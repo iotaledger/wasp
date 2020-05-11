@@ -3,7 +3,7 @@
     "directory": "mainnetdb"
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": false,
     "disableStacktrace": false,
     "encoding": "console",
