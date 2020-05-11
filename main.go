@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/banner"
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -17,6 +18,7 @@ var PLUGINS = node.Plugins(
 	gracefulshutdown.Plugin,
 	webapi.Plugin,
 	cli.Plugin,
+	database.Plugin,
 )
 
 func main() {

@@ -3,6 +3,7 @@ package webapi
 import (
 	"context"
 	"errors"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"net/http"
 	"time"
 
@@ -35,7 +36,7 @@ func configure(*node.Plugin) {
 
 func run(*node.Plugin) {
 	log.Infof("Starting %s ...", PluginName)
-	if err := daemon.BackgroundWorker("WebAPI Server", worker); err != nil {
+	if err := daemon.BackgroundWorker("WebAPI Server", worker, shutdown.PriorityWebAPI); err != nil {
 		log.Errorf("Error starting as daemon: %s", err)
 	}
 }
