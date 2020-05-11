@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/plugins/banner"
+	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
@@ -15,6 +16,7 @@ var PLUGINS = node.Plugins(
 	logger.Plugin,
 	gracefulshutdown.Plugin,
 	webapi.Plugin,
+	cli.Plugin,
 )
 
 func main() {
