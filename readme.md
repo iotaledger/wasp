@@ -6,4 +6,4 @@ protocol, run by Goshimmer nodes.
 _Wasp_ maintains connection with Goshimmer node to have access to the Value Tangle.   
 
 
-_(in progress..)_
+_in progress.._
