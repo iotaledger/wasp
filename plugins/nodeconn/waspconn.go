@@ -1,0 +1,102 @@
+// package for maintaining connection with the main node
+// on the node WaspConn plugin is handling yhe connection
+package nodeconn
+
+import (
+	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/hive.go/backoff"
+	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/netutil/buffconn"
+	"github.com/iotaledger/wasp/plugins/config"
+	"net"
+	"sync"
+	"time"
+)
+
+var (
+	bconn             *buffconn.BufferedConnection
+	bconnMutex        = &sync.RWMutex{}
+	subscriptions     []address.Address
+	subscriptionsSent bool
+)
+
+const (
+	dialTimeout  = 1 * time.Second
+	dialRetries  = 10
+	backoffDelay = 500 * time.Millisecond
+	retryAfter   = 3 * time.Second
+)
+
+// retry net.Dial once, on fail after 0.5s
+var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetries(dialRetries))
+
+// dials outbound address and established connection
+func nodeConnect() {
+	addr := config.Node.GetString(CfgNodeAddress)
+	log.Infof("connecting with node at %s", addr)
+
+	var conn net.Conn
+	if err := backoff.Retry(dialRetryPolicy, func() error {
+		var err error
+		conn, err = net.DialTimeout("tcp", addr, dialTimeout)
+		if err != nil {
+			return fmt.Errorf("can't connect with the node: %v", err)
+		}
+		return nil
+	}); err != nil {
+		log.Error(err)
+
+		retryNodeConnect()
+		return
+	}
+
+	bconnMutex.Lock()
+	bconn := buffconn.NewBufferedConnection(conn)
+	bconnMutex.Unlock()
+
+	log.Debugf("established connection with node at %s", addr)
+
+	dataReceivedClosure := events.NewClosure(func(data []byte) {
+		EventNodeMessageReceived.Trigger(data)
+	})
+
+	bconn.Events.ReceiveMessage.Attach(dataReceivedClosure)
+	bconn.Events.Close.Attach(events.NewClosure(func() {
+		log.Errorf("lost connection with %s", addr)
+		go func() {
+			bconnMutex.Lock()
+			bconn = nil
+			bconnMutex.Unlock()
+			bconn.Events.ReceiveMessage.Detach(dataReceivedClosure)
+		}()
+	}))
+
+	// read loop
+	if err := bconn.Read(); err != nil {
+		log.Error(err)
+	}
+	// try to reconnect after some time
+	log.Debugf("disconnected from node. Will try to reconnect after %v", retryAfter)
+
+	retryNodeConnect()
+}
+
+func retryNodeConnect() {
+	log.Infof("will retry connecting to the node after %v", retryAfter)
+	time.Sleep(retryAfter)
+	go nodeConnect()
+}
+
+func SendDataToNode(data []byte) error {
+	bconnMutex.RLock()
+	defer bconnMutex.Unlock()
+
+	var err error
+	if bconn != nil {
+		_, err = bconn.Write(data)
+	} else {
+		return fmt.Errorf("SendDataToNode: not connected to node")
+	}
+	return err
+}
