@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -19,6 +20,7 @@ var PLUGINS = node.Plugins(
 	webapi.Plugin,
 	cli.Plugin,
 	database.Plugin,
+	peering.Plugin,
 )
 
 func main() {

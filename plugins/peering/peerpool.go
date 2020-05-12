@@ -1,27 +1,13 @@
 package peering
 
 import (
-	"flag"
 	"fmt"
-	"github.com/iotaledger/goshimmer/plugins/config"
-	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/plugins/config"
 	"net"
 	"sync"
 	"time"
 )
-
-const (
-	WASP_PORT = "wasp.port"
-	NODE_ADDR = "wasp.nodeaddr"
-	NODE_PORT = "wasp.nodeport"
-)
-
-func init() {
-	flag.Int(WASP_PORT, 4000, "port for committee connection")
-	flag.String(NODE_ADDR, "127.0.0.1", "node host address")
-	flag.Int(NODE_PORT, 5000, "node port")
-}
 
 var (
 	// all qnode peers maintained by the node
@@ -31,30 +17,12 @@ var (
 )
 
 func Init() {
-	initLogger()
-
-	if err := daemon.BackgroundWorker("Qnode connectOutboundLoop", func(shutdownSignal <-chan struct{}) {
-		log.Debugf("starting qnode peering...")
-
-		// start loops which looks after the qnodePeers and maintains them connected
-		go connectOutboundLoop()
-		go connectInboundLoop()
-		//go countConnectionsLoop() // helper for testing
-
-		<-shutdownSignal
-
-		closeAll()
-
-		log.Debugf("stopped qnode communications...")
-	}); err != nil {
-		panic(err)
-	}
 }
 
 // IP address and port of this node
 func OwnPortAddr() *registry.PortAddr {
 	return &registry.PortAddr{
-		Port: config.Node.GetInt(WASP_PORT),
+		Port: config.Node.GetInt(CfgPeeringPort),
 		Addr: "127.0.0.1", // TODO for testing only
 	}
 }
@@ -161,7 +129,7 @@ func connectOutboundLoop() {
 
 // loop which maintains inbound peers connected (when possible)
 func connectInboundLoop() {
-	listenOn := fmt.Sprintf(":%d", config.Node.GetInt(parameters.WASP_PORT))
+	listenOn := fmt.Sprintf(":%d", config.Node.GetInt(CfgPeeringPort))
 	listener, err := net.Listen("tcp", listenOn)
 	if err != nil {
 		log.Errorf("tcp listen on %s failed: %v. Restarting connectInboundLoop after 1 sec", listenOn, err)
@@ -180,7 +148,6 @@ func connectInboundLoop() {
 		}
 		log.Debugf("accepted connection from %s", conn.RemoteAddr().String())
 
-		//manconn := network.NewManagedConnection(conn)
 		bconn := newPeeredConnection(conn, nil)
 		go func() {
 			log.Debugf("starting reading inbound %s", conn.RemoteAddr().String())

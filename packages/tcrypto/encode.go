@@ -3,7 +3,7 @@ package tcrypto
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/plugins/wasp/util"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/pkg/errors"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"

@@ -3,7 +3,6 @@ package peering
 import (
 	"errors"
 	"fmt"
-	qnode_events "github.com/iotaledger/goshimmer/plugins/wasp/events"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/wasp/packages/registry"
 	"net"
@@ -94,7 +93,7 @@ func (peer *Peer) runOutbound() {
 // sends handshake message. It contains IP address of this end.
 // The address is used by another end for peering
 func (peer *Peer) sendHandshake() error {
-	data, _ := encodeMessage(&qnode_events.PeerMessage{
+	data, _ := encodeMessage(&PeerMessage{
 		MsgType: MsgTypeHandshake,
 		MsgData: []byte(OwnPortAddr().String()),
 	})
@@ -103,7 +102,7 @@ func (peer *Peer) sendHandshake() error {
 	return err
 }
 
-func (peer *Peer) SendMsg(msg *qnode_events.PeerMessage) error {
+func (peer *Peer) SendMsg(msg *PeerMessage) error {
 	if msg.MsgType < FirstCommitteeMsgCode {
 		return errors.New("reserved message code")
 	}
@@ -117,7 +116,7 @@ func (peer *Peer) SendMsg(msg *qnode_events.PeerMessage) error {
 
 // sends same msg to all peers in the slice which are not nil
 // with the same timestamp
-func SendMsgToPeers(msg *qnode_events.PeerMessage, peers ...*Peer) (uint16, time.Time) {
+func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, time.Time) {
 	if msg.MsgType < FirstCommitteeMsgCode {
 		return 0, time.Time{}
 	}

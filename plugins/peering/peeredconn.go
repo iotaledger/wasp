@@ -1,7 +1,6 @@
 package peering
 
 import (
-	wasp_events "github.com/iotaledger/goshimmer/plugins/wasp/events"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"net"
@@ -54,8 +53,8 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 				// heartbeat msg. No need for further processing
 				return
 			}
-			// trigger event to be processed by the dispatcher
-			wasp_events.Events.PeerMessageReceived.Trigger(msg)
+			// trigger event to be processed
+			EventPeerMessageReceived.Trigger(msg)
 		} else {
 			// expected handshake msg
 			if msg.MsgType != MsgTypeHandshake {
@@ -79,7 +78,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 
 // receives handshake response from the outbound peer
 // assumes the connection is already peered (i can be only for outbound peers)
-func (bconn *peeredConnection) processHandShakeOutbound(msg *wasp_events.PeerMessage) {
+func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
 	peerAddr := string(msg.MsgData)
 	log.Debugf("received handshake from outbound %s", peerAddr)
 	if peerAddr != bconn.peer.peerPortAddr.String() {
@@ -99,7 +98,7 @@ func (bconn *peeredConnection) processHandShakeOutbound(msg *wasp_events.PeerMes
 // receives handshake from the inbound peer
 // links connection with the peer
 // sends response back to finish the handshake
-func (bconn *peeredConnection) processHandShakeInbound(msg *wasp_events.PeerMessage) {
+func (bconn *peeredConnection) processHandShakeInbound(msg *PeerMessage) {
 	peerAddr := string(msg.MsgData)
 	log.Debugf("received handshake from inbound %s", peerAddr)
 

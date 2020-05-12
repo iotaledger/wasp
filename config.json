@@ -28,5 +28,8 @@
       "username": "wasp"
     },
     "bindAddress": "127.0.0.1:8080"
+  },
+  "peering":{
+    "port": 31415
   }
 }
