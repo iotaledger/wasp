@@ -62,15 +62,15 @@ func run(_ *node.Plugin) {
 
 			<-shutdownSignal
 
-			log.Info("Stopping dispatcher..")
+			log.Infof("Stopping %s..", PluginName)
 			go func() {
 				nodeconn.EventNodeMessageReceived.Detach(processNodeDataClosure)
 				close(chMsgData)
-				log.Info("Stopping dispatcher.. Done")
+				log.Infof("Stopping %s.. Done", PluginName)
 			}()
 		})
 		if err != nil {
-			log.Errorf("failed to initialize dispatcher")
+			log.Errorf("failed to initialize %v", PluginName)
 			return
 		}
 
@@ -82,6 +82,6 @@ func run(_ *node.Plugin) {
 	}, shutdown.PriorityDispatcher)
 
 	if err != nil {
-		log.Errorf("failed to start worker: %v", err)
+		log.Errorf("failed to start worker for %s: %v", PluginName, err)
 	}
 }

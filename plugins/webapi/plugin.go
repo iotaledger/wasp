@@ -31,7 +31,7 @@ func configure(*node.Plugin) {
 	// configure the server
 	Server.HideBanner = true
 	Server.HidePort = true
-	Server.GET("/", IndexRequest)
+	addEndpoints()
 }
 
 func run(*node.Plugin) {

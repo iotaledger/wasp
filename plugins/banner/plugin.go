@@ -10,7 +10,7 @@ import (
 const PluginName = "Banner"
 
 // Plugin is the plugin instance of the banner plugin.
-var Plugin = node.NewPlugin(PluginName, node.Enabled, configure)
+var Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 
 const (
 	// AppVersion version number
@@ -36,4 +36,8 @@ func configure(ctx *node.Plugin) {
 
 	ctx.Node.Logger.Infof("Wasp version %s ...", AppVersion)
 	ctx.Node.Logger.Info("Loading plugins ...")
+}
+
+func run(ctx *node.Plugin) {
+
 }
