@@ -5,8 +5,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/plugins/wasp/committee"
-	"github.com/iotaledger/goshimmer/plugins/wasp/sctransaction"
+	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 func dispatchState(tx *sctransaction.Transaction) {

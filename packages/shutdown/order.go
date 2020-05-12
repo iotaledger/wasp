@@ -5,6 +5,7 @@ const (
 
 	PriorityPeering
 	PriorityNodeConnection
+	PriorityDispatcher
 	PriorityWebAPI
 	PriorityBadgerGarbageCollection
 )

@@ -1,8 +1,8 @@
-package dispatcher
+package consensus
 
 import "github.com/iotaledger/hive.go/logger"
 
-const modulename = "wasp/dispatcher"
+const modulename = "wasp/consensus"
 
 var log *logger.Logger
 

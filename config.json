@@ -1,6 +1,6 @@
 {
   "database": {
-    "directory": "mainnetdb"
+    "directory": "waspdb"
   },
   "logger": {
     "level": "debug",

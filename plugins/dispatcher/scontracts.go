@@ -3,8 +3,8 @@ package dispatcher
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/plugins/wasp/committee"
-	"github.com/iotaledger/goshimmer/plugins/wasp/registry"
+	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/registry"
 	"sync"
 )
 

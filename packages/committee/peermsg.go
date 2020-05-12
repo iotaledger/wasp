@@ -1,0 +1,152 @@
+package committee
+
+import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
+	"io"
+)
+
+func (msg *NotifyReqMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, uint16(len(msg.RequestIds))); err != nil {
+		return err
+	}
+	for _, reqid := range msg.RequestIds {
+		if _, err := w.Write(reqid.Bytes()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (msg *NotifyReqMsg) Read(r io.Reader) error {
+	err := util.ReadUint32(r, &msg.StateIndex)
+	if err != nil {
+		return err
+	}
+	var arrLen uint16
+	err = util.ReadUint16(r, &arrLen)
+	if err != nil {
+		return err
+	}
+	if arrLen == 0 {
+		return nil
+	}
+	msg.RequestIds = make([]*sctransaction.RequestId, arrLen)
+	for i := range msg.RequestIds {
+		msg.RequestIds[i] = new(sctransaction.RequestId)
+		_, err = r.Read(msg.RequestIds[i].Bytes())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (msg *StartProcessingReqMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	if _, err := w.Write(msg.RequestId.Bytes()); err != nil {
+		return err
+	}
+	if _, err := w.Write(msg.RewardAddress.Bytes()); err != nil {
+		return err
+	}
+	if err := nodeconn.WriteBalances(w, msg.Balances); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *StartProcessingReqMsg) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
+		return err
+	}
+	msg.RequestId = new(sctransaction.RequestId)
+	if _, err := r.Read(msg.RequestId.Bytes()); err != nil {
+		return err
+	}
+	msg.RewardAddress = new(address.Address)
+	if _, err := r.Read(msg.RewardAddress.Bytes()); err != nil {
+		return err
+	}
+	var err error
+	if msg.Balances, err = nodeconn.ReadBalances(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *SignedHashMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	if err := util.WriteTime(w, msg.OrigTimestamp); err != nil {
+		return err
+	}
+	if _, err := w.Write(msg.RequestId.Bytes()); err != nil {
+		return err
+	}
+	if _, err := w.Write(msg.EssenceHash.Bytes()); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *SignedHashMsg) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
+		return err
+	}
+	if err := util.ReadTime(r, &msg.OrigTimestamp); err != nil {
+		return err
+	}
+	if _, err := r.Read(msg.RequestId.Bytes()); err != nil {
+		return err
+	}
+	if _, err := r.Read(msg.EssenceHash.Bytes()); err != nil {
+		return err
+	}
+	var err error
+	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *GetStateUpdateMsg) Write(w io.Writer) error {
+	return util.WriteUint32(w, msg.StateIndex)
+}
+
+func (msg *GetStateUpdateMsg) Read(r io.Reader) error {
+	return util.ReadUint32(r, &msg.StateIndex)
+}
+
+func (msg *StateUpdateMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	if err := msg.StateUpdate.Write(w); err != nil {
+		return err
+	}
+	return util.WriteBoolByte(w, msg.FromVM)
+}
+
+func (msg *StateUpdateMsg) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
+		return err
+	}
+	msg.StateUpdate = state.NewStateUpdate(nil, 0)
+	if err := msg.StateUpdate.Read(r); err != nil {
+		return err
+	}
+	return util.ReadBoolByte(r, &msg.FromVM)
+}
