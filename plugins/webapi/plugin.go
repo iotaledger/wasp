@@ -28,13 +28,12 @@ var (
 
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
-	// configure the server
 	Server.HideBanner = true
 	Server.HidePort = true
 	addEndpoints()
 }
 
-func run(*node.Plugin) {
+func run(_ *node.Plugin) {
 	log.Infof("Starting %s ...", PluginName)
 	if err := daemon.BackgroundWorker("WebAPI Server", worker, shutdown.PriorityWebAPI); err != nil {
 		log.Errorf("Error starting as daemon: %s", err)

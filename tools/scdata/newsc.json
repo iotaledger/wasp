@@ -1,0 +1,14 @@
+{
+  "hosts": [
+    {"port": 9090, "addr": "127.0.0.1"},
+    {"port": 9091, "addr": "127.0.0.1"},
+    {"port": 9092, "addr": "127.0.0.1"},
+    {"port": 9093, "addr": "127.0.0.1"}
+  ],
+  "sc_data": {
+    "scid": "DsHiYnydheNLfhkc9sYPySVcEnyhxgtP4wWhKsczbnrRpYXrabwEjuej2N7bvb1qtdgGMewiWonzsD1zmLJAAXdE",
+    "description": "test sc with existing address and random color",
+    "owner_pub_key": "FsA7Fi5DWrbKKPEmJSc5WF6gzpUGBYran4bpNzE1G3ef",
+    "program_hash": "9UPqKqEHMX5xBF1DkLqYqosQWLkTorkPx3aqdBxuC84H"
+  }
+}
