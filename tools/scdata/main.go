@@ -166,7 +166,7 @@ func GetSc(fname string) {
 			inconsistent = true
 			break
 		}
-		if !scDataCheck.OwnerPubKey.Equal(scData.OwnerPubKey) {
+		if !scDataCheck.OwnerAddress.Equal(scData.OwnerAddress) {
 			inconsistent = true
 			break
 		}

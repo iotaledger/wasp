@@ -13,6 +13,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/database"
 	. "github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util"
+	"io"
 )
 
 // the data structure introduces smart contract to wasp
@@ -20,19 +22,19 @@ import (
 // TODO add state update variables
 
 type SCData struct {
-	Address       *address.Address
-	Color         *balance.Color
-	OwnerPubKey   *HashValue  `json:"owner_pub_key"`
-	Description   string      `json:"description"`
-	ProgramHash   HashValue   `json:"program_hash"`
-	NodeLocations []*PortAddr `json:"node_locations"`
+	Address       address.Address
+	Color         balance.Color
+	OwnerAddress  address.Address
+	Description   string
+	ProgramHash   HashValue
+	NodeLocations []string // "host_addr:port"
 }
 
 // GetScList retrieves all SCdata records from the registry
 // in arbitrary key/value map order and returns a list
 // if ownPortAddr is not nil, it only includes those SCData records which are processed
 // by his node
-func GetSCDataList(ownAddr *PortAddr) ([]*SCData, error) {
+func GetSCDataList(ownAddr string) ([]*SCData, error) {
 	dbase, err := database.GetDB()
 	if err != nil {
 		return nil, err
@@ -52,12 +54,8 @@ func GetSCDataList(ownAddr *PortAddr) ([]*SCData, error) {
 
 // checks if SCData record is valid
 // if ownAddr != nil checks if it is of interest to the current node
-func validate(scdata *SCData, ownAddr *PortAddr) bool {
-	if scdata.Address == nil || scdata.Color == nil || scdata.OwnerPubKey == nil || scdata.NodeLocations == nil {
-		panic("wrong sc data structure")
-		return false
-	}
-	dkshare, ok, _ := GetDKShare(scdata.Address)
+func validate(scdata *SCData, ownAddr string) bool {
+	dkshare, ok, _ := GetDKShare(&scdata.Address)
 	if !ok {
 		// failed to load dkshare of the sc address
 		return false
@@ -66,10 +64,10 @@ func validate(scdata *SCData, ownAddr *PortAddr) bool {
 		// shouldn't be
 		return false
 	}
-	if ownAddr == nil {
+	if ownAddr == "" {
 		return true
 	}
-	if ownAddr.String() != scdata.NodeLocations[dkshare.Index].String() {
+	if ownAddr != scdata.NodeLocations[dkshare.Index] {
 		// if own address is not consistent with the one at the index in the list of nodes
 		// this node is not interested in the SC
 		return false
@@ -101,7 +99,7 @@ func SaveSCData(scd *SCData) error {
 		return err
 	}
 	return dbase.Set(database.Entry{
-		Key:   dbSCDataKey(scd.Address),
+		Key:   dbSCDataKey(&scd.Address),
 		Value: jsonData,
 	})
 }
@@ -120,4 +118,49 @@ func GetSCData(addr *address.Address) (*SCData, error) {
 		return nil, err
 	}
 	return &ret, nil
+}
+
+func (scd *SCData) Write(w io.Writer) error {
+	if _, err := w.Write(scd.Address[:]); err != nil {
+		return err
+	}
+	if _, err := w.Write(scd.Color[:]); err != nil {
+		return err
+	}
+	if _, err := w.Write(scd.OwnerAddress[:]); err != nil {
+		return err
+	}
+	if err := util.WriteString16(w, scd.Description); err != nil {
+		return err
+	}
+	if _, err := w.Write(scd.ProgramHash[:]); err != nil {
+		return err
+	}
+	if err := util.WriteStrings16(w, scd.NodeLocations); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (scd *SCData) Read(r io.Reader) error {
+	if err := util.ReadAddress(r, &scd.Address); err != nil {
+		return err
+	}
+	if err := util.ReadColor(r, &scd.Color); err != nil {
+		return err
+	}
+	if err := util.ReadAddress(r, &scd.OwnerAddress); err != nil {
+		return err
+	}
+	var err error
+	if scd.Description, err = util.ReadString16(r); err != nil {
+		return err
+	}
+	if err := util.ReadHashValue(r, &scd.ProgramHash); err != nil {
+		return err
+	}
+	if scd.NodeLocations, err = util.ReadStrings16(r); err != nil {
+		return err
+	}
+	return nil
 }

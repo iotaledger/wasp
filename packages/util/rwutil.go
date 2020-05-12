@@ -2,6 +2,9 @@ package util
 
 import (
 	"encoding/binary"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 	"io"
 	"time"
@@ -107,7 +110,12 @@ func ReadUint64(r io.Reader, pval *uint64) error {
 	return nil
 }
 
+const MaxUint16 = int(^uint16(0))
+
 func WriteBytes16(w io.Writer, data []byte) error {
+	if len(data) > MaxUint16 {
+		panic("WriteBytes16: too long data")
+	}
 	err := WriteUint16(w, uint16(len(data)))
 	if err != nil {
 		return err
@@ -200,5 +208,80 @@ func ReadTime(r io.Reader, ts *time.Time) error {
 		return err
 	}
 	*ts = time.Unix(0, int64(nano))
+	return nil
+}
+
+func WriteString16(w io.Writer, str string) error {
+	return WriteBytes16(w, []byte(str))
+}
+
+func ReadString16(r io.Reader) (string, error) {
+	ret, err := ReadBytes16(r)
+	if err != nil {
+		return "", err
+	}
+	return string(ret), err
+}
+
+func WriteStrings16(w io.Writer, strs []string) error {
+	if len(strs) > MaxUint16 {
+		panic("WriteStrings16: too long array")
+	}
+	if err := WriteUint16(w, uint16(len(strs))); err != nil {
+		return err
+	}
+	for _, s := range strs {
+		if err := WriteString16(w, s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ReadStrings16(r io.Reader) ([]string, error) {
+	var size uint16
+	if err := ReadUint16(r, &size); err != nil {
+		return nil, nil
+	}
+	ret := make([]string, size)
+	var err error
+	for i := range ret {
+		if ret[i], err = ReadString16(r); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+func ReadAddress(r io.Reader, addr *address.Address) error {
+	n, err := r.Read(addr[:])
+	if err != nil {
+		return err
+	}
+	if n != address.Length {
+		return errors.New("error while reading address")
+	}
+	return nil
+}
+
+func ReadColor(r io.Reader, color *balance.Color) error {
+	n, err := r.Read(color[:])
+	if err != nil {
+		return err
+	}
+	if n != balance.ColorLength {
+		return errors.New("error while reading color code")
+	}
+	return nil
+}
+
+func ReadHashValue(r io.Reader, h *hashing.HashValue) error {
+	n, err := r.Read(h[:])
+	if err != nil {
+		return err
+	}
+	if n != hashing.HashSize {
+		return errors.New("error while reading hash")
+	}
 	return nil
 }
