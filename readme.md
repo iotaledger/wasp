@@ -1,3 +1,4 @@
+![Wasp logo](WASP_logo_light.png)
 # Wasp: a node for IOTA Smart Contracts
 
 
