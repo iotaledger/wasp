@@ -9,13 +9,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
-func dbKey(addr *address.Address) []byte {
-	var buf bytes.Buffer
-	buf.WriteString("key_")
-	buf.Write(addr.Bytes())
-	return buf.Bytes()
-}
-
 func CommitDKShare(ks *tcrypto.DKShare, pubKeys []kyber.Point) error {
 	if err := ks.FinalizeDKS(pubKeys); err != nil {
 		return err
@@ -27,11 +20,11 @@ func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	if !ks.Committed {
 		return fmt.Errorf("uncommited DK share: can't be saved to the registry")
 	}
-	dbase, err := database.GetDB()
+	dbase, err := database.GetKeyDataDB()
 	if err != nil {
 		return err
 	}
-	dbkey := dbKey(ks.Address)
+	dbkey := database.DbKeyDKShare(ks.Address)
 	exists, err := dbase.Contains(dbkey)
 	if err != nil {
 		return err
@@ -52,12 +45,12 @@ func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	})
 }
 
-func LoadDKShare(address *address.Address, maskPrivate bool) (*tcrypto.DKShare, error) {
-	dbase, err := database.GetDB()
+func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, error) {
+	dbase, err := database.GetKeyDataDB()
 	if err != nil {
 		return nil, err
 	}
-	entry, err := dbase.Get(dbKey(address))
+	entry, err := dbase.Get(database.DbKeyDKShare(addr))
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +62,9 @@ func LoadDKShare(address *address.Address, maskPrivate bool) (*tcrypto.DKShare, 
 }
 
 func ExistDKShareInRegistry(addr *address.Address) (bool, error) {
-	dbase, err := database.GetDB()
+	dbase, err := database.GetKeyDataDB()
 	if err != nil {
 		return false, err
 	}
-	return dbase.Contains(dbKey(addr))
+	return dbase.Contains(database.DbKeyDKShare(addr))
 }

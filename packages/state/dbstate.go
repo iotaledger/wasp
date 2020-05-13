@@ -43,7 +43,7 @@ func requestStorageKey(reqid *sctransaction.RequestId) []byte {
 // loads state update with the given index
 func LoadStateUpdate(addr *address.Address, stateIndex uint32) (StateUpdate, error) {
 	storageKey := stateUpdateStorageKey(addr, stateIndex)
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func LoadStateUpdate(addr *address.Address, stateIndex uint32) (StateUpdate, err
 
 // saves state update to db
 func (su *mockStateUpdate) SaveToDb() error {
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (su *mockStateUpdate) SaveToDb() error {
 // loads variable state from db
 func LoadVariableState(addr *address.Address) (VariableState, error) {
 	storageKey := variableStateStorageKey(addr)
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func LoadVariableState(addr *address.Address) (VariableState, error) {
 
 // saves variable state to db
 func (vs *mockVariableState) SaveToDb() error {
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (vs *mockVariableState) SaveToDb() error {
 // marks request processed
 // TODO time when processed, cleanup the index after some time and so on
 func MarkRequestProcessed(reqid *sctransaction.RequestId) error {
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func MarkRequestProcessed(reqid *sctransaction.RequestId) error {
 // checks if request is processed
 func IsRequestProcessed(reqid *sctransaction.RequestId) (bool, error) {
 	storageKey := requestStorageKey(reqid)
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return false, err
 	}
@@ -148,7 +148,7 @@ func IsRequestProcessed(reqid *sctransaction.RequestId) (bool, error) {
 // retrieves associated error string to the "request processed" record (if exists)
 func RequestProcessedErrorString(reqid *sctransaction.RequestId) (string, error) {
 	storageKey := requestStorageKey(reqid)
-	dbase, err := database.GetDB()
+	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return "", err
 	}

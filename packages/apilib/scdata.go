@@ -6,19 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"net/http"
 )
 
-// calls node  to wright SCData record
-func PutSCData(addr string, port int, adata *registry.SCData) error {
-	data, err := json.Marshal(adata)
+// calls node  to wright SCMetaData record
+func PutSCData(host string, params admapi.SCMetaDataJsonable) error {
+	data, err := json.Marshal(params)
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf("http://%s:%d/adm/putscdata", addr, port)
+	url := fmt.Sprintf("http://%s/adm/putscdata", host)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
@@ -35,14 +34,14 @@ func PutSCData(addr string, port int, adata *registry.SCData) error {
 	return err
 }
 
-// calls the nodes to get SCData record by scid
-func GetSCdata(addr string, port int, scaddr *address.Address) (*registry.SCData, error) {
+// calls the nodes to get SCMetaData record by address
+func GetSCdata(host string, scaddr *address.Address) (*admapi.SCMetaDataJsonable, error) {
 	req := admapi.GetSCDataRequest{Address: scaddr}
 	data, err := json.Marshal(&req)
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("http://%s:%d/adm/getscdata", addr, port)
+	url := fmt.Sprintf("http://%s/adm/getscdata", host)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -58,11 +57,11 @@ func GetSCdata(addr string, port int, scaddr *address.Address) (*registry.SCData
 	if dresp.Error != "" {
 		return nil, errors.New(dresp.Error)
 	}
-	return &dresp.SCData, err
+	return &dresp.SCMetaDataJsonable, err
 }
 
 // gets list of all SCs from the node
-func GetSCList(url string) ([]*registry.SCData, error) {
+func GetSCList(url string) ([]*admapi.SCMetaDataJsonable, error) {
 	resp, err := http.Get(fmt.Sprintf("http://%s/adm/getsclist", url))
 	if err != nil {
 		return nil, err

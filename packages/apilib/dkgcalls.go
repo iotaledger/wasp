@@ -10,12 +10,12 @@ import (
 	"net/http"
 )
 
-func callNewKey(addr string, port int, params dkgapi.NewDKSRequest) (*dkgapi.NewDKSResponse, error) {
+func callNewKey(netLoc string, params dkgapi.NewDKSRequest) (*dkgapi.NewDKSResponse, error) {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("http://%s:%d/adm/newdks", addr, port)
+	url := fmt.Sprintf("http://%s/adm/newdks", netLoc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -31,12 +31,12 @@ func callNewKey(addr string, port int, params dkgapi.NewDKSRequest) (*dkgapi.New
 	return nil, errors.New(result.Err)
 }
 
-func callAggregate(addr string, port int, params dkgapi.AggregateDKSRequest) (*dkgapi.AggregateDKSResponse, error) {
+func callAggregate(netLoc string, params dkgapi.AggregateDKSRequest) (*dkgapi.AggregateDKSResponse, error) {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("http://%s:%d/adm/aggregatedks", addr, port)
+	url := fmt.Sprintf("http://%s/adm/aggregatedks", netLoc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -52,12 +52,12 @@ func callAggregate(addr string, port int, params dkgapi.AggregateDKSRequest) (*d
 	return nil, errors.New(result.Err)
 }
 
-func callCommit(addr string, port int, params dkgapi.CommitDKSRequest) (*address.Address, error) {
+func callCommit(netloc string, params dkgapi.CommitDKSRequest) (*address.Address, error) {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("http://%s:%d/adm/commitdks", addr, port)
+	url := fmt.Sprintf("http://%s/adm/commitdks", netloc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -77,12 +77,12 @@ func callCommit(addr string, port int, params dkgapi.CommitDKSRequest) (*address
 	return nil, errors.New(result.Err)
 }
 
-func callGetPubKeyInfo(addr string, port int, params dkgapi.GetPubKeyInfoRequest) *dkgapi.GetPubKeyInfoResponse {
+func callGetPubKeyInfo(netLoc string, params dkgapi.GetPubKeyInfoRequest) *dkgapi.GetPubKeyInfoResponse {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return &dkgapi.GetPubKeyInfoResponse{Err: err.Error()}
 	}
-	url := fmt.Sprintf("http://%s:%d/adm/getpubkeyinfo", addr, port)
+	url := fmt.Sprintf("http://%s/adm/getpubkeyinfo", netLoc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return &dkgapi.GetPubKeyInfoResponse{Err: err.Error()}

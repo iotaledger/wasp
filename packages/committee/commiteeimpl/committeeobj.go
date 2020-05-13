@@ -23,7 +23,7 @@ type committeeObj struct {
 	isOperational atomic.Bool
 	peers         []*peering.Peer
 	ownIndex      uint16
-	scdata        *registry.SCData
+	scdata        *registry.SCMetaData
 	chMsg         chan interface{}
 	stateMgr      *statemgr.StateManager
 	operator      *consensus.Operator
@@ -33,7 +33,7 @@ func init() {
 	committee.New = newCommitteeObj
 }
 
-func newCommitteeObj(scdata *registry.SCData) (committee.Committee, error) {
+func newCommitteeObj(scdata *registry.SCMetaData) (committee.Committee, error) {
 	dkshare, keyExists, err := registry.GetDKShare(&scdata.Address)
 	if err != nil {
 		return nil, err

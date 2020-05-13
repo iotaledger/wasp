@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/plugins/webapi/admapi"
+	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"net/http"
 	"time"
 
@@ -28,6 +30,9 @@ var (
 
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
+	dkgapi.InitLogger()
+	admapi.InitLogger()
+
 	Server.HideBanner = true
 	Server.HidePort = true
 	addEndpoints()

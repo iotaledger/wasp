@@ -3,14 +3,13 @@ package apilib
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/pkg/errors"
 	"math/rand"
 )
 
-func GenerateNewDistributedKeySet(nodes []*registry.PortAddr, n, t uint16) (*address.Address, error) {
+func GenerateNewDistributedKeySet(nodes []string, n, t uint16) (*address.Address, error) {
 	if len(nodes) != int(n) {
 		return nil, errors.New("wrong params")
 	}
@@ -26,10 +25,10 @@ func GenerateNewDistributedKeySet(nodes []*registry.PortAddr, n, t uint16) (*add
 	// generate new key shares
 	// results in the matrix
 	priSharesMatrix := make([][]string, params.N)
-	for i, pa := range nodes {
+	for i, host := range nodes {
 		par := params
 		par.Index = uint16(i)
-		resp, err := callNewKey(pa.Addr, pa.Port, par)
+		resp, err := callNewKey(host, par)
 		if err != nil {
 			return nil, err
 		}
@@ -42,11 +41,11 @@ func GenerateNewDistributedKeySet(nodes []*registry.PortAddr, n, t uint16) (*add
 	// aggregate private shares
 	pubShares := make([]string, params.N)
 	priSharesCol := make([]string, params.N)
-	for col, pa := range nodes {
+	for col, host := range nodes {
 		for row := range nodes {
 			priSharesCol[row] = priSharesMatrix[row][col]
 		}
-		resp, err := callAggregate(pa.Addr, pa.Port, dkgapi.AggregateDKSRequest{
+		resp, err := callAggregate(host, dkgapi.AggregateDKSRequest{
 			TmpId:     params.TmpId,
 			Index:     uint16(col),
 			PriShares: priSharesCol,
@@ -59,8 +58,8 @@ func GenerateNewDistributedKeySet(nodes []*registry.PortAddr, n, t uint16) (*add
 
 	// commit keys
 	var addrRet *address.Address
-	for _, pa := range nodes {
-		addr, err := callCommit(pa.Addr, pa.Port, dkgapi.CommitDKSRequest{
+	for _, host := range nodes {
+		addr, err := callCommit(host, dkgapi.CommitDKSRequest{
 			TmpId:     params.TmpId,
 			PubShares: pubShares,
 		})
@@ -79,13 +78,13 @@ func GenerateNewDistributedKeySet(nodes []*registry.PortAddr, n, t uint16) (*add
 }
 
 // retrieves public info about key with specific address
-func GetPublicKeyInfo(nodes []*registry.PortAddr, address *address.Address) []*dkgapi.GetPubKeyInfoResponse {
+func GetPublicKeyInfo(nodes []string, address *address.Address) []*dkgapi.GetPubKeyInfoResponse {
 	params := dkgapi.GetPubKeyInfoRequest{
 		Address: address.String(),
 	}
 	ret := make([]*dkgapi.GetPubKeyInfoResponse, len(nodes))
-	for i, pa := range nodes {
-		ret[i] = callGetPubKeyInfo(pa.Addr, pa.Port, params)
+	for i, host := range nodes {
+		ret[i] = callGetPubKeyInfo(host, params)
 	}
 	return ret
 }

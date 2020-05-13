@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"log"
@@ -14,13 +14,13 @@ import (
 )
 
 type ioParams struct {
-	Hosts  []*registry.PortAddr `json:"hosts"`
-	SCData registry.SCData      `json:"sc_data"`
+	Hosts       []string                  `json:"hosts"`
+	RequestData admapi.SCMetaDataJsonable `json:"request_data"`
 }
 
 type ioGetParams struct {
-	Hosts   []*registry.PortAddr `json:"hosts"`
-	Address address.Address      `json:"address"`
+	Hosts   []string `json:"hosts"`
+	Address string   `json:"address"`
 }
 
 func main() {
@@ -88,13 +88,13 @@ func Newsc(fname string) {
 	if err != nil {
 		panic(err)
 	}
-	params.SCData.NodeLocations = params.Hosts
+	params.RequestData.NodeLocations = params.Hosts
 	for _, h := range params.Hosts {
-		err = apilib.PutSCData(h.Addr, h.Port, &params.SCData)
+		err = apilib.PutSCData(h, params.RequestData)
 		if err != nil {
 			fmt.Printf("PutSCData: %v\n", err)
 		} else {
-			fmt.Printf("PutSCData success: %s:%d\n", h.Addr, h.Port)
+			fmt.Printf("PutSCData success: %s\n", h)
 		}
 	}
 	data, err = json.MarshalIndent(&params, "", " ")
@@ -119,17 +119,22 @@ func GetSc(fname string) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Retrieving data for sc addr = %s\n", params.Address.String())
+	fmt.Printf("Retrieving data for sc addr = %s\n", params.Address)
 
-	res := make(map[string]*registry.SCData)
+	addr, err := address.FromBase58(params.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	res := make(map[string]*admapi.SCMetaDataJsonable)
 	for _, h := range params.Hosts {
-		scData, err := apilib.GetSCdata(h.Addr, h.Port, &params.Address)
+		scData, err := apilib.GetSCdata(h, &addr)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			continue
 		}
-		res[h.String()] = scData
-		fmt.Printf("GetSCData from %s: success\n", h.String())
+		res[h] = scData
+		fmt.Printf("GetSCData from %s: success\n", h)
 	}
 	data, err = json.MarshalIndent(res, "", " ")
 	if err != nil {
@@ -151,14 +156,14 @@ func GetSc(fname string) {
 	}
 	fmt.Printf("%d SC data records was retrived\nChecking for consistency...\n", len(res))
 	// checking if all data records are identical
-	var scDataCheck *registry.SCData
+	var scDataCheck *admapi.SCMetaDataJsonable
 	var inconsistent bool
 	for _, scData := range res {
 		if scDataCheck == nil {
 			scDataCheck = scData
 			continue
 		}
-		if *scDataCheck.Address != *scData.Address {
+		if scDataCheck.Address != scData.Address {
 			inconsistent = true
 			break
 		}
@@ -166,7 +171,7 @@ func GetSc(fname string) {
 			inconsistent = true
 			break
 		}
-		if !scDataCheck.OwnerAddress.Equal(scData.OwnerAddress) {
+		if scDataCheck.OwnerAddress != scData.OwnerAddress {
 			inconsistent = true
 			break
 		}

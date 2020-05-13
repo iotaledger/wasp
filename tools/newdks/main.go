@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/registry"
 	"io/ioutil"
 	"os"
 )
 
 type ioParams struct {
-	Hosts     []*registry.PortAddr `json:"hosts"`
-	N         uint16               `json:"n"`
-	T         uint16               `json:"t"`
-	NumKeys   uint16               `json:"num_keys"`
-	Addresses []string             `json:"addresses"` //base58
+	Hosts     []string `json:"hosts"`
+	N         uint16   `json:"n"`
+	T         uint16   `json:"t"`
+	NumKeys   uint16   `json:"num_keys"`
+	Addresses []string `json:"addresses"` //base58
 }
 
 func main() {

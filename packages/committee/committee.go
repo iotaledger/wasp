@@ -20,4 +20,4 @@ type Committee interface {
 	ReceiveMessage(msg interface{})
 }
 
-var New func(scdata *registry.SCData) (Committee, error)
+var New func(scdata *registry.SCMetaData) (Committee, error)

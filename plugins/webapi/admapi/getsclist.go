@@ -7,8 +7,8 @@ import (
 )
 
 type GetScListResponse struct {
-	SCDataList []*registry.SCData `json:"sc_data_list"`
-	Error      string             `json:"err"`
+	SCDataList []*SCMetaDataJsonable `json:"sc_data_list"`
+	Error      string                `json:"err"`
 }
 
 func HandlerGetSCList(c echo.Context) error {
@@ -16,5 +16,20 @@ func HandlerGetSCList(c echo.Context) error {
 	if err != nil {
 		return misc.OkJson(c, &GetScListResponse{Error: err.Error()})
 	}
-	return misc.OkJson(c, &GetScListResponse{SCDataList: sclist})
+	retSclist := make([]*SCMetaDataJsonable, len(sclist))
+	for i, scd := range sclist {
+		retSclist[i] = toJsonable(scd)
+	}
+	return misc.OkJson(c, &GetScListResponse{SCDataList: retSclist})
+}
+
+func toJsonable(scdata *registry.SCMetaData) *SCMetaDataJsonable {
+	return &SCMetaDataJsonable{
+		Address:       scdata.Address.String(),
+		Color:         scdata.Color.String(),
+		OwnerAddress:  scdata.OwnerAddress.String(),
+		Description:   scdata.Description,
+		ProgramHash:   scdata.ProgramHash.String(),
+		NodeLocations: scdata.NodeLocations,
+	}
 }

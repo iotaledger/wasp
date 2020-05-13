@@ -2,13 +2,12 @@
 // The registry stores information about smart contracts and private keys and other data needed
 // to sign the transaction
 // all registry is cached in memory to enable fast check is SC transaction is of interest fo the node
-// only SCData records which node is processing is included in the cache
+// only SCMetaData records which node is processing is included in the cache
 // if scid is not in cache, the transaction is ignored
 package registry
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/database"
@@ -21,7 +20,7 @@ import (
 // the color is origin transaction hash
 // TODO add state update variables
 
-type SCData struct {
+type SCMetaData struct {
 	Address       address.Address
 	Color         balance.Color
 	OwnerAddress  address.Address
@@ -32,17 +31,17 @@ type SCData struct {
 
 // GetScList retrieves all SCdata records from the registry
 // in arbitrary key/value map order and returns a list
-// if ownPortAddr is not nil, it only includes those SCData records which are processed
+// if ownPortAddr is not nil, it only includes those SCMetaData records which are processed
 // by his node
-func GetSCDataList() ([]*SCData, error) {
-	dbase, err := database.GetDB()
+func GetSCDataList() ([]*SCMetaData, error) {
+	dbase, err := database.GetSCMetaDataDB()
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]*SCData, 0)
-	err = dbase.ForEachPrefix(dbSCDataGroupPrefix, func(entry database.Entry) bool {
-		scdata := &SCData{}
-		if err = json.Unmarshal(entry.Value, scdata); err == nil {
+	ret := make([]*SCMetaData, 0)
+	err = dbase.ForEachPrefix(nil, func(entry database.Entry) bool {
+		scdata := &SCMetaData{}
+		if err = scdata.Read(bytes.NewReader(entry.Value)); err == nil {
 			if validate(scdata) {
 				ret = append(ret, scdata)
 			}
@@ -52,9 +51,9 @@ func GetSCDataList() ([]*SCData, error) {
 	return ret, err
 }
 
-// checks if SCData record is valid
+// checks if SCMetaData record is valid
 // if ownAddr != nil checks if it is of interest to the current node
-func validate(scdata *SCData) bool {
+func validate(scdata *SCMetaData) bool {
 	dkshare, ok, _ := GetDKShare(&scdata.Address)
 	if !ok {
 		// failed to load dkshare of the sc address
@@ -67,52 +66,41 @@ func validate(scdata *SCData) bool {
 	return true
 }
 
-// prefix of the SCData entry key
-var dbSCDataGroupPrefix = HashStrings("scdata").Bytes()
-
-// key of the entry
-func dbSCDataKey(addr *address.Address) []byte {
-	var buf bytes.Buffer
-	buf.Write(dbSCDataGroupPrefix)
-	buf.Write(addr.Bytes())
-	return buf.Bytes()
-}
-
-// SaveSCData saves SCData record to the registry
+// SaveSCData saves SCMetaData record to the registry
 // overwrites previous if any
 // for new sc
-func SaveSCData(scd *SCData) error {
-	dbase, err := database.GetDB()
+func SaveSCData(scd *SCMetaData) error {
+	dbase, err := database.GetSCMetaDataDB()
 	if err != nil {
 		return err
 	}
-	jsonData, err := json.Marshal(scd)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := scd.Write(&buf); err != nil {
 		return err
 	}
 	return dbase.Set(database.Entry{
-		Key:   dbSCDataKey(&scd.Address),
-		Value: jsonData,
+		Key:   database.DbKeySCMetaData(&scd.Address),
+		Value: buf.Bytes(),
 	})
 }
 
-func GetSCData(addr *address.Address) (*SCData, error) {
-	dbase, err := database.GetDB()
+func GetSCData(addr *address.Address) (*SCMetaData, error) {
+	dbase, err := database.GetSCMetaDataDB()
 	if err != nil {
 		return nil, err
 	}
-	entry, err := dbase.Get(dbSCDataKey(addr))
+	entry, err := dbase.Get(database.DbKeySCMetaData(addr))
 	if err != nil {
 		return nil, err
 	}
-	var ret SCData
-	if err := json.Unmarshal(entry.Value, &ret); err != nil {
+	var ret SCMetaData
+	if err := ret.Read(bytes.NewReader(entry.Value)); err != nil {
 		return nil, err
 	}
 	return &ret, nil
 }
 
-func (scd *SCData) Write(w io.Writer) error {
+func (scd *SCMetaData) Write(w io.Writer) error {
 	if _, err := w.Write(scd.Address[:]); err != nil {
 		return err
 	}
@@ -134,7 +122,7 @@ func (scd *SCData) Write(w io.Writer) error {
 	return nil
 }
 
-func (scd *SCData) Read(r io.Reader) error {
+func (scd *SCMetaData) Read(r io.Reader) error {
 	if err := util.ReadAddress(r, &scd.Address); err != nil {
 		return err
 	}

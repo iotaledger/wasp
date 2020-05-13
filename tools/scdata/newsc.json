@@ -1,14 +1,15 @@
 {
   "hosts": [
-    {"port": 9090, "addr": "127.0.0.1"},
-    {"port": 9091, "addr": "127.0.0.1"},
-    {"port": 9092, "addr": "127.0.0.1"},
-    {"port": 9093, "addr": "127.0.0.1"}
+    "127.0.0.1:8080",
+    "127.0.0.1:8081",
+    "127.0.0.1:8082",
+    "127.0.0.1:8083"
   ],
-  "sc_data": {
-    "scid": "DsHiYnydheNLfhkc9sYPySVcEnyhxgtP4wWhKsczbnrRpYXrabwEjuej2N7bvb1qtdgGMewiWonzsD1zmLJAAXdE",
-    "description": "test sc with existing address and random color",
-    "owner_pub_key": "FsA7Fi5DWrbKKPEmJSc5WF6gzpUGBYran4bpNzE1G3ef",
+  "request_data": {
+    "address": "ow3yz89bV4ytKEkDQNeUxaqwmaq9euDpt2PY4bAc8ZHb",
+    "color": "93SFFkzdYopchUfee2HWGK769dwgxJmg8TFfXY74ygji",
+    "owner_address": "fgCteXu7feArmkR1ArmYsXAWSU3Y7iNA1pmrzxSWwFNV",
+    "description": "test sc for wasp 1",
     "program_hash": "9UPqKqEHMX5xBF1DkLqYqosQWLkTorkPx3aqdBxuC84H"
   }
 }
