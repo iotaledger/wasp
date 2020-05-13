@@ -1,0 +1,38 @@
+{
+  "database": {
+    "directory": "waspdb"
+  },
+  "logger": {
+    "level": "debug",
+    "disableCaller": false,
+    "disableStacktrace": false,
+    "encoding": "console",
+    "outputPaths": [
+      "stdout",
+      "wasp.log"
+    ],
+    "disableEvents": true
+  },
+  "network": {
+    "bindAddress": "0.0.0.0",
+    "externalAddress": "auto"
+  },
+  "node": {
+    "disablePlugins": [],
+    "enablePlugins": []
+  },
+  "webapi": {
+    "auth": {
+      "password": "wasp",
+      "privateKey": "",
+      "username": "wasp"
+    },
+    "bindAddress": "127.0.0.1:8080"
+  },
+  "peering":{
+    "port": 4000
+  },
+  "nodeconn": {
+    "address": "127.0.0.1:5000"
+  }
+}
