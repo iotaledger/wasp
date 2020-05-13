@@ -40,7 +40,7 @@ func run(_ *node.Plugin) {
 
 		err := daemon.BackgroundWorker("wasp dispatcher", func(shutdownSignal <-chan struct{}) {
 			// load all sc data records from registry
-			addrs, err := loadAllSContracts(peering.OwnPortAddr())
+			addrs, err := loadAllSContracts()
 			if err != nil {
 				log.Error("failed to load SC data from registry: %v", err)
 				return

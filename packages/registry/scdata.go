@@ -34,7 +34,7 @@ type SCData struct {
 // in arbitrary key/value map order and returns a list
 // if ownPortAddr is not nil, it only includes those SCData records which are processed
 // by his node
-func GetSCDataList(ownAddr string) ([]*SCData, error) {
+func GetSCDataList() ([]*SCData, error) {
 	dbase, err := database.GetDB()
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func GetSCDataList(ownAddr string) ([]*SCData, error) {
 	err = dbase.ForEachPrefix(dbSCDataGroupPrefix, func(entry database.Entry) bool {
 		scdata := &SCData{}
 		if err = json.Unmarshal(entry.Value, scdata); err == nil {
-			if validate(scdata, ownAddr) {
+			if validate(scdata) {
 				ret = append(ret, scdata)
 			}
 		}
@@ -54,7 +54,7 @@ func GetSCDataList(ownAddr string) ([]*SCData, error) {
 
 // checks if SCData record is valid
 // if ownAddr != nil checks if it is of interest to the current node
-func validate(scdata *SCData, ownAddr string) bool {
+func validate(scdata *SCData) bool {
 	dkshare, ok, _ := GetDKShare(&scdata.Address)
 	if !ok {
 		// failed to load dkshare of the sc address
@@ -62,14 +62,6 @@ func validate(scdata *SCData, ownAddr string) bool {
 	}
 	if int(dkshare.Index) >= len(scdata.NodeLocations) {
 		// shouldn't be
-		return false
-	}
-	if ownAddr == "" {
-		return true
-	}
-	if ownAddr != scdata.NodeLocations[dkshare.Index] {
-		// if own address is not consistent with the one at the index in the list of nodes
-		// this node is not interested in the SC
 		return false
 	}
 	return true

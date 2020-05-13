@@ -1,6 +1,7 @@
 package commiteeimpl
 
 import (
+	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -33,11 +34,7 @@ func init() {
 }
 
 func newCommitteeObj(scdata *registry.SCData) (committee.Committee, error) {
-	ownIndex, ok := peering.FindOwnIndex(scdata.NodeLocations)
-	if !ok {
-		return nil, fmt.Errorf("not processed by this node sc addr: %s", scdata.Address.String())
-	}
-	dkshare, keyExists, err := registry.GetDKShare(scdata.Address)
+	dkshare, keyExists, err := registry.GetDKShare(&scdata.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +42,10 @@ func newCommitteeObj(scdata *registry.SCData) (committee.Committee, error) {
 		return nil, fmt.Errorf("unkniwn key. sc addr = %s", scdata.Address.String())
 	}
 	err = fmt.Errorf("sc data inconsstent with key parameteres for sc addr %s", scdata.Address.String())
-	if *scdata.Address != *dkshare.Address {
+	if scdata.Address != *dkshare.Address {
 		return nil, err
 	}
-	if len(scdata.NodeLocations) != int(dkshare.N) {
-		return nil, err
-	}
-	if dkshare.Index != ownIndex {
+	if err := checkNetworkLocations(scdata.NodeLocations, dkshare.N, dkshare.Index); err != nil {
 		return nil, err
 	}
 
@@ -59,11 +53,12 @@ func newCommitteeObj(scdata *registry.SCData) (committee.Committee, error) {
 		chMsg:    make(chan interface{}, 10),
 		scdata:   scdata,
 		peers:    make([]*peering.Peer, 0, len(scdata.NodeLocations)),
-		ownIndex: ownIndex,
+		ownIndex: dkshare.Index,
 	}
-	for i, pa := range scdata.NodeLocations {
-		if i != int(ownIndex) {
-			ret.peers[i] = peering.UsePeer(pa)
+	myLocation := scdata.NodeLocations[dkshare.Index]
+	for i, remoteLocation := range scdata.NodeLocations {
+		if i != int(dkshare.Index) {
+			ret.peers[i] = peering.UsePeer(remoteLocation, myLocation)
 		}
 	}
 
@@ -89,7 +84,23 @@ func newCommitteeObj(scdata *registry.SCData) (committee.Committee, error) {
 	return ret, nil
 }
 
-// implements commtypes.Committee interface
+// checkNetworkLocations checks if netLocations makes sense
+func checkNetworkLocations(netLocations []string, n, index uint16) error {
+	if len(netLocations) != int(n) {
+		return fmt.Errorf("wrong number of network locations")
+	}
+	// check for duplicates
+	for i := range netLocations {
+		for j := i + 1; i < len(netLocations); j++ {
+			if netLocations[i] == netLocations[j] {
+				return errors.New("duplicate network locations in the list")
+			}
+		}
+	}
+	return peering.CheckMyNetworkID(netLocations[index])
+}
+
+// implements Committee interface
 
 func (c *committeeObj) SetOperational() {
 	c.isOperational.Store(true)
@@ -107,11 +118,11 @@ func (c *committeeObj) Dismiss() {
 }
 
 func (c *committeeObj) Address() *address.Address {
-	return c.scdata.Address
+	return &c.scdata.Address
 }
 
 func (c *committeeObj) Color() *balance.Color {
-	return c.scdata.Color
+	return &c.scdata.Color
 }
 
 func (c *committeeObj) Size() uint16 {
@@ -131,7 +142,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	}
 	peer := c.peers[targetPeerIndex]
 	msg := &peering.PeerMessage{
-		Address:     *c.scdata.Address,
+		Address:     c.scdata.Address,
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
@@ -141,7 +152,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 
 func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time) {
 	msg := &peering.PeerMessage{
-		Address:     *c.scdata.Address,
+		Address:     c.scdata.Address,
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,

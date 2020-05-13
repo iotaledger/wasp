@@ -79,14 +79,14 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 // receives handshake response from the outbound peer
 // assumes the connection is already peered (i can be only for outbound peers)
 func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
-	peerAddr := string(msg.MsgData)
-	log.Debugf("received handshake from outbound %s", peerAddr)
-	if peerAddr != bconn.peer.peerPortAddr.String() {
+	id := string(msg.MsgData)
+	log.Debugf("received handshake from outbound %s", id)
+	if id != bconn.peer.PeeringId() {
 		log.Error("closeConn the peer connection: wrong handshake message from outbound peer: expected %s got '%s'",
-			bconn.peer.peerPortAddr.String(), peerAddr)
+			bconn.peer.PeeringId(), id)
 		bconn.peer.closeConn()
 	} else {
-		log.Infof("handshake ok with peer %s", peerAddr)
+		log.Infof("handshake ok with peer %s", id)
 		bconn.peer.handshakeOk = true
 
 		bconn.peer.initHeartbeats()
@@ -99,15 +99,15 @@ func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
 // links connection with the peer
 // sends response back to finish the handshake
 func (bconn *peeredConnection) processHandShakeInbound(msg *PeerMessage) {
-	peerAddr := string(msg.MsgData)
-	log.Debugf("received handshake from inbound %s", peerAddr)
+	peeringId := string(msg.MsgData)
+	log.Debugf("received handshake from inbound id = %s", peeringId)
 
 	peersMutex.RLock()
-	peer, ok := peers[peerAddr]
+	peer, ok := peers[peeringId]
 	peersMutex.RUnlock()
 
 	if !ok || !peer.isInbound() {
-		log.Errorf("inbound connection from unexpected peer %s. Closing..", peerAddr)
+		log.Errorf("inbound connection from unexpected peer id %s. Closing..", peeringId)
 		_ = bconn.Close()
 		return
 	}

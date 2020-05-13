@@ -67,7 +67,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 
 // TODO the rest of request vars
 
-// Request Id
+// Request PeeringId
 
 func NewRequestId(txid valuetransaction.ID, index uint16) (ret RequestId) {
 	copy(ret[:valuetransaction.IDLength], txid.Bytes())

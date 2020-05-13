@@ -12,7 +12,7 @@ type GetScListResponse struct {
 }
 
 func HandlerGetSCList(c echo.Context) error {
-	sclist, err := registry.GetSCDataList(nil)
+	sclist, err := registry.GetSCDataList()
 	if err != nil {
 		return misc.OkJson(c, &GetScListResponse{Error: err.Error()})
 	}

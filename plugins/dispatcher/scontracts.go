@@ -28,20 +28,20 @@ func GetSubscriptionList() []address.Address {
 	return ret
 }
 
-func loadAllSContracts(ownAddr *registry.PortAddr) ([]address.Address, error) {
+func loadAllSContracts() ([]address.Address, error) {
 	scontractsMutex.Lock()
 	defer scontractsMutex.Unlock()
 
-	sclist, err := registry.GetSCDataList(ownAddr)
+	sclist, err := registry.GetSCDataList()
 	if err != nil {
 		return nil, err
 	}
 	addrs := make([]address.Address, 0)
 	for _, scdata := range sclist {
 		if c, err := committee.New(scdata); err == nil {
-			scontractsByAddress[*scdata.Address] = c
-			scontractsByColor[*scdata.Color] = c
-			addrs = append(addrs, *scdata.Address)
+			scontractsByAddress[scdata.Address] = c
+			scontractsByColor[scdata.Color] = c
+			addrs = append(addrs, scdata.Address)
 		} else {
 			log.Warn(err)
 		}
