@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/testplugins"
@@ -35,7 +36,7 @@ func run(_ *node.Plugin) {
 		scTestData := make([]*registry.SCMetaData, len(scTestDataJasonable))
 		var err error
 		for i := range scTestData {
-			scTestData[i], err = scTestDataJasonable[i].NewSCMetaData()
+			scTestData[i], err = scTestDataJasonable[i].ToSCMetaData()
 			if err != nil {
 				log.Errorf("TEST FAILED 1, wring testing data: %v", err)
 				return
@@ -73,9 +74,16 @@ func run(_ *node.Plugin) {
 				return
 			}
 			if exists {
-				if !equalSC(scTestDataJasonable[i], sc1back) {
-					log.Warnf("inconsistency. Data to be replaced for address %s.", scdata.Address.String())
+				h1 := hashing.GetHashValue(scdata)
+				if scb, err := sc1back.ToSCMetaData(); err != nil {
+					log.Errorf("error. Data to be replaced for address %s", scdata.Address.String())
 					writeNew = true
+				} else {
+					h2 := hashing.GetHashValue(scb)
+					if h1 != h2 {
+						log.Warnf("inconsistency. Data to be replaced for address %s.", scdata.Address.String())
+						writeNew = true
+					}
 				}
 			} else {
 				writeNew = true
@@ -94,12 +102,4 @@ func run(_ *node.Plugin) {
 
 		log.Infof("TEST PASSED")
 	}()
-}
-
-func equalSC(sc1, sc2 *registry.SCMetaDataJsonable) bool {
-	return sc1.Address == sc2.Address &&
-		sc1.Color == sc2.Color &&
-		sc1.OwnerAddress == sc2.OwnerAddress &&
-		sc1.Description == sc2.Description &&
-		sc1.ProgramHash == sc2.ProgramHash
 }

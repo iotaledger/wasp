@@ -51,7 +51,7 @@ func (scd *SCMetaData) Jsonable() *SCMetaDataJsonable {
 	}
 }
 
-func (jo *SCMetaDataJsonable) NewSCMetaData() (*SCMetaData, error) {
+func (jo *SCMetaDataJsonable) ToSCMetaData() (*SCMetaData, error) {
 	ret := &SCMetaData{
 		Description:   jo.Description,
 		NodeLocations: jo.NodeLocations,
