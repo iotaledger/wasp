@@ -8,10 +8,12 @@ package registry
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/database"
 	. "github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 )
@@ -47,6 +49,27 @@ func (scd *SCMetaData) Jsonable() *SCMetaDataJsonable {
 		ProgramHash:   scd.ProgramHash.String(),
 		NodeLocations: scd.NodeLocations,
 	}
+}
+
+func (jo *SCMetaDataJsonable) NewSCMetaData() (*SCMetaData, error) {
+	ret := &SCMetaData{
+		Description:   jo.Description,
+		NodeLocations: jo.NodeLocations,
+	}
+	var err error
+	if ret.Address, err = address.FromBase58(jo.Address); err != nil {
+		return nil, err
+	}
+	if ret.Color, err = sctransaction.ColorFromString(jo.Color); err != nil {
+		return nil, err
+	}
+	if ret.OwnerAddress, err = address.FromBase58(jo.OwnerAddress); err != nil {
+		return nil, err
+	}
+	if ret.ProgramHash, err = HashValueFromString(jo.ProgramHash); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 // GetScList retrieves all SCdata records from the registry
@@ -104,20 +127,43 @@ func SaveSCData(scd *SCMetaData) error {
 	})
 }
 
-func GetSCData(addr *address.Address) (*SCMetaData, error) {
+func ExistSCMetaData(addr *address.Address) (bool, error) {
 	dbase, err := database.GetSCMetaDataDB()
 	if err != nil {
-		return nil, err
+		return false, err
+	}
+	return dbase.Contains(database.DbKeySCMetaData(addr))
+}
+
+func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
+	exists, err := ExistDKShareInRegistry(addr)
+	if err != nil {
+		return nil, false, err
+	}
+	if !exists {
+		return nil, false, fmt.Errorf("address is not present in registry")
+	}
+
+	exists, err = ExistSCMetaData(addr)
+	if err != nil {
+		return nil, false, err
+	}
+	if !exists {
+		return nil, false, nil
+	}
+	dbase, err := database.GetSCMetaDataDB()
+	if err != nil {
+		return nil, false, err
 	}
 	entry, err := dbase.Get(database.DbKeySCMetaData(addr))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	var ret SCMetaData
 	if err := ret.Read(bytes.NewReader(entry.Value)); err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &ret, nil
+	return &ret, true, nil
 }
 
 func (scd *SCMetaData) Write(w io.Writer) error {

@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -26,7 +27,17 @@ var (
 	Server = echo.New()
 
 	log *logger.Logger
+
+	initWG sync.WaitGroup
 )
+
+func init() {
+	initWG.Add(1)
+}
+
+func WaitIsUp() {
+	initWG.Wait()
+}
 
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
@@ -43,6 +54,8 @@ func run(_ *node.Plugin) {
 	if err := daemon.BackgroundWorker("WebAPI Server", worker, shutdown.PriorityWebAPI); err != nil {
 		log.Errorf("Error starting as daemon: %s", err)
 	}
+
+	initWG.Done()
 }
 
 func worker(shutdownSignal <-chan struct{}) {

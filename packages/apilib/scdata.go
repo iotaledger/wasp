@@ -36,29 +36,29 @@ func PutSCData(host string, params registry.SCMetaDataJsonable) error {
 }
 
 // calls the nodes to get SCMetaData record by address
-func GetSCdata(host string, scaddr *address.Address) (*registry.SCMetaDataJsonable, error) {
+func GetSCMetaData(host string, scaddr *address.Address) (*registry.SCMetaDataJsonable, bool, error) {
 	req := admapi.GetSCDataRequest{Address: scaddr}
 	data, err := json.Marshal(&req)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	url := fmt.Sprintf("http://%s/adm/getscdata", host)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("response status %d", resp.StatusCode)
+		return nil, false, fmt.Errorf("response status %d", resp.StatusCode)
 	}
 	var dresp admapi.GetSCDataResponse
 	err = json.NewDecoder(resp.Body).Decode(&dresp)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if dresp.Error != "" {
-		return nil, errors.New(dresp.Error)
+		return nil, false, errors.New(dresp.Error)
 	}
-	return &dresp.SCMetaDataJsonable, err
+	return &dresp.SCMetaDataJsonable, dresp.Exists, nil
 }
 
 // gets list of all SCs from the node

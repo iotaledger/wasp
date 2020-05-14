@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	_ "github.com/iotaledger/wasp/packages/committee/commiteeimpl" // activate init
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"

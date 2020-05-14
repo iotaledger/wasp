@@ -41,7 +41,7 @@ func HandlerPutSCData(c echo.Context) error {
 	if h, err := hashing.HashValueFromString(req.ProgramHash); err != nil {
 		return misc.OkJsonErr(c, err)
 	} else {
-		scdata.ProgramHash = *h
+		scdata.ProgramHash = h
 	}
 	scdata.NodeLocations = req.NodeLocations
 
@@ -61,9 +61,10 @@ func HandlerPutSCData(c echo.Context) error {
 
 	log.Debugf("+++++ saved %v", req)
 
-	if scdBack, err := registry.GetSCData(&scdata.Address); err != nil {
+	if scdBack, exists, err := registry.GetSCData(&scdata.Address); err != nil || !exists {
 		log.Debugw("reading back",
 			"sc addr", req.Address,
+			"exists", exists,
 			"error", err)
 	} else {
 		log.Debugf("reading back: %+v", *scdBack)

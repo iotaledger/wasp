@@ -24,7 +24,7 @@ func (sm *StateManager) checkStateTransition() bool {
 	}
 	// among pending state updates we locate the one, consistent with the next state transaction
 	varStateHash := sm.nextStateTransaction.MustState().VariableStateHash()
-	pending, ok := sm.pendingStateUpdates[varStateHash]
+	pending, ok := sm.pendingStateUpdates[*varStateHash]
 	if !ok {
 		// corresponding state update wasn't found among pending state updates
 		return false

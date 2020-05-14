@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/testplugins/scmeta"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -27,8 +28,13 @@ var PLUGINS = node.Plugins(
 	dispatcher.Plugin,
 )
 
+var TestPLUGINS = node.Plugins(
+	scmeta.Plugin,
+)
+
 func main() {
 	node.Run(
 		PLUGINS,
+		TestPLUGINS,
 	)
 }
