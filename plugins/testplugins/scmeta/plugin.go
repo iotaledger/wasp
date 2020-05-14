@@ -56,7 +56,7 @@ func run(_ *node.Plugin) {
 				log.Errorf("response from GetPublicKeyInfo for addr %s: %s", scdata.Address.String(), resp[0].Err)
 				failed = true
 			} else {
-				log.Infof("address in registry OK: %s", scdata.Address.String())
+				log.Infof("OK address in registry: %s", scdata.Address.String())
 			}
 		}
 		if failed {
@@ -86,6 +86,9 @@ func run(_ *node.Plugin) {
 				if err := apilib.PutSCData(myHost, *scTestDataJasonable[i]); err != nil {
 					log.Errorf("failed writing sc meta data: %v", err)
 				}
+			} else {
+				log.Infof("OK sc meta data for address %s", scdata.Address.String())
+
 			}
 		}
 
