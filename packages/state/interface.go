@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/variables"
 	"io"
 )
@@ -17,13 +18,15 @@ type VariableState interface {
 }
 
 // state update with anchor transaction hash
-// NOTE: if error occures during processing, it is a deterministic result
+// NOTE: if error occurs during processing, it is a deterministic result
 // special variable "ErrorMsg" in stateUpdate(and variable state) must be set to error string,
 // otherwise it is a normal state update
 type StateUpdate interface {
 	Address() *address.Address
 	StateIndex() uint32
 	StateTransactionId() valuetransaction.ID
+	RequestId() *sctransaction.RequestId
+	SetRequestId(*sctransaction.RequestId)
 	SetStateTransactionId(valuetransaction.ID)
 	SaveToDb() error
 	Variables() variables.Variables

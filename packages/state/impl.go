@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
 	"io"
@@ -28,6 +29,7 @@ type mockStateUpdate struct {
 	address    *address.Address // persist in key
 	stateIndex uint32           // persist in key
 	stateTxId  valuetransaction.ID
+	requestId  *sctransaction.RequestId
 	vars       variables.Variables
 }
 
@@ -49,6 +51,14 @@ func (se *mockStateUpdate) Address() *address.Address {
 
 func (se *mockStateUpdate) StateIndex() uint32 {
 	return se.stateIndex
+}
+
+func (su *mockStateUpdate) RequestId() *sctransaction.RequestId {
+	return su.requestId
+}
+
+func (su *mockStateUpdate) SetRequestId(reqId *sctransaction.RequestId) {
+	su.requestId = reqId
 }
 
 func (su *mockStateUpdate) StateTransactionId() valuetransaction.ID {

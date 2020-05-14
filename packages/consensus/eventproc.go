@@ -2,13 +2,12 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/vm"
 )
 
-func (op *Operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
+func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	if op.variableState != nil {
 		if !(op.variableState.StateIndex()+1 == msg.VariableState.StateIndex()) {
-			panic("assertion failed: op.variableState.StateIndex()+1 == msg.VariableState.StateIndex()")
+			panic("assertion failed: op.variableState.stateIndex()+1 == msg.VariableState.stateIndex()")
 		}
 	}
 	// remove all processed requests from the local backlog
@@ -20,7 +19,7 @@ func (op *Operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.takeAction()
 }
 
-func (op *Operator) EventBalancesMsg(balances committee.BalancesMsg) {
+func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
 	log.Debugf("EventBalancesMsg")
 	op.balances = balances.Balances
 
@@ -28,7 +27,7 @@ func (op *Operator) EventBalancesMsg(balances committee.BalancesMsg) {
 }
 
 // triggered by new request msg from the node
-func (op *Operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
+func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	if err := op.validateRequestBlock(reqMsg); err != nil {
 		log.Warnw("request block validation failed.Ignored",
 			"req", reqMsg.Id().Short(),
@@ -47,7 +46,7 @@ func (op *Operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	op.takeAction()
 }
 
-func (op *Operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
+func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	log.Debugw("EventNotifyReqMsg",
 		"num", len(msg.RequestIds),
 		"sender", msg.SenderIndex,
@@ -60,7 +59,7 @@ func (op *Operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.takeAction()
 }
 
-func (op *Operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
+func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
 	log.Debugw("EventStartProcessingReqMsg",
 		"reqId", msg.RequestId.Short(),
 		"sender", msg.SenderIndex,
@@ -84,13 +83,13 @@ func (op *Operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 	})
 }
 
-func (op *Operator) EventResultCalculated(result *vm.VMOutput) {
+func (op *operator) EventResultCalculated(result *committee.VMOutput) {
 	log.Debugf("eventResultCalculated")
 
 	ctx := result.Inputs.(*runtimeContext)
 
 	// check if result belongs to context
-	if ctx.variableState.StateIndex() != op.StateIndex() {
+	if ctx.variableState.StateIndex() != op.stateIndex() {
 		// out of context. ignore
 		return
 	}
@@ -104,7 +103,7 @@ func (op *Operator) EventResultCalculated(result *vm.VMOutput) {
 	}
 	ctx.log.Debugw("eventResultCalculated",
 		"req", req.reqId.Short(),
-		"stateIndex", op.StateIndex(),
+		"stateIndex", op.stateIndex(),
 	)
 
 	if ctx.leaderPeerIndex == op.committee.OwnPeerIndex() {
@@ -115,7 +114,7 @@ func (op *Operator) EventResultCalculated(result *vm.VMOutput) {
 	op.takeAction()
 }
 
-func (op *Operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
+func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	log.Debugw("EventSignedHashMsg",
 		"reqId", msg.RequestId.Short(),
 		"sender", msg.SenderIndex,
@@ -125,7 +124,7 @@ func (op *Operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		// shouldn't be
 		return
 	}
-	if msg.StateIndex != op.StateIndex() {
+	if msg.StateIndex != op.stateIndex() {
 		// out of context
 		return
 	}
@@ -162,7 +161,7 @@ func (op *Operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	op.takeAction()
 }
 
-func (op *Operator) EventTimerMsg(msg committee.TimerTick) {
+func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 	if msg%10 == 0 {
 		op.takeAction()
 	}

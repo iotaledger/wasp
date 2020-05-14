@@ -12,12 +12,12 @@ import (
 
 const getBalancesTimeout = 1 * time.Second
 
-func (op *Operator) takeAction() {
+func (op *operator) takeAction() {
 	op.doLeader()
 	op.doSubordinate()
 }
 
-func (op *Operator) doSubordinate() {
+func (op *operator) doSubordinate() {
 	for _, cr := range op.currentStateCompRequests {
 		if cr.processed {
 			continue
@@ -30,7 +30,7 @@ func (op *Operator) doSubordinate() {
 	}
 }
 
-func (op *Operator) doLeader() {
+func (op *operator) doLeader() {
 	if op.iAmCurrentLeader() {
 		if op.balances == nil {
 			// of balances are not known yet, request it from the node
@@ -42,7 +42,7 @@ func (op *Operator) doLeader() {
 	op.checkQuorum()
 }
 
-func (op *Operator) requestBalancesFromNode() {
+func (op *operator) requestBalancesFromNode() {
 	if op.balances == nil && time.Now().After(op.getBalancesDeadline) {
 		addr := op.committee.Address()
 		nodeconn.GetBalancesFromNode(addr)
@@ -50,7 +50,7 @@ func (op *Operator) requestBalancesFromNode() {
 	}
 }
 
-func (op *Operator) startProcessing() {
+func (op *operator) startProcessing() {
 	if op.balances == nil {
 		// shouldn't be
 		return
@@ -80,7 +80,7 @@ func (op *Operator) startProcessing() {
 
 	req.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
-	if numSucc < op.Quorum()-1 {
+	if numSucc < op.quorum()-1 {
 		// doesn't make sense to continue because less than quorum sends succeeded
 		req.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded", numSucc)
 		return
@@ -102,7 +102,7 @@ func (op *Operator) startProcessing() {
 	})
 }
 
-func (op *Operator) checkQuorum() bool {
+func (op *operator) checkQuorum() bool {
 	log.Debug("checkQuorum")
 	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
 		//log.Debug("checkQuorum: op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized")
@@ -122,7 +122,7 @@ func (op *Operator) checkQuorum() bool {
 			sigShares = append(sigShares, op.leaderStatus.signedResults[i].sigShare)
 		}
 	}
-	if len(sigShares) < int(op.Quorum()) {
+	if len(sigShares) < int(op.quorum()) {
 		return false
 	}
 	// quorum detected
@@ -142,7 +142,7 @@ func (op *Operator) checkQuorum() bool {
 }
 
 // sets new state transaction and initializes respective variables
-func (op *Operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState) {
+func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState) {
 	op.stateTx = stateTx
 	op.balances = nil
 	op.getBalancesDeadline = time.Now()
@@ -162,7 +162,7 @@ func (op *Operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	op.requestNotificationsNextState = op.requestNotificationsNextState[:0]
 }
 
-func (op *Operator) selectRequestToProcess() *request {
+func (op *operator) selectRequestToProcess() *request {
 	// virtual voting
 	votes := make(map[sctransaction.RequestId]int)
 	for _, rn := range op.requestNotificationsCurrentState {
@@ -180,12 +180,12 @@ func (op *Operator) selectRequestToProcess() *request {
 			maxvotes = v
 		}
 	}
-	if maxvotes < int(op.Quorum()) {
+	if maxvotes < int(op.quorum()) {
 		return nil
 	}
 	candidates := make([]*request, 0, len(votes))
 	for rid, v := range votes {
-		if v == int(op.Quorum()) {
+		if v == int(op.quorum()) {
 			req := op.requests[rid]
 			if req.reqMsg != nil {
 				candidates = append(candidates, req)

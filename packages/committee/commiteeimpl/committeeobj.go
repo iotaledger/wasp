@@ -6,9 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/consensus"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/statemgr"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
 	"time"
@@ -25,8 +23,8 @@ type committeeObj struct {
 	ownIndex      uint16
 	scdata        *registry.SCMetaData
 	chMsg         chan interface{}
-	stateMgr      *statemgr.StateManager
-	operator      *consensus.Operator
+	stateMgr      committee.StateManager
+	operator      committee.Operator
 }
 
 func init() {
@@ -62,8 +60,8 @@ func newCommitteeObj(scdata *registry.SCMetaData) (committee.Committee, error) {
 		}
 	}
 
-	ret.stateMgr = statemgr.New(ret)
-	ret.operator = consensus.NewOperator(ret, dkshare)
+	//ret.stateMgr = statemgr.New(ret)
+	//ret.operator = consensus.NewOperator(ret, dkshare)
 
 	go func() {
 		for msg := range ret.chMsg {
@@ -91,7 +89,7 @@ func checkNetworkLocations(netLocations []string, n, index uint16) error {
 	}
 	// check for duplicates
 	for i := range netLocations {
-		for j := i + 1; i < len(netLocations); j++ {
+		for j := i + 1; j < len(netLocations); j++ {
 			if netLocations[i] == netLocations[j] {
 				return errors.New("duplicate network locations in the list")
 			}

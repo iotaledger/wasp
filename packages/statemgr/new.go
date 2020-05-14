@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type StateManager struct {
+type stateManager struct {
 	committee committee.Committee
 
 	// pending state updates are a candidates to confirmation by the state transaction
@@ -48,8 +48,8 @@ type pendingStateUpdate struct {
 	nextVariableState state.VariableState
 }
 
-func New(committee committee.Committee) *StateManager {
-	ret := &StateManager{
+func New(committee committee.Committee) committee.StateManager {
+	ret := &stateManager{
 		committee:           committee,
 		pendingStateUpdates: make(map[hashing.HashValue]*pendingStateUpdate),
 	}
@@ -59,7 +59,7 @@ func New(committee committee.Committee) *StateManager {
 }
 
 // initial loading of the solid state
-func (sm *StateManager) initLoadState() {
+func (sm *stateManager) initLoadState() {
 	var err error
 
 	scid := sm.committee.ScId()

@@ -8,12 +8,12 @@ import (
 )
 
 // check if the request message is well formed
-func (op *Operator) validateRequestBlock(reqRef *committee.RequestMsg) error {
+func (op *operator) validateRequestBlock(reqRef *committee.RequestMsg) error {
 	// TODO check rewards etc
 	return nil
 }
 
-func (op *Operator) newRequest(reqId *sctransaction.RequestId) *request {
+func (op *operator) newRequest(reqId *sctransaction.RequestId) *request {
 	reqLog := log.Named(reqId.Short())
 	ret := &request{
 		reqId: reqId,
@@ -24,7 +24,7 @@ func (op *Operator) newRequest(reqId *sctransaction.RequestId) *request {
 }
 
 // request record retrieved (or created) by request message
-func (op *Operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
+func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
 	reqId := reqMsg.Id()
 	ret, ok := op.requests[*reqId]
 	if ok && ret.reqMsg == nil {
@@ -44,7 +44,7 @@ func (op *Operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
 
 // request record is retrieved by request id.
 // If it doesn't exist and is not in the list of processed requests, it is created
-func (op *Operator) requestFromId(reqId *sctransaction.RequestId) (*request, bool) {
+func (op *operator) requestFromId(reqId *sctransaction.RequestId) (*request, bool) {
 	if op.isRequestProcessed(reqId) {
 		return nil, false
 	}
@@ -59,7 +59,7 @@ func (op *Operator) requestFromId(reqId *sctransaction.RequestId) (*request, boo
 
 // TODO caching processed requests
 // TODO gracefull reaction in DB error
-func (op *Operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
+func (op *operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
 	processed, err := state.IsRequestProcessed(reqid)
 	if err != nil {
 		panic(err)
@@ -67,7 +67,7 @@ func (op *Operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
 	return processed
 }
 
-func (op *Operator) removeRequest(reqId *sctransaction.RequestId) bool {
+func (op *operator) removeRequest(reqId *sctransaction.RequestId) bool {
 	if _, ok := op.requests[*reqId]; ok {
 		delete(op.requests, *reqId)
 		return true

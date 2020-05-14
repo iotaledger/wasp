@@ -6,7 +6,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 )
 
@@ -19,7 +18,7 @@ type runCalculationsParams struct {
 }
 
 // runs the VM for the request and posts result to committee's queue
-func (op *Operator) processRequest(par runCalculationsParams) {
+func (op *operator) processRequest(par runCalculationsParams) {
 	result := op.processor.Run(&runtimeContext{
 		address:         op.committee.Address(),
 		color:           op.committee.Color(),
@@ -36,7 +35,7 @@ func (op *Operator) processRequest(par runCalculationsParams) {
 	op.committee.ReceiveMessage(result)
 }
 
-func (op *Operator) sendResultToTheLeader(result *vm.VMOutput) {
+func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 	reqId := result.Inputs.RequestMsg()[0].Id()
 	ctx := result.Inputs.(*runtimeContext)
 	log.Debugw("sendResultToTheLeader",
@@ -52,7 +51,7 @@ func (op *Operator) sendResultToTheLeader(result *vm.VMOutput) {
 	}
 	msgData := hashing.MustBytes(&committee.SignedHashMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			StateIndex: op.StateIndex(),
+			StateIndex: op.stateIndex(),
 		},
 		RequestId:     reqId,
 		OrigTimestamp: ctx.Timestamp(),
@@ -65,7 +64,7 @@ func (op *Operator) sendResultToTheLeader(result *vm.VMOutput) {
 	}
 }
 
-func (op *Operator) saveOwnResult(result *vm.VMOutput) {
+func (op *operator) saveOwnResult(result *committee.VMOutput) {
 	reqId := result.Inputs.RequestMsg()[0].Id()
 	log.Debugw("saveOwnResult",
 		"req", reqId.Short(),
@@ -84,7 +83,7 @@ func (op *Operator) saveOwnResult(result *vm.VMOutput) {
 	}
 }
 
-func (op *Operator) aggregateSigShares(sigShares [][]byte) error {
+func (op *operator) aggregateSigShares(sigShares [][]byte) error {
 	resTx := op.leaderStatus.resultTx
 
 	finalSignature, err := op.dkshare.RecoverFullSignature(sigShares, resTx.EssenceBytes())

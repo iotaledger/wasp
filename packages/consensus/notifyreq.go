@@ -8,7 +8,7 @@ import (
 )
 
 // notifies current leader about requests in the order of arrival
-func (op *Operator) sendRequestNotificationsToLeader(reqs []*request) {
+func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	if op.iAmCurrentLeader() {
 		return
 	}
@@ -43,7 +43,7 @@ func (op *Operator) sendRequestNotificationsToLeader(reqs []*request) {
 }
 
 // only requests with reqRef != nil
-func (op *Operator) sortedRequestsByAge() []*request {
+func (op *operator) sortedRequestsByAge() []*request {
 	//ret := make([]*request, 0, len(op.requests))
 	//for _, req := range op.requests {
 	//	if req.reqRef != nil {
@@ -55,7 +55,7 @@ func (op *Operator) sortedRequestsByAge() []*request {
 	panic("implement me")
 }
 
-func (op *Operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
+func (op *operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
 	sortedReqs := op.sortedRequestsByAge()
 	ids := make([]*sctransaction.RequestId, len(sortedReqs))
 	for i := range ids {
@@ -66,13 +66,13 @@ func (op *Operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
 
 // includes request ids into the respective list of notifications,
 // by the sender index
-func (op *Operator) appendRequestIdNotifications(senderIndex uint16, stateIndex uint32, reqs ...*sctransaction.RequestId) {
+func (op *operator) appendRequestIdNotifications(senderIndex uint16, stateIndex uint32, reqs ...*sctransaction.RequestId) {
 	switch {
-	case stateIndex == op.StateIndex():
+	case stateIndex == op.stateIndex():
 		for _, id := range reqs {
 			op.requestNotificationsCurrentState = appendNotification(op.requestNotificationsCurrentState, id, senderIndex)
 		}
-	case stateIndex == op.StateIndex()+1:
+	case stateIndex == op.stateIndex()+1:
 		for _, id := range reqs {
 			op.requestNotificationsNextState = appendNotification(op.requestNotificationsNextState, id, senderIndex)
 		}

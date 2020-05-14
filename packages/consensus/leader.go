@@ -5,26 +5,26 @@ import (
 	"time"
 )
 
-func (op *Operator) iAmCurrentLeader() bool {
+func (op *operator) iAmCurrentLeader() bool {
 	return op.committee.OwnPeerIndex() == op.currentLeaderPeerIndex()
 }
 
-func (op *Operator) currentLeaderPeerIndex() uint16 {
+func (op *operator) currentLeaderPeerIndex() uint16 {
 	return op.leaderAtSeqIndex(op.currLeaderSeqIndex)
 }
 
-func (op *Operator) leaderAtSeqIndex(seqIdx uint16) uint16 {
+func (op *operator) leaderAtSeqIndex(seqIdx uint16) uint16 {
 	return op.leaderPeerIndexList[seqIdx]
 }
 
 const leaderRotationPeriod = 3 * time.Second
 
-func (op *Operator) moveToNextLeader() {
+func (op *operator) moveToNextLeader() {
 	op.currLeaderSeqIndex = (op.currLeaderSeqIndex + 1) % op.committee.Size()
 	op.setLeaderRotationDeadline(time.Now().Add(leaderRotationPeriod))
 }
 
-func (op *Operator) resetLeader(seedBytes []byte) {
+func (op *operator) resetLeader(seedBytes []byte) {
 	op.currLeaderSeqIndex = 0
 	op.leaderPeerIndexList = util.GetPermutation(op.committee.Size(), seedBytes)
 	for i, v := range op.leaderPeerIndexList {
@@ -38,12 +38,12 @@ func (op *Operator) resetLeader(seedBytes []byte) {
 	op.leaderRotationDeadlineSet = false
 }
 
-func (op *Operator) setLeaderRotationDeadline(deadline time.Time) {
+func (op *operator) setLeaderRotationDeadline(deadline time.Time) {
 	op.leaderRotationDeadlineSet = false
 	op.leaderRotationDeadline = deadline
 }
 
-func (op *Operator) rotateLeaderIfNeeded() {
+func (op *operator) rotateLeaderIfNeeded() {
 	if op.leaderRotationDeadlineSet && op.leaderRotationDeadline.After(time.Now()) {
 		op.moveToNextLeader()
 	}

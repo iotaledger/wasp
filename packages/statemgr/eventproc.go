@@ -9,7 +9,7 @@ import (
 )
 
 // respond to sync request 'GetStateUpdate'
-func (sm *StateManager) EventGetStateUpdateMsg(msg *committee.GetStateUpdateMsg) {
+func (sm *stateManager) EventGetStateUpdateMsg(msg *committee.GetStateUpdateMsg) {
 	if stateUpd, err := state.LoadStateUpdate(sm.committee.ScId(), msg.StateIndex); err == nil {
 		_ = sm.committee.SendMsg(msg.SenderIndex, committee.MsgStateUpdate, hashing.MustBytes(&committee.StateUpdateMsg{
 			StateUpdate: stateUpd,
@@ -21,7 +21,7 @@ func (sm *StateManager) EventGetStateUpdateMsg(msg *committee.GetStateUpdateMsg)
 // respond to state update msg.
 // It collects state updates while waiting for the anchoring state transaction
 // only are stored updates to the current solid variable state
-func (sm *StateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
+func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 	if !sm.addPendingStateUpdate(msg.StateUpdate) {
 		return
 	}
@@ -36,7 +36,7 @@ func (sm *StateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 }
 
 // triggered whenever new state transaction arrives
-func (sm *StateManager) EventStateTransactionMsg(msg committee.StateTransactionMsg) {
+func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionMsg) {
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
 		return
@@ -52,7 +52,7 @@ func (sm *StateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 	sm.takeAction()
 }
 
-func (sm *StateManager) EventTimerMsg(msg committee.TimerTick) {
+func (sm *stateManager) EventTimerMsg(msg committee.TimerTick) {
 	if msg%10 == 0 {
 		sm.takeAction()
 	}

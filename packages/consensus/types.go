@@ -11,11 +11,10 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
-	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 )
 
-type Operator struct {
+type operator struct {
 	committee committee.Committee
 	dkshare   *tcrypto.DKShare
 	stateTx   *sctransaction.Transaction
@@ -25,7 +24,7 @@ type Operator struct {
 
 	variableState state.VariableState
 	// VM
-	processor vm.Processor
+	processor committee.Processor
 
 	requests map[sctransaction.RequestId]*request
 
@@ -89,28 +88,28 @@ type request struct {
 	log        *logger.Logger
 }
 
-func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare) *Operator {
-	return &Operator{
+func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare) *operator {
+	return &operator{
 		committee: committee,
 		dkshare:   dkshare,
 	}
 }
 
-func (op *Operator) Quorum() uint16 {
+func (op *operator) quorum() uint16 {
 	return op.dkshare.T
 }
 
-func (op *Operator) StateIndex() uint32 {
+func (op *operator) stateIndex() uint32 {
 	if op.variableState == nil {
 		return 0
 	}
 	return op.variableState.StateIndex()
 }
 
-func (op *Operator) MustValidStateIndex(stateIndex uint32) {
-	if stateIndex != op.StateIndex() && stateIndex != op.StateIndex()+1 {
+func (op *operator) MustValidStateIndex(stateIndex uint32) {
+	if stateIndex != op.stateIndex() && stateIndex != op.stateIndex()+1 {
 		// only tolerated messages from current and next state indices
 		// stateManager should not pass other messages
-		panic(fmt.Errorf("wrong state index. Current %d, got %d", op.StateIndex(), stateIndex))
+		panic(fmt.Errorf("wrong state index. Current %d, got %d", op.stateIndex(), stateIndex))
 	}
 }

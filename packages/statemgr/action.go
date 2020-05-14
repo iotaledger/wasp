@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-func (sm *StateManager) takeAction() {
+func (sm *stateManager) takeAction() {
 	if sm.checkStateTransition() {
 		return
 	}
 	sm.requestStateUpdateFromPeerIfNeeded()
 }
 
-func (sm *StateManager) checkStateTransition() bool {
+func (sm *stateManager) checkStateTransition() bool {
 	if sm.nextStateTransaction == nil {
 		return false
 	}
@@ -66,7 +66,9 @@ func (sm *StateManager) checkStateTransition() bool {
 	return true
 }
 
-func (sm *StateManager) requestStateUpdateFromPeerIfNeeded() {
+const syncPeriodBetweenSyncMessages = 1 * time.Second
+
+func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	if sm.solidVariableState == nil {
 		return
 	}
@@ -93,7 +95,7 @@ func (sm *StateManager) requestStateUpdateFromPeerIfNeeded() {
 			break
 		}
 		sm.permutationIndex = (sm.permutationIndex + 1) % sm.committee.Size()
-		sm.syncMessageDeadline = time.Now().Add(parameters.SyncPeriodBetweenSyncMessages)
+		sm.syncMessageDeadline = time.Now().Add(syncPeriodBetweenSyncMessages)
 	}
 }
 
@@ -102,7 +104,7 @@ func (sm *StateManager) requestStateUpdateFromPeerIfNeeded() {
 // 1 behind the largest, node is not synced
 // function returns if the message with idx must be passed to consensus operator, which works only with
 // state indices of current or next state
-func (sm *StateManager) CheckSynchronizationStatus(idx uint32) bool {
+func (sm *stateManager) CheckSynchronizationStatus(idx uint32) bool {
 	// synced state is when current state index is behind
 	// the largestEvidencedStateIndex no more than by 1 point
 	wasSynchronized := sm.isSynchronized()
@@ -119,13 +121,13 @@ func (sm *StateManager) CheckSynchronizationStatus(idx uint32) bool {
 	return idx == currentStateIndex || idx == currentStateIndex+1
 }
 
-func (sm *StateManager) isSynchronized() bool {
+func (sm *stateManager) isSynchronized() bool {
 	return sm.largestEvidencedStateIndex-sm.solidVariableState.StateIndex() <= 1
 }
 
 // async loads state transaction from DB and validates it
 // posts 'StateTransactionMsg' to the committee upon success
-func (sm *StateManager) asyncRequestForStateTransaction(txid transaction.ID, scid sctransaction.ScId, stateIndex uint32) {
+func (sm *stateManager) asyncRequestForStateTransaction(txid transaction.ID, scid sctransaction.ScId, stateIndex uint32) {
 	go func() {
 		tx, err := sctransaction.LoadTx(txid)
 		if err != nil {
@@ -160,7 +162,7 @@ func (sm *StateManager) asyncRequestForStateTransaction(txid transaction.ID, sci
 	}()
 }
 
-func (sm *StateManager) findLastStateTransaction(scid sctransaction.ScId) {
+func (sm *stateManager) findLastStateTransaction(scid sctransaction.ScId) {
 	// finds transaction, which owns output with colored toke scid.Color()
 	// notifies committee about it
 	// posting to the committee's queue
@@ -170,7 +172,7 @@ func (sm *StateManager) findLastStateTransaction(scid sctransaction.ScId) {
 }
 
 // adding state update to the 'pending' map
-func (sm *StateManager) addPendingStateUpdate(stateUpdate state.StateUpdate) bool {
+func (sm *stateManager) addPendingStateUpdate(stateUpdate state.StateUpdate) bool {
 	var varState state.VariableState
 	if sm.solidVariableState != nil {
 		if stateUpdate.StateIndex() != sm.solidVariableState.StateIndex()+1 {
