@@ -150,3 +150,37 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 	}
 	return util.ReadBoolByte(r, &msg.FromVM)
 }
+
+func (msg *TestTraceMsg) Write(w io.Writer) error {
+	if err := util.WriteUint64(w, uint64(msg.InitTime)); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, uint16(len(msg.Trace))); err != nil {
+		return err
+	}
+	for _, idx := range msg.Trace {
+		if err := util.WriteUint16(w, idx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (msg *TestTraceMsg) Read(r io.Reader) error {
+	var initTime uint64
+	if err := util.ReadUint64(r, &initTime); err != nil {
+		return err
+	}
+	msg.InitTime = int64(initTime)
+	var size uint16
+	if err := util.ReadUint16(r, &size); err != nil {
+		return err
+	}
+	msg.Trace = make([]uint16, size)
+	for i := range msg.Trace {
+		if err := util.ReadUint16(r, &msg.Trace[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}

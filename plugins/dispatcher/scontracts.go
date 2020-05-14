@@ -38,7 +38,7 @@ func loadAllSContracts() ([]address.Address, error) {
 	}
 	addrs := make([]address.Address, 0)
 	for _, scdata := range sclist {
-		if c, err := committee.New(scdata); err == nil {
+		if c, err := committee.New(scdata, log); err == nil {
 			scontractsByAddress[scdata.Address] = c
 			scontractsByColor[scdata.Color] = c
 			addrs = append(addrs, scdata.Address)
@@ -57,7 +57,7 @@ func committeeByColor(color *balance.Color) committee.Committee {
 	return ret
 }
 
-func committeeByAddress(address *address.Address) committee.Committee {
+func CommitteeByAddress(address *address.Address) committee.Committee {
 	scontractsMutex.RLock()
 	defer scontractsMutex.RUnlock()
 

@@ -34,7 +34,7 @@ func run(_ *node.Plugin) {
 		})
 
 		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
-			if committee := committeeByAddress(&msg.Address); committee != nil {
+			if committee := CommitteeByAddress(&msg.Address); committee != nil {
 				committee.ReceiveMessage(msg)
 			}
 		})

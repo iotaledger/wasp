@@ -60,7 +60,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 	case committee.MsgNotifyRequests:
 		msgt := &committee.NotifyReqMsg{}
 		if err := msgt.Read(rdr); err != nil {
-			log.Error(err)
+			c.log.Error(err)
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
@@ -72,7 +72,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 	case committee.MsgStartProcessingRequest:
 		msgt := &committee.StartProcessingReqMsg{}
 		if err := msgt.Read(rdr); err != nil {
-			log.Error(err)
+			c.log.Error(err)
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
@@ -85,7 +85,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 	case committee.MsgSignedHash:
 		msgt := &committee.SignedHashMsg{}
 		if err := msgt.Read(rdr); err != nil {
-			log.Error(err)
+			c.log.Error(err)
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
@@ -98,7 +98,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 	case committee.MsgGetStateUpdate:
 		msgt := &committee.GetStateUpdateMsg{}
 		if err := msgt.Read(rdr); err != nil {
-			log.Error(err)
+			c.log.Error(err)
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
@@ -110,7 +110,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 	case committee.MsgStateUpdate:
 		msgt := &committee.StateUpdateMsg{}
 		if err := msgt.Read(rdr); err != nil {
-			log.Error(err)
+			c.log.Error(err)
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
@@ -119,7 +119,16 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.stateMgr.EventStateUpdateMsg(msgt)
 		}
 
+	case committee.MsgTestTrace:
+		msgt := &committee.TestTraceMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+		c.testTrace(msgt)
+
 	default:
-		log.Errorf("processPeerMessage: wrong msg type")
+		c.log.Errorf("processPeerMessage: wrong msg type")
 	}
 }

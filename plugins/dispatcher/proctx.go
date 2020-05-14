@@ -19,7 +19,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 
 func dispatchRequests(tx *sctransaction.Transaction) {
 	for i, reqBlk := range tx.Requests() {
-		if cmt := committeeByAddress(reqBlk.Address()); cmt != nil {
+		if cmt := CommitteeByAddress(reqBlk.Address()); cmt != nil {
 			cmt.ReceiveMessage(&committee.RequestMsg{
 				Transaction: tx,
 				Index:       uint16(i),
@@ -30,7 +30,7 @@ func dispatchRequests(tx *sctransaction.Transaction) {
 
 func dispatchBalances(address *address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
-	if cmt := committeeByAddress(address); cmt != nil {
+	if cmt := CommitteeByAddress(address); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
 }

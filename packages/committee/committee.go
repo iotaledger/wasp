@@ -22,9 +22,10 @@ type Committee interface {
 	SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time)
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
+	InitTestRound()
 }
 
-var New func(scdata *registry.SCMetaData) (Committee, error)
+var New func(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error)
 
 type StateManager interface {
 	CheckSynchronizationStatus(idx uint32) bool

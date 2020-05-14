@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -25,13 +26,14 @@ type committeeObj struct {
 	chMsg         chan interface{}
 	stateMgr      committee.StateManager
 	operator      committee.Operator
+	log           *logger.Logger
 }
 
 func init() {
 	committee.New = newCommitteeObj
 }
 
-func newCommitteeObj(scdata *registry.SCMetaData) (committee.Committee, error) {
+func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee.Committee, error) {
 	dkshare, keyExists, err := registry.GetDKShare(&scdata.Address)
 	if err != nil {
 		return nil, err
@@ -52,6 +54,7 @@ func newCommitteeObj(scdata *registry.SCMetaData) (committee.Committee, error) {
 		scdata:   scdata,
 		peers:    make([]*peering.Peer, len(scdata.NodeLocations)),
 		ownIndex: dkshare.Index,
+		log:      log.Named("comm"),
 	}
 	myLocation := scdata.NodeLocations[dkshare.Index]
 	for i, remoteLocation := range scdata.NodeLocations {

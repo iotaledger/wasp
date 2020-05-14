@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
+	roundtrip "github.com/iotaledger/wasp/plugins/testplugins/rountrip"
 	"github.com/iotaledger/wasp/plugins/testplugins/scmeta"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
@@ -30,6 +31,7 @@ var PLUGINS = node.Plugins(
 
 var TestPLUGINS = node.Plugins(
 	scmeta.Plugin,
+	roundtrip.Plugin,
 )
 
 func main() {

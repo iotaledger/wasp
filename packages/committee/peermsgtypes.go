@@ -18,6 +18,7 @@ const (
 	MsgSignedHash             = 2 + peering.FirstCommitteeMsgCode
 	MsgGetStateUpdate         = 3 + peering.FirstCommitteeMsgCode
 	MsgStateUpdate            = 4 + peering.FirstCommitteeMsgCode
+	MsgTestTrace              = 5 + peering.FirstCommitteeMsgCode
 )
 
 type TimerTick int
@@ -82,6 +83,13 @@ type StateUpdateMsg struct {
 	StateUpdate state.StateUpdate
 	// locally calculated by VM (needed for syncing)
 	FromVM bool
+}
+
+// used for testing of the communications
+type TestTraceMsg struct {
+	PeerMsgHeader
+	InitTime int64
+	Trace    []uint16
 }
 
 // state manager notifies consensus operator about changed state
