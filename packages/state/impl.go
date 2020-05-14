@@ -21,28 +21,14 @@ type mockVariableState struct {
 	address    *address.Address
 	stateIndex uint32
 	merkleHash hashing.HashValue
-	vars       mockVariables
+	vars       variables.Variables
 }
 
 type mockStateUpdate struct {
 	address    *address.Address // persist in key
 	stateIndex uint32           // persist in key
 	stateTxId  valuetransaction.ID
-	vars       mockVariables
-}
-
-// Variables
-
-type mockVariables struct {
-	// TODO tbd
-}
-
-func (b *mockVariables) Write(_ io.Writer) error {
-	return nil
-}
-
-func (b *mockVariables) Read(_ io.Reader) error {
-	return nil
+	vars       variables.Variables
 }
 
 // StateUpdate
@@ -51,6 +37,7 @@ func NewStateUpdate(addr *address.Address, stateIndex uint32) StateUpdate {
 	return &mockStateUpdate{
 		address:    addr,
 		stateIndex: stateIndex,
+		vars:       variables.NewVariables(),
 	}
 }
 
@@ -73,7 +60,7 @@ func (su *mockStateUpdate) SetStateTransactionId(vtxId valuetransaction.ID) {
 }
 
 func (su *mockStateUpdate) Variables() variables.Variables {
-	return &su.vars
+	return su.vars
 }
 
 func (su *mockStateUpdate) Write(w io.Writer) error {
@@ -131,7 +118,7 @@ func (vs *mockVariableState) Apply(stateUpdate StateUpdate) VariableState {
 }
 
 func (vs *mockVariableState) Variables() variables.Variables {
-	return &vs.vars
+	return vs.vars
 }
 
 func (vs *mockVariableState) Write(w io.Writer) error {
