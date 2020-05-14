@@ -50,7 +50,7 @@ func newCommitteeObj(scdata *registry.SCMetaData) (committee.Committee, error) {
 	ret := &committeeObj{
 		chMsg:    make(chan interface{}, 10),
 		scdata:   scdata,
-		peers:    make([]*peering.Peer, 0, len(scdata.NodeLocations)),
+		peers:    make([]*peering.Peer, len(scdata.NodeLocations)),
 		ownIndex: dkshare.Index,
 	}
 	myLocation := scdata.NodeLocations[dkshare.Index]
