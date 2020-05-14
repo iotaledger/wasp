@@ -11,18 +11,9 @@ import (
 	"github.com/labstack/echo"
 )
 
-type SCMetaDataJsonable struct {
-	Address       string   `json:"address"`       // base58
-	Color         string   `json:"color"`         // base58
-	OwnerAddress  string   `json:"owner_address"` // base58
-	Description   string   `json:"description"`   // base58
-	ProgramHash   string   `json:"program_hash"`  // base58
-	NodeLocations []string `json:"node_locations"`
-}
-
 //----------------------------------------------------------
 func HandlerPutSCData(c echo.Context) error {
-	var req SCMetaDataJsonable
+	var req registry.SCMetaDataJsonable
 
 	if err := c.Bind(&req); err != nil {
 		return misc.OkJsonErr(c, err)

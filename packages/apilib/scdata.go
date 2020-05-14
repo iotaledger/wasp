@@ -6,13 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"net/http"
 )
 
 // calls node  to wright SCMetaData record
-func PutSCData(host string, params admapi.SCMetaDataJsonable) error {
+func PutSCData(host string, params registry.SCMetaDataJsonable) error {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return err
@@ -35,7 +36,7 @@ func PutSCData(host string, params admapi.SCMetaDataJsonable) error {
 }
 
 // calls the nodes to get SCMetaData record by address
-func GetSCdata(host string, scaddr *address.Address) (*admapi.SCMetaDataJsonable, error) {
+func GetSCdata(host string, scaddr *address.Address) (*registry.SCMetaDataJsonable, error) {
 	req := admapi.GetSCDataRequest{Address: scaddr}
 	data, err := json.Marshal(&req)
 	if err != nil {
@@ -61,7 +62,7 @@ func GetSCdata(host string, scaddr *address.Address) (*admapi.SCMetaDataJsonable
 }
 
 // gets list of all SCs from the node
-func GetSCList(url string) ([]*admapi.SCMetaDataJsonable, error) {
+func GetSCList(url string) ([]*registry.SCMetaDataJsonable, error) {
 	resp, err := http.Get(fmt.Sprintf("http://%s/adm/getsclist", url))
 	if err != nil {
 		return nil, err

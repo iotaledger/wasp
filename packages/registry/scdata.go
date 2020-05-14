@@ -29,6 +29,26 @@ type SCMetaData struct {
 	NodeLocations []string // "host_addr:port"
 }
 
+type SCMetaDataJsonable struct {
+	Address       string   `json:"address"`       // base58
+	Color         string   `json:"color"`         // base58
+	OwnerAddress  string   `json:"owner_address"` // base58
+	Description   string   `json:"description"`   // base58
+	ProgramHash   string   `json:"program_hash"`  // base58
+	NodeLocations []string `json:"node_locations"`
+}
+
+func (scd *SCMetaData) Jsonable() *SCMetaDataJsonable {
+	return &SCMetaDataJsonable{
+		Address:       scd.Address.String(),
+		Color:         scd.Color.String(),
+		OwnerAddress:  scd.OwnerAddress.String(),
+		Description:   scd.Description,
+		ProgramHash:   scd.ProgramHash.String(),
+		NodeLocations: scd.NodeLocations,
+	}
+}
+
 // GetScList retrieves all SCdata records from the registry
 // in arbitrary key/value map order and returns a list
 // if ownPortAddr is not nil, it only includes those SCMetaData records which are processed

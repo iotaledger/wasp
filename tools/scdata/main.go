@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/plugins/webapi/admapi"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"log"
@@ -14,8 +14,8 @@ import (
 )
 
 type ioParams struct {
-	Hosts       []string                  `json:"hosts"`
-	RequestData admapi.SCMetaDataJsonable `json:"request_data"`
+	Hosts       []string                    `json:"hosts"`
+	RequestData registry.SCMetaDataJsonable `json:"request_data"`
 }
 
 type ioGetParams struct {
@@ -126,7 +126,7 @@ func GetSc(fname string) {
 		panic(err)
 	}
 
-	res := make(map[string]*admapi.SCMetaDataJsonable)
+	res := make(map[string]*registry.SCMetaDataJsonable)
 	for _, h := range params.Hosts {
 		scData, err := apilib.GetSCdata(h, &addr)
 		if err != nil {
@@ -156,7 +156,7 @@ func GetSc(fname string) {
 	}
 	fmt.Printf("%d SC data records was retrived\nChecking for consistency...\n", len(res))
 	// checking if all data records are identical
-	var scDataCheck *admapi.SCMetaDataJsonable
+	var scDataCheck *registry.SCMetaDataJsonable
 	var inconsistent bool
 	for _, scData := range res {
 		if scDataCheck == nil {

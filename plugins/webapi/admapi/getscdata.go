@@ -12,7 +12,7 @@ type GetSCDataRequest struct {
 }
 
 type GetSCDataResponse struct {
-	SCMetaDataJsonable
+	registry.SCMetaDataJsonable
 	Error string `json:"err"`
 }
 
@@ -28,13 +28,5 @@ func HandlerGetSCData(c echo.Context) error {
 	if err != nil {
 		return misc.OkJson(c, &GetScListResponse{Error: err.Error()})
 	}
-	retScData := SCMetaDataJsonable{
-		Address:       scdata.Address.String(),
-		Color:         scdata.Color.String(),
-		OwnerAddress:  scdata.OwnerAddress.String(),
-		Description:   scdata.Description,
-		ProgramHash:   scdata.ProgramHash.String(),
-		NodeLocations: scdata.NodeLocations,
-	}
-	return misc.OkJson(c, &GetSCDataResponse{SCMetaDataJsonable: retScData})
+	return misc.OkJson(c, &GetSCDataResponse{SCMetaDataJsonable: *scdata.Jsonable()})
 }
