@@ -107,7 +107,7 @@ func LoadVariableState(addr *address.Address) (VariableState, error) {
 }
 
 // saves variable state to db
-func (vs *mockVariableState) SaveToDb() error {
+func (vs *mockVariableState) Commit() error {
 	dbase, err := database.GetSCStateDB()
 	if err != nil {
 		return err
@@ -116,6 +116,10 @@ func (vs *mockVariableState) SaveToDb() error {
 		Key:   variableStateStorageKey(vs.address),
 		Value: hashing.MustBytes(vs),
 	})
+}
+
+func (vs *mockVariableState) Hash() *hashing.HashValue {
+	panic("implement me")
 }
 
 // marks request processed

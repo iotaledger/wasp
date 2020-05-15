@@ -119,7 +119,7 @@ func (vs *mockVariableState) StateIndex() uint32 {
 	return vs.stateIndex
 }
 
-func (vs *mockVariableState) Apply(stateUpdate StateUpdate) VariableState {
+func (vs *mockVariableState) Apply(stateUpdate []StateUpdate) VariableState {
 	merkleHash := hashing.NilHash
 	if vs != nil {
 		merkleHash = hashing.HashData(vs.merkleHash.Bytes())

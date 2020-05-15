@@ -20,6 +20,7 @@ type Committee interface {
 	Dismiss()
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time)
+	SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error)
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
 	InitTestRound()

@@ -1,35 +1,39 @@
 package state
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/variables"
-	"io"
 )
 
+// represents an interface to the mutable state of the smart contract
 type VariableState interface {
+	// index of the current state. State index is incremented when state transition occurs
+	// index 0 means origin state
 	StateIndex() uint32
-	Apply(StateUpdate) VariableState
-	SaveToDb() error
+	// state transition occurs when a batch of state updates is applied to the variable state
+	// state transition produces a new transient variable state object.
+	Apply([]StateUpdate) VariableState
+	// commit means saving variable state to db, making it persistent
+	Commit() error
+	// return hash of the variable state. It is a root of the Merkle chain of all
+	// state updates starting from the origin
+	Hash() *hashing.HashValue
+
 	Variables() variables.Variables
-	Read(io.Reader) error // TODO serialization must be replaced for more efficient mechanism
-	Write(io.Writer) error
 }
 
-// state update with anchor transaction hash
-// NOTE: if error occurs during processing, it is a deterministic result
-// special variable "ErrorMsg" in stateUpdate(and variable state) must be set to error string,
-// otherwise it is a normal state update
+// State update represents update to the variable state
+// it is calculated by the VM in batches
 type StateUpdate interface {
-	Address() *address.Address
-	StateIndex() uint32
-	StateTransactionId() valuetransaction.ID
 	RequestId() *sctransaction.RequestId
-	SetRequestId(*sctransaction.RequestId)
-	SetStateTransactionId(valuetransaction.ID)
-	SaveToDb() error
 	Variables() variables.Variables
-	Read(io.Reader) error
-	Write(io.Writer) error
+}
+
+// Batch of state updates applicable to the variable state
+type Batch interface {
+	StateIndex() uint32
+	StateUpdates() []StateUpdate
+	StateTransactionId() valuetransaction.ID
 }

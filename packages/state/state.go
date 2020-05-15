@@ -8,7 +8,7 @@ import (
 // assumes it is consistent, just save into the db
 // must an atomic call to badger TODO
 func SaveStateToDb(stateUpd StateUpdate, varState VariableState, reqIds *[]sctransaction.RequestId) error {
-	if err := varState.SaveToDb(); err != nil {
+	if err := varState.Commit(); err != nil {
 		return err
 	}
 	if err := stateUpd.SaveToDb(); err != nil {

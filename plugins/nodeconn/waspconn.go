@@ -9,7 +9,9 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/wasp/plugins/config"
+	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -74,7 +76,9 @@ func nodeConnect() {
 
 	// read loop
 	if err := bconn.Read(); err != nil {
-		log.Error(err)
+		if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
+			log.Warnw("Permanent error", "err", err)
+		}
 	}
 	// try to reconnect after some time
 	log.Debugf("disconnected from node. Will try to reconnect after %v", retryAfter)
