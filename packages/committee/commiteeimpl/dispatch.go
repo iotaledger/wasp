@@ -8,10 +8,9 @@ import (
 )
 
 func (c *committeeObj) dispatchMessage(msg interface{}) {
-	if !c.isOperational.Load() {
+	if !c.isOpenQueue.Load() {
 		return
 	}
-	stateMgr := false
 
 	switch msgt := msg.(type) {
 
@@ -43,16 +42,20 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 		c.operator.EventResultCalculated(msgt)
 
 	case committee.TimerTick:
-		if stateMgr {
-			c.stateMgr.EventTimerMsg(msgt)
+		if msgt%2 == 0 {
+			if c.stateMgr != nil {
+				c.stateMgr.EventTimerMsg(msgt)
+			}
 		} else {
-			c.operator.EventTimerMsg(msgt)
+			if c.operator != nil {
+				c.operator.EventTimerMsg(msgt)
+			}
 		}
-		stateMgr = !stateMgr
 	}
 }
 
 func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
+
 	rdr := bytes.NewReader(msg.MsgData)
 
 	switch msg.MsgType {

@@ -155,10 +155,13 @@ func (msg *TestTraceMsg) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, uint64(msg.InitTime)); err != nil {
 		return err
 	}
-	if err := util.WriteUint16(w, uint16(len(msg.Trace))); err != nil {
+	if err := util.WriteUint16(w, uint16(msg.InitPeerIndex)); err != nil {
 		return err
 	}
-	for _, idx := range msg.Trace {
+	if err := util.WriteUint16(w, uint16(len(msg.Sequence))); err != nil {
+		return err
+	}
+	for _, idx := range msg.Sequence {
 		if err := util.WriteUint16(w, idx); err != nil {
 			return err
 		}
@@ -172,13 +175,16 @@ func (msg *TestTraceMsg) Read(r io.Reader) error {
 		return err
 	}
 	msg.InitTime = int64(initTime)
+	if err := util.ReadUint16(r, &msg.InitPeerIndex); err != nil {
+		return err
+	}
 	var size uint16
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	msg.Trace = make([]uint16, size)
-	for i := range msg.Trace {
-		if err := util.ReadUint16(r, &msg.Trace[i]); err != nil {
+	msg.Sequence = make([]uint16, size)
+	for i := range msg.Sequence {
+		if err := util.ReadUint16(r, &msg.Sequence[i]); err != nil {
 			return err
 		}
 	}

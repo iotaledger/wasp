@@ -158,8 +158,7 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, time.Time) {
 
 func (peer *Peer) sendData(data []byte) error {
 	if peer.peerconn == nil {
-		return fmt.Errorf("error while sending data: connection with %s not established. Peering id %s",
-			peer.remoteLocation, peer.PeeringId())
+		return fmt.Errorf("no connection with %s", peer.remoteLocation)
 	}
 	num, err := peer.peerconn.Write(data)
 	if num != len(data) {

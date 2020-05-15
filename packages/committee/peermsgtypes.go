@@ -88,8 +88,9 @@ type StateUpdateMsg struct {
 // used for testing of the communications
 type TestTraceMsg struct {
 	PeerMsgHeader
-	InitTime int64
-	Trace    []uint16
+	InitTime      int64
+	InitPeerIndex uint16
+	Sequence      []uint16
 }
 
 // state manager notifies consensus operator about changed state

@@ -19,14 +19,14 @@ const (
 )
 
 type committeeObj struct {
-	isOperational atomic.Bool
-	peers         []*peering.Peer
-	ownIndex      uint16
-	scdata        *registry.SCMetaData
-	chMsg         chan interface{}
-	stateMgr      committee.StateManager
-	operator      committee.Operator
-	log           *logger.Logger
+	isOpenQueue atomic.Bool
+	peers       []*peering.Peer
+	ownIndex    uint16
+	scdata      *registry.SCMetaData
+	chMsg       chan interface{}
+	stateMgr    committee.StateManager
+	operator    committee.Operator
+	log         *logger.Logger
 }
 
 func init() {
@@ -50,7 +50,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 	}
 
 	ret := &committeeObj{
-		chMsg:    make(chan interface{}, 10),
+		chMsg:    make(chan interface{}),
 		scdata:   scdata,
 		peers:    make([]*peering.Peer, len(scdata.NodeLocations)),
 		ownIndex: dkshare.Index,
@@ -65,6 +65,8 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 
 	//ret.stateMgr = statemgr.New(ret)
 	//ret.operator = consensus.NewOperator(ret, dkshare)
+
+	ret.OpenQueue() // TODO only for testing
 
 	go func() {
 		for msg := range ret.chMsg {
@@ -103,12 +105,12 @@ func checkNetworkLocations(netLocations []string, n, index uint16) error {
 
 // implements Committee interface
 
-func (c *committeeObj) SetOperational() {
-	c.isOperational.Store(true)
+func (c *committeeObj) OpenQueue() {
+	c.isOpenQueue.Store(true)
 }
 
 func (c *committeeObj) Dismiss() {
-	c.isOperational.Store(false)
+	c.isOpenQueue.Store(false)
 	close(c.chMsg)
 
 	for i, pa := range c.scdata.NodeLocations {
@@ -131,7 +133,7 @@ func (c *committeeObj) Size() uint16 {
 }
 
 func (c *committeeObj) ReceiveMessage(msg interface{}) {
-	if c.isOperational.Load() {
+	if c.isOpenQueue.Load() {
 		c.chMsg <- msg
 	}
 }
@@ -159,6 +161,27 @@ func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte) (uint16, tim
 		MsgData:     msgData,
 	}
 	return peering.SendMsgToPeers(msg, c.peers...)
+}
+
+// sends message to the peer seq[seqIndex]. If receives error, seqIndex = (seqIndex+1) % size and repeats
+// if is not able to send message after size attempts, returns an error
+// seqIndex is start seqIndex
+// returned index is seqIndex of the successful send
+func (c *committeeObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error) {
+	if len(seq) != int(c.Size()) || seqIndex >= c.Size() {
+		return 0, fmt.Errorf("SendMsgInSequence: wrong params")
+	}
+	numAttempts := uint16(0)
+	for ; numAttempts < c.Size(); seqIndex = (seqIndex + 1) % c.Size() {
+		if seq[seqIndex] >= c.Size() {
+			return 0, fmt.Errorf("SendMsgInSequence: wrong params")
+		}
+		if err := c.SendMsg(seq[seqIndex], msgType, msgData); err == nil {
+			return seqIndex, nil
+		}
+		numAttempts++
+	}
+	return 0, fmt.Errorf("failed to send")
 }
 
 // returns true if peer is alive. Used by the operator to determine current leader

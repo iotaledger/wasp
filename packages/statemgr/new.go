@@ -90,7 +90,7 @@ func (sm *stateManager) initLoadState() {
 	}
 
 	// open msg queue for the committee
-	sm.committee.SetOperational()
+	sm.committee.OpenQueue()
 
 	// request last state transaction to update sync status
 	go sm.findLastStateTransaction(sm.committee.ScId())

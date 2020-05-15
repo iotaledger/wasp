@@ -16,7 +16,7 @@ type Committee interface {
 	Color() *balance.Color
 	Size() uint16
 	OwnPeerIndex() uint16
-	SetOperational()
+	OpenQueue()
 	Dismiss()
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time)
