@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
 	"time"
@@ -168,7 +169,7 @@ func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte) (uint16, tim
 // seqIndex is start seqIndex
 // returned index is seqIndex of the successful send
 func (c *committeeObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error) {
-	if len(seq) != int(c.Size()) || seqIndex >= c.Size() {
+	if len(seq) != int(c.Size()) || seqIndex >= c.Size() || !util.ValidPermutation(seq) {
 		return 0, fmt.Errorf("SendMsgInSequence: wrong params")
 	}
 	numAttempts := uint16(0)

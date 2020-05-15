@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/hive.go/backoff"
+	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -104,7 +106,9 @@ func (peer *Peer) runOutbound() {
 	}
 	log.Debugf("starting reading outbound %s", peer.remoteLocation)
 	if err := peer.peerconn.Read(); err != nil {
-		log.Error(err)
+		if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
+			log.Warnw("Permanent error", "err", err)
+		}
 	}
 	log.Debugf("stopped reading. Closing %s", peer.remoteLocation)
 	peer.closeConn()

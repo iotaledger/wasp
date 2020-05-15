@@ -3,7 +3,9 @@ package peering
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/plugins/config"
+	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -72,7 +74,9 @@ func connectInboundLoop() {
 		go func() {
 			log.Debugf("starting reading inbound %s", conn.RemoteAddr().String())
 			if err := bconn.Read(); err != nil {
-				log.Error(err)
+				if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
+					log.Warnw("Permanent error", "err", err)
+				}
 			}
 			_ = bconn.Close()
 		}()

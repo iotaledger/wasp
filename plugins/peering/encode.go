@@ -40,8 +40,7 @@ func encodeMessage(msg *PeerMessage) ([]byte, time.Time) {
 		buf.WriteByte(msg.MsgType)
 		buf.Write(msg.Address.Bytes())
 		_ = util.WriteUint16(&buf, msg.SenderIndex)
-		_ = util.WriteUint32(&buf, uint32(len(msg.MsgData)))
-		buf.Write(msg.MsgData)
+		_ = util.WriteBytes32(&buf, msg.MsgData)
 
 	default:
 		log.Panicf("wrong msg type %d", msg.MsgType)
@@ -82,13 +81,8 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 		if err = util.ReadUint16(rdr, &ret.SenderIndex); err != nil {
 			return nil, err
 		}
-		var dataLen uint32
-		if err = util.ReadUint32(rdr, &dataLen); err != nil {
+		if ret.MsgData, err = util.ReadBytes32(rdr); err != nil {
 			return nil, err
-		}
-		ret.MsgData = rdr.Bytes()
-		if len(ret.MsgData) != int(dataLen) {
-			return nil, fmt.Errorf("unexpected MsgData length")
 		}
 		return ret, nil
 	}

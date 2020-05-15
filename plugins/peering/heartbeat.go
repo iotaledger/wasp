@@ -30,9 +30,13 @@ func (peer *Peer) receiveHeartbeat(ts int64) {
 }
 
 func (peer *Peer) scheduleNexHeartbeat() {
+	if peerAlive, _ := peer.IsAlive(); !peerAlive {
+		//log.Debugf("stopped sending heartbeat: peer %s is dead. peering id %s", peer.remoteLocation, peer.PeeringId())
+		return
+	}
 	time.Sleep(heartbeatEvery)
 	if peerAlive, _ := peer.IsAlive(); !peerAlive {
-		log.Debugf("stopped sending heartbeat: peer %s is dead. peering id %s", peer.remoteLocation, peer.PeeringId())
+		//log.Debugf("stopped sending heartbeat: peer %s is dead. peering id %s", peer.remoteLocation, peer.PeeringId())
 		return
 	}
 

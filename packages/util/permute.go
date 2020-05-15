@@ -46,3 +46,33 @@ func GetPermutation(n uint16, seed []byte) []uint16 {
 	}
 	return ret
 }
+
+func ValidPermutation(perm []uint16) bool {
+	n := uint16(len(perm))
+
+	// check if every value exists
+	for i := uint16(0); i < n; i++ {
+		if _, found := findIndexOf(i, perm); !found {
+			return false
+		}
+	}
+
+	// check if all value are different
+	for i, v1 := range perm {
+		for j, v2 := range perm {
+			if i != j && v1 == v2 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func findIndexOf(val uint16, sequence []uint16) (uint16, bool) {
+	for i, s := range sequence {
+		if s == val {
+			return uint16(i), true
+		}
+	}
+	return 0, false
+}

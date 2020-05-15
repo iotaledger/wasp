@@ -91,6 +91,7 @@ type TestTraceMsg struct {
 	InitTime      int64
 	InitPeerIndex uint16
 	Sequence      []uint16
+	NumHops       uint16
 }
 
 // state manager notifies consensus operator about changed state

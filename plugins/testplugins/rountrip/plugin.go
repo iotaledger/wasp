@@ -37,7 +37,7 @@ func run(_ *node.Plugin) {
 			select {
 			case <-shutdownSignal:
 				return
-			case <-time.After(2 * time.Second):
+			case <-time.After(5 * time.Second):
 				if c := dispatcher.CommitteeByAddress(&addr); c != nil {
 					c.InitTestRound()
 				}

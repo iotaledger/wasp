@@ -1,6 +1,7 @@
 package committee
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -152,10 +153,13 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 }
 
 func (msg *TestTraceMsg) Write(w io.Writer) error {
+	if !util.ValidPermutation(msg.Sequence) {
+		panic(fmt.Sprintf("Write: wrong permutation %+v", msg.Sequence))
+	}
 	if err := util.WriteUint64(w, uint64(msg.InitTime)); err != nil {
 		return err
 	}
-	if err := util.WriteUint16(w, uint16(msg.InitPeerIndex)); err != nil {
+	if err := util.WriteUint16(w, msg.InitPeerIndex); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(len(msg.Sequence))); err != nil {
@@ -165,6 +169,9 @@ func (msg *TestTraceMsg) Write(w io.Writer) error {
 		if err := util.WriteUint16(w, idx); err != nil {
 			return err
 		}
+	}
+	if err := util.WriteUint16(w, msg.NumHops); err != nil {
+		return err
 	}
 	return nil
 }
@@ -187,6 +194,12 @@ func (msg *TestTraceMsg) Read(r io.Reader) error {
 		if err := util.ReadUint16(r, &msg.Sequence[i]); err != nil {
 			return err
 		}
+	}
+	if err := util.ReadUint16(r, &msg.NumHops); err != nil {
+		return err
+	}
+	if !util.ValidPermutation(msg.Sequence) {
+		panic(fmt.Sprintf("Read: wrong permutation %+v", msg.Sequence))
 	}
 	return nil
 }
