@@ -3,6 +3,7 @@ package nodeconn
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/waspconn"
 )
 
 func SetSubscriptions(addrs []address.Address) {
@@ -26,12 +27,12 @@ func sendSubscriptionsIfNeeded() {
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
-	msg := &WaspSendSubscribeMsg{
+	msg := &waspconn.WaspSendSubscribeMsg{
 		Addresses:   subscriptions,
 		PullBacklog: false,
 	}
 	var buf bytes.Buffer
-	buf.WriteByte(WaspSendSubscribeCode)
+	buf.WriteByte(waspconn.WaspSendSubscribeCode)
 	buf.Write(msg.Encode())
 
 	num := len(subscriptions)
@@ -49,12 +50,12 @@ func sendSubscriptionsIfNeeded() {
 }
 
 func GetBalancesFromNode(addr *address.Address) {
-	msg := WaspSendGetBalancesMsg{
+	msg := waspconn.WaspSendGetBalancesMsg{
 		Address: addr,
 	}
 
 	var buf bytes.Buffer
-	buf.WriteByte(WaspSendGetBalancesCode)
+	buf.WriteByte(waspconn.WaspSendGetBalancesCode)
 	buf.Write(msg.Encode())
 
 	go func() {

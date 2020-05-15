@@ -3,10 +3,10 @@ package committee
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"io"
 )
 
@@ -59,7 +59,7 @@ func (msg *StartProcessingReqMsg) Write(w io.Writer) error {
 	if _, err := w.Write(msg.RewardAddress.Bytes()); err != nil {
 		return err
 	}
-	if err := nodeconn.WriteBalances(w, msg.Balances); err != nil {
+	if err := waspconn.WriteBalances(w, msg.Balances); err != nil {
 		return err
 	}
 	return nil
@@ -78,7 +78,7 @@ func (msg *StartProcessingReqMsg) Read(r io.Reader) error {
 		return err
 	}
 	var err error
-	if msg.Balances, err = nodeconn.ReadBalances(r); err != nil {
+	if msg.Balances, err = waspconn.ReadBalances(r); err != nil {
 		return err
 	}
 	return nil
