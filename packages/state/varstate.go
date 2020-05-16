@@ -39,14 +39,13 @@ func (vs *variableState) Apply(batch Batch) (VariableState, error) {
 	if batch.StateIndex() != vs.stateIndex+1 {
 		return nil, fmt.Errorf("wrong state index")
 	}
-	updHashes := make([][]byte, batch.Size())
 	ret := NewVariableState(vs)
 	batch.ForEach(func(stateUpd StateUpdate) bool {
 		ret.Variables().Apply(stateUpd.Variables())
-		updHashes[stateUpd.StateIndex()] = stateUpd.Hash().Bytes()
 		return false
 	})
-	ret.(*variableState).stateHash = *hashing.HashData(vs.Hash().Bytes(), batch.Hash().Bytes())
+	batchHash := hashing.GetHashValue(batch)
+	ret.(*variableState).stateHash = *hashing.HashData(vs.Hash().Bytes(), batchHash.Bytes())
 	return ret, nil
 }
 

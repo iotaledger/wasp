@@ -12,8 +12,8 @@ const (
 	DBPrefixDatabaseVersion byte = iota
 	DBPrefixSCMetaData
 	DBPrefixKeyData
-	DBPrefixSCVariableState
-	DBPrefixSCStateUpdates
+	DBPrefixVariableState
+	DBPrefixBatches
 	DBPrefixProcessedRequests
 )
 
@@ -29,12 +29,12 @@ func GetKeyDataDB() (database.Database, error) {
 
 // smart contract state data
 func GetVariableStateDB() (database.Database, error) {
-	return Get(DBPrefixSCVariableState, GetBadgerInstance())
+	return Get(DBPrefixVariableState, GetBadgerInstance())
 }
 
 // smart contract state update data
-func GetStateUpdateDB() (database.Database, error) {
-	return Get(DBPrefixSCStateUpdates, GetBadgerInstance())
+func GetBatchesDB() (database.Database, error) {
+	return Get(DBPrefixBatches, GetBadgerInstance())
 }
 
 // smart contract state update data
@@ -72,8 +72,8 @@ func DbPrefixState(addr *address.Address, stateIndex uint32) []byte {
 	return ObjAddressKey(addr, util.Uint32To4Bytes(stateIndex))
 }
 
-func DbKeyStateUpdate(addr *address.Address, stateIndex uint32, batchIndex uint16) []byte {
-	return ObjKey(DbPrefixState(addr, stateIndex), util.Uint16To2Bytes(batchIndex))
+func DbKeyBatch(addr *address.Address, stateIndex uint32) []byte {
+	return ObjAddressKey(addr, util.Uint32To4Bytes(stateIndex))
 }
 
 func DbKeyProcessedRequest(reqId *sctransaction.RequestId) []byte {

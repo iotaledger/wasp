@@ -12,7 +12,7 @@ func MarkRequestsProcessed(reqids []*sctransaction.RequestId) error {
 	}
 	for _, rid := range reqids {
 		err := dbase.Set(database.Entry{
-			Key: rid.Bytes(),
+			Key: database.DbKeyProcessedRequest(rid),
 		})
 		if err != nil {
 			return err
@@ -26,7 +26,7 @@ func IsRequestProcessed(reqid *sctransaction.RequestId) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	contains, err := dbase.Contains(reqid.Bytes())
+	contains, err := dbase.Contains(database.DbKeyProcessedRequest(reqid))
 	if err != nil {
 		return false, err
 	}

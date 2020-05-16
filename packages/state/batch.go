@@ -6,51 +6,45 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
+	"io"
 )
 
 type batch struct {
+	stateIndex   uint32
+	stateTxId    valuetransaction.ID
 	stateUpdates []StateUpdate
 }
 
-// validates and creates a batch from array of state updates. Array can be not sorted bu batchIndex
-func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
+// validates, enumerates and creates a batch from array of state updates
+func NewBatch(stateUpdates []StateUpdate, stateIndex uint32) (Batch, error) {
 	if len(stateUpdates) == 0 {
 		return nil, fmt.Errorf("batch can't be empty")
 	}
-	stateIndex := stateUpdates[0].StateIndex()
-	txId := stateUpdates[0].StateTransactionId()
-
 	stateUpdatesNew := make([]StateUpdate, len(stateUpdates))
 
 	for i, su := range stateUpdates {
-		if su.StateIndex() != stateIndex {
-			return nil, fmt.Errorf("different stateIndex values")
-		}
-		if su.StateTransactionId() != txId {
-			return nil, fmt.Errorf("different stateTransactionId values")
-		}
 		for j := i + 1; j < len(stateUpdates); j++ {
 			if *su.RequestId() == *stateUpdates[j].RequestId() {
 				return nil, fmt.Errorf("duplicate request id")
 			}
 		}
-		if int(su.BatchIndex()) >= len(stateUpdatesNew) {
-			return nil, fmt.Errorf("wrong batch index")
-		}
-		if stateUpdatesNew[su.BatchIndex()] != nil {
-			return nil, fmt.Errorf("duplicate batch index")
-		}
+		su.SetBatchIndex(uint16(i))
 		stateUpdatesNew[su.BatchIndex()] = su
 	}
-	return &batch{stateUpdates: stateUpdatesNew}, nil
+	return &batch{
+		stateIndex:   stateIndex,
+		stateUpdates: stateUpdatesNew,
+	}, nil
+}
+
+func (b *batch) StateTransactionId() valuetransaction.ID {
+	return b.stateTxId
 }
 
 func (b *batch) SetStateTransactionId(vtxid valuetransaction.ID) {
-	for _, su := range b.stateUpdates {
-		su.SetStateTransactionId(vtxid)
-	}
+	b.stateTxId = vtxid
 }
 
 func (b *batch) ForEach(fun func(StateUpdate) bool) bool {
@@ -63,23 +57,11 @@ func (b *batch) ForEach(fun func(StateUpdate) bool) bool {
 }
 
 func (b *batch) StateIndex() uint32 {
-	return b.stateUpdates[0].StateIndex()
-}
-
-func (b *batch) StateTransactionId() valuetransaction.ID {
-	return b.stateUpdates[0].StateTransactionId()
+	return b.stateIndex
 }
 
 func (b *batch) Size() uint16 {
 	return uint16(len(b.stateUpdates))
-}
-
-func (b *batch) Hash() *hashing.HashValue {
-	hashes := make([][]byte, len(b.stateUpdates))
-	for i, su := range b.stateUpdates {
-		hashes[i] = su.Hash().Bytes()
-	}
-	return hashing.HashData(hashes...)
 }
 
 func (b *batch) RequestIds() []*sctransaction.RequestId {
@@ -90,39 +72,77 @@ func (b *batch) RequestIds() []*sctransaction.RequestId {
 	return ret
 }
 
-func (b *batch) saveToDb(addr *address.Address) error {
-	db, err := database.GetStateUpdateDB()
-	if err != nil {
+func (b *batch) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, b.stateIndex); err != nil {
+		return err
+	}
+	if _, err := w.Write(b.stateTxId.Bytes()); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, uint16(len(b.stateUpdates))); err != nil {
 		return err
 	}
 	for _, su := range b.stateUpdates {
-		err := db.Set(database.Entry{
-			Key:   database.DbKeyStateUpdate(addr, b.StateIndex(), su.BatchIndex()),
-			Value: hashing.MustBytes(su.(*stateUpdate)),
-		})
-		if err != nil {
+		if err := su.Write(w); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
-	db, err := database.GetStateUpdateDB()
-	if err != nil {
-		return nil, err
+func (b *batch) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
+		return err
 	}
-	prefix := database.DbPrefixState(addr, stateIndex)
-
-	stateUpdates := make([]StateUpdate, 0)
-	err = db.ForEachPrefix(prefix, func(entry database.Entry) (stop bool) {
-		if su, err := NewStateUpdateRead(bytes.NewReader(entry.Value)); err == nil {
-			stateUpdates = append(stateUpdates, su)
+	if _, err := r.Read(b.stateTxId[:]); err != nil {
+		return err
+	}
+	var size uint16
+	if err := util.ReadUint16(r, &size); err != nil {
+		return err
+	}
+	b.stateUpdates = make([]StateUpdate, size)
+	for i := range b.stateUpdates {
+		b.stateUpdates[i] = new(stateUpdate)
+		if err := b.stateUpdates[i].Read(r); err != nil {
+			return err
 		}
-		return false
+	}
+	return nil
+}
+
+func (b *batch) saveToDb(addr *address.Address) error {
+	dbase, err := database.GetBatchesDB()
+	if err != nil {
+		return err
+	}
+	// write batch header as separate record
+	var buf bytes.Buffer
+	if err := b.Write(&buf); err != nil {
+		return err
+	}
+	err = dbase.Set(database.Entry{
+		Key:   database.DbKeyBatch(addr, b.stateIndex),
+		Value: buf.Bytes(),
 	})
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
+	dbase, err := database.GetBatchesDB()
+	if err != nil {
 		return nil, err
 	}
-	return NewBatch(stateUpdates)
+	entry, err := dbase.Get(database.DbKeyBatch(addr, stateIndex))
+	if err != nil {
+		return nil, err
+	}
+	ret := new(batch)
+	if err := ret.Read(bytes.NewReader(entry.Value)); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

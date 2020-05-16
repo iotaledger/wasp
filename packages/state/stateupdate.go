@@ -1,8 +1,6 @@
 package state
 
 import (
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
@@ -10,27 +8,19 @@ import (
 )
 
 type stateUpdate struct {
-	stateIndex uint32
 	batchIndex uint16
-	stateTxId  valuetransaction.ID
 	requestId  sctransaction.RequestId
 	vars       variables.Variables
 }
 
-type NewStateUpdateParams struct {
-	StateIndex uint32
-	BatchIndex uint16
-	StateTxId  valuetransaction.ID
-	RequestId  sctransaction.RequestId
-}
-
-func NewStateUpdate(par NewStateUpdateParams) StateUpdate {
+func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
+	var req sctransaction.RequestId
+	if reqid != nil {
+		req = *reqid
+	}
 	return &stateUpdate{
-		stateIndex: par.StateIndex,
-		batchIndex: par.BatchIndex,
-		stateTxId:  par.StateTxId,
-		requestId:  par.RequestId,
-		vars:       variables.New(nil),
+		requestId: req,
+		vars:      variables.New(nil),
 	}
 }
 
@@ -41,10 +31,6 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 
 // StateUpdate
 
-func (se *stateUpdate) StateIndex() uint32 {
-	return se.stateIndex
-}
-
 func (su *stateUpdate) RequestId() *sctransaction.RequestId {
 	return &su.requestId
 }
@@ -53,16 +39,8 @@ func (su *stateUpdate) BatchIndex() uint16 {
 	return su.batchIndex
 }
 
-func (su *stateUpdate) Hash() *hashing.HashValue {
-	return hashing.HashData(hashing.MustBytes(su))
-}
-
-func (su *stateUpdate) StateTransactionId() valuetransaction.ID {
-	return su.stateTxId
-}
-
-func (su *stateUpdate) SetStateTransactionId(vtxId valuetransaction.ID) {
-	su.stateTxId = vtxId
+func (su *stateUpdate) SetBatchIndex(batchIndex uint16) {
+	su.batchIndex = batchIndex
 }
 
 func (su *stateUpdate) Variables() variables.Variables {
@@ -70,13 +48,7 @@ func (su *stateUpdate) Variables() variables.Variables {
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, su.stateIndex); err != nil {
-		return err
-	}
 	if err := util.WriteUint16(w, su.batchIndex); err != nil {
-		return err
-	}
-	if _, err := w.Write(su.stateTxId[:]); err != nil {
 		return err
 	}
 	if _, err := w.Write(su.requestId[:]); err != nil {
@@ -89,13 +61,7 @@ func (su *stateUpdate) Write(w io.Writer) error {
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &su.stateIndex); err != nil {
-		return err
-	}
 	if err := util.ReadUint16(r, &su.batchIndex); err != nil {
-		return err
-	}
-	if _, err := r.Read(su.stateTxId[:]); err != nil {
 		return err
 	}
 	if _, err := r.Read(su.requestId[:]); err != nil {

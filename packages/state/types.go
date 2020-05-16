@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/variables"
+	"io"
 )
 
 // represents an interface to the mutable state of the smart contract
@@ -31,16 +32,14 @@ type VariableState interface {
 // has same state index, state tx id and batch size. Batch index is unique in batch
 // Batch is completed when it contains one state update for each index
 type StateUpdate interface {
-	StateIndex() uint32
-	// transaction which validates the batch
-	StateTransactionId() valuetransaction.ID
-	SetStateTransactionId(valuetransaction.ID)
 	BatchIndex() uint16
+	SetBatchIndex(uint16)
 	// request which resulted in this state update
 	RequestId() *sctransaction.RequestId
 	// the payload of variables/values
 	Variables() variables.Variables
-	Hash() *hashing.HashValue
+	Write(io.Writer) error
+	Read(io.Reader) error
 }
 
 // Batch of state updates applicable to the variable state by applying state updates
@@ -53,6 +52,6 @@ type Batch interface {
 	SetStateTransactionId(valuetransaction.ID)
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
-	// is a hash of all hashes of state updates. It is only correct when valid
-	Hash() *hashing.HashValue
+	Write(io.Writer) error
+	Read(io.Reader) error
 }

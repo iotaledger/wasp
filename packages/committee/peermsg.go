@@ -145,7 +145,7 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
 		return err
 	}
-	msg.StateUpdate = state.NewStateUpdate(nil, 0)
+	msg.StateUpdate = state.NewStateUpdate(nil)
 	if err := msg.StateUpdate.Read(r); err != nil {
 		return err
 	}
