@@ -56,7 +56,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	if n, err := r.Read(addr[:]); err != nil || n != address.Length {
 		return fmt.Errorf("error while reading address: %v", err)
 	}
-	//vars := variables.NewVariables()
+	//vars := variables.New()
 	//if err := vars.Read(r); err != nil {
 	//	return err
 	//}

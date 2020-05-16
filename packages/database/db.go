@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/database"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
 	DBPrefixDatabaseVersion byte = iota
 	DBPrefixSCMetaData
 	DBPrefixKeyData
-	DBPrefixSCState
+	DBPrefixSCVariableState
+	DBPrefixSCStateUpdates
+	DBPrefixProcessedRequests
 )
 
 // smart contract meta data
@@ -24,8 +28,18 @@ func GetKeyDataDB() (database.Database, error) {
 }
 
 // smart contract state data
-func GetSCStateDB() (database.Database, error) {
-	return Get(DBPrefixSCState, GetBadgerInstance())
+func GetVariableStateDB() (database.Database, error) {
+	return Get(DBPrefixSCVariableState, GetBadgerInstance())
+}
+
+// smart contract state update data
+func GetStateUpdateDB() (database.Database, error) {
+	return Get(DBPrefixSCStateUpdates, GetBadgerInstance())
+}
+
+// smart contract state update data
+func GetProcessedRequestsDB() (database.Database, error) {
+	return Get(DBPrefixProcessedRequests, GetBadgerInstance())
 }
 
 // omitting first version byte in the address
@@ -48,4 +62,20 @@ func DbKeyDKShare(addr *address.Address) []byte {
 
 func DbKeySCMetaData(addr *address.Address) []byte {
 	return ObjAddressKey(addr)
+}
+
+func DbKeyVariableState(addr *address.Address) []byte {
+	return ObjAddressKey(addr)
+}
+
+func DbPrefixState(addr *address.Address, stateIndex uint32) []byte {
+	return ObjAddressKey(addr, util.Uint32To4Bytes(stateIndex))
+}
+
+func DbKeyStateUpdate(addr *address.Address, stateIndex uint32, batchIndex uint16) []byte {
+	return ObjKey(DbPrefixState(addr, stateIndex), util.Uint16To2Bytes(batchIndex))
+}
+
+func DbKeyProcessedRequest(reqId *sctransaction.RequestId) []byte {
+	return reqId.Bytes()
 }

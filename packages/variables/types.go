@@ -10,6 +10,8 @@ type Variables interface {
 	// TODO tbd
 	Set(key interface{}, value interface{})
 	Get(key interface{}) (interface{}, bool)
+	Apply(Variables)
+	ForEach(func(key interface{}, value interface{}) bool) bool
 	Read(io.Reader) error
 	Write(io.Writer) error
 }
@@ -18,8 +20,46 @@ type variables struct {
 	m map[string]interface{}
 }
 
-func NewVariables() Variables {
-	return &variables{m: make(map[string]interface{})}
+// create/clone
+func New(vars Variables) Variables {
+	return new(vars)
+}
+
+func new(vars Variables) *variables {
+	ret := &variables{m: make(map[string]interface{})}
+	if vars == nil {
+		return ret
+	}
+	vars.ForEach(func(key interface{}, value interface{}) bool {
+		if value != nil {
+			ret.m[key.(string)] = value
+		}
+		return true
+	})
+	return ret
+}
+
+// applying update to variables, var per var.
+// new value nil mean deleting the variable
+func (vr *variables) Apply(upd Variables) {
+	upd.ForEach(func(key interface{}, value interface{}) bool {
+		skey := key.(string)
+		if value == nil {
+			delete(vr.m, skey)
+		} else {
+			vr.Set(skey, value)
+		}
+		return false
+	})
+}
+
+func (vr *variables) ForEach(fun func(key interface{}, value interface{}) bool) bool {
+	for k, v := range vr.m {
+		if fun(k, v) {
+			return true // aborted
+		}
+	}
+	return false
 }
 
 func (vr *variables) Set(key interface{}, value interface{}) {

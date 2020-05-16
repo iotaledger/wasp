@@ -18,6 +18,8 @@ type StateBlock struct {
 	// stata index is 0 for the origin transaction
 	// consensus maintains incremental sequence of state indexes
 	stateIndex uint32
+	// batch size. Must be >= 1
+	batchSize uint16
 	// timestamp of the transaction. 0 means transaction is not timestamped
 	timestamp int64
 	// requestId = tx hash + requestId index which originated this state update
@@ -39,6 +41,10 @@ func (sb *StateBlock) Color() *balance.Color {
 
 func (sb *StateBlock) StateIndex() uint32 {
 	return sb.stateIndex
+}
+
+func (sb *StateBlock) BatchSize() uint16 {
+	return sb.batchSize
 }
 
 func (sb *StateBlock) Timestamp() int64 {
@@ -69,6 +75,9 @@ func (sb *StateBlock) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, sb.stateIndex); err != nil {
 		return err
 	}
+	if err := util.WriteUint16(w, sb.batchSize); err != nil {
+		return err
+	}
 	if err := util.WriteUint64(w, uint64(sb.timestamp)); err != nil {
 		return err
 	}
@@ -83,6 +92,9 @@ func (sb *StateBlock) Read(r io.Reader) error {
 		return fmt.Errorf("error while reading color: %v", err)
 	}
 	if err := util.ReadUint32(r, &sb.stateIndex); err != nil {
+		return err
+	}
+	if err := util.ReadUint16(r, &sb.batchSize); err != nil {
 		return err
 	}
 	var timestamp uint64
