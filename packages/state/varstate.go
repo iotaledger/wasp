@@ -13,6 +13,7 @@ import (
 
 type variableState struct {
 	stateIndex uint32
+	empty      bool
 	stateHash  hashing.HashValue
 	vars       variables.Variables
 }
@@ -22,11 +23,12 @@ type variableState struct {
 func NewVariableState(varState VariableState) VariableState {
 	if varState == nil {
 		return &variableState{
-			vars: variables.New(nil),
+			vars:  variables.New(nil),
+			empty: true,
 		}
 	}
 	return &variableState{
-		stateIndex: varState.StateIndex() + 1,
+		stateIndex: varState.StateIndex(),
 		vars:       variables.New(varState.Variables()),
 	}
 }
@@ -35,30 +37,29 @@ func (vs *variableState) StateIndex() uint32 {
 	return vs.stateIndex
 }
 
-func (vs *variableState) Apply(batch Batch) (VariableState, error) {
-	if vs != nil {
+// the only method which changes state of the variableState object
+func (vs *variableState) Apply(batch Batch) error {
+	if !vs.empty {
 		if batch.StateIndex() != vs.stateIndex+1 {
-			return nil, fmt.Errorf("batch state index #%d can't be applied to the state #%d",
+			return fmt.Errorf("batch state index #%d can't be applied to the state #%d",
 				batch.StateIndex(), vs.stateIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
-			return nil, fmt.Errorf("batch state index #%d can't be applied to the pre-origin state", batch.StateIndex())
+			return fmt.Errorf("batch state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
-	ret := NewVariableState(vs)
 	batch.ForEach(func(stateUpd StateUpdate) bool {
-		ret.Variables().Apply(stateUpd.Variables())
+		vs.Variables().Apply(stateUpd.Variables())
 		return false
 	})
-	ret.(*variableState).stateHash = *hashing.HashData(vs.Hash().Bytes(), batch.EssenceHash().Bytes())
-	return ret, nil
+	vs.stateHash = *hashing.HashData(vs.Hash().Bytes(), batch.EssenceHash().Bytes())
+	vs.stateIndex = batch.StateIndex()
+	vs.empty = false
+	return nil
 }
 
 func (vs *variableState) Hash() *hashing.HashValue {
-	if vs == nil {
-		return hashing.NilHash
-	}
 	return &vs.stateHash
 }
 
@@ -118,6 +119,14 @@ func (vs *variableState) Commit(addr *address.Address, b Batch) error {
 		return err
 	}
 	return nil
+}
+
+func StateExist(addr *address.Address) (bool, error) {
+	dbase, err := database.GetVariableStateDB()
+	if err != nil {
+		return false, err
+	}
+	return dbase.Contains(database.DbKeyVariableState(addr))
 }
 
 // loads variable state and corresponding batch

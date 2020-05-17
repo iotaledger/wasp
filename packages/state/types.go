@@ -15,8 +15,7 @@ type VariableState interface {
 	// index 0 means origin state
 	StateIndex() uint32
 	// state transition occurs when a batch of state updates is applied to the variable state
-	// state transition produces a new transient variable state object.
-	Apply(Batch) (VariableState, error)
+	Apply(Batch) error
 	// commit means saving variable state to sc db, making it persistent
 	Commit(address *address.Address, batch Batch) error
 	// return hash of the variable state. It is a root of the Merkle chain of all

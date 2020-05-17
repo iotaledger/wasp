@@ -94,7 +94,7 @@ func retryNodeConnect() {
 
 func SendDataToNode(data []byte) error {
 	bconnMutex.RLock()
-	defer bconnMutex.Unlock()
+	defer bconnMutex.RUnlock()
 
 	var err error
 	if bconn != nil {

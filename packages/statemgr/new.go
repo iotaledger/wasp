@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"sync"
 	"time"
 )
 
@@ -72,8 +71,6 @@ type pendingBatch struct {
 
 const nodeRequestTimeout = 2 * time.Second
 
-var once sync.Once
-
 func New(committee committee.Committee, log *logger.Logger) committee.StateManager {
 	ret := &stateManager{
 		committee:      committee,
@@ -88,19 +85,34 @@ func New(committee committee.Committee, log *logger.Logger) committee.StateManag
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
 	var err error
-	var solidBatch state.Batch
+	var batch state.Batch
 
-	// load last solid state and batch
-	sm.solidVariableState, solidBatch, err = state.LoadVariableState(sm.committee.Address())
+	stateExist, err := state.StateExist(sm.committee.Address())
 	if err != nil {
-		sm.log.Errorf("can't load variable state for sc addr %s: %v", sm.committee.Address().String(), err)
+		sm.log.Errorf("error occurred. sc addr %s: %v", sm.committee.Address().String(), err)
 		sm.committee.Dismiss()
 		return
+	}
+
+	if stateExist {
+		// load last solid state and batch
+		sm.solidVariableState, batch, err = state.LoadVariableState(sm.committee.Address())
+		if err != nil {
+			sm.log.Errorf("can't load variable state for sc addr %s: %v", sm.committee.Address().String(), err)
+			sm.committee.Dismiss()
+			return
+		}
+	} else {
+		// origin state
+		sm.solidVariableState = nil // por las dudas
+		batch = state.OriginBatchFromMetaData(sm.committee.MetaData())
+		sm.log.Infof("using meta data to create origin state update batch. Sc addr %s",
+			sm.committee.Address().String())
 	}
 	// loaded solid variable state and the last batch of state updates
 	// it needs to be validated by the state transaction, therefore it is added to the
 	// pending batches and transaction is requested from the node
-	if !sm.addPendingBatch(solidBatch) {
+	if !sm.addPendingBatch(batch) {
 		sm.log.Errorf("assertion failed: sm.addPendingBatch(stateUpdate)")
 		sm.committee.Dismiss()
 		return
@@ -109,7 +121,7 @@ func (sm *stateManager) initLoadState() {
 	sm.committee.OpenQueue()
 
 	// request state transaction to approve last solid state
-	txid := solidBatch.StateTransactionId()
+	txid := batch.StateTransactionId()
 	nodeconn.RequestTransactionFromNode(&txid)
 	sm.nodeRequestDeadline = time.Now().Add(nodeRequestTimeout)
 }

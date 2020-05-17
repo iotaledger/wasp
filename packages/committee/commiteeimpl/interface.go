@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"time"
@@ -109,4 +110,8 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 
 func (c *committeeObj) OwnPeerIndex() uint16 {
 	return c.ownIndex
+}
+
+func (c *committeeObj) MetaData() *registry.SCMetaData {
+	return c.scdata
 }

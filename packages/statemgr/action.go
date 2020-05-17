@@ -130,7 +130,19 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	var varState state.VariableState
 	var err error
 
-	varState, err = sm.solidVariableState.Apply(batch)
+	if sm.solidVariableState != nil {
+		if batch.StateIndex() != sm.solidVariableState.StateIndex()+1 {
+			return false
+		}
+	} else {
+		if batch.StateIndex() != 0 {
+			return false
+		}
+	}
+
+	varState = state.NewVariableState(sm.solidVariableState)
+
+	err = varState.Apply(batch)
 	if err != nil {
 		sm.log.Warn(err)
 		return false

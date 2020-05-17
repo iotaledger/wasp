@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"sync"
 	"time"
 )
 
@@ -17,6 +16,7 @@ type Committee interface {
 	Color() *balance.Color
 	Size() uint16
 	OwnPeerIndex() uint16
+	MetaData() *registry.SCMetaData
 	OpenQueue()
 	Dismiss()
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
@@ -85,14 +85,8 @@ type VMOutput struct {
 	StateUpdates []state.StateUpdate
 }
 
-var (
-	ConstructorNew func(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error)
-	once           sync.Once
-)
+var ConstructorNew func(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error)
 
 func New(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error) {
-	once.Do(func() {
-		initLogger()
-	})
 	return ConstructorNew(scdata, log)
 }
