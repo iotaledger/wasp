@@ -1,7 +1,6 @@
 package sctransaction
 
 import (
-	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -10,20 +9,6 @@ import (
 	"testing"
 	"time"
 )
-
-func TestBasicScId(t *testing.T) {
-	addr := address.RandomOfType(address.VersionBLS)
-	color := RandomColor()
-	scid := NewScId(color, addr)
-
-	scidstr := scid.String()
-	scid1, err := ScIdFromString(scidstr)
-	assert.Equal(t, err, nil)
-	assert.Equal(t, scidstr, scid1.String())
-
-	assert.Equal(t, bytes.Equal(scid.Address().Bytes(), addr[:]), true)
-	assert.Equal(t, bytes.Equal(scid.Color().Bytes(), color[:]), true)
-}
 
 const (
 	testAddress = "mtNnGt72bZd25v291TjEzw5uTonExip24cAjtB38x4tq"
@@ -40,35 +25,6 @@ const (
 //	scid := NewScId(color, addr)
 //	t.Logf("scid = %s", scid.String())
 //}
-
-func TestScid(t *testing.T) {
-	scid, err := ScIdFromString(testScid)
-	assert.Equal(t, err, nil)
-	addr := scid.Address()
-	assert.Equal(t, addr.Version(), address.VersionBLS)
-	color, err := ColorFromString(testColor)
-	assert.Equal(t, err, nil)
-
-	assert.Equal(t, color, scid.Color())
-	assert.Equal(t, addr, scid.Address())
-
-	scidBack := NewScId(color, addr).String()
-	assert.Equal(t, scidBack, testScid)
-}
-
-func TestRandScid(t *testing.T) {
-	addr, err := address.FromBase58(testAddress)
-	assert.Equal(t, err, nil)
-	assert.Equal(t, addr.Version(), address.VersionBLS)
-
-	scid := RandomScId(addr)
-	a := scid.Address().Bytes()
-	assert.Equal(t, bytes.Equal(a, addr[:]), true)
-
-	scid1, err := ScIdFromString(scid.String())
-	assert.Equal(t, err, nil)
-	assert.Equal(t, scid.Equal(scid1), true)
-}
 
 func TestTransactionStateBlock1(t *testing.T) {
 	addr, err := address.FromBase58(testAddress)

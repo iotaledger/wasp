@@ -105,7 +105,13 @@ func (sm *stateManager) initLoadState() {
 	} else {
 		// origin state
 		sm.solidVariableState = nil // por las dudas
-		batch = state.OriginBatchFromMetaData(sm.committee.MetaData())
+		par := sm.committee.MetaData()
+		batch = state.NewOriginBatch(state.NewOriginBatchParams{
+			Address:      &par.Address,
+			OwnerAddress: &par.OwnerAddress,
+			Description:  par.Description,
+			ProgramHash:  &par.ProgramHash,
+		})
 		sm.log.Infof("using meta data to create origin state update batch. Sc addr %s",
 			sm.committee.Address().String())
 	}
@@ -116,6 +122,15 @@ func (sm *stateManager) initLoadState() {
 		sm.log.Errorf("assertion failed: sm.addPendingBatch(stateUpdate)")
 		sm.committee.Dismiss()
 		return
+	}
+	if sm.solidVariableState == nil {
+		if !(len(sm.pendingBatches) == 1) {
+			panic("assertion: len(sm.pendingBatches) == 1")
+		}
+		// origin state
+		for stateHash := range sm.pendingBatches {
+			sm.log.Infof("origin state hash %s address %s", stateHash.String(), sm.committee.Address().String())
+		}
 	}
 	// open msg queue for the committee
 	sm.committee.OpenQueue()

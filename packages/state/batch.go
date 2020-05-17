@@ -7,7 +7,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -171,21 +170,4 @@ func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
 		return nil, err
 	}
 	return ret, nil
-}
-
-// create origin state update
-func OriginBatchFromMetaData(scdata *registry.SCMetaData) Batch {
-	stateUpd := NewStateUpdate(nil)
-	vars := stateUpd.Variables()
-	vars.Set("$address$", scdata.Address.String())
-	vars.Set("$color$", scdata.Color.String())
-	vars.Set("$owneraddr$", scdata.OwnerAddress.String())
-	vars.Set("$descr$", scdata.Description)
-	vars.Set("$proghash$", scdata.ProgramHash.String())
-	vars.Set("$netlochash$", hashing.HashStrings(scdata.NodeLocations...).String())
-	ret, err := NewBatch([]StateUpdate{stateUpd}, 0)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }

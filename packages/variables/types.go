@@ -22,10 +22,10 @@ type variables struct {
 
 // create/clone
 func New(vars Variables) Variables {
-	return new(vars)
+	return newVars(vars)
 }
 
-func new(vars Variables) *variables {
+func newVars(vars Variables) *variables {
 	ret := &variables{m: make(map[string]interface{})}
 	if vars == nil {
 		return ret
@@ -40,7 +40,7 @@ func new(vars Variables) *variables {
 }
 
 // applying update to variables, var per var.
-// new value nil mean deleting the variable
+// newVars value nil mean deleting the variable
 func (vr *variables) Apply(upd Variables) {
 	upd.ForEach(func(key interface{}, value interface{}) bool {
 		skey := key.(string)
@@ -63,6 +63,10 @@ func (vr *variables) ForEach(fun func(key interface{}, value interface{}) bool) 
 }
 
 func (vr *variables) Set(key interface{}, value interface{}) {
+	if value == nil {
+		delete(vr.m, key.(string))
+		return
+	}
 	switch value.(type) {
 	case uint16:
 	case uint32:
