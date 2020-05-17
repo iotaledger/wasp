@@ -52,6 +52,7 @@ type Batch interface {
 	SetStateTransactionId(valuetransaction.ID)
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
+	EssenceHash() *hashing.HashValue // except state transaction id
 	Write(io.Writer) error
 	Read(io.Reader) error
 }

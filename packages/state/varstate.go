@@ -44,8 +44,7 @@ func (vs *variableState) Apply(batch Batch) (VariableState, error) {
 		ret.Variables().Apply(stateUpd.Variables())
 		return false
 	})
-	batchHash := hashing.GetHashValue(batch)
-	ret.(*variableState).stateHash = *hashing.HashData(vs.Hash().Bytes(), batchHash.Bytes())
+	ret.(*variableState).stateHash = *hashing.HashData(vs.Hash().Bytes(), batch.EssenceHash().Bytes())
 	return ret, nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -72,11 +73,27 @@ func (b *batch) RequestIds() []*sctransaction.RequestId {
 	return ret
 }
 
+// hash of all data except state transaction hash
+func (b *batch) EssenceHash() *hashing.HashValue {
+	var buf bytes.Buffer
+	if err := b.writeEssence(&buf); err != nil {
+		panic("EssenceHash")
+	}
+	return hashing.HashData(buf.Bytes())
+}
+
 func (b *batch) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, b.stateIndex); err != nil {
+	if err := b.writeEssence(w); err != nil {
 		return err
 	}
 	if _, err := w.Write(b.stateTxId.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *batch) writeEssence(w io.Writer) error {
+	if err := util.WriteUint32(w, b.stateIndex); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(len(b.stateUpdates))); err != nil {
@@ -91,10 +108,17 @@ func (b *batch) Write(w io.Writer) error {
 }
 
 func (b *batch) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
+	if err := b.readEssence(r); err != nil {
 		return err
 	}
 	if _, err := r.Read(b.stateTxId[:]); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *batch) readEssence(r io.Reader) error {
+	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
 		return err
 	}
 	var size uint16
@@ -102,9 +126,10 @@ func (b *batch) Read(r io.Reader) error {
 		return err
 	}
 	b.stateUpdates = make([]StateUpdate, size)
+	var err error
 	for i := range b.stateUpdates {
-		b.stateUpdates[i] = new(stateUpdate)
-		if err := b.stateUpdates[i].Read(r); err != nil {
+		b.stateUpdates[i], err = NewStateUpdateRead(r)
+		if err != nil {
 			return err
 		}
 	}
