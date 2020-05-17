@@ -98,8 +98,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.operator.EventSignedHashMsg(msgt)
 		}
 
-	case committee.MsgGetStateUpdate:
-		msgt := &committee.GetStateUpdateMsg{}
+	case committee.MsgGetBatch:
+		msgt := &committee.GetBatchMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -107,7 +107,19 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderIndex = msg.SenderIndex
 
 		if c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex) {
-			c.stateMgr.EventGetStateUpdateMsg(msgt)
+			c.stateMgr.EventGetBatchMsg(msgt)
+		}
+
+	case committee.MsgBatchHeader:
+		msgt := &committee.BatchHeaderMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+
+		if c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex) {
+			c.stateMgr.EventBatchHeaderMsg(msgt)
 		}
 
 	case committee.MsgStateUpdate:

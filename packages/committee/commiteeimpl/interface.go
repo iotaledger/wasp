@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	committee.New = newCommitteeObj
+	committee.ConstructorNew = newCommitteeObj
 }
 
 // implements Committee interface

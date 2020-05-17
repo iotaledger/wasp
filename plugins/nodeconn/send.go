@@ -3,6 +3,7 @@ package nodeconn
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 )
 
@@ -49,7 +50,7 @@ func sendSubscriptionsIfNeeded() {
 	}()
 }
 
-func GetBalancesFromNode(addr *address.Address) {
+func RequestBalancesFromNode(addr *address.Address) {
 	msg := waspconn.WaspSendGetBalancesMsg{
 		Address: addr,
 	}
@@ -59,6 +60,24 @@ func GetBalancesFromNode(addr *address.Address) {
 	buf.Write(msg.Encode())
 
 	go func() {
-		_ = SendDataToNode(buf.Bytes())
+		if err := SendDataToNode(buf.Bytes()); err != nil {
+			log.Warnf("failed to send 'WaspSendGetBalancesMsg' to the node: %v", err)
+		}
+	}()
+}
+
+func RequestTransactionFromNode(txid *valuetransaction.ID) {
+	msg := waspconn.WaspSendGetTransactionMsg{
+		TxId: txid,
+	}
+
+	var buf bytes.Buffer
+	buf.WriteByte(waspconn.WaspSendGetTransactionCode)
+	buf.Write(msg.Encode())
+
+	go func() {
+		if err := SendDataToNode(buf.Bytes()); err != nil {
+			log.Warnf("failed to send 'WaspSendGetTransactionMsg' to the node: %v", err)
+		}
 	}()
 }

@@ -45,7 +45,7 @@ func (op *operator) doLeader() {
 func (op *operator) requestBalancesFromNode() {
 	if op.balances == nil && time.Now().After(op.getBalancesDeadline) {
 		addr := op.committee.Address()
-		nodeconn.GetBalancesFromNode(addr)
+		nodeconn.RequestBalancesFromNode(addr)
 		op.getBalancesDeadline = time.Now().Add(getBalancesTimeout)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"sync"
 	"time"
 )
 
@@ -26,11 +27,10 @@ type Committee interface {
 	InitTestRound()
 }
 
-var New func(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error)
-
 type StateManager interface {
 	CheckSynchronizationStatus(idx uint32) bool
-	EventGetStateUpdateMsg(msg *GetStateUpdateMsg)
+	EventGetBatchMsg(msg *GetBatchMsg)
+	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
 	EventStateTransactionMsg(msg StateTransactionMsg)
 	EventTimerMsg(msg TimerTick)
@@ -83,4 +83,16 @@ type VMOutput struct {
 	ResultTransaction *sctransaction.Transaction
 	// state update corresponding to requests
 	StateUpdates []state.StateUpdate
+}
+
+var (
+	ConstructorNew func(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error)
+	once           sync.Once
+)
+
+func New(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error) {
+	once.Do(func() {
+		initLogger()
+	})
+	return ConstructorNew(scdata, log)
 }

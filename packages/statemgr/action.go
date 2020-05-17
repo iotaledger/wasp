@@ -2,10 +2,8 @@ package statemgr
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"time"
@@ -24,19 +22,20 @@ func (sm *stateManager) checkStateTransition() bool {
 	}
 	// among pending state updates we locate the one, consistent with the next state transaction
 	varStateHash := sm.nextStateTransaction.MustState().VariableStateHash()
-	pending, ok := sm.pendingStateUpdates[*varStateHash]
+	pending, ok := sm.pendingBatches[*varStateHash]
 	if !ok {
-		// corresponding state update wasn't found among pending state updates
+		// corresponding batch wasn't found among pending state updates
+		// state transition is not possible
 		return false
 	}
-	// found corresponding pending state
-	// it is approved by the nextStateTransaction
-	pending.stateUpdate.SetStateTransactionId(sm.nextStateTransaction.ID())
+	// found corresponding pending batch
+	// it is approved by the nextStateTransaction, because hashes of coincide
+	// batch is marked with approving stat tx id. It doesn't change essence bytes of the batch
+	pending.batch.SetStateTransactionId(sm.nextStateTransaction.ID())
 
 	// save the new state and mark requests as processed
-	reqIds := sm.nextStateTransaction.MustState().RequestIds()
-	if err := state.SaveStateToDb(pending.stateUpdate, pending.nextVariableState, reqIds); err != nil {
-		log.Errorf("failed to save state #%d: %v", pending.stateUpdate.StateIndex(), err)
+	if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
+		sm.log.Errorf("failed to save next state #%d", pending.batch.StateIndex())
 		return false
 	}
 
@@ -44,14 +43,15 @@ func (sm *stateManager) checkStateTransition() bool {
 	if sm.solidVariableState.StateIndex() > 0 {
 		prevStateIndex = fmt.Sprintf("#%d", sm.solidVariableState.StateIndex()-1)
 	}
-	log.Infof("state transition %s --> #%d scid %s", prevStateIndex, sm.solidVariableState.StateIndex())
+	sm.log.Infof("state transition #%s --> #%d sc addr %s",
+		prevStateIndex, sm.solidVariableState.StateIndex(), sm.committee.Address().String())
 
 	saveTx := sm.nextStateTransaction
 
 	// update state manager variables to the new state
 	sm.solidVariableState = pending.nextVariableState
 	sm.nextStateTransaction = nil
-	sm.pendingStateUpdates = make(map[hashing.HashValue]*pendingStateUpdate) // clean pending state updates
+	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clean pending batches
 	sm.permutationOfPeers = util.GetPermutation(sm.committee.Size(), varStateHash.Bytes())
 	sm.permutationIndex = 0
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
@@ -83,7 +83,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	}
 	// it is time to ask for the next state update to next peer in the permutation
 	sm.permutationIndex = (sm.permutationIndex + 1) % sm.committee.Size()
-	data := hashing.MustBytes(&committee.GetStateUpdateMsg{
+	data := hashing.MustBytes(&committee.GetBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: sm.solidVariableState.StateIndex() + 1,
 		},
@@ -91,7 +91,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	// send messages until first without error
 	for i := uint16(0); i < sm.committee.Size(); i++ {
 		targetPeerIndex := sm.permutationOfPeers[sm.permutationIndex]
-		if err := sm.committee.SendMsg(targetPeerIndex, committee.MsgGetStateUpdate, data); err == nil {
+		if err := sm.committee.SendMsg(targetPeerIndex, committee.MsgGetBatch, data); err == nil {
 			break
 		}
 		sm.permutationIndex = (sm.permutationIndex + 1) % sm.committee.Size()
@@ -125,77 +125,18 @@ func (sm *stateManager) isSynchronized() bool {
 	return sm.largestEvidencedStateIndex-sm.solidVariableState.StateIndex() <= 1
 }
 
-// async loads state transaction from DB and validates it
-// posts 'StateTransactionMsg' to the committee upon success
-func (sm *stateManager) asyncRequestForStateTransaction(txid transaction.ID, scid sctransaction.ScId, stateIndex uint32) {
-	go func() {
-		tx, err := sctransaction.LoadTx(txid)
-		if err != nil {
-			log.Errorf("can't load state tx",
-				"txid", txid.String(),
-				"stateIndex", stateIndex,
-				"scid", scid.String(),
-			)
-			return
-		}
-		stateBlock, ok := tx.State()
-		if !ok {
-			log.Errorf("not a state tx",
-				"txid", txid.String(),
-				"stateIndex", stateIndex,
-				"scid", scid.String(),
-			)
-			return
-		}
-		if *stateBlock.ScId() != scid || stateBlock.StateIndex() != stateIndex {
-			log.Errorf("unexpected state tx data",
-				"txid", txid.String(),
-				"stateIndex", stateIndex,
-				"scid", scid.String(),
-			)
-			return
-		}
-		// posting to the committee's queue
-		sm.committee.ReceiveMessage(committee.StateTransactionMsg{
-			Transaction: tx,
-		})
-	}()
-}
-
-func (sm *stateManager) findLastStateTransaction(scid sctransaction.ScId) {
-	// finds transaction, which owns output with colored toke scid.Color()
-	// notifies committee about it
-	// posting to the committee's queue
-	sm.committee.ReceiveMessage(committee.StateTransactionMsg{
-		Transaction: nil, // TODO stub
-	})
-}
-
-// adding state update to the 'pending' map
-func (sm *stateManager) addPendingStateUpdate(stateUpdate state.StateUpdate) bool {
+// adding batch of state updates to the 'pending' map
+func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	var varState state.VariableState
-	if sm.solidVariableState != nil {
-		if stateUpdate.StateIndex() != sm.solidVariableState.StateIndex()+1 {
-			// only interested in updates to the current state
-			return false
-		}
-		varState = sm.solidVariableState.Apply(stateUpdate)
-	} else {
-		if stateUpdate.StateIndex() != 0 {
-			// in the origin, only interested in updates with index 0
-			return false
-		}
-		varState = state.CreateOriginVariableState(stateUpdate)
-	}
+	var err error
 
-	stateHash := hashing.GetHashValue(varState)
-	existingRecord, ok := sm.pendingStateUpdates[stateHash]
-	if ok && existingRecord.stateUpdate.StateTransactionId() != sctransaction.NilId {
-		// corresponding pending update already exist
+	varState, err = sm.solidVariableState.Apply(batch)
+	if err != nil {
+		sm.log.Warn(err)
 		return false
 	}
-	sm.pendingStateUpdates[stateHash] = &pendingStateUpdate{
-		stateUpdate:       stateUpdate,
+	sm.pendingBatches[*varState.Hash()] = &pendingBatch{
+		batch:             batch,
 		nextVariableState: varState,
 	}
 	return true

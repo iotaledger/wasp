@@ -3,7 +3,7 @@ package committee
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -16,9 +16,10 @@ const (
 	MsgNotifyRequests         = 0 + peering.FirstCommitteeMsgCode
 	MsgStartProcessingRequest = 1 + peering.FirstCommitteeMsgCode
 	MsgSignedHash             = 2 + peering.FirstCommitteeMsgCode
-	MsgGetStateUpdate         = 3 + peering.FirstCommitteeMsgCode
+	MsgGetBatch               = 3 + peering.FirstCommitteeMsgCode
 	MsgStateUpdate            = 4 + peering.FirstCommitteeMsgCode
-	MsgTestTrace              = 5 + peering.FirstCommitteeMsgCode
+	MsgBatchHeader            = 5 + peering.FirstCommitteeMsgCode
+	MsgTestTrace              = 6 + peering.FirstCommitteeMsgCode
 )
 
 type TimerTick int
@@ -52,7 +53,7 @@ type StartProcessingReqMsg struct {
 	// reward address
 	RewardAddress *address.Address
 	// balances/outputs
-	Balances map[transaction.ID][]*balance.Balance
+	Balances map[valuetransaction.ID][]*balance.Balance
 }
 
 // after calculations the result peer responds to the start processing msg
@@ -71,18 +72,26 @@ type SignedHashMsg struct {
 	SigShare tbdn.SigShare
 }
 
-// request state update from peer. Used in syn process
-type GetStateUpdateMsg struct {
+// request batch of updates from peer. Used in syn process
+type GetBatchMsg struct {
 	PeerMsgHeader
 }
 
-// state update sent to peer. Used in sync process
+// the header of the batch message sent by peers in the process of syncing
+// it is sent as a first message while syncing a batch
+type BatchHeaderMsg struct {
+	PeerMsgHeader
+	// state index of the batch
+	Size uint16
+	// approving transaction id
+	StateTransactionId valuetransaction.ID
+}
+
+// state update sent to peer. Used in sync process, as part of batch
 type StateUpdateMsg struct {
 	PeerMsgHeader
 	// state update
 	StateUpdate state.StateUpdate
-	// locally calculated by VM (needed for syncing)
-	FromVM bool
 }
 
 // used for testing of the communications
@@ -104,4 +113,10 @@ type StateTransitionMsg struct {
 	StateTransaction *sctransaction.Transaction
 	// processed requests
 	RequestIds []*sctransaction.RequestId
+}
+
+// message of complete batch. Is sent by consensus operator to the state manager as a VM result
+// - state manager to itself when batch is completed after syncing
+type BatchMsg struct {
+	Batch state.Batch
 }

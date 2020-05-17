@@ -36,8 +36,15 @@ func (vs *variableState) StateIndex() uint32 {
 }
 
 func (vs *variableState) Apply(batch Batch) (VariableState, error) {
-	if batch.StateIndex() != vs.stateIndex+1 {
-		return nil, fmt.Errorf("wrong state index")
+	if vs != nil {
+		if batch.StateIndex() != vs.stateIndex+1 {
+			return nil, fmt.Errorf("batch state index #%d can't be applied to the state #%d",
+				batch.StateIndex(), vs.stateIndex)
+		}
+	} else {
+		if batch.StateIndex() != 0 {
+			return nil, fmt.Errorf("batch state index #%d can't be applied to the pre-origin state", batch.StateIndex())
+		}
 	}
 	ret := NewVariableState(vs)
 	batch.ForEach(func(stateUpd StateUpdate) bool {
@@ -49,6 +56,9 @@ func (vs *variableState) Apply(batch Batch) (VariableState, error) {
 }
 
 func (vs *variableState) Hash() *hashing.HashValue {
+	if vs == nil {
+		return hashing.NilHash
+	}
 	return &vs.stateHash
 }
 

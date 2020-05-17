@@ -49,7 +49,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 		scdata:   scdata,
 		peers:    make([]*peering.Peer, len(scdata.NodeLocations)),
 		ownIndex: dkshare.Index,
-		log:      log.Named("comm"),
+		log:      log.Named("cmt"),
 	}
 	myLocation := scdata.NodeLocations[dkshare.Index]
 	for i, remoteLocation := range scdata.NodeLocations {
@@ -58,7 +58,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 		}
 	}
 
-	ret.stateMgr = statemgr.New(ret)
+	ret.stateMgr = statemgr.New(ret, ret.log)
 	//ret.operator = consensus.NewOperator(ret, dkshare)
 
 	ret.OpenQueue() // TODO only for testing

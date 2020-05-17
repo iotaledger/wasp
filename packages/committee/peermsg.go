@@ -123,12 +123,38 @@ func (msg *SignedHashMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (msg *GetStateUpdateMsg) Write(w io.Writer) error {
+func (msg *GetBatchMsg) Write(w io.Writer) error {
 	return util.WriteUint32(w, msg.StateIndex)
 }
 
-func (msg *GetStateUpdateMsg) Read(r io.Reader) error {
+func (msg *GetBatchMsg) Read(r io.Reader) error {
 	return util.ReadUint32(r, &msg.StateIndex)
+}
+
+func (msg *BatchHeaderMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, msg.Size); err != nil {
+		return err
+	}
+	if _, err := w.Write(msg.StateTransactionId.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *BatchHeaderMsg) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
+		return err
+	}
+	if err := util.ReadUint16(r, &msg.Size); err != nil {
+		return err
+	}
+	if _, err := r.Read(msg.StateTransactionId[:]); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (msg *StateUpdateMsg) Write(w io.Writer) error {
@@ -138,7 +164,7 @@ func (msg *StateUpdateMsg) Write(w io.Writer) error {
 	if err := msg.StateUpdate.Write(w); err != nil {
 		return err
 	}
-	return util.WriteBoolByte(w, msg.FromVM)
+	return nil
 }
 
 func (msg *StateUpdateMsg) Read(r io.Reader) error {
@@ -149,7 +175,7 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 	if err := msg.StateUpdate.Read(r); err != nil {
 		return err
 	}
-	return util.ReadBoolByte(r, &msg.FromVM)
+	return nil
 }
 
 func (msg *TestTraceMsg) Write(w io.Writer) error {

@@ -3,34 +3,89 @@ package statemgr
 import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"time"
 )
 
 // respond to sync request 'GetStateUpdate'
-func (sm *stateManager) EventGetStateUpdateMsg(msg *committee.GetStateUpdateMsg) {
-	if stateUpd, err := state.LoadStateUpdate(sm.committee.ScId(), msg.StateIndex); err == nil {
-		_ = sm.committee.SendMsg(msg.SenderIndex, committee.MsgStateUpdate, hashing.MustBytes(&committee.StateUpdateMsg{
-			StateUpdate: stateUpd,
-		}))
+func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
+	batch, err := state.LoadBatch(sm.committee.Address(), msg.StateIndex)
+	if err != nil {
+		// can't load batch, can't respond
+		return
 	}
-	// no need for action because it doesn't change of the state
+	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, hashing.MustBytes(&committee.BatchHeaderMsg{
+		PeerMsgHeader: committee.PeerMsgHeader{
+			StateIndex: msg.StateIndex,
+		},
+		Size:               batch.Size(),
+		StateTransactionId: batch.StateTransactionId(),
+	}))
+	if err != nil {
+		return
+	}
+	batch.ForEach(func(stateUpdate state.StateUpdate) bool {
+		err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgStateUpdate, hashing.MustBytes(&committee.StateUpdateMsg{
+			PeerMsgHeader: committee.PeerMsgHeader{
+				StateIndex: msg.StateIndex,
+			},
+			StateUpdate: stateUpdate,
+		}))
+		return err != nil
+	})
+}
+
+func (sm *stateManager) EventBatchHeaderMsg(msg *committee.BatchHeaderMsg) {
+	if sm.syncedBatch != nil &&
+		sm.syncedBatch.stateIndex == msg.StateIndex &&
+		sm.syncedBatch.statetxId == msg.StateTransactionId &&
+		len(sm.syncedBatch.stateUpdates) == int(msg.Size) {
+		return // no need to start from scratch
+	}
+	sm.syncedBatch = &syncedBatch{
+		stateIndex:   msg.StateIndex,
+		stateUpdates: make([]state.StateUpdate, msg.Size),
+		statetxId:    msg.StateTransactionId,
+	}
 }
 
 // respond to state update msg.
 // It collects state updates while waiting for the anchoring state transaction
 // only are stored updates to the current solid variable state
 func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
-	if !sm.addPendingStateUpdate(msg.StateUpdate) {
+	if sm.syncedBatch == nil {
 		return
 	}
-	if msg.StateUpdate.StateTransactionId() != sctransaction.NilId && !msg.FromVM {
-		// state update contains state transaction in it
-		// so we need to ask for the corresponding state transaction
-		// except when it is calculated locally by the VM
-		sm.asyncRequestForStateTransaction(msg.StateUpdate.StateTransactionId(), sm.committee.ScId(), msg.StateUpdate.StateIndex())
-		sm.syncMessageDeadline = time.Now().Add(parameters.SyncPeriodBetweenSyncMessages)
+	if sm.syncedBatch.stateIndex != msg.StateIndex {
+		return
+	}
+	if int(msg.StateUpdate.BatchIndex()) >= len(sm.syncedBatch.stateUpdates) {
+		sm.log.Errorf("bad state update message")
+		return
+	}
+	sm.syncedBatch.stateUpdates[msg.StateUpdate.BatchIndex()] = msg.StateUpdate
+	sm.syncedBatch.msgCounter++
+
+	if int(sm.syncedBatch.msgCounter) < len(sm.syncedBatch.stateUpdates) {
+		// some are missing
+		return
+	}
+	// check if whole batch already received
+	for _, su := range sm.syncedBatch.stateUpdates {
+		if su == nil {
+			// some state updates are missing
+			return
+		}
+	}
+	// the whole batch received
+	batch, err := state.NewBatch(sm.syncedBatch.stateUpdates, sm.syncedBatch.stateIndex)
+	if err != nil {
+		sm.log.Errorf("failed to create batch: %v", err)
+		sm.syncedBatch = nil
+		return
+	}
+	sm.syncedBatch = nil
+	if !sm.addPendingBatch(batch) {
+		return
 	}
 	sm.takeAction()
 }
