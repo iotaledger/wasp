@@ -21,11 +21,10 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	if !ownerAddressOk() {
-		log.Errorf("wrong test data. Can't continue")
-	} else {
-		log.Errorf("test data OK")
-	}
-	originTx := createOriginTx()
-	log.Infof("origin transaction ID = %s", originTx.ID().String())
+	orig1, _ := testplugins.CreateOriginData(testplugins.SC1, nil)
+	orig2, _ := testplugins.CreateOriginData(testplugins.SC2, nil)
+	orig3, _ := testplugins.CreateOriginData(testplugins.SC3, nil)
+	log.Infof("origin transaction SC1 ID = %s", orig1.ID().String())
+	log.Infof("origin transaction SC2 ID = %s", orig2.ID().String())
+	log.Infof("origin transaction SC3 ID = %s", orig3.ID().String())
 }

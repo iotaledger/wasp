@@ -5,6 +5,7 @@ package statemgr
 import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -106,12 +107,17 @@ func (sm *stateManager) initLoadState() {
 		// origin state
 		sm.solidVariableState = nil // por las dudas
 		par := sm.committee.MetaData()
-		batch = state.NewOriginBatch(state.NewOriginBatchParams{
+		batch = apilib.NewOriginBatchUncommitted(apilib.NewOriginParams{
 			Address:      &par.Address,
 			OwnerAddress: &par.OwnerAddress,
 			Description:  par.Description,
 			ProgramHash:  &par.ProgramHash,
 		})
+		// committing batch means linking it to the approving transaction
+		// it doesn't change essence of the batch
+		// SC metadata contains 'color' which is equal to the ID of the origin transaction
+		batch.Commit((valuetransaction.ID)(par.Color))
+
 		sm.log.Infof("using meta data to create origin state update batch. Sc addr %s",
 			sm.committee.Address().String())
 	}

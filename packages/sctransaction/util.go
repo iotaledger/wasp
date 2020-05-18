@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/mr-tron/base58"
 )
 
@@ -30,6 +31,24 @@ func ColorFromBytes(cb []byte) (ret balance.Color, err error) {
 		return
 	}
 	copy(ret[:], cb)
+	return
+}
+
+func RandomTransactionID() (ret valuetransaction.ID) {
+	if _, err := rand.Read(ret[:]); err != nil {
+		panic(err)
+	}
+	return
+}
+
+var NilID valuetransaction.ID
+
+func TransactionIDFromString(s string) (ret valuetransaction.ID, err error) {
+	b, err := base58.Decode(s)
+	if err != nil {
+		return
+	}
+	ret, _, err = valuetransaction.IDFromBytes(b)
 	return
 }
 

@@ -83,6 +83,9 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		sm.syncedBatch = nil
 		return
 	}
+	// always committed
+	batch.Commit(sm.syncedBatch.statetxId)
+
 	sm.syncedBatch = nil
 	if !sm.addPendingBatch(batch) {
 		return

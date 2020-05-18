@@ -48,7 +48,8 @@ type Batch interface {
 	StateIndex() uint32
 	// transaction which validates the batch
 	StateTransactionId() valuetransaction.ID
-	SetStateTransactionId(valuetransaction.ID)
+	Commit(valuetransaction.ID) // sets the state transaction ID
+	IsCommitted() bool
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
 	EssenceHash() *hashing.HashValue // except state transaction id

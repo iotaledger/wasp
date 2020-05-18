@@ -31,7 +31,14 @@ func (sm *stateManager) checkStateTransition() bool {
 	// found corresponding pending batch
 	// it is approved by the nextStateTransaction, because hashes of coincide
 	// batch is marked with approving stat tx id. It doesn't change essence bytes of the batch
-	pending.batch.SetStateTransactionId(sm.nextStateTransaction.ID())
+	if !pending.batch.IsCommitted() {
+		pending.batch.Commit(sm.nextStateTransaction.ID())
+	} else {
+		// should be same transaction hash
+		if !(sm.nextStateTransaction.ID() == pending.batch.StateTransactionId()) {
+			sm.log.Panicf("assertion failed: sm.nextStateTransaction.ID() == pending.batch.StateTransactionId()")
+		}
+	}
 
 	// save the new state and mark requests as processed
 	if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {

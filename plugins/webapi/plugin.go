@@ -35,7 +35,7 @@ func init() {
 	initWG.Add(1)
 }
 
-func WaitIsUp() {
+func WaitUntilIsUp() {
 	initWG.Wait()
 }
 

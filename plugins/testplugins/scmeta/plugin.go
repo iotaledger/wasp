@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/testplugins"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -16,9 +15,14 @@ import (
 const PluginName = "TestingSCMetaData"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)
-	log    *logger.Logger
+	Plugin        = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)
+	log           *logger.Logger
+	nodeLocations = []string{
+		"127.0.0.1:4000",
+		"127.0.0.1:4001",
+		"127.0.0.1:4002",
+		"127.0.0.1:4003",
+	}
 )
 
 func configure(_ *node.Plugin) {
@@ -26,80 +30,68 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	go func() {
-		// wait for signal from webapi
-		webapi.WaitIsUp()
+	go runTestSC(testplugins.SC1)
+	go runTestSC(testplugins.SC2)
+	go runTestSC(testplugins.SC3)
+}
 
-		log.Infof("Start running testing: %s", PluginName)
+func runTestSC(par apilib.NewOriginParams) {
+	// wait for signal from webapi
+	webapi.WaitUntilIsUp()
 
-		// convert data
-		scTestData := make([]*registry.SCMetaData, len(scTestDataJasonable))
-		var err error
-		for i := range scTestData {
-			scTestData[i], err = scTestDataJasonable[i].ToSCMetaData()
-			if err != nil {
-				log.Errorf("TEST FAILED 1, wring testing data: %v", err)
-				return
-			}
-		}
+	log.Infof("Start running testing plugin %s for '%s'", PluginName, par.Description)
 
-		myHost := config.Node.GetString(webapi.CfgBindAddress)
+	myHost := config.Node.GetString(webapi.CfgBindAddress)
 
-		failed := false
-		// check if all keys exist in local registry
-		for _, scdata := range scTestData {
-			resp := apilib.GetPublicKeyInfo([]string{myHost}, &scdata.Address)
-			if len(resp) != 1 {
-				log.Errorf("TEST FAILED 3: bad response from GetPublicKeyInfo")
-				return
-			}
-			if resp[0].Err != "" {
-				log.Errorf("response from GetPublicKeyInfo for addr %s: %s", scdata.Address.String(), resp[0].Err)
-				failed = true
-			} else {
-				log.Infof("OK address in registry: %s", scdata.Address.String())
-			}
-		}
-		if failed {
-			log.Errorf("TEST FAILED 4: not all keys are available")
-			return
-		}
+	_, scdata := testplugins.CreateOriginData(par, nodeLocations)
 
-		// retrieving SC meta data from registry calling WebAPI to itself
-		for i, scdata := range scTestData {
-			writeNew := false
-			sc1back, exists, err := apilib.GetSCMetaData(myHost, &scdata.Address)
-			if err != nil {
-				log.Errorf("TEST FAILED 5: retrieving SC meta data for %s: %v", scdata.Address.String(), err)
-				return
-			}
-			if exists {
-				h1 := hashing.GetHashValue(scdata)
-				if scb, err := sc1back.ToSCMetaData(); err != nil {
-					log.Errorf("error. Data to be replaced for address %s", scdata.Address.String())
-					writeNew = true
-				} else {
-					h2 := hashing.GetHashValue(scb)
-					if h1 != h2 {
-						log.Warnf("inconsistency. Data to be replaced for address %s.", scdata.Address.String())
-						writeNew = true
-					}
-				}
-			} else {
+	resp := apilib.GetPublicKeyInfo([]string{myHost}, &scdata.Address)
+	if len(resp) != 1 {
+		log.Errorf("TEST for '%s' FAILED 1: bad response from GetPublicKeyInfo", par.Description)
+		return
+	}
+	failed := false
+	if resp[0].Err != "" {
+		log.Errorf("response from GetPublicKeyInfo for addr %s: %s", scdata.Address.String(), resp[0].Err)
+		failed = true
+	} else {
+		log.Infof("OK address in registry: %s", scdata.Address.String())
+	}
+	if failed {
+		log.Errorf("TEST FAILED 2: the key with address %s is not available for '%s'",
+			par.Address.String(), par.Description)
+		return
+	}
+
+	writeNew := false
+	scDataBack, exists, err := apilib.GetSCMetaData(myHost, &scdata.Address)
+	if err != nil {
+		log.Errorf("TEST FAILED 3: retrieving SC meta data '%s': %v", scdata.Description, err)
+		return
+	}
+	if exists {
+		h1 := hashing.GetHashValue(scdata)
+		if scb, err := scDataBack.ToSCMetaData(); err != nil {
+			log.Warnf("data will be overwritten: '%s'", scdata.Description)
+			writeNew = true
+		} else {
+			h2 := hashing.GetHashValue(scb)
+			if h1 != h2 {
+				log.Warnf("data will be overwritten: '%s'", scdata.Description)
 				writeNew = true
 			}
-			if writeNew {
-				log.Infof("writing sc meta data for address %s", scdata.Address.String())
-
-				if err := apilib.PutSCData(myHost, *scTestDataJasonable[i]); err != nil {
-					log.Errorf("failed writing sc meta data: %v", err)
-				}
-			} else {
-				log.Infof("OK sc meta data for address %s", scdata.Address.String())
-
-			}
 		}
-
-		log.Infof("TEST PASSED")
-	}()
+	} else {
+		writeNew = true
+	}
+	if writeNew {
+		log.Infof("writing sc meta data for '%s', address %s", scdata.Description, scdata.Address.String())
+		d := scdata.Jsonable()
+		if err := apilib.PutSCData(myHost, *d); err != nil {
+			log.Errorf("failed writing sc meta data: %v", err)
+		}
+	} else {
+		log.Infof("OK sc meta data for address %s", scdata.Address.String())
+	}
+	log.Infof("TEST PASSED: '%s'", par.Description)
 }
