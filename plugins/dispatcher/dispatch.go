@@ -1,6 +1,7 @@
 package dispatcher
 
 import (
+	"bytes"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
@@ -12,7 +13,7 @@ func processMsgData(data []byte) {
 	switch data[0] {
 	case waspconn.WaspRecvTransactionCode:
 		msg := &waspconn.WaspRecvTransactionMsg{}
-		if err := msg.Decode(data[1:]); err != nil {
+		if err := msg.Read(bytes.NewReader(data[1:])); err != nil {
 			log.Errorf("error parsing 'WaspRecvTransactionMsg' message: %v", err)
 			return
 		}
@@ -26,7 +27,7 @@ func processMsgData(data []byte) {
 
 	case waspconn.WaspRecvBalancesCode:
 		bals := &waspconn.WaspRecvBalancesMsg{}
-		if err := bals.Decode(data[1:]); err != nil {
+		if err := bals.Read(bytes.NewReader(data[1:])); err != nil {
 			log.Errorf("error parsing 'WaspRecvBalancesMsg' message: %v", err)
 			return
 		}

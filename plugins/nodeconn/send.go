@@ -33,8 +33,14 @@ func sendSubscriptionsIfNeeded() {
 		PullBacklog: false,
 	}
 	var buf bytes.Buffer
-	buf.WriteByte(waspconn.WaspSendSubscribeCode)
-	buf.Write(msg.Encode())
+	if err := buf.WriteByte(waspconn.WaspSendSubscribeCode); err != nil {
+		log.Error(err)
+		return
+	}
+	if err := msg.Write(&buf); err != nil {
+		log.Error(err)
+		return
+	}
 
 	num := len(subscriptions)
 	subscriptionsSent = true
@@ -56,8 +62,14 @@ func RequestBalancesFromNode(addr *address.Address) {
 	}
 
 	var buf bytes.Buffer
-	buf.WriteByte(waspconn.WaspSendGetBalancesCode)
-	buf.Write(msg.Encode())
+	if err := buf.WriteByte(waspconn.WaspSendGetBalancesCode); err != nil {
+		log.Error(err)
+		return
+	}
+	if err := msg.Write(&buf); err != nil {
+		log.Error(err)
+		return
+	}
 
 	go func() {
 		if err := SendDataToNode(buf.Bytes()); err != nil {
@@ -70,10 +82,15 @@ func RequestTransactionFromNode(txid *valuetransaction.ID) {
 	msg := waspconn.WaspSendGetTransactionMsg{
 		TxId: txid,
 	}
-
 	var buf bytes.Buffer
-	buf.WriteByte(waspconn.WaspSendGetTransactionCode)
-	buf.Write(msg.Encode())
+	if err := buf.WriteByte(waspconn.WaspSendGetTransactionCode); err != nil {
+		log.Error(err)
+		return
+	}
+	if err := msg.Write(&buf); err != nil {
+		log.Error(err)
+		return
+	}
 
 	go func() {
 		if err := SendDataToNode(buf.Bytes()); err != nil {
