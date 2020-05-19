@@ -54,7 +54,7 @@ func nodeConnect() {
 	}
 
 	bconnMutex.Lock()
-	bconn := buffconn.NewBufferedConnection(conn)
+	bconn = buffconn.NewBufferedConnection(conn)
 	bconnMutex.Unlock()
 
 	log.Debugf("established connection with node at %s", addr)
@@ -68,9 +68,10 @@ func nodeConnect() {
 		log.Errorf("lost connection with %s", addr)
 		go func() {
 			bconnMutex.Lock()
+			bconnSave := bconn
 			bconn = nil
 			bconnMutex.Unlock()
-			bconn.Events.ReceiveMessage.Detach(dataReceivedClosure)
+			bconnSave.Events.ReceiveMessage.Detach(dataReceivedClosure)
 		}()
 	}))
 

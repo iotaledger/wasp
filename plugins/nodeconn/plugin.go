@@ -34,7 +34,6 @@ func run(_ *node.Plugin) {
 			if bconn != nil {
 				log.Infof("Closing connection with node..")
 				_ = bconn.Close()
-				bconn = nil
 				log.Infof("Closing connection with node.. Done")
 			}
 		}()

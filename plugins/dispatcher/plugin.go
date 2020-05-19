@@ -27,10 +27,10 @@ func configure(_ *node.Plugin) {
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 
-		chMsgData := make(chan []byte, 100)
+		chNodeMsgData := make(chan []byte, 100)
 
 		processNodeDataClosure := events.NewClosure(func(data []byte) {
-			chMsgData <- data
+			chNodeMsgData <- data
 		})
 
 		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
@@ -56,8 +56,8 @@ func run(_ *node.Plugin) {
 
 			// goroutine to read incoming messages from the node
 			go func() {
-				for data := range chMsgData {
-					processMsgData(data)
+				for data := range chNodeMsgData {
+					processNodeMsgData(data)
 				}
 			}()
 
@@ -66,7 +66,7 @@ func run(_ *node.Plugin) {
 			log.Infof("Stopping %s..", PluginName)
 			go func() {
 				nodeconn.EventNodeMessageReceived.Detach(processNodeDataClosure)
-				close(chMsgData)
+				close(chNodeMsgData)
 				log.Infof("Stopping %s.. Done", PluginName)
 			}()
 		})

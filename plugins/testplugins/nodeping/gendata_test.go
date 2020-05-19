@@ -1,4 +1,4 @@
-package nodeconntest
+package nodeping
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"

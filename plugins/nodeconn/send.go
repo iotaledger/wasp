@@ -1,7 +1,6 @@
 package nodeconn
 
 import (
-	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
@@ -28,25 +27,20 @@ func sendSubscriptionsIfNeeded() {
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
-	msg := &waspconn.WaspSendSubscribeMsg{
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeSubscribeMsg{
 		Addresses:   subscriptions,
 		PullBacklog: false,
-	}
-	var buf bytes.Buffer
-	if err := buf.WriteByte(waspconn.WaspSendSubscribeCode); err != nil {
-		log.Error(err)
-		return
-	}
-	if err := msg.Write(&buf); err != nil {
-		log.Error(err)
+	})
+	if err != nil {
+		log.Errorf("sending subscriptions: %v", err)
 		return
 	}
 
 	num := len(subscriptions)
 	subscriptionsSent = true
 	go func() {
-		if err := SendDataToNode(buf.Bytes()); err != nil {
-			log.Errorf("error while sending subscriptions: %v", err)
+		if err := SendDataToNode(data); err != nil {
+			log.Errorf("sending subscriptions: %v", err)
 			bconnMutex.Lock()
 			defer bconnMutex.Unlock()
 			subscriptionsSent = false
@@ -57,43 +51,30 @@ func sendSubscriptionsIfNeeded() {
 }
 
 func RequestBalancesFromNode(addr *address.Address) {
-	msg := waspconn.WaspSendGetBalancesMsg{
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetBalancesMsg{
 		Address: addr,
-	}
-
-	var buf bytes.Buffer
-	if err := buf.WriteByte(waspconn.WaspSendGetBalancesCode); err != nil {
-		log.Error(err)
+	})
+	if err != nil {
+		log.Errorf("sending request for balances to node: %v", err)
 		return
 	}
-	if err := msg.Write(&buf); err != nil {
-		log.Error(err)
-		return
-	}
-
 	go func() {
-		if err := SendDataToNode(buf.Bytes()); err != nil {
+		if err := SendDataToNode(data); err != nil {
 			log.Warnf("failed to send 'WaspSendGetBalancesMsg' to the node: %v", err)
 		}
 	}()
 }
 
 func RequestTransactionFromNode(txid *valuetransaction.ID) {
-	msg := waspconn.WaspSendGetTransactionMsg{
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetTransactionMsg{
 		TxId: txid,
-	}
-	var buf bytes.Buffer
-	if err := buf.WriteByte(waspconn.WaspSendGetTransactionCode); err != nil {
-		log.Error(err)
+	})
+	if err != nil {
+		log.Errorf("requesting transaction from node: %v", err)
 		return
 	}
-	if err := msg.Write(&buf); err != nil {
-		log.Error(err)
-		return
-	}
-
 	go func() {
-		if err := SendDataToNode(buf.Bytes()); err != nil {
+		if err := SendDataToNode(data); err != nil {
 			log.Warnf("failed to send 'WaspSendGetTransactionMsg' to the node: %v", err)
 		}
 	}()

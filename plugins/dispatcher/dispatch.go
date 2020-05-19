@@ -1,23 +1,24 @@
 package dispatcher
 
 import (
-	"bytes"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"time"
 )
 
-func processMsgData(data []byte) {
-	if len(data) == 0 {
+func processNodeMsgData(data []byte) {
+	msg, err := waspconn.DecodeMsg(data, true)
+	if err != nil {
+		log.Errorf("wrong message from node: %v", err)
 		return
 	}
-	switch data[0] {
-	case waspconn.WaspRecvTransactionCode:
-		msg := &waspconn.WaspRecvTransactionMsg{}
-		if err := msg.Read(bytes.NewReader(data[1:])); err != nil {
-			log.Errorf("error parsing 'WaspRecvTransactionMsg' message: %v", err)
-			return
-		}
-		tx, err := sctransaction.ParseValueTransaction(msg.Tx)
+	switch msgt := msg.(type) {
+	case *waspconn.WaspPingMsg:
+		roundtrip := time.Since(time.Unix(0, msgt.Timestamp))
+		log.Infof("PING %d response from node. Roundtrip %v", msgt.Id, roundtrip)
+
+	case *waspconn.WaspFromNodeTransactionMsg:
+		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
 		if err != nil {
 			// not a SC transaction. Ignore
 			return
@@ -25,12 +26,7 @@ func processMsgData(data []byte) {
 		dispatchState(tx)
 		dispatchRequests(tx)
 
-	case waspconn.WaspRecvBalancesCode:
-		bals := &waspconn.WaspRecvBalancesMsg{}
-		if err := bals.Read(bytes.NewReader(data[1:])); err != nil {
-			log.Errorf("error parsing 'WaspRecvBalancesMsg' message: %v", err)
-			return
-		}
-		dispatchBalances(bals.Address, bals.Balances)
+	case *waspconn.WaspFromNodeBalancesMsg:
+		dispatchBalances(msgt.Address, msgt.Balances)
 	}
 }
