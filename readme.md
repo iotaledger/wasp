@@ -7,5 +7,13 @@ protocol, run by Goshimmer nodes.
 
 _Wasp_ connects to Goshimmer node to have access to the Value Tangle.   
 
+Clone the `develop` branch of the repository:
 
-_in progress.._
+`git clone -b develop https://github.com/iotaledger/wasp.git wasp`
+`cd wasp`
+`go install`
+`cd ./testing/instance/0`
+`wasp`
+
+It will use `config.json` file in the current directory
+
