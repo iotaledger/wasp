@@ -13,10 +13,10 @@ import (
 )
 
 type NewOriginParams struct {
-	Address      *address.Address
-	OwnerAddress *address.Address
+	Address      address.Address
+	OwnerAddress address.Address
 	Description  string
-	ProgramHash  *hashing.HashValue
+	ProgramHash  hashing.HashValue
 }
 
 // content of the origin variable state. It does not linked to the origin transaction yet
@@ -72,7 +72,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*valuetransaction.Tra
 
 	txb.AddInputs(par.Input)
 
-	txb.AddBalanceToOutput(*par.Address, balance.New(balance.ColorNew, 1))
+	txb.AddBalanceToOutput(par.Address, balance.New(balance.ColorNew, 1))
 	// reminder outputs if any
 	for _, remb := range reminderBalances {
 		txb.AddBalanceToOutput(par.Input.Address(), remb)
@@ -92,11 +92,11 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*valuetransaction.Tra
 
 func NewMetaData(par NewOriginParams, color *balance.Color, nodeLocations []string) *registry.SCMetaData {
 	return &registry.SCMetaData{
-		Address:       *par.Address,
+		Address:       par.Address,
 		Color:         *color,
-		OwnerAddress:  *par.OwnerAddress,
+		OwnerAddress:  par.OwnerAddress,
 		Description:   par.Description,
-		ProgramHash:   *par.ProgramHash,
+		ProgramHash:   par.ProgramHash,
 		NodeLocations: nodeLocations,
 	}
 }

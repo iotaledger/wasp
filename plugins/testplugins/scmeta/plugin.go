@@ -1,4 +1,4 @@
-// scmeta package runs integration tests by calling WebAPi to itself for SC meta data
+// scmeta plugin runs test by creating smart contract meta data records
 package scmeta
 
 import (

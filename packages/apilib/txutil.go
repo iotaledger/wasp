@@ -1,6 +1,7 @@
 package apilib
 
 import (
+	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"sort"
@@ -36,15 +37,31 @@ func SelectMinimumOutputs(outputs map[valuetransaction.OutputID][]*balance.Balan
 		lessComparator: func(so1, so2 *sorteableOutput) bool {
 			b1 := BalanceOfColor(so1.balances, color)
 			b2 := BalanceOfColor(so2.balances, color)
-			return b1 != 0 && b1 < b2
+			if b1 == 0 {
+				return false
+			}
+			if b1 == 0 || b2 == 0 {
+				panic("b1 == 0 || b2 == 0")
+			}
+			switch {
+			case b1 < b2:
+				return true
+			case b1 > b2:
+				return false
+			case b1 == b2:
+				return bytes.Compare(so1.id[:], so2.id[:]) < 0
+			}
+			panic("can't be")
 		},
 		outputs: make([]*sorteableOutput, 0, len(outputs)),
 	}
 	for aoid, bals := range outputs {
-		sorted.outputs = append(sorted.outputs, &sorteableOutput{
-			id:       aoid,
-			balances: bals,
-		})
+		if BalanceOfColor(bals, color) != 0 {
+			sorted.outputs = append(sorted.outputs, &sorteableOutput{
+				id:       aoid,
+				balances: bals,
+			})
+		}
 	}
 	sort.Sort(sorted)
 

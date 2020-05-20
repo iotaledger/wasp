@@ -43,32 +43,32 @@ func init() {
 	}
 	ownerAddress := utxodb.GetAddress(1)
 	SC1 = apilib.NewOriginParams{
-		Address:      &addr1,
-		OwnerAddress: &ownerAddress,
+		Address:      addr1,
+		OwnerAddress: ownerAddress,
 		Description:  "Test smart contract 1 one",
 	}
-	SC1.ProgramHash = hashing.HashStrings(SC1.Description)
+	SC1.ProgramHash = *hashing.HashStrings(SC1.Description)
 
 	ownerAddress = utxodb.GetAddress(2)
 	SC2 = apilib.NewOriginParams{
-		Address:      &addr2,
-		OwnerAddress: &ownerAddress,
+		Address:      addr2,
+		OwnerAddress: ownerAddress,
 		Description:  "Test smart contract 2 two",
 	}
-	SC2.ProgramHash = hashing.HashStrings(SC2.Description)
+	SC2.ProgramHash = *hashing.HashStrings(SC2.Description)
 
 	ownerAddress = utxodb.GetAddress(3)
 	SC3 = apilib.NewOriginParams{
-		Address:      &addr3,
-		OwnerAddress: &ownerAddress,
+		Address:      addr3,
+		OwnerAddress: ownerAddress,
 		Description:  "Test smart contract 3 three",
 	}
-	SC3.ProgramHash = hashing.HashStrings(SC3.Description)
+	SC3.ProgramHash = *hashing.HashStrings(SC3.Description)
 }
 
 func CreateOriginData(par apilib.NewOriginParams, nodeLocations []string) (*valuetransaction.Transaction, *registry.SCMetaData) {
-	allOuts := utxodb.GetAddressOutputs(*par.OwnerAddress)
-	outs := apilib.SelectMinimumOutputs(allOuts, balance.ColorIOTA, 1)
+	allOuts := utxodb.GetAddressOutputs(par.OwnerAddress)              // non deterministic
+	outs := apilib.SelectMinimumOutputs(allOuts, balance.ColorIOTA, 1) // must be deterministic!
 	if len(outs) == 0 {
 		panic("inconsistency: not enough outputs for 1 iota!")
 	}
@@ -87,7 +87,7 @@ func CreateOriginData(par apilib.NewOriginParams, nodeLocations []string) (*valu
 		Input:           input,
 		InputBalances:   inputBalances,
 		InputColor:      balance.ColorIOTA,
-		OwnerSigScheme:  utxodb.GetSigScheme(*par.OwnerAddress),
+		OwnerSigScheme:  utxodb.GetSigScheme(par.OwnerAddress),
 	})
 	if err != nil {
 		panic(err)
@@ -96,11 +96,11 @@ func CreateOriginData(par apilib.NewOriginParams, nodeLocations []string) (*valu
 		return originTx, nil
 	}
 	scdata := &registry.SCMetaData{
-		Address:       *par.Address,
+		Address:       par.Address,
 		Color:         balance.Color(originTx.ID()),
-		OwnerAddress:  *par.OwnerAddress,
+		OwnerAddress:  par.OwnerAddress,
 		Description:   par.Description,
-		ProgramHash:   *par.ProgramHash,
+		ProgramHash:   par.ProgramHash,
 		NodeLocations: nodeLocations,
 	}
 	return originTx, scdata

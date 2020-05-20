@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/statemgr"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
 	"time"
@@ -49,7 +50,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 		scdata:   scdata,
 		peers:    make([]*peering.Peer, len(scdata.NodeLocations)),
 		ownIndex: dkshare.Index,
-		log:      log.Named("cmt"),
+		log:      log.Named(util.Short(scdata.Address.String())),
 	}
 	myLocation := scdata.NodeLocations[dkshare.Index]
 	for i, remoteLocation := range scdata.NodeLocations {

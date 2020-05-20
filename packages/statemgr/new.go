@@ -108,10 +108,10 @@ func (sm *stateManager) initLoadState() {
 		sm.solidVariableState = nil // por las dudas
 		par := sm.committee.MetaData()
 		batch = apilib.NewOriginBatchUncommitted(apilib.NewOriginParams{
-			Address:      &par.Address,
-			OwnerAddress: &par.OwnerAddress,
+			Address:      par.Address,
+			OwnerAddress: par.OwnerAddress,
 			Description:  par.Description,
-			ProgramHash:  &par.ProgramHash,
+			ProgramHash:  par.ProgramHash,
 		})
 		// committing batch means linking it to the approving transaction
 		// it doesn't change essence of the batch
