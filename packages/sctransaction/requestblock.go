@@ -16,20 +16,21 @@ const RequestIdSize = hashing.HashSize + 2
 type RequestId [RequestIdSize]byte
 
 type RequestBlock struct {
-	address *address.Address
+	address address.Address
 	// small variable state with variable/value pairs
 	vars variables.Variables
 }
 
 // RequestBlock
 
-func NewRequestBlock(addr *address.Address) *RequestBlock {
+func NewRequestBlock(addr address.Address) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
+		vars:    variables.New(nil),
 	}
 }
 
-func (req *RequestBlock) Address() *address.Address {
+func (req *RequestBlock) Address() address.Address {
 	return req.address
 }
 
@@ -44,30 +45,22 @@ func (req *RequestBlock) Write(w io.Writer) error {
 	if _, err := w.Write(req.address.Bytes()); err != nil {
 		return err
 	}
-	// TODO
-	//if err := req.vars.Write(w); err != nil {
-	//	return err
-	//}
+	if err := req.vars.Write(w); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (req *RequestBlock) Read(r io.Reader) error {
-	addr := new(address.Address)
-	if n, err := r.Read(addr[:]); err != nil || n != address.Length {
+	if err := util.ReadAddress(r, &req.address); err != nil {
 		return fmt.Errorf("error while reading address: %v", err)
 	}
-	//vars := variables.New()
-	//if err := vars.Read(r); err != nil {
-	//	return err
-	//}
-	req.address = addr
-	req.vars = nil // TODO
+	req.vars = variables.New(nil)
+	if err := req.vars.Read(r); err != nil {
+		return err
+	}
 	return nil
 }
-
-// TODO the rest of request vars
-
-// Request PeeringId
 
 func NewRequestId(txid valuetransaction.ID, index uint16) (ret RequestId) {
 	copy(ret[:valuetransaction.IDLength], txid.Bytes())
@@ -101,7 +94,7 @@ func (rid *RequestId) Write(w io.Writer) error {
 }
 
 func (rid *RequestId) Read(r io.Reader) error {
-	n, err := r.Read(rid.Bytes())
+	n, err := r.Read(rid[:])
 	if err != nil {
 		return err
 	}
@@ -116,5 +109,5 @@ func (rid *RequestId) String() string {
 }
 
 func (rid *RequestId) Short() string {
-	return util.Short(rid.String())
+	return rid.String()[:8] + ".."
 }
