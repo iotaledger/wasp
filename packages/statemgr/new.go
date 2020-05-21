@@ -103,7 +103,7 @@ func (sm *stateManager) initLoadState() {
 		// origin state
 		sm.solidVariableState = nil // por las dudas
 		par := sm.committee.MetaData()
-		batch = apilib.NewOriginBatchUncommitted(apilib.NewOriginParams{
+		batch = apilib.NewOriginBatch(apilib.NewOriginParams{
 			Address:      par.Address,
 			OwnerAddress: par.OwnerAddress,
 			Description:  par.Description,

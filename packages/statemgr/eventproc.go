@@ -103,9 +103,15 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 	}
 	sm.CheckSynchronizationStatus(stateBlock.StateIndex())
 
-	if sm.solidVariableState == nil || stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {
-		// only interested for the state transaction to verify latest state update
-		return
+	if sm.solidVariableState == nil {
+		if stateBlock.StateIndex() != 0 {
+			return
+		}
+	} else {
+		if stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {
+			// only interested for the state transaction to verify latest state update
+			return
+		}
 	}
 	sm.nextStateTransaction = msg.Transaction
 

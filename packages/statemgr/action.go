@@ -51,14 +51,6 @@ func (sm *stateManager) checkStateTransition() bool {
 		sm.log.Errorf("failed to save next state #%d", pending.batch.StateIndex())
 		return false
 	}
-
-	prevStateIndex := ""
-	if sm.solidVariableState.StateIndex() > 0 {
-		prevStateIndex = fmt.Sprintf("#%d", sm.solidVariableState.StateIndex()-1)
-	}
-	sm.log.Infof("state transition %s --> #%d sc addr %s",
-		prevStateIndex, sm.solidVariableState.StateIndex(), sm.committee.Address().String())
-
 	saveTx := sm.nextStateTransaction
 
 	// update state manager variables to the new state
@@ -68,6 +60,13 @@ func (sm *stateManager) checkStateTransition() bool {
 	sm.permutationOfPeers = util.GetPermutation(sm.committee.Size(), varStateHash.Bytes())
 	sm.permutationIndex = 0
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
+
+	prevStateIndex := ""
+	if sm.solidVariableState.StateIndex() > 0 {
+		prevStateIndex = fmt.Sprintf("#%d", sm.solidVariableState.StateIndex()-1)
+	}
+	sm.log.Infof("STATE TRANSITION %s --> #%d addr %s",
+		prevStateIndex, sm.solidVariableState.StateIndex(), sm.committee.Address().String())
 
 	// if synchronized, notify consensus operator about state transition
 	if sm.isSynchronized() {

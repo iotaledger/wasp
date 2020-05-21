@@ -22,7 +22,7 @@ type NewOriginParams struct {
 }
 
 // content of the origin variable state. It does not linked to the origin transaction yet
-func NewOriginBatchUncommitted(par NewOriginParams) state.Batch {
+func NewOriginBatch(par NewOriginParams) state.Batch {
 	stateUpd := state.NewStateUpdate(nil)
 	vars := stateUpd.Variables()
 	vars.Set("$address$", par.Address.String())
@@ -38,7 +38,7 @@ func NewOriginBatchUncommitted(par NewOriginParams) state.Batch {
 
 // does not include color/origin tx hash
 func OriginVariableStateHash(par NewOriginParams) *hashing.HashValue {
-	batch := NewOriginBatchUncommitted(par)
+	batch := NewOriginBatch(par)
 	originState := state.NewVariableState(nil)
 	if err := originState.Apply(batch); err != nil {
 		panic(err)
