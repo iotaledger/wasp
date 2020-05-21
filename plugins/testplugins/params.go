@@ -6,8 +6,8 @@ const testPluginsEnabled = true
 
 var enabledTests = map[string]bool{
 	"TestingSCMetaData": true,
-	"TestingRoundTrip":  true,
-	"TestingNodePing":   true,
+	"TestingRoundTrip":  false,
+	"TestingNodePing":   false,
 }
 
 func Status(pluginName string) int {

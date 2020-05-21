@@ -5,6 +5,10 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
+func dbKeyProcessedRequest(reqId *sctransaction.RequestId) []byte {
+	return reqId.Bytes()
+}
+
 func MarkRequestsProcessed(reqids []*sctransaction.RequestId) error {
 	dbase, err := database.GetProcessedRequestsDB()
 	if err != nil {
@@ -12,7 +16,7 @@ func MarkRequestsProcessed(reqids []*sctransaction.RequestId) error {
 	}
 	for _, rid := range reqids {
 		err := dbase.Set(database.Entry{
-			Key: database.DbKeyProcessedRequest(rid),
+			Key: dbKeyProcessedRequest(rid),
 		})
 		if err != nil {
 			return err
@@ -26,7 +30,7 @@ func IsRequestProcessed(reqid *sctransaction.RequestId) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	contains, err := dbase.Contains(database.DbKeyProcessedRequest(reqid))
+	contains, err := dbase.Contains(dbKeyProcessedRequest(reqid))
 	if err != nil {
 		return false, err
 	}

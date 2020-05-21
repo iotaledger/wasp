@@ -27,7 +27,7 @@
       "privateKey": "",
       "username": "wasp"
     },
-    "bindAddress": "127.0.0.1:8081"
+    "bindAddress": "127.0.0.1:9091"
   },
   "peering":{
     "port": 4001

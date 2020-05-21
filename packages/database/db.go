@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/database"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -74,8 +73,4 @@ func DbPrefixState(addr *address.Address, stateIndex uint32) []byte {
 
 func DbKeyBatch(addr *address.Address, stateIndex uint32) []byte {
 	return ObjAddressKey(addr, util.Uint32To4Bytes(stateIndex))
-}
-
-func DbKeyProcessedRequest(reqId *sctransaction.RequestId) []byte {
-	return reqId.Bytes()
 }

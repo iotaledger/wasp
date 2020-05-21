@@ -8,7 +8,7 @@ import (
 // what kind of block it is: state or request
 // max number of request blocks in the transaction is 127
 
-const stateBlockMask = 0x80
+const stateBlockMask = byte(0x80)
 
 func encodeMetaByte(hasState bool, numRequests byte) (byte, error) {
 	if numRequests > 127 {
@@ -22,5 +22,5 @@ func encodeMetaByte(hasState bool, numRequests byte) (byte, error) {
 }
 
 func decodeMetaByte(b byte) (bool, byte) {
-	return b|stateBlockMask != 0, b & stateBlockMask
+	return b&stateBlockMask != 0, b & ^stateBlockMask
 }

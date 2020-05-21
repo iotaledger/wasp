@@ -22,6 +22,8 @@ func (c *committeeObj) OpenQueue() {
 }
 
 func (c *committeeObj) Dismiss() {
+	c.log.Infof("Dismiss committee for %s", c.scdata.Address.String())
+
 	c.isOpenQueue.Store(false)
 	close(c.chMsg)
 

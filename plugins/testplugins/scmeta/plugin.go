@@ -2,13 +2,16 @@
 package scmeta
 
 import (
+	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/testplugins"
 	"github.com/iotaledger/wasp/plugins/webapi"
+	"time"
 )
 
 // PluginName is the name of the database plugin.
@@ -30,12 +33,21 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	go runTestSC(testplugins.SC1)
-	go runTestSC(testplugins.SC2)
-	go runTestSC(testplugins.SC3)
+	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+		go runInitSC(testplugins.SC1, shutdownSignal)
+		go runInitSC(testplugins.SC2, shutdownSignal)
+		go runInitSC(testplugins.SC3, shutdownSignal)
+	})
+	if err != nil {
+		log.Errorf("can't start daemon")
+	}
 }
 
-func runTestSC(par apilib.NewOriginParams) {
+// reads the registry and checks if initial meta data is correct
+// if not:
+// - creates new meta data for the smart contracts according to new origin parameters provided
+// - creates new origin transaction and posts it to the node
+func runInitSC(par apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
 	// wait for signal from webapi
 	webapi.WaitUntilIsUp()
 
@@ -43,7 +55,7 @@ func runTestSC(par apilib.NewOriginParams) {
 
 	myHost := config.Node.GetString(webapi.CfgBindAddress)
 
-	_, scdata := testplugins.CreateOriginData(par, nodeLocations)
+	originTx, scdata := apilib.CreateOriginData(par, nodeLocations)
 
 	resp := apilib.GetPublicKeyInfo([]string{myHost}, &scdata.Address)
 	if len(resp) != 1 {
@@ -86,12 +98,27 @@ func runTestSC(par apilib.NewOriginParams) {
 	}
 	if writeNew {
 		log.Infof("writing sc meta data for '%s', address %s", scdata.Description, scdata.Address.String())
-		d := scdata.Jsonable()
-		if err := apilib.PutSCData(myHost, *d); err != nil {
+		if err := apilib.PutSCData(myHost, *scdata.Jsonable()); err != nil {
 			log.Errorf("failed writing sc meta data: %v", err)
+			return
 		}
 	} else {
-		log.Infof("OK sc meta data for address %s", scdata.Address.String())
+		log.Debugf("OK sc meta data for address %s", scdata.Address.String())
 	}
-	log.Infof("TEST PASSED: '%s'", par.Description)
+	log.Debugf("SC METADATA TEST PASSED: '%s'", par.Description)
+	exit := false
+	for !exit {
+		select {
+		case <-shutdownSignal:
+			exit = true
+		case <-time.After(5 * time.Second):
+			if err := nodeconn.PostTransactionToNode(originTx.Transaction); err != nil {
+				log.Warnf("failed to send origin tx to node. txid = %s", originTx.ID().String())
+			} else {
+				log.Debugf("sent origin transaction to node: '%s', txid %s", scdata.Description, originTx.ID().String())
+				exit = true
+			}
+		}
+	}
+	log.Debugf("SC INIT test routine ended '%s'", par.Description)
 }

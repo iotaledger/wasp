@@ -1,4 +1,4 @@
-package sctransaction
+package util
 
 import (
 	"crypto/rand"
@@ -41,8 +41,6 @@ func RandomTransactionID() (ret valuetransaction.ID) {
 	return
 }
 
-var NilID valuetransaction.ID
-
 func TransactionIDFromString(s string) (ret valuetransaction.ID, err error) {
 	b, err := base58.Decode(s)
 	if err != nil {
@@ -61,4 +59,14 @@ func SumBalancesOfColor(balances []*balance.Balance, color *balance.Color) int64
 		}
 	}
 	return ret
+}
+
+func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
+	sum := int64(0)
+	for _, b := range bals {
+		if b.Color() == color {
+			sum += b.Value()
+		}
+	}
+	return sum
 }

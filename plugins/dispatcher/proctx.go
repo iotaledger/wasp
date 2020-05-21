@@ -7,6 +7,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func dispatchState(tx *sctransaction.Transaction) {
@@ -14,6 +15,8 @@ func dispatchState(tx *sctransaction.Transaction) {
 	if !ok {
 		return
 	}
+	log.Debugw("dispatchState", "txid", tx.ID().String())
+
 	cmt.ReceiveMessage(committee.StateTransactionMsg{Transaction: tx})
 }
 
@@ -65,9 +68,9 @@ func validateState(tx *sctransaction.Transaction) (committee.Committee, bool) {
 		)
 		return nil, false
 	}
-	outBalance := sctransaction.SumBalancesOfColor(balances, color)
+	outBalance := util.SumBalancesOfColor(balances, color)
 	if outBalance == 0 && mayBeOrigin {
-		outBalance = sctransaction.SumBalancesOfColor(balances, (*balance.Color)(&balance.ColorNew))
+		outBalance = util.SumBalancesOfColor(balances, (*balance.Color)(&balance.ColorNew))
 	}
 	if outBalance != 1 {
 		// supply of the SC token must be exactly 1

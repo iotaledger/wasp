@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/database"
 	. "github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 )
@@ -60,7 +59,7 @@ func (jo *SCMetaDataJsonable) ToSCMetaData() (*SCMetaData, error) {
 	if ret.Address, err = address.FromBase58(jo.Address); err != nil {
 		return nil, err
 	}
-	if ret.Color, err = sctransaction.ColorFromString(jo.Color); err != nil {
+	if ret.Color, err = util.ColorFromString(jo.Color); err != nil {
 		return nil, err
 	}
 	if ret.OwnerAddress, err = address.FromBase58(jo.OwnerAddress); err != nil {

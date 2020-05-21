@@ -50,32 +50,41 @@ func sendSubscriptionsIfNeeded() {
 	}()
 }
 
-func RequestBalancesFromNode(addr *address.Address) {
+func RequestBalancesFromNode(addr *address.Address) error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetBalancesMsg{
 		Address: addr,
 	})
 	if err != nil {
-		log.Errorf("sending request for balances to node: %v", err)
-		return
+		return err
 	}
-	go func() {
-		if err := SendDataToNode(data); err != nil {
-			log.Warnf("failed to send 'WaspSendGetBalancesMsg' to the node: %v", err)
-		}
-	}()
+	if err := SendDataToNode(data); err != nil {
+		return err
+	}
+	return nil
 }
 
-func RequestTransactionFromNode(txid *valuetransaction.ID) {
+func RequestTransactionFromNode(txid *valuetransaction.ID) error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetTransactionMsg{
 		TxId: txid,
 	})
 	if err != nil {
-		log.Errorf("requesting transaction from node: %v", err)
-		return
+		return err
 	}
-	go func() {
-		if err := SendDataToNode(data); err != nil {
-			log.Warnf("failed to send 'WaspSendGetTransactionMsg' to the node: %v", err)
-		}
-	}()
+	if err := SendDataToNode(data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func PostTransactionToNode(tx *valuetransaction.Transaction) error {
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeTransactionMsg{
+		Tx: tx,
+	})
+	if err != nil {
+		return err
+	}
+	if err = SendDataToNode(data); err != nil {
+		return err
+	}
+	return nil
 }

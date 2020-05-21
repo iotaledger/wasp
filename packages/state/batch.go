@@ -48,10 +48,6 @@ func (b *batch) Commit(vtxid valuetransaction.ID) {
 	b.stateTxId = vtxid
 }
 
-func (b *batch) IsCommitted() bool {
-	return b.stateTxId != sctransaction.NilID
-}
-
 func (b *batch) ForEach(fun func(StateUpdate) bool) bool {
 	for _, su := range b.stateUpdates {
 		if fun(su) {

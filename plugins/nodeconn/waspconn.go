@@ -87,6 +87,12 @@ func nodeConnect() {
 	retryNodeConnect()
 }
 
+func IsConnected() bool {
+	bconnMutex.RLock()
+	defer bconnMutex.RUnlock()
+	return bconn != nil
+}
+
 func retryNodeConnect() {
 	log.Infof("will retry connecting to the node after %v", retryAfter)
 	time.Sleep(retryAfter)

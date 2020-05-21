@@ -7,6 +7,8 @@ import (
 )
 
 func processNodeMsgData(data []byte) {
+	log.Debugf("processNodeMsgData")
+
 	msg, err := waspconn.DecodeMsg(data, true)
 	if err != nil {
 		log.Errorf("wrong message from node: %v", err)
@@ -18,8 +20,11 @@ func processNodeMsgData(data []byte) {
 		log.Infof("PING %d response from node. Roundtrip %v", msgt.Id, roundtrip)
 
 	case *waspconn.WaspFromNodeTransactionMsg:
+		log.Debugf("*waspconn.WaspFromNodeTransactionMsg")
+
 		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
 		if err != nil {
+			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
 			// not a SC transaction. Ignore
 			return
 		}

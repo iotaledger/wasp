@@ -6,25 +6,31 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/magiconair/properties/assert"
+	"math/rand"
 	"testing"
 	"time"
 )
 
 const (
 	testAddress = "mtNnGt72bZd25v291TjEzw5uTonExip24cAjtB38x4tq"
-	testColor   = "3MrmupSNH8gPH2ZcEiLPno5dTNycgAE1qDs4cgbzgMLm"
-	testScid    = "46Smwtm1jH2hQ4gEYb7skX1EBMQSi1oLvcDpUwEudB6qJV96GpWjucD398R3s3UJ6kgrsZWhHw6FiSCMiGZ47QsA9"
 )
 
 //
-//func TestGenData(t *testing.T){
-//	addr := address.RandomOfType(address.VERSION_BLS)
-//	t.Logf("addr = %s", addr.String())
+//func TestGenData(t *testing.T) {
+//	addr1 := address.RandomOfType(address.VersionED25519)
+//	t.Logf("addrEC = %s", addr1.String())
+//	addr2 := address.RandomOfType(address.VersionBLS)
+//	t.Logf("addrBLS = %s", addr2.String())
 //	color := RandomColor()
 //	t.Logf("color = %s", color.String())
-//	scid := NewScId(color, addr)
-//	t.Logf("scid = %s", scid.String())
 //}
+
+func randomColor() (ret balance.Color) {
+	if _, err := rand.Read(ret[:]); err != nil {
+		panic(err)
+	}
+	return
+}
 
 func TestTransactionStateBlock1(t *testing.T) {
 	addr, err := address.FromBase58(testAddress)
@@ -39,7 +45,7 @@ func TestTransactionStateBlock1(t *testing.T) {
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	color := RandomColor()
+	color := randomColor()
 	txb.AddStateBlock(&color, 42)
 
 	_, err = txb.Finalize()
@@ -62,7 +68,7 @@ func TestTransactionStateBlock2(t *testing.T) {
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	color := RandomColor()
+	color := randomColor()
 
 	txb.AddStateBlock(&color, 42)
 	txb.SetTimestamp(time.Now().UnixNano())
@@ -111,7 +117,7 @@ func TestTransactionMultiBlocks(t *testing.T) {
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	color := RandomColor()
+	color := randomColor()
 
 	txb.AddStateBlock(&color, 42)
 	txb.SetTimestamp(time.Now().UnixNano())

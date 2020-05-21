@@ -20,7 +20,7 @@ type VariableState interface {
 	Commit(address *address.Address, batch Batch) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
-	Hash() *hashing.HashValue
+	Hash() hashing.HashValue
 	// the storage of variable/value pairs
 	Variables() variables.Variables
 }
@@ -49,7 +49,6 @@ type Batch interface {
 	// transaction which validates the batch
 	StateTransactionId() valuetransaction.ID
 	Commit(valuetransaction.ID) // sets the state transaction ID
-	IsCommitted() bool
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
 	EssenceHash() *hashing.HashValue // except state transaction id

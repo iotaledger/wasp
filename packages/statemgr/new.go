@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
 )
 
@@ -21,7 +20,7 @@ type stateManager struct {
 	// which leads to the state transition
 	// the map key is hash of the variable state which is a result of applying the
 	// batch of state updates to the solid variable state
-	pendingBatches map[hashing.HashValue]*pendingBatch
+	pendingBatches map[hashing.HashValue][]*pendingBatch
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
@@ -30,9 +29,6 @@ type stateManager struct {
 	// last variable state stored in the database
 	// it may be nil at bootstrap when origin variable state is calculated
 	solidVariableState state.VariableState
-
-	// the timeout deadline for async node request
-	nodeRequestDeadline time.Time
 
 	// largest state index evidenced by other messages. If this index is more than 1 step ahead
 	// of the solid variable state, it means the state of the smart contract in the current node
@@ -68,14 +64,14 @@ type pendingBatch struct {
 	batch state.Batch
 	// resulting variable state after applied the batch to the solidVariableState
 	nextVariableState state.VariableState
+	// state transaction request deadline. For committed batches only
+	stateTransactionRequestDeadline time.Time
 }
-
-const nodeRequestTimeout = 2 * time.Second
 
 func New(committee committee.Committee, log *logger.Logger) committee.StateManager {
 	ret := &stateManager{
 		committee:      committee,
-		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
+		pendingBatches: make(map[hashing.HashValue][]*pendingBatch),
 		log:            log.Named("smgr"),
 	}
 	go ret.initLoadState()
@@ -118,8 +114,8 @@ func (sm *stateManager) initLoadState() {
 		// SC metadata contains 'color' which is equal to the ID of the origin transaction
 		batch.Commit((valuetransaction.ID)(par.Color))
 
-		sm.log.Infof("using meta data to create origin state update batch. Sc addr %s",
-			sm.committee.Address().String())
+		sm.log.Infof("origin state update batch. addr %s origin txid = %s",
+			sm.committee.Address().String(), batch.StateTransactionId().String())
 	}
 	// loaded solid variable state and the last batch of state updates
 	// it needs to be validated by the state transaction, therefore it is added to the
@@ -128,21 +124,13 @@ func (sm *stateManager) initLoadState() {
 		sm.log.Errorf("assertion failed: sm.addPendingBatch(stateUpdate)")
 		sm.committee.Dismiss()
 		return
-	}
-	if sm.solidVariableState == nil {
-		if !(len(sm.pendingBatches) == 1) {
-			panic("assertion: len(sm.pendingBatches) == 1")
-		}
-		// origin state
-		for stateHash := range sm.pendingBatches {
-			sm.log.Infof("origin state hash %s address %s", stateHash.String(), sm.committee.Address().String())
+	} else {
+		if sm.solidVariableState == nil {
+			if !(len(sm.pendingBatches) == 1) {
+				panic("assertion: len(sm.pendingBatches) == 1")
+			}
 		}
 	}
 	// open msg queue for the committee
 	sm.committee.OpenQueue()
-
-	// request state transaction to approve last solid state
-	txid := batch.StateTransactionId()
-	nodeconn.RequestTransactionFromNode(&txid)
-	sm.nodeRequestDeadline = time.Now().Add(nodeRequestTimeout)
 }

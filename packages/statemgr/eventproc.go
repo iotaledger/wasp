@@ -95,6 +95,8 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 
 // triggered whenever new state transaction arrives
 func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionMsg) {
+	sm.log.Debugw("received transaction", "txid", msg.ID().String())
+
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
 		return

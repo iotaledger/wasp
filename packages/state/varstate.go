@@ -53,14 +53,15 @@ func (vs *variableState) Apply(batch Batch) error {
 		vs.Variables().Apply(stateUpd.Variables())
 		return false
 	})
-	vs.stateHash = *hashing.HashData(vs.Hash().Bytes(), batch.EssenceHash().Bytes())
+	vh := vs.Hash()
+	vs.stateHash = *hashing.HashData(vh.Bytes(), batch.EssenceHash().Bytes())
 	vs.stateIndex = batch.StateIndex()
 	vs.empty = false
 	return nil
 }
 
-func (vs *variableState) Hash() *hashing.HashValue {
-	return &vs.stateHash
+func (vs *variableState) Hash() hashing.HashValue {
+	return vs.stateHash
 }
 
 func (vs *variableState) Variables() variables.Variables {

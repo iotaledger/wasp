@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
@@ -31,7 +31,7 @@ func HandlerPutSCData(c echo.Context) error {
 	if scdata.Address, err = address.FromBase58(req.Address); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
-	if scdata.Color, err = sctransaction.ColorFromString(req.Color); err != nil {
+	if scdata.Color, err = util.ColorFromString(req.Color); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
 	if scdata.OwnerAddress, err = address.FromBase58(req.OwnerAddress); err != nil {

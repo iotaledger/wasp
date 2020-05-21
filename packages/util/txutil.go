@@ -1,4 +1,4 @@
-package apilib
+package util
 
 import (
 	"bytes"
@@ -75,14 +75,4 @@ func SelectMinimumOutputs(outputs map[valuetransaction.OutputID][]*balance.Balan
 		}
 	}
 	return nil
-}
-
-func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
-	sum := int64(0)
-	for _, b := range bals {
-		if b.Color() == color {
-			sum += b.Value()
-		}
-	}
-	return sum
 }
