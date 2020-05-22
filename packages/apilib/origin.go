@@ -93,7 +93,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	return ret, nil
 }
 
-func CreateOriginData(par NewOriginParams, nodeLocations []string) (*sctransaction.Transaction, *registry.SCMetaData) {
+func CreateOriginData(par *NewOriginParams, nodeLocations []string) (*sctransaction.Transaction, *registry.SCMetaData) {
 	allOuts := utxodb.GetAddressOutputs(par.OwnerAddress)            // non deterministic
 	outs := util.SelectMinimumOutputs(allOuts, balance.ColorIOTA, 1) // must be deterministic!
 	if len(outs) == 0 {
@@ -110,7 +110,7 @@ func CreateOriginData(par NewOriginParams, nodeLocations []string) (*sctransacti
 	}
 
 	originTx, err := NewOriginTransaction(NewOriginTransactionParams{
-		NewOriginParams: par,
+		NewOriginParams: *par,
 		Input:           input,
 		InputBalances:   inputBalances,
 		InputColor:      balance.ColorIOTA,

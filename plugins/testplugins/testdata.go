@@ -1,6 +1,7 @@
 package testplugins
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/apilib"
@@ -8,57 +9,45 @@ import (
 )
 
 // BLS addresses
-const (
-	blsaddr1 = "exZup69X1XwRNHiWWjoYy75aPNgC22YKkPV7sUJSBYA9"
-	blsaddr2 = "dV9hfYyHq7uiCKdKYQoLqyiwX6tN448GRm8UgFpUC3Vo"
-	blsaddr3 = "eiMbhrJjajqnCLmVJqFXzFsh1ZsbCAnJ9wauU8cP8uxL"
-)
+
+var scAddressesStr = []string{
+	"exZup69X1XwRNHiWWjoYy75aPNgC22YKkPV7sUJSBYA9",
+	"dV9hfYyHq7uiCKdKYQoLqyiwX6tN448GRm8UgFpUC3Vo",
+	"eiMbhrJjajqnCLmVJqFXzFsh1ZsbCAnJ9wauU8cP8uxL",
+}
 
 var (
-	addr1 address.Address
-	addr2 address.Address
-	addr3 address.Address
-	SC1   apilib.NewOriginParams
-	SC2   apilib.NewOriginParams
-	SC3   apilib.NewOriginParams
+	scAddresses  []address.Address
+	scOrigParams []apilib.NewOriginParams
 )
 
 func init() {
 	var err error
+	scAddresses = make([]address.Address, len(scAddressesStr))
+	scOrigParams = make([]apilib.NewOriginParams, len(scAddressesStr))
 
-	addr1, err = address.FromBase58(blsaddr1)
-	if err != nil {
-		panic(err)
+	for i := range scAddresses {
+		scAddresses[i], err = address.FromBase58(scAddressesStr[i])
+		if err != nil {
+			panic(err)
+		}
 	}
-	addr2, err = address.FromBase58(blsaddr2)
-	if err != nil {
-		panic(err)
+	for i := range scAddresses {
+		ownerAddress := utxodb.GetAddress(i + 1)
+		scOrigParams[i] = apilib.NewOriginParams{
+			Address:      scAddresses[i],
+			OwnerAddress: ownerAddress,
+			Description:  fmt.Sprintf("Test smart contract #%d", i+1),
+		}
+		scOrigParams[i].ProgramHash = *hashing.HashStrings(scOrigParams[i].Description)
 	}
-	addr3, err = address.FromBase58(blsaddr3)
-	if err != nil {
-		panic(err)
-	}
-	ownerAddress := utxodb.GetAddress(1)
-	SC1 = apilib.NewOriginParams{
-		Address:      addr1,
-		OwnerAddress: ownerAddress,
-		Description:  "Test smart contract 1 one",
-	}
-	SC1.ProgramHash = *hashing.HashStrings(SC1.Description)
+}
 
-	ownerAddress = utxodb.GetAddress(2)
-	SC2 = apilib.NewOriginParams{
-		Address:      addr2,
-		OwnerAddress: ownerAddress,
-		Description:  "Test smart contract 2 two",
-	}
-	SC2.ProgramHash = *hashing.HashStrings(SC2.Description)
+// index 1 to 3
+func GetScAddress(scIndex int) address.Address {
+	return scAddresses[scIndex-1]
+}
 
-	ownerAddress = utxodb.GetAddress(3)
-	SC3 = apilib.NewOriginParams{
-		Address:      addr3,
-		OwnerAddress: ownerAddress,
-		Description:  "Test smart contract 3 three",
-	}
-	SC3.ProgramHash = *hashing.HashStrings(SC3.Description)
+func GetOriginParams(scIndex int) *apilib.NewOriginParams {
+	return &scOrigParams[scIndex-1]
 }

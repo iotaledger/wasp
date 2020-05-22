@@ -10,7 +10,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/iotaledger/goshimmer v0.1.1-0.20200521171147-78ac472fe97d
+	github.com/iotaledger/goshimmer v0.1.1-0.20200522112103-3b007931b31f
 	github.com/iotaledger/hive.go v0.0.0-20200513180357-f0ac8c45b754
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible

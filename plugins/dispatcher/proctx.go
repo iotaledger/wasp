@@ -31,7 +31,7 @@ func dispatchRequests(tx *sctransaction.Transaction) {
 	}
 }
 
-func dispatchBalances(address *address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
+func dispatchBalances(address address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
 	if cmt := CommitteeByAddress(address); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 	"io"
@@ -251,6 +252,17 @@ func ReadStrings16(r io.Reader) ([]string, error) {
 		}
 	}
 	return ret, nil
+}
+
+func ReadTransactionId(r io.Reader, txid *transaction.ID) error {
+	n, err := r.Read(txid[:])
+	if err != nil {
+		return err
+	}
+	if n != transaction.IDLength {
+		return errors.New("error while reading txid")
+	}
+	return nil
 }
 
 func ReadAddress(r io.Reader, addr *address.Address) error {

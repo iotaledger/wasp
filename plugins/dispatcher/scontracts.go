@@ -57,10 +57,10 @@ func committeeByColor(color *balance.Color) committee.Committee {
 	return ret
 }
 
-func CommitteeByAddress(address *address.Address) committee.Committee {
+func CommitteeByAddress(addr address.Address) committee.Committee {
 	scontractsMutex.RLock()
 	defer scontractsMutex.RUnlock()
 
-	ret, _ := scontractsByAddress[*address]
+	ret, _ := scontractsByAddress[addr]
 	return ret
 }

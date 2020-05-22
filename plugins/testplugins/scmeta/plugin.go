@@ -34,9 +34,9 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		go runInitSC(testplugins.SC1, shutdownSignal)
-		go runInitSC(testplugins.SC2, shutdownSignal)
-		go runInitSC(testplugins.SC3, shutdownSignal)
+		go runInitSC(testplugins.GetOriginParams(1), shutdownSignal)
+		go runInitSC(testplugins.GetOriginParams(2), shutdownSignal)
+		go runInitSC(testplugins.GetOriginParams(3), shutdownSignal)
 	})
 	if err != nil {
 		log.Errorf("can't start daemon")
@@ -47,7 +47,7 @@ func run(_ *node.Plugin) {
 // if not:
 // - creates new meta data for the smart contracts according to new origin parameters provided
 // - creates new origin transaction and posts it to the node
-func runInitSC(par apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
+func runInitSC(par *apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
 	// wait for signal from webapi
 	webapi.WaitUntilIsUp()
 
