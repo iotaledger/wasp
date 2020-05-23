@@ -1,7 +1,6 @@
 package statemgr
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -24,15 +23,16 @@ func (sm *stateManager) checkStateTransition() bool {
 	if sm.nextStateTransaction == nil {
 		return false
 	}
-	// among pending state updates we locate the one, consistent with the next state transaction
+	// among pending state update batches we locate the one which is approved by the
+	// the transaction
 	varStateHash := sm.nextStateTransaction.MustState().VariableStateHash()
 	lst, ok := sm.pendingBatches[*varStateHash]
 	if !ok {
 		// corresponding batch wasn't found among pending state updates
-		// state transition is not possible
+		// transaction doesn't approve anything
 		return false
 	}
-	// find pending batch who has the same state tx id
+	// find pending batch who has the same state tx id, i.e. is expecting approval by the transaction
 	var pending *pendingBatch
 	for _, pb := range lst {
 		if pb.batch.StateTransactionId() == sm.nextStateTransaction.ID() {
@@ -42,32 +42,60 @@ func (sm *stateManager) checkStateTransition() bool {
 	}
 	if pending == nil {
 		// for some reason nextStateTransaction doesn't approve anything
+		// it shouldn't happen
+		sm.log.Errorw("inconsistency: pending batch doesn't contain expected txid",
+			"state hash", varStateHash.String(),
+			"txid", sm.nextStateTransaction.ID().String(),
+		)
 		return false
 	}
 
-	// the nextStateTransaction approves pending batch.
-	// Commit the state to the ledger.
-	if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
-		sm.log.Errorf("failed to save next state #%d", pending.batch.StateIndex())
+	switch {
+	case sm.solidVariableState != nil && sm.solidVariableState.StateIndex() == pending.batch.StateIndex():
+		// solid state confirmed. No state transition
+		sm.log.Infof("STATE #%d CONFIRMED. State hash: %s, state txid: %s",
+			sm.solidVariableState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
+
+	case sm.solidVariableState != nil && sm.solidVariableState.StateIndex()+1 == pending.batch.StateIndex():
+		// next state confirmed, State transition
+		// Commit the state to the ledger.
+		if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
+			sm.log.Errorf("failed to save next state #%d", pending.batch.StateIndex())
+			return false
+		}
+		sm.log.Infof("STATE TRANSITION %s --> #%d. State hash: %s, state txid: %s",
+			sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
+			varStateHash.String(), sm.nextStateTransaction.ID().String())
+
+		sm.solidVariableState = pending.nextVariableState
+
+	case sm.solidVariableState != nil:
+		// panic?
+		sm.log.Errorw("inconsistency: wrong state indices",
+			"state hash", varStateHash.String(),
+			"txid", sm.nextStateTransaction.ID().String(),
+		)
 		return false
+
+	case sm.solidVariableState == nil:
+		if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
+			sm.log.Errorf("failed to save origin state")
+			return false
+		}
+		sm.log.Infof("ORIGIN STATE COMMITTED. State hash: %s, state txid: %s",
+			varStateHash.String(), sm.nextStateTransaction.ID().String())
+
+		sm.solidVariableState = pending.nextVariableState
 	}
+
 	saveTx := sm.nextStateTransaction
 
 	// update state manager variables to the new state
-	sm.solidVariableState = pending.nextVariableState
 	sm.nextStateTransaction = nil
 	sm.pendingBatches = make(map[hashing.HashValue][]*pendingBatch) // clean pending batches
 	sm.permutationOfPeers = util.GetPermutation(sm.committee.Size(), varStateHash.Bytes())
 	sm.permutationIndex = 0
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
-
-	prevStateIndex := ""
-	if sm.solidVariableState.StateIndex() > 0 {
-		prevStateIndex = fmt.Sprintf("#%d", sm.solidVariableState.StateIndex()-1)
-	}
-
-	sm.log.Infof("STATE TRANSITION %s --> #%d. State hash %s has been approved by txid %s",
-		prevStateIndex, sm.solidVariableState.StateIndex(), varStateHash.String(), saveTx.ID().String())
 
 	// if synchronized, notify consensus operator about state transition
 	if sm.isSynchronized() {
@@ -163,27 +191,49 @@ func (sm *stateManager) isSynchronized() bool {
 }
 
 // adding batch of state updates to the 'pending' map
+// batch may be of the current stat index or the next
 func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	var varState state.VariableState
 	var err error
 
+	varState = state.NewVariableState(sm.solidVariableState)
+
 	if sm.solidVariableState != nil {
-		if batch.StateIndex() != sm.solidVariableState.StateIndex()+1 {
+		switch {
+		case batch.StateIndex() == sm.solidVariableState.StateIndex():
+			// batch has same index, it only has to be approved by transaction
+			// it happens in initial state loading from db
+		case batch.StateIndex() == sm.solidVariableState.StateIndex()+1:
+			err = varState.Apply(batch)
+			if err != nil {
+				sm.log.Errorw("addPendingBatch: error while applying batch",
+					"batch state index", batch.StateIndex(),
+					"solid state index", sm.solidVariableState.StateIndex(),
+				)
+				return false
+			}
+		default:
+			sm.log.Debugw("addPendingBatch: unexpected batch state index",
+				"batch state index", batch.StateIndex(),
+				"solid state index", sm.solidVariableState.StateIndex(),
+			)
 			return false
 		}
 	} else {
 		// origin
 		if batch.StateIndex() != 0 {
+			sm.log.Debugw("addPendingBatch: origin: unexpected batch state index",
+				"batch state index", batch.StateIndex(),
+			)
 			return false
 		}
-	}
-	// clone current variable state of make new empty
-	varState = state.NewVariableState(sm.solidVariableState)
-	// apply the batch of state updates
-	err = varState.Apply(batch)
-	if err != nil {
-		sm.log.Warn(err)
-		return false
+		err = varState.Apply(batch)
+		if err != nil {
+			sm.log.Errorw("addPendingBatch: error while applying batch to empty state",
+				"batch state index", batch.StateIndex(),
+			)
+			return false
+		}
 	}
 	// include the bach to pending batches map
 	vh := varState.Hash()
