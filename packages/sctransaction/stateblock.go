@@ -26,15 +26,15 @@ type StateBlock struct {
 	variableStateHash hashing.HashValue
 }
 
-func NewStateBlock(color *balance.Color, stateIndex uint32) *StateBlock {
+func NewStateBlock(color balance.Color, stateIndex uint32) *StateBlock {
 	return &StateBlock{
-		color:      *color,
+		color:      color,
 		stateIndex: stateIndex,
 	}
 }
 
-func (sb *StateBlock) Color() *balance.Color {
-	return &sb.color
+func (sb *StateBlock) Color() balance.Color {
+	return sb.color
 }
 
 func (sb *StateBlock) StateIndex() uint32 {
@@ -45,8 +45,8 @@ func (sb *StateBlock) Timestamp() int64 {
 	return sb.timestamp
 }
 
-func (sb *StateBlock) VariableStateHash() *hashing.HashValue {
-	return &sb.variableStateHash
+func (sb *StateBlock) VariableStateHash() hashing.HashValue {
+	return sb.variableStateHash
 }
 
 func (sb *StateBlock) WithTimestamp(ts int64) *StateBlock {

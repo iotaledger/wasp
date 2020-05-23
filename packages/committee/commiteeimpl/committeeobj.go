@@ -20,6 +20,7 @@ const (
 
 type committeeObj struct {
 	isOpenQueue atomic.Bool
+	dismissed   atomic.Bool
 	peers       []*peering.Peer
 	ownIndex    uint16
 	scdata      *registry.SCMetaData

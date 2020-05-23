@@ -10,7 +10,7 @@ import (
 )
 
 func (sm *stateManager) takeAction() {
-	if sm.checkStateTransition() {
+	if sm.checkStateApproval() {
 		return
 	}
 	sm.requestStateTransactionIfNeeded()
@@ -19,19 +19,20 @@ func (sm *stateManager) takeAction() {
 
 // checks the state of the state manager. If one of pending state update batches is confirmed
 // by the nextStateTransaction changes the state to the next
-func (sm *stateManager) checkStateTransition() bool {
+func (sm *stateManager) checkStateApproval() bool {
 	if sm.nextStateTransaction == nil {
 		return false
 	}
-	// among pending state update batches we locate the one which is approved by the
-	// the transaction
+	// among pending state update batches we locate the one which
+	// is approved by the transaction
 	varStateHash := sm.nextStateTransaction.MustState().VariableStateHash()
-	lst, ok := sm.pendingBatches[*varStateHash]
+	lst, ok := sm.pendingBatches[varStateHash]
 	if !ok {
 		// corresponding batch wasn't found among pending state updates
 		// transaction doesn't approve anything
 		return false
 	}
+	// there are pending batches with the var state hash which it approves
 	// find pending batch who has the same state tx id, i.e. is expecting approval by the transaction
 	var pending *pendingBatch
 	for _, pb := range lst {
@@ -41,52 +42,34 @@ func (sm *stateManager) checkStateTransition() bool {
 		}
 	}
 	if pending == nil {
-		// for some reason nextStateTransaction doesn't approve anything
-		// it shouldn't happen
+		// for some reason nextStateTransaction references to valid state hash,
+		// however the txid of it is different from what is expected by the pending state updates
 		sm.log.Errorw("inconsistency: pending batch doesn't contain expected txid",
 			"state hash", varStateHash.String(),
-			"txid", sm.nextStateTransaction.ID().String(),
+			"expected txid", sm.nextStateTransaction.ID().String(),
 		)
 		return false
 	}
-
-	switch {
-	case sm.solidVariableState != nil && sm.solidVariableState.StateIndex() == pending.batch.StateIndex():
-		// solid state confirmed. No state transition
+	if sm.solidStateValid || sm.solidVariableState == nil {
+		if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
+			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
+			return false
+		}
+		if sm.solidVariableState != nil {
+			sm.log.Infof("STATE TRANSITION %s --> #%d. State hash: %s, state txid: %s",
+				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
+				varStateHash.String(), sm.nextStateTransaction.ID().String())
+		} else {
+			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s",
+				varStateHash.String(), sm.nextStateTransaction.ID().String())
+		}
+	} else {
+		// initial load
 		sm.log.Infof("STATE #%d CONFIRMED. State hash: %s, state txid: %s",
 			sm.solidVariableState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
-
-	case sm.solidVariableState != nil && sm.solidVariableState.StateIndex()+1 == pending.batch.StateIndex():
-		// next state confirmed, State transition
-		// Commit the state to the ledger.
-		if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
-			sm.log.Errorf("failed to save next state #%d", pending.batch.StateIndex())
-			return false
-		}
-		sm.log.Infof("STATE TRANSITION %s --> #%d. State hash: %s, state txid: %s",
-			sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
-			varStateHash.String(), sm.nextStateTransaction.ID().String())
-
-		sm.solidVariableState = pending.nextVariableState
-
-	case sm.solidVariableState != nil:
-		// panic?
-		sm.log.Errorw("inconsistency: wrong state indices",
-			"state hash", varStateHash.String(),
-			"txid", sm.nextStateTransaction.ID().String(),
-		)
-		return false
-
-	case sm.solidVariableState == nil:
-		if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
-			sm.log.Errorf("failed to save origin state")
-			return false
-		}
-		sm.log.Infof("ORIGIN STATE COMMITTED. State hash: %s, state txid: %s",
-			varStateHash.String(), sm.nextStateTransaction.ID().String())
-
-		sm.solidVariableState = pending.nextVariableState
 	}
+	sm.solidStateValid = true
+	sm.solidVariableState = pending.nextVariableState
 
 	saveTx := sm.nextStateTransaction
 
@@ -191,64 +174,55 @@ func (sm *stateManager) isSynchronized() bool {
 }
 
 // adding batch of state updates to the 'pending' map
-// batch may be of the current stat index or the next
 func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
-	var varState state.VariableState
-	var err error
-
-	varState = state.NewVariableState(sm.solidVariableState)
-
-	if sm.solidVariableState != nil {
-		switch {
-		case batch.StateIndex() == sm.solidVariableState.StateIndex():
-			// batch has same index, it only has to be approved by transaction
-			// it happens in initial state loading from db
-		case batch.StateIndex() == sm.solidVariableState.StateIndex()+1:
-			err = varState.Apply(batch)
-			if err != nil {
-				sm.log.Errorw("addPendingBatch: error while applying batch",
-					"batch state index", batch.StateIndex(),
-					"solid state index", sm.solidVariableState.StateIndex(),
-				)
-				return false
-			}
-		default:
-			sm.log.Debugw("addPendingBatch: unexpected batch state index",
-				"batch state index", batch.StateIndex(),
-				"solid state index", sm.solidVariableState.StateIndex(),
-			)
+	if sm.solidStateValid {
+		if batch.StateIndex() != sm.solidVariableState.StateIndex()+1 {
+			// if current state is validated, only interested in the batches of state updates for the next state
 			return false
 		}
 	} else {
-		// origin
-		if batch.StateIndex() != 0 {
-			sm.log.Debugw("addPendingBatch: origin: unexpected batch state index",
-				"batch state index", batch.StateIndex(),
-			)
-			return false
+		// initial loading
+		if sm.solidVariableState == nil {
+			// origin state
+			if batch.StateIndex() != 0 {
+				sm.log.Errorf("expected batch index 0 got %d", batch.StateIndex())
+				return false
+			}
+		} else {
+			// not origin state, the loaded state must be approved by the transaction
+			if batch.StateIndex() != sm.solidVariableState.StateIndex() {
+				sm.log.Errorf("expected batch index %d got %d",
+					sm.solidVariableState.StateIndex(), batch.StateIndex())
+				return false
+			}
 		}
-		err = varState.Apply(batch)
-		if err != nil {
-			sm.log.Errorw("addPendingBatch: error while applying batch to empty state",
-				"batch state index", batch.StateIndex(),
+	}
+	varStateToApprove := state.NewVariableState(sm.solidVariableState)
+	if sm.solidStateValid || sm.solidVariableState == nil {
+		// we need to approve the next state.
+		// In case of origin, the next state is origin batch applied to empty state
+		if err := varStateToApprove.Apply(batch); err != nil {
+			sm.log.Errorw("can't apply update to the current state",
+				"cur state index", sm.solidVariableState.StateIndex(),
+				"err", err,
 			)
 			return false
 		}
 	}
 	// include the bach to pending batches map
-	vh := varState.Hash()
+	vh := varStateToApprove.Hash()
 	pendingBatches, ok := sm.pendingBatches[vh]
 	if !ok {
 		pendingBatches = make([]*pendingBatch, 0)
 	}
 	pb := &pendingBatch{
 		batch:             batch,
-		nextVariableState: varState,
+		nextVariableState: varStateToApprove,
 	}
 	pendingBatches = append(pendingBatches, pb)
 	sm.pendingBatches[vh] = pendingBatches
 
-	// request transaction from the node
+	// request approving transaction from the node. It may also come without request
 	txid := batch.StateTransactionId()
 	if err := nodeconn.RequestTransactionFromNode(&txid); err != nil {
 		sm.log.Debug(err)

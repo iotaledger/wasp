@@ -65,7 +65,7 @@ func (txb *TransactionBuilder) AddBalanceToOutput(addr address.Address, bal *bal
 	}
 }
 
-func (txb *TransactionBuilder) AddStateBlock(color *balance.Color, stateIndex uint32) {
+func (txb *TransactionBuilder) AddStateBlock(color balance.Color, stateIndex uint32) {
 	txb.stateBlock = NewStateBlock(color, stateIndex)
 }
 

@@ -16,6 +16,10 @@ import (
 type stateManager struct {
 	committee committee.Committee
 
+	// becomes true after initially loaded state is validated.
+	// after that it is always true
+	solidStateValid bool
+
 	// pending batches of state updates are candidates to confirmation by the state transaction
 	// which leads to the state transition
 	// the map key is hash of the variable state which is a result of applying the
@@ -72,7 +76,7 @@ func New(committee committee.Committee, log *logger.Logger) committee.StateManag
 	ret := &stateManager{
 		committee:      committee,
 		pendingBatches: make(map[hashing.HashValue][]*pendingBatch),
-		log:            log.Named("smgr"),
+		log:            log.Named("s"),
 	}
 	go ret.initLoadState()
 
@@ -86,21 +90,21 @@ func (sm *stateManager) initLoadState() {
 
 	stateExist, err := state.StateExist(sm.committee.Address())
 	if err != nil {
-		sm.log.Errorf("error occurred. sc addr %s: %v", sm.committee.Address().String(), err)
+		sm.log.Error(err)
 		sm.committee.Dismiss()
 		return
 	}
 
 	if stateExist {
-		// load last solid state and batch
+		// load last solid state and last state update batch
 		sm.solidVariableState, batch, err = state.LoadVariableState(sm.committee.Address())
 		if err != nil {
-			sm.log.Errorf("can't load variable state for sc addr %s: %v", sm.committee.Address().String(), err)
+			sm.log.Error(err)
 			sm.committee.Dismiss()
 			return
 		}
 		h := sm.solidVariableState.Hash()
-		sm.log.Debugw("initial state has been found in the ledger",
+		sm.log.Debugw("solid state state has been loaded",
 			"state index", sm.solidVariableState.StateIndex(),
 			"state hash", h.String(),
 		)
@@ -111,7 +115,6 @@ func (sm *stateManager) initLoadState() {
 		batch = apilib.NewOriginBatch(apilib.NewOriginParams{
 			Address:      par.Address,
 			OwnerAddress: par.OwnerAddress,
-			Description:  par.Description,
 			ProgramHash:  par.ProgramHash,
 		})
 		// committing batch means linking it to the approving transaction
@@ -123,10 +126,10 @@ func (sm *stateManager) initLoadState() {
 			"state txid", batch.StateTransactionId().String())
 	}
 	// loaded solid variable state and the last batch of state updates
-	// it needs to be validated by the state transaction, therefore it is added to the
-	// pending batches and transaction is requested from the node
+	// it needs to be validated by the state transaction, so it is added to the
+	// pending batches
 	if !sm.addPendingBatch(batch) {
-		sm.log.Errorf("assertion failed: sm.addPendingBatch(stateUpdate)")
+		sm.log.Errorf("initial batch inconsistent")
 		sm.committee.Dismiss()
 		return
 	} else {

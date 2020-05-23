@@ -47,9 +47,9 @@ func validateState(tx *sctransaction.Transaction) (committee.Committee, bool) {
 	}
 	color := stateBlock.Color()
 	mayBeOrigin := false
-	if *color == balance.ColorNew {
+	if color == balance.ColorNew {
 		// may be origin
-		*color = (balance.Color)(tx.ID())
+		color = (balance.Color)(tx.ID())
 		mayBeOrigin = true
 	}
 	cmt := committeeByColor(color)
@@ -60,7 +60,7 @@ func validateState(tx *sctransaction.Transaction) (committee.Committee, bool) {
 	// the respective color and value 1
 	addr := cmt.Address()
 
-	balances, hasAddress := tx.OutputBalancesByAddress(addr)
+	balances, hasAddress := tx.OutputBalancesByAddress(&addr)
 	if !hasAddress {
 		// invalid state
 		log.Errorw("invalid state block: SC state output not found",
@@ -69,7 +69,7 @@ func validateState(tx *sctransaction.Transaction) (committee.Committee, bool) {
 		)
 		return nil, false
 	}
-	outBalance := util.SumBalancesOfColor(balances, color)
+	outBalance := util.SumBalancesOfColor(balances, &color)
 	if outBalance == 0 && mayBeOrigin {
 		outBalance = util.SumBalancesOfColor(balances, (*balance.Color)(&balance.ColorNew))
 	}

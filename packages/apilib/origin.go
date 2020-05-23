@@ -17,7 +17,6 @@ import (
 type NewOriginParams struct {
 	Address      address.Address
 	OwnerAddress address.Address
-	Description  string
 	ProgramHash  hashing.HashValue
 }
 
@@ -27,7 +26,6 @@ func NewOriginBatch(par NewOriginParams) state.Batch {
 	vars := stateUpd.Variables()
 	vars.Set("$address$", par.Address.String())
 	vars.Set("$owneraddr$", par.OwnerAddress.String())
-	vars.Set("$descr$", par.Description)
 	vars.Set("$proghash$", par.ProgramHash.String())
 	ret, err := state.NewBatch([]state.StateUpdate{stateUpd}, 0)
 	if err != nil {
@@ -80,8 +78,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	for _, remb := range reminderBalances {
 		txb.AddBalanceToOutput(par.Input.Address(), remb)
 	}
-	var col balance.Color = balance.ColorNew
-	txb.AddStateBlock(&col, 0)
+	txb.AddStateBlock(balance.ColorNew, 0)
 
 	txb.SetVariableStateHash(OriginVariableStateHash(par.NewOriginParams))
 
@@ -93,7 +90,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	return ret, nil
 }
 
-func CreateOriginData(par *NewOriginParams, nodeLocations []string) (*sctransaction.Transaction, *registry.SCMetaData) {
+func CreateOriginData(par *NewOriginParams, dscr string, nodeLocations []string) (*sctransaction.Transaction, *registry.SCMetaData) {
 	allOuts := utxodb.GetAddressOutputs(par.OwnerAddress)            // non deterministic
 	outs := util.SelectMinimumOutputs(allOuts, balance.ColorIOTA, 1) // must be deterministic!
 	if len(outs) == 0 {
@@ -126,20 +123,9 @@ func CreateOriginData(par *NewOriginParams, nodeLocations []string) (*sctransact
 		Address:       par.Address,
 		Color:         balance.Color(originTx.ID()),
 		OwnerAddress:  par.OwnerAddress,
-		Description:   par.Description,
 		ProgramHash:   par.ProgramHash,
+		Description:   dscr,
 		NodeLocations: nodeLocations,
 	}
 	return originTx, scdata
-}
-
-func NewMetaData(par NewOriginParams, color *balance.Color, nodeLocations []string) *registry.SCMetaData {
-	return &registry.SCMetaData{
-		Address:       par.Address,
-		Color:         *color,
-		OwnerAddress:  par.OwnerAddress,
-		Description:   par.Description,
-		ProgramHash:   par.ProgramHash,
-		NodeLocations: nodeLocations,
-	}
 }

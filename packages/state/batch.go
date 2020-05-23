@@ -166,12 +166,12 @@ func (b *batch) saveToDb(addr *address.Address) error {
 	return nil
 }
 
-func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
+func LoadBatch(addr address.Address, stateIndex uint32) (Batch, error) {
 	dbase, err := database.GetBatchesDB()
 	if err != nil {
 		return nil, err
 	}
-	entry, err := dbase.Get(database.DbKeyBatch(addr, stateIndex))
+	entry, err := dbase.Get(database.DbKeyBatch(&addr, stateIndex))
 	if err != nil {
 		return nil, err
 	}

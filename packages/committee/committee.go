@@ -12,13 +12,14 @@ import (
 )
 
 type Committee interface {
-	Address() *address.Address
-	Color() *balance.Color
+	Address() address.Address
+	Color() balance.Color
 	Size() uint16
 	OwnPeerIndex() uint16
 	MetaData() *registry.SCMetaData
 	OpenQueue()
 	Dismiss()
+	IsDismissed() bool
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time)
 	SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error)

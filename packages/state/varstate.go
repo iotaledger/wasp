@@ -117,14 +117,14 @@ func (vs *variableState) Read(r io.Reader) error {
 }
 
 // saves variable state to db together with the batch of state updates
-func (vs *variableState) Commit(addr *address.Address, b Batch) error {
+func (vs *variableState) Commit(addr address.Address, b Batch) error {
 	// TODO make it Badger-atomic transaction
 	// TODO mark processed requests in db in separate index
 
-	if err := b.(*batch).saveToDb(addr); err != nil {
+	if err := b.(*batch).saveToDb(&addr); err != nil {
 		return err
 	}
-	if err := vs.saveToDb(addr); err != nil {
+	if err := vs.saveToDb(&addr); err != nil {
 		return err
 	}
 	if err := MarkRequestsProcessed(b.RequestIds()); err != nil {
@@ -133,12 +133,12 @@ func (vs *variableState) Commit(addr *address.Address, b Batch) error {
 	return nil
 }
 
-func StateExist(addr *address.Address) (bool, error) {
+func StateExist(addr address.Address) (bool, error) {
 	dbase, err := database.GetVariableStateDB()
 	if err != nil {
 		return false, err
 	}
-	key := database.DbKeyVariableState(addr)
+	key := database.DbKeyVariableState(&addr)
 	log.Debugw("checking if state exist",
 		"addr", addr.String(),
 		"dbkey", base58.Encode(key))
@@ -146,22 +146,25 @@ func StateExist(addr *address.Address) (bool, error) {
 }
 
 // loads variable state and corresponding batch
-func LoadVariableState(addr *address.Address) (VariableState, Batch, error) {
+func LoadVariableState(addr address.Address) (VariableState, Batch, error) {
 	dbase, err := database.GetVariableStateDB()
 	if err != nil {
 		return nil, nil, err
 	}
-	entry, err := dbase.Get(database.DbKeyVariableState(addr))
+	entry, err := dbase.Get(database.DbKeyVariableState(&addr))
 	if err != nil {
 		return nil, nil, err
 	}
-	ret := NewVariableState(nil).(*variableState)
-	if err = ret.Read(bytes.NewReader(entry.Value)); err != nil {
+	varState := NewVariableState(nil).(*variableState)
+	if err = varState.Read(bytes.NewReader(entry.Value)); err != nil {
 		return nil, nil, err
 	}
-	batch, err := LoadBatch(addr, ret.StateIndex())
+	batch, err := LoadBatch(addr, varState.StateIndex())
 	if err != nil {
 		return nil, nil, err
 	}
-	return ret, batch, nil
+	if varState.StateIndex() != batch.StateIndex() {
+		return nil, nil, fmt.Errorf("inconsistent solid state: state indices must be equal")
+	}
+	return varState, batch, nil
 }

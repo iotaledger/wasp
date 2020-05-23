@@ -25,6 +25,8 @@ func (c *committeeObj) Dismiss() {
 	c.log.Infof("Dismiss committee for %s", c.scdata.Address.String())
 
 	c.isOpenQueue.Store(false)
+	c.dismissed.Store(true)
+
 	close(c.chMsg)
 
 	for i, pa := range c.scdata.NodeLocations {
@@ -34,12 +36,16 @@ func (c *committeeObj) Dismiss() {
 	}
 }
 
-func (c *committeeObj) Address() *address.Address {
-	return &c.scdata.Address
+func (c *committeeObj) IsDismissed() bool {
+	return c.dismissed.Load()
 }
 
-func (c *committeeObj) Color() *balance.Color {
-	return &c.scdata.Color
+func (c *committeeObj) Address() address.Address {
+	return c.scdata.Address
+}
+
+func (c *committeeObj) Color() balance.Color {
+	return c.scdata.Color
 }
 
 func (c *committeeObj) Size() uint16 {

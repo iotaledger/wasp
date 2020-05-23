@@ -34,9 +34,9 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		go runInitSC(testplugins.GetOriginParams(1), shutdownSignal)
-		go runInitSC(testplugins.GetOriginParams(2), shutdownSignal)
-		go runInitSC(testplugins.GetOriginParams(3), shutdownSignal)
+		go runInitSC(1, shutdownSignal)
+		go runInitSC(2, shutdownSignal)
+		go runInitSC(3, shutdownSignal)
 	})
 	if err != nil {
 		log.Errorf("can't start daemon")
@@ -47,19 +47,20 @@ func run(_ *node.Plugin) {
 // if not:
 // - creates new meta data for the smart contracts according to new origin parameters provided
 // - creates new origin transaction and posts it to the node
-func runInitSC(par *apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
+func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
 	// wait for signal from webapi
 	webapi.WaitUntilIsUp()
 
-	log.Infof("Start running testing plugin %s for '%s'", PluginName, par.Description)
+	par := testplugins.GetOriginParams(scIndex)
+	log.Infof("Start running testing plugin %s for '%s'", PluginName, testplugins.GetScDescription(scIndex))
 
 	myHost := config.Node.GetString(webapi.CfgBindAddress)
 
-	originTx, scdata := apilib.CreateOriginData(par, nodeLocations)
+	originTx, scdata := apilib.CreateOriginData(par, testplugins.GetScDescription(scIndex), nodeLocations)
 
 	resp := apilib.GetPublicKeyInfo([]string{myHost}, &scdata.Address)
 	if len(resp) != 1 {
-		log.Errorf("TEST for '%s' FAILED 1: bad response from GetPublicKeyInfo", par.Description)
+		log.Errorf("TEST for '%s' FAILED 1: bad response from GetPublicKeyInfo", testplugins.GetScDescription(scIndex))
 		return
 	}
 	failed := false
@@ -71,7 +72,7 @@ func runInitSC(par *apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
 	}
 	if failed {
 		log.Errorf("TEST FAILED 2: the key with address %s is not available for '%s'",
-			par.Address.String(), par.Description)
+			par.Address.String(), testplugins.GetScDescription(scIndex))
 		return
 	}
 
@@ -105,7 +106,7 @@ func runInitSC(par *apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
 	} else {
 		log.Debugf("OK sc meta data for address %s", scdata.Address.String())
 	}
-	log.Debugf("SC METADATA TEST PASSED: '%s'", par.Description)
+	log.Debugf("SC METADATA TEST PASSED: '%s'", testplugins.GetScDescription(scIndex))
 	exit := false
 	for !exit {
 		select {
@@ -120,5 +121,5 @@ func runInitSC(par *apilib.NewOriginParams, shutdownSignal <-chan struct{}) {
 			}
 		}
 	}
-	log.Debugf("SC INIT test routine ended '%s'", par.Description)
+	log.Debugf("SC INIT test routine ended '%s'", testplugins.GetScDescription(scIndex))
 }

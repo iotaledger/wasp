@@ -37,10 +37,13 @@ func init() {
 		scOrigParams[i] = apilib.NewOriginParams{
 			Address:      scAddresses[i],
 			OwnerAddress: ownerAddress,
-			Description:  fmt.Sprintf("Test smart contract #%d", i+1),
 		}
-		scOrigParams[i].ProgramHash = *hashing.HashStrings(scOrigParams[i].Description)
+		scOrigParams[i].ProgramHash = *hashing.HashStrings(GetScDescription(i + 1))
 	}
+}
+
+func GetScDescription(scIndex int) string {
+	return fmt.Sprintf("Test smart contract #%d", scIndex)
 }
 
 // index 1 to 3
