@@ -65,15 +65,19 @@ func (sm *stateManager) checkStateTransition() bool {
 	if sm.solidVariableState.StateIndex() > 0 {
 		prevStateIndex = fmt.Sprintf("#%d", sm.solidVariableState.StateIndex()-1)
 	}
-	sm.log.Infof("STATE TRANSITION %s --> #%d addr %s",
-		prevStateIndex, sm.solidVariableState.StateIndex(), sm.committee.Address().String())
+
+	sm.log.Infof("STATE TRANSITION %s --> #%d. State hash %s has been approved by txid %s",
+		prevStateIndex, sm.solidVariableState.StateIndex(), varStateHash.String(), saveTx.ID().String())
 
 	// if synchronized, notify consensus operator about state transition
 	if sm.isSynchronized() {
-		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
-			VariableState:    sm.solidVariableState,
-			StateTransaction: saveTx,
-		})
+		// async is a must in order not to deadlock
+		go func() {
+			sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
+				VariableState:    sm.solidVariableState,
+				StateTransaction: saveTx,
+			})
+		}()
 	}
 	return true
 }

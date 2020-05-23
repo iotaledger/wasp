@@ -48,7 +48,12 @@ func (c *committeeObj) Size() uint16 {
 
 func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
-		c.chMsg <- msg
+		select {
+		case c.chMsg <- msg:
+		case <-time.After(500 * time.Millisecond):
+			c.log.Warnf("timeout on ReceiveMessage. message was lost")
+		}
+
 	}
 }
 

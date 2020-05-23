@@ -10,7 +10,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/iotaledger/goshimmer v0.1.1-0.20200522112103-3b007931b31f
+	github.com/iotaledger/goshimmer v0.1.1-0.20200523073157-b07b21c3c548
 	github.com/iotaledger/hive.go v0.0.0-20200513180357-f0ac8c45b754
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
@@ -36,7 +36,7 @@ require (
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200513185701-a91f0712d120 // indirect
 	golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9 // indirect
-	golang.org/x/tools v0.0.0-20200515220128-d3bf790afa53 // indirect
+	golang.org/x/tools v0.0.0-20200521211927-2b542361a4fc // indirect
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
 )

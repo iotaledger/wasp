@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/mr-tron/base58"
 )
 
 func dbKeyProcessedRequest(reqId *sctransaction.RequestId) []byte {
@@ -14,9 +15,16 @@ func MarkRequestsProcessed(reqids []*sctransaction.RequestId) error {
 	if err != nil {
 		return err
 	}
+
 	for _, rid := range reqids {
+		key := dbKeyProcessedRequest(rid)
+
+		log.Debugw("request marking processed in db",
+			"key", base58.Encode(key),
+			"reqid", rid.String(),
+		)
 		err := dbase.Set(database.Entry{
-			Key: dbKeyProcessedRequest(rid),
+			Key: key,
 		})
 		if err != nil {
 			return err

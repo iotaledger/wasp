@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/mr-tron/base58"
 	"io"
 )
 
@@ -146,8 +147,17 @@ func (b *batch) saveToDb(addr *address.Address) error {
 	if err := b.Write(&buf); err != nil {
 		return err
 	}
+	key := database.DbKeyBatch(addr, b.stateIndex)
+	log.Debugw("batch saving to db",
+		"addr", addr.String(),
+		"state index", b.stateIndex,
+		"dbkey", base58.Encode(key),
+		"essenceHash", b.EssenceHash().String(),
+		"stateTx", b.StateTransactionId().String(),
+	)
+
 	err = dbase.Set(database.Entry{
-		Key:   database.DbKeyBatch(addr, b.stateIndex),
+		Key:   key,
 		Value: buf.Bytes(),
 	})
 	if err != nil {

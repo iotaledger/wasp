@@ -1,5 +1,5 @@
 // scmeta plugin runs test by creating smart contract meta data records
-package scmeta
+package builtinsc
 
 import (
 	"github.com/iotaledger/hive.go/daemon"
@@ -15,7 +15,7 @@ import (
 )
 
 // PluginName is the name of the database plugin.
-const PluginName = "TestingSCMetaData"
+const PluginName = "TestingBuiltinSC"
 
 var (
 	Plugin        = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)

@@ -25,8 +25,8 @@ func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
 }
 
 func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
-	ret := stateUpdate{}
-	return &ret, ret.Read(r)
+	ret := NewStateUpdate(nil).(*stateUpdate)
+	return ret, ret.Read(r)
 }
 
 // StateUpdate

@@ -12,6 +12,7 @@ import (
 	_ "github.com/iotaledger/wasp/packages/committee/commiteeimpl" // activate init
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"time"
@@ -28,6 +29,7 @@ var (
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
+	state.InitLogger()
 }
 
 func run(_ *node.Plugin) {

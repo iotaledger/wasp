@@ -17,13 +17,18 @@ func HandlerTestRequestTx(c echo.Context) error {
 
 	tx, err := testapilib.TransactionFromJsonTesting(&req)
 	if err != nil {
+		log.Debugw("failed to post request transaction to node", "err", err)
 		return misc.OkJsonErr(c, err)
 	}
 
 	if err := nodeconn.PostTransactionToNode(tx.Transaction); err != nil {
-		log.Debug("failed to post request transaction to node")
+		log.Debugw("failed to post request transaction to node",
+			"txid", tx.ID().String(),
+		)
 	} else {
-		log.Debug("successfully forwarded request transaction to node")
+		log.Debugw("successfully created and forwarded request transaction to node",
+			"txid", tx.ID().String(),
+		)
 	}
 	return misc.OkJsonErr(c, nil)
 }

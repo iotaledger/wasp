@@ -99,6 +99,11 @@ func (sm *stateManager) initLoadState() {
 			sm.committee.Dismiss()
 			return
 		}
+		h := sm.solidVariableState.Hash()
+		sm.log.Debugw("initial state has been found in the ledger",
+			"state index", sm.solidVariableState.StateIndex(),
+			"state hash", h.String(),
+		)
 	} else {
 		// origin state
 		sm.solidVariableState = nil // por las dudas
@@ -114,8 +119,8 @@ func (sm *stateManager) initLoadState() {
 		// SC metadata contains 'color' which is equal to the ID of the origin transaction
 		batch.Commit((valuetransaction.ID)(par.Color))
 
-		sm.log.Infof("origin state update batch. addr %s origin txid = %s",
-			sm.committee.Address().String(), batch.StateTransactionId().String())
+		sm.log.Infow("initial stated wasn't found. Origin state update batch has been created",
+			"state txid", batch.StateTransactionId().String())
 	}
 	// loaded solid variable state and the last batch of state updates
 	// it needs to be validated by the state transaction, therefore it is added to the

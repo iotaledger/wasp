@@ -24,8 +24,10 @@ func configure(_ *node.Plugin) {
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		go nodeConnect()
+		go keepSendingSubscriptionIfNeeded(shutdownSignal)
 
 		<-shutdownSignal
+
 		log.Info("Stopping node connection..")
 		go func() {
 			bconnMutex.Lock()
@@ -38,19 +40,20 @@ func run(_ *node.Plugin) {
 			}
 		}()
 
-		go func() {
-			for {
-				select {
-				case <-shutdownSignal:
-					return
-
-				case <-time.After(1 * time.Second):
-					sendSubscriptionsIfNeeded()
-				}
-			}
-		}()
 	}, shutdown.PriorityNodeConnection)
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
+	}
+}
+
+func keepSendingSubscriptionIfNeeded(shutdownSignal <-chan struct{}) {
+	for {
+		select {
+		case <-shutdownSignal:
+			return
+
+		case <-time.After(1 * time.Second):
+			sendSubscriptionsIfNeeded()
+		}
 	}
 }

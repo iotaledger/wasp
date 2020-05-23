@@ -23,7 +23,9 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 		c.stateMgr.EventStateUpdateMsg(msgt)
 
 	case *committee.StateTransitionMsg:
-		c.operator.EventStateTransitionMsg(msgt)
+		if c.operator != nil {
+			c.operator.EventStateTransitionMsg(msgt)
+		}
 
 	case committee.StateTransactionMsg:
 		// receive state transaction message
@@ -31,16 +33,21 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 
 	case committee.BalancesMsg:
 		// outputs and balances of the address arrived
-		c.operator.EventBalancesMsg(msgt)
+		if c.operator != nil {
+			c.operator.EventBalancesMsg(msgt)
+		}
 
 	case *committee.RequestMsg:
 		// receive request message
-		c.operator.EventRequestMsg(msgt)
+		if c.operator != nil {
+			c.operator.EventRequestMsg(msgt)
+		}
 
 	case *committee.VMOutput:
 		// VM finished working
-		c.operator.EventResultCalculated(msgt)
-
+		if c.operator != nil {
+			c.operator.EventResultCalculated(msgt)
+		}
 	case committee.TimerTick:
 		if msgt%2 == 0 {
 			if c.stateMgr != nil {

@@ -31,11 +31,12 @@ func dispatchRequests(tx *sctransaction.Transaction) {
 	}
 }
 
-func dispatchBalances(address address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
+func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
-	if cmt := CommitteeByAddress(address); cmt != nil {
+	if cmt := CommitteeByAddress(addr); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
+	triggerBalanceConsumers(addr, bals)
 }
 
 // validates and returns if it has state block, is it origin state or error

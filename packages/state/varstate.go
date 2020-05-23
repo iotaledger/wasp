@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/mr-tron/base58"
 	"io"
 )
 
@@ -73,8 +74,18 @@ func (vs *variableState) saveToDb(addr *address.Address) error {
 	if err != nil {
 		return err
 	}
+
+	key := database.DbKeyVariableState(addr)
+	h := vs.Hash()
+	log.Debugw("state saving to db",
+		"addr", addr.String(),
+		"state index", vs.StateIndex(),
+		"dbkey", base58.Encode(key),
+		"stateHash", h.String(),
+	)
+
 	return dbase.Set(database.Entry{
-		Key:   database.DbPrefixState(addr, vs.stateIndex),
+		Key:   key,
 		Value: hashing.MustBytes(vs),
 	})
 }
@@ -127,7 +138,11 @@ func StateExist(addr *address.Address) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return dbase.Contains(database.DbKeyVariableState(addr))
+	key := database.DbKeyVariableState(addr)
+	log.Debugw("checking if state exist",
+		"addr", addr.String(),
+		"dbkey", base58.Encode(key))
+	return dbase.Contains(key)
 }
 
 // loads variable state and corresponding batch
@@ -140,7 +155,7 @@ func LoadVariableState(addr *address.Address) (VariableState, Batch, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	ret := &variableState{}
+	ret := NewVariableState(nil).(*variableState)
 	if err = ret.Read(bytes.NewReader(entry.Value)); err != nil {
 		return nil, nil, err
 	}

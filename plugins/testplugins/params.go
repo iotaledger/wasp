@@ -5,9 +5,9 @@ import "github.com/iotaledger/hive.go/node"
 const testPluginsEnabled = true
 
 var enabledTests = map[string]bool{
-	"TestingSCMetaData": true,
-	"TestingRoundTrip":  false,
-	"TestingNodePing":   false,
+	"TestingBuiltinSC": true,
+	"TestingRoundTrip": false,
+	"TestingNodePing":  false,
 }
 
 func Status(pluginName string) int {
