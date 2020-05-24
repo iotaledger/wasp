@@ -222,6 +222,11 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	pendingBatches = append(pendingBatches, pb)
 	sm.pendingBatches[vh] = pendingBatches
 
+	sm.log.Debugw("added new pending batch",
+		"state index", pb.batch.StateIndex(),
+		"state hash", vh.String(),
+		"approving tx", pb.batch.StateTransactionId().String(),
+	)
 	// request approving transaction from the node. It may also come without request
 	txid := batch.StateTransactionId()
 	if err := nodeconn.RequestTransactionFromNode(&txid); err != nil {

@@ -103,18 +103,29 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 	}
 	sm.CheckSynchronizationStatus(stateBlock.StateIndex())
 
-	if sm.solidVariableState == nil {
-		if stateBlock.StateIndex() != 0 {
-			return
-		}
-	} else {
+	if sm.solidStateValid {
 		if stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {
 			// only interested for the state transaction to verify latest state update
 			return
 		}
+	} else {
+		if sm.solidVariableState == nil {
+			if stateBlock.StateIndex() != 0 {
+				return
+			}
+		} else {
+			if stateBlock.StateIndex() != sm.solidVariableState.StateIndex() {
+				return
+			}
+		}
 	}
+	vh := stateBlock.VariableStateHash()
+	sm.log.Debugw("next state tx accepted",
+		"state index", stateBlock.StateIndex(),
+		"txid", msg.Transaction.ID().String(),
+		"state hash", vh.String(),
+	)
 	sm.nextStateTransaction = msg.Transaction
-
 	sm.takeAction()
 }
 

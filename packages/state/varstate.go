@@ -30,6 +30,7 @@ func NewVariableState(varState VariableState) VariableState {
 	}
 	return &variableState{
 		stateIndex: varState.StateIndex(),
+		stateHash:  varState.Hash(),
 		vars:       variables.New(varState.Variables()),
 	}
 }
