@@ -33,7 +33,7 @@ func GenerateNewDistributedKeySet(nodes []string, n, t uint16) (*address.Address
 			return nil, err
 		}
 		if len(resp.PriShares) != int(params.N) {
-			return nil, errors.New("len(resp.PriShares) != int(params.N)")
+			return nil, errors.New("apilib: len(resp.PriShares) != int(params.N)")
 		}
 		priSharesMatrix[i] = resp.PriShares
 	}

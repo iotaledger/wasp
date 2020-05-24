@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/committees"
 )
 
 func dispatchState(tx *sctransaction.Transaction) {
@@ -22,7 +23,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 
 func dispatchRequests(tx *sctransaction.Transaction) {
 	for i, reqBlk := range tx.Requests() {
-		if cmt := CommitteeByAddress(reqBlk.Address()); cmt != nil {
+		if cmt := committees.CommitteeByAddress(reqBlk.Address()); cmt != nil {
 			cmt.ReceiveMessage(&committee.RequestMsg{
 				Transaction: tx,
 				Index:       uint16(i),
@@ -33,7 +34,7 @@ func dispatchRequests(tx *sctransaction.Transaction) {
 
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
-	if cmt := CommitteeByAddress(addr); cmt != nil {
+	if cmt := committees.CommitteeByAddress(addr); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
 	triggerBalanceConsumers(addr, bals)
@@ -52,7 +53,7 @@ func validateState(tx *sctransaction.Transaction) (committee.Committee, bool) {
 		color = (balance.Color)(tx.ID())
 		mayBeOrigin = true
 	}
-	cmt := committeeByColor(color)
+	cmt := committees.CommitteeByColor(color)
 	if cmt == nil {
 		return nil, false
 	}

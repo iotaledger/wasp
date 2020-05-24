@@ -7,6 +7,8 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/testplugins"
@@ -34,6 +36,11 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+		committees.WaitInitialLoad()
+		webapi.WaitUntilIsUp()
+
+		log.Debugf("starting to run built-in metadata test routines")
+
 		go runInitSC(1, shutdownSignal)
 		go runInitSC(2, shutdownSignal)
 		go runInitSC(3, shutdownSignal)
@@ -48,15 +55,19 @@ func run(_ *node.Plugin) {
 // - creates new meta data for the smart contracts according to new origin parameters provided
 // - creates new origin transaction and posts it to the node
 func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
-	// wait for signal from webapi
-	webapi.WaitUntilIsUp()
-
 	par := testplugins.GetOriginParams(scIndex)
 	log.Infof("Start running testing plugin %s for '%s'", PluginName, testplugins.GetScDescription(scIndex))
 
 	myHost := config.Node.GetString(webapi.CfgBindAddress)
 
 	originTx, scdata := apilib.CreateOriginData(par, testplugins.GetScDescription(scIndex), nodeLocations)
+
+	log.Debugw("++++ origin tx",
+		"scindex", scIndex,
+		"addr", scdata.Address.String(),
+		"txid", originTx.ID().String(),
+		"color", scdata.Color.String(),
+	)
 
 	resp := apilib.GetPublicKeyInfo([]string{myHost}, &scdata.Address)
 	if len(resp) != 1 {
@@ -107,6 +118,13 @@ func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
 		log.Debugf("OK sc meta data for address %s", scdata.Address.String())
 	}
 	log.Debugf("SC METADATA TEST PASSED: '%s'", testplugins.GetScDescription(scIndex))
+
+	postOriginToNode(originTx, scIndex, shutdownSignal)
+
+	log.Debugf("SC INIT test routine ended '%s'", testplugins.GetScDescription(scIndex))
+}
+
+func postOriginToNode(originTx *sctransaction.Transaction, scIndex int, shutdownSignal <-chan struct{}) {
 	exit := false
 	for !exit {
 		select {
@@ -116,10 +134,12 @@ func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
 			if err := nodeconn.PostTransactionToNode(originTx.Transaction); err != nil {
 				log.Warnf("failed to send origin tx to node. txid = %s", originTx.ID().String())
 			} else {
-				log.Debugf("sent origin transaction to node: '%s', txid %s", scdata.Description, originTx.ID().String())
+				log.Debugw("sent origin transaction to node",
+					"scindex", scIndex,
+					"txid", originTx.ID().String(),
+				)
 				exit = true
 			}
 		}
 	}
-	log.Debugf("SC INIT test routine ended '%s'", testplugins.GetScDescription(scIndex))
 }

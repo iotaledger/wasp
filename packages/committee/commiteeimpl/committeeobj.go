@@ -36,7 +36,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 		return nil, err
 	}
 	if !keyExists {
-		return nil, fmt.Errorf("unkniwn key. sc addr = %s", scdata.Address.String())
+		return nil, fmt.Errorf("unknown key addr = %s", scdata.Address.String())
 	}
 	err = fmt.Errorf("sc data inconsstent with key parameteres for sc addr %s", scdata.Address.String())
 	if scdata.Address != *dkshare.Address {

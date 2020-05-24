@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/plugins/dispatcher"
+	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/testplugins"
 	"time"
 )
@@ -38,7 +38,7 @@ func run(_ *node.Plugin) {
 			case <-shutdownSignal:
 				return
 			case <-time.After(5 * time.Second):
-				if c := dispatcher.CommitteeByAddress(addr); c != nil {
+				if c := committees.CommitteeByAddress(addr); c != nil {
 					c.InitTestRound()
 				}
 			}

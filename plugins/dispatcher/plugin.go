@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"time"
@@ -42,26 +43,12 @@ func run(_ *node.Plugin) {
 		})
 
 		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
-			if committee := CommitteeByAddress(msg.Address); committee != nil {
+			if committee := committees.CommitteeByAddress(msg.Address); committee != nil {
 				committee.ReceiveMessage(msg)
 			}
 		})
 
 		err := daemon.BackgroundWorker("wasp dispatcher", func(shutdownSignal <-chan struct{}) {
-			// load all sc data records from registry
-			addrs, err := loadAllSContracts()
-			if err != nil {
-				log.Error("failed to load SC data from registry: %v", err)
-				return
-			}
-			log.Debugf("loaded %d SC data record(s) from registry", len(addrs))
-
-			// let the node know addresses of interest
-			nodeconn.SetSubscriptions(addrs)
-
-			// trigger event to notify that SC data is initialized
-			Events.SCDataLoaded.Trigger()
-
 			// goroutine to read incoming messages from the node
 			go func() {
 				for data := range chNodeMsgData {
@@ -75,7 +62,6 @@ func run(_ *node.Plugin) {
 			go func() {
 				nodeconn.EventNodeMessageReceived.Detach(processNodeDataClosure)
 				peering.EventPeerMessageReceived.Detach(processPeerMsgClosure)
-				Events.SCDataLoaded.DetachAll()
 				Events.BalancesArrivedFromNode.DetachAll()
 				Events.TransactionArrivedFromNode.DetachAll()
 

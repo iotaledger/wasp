@@ -1,16 +1,16 @@
 {
  "hosts": [
-  "127.0.0.1:8080",
-  "127.0.0.1:8081",
-  "127.0.0.1:8082",
-  "127.0.0.1:8083"
+  "127.0.0.1:9090",
+  "127.0.0.1:9091",
+  "127.0.0.1:9092",
+  "127.0.0.1:9093"
  ],
  "n": 4,
  "t": 3,
  "num_keys": 3,
  "addresses": [
-  "exZup69X1XwRNHiWWjoYy75aPNgC22YKkPV7sUJSBYA9",
-  "dV9hfYyHq7uiCKdKYQoLqyiwX6tN448GRm8UgFpUC3Vo",
-  "eiMbhrJjajqnCLmVJqFXzFsh1ZsbCAnJ9wauU8cP8uxL"
+  "mQDimPXfu5auHUksTVAzXPDM1cJr1ryx4vgo1XvPtmpX",
+  "ooRmabFjCxgJSW9KszW4gPPBBZFi4ttb7nr5RUpJbWth",
+  "kbBfpmYwdxS9f3s1L7u5RqvetJ7MYM4kYy27NzWC561p"
  ]
 }

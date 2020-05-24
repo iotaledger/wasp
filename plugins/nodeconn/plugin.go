@@ -1,10 +1,13 @@
 package nodeconn
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/shutdown"
+	"sync"
 	"time"
 )
 
@@ -15,6 +18,11 @@ var (
 	// Plugin is the plugin instance of the database plugin.
 	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log    *logger.Logger
+
+	bconn             *buffconn.BufferedConnection
+	bconnMutex        = &sync.RWMutex{}
+	subscriptions     = make(map[address.Address]struct{})
+	subscriptionsSent bool
 )
 
 func configure(_ *node.Plugin) {

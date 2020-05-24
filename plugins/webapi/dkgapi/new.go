@@ -39,6 +39,7 @@ import (
 // Next: see '/adm/aggregatedks' API
 
 func HandlerNewDks(c echo.Context) error {
+	log.Debugw("HandlerNewDks")
 	var req NewDKSRequest
 
 	if err := c.Bind(&req); err != nil {

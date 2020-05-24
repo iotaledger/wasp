@@ -9,13 +9,11 @@ import (
 )
 
 type dispatcherEvents struct {
-	SCDataLoaded               *events.Event
 	TransactionArrivedFromNode *events.Event
 	BalancesArrivedFromNode    *events.Event
 }
 
 var Events = dispatcherEvents{
-	SCDataLoaded:               events.NewEvent(events.CallbackCaller),
 	TransactionArrivedFromNode: events.NewEvent(scTransactionCaller),
 	BalancesArrivedFromNode:    events.NewEvent(addressBalancesCaller),
 }

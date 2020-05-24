@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/plugins/banner"
 	"github.com/iotaledger/wasp/plugins/cli"
+	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dispatcher"
@@ -28,6 +29,7 @@ var PLUGINS = node.Plugins(
 	peering.Plugin,
 	nodeconn.Plugin,
 	dispatcher.Plugin,
+	committees.Plugin,
 )
 
 var TestPLUGINS = node.Plugins(

@@ -4,7 +4,6 @@ package nodeconn
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
@@ -12,15 +11,7 @@ import (
 	"io"
 	"net"
 	"strings"
-	"sync"
 	"time"
-)
-
-var (
-	bconn             *buffconn.BufferedConnection
-	bconnMutex        = &sync.RWMutex{}
-	subscriptions     []address.Address
-	subscriptionsSent bool
 )
 
 const (
