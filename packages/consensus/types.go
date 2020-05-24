@@ -41,6 +41,8 @@ type operator struct {
 	leaderStatus             *leaderStatus
 	currentStateCompRequests []*computationRequest
 	nextStateCompRequests    []*computationRequest
+
+	log *logger.Logger
 }
 
 type requestNotification struct {
@@ -88,15 +90,20 @@ type request struct {
 	log        *logger.Logger
 }
 
-func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare) *operator {
+func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
 	return &operator{
 		committee: committee,
 		dkshare:   dkshare,
+		log:       log.Named("c"),
 	}
 }
 
 func (op *operator) quorum() uint16 {
 	return op.dkshare.T
+}
+
+func (op *operator) size() uint16 {
+	return op.dkshare.N
 }
 
 func (op *operator) stateIndex() uint32 {

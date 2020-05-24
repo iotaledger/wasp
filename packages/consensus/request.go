@@ -14,7 +14,7 @@ func (op *operator) validateRequestBlock(reqRef *committee.RequestMsg) error {
 }
 
 func (op *operator) newRequest(reqId *sctransaction.RequestId) *request {
-	reqLog := log.Named(reqId.Short())
+	reqLog := op.log.Named(reqId.Short())
 	ret := &request{
 		reqId: reqId,
 		log:   reqLog,

@@ -13,7 +13,7 @@ type runCalculationsParams struct {
 	req             *request
 	ts              time.Time
 	balances        map[valuetransaction.ID][]*balance.Balance
-	rewardAddress   *address.Address
+	rewardAddress   address.Address
 	leaderPeerIndex uint16
 }
 
@@ -38,7 +38,7 @@ func (op *operator) processRequest(par runCalculationsParams) {
 func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 	reqId := result.Inputs.RequestMsg()[0].Id()
 	ctx := result.Inputs.(*runtimeContext)
-	log.Debugw("sendResultToTheLeader",
+	op.log.Debugw("sendResultToTheLeader",
 		"req", reqId.Short(),
 		"ts", result.Inputs.Timestamp(),
 		"leader", ctx.leaderPeerIndex,
@@ -46,7 +46,7 @@ func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 
 	sigShare, err := op.dkshare.SignShare(result.ResultTransaction.EssenceBytes())
 	if err != nil {
-		log.Errorf("error while signing transaction %v", err)
+		op.log.Errorf("error while signing transaction %v", err)
 		return
 	}
 	msgData := hashing.MustBytes(&committee.SignedHashMsg{
@@ -60,20 +60,20 @@ func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 	})
 
 	if err := op.committee.SendMsg(ctx.leaderPeerIndex, committee.MsgSignedHash, msgData); err != nil {
-		log.Error(err)
+		op.log.Error(err)
 	}
 }
 
 func (op *operator) saveOwnResult(result *committee.VMOutput) {
 	reqId := result.Inputs.RequestMsg()[0].Id()
-	log.Debugw("saveOwnResult",
+	op.log.Debugw("saveOwnResult",
 		"req", reqId.Short(),
 		"ts", result.Inputs.Timestamp(),
 	)
 
 	sigShare, err := op.dkshare.SignShare(result.ResultTransaction.EssenceBytes())
 	if err != nil {
-		log.Errorf("error while signing transaction %v", err)
+		op.log.Errorf("error while signing transaction %v", err)
 		return
 	}
 	op.leaderStatus.resultTx = result.ResultTransaction

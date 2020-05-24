@@ -45,7 +45,7 @@ func (op *operator) doLeader() {
 func (op *operator) requestBalancesFromNode() {
 	if op.balances == nil && time.Now().After(op.getBalancesDeadline) {
 		addr := op.committee.Address()
-		nodeconn.RequestBalancesFromNode(addr)
+		nodeconn.RequestBalancesFromNode(&addr)
 		op.getBalancesDeadline = time.Now().Add(getBalancesTimeout)
 	}
 }
@@ -62,7 +62,7 @@ func (op *operator) startProcessing() {
 	req := op.selectRequestToProcess()
 	if req == nil {
 		// can't select request to process
-		log.Debugf("can't select request to process")
+		op.log.Debugf("can't select request to process")
 		return
 	}
 	req.log.Debugw("request selected to process", "stateIdx", op.stateTx.MustState().StateIndex())
@@ -97,13 +97,13 @@ func (op *operator) startProcessing() {
 		req:             req,
 		ts:              ts,
 		balances:        op.balances,
-		rewardAddress:   registry.GetRewardAddress(op.committee.Address()),
+		rewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
 		leaderPeerIndex: op.committee.OwnPeerIndex(),
 	})
 }
 
 func (op *operator) checkQuorum() bool {
-	log.Debug("checkQuorum")
+	op.log.Debug("checkQuorum")
 	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
 		//log.Debug("checkQuorum: op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized")
 		return false
@@ -132,11 +132,11 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	if !op.leaderStatus.resultTx.SignaturesValid() {
-		log.Errorf("something went wrong while finalizing result transaction: %v", err)
+		op.log.Errorf("something went wrong while finalizing result transaction: %v", err)
 		return false
 	}
 
-	log.Info("FINALIZED RESULT. Posting to the Value Tangle. Req = %s", op.leaderStatus.req.reqId.Short())
+	op.log.Info("FINALIZED RESULT. Posting to the Value Tangle. Req = %s", op.leaderStatus.req.reqId.Short())
 	// TODO post to tangle
 	return true
 }

@@ -14,13 +14,13 @@ import (
 // implements VMInputs interface
 type runtimeContext struct {
 	// address of the smart contract
-	address *address.Address
+	address address.Address
 	// color of the smart contract
-	color *balance.Color
+	color balance.Color
 	// outputs/balances of the account address
 	balances map[valuetransaction.ID][]*balance.Balance
 	// reward address
-	rewardAddress *address.Address
+	rewardAddress address.Address
 	// input. Leader where results must be sent
 	leaderPeerIndex uint16
 	// input. Requests, may be a batch
@@ -35,11 +35,11 @@ type runtimeContext struct {
 }
 
 func (ctx *runtimeContext) Address() *address.Address {
-	return ctx.address
+	return &ctx.address
 }
 
 func (ctx *runtimeContext) Color() *balance.Color {
-	return ctx.color
+	return &ctx.color
 }
 
 func (ctx *runtimeContext) Balances() map[valuetransaction.ID][]*balance.Balance {
@@ -47,7 +47,7 @@ func (ctx *runtimeContext) Balances() map[valuetransaction.ID][]*balance.Balance
 }
 
 func (ctx *runtimeContext) RewardAddress() *address.Address {
-	return ctx.rewardAddress
+	return &ctx.rewardAddress
 }
 
 func (ctx *runtimeContext) RequestMsg() []*committee.RequestMsg {

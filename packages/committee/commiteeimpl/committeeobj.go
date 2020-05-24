@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/consensus"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/statemgr"
 	"github.com/iotaledger/wasp/packages/util"
@@ -61,7 +62,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 	}
 
 	ret.stateMgr = statemgr.New(ret, ret.log)
-	//ret.operator = consensus.NewOperator(ret, dkshare)
+	ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
 
 	ret.OpenQueue() // TODO only for testing
 

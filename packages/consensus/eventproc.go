@@ -20,7 +20,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 }
 
 func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
-	log.Debugf("EventBalancesMsg")
+	op.log.Debugf("EventBalancesMsg")
 	op.balances = balances.Balances
 
 	op.takeAction()
@@ -29,7 +29,7 @@ func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
 // triggered by new request msg from the node
 func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	if err := op.validateRequestBlock(reqMsg); err != nil {
-		log.Warnw("request block validation failed.Ignored",
+		op.log.Warnw("request block validation failed.Ignored",
 			"req", reqMsg.Id().Short(),
 			"err", err,
 		)
@@ -47,7 +47,7 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 }
 
 func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
-	log.Debugw("EventNotifyReqMsg",
+	op.log.Debugw("EventNotifyReqMsg",
 		"num", len(msg.RequestIds),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
@@ -60,7 +60,7 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 }
 
 func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
-	log.Debugw("EventStartProcessingReqMsg",
+	op.log.Debugw("EventStartProcessingReqMsg",
 		"reqId", msg.RequestId.Short(),
 		"sender", msg.SenderIndex,
 	)
@@ -78,13 +78,13 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 		req:             reqRec,
 		ts:              msg.Timestamp,
 		balances:        msg.Balances,
-		rewardAddress:   msg.RewardAddress,
+		rewardAddress:   *msg.RewardAddress,
 		leaderPeerIndex: msg.SenderIndex,
 	})
 }
 
 func (op *operator) EventResultCalculated(result *committee.VMOutput) {
-	log.Debugf("eventResultCalculated")
+	op.log.Debugf("eventResultCalculated")
 
 	ctx := result.Inputs.(*runtimeContext)
 
@@ -115,12 +115,12 @@ func (op *operator) EventResultCalculated(result *committee.VMOutput) {
 }
 
 func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
-	log.Debugw("EventSignedHashMsg",
+	op.log.Debugw("EventSignedHashMsg",
 		"reqId", msg.RequestId.Short(),
 		"sender", msg.SenderIndex,
 	)
 	if op.leaderStatus == nil {
-		log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
+		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
 		// shouldn't be
 		return
 	}
@@ -129,18 +129,18 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		return
 	}
 	if *msg.RequestId != *op.leaderStatus.req.reqId {
-		log.Debugf("EventSignedHashMsg: !msg.RequestId.Equal(op.leaderStatus.req.reqId)")
+		op.log.Debugf("EventSignedHashMsg: !msg.RequestId.Equal(op.leaderStatus.req.reqId)")
 		return
 	}
 	if !msg.OrigTimestamp.Equal(op.leaderStatus.ts) {
-		log.Debugw("EventSignedHashMsg: !msg.OrigTimestamp.Equal(op.leaderStatus.ts)",
+		op.log.Debugw("EventSignedHashMsg: !msg.OrigTimestamp.Equal(op.leaderStatus.ts)",
 			"msgTs", msg.OrigTimestamp,
 			"ownTs", op.leaderStatus.ts)
 		return
 	}
 	if op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil {
 		// repeating
-		log.Debugf("EventSignedHashMsg: op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil")
+		op.log.Debugf("EventSignedHashMsg: op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil")
 		return
 	}
 	if req, ok := op.requestFromId(msg.RequestId); ok {
@@ -151,7 +151,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	}
 	// verify signature share received
 	if err := op.dkshare.VerifySigShare(op.leaderStatus.resultTx.EssenceBytes(), msg.SigShare); err != nil {
-		log.Errorf("wrong signature from peer #%d: %v", msg.SenderIndex, err)
+		op.log.Errorf("wrong signature from peer #%d: %v", msg.SenderIndex, err)
 		return
 	}
 	op.leaderStatus.signedResults[msg.SenderIndex] = signedResult{
