@@ -4,6 +4,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/hive.go/logger"
+	"time"
 )
 
 func RequestBalancesFromNode(addr *address.Address) error {
@@ -43,4 +45,22 @@ func PostTransactionToNode(tx *valuetransaction.Transaction) error {
 		return err
 	}
 	return nil
+}
+
+func PostTransactionToNodeAsyncWithRetry(tx *valuetransaction.Transaction, retryEach, maxDuration time.Duration, log *logger.Logger) {
+	deadline := time.Now().Add(maxDuration)
+	go func() {
+		for {
+			if time.Now().After(deadline) {
+				log.Warn("PostTransactionToNodeAsyncWithRetry: cancelled sending transaction to node txid = %s", tx.ID().String())
+				return
+			}
+			err := PostTransactionToNode(tx)
+			if err == nil {
+				return
+			}
+			log.Warn("PostTransactionToNodeAsyncWithRetry: txid %s err = %v", tx.ID().String(), err)
+			time.Sleep(retryEach)
+		}
+	}()
 }

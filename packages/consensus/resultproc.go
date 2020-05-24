@@ -4,17 +4,19 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
 )
 
 type runCalculationsParams struct {
-	req             *request
+	reqs            []*committee.RequestMsg // batch
 	ts              time.Time
 	balances        map[valuetransaction.ID][]*balance.Balance
 	rewardAddress   address.Address
 	leaderPeerIndex uint16
+	log             *logger.Logger
 }
 
 // runs the VM for the request and posts result to committee's queue
@@ -26,10 +28,10 @@ func (op *operator) processRequest(par runCalculationsParams) {
 		balances:        par.balances,
 		rewardAddress:   par.rewardAddress,
 		leaderPeerIndex: par.leaderPeerIndex,
-		reqMsg:          []*committee.RequestMsg{par.req.reqMsg},
+		reqMsg:          par.reqs,
 		timestamp:       par.ts,
 		variableState:   op.variableState,
-		log:             par.req.log,
+		log:             par.log,
 	})
 
 	op.committee.ReceiveMessage(result)
@@ -39,7 +41,7 @@ func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 	reqId := result.Inputs.RequestMsg()[0].Id()
 	ctx := result.Inputs.(*runtimeContext)
 	op.log.Debugw("sendResultToTheLeader",
-		"req", reqId.Short(),
+		"reqs", reqId.Short(),
 		"ts", result.Inputs.Timestamp(),
 		"leader", ctx.leaderPeerIndex,
 	)
@@ -49,13 +51,14 @@ func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 		op.log.Errorf("error while signing transaction %v", err)
 		return
 	}
+
 	msgData := hashing.MustBytes(&committee.SignedHashMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: op.stateIndex(),
 		},
-		RequestId:     reqId,
+		BatchHash:     committee.BatchHash(result.Inputs),
 		OrigTimestamp: ctx.Timestamp(),
-		EssenceHash:   hashing.HashData(result.ResultTransaction.EssenceBytes()),
+		EssenceHash:   *hashing.HashData(result.ResultTransaction.EssenceBytes()),
 		SigShare:      sigShare,
 	})
 
@@ -67,7 +70,7 @@ func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 func (op *operator) saveOwnResult(result *committee.VMOutput) {
 	reqId := result.Inputs.RequestMsg()[0].Id()
 	op.log.Debugw("saveOwnResult",
-		"req", reqId.Short(),
+		"reqs", reqId.Short(),
 		"ts", result.Inputs.Timestamp(),
 	)
 
@@ -77,8 +80,8 @@ func (op *operator) saveOwnResult(result *committee.VMOutput) {
 		return
 	}
 	op.leaderStatus.resultTx = result.ResultTransaction
-	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = signedResult{
-		essenceHash: hashing.HashData(result.ResultTransaction.EssenceBytes()),
+	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
+		essenceHash: *hashing.HashData(result.ResultTransaction.EssenceBytes()),
 		sigShare:    sigShare,
 	}
 }

@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"bytes"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -26,7 +27,7 @@ func (op *operator) doSubordinate() {
 			continue
 		}
 		cr.processed = true
-		//go op.processRequest(cr.req, cr.ts, cr.leaderPeerIndex)
+		//go op.processRequest(cr.reqs, cr.ts, cr.leaderPeerIndex)
 	}
 }
 
@@ -59,42 +60,54 @@ func (op *operator) startProcessing() {
 		// request already selected and calculations initialized
 		return
 	}
-	req := op.selectRequestToProcess()
-	if req == nil {
+	reqs := op.selectRequestsToProcess()
+	reqIds := takeIds(reqs)
+	if len(reqs) == 0 {
 		// can't select request to process
 		op.log.Debugf("can't select request to process")
 		return
 	}
-	req.log.Debugw("request selected to process", "stateIdx", op.stateTx.MustState().StateIndex())
+	op.log.Debugw("requests selected to process",
+		"stateIdx", op.stateTx.MustState().StateIndex(),
+		"batch size", len(reqs),
+	)
 	msgData := hashing.MustBytes(&committee.StartProcessingReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			// ts is set by SendMsgToPeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
-		RewardAddress: registry.GetRewardAddress(op.committee.Address()),
+		RewardAddress: *registry.GetRewardAddress(op.committee.Address()),
 		Balances:      op.balances,
-		RequestId:     req.reqId,
+		RequestIds:    reqIds,
 	})
 
 	numSucc, ts := op.committee.SendMsgToPeers(committee.MsgStartProcessingRequest, msgData)
 
-	req.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
+	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
 	if numSucc < op.quorum()-1 {
 		// doesn't make sense to continue because less than quorum sends succeeded
-		req.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded", numSucc)
+		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded", numSucc)
 		return
 	}
-	op.leaderStatus = &leaderStatus{
-		req:           req,
-		ts:            ts,
-		signedResults: make([]signedResult, op.committee.Size()),
+	var buf bytes.Buffer
+	for i := range reqIds {
+		buf.Write(reqIds[i][:])
 	}
-	req.log.Debugf("msgStartProcessingRequest successfully sent to %d peers", numSucc)
+	reqMsgs, ok := takeMsgs(reqs)
+	if !ok {
+		panic("some req messages are nil")
+	}
+	op.leaderStatus = &leaderStatus{
+		reqs:          reqs,
+		batchHash:     sctransaction.BatchHash(reqIds),
+		ts:            ts,
+		signedResults: make([]*signedResult, op.committee.Size()),
+	}
+	op.log.Debugf("msgStartProcessingRequest successfully sent to %d peers", numSucc)
 
-	// run calculations async.
 	go op.processRequest(runCalculationsParams{
-		req:             req,
+		reqs:            reqMsgs,
 		ts:              ts,
 		balances:        op.balances,
 		rewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
@@ -109,16 +122,9 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	mainHash := op.leaderStatus.signedResults[op.committee.OwnPeerIndex()].essenceHash
-	if mainHash == nil {
-		//log.Debug("checkQuorum: mainHash == nil")
-		return false
-	}
 	sigShares := make([][]byte, 0, op.committee.Size())
 	for i := range op.leaderStatus.signedResults {
-		if op.leaderStatus.signedResults[i].essenceHash == nil {
-			continue
-		}
-		if *op.leaderStatus.signedResults[i].essenceHash == *mainHash {
+		if op.leaderStatus.signedResults[i].essenceHash == mainHash {
 			sigShares = append(sigShares, op.leaderStatus.signedResults[i].sigShare)
 		}
 	}
@@ -128,7 +134,7 @@ func (op *operator) checkQuorum() bool {
 	// quorum detected
 	err := op.aggregateSigShares(sigShares)
 	if err != nil {
-		op.leaderStatus.req.log.Errorf("aggregateSigShares returned: %v", err)
+		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
 	}
 	if !op.leaderStatus.resultTx.SignaturesValid() {
@@ -136,8 +142,10 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
-	op.log.Info("FINALIZED RESULT. Posting to the Value Tangle. Req = %s", op.leaderStatus.req.reqId.Short())
-	// TODO post to tangle
+	op.log.Infof("FINALIZED RESULT. Posting transaction to the Value Tangle. txid = %s",
+		op.leaderStatus.resultTx.ID().String())
+
+	nodeconn.PostTransactionToNodeAsyncWithRetry(op.leaderStatus.resultTx.Transaction, 2*time.Second, 7*time.Second, op.log)
 	return true
 }
 
@@ -147,6 +155,10 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	op.balances = nil
 	op.getBalancesDeadline = time.Now()
 
+	nextStateTransition := false
+	if op.variableState != nil && variableState.StateIndex() == op.variableState.StateIndex()+1 {
+		nextStateTransition = true
+	}
 	op.variableState = variableState
 
 	op.resetLeader(stateTx.ID().Bytes())
@@ -157,44 +169,17 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 		op.nextStateCompRequests, op.currentStateCompRequests
 	op.nextStateCompRequests = op.nextStateCompRequests[:0]
 
-	op.requestNotificationsCurrentState, op.requestNotificationsNextState =
-		op.requestNotificationsNextState, op.requestNotificationsCurrentState
-	op.requestNotificationsNextState = op.requestNotificationsNextState[:0]
-}
-
-func (op *operator) selectRequestToProcess() *request {
-	// virtual voting
-	votes := make(map[sctransaction.RequestId]int)
-	for _, rn := range op.requestNotificationsCurrentState {
-		if _, ok := votes[*rn.reqId]; !ok {
-			votes[*rn.reqId] = 0
-		}
-		votes[*rn.reqId] = votes[*rn.reqId] + 1
-	}
-	if len(votes) == 0 {
-		return nil
-	}
-	maxvotes := 0
-	for _, v := range votes {
-		if v > maxvotes {
-			maxvotes = v
-		}
-	}
-	if maxvotes < int(op.quorum()) {
-		return nil
-	}
-	candidates := make([]*request, 0, len(votes))
-	for rid, v := range votes {
-		if v == int(op.quorum()) {
-			req := op.requests[rid]
+	for _, req := range op.requests {
+		if nextStateTransition {
+			req.notificationsNextState, req.notificationsCurrentState = req.notificationsCurrentState, req.notificationsNextState
+			setAllFalse(req.notificationsNextState)
 			if req.reqMsg != nil {
-				candidates = append(candidates, req)
+				req.notificationsNextState[op.peerIndex()] = true
+				req.notificationsCurrentState[op.peerIndex()] = true
 			}
+		} else {
+			setAllFalse(req.notificationsNextState)
+			setAllFalse(req.notificationsCurrentState)
 		}
 	}
-	if len(candidates) == 0 {
-		return nil
-	}
-	sortRequestsByAge(candidates)
-	return candidates[0]
 }

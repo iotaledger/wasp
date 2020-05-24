@@ -28,9 +28,6 @@ type operator struct {
 
 	requests map[sctransaction.RequestId]*request
 
-	requestNotificationsCurrentState []*requestNotification
-	requestNotificationsNextState    []*requestNotification
-
 	leaderPeerIndexList       []uint16
 	currLeaderSeqIndex        uint16
 	myLeaderSeqIndex          uint16
@@ -45,21 +42,17 @@ type operator struct {
 	log *logger.Logger
 }
 
-type requestNotification struct {
-	reqId     *sctransaction.RequestId
-	peerIndex uint16
-}
-
 type leaderStatus struct {
-	req           *request
+	reqs          []*request
+	batchHash     hashing.HashValue
 	ts            time.Time
 	resultTx      *sctransaction.Transaction
 	finalized     bool
-	signedResults []signedResult
+	signedResults []*signedResult
 }
 
 type signedResult struct {
-	essenceHash *hashing.HashValue
+	essenceHash hashing.HashValue
 	sigShare    tbdn.SigShare
 }
 
@@ -82,6 +75,10 @@ type request struct {
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
 
+	// notification vectors for the current and next state
+	notificationsCurrentState []bool
+	notificationsNextState    []bool
+
 	// request message as received by the operator.
 	// Contains parsed SC transaction and the request block index
 	//reqRef *sctransaction.RequestRef
@@ -96,6 +93,10 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 		dkshare:   dkshare,
 		log:       log.Named("c"),
 	}
+}
+
+func (op *operator) peerIndex() uint16 {
+	return op.dkshare.Index
 }
 
 func (op *operator) quorum() uint16 {

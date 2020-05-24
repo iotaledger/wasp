@@ -16,29 +16,12 @@ func (op *operator) validateRequestBlock(reqRef *committee.RequestMsg) error {
 func (op *operator) newRequest(reqId *sctransaction.RequestId) *request {
 	reqLog := op.log.Named(reqId.Short())
 	ret := &request{
-		reqId: reqId,
-		log:   reqLog,
+		reqId:                     reqId,
+		log:                       reqLog,
+		notificationsCurrentState: make([]bool, op.size()),
+		notificationsNextState:    make([]bool, op.size()),
 	}
 	reqLog.Info("NEW REQUEST")
-	return ret
-}
-
-// request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
-	reqId := reqMsg.Id()
-	ret, ok := op.requests[*reqId]
-	if ok && ret.reqMsg == nil {
-		ret.reqMsg = reqMsg
-		ret.whenMsgReceived = time.Now()
-		return ret
-	}
-	if !ok {
-		ret = op.newRequest(reqId)
-		ret.whenMsgReceived = time.Now()
-		ret.reqMsg = reqMsg
-		op.requests[*reqId] = ret
-	}
-	ret.msgCounter++
 	return ret
 }
 
@@ -57,6 +40,27 @@ func (op *operator) requestFromId(reqId *sctransaction.RequestId) (*request, boo
 	return ret, true
 }
 
+// request record retrieved (or created) by request message
+func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
+	reqId := reqMsg.Id()
+	ret, ok := op.requests[*reqId]
+	if ok && ret.reqMsg == nil {
+		ret.reqMsg = reqMsg
+		ret.whenMsgReceived = time.Now()
+		return ret
+	}
+	if !ok {
+		ret = op.newRequest(reqId)
+		ret.whenMsgReceived = time.Now()
+		ret.reqMsg = reqMsg
+		op.requests[*reqId] = ret
+	}
+	ret.markSeenCurrentStateBy(op.peerIndex())
+
+	ret.msgCounter++
+	return ret
+}
+
 // TODO caching processed requests
 // TODO gracefull reaction in DB error
 func (op *operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
@@ -73,4 +77,47 @@ func (op *operator) removeRequest(reqId *sctransaction.RequestId) bool {
 		return true
 	}
 	return false
+}
+
+func (req *request) markSeenCurrentStateBy(peerIndex uint16) {
+	req.notificationsCurrentState[peerIndex] = true
+}
+
+func (req *request) markSeenNextStateBy(peerIndex uint16) {
+	req.notificationsNextState[peerIndex] = true
+}
+
+func setAllFalse(bs []bool) {
+	for i := range bs {
+		bs[i] = false
+	}
+}
+
+func numTrue(bs []bool) uint16 {
+	ret := uint16(0)
+	for _, v := range bs {
+		if v {
+			ret++
+		}
+	}
+	return ret
+}
+
+func takeIds(reqs []*request) []sctransaction.RequestId {
+	ret := make([]sctransaction.RequestId, len(reqs))
+	for i := range ret {
+		ret[i] = *reqs[i].reqId
+	}
+	return ret
+}
+
+func takeMsgs(reqs []*request) ([]*committee.RequestMsg, bool) {
+	ret := make([]*committee.RequestMsg, len(reqs))
+	for i := range ret {
+		if reqs[i].reqMsg == nil {
+			return nil, false
+		}
+		ret[i] = reqs[i].reqMsg
+	}
+	return ret, true
 }

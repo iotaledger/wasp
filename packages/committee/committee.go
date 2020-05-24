@@ -1,10 +1,12 @@
 package committee
 
 import (
+	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -90,4 +92,12 @@ var ConstructorNew func(scdata *registry.SCMetaData, log *logger.Logger) (Commit
 
 func New(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error) {
 	return ConstructorNew(scdata, log)
+}
+
+func BatchHash(vimp VMInputs) hashing.HashValue {
+	var buf bytes.Buffer
+	for _, msg := range vimp.RequestMsg() {
+		buf.Write(msg.Id()[:])
+	}
+	return *hashing.HashData(buf.Bytes())
 }

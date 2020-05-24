@@ -43,15 +43,15 @@ type NotifyReqMsg struct {
 
 // message is sent by the leader to other peers to initiate request processing
 // other peers are expected to check is timestamp is acceptable then
-// process request and sign the result hash with the timestamp proposed by the leader
+// process request batch and sign the result hash with the timestamp proposed by the leader
 type StartProcessingReqMsg struct {
 	PeerMsgHeader
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp time.Time
-	// request id
-	RequestId *sctransaction.RequestId
+	// batch of request ids
+	RequestIds []sctransaction.RequestId
 	// reward address
-	RewardAddress *address.Address
+	RewardAddress address.Address
 	// balances/outputs
 	Balances map[valuetransaction.ID][]*balance.Balance
 }
@@ -62,12 +62,12 @@ type SignedHashMsg struct {
 	PeerMsgHeader
 	// timestamp of this message. Field is set upon receive the message to sender's timestamp
 	Timestamp time.Time
-	// request id
-	RequestId *sctransaction.RequestId
+	// returns hash of all req ids
+	BatchHash hashing.HashValue
 	// original timestamp, the parameter for calculations, which is signed as part of the essence
 	OrigTimestamp time.Time
 	// hash of the signed data (essence)
-	EssenceHash *hashing.HashValue
+	EssenceHash hashing.HashValue
 	// signature
 	SigShare tbdn.SigShare
 }

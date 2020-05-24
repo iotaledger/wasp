@@ -2,7 +2,6 @@ package committee
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -53,10 +52,15 @@ func (msg *StartProcessingReqMsg) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.RequestId.Bytes()); err != nil {
+	if err := util.WriteUint16(w, uint16(len(msg.RequestIds))); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.RewardAddress.Bytes()); err != nil {
+	for i := range msg.RequestIds {
+		if _, err := w.Write(msg.RequestIds[i][:]); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write(msg.RewardAddress[:]); err != nil {
 		return err
 	}
 	if err := waspconn.WriteBalances(w, msg.Balances); err != nil {
@@ -69,12 +73,17 @@ func (msg *StartProcessingReqMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
 		return err
 	}
-	msg.RequestId = new(sctransaction.RequestId)
-	if _, err := r.Read(msg.RequestId.Bytes()); err != nil {
+	var size uint16
+	if err := util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	msg.RewardAddress = new(address.Address)
-	if _, err := r.Read(msg.RewardAddress.Bytes()); err != nil {
+	msg.RequestIds = make([]sctransaction.RequestId, size)
+	for i := range msg.RequestIds {
+		if err := sctransaction.ReadRequestId(r, &msg.RequestIds[i]); err != nil {
+			return err
+		}
+	}
+	if err := util.ReadAddress(r, &msg.RewardAddress); err != nil {
 		return err
 	}
 	var err error
@@ -91,10 +100,10 @@ func (msg *SignedHashMsg) Write(w io.Writer) error {
 	if err := util.WriteTime(w, msg.OrigTimestamp); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.RequestId.Bytes()); err != nil {
+	if _, err := w.Write(msg.BatchHash[:]); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.EssenceHash.Bytes()); err != nil {
+	if _, err := w.Write(msg.EssenceHash[:]); err != nil {
 		return err
 	}
 	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
@@ -110,10 +119,10 @@ func (msg *SignedHashMsg) Read(r io.Reader) error {
 	if err := util.ReadTime(r, &msg.OrigTimestamp); err != nil {
 		return err
 	}
-	if _, err := r.Read(msg.RequestId.Bytes()); err != nil {
+	if err := util.ReadHashValue(r, &msg.BatchHash); err != nil {
 		return err
 	}
-	if _, err := r.Read(msg.EssenceHash.Bytes()); err != nil {
+	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
 		return err
 	}
 	var err error

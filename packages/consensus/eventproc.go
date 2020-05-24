@@ -4,21 +4,24 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 )
 
+// EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	if op.variableState != nil {
-		if !(op.variableState.StateIndex()+1 == msg.VariableState.StateIndex()) {
-			panic("assertion failed: op.variableState.stateIndex()+1 == msg.VariableState.stateIndex()")
-		}
-	}
+	vh := msg.VariableState.Hash()
+	op.log.Debugw("EventStateTransitionMsg",
+		"state index", msg.VariableState.StateIndex(),
+		"state hash", vh.String(),
+		"state tx", msg.StateTransaction.String(),
+		"num reqs", len(msg.RequestIds),
+	)
 	// remove all processed requests from the local backlog
 	for _, reqId := range msg.RequestIds {
 		op.removeRequest(reqId)
 	}
 	op.setNewState(msg.StateTransaction, msg.VariableState)
-
 	op.takeAction()
 }
 
+// EventBalancesMsg triggered by balances of the SC address coming from the node
 func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg")
 	op.balances = balances.Balances
@@ -26,23 +29,23 @@ func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
 	op.takeAction()
 }
 
-// triggered by new request msg from the node
+// EventRequestMsg triggered by new request msg from the node
 func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
+	op.log.Debugw("EventRequestMsg", "reqid", reqMsg.ID().String())
+
 	if err := op.validateRequestBlock(reqMsg); err != nil {
 		op.log.Warnw("request block validation failed.Ignored",
-			"req", reqMsg.Id().Short(),
+			"reqs", reqMsg.Id().Short(),
 			"err", err,
 		)
 		return
 	}
 	req := op.requestFromMsg(reqMsg)
-	req.log.Debugf("eventRequestMsg: id = %s", reqMsg.Id().Short())
+	req.log.Debugf("EventRequestMsg: request object")
 
-	// include request into own list of the current state
-	op.appendRequestIdNotifications(op.committee.OwnPeerIndex(), op.stateTx.MustState().StateIndex(), req.reqId)
-
-	// the current leader is notified about new request
+	// notify about new request the current leader
 	op.sendRequestNotificationsToLeader([]*request{req})
+
 	op.takeAction()
 }
 
@@ -54,31 +57,38 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	)
 	op.MustValidStateIndex(msg.StateIndex)
 
-	// include all reqids into notifications list
-	op.appendRequestIdNotifications(msg.SenderIndex, msg.StateIndex, msg.RequestIds...)
+	op.markRequestsNotified(msg.SenderIndex, msg.StateIndex, msg.RequestIds)
+
 	op.takeAction()
 }
 
 func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
 	op.log.Debugw("EventStartProcessingReqMsg",
-		"reqId", msg.RequestId.Short(),
+		"num reqId", len(msg.RequestIds),
 		"sender", msg.SenderIndex,
 	)
 
 	op.MustValidStateIndex(msg.StateIndex)
 
-	// run calculations async.
-	reqRec, processed := op.requestFromId(msg.RequestId)
-	if reqRec.reqMsg == nil || processed {
-		return
+	reqs := make([]*committee.RequestMsg, len(msg.RequestIds))
+	for i := range reqs {
+		req, ok := op.requestFromId(&msg.RequestIds[i])
+		if !ok {
+			op.log.Debug("some requests in the batch are already processed")
+			return
+		}
+		if req.reqMsg == nil {
+			op.log.Debug("some requests in the batch not yet received by the node")
+			return
+		}
+		reqs = append(reqs, req.reqMsg)
 	}
-
 	// start async calculation
 	go op.processRequest(runCalculationsParams{
-		req:             reqRec,
+		reqs:            reqs,
 		ts:              msg.Timestamp,
 		balances:        msg.Balances,
-		rewardAddress:   *msg.RewardAddress,
+		rewardAddress:   msg.RewardAddress,
 		leaderPeerIndex: msg.SenderIndex,
 	})
 }
@@ -102,7 +112,7 @@ func (op *operator) EventResultCalculated(result *committee.VMOutput) {
 		return
 	}
 	ctx.log.Debugw("eventResultCalculated",
-		"req", req.reqId.Short(),
+		"reqs", req.reqId.Short(),
 		"stateIndex", op.stateIndex(),
 	)
 
@@ -116,8 +126,8 @@ func (op *operator) EventResultCalculated(result *committee.VMOutput) {
 
 func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	op.log.Debugw("EventSignedHashMsg",
-		"reqId", msg.RequestId.Short(),
 		"sender", msg.SenderIndex,
+		"batch hash", msg.BatchHash.String(),
 	)
 	if op.leaderStatus == nil {
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
@@ -128,8 +138,8 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		// out of context
 		return
 	}
-	if *msg.RequestId != *op.leaderStatus.req.reqId {
-		op.log.Debugf("EventSignedHashMsg: !msg.RequestId.Equal(op.leaderStatus.req.reqId)")
+	if msg.BatchHash != op.leaderStatus.batchHash {
+		op.log.Errorf("EventSignedHashMsg: msg.BatchHash != op.leaderStatus.batchHash")
 		return
 	}
 	if !msg.OrigTimestamp.Equal(op.leaderStatus.ts) {
@@ -138,23 +148,17 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 			"ownTs", op.leaderStatus.ts)
 		return
 	}
-	if op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil {
+	if op.leaderStatus.signedResults[msg.SenderIndex] != nil {
 		// repeating
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil")
 		return
-	}
-	if req, ok := op.requestFromId(msg.RequestId); ok {
-		req.log.Debugw("EventSignedHashMsg",
-			"origTS", msg.OrigTimestamp,
-			"stateIdx", msg.StateIndex,
-		)
 	}
 	// verify signature share received
 	if err := op.dkshare.VerifySigShare(op.leaderStatus.resultTx.EssenceBytes(), msg.SigShare); err != nil {
 		op.log.Errorf("wrong signature from peer #%d: %v", msg.SenderIndex, err)
 		return
 	}
-	op.leaderStatus.signedResults[msg.SenderIndex] = signedResult{
+	op.leaderStatus.signedResults[msg.SenderIndex] = &signedResult{
 		essenceHash: msg.EssenceHash,
 		sigShare:    msg.SigShare,
 	}

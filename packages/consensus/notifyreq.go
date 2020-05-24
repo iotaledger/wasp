@@ -45,9 +45,9 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 // only requests with reqRef != nil
 func (op *operator) sortedRequestsByAge() []*request {
 	//ret := make([]*request, 0, len(op.requests))
-	//for _, req := range op.requests {
-	//	if req.reqRef != nil {
-	//		ret = append(ret, req)
+	//for _, reqs := range op.requests {
+	//	if reqs.reqRef != nil {
+	//		ret = append(ret, reqs)
 	//	}
 	//}
 	//sortRequestsByAge(ret)
@@ -66,30 +66,26 @@ func (op *operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
 
 // includes request ids into the respective list of notifications,
 // by the sender index
-func (op *operator) appendRequestIdNotifications(senderIndex uint16, stateIndex uint32, reqs ...*sctransaction.RequestId) {
+func (op *operator) markRequestsNotified(senderIndex uint16, stateIndex uint32, reqs []*sctransaction.RequestId) {
+	var isCurrentState bool
 	switch {
 	case stateIndex == op.stateIndex():
-		for _, id := range reqs {
-			op.requestNotificationsCurrentState = appendNotification(op.requestNotificationsCurrentState, id, senderIndex)
-		}
+		isCurrentState = true
 	case stateIndex == op.stateIndex()+1:
-		for _, id := range reqs {
-			op.requestNotificationsNextState = appendNotification(op.requestNotificationsNextState, id, senderIndex)
-		}
+		isCurrentState = false
 	default:
-		panic("wrong state index")
+		// from another state
+		return
 	}
-}
-
-// ensures each id is unique in the list
-func appendNotification(lst []*requestNotification, id *sctransaction.RequestId, peerIndex uint16) []*requestNotification {
-	for _, tid := range lst {
-		if *tid.reqId == *id && tid.peerIndex == peerIndex {
-			return lst
+	for _, reqid := range reqs {
+		req, ok := op.requestFromId(reqid)
+		if !ok {
+			continue
+		}
+		if isCurrentState {
+			req.markSeenCurrentStateBy(senderIndex)
+		} else {
+			req.markSeenNextStateBy(senderIndex)
 		}
 	}
-	return append(lst, &requestNotification{
-		reqId:     id,
-		peerIndex: peerIndex,
-	})
 }
