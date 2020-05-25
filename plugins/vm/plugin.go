@@ -37,16 +37,21 @@ func run(_ *node.Plugin) {
 }
 
 func getProcessor(programHash hashing.HashValue) (Processor, error) {
-
+	panic("implement me")
 }
 
 // RunComputationsAsync runs computations in the background and call function upn finishing it
-func RunComputationsAsync(ctx *RuntimeContext, onFinish func()) error {
-	if processor, err := getProcessor(ctx.ProgramHash); err != nil {
+func RunComputationsAsync(ctx *RuntimeContext) error {
+	processor, err := getProcessor(ctx.ProgramHash)
+	if err != nil {
 		return err
 	}
-	err := vmDaemon.BackgroundWorker(ctx.taskName(), func(shutdownSignal <-chan struct{}) {
-		panic("implement me")
+	err = vmDaemon.BackgroundWorker(ctx.taskName(), func(shutdownSignal <-chan struct{}) {
+		runVM(ctx, processor, shutdownSignal)
 	})
 	return err
+}
+
+func runVM(ctx *RuntimeContext, processor Processor, shutdownSignal <-chan struct{}) {
+
 }
