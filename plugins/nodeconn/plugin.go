@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// PluginName is the name of the database plugin.
+// PluginName is the name of the NodeConn plugin.
 const PluginName = "NodeConn"
 
 var (

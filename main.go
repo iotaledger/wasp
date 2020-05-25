@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/testplugins/builtinsc"
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/testplugins/roundtrip"
+	"github.com/iotaledger/wasp/plugins/vm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -30,6 +31,7 @@ var PLUGINS = node.Plugins(
 	nodeconn.Plugin,
 	dispatcher.Plugin,
 	committees.Plugin,
+	vm.Plugin,
 )
 
 var TestPLUGINS = node.Plugins(

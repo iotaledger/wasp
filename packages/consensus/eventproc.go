@@ -2,6 +2,8 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/plugins/vm"
 )
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
@@ -98,30 +100,26 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 	})
 }
 
-func (op *operator) EventResultCalculated(result *committee.VMOutput) {
+func (op *operator) EventResultCalculated(ctx *vm.RuntimeContext) {
 	op.log.Debugf("eventResultCalculated")
 
-	ctx := result.Inputs.(*runtimeContext)
-
 	// check if result belongs to context
-	if ctx.variableState.StateIndex() != op.stateIndex() {
+	if ctx.VariableState.StateIndex() != op.stateIndex() {
 		// out of context. ignore
 		return
 	}
 
-	// TODO batch of requests. Now assumed 1 request in the batch
-	reqId := ctx.reqMsg[0].RequestId()
-	req, ok := op.requestFromId(reqId)
-	if !ok {
-		// processed
+	resultBatch, err := state.NewBatch(ctx.StateUpdates, ctx.VariableState.StateIndex()+1)
+	if err != nil {
+		op.log.Errorf("error while creating batch: %v", err)
 		return
 	}
-	ctx.log.Debugw("eventResultCalculated",
-		"reqs", req.reqId.Short(),
+	op.log.Debugw("eventResultCalculated",
+		"batch size", resultBatch.Size(),
 		"stateIndex", op.stateIndex(),
 	)
 
-	if ctx.leaderPeerIndex == op.committee.OwnPeerIndex() {
+	if ctx.LeaderPeerIndex == op.committee.OwnPeerIndex() {
 		op.saveOwnResult(result)
 	} else {
 		op.sendResultToTheLeader(result)
