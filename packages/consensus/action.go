@@ -155,31 +155,38 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	op.balances = nil
 	op.getBalancesDeadline = time.Now()
 
-	nextStateTransition := false
-	if op.variableState != nil && variableState.StateIndex() == op.variableState.StateIndex()+1 {
-		nextStateTransition = true
-	}
 	op.variableState = variableState
 
 	op.resetLeader(stateTx.ID().Bytes())
 
-	// computation requests and notifications about requests for the next state index
-	// are brought to the current state next state list is cleared
-	op.currentStateCompRequests, op.nextStateCompRequests =
-		op.nextStateCompRequests, op.currentStateCompRequests
-	op.nextStateCompRequests = op.nextStateCompRequests[:0]
+	// if consistently moving to the next state, computation requests and notifications about
+	// requests for the next state index are brought to the current state next state list is cleared
+	// otherwise any state data is cleared
+	if op.variableState != nil && variableState.StateIndex() == op.variableState.StateIndex()+1 {
+		op.currentStateCompRequests, op.nextStateCompRequests =
+			op.nextStateCompRequests, op.currentStateCompRequests
+		op.nextStateCompRequests = op.nextStateCompRequests[:0]
+	} else {
+		op.nextStateCompRequests = op.nextStateCompRequests[:0]
+		op.currentStateCompRequests = op.currentStateCompRequests[:0]
+	}
 
 	for _, req := range op.requests {
-		if nextStateTransition {
-			req.notificationsNextState, req.notificationsCurrentState = req.notificationsCurrentState, req.notificationsNextState
-			setAllFalse(req.notificationsNextState)
-			if req.reqMsg != nil {
-				req.notificationsNextState[op.peerIndex()] = true
-				req.notificationsCurrentState[op.peerIndex()] = true
+		setAllFalse(req.notifications)
+		req.notifications[op.peerIndex()] = req.reqMsg != nil
+	}
+	// run through the notification backlog and mark relevant notifications
+	for _, nmsg := range op.notificationsBacklog {
+		if nmsg.StateIndex == op.variableState.StateIndex() {
+			for _, rid := range nmsg.RequestIds {
+				r, ok := op.requestFromId(rid)
+				if !ok {
+					continue
+				}
+				r.notifications[nmsg.SenderIndex] = true
 			}
-		} else {
-			setAllFalse(req.notificationsNextState)
-			setAllFalse(req.notificationsCurrentState)
 		}
 	}
+	// clean notification backlog
+	op.notificationsBacklog = op.notificationsBacklog[:0]
 }

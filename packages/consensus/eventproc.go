@@ -6,19 +6,25 @@ import (
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	vh := msg.VariableState.Hash()
-	op.log.Debugw("EventStateTransitionMsg",
-		"state index", msg.VariableState.StateIndex(),
-		"state hash", vh.String(),
-		"state tx", msg.StateTransaction.String(),
-		"num reqs", len(msg.RequestIds),
-	)
 	// remove all processed requests from the local backlog
 	for _, reqId := range msg.RequestIds {
 		op.removeRequest(reqId)
 	}
+
 	op.setNewState(msg.StateTransaction, msg.VariableState)
-	op.takeAction()
+
+	vh := msg.VariableState.Hash()
+	op.log.Debugw("EventStateTransitionMsg",
+		"state index", msg.VariableState.StateIndex(),
+		"state hash", vh.String(),
+		"state txid", msg.StateTransaction.ID().String(),
+		"num reqs", len(msg.RequestIds),
+		"iAmTheLeader", op.iAmCurrentLeader(),
+	)
+	// notify about all request the new leader
+	op.sendRequestNotificationsToLeader(nil)
+
+	//op.takeAction()
 }
 
 // EventBalancesMsg triggered by balances of the SC address coming from the node
@@ -31,35 +37,34 @@ func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
 
 // EventRequestMsg triggered by new request msg from the node
 func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
-	op.log.Debugw("EventRequestMsg", "reqid", reqMsg.ID().String())
+	op.log.Debugw("EventRequestMsg", "reqid", reqMsg.RequestId().String())
 
 	if err := op.validateRequestBlock(reqMsg); err != nil {
 		op.log.Warnw("request block validation failed.Ignored",
-			"reqs", reqMsg.Id().Short(),
+			"reqs", reqMsg.RequestId().Short(),
 			"err", err,
 		)
 		return
 	}
 	req := op.requestFromMsg(reqMsg)
-	req.log.Debugf("EventRequestMsg: request object")
 
 	// notify about new request the current leader
 	op.sendRequestNotificationsToLeader([]*request{req})
 
-	op.takeAction()
+	//op.takeAction()
 }
 
 func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
-		"num", len(msg.RequestIds),
+		"num ids", len(msg.RequestIds),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
 	op.MustValidStateIndex(msg.StateIndex)
 
-	op.markRequestsNotified(msg.SenderIndex, msg.StateIndex, msg.RequestIds)
+	op.markRequestsNotified(msg)
 
-	op.takeAction()
+	//op.takeAction()
 }
 
 func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
@@ -105,7 +110,7 @@ func (op *operator) EventResultCalculated(result *committee.VMOutput) {
 	}
 
 	// TODO batch of requests. Now assumed 1 request in the batch
-	reqId := ctx.reqMsg[0].Id()
+	reqId := ctx.reqMsg[0].RequestId()
 	req, ok := op.requestFromId(reqId)
 	if !ok {
 		// processed
@@ -166,7 +171,13 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
-	if msg%10 == 0 {
-		op.takeAction()
+	if msg%200 == 0 {
+		op.log.Debugw("timer tick",
+			"#", msg,
+			"req backlog", len(op.requests),
+			"selection", len(op.selectRequestsToProcess()),
+			"notif backlog", len(op.notificationsBacklog),
+		)
+		//op.takeAction()
 	}
 }

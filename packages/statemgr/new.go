@@ -122,7 +122,7 @@ func (sm *stateManager) initLoadState() {
 		// SC metadata contains 'color' which is equal to the ID of the origin transaction
 		batch.Commit((valuetransaction.ID)(par.Color))
 
-		sm.log.Infow("initial stated wasn't found. Origin state update batch has been created",
+		sm.log.Infow("initial state wasn't found. Origin state update batch has been created",
 			"state txid", batch.StateTransactionId().String())
 	}
 	// loaded solid variable state and the last batch of state updates

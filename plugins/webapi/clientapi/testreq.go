@@ -30,5 +30,8 @@ func HandlerTestRequestTx(c echo.Context) error {
 			"txid", tx.ID().String(),
 		)
 	}
-	return misc.OkJsonErr(c, nil)
+	return misc.OkJson(c, &testapilib.TestRequestResponse{
+		TxId:   tx.ID().String(),
+		NumReq: len(tx.Requests()),
+	})
 }

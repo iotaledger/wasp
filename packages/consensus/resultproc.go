@@ -38,7 +38,7 @@ func (op *operator) processRequest(par runCalculationsParams) {
 }
 
 func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
-	reqId := result.Inputs.RequestMsg()[0].Id()
+	reqId := result.Inputs.RequestMsg()[0].RequestId()
 	ctx := result.Inputs.(*runtimeContext)
 	op.log.Debugw("sendResultToTheLeader",
 		"reqs", reqId.Short(),
@@ -68,7 +68,7 @@ func (op *operator) sendResultToTheLeader(result *committee.VMOutput) {
 }
 
 func (op *operator) saveOwnResult(result *committee.VMOutput) {
-	reqId := result.Inputs.RequestMsg()[0].Id()
+	reqId := result.Inputs.RequestMsg()[0].RequestId()
 	op.log.Debugw("saveOwnResult",
 		"reqs", reqId.Short(),
 		"ts", result.Inputs.Timestamp(),

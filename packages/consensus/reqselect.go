@@ -13,11 +13,11 @@ func (op *operator) selectRequestsToProcess() []*request {
 	}
 	ret := []*request{candidates[0]}
 	intersection := make([]bool, op.size())
-	copy(intersection, candidates[0].notificationsCurrentState)
+	copy(intersection, candidates[0].notifications)
 
 	for i := uint16(1); int(i) < len(candidates); i++ {
 		for j := range intersection {
-			intersection[j] = intersection[j] && candidates[i].notificationsCurrentState[j]
+			intersection[j] = intersection[j] && candidates[i].notifications[j]
 		}
 		if numTrue(intersection) < op.quorum() {
 			break
@@ -38,7 +38,7 @@ type requestWithVotes struct {
 func (op *operator) requestsSeenQuorumTimes() []*request {
 	ret1 := make([]*requestWithVotes, 0)
 	for _, req := range op.requests {
-		votes := numTrue(req.notificationsCurrentState)
+		votes := numTrue(req.notifications)
 		if votes >= op.quorum() {
 			ret1 = append(ret1, &requestWithVotes{
 				req:       req,

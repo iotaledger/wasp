@@ -19,7 +19,7 @@ type RequestMsg struct {
 	Index uint16
 }
 
-func (reqMsg *RequestMsg) Id() *sctransaction.RequestId {
+func (reqMsg *RequestMsg) RequestId() *sctransaction.RequestId {
 	ret := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
 	return &ret
 }

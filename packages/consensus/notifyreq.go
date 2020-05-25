@@ -12,9 +12,23 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	if op.iAmCurrentLeader() {
 		return
 	}
-	ids := make([]*sctransaction.RequestId, len(reqs))
-	for i := range ids {
-		ids[i] = reqs[i].reqId
+	ids := make([]*sctransaction.RequestId, 0, len(reqs))
+	if len(reqs) > 0 {
+		for _, r := range reqs {
+			ids = append(ids, r.reqId)
+		}
+	} else {
+		// all of them if any
+		for _, req := range op.requests {
+			if req.reqMsg == nil {
+				continue
+			}
+			ids = append(ids, req.reqId)
+		}
+	}
+	if len(ids) == 0 {
+		// nothing to notify about
+		return
 	}
 	msgData := hashing.MustBytes(&committee.NotifyReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
@@ -23,6 +37,12 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 		RequestIds: ids,
 	})
 	// send until first success, but no more than number of nodes in the committee
+	op.log.Debugw("sendRequestNotificationsToLeader",
+		"leader", op.currentLeaderPeerIndex(),
+		"my peer index", op.peerIndex(),
+		"num req", len(ids),
+	)
+
 	var i uint16
 	for i = 0; i < op.committee.Size(); i++ {
 		if op.iAmCurrentLeader() {
@@ -64,28 +84,30 @@ func (op *operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
 	return ids
 }
 
-// includes request ids into the respective list of notifications,
-// by the sender index
-func (op *operator) markRequestsNotified(senderIndex uint16, stateIndex uint32, reqs []*sctransaction.RequestId) {
-	var isCurrentState bool
-	switch {
-	case stateIndex == op.stateIndex():
-		isCurrentState = true
-	case stateIndex == op.stateIndex()+1:
-		isCurrentState = false
-	default:
-		// from another state
+// stores information about notification in the current state
+func (op *operator) markRequestsNotified(msg *committee.NotifyReqMsg) {
+	if op.variableState == nil {
+		op.notificationsBacklog = append(op.notificationsBacklog, msg)
 		return
 	}
-	for _, reqid := range reqs {
+	if msg.StateIndex < op.variableState.StateIndex() {
+		// ignore
+		return
+	}
+	if msg.StateIndex > op.variableState.StateIndex() {
+		op.notificationsBacklog = append(op.notificationsBacklog, msg)
+		return
+	}
+	if !(op.variableState != nil && msg.StateIndex == op.variableState.StateIndex()) {
+		panic("assertion failed: op.variableState != nil && msg.StateIndex == op.variableState.StateIndex()")
+	}
+
+	for _, reqid := range msg.RequestIds {
 		req, ok := op.requestFromId(reqid)
 		if !ok {
 			continue
 		}
-		if isCurrentState {
-			req.markSeenCurrentStateBy(senderIndex)
-		} else {
-			req.markSeenNextStateBy(senderIndex)
-		}
+		// mark request was seen by sender
+		req.notifications[msg.SenderIndex] = true
 	}
 }

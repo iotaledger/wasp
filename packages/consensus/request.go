@@ -16,10 +16,9 @@ func (op *operator) validateRequestBlock(reqRef *committee.RequestMsg) error {
 func (op *operator) newRequest(reqId *sctransaction.RequestId) *request {
 	reqLog := op.log.Named(reqId.Short())
 	ret := &request{
-		reqId:                     reqId,
-		log:                       reqLog,
-		notificationsCurrentState: make([]bool, op.size()),
-		notificationsNextState:    make([]bool, op.size()),
+		reqId:         reqId,
+		log:           reqLog,
+		notifications: make([]bool, op.size()),
 	}
 	reqLog.Info("NEW REQUEST")
 	return ret
@@ -36,13 +35,12 @@ func (op *operator) requestFromId(reqId *sctransaction.RequestId) (*request, boo
 		ret = op.newRequest(reqId)
 		op.requests[*reqId] = ret
 	}
-	ret.msgCounter++
 	return ret, true
 }
 
 // request record retrieved (or created) by request message
 func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
-	reqId := reqMsg.Id()
+	reqId := reqMsg.RequestId()
 	ret, ok := op.requests[*reqId]
 	if ok && ret.reqMsg == nil {
 		ret.reqMsg = reqMsg
@@ -55,9 +53,8 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
 		ret.reqMsg = reqMsg
 		op.requests[*reqId] = ret
 	}
-	ret.markSeenCurrentStateBy(op.peerIndex())
+	ret.notifications[op.peerIndex()] = true
 
-	ret.msgCounter++
 	return ret
 }
 
@@ -77,14 +74,6 @@ func (op *operator) removeRequest(reqId *sctransaction.RequestId) bool {
 		return true
 	}
 	return false
-}
-
-func (req *request) markSeenCurrentStateBy(peerIndex uint16) {
-	req.notificationsCurrentState[peerIndex] = true
-}
-
-func (req *request) markSeenNextStateBy(peerIndex uint16) {
-	req.notificationsNextState[peerIndex] = true
 }
 
 func setAllFalse(bs []bool) {

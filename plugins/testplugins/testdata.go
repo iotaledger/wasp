@@ -17,8 +17,14 @@ var scAddressesStr = []string{
 }
 
 var (
-	scAddresses  []address.Address
-	scOrigParams []apilib.NewOriginParams
+	scAddresses   []address.Address
+	scOrigParams  []apilib.NewOriginParams
+	nodeLocations = []string{
+		"127.0.0.1:4000",
+		"127.0.0.1:4001",
+		"127.0.0.1:4002",
+		"127.0.0.1:4003",
+	}
 )
 
 func init() {
@@ -42,6 +48,10 @@ func init() {
 	}
 }
 
+func GetNodeLocations(_ int) []string {
+	return nodeLocations
+}
+
 func GetScDescription(scIndex int) string {
 	return fmt.Sprintf("Test smart contract #%d", scIndex)
 }
@@ -49,6 +59,10 @@ func GetScDescription(scIndex int) string {
 // index 1 to 3
 func GetScAddress(scIndex int) address.Address {
 	return scAddresses[scIndex-1]
+}
+
+func NumBuiltinScAddresses() int {
+	return len(scAddresses)
 }
 
 func GetOriginParams(scIndex int) *apilib.NewOriginParams {

@@ -97,7 +97,7 @@ func New(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error) {
 func BatchHash(vimp VMInputs) hashing.HashValue {
 	var buf bytes.Buffer
 	for _, msg := range vimp.RequestMsg() {
-		buf.Write(msg.Id()[:])
+		buf.Write(msg.RequestId()[:])
 	}
 	return *hashing.HashData(buf.Bytes())
 }

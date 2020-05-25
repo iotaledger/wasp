@@ -23,8 +23,12 @@ type operator struct {
 	getBalancesDeadline time.Time
 
 	variableState state.VariableState
+
 	// VM
 	processor committee.Processor
+
+	// notifications with future state indices
+	notificationsBacklog []*committee.NotifyReqMsg
 
 	requests map[sctransaction.RequestId]*request
 
@@ -75,22 +79,17 @@ type request struct {
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
 
-	// notification vectors for the current and next state
-	notificationsCurrentState []bool
-	notificationsNextState    []bool
+	// notification vector for the current state
+	notifications []bool
 
-	// request message as received by the operator.
-	// Contains parsed SC transaction and the request block index
-	//reqRef *sctransaction.RequestRef
-
-	msgCounter int
-	log        *logger.Logger
+	log *logger.Logger
 }
 
 func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
 	return &operator{
 		committee: committee,
 		dkshare:   dkshare,
+		requests:  make(map[sctransaction.RequestId]*request),
 		log:       log.Named("c"),
 	}
 }

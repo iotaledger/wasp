@@ -47,6 +47,10 @@ func run(_ *node.Plugin) {
 
 		addrs := make([]address.Address, 0, len(sclist))
 		for _, scdata := range sclist {
+			if IsAddressDisabled(scdata.Address) {
+				log.Debugf("skipping disabled address %s", scdata.Address.String())
+				continue
+			}
 			if err := RegisterCommittee(scdata, false); err != nil {
 				log.Warn(err)
 			} else {
@@ -127,4 +131,18 @@ func CommitteeByAddress(addr address.Address) committee.Committee {
 		return nil
 	}
 	return ret
+}
+
+var disabledAddresses = map[string]bool{
+	"mQDimPXfu5auHUksTVAzXPDM1cJr1ryx4vgo1XvPtmpX": false,
+	"ooRmabFjCxgJSW9KszW4gPPBBZFi4ttb7nr5RUpJbWth": true,
+	"kbBfpmYwdxS9f3s1L7u5RqvetJ7MYM4kYy27NzWC561p": true,
+}
+
+func IsAddressDisabled(addr address.Address) bool {
+	disabled, ok := disabledAddresses[addr.String()]
+	if !ok {
+		return false
+	}
+	return disabled
 }

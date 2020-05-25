@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 )
 
 type RequestBlockJson struct {
@@ -126,25 +125,31 @@ func TransactionFromJsonTesting(txJson *RequestTransactionJson) (*sctransaction.
 	return tx, nil
 }
 
-func SendTestRequest(netLoc string, txJson *RequestTransactionJson) error {
+type TestRequestResponse struct {
+	TxId   string `json:"tx_id"`
+	NumReq int    `json:"num_req"`
+	Error  string `json:"error"`
+}
+
+func SendTestRequest(netLoc string, txJson *RequestTransactionJson) TestRequestResponse {
 	data, err := json.Marshal(txJson)
 	if err != nil {
-		return err
+		return TestRequestResponse{Error: err.Error()}
 	}
 	url := fmt.Sprintf("http://%s/client/testreq", netLoc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return err
+		return TestRequestResponse{Error: err.Error()}
 	}
-	result := &misc.SimpleResponse{}
+	result := TestRequestResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return err
+		return TestRequestResponse{Error: err.Error()}
 	}
 	if result.Error != "" {
-		return errors.New(result.Error)
+		return TestRequestResponse{Error: err.Error()}
 	}
-	return nil
+	return result
 }
 
 func MustNotNullInputs(tx *valuetransaction.Transaction) {

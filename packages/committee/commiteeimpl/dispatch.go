@@ -49,13 +49,14 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 			c.operator.EventResultCalculated(msgt)
 		}
 	case committee.TimerTick:
+
 		if msgt%2 == 0 {
 			if c.stateMgr != nil {
-				c.stateMgr.EventTimerMsg(msgt)
+				c.stateMgr.EventTimerMsg(msgt / 2)
 			}
 		} else {
 			if c.operator != nil {
-				c.operator.EventTimerMsg(msgt)
+				c.operator.EventTimerMsg(msgt / 2)
 			}
 		}
 	}

@@ -78,6 +78,7 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 			for {
 				time.Sleep(timerTickPeriod)
 				ret.ReceiveMessage(committee.TimerTick(tick))
+				tick++
 			}
 		}()
 	}

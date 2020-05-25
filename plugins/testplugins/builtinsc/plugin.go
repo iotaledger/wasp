@@ -20,14 +20,8 @@ import (
 const PluginName = "TestingBuiltinSC"
 
 var (
-	Plugin        = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)
-	log           *logger.Logger
-	nodeLocations = []string{
-		"127.0.0.1:4000",
-		"127.0.0.1:4001",
-		"127.0.0.1:4002",
-		"127.0.0.1:4003",
-	}
+	Plugin = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)
+	log    *logger.Logger
 )
 
 func configure(_ *node.Plugin) {
@@ -55,12 +49,17 @@ func run(_ *node.Plugin) {
 // - creates new meta data for the smart contracts according to new origin parameters provided
 // - creates new origin transaction and posts it to the node
 func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
+	if committees.IsAddressDisabled(testplugins.GetScAddress(scIndex)) {
+		log.Debugf("not running test on disabled address %s", testplugins.GetScAddress(scIndex).String())
+		return
+	}
 	par := testplugins.GetOriginParams(scIndex)
-	log.Infof("Start running testing plugin %s for '%s'", PluginName, testplugins.GetScDescription(scIndex))
+	log.Infof("Start running testing plugin %s addr %s : '%s'",
+		PluginName, testplugins.GetScAddress(scIndex), testplugins.GetScDescription(scIndex))
 
 	myHost := config.Node.GetString(webapi.CfgBindAddress)
 
-	originTx, scdata := apilib.CreateOriginData(par, testplugins.GetScDescription(scIndex), nodeLocations)
+	originTx, scdata := apilib.CreateOriginData(par, testplugins.GetScDescription(scIndex), testplugins.GetNodeLocations(scIndex))
 
 	log.Debugw("++++ origin tx",
 		"scindex", scIndex,
