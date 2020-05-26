@@ -1,11 +1,13 @@
 package sctransaction
 
 import (
+	"bytes"
 	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"sort"
 )
 
 // object with interface to build SC transaction and value transaction within it
@@ -48,6 +50,12 @@ func (txb *TransactionBuilder) Finalize() (*Transaction, error) {
 }
 
 func (txb *TransactionBuilder) AddInputs(oid ...valuetransaction.OutputID) {
+	//sort input to be deterministic and independent from parameters
+	oidClone := make([]valuetransaction.OutputID, len(oid))
+	copy(oidClone, oid)
+	sort.Slice(oidClone, func(i, j int) bool {
+		return bytes.Compare(oidClone[i][:], oidClone[j][:]) < 0
+	})
 	for _, o := range oid {
 		txb.inputs.Add(o)
 	}

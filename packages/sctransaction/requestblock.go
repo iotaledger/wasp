@@ -21,6 +21,11 @@ type RequestBlock struct {
 	vars variables.Variables
 }
 
+type RequestRef struct {
+	Tx    *Transaction
+	Index uint16
+}
+
 // RequestBlock
 
 func NewRequestBlock(addr address.Address) *RequestBlock {
@@ -110,4 +115,19 @@ func (rid *RequestId) String() string {
 
 func (rid *RequestId) Short() string {
 	return rid.String()[:8] + ".."
+}
+
+// request ref
+
+func (ref *RequestRef) RequestId() *RequestId {
+	ret := NewRequestId(ref.Tx.ID(), ref.Index)
+	return &ret
+}
+
+func TakeRequestIds(lst []RequestRef) []RequestId {
+	ret := make([]RequestId, len(lst))
+	for i := range ret {
+		ret[i] = *lst[i].RequestId()
+	}
+	return ret
 }

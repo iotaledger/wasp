@@ -5,27 +5,31 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-type accounts struct {
+type TransactionBuilder struct {
+	sctxbuilder    *sctransaction.TransactionBuilder
+	balances       map[valuetransaction.ID][]*balance.Balance
 	ownAddress     address.Address
 	inputBalances  map[balance.Color]int64
 	outputBalances map[address.Address]map[balance.Color]int64
-	reminder       int64
 	total          int64
 }
 
-// AccountsFromBalances
-type AccountsFromBalancesParams struct {
+// NewTxBuilder
+type TransactionBuilderParams struct {
 	Balances   map[valuetransaction.ID][]*balance.Balance
 	OwnColor   balance.Color
 	OwnAddress address.Address
 	RequestIds []sctransaction.RequestId
 }
 
-func AccountsFromBalances(par AccountsFromBalancesParams) (*accounts, error) {
-	ret := &accounts{
+func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
+	ret := &TransactionBuilder{
+		sctxbuilder:    sctransaction.NewTransactionBuilder(),
+		balances:       par.Balances,
 		inputBalances:  make(map[balance.Color]int64),
 		outputBalances: make(map[address.Address]map[balance.Color]int64),
 	}
@@ -37,8 +41,6 @@ func AccountsFromBalances(par AccountsFromBalancesParams) (*accounts, error) {
 			ret.total += s
 		}
 	}
-
-	ret.reminder = ret.total
 
 	ret.ownAddress = par.OwnAddress
 	// transfer smart contract token
@@ -55,31 +57,69 @@ func AccountsFromBalances(par AccountsFromBalancesParams) (*accounts, error) {
 	return ret, nil
 }
 
-func (acc *accounts) MustValidate() {
-	var sumIn, sumOut int64
-
-	for _, b := range acc.inputBalances {
-		sumIn += b
+func (acc *TransactionBuilder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
+	// create and transfer request token to the target SC address
+	if err := acc.NewColor(reqBlk.Address(), balance.ColorIOTA, 1); err != nil {
+		return err
 	}
-	for _, a := range acc.outputBalances {
-		for _, s := range a {
-			sumOut += s
+	acc.sctxbuilder.AddRequestBlock(reqBlk)
+	return nil
+}
+
+// SqueezeTransactionBuilder produces not finalized yet transaction builder
+// without state and request blocks
+func (acc *TransactionBuilder) Finalize(stateIndex uint32, stateHash hashing.HashValue) *sctransaction.Transaction {
+	if !(acc.sumInputs() == 0) {
+		panic("assertion failed: acc.sumInputs() == 0")
+	}
+	oids := make([]valuetransaction.OutputID, 0, len(acc.balances))
+	for txid := range acc.balances {
+		oids = append(oids, valuetransaction.NewOutputID(acc.ownAddress, txid))
+	}
+	acc.sctxbuilder.AddInputs(oids...)
+
+	for addr, lst := range acc.outputBalances {
+		for col, v := range lst {
+			acc.sctxbuilder.AddBalanceToOutput(addr, balance.New(col, v))
 		}
 	}
-	if sumOut+sumIn != acc.total {
-		panic("wrong balance I")
+	ret, err := acc.sctxbuilder.Finalize()
+	if err != nil {
+		panic(err)
 	}
-	if sumIn != acc.reminder {
-		panic("wrong balance II")
+	return ret
+}
+
+func (acc *TransactionBuilder) sumInputs() int64 {
+	var ret int64
+	for _, b := range acc.inputBalances {
+		ret += b
+	}
+	return ret
+}
+
+func (acc *TransactionBuilder) sumOutputs() int64 {
+	var ret int64
+	for _, a := range acc.outputBalances {
+		for _, s := range a {
+			ret += s
+		}
+	}
+	return ret
+}
+
+func (acc *TransactionBuilder) MustValidate() {
+	if acc.sumInputs()+acc.sumOutputs() != acc.total {
+		panic("wrong balance I")
 	}
 }
 
-func (acc *accounts) GetInputBalance(color balance.Color) (int64, bool) {
+func (acc *TransactionBuilder) GetInputBalance(color balance.Color) (int64, bool) {
 	ret, ok := acc.inputBalances[color]
 	return ret, ok
 }
 
-func (acc *accounts) GetOutputBalance(addr address.Address, color balance.Color) (int64, bool) {
+func (acc *TransactionBuilder) GetOutputBalance(addr address.Address, color balance.Color) (int64, bool) {
 	bals, ok := acc.outputBalances[addr]
 	if !ok {
 		return 0, false
@@ -88,7 +128,7 @@ func (acc *accounts) GetOutputBalance(addr address.Address, color balance.Color)
 	return ret, ok
 }
 
-func (acc *accounts) InputColors() []balance.Color {
+func (acc *TransactionBuilder) InputColors() []balance.Color {
 	ret := make([]balance.Color, 0, len(acc.inputBalances))
 	for col := range acc.inputBalances {
 		ret = append(ret, col)
@@ -96,12 +136,8 @@ func (acc *accounts) InputColors() []balance.Color {
 	return ret
 }
 
-func (acc *accounts) Reminder() int64 {
-	return acc.reminder
-}
-
 // Transfer transfers tokens without changing color
-func (acc *accounts) Transfer(targetAddr address.Address, col balance.Color, amount int64) error {
+func (acc *TransactionBuilder) Transfer(targetAddr address.Address, col balance.Color, amount int64) error {
 	inpb, ok := acc.inputBalances[col]
 	if !ok {
 		return errors.New("wrong color")
@@ -110,7 +146,6 @@ func (acc *accounts) Transfer(targetAddr address.Address, col balance.Color, amo
 		return errors.New("not enough funds")
 	}
 	acc.inputBalances[col] = acc.inputBalances[col] - amount
-	acc.reminder = acc.reminder - amount
 
 	if _, ok := acc.outputBalances[targetAddr]; !ok {
 		acc.outputBalances[targetAddr] = make(map[balance.Color]int64)
@@ -124,7 +159,7 @@ func (acc *accounts) Transfer(targetAddr address.Address, col balance.Color, amo
 }
 
 // NewColor repaints tokens to new color
-func (acc *accounts) NewColor(targetAddr address.Address, col balance.Color, amount int64) error {
+func (acc *TransactionBuilder) NewColor(targetAddr address.Address, col balance.Color, amount int64) error {
 	inpb, ok := acc.inputBalances[col]
 	if !ok {
 		return errors.New("wrong color")
@@ -133,7 +168,6 @@ func (acc *accounts) NewColor(targetAddr address.Address, col balance.Color, amo
 		return errors.New("not enough funds")
 	}
 	acc.inputBalances[col] = acc.inputBalances[col] - amount
-	acc.reminder = acc.reminder - amount
 
 	if _, ok := acc.outputBalances[targetAddr]; !ok {
 		acc.outputBalances[targetAddr] = make(map[balance.Color]int64)
@@ -147,7 +181,7 @@ func (acc *accounts) NewColor(targetAddr address.Address, col balance.Color, amo
 }
 
 // EraseColor repaints tokens to IOTA color
-func (acc *accounts) EraseColor(targetAddr address.Address, col balance.Color, amount int64) error {
+func (acc *TransactionBuilder) EraseColor(targetAddr address.Address, col balance.Color, amount int64) error {
 	inpb, ok := acc.inputBalances[col]
 	if !ok {
 		return errors.New("wrong color")
@@ -156,7 +190,6 @@ func (acc *accounts) EraseColor(targetAddr address.Address, col balance.Color, a
 		return errors.New("not enough funds")
 	}
 	acc.inputBalances[col] = acc.inputBalances[col] - amount
-	acc.reminder = acc.reminder - amount
 
 	if _, ok := acc.outputBalances[targetAddr]; !ok {
 		acc.outputBalances[targetAddr] = make(map[balance.Color]int64)
@@ -167,4 +200,25 @@ func (acc *accounts) EraseColor(targetAddr address.Address, col balance.Color, a
 
 	acc.MustValidate()
 	return nil
+}
+
+func (acc *TransactionBuilder) AddReminder(reminderAddress *address.Address) {
+	if acc.sumInputs() == 0 {
+		return
+	}
+	if reminderAddress == nil {
+		reminderAddress = &acc.ownAddress
+	}
+
+	for col, v := range acc.inputBalances {
+		if v > 0 {
+			err := acc.Transfer(*reminderAddress, col, v)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	if acc.sumInputs() != 0 {
+		panic("Finalize: acc.sumInputs() != 0")
+	}
 }

@@ -38,7 +38,7 @@ func NewOriginBatch(par NewOriginParams) state.Batch {
 func OriginVariableStateHash(par NewOriginParams) *hashing.HashValue {
 	batch := NewOriginBatch(par)
 	originState := state.NewVariableState(nil)
-	if err := originState.Apply(batch); err != nil {
+	if err := originState.ApplyBatch(batch); err != nil {
 		panic(err)
 	}
 	ret := originState.Hash()

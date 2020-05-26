@@ -201,7 +201,7 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	if sm.solidStateValid || sm.solidVariableState == nil {
 		// we need to approve the next state.
 		// In case of origin, the next state is origin batch applied to empty state
-		if err := varStateToApprove.Apply(batch); err != nil {
+		if err := varStateToApprove.ApplyBatch(batch); err != nil {
 			sm.log.Errorw("can't apply update to the current state",
 				"cur state index", sm.solidVariableState.StateIndex(),
 				"err", err,

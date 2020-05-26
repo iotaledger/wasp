@@ -39,8 +39,12 @@ func (vs *variableState) StateIndex() uint32 {
 	return vs.stateIndex
 }
 
-// the only method which changes state of the variableState object
-func (vs *variableState) Apply(batch Batch) error {
+func (vs *variableState) IncStateIndex() {
+	vs.stateIndex++
+}
+
+// applies batch of state updates. Increases state index
+func (vs *variableState) ApplyBatch(batch Batch) error {
 	if !vs.empty {
 		if batch.StateIndex() != vs.stateIndex+1 {
 			return fmt.Errorf("batch state index #%d can't be applied to the state #%d",
@@ -52,14 +56,21 @@ func (vs *variableState) Apply(batch Batch) error {
 		}
 	}
 	batch.ForEach(func(stateUpd StateUpdate) bool {
-		vs.Variables().Apply(stateUpd.Variables())
+		vs.ApplyStateUpdate(stateUpd)
 		return false
 	})
-	vh := vs.Hash()
-	vs.stateHash = *hashing.HashData(vh.Bytes(), batch.EssenceHash().Bytes())
-	vs.stateIndex = batch.StateIndex()
-	vs.empty = false
+	vs.IncStateIndex()
 	return nil
+}
+
+// applies one state update. Doesn't change state index
+func (vs *variableState) ApplyStateUpdate(stateUpd StateUpdate) {
+	vs.Variables().Apply(stateUpd.Variables())
+
+	vh := vs.Hash()
+	sh := hashing.GetHashValue(stateUpd)
+	vs.stateHash = *hashing.HashData(vh.Bytes(), sh.Bytes())
+	vs.empty = false
 }
 
 func (vs *variableState) Hash() hashing.HashValue {

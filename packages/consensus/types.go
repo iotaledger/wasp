@@ -24,9 +24,6 @@ type operator struct {
 
 	variableState state.VariableState
 
-	// VM
-	processor committee.Processor
-
 	// notifications with future state indices
 	notificationsBacklog []*committee.NotifyReqMsg
 

@@ -3,7 +3,7 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/vm"
+	vm2 "github.com/iotaledger/wasp/packages/vm"
 )
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
@@ -100,7 +100,7 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 	})
 }
 
-func (op *operator) EventResultCalculated(ctx *vm.RuntimeContext) {
+func (op *operator) EventResultCalculated(ctx *vm2.RuntimeContext) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
