@@ -1,17 +1,16 @@
 package vmnil
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
-	vm2 "github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type vmnilstruct struct {
+type vmnil struct {
 }
 
-func New() vm2.Processor {
-	return vmnilstruct{}
+func New() vm.Processor {
+	return vmnil{}
 }
 
-func (v vmnilstruct) Run(inputs *vm2.VMContext) state.StateUpdate {
+func (v vmnil) Run(inputs *vm.VMContext) {
 	panic("implement me")
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/registry"
-	vm2 "github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 )
 
@@ -41,7 +41,7 @@ type Operator interface {
 	EventRequestMsg(reqMsg *RequestMsg)
 	EventNotifyReqMsg(msg *NotifyReqMsg)
 	EventStartProcessingReqMsg(msg *StartProcessingReqMsg)
-	EventResultCalculated(result *vm2.RuntimeContext)
+	EventResultCalculated(result *vm.VMTask)
 	EventSignedHashMsg(msg *SignedHashMsg)
 	EventTimerMsg(msg TimerTick)
 }

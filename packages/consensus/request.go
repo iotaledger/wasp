@@ -100,13 +100,16 @@ func takeIds(reqs []*request) []sctransaction.RequestId {
 	return ret
 }
 
-func takeMsgs(reqs []*request) ([]*committee.RequestMsg, bool) {
-	ret := make([]*committee.RequestMsg, len(reqs))
+func takeRefs(reqs []*request) ([]sctransaction.RequestRef, bool) {
+	ret := make([]sctransaction.RequestRef, len(reqs))
 	for i := range ret {
 		if reqs[i].reqMsg == nil {
 			return nil, false
 		}
-		ret[i] = reqs[i].reqMsg
+		ret[i] = sctransaction.RequestRef{
+			Tx:    reqs[i].reqMsg.Transaction,
+			Index: reqs[i].reqMsg.Index,
+		}
 	}
 	return ret, true
 }

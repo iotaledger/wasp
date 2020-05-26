@@ -1,4 +1,4 @@
-package vm
+package runvm
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ var (
 	log    *logger.Logger
 
 	vmDaemon   = daemon.New()
-	processors map[string]vm.Processor
+	processors = make(map[string]vm.Processor)
 )
 
 func configure(_ *node.Plugin) {
@@ -66,7 +66,7 @@ func getProcessor(programHash string) (vm.Processor, error) {
 }
 
 // RunComputationsAsync runs computations in the background and call function upn finishing it
-func RunComputationsAsync(ctx *vm.RuntimeContext) error {
+func RunComputationsAsync(ctx *vm.VMTask) error {
 	processor, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		return err
@@ -80,32 +80,52 @@ func RunComputationsAsync(ctx *vm.RuntimeContext) error {
 	if err != nil {
 		return err
 	}
-	taskName := ctx.Address.String() + "." + ctx.BatchHash().String()
+
+	reqids := make([]sctransaction.RequestId, len(ctx.Requests))
+	for i := range reqids {
+		reqids[i] = *ctx.Requests[i].RequestId()
+	}
+
+	bh := vm.BatchHash(reqids, ctx.Timestamp)
+	taskName := ctx.Address.String() + "." + bh.String()
+
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		runVM(ctx, builder, processor)
+		if err := runVM(ctx, builder, processor); err != nil {
+			ctx.Log.Errorf("runVM: %v", err)
+		}
 	})
 	return err
 }
 
 // runs batch
-func runVM(ctx *vm.RuntimeContext, builder *vm.TransactionBuilder, processor vm.Processor) {
+func runVM(ctx *vm.VMTask, builder *vm.TransactionBuilder, processor vm.Processor) error {
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
 		Color:         ctx.Color,
-		Builder:       builder,
+		TxBuilder:     builder,
 		Timestamp:     ctx.Timestamp,
 		VariableState: state.NewVariableState(ctx.VariableState),
 		Log:           ctx.Log,
 	}
-	ctx.StateUpdates = make([]state.StateUpdate, len(ctx.Requests))
+	stateUpdates := make([]state.StateUpdate, len(ctx.Requests))
 	for i, reqRef := range ctx.Requests {
 		vmctx.Request = reqRef
-		ctx.StateUpdates[i] = processor.Run(vmctx)
-		ctx.VariableState.ApplyStateUpdate(ctx.StateUpdates[i])
+		processor.Run(vmctx)
+		stateUpdates[i] = vmctx.StateUpdate
+		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
 	}
-	ctx.VariableState.IncStateIndex()
+	var err error
+	ctx.ResultBatch, err = state.NewBatch(stateUpdates, ctx.VariableState.StateIndex()+1)
+	if err != nil {
+		return err
+	}
+	err = ctx.VariableState.ApplyBatch(ctx.ResultBatch)
+	if err != nil {
+		return err
+	}
 	// create final transaction
-	ctx.ResultTransaction = vmctx.Builder.Finalize(ctx.VariableState.StateIndex(), ctx.VariableState.Hash())
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex(), ctx.VariableState.Hash())
 	// call back
 	ctx.OnFinish()
+	return nil
 }

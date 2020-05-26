@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
 )
@@ -27,7 +28,7 @@ func (op *operator) doSubordinate() {
 			continue
 		}
 		cr.processed = true
-		//go op.processRequest(cr.reqs, cr.ts, cr.leaderPeerIndex)
+		//go op.runCalculationsAsync(cr.reqs, cr.ts, cr.leaderPeerIndex)
 	}
 }
 
@@ -94,24 +95,20 @@ func (op *operator) startProcessing() {
 	for i := range reqIds {
 		buf.Write(reqIds[i][:])
 	}
-	reqMsgs, ok := takeMsgs(reqs)
-	if !ok {
-		panic("some req messages are nil")
-	}
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
-		batchHash:     sctransaction.BatchHash(reqIds),
-		ts:            ts,
+		batchHash:     vm.BatchHash(reqIds, ts),
+		timestamp:     ts,
 		signedResults: make([]*signedResult, op.committee.Size()),
 	}
 	op.log.Debugf("msgStartProcessingRequest successfully sent to %d peers", numSucc)
 
-	go op.processRequest(runCalculationsParams{
-		reqs:            reqMsgs,
-		ts:              ts,
-		balances:        op.balances,
-		rewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
+	op.runCalculationsAsync(runCalculationsParams{
+		requests:        reqs,
 		leaderPeerIndex: op.committee.OwnPeerIndex(),
+		balances:        op.balances,
+		timestamp:       ts,
+		rewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
 	})
 }
 

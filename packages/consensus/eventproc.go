@@ -2,8 +2,7 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/state"
-	vm2 "github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
@@ -77,7 +76,7 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 
 	op.MustValidStateIndex(msg.StateIndex)
 
-	reqs := make([]*committee.RequestMsg, len(msg.RequestIds))
+	reqs := make([]*request, len(msg.RequestIds))
 	for i := range reqs {
 		req, ok := op.requestFromId(&msg.RequestIds[i])
 		if !ok {
@@ -88,41 +87,36 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 			op.log.Debug("some requests in the batch not yet received by the node")
 			return
 		}
-		reqs = append(reqs, req.reqMsg)
+		reqs = append(reqs, req)
 	}
 	// start async calculation
-	go op.processRequest(runCalculationsParams{
-		reqs:            reqs,
-		ts:              msg.Timestamp,
+	go op.runCalculationsAsync(runCalculationsParams{
+		requests:        reqs,
+		timestamp:       msg.Timestamp,
 		balances:        msg.Balances,
 		rewardAddress:   msg.RewardAddress,
 		leaderPeerIndex: msg.SenderIndex,
 	})
 }
 
-func (op *operator) EventResultCalculated(ctx *vm2.RuntimeContext) {
+func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
-	if ctx.VariableState.StateIndex() != op.stateIndex() {
+	if ctx.VariableState.StateIndex() != op.stateIndex()+1 {
 		// out of context. ignore
 		return
 	}
-
-	resultBatch, err := state.NewBatch(ctx.StateUpdates, ctx.VariableState.StateIndex()+1)
-	if err != nil {
-		op.log.Errorf("error while creating batch: %v", err)
-		return
-	}
 	op.log.Debugw("eventResultCalculated",
-		"batch size", resultBatch.Size(),
+		"batch size", ctx.ResultBatch.Size(),
 		"stateIndex", op.stateIndex(),
 	)
-
+	// save own result
+	// or send to the leader
 	if ctx.LeaderPeerIndex == op.committee.OwnPeerIndex() {
-		op.saveOwnResult(result)
+		op.saveOwnResult(ctx)
 	} else {
-		op.sendResultToTheLeader(result)
+		op.sendResultToTheLeader(ctx)
 	}
 	op.takeAction()
 }
@@ -143,12 +137,6 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	}
 	if msg.BatchHash != op.leaderStatus.batchHash {
 		op.log.Errorf("EventSignedHashMsg: msg.BatchHash != op.leaderStatus.batchHash")
-		return
-	}
-	if !msg.OrigTimestamp.Equal(op.leaderStatus.ts) {
-		op.log.Debugw("EventSignedHashMsg: !msg.OrigTimestamp.Equal(op.leaderStatus.ts)",
-			"msgTs", msg.OrigTimestamp,
-			"ownTs", op.leaderStatus.ts)
 		return
 	}
 	if op.leaderStatus.signedResults[msg.SenderIndex] != nil {

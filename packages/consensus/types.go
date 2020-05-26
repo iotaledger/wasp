@@ -45,8 +45,9 @@ type operator struct {
 
 type leaderStatus struct {
 	reqs          []*request
+	batch         state.Batch
 	batchHash     hashing.HashValue
-	ts            time.Time
+	timestamp     time.Time
 	resultTx      *sctransaction.Transaction
 	finalized     bool
 	signedResults []*signedResult

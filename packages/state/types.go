@@ -32,8 +32,8 @@ type VariableState interface {
 // State update represents update to the variable state
 // it is calculated by the VM (in batches)
 // State updates comes in batches, all state updates within one batch
-// has same state index, state tx id and batch size. Batch index is unique in batch
-// Batch is completed when it contains one state update for each index
+// has same state index, state tx id and batch size. ResultBatch index is unique in batch
+// ResultBatch is completed when it contains one state update for each index
 type StateUpdate interface {
 	BatchIndex() uint16
 	SetBatchIndex(uint16)
@@ -45,7 +45,7 @@ type StateUpdate interface {
 	Read(io.Reader) error
 }
 
-// Batch of state updates applicable to the variable state by applying state updates
+// ResultBatch of state updates applicable to the variable state by applying state updates
 // in a sequence defined by batch indices
 type Batch interface {
 	ForEach(func(StateUpdate) bool) bool

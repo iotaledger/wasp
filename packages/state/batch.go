@@ -41,6 +41,14 @@ func NewBatch(stateUpdates []StateUpdate, stateIndex uint32) (Batch, error) {
 	}, nil
 }
 
+func MustNewBatch(stateUpdates []StateUpdate, stateIndex uint32) Batch {
+	ret, err := NewBatch(stateUpdates, stateIndex)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func (b *batch) StateTransactionId() valuetransaction.ID {
 	return b.stateTxId
 }

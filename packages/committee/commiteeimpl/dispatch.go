@@ -3,6 +3,7 @@ package commiteeimpl
 import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"time"
 )
@@ -43,7 +44,7 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 			c.operator.EventRequestMsg(msgt)
 		}
 
-	case *committee.VMOutput:
+	case *vm.VMTask:
 		// VM finished working
 		if c.operator != nil {
 			c.operator.EventResultCalculated(msgt)

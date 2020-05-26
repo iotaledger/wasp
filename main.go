@@ -12,10 +12,10 @@ import (
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/runvm"
 	"github.com/iotaledger/wasp/plugins/testplugins/builtinsc"
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/testplugins/roundtrip"
-	"github.com/iotaledger/wasp/plugins/vm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -31,7 +31,7 @@ var PLUGINS = node.Plugins(
 	nodeconn.Plugin,
 	dispatcher.Plugin,
 	committees.Plugin,
-	vm.Plugin,
+	runvm.Plugin,
 )
 
 var TestPLUGINS = node.Plugins(

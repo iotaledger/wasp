@@ -13,44 +13,49 @@ import (
 	"time"
 )
 
-// implements VMInputs interface
-type RuntimeContext struct {
+type VMTask struct {
 	// inputs
-	ProgramHash   hashing.HashValue
-	Address       address.Address
-	Color         balance.Color
-	Balances      map[valuetransaction.ID][]*balance.Balance
-	RewardAddress address.Address
-	Requests      []sctransaction.RequestRef
-	Timestamp     time.Time
-	VariableState state.VariableState // input/output
-	OnFinish      func()
-	Log           *logger.Logger
-
+	LeaderPeerIndex uint16
+	ProgramHash     hashing.HashValue
+	Address         address.Address
+	Color           balance.Color
+	Balances        map[valuetransaction.ID][]*balance.Balance
+	RewardAddress   address.Address
+	Requests        []sctransaction.RequestRef
+	Timestamp       time.Time
+	VariableState   state.VariableState // input
+	Log             *logger.Logger
+	// call when finished
+	OnFinish func()
 	// outputs
 	ResultTransaction *sctransaction.Transaction
-	StateUpdates      []state.StateUpdate
+	ResultBatch       state.Batch
 }
 
 type Processor interface {
-	Run(ctx *VMContext) state.StateUpdate
+	Run(ctx *VMContext)
 }
 
+// context of one VM call
 type VMContext struct {
+	// same context duting batch
 	Address       address.Address
 	Color         balance.Color
-	Builder       *TransactionBuilder
+	TxBuilder     *TransactionBuilder
 	Timestamp     time.Time
-	Request       sctransaction.RequestRef
 	VariableState state.VariableState
 	Log           *logger.Logger
+	// input for one call
+	Request sctransaction.RequestRef
+	// output of one call
+	StateUpdate state.StateUpdate
 }
 
-func (ctx *RuntimeContext) BatchHash() *hashing.HashValue {
+func BatchHash(reqids []sctransaction.RequestId, timestamp time.Time) hashing.HashValue {
 	var buf bytes.Buffer
-	for _, reqRef := range ctx.Requests {
-		buf.Write(reqRef.RequestId().Bytes())
+	for i := range reqids {
+		buf.Write(reqids[i].Bytes())
 	}
-	_ = util.WriteUint64(&buf, uint64(ctx.Timestamp.UnixNano()))
-	return hashing.HashData(buf.Bytes())
+	_ = util.WriteUint64(&buf, uint64(timestamp.UnixNano()))
+	return *hashing.HashData(buf.Bytes())
 }
