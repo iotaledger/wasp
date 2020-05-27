@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/wasp/plugins/database"
 	"io"
 )
 
@@ -145,46 +144,32 @@ func (b *batch) readEssence(r io.Reader) error {
 	return nil
 }
 
+func dbkeyBatch(stateIndex uint32) []byte {
+	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
+}
+
 func (b *batch) saveToDb(addr *address.Address) error {
-	dbase, err := database.GetBatchesDB()
-	if err != nil {
-		return err
-	}
-	// write batch header as separate record
 	var buf bytes.Buffer
 	if err := b.Write(&buf); err != nil {
 		return err
 	}
-	key := database.DbKeyBatch(addr, b.stateIndex)
 	log.Debugw("batch saving to db",
 		"addr", addr.String(),
 		"state index", b.stateIndex,
-		"dbkey", base58.Encode(key),
 		"essenceHash", b.EssenceHash().String(),
 		"stateTx", b.StateTransactionId().String(),
 	)
 
-	err = dbase.Set(database.Entry{
-		Key:   key,
-		Value: buf.Bytes(),
-	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return database.GetPartition(addr).Set(dbkeyBatch(b.StateIndex()), buf.Bytes())
 }
 
 func LoadBatch(addr address.Address, stateIndex uint32) (Batch, error) {
-	dbase, err := database.GetBatchesDB()
-	if err != nil {
-		return nil, err
-	}
-	entry, err := dbase.Get(database.DbKeyBatch(&addr, stateIndex))
+	data, err := database.GetPartition(&addr).Get(dbkeyBatch(stateIndex))
 	if err != nil {
 		return nil, err
 	}
 	ret := new(batch)
-	if err := ret.Read(bytes.NewReader(entry.Value)); err != nil {
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return ret, nil

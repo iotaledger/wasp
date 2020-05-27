@@ -11,9 +11,10 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/hive.go/kvstore"
 	. "github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/database"
 	"io"
 )
 
@@ -76,19 +77,18 @@ func (jo *SCMetaDataJsonable) ToSCMetaData() (*SCMetaData, error) {
 // if ownPortAddr is not nil, it only includes those SCMetaData records which are processed
 // by his node
 func GetSCDataList() ([]*SCMetaData, error) {
-	dbase, err := database.GetSCMetaDataDB()
-	if err != nil {
-		return nil, err
-	}
+	var niladdr address.Address
+	db := database.GetPartition(&niladdr)
 	ret := make([]*SCMetaData, 0)
-	err = dbase.ForEachPrefix(nil, func(entry database.Entry) bool {
+
+	err := db.Iterate([]byte{database.ObjectTypeSCMetaData}, func(_ kvstore.Key, value kvstore.Value) bool {
 		scdata := &SCMetaData{}
-		if err = scdata.Read(bytes.NewReader(entry.Value)); err == nil {
+		if err := scdata.Read(bytes.NewReader(value)); err == nil {
 			if validate(scdata) {
 				ret = append(ret, scdata)
 			}
 		}
-		return false
+		return true
 	})
 	return ret, err
 }
@@ -108,30 +108,24 @@ func validate(scdata *SCMetaData) bool {
 	return true
 }
 
+func (scd *SCMetaData) dbkey() []byte {
+	return database.MakeKey(database.ObjectTypeSCMetaData, scd.Address[:])
+}
+
 // SaveSCData saves SCMetaData record to the registry
-// overwrites previous if any
-// for new sc
+// overwrites previous if any for new sc
+// it is saved in the niladdr partition
 func SaveSCData(scd *SCMetaData) error {
-	dbase, err := database.GetSCMetaDataDB()
-	if err != nil {
-		return err
-	}
 	var buf bytes.Buffer
 	if err := scd.Write(&buf); err != nil {
 		return err
 	}
-	return dbase.Set(database.Entry{
-		Key:   database.DbKeySCMetaData(&scd.Address),
-		Value: buf.Bytes(),
-	})
+	var niladdr address.Address
+	return database.GetPartition(&niladdr).Set(scd.dbkey(), buf.Bytes())
 }
 
 func ExistSCMetaData(addr *address.Address) (bool, error) {
-	dbase, err := database.GetSCMetaDataDB()
-	if err != nil {
-		return false, err
-	}
-	return dbase.Contains(database.DbKeySCMetaData(addr))
+	return database.GetPartition(addr).Has(database.MakeKey(database.ObjectTypeSCMetaData))
 }
 
 func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
@@ -140,7 +134,7 @@ func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
 		return nil, false, err
 	}
 	if !exists {
-		return nil, false, fmt.Errorf("address is not present in registry")
+		return nil, false, fmt.Errorf("address is not known")
 	}
 
 	exists, err = ExistSCMetaData(addr)
@@ -150,19 +144,12 @@ func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
 	if !exists {
 		return nil, false, nil
 	}
-	dbase, err := database.GetSCMetaDataDB()
-	if err != nil {
+	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeSCMetaData))
+	ret := new(SCMetaData)
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, false, err
 	}
-	entry, err := dbase.Get(database.DbKeySCMetaData(addr))
-	if err != nil {
-		return nil, false, err
-	}
-	var ret SCMetaData
-	if err := ret.Read(bytes.NewReader(entry.Value)); err != nil {
-		return nil, false, err
-	}
-	return &ret, true, nil
+	return ret, true, nil
 }
 
 func (scd *SCMetaData) Write(w io.Writer) error {

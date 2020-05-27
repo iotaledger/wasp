@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/plugins/database"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -20,12 +20,9 @@ func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	if !ks.Committed {
 		return fmt.Errorf("uncommited DK share: can't be saved to the registry")
 	}
-	dbase, err := database.GetKeyDataDB()
-	if err != nil {
-		return err
-	}
-	dbkey := database.DbKeyDKShare(ks.Address)
-	exists, err := dbase.Contains(dbkey)
+	dbase := database.GetPartition(ks.Address)
+	dbkey := database.MakeKey(database.ObjectTypeDistributedKeyData)
+	exists, err := dbase.Has(dbkey)
 	if err != nil {
 		return err
 	}
@@ -39,22 +36,15 @@ func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	if err != nil {
 		return err
 	}
-	return dbase.Set(database.Entry{
-		Key:   dbkey,
-		Value: buf.Bytes(),
-	})
+	return dbase.Set(dbkey, buf.Bytes())
 }
 
 func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, error) {
-	dbase, err := database.GetKeyDataDB()
+	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeDistributedKeyData))
 	if err != nil {
 		return nil, err
 	}
-	entry, err := dbase.Get(database.DbKeyDKShare(addr))
-	if err != nil {
-		return nil, err
-	}
-	ret, err := tcrypto.UnmarshalDKShare(entry.Value, maskPrivate)
+	ret, err := tcrypto.UnmarshalDKShare(data, maskPrivate)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +52,5 @@ func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, err
 }
 
 func ExistDKShareInRegistry(addr *address.Address) (bool, error) {
-	dbase, err := database.GetKeyDataDB()
-	if err != nil {
-		return false, err
-	}
-	return dbase.Contains(database.DbKeyDKShare(addr))
+	return database.GetPartition(addr).Has(database.MakeKey(database.ObjectTypeDistributedKeyData))
 }

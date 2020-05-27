@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/wasp/plugins/database"
 	"io"
 )
 
@@ -82,24 +82,22 @@ func (vs *variableState) Variables() variables.Variables {
 }
 
 func (vs *variableState) saveToDb(addr *address.Address) error {
-	dbase, err := database.GetVariableStateDB()
+	data, err := hashing.Bytes(vs)
 	if err != nil {
 		return err
 	}
 
-	key := database.DbKeyVariableState(addr)
+	if err := database.GetPartition(addr).Set(database.MakeKey(database.ObjectTypeVariableState), data); err != nil {
+		return err
+	}
+
 	h := vs.Hash()
 	log.Debugw("state saving to db",
 		"addr", addr.String(),
 		"state index", vs.StateIndex(),
-		"dbkey", base58.Encode(key),
 		"stateHash", h.String(),
 	)
-
-	return dbase.Set(database.Entry{
-		Key:   key,
-		Value: hashing.MustBytes(vs),
-	})
+	return nil
 }
 
 func (vs *variableState) Write(w io.Writer) error {
@@ -133,42 +131,46 @@ func (vs *variableState) Commit(addr address.Address, b Batch) error {
 	// TODO make it Badger-atomic transaction
 	// TODO mark processed requests in db in separate index
 
-	if err := b.(*batch).saveToDb(&addr); err != nil {
+	batchData, err := hashing.Bytes(b)
+	if err != nil {
 		return err
 	}
-	if err := vs.saveToDb(&addr); err != nil {
+	varStateData, err := hashing.Bytes(vs)
+	if err != nil {
 		return err
 	}
-	if err := MarkRequestsProcessed(b.RequestIds()); err != nil {
+	db := database.GetPartition(&addr)
+	atomicWrite := db.Batched()
+	//batchedMutations.
+	err = atomicWrite.Set(dbkeyBatch(b.StateIndex()), batchData)
+	if err != nil {
 		return err
 	}
-	return nil
+	varStateDbkey := database.MakeKey(database.ObjectTypeVariableState)
+	err = atomicWrite.Set(varStateDbkey, varStateData)
+	if err != nil {
+		return err
+	}
+	reqids := b.RequestIds()
+	for i := range reqids {
+		err = atomicWrite.Set(dbkeyRequest(reqids[i]), []byte{})
+		if err != nil {
+			return err
+		}
+	}
+	return atomicWrite.Commit()
 }
 
 func StateExist(addr address.Address) (bool, error) {
-	dbase, err := database.GetVariableStateDB()
-	if err != nil {
-		return false, err
-	}
-	key := database.DbKeyVariableState(&addr)
-	log.Debugw("checking if state exist",
-		"addr", addr.String(),
-		"dbkey", base58.Encode(key))
-	return dbase.Contains(key)
+	return database.GetPartition(&addr).Has(database.MakeKey(database.ObjectTypeVariableState))
 }
 
 // loads variable state and corresponding batch
 func LoadVariableState(addr address.Address) (VariableState, Batch, error) {
-	dbase, err := database.GetVariableStateDB()
-	if err != nil {
-		return nil, nil, err
-	}
-	entry, err := dbase.Get(database.DbKeyVariableState(&addr))
-	if err != nil {
-		return nil, nil, err
-	}
+	data, err := database.GetPartition(&addr).Get(database.MakeKey(database.ObjectTypeVariableState))
+
 	varState := NewVariableState(nil).(*variableState)
-	if err = varState.Read(bytes.NewReader(entry.Value)); err != nil {
+	if err = varState.Read(bytes.NewReader(data)); err != nil {
 		return nil, nil, err
 	}
 	batch, err := LoadBatch(addr, varState.StateIndex())
@@ -179,4 +181,12 @@ func LoadVariableState(addr address.Address) (VariableState, Batch, error) {
 		return nil, nil, fmt.Errorf("inconsistent solid state: state indices must be equal")
 	}
 	return varState, batch, nil
+}
+
+func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
+	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
+}
+
+func IsRequestProcessed(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
+	return database.GetPartition(addr).Has(dbkeyRequest(reqid))
 }

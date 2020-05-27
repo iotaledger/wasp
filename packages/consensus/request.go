@@ -61,7 +61,8 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
 // TODO caching processed requests
 // TODO gracefull reaction in DB error
 func (op *operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
-	processed, err := state.IsRequestProcessed(reqid)
+	addr := op.committee.Address()
+	processed, err := state.IsRequestProcessed(&addr, reqid)
 	if err != nil {
 		panic(err)
 	}

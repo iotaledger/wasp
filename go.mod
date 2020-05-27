@@ -11,8 +11,8 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gobuffalo/logger v1.0.1
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/iotaledger/goshimmer v0.1.1-0.20200523073157-b07b21c3c548
-	github.com/iotaledger/hive.go v0.0.0-20200513180357-f0ac8c45b754
+	github.com/iotaledger/goshimmer v0.1.1-0.20200526193757-42d3d3fd372b
+	github.com/iotaledger/hive.go v0.0.0-20200525142347-543f24c486b8
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
