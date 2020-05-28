@@ -108,24 +108,25 @@ func validate(scdata *SCMetaData) bool {
 	return true
 }
 
-func (scd *SCMetaData) dbkey() []byte {
-	return database.MakeKey(database.ObjectTypeSCMetaData, scd.Address[:])
+func dbkeyScdata(addr *address.Address) []byte {
+	return database.MakeKey(database.ObjectTypeSCMetaData, addr[:])
 }
+
+// scdata is saved in the niladdr partition
+var niladdr address.Address
 
 // SaveSCData saves SCMetaData record to the registry
 // overwrites previous if any for new sc
-// it is saved in the niladdr partition
 func SaveSCData(scd *SCMetaData) error {
 	var buf bytes.Buffer
 	if err := scd.Write(&buf); err != nil {
 		return err
 	}
-	var niladdr address.Address
-	return database.GetPartition(&niladdr).Set(scd.dbkey(), buf.Bytes())
+	return database.GetPartition(&niladdr).Set(dbkeyScdata(&scd.Address), buf.Bytes())
 }
 
 func ExistSCMetaData(addr *address.Address) (bool, error) {
-	return database.GetPartition(addr).Has(database.MakeKey(database.ObjectTypeSCMetaData))
+	return database.GetPartition(&niladdr).Has(dbkeyScdata(addr))
 }
 
 func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
@@ -144,7 +145,7 @@ func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
 	if !exists {
 		return nil, false, nil
 	}
-	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeSCMetaData))
+	data, err := database.GetPartition(&niladdr).Get(dbkeyScdata(addr))
 	ret := new(SCMetaData)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, false, err

@@ -11,9 +11,9 @@ import (
 // BLS addresses
 
 var scAddressesStr = []string{
-	"mQDimPXfu5auHUksTVAzXPDM1cJr1ryx4vgo1XvPtmpX",
-	"ooRmabFjCxgJSW9KszW4gPPBBZFi4ttb7nr5RUpJbWth",
-	"kbBfpmYwdxS9f3s1L7u5RqvetJ7MYM4kYy27NzWC561p",
+	"hpospPqvUWK1gdHDbcG9V3CbaFW2PYojiWpF8C6KHwkk",
+	"mgBGndKS1Tp9QprCVvXtaB3vVCTZ4QEbJ6n8UzCnXbM5",
+	"c2frVHt2eUG1h8DCXxhQzeAZxU1dme1f5fHYjsVyNbfh",
 }
 
 var (

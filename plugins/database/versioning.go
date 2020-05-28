@@ -1,9 +1,11 @@
 package database
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore"
 )
@@ -20,15 +22,21 @@ var (
 )
 
 // checks whether the database is compatible with the current schema version.
-// also automatically sets the version if the database is new.
-// version is stored in niladdr partition
+// also automatically sets the version if the database if new.
+// version is stored in niladdr partition.
+// it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
 	var niladdr address.Address
 	db := GetPartition(&niladdr)
 	ver, err := db.Get(MakeKey(ObjectTypeDBSchemaVersion))
+
+	var versiondata [1 + hashing.HashSize]byte
+	versiondata[0] = DBVersion
+	copy(versiondata[1:], hashing.HashStrings(fmt.Sprintf("dbversion = %d", DBVersion)).Bytes())
+
 	if err == kvstore.ErrKeyNotFound {
 		// set the version in an empty DB
-		return db.Set(MakeKey(ObjectTypeDBSchemaVersion), []byte{DBVersion})
+		return db.Set(MakeKey(ObjectTypeDBSchemaVersion), versiondata[:])
 	}
 	if err != nil {
 		return err
@@ -36,7 +44,7 @@ func checkDatabaseVersion() error {
 	if len(ver) == 0 {
 		return fmt.Errorf("%w: no database version was persisted", ErrDBVersionIncompatible)
 	}
-	if ver[0] != DBVersion {
+	if !bytes.Equal(ver, versiondata[:]) {
 		return fmt.Errorf("%w: supported version: %d, version of database: %d", ErrDBVersionIncompatible, DBVersion, ver[0])
 	}
 	return nil
