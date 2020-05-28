@@ -1,0 +1,8 @@
+{
+	"nodes": [
+    {"bindAddress": "127.0.0.1:8080", "peeringPort": 4000},
+    {"bindAddress": "127.0.0.1:8081", "peeringPort": 4001},
+    {"bindAddress": "127.0.0.1:8082", "peeringPort": 4002},
+    {"bindAddress": "127.0.0.1:8083", "peeringPort": 4003}
+  ]
+}
