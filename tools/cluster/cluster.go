@@ -143,8 +143,9 @@ func (cluster *Cluster) Start() {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
-	for _, cmd := range cluster.cmds {
-		err := cmd.Process.Signal(os.Interrupt)
+	for _, node := range cluster.Config.Nodes {
+		fmt.Printf("Sending shutdown to %s\n", node.BindAddress)
+		err := apilib.Shutdown(node.BindAddress)
 		if err != nil {
 			fmt.Println(err)
 		}

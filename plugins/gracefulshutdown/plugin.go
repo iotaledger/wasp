@@ -58,8 +58,13 @@ var Plugin = node.NewPlugin(PluginName, node.Enabled, func(plugin *node.Plugin) 
 	}()
 })
 
+// Shutdown shuts down the default daemon instance.
+func Shutdown() {
+	gracefulStop <- syscall.SIGINT
+}
+
 // ShutdownWithError prints out an error message and shuts down the default daemon instance.
 func ShutdownWithError(err error) {
 	log.Error(err)
-	gracefulStop <- syscall.SIGINT
+	Shutdown()
 }

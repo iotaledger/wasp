@@ -21,6 +21,7 @@ func addEndpoints() {
 	Server.POST("/adm/putscdata", admapi.HandlerPutSCData)
 	Server.POST("/adm/getscdata", admapi.HandlerGetSCData)
 	Server.GET("/adm/getsclist", admapi.HandlerGetSCList)
+	Server.GET("/adm/shutdown", admapi.HandlerShutdown)
 	// clientapi
 	Server.POST("/client/testreq", clientapi.HandlerTestRequestTx)
 
