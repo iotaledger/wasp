@@ -1,29 +1,57 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func main() {
-	if len(os.Args) < 3 {
-		fmt.Printf("usage: %s <config-path> <data-path>\n", os.Args[0])
+func check(err error) {
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
 		os.Exit(1)
 	}
+}
 
-	configPath := os.Args[1]
-	dataPath := os.Args[2]
+func main() {
+	globalFlags := flag.NewFlagSet("", flag.ExitOnError)
+	configPath := globalFlags.String("config", ".", "Config path")
+	dataPath := globalFlags.String("data", "cluster-data", "Data path")
+	globalFlags.Parse(os.Args[1:])
 
-	wasps := cluster.New(configPath, dataPath)
+	wasps, err := cluster.New(*configPath, *dataPath)
+	check(err)
 
-	wasps.Init()
+	if globalFlags.NArg() < 1 {
+		fmt.Printf("Usage: %s [options] [init|start|gendksets]\n", os.Args[0])
+		globalFlags.PrintDefaults()
+		return
+	}
 
-	wasps.Start()
+	switch globalFlags.Arg(0) {
+	case "init":
+		initFlags := flag.NewFlagSet("init", flag.ExitOnError)
+		resetDataPath := initFlags.Bool("r", false, "Reset data path if it exists")
+		initFlags.Parse(globalFlags.Args()[1:])
+		err = wasps.Init(*resetDataPath)
+		check(err)
+	case "start":
+		err = wasps.Start()
+		check(err)
 
-	addr := wasps.GenerateNewDistributedKeySet(3)
-	fmt.Printf("Generated key set with address %s\n", addr)
-
-	wasps.Stop()
+		fmt.Printf("Press CTRL-C to stop\n")
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		<-c
+		wasps.Wait()
+	case "gendksets":
+		err = wasps.Start()
+		check(err)
+		err = wasps.GenerateDKSets()
+		check(err)
+		wasps.Stop()
+	}
 }

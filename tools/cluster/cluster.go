@@ -3,6 +3,7 @@ package cluster
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,46 +13,55 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/apilib"
 )
+
+type SmartContractConfig struct {
+	Nodes  []int `json:"nodes"`
+	Quorum int   `json:"quorum"`
+}
 
 type ClusterConfig struct {
 	Nodes []struct {
 		BindAddress string `json:"bindAddress"`
 		PeeringPort int    `json:"PeeringPort"`
 	} `json:"nodes"`
+	SmartContracts []SmartContractConfig
 }
 
 type Cluster struct {
 	Config     *ClusterConfig
 	ConfigPath string // where the cluster configuration is stored - read only
 	DataPath   string // where the cluster's volatile data lives
+	Started    bool
 	cmds       []*exec.Cmd
 }
 
-func readConfig(configPath string) *ClusterConfig {
+func readConfig(configPath string) (*ClusterConfig, error) {
 	data, err := ioutil.ReadFile(path.Join(configPath, "cluster.json"))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	config := &ClusterConfig{}
 	err = json.Unmarshal(data, &config)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return config
+	return config, nil
 }
 
-func New(configPath string, dataPath string) *Cluster {
-	config := readConfig(configPath)
+func New(configPath string, dataPath string) (*Cluster, error) {
+	config, err := readConfig(configPath)
+	if err != nil {
+		return nil, err
+	}
 	return &Cluster{
 		Config:     config,
 		ConfigPath: configPath,
 		DataPath:   dataPath,
 		cmds:       make([]*exec.Cmd, 0),
-	}
+	}, nil
 }
 
 func (cluster *Cluster) Path(s string) string {
@@ -66,18 +76,34 @@ func (cluster *Cluster) WaspNodePath(i int) string {
 	return path.Join(cluster.DataPath, strconv.Itoa(i))
 }
 
-// Init creates in DataPath a directory with config.json for each node
-func (cluster *Cluster) Init() *Cluster {
+func (cluster *Cluster) DataPathExists() (bool, error) {
 	if _, err := os.Stat(cluster.DataPath); err == nil {
-		fmt.Printf("%s directory exists. Delete it first.\n", cluster.DataPath)
-		os.Exit(1)
+		return true, nil
 	} else if !os.IsNotExist(err) {
-		panic(err)
+		return true, err
+	}
+	return false, nil
+}
+
+// Init creates in DataPath a directory with config.json for each node
+func (cluster *Cluster) Init(resetDataPath bool) error {
+	exists, err := cluster.DataPathExists()
+	if err != nil {
+		return err
+	}
+	if exists {
+		if !resetDataPath {
+			return errors.New(fmt.Sprintf("%s directory exists", cluster.DataPath))
+		}
+		err = os.RemoveAll(cluster.DataPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	configTmpl, err := template.ParseFiles(cluster.ConfigTemplatePath())
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for i, nodeConfig := range cluster.Config.Nodes {
@@ -86,21 +112,21 @@ func (cluster *Cluster) Init() *Cluster {
 
 		err := os.MkdirAll(nodePath, os.ModePerm)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		f, err := os.Create(path.Join(nodePath, "config.json"))
 		if err != nil {
-			panic(err)
+			return err
 		}
 		defer f.Close()
 		err = configTmpl.Execute(f, &nodeConfig)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
-	return cluster
+	return nil
 }
 
 func logNode(i int, scanner *bufio.Scanner, initString string, initOk chan bool) {
@@ -116,7 +142,15 @@ func logNode(i int, scanner *bufio.Scanner, initString string, initOk chan bool)
 }
 
 // Start launches all wasp nodes in the cluster, each running in its own directory
-func (cluster *Cluster) Start() {
+func (cluster *Cluster) Start() error {
+	exists, err := cluster.DataPathExists()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New(fmt.Sprintf("Data path %s does not exist", cluster.DataPath))
+	}
+
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
 	for i, _ := range cluster.Config.Nodes {
@@ -124,12 +158,12 @@ func (cluster *Cluster) Start() {
 		cmd.Dir = cluster.WaspNodePath(i)
 		pipe, err := cmd.StdoutPipe()
 		if err != nil {
-			panic(err)
+			return err
 		}
 		scanner := bufio.NewScanner(pipe)
 		err = cmd.Start()
 		if err != nil {
-			panic(err)
+			return err
 		}
 		cluster.cmds = append(cluster.cmds, cmd)
 
@@ -139,6 +173,9 @@ func (cluster *Cluster) Start() {
 	for i := 0; i < len(cluster.Config.Nodes); i++ {
 		<-initOk
 	}
+
+	cluster.Started = true
+	return nil
 }
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
@@ -171,10 +208,33 @@ func (cluster *Cluster) Hosts() []string {
 	return hosts
 }
 
-func (cluster *Cluster) GenerateNewDistributedKeySet(quorum int) *address.Address {
-	addr, err := apilib.GenerateNewDistributedKeySet(cluster.Hosts(), uint16(len(cluster.Config.Nodes)), uint16(quorum))
-	if err != nil {
-		panic(err)
+func (cluster *Cluster) Committee(sc *SmartContractConfig) ([]string, error) {
+	committee := make([]string, 0)
+	for _, i := range sc.Nodes {
+		if i < 0 || i > len(cluster.Config.Nodes) - 1 {
+			return nil, errors.New(fmt.Sprintf("Node index out of bounds in smart contract committee configuration: %d", i))
+		}
+		committee = append(committee, cluster.Config.Nodes[i].BindAddress)
 	}
-	return addr
+	return committee, nil
+
+}
+
+func (cluster *Cluster) GenerateDKSets() error {
+	for _, sc := range cluster.Config.SmartContracts {
+		committee, err := cluster.Committee(&sc)
+		if err != nil {
+			return err
+		}
+		addr, err := apilib.GenerateNewDistributedKeySet(
+			committee,
+			uint16(len(committee)),
+			uint16(sc.Quorum),
+		)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Generated key set with address %s\n", addr)
+	}
+	return nil
 }

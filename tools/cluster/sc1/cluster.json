@@ -1,8 +1,14 @@
 {
-	"nodes": [
+  "nodes": [
     {"bindAddress": "127.0.0.1:9090", "peeringPort": 4000},
     {"bindAddress": "127.0.0.1:9091", "peeringPort": 4001},
     {"bindAddress": "127.0.0.1:9092", "peeringPort": 4002},
     {"bindAddress": "127.0.0.1:9093", "peeringPort": 4003}
+  ],
+  "smartContracts": [
+    {
+      "nodes": [0, 1, 2, 3],
+      "quorum": 3
+    }
   ]
 }
