@@ -126,8 +126,8 @@ func (vs *variableState) Read(r io.Reader) error {
 	return nil
 }
 
-// saves variable state to db together with the batch of state updates
-func (vs *variableState) Commit(addr address.Address, b Batch) error {
+// saves variable state to db together with the batch of state updates and records of processed requests
+func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
 	// TODO make it Badger-atomic transaction
 	// TODO mark processed requests in db in separate index
 

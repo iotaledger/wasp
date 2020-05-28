@@ -51,7 +51,7 @@ func (sm *stateManager) checkStateApproval() bool {
 		return false
 	}
 	if sm.solidStateValid || sm.solidVariableState == nil {
-		if err := pending.nextVariableState.Commit(sm.committee.Address(), pending.batch); err != nil {
+		if err := pending.nextVariableState.CommitToDb(sm.committee.Address(), pending.batch); err != nil {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
 			return false
 		}

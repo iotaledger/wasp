@@ -148,21 +148,6 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func (b *batch) saveToDb(addr *address.Address) error {
-	var buf bytes.Buffer
-	if err := b.Write(&buf); err != nil {
-		return err
-	}
-	log.Debugw("batch saving to db",
-		"addr", addr.String(),
-		"state index", b.stateIndex,
-		"essenceHash", b.EssenceHash().String(),
-		"stateTx", b.StateTransactionId().String(),
-	)
-
-	return database.GetPartition(addr).Set(dbkeyBatch(b.StateIndex()), buf.Bytes())
-}
-
 func LoadBatch(addr address.Address, stateIndex uint32) (Batch, error) {
 	data, err := database.GetPartition(&addr).Get(dbkeyBatch(stateIndex))
 	if err != nil {

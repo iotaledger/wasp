@@ -32,10 +32,13 @@ func storeRealm(realm kvstore.Realm) kvstore.KVStore {
 }
 
 // Partition returns store prefixed with the smart contract address
+// Wasp ledger is partitioned by smart contract addresses
 func GetPartition(addr *address.Address) kvstore.KVStore {
 	return storeRealm(addr[:])
 }
 
+// MakeKey makes key within the partition. It consists to one byte for object type
+// and arbitrary byte fragments concatenated together
 func MakeKey(objType byte, keyBytes ...[]byte) []byte {
 	var buf bytes.Buffer
 	buf.WriteByte(objType)

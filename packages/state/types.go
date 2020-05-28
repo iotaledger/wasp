@@ -21,7 +21,7 @@ type VariableState interface {
 	// applies batch of state updates and increases state index. Validates batch state index
 	ApplyBatch(Batch) error
 	// commit means saving variable state to sc db, making it persistent
-	Commit(address address.Address, batch Batch) error
+	CommitToDb(address address.Address, batch Batch) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
 	Hash() hashing.HashValue

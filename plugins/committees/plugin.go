@@ -135,8 +135,8 @@ func CommitteeByAddress(addr address.Address) committee.Committee {
 
 var disabledAddresses = map[string]bool{
 	"hpospPqvUWK1gdHDbcG9V3CbaFW2PYojiWpF8C6KHwkk": false,
-	"mgBGndKS1Tp9QprCVvXtaB3vVCTZ4QEbJ6n8UzCnXbM5": false,
-	"c2frVHt2eUG1h8DCXxhQzeAZxU1dme1f5fHYjsVyNbfh": false,
+	"mgBGndKS1Tp9QprCVvXtaB3vVCTZ4QEbJ6n8UzCnXbM5": true,
+	"c2frVHt2eUG1h8DCXxhQzeAZxU1dme1f5fHYjsVyNbfh": true,
 }
 
 func IsAddressDisabled(addr address.Address) bool {
