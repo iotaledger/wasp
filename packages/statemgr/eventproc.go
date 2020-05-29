@@ -30,7 +30,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 			},
 			StateUpdate: stateUpdate,
 		}))
-		return err != nil
+		return err == nil
 	})
 }
 

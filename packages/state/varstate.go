@@ -54,7 +54,7 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 	}
 	batch.ForEach(func(stateUpd StateUpdate) bool {
 		vs.ApplyStateUpdate(stateUpd)
-		return false
+		return true
 	})
 	vs.stateIndex = batch.StateIndex()
 	return nil

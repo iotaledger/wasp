@@ -46,7 +46,7 @@ type StateUpdate interface {
 // ResultBatch of state updates applicable to the variable state by applying state updates
 // in a sequence defined by batch indices
 type Batch interface {
-	ForEach(func(StateUpdate) bool) bool
+	ForEach(func(StateUpdate) bool)
 	StateIndex() uint32
 	// transaction which validates the batch
 	StateTransactionId() valuetransaction.ID

@@ -56,13 +56,12 @@ func (b *batch) Commit(vtxid valuetransaction.ID) {
 	b.stateTxId = vtxid
 }
 
-func (b *batch) ForEach(fun func(StateUpdate) bool) bool {
+func (b *batch) ForEach(fun func(StateUpdate) bool) {
 	for _, su := range b.stateUpdates {
-		if fun(su) {
-			return true
+		if !fun(su) {
+			return
 		}
 	}
-	return false
 }
 
 func (b *batch) StateIndex() uint32 {
