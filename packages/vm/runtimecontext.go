@@ -23,7 +23,7 @@ type VMTask struct {
 	RewardAddress   address.Address
 	Requests        []sctransaction.RequestRef
 	Timestamp       time.Time
-	VariableState   state.VariableState // input
+	VariableState   state.VariableState // input immutable
 	Log             *logger.Logger
 	// call when finished
 	OnFinish func()
@@ -38,16 +38,22 @@ type Processor interface {
 
 // context of one VM call
 type VMContext struct {
-	// same context duting batch
-	Address       address.Address
-	Color         balance.Color
-	TxBuilder     *TransactionBuilder
-	Timestamp     time.Time
+	// invariant through the batch
+	// address of the smart contract
+	Address address.Address
+	// color of the smart contract
+	Color balance.Color
+	// tx builder to build the final transaction
+	TxBuilder *TransactionBuilder
+	// timestamp of the batch
+	Timestamp time.Time
+	// initial state of the batch
 	VariableState state.VariableState
-	Log           *logger.Logger
-	// input for one call
+	// log
+	Log *logger.Logger
+	// set for each call
 	Request sctransaction.RequestRef
-	// output of one call
+	// output of the call
 	StateUpdate state.StateUpdate
 }
 

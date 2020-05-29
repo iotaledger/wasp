@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -149,7 +150,7 @@ func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
 	}
 	reqids := b.RequestIds()
 	for i := range reqids {
-		err = atomicWrite.Set(dbkeyRequest(reqids[i]), []byte{})
+		err = markRequestProcessedSuccess(reqids[i], atomicWrite)
 		if err != nil {
 			return err
 		}
@@ -186,6 +187,47 @@ func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestProcessed(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
-	return database.GetPartition(addr).Has(dbkeyRequest(reqid))
+func markRequestProcessedSuccess(reqid *sctransaction.RequestId, atomicWrite kvstore.BatchedMutations) error {
+	return atomicWrite.Set(dbkeyRequest(reqid), []byte{0})
+}
+
+func MarkRequestProcessedFailure(addr *address.Address, reqid *sctransaction.RequestId) error {
+	has, err := database.GetPartition(addr).Has(dbkeyRequest(reqid))
+	if err != nil {
+		return err
+	}
+	dbkey := dbkeyRequest(reqid)
+	if !has {
+		return database.GetPartition(addr).Set(dbkey, []byte{1})
+	}
+	value, err := database.GetPartition(addr).Get(dbkey)
+	if err != nil {
+		return err
+	}
+	if len(value) != 1 {
+		return fmt.Errorf("inconistency: len(value) != 1")
+	}
+	return database.GetPartition(addr).Set(dbkey, []byte{value[0] + 1})
+}
+
+const maxRetriesForRequest = byte(5)
+
+// IsRequestCompleted returns true if it was completed successfully or number of retries reached maximum
+func IsRequestCompleted(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
+	dbkey := dbkeyRequest(reqid)
+	has, err := database.GetPartition(addr).Has(dbkey)
+	if err != nil {
+		return false, err
+	}
+	if !has {
+		return false, nil
+	}
+	val, err := database.GetPartition(addr).Get(dbkey)
+	if err != nil {
+		return false, err
+	}
+	if len(val) != 1 {
+		return false, fmt.Errorf("inconistency: len(val) != 1")
+	}
+	return val[0] == 0 || val[0] >= maxRetriesForRequest, nil
 }

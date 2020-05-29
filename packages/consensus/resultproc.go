@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/runvm"
 	"time"
@@ -52,7 +53,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		return
 	}
 
-	reqids := make([]sctransaction.RequestId, len(result.Requests))
+	reqids := make([]sctransaction.RequestId, 0, len(result.Requests))
 	for i := range reqids {
 		reqids[i] = *result.Requests[i].RequestId()
 	}
@@ -90,6 +91,14 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
 		essenceHash: *hashing.HashData(result.ResultTransaction.EssenceBytes()),
 		sigShare:    sigShare,
+	}
+
+	// mark failed requests if any
+	for i := int(op.leaderStatus.batch.Size()); i < len(op.leaderStatus.reqs); i++ {
+		addr := op.committee.Address()
+		if err = state.MarkRequestProcessedFailure(&addr, op.leaderStatus.reqs[i].reqId); err != nil {
+			op.log.Errorf("can't mark request %s as failed", op.leaderStatus.reqs[i].reqId.String())
+		}
 	}
 }
 

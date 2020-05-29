@@ -62,19 +62,31 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
 // TODO gracefull reaction in DB error
 func (op *operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
 	addr := op.committee.Address()
-	processed, err := state.IsRequestProcessed(&addr, reqid)
+	processed, err := state.IsRequestCompleted(&addr, reqid)
 	if err != nil {
 		panic(err)
 	}
 	return processed
 }
 
-func (op *operator) removeRequest(reqId *sctransaction.RequestId) bool {
-	if _, ok := op.requests[*reqId]; ok {
-		delete(op.requests, *reqId)
-		return true
+// deleteCompletedRequests deletes requests which were successfully processed or failed more than maximum retry limit
+func (op *operator) deleteCompletedRequests() error {
+	toDelete := make([]*sctransaction.RequestId, 0)
+
+	addr := op.committee.Address()
+	for _, req := range op.requests {
+		if completed, err := state.IsRequestCompleted(&addr, req.reqId); err != nil {
+			return err
+		} else {
+			if completed {
+				toDelete = append(toDelete, req.reqId)
+			}
+		}
 	}
-	return false
+	for _, rid := range toDelete {
+		delete(op.requests, *rid)
+	}
+	return nil
 }
 
 func setAllFalse(bs []bool) {

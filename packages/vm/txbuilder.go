@@ -23,7 +23,6 @@ type TransactionBuilderParams struct {
 	Balances   map[valuetransaction.ID][]*balance.Balance
 	OwnColor   balance.Color
 	OwnAddress address.Address
-	RequestIds []sctransaction.RequestId
 }
 
 func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
@@ -43,15 +42,9 @@ func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
 	}
 
 	ret.ownAddress = par.OwnAddress
-	// transfer smart contract token
+	// move smart contract token from SC address to itself
 	if err := ret.Transfer(par.OwnAddress, par.OwnColor, 1); err != nil {
 		return nil, err
-	}
-	// destroy tokens corresponding to requests
-	for i := range par.RequestIds {
-		if err := ret.EraseColor(par.OwnAddress, (balance.Color)(*par.RequestIds[i].TransactionId()), 1); err != nil {
-			return nil, err
-		}
 	}
 	ret.MustValidate()
 	return ret, nil

@@ -8,10 +8,10 @@ import (
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	// remove all processed requests from the local backlog
-	for _, reqId := range msg.RequestIds {
-		op.removeRequest(reqId)
+	if err := op.deleteCompletedRequests(); err != nil {
+		op.log.Errorf("deleteCompletedRequests: %v", err)
+		return
 	}
-
 	op.setNewState(msg.StateTransaction, msg.VariableState)
 
 	vh := msg.VariableState.Hash()
@@ -103,7 +103,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
-	if ctx.VariableState.StateIndex() != op.stateIndex()+1 {
+	if ctx.ResultBatch.StateIndex() != op.stateIndex()+1 {
 		// out of context. ignore
 		return
 	}
@@ -111,6 +111,8 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 		"batch size", ctx.ResultBatch.Size(),
 		"stateIndex", op.stateIndex(),
 	)
+	// TODO what if len(ctx.ResultBatch.Size() == 0 ?
+
 	// save own result
 	// or send to the leader
 	if ctx.LeaderPeerIndex == op.committee.OwnPeerIndex() {

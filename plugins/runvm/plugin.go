@@ -3,6 +3,7 @@ package runvm
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -81,32 +82,27 @@ func getProcessor(programHash string) (vm.Processor, error) {
 	return ret, nil
 }
 
-// RunComputationsAsync runs computations in the background and call function upn finishing it
+// RunComputationsAsync runs computations for the batch of requests in the background
 func RunComputationsAsync(ctx *vm.VMTask) error {
 	processor, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		return err
 	}
-	builder, err := vm.NewTxBuilder(vm.TransactionBuilderParams{
+	txbuilder, err := vm.NewTxBuilder(vm.TransactionBuilderParams{
 		Balances:   ctx.Balances,
 		OwnColor:   ctx.Color,
 		OwnAddress: ctx.Address,
-		RequestIds: sctransaction.TakeRequestIds(ctx.Requests),
 	})
 	if err != nil {
 		return err
 	}
 
-	reqids := make([]sctransaction.RequestId, len(ctx.Requests))
-	for i := range reqids {
-		reqids[i] = *ctx.Requests[i].RequestId()
-	}
-
+	reqids := sctransaction.TakeRequestIds(ctx.Requests)
 	bh := vm.BatchHash(reqids, ctx.Timestamp)
 	taskName := ctx.Address.String() + "." + bh.String()
 
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		if err := runVM(ctx, builder, processor); err != nil {
+		if err := runVM(ctx, txbuilder, processor); err != nil {
 			ctx.Log.Errorf("runVM: %v", err)
 		}
 	})
@@ -114,23 +110,34 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 }
 
 // runs batch
-func runVM(ctx *vm.VMTask, builder *vm.TransactionBuilder, processor vm.Processor) error {
+func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor) error {
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
 		Color:         ctx.Color,
-		TxBuilder:     builder,
+		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,
-		VariableState: state.NewVariableState(ctx.VariableState),
+		VariableState: state.NewVariableState(ctx.VariableState), // clone
 		Log:           ctx.Log,
 	}
-	stateUpdates := make([]state.StateUpdate, len(ctx.Requests))
-	for i, reqRef := range ctx.Requests {
+	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
+	for _, reqRef := range ctx.Requests {
+		// destroy token corresponding to request
+		err := txbuilder.EraseColor(ctx.Address, (balance.Color)(reqRef.Tx.ID()), 1)
+		if err != nil {
+			// not enough balance for requests tokens
+			// stop here
+			break
+		}
+		// run processor
 		vmctx.Request = reqRef
 		processor.Run(vmctx)
-		stateUpdates[i] = vmctx.StateUpdate
+
+		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
+		// update state
 		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
 	}
 	var err error
+	// create batch out of state updates. Note that batch can contain less state updates than number of requests
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates, ctx.VariableState.StateIndex()+1)
 	if err != nil {
 		return err
