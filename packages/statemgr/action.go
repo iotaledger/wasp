@@ -56,7 +56,7 @@ func (sm *stateManager) checkStateApproval() bool {
 			return false
 		}
 		if sm.solidVariableState != nil {
-			sm.log.Infof("STATE TRANSITION %s --> #%d. State hash: %s, state txid: %s",
+			sm.log.Infof("TRANSITION TO THE NEXT STATE %s --> #%d. State hash: %s, state txid: %s",
 				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
 				varStateHash.String(), sm.nextStateTransaction.ID().String())
 		} else {
@@ -65,7 +65,7 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 	} else {
 		// initial load
-		sm.log.Infof("STATE #%d CONFIRMED. State hash: %s, state txid: %s",
+		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",
 			sm.solidVariableState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
 	}
 	sm.solidStateValid = true
@@ -199,8 +199,8 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	}
 	varStateToApprove := state.NewVariableState(sm.solidVariableState)
 	if sm.solidStateValid || sm.solidVariableState == nil {
-		// we need to approve the next state.
-		// In case of origin, the next state is origin batch applied to empty state
+		// we need to approve the solidVariableState.
+		// In case of origin, the next state is origin batch applied to the empty state
 		if err := varStateToApprove.ApplyBatch(batch); err != nil {
 			sm.log.Errorw("can't apply update to the current state",
 				"cur state index", sm.solidVariableState.StateIndex(),

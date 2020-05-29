@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmnil"
+	"sync"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -20,8 +21,9 @@ var (
 	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log    *logger.Logger
 
-	vmDaemon   = daemon.New()
-	processors = make(map[string]vm.Processor)
+	vmDaemon        = daemon.New()
+	processors      = make(map[string]vm.Processor)
+	processorsMutex sync.RWMutex
 )
 
 func configure(_ *node.Plugin) {
@@ -29,8 +31,6 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	_ = RegisterProcessor("7ZLjqJ7ZnASoP9fJwrJ66HadwHR7JzMY2na1jNxVhKBi")
-
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		// globally initialize VM
 		go vmDaemon.Run()
@@ -46,18 +46,34 @@ func run(_ *node.Plugin) {
 }
 
 // RegisterProcessor creates and registers processor for program hash
+// asynchronously
 // possibly, locates Wasm program code in IPFS and caches here
-func RegisterProcessor(programHash string) error {
-	switch programHash {
-	case "7ZLjqJ7ZnASoP9fJwrJ66HadwHR7JzMY2na1jNxVhKBi":
-		processors["7ZLjqJ7ZnASoP9fJwrJ66HadwHR7JzMY2na1jNxVhKBi"] = vmnil.New()
-	default:
-		return fmt.Errorf("can't create processor for %s", programHash)
-	}
-	return nil
+func RegisterProcessor(programHash string, onFinish func(err error)) {
+	go func() {
+		processorsMutex.Lock()
+		defer processorsMutex.Unlock()
+
+		switch programHash {
+		case "KSoWFbHwZuHG8B8HVcYVKR4WYVQ7MpoqeaXgKWfkBMF": // sc1
+			processors[programHash] = vmnil.New()
+			onFinish(nil)
+
+		case "7xmPcECfZsSQq5eq7GCucuxmL2QpsgYwTjusuQcoK9GE": // sc2
+			onFinish(fmt.Errorf("VM not implemented"))
+
+		case "2tx7z36m9EhX3xBRGmEUD4FwTyP6R66zGPYY53EWc87k": // sc3
+			onFinish(fmt.Errorf("VM not implemented"))
+
+		default:
+			onFinish(fmt.Errorf("can't create processor for progam hash %s", programHash))
+		}
+	}()
 }
 
 func getProcessor(programHash string) (vm.Processor, error) {
+	processorsMutex.RLock()
+	defer processorsMutex.RUnlock()
+
 	ret, ok := processors[programHash]
 	if !ok {
 		return nil, errors.New("no such processor")

@@ -84,6 +84,8 @@ type request struct {
 }
 
 func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
+	defer committee.SetReadyConsensus()
+
 	return &operator{
 		committee: committee,
 		dkshare:   dkshare,

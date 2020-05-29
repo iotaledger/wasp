@@ -39,10 +39,6 @@ func (vs *variableState) StateIndex() uint32 {
 	return vs.stateIndex
 }
 
-func (vs *variableState) IncStateIndex() {
-	vs.stateIndex++
-}
-
 // applies batch of state updates. Increases state index
 func (vs *variableState) ApplyBatch(batch Batch) error {
 	if !vs.empty {
@@ -59,7 +55,7 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 		vs.ApplyStateUpdate(stateUpd)
 		return false
 	})
-	vs.IncStateIndex()
+	vs.stateIndex = batch.StateIndex()
 	return nil
 }
 
@@ -168,6 +164,9 @@ func StateExist(addr address.Address) (bool, error) {
 // loads variable state and corresponding batch
 func LoadVariableState(addr address.Address) (VariableState, Batch, error) {
 	data, err := database.GetPartition(&addr).Get(database.MakeKey(database.ObjectTypeVariableState))
+	if err != nil {
+		return nil, nil, fmt.Errorf("loading variable state: %v", err)
+	}
 
 	varState := NewVariableState(nil).(*variableState)
 	if err = varState.Read(bytes.NewReader(data)); err != nil {
@@ -175,7 +174,7 @@ func LoadVariableState(addr address.Address) (VariableState, Batch, error) {
 	}
 	batch, err := LoadBatch(addr, varState.StateIndex())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("loading batch: %v", err)
 	}
 	if varState.StateIndex() != batch.StateIndex() {
 		return nil, nil, fmt.Errorf("inconsistent solid state: state indices must be equal")

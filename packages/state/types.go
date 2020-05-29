@@ -14,8 +14,6 @@ type VariableState interface {
 	// index of the current state. State index is incremented when state transition occurs
 	// index 0 means origin state
 	StateIndex() uint32
-	// increases state index
-	IncStateIndex()
 	// updates state without changing state index
 	ApplyStateUpdate(stateUpd StateUpdate)
 	// applies batch of state updates and increases state index. Validates batch state index

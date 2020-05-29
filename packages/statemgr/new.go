@@ -117,9 +117,9 @@ func (sm *stateManager) initLoadState() {
 			OwnerAddress: par.OwnerAddress,
 			ProgramHash:  par.ProgramHash,
 		})
-		// committing batch means linking it to the approving transaction
+		// committing a batch means linking it to the approving transaction
 		// it doesn't change essence of the batch
-		// SC metadata contains 'color' which is equal to the ID of the origin transaction
+		// here 'color' is the ID of the origin transaction
 		batch.Commit((valuetransaction.ID)(par.Color))
 
 		sm.log.Infow("initial state wasn't found. Origin state update batch has been created",
@@ -140,5 +140,5 @@ func (sm *stateManager) initLoadState() {
 		}
 	}
 	// open msg queue for the committee
-	sm.committee.OpenQueue()
+	sm.committee.SetReadyStateManager()
 }

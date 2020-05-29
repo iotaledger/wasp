@@ -1,7 +1,6 @@
 package testplugins
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/apilib"
@@ -11,9 +10,15 @@ import (
 // BLS addresses
 
 var scAddressesStr = []string{
-	"hpospPqvUWK1gdHDbcG9V3CbaFW2PYojiWpF8C6KHwkk",
-	"mgBGndKS1Tp9QprCVvXtaB3vVCTZ4QEbJ6n8UzCnXbM5",
-	"c2frVHt2eUG1h8DCXxhQzeAZxU1dme1f5fHYjsVyNbfh",
+	"r1u46Yss96QKrEaZMw1hcat1x5v8Wyab2xdkDi1hfFf7",
+	"eWCs2eZvEkwFZe9jQKPd3Njv7byy8UkRM2X12kQvTbcC",
+	"tdGfa4ihTh8WYE5xvufWgTzNJoLrZS7xLyvhg13tKmKh",
+}
+
+var descriptions = []string{
+	"1. testing nil program",
+	"2. testing increment",
+	"3. testing FairRoulette",
 }
 
 var (
@@ -44,8 +49,12 @@ func init() {
 			Address:      scAddresses[i],
 			OwnerAddress: ownerAddress,
 		}
-		scOrigParams[i].ProgramHash = *hashing.HashStrings(GetScDescription(i + 1))
+		scOrigParams[i].ProgramHash = *GetProgramHash(i + 1)
 	}
+}
+
+func GetProgramHash(scIndex int) *hashing.HashValue {
+	return hashing.HashStrings(GetScDescription(scIndex))
 }
 
 func GetNodeLocations(_ int) []string {
@@ -53,7 +62,7 @@ func GetNodeLocations(_ int) []string {
 }
 
 func GetScDescription(scIndex int) string {
-	return fmt.Sprintf("Test smart contract #%d", scIndex)
+	return descriptions[scIndex-1]
 }
 
 // index 1 to 3

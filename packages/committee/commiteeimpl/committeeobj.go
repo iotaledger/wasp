@@ -10,7 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/statemgr"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/runvm"
 	"go.uber.org/atomic"
+	"sync"
 	"time"
 )
 
@@ -20,15 +22,21 @@ const (
 )
 
 type committeeObj struct {
-	isOpenQueue atomic.Bool
-	dismissed   atomic.Bool
-	peers       []*peering.Peer
-	ownIndex    uint16
-	scdata      *registry.SCMetaData
-	chMsg       chan interface{}
-	stateMgr    committee.StateManager
-	operator    committee.Operator
-	log         *logger.Logger
+	isReadyStateManager bool
+	isReadyConsensus    bool
+	isReadyVM           bool
+	mutexIsReady        sync.Mutex
+	isOpenQueue         atomic.Bool
+	dismissed           atomic.Bool
+	dismissOnce         sync.Once
+	//
+	peers    []*peering.Peer
+	ownIndex uint16
+	scdata   *registry.SCMetaData
+	chMsg    chan interface{}
+	stateMgr committee.StateManager
+	operator committee.Operator
+	log      *logger.Logger
 }
 
 func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee.Committee, error) {
@@ -63,9 +71,14 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 
 	ret.stateMgr = statemgr.New(ret, ret.log)
 	ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
-
-	ret.OpenQueue() // TODO only for testing
-
+	runvm.RegisterProcessor(scdata.ProgramHash.String(), func(err error) {
+		if err == nil {
+			ret.SetReadyVM()
+		} else {
+			ret.log.Error(err)
+			ret.Dismiss()
+		}
+	})
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)

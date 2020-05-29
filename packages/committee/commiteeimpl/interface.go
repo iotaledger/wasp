@@ -17,23 +17,66 @@ func init() {
 
 // implements Committee interface
 
-func (c *committeeObj) OpenQueue() {
-	c.isOpenQueue.Store(true)
+func (c *committeeObj) IsOpenQueue() bool {
+	if c.isOpenQueue.Load() {
+		return true
+	}
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	return c.checkReady()
+}
+
+func (c *committeeObj) SetReadyStateManager() {
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	c.isReadyStateManager = true
+	c.log.Debugf("State Manager is ready")
+	c.checkReady()
+}
+
+func (c *committeeObj) SetReadyConsensus() {
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	c.isReadyConsensus = true
+	c.log.Debugf("Consensus is ready")
+	c.checkReady()
+}
+
+func (c *committeeObj) SetReadyVM() {
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	c.isReadyVM = true
+	c.log.Debugf("VM is ready")
+	c.checkReady()
+}
+
+func (c *committeeObj) checkReady() bool {
+	if c.isReadyConsensus && c.isReadyStateManager && c.isReadyVM {
+		c.isOpenQueue.Store(true)
+		c.log.Debugf("committee now is fully initialized")
+	}
+	return c.isReadyConsensus && c.isReadyStateManager && c.isReadyVM
 }
 
 func (c *committeeObj) Dismiss() {
 	c.log.Infof("Dismiss committee for %s", c.scdata.Address.String())
 
-	c.isOpenQueue.Store(false)
-	c.dismissed.Store(true)
+	c.dismissOnce.Do(func() {
+		c.isOpenQueue.Store(false)
+		c.dismissed.Store(true)
 
-	close(c.chMsg)
+		close(c.chMsg)
 
-	for i, pa := range c.scdata.NodeLocations {
-		if i != int(c.ownIndex) {
-			peering.StopUsingPeer(pa)
+		for i, pa := range c.scdata.NodeLocations {
+			if i != int(c.ownIndex) {
+				peering.StopUsingPeer(pa)
+			}
 		}
-	}
+	})
 }
 
 func (c *committeeObj) IsDismissed() bool {
