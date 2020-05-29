@@ -117,6 +117,7 @@ type StateTransitionMsg struct {
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
 // - state manager to itself when batch is completed after syncing
-type BatchMsg struct {
-	Batch state.Batch
+type PendingBatchMsg struct {
+	Batch                state.Batch
+	RequestTxImmediately bool
 }

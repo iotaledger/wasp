@@ -128,7 +128,7 @@ func (sm *stateManager) initLoadState() {
 	// loaded solid variable state and the last batch of state updates
 	// it needs to be validated by the state transaction, so it is added to the
 	// pending batches
-	if !sm.addPendingBatch(batch) {
+	if !sm.addPendingBatch(batch, true) {
 		sm.log.Errorf("initial batch inconsistent")
 		sm.committee.Dismiss()
 		return

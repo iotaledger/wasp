@@ -28,6 +28,10 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 			c.operator.EventStateTransitionMsg(msgt)
 		}
 
+	case committee.PendingBatchMsg:
+
+		c.stateMgr.EventPendingBatchMsg(msgt)
+
 	case committee.StateTransactionMsg:
 		// receive state transaction message
 		c.stateMgr.EventStateTransactionMsg(msgt)

@@ -142,6 +142,13 @@ func (op *operator) checkQuorum() bool {
 	op.log.Infof("FINALIZED RESULT. Posting transaction to the Value Tangle. txid = %s",
 		op.leaderStatus.resultTx.ID().String())
 
+	// inform state manager about new result
+	go func() {
+		op.committee.ReceiveMessage(committee.PendingBatchMsg{
+			Batch:                op.leaderStatus.batch,
+			RequestTxImmediately: false,
+		})
+	}()
 	nodeconn.PostTransactionToNodeAsyncWithRetry(op.leaderStatus.resultTx.Transaction, 2*time.Second, 7*time.Second, op.log)
 	return true
 }

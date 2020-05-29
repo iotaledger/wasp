@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// task context (for batch of requests)
 type VMTask struct {
 	// inputs
 	LeaderPeerIndex uint16
@@ -36,7 +37,7 @@ type Processor interface {
 	Run(ctx *VMContext)
 }
 
-// context of one VM call
+// context of one VM call (for one request)
 type VMContext struct {
 	// invariant through the batch
 	// address of the smart contract
@@ -53,7 +54,7 @@ type VMContext struct {
 	Log *logger.Logger
 	// set for each call
 	Request sctransaction.RequestRef
-	// output of the call
+	// Empty state update upon call, result of the call.
 	StateUpdate state.StateUpdate
 }
 

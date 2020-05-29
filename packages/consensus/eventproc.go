@@ -25,7 +25,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
 
-	//op.takeAction()
+	op.takeAction()
 }
 
 // EventBalancesMsg triggered by balances of the SC address coming from the node
@@ -52,7 +52,7 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	// notify about new request the current leader
 	op.sendRequestNotificationsToLeader([]*request{req})
 
-	//op.takeAction()
+	op.takeAction()
 }
 
 func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
@@ -65,7 +65,7 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 
 	op.markRequestsNotified(msg)
 
-	//op.takeAction()
+	op.takeAction()
 }
 
 func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {

@@ -87,9 +87,11 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 	batch.Commit(sm.syncedBatch.statetxId)
 
 	sm.syncedBatch = nil
-	if !sm.addPendingBatch(batch) {
-		return
-	}
+	go func() {
+		sm.committee.ReceiveMessage(committee.PendingBatchMsg{
+			Batch: batch,
+		})
+	}()
 	sm.takeAction()
 }
 
@@ -126,6 +128,13 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 		"state hash", vh.String(),
 	)
 	sm.nextStateTransaction = msg.Transaction
+	sm.takeAction()
+}
+
+func (sm *stateManager) EventPendingBatchMsg(msg committee.PendingBatchMsg) {
+	sm.log.Debugf("EventPendingBatchMsg")
+
+	sm.addPendingBatch(msg.Batch, msg.RequestTxImmediately)
 	sm.takeAction()
 }
 

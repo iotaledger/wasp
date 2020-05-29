@@ -126,24 +126,6 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	}
 }
 
-const stateTransactionRequestTimeout = 10 * time.Second
-
-func (sm *stateManager) requestStateTransactionIfNeeded() {
-	if sm.nextStateTransaction != nil {
-		return
-	}
-	for _, lst := range sm.pendingBatches {
-		for _, pb := range lst {
-			if pb.stateTransactionRequestDeadline.Before(time.Now()) {
-				txid := pb.batch.StateTransactionId()
-				sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
-				_ = nodeconn.RequestTransactionFromNode(&txid)
-				pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
-			}
-		}
-	}
-}
-
 // index of evidenced state index is passed to record the largest one.
 // This is needed to check synchronization status. If some state index is more than
 // 1 behind the largest, node is not synced
@@ -173,8 +155,10 @@ func (sm *stateManager) isSynchronized() bool {
 	return sm.largestEvidencedStateIndex-sm.solidVariableState.StateIndex() <= 1
 }
 
+const expectedConfirmationTime = 5 * time.Second
+
 // adding batch of state updates to the 'pending' map
-func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
+func (sm *stateManager) addPendingBatch(batch state.Batch, requestTxImmediately bool) bool {
 	if sm.solidStateValid {
 		if batch.StateIndex() != sm.solidVariableState.StateIndex()+1 {
 			// if current state is validated, only interested in the batches of state updates for the next state
@@ -228,10 +212,36 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 		"approving tx", pb.batch.StateTransactionId().String(),
 	)
 	// request approving transaction from the node. It may also come without request
-	txid := batch.StateTransactionId()
-	if err := nodeconn.RequestTransactionFromNode(&txid); err != nil {
-		sm.log.Debug(err)
+	if requestTxImmediately {
+		sm.requestStateTransactionAfter(pb, 0)
+	} else {
+		sm.requestStateTransactionAfter(pb, expectedConfirmationTime)
 	}
-	pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
 	return true
+}
+
+const stateTransactionRequestTimeout = 10 * time.Second
+
+func (sm *stateManager) requestStateTransactionIfNeeded() {
+	if sm.nextStateTransaction != nil {
+		return
+	}
+	for _, lst := range sm.pendingBatches {
+		for _, pb := range lst {
+			if pb.stateTransactionRequestDeadline.Before(time.Now()) {
+				sm.requestStateTransactionAfter(pb, 0)
+			}
+		}
+	}
+}
+
+func (sm *stateManager) requestStateTransactionAfter(pb *pendingBatch, after time.Duration) {
+	if after == 0 {
+		txid := pb.batch.StateTransactionId()
+		sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
+		_ = nodeconn.RequestTransactionFromNode(&txid)
+		pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
+	} else {
+		pb.stateTransactionRequestDeadline = time.Now().Add(after)
+	}
 }

@@ -130,6 +130,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		}
 		// run processor
 		vmctx.Request = reqRef
+		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId())
 		processor.Run(vmctx)
 
 		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
