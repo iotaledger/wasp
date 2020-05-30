@@ -13,7 +13,7 @@ func (op *operator) validateRequestBlock(reqRef *committee.RequestMsg) error {
 	return nil
 }
 
-func (op *operator) newRequest(reqId *sctransaction.RequestId) *request {
+func (op *operator) newRequest(reqId sctransaction.RequestId) *request {
 	reqLog := op.log.Named(reqId.Short())
 	ret := &request{
 		reqId:         reqId,
@@ -26,32 +26,32 @@ func (op *operator) newRequest(reqId *sctransaction.RequestId) *request {
 
 // request record is retrieved by request id.
 // If it doesn't exist and is not in the list of processed requests, it is created
-func (op *operator) requestFromId(reqId *sctransaction.RequestId) (*request, bool) {
-	if op.isRequestProcessed(reqId) {
+func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool) {
+	if op.isRequestProcessed(&reqId) {
 		return nil, false
 	}
-	ret, ok := op.requests[*reqId]
+	ret, ok := op.requests[reqId]
 	if !ok {
 		ret = op.newRequest(reqId)
-		op.requests[*reqId] = ret
+		op.requests[reqId] = ret
 	}
 	return ret, true
 }
 
 // request record retrieved (or created) by request message
 func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
-	reqId := reqMsg.RequestId()
-	ret, ok := op.requests[*reqId]
-	if ok && ret.reqMsg == nil {
-		ret.reqMsg = reqMsg
+	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
+	ret, ok := op.requests[reqId]
+	if ok && ret.reqTx == nil {
+		ret.reqTx = reqMsg.Transaction
 		ret.whenMsgReceived = time.Now()
 		return ret
 	}
 	if !ok {
 		ret = op.newRequest(reqId)
 		ret.whenMsgReceived = time.Now()
-		ret.reqMsg = reqMsg
-		op.requests[*reqId] = ret
+		ret.reqTx = reqMsg.Transaction
+		op.requests[reqId] = ret
 	}
 	ret.notifications[op.peerIndex()] = true
 
@@ -75,11 +75,11 @@ func (op *operator) deleteCompletedRequests() error {
 
 	addr := op.committee.Address()
 	for _, req := range op.requests {
-		if completed, err := state.IsRequestCompleted(&addr, req.reqId); err != nil {
+		if completed, err := state.IsRequestCompleted(&addr, &req.reqId); err != nil {
 			return err
 		} else {
 			if completed {
-				toDelete = append(toDelete, req.reqId)
+				toDelete = append(toDelete, &req.reqId)
 			}
 		}
 	}
@@ -108,7 +108,7 @@ func numTrue(bs []bool) uint16 {
 func takeIds(reqs []*request) []sctransaction.RequestId {
 	ret := make([]sctransaction.RequestId, len(reqs))
 	for i := range ret {
-		ret[i] = *reqs[i].reqId
+		ret[i] = reqs[i].reqId
 	}
 	return ret
 }
@@ -116,12 +116,12 @@ func takeIds(reqs []*request) []sctransaction.RequestId {
 func takeRefs(reqs []*request) ([]sctransaction.RequestRef, bool) {
 	ret := make([]sctransaction.RequestRef, len(reqs))
 	for i := range ret {
-		if reqs[i].reqMsg == nil {
+		if reqs[i].reqTx == nil {
 			return nil, false
 		}
 		ret[i] = sctransaction.RequestRef{
-			Tx:    reqs[i].reqMsg.Transaction,
-			Index: reqs[i].reqMsg.Index,
+			Tx:    reqs[i].reqTx,
+			Index: reqs[i].reqId.Index(),
 		}
 	}
 	return ret, true

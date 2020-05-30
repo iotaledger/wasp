@@ -19,15 +19,15 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	ids := make([]*sctransaction.RequestId, 0, len(reqs))
 	if len(reqs) > 0 {
 		for _, r := range reqs {
-			ids = append(ids, r.reqId)
+			ids = append(ids, &r.reqId)
 		}
 	} else {
 		// all of them if any
 		for _, req := range op.requests {
-			if req.reqMsg == nil {
+			if req.reqTx == nil {
 				continue
 			}
-			ids = append(ids, req.reqId)
+			ids = append(ids, &req.reqId)
 		}
 	}
 	if len(ids) == 0 {
@@ -84,7 +84,7 @@ func (op *operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
 	sortedReqs := op.sortedRequestsByAge()
 	ids := make([]*sctransaction.RequestId, len(sortedReqs))
 	for i := range ids {
-		ids[i] = sortedReqs[i].reqId
+		ids[i] = &sortedReqs[i].reqId
 	}
 	return ids
 }
@@ -108,7 +108,7 @@ func (op *operator) markRequestsNotified(msg *committee.NotifyReqMsg) {
 	}
 
 	for _, reqid := range msg.RequestIds {
-		req, ok := op.requestFromId(reqid)
+		req, ok := op.requestFromId(*reqid)
 		if !ok {
 			continue
 		}

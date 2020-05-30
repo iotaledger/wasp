@@ -24,7 +24,7 @@ func (op *operator) doSubordinate() {
 		if cr.processed {
 			continue
 		}
-		if cr.req.reqMsg == nil {
+		if cr.req.reqTx == nil {
 			continue
 		}
 		cr.processed = true
@@ -47,7 +47,7 @@ func (op *operator) doLeader() {
 func (op *operator) requestBalancesFromNode() {
 	if op.balances == nil && time.Now().After(op.getBalancesDeadline) {
 		addr := op.committee.Address()
-		nodeconn.RequestBalancesFromNode(&addr)
+		nodeconn.RequestOutputsFromNode(&addr)
 		op.getBalancesDeadline = time.Now().Add(getBalancesTimeout)
 	}
 }
@@ -177,13 +177,13 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 
 	for _, req := range op.requests {
 		setAllFalse(req.notifications)
-		req.notifications[op.peerIndex()] = req.reqMsg != nil
+		req.notifications[op.peerIndex()] = req.reqTx != nil
 	}
 	// run through the notification backlog and mark relevant notifications
 	for _, nmsg := range op.notificationsBacklog {
 		if nmsg.StateIndex == op.variableState.StateIndex() {
 			for _, rid := range nmsg.RequestIds {
-				r, ok := op.requestFromId(rid)
+				r, ok := op.requestFromId(*rid)
 				if !ok {
 					continue
 				}

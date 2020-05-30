@@ -96,7 +96,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	// mark failed requests if any
 	for i := int(op.leaderStatus.batch.Size()); i < len(op.leaderStatus.reqs); i++ {
 		addr := op.committee.Address()
-		if err = state.MarkRequestProcessedFailure(&addr, op.leaderStatus.reqs[i].reqId); err != nil {
+		if err = state.MarkRequestProcessedFailure(&addr, &op.leaderStatus.reqs[i].reqId); err != nil {
 			op.log.Errorf("can't mark request %s as failed", op.leaderStatus.reqs[i].reqId.String())
 		}
 	}

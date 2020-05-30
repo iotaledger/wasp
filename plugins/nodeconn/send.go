@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func RequestBalancesFromNode(addr *address.Address) error {
-	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetBalancesMsg{
-		Address: addr,
+func RequestOutputsFromNode(addr *address.Address) error {
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetOutputsMsg{
+		Address: *addr,
 	})
 	if err != nil {
 		return err

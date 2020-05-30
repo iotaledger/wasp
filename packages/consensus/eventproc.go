@@ -28,21 +28,6 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.takeAction()
 }
 
-// EventBalancesMsg triggered by balances of the SC address coming from the node
-func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
-	op.log.Debugf("EventBalancesMsg")
-
-	if !op.validToken(balances.Balances) {
-		// serious inconsistency
-		op.log.Errorf("can't continue")
-		op.committee.Dismiss()
-		return
-	}
-	op.balances = balances.Balances
-
-	op.takeAction()
-}
-
 // EventRequestMsg triggered by new request msg from the node
 func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	op.log.Debugw("EventRequestMsg", "reqid", reqMsg.RequestId().String())
@@ -55,6 +40,10 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 		return
 	}
 	req := op.requestFromMsg(reqMsg)
+
+	// update outputs with each request because request transaction changes address balance with request tokens
+	// the address update message brings request transaction and its outputs with request tokens
+	op.balances = reqMsg.Outputs
 
 	// notify about new request the current leader
 	if op.stateTx != nil {
@@ -87,12 +76,12 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 
 	reqs := make([]*request, len(msg.RequestIds))
 	for i := range reqs {
-		req, ok := op.requestFromId(&msg.RequestIds[i])
+		req, ok := op.requestFromId(msg.RequestIds[i])
 		if !ok {
 			op.log.Debug("some requests in the batch are already processed")
 			return
 		}
-		if req.reqMsg == nil {
+		if req.reqTx == nil {
 			op.log.Debug("some requests in the batch not yet received by the node")
 			return
 		}

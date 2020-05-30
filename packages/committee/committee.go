@@ -41,7 +41,6 @@ type StateManager interface {
 
 type Operator interface {
 	EventStateTransitionMsg(msg *StateTransitionMsg)
-	EventBalancesMsg(balances BalancesMsg)
 	EventRequestMsg(reqMsg *RequestMsg)
 	EventNotifyReqMsg(msg *NotifyReqMsg)
 	EventStartProcessingReqMsg(msg *StartProcessingReqMsg)

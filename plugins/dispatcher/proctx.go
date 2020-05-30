@@ -21,23 +21,34 @@ func dispatchState(tx *sctransaction.Transaction) {
 	cmt.ReceiveMessage(committee.StateTransactionMsg{Transaction: tx})
 }
 
-func dispatchRequests(tx *sctransaction.Transaction) {
-	for i, reqBlk := range tx.Requests() {
-		if cmt := committees.CommitteeByAddress(reqBlk.Address()); cmt != nil {
-			cmt.ReceiveMessage(&committee.RequestMsg{
-				Transaction: tx,
-				Index:       uint16(i),
-			})
-		}
-	}
-}
-
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
 	if cmt := committees.CommitteeByAddress(addr); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
 	triggerBalanceConsumers(addr, bals)
+}
+
+func dispatchAddressUpdate(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
+	cmtState, ok := validateState(tx)
+	if ok && cmtState.Address() == addr {
+		cmtState.ReceiveMessage(&committee.StateTransactionMsg{tx})
+	}
+
+	cmtReq := committees.CommitteeByAddress(addr)
+	if cmtReq == nil {
+		// wrong addressee
+		return
+	}
+	for i, reqBlk := range tx.Requests() {
+		if reqBlk.Address() == addr {
+			cmtReq.ReceiveMessage(&committee.RequestMsg{
+				Transaction: tx,
+				Index:       uint16(i),
+				Outputs:     bals,
+			})
+		}
+	}
 }
 
 // validates and returns if it has state block, is it origin state or error

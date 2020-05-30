@@ -32,7 +32,7 @@ func GetBalancesFromNodeSync(addr address.Address) (map[valuetransaction.ID][]*b
 		closeMutex.Unlock()
 	})
 
-	if err := nodeconn.RequestBalancesFromNode(&addr); err != nil {
+	if err := nodeconn.RequestOutputsFromNode(&addr); err != nil {
 		close(chCompleted)
 		closed = true
 		return nil, err

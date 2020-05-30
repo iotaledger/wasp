@@ -69,10 +69,10 @@ type computationRequest struct {
 type request struct {
 
 	// id of the hash of request tx id and request block index
-	reqId *sctransaction.RequestId
+	reqId sctransaction.RequestId
 
-	// request message or nil if wasn't received yet
-	reqMsg *committee.RequestMsg
+	// from request message. nil if request message wasn't received yet
+	reqTx *sctransaction.Transaction
 
 	// time when request message was received by the operator
 	whenMsgReceived time.Time

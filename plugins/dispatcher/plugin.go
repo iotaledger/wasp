@@ -62,7 +62,7 @@ func run(_ *node.Plugin) {
 			go func() {
 				nodeconn.EventNodeMessageReceived.Detach(processNodeDataClosure)
 				peering.EventPeerMessageReceived.Detach(processPeerMsgClosure)
-				Events.BalancesArrivedFromNode.DetachAll()
+				Events.OutputsArrivedFromNode.DetachAll()
 				Events.TransactionArrivedFromNode.DetachAll()
 
 				close(chNodeMsgData)
@@ -84,11 +84,13 @@ func run(_ *node.Plugin) {
 		// when transaction arrives from node
 		Events.TransactionArrivedFromNode.Attach(events.NewClosure(func(tx *sctransaction.Transaction) {
 			dispatchState(tx)
-			dispatchRequests(tx)
 		}))
 		// when balances arrive from nodes
-		Events.BalancesArrivedFromNode.Attach(events.NewClosure(func(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance) {
+		Events.OutputsArrivedFromNode.Attach(events.NewClosure(func(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance) {
 			dispatchBalances(addr, balances)
+		}))
+		Events.AddressUpdateArrivedFromNode.Attach(events.NewClosure(func(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
+			dispatchAddressUpdate(addr, balances, tx)
 		}))
 
 		log.Infof("dispatcher started")
@@ -122,7 +124,16 @@ func processNodeMsgData(data []byte) {
 		}
 		Events.TransactionArrivedFromNode.Trigger(tx)
 
-	case *waspconn.WaspFromNodeBalancesMsg:
-		Events.BalancesArrivedFromNode.Trigger(*msgt.Address, msgt.Balances)
+	case *waspconn.WaspFromNodeAddressOutputsMsg:
+		Events.OutputsArrivedFromNode.Trigger(msgt.Address, msgt.Balances)
+
+	case *waspconn.WaspFromNodeAddressUpdateMsg:
+		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
+		if err != nil {
+			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
+			// not a SC transaction. Ignore
+			return
+		}
+		Events.AddressUpdateArrivedFromNode.Trigger(msgt.Address, msgt.Balances, tx)
 	}
 }
