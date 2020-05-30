@@ -77,14 +77,13 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		}
 	}
 	// the whole batch received
-	batch, err := state.NewBatch(sm.syncedBatch.stateUpdates, sm.syncedBatch.stateIndex)
+	batch, err := state.NewBatch(sm.syncedBatch.stateUpdates)
 	if err != nil {
 		sm.log.Errorf("failed to create batch: %v", err)
 		sm.syncedBatch = nil
 		return
 	}
-	// always committed
-	batch.Commit(sm.syncedBatch.statetxId)
+	batch.WithStateIndex(sm.syncedBatch.stateIndex).WithStateTransaction(sm.syncedBatch.statetxId)
 
 	sm.syncedBatch = nil
 	go func() {

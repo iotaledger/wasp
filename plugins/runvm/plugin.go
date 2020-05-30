@@ -139,10 +139,11 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 	}
 	var err error
 	// create batch out of state updates. Note that batch can contain less state updates than number of requests
-	ctx.ResultBatch, err = state.NewBatch(stateUpdates, ctx.VariableState.StateIndex()+1)
+	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
 		return err
 	}
+	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
 	err = ctx.VariableState.ApplyBatch(ctx.ResultBatch)
 	if err != nil {
 		return err

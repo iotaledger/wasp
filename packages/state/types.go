@@ -48,9 +48,9 @@ type StateUpdate interface {
 type Batch interface {
 	ForEach(func(StateUpdate) bool)
 	StateIndex() uint32
-	// transaction which validates the batch
+	WithStateIndex(uint32) Batch
 	StateTransactionId() valuetransaction.ID
-	Commit(valuetransaction.ID) // sets the state transaction ID
+	WithStateTransaction(valuetransaction.ID) Batch
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
 	EssenceHash() *hashing.HashValue // except state transaction id

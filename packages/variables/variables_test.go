@@ -69,3 +69,31 @@ func TestBytes(t *testing.T) {
 	h12 = hashing.GetHashValue(vars2)
 	assert.Equal(t, h11 == h12, true)
 }
+
+func TestDetereminism(t *testing.T) {
+	vars1 := New(nil)
+	h1 := hashing.GetHashValue(vars1)
+
+	vars2 := New(vars1)
+	h2 := hashing.GetHashValue(vars2)
+
+	assert.Equal(t, h1 == h2, true)
+
+	vars1.Set("k1", "kuku")
+	vars1.Set("k2", uint16(42))
+	vars1.Set("k3", "kuku")
+	vars1.Set("k4", uint16(2))
+
+	vars2.Set("k4", uint16(2))
+	vars2.Set("k3", "kuku")
+	vars2.Set("k2", uint16(42))
+	vars2.Set("k1", "kuku")
+
+	h11 := hashing.GetHashValue(vars1)
+	h12 := hashing.GetHashValue(vars2)
+	assert.Equal(t, h11 == h12, true)
+
+	vars1.Set("k3", nil)
+	vars2.Set("k3", nil)
+	assert.Equal(t, h11 == h12, true)
+}

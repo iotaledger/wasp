@@ -120,7 +120,7 @@ func (sm *stateManager) initLoadState() {
 		// committing a batch means linking it to the approving transaction
 		// it doesn't change essence of the batch
 		// here 'color' is the ID of the origin transaction
-		batch.Commit((valuetransaction.ID)(par.Color))
+		batch.WithStateTransaction((valuetransaction.ID)(par.Color))
 
 		sm.log.Infow("initial state wasn't found. Origin state update batch has been created",
 			"state txid", batch.StateTransactionId().String())

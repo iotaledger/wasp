@@ -27,7 +27,7 @@ func NewOriginBatch(par NewOriginParams) state.Batch {
 	vars.Set("$address$", par.Address.String())
 	vars.Set("$owneraddr$", par.OwnerAddress.String())
 	vars.Set("$proghash$", par.ProgramHash.String())
-	ret, err := state.NewBatch([]state.StateUpdate{stateUpd}, 0)
+	ret, err := state.NewBatch([]state.StateUpdate{stateUpd})
 	if err != nil {
 		panic(err)
 	}

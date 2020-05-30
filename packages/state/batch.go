@@ -19,7 +19,7 @@ type batch struct {
 }
 
 // validates, enumerates and creates a batch from array of state updates
-func NewBatch(stateUpdates []StateUpdate, stateIndex uint32) (Batch, error) {
+func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
 	if len(stateUpdates) == 0 {
 		return nil, fmt.Errorf("batch can't be empty")
 	}
@@ -35,13 +35,12 @@ func NewBatch(stateUpdates []StateUpdate, stateIndex uint32) (Batch, error) {
 		stateUpdatesNew[su.BatchIndex()] = su
 	}
 	return &batch{
-		stateIndex:   stateIndex,
 		stateUpdates: stateUpdatesNew,
 	}, nil
 }
 
-func MustNewBatch(stateUpdates []StateUpdate, stateIndex uint32) Batch {
-	ret, err := NewBatch(stateUpdates, stateIndex)
+func MustNewBatch(stateUpdates []StateUpdate) Batch {
+	ret, err := NewBatch(stateUpdates)
 	if err != nil {
 		panic(err)
 	}
@@ -52,8 +51,18 @@ func (b *batch) StateTransactionId() valuetransaction.ID {
 	return b.stateTxId
 }
 
-func (b *batch) Commit(vtxid valuetransaction.ID) {
+func (b *batch) StateIndex() uint32 {
+	return b.stateIndex
+}
+
+func (b *batch) WithStateIndex(stateIndex uint32) Batch {
+	b.stateIndex = stateIndex
+	return b
+}
+
+func (b *batch) WithStateTransaction(vtxid valuetransaction.ID) Batch {
 	b.stateTxId = vtxid
+	return b
 }
 
 func (b *batch) ForEach(fun func(StateUpdate) bool) {
@@ -62,10 +71,6 @@ func (b *batch) ForEach(fun func(StateUpdate) bool) {
 			return
 		}
 	}
-}
-
-func (b *batch) StateIndex() uint32 {
-	return b.stateIndex
 }
 
 func (b *batch) Size() uint16 {

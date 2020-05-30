@@ -48,23 +48,25 @@ func TestBatches(t *testing.T) {
 
 	assert.EqualValues(t, *su2.RequestId(), reqid2)
 
-	_, err := NewBatch(nil, 2)
+	_, err := NewBatch(nil)
 	assert.Equal(t, err == nil, false)
 
-	batch1, err := NewBatch([]StateUpdate{su1, su2}, 2)
+	batch1, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
+	batch1.WithStateIndex(2)
 	assert.Equal(t, batch1.Size(), uint16(2))
 
-	batch2, err := NewBatch([]StateUpdate{su1, su2}, 2)
+	batch2, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
+	batch2.WithStateIndex(2)
 	assert.Equal(t, batch1.Size(), uint16(2))
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch1.Commit(txid1)
+	batch1.WithStateTransaction(txid1)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch2.Commit(txid1)
+	batch2.WithStateTransaction(txid1)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
 	assert.EqualValues(t, hashing.GetHashValue(batch1), hashing.GetHashValue(batch2))
@@ -82,72 +84,77 @@ func TestApply(t *testing.T) {
 	su2 := NewStateUpdate(&reqid2)
 	suwrong := NewStateUpdate(&reqid2)
 
-	reqid3 := sctransaction.NewRequestId(txid2, 0)
-	su3 := NewStateUpdate(&reqid3)
-
 	assert.EqualValues(t, *su2.RequestId(), reqid2)
 
-	_, err := NewBatch(nil, 2)
+	_, err := NewBatch(nil)
 	assert.Equal(t, err == nil, false)
 
-	_, err = NewBatch([]StateUpdate{su1, su1}, 0)
+	_, err = NewBatch([]StateUpdate{su1, su1})
 	assert.Equal(t, err == nil, false)
 
-	_, err = NewBatch([]StateUpdate{su2, suwrong}, 0)
+	_, err = NewBatch([]StateUpdate{su2, suwrong})
 	assert.Equal(t, err == nil, false)
 
-	batch1, err := NewBatch([]StateUpdate{su1, su2}, 0)
+	batch1, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	assert.Equal(t, batch1.Size(), uint16(2))
 
-	batch2, err := NewBatch([]StateUpdate{su1, su2}, 0)
+	batch2, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	assert.Equal(t, batch1.Size(), uint16(2))
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch1.Commit(txid1)
+	batch1.WithStateTransaction(txid1)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch2.Commit(txid1)
+	batch2.WithStateTransaction(txid1)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
 	assert.EqualValues(t, hashing.GetHashValue(batch1), hashing.GetHashValue(batch2))
 
 	vs1 := NewVariableState(nil)
 	vs2 := NewVariableState(nil)
-	vs3 := NewVariableState(nil)
 
 	err = vs1.ApplyBatch(batch1)
 	assert.NoError(t, err)
 
 	err = vs2.ApplyBatch(batch2)
 	assert.NoError(t, err)
+}
 
-	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
+func TestApply2(t *testing.T) {
+	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	reqid1 := sctransaction.NewRequestId(txid1, 0)
+	reqid2 := sctransaction.NewRequestId(txid1, 2)
+	reqid3 := sctransaction.NewRequestId(txid1, 5)
 
-	batch3, err := NewBatch([]StateUpdate{su1}, 2)
+	su1 := NewStateUpdate(&reqid1)
+	su2 := NewStateUpdate(&reqid2)
+	su3 := NewStateUpdate(&reqid3)
+
+	vs1 := NewVariableState(nil)
+	vs2 := NewVariableState(nil)
+
+	batch23, err := NewBatch([]StateUpdate{su2, su3})
 	assert.NoError(t, err)
-	err = vs3.ApplyBatch(batch3)
-	assert.Equal(t, err != nil, true)
+	batch23.WithStateIndex(1)
 
-	su1.Variables().Set("kuku", "A")
-	su2.Variables().Set("mumu", "B")
-
-	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
+	batch3, err := NewBatch([]StateUpdate{su3})
+	assert.NoError(t, err)
+	batch3.WithStateIndex(1)
 
 	vs1.ApplyStateUpdate(su1)
-	b, err := NewBatch([]StateUpdate{su2, su3}, 1)
-	assert.NoError(t, err)
-	err = vs1.ApplyBatch(b)
+	err = vs1.ApplyBatch(batch23)
 	assert.NoError(t, err)
 
-	batch4, err := NewBatch([]StateUpdate{su1, su2, su3}, 1)
-	assert.NoError(t, err)
-	err = vs2.ApplyBatch(batch4)
+	vs2.ApplyStateUpdate(su1)
+	vs2.ApplyStateUpdate(su2)
+	err = vs2.ApplyBatch(batch3)
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, vs1.StateIndex(), vs2.StateIndex())
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
+
 }
