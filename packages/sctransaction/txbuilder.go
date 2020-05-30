@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"sort"
 )
 
@@ -73,16 +72,8 @@ func (txb *TransactionBuilder) AddBalanceToOutput(addr address.Address, bal *bal
 	}
 }
 
-func (txb *TransactionBuilder) AddStateBlock(color balance.Color, stateIndex uint32) {
-	txb.stateBlock = NewStateBlock(color, stateIndex)
-}
-
-func (txb *TransactionBuilder) SetTimestamp(ts int64) {
-	txb.stateBlock.WithTimestamp(ts)
-}
-
-func (txb *TransactionBuilder) SetVariableStateHash(h *hashing.HashValue) {
-	txb.stateBlock.WithVariableStateHash(h)
+func (txb *TransactionBuilder) AddStateBlock(par NewStateBlockParams) {
+	txb.stateBlock = NewStateBlock(par)
 }
 
 func (txb *TransactionBuilder) AddRequestBlock(reqBlk *RequestBlock) {

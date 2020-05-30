@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmnil"
 	"sync"
@@ -84,6 +85,9 @@ func getProcessor(programHash string) (vm.Processor, error) {
 
 // RunComputationsAsync runs computations for the batch of requests in the background
 func RunComputationsAsync(ctx *vm.VMTask) error {
+	if len(ctx.Requests) == 0 {
+		return fmt.Errorf("must be at least 1 request")
+	}
 	processor, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		return err
@@ -102,15 +106,15 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	taskName := ctx.Address.String() + "." + bh.String()
 
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		if err := runVM(ctx, txbuilder, processor); err != nil {
-			ctx.Log.Errorf("runVM: %v", err)
-		}
+		runVM(ctx, txbuilder, processor, shutdownSignal)
 	})
 	return err
 }
 
 // runs batch
-func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor) error {
+func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
+	ctx.Log.Debugf("input balances:\n%s", util.BalancesToString(ctx.Balances))
+
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
 		Color:         ctx.Color,
@@ -126,6 +130,8 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		if err != nil {
 			// not enough balance for requests tokens
 			// stop here
+			ctx.Log.Errorf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
+				reqRef.RequestId().String(), err)
 			break
 		}
 		// run processor
@@ -137,20 +143,28 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		// update state
 		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
 	}
+	if len(stateUpdates) == 0 {
+		ctx.Log.Errorf("no state updates were produced")
+		return
+	}
+
 	var err error
 	// create batch out of state updates. Note that batch can contain less state updates than number of requests
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
-		return err
+		ctx.Log.Error(err)
 	}
 	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
 	err = ctx.VariableState.ApplyBatch(ctx.ResultBatch)
 	if err != nil {
-		return err
+		ctx.Log.Error(err)
 	}
 	// create final transaction
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex(), ctx.VariableState.Hash())
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(
+		ctx.VariableState.StateIndex(),
+		ctx.VariableState.Hash(),
+		ctx.Timestamp.UnixNano(),
+	)
 	// call back
 	ctx.OnFinish()
-	return nil
 }

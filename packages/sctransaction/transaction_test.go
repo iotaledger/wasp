@@ -4,11 +4,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/magiconair/properties/assert"
 	"math/rand"
 	"testing"
-	"time"
 )
 
 const (
@@ -46,7 +44,10 @@ func TestTransactionStateBlock1(t *testing.T) {
 	txb.AddBalanceToOutput(addr, bal)
 
 	color := randomColor()
-	txb.AddStateBlock(&color, 42)
+	txb.AddStateBlock(NewStateBlockParams{
+		Color:      color,
+		StateIndex: 42,
+	})
 
 	_, err = txb.Finalize()
 	assert.Equal(t, err, nil)
@@ -70,9 +71,10 @@ func TestTransactionStateBlock2(t *testing.T) {
 
 	color := randomColor()
 
-	txb.AddStateBlock(&color, 42)
-	txb.SetTimestamp(time.Now().UnixNano())
-	txb.SetVariableStateHash(hashing.RandomHash(nil))
+	txb.AddStateBlock(NewStateBlockParams{
+		Color:      color,
+		StateIndex: 42,
+	})
 
 	_, err = txb.Finalize()
 	assert.Equal(t, err, nil)
@@ -94,7 +96,7 @@ func TestTransactionRequestBlock(t *testing.T) {
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	reqBlk := NewRequestBlock(&addr)
+	reqBlk := NewRequestBlock(addr)
 	txb.AddRequestBlock(reqBlk)
 
 	_, err = txb.Finalize()
@@ -119,11 +121,12 @@ func TestTransactionMultiBlocks(t *testing.T) {
 
 	color := randomColor()
 
-	txb.AddStateBlock(&color, 42)
-	txb.SetTimestamp(time.Now().UnixNano())
-	txb.SetVariableStateHash(hashing.RandomHash(nil))
+	txb.AddStateBlock(NewStateBlockParams{
+		Color:      color,
+		StateIndex: 42,
+	})
 
-	reqBlk := NewRequestBlock(&addr)
+	reqBlk := NewRequestBlock(addr)
 	txb.AddRequestBlock(reqBlk)
 
 	_, err = txb.Finalize()

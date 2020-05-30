@@ -78,9 +78,12 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	for _, remb := range reminderBalances {
 		txb.AddBalanceToOutput(par.Input.Address(), remb)
 	}
-	txb.AddStateBlock(balance.ColorNew, 0)
-
-	txb.SetVariableStateHash(OriginVariableStateHash(par.NewOriginParams))
+	txb.AddStateBlock(sctransaction.NewStateBlockParams{
+		Color:      balance.ColorNew,
+		StateIndex: 0,
+		StateHash:  *OriginVariableStateHash(par.NewOriginParams),
+		Timestamp:  0, // <<<< to have deterministic origin tx hash
+	})
 
 	ret, err := txb.Finalize()
 	if err != nil {

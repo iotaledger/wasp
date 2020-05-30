@@ -26,10 +26,19 @@ type StateBlock struct {
 	variableStateHash hashing.HashValue
 }
 
-func NewStateBlock(color balance.Color, stateIndex uint32) *StateBlock {
+type NewStateBlockParams struct {
+	Color      balance.Color
+	StateIndex uint32
+	StateHash  hashing.HashValue
+	Timestamp  int64
+}
+
+func NewStateBlock(par NewStateBlockParams) *StateBlock {
 	return &StateBlock{
-		color:      color,
-		stateIndex: stateIndex,
+		color:             par.Color,
+		stateIndex:        par.StateIndex,
+		variableStateHash: par.StateHash,
+		timestamp:         par.Timestamp,
 	}
 }
 

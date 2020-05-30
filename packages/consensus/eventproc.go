@@ -31,6 +31,13 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 // EventBalancesMsg triggered by balances of the SC address coming from the node
 func (op *operator) EventBalancesMsg(balances committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg")
+
+	if !op.validToken(balances.Balances) {
+		// serious inconsistency
+		op.log.Errorf("can't continue")
+		op.committee.Dismiss()
+		return
+	}
 	op.balances = balances.Balances
 
 	op.takeAction()
@@ -50,7 +57,9 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	req := op.requestFromMsg(reqMsg)
 
 	// notify about new request the current leader
-	op.sendRequestNotificationsToLeader([]*request{req})
+	if op.stateTx != nil {
+		op.sendRequestNotificationsToLeader([]*request{req})
+	}
 
 	op.takeAction()
 }

@@ -9,6 +9,10 @@ import (
 
 // notifies current leader about requests in the order of arrival
 func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
+	currentLeaderPeerIndex, ok := op.currentLeaderPeerIndex()
+	if !ok {
+		return
+	}
 	if op.iAmCurrentLeader() {
 		return
 	}
@@ -36,9 +40,10 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 		},
 		RequestIds: ids,
 	})
+
 	// send until first success, but no more than number of nodes in the committee
 	op.log.Debugw("sendRequestNotificationsToLeader",
-		"leader", op.currentLeaderPeerIndex(),
+		"leader", currentLeaderPeerIndex,
 		"my peer index", op.peerIndex(),
 		"num req", len(ids),
 	)
@@ -49,11 +54,11 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 			// stop if I am the current leader
 			return
 		}
-		if !op.committee.IsAlivePeer(op.currentLeaderPeerIndex()) {
+		if !op.committee.IsAlivePeer(currentLeaderPeerIndex) {
 			op.moveToNextLeader()
 			continue
 		}
-		err := op.committee.SendMsg(op.currentLeaderPeerIndex(), committee.MsgNotifyRequests, msgData)
+		err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData)
 		if err == nil {
 			op.setLeaderRotationDeadline(time.Now().Add(leaderRotationPeriod))
 			// first node to which data was successfully sent is assumed the leader

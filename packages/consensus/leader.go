@@ -6,15 +6,22 @@ import (
 )
 
 func (op *operator) iAmCurrentLeader() bool {
-	return op.committee.OwnPeerIndex() == op.currentLeaderPeerIndex()
+	currLead, ok := op.currentLeaderPeerIndex()
+	if !ok {
+		return false
+	}
+	return op.committee.OwnPeerIndex() == currLead
 }
 
-func (op *operator) currentLeaderPeerIndex() uint16 {
+func (op *operator) currentLeaderPeerIndex() (uint16, bool) {
 	return op.leaderAtSeqIndex(op.currLeaderSeqIndex)
 }
 
-func (op *operator) leaderAtSeqIndex(seqIdx uint16) uint16 {
-	return op.leaderPeerIndexList[seqIdx]
+func (op *operator) leaderAtSeqIndex(seqIdx uint16) (uint16, bool) {
+	if op.leaderPeerIndexList == nil {
+		return 0, false
+	}
+	return op.leaderPeerIndexList[seqIdx], true
 }
 
 const leaderRotationPeriod = 3 * time.Second

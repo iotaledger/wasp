@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"sort"
@@ -75,4 +76,15 @@ func SelectMinimumOutputs(outputs map[valuetransaction.OutputID][]*balance.Balan
 		}
 	}
 	return nil
+}
+
+func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
+	ret := "{"
+	for txid, bals := range outs {
+		ret += txid.String() + ":\n"
+		for _, bal := range bals {
+			ret += fmt.Sprintf("         %s: %d\n", bal.Color().String(), bal.Value())
+		}
+	}
+	return ret
 }
