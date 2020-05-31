@@ -1,13 +1,13 @@
 package consensus
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/runvm"
 	"time"
@@ -32,7 +32,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		Balances:        par.balances,
 		RewardAddress:   address.Address{},
 		Requests:        reqRefs,
-		Timestamp:       time.Time{},
+		Timestamp:       par.timestamp,
 		VariableState:   op.variableState,
 		Log:             op.log,
 	}
@@ -53,16 +53,23 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		return
 	}
 
-	reqids := make([]sctransaction.RequestId, 0, len(result.Requests))
+	reqids := make([]sctransaction.RequestId, len(result.Requests))
 	for i := range reqids {
 		reqids[i] = *result.Requests[i].RequestId()
 	}
+
+	bh := vm.BatchHash(reqids, result.Timestamp)
+	op.log.Debugw("sendResultToTheLeader",
+		"leader", result.LeaderPeerIndex,
+		"batchHash", bh.String(),
+		"ts", result.Timestamp,
+	)
 
 	msgData := hashing.MustBytes(&committee.SignedHashMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: op.stateIndex(),
 		},
-		BatchHash:     vm.BatchHash(reqids, result.Timestamp),
+		BatchHash:     bh,
 		OrigTimestamp: result.Timestamp,
 		EssenceHash:   *hashing.HashData(result.ResultTransaction.EssenceBytes()),
 		SigShare:      sigShare,
@@ -85,20 +92,24 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		reqids[i] = *result.Requests[i].RequestId()
 	}
 
+	bh := vm.BatchHash(reqids, result.Timestamp)
+	if bh != op.leaderStatus.batchHash {
+		panic("bh != op.leaderStatus.batchHash")
+	}
+	if len(result.Requests) != int(result.ResultBatch.Size()) {
+		panic("len(result.Requests) != int(result.ResultBatch.Size())")
+	}
+
+	op.log.Debugw("saveOwnResult",
+		"batchHash", bh.String(),
+		"ts", result.Timestamp,
+	)
+
 	op.leaderStatus.resultTx = result.ResultTransaction
 	op.leaderStatus.batch = result.ResultBatch
-	op.leaderStatus.batchHash = vm.BatchHash(reqids, result.Timestamp)
 	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
 		essenceHash: *hashing.HashData(result.ResultTransaction.EssenceBytes()),
 		sigShare:    sigShare,
-	}
-
-	// mark failed requests if any
-	for i := int(op.leaderStatus.batch.Size()); i < len(op.leaderStatus.reqs); i++ {
-		addr := op.committee.Address()
-		if err = state.MarkRequestProcessedFailure(&addr, &op.leaderStatus.reqs[i].reqId); err != nil {
-			op.log.Errorf("can't mark request %s as failed", op.leaderStatus.reqs[i].reqId.String())
-		}
 	}
 }
 
@@ -109,9 +120,8 @@ func (op *operator) aggregateSigShares(sigShares [][]byte) error {
 	if err != nil {
 		return err
 	}
-	finalSignature = finalSignature
-	// if err := resTx.PutSignature(finalSignature); err != nil{
-	// 		return fmt.Errorf("something wrong while aggregating final signature: %v", err)
-	// }
+	if err := resTx.PutSignature(finalSignature); err != nil {
+		return fmt.Errorf("something wrong while aggregating final signature: %v", err)
+	}
 	return nil
 }

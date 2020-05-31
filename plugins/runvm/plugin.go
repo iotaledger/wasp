@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmnil"
 	"sync"
+	"time"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -113,6 +114,14 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 
 // runs batch
 func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
+	ctx.Log.Debugw("runVM IN",
+		"addr", ctx.Address.String(),
+		"color", ctx.Color.String(),
+		"ts", ctx.Timestamp,
+		"state index", ctx.VariableState.StateIndex(),
+		"num req", len(ctx.Requests),
+		"leader", ctx.LeaderPeerIndex,
+	)
 	ctx.Log.Debugf("input balances:\n%s", util.BalancesToString(ctx.Balances))
 
 	vmctx := &vm.VMContext{
@@ -147,26 +156,36 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
-		ctx.Log.Errorf("no state updates were produced")
+		ctx.Log.Errorf("RunVM: no state updates were produced")
 		return
 	}
 
 	var err error
+
 	// create batch from state updates.
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
-		ctx.Log.Error(err)
+		ctx.Log.Errorf("RunVM: %v", err)
+		return
 	}
 	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
-	err = ctx.VariableState.ApplyBatch(ctx.ResultBatch)
-	if err != nil {
-		ctx.Log.Error(err)
-	}
+
 	// create final transaction
+	vsClone := state.NewVariableState(ctx.VariableState)
+	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
+		ctx.Log.Errorf("RunVM: %v", err)
+		return
+	}
 	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(
 		ctx.VariableState.StateIndex(),
-		ctx.VariableState.Hash(),
+		vsClone.Hash(),
 		ctx.Timestamp.UnixNano(),
+	)
+	ctx.Log.Debugw("runVM OUT",
+		"result batch size", ctx.ResultBatch.Size(),
+		"result batch state index", ctx.ResultBatch.StateIndex(),
+		"result batch size", ctx.ResultBatch.EssenceHash().String(),
+		"result tx ts", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
 	)
 	// call back
 	ctx.OnFinish()

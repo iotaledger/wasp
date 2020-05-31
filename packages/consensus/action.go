@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"bytes"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -78,17 +77,17 @@ func (op *operator) startProcessing() {
 		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded", numSucc)
 		return
 	}
-	var buf bytes.Buffer
-	for i := range reqIds {
-		buf.Write(reqIds[i][:])
-	}
+	batchHash := vm.BatchHash(reqIds, ts)
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
-		batchHash:     vm.BatchHash(reqIds, ts),
+		batchHash:     batchHash,
 		timestamp:     ts,
 		signedResults: make([]*signedResult, op.committee.Size()),
 	}
-	op.log.Debugf("msgStartProcessingRequest successfully sent to %d peers", numSucc)
+	op.log.Debugw("runCalculationsAsync leader",
+		"batch hash", batchHash.String(),
+		"ts", ts,
+	)
 
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
@@ -105,13 +104,25 @@ func (op *operator) checkQuorum() bool {
 		//log.Debug("checkQuorum: op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized")
 		return false
 	}
+	// collect signature shares available
 	mainHash := op.leaderStatus.signedResults[op.committee.OwnPeerIndex()].essenceHash
 	sigShares := make([][]byte, 0, op.committee.Size())
 	for i := range op.leaderStatus.signedResults {
+		if op.leaderStatus.signedResults[i] == nil {
+			continue
+		}
+		err := op.dkshare.VerifySigShare(op.leaderStatus.resultTx.EssenceBytes(), op.leaderStatus.signedResults[i].sigShare)
+		if err != nil {
+			op.log.Warnf("wrong signature from peer #%d: %v", i, err)
+			op.leaderStatus.signedResults[i] = nil // ignoring
+			continue
+		}
+
 		if op.leaderStatus.signedResults[i].essenceHash == mainHash {
 			sigShares = append(sigShares, op.leaderStatus.signedResults[i].sigShare)
 		}
 	}
+
 	if len(sigShares) < int(op.quorum()) {
 		return false
 	}
@@ -122,12 +133,16 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	if !op.leaderStatus.resultTx.SignaturesValid() {
-		op.log.Errorf("something went wrong while finalizing result transaction: %v", err)
+		op.log.Error("final signature invalid: something went wrong while finalizing result transaction")
 		return false
 	}
 
-	op.log.Infof("FINALIZED RESULT. Posting transaction to the Value Tangle. txid = %s",
-		op.leaderStatus.resultTx.ID().String())
+	sh := op.leaderStatus.resultTx.MustState().VariableStateHash()
+	op.log.Infof("FINALIZED RESULT. Posting transaction to the Value Tangle. txid = %s state hash = %s",
+		op.leaderStatus.resultTx.ID().String(),
+		sh.String(),
+	)
+	op.leaderStatus.finalized = true
 
 	// inform state manager about new result
 	go func() {

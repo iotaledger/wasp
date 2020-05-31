@@ -15,7 +15,7 @@ import (
 
 // task context (for batch of requests)
 type VMTask struct {
-	// inputs
+	// inputs (immutable)
 	LeaderPeerIndex uint16
 	ProgramHash     hashing.HashValue
 	Address         address.Address

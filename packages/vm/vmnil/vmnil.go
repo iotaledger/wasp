@@ -17,7 +17,7 @@ func (v vmnil) Run(inp *vm.VMContext) {
 		"addr", inp.Address.String(),
 		"color", inp.Color.String(),
 		"ts", inp.Timestamp,
-		"vs index", inp.VariableState.StateIndex(),
+		"state index", inp.VariableState.StateIndex(),
 		"req", inp.Request.RequestId().String(),
 	)
 }

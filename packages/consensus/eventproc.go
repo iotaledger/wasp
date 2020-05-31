@@ -71,24 +71,26 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 
 func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
 	op.log.Debugw("EventStartProcessingReqMsg",
-		"num reqId", len(msg.RequestIds),
 		"sender", msg.SenderIndex,
+		"num reqId", len(msg.RequestIds),
+		"ts", msg.Timestamp,
+		"batch hash", vm.BatchHash(msg.RequestIds, msg.Timestamp),
 	)
 
 	op.MustValidStateIndex(msg.StateIndex)
 
+	var ok bool
 	reqs := make([]*request, len(msg.RequestIds))
 	for i := range reqs {
-		req, ok := op.requestFromId(msg.RequestIds[i])
+		reqs[i], ok = op.requestFromId(msg.RequestIds[i])
 		if !ok {
-			op.log.Debug("some requests in the batch are already processed")
+			op.log.Warn("EventStartProcessingReqMsg inconsistency: some requests in the batch are already processed")
 			return
 		}
-		if req.reqTx == nil {
-			op.log.Debug("some requests in the batch not yet received by the node")
+		if reqs[i].reqTx == nil {
+			op.log.Warn("EventStartProcessingReqMsg inconsistency: some requests in the batch not yet received by the node")
 			return
 		}
-		reqs = append(reqs, req)
 	}
 	// start async calculation
 	go op.runCalculationsAsync(runCalculationsParams{
@@ -128,6 +130,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	op.log.Debugw("EventSignedHashMsg",
 		"sender", msg.SenderIndex,
 		"batch hash", msg.BatchHash.String(),
+		"essence hash", msg.EssenceHash.String(),
 	)
 	if op.leaderStatus == nil {
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
@@ -145,11 +148,6 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	if op.leaderStatus.signedResults[msg.SenderIndex] != nil {
 		// repeating
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil")
-		return
-	}
-	// verify signature share received
-	if err := op.dkshare.VerifySigShare(op.leaderStatus.resultTx.EssenceBytes(), msg.SigShare); err != nil {
-		op.log.Errorf("wrong signature from peer #%d: %v", msg.SenderIndex, err)
 		return
 	}
 	op.leaderStatus.signedResults[msg.SenderIndex] = &signedResult{
