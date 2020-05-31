@@ -126,17 +126,19 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
 	for _, reqRef := range ctx.Requests {
 		// destroy token corresponding to request
+		// NOTE: it is assumed here that balances contain all necessary request token balances
+		// it is checked in the dispatcher.dispatchAddressUpdate
 		err := txbuilder.EraseColor(ctx.Address, (balance.Color)(reqRef.Tx.ID()), 1)
 		if err != nil {
 			// not enough balance for requests tokens
-			// stop here
-			ctx.Log.Errorf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
+			// major inconsistency
+			ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
 				reqRef.RequestId().String(), err)
-			break
 		}
 		// run processor
 		vmctx.Request = reqRef
 		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId())
+
 		processor.Run(vmctx)
 
 		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
@@ -144,12 +146,13 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
 	}
 	if len(stateUpdates) == 0 {
+		// should not happen
 		ctx.Log.Errorf("no state updates were produced")
 		return
 	}
 
 	var err error
-	// create batch out of state updates. Note that batch can contain less state updates than number of requests
+	// create batch from state updates.
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
 		ctx.Log.Error(err)

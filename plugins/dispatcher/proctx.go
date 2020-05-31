@@ -2,22 +2,26 @@
 package dispatcher
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/committees"
 )
 
 func dispatchState(tx *sctransaction.Transaction) {
-	cmt, ok := validateState(tx)
-	if !ok {
+	cmt := getCommitteeByState(tx)
+	if cmt == nil {
 		return
 	}
 	log.Debugw("dispatchState", "txid", tx.ID().String())
+	addr := cmt.Address()
+	_, err := tx.ValidateBlocks(&addr)
+	if err != nil {
+		log.Errorf("invalid transaction %s ignored: %v", tx.ID().String(), err)
+		return
+	}
 
 	cmt.ReceiveMessage(committee.StateTransactionMsg{Transaction: tx})
 }
@@ -36,16 +40,19 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		// wrong addressee
 		return
 	}
-	if err := validateTransactionWithBalances(tx, balances); err != nil {
-		log.Warnf("transaction %s ignored: %v", tx.ID().String(), err)
+	if _, ok := balances[tx.ID()]; !ok {
+		log.Errorf("transaction %s is not among provided outputs. Ignored", tx.ID().String())
+		return
+	}
+	if _, err := tx.ValidateBlocks(&addr); err != nil {
+		log.Warnf("invalid transaction %s ignored: %v", tx.ID().String(), err)
 		return
 	}
 
 	var stateTxMsg committee.StateTransactionMsg
 	requestMsgs := make([]committee.RequestMsg, 0, len(tx.Requests()))
 
-	stateBlock, ok := tx.State()
-	if ok && stateBlock.Color() == cmt.Color() {
+	if cmtState := getCommitteeByState(tx); cmtState != nil && cmtState.Address() == addr {
 		stateTxMsg = committee.StateTransactionMsg{tx}
 	}
 
@@ -70,67 +77,15 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	}
 }
 
-// validates and returns if it has state block, is it origin state or error
-func validateState(tx *sctransaction.Transaction) (committee.Committee, bool) {
+func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
 	stateBlock, hasState := tx.State()
 	if !hasState {
-		return nil, false
+		return nil
 	}
 	color := stateBlock.Color()
-	mayBeOrigin := false
 	if color == balance.ColorNew {
 		// may be origin
 		color = (balance.Color)(tx.ID())
-		mayBeOrigin = true
 	}
-	cmt := committees.CommitteeByColor(color)
-	if cmt == nil {
-		return nil, false
-	}
-	// get address of the SC and check if the transaction contains and output to that address with
-	// the respective color and value 1
-	addr := cmt.Address()
-
-	balances, hasAddress := tx.OutputBalancesByAddress(&addr)
-	if !hasAddress {
-		// invalid state
-		log.Errorw("invalid state block: SC state output not found",
-			"addr", addr.String(),
-			"tx", tx.ID().String(),
-		)
-		return nil, false
-	}
-	outBalance := util.BalanceOfColor(balances, color)
-	if outBalance == 0 && mayBeOrigin {
-		outBalance = util.BalanceOfColor(balances, balance.ColorNew)
-	}
-	if outBalance != 1 {
-		// supply of the SC token must be exactly 1
-		log.Errorf("non-existent or wrong output with SC token in sc tx %s", tx.ID().String())
-		return nil, false
-	}
-	return cmt, true
-}
-
-func validateTransactionWithBalances(tx *sctransaction.Transaction, balances map[valuetransaction.ID][]*balance.Balance) error {
-	if _, ok := validateState(tx); !ok {
-		return fmt.Errorf("invalid state block")
-	}
-	sumReqTokens := int64(0)
-	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		sumReqTokens += util.BalanceOfColor(bals, balance.ColorNew)
-		return true
-	})
-	if sumReqTokens != int64(len(tx.Requests())) {
-		return fmt.Errorf("wrong number of request tokens in transaction")
-	}
-	// check if balances contains all outputs wrt to requests
-	bals, ok := balances[tx.ID()]
-	if !ok {
-		return fmt.Errorf("can't find request tokens")
-	}
-	if util.BalanceOfColor(bals, (balance.Color)(tx.ID())) != sumReqTokens {
-		return fmt.Errorf("wrong number of request tokens in balances")
-	}
-	return nil
+	return committees.CommitteeByColor(color)
 }

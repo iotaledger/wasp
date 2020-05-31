@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 )
@@ -30,67 +30,114 @@ func randomColor() (ret balance.Color) {
 	return
 }
 
+func TestTransactionStateBlockOrigin(t *testing.T) {
+	addr, err := address.FromBase58(testAddress)
+	assert.NoError(t, err)
+
+	txb := NewTransactionBuilder()
+	tx, err := txb.Finalize()
+	assert.Error(t, err)
+
+	txb = NewTransactionBuilder()
+	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+	txb.AddInputs(o1)
+	bal := balance.New(balance.ColorNew, 1)
+	txb.AddBalanceToOutput(addr, bal)
+
+	txb.AddStateBlock(NewStateBlockParams{
+		Color:      balance.ColorNew,
+		StateIndex: 0,
+	})
+
+	tx, err = txb.Finalize()
+	assert.NoError(t, err)
+	origin, err := tx.ValidateBlocks(&addr)
+	assert.NoError(t, err)
+	assert.Equal(t, origin, true)
+
+	txb = NewTransactionBuilder()
+	o1 = valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+	txb.AddInputs(o1)
+	bal = balance.New(balance.ColorIOTA, 1)
+	txb.AddBalanceToOutput(addr, bal)
+
+	txb.AddStateBlock(NewStateBlockParams{
+		Color:      balance.ColorNew,
+		StateIndex: 42,
+	})
+
+	tx, err = txb.Finalize()
+	assert.NoError(t, err)
+	_, err = tx.ValidateBlocks(&addr)
+	assert.Error(t, err)
+}
+
 func TestTransactionStateBlock1(t *testing.T) {
 	addr, err := address.FromBase58(testAddress)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
 	txb := NewTransactionBuilder()
 	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	assert.Error(t, err)
 
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
 	txb.AddInputs(o1)
-	bal := balance.New(balance.ColorIOTA, 1)
+	color := randomColor()
+	bal := balance.New(color, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	color := randomColor()
 	txb.AddStateBlock(NewStateBlockParams{
 		Color:      color,
 		StateIndex: 42,
 	})
 
-	_, err = txb.Finalize()
-	assert.Equal(t, err, nil)
+	tx, err := txb.Finalize()
+	assert.NoError(t, err)
+
+	origin, err := tx.ValidateBlocks(&addr)
+	assert.NoError(t, err)
+	assert.Equal(t, origin, false)
 
 	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	assert.Error(t, err)
 }
 
 func TestTransactionStateBlock2(t *testing.T) {
 	addr, err := address.FromBase58(testAddress)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
 	txb := NewTransactionBuilder()
 	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	assert.Error(t, err)
 
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
 	txb.AddInputs(o1)
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	color := randomColor()
-
 	txb.AddStateBlock(NewStateBlockParams{
-		Color:      color,
+		Color:      balance.ColorNew,
 		StateIndex: 42,
 	})
 
-	_, err = txb.Finalize()
-	assert.Equal(t, err, nil)
+	txb.AddRequestBlock(NewRequestBlock(addr))
 
-	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	tx, err := txb.Finalize()
+	assert.NoError(t, err)
+
+	_, err = tx.ValidateBlocks(&addr)
+	assert.Error(t, err)
 }
 
-func TestTransactionRequestBlock(t *testing.T) {
+func TestTransactionRequestBlock1(t *testing.T) {
 	addr, err := address.FromBase58(testAddress)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
 	txb := NewTransactionBuilder()
 	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	assert.Error(t, err)
 
+	txb = NewTransactionBuilder()
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
 	txb.AddInputs(o1)
 	bal := balance.New(balance.ColorIOTA, 1)
@@ -99,27 +146,55 @@ func TestTransactionRequestBlock(t *testing.T) {
 	reqBlk := NewRequestBlock(addr)
 	txb.AddRequestBlock(reqBlk)
 
-	_, err = txb.Finalize()
-	assert.Equal(t, err, nil)
+	tx, err := txb.Finalize()
+	assert.NoError(t, err)
 
+	_, err = tx.ValidateBlocks(&addr)
+	assert.Error(t, err)
+}
+
+func TestTransactionRequestBlock2(t *testing.T) {
+	addr, err := address.FromBase58(testAddress)
+	assert.NoError(t, err)
+
+	txb := NewTransactionBuilder()
 	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	assert.Error(t, err)
+
+	txb = NewTransactionBuilder()
+	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+	txb.AddInputs(o1)
+	bal := balance.New(balance.ColorIOTA, 1)
+	txb.AddBalanceToOutput(addr, bal)
+
+	reqBlk := NewRequestBlock(addr)
+	txb.AddRequestBlock(reqBlk)
+	bal = balance.New(balance.ColorNew, 1)
+	txb.AddBalanceToOutput(addr, bal)
+
+	tx, err := txb.Finalize()
+	assert.NoError(t, err)
+
+	origin, err := tx.ValidateBlocks(&addr)
+	assert.NoError(t, err)
+	assert.Equal(t, origin, false)
 }
 
 func TestTransactionMultiBlocks(t *testing.T) {
 	addr, err := address.FromBase58(testAddress)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
 	txb := NewTransactionBuilder()
 	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	assert.Error(t, err)
 
+	txb = NewTransactionBuilder()
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
 	txb.AddInputs(o1)
-	bal := balance.New(balance.ColorIOTA, 1)
-	txb.AddBalanceToOutput(addr, bal)
 
 	color := randomColor()
+	bal := balance.New(color, 1)
+	txb.AddBalanceToOutput(addr, bal)
 
 	txb.AddStateBlock(NewStateBlockParams{
 		Color:      color,
@@ -128,10 +203,13 @@ func TestTransactionMultiBlocks(t *testing.T) {
 
 	reqBlk := NewRequestBlock(addr)
 	txb.AddRequestBlock(reqBlk)
+	bal = balance.New(balance.ColorNew, 1)
+	txb.AddBalanceToOutput(addr, bal)
 
-	_, err = txb.Finalize()
-	assert.Equal(t, err, nil)
+	tx, err := txb.Finalize()
+	assert.NoError(t, err)
 
-	_, err = txb.Finalize()
-	assert.Equal(t, err != nil, true)
+	origin, err := tx.ValidateBlocks(&addr)
+	assert.NoError(t, err)
+	assert.Equal(t, origin, false)
 }
