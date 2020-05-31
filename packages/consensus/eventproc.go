@@ -28,11 +28,18 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.takeAction()
 }
 
+func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
+	op.log.Debug("EventBalancesMsg")
+
+	op.balances = reqMsg.Balances
+	op.takeAction()
+}
+
 // EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
+func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 	op.log.Debugw("EventRequestMsg", "reqid", reqMsg.RequestId().String())
 
-	if err := op.validateRequestBlock(reqMsg); err != nil {
+	if err := op.validateRequestBlock(&reqMsg); err != nil {
 		op.log.Warnw("request block validation failed.Ignored",
 			"reqs", reqMsg.RequestId().Short(),
 			"err", err,
@@ -40,10 +47,6 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 		return
 	}
 	req := op.requestFromMsg(reqMsg)
-
-	// update outputs with each request because request transaction changes address balance with request tokens
-	// the address update message brings request transaction and its outputs with request tokens
-	op.balances = reqMsg.Outputs
 
 	// notify about new request the current leader
 	if op.stateTx != nil {

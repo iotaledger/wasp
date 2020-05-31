@@ -16,8 +16,7 @@ type BalancesMsg struct {
 
 type RequestMsg struct {
 	*sctransaction.Transaction
-	Index   uint16
-	Outputs map[valuetransaction.ID][]*balance.Balance
+	Index uint16
 }
 
 func (reqMsg *RequestMsg) RequestId() *sctransaction.RequestId {

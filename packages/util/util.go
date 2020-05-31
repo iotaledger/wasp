@@ -50,17 +50,6 @@ func TransactionIDFromString(s string) (ret valuetransaction.ID, err error) {
 	return
 }
 
-// sums value of valances with particular color
-func SumBalancesOfColor(balances []*balance.Balance, color *balance.Color) int64 {
-	var ret int64
-	for _, bal := range balances {
-		if bal.Color() == *color {
-			ret += bal.Value()
-		}
-	}
-	return ret
-}
-
 func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
 	sum := int64(0)
 	for _, b := range bals {

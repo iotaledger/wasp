@@ -34,22 +34,9 @@ func (op *operator) doSubordinate() {
 
 func (op *operator) doLeader() {
 	if op.iAmCurrentLeader() {
-		if op.balances == nil {
-			// of balances are not known yet, request it from the node
-			op.requestBalancesFromNode()
-		} else {
-			op.startProcessing()
-		}
+		op.startProcessing()
 	}
 	op.checkQuorum()
-}
-
-func (op *operator) requestBalancesFromNode() {
-	if op.balances == nil && time.Now().After(op.getBalancesDeadline) {
-		addr := op.committee.Address()
-		nodeconn.RequestOutputsFromNode(&addr)
-		op.getBalancesDeadline = time.Now().Add(getBalancesTimeout)
-	}
 }
 
 func (op *operator) startProcessing() {

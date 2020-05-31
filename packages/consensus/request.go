@@ -39,7 +39,7 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 }
 
 // request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) *request {
+func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) *request {
 	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
 	ret, ok := op.requests[reqId]
 	if ok && ret.reqTx == nil {

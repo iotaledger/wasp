@@ -41,7 +41,8 @@ type StateManager interface {
 
 type Operator interface {
 	EventStateTransitionMsg(msg *StateTransitionMsg)
-	EventRequestMsg(reqMsg *RequestMsg)
+	EventBalancesMsg(reqMsg BalancesMsg)
+	EventRequestMsg(reqMsg RequestMsg)
 	EventNotifyReqMsg(msg *NotifyReqMsg)
 	EventStartProcessingReqMsg(msg *StartProcessingReqMsg)
 	EventResultCalculated(result *vm.VMTask)
