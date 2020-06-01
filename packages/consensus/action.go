@@ -142,8 +142,6 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
-	op.leaderStatus.batch.WithStateTransaction(op.leaderStatus.resultTx.ID())
-
 	addr := op.committee.Address()
 	if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(&addr, op.leaderStatus.balances); err != nil {
 		op.log.Errorf("ValidateConsumptionOfInputs: final tx invalid: %v", err)

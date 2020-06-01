@@ -30,6 +30,14 @@ func (s arrToSort) Swap(i, j int) {
 }
 
 func GetPermutation(n uint16, seed []byte) []uint16 {
+	if seed == nil {
+		ret := make([]uint16, n)
+		for i := range ret {
+			ret[i] = uint16(i)
+		}
+		return ret
+	}
+
 	arr := make(arrToSort, n)
 	var t [2]byte
 	for i := range arr {

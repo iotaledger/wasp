@@ -15,11 +15,12 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.setNewState(msg.StateTransaction, msg.VariableState)
 
 	vh := msg.VariableState.Hash()
+	leader, _ := op.currentLeaderPeerIndex()
 	op.log.Debugw("EventStateTransitionMsg",
 		"state index", msg.VariableState.StateIndex(),
 		"state hash", vh.String(),
 		"state txid", msg.StateTransaction.ID().String(),
-		"num reqs", len(msg.RequestIds),
+		"leader index", leader,
 		"iAmTheLeader", op.iAmCurrentLeader(),
 	)
 	// notify about all request the new leader

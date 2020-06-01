@@ -124,7 +124,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		"num req", len(ctx.Requests),
 		"leader", ctx.LeaderPeerIndex,
 	)
-	ctx.Log.Debugf("input balances:\n%s", util.BalancesToString(ctx.Balances))
+	//ctx.Log.Debugf("input balances:\n%s", util.BalancesToString(ctx.Balances))
 
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
@@ -179,7 +179,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		return
 	}
 	vsh := vsClone.Hash()
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex(), vsh, ctx.Timestamp.UnixNano())
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex()+1, vsh, ctx.Timestamp.UnixNano())
 
 	// check of all provided inputs were properly consumed
 	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {

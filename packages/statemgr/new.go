@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"time"
 )
 
@@ -75,9 +76,10 @@ type pendingBatch struct {
 
 func New(committee committee.Committee, log *logger.Logger) committee.StateManager {
 	ret := &stateManager{
-		committee:      committee,
-		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
-		log:            log.Named("s"),
+		committee:          committee,
+		pendingBatches:     make(map[hashing.HashValue]*pendingBatch),
+		permutationOfPeers: util.GetPermutation(committee.Size(), nil),
+		log:                log.Named("s"),
 	}
 	go ret.initLoadState()
 
@@ -105,9 +107,11 @@ func (sm *stateManager) initLoadState() {
 			return
 		}
 		h := sm.solidVariableState.Hash()
+		txh := batch.StateTransactionId()
 		sm.log.Debugw("solid state state has been loaded",
 			"state index", sm.solidVariableState.StateIndex(),
 			"state hash", h.String(),
+			"approving tx", txh.String(),
 		)
 	} else {
 		// origin state

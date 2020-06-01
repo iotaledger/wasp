@@ -53,7 +53,7 @@ func (sm *stateManager) checkStateApproval() bool {
 			return false
 		}
 		if sm.solidVariableState != nil {
-			sm.log.Infof("TRANSITION TO THE NEXT STATE %s --> #%d. State hash: %s, state txid: %s",
+			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s",
 				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
 				varStateHash.String(), sm.nextStateTransaction.ID().String())
 		} else {
