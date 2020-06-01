@@ -49,13 +49,3 @@ func TransactionIDFromString(s string) (ret valuetransaction.ID, err error) {
 	ret, _, err = valuetransaction.IDFromBytes(b)
 	return
 }
-
-func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
-	sum := int64(0)
-	for _, b := range bals {
-		if b.Color() == color {
-			sum += b.Value()
-		}
-	}
-	return sum
-}

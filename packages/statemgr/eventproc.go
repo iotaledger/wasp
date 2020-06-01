@@ -96,7 +96,7 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 
 // triggered whenever new state transaction arrives
 func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionMsg) {
-	sm.log.Debugw("received transaction", "txid", msg.ID().String())
+	sm.log.Debugw("received transaction")
 
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
@@ -104,28 +104,32 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 	}
 	sm.CheckSynchronizationStatus(stateBlock.StateIndex())
 
+	vh := stateBlock.VariableStateHash()
+	sm.log.Debugw("received state transaction",
+		"txid", msg.ID().String(),
+		"state index", stateBlock.StateIndex(),
+		"state hash", vh.String(),
+	)
+
 	if sm.solidStateValid {
 		if stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {
-			// only interested for the state transaction to verify latest state update
+			sm.log.Debugf("only interested for the state transaction to verify latest state update")
 			return
 		}
 	} else {
 		if sm.solidVariableState == nil {
 			if stateBlock.StateIndex() != 0 {
+				sm.log.Debugf("sm.solidVariableState == nil && stateBlock.StateIndex() != 0")
 				return
 			}
 		} else {
 			if stateBlock.StateIndex() != sm.solidVariableState.StateIndex() {
+				sm.log.Debugf("sm.solidVariableState == nil && stateBlock.StateIndex() != sm.solidVariableState.StateIndex()")
 				return
 			}
 		}
 	}
-	vh := stateBlock.VariableStateHash()
-	sm.log.Debugw("next state tx accepted",
-		"state index", stateBlock.StateIndex(),
-		"txid", msg.Transaction.ID().String(),
-		"state hash", vh.String(),
-	)
+
 	sm.nextStateTransaction = msg.Transaction
 	sm.takeAction()
 }

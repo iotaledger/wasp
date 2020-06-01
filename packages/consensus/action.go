@@ -81,6 +81,7 @@ func (op *operator) startProcessing() {
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
 		batchHash:     batchHash,
+		balances:      op.balances,
 		timestamp:     ts,
 		signedResults: make([]*signedResult, op.committee.Size()),
 	}
@@ -111,6 +112,11 @@ func (op *operator) checkQuorum() bool {
 		if op.leaderStatus.signedResults[i] == nil {
 			continue
 		}
+		if op.leaderStatus.signedResults[i].essenceHash != mainHash {
+			op.log.Warnf("wrong EssenceHash from peer #%d", i)
+			op.leaderStatus.signedResults[i] = nil // ignoring
+			continue
+		}
 		err := op.dkshare.VerifySigShare(op.leaderStatus.resultTx.EssenceBytes(), op.leaderStatus.signedResults[i].sigShare)
 		if err != nil {
 			op.log.Warnf("wrong signature from peer #%d: %v", i, err)
@@ -118,9 +124,7 @@ func (op *operator) checkQuorum() bool {
 			continue
 		}
 
-		if op.leaderStatus.signedResults[i].essenceHash == mainHash {
-			sigShares = append(sigShares, op.leaderStatus.signedResults[i].sigShare)
-		}
+		sigShares = append(sigShares, op.leaderStatus.signedResults[i].sigShare)
 	}
 
 	if len(sigShares) < int(op.quorum()) {
@@ -132,8 +136,17 @@ func (op *operator) checkQuorum() bool {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
 	}
+
 	if !op.leaderStatus.resultTx.SignaturesValid() {
 		op.log.Error("final signature invalid: something went wrong while finalizing result transaction")
+		return false
+	}
+
+	op.leaderStatus.batch.WithStateTransaction(op.leaderStatus.resultTx.ID())
+
+	addr := op.committee.Address()
+	if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(&addr, op.leaderStatus.balances); err != nil {
+		op.log.Errorf("ValidateConsumptionOfInputs: final tx invalid: %v", err)
 		return false
 	}
 
@@ -144,13 +157,6 @@ func (op *operator) checkQuorum() bool {
 	)
 	op.leaderStatus.finalized = true
 
-	// inform state manager about new result
-	go func() {
-		op.committee.ReceiveMessage(committee.PendingBatchMsg{
-			Batch:                op.leaderStatus.batch,
-			RequestTxImmediately: false,
-		})
-	}()
 	nodeconn.PostTransactionToNodeAsyncWithRetry(op.leaderStatus.resultTx.Transaction, 2*time.Second, 7*time.Second, op.log)
 	return true
 }

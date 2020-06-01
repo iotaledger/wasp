@@ -70,11 +70,12 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 }
 
 func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
+	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp)
 	op.log.Debugw("EventStartProcessingReqMsg",
 		"sender", msg.SenderIndex,
 		"num reqId", len(msg.RequestIds),
 		"ts", msg.Timestamp,
-		"batch hash", vm.BatchHash(msg.RequestIds, msg.Timestamp),
+		"batch hash", bh.String(),
 	)
 
 	op.MustValidStateIndex(msg.StateIndex)
@@ -114,15 +115,22 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 		"batch size", ctx.ResultBatch.Size(),
 		"stateIndex", op.stateIndex(),
 	)
-	// TODO what if len(ctx.ResultBatch.Size() == 0 ?
 
-	// save own result
-	// or send to the leader
+	// inform state manager about new result batch
+	go func() {
+		op.committee.ReceiveMessage(committee.PendingBatchMsg{
+			Batch:                ctx.ResultBatch,
+			RequestTxImmediately: false,
+		})
+	}()
+
+	// save own result or send to the leader
 	if ctx.LeaderPeerIndex == op.committee.OwnPeerIndex() {
 		op.saveOwnResult(ctx)
 	} else {
 		op.sendResultToTheLeader(ctx)
 	}
+
 	op.takeAction()
 }
 
@@ -131,6 +139,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		"sender", msg.SenderIndex,
 		"batch hash", msg.BatchHash.String(),
 		"essence hash", msg.EssenceHash.String(),
+		"ts", msg.OrigTimestamp,
 	)
 	if op.leaderStatus == nil {
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")

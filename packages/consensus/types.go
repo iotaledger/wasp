@@ -48,6 +48,7 @@ type leaderStatus struct {
 	batch         state.Batch
 	batchHash     hashing.HashValue
 	timestamp     time.Time
+	balances      map[valuetransaction.ID][]*balance.Balance
 	resultTx      *sctransaction.Transaction
 	finalized     bool
 	signedResults []*signedResult

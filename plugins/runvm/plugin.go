@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -118,6 +119,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		"addr", ctx.Address.String(),
 		"color", ctx.Color.String(),
 		"ts", ctx.Timestamp,
+		"balances hash", util.BalancesHash(ctx.Balances),
 		"state index", ctx.VariableState.StateIndex(),
 		"num req", len(ctx.Requests),
 		"leader", ctx.LeaderPeerIndex,
@@ -176,15 +178,19 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		ctx.Log.Errorf("RunVM: %v", err)
 		return
 	}
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(
-		ctx.VariableState.StateIndex(),
-		vsClone.Hash(),
-		ctx.Timestamp.UnixNano(),
-	)
+	vsh := vsClone.Hash()
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex(), vsh, ctx.Timestamp.UnixNano())
+
+	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
+		ctx.Log.Errorf("RunVM.ValidateConsumptionOfInputs: wrong result transaction: %v", err)
+		return
+	}
+
 	ctx.Log.Debugw("runVM OUT",
 		"result batch size", ctx.ResultBatch.Size(),
 		"result batch state index", ctx.ResultBatch.StateIndex(),
-		"result batch size", ctx.ResultBatch.EssenceHash().String(),
+		"result variable state hash", vsh.String(),
+		"result essence hash", hashing.HashData(ctx.ResultTransaction.EssenceBytes()).String(),
 		"result tx ts", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
 	)
 	// call back

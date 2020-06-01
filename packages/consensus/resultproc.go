@@ -58,10 +58,13 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		reqids[i] = *result.Requests[i].RequestId()
 	}
 
-	bh := vm.BatchHash(reqids, result.Timestamp)
+	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
+	batchHash := vm.BatchHash(reqids, result.Timestamp)
+
 	op.log.Debugw("sendResultToTheLeader",
 		"leader", result.LeaderPeerIndex,
-		"batchHash", bh.String(),
+		"batchHash", batchHash.String(),
+		"essenceHash", essenceHash.String(),
 		"ts", result.Timestamp,
 	)
 
@@ -69,9 +72,9 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: op.stateIndex(),
 		},
-		BatchHash:     bh,
+		BatchHash:     batchHash,
 		OrigTimestamp: result.Timestamp,
-		EssenceHash:   *hashing.HashData(result.ResultTransaction.EssenceBytes()),
+		EssenceHash:   *essenceHash,
 		SigShare:      sigShare,
 	})
 
@@ -100,15 +103,17 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		panic("len(result.Requests) != int(result.ResultBatch.Size())")
 	}
 
+	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
 	op.log.Debugw("saveOwnResult",
 		"batchHash", bh.String(),
 		"ts", result.Timestamp,
+		"essenceHash", essenceHash.String(),
 	)
 
 	op.leaderStatus.resultTx = result.ResultTransaction
 	op.leaderStatus.batch = result.ResultBatch
 	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
-		essenceHash: *hashing.HashData(result.ResultTransaction.EssenceBytes()),
+		essenceHash: *essenceHash,
 		sigShare:    sigShare,
 	}
 }

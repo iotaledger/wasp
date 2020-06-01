@@ -34,9 +34,19 @@ func (txb *TransactionBuilder) Finalize() (*Transaction, error) {
 
 	outputs := make(map[address.Address][]*balance.Balance)
 	for addr, bmap := range txb.outputs {
+		// sort to have deterministic result
+		blst := make([]balance.Color, 0, len(bmap))
+		for c := range bmap {
+			blst = append(blst, c)
+		}
+
+		sort.Slice(blst, func(i, j int) bool {
+			return bytes.Compare(blst[i][:], blst[j][:]) < 0
+		})
+
 		outputs[addr] = make([]*balance.Balance, 0)
-		for col, val := range bmap {
-			outputs[addr] = append(outputs[addr], balance.New(col, val))
+		for _, c := range blst {
+			outputs[addr] = append(outputs[addr], balance.New(c, bmap[c]))
 		}
 	}
 	txv := valuetransaction.New(txb.inputs, valuetransaction.NewOutputs(outputs))

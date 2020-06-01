@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"sort"
 )
 
@@ -87,4 +88,58 @@ func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
 		}
 	}
 	return ret
+}
+
+func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balance.Color]int64, int64) {
+	ret := make(map[balance.Color]int64)
+	var total int64
+	for _, bals := range outs {
+		for _, b := range bals {
+			if s, ok := ret[b.Color()]; !ok {
+				ret[b.Color()] = b.Value()
+			} else {
+				ret[b.Color()] = s + b.Value()
+			}
+			total += b.Value()
+		}
+	}
+	return ret, total
+}
+
+func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
+	sum := int64(0)
+	for _, b := range bals {
+		if b.Color() == color {
+			sum += b.Value()
+		}
+	}
+	return sum
+}
+
+func BalancesSumTotal(bals []*balance.Balance) int64 {
+	var ret int64
+	for _, b := range bals {
+		ret += b.Value()
+	}
+	return ret
+}
+
+// BalancesHash calculates deterministic hash of address balances
+func BalancesHash(outs map[valuetransaction.ID][]*balance.Balance) *hashing.HashValue {
+	ids := make([]valuetransaction.ID, 0, len(outs))
+	for txid := range outs {
+		ids = append(ids, txid)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		return bytes.Compare(ids[i][:], ids[j][:]) < 0
+	})
+	var buf bytes.Buffer
+	for _, txid := range ids {
+		buf.Write(txid[:])
+		for _, b := range outs[txid] {
+			buf.Write(b.Color().Bytes())
+			_ = WriteUint64(&buf, uint64(b.Value()))
+		}
+	}
+	return hashing.HashData(buf.Bytes())
 }
