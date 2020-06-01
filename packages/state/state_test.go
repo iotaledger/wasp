@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestVariableStateBasic(t *testing.T) {
@@ -156,5 +157,31 @@ func TestApply2(t *testing.T) {
 	assert.EqualValues(t, vs1.StateIndex(), vs2.StateIndex())
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
+}
 
+func TestApply3(t *testing.T) {
+	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	reqid1 := sctransaction.NewRequestId(txid1, 0)
+	reqid2 := sctransaction.NewRequestId(txid1, 2)
+
+	su1 := NewStateUpdate(&reqid1)
+	su2 := NewStateUpdate(&reqid2)
+
+	vs1 := NewVariableState(nil)
+	vs2 := NewVariableState(nil)
+
+	nowis := time.Now()
+
+	vs1.ApplyStateUpdate(su1)
+	vs1.ApplyStateUpdate(su2)
+	vs1.ApplyStateIndex(0)
+	vs1.ApplyTimestamp(nowis)
+
+	batch, err := NewBatch([]StateUpdate{su1, su2})
+	assert.NoError(t, err)
+	batch.WithStateIndex(0).WithTimestamp(nowis)
+	err = vs2.ApplyBatch(batch)
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 }

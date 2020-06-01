@@ -2,7 +2,6 @@ package state
 
 import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
 	"io"
 )
@@ -35,22 +34,11 @@ func (su *stateUpdate) RequestId() *sctransaction.RequestId {
 	return &su.requestId
 }
 
-func (su *stateUpdate) BatchIndex() uint16 {
-	return su.batchIndex
-}
-
-func (su *stateUpdate) SetBatchIndex(batchIndex uint16) {
-	su.batchIndex = batchIndex
-}
-
 func (su *stateUpdate) Variables() variables.Variables {
 	return su.vars
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
-	if err := util.WriteUint16(w, su.batchIndex); err != nil {
-		return err
-	}
 	if _, err := w.Write(su.requestId[:]); err != nil {
 		return err
 	}
@@ -61,9 +49,6 @@ func (su *stateUpdate) Write(w io.Writer) error {
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
-	if err := util.ReadUint16(r, &su.batchIndex); err != nil {
-		return err
-	}
 	if _, err := r.Read(su.requestId[:]); err != nil {
 		return err
 	}

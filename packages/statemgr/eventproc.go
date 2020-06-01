@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
+	"time"
 )
 
 // respond to sync request 'GetStateUpdate'
@@ -37,14 +38,16 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 func (sm *stateManager) EventBatchHeaderMsg(msg *committee.BatchHeaderMsg) {
 	if sm.syncedBatch != nil &&
 		sm.syncedBatch.stateIndex == msg.StateIndex &&
-		sm.syncedBatch.statetxId == msg.StateTransactionId &&
-		len(sm.syncedBatch.stateUpdates) == int(msg.Size) {
+		sm.syncedBatch.stateTxId == msg.StateTransactionId &&
+		len(sm.syncedBatch.stateUpdates) == int(msg.Size) &&
+		sm.syncedBatch.ts == msg.Timestamp {
 		return // no need to start from scratch
 	}
 	sm.syncedBatch = &syncedBatch{
 		stateIndex:   msg.StateIndex,
 		stateUpdates: make([]state.StateUpdate, msg.Size),
-		statetxId:    msg.StateTransactionId,
+		stateTxId:    msg.StateTransactionId,
+		ts:           msg.Timestamp,
 	}
 }
 
@@ -58,11 +61,11 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 	if sm.syncedBatch.stateIndex != msg.StateIndex {
 		return
 	}
-	if int(msg.StateUpdate.BatchIndex()) >= len(sm.syncedBatch.stateUpdates) {
+	if int(msg.BatchIndex) >= len(sm.syncedBatch.stateUpdates) {
 		sm.log.Errorf("bad state update message")
 		return
 	}
-	sm.syncedBatch.stateUpdates[msg.StateUpdate.BatchIndex()] = msg.StateUpdate
+	sm.syncedBatch.stateUpdates[msg.BatchIndex] = msg.StateUpdate
 	sm.syncedBatch.msgCounter++
 
 	if int(sm.syncedBatch.msgCounter) < len(sm.syncedBatch.stateUpdates) {
@@ -83,7 +86,9 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		sm.syncedBatch = nil
 		return
 	}
-	batch.WithStateIndex(sm.syncedBatch.stateIndex).WithStateTransaction(sm.syncedBatch.statetxId)
+	batch.WithStateIndex(sm.syncedBatch.stateIndex).
+		WithTimestamp(time.Unix(0, sm.syncedBatch.ts)).
+		WithStateTransaction(sm.syncedBatch.stateTxId)
 
 	sm.syncedBatch = nil
 	go func() {
@@ -137,7 +142,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 func (sm *stateManager) EventPendingBatchMsg(msg committee.PendingBatchMsg) {
 	sm.log.Debugf("EventPendingBatchMsg")
 
-	sm.addPendingBatch(msg.Batch, msg.RequestTxImmediately)
+	sm.addPendingBatch(msg.Batch)
 	sm.takeAction()
 }
 

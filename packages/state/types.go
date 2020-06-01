@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/variables"
 	"io"
+	"time"
 )
 
 // represents an interface to the mutable state of the smart contract
@@ -14,9 +15,13 @@ type VariableState interface {
 	// index of the current state. State index is incremented when state transition occurs
 	// index 0 means origin state
 	StateIndex() uint32
+	ApplyStateIndex(uint32)
+	// timestamp
+	Timestamp() time.Time
+	ApplyTimestamp(time.Time)
 	// updates state without changing state index
 	ApplyStateUpdate(stateUpd StateUpdate)
-	// applies batch of state updates and increases state index. Validates batch state index
+	// applies batch of state updates, state index and timestamp
 	ApplyBatch(Batch) error
 	// commit means saving variable state to sc db, making it persistent
 	CommitToDb(address address.Address, batch Batch) error
@@ -33,8 +38,6 @@ type VariableState interface {
 // has same state index, state tx id and batch size. ResultBatch index is unique in batch
 // ResultBatch is completed when it contains one state update for each index
 type StateUpdate interface {
-	BatchIndex() uint16
-	SetBatchIndex(uint16)
 	// request which resulted in this state update
 	RequestId() *sctransaction.RequestId
 	// the payload of variables/values
@@ -51,6 +54,8 @@ type Batch interface {
 	WithStateIndex(uint32) Batch
 	StateTransactionId() valuetransaction.ID
 	WithStateTransaction(valuetransaction.ID) Batch
+	Timestamp() time.Time
+	WithTimestamp(time.Time) Batch
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
 	EssenceHash() *hashing.HashValue // except state transaction id

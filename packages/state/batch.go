@@ -10,12 +10,14 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
+	"time"
 )
 
 type batch struct {
 	stateIndex   uint32
 	stateTxId    valuetransaction.ID
 	stateUpdates []StateUpdate
+	timestamp    time.Time
 }
 
 // validates, enumerates and creates a batch from array of state updates
@@ -23,19 +25,15 @@ func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
 	if len(stateUpdates) == 0 {
 		return nil, fmt.Errorf("batch can't be empty")
 	}
-	stateUpdatesNew := make([]StateUpdate, len(stateUpdates))
-
 	for i, su := range stateUpdates {
 		for j := i + 1; j < len(stateUpdates); j++ {
 			if *su.RequestId() == *stateUpdates[j].RequestId() {
 				return nil, fmt.Errorf("duplicate request id")
 			}
 		}
-		su.SetBatchIndex(uint16(i))
-		stateUpdatesNew[su.BatchIndex()] = su
 	}
 	return &batch{
-		stateUpdates: stateUpdatesNew,
+		stateUpdates: stateUpdates,
 	}, nil
 }
 
@@ -55,6 +53,10 @@ func (b *batch) StateIndex() uint32 {
 	return b.stateIndex
 }
 
+func (b *batch) Timestamp() time.Time {
+	return b.timestamp
+}
+
 func (b *batch) WithStateIndex(stateIndex uint32) Batch {
 	b.stateIndex = stateIndex
 	return b
@@ -62,6 +64,11 @@ func (b *batch) WithStateIndex(stateIndex uint32) Batch {
 
 func (b *batch) WithStateTransaction(vtxid valuetransaction.ID) Batch {
 	b.stateTxId = vtxid
+	return b
+}
+
+func (b *batch) WithTimestamp(ts time.Time) Batch {
+	b.timestamp = ts
 	return b
 }
 
@@ -108,6 +115,9 @@ func (b *batch) writeEssence(w io.Writer) error {
 	if err := util.WriteUint32(w, b.stateIndex); err != nil {
 		return err
 	}
+	if err := util.WriteTime(w, b.timestamp); err != nil {
+		return err
+	}
 	if err := util.WriteUint16(w, uint16(len(b.stateUpdates))); err != nil {
 		return err
 	}
@@ -131,6 +141,9 @@ func (b *batch) Read(r io.Reader) error {
 
 func (b *batch) readEssence(r io.Reader) error {
 	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
+		return err
+	}
+	if err := util.ReadTime(r, &b.timestamp); err != nil {
 		return err
 	}
 	var size uint16

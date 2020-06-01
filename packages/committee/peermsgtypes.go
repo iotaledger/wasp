@@ -85,6 +85,8 @@ type BatchHeaderMsg struct {
 	Size uint16
 	// approving transaction id
 	StateTransactionId valuetransaction.ID
+	// timestamp
+	Timestamp int64
 }
 
 // state update sent to peer. Used in sync process, as part of batch
@@ -92,6 +94,8 @@ type StateUpdateMsg struct {
 	PeerMsgHeader
 	// state update
 	StateUpdate state.StateUpdate
+	// position in a batch
+	BatchIndex uint16
 }
 
 // used for testing of the communications
@@ -118,6 +122,5 @@ type StateTransitionMsg struct {
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
 // - state manager to itself when batch is completed after syncing
 type PendingBatchMsg struct {
-	Batch                state.Batch
-	RequestTxImmediately bool
+	Batch state.Batch
 }

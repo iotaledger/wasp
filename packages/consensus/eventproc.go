@@ -119,8 +119,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	// inform state manager about new result batch
 	go func() {
 		op.committee.ReceiveMessage(committee.PendingBatchMsg{
-			Batch:                ctx.ResultBatch,
-			RequestTxImmediately: false,
+			Batch: ctx.ResultBatch,
 		})
 	}()
 

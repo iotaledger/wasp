@@ -170,7 +170,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		ctx.Log.Errorf("RunVM: %v", err)
 		return
 	}
-	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
+	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1).WithTimestamp(ctx.Timestamp)
 
 	// create final transaction
 	vsClone := state.NewVariableState(ctx.VariableState)
@@ -181,6 +181,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 	vsh := vsClone.Hash()
 	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex(), vsh, ctx.Timestamp.UnixNano())
 
+	// check of all provided inputs were properly consumed
 	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
 		ctx.Log.Errorf("RunVM.ValidateConsumptionOfInputs: wrong result transaction: %v", err)
 		return

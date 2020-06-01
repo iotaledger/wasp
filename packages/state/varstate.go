@@ -11,17 +11,18 @@ import (
 	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
+	"time"
 )
 
 type variableState struct {
 	stateIndex uint32
+	timestamp  time.Time
 	empty      bool
 	stateHash  hashing.HashValue
 	vars       variables.Variables
 }
 
-// VariableState
-
+// VariableState new empty or clone
 func NewVariableState(varState VariableState) VariableState {
 	if varState == nil {
 		return &variableState{
@@ -30,6 +31,7 @@ func NewVariableState(varState VariableState) VariableState {
 		}
 	}
 	return &variableState{
+		timestamp:  varState.Timestamp(),
 		stateIndex: varState.StateIndex(),
 		stateHash:  varState.Hash(),
 		vars:       variables.New(varState.Variables()),
@@ -38,6 +40,24 @@ func NewVariableState(varState VariableState) VariableState {
 
 func (vs *variableState) StateIndex() uint32 {
 	return vs.stateIndex
+}
+
+func (vs *variableState) ApplyStateIndex(stateIndex uint32) {
+	vh := vs.Hash()
+	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(stateIndex))
+	vs.empty = false
+	vs.stateIndex = stateIndex
+}
+
+func (vs *variableState) Timestamp() time.Time {
+	return vs.timestamp
+}
+
+func (vs *variableState) ApplyTimestamp(ts time.Time) {
+	vh := vs.Hash()
+	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint64To8Bytes(uint64(ts.UnixNano())))
+	vs.empty = false
+	vs.timestamp = ts
 }
 
 // applies batch of state updates. Increases state index
@@ -56,7 +76,8 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 		vs.ApplyStateUpdate(stateUpd)
 		return true
 	})
-	vs.stateIndex = batch.StateIndex()
+	vs.ApplyStateIndex(batch.StateIndex())
+	vs.ApplyTimestamp(batch.Timestamp())
 	return nil
 }
 
@@ -101,6 +122,9 @@ func (vs *variableState) Write(w io.Writer) error {
 	if _, err := w.Write(util.Uint32To4Bytes(vs.stateIndex)); err != nil {
 		return err
 	}
+	if err := util.WriteTime(w, vs.timestamp); err != nil {
+		return err
+	}
 	if _, err := w.Write(vs.stateHash.Bytes()); err != nil {
 		return err
 	}
@@ -112,6 +136,9 @@ func (vs *variableState) Write(w io.Writer) error {
 
 func (vs *variableState) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &vs.stateIndex); err != nil {
+		return err
+	}
+	if err := util.ReadTime(r, &vs.timestamp); err != nil {
 		return err
 	}
 	if _, err := r.Read(vs.stateHash[:]); err != nil {

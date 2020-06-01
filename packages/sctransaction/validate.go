@@ -106,6 +106,9 @@ func (tx *Transaction) ValidateConsumptionOfInputs(addr *address.Address, inputB
 		totalInputs2 += util.BalancesSumTotal(bals)
 		return true
 	})
+	if err != nil {
+		return err
+	}
 
 	if totalInputs1 != totalInputs2 {
 		return errors.New("not all provided inputs are consumed")

@@ -24,7 +24,7 @@ type stateManager struct {
 	// which leads to the state transition
 	// the map key is hash of the variable state which is a result of applying the
 	// batch of state updates to the solid variable state
-	pendingBatches map[hashing.HashValue][]*pendingBatch
+	pendingBatches map[hashing.HashValue]*pendingBatch
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
@@ -60,7 +60,8 @@ type syncedBatch struct {
 	msgCounter   uint16
 	stateIndex   uint32
 	stateUpdates []state.StateUpdate
-	statetxId    valuetransaction.ID
+	stateTxId    valuetransaction.ID
+	ts           int64
 }
 
 type pendingBatch struct {
@@ -75,7 +76,7 @@ type pendingBatch struct {
 func New(committee committee.Committee, log *logger.Logger) committee.StateManager {
 	ret := &stateManager{
 		committee:      committee,
-		pendingBatches: make(map[hashing.HashValue][]*pendingBatch),
+		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
 		log:            log.Named("s"),
 	}
 	go ret.initLoadState()
@@ -128,7 +129,7 @@ func (sm *stateManager) initLoadState() {
 	// loaded solid variable state and the last batch of state updates
 	// it needs to be validated by the state transaction, so it is added to the
 	// pending batches
-	if !sm.addPendingBatch(batch, true) {
+	if !sm.addPendingBatch(batch) {
 		sm.log.Errorf("initial batch inconsistent")
 		sm.committee.Dismiss()
 		return

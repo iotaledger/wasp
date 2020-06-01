@@ -1,6 +1,7 @@
 package statemgr
 
 import (
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -26,30 +27,26 @@ func (sm *stateManager) checkStateApproval() bool {
 	// among pending state update batches we locate the one which
 	// is approved by the transaction
 	varStateHash := sm.nextStateTransaction.MustState().VariableStateHash()
-	lst, ok := sm.pendingBatches[varStateHash]
+	pending, ok := sm.pendingBatches[varStateHash]
 	if !ok {
 		// corresponding batch wasn't found among pending state updates
 		// transaction doesn't approve anything
 		return false
 	}
-	// there are pending batches with the var state hash which it approves
-	// find pending batch who has the same state tx id, i.e. is expecting approval by the transaction
-	var pending *pendingBatch
-	for _, pb := range lst {
-		if pb.batch.StateTransactionId() == sm.nextStateTransaction.ID() {
-			pending = pb
-			break
+
+	if pending.batch.StateTransactionId() == niltxid {
+		// not committed yet batch. Link it to the transaction
+		pending.batch.WithStateTransaction(sm.nextStateTransaction.ID())
+	} else {
+		txid1 := pending.batch.StateTransactionId()
+		txid2 := sm.nextStateTransaction.ID()
+		if txid1 != txid2 {
+			sm.log.Errorf("major inconsistency: var state hahs %s is approved by two different tx: txid1 = %s, txid2 = %s",
+				varStateHash.String(), txid1.String(), txid2.String())
+			return false
 		}
 	}
-	if pending == nil {
-		// for some reason nextStateTransaction references to valid state hash,
-		// however the txid of it is different from what is expected by the pending state updates
-		sm.log.Errorw("inconsistency: pending batch doesn't contain expected txid",
-			"state hash", varStateHash.String(),
-			"expected txid", sm.nextStateTransaction.ID().String(),
-		)
-		return false
-	}
+
 	if sm.solidStateValid || sm.solidVariableState == nil {
 		if err := pending.nextVariableState.CommitToDb(sm.committee.Address(), pending.batch); err != nil {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
@@ -75,7 +72,7 @@ func (sm *stateManager) checkStateApproval() bool {
 
 	// update state manager variables to the new state
 	sm.nextStateTransaction = nil
-	sm.pendingBatches = make(map[hashing.HashValue][]*pendingBatch) // clean pending batches
+	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clean pending batches
 	sm.permutationOfPeers = util.GetPermutation(sm.committee.Size(), varStateHash.Bytes())
 	sm.permutationIndex = 0
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
@@ -157,8 +154,10 @@ func (sm *stateManager) isSynchronized() bool {
 
 const expectedConfirmationTime = 5 * time.Second
 
+var niltxid valuetransaction.ID
+
 // adding batch of state updates to the 'pending' map
-func (sm *stateManager) addPendingBatch(batch state.Batch, requestTxImmediately bool) bool {
+func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	if sm.solidStateValid {
 		if batch.StateIndex() != sm.solidVariableState.StateIndex()+1 {
 			// if current state is validated, only interested in the batches of state updates for the next state
@@ -181,7 +180,8 @@ func (sm *stateManager) addPendingBatch(batch state.Batch, requestTxImmediately 
 			}
 		}
 	}
-	varStateToApprove := state.NewVariableState(sm.solidVariableState)
+	varStateToApprove := state.NewVariableState(sm.solidVariableState) // clone
+
 	if sm.solidStateValid || sm.solidVariableState == nil {
 		// we need to approve the solidVariableState.
 		// In case of origin, the next state is origin batch applied to the empty state
@@ -195,16 +195,14 @@ func (sm *stateManager) addPendingBatch(batch state.Batch, requestTxImmediately 
 	}
 	// include the bach to pending batches map
 	vh := varStateToApprove.Hash()
-	pendingBatches, ok := sm.pendingBatches[vh]
-	if !ok {
-		pendingBatches = make([]*pendingBatch, 0)
+	pb, ok := sm.pendingBatches[vh]
+	if !ok || pb.batch.StateTransactionId() == niltxid {
+		pb = &pendingBatch{
+			batch:             batch,
+			nextVariableState: varStateToApprove,
+		}
+		sm.pendingBatches[vh] = pb
 	}
-	pb := &pendingBatch{
-		batch:             batch,
-		nextVariableState: varStateToApprove,
-	}
-	pendingBatches = append(pendingBatches, pb)
-	sm.pendingBatches[vh] = pendingBatches
 
 	sm.log.Debugw("added new pending batch",
 		"state index", pb.batch.StateIndex(),
@@ -212,36 +210,29 @@ func (sm *stateManager) addPendingBatch(batch state.Batch, requestTxImmediately 
 		"approving tx", pb.batch.StateTransactionId().String(),
 	)
 	// request approving transaction from the node. It may also come without request
-	if requestTxImmediately {
-		sm.requestStateTransactionAfter(pb, 0)
-	} else {
-		sm.requestStateTransactionAfter(pb, expectedConfirmationTime)
+	if batch.StateTransactionId() != niltxid {
+		sm.requestStateTransaction(pb)
 	}
 	return true
 }
 
 const stateTransactionRequestTimeout = 10 * time.Second
 
+// for committed batches request approving transaction if deadline has passed
 func (sm *stateManager) requestStateTransactionIfNeeded() {
 	if sm.nextStateTransaction != nil {
 		return
 	}
-	for _, lst := range sm.pendingBatches {
-		for _, pb := range lst {
-			if pb.stateTransactionRequestDeadline.Before(time.Now()) {
-				sm.requestStateTransactionAfter(pb, 0)
-			}
+	for _, pb := range sm.pendingBatches {
+		if pb.batch.StateTransactionId() != niltxid && pb.stateTransactionRequestDeadline.Before(time.Now()) {
+			sm.requestStateTransaction(pb)
 		}
 	}
 }
 
-func (sm *stateManager) requestStateTransactionAfter(pb *pendingBatch, after time.Duration) {
-	if after == 0 {
-		txid := pb.batch.StateTransactionId()
-		sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
-		_ = nodeconn.RequestTransactionFromNode(&txid)
-		pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
-	} else {
-		pb.stateTransactionRequestDeadline = time.Now().Add(after)
-	}
+func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
+	txid := pb.batch.StateTransactionId()
+	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
+	_ = nodeconn.RequestTransactionFromNode(&txid)
+	pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
 }

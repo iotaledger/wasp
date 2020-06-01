@@ -150,6 +150,9 @@ func (msg *BatchHeaderMsg) Write(w io.Writer) error {
 	if _, err := w.Write(msg.StateTransactionId.Bytes()); err != nil {
 		return err
 	}
+	if err := util.WriteUint64(w, uint64(msg.Timestamp)); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -163,6 +166,11 @@ func (msg *BatchHeaderMsg) Read(r io.Reader) error {
 	if _, err := r.Read(msg.StateTransactionId[:]); err != nil {
 		return err
 	}
+	var ts uint64
+	if err := util.ReadUint64(r, &ts); err != nil {
+		return err
+	}
+	msg.Timestamp = int64(ts)
 	return nil
 }
 
@@ -171,6 +179,9 @@ func (msg *StateUpdateMsg) Write(w io.Writer) error {
 		return err
 	}
 	if err := msg.StateUpdate.Write(w); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, msg.BatchIndex); err != nil {
 		return err
 	}
 	return nil
@@ -182,6 +193,9 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 	}
 	msg.StateUpdate = state.NewStateUpdate(nil)
 	if err := msg.StateUpdate.Read(r); err != nil {
+		return err
+	}
+	if err := util.ReadUint16(r, &msg.BatchIndex); err != nil {
 		return err
 	}
 	return nil
