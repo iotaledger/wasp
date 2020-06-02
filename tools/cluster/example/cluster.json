@@ -7,6 +7,7 @@
   ],
   "smartContracts": [
     {
+      "description": "Smart Contract test",
       "nodes": [0, 1, 2, 3],
       "quorum": 3
     }

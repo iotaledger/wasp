@@ -13,14 +13,23 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-type KeysConfig [][]string // [sc index][node index]
+type SmartContractKeys struct {
+	Address  string
+	DKShares []string // [node index]
+}
 
 type SmartContractConfig struct {
-	Nodes  []int `json:"nodes"`
-	Quorum int   `json:"quorum"`
+	Description string `json:"description"`
+	Nodes       []int  `json:"nodes"`
+	Quorum      int    `json:"quorum"`
 }
 
 type ClusterConfig struct {
@@ -66,13 +75,13 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	}, nil
 }
 
-func (cluster *Cluster) readKeysConfig() (KeysConfig, error) {
+func (cluster *Cluster) readKeysConfig() ([]SmartContractKeys, error) {
 	data, err := ioutil.ReadFile(cluster.ConfigKeysPath())
 	if err != nil {
 		return nil, err
 	}
 
-	config := make(KeysConfig, 0)
+	config := make([]SmartContractKeys, 0)
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err
@@ -227,10 +236,13 @@ func (cluster *Cluster) importKeys() error {
 	}
 
 	keys, err := cluster.readKeysConfig()
+	if err != nil {
+		return err
+	}
 
-	fmt.Printf("Importing DKShares...\n")
 	for _, scKeys := range keys {
-		for nodeIndex, dks := range scKeys {
+		fmt.Printf("Importing DKShares for account %s...\n", scKeys.Address)
+		for nodeIndex, dks := range scKeys.DKShares {
 			err := apilib.ImportDKShare(cluster.Config.Nodes[nodeIndex].BindAddress, dks)
 			if err != nil {
 				return err
@@ -293,11 +305,9 @@ func (cluster *Cluster) GenerateDKSets() error {
 		return fmt.Errorf("dk sets already generated in keys.json")
 	}
 
-	keys := make(KeysConfig, 0)
+	keys := make([]SmartContractKeys, 0)
 
 	for _, sc := range cluster.Config.SmartContracts {
-		scKeys := make([]string, 0)
-
 		committee, err := cluster.Committee(&sc)
 		if err != nil {
 			return err
@@ -313,19 +323,82 @@ func (cluster *Cluster) GenerateDKSets() error {
 
 		fmt.Printf("Generated key set for SC with address %s\n", addr)
 
+		dkShares := make([]string, 0)
 		for _, host := range cluster.Hosts() {
 			dks, err := apilib.ExportDKShare(host, addr)
 			if err != nil {
 				return err
 			}
-			scKeys = append(scKeys, dks)
+			dkShares = append(dkShares, dks)
 		}
 
-		keys = append(keys, scKeys)
+		keys = append(keys, SmartContractKeys{
+			Address:  addr.String(),
+			DKShares: dkShares,
+		})
 	}
 	buf, err := json.MarshalIndent(keys, "", "  ")
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(keysFile, buf, 0644)
+}
+
+func (cluster *Cluster) CreateOriginTx() error {
+	keys, err := cluster.readKeysConfig()
+	if err != nil {
+		return err
+	}
+
+	for scIndex, sc := range cluster.Config.SmartContracts {
+		committee, err := cluster.Committee(&sc)
+		if err != nil {
+			return err
+		}
+		scAddr, err := address.FromBase58(keys[scIndex].Address)
+		if err != nil {
+			return err
+		}
+		tx, scMetadata := apilib.CreateOriginData(
+			&apilib.NewOriginParams{
+				Address:      scAddr,
+				OwnerAddress: utxodb.GetAddress(1), // TODO hardcoded
+				ProgramHash:  *hashing.HashStrings(sc.Description),
+			},
+			sc.Description,
+			committee,
+		)
+
+		err = logOriginTx(tx, scMetadata)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func logOriginTx(tx *sctransaction.Transaction, scMetadata *registry.SCMetaData) error {
+	fmt.Printf("Created origin tx for SC with address %s\n", scMetadata.Address)
+
+	buf, err := json.MarshalIndent(scMetadata.Jsonable(), "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("SC Metadata: %s\n", string(buf))
+
+	txState, _ := tx.State()
+	txJson := struct {
+		State        *sctransaction.StateBlock
+		RequestBlock []*sctransaction.RequestBlock
+	}{
+		State:        txState,
+		RequestBlock: tx.Requests(),
+	}
+	buf, err = json.MarshalIndent(txJson, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("TX: %s\n", string(buf))
+
+	return nil
 }

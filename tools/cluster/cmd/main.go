@@ -32,12 +32,14 @@ func main() {
 	}
 
 	switch globalFlags.Arg(0) {
+
 	case "init":
 		initFlags := flag.NewFlagSet("init", flag.ExitOnError)
 		resetDataPath := initFlags.Bool("r", false, "Reset data path if it exists")
 		initFlags.Parse(globalFlags.Args()[1:])
 		err = wasps.Init(*resetDataPath)
 		check(err)
+
 	case "start":
 		err = wasps.Start()
 		check(err)
@@ -47,10 +49,18 @@ func main() {
 		signal.Notify(c, os.Interrupt)
 		<-c
 		wasps.Wait()
+
 	case "gendksets":
 		err = wasps.Start()
 		check(err)
 		err = wasps.GenerateDKSets()
+		check(err)
+		wasps.Stop()
+
+	case "origintx":
+		err = wasps.Start()
+		check(err)
+		err = wasps.CreateOriginTx()
 		check(err)
 		wasps.Stop()
 	}
