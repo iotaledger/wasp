@@ -1,9 +1,11 @@
 package registry
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"sync"
 )
 
 var (
@@ -39,4 +41,22 @@ func GetDKShare(addr *address.Address) (*tcrypto.DKShare, bool, error) {
 	}
 	dkscache[*addr] = ks
 	return ks, true, nil
+}
+
+func GetCommittedDKShare(base58addr string) (*tcrypto.DKShare, error) {
+	addr, err := address.FromBase58(base58addr)
+	if err != nil {
+		return nil, err
+	}
+	if addr.Version() != address.VersionBLS {
+		return nil, fmt.Errorf("Not a BLS address: %s", base58addr)
+	}
+	ks, ok, err := GetDKShare(&addr)
+	if err != nil {
+		return nil, err
+	}
+	if !ok || !ks.Committed {
+		return nil, fmt.Errorf("Key share not found: %s", base58addr)
+	}
+	return ks, nil
 }

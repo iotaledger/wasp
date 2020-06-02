@@ -17,6 +17,7 @@ func addEndpoints() {
 	Server.POST("/adm/commitdks", dkgapi.HandlerCommitDks)
 	Server.POST("/adm/signdigest", dkgapi.HandlerSignDigest)
 	Server.POST("/adm/getpubkeyinfo", dkgapi.HandlerGetKeyPubInfo)
+	Server.POST("/adm/exportdkshare", dkgapi.HandlerExportDKShare)
 	// admapi
 	Server.POST("/adm/putscdata", admapi.HandlerPutSCData)
 	Server.POST("/adm/getscdata", admapi.HandlerGetSCData)

@@ -64,16 +64,20 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	}, nil
 }
 
-func (cluster *Cluster) Path(s string) string {
+func (cluster *Cluster) JoinConfigPath(s string) string {
 	return path.Join(cluster.ConfigPath, s)
 }
 
 func (cluster *Cluster) ConfigTemplatePath() string {
-	return cluster.Path("wasp-config-template.json")
+	return cluster.JoinConfigPath("wasp-config-template.json")
 }
 
-func (cluster *Cluster) WaspNodePath(i int) string {
+func (cluster *Cluster) NodeDataPath(i int) string {
 	return path.Join(cluster.DataPath, strconv.Itoa(i))
+}
+
+func (cluster *Cluster) JoinNodeDataPath(i int, s string) string {
+	return path.Join(cluster.NodeDataPath(i), s)
 }
 
 func (cluster *Cluster) DataPathExists() (bool, error) {
@@ -107,7 +111,7 @@ func (cluster *Cluster) Init(resetDataPath bool) error {
 	}
 
 	for i, nodeConfig := range cluster.Config.Nodes {
-		nodePath := cluster.WaspNodePath(i)
+		nodePath := cluster.NodeDataPath(i)
 		fmt.Printf("Initializing node configuration at %s\n", nodePath)
 
 		err := os.MkdirAll(nodePath, os.ModePerm)
@@ -115,7 +119,7 @@ func (cluster *Cluster) Init(resetDataPath bool) error {
 			return err
 		}
 
-		f, err := os.Create(path.Join(nodePath, "config.json"))
+		f, err := os.Create(cluster.JoinNodeDataPath(i, "config.json"))
 		if err != nil {
 			return err
 		}
@@ -155,7 +159,7 @@ func (cluster *Cluster) Start() error {
 
 	for i, _ := range cluster.Config.Nodes {
 		cmd := exec.Command("wasp")
-		cmd.Dir = cluster.WaspNodePath(i)
+		cmd.Dir = cluster.NodeDataPath(i)
 		pipe, err := cmd.StdoutPipe()
 		if err != nil {
 			return err
@@ -211,7 +215,7 @@ func (cluster *Cluster) Hosts() []string {
 func (cluster *Cluster) Committee(sc *SmartContractConfig) ([]string, error) {
 	committee := make([]string, 0)
 	for _, i := range sc.Nodes {
-		if i < 0 || i > len(cluster.Config.Nodes) - 1 {
+		if i < 0 || i > len(cluster.Config.Nodes)-1 {
 			return nil, errors.New(fmt.Sprintf("Node index out of bounds in smart contract committee configuration: %d", i))
 		}
 		committee = append(committee, cluster.Config.Nodes[i].BindAddress)
@@ -221,7 +225,11 @@ func (cluster *Cluster) Committee(sc *SmartContractConfig) ([]string, error) {
 }
 
 func (cluster *Cluster) GenerateDKSets() error {
+	keys := make([][]string, 0) // [sc index][node index]
+
 	for _, sc := range cluster.Config.SmartContracts {
+		scKeys := make([]string, 0)
+
 		committee, err := cluster.Committee(&sc)
 		if err != nil {
 			return err
@@ -234,7 +242,22 @@ func (cluster *Cluster) GenerateDKSets() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Generated key set with address %s\n", addr)
+
+		fmt.Printf("Generated key set for SC with address %s\n", addr)
+
+		for _, host := range cluster.Hosts() {
+			dks, err := apilib.ExportDKShare(host, addr)
+			if err != nil {
+				return err
+			}
+			scKeys = append(scKeys, dks)
+		}
+
+		keys = append(keys, scKeys)
 	}
-	return nil
+	buf, err := json.MarshalIndent(keys, "", "  ")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cluster.JoinConfigPath("keys.json"), buf, 0644)
 }

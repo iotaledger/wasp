@@ -2,11 +2,12 @@ package apilib
 
 import (
 	"bytes"
+	"math/rand"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/pkg/errors"
-	"math/rand"
 )
 
 func GenerateNewDistributedKeySet(nodes []string, n, t uint16) (*address.Address, error) {
@@ -87,4 +88,10 @@ func GetPublicKeyInfo(nodes []string, address *address.Address) []*dkgapi.GetPub
 		ret[i] = callGetPubKeyInfo(host, params)
 	}
 	return ret
+}
+
+func ExportDKShare(node string, address *address.Address) (string, error) {
+	return callExportDKShare(node, dkgapi.ExportDKShareRequest{
+		Address: address.String(),
+	})
 }

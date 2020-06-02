@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 func callNewKey(netLoc string, params dkgapi.NewDKSRequest) (*dkgapi.NewDKSResponse, error) {
@@ -93,4 +94,19 @@ func callGetPubKeyInfo(netLoc string, params dkgapi.GetPubKeyInfoRequest) *dkgap
 		return &dkgapi.GetPubKeyInfoResponse{Err: err.Error()}
 	}
 	return result
+}
+
+func callExportDKShare(netLoc string, params dkgapi.ExportDKShareRequest) (string, error) {
+	data, err := json.Marshal(params)
+	if err != nil {
+		return "", err
+	}
+	url := fmt.Sprintf("http://%s/adm/exportdkshare", netLoc)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	result := &dkgapi.ExportDKShareResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("exportkeys returned code %d: %s", resp.StatusCode, result.Err)
+	}
+	return result.DKShare, err
 }
