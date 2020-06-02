@@ -106,7 +106,22 @@ func callExportDKShare(netLoc string, params dkgapi.ExportDKShareRequest) (strin
 	result := &dkgapi.ExportDKShareResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("exportkeys returned code %d: %s", resp.StatusCode, result.Err)
+		return "", fmt.Errorf("exportdkshare returned code %d: %s", resp.StatusCode, result.Err)
 	}
 	return result.DKShare, err
+}
+
+func callImportDKShare(netLoc string, params dkgapi.ImportDKShareRequest) error {
+	data, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprintf("http://%s/adm/importdkshare", netLoc)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	result := &dkgapi.ImportDKShareResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("importdkshare returned code %d: %s", resp.StatusCode, result.Err)
+	}
+	return err
 }

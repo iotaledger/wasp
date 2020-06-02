@@ -16,6 +16,8 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 )
 
+type KeysConfig [][]string // [sc index][node index]
+
 type SmartContractConfig struct {
 	Nodes  []int `json:"nodes"`
 	Quorum int   `json:"quorum"`
@@ -64,12 +66,30 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	}, nil
 }
 
+func (cluster *Cluster) readKeysConfig() (KeysConfig, error) {
+	data, err := ioutil.ReadFile(cluster.ConfigKeysPath())
+	if err != nil {
+		return nil, err
+	}
+
+	config := make(KeysConfig, 0)
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
 func (cluster *Cluster) JoinConfigPath(s string) string {
 	return path.Join(cluster.ConfigPath, s)
 }
 
 func (cluster *Cluster) ConfigTemplatePath() string {
 	return cluster.JoinConfigPath("wasp-config-template.json")
+}
+
+func (cluster *Cluster) ConfigKeysPath() string {
+	return cluster.JoinConfigPath("keys.json")
 }
 
 func (cluster *Cluster) NodeDataPath(i int) string {
@@ -80,18 +100,20 @@ func (cluster *Cluster) JoinNodeDataPath(i int, s string) string {
 	return path.Join(cluster.NodeDataPath(i), s)
 }
 
-func (cluster *Cluster) DataPathExists() (bool, error) {
-	if _, err := os.Stat(cluster.DataPath); err == nil {
+func fileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
 		return true, nil
-	} else if !os.IsNotExist(err) {
-		return true, err
 	}
-	return false, nil
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
 
 // Init creates in DataPath a directory with config.json for each node
 func (cluster *Cluster) Init(resetDataPath bool) error {
-	exists, err := cluster.DataPathExists()
+	exists, err := fileExists(cluster.DataPath)
 	if err != nil {
 		return err
 	}
@@ -147,7 +169,7 @@ func logNode(i int, scanner *bufio.Scanner, initString string, initOk chan bool)
 
 // Start launches all wasp nodes in the cluster, each running in its own directory
 func (cluster *Cluster) Start() error {
-	exists, err := cluster.DataPathExists()
+	exists, err := fileExists(cluster.DataPath)
 	if err != nil {
 		return err
 	}
@@ -155,6 +177,20 @@ func (cluster *Cluster) Start() error {
 		return errors.New(fmt.Sprintf("Data path %s does not exist", cluster.DataPath))
 	}
 
+	err = cluster.start()
+	if err != nil {
+		return err
+	}
+
+	err = cluster.importKeys()
+	if err != nil {
+		return err
+	}
+	cluster.Started = true
+	return nil
+}
+
+func (cluster *Cluster) start() error {
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
 	for i, _ := range cluster.Config.Nodes {
@@ -177,8 +213,31 @@ func (cluster *Cluster) Start() error {
 	for i := 0; i < len(cluster.Config.Nodes); i++ {
 		<-initOk
 	}
+	return nil
+}
 
-	cluster.Started = true
+func (cluster *Cluster) importKeys() error {
+	exists, err := fileExists(cluster.ConfigKeysPath())
+	if err != nil {
+		return err
+	}
+	if !exists {
+		// nothing to do
+		return nil
+	}
+
+	keys, err := cluster.readKeysConfig()
+
+	fmt.Printf("Importing DKShares...\n")
+	for _, scKeys := range keys {
+		for nodeIndex, dks := range scKeys {
+			err := apilib.ImportDKShare(cluster.Config.Nodes[nodeIndex].BindAddress, dks)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -225,7 +284,16 @@ func (cluster *Cluster) Committee(sc *SmartContractConfig) ([]string, error) {
 }
 
 func (cluster *Cluster) GenerateDKSets() error {
-	keys := make([][]string, 0) // [sc index][node index]
+	keysFile := cluster.ConfigKeysPath()
+	exists, err := fileExists(keysFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("dk sets already generated in keys.json")
+	}
+
+	keys := make(KeysConfig, 0)
 
 	for _, sc := range cluster.Config.SmartContracts {
 		scKeys := make([]string, 0)
@@ -259,5 +327,5 @@ func (cluster *Cluster) GenerateDKSets() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cluster.JoinConfigPath("keys.json"), buf, 0644)
+	return ioutil.WriteFile(keysFile, buf, 0644)
 }

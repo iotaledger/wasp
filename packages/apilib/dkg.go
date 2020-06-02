@@ -95,3 +95,9 @@ func ExportDKShare(node string, address *address.Address) (string, error) {
 		Address: address.String(),
 	})
 }
+
+func ImportDKShare(node string, base58blob string) error {
+	return callImportDKShare(node, dkgapi.ImportDKShareRequest{
+		Blob: base58blob,
+	})
+}
