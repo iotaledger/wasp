@@ -37,6 +37,10 @@ func GetPartition(addr *address.Address) kvstore.KVStore {
 	return storeRealm(addr[:])
 }
 
+func deletePartition(addr *address.Address) error {
+	return storeInstance().DeletePrefix(addr[:])
+}
+
 // MakeKey makes key within the partition. It consists to one byte for object type
 // and arbitrary byte fragments concatenated together
 func MakeKey(objType byte, keyBytes ...[]byte) []byte {
