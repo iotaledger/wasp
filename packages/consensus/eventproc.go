@@ -7,22 +7,19 @@ import (
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
+	op.setNewState(msg.StateTransaction, msg.VariableState)
+
+	vh := msg.VariableState.Hash()
+	leader, _ := op.currentLeaderPeerIndex()
+
+	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
+		msg.VariableState.StateIndex(), leader, msg.StateTransaction.ID().String(), vh.String(), op.iAmCurrentLeader())
+
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
 		op.log.Errorf("deleteCompletedRequests: %v", err)
 		return
 	}
-	op.setNewState(msg.StateTransaction, msg.VariableState)
-
-	vh := msg.VariableState.Hash()
-	leader, _ := op.currentLeaderPeerIndex()
-	op.log.Debugw("EventStateTransitionMsg",
-		"state index", msg.VariableState.StateIndex(),
-		"state hash", vh.String(),
-		"state txid", msg.StateTransaction.ID().String(),
-		"leader index", leader,
-		"iAmTheLeader", op.iAmCurrentLeader(),
-	)
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
 

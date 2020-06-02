@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/testapilib"
-	"github.com/iotaledger/wasp/plugins/testplugins"
+	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 	"os"
 	"strconv"
 )
@@ -14,21 +14,25 @@ const targetHost = "127.0.0.1:9090"
 func main() {
 	fmt.Println("--------------------------------------------------")
 	if len(os.Args) != 2 {
-		fmt.Printf("usage: 'sendreq <sc index>' where <sc index> = 1 .. %d\n", testplugins.NumBuiltinScAddresses())
+		fmt.Printf("usage: 'sendreq <sc index>' where <sc index> = 0 .. %d\n", testaddresses.NumAddresses()-1)
 		os.Exit(1)
 	}
 	scidx, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		fmt.Printf("%v\n", err)
-		fmt.Printf("usage: 'sendreq <sc index>' where <sc index> = 1 .. %d\n", testplugins.NumBuiltinScAddresses())
+		fmt.Printf("usage: 'sendreq <sc index>' where <sc index> = 0 .. %d\n", testaddresses.NumAddresses()-1)
 		os.Exit(1)
 	} else {
-		if scidx < 1 || scidx > testplugins.NumBuiltinScAddresses() {
-			fmt.Printf("usage: 'sendreq <sc index>' where <sc index> = 1 .. %d\n", testplugins.NumBuiltinScAddresses())
+		if scidx < 0 || scidx > testaddresses.NumAddresses()-1 {
+			fmt.Printf("usage: 'sendreq <sc index>' where <sc index> = 0 .. %d\n", testaddresses.NumAddresses()-1)
 			os.Exit(1)
 		}
 	}
-	addr := testplugins.GetScAddress(scidx)
+	addr, enabled := testaddresses.GetAddress(scidx)
+	if !enabled {
+		fmt.Printf("address disabled\n")
+		os.Exit(0)
+	}
 	fmt.Printf("sending test request to builtin sc #%d, addr %s\n through host %s\n",
 		scidx, addr.String(), targetHost)
 

@@ -37,8 +37,13 @@ func GetPartition(addr *address.Address) kvstore.KVStore {
 	return storeRealm(addr[:])
 }
 
+func GetRegistryPartition() kvstore.KVStore {
+	var niladdr address.Address
+	return GetPartition(&niladdr)
+}
+
 func deletePartition(addr *address.Address) error {
-	return storeInstance().DeletePrefix(addr[:])
+	return GetPartition(addr).Clear()
 }
 
 // MakeKey makes key within the partition. It consists to one byte for object type

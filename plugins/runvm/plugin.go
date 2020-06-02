@@ -58,14 +58,14 @@ func RegisterProcessor(programHash string, onFinish func(err error)) {
 		defer processorsMutex.Unlock()
 
 		switch programHash {
-		case "KSoWFbHwZuHG8B8HVcYVKR4WYVQ7MpoqeaXgKWfkBMF": // sc1
+		case "3di7EFv8CvYFn8A8ppSaRTAew5anxZ3qinvFxDnh6Xf6": // sc0
 			processors[programHash] = vmnil.New()
 			onFinish(nil)
 
-		case "7xmPcECfZsSQq5eq7GCucuxmL2QpsgYwTjusuQcoK9GE": // sc2
+		case "CJ7e4Xbosi5SjydtGvC38Bt95EdwPW29qybP83JF5xNZ": // sc1
 			onFinish(fmt.Errorf("VM not implemented"))
 
-		case "2tx7z36m9EhX3xBRGmEUD4FwTyP6R66zGPYY53EWc87k": // sc3
+		case "AtyXNo5d1uN1nFWiFjQNJzbZiCt9orxsddvPZu4aLNkp": // sc2
 			onFinish(fmt.Errorf("VM not implemented"))
 
 		default:

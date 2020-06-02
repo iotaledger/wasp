@@ -19,6 +19,7 @@ import (
 // clocks of peer are.
 type Peer struct {
 	*sync.RWMutex
+	isDismissed bool              // to be GC-ed
 	peerconn    *peeredConnection // nil means not connected
 	handshakeOk bool
 	// network locations as taken from the SC data
@@ -63,12 +64,19 @@ func (peer *Peer) PeeringId() string {
 func (peer *Peer) connStatus() (bool, bool) {
 	peer.RLock()
 	defer peer.RUnlock()
+	if peer.isDismissed {
+		return false, false
+	}
 	return peer.peerconn != nil, peer.handshakeOk
 }
 
 func (peer *Peer) closeConn() {
 	peer.Lock()
 	defer peer.Unlock()
+
+	if peer.isDismissed {
+		return
+	}
 	if peer.peerconn != nil {
 		_ = peer.peerconn.Close()
 	}
@@ -76,6 +84,9 @@ func (peer *Peer) closeConn() {
 
 // dials outbound address and established connection
 func (peer *Peer) runOutbound() {
+	if peer.isDismissed {
+		return
+	}
 	if peer.isInbound() {
 		return
 	}

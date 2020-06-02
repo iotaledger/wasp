@@ -4,9 +4,9 @@ import "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 
 var (
 	specAddresses = []string{
-		"deYcbuG8CJXE9wJ8Z674TVtDr9XNqYD1xHKRicc8QjqD",
-		"tB4HURokgTy4Xb7n12qUKqUUjUJd8WfWTSHFKzjs2x5D",
-		"gswP8mq1uxvyiCPWhypQoxTjoScYrHWZeWmYd53hejUR",
+		"goAqoJfcsr5pngfy4h1Xz1hdGV5RRMWd4CHPhWpf48hu",
+		"e7ZcV4rubyz8wTJCfvqYDESZ628G327UBHfhGWVGbqqP",
+		"mJrb8R5ko5HDTEhNr6YBDVJb5sYon4bDmHDPiwa1WFsf",
 	}
 	enabledAddress = []bool{true, false, false}
 )

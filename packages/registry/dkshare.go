@@ -16,13 +16,16 @@ func CommitDKShare(ks *tcrypto.DKShare, pubKeys []kyber.Point) error {
 	return SaveDKShareToRegistry(ks)
 }
 
+func dbkey(addr *address.Address) []byte {
+	return database.MakeKey(database.ObjectTypeDistributedKeyData, addr.Bytes())
+}
+
 func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	if !ks.Committed {
 		return fmt.Errorf("uncommited DK share: can't be saved to the registry")
 	}
-	dbase := database.GetPartition(ks.Address)
-	dbkey := database.MakeKey(database.ObjectTypeDistributedKeyData)
-	exists, err := dbase.Has(dbkey)
+	dbase := database.GetRegistryPartition()
+	exists, err := dbase.Has(dbkey(ks.Address))
 	if err != nil {
 		return err
 	}
@@ -36,11 +39,11 @@ func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	if err != nil {
 		return err
 	}
-	return dbase.Set(dbkey, buf.Bytes())
+	return dbase.Set(dbkey(ks.Address), buf.Bytes())
 }
 
 func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, error) {
-	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeDistributedKeyData))
+	data, err := database.GetRegistryPartition().Get(dbkey(addr))
 	if err != nil {
 		return nil, err
 	}
@@ -52,5 +55,5 @@ func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, err
 }
 
 func ExistDKShareInRegistry(addr *address.Address) (bool, error) {
-	return database.GetPartition(addr).Has(database.MakeKey(database.ObjectTypeDistributedKeyData))
+	return database.GetRegistryPartition().Has(dbkey(addr))
 }

@@ -77,8 +77,7 @@ func (jo *SCMetaDataJsonable) ToSCMetaData() (*SCMetaData, error) {
 // if ownPortAddr is not nil, it only includes those SCMetaData records which are processed
 // by his node
 func GetSCDataList() ([]*SCMetaData, error) {
-	var niladdr address.Address
-	db := database.GetPartition(&niladdr)
+	db := database.GetRegistryPartition()
 	ret := make([]*SCMetaData, 0)
 
 	err := db.Iterate([]byte{database.ObjectTypeSCMetaData}, func(_ kvstore.Key, value kvstore.Value) bool {
@@ -112,9 +111,6 @@ func dbkeyScdata(addr *address.Address) []byte {
 	return database.MakeKey(database.ObjectTypeSCMetaData, addr[:])
 }
 
-// scdata is saved in the niladdr partition
-var niladdr address.Address
-
 // SaveSCData saves SCMetaData record to the registry
 // overwrites previous if any for new sc
 func SaveSCData(scd *SCMetaData) error {
@@ -122,11 +118,11 @@ func SaveSCData(scd *SCMetaData) error {
 	if err := scd.Write(&buf); err != nil {
 		return err
 	}
-	return database.GetPartition(&niladdr).Set(dbkeyScdata(&scd.Address), buf.Bytes())
+	return database.GetRegistryPartition().Set(dbkeyScdata(&scd.Address), buf.Bytes())
 }
 
 func ExistSCMetaData(addr *address.Address) (bool, error) {
-	return database.GetPartition(&niladdr).Has(dbkeyScdata(addr))
+	return database.GetRegistryPartition().Has(dbkeyScdata(addr))
 }
 
 func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
@@ -145,7 +141,7 @@ func GetSCData(addr *address.Address) (*SCMetaData, bool, error) {
 	if !exists {
 		return nil, false, nil
 	}
-	data, err := database.GetPartition(&niladdr).Get(dbkeyScdata(addr))
+	data, err := database.GetRegistryPartition().Get(dbkeyScdata(addr))
 	ret := new(SCMetaData)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, false, err
