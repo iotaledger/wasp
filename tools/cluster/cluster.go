@@ -17,8 +17,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
 
 type SmartContractKeys struct {
@@ -369,36 +368,18 @@ func (cluster *Cluster) CreateOriginTx() error {
 			committee,
 		)
 
-		err = logOriginTx(tx, scMetadata)
+		fmt.Printf(
+			"Posting origin tx for SC index %d / address %s / txid %s / color %s\n",
+			scIndex,
+			scMetadata.Address.String(),
+			tx.ID().String(),
+			scMetadata.Color.String(),
+		)
+
+		err = nodeconn.PostTransactionToNode(tx.Transaction)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
-}
-
-func logOriginTx(tx *sctransaction.Transaction, scMetadata *registry.SCMetaData) error {
-	fmt.Printf("Created origin tx for SC with address %s\n", scMetadata.Address)
-
-	buf, err := json.MarshalIndent(scMetadata.Jsonable(), "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Printf("SC Metadata: %s\n", string(buf))
-
-	txState, _ := tx.State()
-	txJson := struct {
-		State        *sctransaction.StateBlock
-		RequestBlock []*sctransaction.RequestBlock
-	}{
-		State:        txState,
-		RequestBlock: tx.Requests(),
-	}
-	buf, err = json.MarshalIndent(txJson, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Printf("TX: %s\n", string(buf))
-
 	return nil
 }
