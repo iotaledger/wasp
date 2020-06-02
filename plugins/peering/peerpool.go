@@ -29,7 +29,7 @@ func (peer *Peer) runAfter(d time.Duration) {
 	go func() {
 		time.Sleep(d)
 		peer.Lock()
-		if !peer.isDismissed {
+		if !peer.isDismissed.Load() {
 			peer.startOnce = &sync.Once{}
 			log.Debugf("will run %s again", peer.PeeringId())
 		}

@@ -33,6 +33,8 @@ func StopUsingPeer(peerId string) {
 	if peer, ok := peers[peerId]; ok {
 		peer.numUsers--
 		if peer.numUsers == 0 {
+			peer.isDismissed.Store(true)
+
 			go func() {
 				peersMutex.Lock()
 				defer peersMutex.Unlock()

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/hive.go/backoff"
+	"go.uber.org/atomic"
 	"io"
 	"net"
 	"strings"
@@ -19,7 +20,7 @@ import (
 // clocks of peer are.
 type Peer struct {
 	*sync.RWMutex
-	isDismissed bool              // to be GC-ed
+	isDismissed atomic.Bool       // to be GC-ed
 	peerconn    *peeredConnection // nil means not connected
 	handshakeOk bool
 	// network locations as taken from the SC data
@@ -64,7 +65,7 @@ func (peer *Peer) PeeringId() string {
 func (peer *Peer) connStatus() (bool, bool) {
 	peer.RLock()
 	defer peer.RUnlock()
-	if peer.isDismissed {
+	if peer.isDismissed.Load() {
 		return false, false
 	}
 	return peer.peerconn != nil, peer.handshakeOk
@@ -74,7 +75,7 @@ func (peer *Peer) closeConn() {
 	peer.Lock()
 	defer peer.Unlock()
 
-	if peer.isDismissed {
+	if peer.isDismissed.Load() {
 		return
 	}
 	if peer.peerconn != nil {
@@ -84,7 +85,7 @@ func (peer *Peer) closeConn() {
 
 // dials outbound address and established connection
 func (peer *Peer) runOutbound() {
-	if peer.isDismissed {
+	if peer.isDismissed.Load() {
 		return
 	}
 	if peer.isInbound() {
