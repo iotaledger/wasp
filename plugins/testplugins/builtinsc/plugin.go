@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/testplugins"
+	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 	"github.com/iotaledger/wasp/plugins/webapi"
 	"time"
 )
@@ -35,9 +36,9 @@ func run(_ *node.Plugin) {
 
 		log.Debugf("starting to run built-in metadata test routines")
 
+		go runInitSC(0, shutdownSignal)
 		go runInitSC(1, shutdownSignal)
 		go runInitSC(2, shutdownSignal)
-		go runInitSC(3, shutdownSignal)
 	})
 	if err != nil {
 		log.Errorf("can't start daemon")
@@ -49,13 +50,14 @@ func run(_ *node.Plugin) {
 // - creates new meta data for the smart contracts according to new origin parameters provided
 // - creates new origin transaction and posts it to the node
 func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
-	if committees.IsAddressDisabled(testplugins.GetScAddress(scIndex)) {
-		log.Debugf("not running test on disabled address %s", testplugins.GetScAddress(scIndex).String())
+	addr, enabled := testaddresses.GetAddress(scIndex)
+	if !enabled {
+		log.Debugf("address index %d is not enabled", scIndex)
 		return
 	}
 	par := testplugins.GetOriginParams(scIndex)
 	log.Infof("Start running testing plugin %s addr %s : '%s'",
-		PluginName, testplugins.GetScAddress(scIndex), testplugins.GetScDescription(scIndex))
+		PluginName, addr.String(), testplugins.GetScDescription(scIndex))
 
 	myHost := config.Node.GetString(webapi.CfgBindAddress)
 

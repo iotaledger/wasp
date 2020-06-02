@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
+	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 	"sync"
 )
 
@@ -47,7 +48,7 @@ func run(_ *node.Plugin) {
 
 		addrs := make([]address.Address, 0, len(sclist))
 		for _, scdata := range sclist {
-			if IsAddressDisabled(scdata.Address) {
+			if testaddresses.IsAddressDisabled(scdata.Address) {
 				log.Debugf("skipping disabled address %s", scdata.Address.String())
 				continue
 			}
@@ -131,18 +132,4 @@ func CommitteeByAddress(addr address.Address) committee.Committee {
 		return nil
 	}
 	return ret
-}
-
-var disabledAddresses = map[string]bool{
-	"deYcbuG8CJXE9wJ8Z674TVtDr9XNqYD1xHKRicc8QjqD": false,
-	"tB4HURokgTy4Xb7n12qUKqUUjUJd8WfWTSHFKzjs2x5D": true,
-	"gswP8mq1uxvyiCPWhypQoxTjoScYrHWZeWmYd53hejUR": true,
-}
-
-func IsAddressDisabled(addr address.Address) bool {
-	disabled, ok := disabledAddresses[addr.String()]
-	if !ok {
-		return false
-	}
-	return disabled
 }
