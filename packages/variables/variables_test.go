@@ -2,34 +2,34 @@ package variables
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestBasicVariables(t *testing.T) {
 	vars := New(nil)
 	_, ok := vars.Get("v1")
-	assert.Equal(t, ok, false)
+	assert.False(t, ok)
 
 	vars.Set("v1", uint16(1))
 	v, ok := vars.Get("v1")
-	assert.Equal(t, ok, true)
+	assert.True(t, ok)
 
 	vint, ok := v.(uint16)
-	assert.Equal(t, ok, true)
+	assert.True(t, ok)
 	assert.Equal(t, vint, uint16(1))
 
 	vars.Set("v2", "kuku")
 	v, ok = vars.Get("v2")
-	assert.Equal(t, ok, true)
+	assert.True(t, ok)
 
 	vstr, ok := v.(string)
-	assert.Equal(t, ok, true)
+	assert.True(t, ok)
 	assert.Equal(t, vstr, "kuku")
 
 	vars.Set("v1", nil)
 	v, ok = vars.Get("v1")
-	assert.Equal(t, ok, false)
+	assert.False(t, ok)
 }
 
 func TestBytes(t *testing.T) {
@@ -39,26 +39,26 @@ func TestBytes(t *testing.T) {
 	vars2 := New(vars1)
 	h2 := hashing.GetHashValue(vars2)
 
-	assert.Equal(t, h1 == h2, true)
+	assert.EqualValues(t, h1, h2)
 
 	vars1.Set("k1", "kuku")
 	vars2.Set("k1", "kuku")
 
 	h11 := hashing.GetHashValue(vars1)
 	h12 := hashing.GetHashValue(vars2)
-	assert.Equal(t, h11 == h12, true)
+	assert.EqualValues(t, h11, h12)
 
 	vars1.Set("k1", "mumu")
 	h11 = hashing.GetHashValue(vars1)
-	assert.Equal(t, h11 != h12, true)
+	assert.False(t, h11 == h12)
 
 	vars1.Set("k1", nil)
 	vars2.Set("k1", nil)
 	h11 = hashing.GetHashValue(vars1)
 	h12 = hashing.GetHashValue(vars2)
-	assert.Equal(t, h11 == h12, true)
-	assert.Equal(t, h11 == h1, true)
-	assert.Equal(t, h11 == h2, true)
+	assert.EqualValues(t, h11, h12)
+	assert.EqualValues(t, h11, h1)
+	assert.EqualValues(t, h11, h2)
 
 	vars1.Set("k1", uint16(42))
 	vars1.Set("k2", "42")
@@ -67,7 +67,7 @@ func TestBytes(t *testing.T) {
 	vars2.Set("k1", uint16(42))
 	h11 = hashing.GetHashValue(vars1)
 	h12 = hashing.GetHashValue(vars2)
-	assert.Equal(t, h11 == h12, true)
+	assert.EqualValues(t, h11, h12)
 }
 
 func TestDetereminism(t *testing.T) {
@@ -77,7 +77,7 @@ func TestDetereminism(t *testing.T) {
 	vars2 := New(vars1)
 	h2 := hashing.GetHashValue(vars2)
 
-	assert.Equal(t, h1 == h2, true)
+	assert.EqualValues(t, h1, h2)
 
 	vars1.Set("k1", "kuku")
 	vars1.Set("k2", uint16(42))
@@ -91,9 +91,9 @@ func TestDetereminism(t *testing.T) {
 
 	h11 := hashing.GetHashValue(vars1)
 	h12 := hashing.GetHashValue(vars2)
-	assert.Equal(t, h11 == h12, true)
+	assert.EqualValues(t, h11, h12)
 
 	vars1.Set("k3", nil)
 	vars2.Set("k3", nil)
-	assert.Equal(t, h11 == h12, true)
+	assert.EqualValues(t, h11, h12)
 }

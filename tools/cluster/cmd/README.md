@@ -2,7 +2,7 @@
 
 ## Before
 
-1. Run `go install` to compile and instll the `wasp` command. Whenever
+1. Run `go install` to compile and install the `wasp` command. Whenever
    you make a change in the wasp code you need to re-run this command.
 
 ## Configuring a cluster
