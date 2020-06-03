@@ -165,8 +165,8 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func LoadBatch(addr address.Address, stateIndex uint32) (Batch, error) {
-	data, err := database.GetPartition(&addr).Get(dbkeyBatch(stateIndex))
+func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
+	data, err := database.GetPartition(addr).Get(dbkeyBatch(stateIndex))
 	if err != nil {
 		return nil, err
 	}

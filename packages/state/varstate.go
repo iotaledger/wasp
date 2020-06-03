@@ -185,19 +185,30 @@ func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
 	return atomicWrite.Commit()
 }
 
-func StateExist(addr address.Address) (bool, error) {
-	return database.GetPartition(&addr).Has(database.MakeKey(database.ObjectTypeVariableState))
+func StateExist(addr *address.Address) (bool, error) {
+	exist, err := database.GetPartition(addr).Has(database.MakeKey(database.ObjectTypeVariableState))
+	if err == nil {
+		log.Debugf("state %s exist = %v", addr.String(), exist)
+	}
+	return exist, err
 }
 
-// loads variable state and corresponding batch
-func LoadVariableState(addr address.Address) (VariableState, Batch, error) {
-	data, err := database.GetPartition(&addr).Get(database.MakeKey(database.ObjectTypeVariableState))
+func loadVariableState(addr *address.Address) (VariableState, error) {
+	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeVariableState))
 	if err != nil {
-		return nil, nil, fmt.Errorf("loading variable state: %v", err)
+		return nil, fmt.Errorf("loading variable state: %v", err)
 	}
 
 	varState := NewVariableState(nil).(*variableState)
 	if err = varState.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return varState, nil
+}
+
+func LoadSolidState(addr *address.Address) (VariableState, Batch, error) {
+	varState, err := loadVariableState(addr)
+	if err != nil {
 		return nil, nil, err
 	}
 	batch, err := LoadBatch(addr, varState.StateIndex())

@@ -9,7 +9,8 @@ import (
 
 // respond to sync request 'GetStateUpdate'
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
-	batch, err := state.LoadBatch(sm.committee.Address(), msg.StateIndex)
+	addr := sm.committee.Address()
+	batch, err := state.LoadBatch(&addr, msg.StateIndex)
 	if err != nil {
 		// can't load batch, can't respond
 		return

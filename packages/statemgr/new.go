@@ -91,7 +91,8 @@ func (sm *stateManager) initLoadState() {
 	var err error
 	var batch state.Batch
 
-	stateExist, err := state.StateExist(sm.committee.Address())
+	addr := sm.committee.Address()
+	stateExist, err := state.StateExist(&addr)
 	if err != nil {
 		sm.log.Error(err)
 		sm.committee.Dismiss()
@@ -100,9 +101,9 @@ func (sm *stateManager) initLoadState() {
 
 	if stateExist {
 		// load last solid state and last state update batch
-		sm.solidVariableState, batch, err = state.LoadVariableState(sm.committee.Address())
+		sm.solidVariableState, batch, err = state.LoadSolidState(&addr)
 		if err != nil {
-			sm.log.Error(err)
+			sm.log.Errorf("LoadSolidState failed. Can't continue: %v", err)
 			sm.committee.Dismiss()
 			return
 		}
