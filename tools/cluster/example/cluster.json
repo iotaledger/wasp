@@ -8,6 +8,7 @@
   "smartContracts": [
     {
       "description": "Smart Contract test",
+      "ownerAddress": "b1uERj4r1wuuVeTx4n7t8JnsuSF5YnZPf8CQdCzv6EHs",
       "nodes": [0, 1, 2, 3],
       "quorum": 3
     }

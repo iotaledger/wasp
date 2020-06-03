@@ -14,7 +14,6 @@ import (
 	"text/template"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -26,9 +25,10 @@ type SmartContractKeys struct {
 }
 
 type SmartContractConfig struct {
-	Description string `json:"description"`
-	Nodes       []int  `json:"nodes"`
-	Quorum      int    `json:"quorum"`
+	Description  string `json:"description"`
+	OwnerAddress string `json:"ownerAddress"` // base58
+	Nodes        []int  `json:"nodes"`
+	Quorum       int    `json:"quorum"`
 }
 
 type ClusterConfig struct {
@@ -354,6 +354,10 @@ func (cluster *Cluster) CreateOriginTx() error {
 		if err != nil {
 			return err
 		}
+		ownerAddress, err := address.FromBase58(sc.OwnerAddress)
+		if err != nil {
+			return err
+		}
 		scAddr, err := address.FromBase58(keys[scIndex].Address)
 		if err != nil {
 			return err
@@ -361,7 +365,7 @@ func (cluster *Cluster) CreateOriginTx() error {
 		tx, scMetadata := apilib.CreateOriginData(
 			&apilib.NewOriginParams{
 				Address:      scAddr,
-				OwnerAddress: utxodb.GetAddress(1), // TODO hardcoded
+				OwnerAddress: ownerAddress,
 				ProgramHash:  *hashing.HashStrings(sc.Description),
 			},
 			sc.Description,
