@@ -5,6 +5,7 @@
     {"bindAddress": "127.0.0.1:9092", "peeringPort": 4002},
     {"bindAddress": "127.0.0.1:9093", "peeringPort": 4003}
   ],
+  "goshimmer": "127.0.0.1:8080",
   "smartContracts": [
     {
       "description": "Smart Contract test",

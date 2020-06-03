@@ -3,15 +3,16 @@
 package statemgr
 
 import (
+	"time"
+
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 type stateManager struct {
@@ -118,7 +119,7 @@ func (sm *stateManager) initLoadState() {
 		// origin state
 		sm.solidVariableState = nil // por las dudas
 		par := sm.committee.MetaData()
-		batch = apilib.NewOriginBatch(apilib.NewOriginParams{
+		batch = origin.NewOriginBatch(origin.NewOriginParams{
 			Address:      par.Address,
 			OwnerAddress: par.OwnerAddress,
 			ProgramHash:  par.ProgramHash,
