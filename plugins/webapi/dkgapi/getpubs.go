@@ -1,7 +1,6 @@
 package dkgapi
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
@@ -39,22 +38,9 @@ type GetPubKeyInfoResponse struct {
 }
 
 func GetKeyPubInfoReq(req *GetPubKeyInfoRequest) *GetPubKeyInfoResponse {
-	addr, err := address.FromBase58(req.Address)
+	ks, err := registry.GetCommittedDKShare(req.Address)
 	if err != nil {
 		return &GetPubKeyInfoResponse{Err: err.Error()}
-	}
-	if addr.Version() != address.VersionBLS {
-		return &GetPubKeyInfoResponse{Err: "not a BLS address"}
-	}
-	ks, ok, err := registry.GetDKShare(&addr)
-	if err != nil {
-		return &GetPubKeyInfoResponse{Err: err.Error()}
-	}
-	if !ok {
-		return &GetPubKeyInfoResponse{Err: "unknown key share"}
-	}
-	if !ks.Committed {
-		return &GetPubKeyInfoResponse{Err: "inconsistency: uncommitted key share"}
 	}
 	pubkeys := make([]string, len(ks.PubKeys))
 	for i, pk := range ks.PubKeys {
