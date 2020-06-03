@@ -120,7 +120,7 @@ func TestTransactionStateBlock2(t *testing.T) {
 		StateIndex: 42,
 	})
 
-	txb.AddRequestBlock(NewRequestBlock(addr))
+	txb.AddRequestBlock(NewRequestBlock(addr, 0))
 
 	tx, err := txb.Finalize()
 	assert.NoError(t, err)
@@ -143,7 +143,7 @@ func TestTransactionRequestBlock1(t *testing.T) {
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	reqBlk := NewRequestBlock(addr)
+	reqBlk := NewRequestBlock(addr, 0)
 	txb.AddRequestBlock(reqBlk)
 
 	tx, err := txb.Finalize()
@@ -167,7 +167,7 @@ func TestTransactionRequestBlock2(t *testing.T) {
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
-	reqBlk := NewRequestBlock(addr)
+	reqBlk := NewRequestBlock(addr, 0)
 	txb.AddRequestBlock(reqBlk)
 	bal = balance.New(balance.ColorNew, 1)
 	txb.AddBalanceToOutput(addr, bal)
@@ -201,7 +201,7 @@ func TestTransactionMultiBlocks(t *testing.T) {
 		StateIndex: 42,
 	})
 
-	reqBlk := NewRequestBlock(addr)
+	reqBlk := NewRequestBlock(addr, 0)
 	txb.AddRequestBlock(reqBlk)
 	bal = balance.New(balance.ColorNew, 1)
 	txb.AddBalanceToOutput(addr, bal)

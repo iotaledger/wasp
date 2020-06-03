@@ -103,13 +103,14 @@ func run(_ *node.Plugin) {
 }
 
 func processNodeMsgData(data []byte) {
-	//log.Debugf("processNodeMsgData")
-
 	msg, err := waspconn.DecodeMsg(data, true)
 	if err != nil {
 		log.Errorf("wrong message from node: %v", err)
 		return
 	}
+
+	log.Debugf("received msg type %T data len = %d", msg, len(data))
+
 	switch msgt := msg.(type) {
 	case *waspconn.WaspPingMsg:
 		roundtrip := time.Since(time.Unix(0, msgt.Timestamp))
