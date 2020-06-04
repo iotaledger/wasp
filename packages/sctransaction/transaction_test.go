@@ -1,6 +1,7 @@
 package sctransaction
 
 import (
+	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -40,7 +41,7 @@ func TestTransactionStateBlockOrigin(t *testing.T) {
 
 	txb = NewTransactionBuilder()
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 	bal := balance.New(balance.ColorNew, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
@@ -57,7 +58,7 @@ func TestTransactionStateBlockOrigin(t *testing.T) {
 
 	txb = NewTransactionBuilder()
 	o1 = valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 	bal = balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
@@ -81,7 +82,7 @@ func TestTransactionStateBlock1(t *testing.T) {
 	assert.Error(t, err)
 
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 	color := randomColor()
 	bal := balance.New(color, 1)
 	txb.AddBalanceToOutput(addr, bal)
@@ -111,7 +112,7 @@ func TestTransactionStateBlock2(t *testing.T) {
 	assert.Error(t, err)
 
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
@@ -139,7 +140,7 @@ func TestTransactionRequestBlock1(t *testing.T) {
 
 	txb = NewTransactionBuilder()
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
@@ -163,7 +164,7 @@ func TestTransactionRequestBlock2(t *testing.T) {
 
 	txb = NewTransactionBuilder()
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 	bal := balance.New(balance.ColorIOTA, 1)
 	txb.AddBalanceToOutput(addr, bal)
 
@@ -190,7 +191,7 @@ func TestTransactionMultiBlocks(t *testing.T) {
 
 	txb = NewTransactionBuilder()
 	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
-	txb.AddInputs(o1)
+	txb.MustAddInputs(o1)
 
 	color := randomColor()
 	bal := balance.New(color, 1)
@@ -212,4 +213,68 @@ func TestTransactionMultiBlocks(t *testing.T) {
 	origin, err := tx.ValidateBlocks(&addr)
 	assert.NoError(t, err)
 	assert.Equal(t, origin, false)
+}
+
+func TestDeterminism(t *testing.T) {
+	addr, err := address.FromBase58(testAddress)
+	assert.NoError(t, err)
+
+	txb1 := NewTransactionBuilder()
+	txb2 := NewTransactionBuilder()
+
+	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+	o2 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+	o3 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+
+	color1 := randomColor()
+	color2 := randomColor()
+	color3 := randomColor()
+
+	bal1 := balance.New(color1, 1)
+	bal2 := balance.New(color2, 2)
+	bal3 := balance.New(color3, 3)
+
+	txb1.MustAddInputs(o1, o2, o3)
+	txb1.AddBalanceToOutput(addr, bal1)
+	txb1.AddBalanceToOutput(addr, bal2)
+	txb1.AddBalanceToOutput(addr, bal3)
+
+	txb1.AddStateBlock(NewStateBlockParams{
+		Color:      color1,
+		StateIndex: 42,
+	})
+
+	tx1, err := txb1.Finalize()
+	assert.NoError(t, err)
+
+	txb2.MustAddInputs(o2, o3, o1)
+	txb2.AddBalanceToOutput(addr, bal2)
+	txb2.AddBalanceToOutput(addr, bal3)
+	txb2.AddBalanceToOutput(addr, bal1)
+
+	txb2.AddStateBlock(NewStateBlockParams{
+		Color:      color1,
+		StateIndex: 42,
+	})
+	tx2, err := txb2.Finalize()
+	assert.NoError(t, err)
+
+	assert.True(t, bytes.Equal(tx1.Bytes(), tx2.Bytes()))
+}
+
+func TestCheckInputs(t *testing.T) {
+	addr, err := address.FromBase58(testAddress)
+	assert.NoError(t, err)
+
+	txb1 := NewTransactionBuilder()
+	txb2 := NewTransactionBuilder()
+
+	o1 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+	o2 := valuetransaction.NewOutputID(addr, valuetransaction.RandomID())
+
+	err = txb1.AddInputs(o1, o2)
+	assert.NoError(t, err)
+
+	err = txb2.AddInputs(o1, o1)
+	assert.Error(t, err)
 }

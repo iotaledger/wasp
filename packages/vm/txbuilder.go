@@ -89,7 +89,7 @@ func (acc *TransactionBuilder) Finalize(stateIndex uint32, stateHash hashing.Has
 	for txid := range acc.balances {
 		oids = append(oids, valuetransaction.NewOutputID(acc.ownAddress, txid))
 	}
-	acc.sctxbuilder.AddInputs(oids...)
+	acc.sctxbuilder.MustAddInputs(oids...)
 
 	for addr, lst := range acc.outputBalances {
 		for col, v := range lst {

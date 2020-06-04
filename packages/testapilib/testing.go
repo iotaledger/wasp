@@ -85,7 +85,9 @@ func TransactionFromJsonTesting(txJson *RequestTransactionJson) (*sctransaction.
 	}
 
 	txb := sctransaction.NewTransactionBuilder()
-	txb.AddInputs(oids...)
+	if err := txb.AddInputs(oids...); err != nil {
+		return nil, err
+	}
 
 	for _, reqBlkJson := range txJson.Requests {
 		reqBlk, err := requestBlockFromJson(&reqBlkJson)

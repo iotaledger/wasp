@@ -67,11 +67,13 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 		}
 	}
 	if !hasColor {
-		return nil, fmt.Errorf("wrong inout color")
+		return nil, fmt.Errorf("wrong input color")
 	}
 	txb := sctransaction.NewTransactionBuilder()
 
-	txb.AddInputs(par.Input)
+	if err := txb.AddInputs(par.Input); err != nil {
+		return nil, err
+	}
 
 	txb.AddBalanceToOutput(par.Address, balance.New(balance.ColorNew, 1))
 	// reminder outputs if any

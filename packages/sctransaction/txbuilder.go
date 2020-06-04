@@ -3,6 +3,7 @@ package sctransaction
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -58,16 +59,33 @@ func (txb *TransactionBuilder) Finalize() (*Transaction, error) {
 	return ret, nil
 }
 
-func (txb *TransactionBuilder) AddInputs(oid ...valuetransaction.OutputID) {
-	//sort input to be deterministic and independent from parameters
+func (txb *TransactionBuilder) MustAddInputs(oid ...valuetransaction.OutputID) {
+	if err := txb.AddInputs(oid...); err != nil {
+		panic(err)
+	}
+}
+
+func (txb *TransactionBuilder) AddInputs(oid ...valuetransaction.OutputID) error {
+	//sort inputs to have deterministic order
 	oidClone := make([]valuetransaction.OutputID, len(oid))
 	copy(oidClone, oid)
+
 	sort.Slice(oidClone, func(i, j int) bool {
 		return bytes.Compare(oidClone[i][:], oidClone[j][:]) < 0
 	})
-	for _, o := range oid {
+
+	// check if all different
+
+	for i := 0; i < len(oidClone)-1; i++ {
+		if bytes.Equal(oidClone[i][:], oidClone[i+1][:]) {
+			return fmt.Errorf("some inputs are identical")
+		}
+	}
+
+	for _, o := range oidClone {
 		txb.inputs.Add(o)
 	}
+	return nil
 }
 
 func (txb *TransactionBuilder) AddBalanceToOutput(addr address.Address, bal *balance.Balance) {
