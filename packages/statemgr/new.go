@@ -91,23 +91,17 @@ func New(committee committee.Committee, log *logger.Logger) committee.StateManag
 func (sm *stateManager) initLoadState() {
 	var err error
 	var batch state.Batch
+	var stateExists bool
 
 	addr := sm.committee.Address()
-	stateExist, err := state.StateExist(&addr)
+	sm.solidVariableState, batch, stateExists, err = state.LoadSolidState(&addr)
 	if err != nil {
 		sm.log.Error(err)
 		sm.committee.Dismiss()
 		return
 	}
 
-	if stateExist {
-		// load last solid state and last state update batch
-		sm.solidVariableState, batch, err = state.LoadSolidState(&addr)
-		if err != nil {
-			sm.log.Errorf("LoadSolidState failed. Can't continue: %v", err)
-			sm.committee.Dismiss()
-			return
-		}
+	if stateExists {
 		h := sm.solidVariableState.Hash()
 		txh := batch.StateTransactionId()
 		sm.log.Debugw("solid state state has been loaded",
@@ -117,7 +111,7 @@ func (sm *stateManager) initLoadState() {
 		)
 	} else {
 		// origin state
-		sm.solidVariableState = nil // por las dudas
+		sm.solidVariableState = nil
 		par := sm.committee.MetaData()
 		batch = origin.NewOriginBatch(origin.NewOriginParams{
 			Address:      par.Address,

@@ -185,16 +185,11 @@ func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
 	return atomicWrite.Commit()
 }
 
-func StateExist(addr *address.Address) (bool, error) {
-	exist, err := database.GetPartition(addr).Has(database.MakeKey(database.ObjectTypeVariableState))
-	if err == nil {
-		log.Debugf("state %s exist = %v", addr.String(), exist)
-	}
-	return exist, err
-}
-
 func loadVariableState(addr *address.Address) (VariableState, error) {
 	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeVariableState))
+	if err == kvstore.ErrKeyNotFound {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("loading variable state: %v", err)
 	}
@@ -206,19 +201,22 @@ func loadVariableState(addr *address.Address) (VariableState, error) {
 	return varState, nil
 }
 
-func LoadSolidState(addr *address.Address) (VariableState, Batch, error) {
+func LoadSolidState(addr *address.Address) (VariableState, Batch, bool, error) {
 	varState, err := loadVariableState(addr)
-	if err != nil {
-		return nil, nil, err
+	if err != nil || varState == nil {
+		return nil, nil, false, err
 	}
 	batch, err := LoadBatch(addr, varState.StateIndex())
 	if err != nil {
-		return nil, nil, fmt.Errorf("loading batch: %v", err)
+		return nil, nil, false, fmt.Errorf("loading batch: %v", err)
+	}
+	if batch == nil {
+		return nil, nil, false, fmt.Errorf("corrupted solid state: variable state exists, the corresponding batch does not")
 	}
 	if varState.StateIndex() != batch.StateIndex() {
-		return nil, nil, fmt.Errorf("inconsistent solid state: state indices must be equal")
+		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")
 	}
-	return varState, batch, nil
+	return varState, batch, true, nil
 }
 
 func dbkeyRequest(reqid *sctransaction.RequestId) []byte {

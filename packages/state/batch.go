@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -167,6 +168,9 @@ func dbkeyBatch(stateIndex uint32) []byte {
 
 func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
 	data, err := database.GetPartition(addr).Get(dbkeyBatch(stateIndex))
+	if err == kvstore.ErrKeyNotFound {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

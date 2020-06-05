@@ -42,10 +42,6 @@ func GetRegistryPartition() kvstore.KVStore {
 	return GetPartition(&niladdr)
 }
 
-func deletePartition(addr *address.Address) error {
-	return GetPartition(addr).Clear()
-}
-
 // MakeKey makes key within the partition. It consists to one byte for object type
 // and arbitrary byte fragments concatenated together
 func MakeKey(objType byte, keyBytes ...[]byte) []byte {
@@ -72,4 +68,9 @@ func createStore() {
 	}
 
 	store = db.NewStore()
+}
+
+func KeyExistInPartition(addr *address.Address, objType byte, keyBytes ...[]byte) (bool, error) {
+	exist, err := GetPartition(addr).Has(MakeKey(objType, keyBytes...))
+	return exist, err
 }
