@@ -34,8 +34,11 @@ func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*bala
 }
 
 func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
+	log.Debugw("dispatchAddressUpdate", "addr", addr.String())
+
 	cmt := committees.CommitteeByAddress(addr)
 	if cmt == nil {
+		log.Debugw("dispatchAddressUpdate: committee not found", "addr", addr.String())
 		// wrong addressee
 		return
 	}
@@ -57,6 +60,11 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 	for i, reqBlk := range tx.Requests() {
 		if reqBlk.Address() == addr {
+			reqid := sctransaction.NewRequestId(tx.ID(), uint16(i))
+			log.Debugw("request dispatched",
+				"addr", addr.String(),
+				"req", reqid.String(),
+			)
 			requestMsgs = append(requestMsgs, committee.RequestMsg{
 				Transaction: tx,
 				Index:       uint16(i),
