@@ -2,8 +2,8 @@ package testplugins
 
 import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
-	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 )
 
@@ -14,7 +14,7 @@ var descriptions = []string{
 }
 
 var (
-	scOrigParams  []apilib.NewOriginParams
+	scOrigParams  []origin.NewOriginParams
 	nodeLocations = []string{
 		"127.0.0.1:4000",
 		"127.0.0.1:4001",
@@ -24,10 +24,10 @@ var (
 )
 
 func init() {
-	scOrigParams = make([]apilib.NewOriginParams, testaddresses.NumAddresses())
+	scOrigParams = make([]origin.NewOriginParams, testaddresses.NumAddresses())
 	for i := range scOrigParams {
 		addr, _ := testaddresses.GetAddress(i)
-		scOrigParams[i] = apilib.NewOriginParams{
+		scOrigParams[i] = origin.NewOriginParams{
 			Address:      *addr,
 			OwnerAddress: utxodb.GetAddress(i + 1),
 		}
@@ -47,6 +47,6 @@ func GetScDescription(scIndex int) string {
 	return descriptions[scIndex]
 }
 
-func GetOriginParams(scIndex int) *apilib.NewOriginParams {
+func GetOriginParams(scIndex int) *origin.NewOriginParams {
 	return &scOrigParams[scIndex]
 }
