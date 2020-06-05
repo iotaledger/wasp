@@ -11,8 +11,8 @@ import (
 )
 
 func CreateOriginData(par *origin.NewOriginParams, dscr string, nodeLocations []string) (*sctransaction.Transaction, *registry.SCMetaData) {
-	allOuts := utxodb.GetAddressOutputs(par.OwnerAddress)            // non deterministic
-	outs := util.SelectMinimumOutputs(allOuts, balance.ColorIOTA, 1) // must be deterministic!
+	allOuts := utxodb.GetAddressOutputs(par.OwnerAddress)              // non deterministic
+	outs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, 1) // must be deterministic!
 	if len(outs) == 0 {
 		panic("inconsistency: not enough outputs for 1 iota!")
 	}

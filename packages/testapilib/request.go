@@ -59,7 +59,7 @@ func PostRequestTransaction(netLoc string, senderAddr *address.Address, reqsJson
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
 
-	selectedOutputs := util.SelectMinimumOutputs(allOuts, balance.ColorIOTA, totalAmount)
+	selectedOutputs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, totalAmount)
 	if len(selectedOutputs) == 0 {
 		return nil, errors.New("not enough funds")
 	}

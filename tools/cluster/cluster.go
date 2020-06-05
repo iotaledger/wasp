@@ -410,7 +410,7 @@ func (cluster *Cluster) selectInputFromAvailableOutputs(ownerAddress *address.Ad
 		return
 	}
 
-	outputs := util.SelectMinimumOutputs(allOutputs, balance.ColorIOTA, 1)
+	outputs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 1)
 	if len(outputs) == 0 {
 		err = fmt.Errorf("Not enough outputs for 1 iota!")
 		return
