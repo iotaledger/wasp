@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/testapilib"
 	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 	"os"
@@ -9,7 +10,7 @@ import (
 )
 
 const requestorIndex = 5
-const targetHost = "127.0.0.1:9090"
+const targetHost = "127.0.0.1:8080"
 
 func main() {
 	fmt.Println("--------------------------------------------------")
@@ -33,19 +34,18 @@ func main() {
 		fmt.Printf("address disabled\n")
 		os.Exit(0)
 	}
-	fmt.Printf("sending test request to builtin sc #%d, addr %s\n through host %s\n",
-		scidx, addr.String(), targetHost)
 
-	reqJson := testapilib.RequestTransactionJson{
-		RequestorIndex: 1,
-		Requests: []testapilib.RequestBlockJson{
-			{addr.String(), requestorIndex, nil},
-		},
-	}
-	resp := testapilib.SendTestRequest(targetHost, &reqJson)
-	if resp.Error != "" {
-		fmt.Printf("Error: %v\n", resp.Error)
+	senderAddr := utxodb.GetAddress(requestorIndex)
+	fmt.Printf("sending test request to sc addr #%d, addr %s\n through host %s from sender addr %s\n",
+		scidx, addr.String(), targetHost, senderAddr.String())
+
+	reqJson := &testapilib.RequestBlockJson{addr.String(), 0, 100, nil}
+
+	tx, err := testapilib.PostRequestTransaction(targetHost, &senderAddr, []*testapilib.RequestBlockJson{reqJson})
+
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("Success:\nTxid = %s\nnum requests = %d\n", resp.TxId, resp.NumReq)
+		fmt.Printf("Success:\nTxid = %s\n", tx.ID().String())
 	}
 }

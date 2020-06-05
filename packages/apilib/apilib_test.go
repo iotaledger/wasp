@@ -6,7 +6,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/magiconair/properties/assert"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -19,9 +20,9 @@ var nodeLocations = []string{"127.0.0.1:4000", "127.0.0.1:4001", "127.0.0.1:4002
 
 func TestReadWrite(t *testing.T) {
 	scAddr, err := address.FromBase58(scAddrStr)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
-	tx, _ := CreateOriginData(&NewOriginParams{
+	tx, _ := CreateOriginData(&origin.NewOriginParams{
 		Address:      scAddr,
 		OwnerAddress: utxodb.GetAddress(1),
 		ProgramHash:  *hashing.HashStrings(dscr),
@@ -30,10 +31,10 @@ func TestReadWrite(t *testing.T) {
 
 	data := tx.Bytes()
 	vtx, _, err := valuetransaction.FromBytes(data)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
 	txback, err := sctransaction.ParseValueTransaction(vtx)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 
-	assert.Equal(t, tx.ID(), txback.ID())
+	assert.EqualValues(t, tx.ID(), txback.ID())
 }

@@ -3,7 +3,7 @@ module github.com/iotaledger/wasp
 go 1.13
 
 require (
-	github.com/iotaledger/goshimmer v0.1.1-0.20200605062219-772af980e703
+	github.com/iotaledger/goshimmer v0.1.1-0.20200605111227-7425ed2a4ffd
 	github.com/iotaledger/hive.go v0.0.0-20200525142347-543f24c486b8
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/magiconair/properties v1.8.1
@@ -17,5 +17,4 @@ require (
 	go.dedis.ch/kyber/v3 v3.0.12
 	go.uber.org/atomic v1.6.0
 	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
-	golang.org/x/tools v0.0.0-20200330040139-fa3cc9eebcfe
 )

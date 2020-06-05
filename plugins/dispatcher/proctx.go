@@ -31,7 +31,6 @@ func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*bala
 	if cmt := committees.CommitteeByAddress(addr); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
-	triggerBalanceConsumers(addr, bals)
 }
 
 func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {

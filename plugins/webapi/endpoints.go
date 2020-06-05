@@ -2,7 +2,6 @@ package webapi
 
 import (
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
-	"github.com/iotaledger/wasp/plugins/webapi/clientapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"net/http"
 
@@ -25,7 +24,6 @@ func addEndpoints() {
 	Server.GET("/adm/getsclist", admapi.HandlerGetSCList)
 	Server.GET("/adm/shutdown", admapi.HandlerShutdown)
 	// clientapi
-	Server.POST("/client/testreq", clientapi.HandlerTestRequestTx)
 
 	log.Infof("added web api endpoints")
 }
