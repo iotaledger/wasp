@@ -5,7 +5,7 @@ import "github.com/iotaledger/hive.go/node"
 const testPluginsEnabled = true
 
 var enabledTests = map[string]bool{
-	"TestingBuiltinSC": true,
+	"TestingBuiltinSC": false,
 	"TestingRoundTrip": false,
 	"TestingNodePing":  false,
 }

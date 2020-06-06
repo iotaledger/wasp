@@ -3,17 +3,22 @@ package database
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 )
 
 func deleteTestingPartitions() {
+	if config.Node.GetBool(CfgDatabaseInMemory) {
+		return
+	}
+
 	for i := 0; i < testaddresses.NumAddresses(); i++ {
 		addr, _ := testaddresses.GetAddress(i)
 		//if err := GetPartition(addr).Clear(); err != nil {
 		if err := deletePartition(addr); err != nil {
-			log.Errorf("failed to deleted database partition for testing address %s: %v", addr.String(), err)
+			log.Debugf("failed to deleted database partition for testing address %s: %v", addr.String(), err)
 		} else {
-			log.Infof("successfully deleted database partition for testing address %s", addr.String())
+			log.Debugf("successfully deleted database partition for testing address %s", addr.String())
 		}
 	}
 }

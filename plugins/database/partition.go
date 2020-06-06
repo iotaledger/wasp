@@ -58,6 +58,7 @@ func createStore() {
 
 	var err error
 	if config.Node.GetBool(CfgDatabaseInMemory) {
+		log.Infof("IN MEMORY DATABASE")
 		db, err = database.NewMemDB()
 	} else {
 		dbDir := config.Node.GetString(CfgDatabaseDir)

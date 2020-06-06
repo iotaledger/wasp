@@ -1,5 +1,6 @@
 {
   "database": {
+    "inMemory": true,
     "directory": "waspdb"
   },
   "logger": {

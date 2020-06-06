@@ -108,7 +108,7 @@ func (peer *Peer) runOutbound() {
 		}
 		return nil
 	}); err != nil {
-		log.Error(err)
+		log.Warn(err)
 		return
 	}
 	peer.peerconn = newPeeredConnection(conn, peer)
