@@ -18,7 +18,7 @@ const (
 	dialTimeout  = 1 * time.Second
 	dialRetries  = 10
 	backoffDelay = 500 * time.Millisecond
-	retryAfter   = 3 * time.Second
+	retryAfter   = 8 * time.Second
 )
 
 // retry net.Dial once, on fail after 0.5s

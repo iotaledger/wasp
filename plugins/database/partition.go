@@ -13,6 +13,7 @@ import (
 // '
 const (
 	ObjectTypeDBSchemaVersion byte = iota
+	ObjectTypeBootupData
 	ObjectTypeSCMetaData
 	ObjectTypeDistributedKeyData
 	ObjectTypeVariableState

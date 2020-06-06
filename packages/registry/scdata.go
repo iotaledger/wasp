@@ -18,10 +18,6 @@ import (
 	"io"
 )
 
-// the data structure introduces smart contract to wasp
-// the color is origin transaction hash
-// TODO add state update variables
-
 type SCMetaData struct {
 	Address       address.Address
 	Color         balance.Color
