@@ -18,7 +18,7 @@ func TestMapDB(t *testing.T) {
 	err := r1.Set(key, value)
 	assert.NoError(t, err)
 
-	r2 := db.WithRealm([]byte(realm))
+	r2 := db.WithRealm(realm)
 
 	musthave, err := r2.Has(key)
 	assert.NoError(t, err)

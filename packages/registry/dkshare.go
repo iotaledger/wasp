@@ -48,7 +48,7 @@ func GetDKShare(addr *address.Address) (*tcrypto.DKShare, bool, error) {
 	if err != nil || !exist {
 		return nil, false, err
 	}
-	ret, err := LoadDKShare(addr, true)
+	ret, err := LoadDKShare(addr, false)
 	if err != nil {
 		return nil, false, err
 	}

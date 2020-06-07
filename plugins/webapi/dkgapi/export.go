@@ -30,14 +30,18 @@ type ImportDKShareResponse struct {
 }
 
 func HandlerExportDKShare(c echo.Context) error {
+	log.Debugw("HandlerExportDKShare")
 	var req ExportDKShareRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
 	}
+	log.Debugw("HandlerExportDKShare", "req", req)
+
 	addr, err := address.FromBase58(req.Address)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
 	}
+	log.Debugw("HandlerExportDKShare", "req", req, "addr")
 	dkshare, exist, err := registry.GetDKShare(&addr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
@@ -45,10 +49,12 @@ func HandlerExportDKShare(c echo.Context) error {
 	if !exist {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: "dkshare not found"})
 	}
+	log.Debugw("HandlerExportDKShare", "req", "before export")
 	blob, err := exportDKShare(dkshare)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
 	}
+	log.Debugw("HandlerExportDKShare", "req", "after export")
 	return c.JSON(http.StatusOK, &ExportDKShareResponse{DKShare: blob})
 }
 
@@ -62,10 +68,14 @@ func exportDKShare(dkshare *tcrypto.DKShare) (string, error) {
 }
 
 func HandlerImportDKShare(c echo.Context) error {
+	log.Debugw("HandlerImportDKShare")
+
 	var req ImportDKShareRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, &ImportDKShareResponse{Err: err.Error()})
 	}
+	log.Debugw("HandlerImportDKShare", "req", req)
+
 	err := importDKShare(req.Blob)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &ImportDKShareResponse{Err: err.Error()})
