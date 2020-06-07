@@ -3,18 +3,26 @@ package apilib
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
-	"github.com/iotaledger/wasp/packages/registry"
+	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func CreateOriginData(par *origin.NewOriginParams, dscr string, nodeLocations []string) (*sctransaction.Transaction, *registry.SCMetaData) {
-	allOuts := utxodb.GetAddressOutputs(par.OwnerAddress)              // non deterministic
+// CreateOriginData creates origin transaction and origin batch, It asks for inputs from goshimmer node
+// origin transaction approves origin state. Origin batch is linked to the origin transaction
+func CreateOriginData(nodeurl string, par origin.NewOriginParams) (*sctransaction.Transaction, state.Batch, error) {
+	ownerAddress := par.OwnerSignatureScheme.Address()
+	// get outputs from goshimmer
+	allOuts, err := nodeapi.GetAccountOutputs(nodeurl, &ownerAddress)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	outs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, 1) // must be deterministic!
 	if len(outs) == 0 {
-		panic("inconsistency: not enough outputs for 1 iota!")
+		panic("inconsistency: not enough outputs for 1 iota?!")
 	}
 	// select first and the only
 	var input valuetransaction.OutputID
@@ -25,27 +33,26 @@ func CreateOriginData(par *origin.NewOriginParams, dscr string, nodeLocations []
 		inputBalances = v
 		break
 	}
+	originBatch := origin.NewOriginBatch(par)
+
+	// calculate state hash
+	originState := state.NewVariableState(nil)
+	if err := originState.ApplyBatch(originBatch); err != nil {
+		return nil, nil, err
+	}
 
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		NewOriginParams: *par,
-		Input:           input,
-		InputBalances:   inputBalances,
-		InputColor:      balance.ColorIOTA,
-		OwnerSigScheme:  utxodb.GetSigScheme(par.OwnerAddress),
+		Address:              par.Address,
+		OwnerSignatureScheme: par.OwnerSignatureScheme,
+		Input:                input,
+		InputBalances:        inputBalances,
+		InputColor:           balance.ColorIOTA,
+		StateHash:            originState.Hash(),
 	})
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	if nodeLocations == nil {
-		return originTx, nil
-	}
-	scdata := &registry.SCMetaData{
-		Address:       par.Address,
-		Color:         balance.Color(originTx.ID()),
-		OwnerAddress:  par.OwnerAddress,
-		ProgramHash:   par.ProgramHash,
-		Description:   dscr,
-		NodeLocations: nodeLocations,
-	}
-	return originTx, scdata
+	originBatch.WithStateTransaction(originTx.ID())
+
+	return originTx, originBatch, nil
 }

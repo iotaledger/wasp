@@ -1,8 +1,3 @@
-// waspt is the program for initial setup of the testing environment for the wasp cluster
-// Commands:
-//    `waspt init` creates directory structure with respective config files
-//    `waspt gendksets` starts wasps and generates keys.json file
-//    `waspt start` start the cluster and and stops when interrupted by "ctrl-C"
 package main
 
 import (
@@ -62,12 +57,12 @@ func main() {
 		check(err)
 		wasps.Stop()
 
-		//case "origintx":
-		//	// example
-		//	err = wasps.Start()
-		//	check(err)
-		//	err = wasps.CreateOriginTx()
-		//	check(err)
-		//	wasps.Stop()
+	case "origintx":
+		// example
+		err = wasps.Start()
+		check(err)
+		err = wasps.CreateOriginTx()
+		check(err)
+		wasps.Stop()
 	}
 }

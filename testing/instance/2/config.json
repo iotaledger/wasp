@@ -31,7 +31,8 @@
     "bindAddress": "127.0.0.1:9092"
   },
   "peering":{
-    "port": 4002
+    "port": 4002,
+    "netid": "127.0.0.1:4002"
   },
   "nodeconn": {
     "address": "127.0.0.1:5000"

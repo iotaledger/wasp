@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -14,8 +15,10 @@ import (
 // BootupData is a minimum data needed to load a committee for the smart contract
 // it is up to the node (not smart contract) to check authorisations to create/update this record
 type BootupData struct {
-	Address       address.Address
-	NodeLocations []string // "host_addr:port"
+	Address        address.Address
+	Color          balance.Color // origin tx hash
+	CommitteeNodes []string      // "host_addr:port"
+	AccessNodes    []string      // "host_addr:port"
 }
 
 func dbkeyBootupData(addr *address.Address) []byte {
@@ -74,7 +77,13 @@ func (bd *BootupData) Write(w io.Writer) error {
 	if _, err := w.Write(bd.Address[:]); err != nil {
 		return err
 	}
-	if err := util.WriteStrings16(w, bd.NodeLocations); err != nil {
+	if _, err := w.Write(bd.Color[:]); err != nil {
+		return err
+	}
+	if err := util.WriteStrings16(w, bd.CommitteeNodes); err != nil {
+		return err
+	}
+	if err := util.WriteStrings16(w, bd.AccessNodes); err != nil {
 		return err
 	}
 	return nil
@@ -85,8 +94,13 @@ func (bd *BootupData) Read(r io.Reader) error {
 	if err = util.ReadAddress(r, &bd.Address); err != nil {
 		return err
 	}
-
-	if bd.NodeLocations, err = util.ReadStrings16(r); err != nil {
+	if err = util.ReadColor(r, &bd.Color); err != nil {
+		return err
+	}
+	if bd.CommitteeNodes, err = util.ReadStrings16(r); err != nil {
+		return err
+	}
+	if bd.AccessNodes, err = util.ReadStrings16(r); err != nil {
 		return err
 	}
 	return nil

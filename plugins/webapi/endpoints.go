@@ -23,7 +23,7 @@ func addEndpoints() {
 	Server.POST("/adm/getscdata", admapi.HandlerGetSCData)
 	Server.GET("/adm/getsclist", admapi.HandlerGetSCList)
 	Server.GET("/adm/shutdown", admapi.HandlerShutdown)
-	// clientapi
+	Server.POST("/api/initsc", admapi.HandlerInitSC)
 
 	log.Infof("added web api endpoints")
 }

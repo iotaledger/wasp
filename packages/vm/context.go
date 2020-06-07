@@ -42,8 +42,6 @@ type VMContext struct {
 	// invariant through the batch
 	// address of the smart contract
 	Address address.Address
-	// color of the smart contract
-	Color balance.Color
 	// tx builder to build the final transaction
 	TxBuilder *TransactionBuilder
 	// timestamp of the batch

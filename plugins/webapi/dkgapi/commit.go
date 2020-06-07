@@ -75,6 +75,7 @@ func CommitDKSReq(req *CommitDKSRequest) *CommitDKSResponse {
 	if err != nil {
 		return &CommitDKSResponse{Err: err.Error()}
 	}
+
 	// delete from the DKG cache
 	_ = putToDkgCache(req.TmpId, nil)
 
@@ -84,6 +85,7 @@ func CommitDKSReq(req *CommitDKSRequest) *CommitDKSResponse {
 		"T", ks.T,
 		"Index", ks.Index,
 	)
+
 	return &CommitDKSResponse{
 		Address: ks.Address.String(),
 	}

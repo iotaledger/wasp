@@ -124,3 +124,7 @@ type StateTransitionMsg struct {
 type PendingBatchMsg struct {
 	Batch state.Batch
 }
+
+type ProcessorIsReady struct {
+	ProgramHash string // base58
+}

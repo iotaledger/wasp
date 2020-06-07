@@ -3,6 +3,7 @@ package dkgapi
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/registry"
@@ -33,9 +34,16 @@ func HandlerExportDKShare(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
 	}
-	dkshare, err := registry.GetCommittedDKShare(req.Address)
+	addr, err := address.FromBase58(req.Address)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
+	}
+	dkshare, exist, err := registry.GetDKShare(&addr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: err.Error()})
+	}
+	if !exist {
+		return c.JSON(http.StatusBadRequest, &ExportDKShareResponse{Err: "dkshare not found"})
 	}
 	blob, err := exportDKShare(dkshare)
 	if err != nil {

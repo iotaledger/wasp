@@ -15,7 +15,6 @@ func (v vmnil) Run(inp *vm.VMContext) {
 	// does nothing, i.e. resulting state update is empty
 	inp.Log.Debugw("run vmnil",
 		"addr", inp.Address.String(),
-		"color", inp.Color.String(),
 		"ts", inp.Timestamp,
 		"state index", inp.VariableState.StateIndex(),
 		"req", inp.Request.RequestId().String(),

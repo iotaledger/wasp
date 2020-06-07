@@ -49,10 +49,10 @@ func run(_ *node.Plugin) {
 	}
 }
 
-// RegisterProcessor creates and registers processor for program hash
+// LoadProcessorAsync creates and registers processor for program hash
 // asynchronously
 // possibly, locates Wasm program code in IPFS and caches here
-func RegisterProcessor(programHash string, onFinish func(err error)) {
+func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 	go func() {
 		processorsMutex.Lock()
 		defer processorsMutex.Unlock()
@@ -72,6 +72,11 @@ func RegisterProcessor(programHash string, onFinish func(err error)) {
 			onFinish(fmt.Errorf("can't create processor for progam hash %s", programHash))
 		}
 	}()
+}
+
+func CheckProcessor(programHash string) bool {
+	_, err := getProcessor(programHash)
+	return err == nil
 }
 
 func getProcessor(programHash string) (vm.Processor, error) {
@@ -117,7 +122,6 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
 	ctx.Log.Debugw("runVM IN",
 		"addr", ctx.Address.String(),
-		"color", ctx.Color.String(),
 		"ts", ctx.Timestamp,
 		"balances hash", util.BalancesHash(ctx.Balances),
 		"state index", ctx.VariableState.StateIndex(),
@@ -128,7 +132,6 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
-		Color:         ctx.Color,
 		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,
 		VariableState: state.NewVariableState(ctx.VariableState), // clone

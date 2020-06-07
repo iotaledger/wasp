@@ -62,7 +62,7 @@ func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) *request {
 // TODO gracefull reaction in DB error
 func (op *operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
 	addr := op.committee.Address()
-	processed, err := state.IsRequestCompleted(&addr, reqid)
+	processed, err := state.IsRequestCompleted(addr, reqid)
 	if err != nil {
 		panic(err)
 	}
@@ -73,9 +73,8 @@ func (op *operator) isRequestProcessed(reqid *sctransaction.RequestId) bool {
 func (op *operator) deleteCompletedRequests() error {
 	toDelete := make([]*sctransaction.RequestId, 0)
 
-	addr := op.committee.Address()
 	for _, req := range op.requests {
-		if completed, err := state.IsRequestCompleted(&addr, &req.reqId); err != nil {
+		if completed, err := state.IsRequestCompleted(op.committee.Address(), &req.reqId); err != nil {
 			return err
 		} else {
 			if completed {

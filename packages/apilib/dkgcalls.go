@@ -103,6 +103,9 @@ func callExportDKShare(netLoc string, params dkgapi.ExportDKShareRequest) (strin
 	}
 	url := fmt.Sprintf("http://%s/adm/exportdkshare", netLoc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return "", err
+	}
 	result := &dkgapi.ExportDKShareResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if resp.StatusCode != http.StatusOK {

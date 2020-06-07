@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -41,18 +40,14 @@ type stateManager struct {
 	// falls behind the state of the smart contract, i.e. it is not synced
 	largestEvidencedStateIndex uint32
 
-	// pseudo-random permutation of peer indices. Serves a sequence in which peers are queried for state updates
-	// the permutation is calculated taking last solid variable state hash as a seed
-	permutationOfPeers []uint16
-
-	// next peer permutationOfPeers[permutationIndex] is a next peer will be asked for ths state update
-	permutationIndex uint16
-
 	// the timeout deadline for sync inquiries
 	syncMessageDeadline time.Time
 
 	// current batch being synced
 	syncedBatch *syncedBatch
+
+	// for the pseudo-random sequence of peers
+	permutation *util.Permutation16
 
 	// logger
 	log *logger.Logger
@@ -77,10 +72,10 @@ type pendingBatch struct {
 
 func New(committee committee.Committee, log *logger.Logger) committee.StateManager {
 	ret := &stateManager{
-		committee:          committee,
-		pendingBatches:     make(map[hashing.HashValue]*pendingBatch),
-		permutationOfPeers: util.GetPermutation(committee.Size(), nil),
-		log:                log.Named("s"),
+		committee:      committee,
+		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
+		permutation:    util.NewPermutation16(committee.NumPeers(), nil),
+		log:            log.Named("s"),
 	}
 	go ret.initLoadState()
 
@@ -93,8 +88,7 @@ func (sm *stateManager) initLoadState() {
 	var batch state.Batch
 	var stateExists bool
 
-	addr := sm.committee.Address()
-	sm.solidVariableState, batch, stateExists, err = state.LoadSolidState(&addr)
+	sm.solidVariableState, batch, stateExists, err = state.LoadSolidState(sm.committee.Address())
 	if err != nil {
 		sm.log.Error(err)
 		sm.committee.Dismiss()
@@ -111,35 +105,9 @@ func (sm *stateManager) initLoadState() {
 		)
 	} else {
 		// origin state
-		sm.solidVariableState = nil
-		par := sm.committee.MetaData()
-		batch = origin.NewOriginBatch(origin.NewOriginParams{
-			Address:      par.Address,
-			OwnerAddress: par.OwnerAddress,
-			ProgramHash:  par.ProgramHash,
-		})
-		// committing a batch means linking it to the approving transaction
-		// it doesn't change essence of the batch
-		// here 'color' is the ID of the origin transaction
-		batch.WithStateTransaction((valuetransaction.ID)(par.Color))
+		sm.log.Info("solid state does not exist: the origin")
+	}
 
-		sm.log.Infow("initial state wasn't found. Origin state update batch has been created",
-			"state txid", batch.StateTransactionId().String())
-	}
-	// loaded solid variable state and the last batch of state updates
-	// it needs to be validated by the state transaction, so it is added to the
-	// pending batches
-	if !sm.addPendingBatch(batch) {
-		sm.log.Errorf("initial batch inconsistent")
-		sm.committee.Dismiss()
-		return
-	} else {
-		if sm.solidVariableState == nil {
-			if !(len(sm.pendingBatches) == 1) {
-				panic("assertion: len(sm.pendingBatches) == 1")
-			}
-		}
-	}
 	// open msg queue for the committee
 	sm.committee.SetReadyStateManager()
 }

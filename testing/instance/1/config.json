@@ -1,5 +1,6 @@
 {
   "database": {
+    "inMemory": true,
     "directory": "waspdb"
   },
   "logger": {
@@ -30,7 +31,8 @@
     "bindAddress": "127.0.0.1:9091"
   },
   "peering":{
-    "port": 4001
+    "port": 4001,
+    "netid": "127.0.0.1:4001"
   },
   "nodeconn": {
     "address": "127.0.0.1:5000"

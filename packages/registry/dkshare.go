@@ -42,6 +42,19 @@ func SaveDKShareToRegistry(ks *tcrypto.DKShare) error {
 	return dbase.Set(dbkey(ks.Address), buf.Bytes())
 }
 
+func GetDKShare(addr *address.Address) (*tcrypto.DKShare, bool, error) {
+	exist, err := database.GetRegistryPartition().Has(dbkey(addr))
+
+	if err != nil || !exist {
+		return nil, false, err
+	}
+	ret, err := LoadDKShare(addr, true)
+	if err != nil {
+		return nil, false, err
+	}
+	return ret, true, nil
+}
+
 func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, error) {
 	data, err := database.GetRegistryPartition().Get(dbkey(addr))
 	if err != nil {
@@ -52,8 +65,4 @@ func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, err
 		return nil, err
 	}
 	return ret, nil
-}
-
-func ExistDKShareInRegistry(addr *address.Address) (bool, error) {
-	return database.GetRegistryPartition().Has(dbkey(addr))
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func HandlerShutdown(c echo.Context) error {
-	log.Info("Received a shutdown request.")
+	log.Info("Received a shutdown request from WebAPI.")
 	gracefulshutdown.Shutdown()
 	return c.String(http.StatusOK, "Shutting down...")
 }

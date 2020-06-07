@@ -29,8 +29,12 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 		}
 
 	case committee.PendingBatchMsg:
-
 		c.stateMgr.EventPendingBatchMsg(msgt)
+
+	case committee.ProcessorIsReady:
+		if c.operator != nil {
+			c.operator.EventProcessorReady(msgt)
+		}
 
 	case committee.StateTransactionMsg:
 		// receive state transaction message

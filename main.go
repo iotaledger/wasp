@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/runvm"
-	"github.com/iotaledger/wasp/plugins/testplugins/builtinsc"
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/testplugins/roundtrip"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -35,7 +34,7 @@ var PLUGINS = node.Plugins(
 )
 
 var TestPLUGINS = node.Plugins(
-	builtinsc.Plugin,
+	//builtinsc.Plugin,
 	roundtrip.Plugin,
 	nodeping.Plugin,
 )

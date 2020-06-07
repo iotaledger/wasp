@@ -174,6 +174,10 @@ func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
 	if err != nil {
 		return nil, err
 	}
+	return BatchFromBytes(data)
+}
+
+func BatchFromBytes(data []byte) (Batch, error) {
 	ret := new(batch)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err

@@ -39,7 +39,7 @@ func (c *committeeObj) InitTestRound() {
 	msg := &committee.TestTraceMsg{
 		InitTime:      time.Now().UnixNano(),
 		InitPeerIndex: c.ownIndex,
-		Sequence:      util.GetPermutation(c.Size(), hashing.RandomHash(nil).Bytes()),
+		Sequence:      util.NewPermutation16(c.NumPeers(), hashing.RandomHash(nil).Bytes()).GetArray(),
 	}
 	// found own seqIndex in permutation
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)

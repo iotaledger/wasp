@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
 )
@@ -48,7 +47,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	}
 
 	if sm.solidStateValid || sm.solidVariableState == nil {
-		if err := pending.nextVariableState.CommitToDb(sm.committee.Address(), pending.batch); err != nil {
+		if err := pending.nextVariableState.CommitToDb(*sm.committee.Address(), pending.batch); err != nil {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
 			return false
 		}
@@ -73,8 +72,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// update state manager variables to the new state
 	sm.nextStateTransaction = nil
 	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clean pending batches
-	sm.permutationOfPeers = util.GetPermutation(sm.committee.Size(), varStateHash.Bytes())
-	sm.permutationIndex = 0
+	sm.permutation.Shuffle(varStateHash.Bytes())
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
 
 	// if synchronized, notify consensus operator about state transition
@@ -93,9 +91,6 @@ func (sm *stateManager) checkStateApproval() bool {
 const periodBetweenSyncMessages = 1 * time.Second
 
 func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
-	if sm.solidVariableState == nil {
-		return
-	}
 	if sm.isSynchronized() {
 		// state is synced, no need for more info
 		return
@@ -106,19 +101,20 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		return
 	}
 	// it is time to ask for the next state update to next peer in the permutation
-	sm.permutationIndex = (sm.permutationIndex + 1) % sm.committee.Size()
+	stateIndex := uint32(0)
+	if sm.solidVariableState != nil {
+		stateIndex = sm.solidVariableState.StateIndex() + 1
+	}
 	data := hashing.MustBytes(&committee.GetBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			StateIndex: sm.solidVariableState.StateIndex() + 1,
+			StateIndex: stateIndex,
 		},
 	})
 	// send messages until first without error
 	for i := uint16(0); i < sm.committee.Size(); i++ {
-		targetPeerIndex := sm.permutationOfPeers[sm.permutationIndex]
-		if err := sm.committee.SendMsg(targetPeerIndex, committee.MsgGetBatch, data); err == nil {
+		if err := sm.committee.SendMsg(sm.permutation.Next(), committee.MsgGetBatch, data); err == nil {
 			break
 		}
-		sm.permutationIndex = (sm.permutationIndex + 1) % sm.committee.Size()
 		sm.syncMessageDeadline = time.Now().Add(periodBetweenSyncMessages)
 	}
 }
@@ -151,8 +147,6 @@ func (sm *stateManager) isSynchronized() bool {
 	}
 	return sm.largestEvidencedStateIndex-sm.solidVariableState.StateIndex() <= 1
 }
-
-const expectedConfirmationTime = 5 * time.Second
 
 var niltxid valuetransaction.ID
 

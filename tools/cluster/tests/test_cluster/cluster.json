@@ -9,7 +9,7 @@
   "smartContracts": [
     {
       "description": "Smart Contract test",
-      "ownerIndexUtxodb": 5,
+      "owner_index_utxodb": 5,
       "nodes": [0, 1, 2, 3],
       "quorum": 3
     }

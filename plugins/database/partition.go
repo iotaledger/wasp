@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/plugins/config"
+	"sync"
 )
 
 // database is structured with 34 byte long prefixes 'address' || 'object type byte
@@ -14,11 +15,16 @@ import (
 const (
 	ObjectTypeDBSchemaVersion byte = iota
 	ObjectTypeBootupData
-	ObjectTypeSCMetaData
 	ObjectTypeDistributedKeyData
 	ObjectTypeVariableState
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
+)
+
+var (
+	// to be able to work with MapsDB
+	partitions      = make(map[address.Address]kvstore.KVStore)
+	partitionsMutex sync.RWMutex
 )
 
 // storeInstance returns the KVStore instance.
@@ -34,8 +40,21 @@ func storeRealm(realm kvstore.Realm) kvstore.KVStore {
 
 // Partition returns store prefixed with the smart contract address
 // Wasp ledger is partitioned by smart contract addresses
+// cached to be able to work with MapsDB TODO
 func GetPartition(addr *address.Address) kvstore.KVStore {
-	return storeRealm(addr[:])
+	partitionsMutex.RLock()
+	ret, ok := partitions[*addr]
+	if ok {
+		defer partitionsMutex.RUnlock()
+		return ret
+	}
+	// switching to write lock
+	partitionsMutex.RUnlock()
+	partitionsMutex.Lock()
+	defer partitionsMutex.Unlock()
+
+	partitions[*addr] = storeRealm(addr[:])
+	return partitions[*addr]
 }
 
 func GetRegistryPartition() kvstore.KVStore {

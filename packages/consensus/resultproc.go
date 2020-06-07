@@ -23,12 +23,23 @@ type runCalculationsParams struct {
 
 // runs the VM for the request and posts result to committee's queue
 func (op *operator) runCalculationsAsync(par runCalculationsParams) {
+	if !op.processorReady {
+		return
+	}
+	progHashStr, ok := op.getProgramHashStr()
+	if !ok {
+		return
+	}
+	progHash, err := hashing.HashValueFromString(progHashStr)
+	if err != nil {
+		return
+	}
 	reqRefs, _ := takeRefs(par.requests)
 	ctx := &vm.VMTask{
 		LeaderPeerIndex: par.leaderPeerIndex,
-		ProgramHash:     op.committee.MetaData().ProgramHash,
-		Address:         op.committee.Address(),
-		Color:           op.committee.Color(),
+		ProgramHash:     progHash,
+		Address:         *op.committee.Address(),
+		Color:           *op.committee.Color(),
 		Balances:        par.balances,
 		RewardAddress:   address.Address{},
 		Requests:        reqRefs,

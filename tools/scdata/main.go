@@ -128,7 +128,7 @@ func GetSc(fname string) {
 
 	res := make(map[string]*registry.SCMetaDataJsonable)
 	for _, h := range params.Hosts {
-		scData, exists, err := apilib.GetSCMetaData(h, &addr)
+		scData, exists, err := apilib.GetSCData(h, &addr)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			continue

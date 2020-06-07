@@ -10,13 +10,13 @@ import (
 )
 
 type Committee interface {
-	Address() address.Address
-	Color() balance.Color
+	Address() *address.Address
+	Color() *balance.Color
 	Size() uint16
 	OwnPeerIndex() uint16
-	MetaData() *registry.SCMetaData
+	NumPeers() uint16
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time)
+	SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, time.Time)
 	SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error)
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
@@ -40,6 +40,7 @@ type StateManager interface {
 }
 
 type Operator interface {
+	EventProcessorReady(msg ProcessorIsReady)
 	EventStateTransitionMsg(msg *StateTransitionMsg)
 	EventBalancesMsg(reqMsg BalancesMsg)
 	EventRequestMsg(reqMsg RequestMsg)
@@ -50,8 +51,8 @@ type Operator interface {
 	EventTimerMsg(msg TimerTick)
 }
 
-var ConstructorNew func(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error)
+var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger) Committee
 
-func New(scdata *registry.SCMetaData, log *logger.Logger) (Committee, error) {
-	return ConstructorNew(scdata, log)
+func New(bootupData *registry.BootupData, log *logger.Logger) Committee {
+	return ConstructorNew(bootupData, log)
 }

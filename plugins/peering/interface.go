@@ -1,22 +1,34 @@
 package peering
 
-import "sync"
+import (
+	"github.com/iotaledger/wasp/plugins/config"
+	"sync"
+)
+
+func MyNetworkId() string {
+	return config.Node.GetString(CfgMyNetId)
+}
 
 // adds new connection to the peer pool
 // if it already exists, returns existing
 // connection added to the pool is picked by loops which will try to establish connection
-func UsePeer(remoteLocation, myLocation string) *Peer {
+func UsePeer(remoteLocation string) *Peer {
+	if !initialized.Load() {
+		return nil
+	}
+	if remoteLocation == MyNetworkId() {
+		return nil
+	}
 	peersMutex.Lock()
 	defer peersMutex.Unlock()
 
-	if qconn, ok := peers[peeringId(remoteLocation, myLocation)]; ok {
+	if qconn, ok := peers[peeringId(remoteLocation)]; ok {
 		qconn.numUsers++
 		return qconn
 	}
 	ret := &Peer{
 		RWMutex:        &sync.RWMutex{},
 		remoteLocation: remoteLocation,
-		myLocation:     myLocation,
 		startOnce:      &sync.Once{},
 		numUsers:       1,
 	}
@@ -27,6 +39,9 @@ func UsePeer(remoteLocation, myLocation string) *Peer {
 
 // decreases counter
 func StopUsingPeer(peerId string) {
+	if !initialized.Load() {
+		return
+	}
 	peersMutex.Lock()
 	defer peersMutex.Unlock()
 

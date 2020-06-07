@@ -1,6 +1,6 @@
 package nodeconn
 
-import "flag"
+import flag "github.com/spf13/pflag"
 
 const (
 	CfgNodeAddress = "nodeconn.address"

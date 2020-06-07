@@ -8,9 +8,11 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
+	"github.com/iotaledger/wasp/packages/util"
 	"time"
 )
 
@@ -22,16 +24,15 @@ type operator struct {
 	balances            map[valuetransaction.ID][]*balance.Balance
 	getBalancesDeadline time.Time
 
-	variableState state.VariableState
+	variableState  state.VariableState
+	processorReady bool
 
 	// notifications with future state indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
 	requests map[sctransaction.RequestId]*request
 
-	leaderPeerIndexList       []uint16
-	currLeaderSeqIndex        uint16
-	myLeaderSeqIndex          uint16
+	peerPermutation           *util.Permutation16
 	leaderRotationDeadlineSet bool
 	leaderRotationDeadline    time.Time
 	// states of requests being processed: as leader and as subordinate
@@ -88,10 +89,11 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 	defer committee.SetReadyConsensus()
 
 	return &operator{
-		committee: committee,
-		dkshare:   dkshare,
-		requests:  make(map[sctransaction.RequestId]*request),
-		log:       log.Named("c"),
+		committee:       committee,
+		dkshare:         dkshare,
+		requests:        make(map[sctransaction.RequestId]*request),
+		peerPermutation: util.NewPermutation16(committee.Size(), nil),
+		log:             log.Named("c"),
 	}
 }
 
@@ -112,6 +114,21 @@ func (op *operator) stateIndex() uint32 {
 		return 0
 	}
 	return op.variableState.StateIndex()
+}
+
+func (op *operator) getProgramHashStr() (string, bool) {
+	if op.variableState == nil {
+		return "", false
+	}
+	p, ok := op.variableState.Variables().Get(origin.VarNameProgramHash)
+	if !ok {
+		return "", false
+	}
+	progHashStr, ok := p.(string)
+	if !ok {
+		return "", false
+	}
+	return progHashStr, true
 }
 
 func (op *operator) MustValidStateIndex(stateIndex uint32) {

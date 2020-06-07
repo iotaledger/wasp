@@ -1,9 +1,7 @@
 package committees
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -23,7 +21,6 @@ var (
 	log    *logger.Logger
 
 	committeesByAddress = make(map[address.Address]committee.Committee)
-	committeesByColor   = make(map[balance.Color]committee.Committee)
 	committeesMutex     = &sync.RWMutex{}
 
 	initialLoadWG sync.WaitGroup
@@ -39,23 +36,20 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		sclist, err := registry.GetSCDataList()
+		lst, err := registry.GetBootupRecords()
 		if err != nil {
-			log.Error("failed to load SC meta data from registry: %v", err)
+			log.Error("failed to load bootup records from registry: %v", err)
 			return
 		}
-		log.Debugf("loaded %d SC data record(s) from registry", len(sclist))
+		log.Debugf("loaded %d bootup record(s) from registry", len(lst))
 
-		addrs := make([]address.Address, 0, len(sclist))
-		for _, scdata := range sclist {
+		addrs := make([]address.Address, 0, len(lst))
+		for _, scdata := range lst {
 			if testaddresses.IsAddressDisabled(scdata.Address) {
 				log.Debugf("skipping disabled address %s", scdata.Address.String())
 				continue
 			}
-			if err := RegisterCommittee(scdata, false); err != nil {
-				log.Warn(err)
-			} else {
-				log.Infof("SC registered: addr %s color %s", scdata.Address.String(), scdata.Color.String())
+			if cmt := RegisterCommittee(scdata, false); cmt != nil {
 				addrs = append(addrs, scdata.Address)
 			}
 		}
@@ -85,39 +79,24 @@ func WaitInitialLoad() {
 	initialLoadWG.Wait()
 }
 
-func RegisterCommittee(scdata *registry.SCMetaData, subscribe bool) error {
+func RegisterCommittee(bootupData *registry.BootupData, subscribe bool) committee.Committee {
 	committeesMutex.Lock()
 	defer committeesMutex.Unlock()
 
-	_, ok := committeesByAddress[scdata.Address]
+	_, ok := committeesByAddress[bootupData.Address]
 	if ok {
-		return fmt.Errorf("committee already registered: %s", scdata.Address)
-	}
-	if c, err := committee.New(scdata, log); err == nil {
-		committeesByAddress[scdata.Address] = c
-		committeesByColor[scdata.Color] = c
-		if subscribe {
-			nodeconn.Subscribe([]address.Address{scdata.Address})
-		}
-	} else {
-		return err
-	}
-
-	return nil
-}
-
-func CommitteeByColor(color balance.Color) committee.Committee {
-	committeesMutex.RLock()
-	defer committeesMutex.RUnlock()
-
-	ret, ok := committeesByColor[color]
-	if ok && ret.IsDismissed() {
-		delete(committeesByAddress, ret.Address())
-		delete(committeesByColor, color)
-		nodeconn.Unsubscribe(ret.Address())
+		log.Errorf("committee already registered: %s", bootupData.Address)
 		return nil
 	}
-	return ret
+	c := committee.New(bootupData, log)
+	if c != nil {
+		committeesByAddress[bootupData.Address] = c
+		if subscribe {
+			nodeconn.Subscribe([]address.Address{bootupData.Address})
+		}
+		log.Infof("registered committee for addr %s", bootupData.Address.String())
+	}
+	return c
 }
 
 func CommitteeByAddress(addr address.Address) committee.Committee {
@@ -127,7 +106,6 @@ func CommitteeByAddress(addr address.Address) committee.Committee {
 	ret, ok := committeesByAddress[addr]
 	if ok && ret.IsDismissed() {
 		delete(committeesByAddress, addr)
-		delete(committeesByColor, ret.Color())
 		nodeconn.Unsubscribe(addr)
 		return nil
 	}

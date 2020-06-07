@@ -7,6 +7,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/committees"
 )
 
@@ -16,8 +17,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 		return
 	}
 	log.Debugw("dispatchState", "txid", tx.ID().String())
-	addr := cmt.Address()
-	_, err := tx.ValidateBlocks(&addr)
+	_, err := tx.ValidateBlocks(cmt.Address())
 	if err != nil {
 		log.Errorf("invalid transaction %s ignored: %v", tx.ID().String(), err)
 		return
@@ -54,7 +54,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	var stateTxMsg committee.StateTransactionMsg
 	requestMsgs := make([]committee.RequestMsg, 0, len(tx.Requests()))
 
-	if cmtState := getCommitteeByState(tx); cmtState != nil && cmtState.Address() == addr {
+	if cmtState := getCommitteeByState(tx); cmtState != nil && *cmtState.Address() == addr {
 		stateTxMsg = committee.StateTransactionMsg{tx}
 	}
 
@@ -94,5 +94,13 @@ func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
 		// may be origin
 		color = (balance.Color)(tx.ID())
 	}
-	return committees.CommitteeByColor(color)
+	var addr address.Address
+	tx.Outputs().ForEach(func(a address.Address, b []*balance.Balance) bool {
+		if util.BalanceOfColor(b, color) == 1 {
+			addr = a
+			return false
+		}
+		return true
+	})
+	return committees.CommitteeByAddress(addr)
 }

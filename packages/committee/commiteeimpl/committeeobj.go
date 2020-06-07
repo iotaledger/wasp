@@ -1,8 +1,8 @@
 package commiteeimpl
 
 import (
-	"errors"
-	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/consensus"
@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/statemgr"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"github.com/iotaledger/wasp/plugins/runvm"
 	"go.uber.org/atomic"
 	"sync"
 	"time"
@@ -30,55 +29,75 @@ type committeeObj struct {
 	dismissed           atomic.Bool
 	dismissOnce         sync.Once
 	//
+	address  address.Address
+	color    balance.Color
 	peers    []*peering.Peer
+	size     uint16
 	ownIndex uint16
-	scdata   *registry.SCMetaData
 	chMsg    chan interface{}
 	stateMgr committee.StateManager
 	operator committee.Operator
 	log      *logger.Logger
 }
 
-func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee.Committee, error) {
-	dkshare, keyExists, err := registry.GetDKShare(&scdata.Address)
+func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) committee.Committee {
+	addr := bootupData.Address
+	if util.ContainsDuplicates(bootupData.CommitteeNodes) ||
+		util.ContainsDuplicates(bootupData.AccessNodes) ||
+		util.IntersectsLists(bootupData.CommitteeNodes, bootupData.AccessNodes) ||
+		util.ContainsInList(peering.MyNetworkId(), bootupData.AccessNodes) {
+
+		log.Errorf("can't create committee object for %s: bootup data contains duplicate node addresses", addr.String())
+		return nil
+	}
+	dkshare, keyExists, err := registry.GetDKShare(&bootupData.Address)
 	if err != nil {
-		return nil, err
+		log.Error(err)
+		return nil
 	}
+
 	if !keyExists {
-		return nil, fmt.Errorf("unknown key addr = %s", scdata.Address.String())
-	}
-	err = fmt.Errorf("sc data inconsstent with key parameteres for sc addr %s", scdata.Address.String())
-	if scdata.Address != *dkshare.Address {
-		return nil, err
-	}
-	if err := checkNetworkLocations(scdata.NodeLocations, dkshare.N, dkshare.Index); err != nil {
-		return nil, err
+		// if key doesn't exists, the node still can provide access to the smart contract state as an "access node"
+		// for access nodes, committee nodes are ignored
+		if len(bootupData.AccessNodes) > 0 {
+			log.Info("can't find private key. Node will run as an access node for the address %s", addr.String())
+		} else {
+			log.Errorf("private key wasn't found and no access peers specified. Node can't run for the address %s", addr.String())
+			return nil
+		}
+	} else {
+		if !iAmInTheCommittee(bootupData.CommitteeNodes, dkshare.N, dkshare.Index) {
+			log.Errorf("bootup data inconsistency: the node is not in the committee for %s", addr.String())
+			return nil
+		}
 	}
 
 	ret := &committeeObj{
-		chMsg:    make(chan interface{}),
-		scdata:   scdata,
-		peers:    make([]*peering.Peer, len(scdata.NodeLocations)),
-		ownIndex: dkshare.Index,
-		log:      log.Named(util.Short(scdata.Address.String())),
+		chMsg:   make(chan interface{}),
+		address: bootupData.Address,
+		color:   bootupData.Color,
+		peers:   make([]*peering.Peer, 0),
+		log:     log.Named(util.Short(bootupData.Address.String())),
 	}
-	myLocation := scdata.NodeLocations[dkshare.Index]
-	for i, remoteLocation := range scdata.NodeLocations {
-		if i != int(dkshare.Index) {
-			ret.peers[i] = peering.UsePeer(remoteLocation, myLocation)
+	if keyExists {
+		ret.ownIndex = dkshare.Index
+		ret.size = dkshare.N
+
+		for _, remoteLocation := range bootupData.CommitteeNodes {
+			ret.peers = append(ret.peers, peering.UsePeer(remoteLocation))
+		}
+	}
+	for _, remoteLocation := range bootupData.AccessNodes {
+		p := peering.UsePeer(remoteLocation)
+		if p != nil {
+			ret.peers = append(ret.peers, p)
 		}
 	}
 
 	ret.stateMgr = statemgr.New(ret, ret.log)
-	ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
-	runvm.RegisterProcessor(scdata.ProgramHash.String(), func(err error) {
-		if err == nil {
-			ret.SetReadyVM()
-		} else {
-			ret.log.Error(err)
-			ret.Dismiss()
-		}
-	})
+	if keyExists {
+		ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
+	}
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -96,21 +115,14 @@ func newCommitteeObj(scdata *registry.SCMetaData, log *logger.Logger) (committee
 		}()
 	}
 
-	return ret, nil
+	return ret
 }
 
-// checkNetworkLocations checks if netLocations makes sense
-func checkNetworkLocations(netLocations []string, n, index uint16) error {
-	if len(netLocations) != int(n) {
-		return fmt.Errorf("wrong number of network locations")
+// iAmInTheCommittee checks if netLocations makes sense
+func iAmInTheCommittee(committeeNodes []string, n, index uint16) bool {
+	if len(committeeNodes) != int(n) {
+		return false
 	}
 	// check for duplicates
-	for i := range netLocations {
-		for j := i + 1; j < len(netLocations); j++ {
-			if netLocations[i] == netLocations[j] {
-				return errors.New("duplicate network locations in the list")
-			}
-		}
-	}
-	return peering.CheckMyNetworkID(netLocations[index])
+	return committeeNodes[index] == peering.MyNetworkId()
 }

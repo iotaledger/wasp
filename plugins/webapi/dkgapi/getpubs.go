@@ -1,6 +1,7 @@
 package dkgapi
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
@@ -38,9 +39,19 @@ type GetPubKeyInfoResponse struct {
 }
 
 func GetKeyPubInfoReq(req *GetPubKeyInfoRequest) *GetPubKeyInfoResponse {
-	ks, err := registry.GetCommittedDKShare(req.Address)
+	addr, err := address.FromBase58(req.Address)
 	if err != nil {
 		return &GetPubKeyInfoResponse{Err: err.Error()}
+	}
+	log.Debugw("GetDKShare", "addr", addr.String())
+	ks, exist, err := registry.GetDKShare(&addr)
+	log.Debugw("GetDKShare", "addr", addr.String(), "err", err, "exist", exist, "ks", ks)
+
+	if err != nil {
+		return &GetPubKeyInfoResponse{Err: err.Error()}
+	}
+	if !exist {
+		return &GetPubKeyInfoResponse{Err: "dkshare not found"}
 	}
 	pubkeys := make([]string, len(ks.PubKeys))
 	for i, pk := range ks.PubKeys {

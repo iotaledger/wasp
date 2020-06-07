@@ -47,6 +47,9 @@ func (op *operator) startProcessing() {
 		// request already selected and calculations initialized
 		return
 	}
+	if !op.processorReady {
+		return
+	}
 	reqs := op.selectRequestsToProcess()
 	reqIds := takeIds(reqs)
 	if len(reqs) == 0 {
@@ -60,7 +63,7 @@ func (op *operator) startProcessing() {
 	)
 	msgData := hashing.MustBytes(&committee.StartProcessingReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			// ts is set by SendMsgToPeers
+			// ts is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
 		RewardAddress: *registry.GetRewardAddress(op.committee.Address()),
@@ -68,7 +71,7 @@ func (op *operator) startProcessing() {
 		RequestIds:    reqIds,
 	})
 
-	numSucc, ts := op.committee.SendMsgToPeers(committee.MsgStartProcessingRequest, msgData)
+	numSucc, ts := op.committee.SendMsgToCommitteePeers(committee.MsgStartProcessingRequest, msgData)
 
 	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
@@ -142,8 +145,7 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
-	addr := op.committee.Address()
-	if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(&addr, op.leaderStatus.balances); err != nil {
+	if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(op.committee.Address(), op.leaderStatus.balances); err != nil {
 		op.log.Errorf("ValidateConsumptionOfInputs: final tx invalid: %v", err)
 		return false
 	}

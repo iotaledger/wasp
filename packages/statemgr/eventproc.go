@@ -10,7 +10,7 @@ import (
 // respond to sync request 'GetStateUpdate'
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 	addr := sm.committee.Address()
-	batch, err := state.LoadBatch(&addr, msg.StateIndex)
+	batch, err := state.LoadBatch(addr, msg.StateIndex)
 	if err != nil {
 		// can't load batch, can't respond
 		return
@@ -52,9 +52,8 @@ func (sm *stateManager) EventBatchHeaderMsg(msg *committee.BatchHeaderMsg) {
 	}
 }
 
-// respond to state update msg.
+// response to the state update msg.
 // It collects state updates while waiting for the anchoring state transaction
-// only are stored updates to the current solid variable state
 func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 	if sm.syncedBatch == nil {
 		return

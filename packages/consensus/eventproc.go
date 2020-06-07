@@ -3,17 +3,23 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/plugins/runvm"
 )
+
+func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
+	op.processorReady = false
+	progHashStr, ok := op.getProgramHashStr()
+	op.processorReady = ok && msg.ProgramHash == progHashStr
+}
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.setNewState(msg.StateTransaction, msg.VariableState)
 
 	vh := msg.VariableState.Hash()
-	leader, _ := op.currentLeaderPeerIndex()
-
-	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
-		msg.VariableState.StateIndex(), leader, msg.StateTransaction.ID().String(), vh.String(), op.iAmCurrentLeader())
+	op.log.Infof("NEW STATE FOR CONSENSUS INPUT #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
+		msg.VariableState.StateIndex(), op.peerPermutation.Current(),
+		msg.StateTransaction.ID().String(), vh.String(), op.iAmCurrentLeader())
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
@@ -22,6 +28,21 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
+
+	// check is processor is ready for the current varstate. If no, initiate load of the processor
+	op.processorReady = false
+	progHashStr, ok := op.getProgramHashStr()
+	if !ok {
+		op.log.Errorf("major inconsistency: undefined program hash at state #%s", op.stateIndex())
+		op.committee.Dismiss()
+		return
+	}
+	op.processorReady = runvm.CheckProcessor(progHashStr)
+	if !op.processorReady {
+		runvm.LoadProcessorAsync(progHashStr, func(err error) {
+			op.committee.ReceiveMessage(committee.ProcessorIsReady{ProgramHash: progHashStr})
+		})
+	}
 
 	op.takeAction()
 }
@@ -92,7 +113,7 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 		}
 	}
 	// start async calculation
-	go op.runCalculationsAsync(runCalculationsParams{
+	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
 		timestamp:       msg.Timestamp,
 		balances:        msg.Balances,

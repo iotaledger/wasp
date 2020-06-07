@@ -1,5 +1,6 @@
 {
   "database": {
+    "inMemory": true,
     "directory": "waspdb"
   },
   "logger": {
@@ -33,6 +34,7 @@
     "port": 4000
   },
   "nodeconn": {
-    "address": "127.0.0.1:5000"
+    "address": "127.0.0.1:5000",
+    "netid": "127.0.0.1:4000"
   }
 }

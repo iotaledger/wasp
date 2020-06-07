@@ -25,7 +25,6 @@ type Peer struct {
 	handshakeOk bool
 	// network locations as taken from the SC data
 	remoteLocation string
-	myLocation     string
 
 	startOnce *sync.Once
 	numUsers  int
@@ -39,27 +38,27 @@ type Peer struct {
 // retry net.Dial once, on fail after 0.5s
 var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetries(dialRetries))
 
-func isInbound(remoteLocation, myLocation string) bool {
-	if remoteLocation == myLocation {
+func isInbound(remoteLocation string) bool {
+	if remoteLocation == MyNetworkId() {
 		panic("remoteLocation == myLocation")
 	}
-	return remoteLocation < myLocation
+	return remoteLocation < MyNetworkId()
 }
 
 func (peer *Peer) isInbound() bool {
-	return isInbound(peer.remoteLocation, peer.myLocation)
+	return isInbound(peer.remoteLocation)
 }
 
-func peeringId(remoteLocation, myLocation string) string {
-	if isInbound(remoteLocation, myLocation) {
-		return remoteLocation + "<" + myLocation
+func peeringId(remoteLocation string) string {
+	if isInbound(remoteLocation) {
+		return remoteLocation + "<" + MyNetworkId()
 	} else {
-		return myLocation + "<" + remoteLocation
+		return MyNetworkId() + "<" + remoteLocation
 	}
 }
 
 func (peer *Peer) PeeringId() string {
-	return peeringId(peer.remoteLocation, peer.myLocation)
+	return peeringId(peer.remoteLocation)
 }
 
 func (peer *Peer) connStatus() (bool, bool) {
@@ -133,7 +132,7 @@ func (peer *Peer) sendHandshake() error {
 		MsgData: []byte(peer.PeeringId()),
 	})
 	_, err := peer.peerconn.Write(data)
-	log.Debugf("sendHandshake '%s' --> '%s', id = %s", peer.myLocation, peer.remoteLocation, peer.PeeringId())
+	log.Debugf("sendHandshake '%s' --> '%s', id = %s", MyNetworkId(), peer.remoteLocation, peer.PeeringId())
 	return err
 }
 

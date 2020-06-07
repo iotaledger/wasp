@@ -2,6 +2,7 @@ package origin
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/variables"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -12,43 +13,47 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
+const (
+	VarNameOwnerAddress = "$owneraddr$"
+	VarNameProgramHash  = "$proghash$"
+)
+
 type NewOriginParams struct {
-	Address      address.Address
-	OwnerAddress address.Address
-	ProgramHash  hashing.HashValue
+	Address              address.Address
+	OwnerSignatureScheme signaturescheme.SignatureScheme
+	ProgramHash          hashing.HashValue
+	Variables            variables.Variables
 }
 
 type NewOriginTransactionParams struct {
-	NewOriginParams
-	Input          valuetransaction.OutputID
-	InputBalances  []*balance.Balance
-	InputColor     balance.Color // default is ColorIOTA
-	OwnerSigScheme signaturescheme.SignatureScheme
+	Address              address.Address
+	OwnerSignatureScheme signaturescheme.SignatureScheme
+	Input                valuetransaction.OutputID
+	InputBalances        []*balance.Balance
+	InputColor           balance.Color // default is ColorIOTA
+	StateHash            hashing.HashValue
 }
 
-// content of the origin variable state. It does not linked to the origin transaction yet
+// content of the origin variable state. It is not linked to the origin transaction yet
 func NewOriginBatch(par NewOriginParams) state.Batch {
 	stateUpd := state.NewStateUpdate(nil)
+
 	vars := stateUpd.Variables()
-	vars.Set("$address$", par.Address.String())
-	vars.Set("$owneraddr$", par.OwnerAddress.String())
-	vars.Set("$proghash$", par.ProgramHash.String())
+	if par.Variables != nil {
+		par.Variables.ForEach(func(key interface{}, value interface{}) bool {
+			vars.Set(key, value)
+			return true
+		})
+	}
+
+	vars.Set(VarNameOwnerAddress, par.OwnerSignatureScheme.Address().String())
+	vars.Set(VarNameProgramHash, par.ProgramHash.String())
+
 	ret, err := state.NewBatch([]state.StateUpdate{stateUpd})
 	if err != nil {
 		panic(err)
 	}
 	return ret
-}
-
-// does not include color/origin tx hash
-func originVariableStateHash(par NewOriginParams) *hashing.HashValue {
-	batch := NewOriginBatch(par)
-	originState := state.NewVariableState(nil)
-	if err := originState.ApplyBatch(batch); err != nil {
-		panic(err)
-	}
-	ret := originState.Hash()
-	return &ret
 }
 
 func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transaction, error) {
@@ -81,7 +86,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	txb.AddStateBlock(sctransaction.NewStateBlockParams{
 		Color:      balance.ColorNew,
 		StateIndex: 0,
-		StateHash:  *originVariableStateHash(par.NewOriginParams),
+		StateHash:  par.StateHash,
 		Timestamp:  0, // <<<< to have deterministic origin tx hash
 	})
 
@@ -89,6 +94,6 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	if err != nil {
 		panic(err)
 	}
-	ret.Transaction.Sign(par.OwnerSigScheme)
+	ret.Transaction.Sign(par.OwnerSignatureScheme)
 	return ret, nil
 }

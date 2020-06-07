@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"time"
@@ -63,7 +62,7 @@ func (c *committeeObj) checkReady() bool {
 }
 
 func (c *committeeObj) Dismiss() {
-	c.log.Infof("Dismiss committee for %s", c.scdata.Address.String())
+	c.log.Infof("Dismiss committee for %s", c.address.String())
 
 	c.dismissOnce.Do(func() {
 		c.isOpenQueue.Store(false)
@@ -71,9 +70,9 @@ func (c *committeeObj) Dismiss() {
 
 		close(c.chMsg)
 
-		for i, pa := range c.scdata.NodeLocations {
-			if i != int(c.ownIndex) {
-				peering.StopUsingPeer(pa)
+		for _, pa := range c.peers {
+			if pa != nil {
+				peering.StopUsingPeer(pa.PeeringId())
 			}
 		}
 	})
@@ -83,16 +82,16 @@ func (c *committeeObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *committeeObj) Address() address.Address {
-	return c.scdata.Address
+func (c *committeeObj) Address() *address.Address {
+	return &c.address
 }
 
-func (c *committeeObj) Color() balance.Color {
-	return c.scdata.Color
+func (c *committeeObj) Color() *balance.Color {
+	return &c.color
 }
 
 func (c *committeeObj) Size() uint16 {
-	return uint16(len(c.scdata.NodeLocations))
+	return c.size
 }
 
 func (c *committeeObj) ReceiveMessage(msg interface{}) {
@@ -102,18 +101,20 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 		case <-time.After(500 * time.Millisecond):
 			c.log.Warnf("timeout on ReceiveMessage. message was lost")
 		}
-
 	}
 }
 
-// sends message to peer with index
+// sends message to peer by index. It can be both committee peer or access peer
 func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-	if targetPeerIndex == c.ownIndex || int(targetPeerIndex) >= len(c.peers) {
+	if int(targetPeerIndex) >= len(c.peers) {
 		return fmt.Errorf("SendMsg: wrong peer index")
 	}
 	peer := c.peers[targetPeerIndex]
+	if peer == nil {
+		return fmt.Errorf("SendMsg: wrong peer")
+	}
 	msg := &peering.PeerMessage{
-		Address:     c.scdata.Address,
+		Address:     c.address,
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
@@ -121,14 +122,14 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	return peer.SendMsg(msg)
 }
 
-func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte) (uint16, time.Time) {
+func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, time.Time) {
 	msg := &peering.PeerMessage{
-		Address:     c.scdata.Address,
+		Address:     c.address,
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	return peering.SendMsgToPeers(msg, c.peers...)
+	return peering.SendMsgToPeers(msg, c.committeePeers()...)
 }
 
 // sends message to the peer seq[seqIndex]. If receives error, seqIndex = (seqIndex+1) % size and repeats
@@ -154,11 +155,11 @@ func (c *committeeObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex 
 
 // returns true if peer is alive. Used by the operator to determine current leader
 func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
-	if peerIndex == c.ownIndex {
-		return true
-	}
 	if int(peerIndex) >= len(c.peers) {
 		return false
+	}
+	if peerIndex == c.ownIndex {
+		return true
 	}
 	ret, _ := c.peers[peerIndex].IsAlive()
 	return ret
@@ -168,6 +169,11 @@ func (c *committeeObj) OwnPeerIndex() uint16 {
 	return c.ownIndex
 }
 
-func (c *committeeObj) MetaData() *registry.SCMetaData {
-	return c.scdata
+func (c *committeeObj) NumPeers() uint16 {
+	return uint16(len(c.peers))
+}
+
+// first N peers are committee peers, the rest are access peers in any
+func (c *committeeObj) committeePeers() []*peering.Peer {
+	return c.peers[:c.size]
 }

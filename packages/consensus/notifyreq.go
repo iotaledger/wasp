@@ -9,7 +9,7 @@ import (
 
 // notifies current leader about requests in the order of arrival
 func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
-	currentLeaderPeerIndex, ok := op.currentLeaderPeerIndex()
+	currentLeaderPeerIndex, ok := op.currentLeader()
 	if !ok {
 		return
 	}
@@ -55,7 +55,7 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 			return
 		}
 		if !op.committee.IsAlivePeer(currentLeaderPeerIndex) {
-			op.moveToNextLeader()
+			currentLeaderPeerIndex = op.moveToNextLeader()
 			continue
 		}
 		err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData)

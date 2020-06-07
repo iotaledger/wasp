@@ -13,16 +13,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type SmartContractKeys struct {
@@ -31,10 +22,10 @@ type SmartContractKeys struct {
 }
 
 type SmartContractConfig struct {
-	Description  string `json:"description"`
-	OwnerAddress string `json:"ownerAddress"`
-	Nodes        []int  `json:"nodes"`
-	Quorum       int    `json:"quorum"`
+	Description      string `json:"description"`
+	OwnerIndexUtxodb int    `json:"owner_index_utxodb"`
+	Nodes            []int  `json:"nodes"`
+	Quorum           int    `json:"quorum"`
 }
 
 type ClusterConfig struct {
@@ -350,77 +341,78 @@ func (cluster *Cluster) GenerateDKSets() error {
 	return ioutil.WriteFile(keysFile, buf, 0644)
 }
 
-func (cluster *Cluster) CreateOriginTx() error {
-	keys, err := cluster.readKeysConfig()
-	if err != nil {
-		return err
-	}
-
-	for scIndex, sc := range cluster.Config.SmartContracts {
-		tx, err := cluster.createOriginTx(&sc, &keys[scIndex])
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Posting origin tx for SC %d: txid %s\n", scIndex, tx.ID().String())
-
-		err = nodeapi.PostTransaction(cluster.Config.Goshimmer, tx.Transaction)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (cluster *Cluster) createOriginTx(sc *SmartContractConfig, keys *SmartContractKeys) (*sctransaction.Transaction, error) {
-	ownerAddress, err := address.FromBase58(sc.OwnerAddress)
-	if err != nil {
-		return nil, err
-	}
-	scAddr, err := address.FromBase58(keys.Address)
-	if err != nil {
-		return nil, err
-	}
-
-	inputTxId, inputBalances, err := cluster.selectInputFromAvailableOutputs(&ownerAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		NewOriginParams: origin.NewOriginParams{
-			Address:      scAddr,
-			OwnerAddress: ownerAddress,
-			ProgramHash:  *hashing.HashStrings(sc.Description), // TODO
-		},
-		Input:          *inputTxId,
-		InputBalances:  inputBalances,
-		InputColor:     balance.ColorIOTA,
-		OwnerSigScheme: utxodb.GetSigScheme(ownerAddress),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return originTx, nil
-}
-
-func (cluster *Cluster) selectInputFromAvailableOutputs(ownerAddress *address.Address) (input *transaction.OutputID, inputBalances []*balance.Balance, err error) {
-	allOutputs, err := nodeapi.GetAccountOutputs(cluster.Config.Goshimmer, ownerAddress)
-	if err != nil {
-		return
-	}
-
-	outputs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 1)
-	if len(outputs) == 0 {
-		err = fmt.Errorf("Not enough outputs for 1 iota!")
-		return
-	}
-
-	// len(outputs) should be 1
-	for oid, v := range outputs {
-		input = &oid
-		inputBalances = v
-		break
-	}
-	return
-}
+//
+//func (cluster *Cluster) CreateOriginTx() error {
+//	keys, err := cluster.readKeysConfig()
+//	if err != nil {
+//		return err
+//	}
+//
+//	for scIndex, sc := range cluster.Config.SmartContracts {
+//		tx, err := cluster.createOriginTx(&sc, &keys[scIndex])
+//		if err != nil {
+//			return err
+//		}
+//
+//		fmt.Printf("Posting origin tx for SC %d: txid %s\n", scIndex, tx.ID().String())
+//
+//		err = nodeapi.PostTransaction(cluster.Config.Goshimmer, tx.Transaction)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
+//
+//func (cluster *Cluster) createOriginTx(sc *SmartContractConfig, keys *SmartContractKeys) (*sctransaction.Transaction, error) {
+//	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+//	ownerSigScheme := utxodb.GetSigScheme(ownerAddr)
+//	scAddr, err := address.FromBase58(keys.Address)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	inputTxId, inputBalances, err := cluster.selectInputFromAvailableOutputs(&ownerAddr)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	waspapi.CreateOriginData()
+//	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+//		NewOriginParams: origin.NewOriginParams{
+//			Address:      scAddr,
+//			OwnerAddress: ownerAddress,
+//			ProgramHash:  *hashing.HashStrings(sc.Description), // TODO
+//		},
+//		Address:        scAddr,
+//		OwnerSignatureScheme: ownerSigScheme,
+//		Input:          *inputTxId,
+//		InputBalances:  inputBalances,
+//		InputColor:     balance.ColorIOTA,
+//	})
+//	if err != nil {
+//		return nil, err
+//	}
+//	return originTx, nil
+//}
+//
+//func (cluster *Cluster) selectInputFromAvailableOutputs(ownerAddress *address.Address) (input *transaction.OutputID, inputBalances []*balance.Balance, err error) {
+//	allOutputs, err := nodeapi.GetAccountOutputs(cluster.Config.Goshimmer, ownerAddress)
+//	if err != nil {
+//		return
+//	}
+//
+//	outputs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 1)
+//	if len(outputs) == 0 {
+//		err = fmt.Errorf("Not enough outputs for 1 iota!")
+//		return
+//	}
+//
+//	// len(outputs) should be 1
+//	for oid, v := range outputs {
+//		input = &oid
+//		inputBalances = v
+//		break
+//	}
+//	return
+//}

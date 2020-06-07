@@ -28,8 +28,8 @@ func init() {
 	for i := range scOrigParams {
 		addr, _ := testaddresses.GetAddress(i)
 		scOrigParams[i] = origin.NewOriginParams{
-			Address:      *addr,
-			OwnerAddress: utxodb.GetAddress(i + 1),
+			Address:              *addr,
+			OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(i + 1)),
 		}
 		scOrigParams[i].ProgramHash = *GetProgramHash(i)
 	}

@@ -89,7 +89,7 @@ func runInitSC(scIndex int, shutdownSignal <-chan struct{}) {
 	}
 
 	writeNew := false
-	scDataBack, exists, err := apilib.GetSCMetaData(myHost, &scdata.Address)
+	scDataBack, exists, err := apilib.GetSCData(myHost, &scdata.Address)
 	if err != nil {
 		log.Errorf("TEST FAILED 3: retrieving SC meta data '%s': %v", scdata.Description, err)
 		return

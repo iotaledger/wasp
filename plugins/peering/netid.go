@@ -8,8 +8,8 @@ import (
 )
 
 // check if network location from the committee list represents current node
-func CheckMyNetworkID(netloc string) error {
-	shost, sport, err := net.SplitHostPort(netloc)
+func checkMyNetworkID() error {
+	shost, sport, err := net.SplitHostPort(MyNetworkId())
 	if err != nil {
 		return err
 	}
@@ -18,7 +18,7 @@ func CheckMyNetworkID(netloc string) error {
 		return err
 	}
 	if port != config.Node.GetInt(CfgPeeringPort) {
-		return fmt.Errorf("wrong own network port in %s", netloc)
+		return fmt.Errorf("wrong own network port in %s", MyNetworkId())
 	}
 	myIPs, err := myIPs()
 	if err != nil {
@@ -35,7 +35,7 @@ func CheckMyNetworkID(netloc string) error {
 			}
 		}
 	}
-	return fmt.Errorf("network location %s doesn't represent current node", netloc)
+	return fmt.Errorf("network location %s doesn't represent current node", MyNetworkId())
 }
 
 func myIPs() ([]string, error) {
