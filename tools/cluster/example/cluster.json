@@ -6,10 +6,9 @@
     {"bindAddress": "127.0.0.1:9093", "peeringPort": 4003}
   ],
   "goshimmer": "127.0.0.1:8080",
-  "smartContracts": [
+  "smart_contracts": [
     {
       "description": "Smart Contract test",
-      "ownerIndexUtxodb": 5,
       "nodes": [0, 1, 2, 3],
       "quorum": 3
     }

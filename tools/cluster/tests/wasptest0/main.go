@@ -57,12 +57,11 @@ func main() {
 		check(err)
 		wasps.Stop()
 
-	case "origintx":
+	case "run":
 		// example
 		err = wasps.Start()
 		check(err)
-		err = wasps.CreateOriginTx()
-		check(err)
+
 		wasps.Stop()
 	}
 }

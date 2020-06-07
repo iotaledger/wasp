@@ -16,25 +16,28 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
 
-type SmartContractKeys struct {
-	Address  string
-	DKShares []string // [node index]
+type SmartContractFinalConfig struct {
+	Address          string   `json:"address"`
+	Description      string   `json:"description"`
+	ProgramHash      string   `json:"program_hash"`
+	Nodes            []int    `json:"nodes"`
+	OwnerIndexUtxodb int      `json:"owner_index_utxodb"`
+	DKShares         []string `json:"dkshares"` // [node index]
 }
 
-type SmartContractConfig struct {
-	Description      string `json:"description"`
-	OwnerIndexUtxodb int    `json:"owner_index_utxodb"`
-	Nodes            []int  `json:"nodes"`
-	Quorum           int    `json:"quorum"`
+type SmartContractInitData struct {
+	Description string `json:"description"`
+	Nodes       []int  `json:"nodes"`
+	Quorum      int    `json:"quorum"`
 }
 
 type ClusterConfig struct {
 	Nodes []struct {
-		BindAddress string `json:"bindAddress"`
-		PeeringPort int    `json:"PeeringPort"`
+		BindAddress string `json:"bind_address"`
+		PeeringPort int    `json:"peering_port"`
 	} `json:"nodes"`
-	Goshimmer      string `json:"goshimmer"`
-	SmartContracts []SmartContractConfig
+	Goshimmer      string                  `json:"goshimmer"`
+	SmartContracts []SmartContractInitData `json:"smart_contracts"`
 }
 
 type Cluster struct {
@@ -72,13 +75,13 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	}, nil
 }
 
-func (cluster *Cluster) readKeysConfig() ([]SmartContractKeys, error) {
+func (cluster *Cluster) readKeysConfig() ([]SmartContractFinalConfig, error) {
 	data, err := ioutil.ReadFile(cluster.ConfigKeysPath())
 	if err != nil {
 		return nil, err
 	}
 
-	config := make([]SmartContractKeys, 0)
+	config := make([]SmartContractFinalConfig, 0)
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err
@@ -280,7 +283,7 @@ func (cluster *Cluster) Hosts() []string {
 	return hosts
 }
 
-func (cluster *Cluster) Committee(sc *SmartContractConfig) ([]string, error) {
+func (cluster *Cluster) Committee(sc *SmartContractInitData) ([]string, error) {
 	committee := make([]string, 0)
 	for _, i := range sc.Nodes {
 		if i < 0 || i > len(cluster.Config.Nodes)-1 {
@@ -290,55 +293,6 @@ func (cluster *Cluster) Committee(sc *SmartContractConfig) ([]string, error) {
 	}
 	return committee, nil
 
-}
-
-func (cluster *Cluster) GenerateDKSets() error {
-	keysFile := cluster.ConfigKeysPath()
-	exists, err := fileExists(keysFile)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return fmt.Errorf("dk sets already generated in keys.json")
-	}
-
-	keys := make([]SmartContractKeys, 0)
-
-	for _, sc := range cluster.Config.SmartContracts {
-		committee, err := cluster.Committee(&sc)
-		if err != nil {
-			return err
-		}
-		addr, err := waspapi.GenerateNewDistributedKeySet(
-			committee,
-			uint16(len(committee)),
-			uint16(sc.Quorum),
-		)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Generated key set for SC with address %s\n", addr)
-
-		dkShares := make([]string, 0)
-		for _, host := range cluster.Hosts() {
-			dks, err := waspapi.ExportDKShare(host, addr)
-			if err != nil {
-				return err
-			}
-			dkShares = append(dkShares, dks)
-		}
-
-		keys = append(keys, SmartContractKeys{
-			Address:  addr.String(),
-			DKShares: dkShares,
-		})
-	}
-	buf, err := json.MarshalIndent(keys, "", "  ")
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(keysFile, buf, 0644)
 }
 
 //
@@ -364,7 +318,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 //	return nil
 //}
 //
-//func (cluster *Cluster) createOriginTx(sc *SmartContractConfig, keys *SmartContractKeys) (*sctransaction.Transaction, error) {
+//func (cluster *Cluster) createOriginTx(sc *SmartContractInitData, keys *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
 //	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 //	ownerSigScheme := utxodb.GetSigScheme(ownerAddr)
 //	scAddr, err := address.FromBase58(keys.Address)
