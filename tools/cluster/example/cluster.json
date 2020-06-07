@@ -1,9 +1,9 @@
 {
   "nodes": [
-    {"bindAddress": "127.0.0.1:9090", "peeringPort": 4000},
-    {"bindAddress": "127.0.0.1:9091", "peeringPort": 4001},
-    {"bindAddress": "127.0.0.1:9092", "peeringPort": 4002},
-    {"bindAddress": "127.0.0.1:9093", "peeringPort": 4003}
+    {"bind_address": "127.0.0.1:9090", "peering_port": 4000},
+    {"bind_address": "127.0.0.1:9091", "peering_port": 4001},
+    {"bind_address": "127.0.0.1:9092", "peering_port": 4002},
+    {"bind_address": "127.0.0.1:9093", "peering_port": 4003}
   ],
   "goshimmer": "127.0.0.1:8080",
   "smart_contracts": [
