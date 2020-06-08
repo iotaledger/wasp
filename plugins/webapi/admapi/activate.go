@@ -16,23 +16,23 @@ type ActivateSCRequest struct {
 func HandlerActivateSC(c echo.Context) error {
 	var req ActivateSCRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: err.Error()})
+		return c.JSON(http.StatusOK, &misc.SimpleResponse{Error: err.Error()})
 	}
 	addr, err := address.FromBase58(req.Address)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: err.Error()})
+		return c.JSON(http.StatusOK, &misc.SimpleResponse{Error: err.Error()})
 	}
 
 	bd, exist, err := registry.GetBootupData(&addr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: err.Error()})
+		return c.JSON(http.StatusOK, &misc.SimpleResponse{Error: err.Error()})
 	}
 	if !exist {
-		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: "address not found"})
+		return c.JSON(http.StatusOK, &misc.SimpleResponse{Error: "address not found"})
 	}
 
 	committees.ActivateCommittee(bd, true)
 
-	return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{})
+	return c.JSON(http.StatusOK, &misc.SimpleResponse{})
 }

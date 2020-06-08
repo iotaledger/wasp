@@ -17,7 +17,7 @@ import (
 
 func check(err error) {
 	if err != nil {
-		fmt.Printf("Waspt error: %s\n", err)
+		fmt.Printf("[cluster] Waspt error: %s. Exitting...\n", err)
 		os.Exit(1)
 	}
 }

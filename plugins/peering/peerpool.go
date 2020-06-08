@@ -3,6 +3,7 @@ package peering
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"io"
 	"net"
 	"strings"
@@ -56,11 +57,14 @@ func connectInboundLoop() {
 	listenOn := fmt.Sprintf(":%d", config.Node.GetInt(CfgPeeringPort))
 	listener, err := net.Listen("tcp", listenOn)
 	if err != nil {
-		log.Errorf("tcp listen on %s failed: %v. Restarting connectInboundLoop after 1 sec", listenOn, err)
-		go func() {
-			time.Sleep(1 * time.Second)
-			connectInboundLoop()
-		}()
+		log.Errorf("tcp listen on %s failed: %v. Shutting down...", listenOn, err)
+		gracefulshutdown.Shutdown()
+
+		//log.Errorf("tcp listen on %s failed: %v. Restarting connectInboundLoop after 1 sec", listenOn, err)
+		//go func() {
+		//	time.Sleep(1 * time.Second)
+		//	connectInboundLoop()
+		//}()
 		return
 	}
 	log.Infof("tcp listen inbound on %s", listenOn)
@@ -76,13 +80,27 @@ func connectInboundLoop() {
 		go func() {
 			log.Debugf("starting reading inbound %s", conn.RemoteAddr().String())
 			if err := bconn.Read(); err != nil {
-				if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
-					log.Warnw("Permanent error", "err", err)
+				if permanentBufconnReadingError(err) {
+					log.Warnf("Permanent error reading inbound %s: %v", conn.RemoteAddr().String(), err)
 				}
 			}
 			_ = bconn.Close()
 		}()
 	}
+}
+
+func permanentBufconnReadingError(err error) bool {
+	if err == io.EOF {
+		return false
+	}
+	if strings.Contains(err.Error(), "use of closed network connection") {
+		return false
+	}
+	if strings.Contains(err.Error(), "invalid message header") {
+		// someone with wrong protocol
+		return false
+	}
+	return true
 }
 
 // for testing
