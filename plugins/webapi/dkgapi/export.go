@@ -101,9 +101,5 @@ func importDKShare(blob string) error {
 	}
 
 	log.Infof("Importing DKShare with address %s...", dks.Address)
-	err = registry.SaveDKShareToRegistry(dks)
-	if err == nil {
-		log.Info("Importing DKShare: success")
-	}
-	return err
+	return registry.SaveDKShareToRegistry(dks)
 }

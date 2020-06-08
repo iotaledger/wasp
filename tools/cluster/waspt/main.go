@@ -8,6 +8,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest0"
 	"os"
 	"os/signal"
 
@@ -16,7 +17,7 @@ import (
 
 func check(err error) {
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
+		fmt.Printf("Waspt error: %s\n", err)
 		os.Exit(1)
 	}
 }
@@ -48,19 +49,32 @@ func main() {
 	case "start":
 		err = wasps.Start()
 		check(err)
+		fmt.Printf("-----------------------------------------------------------------\n")
+		fmt.Printf("           The cluster started\n")
+		fmt.Printf("-----------------------------------------------------------------\n")
 
-		fmt.Printf("Press CTRL-C to stop\n")
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		<-c
+		waitCtrlC()
 		wasps.Wait()
 
 	case "gendksets":
 		err = wasps.Start()
 		check(err)
+		fmt.Printf("-----------------------------------------------------------------\n")
+		fmt.Printf("           Generate DKSets\n")
+		fmt.Printf("-----------------------------------------------------------------\n")
 		err = wasps.GenerateDKSets()
 		check(err)
 		wasps.Stop()
+
+	case "test0":
+		err = wasps.Start()
+		check(err)
+
+		err = wasptest0.Run(wasps)
+		check(err)
+
+		waitCtrlC()
+		wasps.Wait()
 
 		//case "origintx":
 		//	// example
@@ -70,4 +84,11 @@ func main() {
 		//	check(err)
 		//	wasps.Stop()
 	}
+}
+
+func waitCtrlC() {
+	fmt.Printf("[waspt] Press CTRL-C to stop\n")
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
 }

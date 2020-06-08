@@ -200,6 +200,8 @@ func (cluster *Cluster) Start() error {
 }
 
 func (cluster *Cluster) start() error {
+	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(cluster.Config.Nodes))
+
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
 	for i, _ := range cluster.Config.Nodes {
@@ -222,6 +224,7 @@ func (cluster *Cluster) start() error {
 	for i := 0; i < len(cluster.Config.Nodes); i++ {
 		<-initOk
 	}
+	fmt.Printf("[cluster] started %d Wasp nodes\n", len(cluster.Config.Nodes))
 	return nil
 }
 
@@ -241,7 +244,7 @@ func (cluster *Cluster) importKeys() error {
 	}
 
 	for _, scKeys := range keys {
-		fmt.Printf("Importing DKShares for account %s...\n", scKeys.Address)
+		fmt.Printf("[cluster] Importing DKShares for address %s...\n", scKeys.Address)
 		for nodeIndex, dks := range scKeys.DKShares {
 			err := waspapi.ImportDKShare(cluster.Config.Nodes[nodeIndex].BindAddress, dks)
 			if err != nil {
@@ -256,7 +259,7 @@ func (cluster *Cluster) importKeys() error {
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
 	for _, node := range cluster.Config.Nodes {
-		fmt.Printf("Sending shutdown to %s\n", node.BindAddress)
+		fmt.Printf("[cluster] Sending shutdown to %s\n", node.BindAddress)
 		err := waspapi.Shutdown(node.BindAddress)
 		if err != nil {
 			fmt.Println(err)
