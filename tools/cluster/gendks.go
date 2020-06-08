@@ -42,7 +42,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 		fmt.Printf("[cluster] Generated key set for SC with address %s\n", addr)
 
 		dkShares := make([]string, 0)
-		for _, host := range cluster.Hosts() {
+		for _, host := range cluster.ApiHosts() {
 			dks, err := waspapi.ExportDKShare(host, addr)
 			if err != nil {
 				return err

@@ -36,7 +36,8 @@ type SmartContractInitData struct {
 
 type ClusterConfig struct {
 	Nodes []struct {
-		BindAddress string `json:"bind_address"`
+		NetAddress  string `json:"net_address"`
+		ApiPort     int    `json:"api_port"`
 		PeeringPort int    `json:"peering_port"`
 	} `json:"nodes"`
 	Goshimmer      string                  `json:"goshimmer"`
@@ -259,7 +260,8 @@ func (cluster *Cluster) importKeys() error {
 	for _, scKeys := range cluster.SmartContractConfig {
 		fmt.Printf("[cluster] Importing DKShares for address %s...\n", scKeys.Address)
 		for nodeIndex, dks := range scKeys.DKShares {
-			err := waspapi.ImportDKShare(cluster.Config.Nodes[nodeIndex].BindAddress, dks)
+			url := fmt.Sprintf("%s:%d", cluster.Config.Nodes[nodeIndex].NetAddress, cluster.Config.Nodes[nodeIndex].ApiPort)
+			err := waspapi.ImportDKShare(url, dks)
 			if err != nil {
 				return err
 			}
@@ -272,8 +274,9 @@ func (cluster *Cluster) importKeys() error {
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
 	for _, node := range cluster.Config.Nodes {
-		fmt.Printf("[cluster] Sending shutdown to %s\n", node.BindAddress)
-		err := waspapi.Shutdown(node.BindAddress)
+		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
+		fmt.Printf("[cluster] Sending shutdown to %s\n", url)
+		err := waspapi.Shutdown(url)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -291,10 +294,11 @@ func (cluster *Cluster) Wait() {
 	}
 }
 
-func (cluster *Cluster) Hosts() []string {
+func (cluster *Cluster) ApiHosts() []string {
 	hosts := make([]string, 0)
 	for _, node := range cluster.Config.Nodes {
-		hosts = append(hosts, node.BindAddress)
+		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
+		hosts = append(hosts, url)
 	}
 	return hosts
 }
@@ -305,8 +309,8 @@ func (cluster *Cluster) Committee(sc *SmartContractInitData) ([]string, error) {
 		if i < 0 || i > len(cluster.Config.Nodes)-1 {
 			return nil, errors.New(fmt.Sprintf("Node index out of bounds in smart contract committee configuration: %d", i))
 		}
-		committee = append(committee, cluster.Config.Nodes[i].BindAddress)
+		url := fmt.Sprintf("%s:%d", cluster.Config.Nodes[i].NetAddress, cluster.Config.Nodes[i].ApiPort)
+		committee = append(committee, url)
 	}
 	return committee, nil
-
 }

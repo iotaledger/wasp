@@ -49,7 +49,7 @@ func run(_ *node.Plugin) {
 				log.Debugf("skipping disabled address %s", scdata.Address.String())
 				continue
 			}
-			if cmt := RegisterCommittee(scdata, false); cmt != nil {
+			if cmt := ActivateCommittee(scdata, false); cmt != nil {
 				addrs = append(addrs, scdata.Address)
 			}
 		}
@@ -79,13 +79,13 @@ func WaitInitialLoad() {
 	initialLoadWG.Wait()
 }
 
-func RegisterCommittee(bootupData *registry.BootupData, subscribe bool) committee.Committee {
+func ActivateCommittee(bootupData *registry.BootupData, subscribe bool) committee.Committee {
 	committeesMutex.Lock()
 	defer committeesMutex.Unlock()
 
 	_, ok := committeesByAddress[bootupData.Address]
 	if ok {
-		log.Errorf("committee already registered: %s", bootupData.Address)
+		log.Warnf("committee already active: %s", bootupData.Address)
 		return nil
 	}
 	c := committee.New(bootupData, log)
@@ -94,7 +94,7 @@ func RegisterCommittee(bootupData *registry.BootupData, subscribe bool) committe
 		if subscribe {
 			nodeconn.Subscribe([]address.Address{bootupData.Address})
 		}
-		log.Infof("registered committee for addr %s", bootupData.Address.String())
+		log.Infof("activated committee for addr %s", bootupData.Address.String())
 	}
 	return c
 }

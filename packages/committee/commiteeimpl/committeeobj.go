@@ -67,7 +67,8 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 		}
 	} else {
 		if !iAmInTheCommittee(bootupData.CommitteeNodes, dkshare.N, dkshare.Index) {
-			log.Errorf("bootup data inconsistency: the node is not in the committee for %s", addr.String())
+			log.Errorf("bootup data inconsistency: the own node %s is not in the committee for %s: %+v",
+				peering.MyNetworkId(), addr.String(), bootupData.CommitteeNodes)
 			return nil
 		}
 	}
