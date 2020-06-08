@@ -9,17 +9,17 @@
   "smart_contracts": [
     {
       "description": "Smart Contract nil program 1",
-      "nodes": [0, 1, 2, 3],
+      "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     },
     {
       "description": "Smart Contract nil program 2",
-      "nodes": [0, 1, 2, 3],
+      "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     },
     {
       "description": "Smart Contract increment program",
-      "nodes": [0, 1, 2, 3],
+      "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     }
   ]

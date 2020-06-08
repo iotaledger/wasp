@@ -9,7 +9,7 @@
   "smart_contracts": [
     {
       "description": "Smart Contract test",
-      "nodes": [0, 1, 2, 3],
+      "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     }
   ]

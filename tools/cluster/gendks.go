@@ -3,7 +3,11 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
+	"github.com/iotaledger/wasp/packages/variables"
 	"io/ioutil"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -35,7 +39,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 			return err
 		}
 
-		fmt.Printf("Generated key set for SC with address %s\n", addr)
+		fmt.Printf("[cluster] Generated key set for SC with address %s\n", addr)
 
 		dkShares := make([]string, 0)
 		for _, host := range cluster.Hosts() {
@@ -46,18 +50,48 @@ func (cluster *Cluster) GenerateDKSets() error {
 			dkShares = append(dkShares, dks)
 		}
 
-		keys = append(keys, SmartContractFinalConfig{
+		scdata := SmartContractFinalConfig{
 			Address:          addr.String(),
 			Description:      sc.Description,
 			ProgramHash:      hashing.HashStrings(sc.Description).String(),
-			Nodes:            sc.Nodes,
+			CommitteeNodes:   sc.CommitteeNodes,
 			OwnerIndexUtxodb: i + 1, // owner index from utxodb
 			DKShares:         dkShares,
-		})
+		}
+		if err = calcColorUtxodb(&scdata); err != nil {
+			return err
+		}
+		keys = append(keys, scdata)
 	}
 	buf, err := json.MarshalIndent(keys, "", "  ")
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(keysFile, buf, 0644)
+}
+
+func calcColorUtxodb(scdata *SmartContractFinalConfig) error {
+	vars := variables.New(nil)
+	vars.Set("description", scdata.Description)
+
+	addr, err := address.FromBase58(scdata.Address)
+	if err != nil {
+		return err
+	}
+	progHash, err := hashing.HashValueFromString(scdata.ProgramHash)
+	if err != nil {
+		return err
+	}
+	// creating origin transaction just to determine color
+	origTx, _, err := waspapi.CreateOriginDataUtxodb(origin.NewOriginParams{
+		Address:              addr,
+		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
+		ProgramHash:          progHash,
+		Variables:            vars,
+	})
+	if err != nil {
+		return err
+	}
+	scdata.Color = origTx.ID().String()
+	return nil
 }

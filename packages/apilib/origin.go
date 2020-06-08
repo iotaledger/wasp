@@ -1,9 +1,11 @@
 package apilib
 
 import (
+	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -19,10 +21,22 @@ func CreateOriginData(nodeurl string, par origin.NewOriginParams) (*sctransactio
 	if err != nil {
 		return nil, nil, err
 	}
+	return createOriginData(par, allOuts)
+}
 
-	outs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, 1) // must be deterministic!
+// same as above only gets inputs form local utxodb rather than goshimmer
+// deterministic if applied to different owner addresses hardcoded in utxodb
+func CreateOriginDataUtxodb(par origin.NewOriginParams) (*sctransaction.Transaction, state.Batch, error) {
+	ownerAddress := par.OwnerSignatureScheme.Address()
+	allOuts := utxodb.GetAddressOutputs(ownerAddress)
+	return createOriginData(par, allOuts)
+}
+
+//
+func createOriginData(par origin.NewOriginParams, allOutputs map[valuetransaction.OutputID][]*balance.Balance) (*sctransaction.Transaction, state.Batch, error) {
+	outs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 1) // must be deterministic!
 	if len(outs) == 0 {
-		panic("inconsistency: not enough outputs for 1 iota?!")
+		return nil, nil, errors.New("inconsistency: not enough outputs for 1 iota")
 	}
 	// select first and the only
 	var input valuetransaction.OutputID
@@ -55,4 +69,5 @@ func CreateOriginData(nodeurl string, par origin.NewOriginParams) (*sctransactio
 	originBatch.WithStateTransaction(originTx.ID())
 
 	return originTx, originBatch, nil
+
 }
