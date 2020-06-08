@@ -24,7 +24,6 @@ type Committee interface {
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
-	SetReadyVM()
 	Dismiss()
 	IsDismissed() bool
 }

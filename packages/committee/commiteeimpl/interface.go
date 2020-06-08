@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/publisher"
 	"time"
 )
 
@@ -44,21 +45,13 @@ func (c *committeeObj) SetReadyConsensus() {
 	c.checkReady()
 }
 
-func (c *committeeObj) SetReadyVM() {
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isReadyVM = true
-	c.log.Debugf("VM is ready")
-	c.checkReady()
-}
-
 func (c *committeeObj) checkReady() bool {
-	if c.isReadyConsensus && c.isReadyStateManager && c.isReadyVM {
+	if c.isReadyConsensus && c.isReadyStateManager {
 		c.isOpenQueue.Store(true)
 		c.log.Debugf("committee now is fully initialized")
+		publisher.Publish("ready", "committee", c.address.String())
 	}
-	return c.isReadyConsensus && c.isReadyStateManager && c.isReadyVM
+	return c.isReadyConsensus && c.isReadyStateManager
 }
 
 func (c *committeeObj) Dismiss() {
@@ -76,6 +69,7 @@ func (c *committeeObj) Dismiss() {
 			}
 		}
 	})
+	publisher.Publish("dismissed", "committee", c.address.String())
 }
 
 func (c *committeeObj) IsDismissed() bool {

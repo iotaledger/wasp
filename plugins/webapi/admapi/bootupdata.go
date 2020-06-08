@@ -35,16 +35,16 @@ func HandlerPutSCData(c echo.Context) error {
 	if err = registry.SaveBootupData(&rec, true); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
-	log.Infof("Bootup records saved for addr = %s", rec.Address.String())
+	log.Infof("Bootup record saved for addr = %s", rec.Address.String())
 
-	if bd, exists, err := registry.GetBootupData(&rec.Address); err != nil || !exists {
-		log.Debugw("reading back",
-			"sc addr", req.Address,
-			"exists", exists,
-			"error", err)
-	} else {
-		log.Debugf("reading back: %+v", *bd)
-	}
+	//if bd, exists, err := registry.GetBootupData(&rec.Address); err != nil || !exists {
+	//	log.Debugw("reading back",
+	//		"sc addr", req.Address,
+	//		"exists", exists,
+	//		"error", err)
+	//} else {
+	//	log.Debugf("reading back: %+v", *bd)
+	//}
 	return misc.OkJsonErr(c, nil)
 }
 

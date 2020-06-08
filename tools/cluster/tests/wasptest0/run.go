@@ -61,7 +61,7 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 			AccessNodes:    accessPeerNodes,
 		})
 		if err != nil {
-			fmt.Printf("[cluster] apilib.PutSCData returned: %v\n", err)
+			fmt.Printf("[cluster] apilib.PutSCData returned for host %s: %v\n", host, err)
 			failed = true
 		}
 	}

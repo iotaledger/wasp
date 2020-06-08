@@ -23,7 +23,6 @@ const (
 type committeeObj struct {
 	isReadyStateManager bool
 	isReadyConsensus    bool
-	isReadyVM           bool
 	mutexIsReady        sync.Mutex
 	isOpenQueue         atomic.Bool
 	dismissed           atomic.Bool
@@ -41,6 +40,8 @@ type committeeObj struct {
 }
 
 func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) committee.Committee {
+	log.Debugw("creating committee", "addr", bootupData.Address.String())
+
 	addr := bootupData.Address
 	if util.ContainsDuplicates(bootupData.CommitteeNodes) ||
 		util.ContainsDuplicates(bootupData.AccessNodes) ||
