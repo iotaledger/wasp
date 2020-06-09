@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"text/template"
 
+	nodeapi "github.com/iotaledger/wasp/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
 
@@ -40,7 +41,9 @@ type ClusterConfig struct {
 		ApiPort     int    `json:"api_port"`
 		PeeringPort int    `json:"peering_port"`
 	} `json:"nodes"`
-	Goshimmer      string                  `json:"goshimmer"`
+	Goshimmer struct {
+		BindAddress string `json:"bind_address"`
+	} `json:"goshimmer"`
 	SmartContracts []SmartContractInitData `json:"smart_contracts"`
 }
 
@@ -98,7 +101,11 @@ func (cluster *Cluster) JoinConfigPath(s string) string {
 	return path.Join(cluster.ConfigPath, s)
 }
 
-func (cluster *Cluster) ConfigTemplatePath() string {
+func (cluster *Cluster) GoshimmerConfigTemplatePath() string {
+	return cluster.JoinConfigPath("goshimmer-config-template.json")
+}
+
+func (cluster *Cluster) WaspConfigTemplatePath() string {
 	return cluster.JoinConfigPath("wasp-config-template.json")
 }
 
@@ -106,12 +113,12 @@ func (cluster *Cluster) ConfigKeysPath() string {
 	return cluster.JoinConfigPath("keys.json")
 }
 
-func (cluster *Cluster) NodeDataPath(i int) string {
-	return path.Join(cluster.DataPath, strconv.Itoa(i))
+func (cluster *Cluster) WaspNodeDataPath(i int) string {
+	return path.Join(cluster.DataPath, fmt.Sprintf("wasp%d", i))
 }
 
-func (cluster *Cluster) JoinNodeDataPath(i int, s string) string {
-	return path.Join(cluster.NodeDataPath(i), s)
+func (cluster *Cluster) GoshimmerDataPath() string {
+	return path.Join(cluster.DataPath, "goshimmer")
 }
 
 func fileExists(path string) (bool, error) {
@@ -141,26 +148,20 @@ func (cluster *Cluster) Init(resetDataPath bool) error {
 		}
 	}
 
-	configTmpl, err := template.ParseFiles(cluster.ConfigTemplatePath())
+	err = cluster.initDataPath(
+		cluster.GoshimmerDataPath(),
+		cluster.GoshimmerConfigTemplatePath(),
+		cluster.Config.Goshimmer,
+	)
 	if err != nil {
 		return err
 	}
-
-	for i, nodeConfig := range cluster.Config.Nodes {
-		nodePath := cluster.NodeDataPath(i)
-		fmt.Printf("Initializing node configuration at %s\n", nodePath)
-
-		err := os.MkdirAll(nodePath, os.ModePerm)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(cluster.JoinNodeDataPath(i, "config.json"))
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		err = configTmpl.Execute(f, &nodeConfig)
+	for i, waspParams := range cluster.Config.Nodes {
+		err = cluster.initDataPath(
+			cluster.WaspNodeDataPath(i),
+			cluster.WaspConfigTemplatePath(),
+			waspParams,
+		)
 		if err != nil {
 			return err
 		}
@@ -169,23 +170,26 @@ func (cluster *Cluster) Init(resetDataPath bool) error {
 	return nil
 }
 
-func logNodeStderr(i int, scanner *bufio.Scanner) {
-	for scanner.Scan() {
-		line := scanner.Text()
-		fmt.Printf("[!wasp %d] %s\n", i, line)
+func (cluster *Cluster) initDataPath(dataPath string, configTemplatePath string, params interface{}) error {
+	configTmpl, err := template.ParseFiles(configTemplatePath)
+	if err != nil {
+		return err
 	}
-}
 
-func logNodeStdout(i int, scanner *bufio.Scanner, initString string, initOk chan bool) {
-	found := false
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !found && strings.Contains(line, initString) {
-			initOk <- true
-			found = true
-		}
-		fmt.Printf("[ wasp %d] %s\n", i, line)
+	fmt.Printf("Initializing %s\n", dataPath)
+
+	err = os.MkdirAll(dataPath, os.ModePerm)
+	if err != nil {
+		return err
 	}
+
+	f, err := os.Create(path.Join(dataPath, "config.json"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return configTmpl.Execute(f, params)
 }
 
 // Start launches all wasp nodes in the cluster, each running in its own directory
@@ -225,34 +229,75 @@ func (cluster *Cluster) start() error {
 
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
+	err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), initOk, "goshimmer")
+	if err != nil {
+		return err
+	}
 	for i, _ := range cluster.Config.Nodes {
-		cmd := exec.Command("wasp")
-		cmd.Dir = cluster.NodeDataPath(i)
-		stdoutPipe, err := cmd.StdoutPipe()
+		err = cluster.startServer("wasp", cluster.WaspNodeDataPath(i), initOk, fmt.Sprintf("wasp %d", i))
 		if err != nil {
 			return err
 		}
-		stderrPipe, err := cmd.StderrPipe()
-		if err != nil {
-			return err
-		}
-		stdoutScanner := bufio.NewScanner(stdoutPipe)
-		stderrScanner := bufio.NewScanner(stderrPipe)
-		err = cmd.Start()
-		if err != nil {
-			return err
-		}
-		cluster.cmds = append(cluster.cmds, cmd)
-
-		go logNodeStderr(i, stderrScanner)
-		go logNodeStdout(i, stdoutScanner, "WebAPI started", initOk)
 	}
 
-	for i := 0; i < len(cluster.Config.Nodes); i++ {
+	for i := 0; i < len(cluster.cmds); i++ {
 		<-initOk
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes\n", len(cluster.Config.Nodes))
 	return nil
+}
+
+func (cluster *Cluster) startServer(command string, cwd string, initOk chan<- bool, name string) error {
+	cmd := exec.Command(command)
+	cmd.Dir = cwd
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	cluster.cmds = append(cluster.cmds, cmd)
+
+	go scanLog(
+		stderrPipe,
+		func(line string) { fmt.Printf("[!%s] %s\n", name, line) },
+	)
+	go scanLog(
+		stdoutPipe,
+		func(line string) { fmt.Printf("[ %s] %s\n", name, line) },
+		waitFor("WebAPI started", initOk),
+	)
+
+	return nil
+}
+
+func scanLog(reader io.Reader, hooks ...func(string)) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		for _, hook := range hooks {
+			hook(line)
+		}
+	}
+}
+
+func waitFor(s string, initOk chan<- bool) func(line string) {
+	found := false
+	return func(line string) {
+		if found {
+			return
+		}
+		if strings.Contains(line, s) {
+			initOk <- true
+			found = true
+		}
+	}
 }
 
 func (cluster *Cluster) readKeysAndData() (bool, error) {
@@ -286,9 +331,15 @@ func (cluster *Cluster) importKeys() error {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
+	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", cluster.Config.Goshimmer.BindAddress)
+	err := nodeapi.Shutdown(cluster.Config.Goshimmer.BindAddress)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	for _, node := range cluster.Config.Nodes {
 		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
-		fmt.Printf("[cluster] Sending shutdown to %s\n", url)
+		fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", url)
 		err := waspapi.Shutdown(url)
 		if err != nil {
 			fmt.Println(err)

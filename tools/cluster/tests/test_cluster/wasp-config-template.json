@@ -28,7 +28,7 @@
       "privateKey": "",
       "username": "wasp"
     },
-    "bindAddress": "{{.BindAddress}}"
+    "bindAddress": "{{.NetAddress}}:{{.ApiPort}}"
   },
   "peering":{
     "port": {{.PeeringPort}},
