@@ -104,8 +104,8 @@ func (sm *stateManager) initLoadState() {
 			"approving tx", txh.String(),
 		)
 	} else {
-		// origin state
-		sm.log.Info("solid state does not exist: the origin")
+		// pre-origin state
+		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN")
 	}
 
 	// open msg queue for the committee

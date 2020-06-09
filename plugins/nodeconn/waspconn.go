@@ -38,7 +38,7 @@ func nodeConnect() {
 		}
 		return nil
 	}); err != nil {
-		log.Error(err)
+		log.Warn(err)
 
 		retryNodeConnect()
 		return

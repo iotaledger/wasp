@@ -11,7 +11,7 @@ import (
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 	addr := sm.committee.Address()
 	batch, err := state.LoadBatch(addr, msg.StateIndex)
-	if err != nil {
+	if err != nil || batch == nil {
 		// can't load batch, can't respond
 		return
 	}
