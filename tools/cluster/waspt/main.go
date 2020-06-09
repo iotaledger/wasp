@@ -101,6 +101,22 @@ func main() {
 
 		waitCtrlC()
 		wasps.Wait()
+
+	case "test3":
+		err = wasps.Start()
+		check(err)
+
+		err = wasptest.Put3BootupRecords(wasps)
+		check(err)
+
+		err = wasptest.Activate1SC(wasps)
+		check(err)
+
+		err = wasptest.Send1Request(wasps)
+		check(err)
+
+		waitCtrlC()
+		wasps.Wait()
 	}
 }
 
