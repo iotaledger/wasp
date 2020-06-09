@@ -16,7 +16,7 @@ import (
 const PluginName = "Publisher"
 
 var (
-	Plugin    = node.NewPlugin(PluginName, node.Enabled, configure, run)
+	Plugin    = node.NewPlugin(PluginName, node.Disabled, configure, run)
 	log       *logger.Logger
 	socket    mangos.Socket
 	sockMutex sync.RWMutex
