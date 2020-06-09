@@ -25,19 +25,6 @@ func closeAll() {
 	}
 }
 
-// wait some time the rests peer to be connected by the loops
-func (peer *Peer) runAfter(d time.Duration) {
-	go func() {
-		time.Sleep(d)
-		peer.Lock()
-		if !peer.isDismissed.Load() {
-			peer.startOnce = &sync.Once{}
-			log.Debugf("will run %s again", peer.PeeringId())
-		}
-		peer.Unlock()
-	}()
-}
-
 // loop which maintains outbound peers connected (if possible)
 func connectOutboundLoop() {
 	for {
@@ -79,11 +66,14 @@ func connectInboundLoop() {
 		bconn := newPeeredConnection(conn, nil)
 		go func() {
 			log.Debugf("starting reading inbound %s", conn.RemoteAddr().String())
-			if err := bconn.Read(); err != nil {
-				if permanentBufconnReadingError(err) {
-					log.Warnf("Permanent error reading inbound %s: %v", conn.RemoteAddr().String(), err)
-				}
-			}
+			err := bconn.Read()
+			log.Debugw("stopped reading inbound. Closing", "remote", conn.RemoteAddr(), "err", err)
+
+			//if err := bconn.Read(); err != nil {
+			//	if permanentBufconnReadingError(err) {
+			//		log.Warnf("Permanent error reading inbound %s: %v", conn.RemoteAddr().String(), err)
+			//	}
+			//}
 			_ = bconn.Close()
 		}()
 	}

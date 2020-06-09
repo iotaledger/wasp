@@ -8,7 +8,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest0"
+	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest"
 	"os"
 	"os/signal"
 
@@ -70,19 +70,37 @@ func main() {
 		err = wasps.Start()
 		check(err)
 
-		err = wasptest0.Run(wasps)
+		err = wasptest.Run0(wasps)
 		check(err)
 
 		waitCtrlC()
 		wasps.Wait()
 
-		//case "origintx":
-		//	// example
-		//	err = wasps.Start()
-		//	check(err)
-		//	err = wasps.CreateOriginTx()
-		//	check(err)
-		//	wasps.Stop()
+	case "test1":
+		err = wasps.Start()
+		check(err)
+
+		err = wasptest.Run0(wasps)
+		check(err)
+
+		err = wasptest.Run1(wasps)
+		check(err)
+
+		waitCtrlC()
+		wasps.Wait()
+
+	case "test2":
+		err = wasps.Start()
+		check(err)
+
+		err = wasptest.Run0(wasps)
+		check(err)
+
+		err = wasptest.Run2(wasps)
+		check(err)
+
+		waitCtrlC()
+		wasps.Wait()
 	}
 }
 

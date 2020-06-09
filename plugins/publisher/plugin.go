@@ -80,5 +80,7 @@ func Publish(msgType string, parts ...string) {
 	sockMutex.RLock()
 	defer sockMutex.RUnlock()
 
-	_ = socket.Send([]byte(msg))
+	if socket != nil {
+		_ = socket.Send([]byte(msg))
+	}
 }

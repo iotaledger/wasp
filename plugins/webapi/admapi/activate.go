@@ -32,6 +32,8 @@ func HandlerActivateSC(c echo.Context) error {
 		return c.JSON(http.StatusOK, &misc.SimpleResponse{Error: "address not found"})
 	}
 
+	log.Debugw("calling committees.ActivateCommittee", "addr", bd.Address.String())
+
 	committees.ActivateCommittee(bd, true)
 
 	return c.JSON(http.StatusOK, &misc.SimpleResponse{})

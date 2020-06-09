@@ -52,7 +52,14 @@ func (peer *Peer) scheduleNexHeartbeat() {
 
 	peer.Unlock()
 
-	_ = peer.sendData(hbMsgData)
+	log.Debugw("sending heartbeat", "to", peer.remoteLocation)
+	err := peer.sendData(hbMsgData)
+	if err != nil {
+		log.Debugw("sending heartbeat error",
+			"to", peer.remoteLocation,
+			"err", err,
+		)
+	}
 }
 
 // return true if is alive and average latencyRingBuf in nanosec

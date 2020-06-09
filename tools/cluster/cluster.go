@@ -169,7 +169,14 @@ func (cluster *Cluster) Init(resetDataPath bool) error {
 	return nil
 }
 
-func logNode(i int, scanner *bufio.Scanner, initString string, initOk chan bool) {
+func logNodeStderr(i int, scanner *bufio.Scanner) {
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Printf("[!wasp %d] %s\n", i, line)
+	}
+}
+
+func logNodeStdout(i int, scanner *bufio.Scanner, initString string, initOk chan bool) {
 	found := false
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -177,7 +184,7 @@ func logNode(i int, scanner *bufio.Scanner, initString string, initOk chan bool)
 			initOk <- true
 			found = true
 		}
-		fmt.Printf("[wasp %d] %s\n", i, line)
+		fmt.Printf("[ wasp %d] %s\n", i, line)
 	}
 }
 
@@ -221,18 +228,24 @@ func (cluster *Cluster) start() error {
 	for i, _ := range cluster.Config.Nodes {
 		cmd := exec.Command("wasp")
 		cmd.Dir = cluster.NodeDataPath(i)
-		pipe, err := cmd.StdoutPipe()
+		stdoutPipe, err := cmd.StdoutPipe()
 		if err != nil {
 			return err
 		}
-		scanner := bufio.NewScanner(pipe)
+		stderrPipe, err := cmd.StderrPipe()
+		if err != nil {
+			return err
+		}
+		stdoutScanner := bufio.NewScanner(stdoutPipe)
+		stderrScanner := bufio.NewScanner(stderrPipe)
 		err = cmd.Start()
 		if err != nil {
 			return err
 		}
 		cluster.cmds = append(cluster.cmds, cmd)
 
-		go logNode(i, scanner, "WebAPI started", initOk)
+		go logNodeStderr(i, stderrScanner)
+		go logNodeStdout(i, stdoutScanner, "WebAPI started", initOk)
 	}
 
 	for i := 0; i < len(cluster.Config.Nodes); i++ {

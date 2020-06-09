@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/hive.go/backoff"
 	"go.uber.org/atomic"
-	"io"
 	"net"
-	"strings"
 	"sync"
 	"time"
 )
@@ -95,7 +93,18 @@ func (peer *Peer) runOutbound() {
 	}
 	log.Debugf("runOutbound %s", peer.remoteLocation)
 
-	defer peer.runAfter(restartAfter)
+	// always try to reconnect
+	defer func() {
+		go func() {
+			time.Sleep(restartAfter)
+			peer.Lock()
+			if !peer.isDismissed.Load() {
+				peer.startOnce = &sync.Once{}
+				log.Debugf("will run again: %s", peer.PeeringId())
+			}
+			peer.Unlock()
+		}()
+	}()
 
 	var conn net.Conn
 
@@ -116,13 +125,15 @@ func (peer *Peer) runOutbound() {
 		return
 	}
 	log.Debugf("starting reading outbound %s", peer.remoteLocation)
-	if err := peer.peerconn.Read(); err != nil {
-		if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
-			log.Warnw("Permanent error", "err", err)
-		}
-	}
-	log.Debugf("stopped reading. Closing %s", peer.remoteLocation)
+	err := peer.peerconn.Read()
+	log.Debugw("stopped reading outbound. Closing", "remote", peer.remoteLocation, "err", err)
 	peer.closeConn()
+	//if ; err != nil {
+	//	log.Warnw("")
+	//	if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
+	//		log.Warnw("Permanent error", "err", err)
+	//	}
+	//}
 }
 
 // sends handshake message. It contains myLocation

@@ -1,4 +1,4 @@
-package wasptest0
+package wasptest
 
 import (
 	"fmt"
@@ -9,10 +9,8 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func Run(clu *cluster.Cluster) error {
-	fmt.Printf("-----------------------------------------------------------------\n")
-	fmt.Printf("           Test 0: bootup records and activation of committees  \n")
-	fmt.Printf("-----------------------------------------------------------------\n")
+func Run0(clu *cluster.Cluster) error {
+	fmt.Printf("------------------------- Test 0: bootup records  \n")
 
 	for _, sc := range clu.SmartContractConfig {
 		fmt.Printf("[cluster] creating bootup record for smart contract descr: '%s' addr: %s program hash: %s\n",
@@ -25,14 +23,6 @@ func Run(clu *cluster.Cluster) error {
 		}
 	}
 	//
-	for _, sc := range clu.SmartContractConfig {
-		if err := activate(&sc, clu); err != nil {
-			fmt.Printf("[cluster] activate %s: %v\n", sc.Address, err)
-
-			return fmt.Errorf("failed to activate smart contracts")
-		}
-	}
-
 	return nil
 }
 
@@ -67,25 +57,6 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 	}
 	if failed {
 		return fmt.Errorf("failed to send bootup data to some commitee nodes")
-	}
-	return nil
-}
-
-func activate(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error {
-	_, _, allNodesApi, err := getUrls(sc, clu)
-	if err != nil {
-		return err
-	}
-	failed := false
-	for _, host := range allNodesApi {
-		err := waspapi.ActivateSC(host, sc.Address)
-		if err != nil {
-			fmt.Printf("[cluster] apilib.ActivateSC returned: %v\n", err)
-			failed = true
-		}
-	}
-	if failed {
-		return fmt.Errorf("failed to activate smart contracts on some nodes")
 	}
 	return nil
 }

@@ -31,6 +31,7 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 			bconn.peer.peerconn = nil
 			bconn.peer.handshakeOk = false
 			bconn.peer.Unlock()
+			log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
 		}
 	}))
 	return bconn
@@ -86,7 +87,7 @@ func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
 			bconn.peer.PeeringId(), id)
 		bconn.peer.closeConn()
 	} else {
-		log.Infof("handshake ok with peer %s", id)
+		log.Infof("CONNECTED WITH PEER %s (outbound)", id)
 		bconn.peer.handshakeOk = true
 
 		bconn.peer.initHeartbeats()
@@ -107,7 +108,7 @@ func (bconn *peeredConnection) processHandShakeInbound(msg *PeerMessage) {
 	peersMutex.RUnlock()
 
 	if !ok || !peer.isInbound() {
-		log.Errorf("inbound connection from unexpected peer id %s. Closing..", peeringId)
+		log.Debugf("inbound connection from unexpected peer id %s. Closing..", peeringId)
 		_ = bconn.Close()
 		return
 	}
@@ -117,6 +118,8 @@ func (bconn *peeredConnection) processHandShakeInbound(msg *PeerMessage) {
 	peer.peerconn = bconn
 	peer.handshakeOk = true
 	peer.Unlock()
+
+	log.Infof("CONNECTED WITH PEER %s (inbound)", peeringId)
 
 	if err := peer.sendHandshake(); err == nil {
 		bconn.peer.initHeartbeats()
