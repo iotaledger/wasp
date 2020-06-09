@@ -112,7 +112,7 @@ func main() {
 		err = wasptest.Activate1SC(wasps)
 		check(err)
 
-		err = wasptest.CreateOrigin3SC(wasps)
+		err = wasptest.CreateOrigin1SC(wasps)
 		check(err)
 
 		waitCtrlC()

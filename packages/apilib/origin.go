@@ -69,5 +69,4 @@ func createOriginData(par origin.NewOriginParams, allOutputs map[valuetransactio
 	originBatch.WithStateTransaction(originTx.ID())
 
 	return originTx, originBatch, nil
-
 }
