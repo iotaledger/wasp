@@ -112,6 +112,22 @@ func main() {
 		err = wasptest.Activate1SC(wasps)
 		check(err)
 
+		err = wasptest.CreateOrigin3SC(wasps)
+		check(err)
+
+		waitCtrlC()
+		wasps.Wait()
+
+	case "test4":
+		err = wasps.Start()
+		check(err)
+
+		err = wasptest.Put3BootupRecords(wasps)
+		check(err)
+
+		err = wasptest.Activate1SC(wasps)
+		check(err)
+
 		err = wasptest.Send1Request(wasps)
 		check(err)
 
