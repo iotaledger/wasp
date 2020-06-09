@@ -70,7 +70,7 @@ func main() {
 		err = wasps.Start()
 		check(err)
 
-		err = wasptest.Run0(wasps)
+		err = wasptest.Put3BootupRecords(wasps)
 		check(err)
 
 		waitCtrlC()
@@ -80,10 +80,10 @@ func main() {
 		err = wasps.Start()
 		check(err)
 
-		err = wasptest.Run0(wasps)
+		err = wasptest.Put3BootupRecords(wasps)
 		check(err)
 
-		err = wasptest.Run1(wasps)
+		err = wasptest.Activate1SC(wasps)
 		check(err)
 
 		waitCtrlC()
@@ -93,10 +93,10 @@ func main() {
 		err = wasps.Start()
 		check(err)
 
-		err = wasptest.Run0(wasps)
+		err = wasptest.Put3BootupRecords(wasps)
 		check(err)
 
-		err = wasptest.Run2(wasps)
+		err = wasptest.Activate3SC(wasps)
 		check(err)
 
 		waitCtrlC()

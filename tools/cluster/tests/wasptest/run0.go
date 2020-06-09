@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func Run0(clu *cluster.Cluster) error {
+func Put3BootupRecords(clu *cluster.Cluster) error {
 	fmt.Printf("------------------------- Test 0: bootup records  \n")
 
 	for _, sc := range clu.SmartContractConfig {

@@ -21,6 +21,7 @@ func (peer *Peer) initHeartbeats() {
 func (peer *Peer) receiveHeartbeat(ts int64) {
 	peer.Lock()
 	peer.lastHeartbeatReceived = time.Now()
+	//log.Debugw("receiveHeartbeat", "id", peer.PeeringId(), "time", peer.lastHeartbeatReceived)
 	lagNano := peer.lastHeartbeatReceived.UnixNano() - ts
 	peer.latencyRingBuf[peer.hbRingBufIdx] = lagNano
 	peer.hbRingBufIdx = (peer.hbRingBufIdx + 1) % numHeartbeatsToKeep
@@ -30,20 +31,24 @@ func (peer *Peer) receiveHeartbeat(ts int64) {
 }
 
 func (peer *Peer) scheduleNexHeartbeat() {
+	//log.Debugw("scheduleNexHeartbeat", "id", peer.PeeringId())
+
 	if peerAlive, _ := peer.IsAlive(); !peerAlive {
-		//log.Debugf("stopped sending heartbeat: peer %s is dead. peering id %s", peer.remoteLocation, peer.PeeringId())
+		//log.Debugw("scheduleNexHeartbeat", "id", peer.PeeringId(), "isAlive", peerAlive)
 		return
 	}
 	time.Sleep(heartbeatEvery)
 	if peerAlive, _ := peer.IsAlive(); !peerAlive {
-		//log.Debugf("stopped sending heartbeat: peer %s is dead. peering id %s", peer.remoteLocation, peer.PeeringId())
+		//log.Debugw("scheduleNexHeartbeat", "id", peer.PeeringId(), "isAlive", peerAlive)
 		return
 	}
 
 	peer.Lock()
 
-	if time.Since(peer.lastHeartbeatSent) < heartbeatEvery {
-		// was recently sent. exit
+	//log.Debugw("scheduleNexHeartbeat", "id", peer.PeeringId(), "since last", time.Since(peer.lastHeartbeatSent))
+
+	if time.Since(peer.lastHeartbeatSent) <= heartbeatEvery {
+		//log.Debugw("scheduleNexHeartbeat: too early", "id", peer.PeeringId())
 		peer.Unlock()
 		return
 	}
@@ -52,7 +57,7 @@ func (peer *Peer) scheduleNexHeartbeat() {
 
 	peer.Unlock()
 
-	log.Debugw("sending heartbeat", "to", peer.remoteLocation)
+	//log.Debugw("sending heartbeat", "to", peer.remoteLocation)
 	err := peer.sendData(hbMsgData)
 	if err != nil {
 		log.Debugw("sending heartbeat error",

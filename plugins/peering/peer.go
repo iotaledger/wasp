@@ -148,6 +148,8 @@ func (peer *Peer) sendHandshake() error {
 }
 
 func (peer *Peer) SendMsg(msg *PeerMessage) error {
+	//log.Debugw("SendMsg", "id", peer.PeeringId(), "msgType", msg.MsgType)
+
 	if msg.MsgType < FirstCommitteeMsgCode {
 		return errors.New("reserved message code")
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func Run1(clu *cluster.Cluster) error {
+func Activate1SC(clu *cluster.Cluster) error {
 	fmt.Printf("-----------------------------     Test 1: activation of 1 smart contract  \n")
 
 	sc := &clu.SmartContractConfig[0]
@@ -17,7 +17,7 @@ func Run1(clu *cluster.Cluster) error {
 	return nil
 }
 
-func Run2(clu *cluster.Cluster) error {
+func Activate3SC(clu *cluster.Cluster) error {
 	fmt.Printf("------------------------------   Test 2: activation of 3 smart contract  \n")
 
 	for _, sc := range clu.SmartContractConfig {
