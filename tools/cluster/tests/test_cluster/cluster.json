@@ -5,7 +5,9 @@
     {"net_address": "127.0.0.1", "api_port": 9092, "peering_port": 4002},
     {"net_address": "127.0.0.1", "api_port": 9093, "peering_port": 4003}
   ],
-  "goshimmer": "127.0.0.1:8080",
+  "goshimmer": {
+    "bind_address": "127.0.0.1:8080"
+  },
   "smart_contracts": [
     {
       "description": "Smart Contract nil program 1",

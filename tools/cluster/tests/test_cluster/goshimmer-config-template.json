@@ -1,0 +1,73 @@
+{
+  "analysis": {
+    "client": {
+      "serverAddress": "node1.goshimmer.dev:188"
+    },
+    "server": {
+      "bindAddress": "0.0.0.0:16178"
+    },
+    "webInterface": {
+      "bindAddress": "0.0.0.0:80"
+    }
+  },
+  "autopeering": {
+    "entryNodes": [
+      "MRCJTGX9x+PPiT3um1DQSHXvALaUg/tCH/oQr6mliGo=@35.246.104.243:14626"
+    ],
+    "port": 14626
+  },
+  "dashboard": {
+    "bindAddress": "127.0.0.1:8081",
+    "dev": false,
+    "basic_auth": {
+      "enabled": false,
+      "username": "goshimmer",
+      "password": "goshimmer"
+    }
+  },
+  "database": {
+    "inMemory": true,
+    "directory": "mainnetdb"
+  },
+  "drng": {
+    "instanceId": 1,
+    "threshold": 3,
+    "distributedPubKey": "",
+    "committeeMembers": []
+  },
+  "gossip": {
+    "port": 14666
+  },
+  "logger": {
+    "level": "debug",
+    "disableCaller": false,
+    "disableStacktrace": false,
+    "encoding": "console",
+    "outputPaths": [
+      "stdout"
+    ],
+    "disableEvents": true,
+    "remotelog": {
+      "serverAddress": "remotelog.goshimmer.iota.cafe:5213"
+    }
+  },
+  "network": {
+    "bindAddress": "0.0.0.0",
+    "externalAddress": "auto"
+  },
+  "node": {
+    "disablePlugins": ["Autopeering", "PortCheck"],
+    "enablePlugins": []
+  },
+  "webapi": {
+    "auth": {
+      "password": "goshimmer",
+      "privateKey": "",
+      "username": "goshimmer"
+    },
+    "bindAddress": "127.0.0.1:8080"
+  },
+  "waspconn": {
+    "port": 5000
+  }
+}
