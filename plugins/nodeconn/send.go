@@ -5,8 +5,22 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"time"
 )
+
+func SendWaspIdToNode() error {
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeSetIdMsg{
+		Waspid: peering.MyNetworkId(),
+	})
+	if err != nil {
+		return err
+	}
+	if err := SendDataToNode(data); err != nil {
+		return err
+	}
+	return nil
+}
 
 func RequestOutputsFromNode(addr *address.Address) error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetOutputsMsg{

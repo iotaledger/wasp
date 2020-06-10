@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"io"
 	"net"
 	"strings"
@@ -65,6 +66,12 @@ func nodeConnect() {
 			bconnSave.Events.ReceiveMessage.Detach(dataReceivedClosure)
 		}()
 	}))
+
+	if err := SendWaspIdToNode(); err == nil {
+		log.Debugf("sent own wasp id to node: %s", peering.MyNetworkId())
+	} else {
+		log.Errorf("failed to send wasp id to node: %v", err)
+	}
 
 	// read loop
 	if err := bconn.Read(); err != nil {

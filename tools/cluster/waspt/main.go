@@ -17,7 +17,7 @@ import (
 
 func check(err error) {
 	if err != nil {
-		fmt.Printf("[cluster] Waspt error: %s. Exitting...\n", err)
+		fmt.Printf("[cluster] Waspt error: %s. Exit...\n", err)
 		os.Exit(1)
 	}
 }
@@ -32,7 +32,7 @@ func main() {
 	check(err)
 
 	if globalFlags.NArg() < 1 {
-		fmt.Printf("Usage: %s [options] [init|start|gendksets]\n", os.Args[0])
+		fmt.Printf("Usage: %s [options] [init|start|gendksets|test<N>]\n", os.Args[0])
 		globalFlags.PrintDefaults()
 		return
 	}

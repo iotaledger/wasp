@@ -71,6 +71,12 @@ func readConfig(configPath string) (*ClusterConfig, error) {
 }
 
 func New(configPath string, dataPath string) (*Cluster, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("[cluster] current working directory is %s\n", wd)
+
 	config, err := readConfig(configPath)
 	if err != nil {
 		return nil, err
