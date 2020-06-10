@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"time"
 )
 
@@ -34,7 +34,7 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 		// nothing to notify about
 		return
 	}
-	msgData := hashing.MustBytes(&committee.NotifyReqMsg{
+	msgData := util.MustBytes(&committee.NotifyReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},

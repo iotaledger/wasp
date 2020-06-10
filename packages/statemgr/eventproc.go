@@ -2,20 +2,36 @@ package statemgr
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"time"
 )
 
 // respond to sync request 'GetStateUpdate'
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
+	sm.log.Debugw("EventGetBatchMsg",
+		"sender index", msg.SenderIndex,
+		"state index", msg.StateIndex,
+	)
 	addr := sm.committee.Address()
 	batch, err := state.LoadBatch(addr, msg.StateIndex)
 	if err != nil || batch == nil {
+		sm.log.Debugw("EventGetBatchMsg: can't find batch",
+			"sender index", msg.SenderIndex,
+			"state index", msg.StateIndex,
+			"addr", addr.String(),
+		)
 		// can't load batch, can't respond
 		return
 	}
-	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, hashing.MustBytes(&committee.BatchHeaderMsg{
+	sm.log.Debugw("EventGetBatchMsg: sending batch",
+		"target peer", msg.SenderIndex,
+		"state index", msg.StateIndex,
+		"state tx", batch.StateTransactionId().String(),
+		"size", batch.Size(),
+		"esence", batch.EssenceHash().String(),
+	)
+	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, util.MustBytes(&committee.BatchHeaderMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: msg.StateIndex,
 		},
@@ -26,17 +42,25 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 		return
 	}
 	batch.ForEach(func(stateUpdate state.StateUpdate) bool {
-		err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgStateUpdate, hashing.MustBytes(&committee.StateUpdateMsg{
+		err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgStateUpdate, util.MustBytes(&committee.StateUpdateMsg{
 			PeerMsgHeader: committee.PeerMsgHeader{
 				StateIndex: msg.StateIndex,
 			},
 			StateUpdate: stateUpdate,
 		}))
+		sh := util.GetHashValue(stateUpdate)
+		sm.log.Debugw("EventGetBatchMsg: sending stateUpdate", "hash", sh.String())
 		return err == nil
 	})
 }
 
 func (sm *stateManager) EventBatchHeaderMsg(msg *committee.BatchHeaderMsg) {
+	sm.log.Debugw("EventBatchHeaderMsg",
+		"sender", msg.SenderIndex,
+		"state index", msg.StateIndex,
+		"size", msg.Size,
+		"state tx", msg.StateTransactionId.String(),
+	)
 	if sm.syncedBatch != nil &&
 		sm.syncedBatch.stateIndex == msg.StateIndex &&
 		sm.syncedBatch.stateTxId == msg.StateTransactionId &&
@@ -55,6 +79,11 @@ func (sm *stateManager) EventBatchHeaderMsg(msg *committee.BatchHeaderMsg) {
 // response to the state update msg.
 // It collects state updates while waiting for the anchoring state transaction
 func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
+	sm.log.Debugw("EventStateUpdateMsg",
+		"sender", msg.SenderIndex,
+		"state index", msg.StateIndex,
+		"batch index", msg.BatchIndex,
+	)
 	if sm.syncedBatch == nil {
 		return
 	}
@@ -65,6 +94,9 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		sm.log.Errorf("bad state update message")
 		return
 	}
+	sh := util.GetHashValue(msg.StateUpdate)
+	sm.log.Debugw("EventStateUpdateMsg: receiving stateUpdate", "hash", sh.String())
+
 	sm.syncedBatch.stateUpdates[msg.BatchIndex] = msg.StateUpdate
 	sm.syncedBatch.msgCounter++
 
@@ -101,20 +133,19 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 
 // triggered whenever new state transaction arrives
 func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionMsg) {
-	sm.log.Debugw("received transaction")
-
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
 		return
 	}
-	sm.CheckSynchronizationStatus(stateBlock.StateIndex())
 
 	vh := stateBlock.VariableStateHash()
-	sm.log.Debugw("received state transaction",
+	sm.log.Debugw("EventStateTransactionMsg",
 		"txid", msg.ID().String(),
 		"state index", stateBlock.StateIndex(),
 		"state hash", vh.String(),
 	)
+
+	sm.CheckSynchronizationStatus(stateBlock.StateIndex())
 
 	if sm.solidStateValid {
 		if stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {
@@ -140,7 +171,12 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 }
 
 func (sm *stateManager) EventPendingBatchMsg(msg committee.PendingBatchMsg) {
-	sm.log.Debugf("EventPendingBatchMsg")
+	sm.log.Debugw("EventPendingBatchMsg",
+		"state index", msg.Batch.StateIndex(),
+		"size", msg.Batch.Size(),
+		"txid", msg.Batch.StateTransactionId().String(),
+		"essence", msg.Batch.EssenceHash().String(),
+	)
 
 	sm.addPendingBatch(msg.Batch)
 	sm.takeAction()

@@ -24,7 +24,7 @@ func (c *committeeObj) testTrace(msg *committee.TestTraceMsg) {
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)
 	targetSeqIndex := (seqIndex + 1) % c.Size()
 
-	sentToSeqIdx, err := c.SendMsgInSequence(committee.MsgTestTrace, hashing.MustBytes(msg), targetSeqIndex, msg.Sequence)
+	sentToSeqIdx, err := c.SendMsgInSequence(committee.MsgTestTrace, util.MustBytes(msg), targetSeqIndex, msg.Sequence)
 	if err != nil {
 		c.log.Errorf("testTrace: %v", err)
 	} else {
@@ -45,7 +45,7 @@ func (c *committeeObj) InitTestRound() {
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)
 	targetSeqIndex := (seqIndex + 1) % c.Size()
 
-	sentToSeqIdx, err := c.SendMsgInSequence(committee.MsgTestTrace, hashing.MustBytes(msg), targetSeqIndex, msg.Sequence)
+	sentToSeqIdx, err := c.SendMsgInSequence(committee.MsgTestTrace, util.MustBytes(msg), targetSeqIndex, msg.Sequence)
 	if err != nil {
 		c.log.Errorf("TEST FAILED: initial send returned an error: %v", err)
 	} else {

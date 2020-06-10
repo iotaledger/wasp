@@ -23,6 +23,11 @@ func CreateOrigin1SC(clu *cluster.Cluster) error {
 	if err != nil {
 		return err
 	}
+
+	sh := tx.MustState().VariableStateHash()
+	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s\n",
+		tx.ID().String(), sh.String(), sc.Address)
+
 	err = nodeapi.PostTransaction(goshimmer, tx.Transaction)
 	if err != nil {
 		return err
@@ -38,6 +43,6 @@ func CreateOrigin1SC(clu *cluster.Cluster) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("[cluster] posted origin batch to Wasp node %s\n", waspNodeUrl)
+	fmt.Printf("[cluster] posted origin batch to Wasp node %s, txid: %s\n", waspNodeUrl, batch.StateTransactionId().String())
 	return nil
 }

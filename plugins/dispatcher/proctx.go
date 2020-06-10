@@ -16,7 +16,10 @@ func dispatchState(tx *sctransaction.Transaction) {
 	if cmt == nil {
 		return
 	}
-	log.Debugw("dispatchState", "txid", tx.ID().String())
+	log.Debugw("dispatchState",
+		"txid", tx.ID().String(),
+		"addr", cmt.Address().String(),
+	)
 	_, err := tx.ValidateBlocks(cmt.Address())
 	if err != nil {
 		log.Errorf("invalid transaction %s ignored: %v", tx.ID().String(), err)
@@ -85,15 +88,14 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 }
 
 func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
+	log.Debugw("getCommitteeByState", "txid", tx.ID().String())
+
 	stateBlock, hasState := tx.State()
 	if !hasState {
 		return nil
 	}
 	color := stateBlock.Color()
-	if color == balance.ColorNew {
-		// may be origin
-		color = (balance.Color)(tx.ID())
-	}
+
 	var addr address.Address
 	tx.Outputs().ForEach(func(a address.Address, b []*balance.Balance) bool {
 		if util.BalanceOfColor(b, color) == 1 {
@@ -102,5 +104,11 @@ func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
 		}
 		return true
 	})
+	log.Debugw("getCommitteeByState",
+		"txid", tx.ID().String(),
+		"color", color.String(),
+		"addr", addr.String(),
+	)
+
 	return committees.CommitteeByAddress(addr)
 }

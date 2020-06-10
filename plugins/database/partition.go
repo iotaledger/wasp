@@ -19,6 +19,7 @@ const (
 	ObjectTypeVariableState
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
+	ObjectTypeSolidStateIndex
 )
 
 var (

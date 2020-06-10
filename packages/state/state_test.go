@@ -185,3 +185,24 @@ func TestApply3(t *testing.T) {
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 }
+
+func TestSave(t *testing.T) {
+	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	reqid1 := sctransaction.NewRequestId(txid1, 0)
+	reqid2 := sctransaction.NewRequestId(txid1, 2)
+
+	su1 := NewStateUpdate(&reqid1)
+	su2 := NewStateUpdate(&reqid2)
+
+	vs := NewVariableState(nil)
+
+	nowis := time.Now()
+
+	batch, err := NewBatch([]StateUpdate{su1, su2})
+	assert.NoError(t, err)
+	batch.WithStateIndex(0).WithTimestamp(nowis)
+	err = vs.ApplyBatch(batch)
+	assert.NoError(t, err)
+
+	vs.CommitToDb()
+}

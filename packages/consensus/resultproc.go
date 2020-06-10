@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/runvm"
 	"time"
@@ -79,7 +80,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		"ts", result.Timestamp,
 	)
 
-	msgData := hashing.MustBytes(&committee.SignedHashMsg{
+	msgData := util.MustBytes(&committee.SignedHashMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: op.stateIndex(),
 		},

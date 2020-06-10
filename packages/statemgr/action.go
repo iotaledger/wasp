@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
 )
@@ -52,12 +53,12 @@ func (sm *stateManager) checkStateApproval() bool {
 			return false
 		}
 		if sm.solidVariableState != nil {
-			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s",
+			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s, batch essence: %s",
 				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
-				varStateHash.String(), sm.nextStateTransaction.ID().String())
+				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		} else {
-			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s",
-				varStateHash.String(), sm.nextStateTransaction.ID().String())
+			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
+				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		}
 	} else {
 		// initial load
@@ -71,13 +72,13 @@ func (sm *stateManager) checkStateApproval() bool {
 
 	// update state manager variables to the new state
 	sm.nextStateTransaction = nil
-	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clean pending batches
+	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clear pending batches
 	sm.permutation.Shuffle(varStateHash.Bytes())
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
 
 	// if synchronized, notify consensus operator about state transition
 	if sm.isSynchronized() {
-		// async is a must in order not to deadlock
+		// async in order not to deadlock
 		go func() {
 			sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
 				VariableState:    sm.solidVariableState,
@@ -105,7 +106,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	if sm.solidVariableState != nil {
 		stateIndex = sm.solidVariableState.StateIndex() + 1
 	}
-	data := hashing.MustBytes(&committee.GetBatchMsg{
+	data := util.MustBytes(&committee.GetBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: stateIndex,
 		},

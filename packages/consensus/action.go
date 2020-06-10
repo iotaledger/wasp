@@ -2,10 +2,10 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
@@ -61,7 +61,7 @@ func (op *operator) startProcessing() {
 		"stateIdx", op.stateTx.MustState().StateIndex(),
 		"batch size", len(reqs),
 	)
-	msgData := hashing.MustBytes(&committee.StartProcessingReqMsg{
+	msgData := util.MustBytes(&committee.StartProcessingReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			// ts is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),

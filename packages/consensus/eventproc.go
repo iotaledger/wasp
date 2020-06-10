@@ -17,7 +17,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.setNewState(msg.StateTransaction, msg.VariableState)
 
 	vh := msg.VariableState.Hash()
-	op.log.Infof("NEW STATE FOR CONSENSUS INPUT #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
+	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
 		msg.VariableState.StateIndex(), op.peerPermutation.Current(),
 		msg.StateTransaction.ID().String(), vh.String(), op.iAmCurrentLeader())
 

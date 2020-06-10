@@ -86,7 +86,7 @@ func (vs *variableState) ApplyStateUpdate(stateUpd StateUpdate) {
 	vs.Variables().Apply(stateUpd.Variables())
 
 	vh := vs.Hash()
-	sh := hashing.GetHashValue(stateUpd)
+	sh := util.GetHashValue(stateUpd)
 	vs.stateHash = *hashing.HashData(vh.Bytes(), sh.Bytes())
 	vs.empty = false
 }
@@ -100,7 +100,7 @@ func (vs *variableState) Variables() variables.Variables {
 }
 
 func (vs *variableState) saveToDb(addr *address.Address) error {
-	data, err := hashing.Bytes(vs)
+	data, err := util.Bytes(vs)
 	if err != nil {
 		return err
 	}
@@ -150,68 +150,62 @@ func (vs *variableState) Read(r io.Reader) error {
 	return nil
 }
 
-// saves variable state to db together with the batch of state updates and records of processed requests
+// saves variable state to db atomically with the batch of state updates and records of processed requests
 func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
-	// TODO make it Badger-atomic transaction
-	// TODO mark processed requests in db in separate index
+	batchData, err := util.Bytes(b)
+	if err != nil {
+		return err
+	}
+	batchDbKey := dbkeyBatch(b.StateIndex())
 
-	batchData, err := hashing.Bytes(b)
-	if err != nil {
-		return err
-	}
-	varStateData, err := hashing.Bytes(vs)
-	if err != nil {
-		return err
-	}
-	db := database.GetPartition(&addr)
-	atomicWrite := db.Batched()
-	//batchedMutations.
-	err = atomicWrite.Set(dbkeyBatch(b.StateIndex()), batchData)
+	varStateData, err := util.Bytes(vs)
 	if err != nil {
 		return err
 	}
 	varStateDbkey := database.MakeKey(database.ObjectTypeVariableState)
-	err = atomicWrite.Set(varStateDbkey, varStateData)
-	if err != nil {
-		return err
-	}
-	reqids := b.RequestIds()
-	for i := range reqids {
-		err = markRequestProcessedSuccess(reqids[i], atomicWrite)
-		if err != nil {
-			return err
-		}
-	}
-	return atomicWrite.Commit()
-}
 
-func loadVariableState(addr *address.Address) (VariableState, error) {
-	data, err := database.GetPartition(addr).Get(database.MakeKey(database.ObjectTypeVariableState))
-	if err == kvstore.ErrKeyNotFound {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("loading variable state: %v", err)
+	solidStateValue := util.Uint32To4Bytes(vs.StateIndex())
+	solidStateKey := database.MakeKey(database.ObjectTypeSolidStateIndex)
+
+	keys := [][]byte{varStateDbkey, batchDbKey, solidStateKey}
+	values := [][]byte{varStateData, batchData, solidStateValue}
+
+	// store successfully processed request IDs
+	for _, rid := range b.RequestIds() {
+		keys = append(keys, dbkeyRequest(rid))
+		values = append(values, []byte{0})
 	}
 
-	varState := NewVariableState(nil).(*variableState)
-	if err = varState.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return varState, nil
+	db := database.GetPartition(&addr)
+
+	return util.StoreSetToDb(db, keys, values)
 }
 
 func LoadSolidState(addr *address.Address) (VariableState, Batch, bool, error) {
-	varState, err := loadVariableState(addr)
-	if err != nil || varState == nil {
+	db := database.GetPartition(addr)
+	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
+	if err == kvstore.ErrKeyNotFound {
+		return nil, nil, false, nil
+	}
+	if err != nil {
 		return nil, nil, false, err
 	}
-	batch, err := LoadBatch(addr, varState.StateIndex())
+	values, err := util.GetSetFromDb(db, [][]byte{
+		database.MakeKey(database.ObjectTypeVariableState),
+		dbkeyBatch(util.Uint32From4Bytes(stateIndexBin)),
+	})
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	varState := NewVariableState(nil).(*variableState)
+	if err = varState.Read(bytes.NewReader(values[0])); err != nil {
+		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
+	}
+
+	batch, err := BatchFromBytes(values[1])
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("loading batch: %v", err)
-	}
-	if batch == nil {
-		return nil, nil, false, fmt.Errorf("corrupted solid state: variable state exists, the corresponding batch does not")
 	}
 	if varState.StateIndex() != batch.StateIndex() {
 		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")
@@ -221,10 +215,6 @@ func LoadSolidState(addr *address.Address) (VariableState, Batch, bool, error) {
 
 func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
-}
-
-func markRequestProcessedSuccess(reqid *sctransaction.RequestId, atomicWrite kvstore.BatchedMutations) error {
-	return atomicWrite.Set(dbkeyRequest(reqid), []byte{0})
 }
 
 func MarkRequestProcessedFailure(addr *address.Address, reqid *sctransaction.RequestId) error {
