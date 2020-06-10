@@ -12,6 +12,7 @@ import (
 	"path"
 	"strings"
 	"text/template"
+	"time"
 
 	nodeapi "github.com/iotaledger/wasp/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -35,12 +36,15 @@ type SmartContractInitData struct {
 	Quorum         int    `json:"quorum"`
 }
 
+type WaspNodeConfig struct {
+	NetAddress  string `json:"net_address"`
+	ApiPort     int    `json:"api_port"`
+	PeeringPort int    `json:"peering_port"`
+	NanomsgPort int    `json:"nanomsg_port"`
+}
+
 type ClusterConfig struct {
-	Nodes []struct {
-		NetAddress  string `json:"net_address"`
-		ApiPort     int    `json:"api_port"`
-		PeeringPort int    `json:"peering_port"`
-	} `json:"nodes"`
+	Nodes     []WaspNodeConfig `json:"nodes"`
 	Goshimmer struct {
 		BindAddress string `json:"bind_address"`
 	} `json:"goshimmer"`
@@ -54,6 +58,25 @@ type Cluster struct {
 	DataPath            string // where the cluster's volatile data lives
 	Started             bool
 	cmds                []*exec.Cmd
+}
+
+func (sc *SmartContractFinalConfig) AllNodes() []int {
+	r := make([]int, 0)
+	r = append(r, sc.CommitteeNodes...)
+	r = append(r, sc.AccessNodes...)
+	return r
+}
+
+func (w *WaspNodeConfig) ApiHost() string {
+	return fmt.Sprintf("%s:%d", w.NetAddress, w.ApiPort)
+}
+
+func (w *WaspNodeConfig) PeeringHost() string {
+	return fmt.Sprintf("%s:%d", w.NetAddress, w.PeeringPort)
+}
+
+func (w *WaspNodeConfig) NanomsgHost() string {
+	return fmt.Sprintf("%s:%d", w.NetAddress, w.NanomsgPort)
 }
 
 func readConfig(configPath string) (*ClusterConfig, error) {
@@ -235,25 +258,37 @@ func (cluster *Cluster) start() error {
 
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
-	err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), initOk, "goshimmer")
+	err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
 	if err != nil {
 		return err
 	}
+
+	select {
+	case <-initOk:
+	case <-time.After(5 * time.Second):
+		return fmt.Errorf("Timeout starting goshimmer node\n")
+	}
+	fmt.Printf("[cluster] started goshimmer node\n")
+
 	for i, _ := range cluster.Config.Nodes {
-		err = cluster.startServer("wasp", cluster.WaspNodeDataPath(i), initOk, fmt.Sprintf("wasp %d", i))
+		err = cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
 		if err != nil {
 			return err
 		}
 	}
 
-	for i := 0; i < len(cluster.cmds); i++ {
-		<-initOk
+	for i := 0; i < len(cluster.Config.Nodes); i++ {
+		select {
+		case <-initOk:
+		case <-time.After(5 * time.Second):
+			return fmt.Errorf("Timeout starting wasp nodes\n")
+		}
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes\n", len(cluster.Config.Nodes))
 	return nil
 }
 
-func (cluster *Cluster) startServer(command string, cwd string, initOk chan<- bool, name string) error {
+func (cluster *Cluster) startServer(command string, cwd string, name string, initOk chan<- bool, initOkMsg string) error {
 	cmd := exec.Command(command)
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
@@ -277,7 +312,7 @@ func (cluster *Cluster) startServer(command string, cwd string, initOk chan<- bo
 	go scanLog(
 		stdoutPipe,
 		func(line string) { fmt.Printf("[ %s] %s\n", name, line) },
-		waitFor("WebAPI started", initOk),
+		waitFor(initOkMsg, initOk),
 	)
 
 	return nil
@@ -293,13 +328,13 @@ func scanLog(reader io.Reader, hooks ...func(string)) {
 	}
 }
 
-func waitFor(s string, initOk chan<- bool) func(line string) {
+func waitFor(msg string, initOk chan<- bool) func(line string) {
 	found := false
 	return func(line string) {
 		if found {
 			return
 		}
-		if strings.Contains(line, s) {
+		if strings.Contains(line, msg) {
 			initOk <- true
 			found = true
 		}
@@ -373,14 +408,21 @@ func (cluster *Cluster) ApiHosts() []string {
 	return hosts
 }
 
-func (cluster *Cluster) Committee(sc *SmartContractInitData) ([]string, error) {
-	committee := make([]string, 0)
-	for _, i := range sc.CommitteeNodes {
-		if i < 0 || i > len(cluster.Config.Nodes)-1 {
-			return nil, errors.New(fmt.Sprintf("Node index out of bounds in smart contract committee configuration: %d", i))
-		}
-		url := fmt.Sprintf("%s:%d", cluster.Config.Nodes[i].NetAddress, cluster.Config.Nodes[i].ApiPort)
-		committee = append(committee, url)
+func (cluster *Cluster) AllWaspNodes() []int {
+	r := make([]int, 0)
+	for i := range cluster.Config.Nodes {
+		r = append(r, i)
 	}
-	return committee, nil
+	return r
+}
+
+func (cluster *Cluster) WaspHosts(nodeIndexes []int, getHost func(w *WaspNodeConfig) string) []string {
+	hosts := make([]string, 0)
+	for _, i := range nodeIndexes {
+		if i < 0 || i > len(cluster.Config.Nodes)-1 {
+			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d", i))
+		}
+		hosts = append(hosts, getHost(&cluster.Config.Nodes[i]))
+	}
+	return hosts
 }

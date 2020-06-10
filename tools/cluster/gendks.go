@@ -3,6 +3,8 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/variables"
-	"io/ioutil"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
@@ -28,10 +29,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 	keys := make([]SmartContractFinalConfig, 0)
 
 	for i, sc := range cluster.Config.SmartContracts {
-		committee, err := cluster.Committee(&sc)
-		if err != nil {
-			return err
-		}
+		committee := cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost)
 		addr, err := waspapi.GenerateNewDistributedKeySet(
 			committee,
 			uint16(len(committee)),

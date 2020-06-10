@@ -8,7 +8,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest"
 	"os"
 	"os/signal"
 
@@ -32,7 +31,7 @@ func main() {
 	check(err)
 
 	if globalFlags.NArg() < 1 {
-		fmt.Printf("Usage: %s [options] [init|start|gendksets|test<N>]\n", os.Args[0])
+		fmt.Printf("Usage: %s [options] [init|start|gendksets]\n", os.Args[0])
 		globalFlags.PrintDefaults()
 		return
 	}
@@ -65,74 +64,6 @@ func main() {
 		err = wasps.GenerateDKSets()
 		check(err)
 		wasps.Stop()
-
-	case "test0":
-		err = wasps.Start()
-		check(err)
-
-		err = wasptest.Put3BootupRecords(wasps)
-		check(err)
-
-		waitCtrlC()
-		wasps.Wait()
-
-	case "test1":
-		err = wasps.Start()
-		check(err)
-
-		err = wasptest.Put3BootupRecords(wasps)
-		check(err)
-
-		err = wasptest.Activate1SC(wasps)
-		check(err)
-
-		waitCtrlC()
-		wasps.Wait()
-
-	case "test2":
-		err = wasps.Start()
-		check(err)
-
-		err = wasptest.Put3BootupRecords(wasps)
-		check(err)
-
-		err = wasptest.Activate3SC(wasps)
-		check(err)
-
-		waitCtrlC()
-		wasps.Wait()
-
-	case "test3":
-		err = wasps.Start()
-		check(err)
-
-		err = wasptest.Put3BootupRecords(wasps)
-		check(err)
-
-		err = wasptest.Activate1SC(wasps)
-		check(err)
-
-		err = wasptest.CreateOrigin1SC(wasps)
-		check(err)
-
-		waitCtrlC()
-		wasps.Wait()
-
-	case "test4":
-		err = wasps.Start()
-		check(err)
-
-		err = wasptest.Put3BootupRecords(wasps)
-		check(err)
-
-		err = wasptest.Activate1SC(wasps)
-		check(err)
-
-		err = wasptest.Send1Request(wasps)
-		check(err)
-
-		waitCtrlC()
-		wasps.Wait()
 	}
 }
 

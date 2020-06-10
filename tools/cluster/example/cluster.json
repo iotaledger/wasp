@@ -1,9 +1,9 @@
 {
   "nodes": [
-    {"net_address": "127.0.0.1", "api_port": 9090, "peering_port": 4000},
-    {"net_address": "127.0.0.1", "api_port": 9091, "peering_port": 4001},
-    {"net_address": "127.0.0.1", "api_port": 9092, "peering_port": 4002},
-    {"net_address": "127.0.0.1", "api_port": 9093, "peering_port": 4003}
+    {"net_address": "127.0.0.1", "api_port": 9090, "peering_port": 4000, "nanomsg_port": 5550},
+    {"net_address": "127.0.0.1", "api_port": 9091, "peering_port": 4001, "nanomsg_port": 5551},
+    {"net_address": "127.0.0.1", "api_port": 9092, "peering_port": 4002, "nanomsg_port": 5552},
+    {"net_address": "127.0.0.1", "api_port": 9093, "peering_port": 4003, "nanomsg_port": 5553}
   ],
   "goshimmer": {
     "bind_address": "127.0.0.1:8080"
