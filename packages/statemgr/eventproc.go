@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // respond to sync request 'GetStateUpdate'
@@ -29,7 +28,8 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 		"state index", msg.StateIndex,
 		"state tx", batch.StateTransactionId().String(),
 		"size", batch.Size(),
-		"esence", batch.EssenceHash().String(),
+		"essence", batch.EssenceHash().String(),
+		"ts", batch.Timestamp(),
 	)
 	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, util.MustBytes(&committee.BatchHeaderMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
@@ -37,6 +37,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 		},
 		Size:               batch.Size(),
 		StateTransactionId: batch.StateTransactionId(),
+		Timestamp:          batch.Timestamp(),
 	}))
 	if err != nil {
 		return
@@ -119,9 +120,13 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		return
 	}
 	batch.WithStateIndex(sm.syncedBatch.stateIndex).
-		WithTimestamp(time.Unix(0, sm.syncedBatch.ts)).
+		WithTimestamp(sm.syncedBatch.ts).
 		WithStateTransaction(sm.syncedBatch.stateTxId)
 
+	sm.log.Debugw("EventStateUpdateMsg: reconstructed batch",
+		"essence", batch.EssenceHash().String(),
+		"ts", batch.Timestamp(),
+	)
 	sm.syncedBatch = nil
 	go func() {
 		sm.committee.ReceiveMessage(committee.PendingBatchMsg{
@@ -176,6 +181,7 @@ func (sm *stateManager) EventPendingBatchMsg(msg committee.PendingBatchMsg) {
 		"size", msg.Batch.Size(),
 		"txid", msg.Batch.StateTransactionId().String(),
 		"essence", msg.Batch.EssenceHash().String(),
+		"ts", msg.Batch.Timestamp(),
 	)
 
 	sm.addPendingBatch(msg.Batch)

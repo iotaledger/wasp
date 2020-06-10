@@ -10,8 +10,8 @@ import (
 // the rest are forwarded to SC operator
 
 func (peer *Peer) initHeartbeats() {
-	peer.lastHeartbeatSent = time.Time{}
-	peer.lastHeartbeatReceived = time.Time{}
+	peer.lastHeartbeatSent = 0
+	peer.lastHeartbeatReceived = 0
 	peer.hbRingBufIdx = 0
 	for i := range peer.latencyRingBuf {
 		peer.latencyRingBuf[i] = 0
@@ -20,9 +20,9 @@ func (peer *Peer) initHeartbeats() {
 
 func (peer *Peer) receiveHeartbeat(ts int64) {
 	peer.Lock()
-	peer.lastHeartbeatReceived = time.Now()
+	peer.lastHeartbeatReceived = time.Now().UnixNano()
 	//log.Debugw("receiveHeartbeat", "id", peer.PeeringId(), "time", peer.lastHeartbeatReceived)
-	lagNano := peer.lastHeartbeatReceived.UnixNano() - ts
+	lagNano := peer.lastHeartbeatReceived - ts
 	peer.latencyRingBuf[peer.hbRingBufIdx] = lagNano
 	peer.hbRingBufIdx = (peer.hbRingBufIdx + 1) % numHeartbeatsToKeep
 	peer.Unlock()
@@ -47,7 +47,7 @@ func (peer *Peer) scheduleNexHeartbeat() {
 
 	//log.Debugw("scheduleNexHeartbeat", "id", peer.PeeringId(), "since last", time.Since(peer.lastHeartbeatSent))
 
-	if time.Since(peer.lastHeartbeatSent) <= heartbeatEvery {
+	if time.Since(time.Unix(0, peer.lastHeartbeatSent)) <= heartbeatEvery {
 		//log.Debugw("scheduleNexHeartbeat: too early", "id", peer.PeeringId())
 		peer.Unlock()
 		return
@@ -75,7 +75,7 @@ func (peer *Peer) IsAlive() (bool, int64) {
 		return false, 0
 	}
 
-	if time.Since(peer.lastHeartbeatReceived) > heartbeatEvery*isDeadAfterMissing {
+	if time.Since(time.Unix(0, peer.lastHeartbeatReceived)) > heartbeatEvery*isDeadAfterMissing {
 		return false, 0
 	}
 	sum := int64(0)

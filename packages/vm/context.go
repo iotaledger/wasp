@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // task context (for batch of requests)
@@ -23,7 +22,7 @@ type VMTask struct {
 	Balances        map[valuetransaction.ID][]*balance.Balance
 	RewardAddress   address.Address
 	Requests        []sctransaction.RequestRef
-	Timestamp       time.Time
+	Timestamp       int64
 	VariableState   state.VariableState // input immutable
 	Log             *logger.Logger
 	// call when finished
@@ -45,7 +44,7 @@ type VMContext struct {
 	// tx builder to build the final transaction
 	TxBuilder *TransactionBuilder
 	// timestamp of the batch
-	Timestamp time.Time
+	Timestamp int64
 	// initial state of the batch
 	VariableState state.VariableState
 	// log
@@ -56,11 +55,11 @@ type VMContext struct {
 	StateUpdate state.StateUpdate
 }
 
-func BatchHash(reqids []sctransaction.RequestId, timestamp time.Time) hashing.HashValue {
+func BatchHash(reqids []sctransaction.RequestId, ts int64) hashing.HashValue {
 	var buf bytes.Buffer
 	for i := range reqids {
 		buf.Write(reqids[i].Bytes())
 	}
-	_ = util.WriteUint64(&buf, uint64(timestamp.UnixNano()))
+	_ = util.WriteUint64(&buf, uint64(ts))
 	return *hashing.HashData(buf.Bytes())
 }

@@ -97,7 +97,7 @@ func (msg *SignedHashMsg) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
 		return err
 	}
-	if err := util.WriteTime(w, msg.OrigTimestamp); err != nil {
+	if err := util.WriteUint64(w, uint64(msg.OrigTimestamp)); err != nil {
 		return err
 	}
 	if _, err := w.Write(msg.BatchHash[:]); err != nil {
@@ -116,9 +116,12 @@ func (msg *SignedHashMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
 		return err
 	}
-	if err := util.ReadTime(r, &msg.OrigTimestamp); err != nil {
+	var ts uint64
+	if err := util.ReadUint64(r, &ts); err != nil {
 		return err
 	}
+	msg.OrigTimestamp = int64(ts)
+
 	if err := util.ReadHashValue(r, &msg.BatchHash); err != nil {
 		return err
 	}

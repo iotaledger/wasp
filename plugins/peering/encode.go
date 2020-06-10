@@ -20,11 +20,11 @@ import (
 //  -- otherwise panicL wrong MsgType
 
 // always puts timestamp into first 8 bytes and 1 byte msg type
-func encodeMessage(msg *PeerMessage) ([]byte, time.Time) {
+func encodeMessage(msg *PeerMessage) ([]byte, int64) {
 	var buf bytes.Buffer
 	// puts timestamp first
-	ts := time.Now()
-	_ = util.WriteUint64(&buf, uint64(ts.UnixNano()))
+	ts := time.Now().UnixNano()
+	_ = util.WriteUint64(&buf, uint64(ts))
 	switch {
 	case msg == nil:
 		buf.WriteByte(MsgTypeHeartbeat)

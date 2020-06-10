@@ -27,8 +27,8 @@ type Peer struct {
 	startOnce *sync.Once
 	numUsers  int
 	// heartbeats and latencies
-	lastHeartbeatReceived time.Time
-	lastHeartbeatSent     time.Time
+	lastHeartbeatReceived int64
+	lastHeartbeatSent     int64
 	latencyRingBuf        [numHeartbeatsToKeep]int64
 	hbRingBufIdx          int
 }
@@ -163,9 +163,9 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 
 // sends same msg to all peers in the slice which are not nil
 // with the same timestamp
-func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, time.Time) {
+func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 	if msg.MsgType < FirstCommitteeMsgCode {
-		return 0, time.Time{}
+		return 0, 0
 	}
 	// timestamped here, once
 	data, ts := encodeMessage(msg)

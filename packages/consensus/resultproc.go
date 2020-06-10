@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/runvm"
-	"time"
 )
 
 type runCalculationsParams struct {
@@ -19,7 +18,7 @@ type runCalculationsParams struct {
 	leaderPeerIndex uint16
 	balances        map[valuetransaction.ID][]*balance.Balance
 	rewardAddress   address.Address
-	timestamp       time.Time
+	timestamp       int64
 }
 
 // runs the VM for the request and posts result to committee's queue

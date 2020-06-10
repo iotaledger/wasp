@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"time"
 )
 
 func (c *committeeObj) dispatchMessage(msg interface{}) {
@@ -95,7 +94,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
-		msgt.Timestamp = time.Unix(0, msg.Timestamp)
+		msgt.Timestamp = msg.Timestamp
 
 		if c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex) {
 			c.operator.EventStartProcessingReqMsg(msgt)
@@ -108,7 +107,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
-		msgt.Timestamp = time.Unix(0, msg.Timestamp)
+		msgt.Timestamp = msg.Timestamp
 
 		if c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex) {
 			c.operator.EventSignedHashMsg(msgt)

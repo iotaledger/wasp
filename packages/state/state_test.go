@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -70,7 +71,7 @@ func TestBatches(t *testing.T) {
 	batch2.WithStateTransaction(txid1)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	assert.EqualValues(t, hashing.GetHashValue(batch1), hashing.GetHashValue(batch2))
+	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 }
 
 func TestApply(t *testing.T) {
@@ -112,7 +113,7 @@ func TestApply(t *testing.T) {
 	batch2.WithStateTransaction(txid1)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	assert.EqualValues(t, hashing.GetHashValue(batch1), hashing.GetHashValue(batch2))
+	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 
 	vs1 := NewVariableState(nil)
 	vs2 := NewVariableState(nil)
@@ -184,25 +185,4 @@ func TestApply3(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
-}
-
-func TestSave(t *testing.T) {
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := sctransaction.NewRequestId(txid1, 0)
-	reqid2 := sctransaction.NewRequestId(txid1, 2)
-
-	su1 := NewStateUpdate(&reqid1)
-	su2 := NewStateUpdate(&reqid2)
-
-	vs := NewVariableState(nil)
-
-	nowis := time.Now()
-
-	batch, err := NewBatch([]StateUpdate{su1, su2})
-	assert.NoError(t, err)
-	batch.WithStateIndex(0).WithTimestamp(nowis)
-	err = vs.ApplyBatch(batch)
-	assert.NoError(t, err)
-
-	vs.CommitToDb()
 }

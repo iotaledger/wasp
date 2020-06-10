@@ -11,12 +11,11 @@ import (
 	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
-	"time"
 )
 
 type variableState struct {
 	stateIndex uint32
-	timestamp  time.Time
+	timestamp  int64
 	empty      bool
 	stateHash  hashing.HashValue
 	vars       variables.Variables
@@ -49,13 +48,13 @@ func (vs *variableState) ApplyStateIndex(stateIndex uint32) {
 	vs.stateIndex = stateIndex
 }
 
-func (vs *variableState) Timestamp() time.Time {
+func (vs *variableState) Timestamp() int64 {
 	return vs.timestamp
 }
 
-func (vs *variableState) ApplyTimestamp(ts time.Time) {
+func (vs *variableState) ApplyTimestamp(ts int64) {
 	vh := vs.Hash()
-	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint64To8Bytes(uint64(ts.UnixNano())))
+	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint64To8Bytes(uint64(ts)))
 	vs.empty = false
 	vs.timestamp = ts
 }
@@ -122,7 +121,7 @@ func (vs *variableState) Write(w io.Writer) error {
 	if _, err := w.Write(util.Uint32To4Bytes(vs.stateIndex)); err != nil {
 		return err
 	}
-	if err := util.WriteTime(w, vs.timestamp); err != nil {
+	if err := util.WriteUint64(w, uint64(vs.timestamp)); err != nil {
 		return err
 	}
 	if _, err := w.Write(vs.stateHash.Bytes()); err != nil {
@@ -138,9 +137,11 @@ func (vs *variableState) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &vs.stateIndex); err != nil {
 		return err
 	}
-	if err := util.ReadTime(r, &vs.timestamp); err != nil {
+	var ts uint64
+	if err := util.ReadUint64(r, &ts); err != nil {
 		return err
 	}
+	vs.timestamp = int64(ts)
 	if _, err := r.Read(vs.stateHash[:]); err != nil {
 		return err
 	}

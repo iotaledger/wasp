@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"time"
 )
 
 const (
@@ -47,7 +46,7 @@ type NotifyReqMsg struct {
 type StartProcessingReqMsg struct {
 	PeerMsgHeader
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
-	Timestamp time.Time
+	Timestamp int64
 	// batch of request ids
 	RequestIds []sctransaction.RequestId
 	// reward address
@@ -61,11 +60,11 @@ type StartProcessingReqMsg struct {
 type SignedHashMsg struct {
 	PeerMsgHeader
 	// timestamp of this message. Field is set upon receive the message to sender's timestamp
-	Timestamp time.Time
+	Timestamp int64
 	// returns hash of all req ids
 	BatchHash hashing.HashValue
 	// original timestamp, the parameter for calculations, which is signed as part of the essence
-	OrigTimestamp time.Time
+	OrigTimestamp int64
 	// hash of the signed data (essence)
 	EssenceHash hashing.HashValue
 	// signature

@@ -182,7 +182,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		return
 	}
 	vsh := vsClone.Hash()
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex()+1, vsh, ctx.Timestamp.UnixNano())
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex()+1, vsh, ctx.Timestamp)
 
 	// check of all provided inputs were properly consumed
 	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {

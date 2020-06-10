@@ -11,14 +11,13 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
-	"time"
 )
 
 type batch struct {
 	stateIndex   uint32
 	stateTxId    valuetransaction.ID
 	stateUpdates []StateUpdate
-	timestamp    time.Time
+	timestamp    int64
 }
 
 // validates, enumerates and creates a batch from array of state updates
@@ -54,7 +53,7 @@ func (b *batch) StateIndex() uint32 {
 	return b.stateIndex
 }
 
-func (b *batch) Timestamp() time.Time {
+func (b *batch) Timestamp() int64 {
 	return b.timestamp
 }
 
@@ -68,7 +67,7 @@ func (b *batch) WithStateTransaction(vtxid valuetransaction.ID) Batch {
 	return b
 }
 
-func (b *batch) WithTimestamp(ts time.Time) Batch {
+func (b *batch) WithTimestamp(ts int64) Batch {
 	b.timestamp = ts
 	return b
 }
@@ -116,7 +115,7 @@ func (b *batch) writeEssence(w io.Writer) error {
 	if err := util.WriteUint32(w, b.stateIndex); err != nil {
 		return err
 	}
-	if err := util.WriteTime(w, b.timestamp); err != nil {
+	if err := util.WriteUint64(w, uint64(b.timestamp)); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(len(b.stateUpdates))); err != nil {
@@ -144,9 +143,11 @@ func (b *batch) readEssence(r io.Reader) error {
 	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
 		return err
 	}
-	if err := util.ReadTime(r, &b.timestamp); err != nil {
+	var ts uint64
+	if err := util.ReadUint64(r, &ts); err != nil {
 		return err
 	}
+	b.timestamp = int64(ts)
 	var size uint16
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err

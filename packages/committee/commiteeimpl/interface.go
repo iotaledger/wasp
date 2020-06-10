@@ -116,7 +116,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	return peer.SendMsg(msg)
 }
 
-func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, time.Time) {
+func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, int64) {
 	msg := &peering.PeerMessage{
 		Address:     c.address,
 		SenderIndex: c.ownIndex,

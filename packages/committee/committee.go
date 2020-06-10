@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm"
-	"time"
 )
 
 type Committee interface {
@@ -16,7 +15,7 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	NumPeers() uint16
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, time.Time)
+	SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, int64)
 	SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error)
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
