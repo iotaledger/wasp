@@ -9,17 +9,16 @@ import (
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
 	_ "go.nanomsg.org/mangos/v3/transport/all"
-	"sync"
 )
 
-// PluginName is the name of the NodeConn plugin.
+// PluginName is the name of the Publisher plugin.
 const PluginName = "Publisher"
 
 var (
-	Plugin    = node.NewPlugin(PluginName, node.Disabled, configure, run)
-	log       *logger.Logger
-	socket    mangos.Socket
-	sockMutex sync.RWMutex
+	Plugin   = node.NewPlugin(PluginName, node.Disabled, configure, run)
+	log      *logger.Logger
+	socket   mangos.Socket
+	messages = make(chan []byte)
 )
 
 func configure(_ *node.Plugin) {
@@ -27,44 +26,44 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		port := config.Node.GetInt(CfgNanomsgPublisherPort)
-		if err := openSocket(port); err != nil {
-			log.Errorf("failed to initialize publisher: %v", err)
-			return
-		}
+	port := config.Node.GetInt(CfgNanomsgPublisherPort)
+	if err := openSocket(port); err != nil {
+		log.Errorf("failed to initialize publisher: %v", err)
+	} else {
 		log.Infof("nanomsg publisher is running on port %d", port)
+	}
 
-		<-shutdownSignal
-
-		sockMutex.Lock()
-
-		socket.Close()
-		socket = nil
-
-		sockMutex.Unlock()
-
-		log.Infof("publisher has been closed")
+	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+		for {
+			select {
+			case msg := <-messages:
+				if socket != nil {
+					err := socket.Send([]byte(msg))
+					if err != nil {
+						log.Errorf("Failed to publish message: %v", err)
+					}
+				}
+			case <-shutdownSignal:
+				socket.Close()
+				socket = nil
+				return
+			}
+		}
 	})
 	if err != nil {
-		log.Error(err)
-		return
+		panic(err)
 	}
 }
 
 func openSocket(port int) error {
-	sockMutex.Lock()
-	defer sockMutex.Unlock()
-
 	var err error
 	socket, err = pub.NewSocket()
 	if err != nil {
 		socket = nil
 		return err
 	}
-	url := fmt.Sprintf("tcp://:%d", port)
-	log.Debugf("listening to %s", url)
 
+	url := fmt.Sprintf("tcp://:%d", port)
 	if err = socket.Listen(url); err != nil {
 		socket = nil
 		return err
@@ -77,10 +76,5 @@ func Publish(msgType string, parts ...string) {
 	for _, s := range parts {
 		msg = msg + " " + s
 	}
-	sockMutex.RLock()
-	defer sockMutex.RUnlock()
-
-	if socket != nil {
-		_ = socket.Send([]byte(msg))
-	}
+	messages <- []byte(msg)
 }

@@ -30,10 +30,7 @@ func Activate3SC(clu *cluster.Cluster) error {
 }
 
 func activate(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error {
-	_, _, allNodesApi, err := getUrls(sc, clu)
-	if err != nil {
-		return err
-	}
+	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 	for _, host := range allNodesApi {
 		err := waspapi.ActivateSC(host, sc.Address)
 		if err != nil {

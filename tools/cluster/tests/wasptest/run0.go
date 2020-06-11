@@ -22,7 +22,6 @@ func Put3BootupRecords(clu *cluster.Cluster) error {
 			return fmt.Errorf("failed to create bootup records")
 		}
 	}
-	//
 	return nil
 }
 
@@ -37,10 +36,9 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 		return err
 	}
 
-	committeePeerNodes, accessPeerNodes, allNodesApi, err := getUrls(sc, clu)
-	if err != nil {
-		return err
-	}
+	committeePeerNodes := clu.WaspHosts(sc.CommitteeNodes, (*cluster.WaspNodeConfig).PeeringHost)
+	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
+	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 
 	var failed bool
 	for _, host := range allNodesApi {
@@ -59,26 +57,4 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 		return fmt.Errorf("failed to send bootup data to some commitee nodes")
 	}
 	return nil
-}
-
-func getUrls(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) ([]string, []string, []string, error) {
-	allNodesApi := make([]string, 0, len(sc.CommitteeNodes)+len(sc.AccessNodes))
-	committeePeerNodes := make([]string, len(sc.CommitteeNodes))
-	for i, hi := range sc.CommitteeNodes {
-		if hi < 0 || hi >= len(clu.Config.Nodes) {
-			return nil, nil, nil, fmt.Errorf("wrong committee node index")
-		}
-		committeePeerNodes[i] = fmt.Sprintf("%s:%d", clu.Config.Nodes[hi].NetAddress, clu.Config.Nodes[hi].PeeringPort)
-		allNodesApi = append(allNodesApi, fmt.Sprintf("%s:%d", clu.Config.Nodes[hi].NetAddress, clu.Config.Nodes[hi].ApiPort))
-	}
-
-	accessPeerNodes := make([]string, len(sc.AccessNodes))
-	for i, hi := range sc.AccessNodes {
-		if hi < 0 || hi >= len(clu.Config.Nodes) {
-			return nil, nil, nil, fmt.Errorf("wrong access node index")
-		}
-		accessPeerNodes[i] = fmt.Sprintf("%s:%d", clu.Config.Nodes[hi].NetAddress, clu.Config.Nodes[hi].PeeringPort)
-		allNodesApi = append(allNodesApi, fmt.Sprintf("%s:%d", clu.Config.Nodes[hi].NetAddress, clu.Config.Nodes[hi].ApiPort))
-	}
-	return committeePeerNodes, accessPeerNodes, allNodesApi, nil
 }
