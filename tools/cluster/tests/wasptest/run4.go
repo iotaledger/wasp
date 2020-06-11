@@ -6,7 +6,7 @@ import (
 )
 
 func Send1Request(clu *cluster.Cluster) error {
-	fmt.Printf("------------------------------   Test 4: create origin of 1 smart contract and send 1 request to it\n")
+	fmt.Printf("---------------------   Test: create origin of 1 smart contract and send 1 request to it\n")
 
 	// TODO
 	// goshimmer is needed

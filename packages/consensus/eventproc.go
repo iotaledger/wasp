@@ -1,8 +1,10 @@
 package consensus
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/iotaledger/wasp/plugins/runvm"
 )
 
@@ -65,7 +67,15 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 		)
 		return
 	}
-	req := op.requestFromMsg(reqMsg)
+	req, newRequest := op.requestFromMsg(reqMsg)
+
+	if newRequest {
+		publisher.Publish("request", "in",
+			op.committee.Address().String(),
+			reqMsg.Transaction.ID().String(),
+			fmt.Sprintf("%d", reqMsg.Index),
+		)
+	}
 
 	// notify about new request the current leader
 	if op.stateTx != nil {

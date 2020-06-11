@@ -39,13 +39,16 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 }
 
 // request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) *request {
+func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool) {
 	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
 	ret, ok := op.requests[reqId]
-	if ok && ret.reqTx == nil {
-		ret.reqTx = reqMsg.Transaction
-		ret.whenMsgReceived = time.Now()
-		return ret
+	if ok {
+		newreq := ret.reqTx == nil
+		if newreq {
+			ret.reqTx = reqMsg.Transaction
+			ret.whenMsgReceived = time.Now()
+		}
+		return ret, newreq
 	}
 	if !ok {
 		ret = op.newRequest(reqId)
@@ -55,7 +58,7 @@ func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) *request {
 	}
 	ret.notifications[op.peerIndex()] = true
 
-	return ret
+	return ret, true
 }
 
 // TODO caching processed requests

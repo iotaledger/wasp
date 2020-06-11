@@ -1,4 +1,4 @@
-package publisher
+package subscribe
 
 import (
 	"fmt"

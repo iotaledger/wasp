@@ -1,6 +1,7 @@
 package statemgr
 
 import (
+	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -55,25 +56,45 @@ func (sm *stateManager) checkStateApproval() bool {
 			return false
 		}
 		if sm.solidVariableState != nil {
-			publisher.Publish("state", sm.committee.Address().String(),
-				strconv.Itoa(int(sm.solidVariableState.StateIndex())),
-				strconv.Itoa(int(pending.nextVariableState.StateIndex())),
+			publisher.Publish("state",
+				sm.committee.Address().String(),
+				fmt.Sprintf("%d", sm.solidVariableState.StateIndex()),
+				fmt.Sprintf("%d", pending.nextVariableState.StateIndex()),
+				sm.nextStateTransaction.ID().String(),
+				varStateHash.String(),
 			)
 
 			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s, batch essence: %s",
 				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		} else {
-			publisher.Publish("state", sm.committee.Address().String(), "-1", "0")
+			publisher.Publish("state",
+				sm.committee.Address().String(),
+				"-1",
+				"0",
+				sm.nextStateTransaction.ID().String(),
+				varStateHash.String(),
+			)
 
 			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
+		}
+
+		// publish processed requests
+		for _, reqid := range pending.batch.RequestIds() {
+			publisher.Publish("request", "out",
+				sm.committee.Address().String(),
+				reqid.TransactionId().String(),
+				fmt.Sprintf("%d", reqid.Index()),
+			)
 		}
 	} else {
 		// initial load
 		publisher.Publish("state", sm.committee.Address().String(),
 			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
 			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+			sm.nextStateTransaction.ID().String(),
+			varStateHash.String(),
 		)
 
 		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",

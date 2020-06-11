@@ -4,22 +4,23 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 // respond to sync request 'GetStateUpdate'
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
-	sm.log.Debugw("EventGetBatchMsg",
-		"sender index", msg.SenderIndex,
-		"state index", msg.StateIndex,
-	)
+	//sm.log.Debugw("EventGetBatchMsg",
+	//	"sender index", msg.SenderIndex,
+	//	"state index", msg.StateIndex,
+	//)
 	addr := sm.committee.Address()
 	batch, err := state.LoadBatch(addr, msg.StateIndex)
 	if err != nil || batch == nil {
-		sm.log.Debugw("EventGetBatchMsg: can't find batch",
-			"sender index", msg.SenderIndex,
-			"state index", msg.StateIndex,
-			"addr", addr.String(),
-		)
+		//sm.log.Debugw("EventGetBatchMsg: can't find batch",
+		//	"sender index", msg.SenderIndex,
+		//	"state index", msg.StateIndex,
+		//	"addr", addr.String(),
+		//)
 		// can't load batch, can't respond
 		return
 	}
@@ -170,8 +171,14 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 			}
 		}
 	}
-
 	sm.nextStateTransaction = msg.Transaction
+
+	// new state transaction accepted by the state manager
+	publisher.Publish("statetx", "in",
+		sm.committee.Address().String(),
+		sm.nextStateTransaction.ID().String(),
+	)
+
 	sm.takeAction()
 }
 

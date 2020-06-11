@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/subscribe"
 	"io"
 	"io/ioutil"
 	"os"
@@ -60,7 +60,7 @@ type Cluster struct {
 	Started             bool
 	cmds                []*exec.Cmd
 	// reading publisher's output
-	messagesCh  chan *publisher.HostMessage
+	messagesCh  chan *subscribe.HostMessage
 	stopReading chan bool
 	counters    map[string]int
 }
@@ -437,7 +437,7 @@ func (cluster *Cluster) ListenToMessages(topics ...string) error {
 
 	fmt.Printf("[cluster] will be listening on topics %+v from %+v\n", topics, allNodesNanomsg)
 
-	cluster.messagesCh = make(chan *publisher.HostMessage, 1000)
+	cluster.messagesCh = make(chan *subscribe.HostMessage, 1000)
 	cluster.stopReading = make(chan bool)
 	cluster.counters = make(map[string]int)
 
@@ -447,13 +447,13 @@ func (cluster *Cluster) ListenToMessages(topics ...string) error {
 		}
 	}
 
-	return publisher.SubscribeMulti(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, topics...)
+	return subscribe.SubscribeMulti(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, topics...)
 }
 
-func (cluster *Cluster) CountMessages(duration time.Duration) ([]*publisher.HostMessage, map[string]int) {
+func (cluster *Cluster) CountMessages(duration time.Duration) ([]*subscribe.HostMessage, map[string]int) {
 	fmt.Printf("[cluster] counting publisher's messages for %v\n", duration)
 
-	all := make([]*publisher.HostMessage, 0)
+	all := make([]*subscribe.HostMessage, 0)
 
 	deadline := time.Now().Add(duration)
 	for {
