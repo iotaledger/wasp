@@ -6,10 +6,9 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func Activate1SC(clu *cluster.Cluster) error {
+func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	fmt.Printf("-----------------------------     Test 1: activation of 1 smart contract  \n")
 
-	sc := &clu.SmartContractConfig[0]
 	if err := activate(sc, clu); err != nil {
 		return fmt.Errorf("activate %s: %v\n", sc.Address, err)
 	}

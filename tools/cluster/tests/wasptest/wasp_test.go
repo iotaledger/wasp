@@ -83,7 +83,7 @@ func TestActivate1SC(t *testing.T) {
 	check(err, t)
 
 	// exercise
-	err = Activate1SC(wasps)
+	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
 	// count
@@ -132,7 +132,6 @@ func TestActivate3SC(t *testing.T) {
 	for _, msg := range allMsg {
 		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
 	}
-
 	// verify
 }
 
@@ -145,14 +144,14 @@ func TestCreateOrigin(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps)
+	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
 	// exercise
 	err = CreateOrigin1SC(wasps)
 	check(err, t)
 
-	allMsg, counters := wasps.CountMessages(10 * time.Second)
+	allMsg, counters := wasps.CountMessages(5 * time.Second)
 
 	fmt.Printf("[cluster] ++++++++++ counters\n")
 	keys := make([]string, 0)
@@ -180,13 +179,30 @@ func TestSend1Request(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps)
+	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	// exercise
-	err = Send1Request(wasps)
+	err = CreateOrigin1SC(wasps)
 	check(err, t)
 
+	err = Send1Request(wasps, &wasps.SmartContractConfig[0])
+	check(err, t)
+
+	allMsg, counters := wasps.CountMessages(15 * time.Second)
+
+	fmt.Printf("[cluster] ++++++++++ counters\n")
+	keys := make([]string, 0)
+	for k := range counters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
+	}
+
+	for _, msg := range allMsg {
+		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
+	}
 	// verify
 	// TODO
 }

@@ -8,8 +8,6 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-const goshimmer = "127.0.0.1:8080"
-
 func CreateOrigin1SC(clu *cluster.Cluster) error {
 	fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
@@ -19,7 +17,7 @@ func CreateOrigin1SC(clu *cluster.Cluster) error {
 	waspNodeUrl := fmt.Sprintf("%s:%d", waspNodeNetAddr, waspNodeApiPort)
 
 	sc := clu.SmartContractConfig[0]
-	tx, batch, err := cluster.CreateOriginData(goshimmer, &sc)
+	tx, batch, err := cluster.CreateOriginData(clu.Config.Goshimmer.BindAddress, &sc)
 	if err != nil {
 		return err
 	}
@@ -31,7 +29,7 @@ func CreateOrigin1SC(clu *cluster.Cluster) error {
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s\n",
 		tx.ID().String(), sh.String(), sc.Address)
 
-	err = nodeapi.PostTransaction(goshimmer, tx.Transaction)
+	err = nodeapi.PostTransaction(clu.Config.Goshimmer.BindAddress, tx.Transaction)
 	if err != nil {
 		return err
 	}
