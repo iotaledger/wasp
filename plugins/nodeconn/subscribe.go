@@ -43,8 +43,7 @@ func sendSubscriptionsIfNeeded() {
 
 	go func() {
 		data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeSubscribeMsg{
-			Addresses:   addrs,
-			PullBacklog: false,
+			Addresses: addrs,
 		})
 		if err != nil {
 			log.Errorf("sending subscriptions: %v", err)
