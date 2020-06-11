@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"io"
 	"io/ioutil"
 	"os"
@@ -58,6 +59,10 @@ type Cluster struct {
 	DataPath            string // where the cluster's volatile data lives
 	Started             bool
 	cmds                []*exec.Cmd
+	// reading publisher's output
+	messagesCh  chan *publisher.HostMessage
+	stopReading chan bool
+	counters    map[string]int
 }
 
 func (sc *SmartContractFinalConfig) AllNodes() []int {
@@ -425,4 +430,44 @@ func (cluster *Cluster) WaspHosts(nodeIndexes []int, getHost func(w *WaspNodeCon
 		hosts = append(hosts, getHost(&cluster.Config.Nodes[i]))
 	}
 	return hosts
+}
+
+func (cluster *Cluster) ListenToMessages(topics ...string) error {
+	allNodesNanomsg := cluster.WaspHosts(cluster.AllWaspNodes(), (*WaspNodeConfig).NanomsgHost)
+
+	fmt.Printf("[cluster] will be listening on topics %+v from %+v\n", topics, allNodesNanomsg)
+
+	cluster.messagesCh = make(chan *publisher.HostMessage, 1000)
+	cluster.stopReading = make(chan bool)
+	cluster.counters = make(map[string]int)
+
+	for _, host := range allNodesNanomsg {
+		for _, t := range topics {
+			cluster.counters[t+"--"+host] = 0
+		}
+	}
+
+	return publisher.SubscribeMulti(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, topics...)
+}
+
+func (cluster *Cluster) CountMessages(duration time.Duration) ([]*publisher.HostMessage, map[string]int) {
+	fmt.Printf("[cluster] counting publisher's messages for %v\n", duration)
+
+	all := make([]*publisher.HostMessage, 0)
+
+	deadline := time.Now().Add(duration)
+	for {
+		select {
+		case msg := <-cluster.messagesCh:
+			all = append(all, msg)
+			cluster.counters[msg.Message[0]+"--"+msg.Sender] += 1
+
+		case <-time.After(500 * time.Millisecond):
+
+		}
+		if time.Now().After(deadline) {
+			break
+		}
+	}
+	return all, cluster.counters
 }

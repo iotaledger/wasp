@@ -1,13 +1,16 @@
 package wasptest
 
 import (
-	"path"
-	"runtime"
-	"testing"
-
+	"fmt"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/assert"
+	"path"
+	"runtime"
+	"sort"
+	"strings"
+	"testing"
+	"time"
 )
 
 func check(err error, t *testing.T) {
@@ -44,7 +47,8 @@ func TestPutBootupRecords(t *testing.T) {
 	messages := make(chan *publisher.HostMessage)
 	done := make(chan bool)
 	defer close(done)
-	err := publisher.SubscribeMulti(allNodesNanomsg, messages, done, "bootuprec")
+	err := publisher.SubscribeMulti(allNodesNanomsg, messages, done,
+		"bootuprec", "active_committee", "dismissed_committee")
 	check(err, t)
 
 	// exercise
@@ -63,41 +67,83 @@ func TestPutBootupRecords(t *testing.T) {
 		msg := <-messages
 		received[msg.Sender+msg.Message[1]] += 1
 	}
+
+	fmt.Printf("[cluster] waiting 10 sec...\n")
 	assert.Equal(t, expected, received)
 }
 
 func TestActivate1SC(t *testing.T) {
 	// setup
 	wasps := setup(t)
-	err := Put3BootupRecords(wasps)
+
+	err := wasps.ListenToMessages("bootuprec", "active_committee", "dismissed_committee")
+	check(err, t)
+
+	err = Put3BootupRecords(wasps)
 	check(err, t)
 
 	// exercise
 	err = Activate1SC(wasps)
 	check(err, t)
 
+	// count
+	_, counters := wasps.CountMessages(5 * time.Second)
+
+	fmt.Printf("[cluster] ++++++++++ counters\n")
+	keys := make([]string, 0)
+	for k := range counters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
+	}
+
 	// verify
-	// TODO
 }
 
 func TestActivate3SC(t *testing.T) {
 	// setup
 	wasps := setup(t)
-	err := Put3BootupRecords(wasps)
+
+	err := wasps.ListenToMessages("bootuprec", "active_committee", "dismissed_committee")
+	check(err, t)
+
+	err = Put3BootupRecords(wasps)
 	check(err, t)
 
 	// exercise
 	err = Activate3SC(wasps)
 	check(err, t)
 
+	// count
+	allMsg, counters := wasps.CountMessages(5 * time.Second)
+
+	fmt.Printf("[cluster] ++++++++++ counters\n")
+	keys := make([]string, 0)
+	for k := range counters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
+	}
+
+	for _, msg := range allMsg {
+		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
+	}
+
 	// verify
-	// TODO
 }
 
 func TestCreateOrigin(t *testing.T) {
 	// setup
 	wasps := setup(t)
-	err := Put3BootupRecords(wasps)
+
+	err := wasps.ListenToMessages("bootuprec", "active_committee", "dismissed_committee", "state")
+	check(err, t)
+
+	err = Put3BootupRecords(wasps)
 	check(err, t)
 	err = Activate1SC(wasps)
 	check(err, t)
@@ -106,6 +152,21 @@ func TestCreateOrigin(t *testing.T) {
 	err = CreateOrigin1SC(wasps)
 	check(err, t)
 
+	allMsg, counters := wasps.CountMessages(5 * time.Second)
+
+	fmt.Printf("[cluster] ++++++++++ counters\n")
+	keys := make([]string, 0)
+	for k := range counters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
+	}
+
+	for _, msg := range allMsg {
+		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
+	}
 	// verify
 	// TODO
 }

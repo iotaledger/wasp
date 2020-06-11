@@ -7,6 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
+	"github.com/iotaledger/wasp/plugins/publisher"
+	"strconv"
 	"time"
 )
 
@@ -53,15 +55,27 @@ func (sm *stateManager) checkStateApproval() bool {
 			return false
 		}
 		if sm.solidVariableState != nil {
+			publisher.Publish("state", sm.committee.Address().String(),
+				strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+				strconv.Itoa(int(pending.nextVariableState.StateIndex())),
+			)
+
 			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s, batch essence: %s",
 				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		} else {
+			publisher.Publish("state", sm.committee.Address().String(), "-1", "0")
+
 			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		}
 	} else {
 		// initial load
+		publisher.Publish("state", sm.committee.Address().String(),
+			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+		)
+
 		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",
 			sm.solidVariableState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
 	}

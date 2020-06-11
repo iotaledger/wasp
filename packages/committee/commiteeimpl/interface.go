@@ -49,7 +49,8 @@ func (c *committeeObj) checkReady() bool {
 	if c.isReadyConsensus && c.isReadyStateManager {
 		c.isOpenQueue.Store(true)
 		c.log.Debugf("committee now is fully initialized")
-		publisher.Publish("ready", "committee", c.address.String())
+
+		publisher.Publish("active_committee", c.address.String())
 	}
 	return c.isReadyConsensus && c.isReadyStateManager
 }
@@ -69,7 +70,8 @@ func (c *committeeObj) Dismiss() {
 			}
 		}
 	})
-	publisher.Publish("dismissed", "committee", c.address.String())
+
+	publisher.Publish("dismissed_committee", c.address.String())
 }
 
 func (c *committeeObj) IsDismissed() bool {

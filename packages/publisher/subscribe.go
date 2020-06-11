@@ -27,11 +27,11 @@ func Subscribe(host string, messages chan<- []string, done <-chan bool, topics .
 	go func() {
 		for {
 			var buf []byte
-			fmt.Printf("recv")
+			//fmt.Printf("recv\n")
 			if buf, err = socket.Recv(); err != nil {
 				return
 			}
-			fmt.Printf("received %v", buf)
+			//fmt.Printf("received nanomsg '%s'\n", string(buf))
 			if len(buf) > 0 {
 				s := string(buf)
 				messages <- strings.Split(s, " ")

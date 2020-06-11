@@ -3,7 +3,6 @@ package admapi
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
@@ -36,7 +35,6 @@ func HandlerPutSCData(c echo.Context) error {
 	if err = registry.SaveBootupData(&rec, true); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
-	publisher.Publish("bootuprec", req.Address)
 
 	log.Infof("Bootup record saved for addr = %s", rec.Address.String())
 

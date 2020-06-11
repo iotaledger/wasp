@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
+	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/mr-tron/base58"
 	"io"
 )
@@ -39,6 +40,9 @@ func SaveBootupData(bd *BootupData, overwrite bool) error {
 	if err := bd.Write(&buf); err != nil {
 		return err
 	}
+
+	defer publisher.Publish("bootuprec", bd.Address.String())
+
 	return database.GetRegistryPartition().Set(dbkeyBootupData(&bd.Address), buf.Bytes())
 }
 
