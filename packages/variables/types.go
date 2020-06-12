@@ -1,6 +1,7 @@
 package variables
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"sort"
@@ -14,6 +15,7 @@ type Variables interface {
 	ForEach(func(key interface{}, value interface{}) bool) bool
 	Read(io.Reader) error
 	Write(io.Writer) error
+	String() string
 }
 
 type variables struct {
@@ -33,6 +35,25 @@ func newVars(vars Variables) *variables {
 	vars.ForEach(func(key interface{}, value interface{}) bool {
 		if value != nil {
 			ret.m[key.(string)] = value
+		}
+		return true
+	})
+	return ret
+}
+
+func (vr *variables) String() string {
+	ret := ""
+	vr.ForEach(func(key interface{}, value interface{}) bool {
+		k := key.(string)
+		switch v := value.(type) {
+		case uint16:
+			ret += fmt.Sprintf("%s: %d\n", k, v)
+		case uint32:
+			ret += fmt.Sprintf("%s: %d\n", k, v)
+		case string:
+			ret += fmt.Sprintf("%s: %s\n", k, v)
+		default:
+			panic("wrong value type")
 		}
 		return true
 	})
