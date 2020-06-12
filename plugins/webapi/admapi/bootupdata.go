@@ -3,12 +3,14 @@ package admapi
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
 
 type BootupDataJsonable struct {
 	Address        string   `json:"address"`
+	Color          string   `json:"color"`
 	CommitteeNodes []string `json:"committee_nodes"`
 	AccessNodes    []string `json:"access_nodes"`
 }
@@ -25,6 +27,9 @@ func HandlerPutSCData(c echo.Context) error {
 	rec := registry.BootupData{}
 
 	if rec.Address, err = address.FromBase58(req.Address); err != nil {
+		return misc.OkJsonErr(c, err)
+	}
+	if rec.Color, err = util.ColorFromString(req.Color); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
 	rec.CommitteeNodes = req.CommitteeNodes

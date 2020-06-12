@@ -57,7 +57,7 @@ func SelectOutputsForAmount(outputs map[valuetransaction.OutputID][]*balance.Bal
 }
 
 func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
-	ret := "{"
+	ret := ""
 	for txid, bals := range outs {
 		ret += txid.String() + ":\n"
 		for _, bal := range bals {

@@ -15,7 +15,7 @@ import (
 const PluginName = "Publisher"
 
 var (
-	Plugin   = node.NewPlugin(PluginName, node.Disabled, configure, run)
+	Plugin   = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log      *logger.Logger
 	socket   mangos.Socket
 	messages = make(chan []byte)
@@ -38,14 +38,16 @@ func run(_ *node.Plugin) {
 			select {
 			case msg := <-messages:
 				if socket != nil {
-					err := socket.Send([]byte(msg))
+					err := socket.Send(msg)
 					if err != nil {
 						log.Errorf("Failed to publish message: %v", err)
 					}
 				}
 			case <-shutdownSignal:
-				socket.Close()
-				socket = nil
+				if socket != nil {
+					socket.Close()
+					socket = nil
+				}
 				return
 			}
 		}

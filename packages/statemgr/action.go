@@ -44,13 +44,22 @@ func (sm *stateManager) checkStateApproval() bool {
 		txid1 := pending.batch.StateTransactionId()
 		txid2 := sm.nextStateTransaction.ID()
 		if txid1 != txid2 {
-			sm.log.Errorf("major inconsistency: var state hahs %s is approved by two different tx: txid1 = %s, txid2 = %s",
+			sm.log.Errorf("major inconsistency: var state hash %s is approved by two different tx: txid1 = %s, txid2 = %s",
 				varStateHash.String(), txid1.String(), txid2.String())
 			return false
 		}
 	}
 
 	if sm.solidStateValid || sm.solidVariableState == nil {
+		if sm.solidVariableState == nil {
+			// pre-origin
+			if sm.nextStateTransaction.ID() != (valuetransaction.ID)(*sm.committee.Color()) {
+				sm.log.Errorf("major inconsistency: origin transaction hash %s not equal to the color of the SC %s",
+					sm.nextStateTransaction.ID().String(), sm.committee.Color().String())
+				sm.committee.Dismiss()
+				return false
+			}
+		}
 		if err := pending.nextVariableState.CommitToDb(*sm.committee.Address(), pending.batch); err != nil {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
 			return false

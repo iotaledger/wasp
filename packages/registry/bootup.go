@@ -27,6 +27,14 @@ func dbkeyBootupData(addr *address.Address) []byte {
 }
 
 func SaveBootupData(bd *BootupData, overwrite bool) error {
+	var niladdr address.Address
+	if bd.Address == niladdr {
+		return fmt.Errorf("can be empty address")
+	}
+	if bd.Color == balance.ColorNew || bd.Color == balance.ColorIOTA {
+		return fmt.Errorf("can't be IOTA or New color")
+	}
+
 	if overwrite {
 		exist, err := database.GetRegistryPartition().Has(dbkeyBootupData(&bd.Address))
 		if err != nil {
@@ -41,7 +49,7 @@ func SaveBootupData(bd *BootupData, overwrite bool) error {
 		return err
 	}
 
-	defer publisher.Publish("bootuprec", bd.Address.String())
+	defer publisher.Publish("bootuprec", bd.Address.String(), bd.Color.String())
 
 	return database.GetRegistryPartition().Set(dbkeyBootupData(&bd.Address), buf.Bytes())
 }

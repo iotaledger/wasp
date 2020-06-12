@@ -160,6 +160,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 		}
 	} else {
 		if sm.solidVariableState == nil {
+			// pre-origin
 			if stateBlock.StateIndex() != 0 {
 				sm.log.Debugf("sm.solidVariableState == nil && stateBlock.StateIndex() != 0")
 				return

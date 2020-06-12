@@ -126,5 +126,7 @@ func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransac
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Printf("[cluster] created origin data: addr : %s descr: %s program hash: %s\n",
+		addr.String(), scdata.Description, scdata.ProgramHash)
 	return origTx, batch, nil
 }

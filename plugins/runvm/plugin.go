@@ -57,15 +57,9 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 		defer processorsMutex.Unlock()
 
 		switch programHash {
-		case "3di7EFv8CvYFn8A8ppSaRTAew5anxZ3qinvFxDnh6Xf6": // sc0
+		case "67F3YgmwXT23PuRwVzDYNLhyXxwQz8WubwmYoWK2hUmE": // sc0
 			processors[programHash] = vmnil.New()
 			onFinish(nil)
-
-		case "CJ7e4Xbosi5SjydtGvC38Bt95EdwPW29qybP83JF5xNZ": // sc1
-			onFinish(fmt.Errorf("VM not implemented"))
-
-		case "AtyXNo5d1uN1nFWiFjQNJzbZiCt9orxsddvPZu4aLNkp": // sc2
-			onFinish(fmt.Errorf("VM not implemented"))
 
 		default:
 			onFinish(fmt.Errorf("can't create processor for progam hash %s", programHash))
@@ -104,6 +98,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		OwnAddress: ctx.Address,
 	})
 	if err != nil {
+		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, util.BalancesToString(ctx.Balances))
 		return err
 	}
 

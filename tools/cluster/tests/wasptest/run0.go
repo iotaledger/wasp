@@ -13,8 +13,7 @@ func Put3BootupRecords(clu *cluster.Cluster) error {
 	fmt.Printf("------------------------- Test 0: bootup records  \n")
 
 	for _, sc := range clu.SmartContractConfig {
-		fmt.Printf("[cluster] creating bootup record for smart contract descr: '%s' addr: %s program hash: %s\n",
-			sc.Description, sc.Address, util.Short(sc.ProgramHash))
+		fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
 
 		if err := putScData(&sc, clu); err != nil {
 			fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
@@ -42,6 +41,7 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 
 	var failed bool
 	for _, host := range allNodesApi {
+
 		err = waspapi.PutSCData(host, registry.BootupData{
 			Address:        addr,
 			Color:          color,

@@ -104,6 +104,8 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 		return nil, err
 	}
 	fmt.Printf("[cluster] current working directory is %s\n", wd)
+	fmt.Printf("[cluster] config part is %s\n", configPath)
+	fmt.Printf("[cluster] data part is %s\n", dataPath)
 
 	config, err := readConfig(configPath)
 	if err != nil {
@@ -270,7 +272,7 @@ func (cluster *Cluster) start() error {
 
 	select {
 	case <-initOk:
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		return fmt.Errorf("Timeout starting goshimmer node\n")
 	}
 	fmt.Printf("[cluster] started goshimmer node\n")
@@ -285,7 +287,7 @@ func (cluster *Cluster) start() error {
 	for i := 0; i < len(cluster.Config.Nodes); i++ {
 		select {
 		case <-initOk:
-		case <-time.After(5 * time.Second):
+		case <-time.After(10 * time.Second):
 			return fmt.Errorf("Timeout starting wasp nodes\n")
 		}
 	}
