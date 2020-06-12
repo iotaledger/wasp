@@ -16,7 +16,7 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	op.setNewState(msg.StateTransaction, msg.VariableState)
+	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Balances)
 
 	vh := msg.VariableState.Hash()
 	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
@@ -43,6 +43,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	if !op.processorReady {
 		runvm.LoadProcessorAsync(progHashStr, func(err error) {
 			op.committee.ReceiveMessage(committee.ProcessorIsReady{ProgramHash: progHashStr})
+			publisher.Publish("loadvm", progHashStr)
 		})
 	}
 
@@ -202,6 +203,8 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 			"selection", len(op.selectRequestsToProcess()),
 			"notif backlog", len(op.notificationsBacklog),
 		)
-		//op.takeAction()
+	}
+	if msg%10 == 0 {
+		op.takeAction()
 	}
 }

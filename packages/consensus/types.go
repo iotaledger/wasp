@@ -21,8 +21,8 @@ type operator struct {
 	dkshare   *tcrypto.DKShare
 	stateTx   *sctransaction.Transaction
 
-	balances            map[valuetransaction.ID][]*balance.Balance
-	getBalancesDeadline time.Time
+	balances                map[valuetransaction.ID][]*balance.Balance
+	requestBalancesDeadline time.Time
 
 	variableState  state.VariableState
 	processorReady bool

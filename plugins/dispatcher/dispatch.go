@@ -26,7 +26,10 @@ func dispatchState(tx *sctransaction.Transaction) {
 		return
 	}
 
-	cmt.ReceiveMessage(committee.StateTransactionMsg{Transaction: tx})
+	cmt.ReceiveMessage(committee.StateTransactionMsg{
+		Transaction: tx,
+		Balances:    nil,
+	})
 }
 
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
@@ -58,7 +61,10 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	requestMsgs := make([]committee.RequestMsg, 0, len(tx.Requests()))
 
 	if cmtState := getCommitteeByState(tx); cmtState != nil && *cmtState.Address() == addr {
-		stateTxMsg = committee.StateTransactionMsg{tx}
+		stateTxMsg = committee.StateTransactionMsg{
+			Transaction: tx,
+			Balances:    balances,
+		}
 	}
 
 	for i, reqBlk := range tx.Requests() {

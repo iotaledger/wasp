@@ -1,7 +1,6 @@
 package runvm
 
 import (
-	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/daemon"
@@ -85,7 +84,7 @@ func getProcessor(programHash string) (vm.Processor, error) {
 
 	ret, ok := processors[programHash]
 	if !ok {
-		return nil, errors.New("no such processor")
+		return nil, fmt.Errorf("no such processor: %v", programHash)
 	}
 	return ret, nil
 }

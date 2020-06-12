@@ -6,8 +6,11 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
+//node messages represented as internal committee messages
+
 type StateTransactionMsg struct {
 	*sctransaction.Transaction
+	Balances map[valuetransaction.ID][]*balance.Balance // may be nil
 }
 
 type BalancesMsg struct {

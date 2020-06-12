@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -11,38 +13,16 @@ import (
 	"time"
 )
 
-const getBalancesTimeout = 1 * time.Second
-
 func (op *operator) takeAction() {
-	op.doLeader()
-	op.doSubordinate()
-}
-
-func (op *operator) doSubordinate() {
-	for _, cr := range op.currentStateCompRequests {
-		if cr.processed {
-			continue
-		}
-		if cr.req.reqTx == nil {
-			continue
-		}
-		cr.processed = true
-		//go op.runCalculationsAsync(cr.reqs, cr.ts, cr.leaderPeerIndex)
-	}
-}
-
-func (op *operator) doLeader() {
+	op.requestOutputsIfNeeded()
 	if op.iAmCurrentLeader() {
-		op.startProcessing()
+		op.startProcessingIfNeeded()
 	}
 	op.checkQuorum()
+	op.rotateLeaderIfNeeded()
 }
 
-func (op *operator) startProcessing() {
-	if op.balances == nil {
-		// shouldn't be
-		return
-	}
+func (op *operator) startProcessingIfNeeded() {
 	if op.leaderStatus != nil {
 		// request already selected and calculations initialized
 		return
@@ -51,22 +31,25 @@ func (op *operator) startProcessing() {
 		return
 	}
 	reqs := op.selectRequestsToProcess()
-	reqIds := takeIds(reqs)
 	if len(reqs) == 0 {
 		// can't select request to process
-		op.log.Debugf("can't select request to process")
+		//op.log.Debugf("can't select request to process")
 		return
 	}
 	op.log.Debugw("requests selected to process",
 		"stateIdx", op.stateTx.MustState().StateIndex(),
 		"batch size", len(reqs),
 	)
+	reqIds := takeIds(reqs)
+	rewardAddress := registry.GetRewardAddress(op.committee.Address())
+
+	// send to subordinate the request to process the batch
 	msgData := util.MustBytes(&committee.StartProcessingReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			// ts is set by SendMsgToCommitteePeers
+			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
-		RewardAddress: *registry.GetRewardAddress(op.committee.Address()),
+		RewardAddress: *rewardAddress,
 		Balances:      op.balances,
 		RequestIds:    reqIds,
 	})
@@ -77,7 +60,7 @@ func (op *operator) startProcessing() {
 
 	if numSucc < op.quorum()-1 {
 		// doesn't make sense to continue because less than quorum sends succeeded
-		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded", numSucc)
+		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded.", numSucc)
 		return
 	}
 	batchHash := vm.BatchHash(reqIds, ts)
@@ -92,20 +75,18 @@ func (op *operator) startProcessing() {
 		"batch hash", batchHash.String(),
 		"ts", ts,
 	)
-
+	// process the batch on own side
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
 		leaderPeerIndex: op.committee.OwnPeerIndex(),
 		balances:        op.balances,
 		timestamp:       ts,
-		rewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
+		rewardAddress:   *rewardAddress,
 	})
 }
 
 func (op *operator) checkQuorum() bool {
-	op.log.Debug("checkQuorum")
 	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
-		//log.Debug("checkQuorum: op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized")
 		return false
 	}
 	// collect signature shares available
@@ -157,17 +138,22 @@ func (op *operator) checkQuorum() bool {
 	)
 	op.leaderStatus.finalized = true
 
-	nodeconn.PostTransactionToNodeAsyncWithRetry(op.leaderStatus.resultTx.Transaction, 2*time.Second, 7*time.Second, op.log)
+	if err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction); err != nil {
+		op.log.Warnf("PostTransactionToNode failed: %v", err)
+		return false
+	}
+	//nodeconn.PostTransactionToNodeAsyncWithRetry(op.leaderStatus.resultTx.Transaction, 2*time.Second, 7*time.Second, op.log)
 	return true
 }
 
 // sets new state transaction and initializes respective variables
-func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState) {
+func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState, balances map[valuetransaction.ID][]*balance.Balance) {
 	op.stateTx = stateTx
-	op.balances = nil
-	op.getBalancesDeadline = time.Now()
-
 	op.variableState = variableState
+
+	op.balances = balances
+	op.requestBalancesDeadline = time.Now()
+	op.requestOutputsIfNeeded()
 
 	op.resetLeader(stateTx.ID().Bytes())
 
@@ -201,4 +187,19 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	}
 	// clean notification backlog
 	op.notificationsBacklog = op.notificationsBacklog[:0]
+}
+
+const requestBalancesTimeout = 1 * time.Second
+
+func (op *operator) requestOutputsIfNeeded() {
+	if op.balances != nil {
+		return
+	}
+	if op.requestBalancesDeadline.After(time.Now()) {
+		return
+	}
+	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
+		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
+	}
+	op.requestBalancesDeadline = time.Now().Add(requestBalancesTimeout)
 }

@@ -172,6 +172,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 		}
 	}
 	sm.nextStateTransaction = msg.Transaction
+	sm.nextStateTransactionBalances = msg.Balances
 
 	// new state transaction accepted by the state manager
 	publisher.Publish("statetx", "in",
