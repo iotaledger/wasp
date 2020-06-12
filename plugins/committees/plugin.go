@@ -12,11 +12,9 @@ import (
 	"sync"
 )
 
-// PluginName is the name of the config plugin.
 const PluginName = "Committees"
 
 var (
-	// Plugin is the plugin instance of the config plugin.
 	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log    *logger.Logger
 
