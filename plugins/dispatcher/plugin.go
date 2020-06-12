@@ -1,9 +1,6 @@
 package dispatcher
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
@@ -16,14 +13,11 @@ import (
 	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"time"
 )
 
-// PluginName is the name of the database plugin.
 const PluginName = "Dispatcher"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
 	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log    *logger.Logger
 )
@@ -36,10 +30,10 @@ func configure(_ *node.Plugin) {
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 
-		chNodeMsgData := make(chan []byte, 100)
+		chNodeMsg := make(chan interface{}, 100)
 
-		processNodeDataClosure := events.NewClosure(func(data []byte) {
-			chNodeMsgData <- data
+		processNodeMsgClosure := events.NewClosure(func(msg interface{}) {
+			chNodeMsg <- msg
 		})
 
 		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
@@ -51,8 +45,8 @@ func run(_ *node.Plugin) {
 		err := daemon.BackgroundWorker("wasp dispatcher", func(shutdownSignal <-chan struct{}) {
 			// goroutine to read incoming messages from the node
 			go func() {
-				for data := range chNodeMsgData {
-					processNodeMsgData(data)
+				for msg := range chNodeMsg {
+					processNodeMsg(msg)
 				}
 			}()
 
@@ -60,12 +54,10 @@ func run(_ *node.Plugin) {
 
 			log.Infof("Stopping %s..", PluginName)
 			go func() {
-				nodeconn.EventNodeMessageReceived.Detach(processNodeDataClosure)
+				nodeconn.EventMessageReceived.Detach(processNodeMsgClosure)
 				peering.EventPeerMessageReceived.Detach(processPeerMsgClosure)
-				Events.OutputsArrivedFromNode.DetachAll()
-				Events.TransactionArrivedFromNode.DetachAll()
 
-				close(chNodeMsgData)
+				close(chNodeMsg)
 				log.Infof("Stopping %s.. Done", PluginName)
 			}()
 		})
@@ -76,22 +68,9 @@ func run(_ *node.Plugin) {
 
 		// event attachments
 		// receiving events from NodeConn --> producing dispatcher events
-		nodeconn.EventNodeMessageReceived.Attach(processNodeDataClosure)
+		nodeconn.EventMessageReceived.Attach(processNodeMsgClosure)
 		// receiving messages from peering --> send to respective committees
 		peering.EventPeerMessageReceived.Attach(processPeerMsgClosure)
-
-		// dispatcher events. It is consumed by dispatcher but other parts may attach too
-		// when transaction arrives from node
-		Events.TransactionArrivedFromNode.Attach(events.NewClosure(func(tx *sctransaction.Transaction) {
-			dispatchState(tx)
-		}))
-		// when balances arrive from nodes
-		Events.OutputsArrivedFromNode.Attach(events.NewClosure(func(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance) {
-			dispatchBalances(addr, balances)
-		}))
-		Events.AddressUpdateArrivedFromNode.Attach(events.NewClosure(func(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
-			dispatchAddressUpdate(addr, balances, tx)
-		}))
 
 		log.Infof("dispatcher started")
 
@@ -102,19 +81,8 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func processNodeMsgData(data []byte) {
-	msg, err := waspconn.DecodeMsg(data, true)
-	if err != nil {
-		log.Errorf("wrong message from node: %v", err)
-		return
-	}
-
-	log.Debugf("received msg type %T data len = %d", msg, len(data))
-
+func processNodeMsg(msg interface{}) {
 	switch msgt := msg.(type) {
-	case *waspconn.WaspPingMsg:
-		roundtrip := time.Since(time.Unix(0, msgt.Timestamp))
-		log.Infof("PING %d response from node. Roundtrip %v", msgt.Id, roundtrip)
 
 	case *waspconn.WaspFromNodeTransactionMsg:
 		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
@@ -123,10 +91,10 @@ func processNodeMsgData(data []byte) {
 			// not a SC transaction. Ignore
 			return
 		}
-		Events.TransactionArrivedFromNode.Trigger(tx)
+		dispatchState(tx)
 
 	case *waspconn.WaspFromNodeAddressOutputsMsg:
-		Events.OutputsArrivedFromNode.Trigger(msgt.Address, msgt.Balances)
+		dispatchBalances(msgt.Address, msgt.Balances)
 
 	case *waspconn.WaspFromNodeAddressUpdateMsg:
 		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
@@ -135,6 +103,6 @@ func processNodeMsgData(data []byte) {
 			// not a SC transaction. Ignore
 			return
 		}
-		Events.AddressUpdateArrivedFromNode.Trigger(msgt.Address, msgt.Balances, tx)
+		dispatchAddressUpdate(msgt.Address, msgt.Balances, tx)
 	}
 }

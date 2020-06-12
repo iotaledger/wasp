@@ -52,7 +52,7 @@ func nodeConnect() {
 	log.Debugf("established connection with node at %s", addr)
 
 	dataReceivedClosure := events.NewClosure(func(data []byte) {
-		EventNodeMessageReceived.Trigger(data)
+		msgDataToEvent(data)
 	})
 
 	bconn.Events.ReceiveMessage.Attach(dataReceivedClosure)
