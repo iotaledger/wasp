@@ -39,6 +39,8 @@ type VariableState interface {
 type StateUpdate interface {
 	// request which resulted in this state update
 	RequestId() *sctransaction.RequestId
+	Timestamp() int64
+	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
 	Variables() variables.Variables
 	Write(io.Writer) error

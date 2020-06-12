@@ -151,13 +151,18 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		}
 		// run processor
 		vmctx.Request = reqRef
-		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId())
+		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
 
 		processor.Run(vmctx)
 
 		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
 		// update state
 		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
+		if vmctx.Timestamp != 0 {
+			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
+			// the reason is to provide a different timestamp for each VM call albeit remain deterministic
+			vmctx.Timestamp += 1
+		}
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
@@ -173,7 +178,13 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		ctx.Log.Errorf("RunVM: %v", err)
 		return
 	}
-	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1).WithTimestamp(ctx.Timestamp)
+
+	// timestamp of the resulting batch is equal to the timestamp of the last state update (if not empty)
+	ts := int64(0)
+	if ctx.Timestamp != 0 {
+		ts = ctx.Timestamp + int64(len(stateUpdates))
+	}
+	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1).WithTimestamp(ts)
 
 	// create final transaction
 	vsClone := state.NewVariableState(ctx.VariableState)

@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
 	"io"
 )
@@ -9,6 +10,7 @@ import (
 type stateUpdate struct {
 	batchIndex uint16
 	requestId  sctransaction.RequestId
+	timestamp  int64
 	vars       variables.Variables
 }
 
@@ -30,6 +32,15 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 
 // StateUpdate
 
+func (su *stateUpdate) Timestamp() int64 {
+	return su.timestamp
+}
+
+func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
+	su.timestamp = ts
+	return su
+}
+
 func (su *stateUpdate) RequestId() *sctransaction.RequestId {
 	return &su.requestId
 }
@@ -45,7 +56,7 @@ func (su *stateUpdate) Write(w io.Writer) error {
 	if err := su.vars.Write(w); err != nil {
 		return err
 	}
-	return nil
+	return util.WriteUint64(w, uint64(su.timestamp))
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
@@ -55,5 +66,10 @@ func (su *stateUpdate) Read(r io.Reader) error {
 	if err := su.vars.Read(r); err != nil {
 		return err
 	}
+	var ts uint64
+	if err := util.ReadUint64(r, &ts); err != nil {
+		return err
+	}
+	su.timestamp = int64(ts)
 	return nil
 }
