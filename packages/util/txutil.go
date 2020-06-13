@@ -60,8 +60,18 @@ func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
 	if outs == nil {
 		return "empty balances"
 	}
+
+	txids := make([]valuetransaction.ID, 0, len(outs))
+	for txid := range outs {
+		txids = append(txids, txid)
+	}
+	sort.Slice(txids, func(i, j int) bool {
+		return bytes.Compare(txids[i][:], txids[j][:]) < 0
+	})
+
 	ret := ""
-	for txid, bals := range outs {
+	for _, txid := range txids {
+		bals := outs[txid]
 		ret += txid.String() + ":\n"
 		for _, bal := range bals {
 			ret += fmt.Sprintf("         %s: %d\n", bal.Color().String(), bal.Value())

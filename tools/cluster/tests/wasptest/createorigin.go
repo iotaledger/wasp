@@ -22,6 +22,7 @@ func CreateOrigin1SC(clu *cluster.Cluster) error {
 		return err
 	}
 
+	fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
 	fmt.Printf("++++++++++ created origin batch:\n%s\n", batch.String())
 
 	sh := tx.MustState().VariableStateHash()

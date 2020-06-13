@@ -5,6 +5,7 @@ package sctransaction
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -156,4 +157,23 @@ func (tx *Transaction) ReadDataPayload(r io.Reader) error {
 	tx.stateBlock = stateBlock
 	tx.requestBlocks = reqBlks
 	return nil
+}
+
+func (tx *Transaction) String() string {
+	ret := fmt.Sprintf("TX: %s\n", tx.Transaction.ID().String())
+	stateBlock, ok := tx.State()
+	if ok {
+		vh := stateBlock.VariableStateHash()
+		ret += fmt.Sprintf("State: color: %s statehash: %s, ts: %d\n",
+			stateBlock.Color().String(),
+			vh.String(), stateBlock.Timestamp(),
+		)
+	} else {
+		ret += "State: none\n"
+	}
+	for i, reqBlk := range tx.Requests() {
+		addr := reqBlk.Address()
+		ret += fmt.Sprintf("Req #%d: addr: %s code: %d\n", i, util.Short(addr.String()), reqBlk.RequestCode())
+	}
+	return ret
 }

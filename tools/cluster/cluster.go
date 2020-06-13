@@ -456,7 +456,6 @@ func (cluster *Cluster) CountMessages(duration time.Duration) ([]*subscribe.Host
 	fmt.Printf("[cluster] counting publisher's messages for %v\n", duration)
 
 	all := make([]*subscribe.HostMessage, 0)
-
 	deadline := time.Now().Add(duration)
 	for {
 		select {
@@ -465,7 +464,6 @@ func (cluster *Cluster) CountMessages(duration time.Duration) ([]*subscribe.Host
 			cluster.counters[msg.Message[0]+"--"+msg.Sender] += 1
 
 		case <-time.After(500 * time.Millisecond):
-
 		}
 		if time.Now().After(deadline) {
 			break

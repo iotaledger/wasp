@@ -43,7 +43,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 	cmt := committees.CommitteeByAddress(addr)
 	if cmt == nil {
-		log.Debugw("dispatchAddressUpdate: committee not found", "addr", addr.String())
+		log.Debugw("committee not found", "addr", addr.String())
 		// wrong addressee
 		return
 	}
@@ -55,6 +55,8 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		log.Warnf("invalid transaction %s ignored: %v", tx.ID().String(), err)
 		return
 	}
+
+	log.Debugf("received with balances: %s", tx.String())
 
 	var stateTxMsg committee.StateTransactionMsg
 	requestMsgs := make([]committee.RequestMsg, 0, len(tx.Requests()))
@@ -93,7 +95,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 }
 
 func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
-	log.Debugw("getCommitteeByState", "txid", tx.ID().String())
+	//log.Debugw("getCommitteeByState", "txid", tx.ID().String())
 
 	stateBlock, hasState := tx.State()
 	if !hasState {

@@ -23,7 +23,7 @@ func msgDataToEvent(data []byte) {
 		return
 	}
 
-	log.Debugf("received msg type %T data len = %d", msg, len(data))
+	//log.Debugf("received msg type %T data len = %d", msg, len(data))
 
 	switch msgt := msg.(type) {
 	case *waspconn.WaspPingMsg:
