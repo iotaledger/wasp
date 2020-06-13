@@ -40,7 +40,7 @@ func NewOriginBatch(par NewOriginParams) state.Batch {
 
 	vars := stateUpd.Variables()
 	if par.Variables != nil {
-		par.Variables.ForEach(func(key interface{}, value interface{}) bool {
+		par.Variables.ForEach(func(key string, value interface{}) bool {
 			vars.Set(key, value)
 			return true
 		})
@@ -53,6 +53,7 @@ func NewOriginBatch(par NewOriginParams) state.Batch {
 	if err != nil {
 		panic(err)
 	}
+
 	return ret
 }
 

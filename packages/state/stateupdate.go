@@ -1,6 +1,7 @@
 package state
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
@@ -31,6 +32,10 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 }
 
 // StateUpdate
+
+func (su *stateUpdate) String() string {
+	return fmt.Sprintf("reqid: %s, ts: %d\n%s", su.requestId.String(), su.Timestamp(), su.Variables().String())
+}
 
 func (su *stateUpdate) Timestamp() int64 {
 	return su.timestamp

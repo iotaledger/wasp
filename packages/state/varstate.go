@@ -37,6 +37,11 @@ func NewVariableState(varState VariableState) VariableState {
 	}
 }
 
+func (vs *variableState) String() string {
+	return fmt.Sprintf("#%d, ts: %d, hash, %s\n%s",
+		vs.stateIndex, vs.timestamp, vs.stateHash.String(), vs.Variables().String())
+}
+
 func (vs *variableState) StateIndex() uint32 {
 	return vs.stateIndex
 }

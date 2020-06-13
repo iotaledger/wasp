@@ -16,7 +16,7 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	op.log.Debugf("variables of the new state:\n%s\n", msg.VariableState.Variables().String())
+	op.log.Debugf("new varstate:\n%s\n", msg.VariableState.String())
 
 	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Balances)
 
@@ -42,7 +42,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 		return
 	}
 
-	op.log.Debugf("++++++++++++++++++++++++++++ proghash = %s", progHashStr)
+	//op.log.Debugf("++++++++++++++++++++++++++++ proghash = %s", progHashStr)
 
 	op.processorReady = runvm.CheckProcessor(progHashStr)
 	if !op.processorReady {

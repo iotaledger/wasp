@@ -64,6 +64,10 @@ func (sm *stateManager) checkStateApproval() bool {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
 			return false
 		}
+
+		//sm.log.Debugf("$$$$$$$$$$$$ COMMITTED STATE\nvarstate: %s\nbatch: %s",
+		//	pending.nextVariableState.String(), pending.batch.String())
+
 		if sm.solidVariableState != nil {
 			publisher.Publish("state",
 				sm.committee.Address().String(),

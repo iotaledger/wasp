@@ -9,10 +9,10 @@ import (
 
 type Variables interface {
 	// TODO tbd
-	Set(key interface{}, value interface{})
-	Get(key interface{}) (interface{}, bool)
+	Set(key string, value interface{})
+	Get(key string) (interface{}, bool)
 	Apply(Variables)
-	ForEach(func(key interface{}, value interface{}) bool) bool
+	ForEach(func(key string, value interface{}) bool)
 	Read(io.Reader) error
 	Write(io.Writer) error
 	String() string
@@ -32,9 +32,9 @@ func newVars(vars Variables) *variables {
 	if vars == nil {
 		return ret
 	}
-	vars.ForEach(func(key interface{}, value interface{}) bool {
+	vars.ForEach(func(key string, value interface{}) bool {
 		if value != nil {
-			ret.m[key.(string)] = value
+			ret.m[key] = value
 		}
 		return true
 	})
@@ -42,50 +42,56 @@ func newVars(vars Variables) *variables {
 }
 
 func (vr *variables) String() string {
+	keys := make([]string, 0)
+	for k := range vr.m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	ret := ""
-	vr.ForEach(func(key interface{}, value interface{}) bool {
-		k := key.(string)
+	for _, key := range keys {
+		value := vr.m[key]
+		if value == nil {
+			ret += fmt.Sprintf("           %s: nil\n", key)
+			continue
+		}
 		switch v := value.(type) {
 		case uint16:
-			ret += fmt.Sprintf("%s: %d\n", k, v)
+			ret += fmt.Sprintf("           %s: %d\n", key, v)
 		case uint32:
-			ret += fmt.Sprintf("%s: %d\n", k, v)
+			ret += fmt.Sprintf("           %s: %d\n", key, v)
 		case string:
-			ret += fmt.Sprintf("%s: %s\n", k, v)
+			ret += fmt.Sprintf("           %s: %s\n", key, v)
 		default:
 			panic("wrong value type")
 		}
-		return true
-	})
+	}
 	return ret
 }
 
 // applying update to variables, var per var.
 // newVars value nil mean deleting the variable
 func (vr *variables) Apply(upd Variables) {
-	upd.ForEach(func(key interface{}, value interface{}) bool {
-		skey := key.(string)
+	upd.ForEach(func(key string, value interface{}) bool {
 		if value == nil {
-			delete(vr.m, skey)
+			delete(vr.m, key)
 		} else {
-			vr.Set(skey, value)
+			vr.Set(key, value)
 		}
-		return false
+		return true
 	})
 }
 
-func (vr *variables) ForEach(fun func(key interface{}, value interface{}) bool) bool {
+func (vr *variables) ForEach(fun func(key string, value interface{}) bool) {
 	for k, v := range vr.m {
-		if fun(k, v) {
-			return true // aborted
+		if !fun(k, v) {
+			return // abort when callback returns false
 		}
 	}
-	return false
 }
 
-func (vr *variables) Set(key interface{}, value interface{}) {
+func (vr *variables) Set(key string, value interface{}) {
 	if value == nil {
-		delete(vr.m, key.(string))
+		vr.m[key] = nil
 		return
 	}
 	switch value.(type) {
@@ -95,11 +101,11 @@ func (vr *variables) Set(key interface{}, value interface{}) {
 	default:
 		panic("wrong value type")
 	}
-	vr.m[key.(string)] = value
+	vr.m[key] = value
 }
 
-func (vr *variables) Get(key interface{}) (interface{}, bool) {
-	ret, ok := vr.m[key.(string)]
+func (vr *variables) Get(key string) (interface{}, bool) {
+	ret, ok := vr.m[key]
 	return ret, ok
 }
 
@@ -107,6 +113,7 @@ const (
 	byteUint16 = iota
 	byteUint32
 	byteString
+	nilValue
 )
 
 func (vr *variables) Write(w io.Writer) error {
@@ -122,33 +129,40 @@ func (vr *variables) Write(w io.Writer) error {
 		if err := util.WriteString16(w, k); err != nil {
 			return err
 		}
-		switch tv := vr.m[k].(type) {
-		case uint16:
-			if err := util.WriteByte(w, byteUint16); err != nil {
+		if vr.m[k] == nil {
+			if err := util.WriteByte(w, nilValue); err != nil {
 				return err
 			}
-			if err := util.WriteUint16(w, tv); err != nil {
-				return err
+		} else {
+			switch tv := vr.m[k].(type) {
+			case uint16:
+				if err := util.WriteByte(w, byteUint16); err != nil {
+					return err
+				}
+				if err := util.WriteUint16(w, tv); err != nil {
+					return err
+				}
+
+			case uint32:
+				if err := util.WriteByte(w, byteUint32); err != nil {
+					return err
+				}
+				if err := util.WriteUint32(w, tv); err != nil {
+					return err
+				}
+
+			case string:
+				if err := util.WriteByte(w, byteString); err != nil {
+					return err
+				}
+				if err := util.WriteString16(w, tv); err != nil {
+					return err
+				}
+
+			default:
+				panic("wrong type")
 			}
 
-		case uint32:
-			if err := util.WriteByte(w, byteUint32); err != nil {
-				return err
-			}
-			if err := util.WriteUint32(w, tv); err != nil {
-				return err
-			}
-
-		case string:
-			if err := util.WriteByte(w, byteString); err != nil {
-				return err
-			}
-			if err := util.WriteString16(w, tv); err != nil {
-				return err
-			}
-
-		default:
-			panic("wrong type")
 		}
 	}
 	return nil
@@ -170,6 +184,9 @@ func (vr *variables) Read(r io.Reader) error {
 			return err
 		}
 		switch b {
+		case nilValue:
+			vr.Set(k, nil)
+
 		case byteUint16:
 			var v uint16
 			if err = util.ReadUint16(r, &v); err != nil {

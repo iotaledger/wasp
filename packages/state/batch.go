@@ -45,6 +45,19 @@ func MustNewBatch(stateUpdates []StateUpdate) Batch {
 	return ret
 }
 
+func (b *batch) String() string {
+	ret := ""
+	ret += fmt.Sprintf("Batch: state index: %d\n", b.StateIndex())
+	ret += fmt.Sprintf("state txid: %s\n", b.StateTransactionId().String())
+	ret += fmt.Sprintf("timestamp: %d\n", b.Timestamp())
+	ret += fmt.Sprintf("size: %d\n", b.Size())
+	ret += fmt.Sprintf("essence: %s\n", b.EssenceHash().String())
+	for i, su := range b.stateUpdates {
+		ret += fmt.Sprintf("   #%d: %s\n", i, su.String())
+	}
+	return ret
+}
+
 func (b *batch) StateTransactionId() valuetransaction.ID {
 	return b.stateTxId
 }

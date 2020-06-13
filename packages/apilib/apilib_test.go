@@ -22,11 +22,11 @@ func TestReadWrite(t *testing.T) {
 	scAddr, err := address.FromBase58(scAddrStr)
 	assert.NoError(t, err)
 
-	tx, _ := CreateOriginData(&origin.NewOriginParams{
-		Address:      scAddr,
-		OwnerAddress: utxodb.GetAddress(1),
-		ProgramHash:  *hashing.HashStrings(dscr),
-	}, dscr, nodeLocations)
+	tx, _, _ := CreateOriginDataUtxodb(origin.NewOriginParams{
+		Address:              scAddr,
+		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(1)),
+		ProgramHash:          *hashing.HashStrings(dscr),
+	})
 	t.Logf("created transaction txid = %s", tx.ID().String())
 
 	data := tx.Bytes()

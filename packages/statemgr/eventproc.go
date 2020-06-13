@@ -9,10 +9,10 @@ import (
 
 // respond to sync request 'GetStateUpdate'
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
-	//sm.log.Debugw("EventGetBatchMsg",
-	//	"sender index", msg.SenderIndex,
-	//	"state index", msg.StateIndex,
-	//)
+	sm.log.Debugw("EventGetBatchMsg",
+		"sender index", msg.SenderIndex,
+		"state index", msg.StateIndex,
+	)
 	addr := sm.committee.Address()
 	batch, err := state.LoadBatch(addr, msg.StateIndex)
 	if err != nil || batch == nil {
@@ -24,14 +24,9 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 		// can't load batch, can't respond
 		return
 	}
-	sm.log.Debugw("EventGetBatchMsg: sending batch",
-		"target peer", msg.SenderIndex,
-		"state index", msg.StateIndex,
-		"state tx", batch.StateTransactionId().String(),
-		"size", batch.Size(),
-		"essence", batch.EssenceHash().String(),
-		"ts", batch.Timestamp(),
-	)
+
+	sm.log.Debugf("EventGetBatchMsg: sending to %d batch %s", msg.SenderIndex, batch.String())
+
 	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, util.MustBytes(&committee.BatchHeaderMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: msg.StateIndex,
@@ -124,10 +119,8 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		WithTimestamp(sm.syncedBatch.ts).
 		WithStateTransaction(sm.syncedBatch.stateTxId)
 
-	sm.log.Debugw("EventStateUpdateMsg: reconstructed batch",
-		"essence", batch.EssenceHash().String(),
-		"ts", batch.Timestamp(),
-	)
+	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
+
 	sm.syncedBatch = nil
 	go func() {
 		sm.committee.ReceiveMessage(committee.PendingBatchMsg{

@@ -29,6 +29,7 @@ type VariableState interface {
 	Hash() hashing.HashValue
 	// the storage of variable/value pairs
 	Variables() variables.Variables
+	String() string
 }
 
 // State update represents update to the variable state
@@ -42,6 +43,7 @@ type StateUpdate interface {
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
+	String() string
 	Variables() variables.Variables
 	Write(io.Writer) error
 	Read(io.Reader) error
@@ -60,6 +62,7 @@ type Batch interface {
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
 	EssenceHash() *hashing.HashValue // except state transaction id
+	String() string
 	Write(io.Writer) error
 	Read(io.Reader) error
 }
