@@ -49,9 +49,3 @@ func (op *operator) setLeaderRotationDeadline(deadline time.Time) {
 		op.leaderRotationDeadline = deadline
 	}
 }
-
-func (op *operator) rotateLeaderIfNeeded() {
-	if op.leaderRotationDeadlineSet && op.leaderRotationDeadline.After(time.Now()) {
-		op.moveToNextLeader()
-	}
-}

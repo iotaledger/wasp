@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // notifies current leader about requests in the order of arrival
@@ -48,45 +47,9 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 		"num req", len(ids),
 	)
 
-	var i uint16
-	for i = 0; i < op.committee.Size(); i++ {
-		if op.iAmCurrentLeader() {
-			// stop if I am the current leader
-			return
-		}
-		if !op.committee.IsAlivePeer(currentLeaderPeerIndex) {
-			currentLeaderPeerIndex = op.moveToNextLeader()
-			continue
-		}
-		err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData)
-		if err == nil {
-			op.setLeaderRotationDeadline(time.Now().Add(leaderRotationPeriod))
-			// first node to which data was successfully sent is assumed the leader
-			return
-		}
+	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
+		op.log.Debugf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
-}
-
-// only requests with reqRef != nil
-func (op *operator) sortedRequestsByAge() []*request {
-	//ret := make([]*request, 0, len(op.requests))
-	//for _, reqs := range op.requests {
-	//	if reqs.reqRef != nil {
-	//		ret = append(ret, reqs)
-	//	}
-	//}
-	//sortRequestsByAge(ret)
-	//return ret
-	panic("implement me")
-}
-
-func (op *operator) sortedRequestIdsByAge() []*sctransaction.RequestId {
-	sortedReqs := op.sortedRequestsByAge()
-	ids := make([]*sctransaction.RequestId, len(sortedReqs))
-	for i := range ids {
-		ids[i] = &sortedReqs[i].reqId
-	}
-	return ids
 }
 
 // stores information about notification in the current state

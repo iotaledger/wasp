@@ -26,6 +26,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 	if !op.processorReady {
 		return
 	}
+
 	progHashStr, ok := op.getProgramHashStr()
 	if !ok {
 		return

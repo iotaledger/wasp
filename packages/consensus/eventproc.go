@@ -3,6 +3,7 @@ package consensus
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/iotaledger/wasp/plugins/runvm"
@@ -16,9 +17,9 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	op.log.Debugf("new varstate:\n%s\n", msg.VariableState.String())
+	//op.log.Debugf("new varstate:\n%s\n", msg.VariableState.String())
 
-	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Balances)
+	op.setNewState(msg.StateTransaction, msg.VariableState)
 
 	vh := msg.VariableState.Hash()
 	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
@@ -59,6 +60,7 @@ func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	op.log.Debug("EventBalancesMsg")
 
 	op.balances = reqMsg.Balances
+	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(op.balances))
 	op.takeAction()
 }
 

@@ -37,6 +37,8 @@ func (sm *stateManager) checkStateApproval() bool {
 		return false
 	}
 
+	// found a pending batch which is approved by the nextStateTransaction
+
 	if pending.batch.StateTransactionId() == niltxid {
 		// not committed yet batch. Link it to the transaction
 		pending.batch.WithStateTransaction(sm.nextStateTransaction.ID())
@@ -117,11 +119,9 @@ func (sm *stateManager) checkStateApproval() bool {
 	sm.solidVariableState = pending.nextVariableState
 
 	saveTx := sm.nextStateTransaction
-	saveBalances := sm.nextStateTransactionBalances
 
 	// update state manager variables to the new state
 	sm.nextStateTransaction = nil
-	sm.nextStateTransactionBalances = nil
 	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clear pending batches
 	sm.permutation.Shuffle(varStateHash.Bytes())
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
@@ -133,7 +133,6 @@ func (sm *stateManager) checkStateApproval() bool {
 			sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
 				VariableState:    sm.solidVariableState,
 				StateTransaction: saveTx,
-				Balances:         saveBalances,
 			})
 		}()
 	}

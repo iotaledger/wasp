@@ -185,7 +185,7 @@ func TestSend1Request(t *testing.T) {
 	err = CreateOrigin1SC(wasps)
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1)
+	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1, 0)
 	check(err, t)
 
 	allMsg, counters := wasps.CountMessages(15 * time.Second)
@@ -206,7 +206,7 @@ func TestSend1Request(t *testing.T) {
 	// verify
 }
 
-func TestSend10Requests(t *testing.T) {
+func TestSend5Requests1Sec(t *testing.T) {
 	// setup
 	wasps := setup(t)
 
@@ -221,10 +221,10 @@ func TestSend10Requests(t *testing.T) {
 	err = CreateOrigin1SC(wasps)
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 10)
+	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 5, 1*time.Second)
 	check(err, t)
 
-	allMsg, counters := wasps.CountMessages(15 * time.Second)
+	allMsg, counters := wasps.CountMessages(20 * time.Second)
 
 	fmt.Printf("[cluster] ++++++++++ counters\n")
 	keys := make([]string, 0)

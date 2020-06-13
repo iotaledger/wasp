@@ -1,8 +1,6 @@
 package consensus
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -20,6 +18,15 @@ func (op *operator) takeAction() {
 	}
 	op.checkQuorum()
 	op.rotateLeaderIfNeeded()
+}
+
+func (op *operator) rotateLeaderIfNeeded() {
+	if op.leaderRotationDeadlineSet && op.leaderRotationDeadline.Before(time.Now()) {
+		prevlead, _ := op.currentLeader()
+		leader := op.moveToNextLeader()
+		op.sendRequestNotificationsToLeader(nil)
+		op.log.Debugf("LEADER ROTATED #%d --> #%d", prevlead, leader)
+	}
 }
 
 func (op *operator) startProcessingIfNeeded() {
@@ -147,11 +154,10 @@ func (op *operator) checkQuorum() bool {
 }
 
 // sets new state transaction and initializes respective variables
-func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState, balances map[valuetransaction.ID][]*balance.Balance) {
+func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState) {
 	op.stateTx = stateTx
 	op.variableState = variableState
 
-	op.balances = balances
 	op.requestBalancesDeadline = time.Now()
 	op.requestOutputsIfNeeded()
 

@@ -114,8 +114,6 @@ type StateTransitionMsg struct {
 	VariableState state.VariableState
 	// corresponding state transaction
 	StateTransaction *sctransaction.Transaction
-	// balances, may be nil
-	Balances map[valuetransaction.ID][]*balance.Balance
 	// processed requests
 	RequestIds []*sctransaction.RequestId
 }

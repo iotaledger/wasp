@@ -3,7 +3,6 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"time"
 
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -31,8 +30,6 @@ type stateManager struct {
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
 	nextStateTransaction *sctransaction.Transaction
-	// address balances received with last transaction (may be nil)
-	nextStateTransactionBalances map[valuetransaction.ID][]*balance.Balance
 
 	// last variable state stored in the database
 	// it may be nil at bootstrap when origin variable state is calculated

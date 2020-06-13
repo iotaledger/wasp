@@ -7,9 +7,10 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"time"
 )
 
-func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n int) error {
+func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n int, wait time.Duration) error {
 	for i := 0; i < n; i++ {
 		tx, err := createRequestTx(clu.Config.Goshimmer.BindAddress, sc)
 		if err != nil {
@@ -20,6 +21,7 @@ func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n 
 			return err
 		}
 		fmt.Printf("[cluster] posted request txid %s", tx.ID().String())
+		time.Sleep(wait)
 	}
 	return nil
 }
