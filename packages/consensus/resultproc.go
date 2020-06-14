@@ -7,6 +7,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -23,7 +24,12 @@ type runCalculationsParams struct {
 
 // runs the VM for the request and posts result to committee's queue
 func (op *operator) runCalculationsAsync(par runCalculationsParams) {
+	if op.variableState == nil {
+		op.log.Debugf("runCalculationsAsync: variable state is not known")
+		return
+	}
 	if !op.processorReady {
+		op.log.Debugf("runCalculationsAsync: processor not ready")
 		return
 	}
 
@@ -35,15 +41,14 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 	if err != nil {
 		return
 	}
-	reqRefs, _ := takeRefs(par.requests)
 	ctx := &vm.VMTask{
 		LeaderPeerIndex: par.leaderPeerIndex,
 		ProgramHash:     progHash,
 		Address:         *op.committee.Address(),
 		Color:           *op.committee.Color(),
 		Balances:        par.balances,
-		RewardAddress:   address.Address{},
-		Requests:        reqRefs,
+		RewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
+		Requests:        takeRefs(par.requests),
 		Timestamp:       par.timestamp,
 		VariableState:   op.variableState,
 		Log:             op.log,

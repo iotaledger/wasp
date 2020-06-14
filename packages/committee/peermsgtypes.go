@@ -37,7 +37,7 @@ type PeerMsgHeader struct {
 type NotifyReqMsg struct {
 	PeerMsgHeader
 	// list of request ids ordered by the time of arrival
-	RequestIds []*sctransaction.RequestId
+	RequestIds []sctransaction.RequestId
 }
 
 // message is sent by the leader to other peers to initiate request processing

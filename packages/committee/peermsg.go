@@ -17,7 +17,7 @@ func (msg *NotifyReqMsg) Write(w io.Writer) error {
 		return err
 	}
 	for _, reqid := range msg.RequestIds {
-		if _, err := w.Write(reqid.Bytes()); err != nil {
+		if _, err := w.Write(reqid[:]); err != nil {
 			return err
 		}
 	}
@@ -37,10 +37,9 @@ func (msg *NotifyReqMsg) Read(r io.Reader) error {
 	if arrLen == 0 {
 		return nil
 	}
-	msg.RequestIds = make([]*sctransaction.RequestId, arrLen)
+	msg.RequestIds = make([]sctransaction.RequestId, arrLen)
 	for i := range msg.RequestIds {
-		msg.RequestIds[i] = new(sctransaction.RequestId)
-		_, err = r.Read(msg.RequestIds[i].Bytes())
+		_, err = r.Read(msg.RequestIds[i][:])
 		if err != nil {
 			return err
 		}

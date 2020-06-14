@@ -95,7 +95,7 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 
 func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
-		"num ids", len(msg.RequestIds),
+		"reqIds", idsShortStr(msg.RequestIds),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
@@ -110,9 +110,9 @@ func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReq
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp)
 	op.log.Debugw("EventStartProcessingReqMsg",
 		"sender", msg.SenderIndex,
-		"num reqId", len(msg.RequestIds),
 		"ts", msg.Timestamp,
 		"batch hash", bh.String(),
+		"reqIds", idsShortStr(msg.RequestIds),
 	)
 
 	op.MustValidStateIndex(msg.StateIndex)

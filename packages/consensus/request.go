@@ -42,10 +42,12 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 	return ret, true
 }
 
-func (op *operator) requestList() []*request {
+func (op *operator) requestMsgList() []*request {
 	ret := make([]*request, 0, len(op.requests))
 	for _, req := range op.requests {
-		ret = append(ret, req)
+		if req.reqTx != nil {
+			ret = append(ret, req)
+		}
 	}
 	return ret
 }
@@ -80,7 +82,7 @@ func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool)
 // only requests in "full batches" are selected, it means request is in the selection together with ALL other requests
 // from the same request transaction, or it is not selected
 func (op *operator) selectRequestsToProcess() []*request {
-	candidates := op.requestsSeenQuorumTimes()
+	candidates := op.requestMessagesSeenQuorumTimes()
 	if len(candidates) == 0 {
 		return nil
 	}
@@ -116,17 +118,20 @@ func (op *operator) selectRequestsToProcess() []*request {
 }
 
 type requestWithVotes struct {
-	req       *request
+	*request
 	seenTimes uint16
 }
 
-func (op *operator) requestsSeenQuorumTimes() []*request {
+func (op *operator) requestMessagesSeenQuorumTimes() []*request {
 	ret1 := make([]*requestWithVotes, 0)
 	for _, req := range op.requests {
+		if req.reqTx == nil {
+			continue
+		}
 		votes := numTrue(req.notifications)
 		if votes >= op.quorum() {
 			ret1 = append(ret1, &requestWithVotes{
-				req:       req,
+				request:   req,
 				seenTimes: votes,
 			})
 		}
@@ -136,7 +141,7 @@ func (op *operator) requestsSeenQuorumTimes() []*request {
 	})
 	ret := make([]*request, len(ret1))
 	for i, req := range ret1 {
-		ret[i] = req.req
+		ret[i] = req.request
 	}
 	return ret
 }
@@ -219,6 +224,14 @@ func numTrue(bs []bool) uint16 {
 	return ret
 }
 
+func idsShortStr(ids []sctransaction.RequestId) []string {
+	ret := make([]string, len(ids))
+	for i := range ret {
+		ret[i] = ids[i].Short()
+	}
+	return ret
+}
+
 func takeIds(reqs []*request) []sctransaction.RequestId {
 	ret := make([]sctransaction.RequestId, len(reqs))
 	for i := range ret {
@@ -227,16 +240,13 @@ func takeIds(reqs []*request) []sctransaction.RequestId {
 	return ret
 }
 
-func takeRefs(reqs []*request) ([]sctransaction.RequestRef, bool) {
+func takeRefs(reqs []*request) []sctransaction.RequestRef {
 	ret := make([]sctransaction.RequestRef, len(reqs))
 	for i := range ret {
-		if reqs[i].reqTx == nil {
-			return nil, false
-		}
 		ret[i] = sctransaction.RequestRef{
 			Tx:    reqs[i].reqTx,
 			Index: reqs[i].reqId.Index(),
 		}
 	}
-	return ret, true
+	return ret
 }

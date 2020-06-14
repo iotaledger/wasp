@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -15,36 +14,26 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	if op.iAmCurrentLeader() {
 		return
 	}
-	ids := make([]*sctransaction.RequestId, 0, len(reqs))
-	if len(reqs) > 0 {
-		for _, r := range reqs {
-			ids = append(ids, &r.reqId)
-		}
-	} else {
-		// all of them if any
-		for _, req := range op.requests {
-			if req.reqTx == nil {
-				continue
-			}
-			ids = append(ids, &req.reqId)
-		}
+	if reqs == nil {
+		reqs = op.requestMsgList()
 	}
-	if len(ids) == 0 {
+	reqIds := takeIds(reqs)
+	if len(reqIds) == 0 {
 		// nothing to notify about
 		return
 	}
 	msgData := util.MustBytes(&committee.NotifyReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			StateIndex: op.stateTx.MustState().StateIndex(),
+			StateIndex: op.stateIndex(),
 		},
-		RequestIds: ids,
+		RequestIds: reqIds,
 	})
 
 	// send until first success, but no more than number of nodes in the committee
 	op.log.Debugw("sendRequestNotificationsToLeader",
+		"state index", op.stateIndex(),
 		"leader", currentLeaderPeerIndex,
-		"my peer index", op.peerIndex(),
-		"num req", len(ids),
+		"reqs", idsShortStr(reqIds),
 	)
 
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
@@ -71,7 +60,7 @@ func (op *operator) markRequestsNotified(msg *committee.NotifyReqMsg) {
 	}
 
 	for _, reqid := range msg.RequestIds {
-		req, ok := op.requestFromId(*reqid)
+		req, ok := op.requestFromId(reqid)
 		if !ok {
 			continue
 		}

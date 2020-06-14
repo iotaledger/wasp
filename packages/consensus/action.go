@@ -24,8 +24,8 @@ func (op *operator) rotateLeaderIfNeeded() {
 	if op.leaderRotationDeadlineSet && op.leaderRotationDeadline.Before(time.Now()) {
 		prevlead, _ := op.currentLeader()
 		leader := op.moveToNextLeader()
-		op.sendRequestNotificationsToLeader(nil)
 		op.log.Debugf("LEADER ROTATED #%d --> #%d", prevlead, leader)
+		op.sendRequestNotificationsToLeader(nil)
 	}
 }
 
@@ -43,11 +43,12 @@ func (op *operator) startProcessingIfNeeded() {
 		//op.log.Debugf("can't select request to process")
 		return
 	}
+	reqIds := takeIds(reqs)
+	reqIdsStr := idsShortStr(reqIds)
 	op.log.Debugw("requests selected to process",
 		"stateIdx", op.stateTx.MustState().StateIndex(),
-		"batch size", len(reqs),
+		"batch", reqIdsStr,
 	)
-	reqIds := takeIds(reqs)
 	rewardAddress := registry.GetRewardAddress(op.committee.Address())
 
 	// send to subordinate the request to process the batch
@@ -80,6 +81,7 @@ func (op *operator) startProcessingIfNeeded() {
 	}
 	op.log.Debugw("runCalculationsAsync leader",
 		"batch hash", batchHash.String(),
+		"batch", reqIdsStr,
 		"ts", ts,
 	)
 	// process the batch on own side
@@ -183,7 +185,7 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	for _, nmsg := range op.notificationsBacklog {
 		if nmsg.StateIndex == op.variableState.StateIndex() {
 			for _, rid := range nmsg.RequestIds {
-				r, ok := op.requestFromId(*rid)
+				r, ok := op.requestFromId(rid)
 				if !ok {
 					continue
 				}
