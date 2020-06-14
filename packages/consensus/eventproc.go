@@ -21,10 +21,10 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 
 	op.setNewState(msg.StateTransaction, msg.VariableState)
 
-	vh := msg.VariableState.Hash()
+	vh := op.variableState.Hash()
 	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
-		msg.VariableState.StateIndex(), op.peerPermutation.Current(),
-		msg.StateTransaction.ID().String(), vh.String(), op.iAmCurrentLeader())
+		op.mustStateIndex(), op.peerPermutation.Current(),
+		op.stateTx.ID().String(), vh.String(), op.iAmCurrentLeader())
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
@@ -38,7 +38,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.processorReady = false
 	progHashStr, ok := op.getProgramHashStr()
 	if !ok {
-		op.log.Errorf("major inconsistency: undefined program hash at state #%d", op.stateIndex())
+		op.log.Errorf("major inconsistency: undefined program hash at state #%d", op.mustStateIndex())
 		op.committee.Dismiss()
 		return
 	}
@@ -57,10 +57,9 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 }
 
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
-	op.log.Debug("EventBalancesMsg")
-
+	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
 	op.balances = reqMsg.Balances
-	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(op.balances))
+
 	op.takeAction()
 }
 
@@ -99,34 +98,35 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
-	op.MustValidStateIndex(msg.StateIndex)
-
-	op.markRequestsNotified(msg)
+	op.notificationsBacklog = append(op.notificationsBacklog, msg)
+	op.markRequestsNotified([]*committee.NotifyReqMsg{msg})
 
 	op.takeAction()
 }
 
-func (op *operator) EventStartProcessingReqMsg(msg *committee.StartProcessingReqMsg) {
+func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp)
-	op.log.Debugw("EventStartProcessingReqMsg",
+	op.log.Debugw("EventStartProcessingBatchMsg",
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,
 		"batch hash", bh.String(),
 		"reqIds", idsShortStr(msg.RequestIds),
 	)
+	stateIndex, ok := op.stateIndex()
+	if !ok || msg.StateIndex != stateIndex {
+		op.log.Debugf("EventStartProcessingBatchMsg: request out of context")
+		return
+	}
 
-	op.MustValidStateIndex(msg.StateIndex)
-
-	var ok bool
 	reqs := make([]*request, len(msg.RequestIds))
 	for i := range reqs {
 		reqs[i], ok = op.requestFromId(msg.RequestIds[i])
 		if !ok {
-			op.log.Warn("EventStartProcessingReqMsg inconsistency: some requests in the batch are already processed")
+			op.log.Warn("EventStartProcessingBatchMsg inconsistency: some requests in the batch are already processed")
 			return
 		}
 		if reqs[i].reqTx == nil {
-			op.log.Warn("EventStartProcessingReqMsg inconsistency: some requests in the batch not yet received by the node")
+			op.log.Warn("EventStartProcessingBatchMsg inconsistency: some requests in the batch not yet received by the node")
 			return
 		}
 	}
@@ -144,13 +144,13 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
-	if ctx.ResultBatch.StateIndex() != op.stateIndex()+1 {
+	if ctx.ResultBatch.StateIndex() != op.mustStateIndex()+1 {
 		// out of context. ignore
 		return
 	}
 	op.log.Debugw("eventResultCalculated",
 		"batch size", ctx.ResultBatch.Size(),
-		"stateIndex", op.stateIndex(),
+		"stateIndex", op.mustStateIndex(),
 	)
 
 	// inform state manager about new result batch
@@ -182,7 +182,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		// shouldn't be
 		return
 	}
-	if msg.StateIndex != op.stateIndex() {
+	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
 		// out of context
 		return
 	}

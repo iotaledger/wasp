@@ -43,7 +43,7 @@ type NotifyReqMsg struct {
 // message is sent by the leader to other peers to initiate request processing
 // other peers are expected to check is timestamp is acceptable then
 // process request batch and sign the result hash with the timestamp proposed by the leader
-type StartProcessingReqMsg struct {
+type StartProcessingBatchMsg struct {
 	PeerMsgHeader
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp int64

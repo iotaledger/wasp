@@ -28,7 +28,7 @@ type Committee interface {
 }
 
 type StateManager interface {
-	CheckSynchronizationStatus(idx uint32) bool
+	CheckSynchronizationStatus(idx uint32)
 	EventGetBatchMsg(msg *GetBatchMsg)
 	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
@@ -43,7 +43,7 @@ type Operator interface {
 	EventBalancesMsg(reqMsg BalancesMsg)
 	EventRequestMsg(reqMsg RequestMsg)
 	EventNotifyReqMsg(msg *NotifyReqMsg)
-	EventStartProcessingReqMsg(msg *StartProcessingReqMsg)
+	EventStartProcessingBatchMsg(msg *StartProcessingBatchMsg)
 	EventResultCalculated(result *vm.VMTask)
 	EventSignedHashMsg(msg *SignedHashMsg)
 	EventTimerMsg(msg TimerTick)

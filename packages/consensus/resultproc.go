@@ -87,7 +87,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 
 	msgData := util.MustBytes(&committee.SignedHashMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			StateIndex: op.stateIndex(),
+			StateIndex: op.mustStateIndex(),
 		},
 		BatchHash:     batchHash,
 		OrigTimestamp: result.Timestamp,

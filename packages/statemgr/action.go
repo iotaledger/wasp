@@ -175,21 +175,27 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 // 1 behind the largest, node is not synced
 // function returns if the message with idx must be passed to consensus operator, which works only with
 // state indices of current or next state
-func (sm *stateManager) CheckSynchronizationStatus(idx uint32) bool {
+func (sm *stateManager) CheckSynchronizationStatus(stateIndex uint32) {
 	// synced state is when current state index is behind
 	// the largestEvidencedStateIndex no more than by 1 point
 	wasSynchronized := sm.isSynchronized()
-	if idx > sm.largestEvidencedStateIndex {
-		sm.largestEvidencedStateIndex = idx
-	}
-	if !sm.isSynchronized() && wasSynchronized {
-		sm.syncMessageDeadline = time.Now()
-	}
-	currentStateIndex := uint32(0)
+
+	currStateIndex := int32(-1)
 	if sm.solidVariableState != nil {
-		currentStateIndex = sm.solidVariableState.StateIndex()
+		currStateIndex = int32(sm.solidVariableState.StateIndex())
 	}
-	return idx == currentStateIndex || idx == currentStateIndex+1
+
+	if stateIndex > sm.largestEvidencedStateIndex {
+		sm.largestEvidencedStateIndex = stateIndex
+	}
+	switch {
+	case !sm.isSynchronized() && wasSynchronized:
+		sm.syncMessageDeadline = time.Now()
+		sm.log.Debugf("NOT SYNCED: current state index: %d, largest evidenced index: %d",
+			currStateIndex, sm.largestEvidencedStateIndex)
+	case sm.isSynchronized() && !wasSynchronized:
+		sm.log.Debugf("SYNCED: current state index: %d", sm.solidVariableState.StateIndex())
+	}
 }
 
 func (sm *stateManager) isSynchronized() bool {

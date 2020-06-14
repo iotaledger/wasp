@@ -47,7 +47,7 @@ func (msg *NotifyReqMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (msg *StartProcessingReqMsg) Write(w io.Writer) error {
+func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (msg *StartProcessingReqMsg) Write(w io.Writer) error {
 	return nil
 }
 
-func (msg *StartProcessingReqMsg) Read(r io.Reader) error {
+func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
 		return err
 	}

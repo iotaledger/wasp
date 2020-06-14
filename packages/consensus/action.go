@@ -52,7 +52,7 @@ func (op *operator) startProcessingIfNeeded() {
 	rewardAddress := registry.GetRewardAddress(op.committee.Address())
 
 	// send to subordinate the request to process the batch
-	msgData := util.MustBytes(&committee.StartProcessingReqMsg{
+	msgData := util.MustBytes(&committee.StartProcessingBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
@@ -71,6 +71,7 @@ func (op *operator) startProcessingIfNeeded() {
 		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded.", numSucc)
 		return
 	}
+
 	batchHash := vm.BatchHash(reqIds, ts)
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
@@ -165,35 +166,13 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 
 	op.resetLeader(stateTx.ID().Bytes())
 
-	// if consistently moving to the next state, computation requests and notifications about
-	// requests for the next state index are brought to the current state next state list is cleared
-	// otherwise any state data is cleared
-	if op.variableState != nil && variableState.StateIndex() == op.variableState.StateIndex()+1 {
-		op.currentStateCompRequests, op.nextStateCompRequests =
-			op.nextStateCompRequests, op.currentStateCompRequests
-		op.nextStateCompRequests = op.nextStateCompRequests[:0]
-	} else {
-		op.nextStateCompRequests = op.nextStateCompRequests[:0]
-		op.currentStateCompRequests = op.currentStateCompRequests[:0]
-	}
-
+	// clear all request notifications from the current state
 	for _, req := range op.requests {
 		setAllFalse(req.notifications)
 		req.notifications[op.peerIndex()] = req.reqTx != nil
 	}
-	// run through the notification backlog and mark relevant notifications
-	for _, nmsg := range op.notificationsBacklog {
-		if nmsg.StateIndex == op.variableState.StateIndex() {
-			for _, rid := range nmsg.RequestIds {
-				r, ok := op.requestFromId(rid)
-				if !ok {
-					continue
-				}
-				r.notifications[nmsg.SenderIndex] = true
-			}
-		}
-	}
-	// clean notification backlog
+	// mark request notified from the current notifications backlog and the clear it
+	op.markRequestsNotified(op.notificationsBacklog)
 	op.notificationsBacklog = op.notificationsBacklog[:0]
 }
 

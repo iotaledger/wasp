@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
@@ -37,9 +36,7 @@ type operator struct {
 	leaderRotationDeadline    time.Time
 	// states of requests being processed: as leader and as subordinate
 
-	leaderStatus             *leaderStatus
-	currentStateCompRequests []*computationRequest
-	nextStateCompRequests    []*computationRequest
+	leaderStatus *leaderStatus
 
 	log *logger.Logger
 }
@@ -109,11 +106,19 @@ func (op *operator) size() uint16 {
 	return op.dkshare.N
 }
 
-func (op *operator) stateIndex() uint32 {
+func (op *operator) stateIndex() (uint32, bool) {
 	if op.variableState == nil {
-		return 0
+		return 0, false
 	}
-	return op.variableState.StateIndex()
+	return op.variableState.StateIndex(), true
+}
+
+func (op *operator) mustStateIndex() uint32 {
+	ret, ok := op.stateIndex()
+	if !ok {
+		panic("mustStateIndex")
+	}
+	return ret
 }
 
 func (op *operator) getProgramHashStr() (string, bool) {
@@ -129,12 +134,4 @@ func (op *operator) getProgramHashStr() (string, bool) {
 		return "", false
 	}
 	return progHashStr, true
-}
-
-func (op *operator) MustValidStateIndex(stateIndex uint32) {
-	if stateIndex != op.stateIndex() && stateIndex != op.stateIndex()+1 {
-		// only tolerated messages from current and next state indices
-		// stateManager should not pass other messages
-		panic(fmt.Errorf("wrong state index. Current %d, got %d", op.stateIndex(), stateIndex))
-	}
 }
