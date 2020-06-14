@@ -28,7 +28,7 @@ type Committee interface {
 }
 
 type StateManager interface {
-	CheckSynchronizationStatus(idx uint32)
+	EvidenceStateIndex(idx uint32)
 	EventGetBatchMsg(msg *GetBatchMsg)
 	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)

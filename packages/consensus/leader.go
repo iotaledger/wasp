@@ -5,10 +5,8 @@ import (
 )
 
 func (op *operator) currentLeader() (uint16, bool) {
-	if op.stateTx == nil {
-		return 0, false
-	}
-	return op.peerPermutation.Current(), true
+	_, ok := op.stateIndex()
+	return op.peerPermutation.Current(), ok
 }
 
 func (op *operator) iAmCurrentLeader() bool {
@@ -20,13 +18,16 @@ const leaderRotationPeriod = 3 * time.Second
 
 func (op *operator) moveToNextLeader() uint16 {
 	op.peerPermutation.Next()
-	return op.moveToFirstAliveLeader()
+	ret := op.moveToFirstAliveLeader()
+	op.setLeaderRotationDeadline()
+	return ret
 }
 
 func (op *operator) resetLeader(seedBytes []byte) {
 	op.peerPermutation.Shuffle(seedBytes)
 	op.leaderStatus = nil
 	op.moveToFirstAliveLeader()
+	op.leaderRotationDeadlineSet = false
 }
 
 // select leader first in the permutation which is alive
@@ -42,7 +43,6 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 		op.log.Debugf("peer #%d is dead", op.peerPermutation.Current())
 		op.peerPermutation.Next()
 	}
-	op.setLeaderRotationDeadline()
 	return ret
 }
 

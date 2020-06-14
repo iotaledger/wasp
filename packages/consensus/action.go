@@ -21,15 +21,28 @@ func (op *operator) takeAction() {
 }
 
 func (op *operator) rotateLeaderIfNeeded() {
-	if op.leaderRotationDeadlineSet && op.leaderRotationDeadline.Before(time.Now()) {
-		prevlead, _ := op.currentLeader()
-		leader := op.moveToNextLeader()
-		op.log.Debugf("LEADER ROTATED #%d --> #%d", prevlead, leader)
-		op.sendRequestNotificationsToLeader(nil)
+	if !op.synchronized {
+		return
 	}
+	if op.iAmCurrentLeader() {
+		return
+	}
+	if !op.leaderRotationDeadlineSet {
+		return
+	}
+	if op.leaderRotationDeadline.After(time.Now()) {
+		return
+	}
+	prevlead, _ := op.currentLeader()
+	leader := op.moveToNextLeader()
+	op.log.Debugf("LEADER ROTATED #%d --> #%d", prevlead, leader)
+	op.sendRequestNotificationsToLeader(nil)
 }
 
 func (op *operator) startProcessingIfNeeded() {
+	if !op.synchronized {
+		return
+	}
 	if op.leaderStatus != nil {
 		// request already selected and calculations initialized
 		return
@@ -37,6 +50,7 @@ func (op *operator) startProcessingIfNeeded() {
 	if !op.processorReady {
 		return
 	}
+
 	reqs := op.selectRequestsToProcess()
 	if len(reqs) == 0 {
 		// can't select request to process
@@ -96,9 +110,13 @@ func (op *operator) startProcessingIfNeeded() {
 }
 
 func (op *operator) checkQuorum() bool {
+	if !op.synchronized {
+		return false
+	}
 	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
 		return false
 	}
+
 	// collect signature shares available
 	mainHash := op.leaderStatus.signedResults[op.committee.OwnPeerIndex()].essenceHash
 	sigShares := make([][]byte, 0, op.committee.Size())
@@ -157,9 +175,10 @@ func (op *operator) checkQuorum() bool {
 }
 
 // sets new state transaction and initializes respective variables
-func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState) {
+func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState, synchronized bool) {
 	op.stateTx = stateTx
 	op.variableState = variableState
+	op.synchronized = synchronized
 
 	op.requestBalancesDeadline = time.Now()
 	op.requestOutputsIfNeeded()
@@ -171,22 +190,22 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 		setAllFalse(req.notifications)
 		req.notifications[op.peerIndex()] = req.reqTx != nil
 	}
-	// mark request notified from the current notifications backlog and the clear it
+	// mark request notified from the current notifications backlog and then clear it
 	op.markRequestsNotified(op.notificationsBacklog)
 	op.notificationsBacklog = op.notificationsBacklog[:0]
 }
 
-const requestBalancesTimeout = 1 * time.Second
+const requestBalancesPeriod = 10 * time.Second
 
 func (op *operator) requestOutputsIfNeeded() {
-	if op.balances != nil {
+	if !op.synchronized {
 		return
 	}
-	if op.requestBalancesDeadline.After(time.Now()) {
+	if op.balances != nil && op.requestBalancesDeadline.After(time.Now()) {
 		return
 	}
 	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
 		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
 	}
-	op.requestBalancesDeadline = time.Now().Add(requestBalancesTimeout)
+	op.requestBalancesDeadline = time.Now().Add(requestBalancesPeriod)
 }

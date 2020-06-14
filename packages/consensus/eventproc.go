@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/iotaledger/wasp/plugins/runvm"
+	"time"
 )
 
 func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
@@ -19,7 +20,7 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	//op.log.Debugf("new varstate:\n%s\n", msg.VariableState.String())
 
-	op.setNewState(msg.StateTransaction, msg.VariableState)
+	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.variableState.Hash()
 	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
@@ -33,6 +34,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
+	op.setLeaderRotationDeadline()
 
 	// check is processor is ready for the current varstate. If no, initiate load of the processor
 	op.processorReady = false
@@ -59,6 +61,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
 	op.balances = reqMsg.Balances
+	op.requestBalancesDeadline = time.Now().Add(requestBalancesPeriod)
 
 	op.takeAction()
 }
@@ -85,7 +88,9 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 	}
 
 	op.sendRequestNotificationsToLeader([]*request{req})
-	op.setLeaderRotationDeadline()
+	if !op.leaderRotationDeadlineSet {
+		op.setLeaderRotationDeadline()
+	}
 
 	op.takeAction()
 }

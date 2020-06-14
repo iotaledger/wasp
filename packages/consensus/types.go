@@ -18,13 +18,14 @@ import (
 type operator struct {
 	committee committee.Committee
 	dkshare   *tcrypto.DKShare
-	stateTx   *sctransaction.Transaction
+	//state
+	variableState state.VariableState
+	stateTx       *sctransaction.Transaction
+	balances      map[valuetransaction.ID][]*balance.Balance
+	synchronized  bool
 
-	balances                map[valuetransaction.ID][]*balance.Balance
 	requestBalancesDeadline time.Time
-
-	variableState  state.VariableState
-	processorReady bool
+	processorReady          bool
 
 	// notifications with future state indices
 	notificationsBacklog []*committee.NotifyReqMsg

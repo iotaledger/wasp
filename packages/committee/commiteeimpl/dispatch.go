@@ -81,7 +81,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 
@@ -95,7 +95,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		msgt.Timestamp = msg.Timestamp
@@ -110,7 +110,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		msgt.Timestamp = msg.Timestamp
@@ -125,7 +125,6 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 
@@ -137,7 +136,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventBatchHeaderMsg(msgt)
@@ -148,7 +147,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.CheckSynchronizationStatus(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventStateUpdateMsg(msgt)

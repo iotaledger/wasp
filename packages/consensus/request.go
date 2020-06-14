@@ -170,7 +170,7 @@ func (op *operator) deleteCompletedRequests() error {
 	}
 	for _, rid := range toDelete {
 		delete(op.requests, *rid)
-		op.log.Debugf("deleted processed request %s", rid.String())
+		op.log.Debugf("removed from backlog: processed request %s", rid.String())
 	}
 	return nil
 }

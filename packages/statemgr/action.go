@@ -126,16 +126,13 @@ func (sm *stateManager) checkStateApproval() bool {
 	sm.permutation.Shuffle(varStateHash.Bytes())
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
 
-	// if synchronized, notify consensus operator about state transition
-	if sm.isSynchronized() {
-		// async in order not to deadlock
-		go func() {
-			sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
-				VariableState:    sm.solidVariableState,
-				StateTransaction: saveTx,
-			})
-		}()
-	}
+	go func() {
+		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
+			VariableState:    sm.solidVariableState,
+			StateTransaction: saveTx,
+			Synchronized:     sm.isSynchronized(),
+		})
+	}()
 	return true
 }
 
@@ -171,11 +168,8 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 }
 
 // index of evidenced state index is passed to record the largest one.
-// This is needed to check synchronization status. If some state index is more than
-// 1 behind the largest, node is not synced
-// function returns if the message with idx must be passed to consensus operator, which works only with
-// state indices of current or next state
-func (sm *stateManager) CheckSynchronizationStatus(stateIndex uint32) {
+// This is needed to check synchronization status.
+func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
 	// synced state is when current state index is behind
 	// the largestEvidencedStateIndex no more than by 1 point
 	wasSynchronized := sm.isSynchronized()
@@ -202,7 +196,7 @@ func (sm *stateManager) isSynchronized() bool {
 	if sm.solidVariableState == nil {
 		return false
 	}
-	return sm.largestEvidencedStateIndex-sm.solidVariableState.StateIndex() <= 1
+	return sm.largestEvidencedStateIndex == sm.solidVariableState.StateIndex()
 }
 
 var niltxid valuetransaction.ID

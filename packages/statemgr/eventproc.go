@@ -146,7 +146,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 		"state hash", vh.String(),
 	)
 
-	sm.CheckSynchronizationStatus(stateBlock.StateIndex())
+	sm.EvidenceStateIndex(stateBlock.StateIndex())
 
 	if sm.solidStateValid {
 		if stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {

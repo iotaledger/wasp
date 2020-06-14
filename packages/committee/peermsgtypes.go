@@ -116,6 +116,8 @@ type StateTransitionMsg struct {
 	StateTransaction *sctransaction.Transaction
 	// processed requests
 	RequestIds []*sctransaction.RequestId
+	// is the state index last seen
+	Synchronized bool
 }
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
