@@ -84,10 +84,8 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 		)
 	}
 
-	// notify about new request the current leader
-	if op.stateTx != nil {
-		op.sendRequestNotificationsToLeader([]*request{req})
-	}
+	op.sendRequestNotificationsToLeader([]*request{req})
+	op.setLeaderRotationDeadline()
 
 	op.takeAction()
 }
@@ -204,8 +202,14 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 	if msg%200 == 0 {
+		stateIndex, ok := op.stateIndex()
+		si := int32(-1)
+		if ok {
+			si = int32(stateIndex)
+		}
 		op.log.Debugw("timer tick",
 			"#", msg,
+			"state index", si,
 			"req backlog", len(op.requests),
 			"selection", len(op.selectRequestsToProcess()),
 			"notif backlog", len(op.notificationsBacklog),

@@ -85,9 +85,9 @@ func (b *batch) WithTimestamp(ts int64) Batch {
 	return b
 }
 
-func (b *batch) ForEach(fun func(StateUpdate) bool) {
-	for _, su := range b.stateUpdates {
-		if !fun(su) {
+func (b *batch) ForEach(fun func(uint16, StateUpdate) bool) {
+	for i, su := range b.stateUpdates {
+		if !fun(uint16(i), su) {
 			return
 		}
 	}

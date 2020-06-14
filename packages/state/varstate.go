@@ -76,7 +76,7 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 			return fmt.Errorf("batch state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
-	batch.ForEach(func(stateUpd StateUpdate) bool {
+	batch.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
 		vs.ApplyStateUpdate(stateUpd)
 		return true
 	})

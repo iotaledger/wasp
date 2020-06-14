@@ -38,16 +38,17 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 	if err != nil {
 		return
 	}
-	batch.ForEach(func(stateUpdate state.StateUpdate) bool {
+	batch.ForEach(func(batchIndex uint16, stateUpdate state.StateUpdate) bool {
 		err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgStateUpdate, util.MustBytes(&committee.StateUpdateMsg{
 			PeerMsgHeader: committee.PeerMsgHeader{
 				StateIndex: msg.StateIndex,
 			},
 			StateUpdate: stateUpdate,
+			BatchIndex:  batchIndex,
 		}))
 		sh := util.GetHashValue(stateUpdate)
 		sm.log.Debugw("EventGetBatchMsg: sending stateUpdate", "hash", sh.String())
-		return err == nil
+		return true
 	})
 }
 
@@ -88,11 +89,12 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		return
 	}
 	if int(msg.BatchIndex) >= len(sm.syncedBatch.stateUpdates) {
-		sm.log.Errorf("bad state update message")
+		sm.log.Errorf("bad batch index in the state update message")
 		return
 	}
 	sh := util.GetHashValue(msg.StateUpdate)
-	sm.log.Debugw("EventStateUpdateMsg: receiving stateUpdate", "hash", sh.String())
+	sm.log.Debugf("EventStateUpdateMsg: receiving stateUpdate batch index: %d hash: %s",
+		msg.BatchIndex, sh.String())
 
 	sm.syncedBatch.stateUpdates[msg.BatchIndex] = msg.StateUpdate
 	sm.syncedBatch.msgCounter++
