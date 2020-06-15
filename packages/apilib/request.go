@@ -92,7 +92,7 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	if err != nil {
 		return nil, err
 	}
-	ret := sctransaction.NewRequestBlock(addr, reqBlkJson.RequestCode)
+	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
 
 	for k, v := range reqBlkJson.Vars {
 		n, err := strconv.Atoi(v)

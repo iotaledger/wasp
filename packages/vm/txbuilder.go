@@ -10,11 +10,10 @@ import (
 )
 
 type TransactionBuilder struct {
-	invalid        bool
 	sctxbuilder    *sctransaction.TransactionBuilder
 	balances       map[valuetransaction.ID][]*balance.Balance
-	ownAddress     address.Address
-	ownColor       balance.Color
+	scAddress      address.Address
+	scColor        balance.Color
 	inputBalances  map[balance.Color]int64
 	outputBalances map[address.Address]map[balance.Color]int64
 	total          int64
@@ -34,8 +33,8 @@ func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
 		balances:       par.Balances,
 		inputBalances:  make(map[balance.Color]int64),
 		outputBalances: make(map[address.Address]map[balance.Color]int64),
-		ownAddress:     par.OwnAddress,
-		ownColor:       par.OwnColor,
+		scAddress:      par.OwnAddress,
+		scColor:        par.OwnColor,
 	}
 	for _, lst := range par.Balances {
 		for _, b := range lst {
@@ -52,7 +51,7 @@ func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
 		return nil, fmt.Errorf("empty input balances")
 	}
 	// move smart contract token from SC address to itself
-	if err := ret.Transfer(ret.ownAddress, ret.ownColor, 1); err != nil {
+	if err := ret.Transfer(ret.scAddress, ret.scColor, 1); err != nil {
 		return nil, err
 	}
 	ret.MustValidate()
@@ -74,10 +73,10 @@ func (acc *TransactionBuilder) Finalize(stateIndex uint32, stateHash hashing.Has
 
 	if acc.sumInputs() != 0 {
 		// if reminder wasn't added explicitely, assume own address
-		acc.AddReminder(acc.ownAddress)
+		acc.AddReminder(acc.scAddress)
 	}
 	acc.sctxbuilder.AddStateBlock(sctransaction.NewStateBlockParams{
-		Color:      acc.ownColor,
+		Color:      acc.scColor,
 		StateIndex: stateIndex,
 		StateHash:  stateHash,
 		Timestamp:  timestamp,
@@ -87,7 +86,7 @@ func (acc *TransactionBuilder) Finalize(stateIndex uint32, stateHash hashing.Has
 
 	oids := make([]valuetransaction.OutputID, 0, len(acc.balances))
 	for txid := range acc.balances {
-		oids = append(oids, valuetransaction.NewOutputID(acc.ownAddress, txid))
+		oids = append(oids, valuetransaction.NewOutputID(acc.scAddress, txid))
 	}
 	acc.sctxbuilder.MustAddInputs(oids...)
 

@@ -107,14 +107,14 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	taskName := ctx.Address.String() + "." + bh.String()
 
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		runVM(ctx, txbuilder, processor, shutdownSignal)
+		runTask(ctx, txbuilder, processor, shutdownSignal)
 	})
 	return err
 }
 
 // runs batch
-func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
-	ctx.Log.Debugw("runVM IN",
+func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
+	ctx.Log.Debugw("runTask IN",
 		"addr", ctx.Address.String(),
 		"finalTimestamp", ctx.Timestamp,
 		"balances hash", util.BalancesHash(ctx.Balances),
@@ -195,7 +195,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		return
 	}
 
-	ctx.Log.Debugw("runVM OUT",
+	ctx.Log.Debugw("runTask OUT",
 		"result batch size", ctx.ResultBatch.Size(),
 		"result batch state index", ctx.ResultBatch.StateIndex(),
 		"result variable state hash", vsh.String(),

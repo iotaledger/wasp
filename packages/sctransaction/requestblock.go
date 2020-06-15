@@ -18,7 +18,7 @@ type RequestId [RequestIdSize]byte
 type RequestBlock struct {
 	address address.Address
 	// request code
-	reqCode uint16
+	reqCode RequestCode
 	// small variable state with variable/value pairs
 	vars variables.Variables
 }
@@ -30,7 +30,7 @@ type RequestRef struct {
 
 // RequestBlock
 
-func NewRequestBlock(addr address.Address, reqCode uint16) *RequestBlock {
+func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
 		reqCode: reqCode,
@@ -46,7 +46,7 @@ func (req *RequestBlock) Variables() variables.Variables {
 	return req.vars
 }
 
-func (req *RequestBlock) RequestCode() uint16 {
+func (req *RequestBlock) RequestCode() RequestCode {
 	return req.reqCode
 }
 
@@ -57,7 +57,7 @@ func (req *RequestBlock) Write(w io.Writer) error {
 	if _, err := w.Write(req.address.Bytes()); err != nil {
 		return err
 	}
-	if err := util.WriteUint16(w, req.reqCode); err != nil {
+	if err := util.WriteUint16(w, uint16(req.reqCode)); err != nil {
 		return err
 	}
 	if err := req.vars.Write(w); err != nil {
@@ -70,9 +70,12 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	if err := util.ReadAddress(r, &req.address); err != nil {
 		return fmt.Errorf("error while reading address: %v", err)
 	}
-	if err := util.ReadUint16(r, &req.reqCode); err != nil {
+	var rc uint16
+	if err := util.ReadUint16(r, &rc); err != nil {
 		return err
 	}
+	req.reqCode = RequestCode(rc)
+
 	req.vars = variables.New(nil)
 	if err := req.vars.Read(r); err != nil {
 		return err
