@@ -13,6 +13,7 @@ type Variables interface {
 	Get(key string) (interface{}, bool)
 	Apply(Variables)
 	ForEach(func(key string, value interface{}) bool)
+	IsEmpty() bool
 	Read(io.Reader) error
 	Write(io.Writer) error
 	String() string
@@ -87,6 +88,10 @@ func (vr *variables) ForEach(fun func(key string, value interface{}) bool) {
 			return // abort when callback returns false
 		}
 	}
+}
+
+func (vr *variables) IsEmpty() bool {
+	return len(vr.m) == 0
 }
 
 func (vr *variables) Set(key string, value interface{}) {

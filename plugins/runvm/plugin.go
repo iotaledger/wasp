@@ -116,7 +116,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
 	ctx.Log.Debugw("runVM IN",
 		"addr", ctx.Address.String(),
-		"ts", ctx.Timestamp,
+		"finalTimestamp", ctx.Timestamp,
 		"balances hash", util.BalancesHash(ctx.Balances),
 		"state index", ctx.VariableState.StateIndex(),
 		"num req", len(ctx.Requests),
@@ -174,11 +174,11 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 	}
 
 	// timestamp of the resulting batch is equal to the timestamp of the last state update (if not empty)
-	ts := int64(0)
+	finalTimestamp := int64(0)
 	if ctx.Timestamp != 0 {
-		ts = ctx.Timestamp + int64(len(stateUpdates))
+		finalTimestamp = ctx.Timestamp + int64(len(stateUpdates)) - 1
 	}
-	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1).WithTimestamp(ts)
+	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1).WithTimestamp(finalTimestamp)
 
 	// create final transaction
 	vsClone := state.NewVariableState(ctx.VariableState)
@@ -187,7 +187,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		return
 	}
 	vsh := vsClone.Hash()
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex()+1, vsh, ctx.Timestamp)
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex()+1, vsh, finalTimestamp)
 
 	// check of all provided inputs were properly consumed
 	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
@@ -200,7 +200,7 @@ func runVM(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proces
 		"result batch state index", ctx.ResultBatch.StateIndex(),
 		"result variable state hash", vsh.String(),
 		"result essence hash", hashing.HashData(ctx.ResultTransaction.EssenceBytes()).String(),
-		"result tx ts", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
+		"result tx finalTimestamp", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
 	)
 	// call back
 	ctx.OnFinish()

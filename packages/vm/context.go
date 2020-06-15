@@ -51,7 +51,7 @@ type VMContext struct {
 	Log *logger.Logger
 	// set for each call
 	Request sctransaction.RequestRef
-	// Empty state update upon call, result of the call.
+	// IsEmpty state update upon call, result of the call.
 	StateUpdate state.StateUpdate
 }
 

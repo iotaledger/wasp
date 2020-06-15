@@ -23,8 +23,8 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.variableState.Hash()
-	op.log.Infof("NEW STATE FOR CONSENSUS #%d, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
-		op.mustStateIndex(), op.peerPermutation.Current(),
+	op.log.Infof("NEW STATE FOR CONSENSUS #%d, synced: %v, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
+		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(),
 		op.stateTx.ID().String(), vh.String(), op.iAmCurrentLeader())
 
 	// remove all processed requests from the local backlog
@@ -68,7 +68,11 @@ func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 
 // EventRequestMsg triggered by new request msg from the node
 func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
-	op.log.Debugw("EventRequestMsg", "reqid", reqMsg.RequestId().String())
+	op.log.Debugw("EventRequestMsg",
+		"reqid", reqMsg.RequestId().Short(),
+		"backlog req", len(op.requests),
+		"backlog notif", len(op.notificationsBacklog),
+	)
 
 	if err := op.validateRequestBlock(&reqMsg); err != nil {
 		op.log.Warnw("request block validation failed.Ignored",
@@ -117,21 +121,14 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 	)
 	stateIndex, ok := op.stateIndex()
 	if !ok || msg.StateIndex != stateIndex {
-		op.log.Debugf("EventStartProcessingBatchMsg: request out of context")
+		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context")
 		return
 	}
 
-	reqs := make([]*request, len(msg.RequestIds))
-	for i := range reqs {
-		reqs[i], ok = op.requestFromId(msg.RequestIds[i])
-		if !ok {
-			op.log.Warn("EventStartProcessingBatchMsg inconsistency: some requests in the batch are already processed")
-			return
-		}
-		if reqs[i].reqTx == nil {
-			op.log.Warn("EventStartProcessingBatchMsg inconsistency: some requests in the batch not yet received by the node")
-			return
-		}
+	reqs := op.requestsForProcessing(msg.RequestIds)
+	if len(reqs) == 0 {
+		op.log.Debugf("batch can't be processed by the node")
+		return
 	}
 	// start async calculation
 	op.runCalculationsAsync(runCalculationsParams{

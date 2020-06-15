@@ -34,7 +34,11 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 // StateUpdate
 
 func (su *stateUpdate) String() string {
-	return fmt.Sprintf("reqid: %s, ts: %d\n%s", su.requestId.String(), su.Timestamp(), su.Variables().String())
+	ret := fmt.Sprintf("reqid: %s, ts: %d", su.requestId.String(), su.Timestamp())
+	if !su.Variables().IsEmpty() {
+		ret += fmt.Sprintf("\n%s", su.Variables().String())
+	}
+	return ret
 }
 
 func (su *stateUpdate) Timestamp() int64 {

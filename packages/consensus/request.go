@@ -102,13 +102,14 @@ func (op *operator) selectRequestsToProcess() []*request {
 	if ret == nil {
 		return nil
 	}
-	before := len(ret)
-	ret = filterFullRequestTokenConsumers(ret, op.balances)
+	before := idsShortStr(takeIds(ret))
+	ret = op.filterFullRequestTokenConsumers(ret)
 
-	after := len(ret)
+	after := idsShortStr(takeIds(ret))
 
-	if after != before {
-		op.log.Debugf("filterFullRequestTokenConsumers: %d --> %d", before, after)
+	if len(after) != len(before) {
+		op.log.Debugf("filterFullRequestTokenConsumers: %+v --> %+v\nbalances: %s",
+			before, after, util.BalancesToString(op.balances))
 	}
 
 	sort.Slice(ret, func(i, j int) bool {
@@ -175,35 +176,62 @@ func (op *operator) deleteCompletedRequests() error {
 	return nil
 }
 
-// selects only those requests which together consume ALL request tokens from balances
-func filterFullRequestTokenConsumers(reqs []*request, balances map[valuetransaction.ID][]*balance.Balance) []*request {
+// selects only those requests which together consume ALL request tokens from current balances
+func (op *operator) filterFullRequestTokenConsumers(reqs []*request) []*request {
 	if len(reqs) == 0 {
 		return nil
 	}
-	if balances == nil {
+	if op.balances == nil {
 		return nil
 	}
 	// count number of requests by request transaction
 	reqtxs := make(map[valuetransaction.ID]int)
 	for _, req := range reqs {
-		if _, ok := reqtxs[*req.reqId.TransactionId()]; !ok {
-			reqtxs[*req.reqId.TransactionId()] = 0
+		txid := req.reqId.TransactionId()
+		if _, ok := reqtxs[*txid]; !ok {
+			reqtxs[*txid] = 0
 		}
-		reqtxs[*req.reqId.TransactionId()]++
+		reqtxs[*txid] += 1
 	}
+	coltxs, _ := util.BalancesByColor(op.balances)
+
 	ret := make([]*request, 0)
 	for _, req := range reqs {
-		txid := req.reqId.TransactionId()
-		bals, ok := balances[*txid]
+		txid := *req.reqId.TransactionId()
+		sum, ok := coltxs[(balance.Color)(txid)]
 		if !ok {
 			continue
 		}
-		numreq := reqtxs[*txid]
-		b := util.BalanceOfColor(bals, (balance.Color)(*txid))
-		if b != int64(numreq) {
+		numreq := reqtxs[txid]
+		if sum != int64(numreq) {
 			continue
 		}
 		ret = append(ret, req)
+	}
+	return ret
+}
+
+// requestsForProcessing checks all ids and returns list of corresponding request records
+// return empty list if not all requests in the list can be processed by the node
+func (op *operator) requestsForProcessing(reqIds []sctransaction.RequestId) []*request {
+	ret := make([]*request, len(reqIds))
+	allValid := true
+
+	for i := range ret {
+		ret[i], _ = op.requestFromId(reqIds[i])
+		if ret[i] == nil {
+			op.log.Debugf("request %s is already processed", reqIds[i].Short())
+			allValid = false
+			continue
+		}
+		if ret[i].reqTx == nil {
+			op.log.Debugf("request %s not known by the node: can't be processed", reqIds[i].Short())
+			allValid = false
+			continue
+		}
+	}
+	if !allValid {
+		return nil
 	}
 	return ret
 }
