@@ -84,8 +84,6 @@ type BatchHeaderMsg struct {
 	Size uint16
 	// approving transaction id
 	StateTransactionId valuetransaction.ID
-	// timestamp
-	Timestamp int64
 }
 
 // state update sent to peer. Used in sync process, as part of batch

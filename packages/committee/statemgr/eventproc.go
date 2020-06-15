@@ -33,7 +33,6 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 		},
 		Size:               batch.Size(),
 		StateTransactionId: batch.StateTransactionId(),
-		Timestamp:          batch.Timestamp(),
 	}))
 	if err != nil {
 		return
@@ -62,15 +61,13 @@ func (sm *stateManager) EventBatchHeaderMsg(msg *committee.BatchHeaderMsg) {
 	if sm.syncedBatch != nil &&
 		sm.syncedBatch.stateIndex == msg.StateIndex &&
 		sm.syncedBatch.stateTxId == msg.StateTransactionId &&
-		len(sm.syncedBatch.stateUpdates) == int(msg.Size) &&
-		sm.syncedBatch.ts == msg.Timestamp {
+		len(sm.syncedBatch.stateUpdates) == int(msg.Size) {
 		return // no need to start from scratch
 	}
 	sm.syncedBatch = &syncedBatch{
 		stateIndex:   msg.StateIndex,
 		stateUpdates: make([]state.StateUpdate, msg.Size),
 		stateTxId:    msg.StateTransactionId,
-		ts:           msg.Timestamp,
 	}
 }
 
@@ -117,9 +114,7 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 		sm.syncedBatch = nil
 		return
 	}
-	batch.WithStateIndex(sm.syncedBatch.stateIndex).
-		WithTimestamp(sm.syncedBatch.ts).
-		WithStateTransaction(sm.syncedBatch.stateTxId)
+	batch.WithStateIndex(sm.syncedBatch.stateIndex).WithStateTransaction(sm.syncedBatch.stateTxId)
 
 	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
 

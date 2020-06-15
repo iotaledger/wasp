@@ -17,7 +17,6 @@ type batch struct {
 	stateIndex   uint32
 	stateTxId    valuetransaction.ID
 	stateUpdates []StateUpdate
-	timestamp    int64
 }
 
 // validates, enumerates and creates a batch from array of state updates
@@ -35,14 +34,6 @@ func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
 	return &batch{
 		stateUpdates: stateUpdates,
 	}, nil
-}
-
-func MustNewBatch(stateUpdates []StateUpdate) Batch {
-	ret, err := NewBatch(stateUpdates)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }
 
 func (b *batch) String() string {
@@ -66,8 +57,9 @@ func (b *batch) StateIndex() uint32 {
 	return b.stateIndex
 }
 
+// timestmap of the last state update
 func (b *batch) Timestamp() int64 {
-	return b.timestamp
+	return b.stateUpdates[len(b.stateUpdates)-1].Timestamp()
 }
 
 func (b *batch) WithStateIndex(stateIndex uint32) Batch {
@@ -77,11 +69,6 @@ func (b *batch) WithStateIndex(stateIndex uint32) Batch {
 
 func (b *batch) WithStateTransaction(vtxid valuetransaction.ID) Batch {
 	b.stateTxId = vtxid
-	return b
-}
-
-func (b *batch) WithTimestamp(ts int64) Batch {
-	b.timestamp = ts
 	return b
 }
 
@@ -128,9 +115,6 @@ func (b *batch) writeEssence(w io.Writer) error {
 	if err := util.WriteUint32(w, b.stateIndex); err != nil {
 		return err
 	}
-	if err := util.WriteUint64(w, uint64(b.timestamp)); err != nil {
-		return err
-	}
 	if err := util.WriteUint16(w, uint16(len(b.stateUpdates))); err != nil {
 		return err
 	}
@@ -156,11 +140,6 @@ func (b *batch) readEssence(r io.Reader) error {
 	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
 		return err
 	}
-	var ts uint64
-	if err := util.ReadUint64(r, &ts); err != nil {
-		return err
-	}
-	b.timestamp = int64(ts)
 	var size uint16
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err

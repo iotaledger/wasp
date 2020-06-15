@@ -58,7 +58,6 @@ type syncedBatch struct {
 	stateIndex   uint32
 	stateUpdates []state.StateUpdate
 	stateTxId    valuetransaction.ID
-	ts           int64
 }
 
 type pendingBatch struct {

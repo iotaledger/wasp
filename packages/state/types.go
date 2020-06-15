@@ -58,7 +58,6 @@ type Batch interface {
 	StateTransactionId() valuetransaction.ID
 	WithStateTransaction(valuetransaction.ID) Batch
 	Timestamp() int64
-	WithTimestamp(int64) Batch
 	Size() uint16
 	RequestIds() []*sctransaction.RequestId
 	EssenceHash() *hashing.HashValue // except state transaction id

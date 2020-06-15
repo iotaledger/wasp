@@ -154,7 +154,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proc
 		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
 		if vmctx.Timestamp != 0 {
 			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
-			// the reason is to provide a different timestamp for each VM call albeit remain deterministic
+			// the reason is to provide a different timestamp for each VM call and remain deterministic
 			vmctx.Timestamp += 1
 		}
 	}
@@ -172,13 +172,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proc
 		ctx.Log.Errorf("RunVM: %v", err)
 		return
 	}
-
-	// timestamp of the resulting batch is equal to the timestamp of the last state update (if not empty)
-	finalTimestamp := int64(0)
-	if ctx.Timestamp != 0 {
-		finalTimestamp = ctx.Timestamp + int64(len(stateUpdates)) - 1
-	}
-	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1).WithTimestamp(finalTimestamp)
+	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
 
 	// create final transaction
 	vsClone := state.NewVariableState(ctx.VariableState)
@@ -187,7 +181,11 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proc
 		return
 	}
 	vsh := vsClone.Hash()
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(ctx.VariableState.StateIndex()+1, vsh, finalTimestamp)
+	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(
+		ctx.VariableState.StateIndex()+1,
+		vsh,
+		ctx.ResultBatch.Timestamp(),
+	)
 
 	// check of all provided inputs were properly consumed
 	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
