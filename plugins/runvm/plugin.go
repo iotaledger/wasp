@@ -88,6 +88,8 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	if len(ctx.Requests) == 0 {
 		return fmt.Errorf("must be at least 1 request")
 	}
+	// TODO wrap VM
+
 	processor, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		return err

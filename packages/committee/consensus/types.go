@@ -1,11 +1,13 @@
 package consensus
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -135,4 +137,29 @@ func (op *operator) getProgramHashStr() (string, bool) {
 		return "", false
 	}
 	return progHashStr, true
+}
+
+func (op *operator) getRewardAddress() address.Address {
+	return registry.GetRewardAddress(op.committee.Address())
+}
+
+func (op *operator) getOwnerAddress() address.Address {
+	if _, ok := op.stateIndex(); !ok {
+		return address.Address{}
+	}
+	a, ok := op.variableState.Variables().Get(origin.VarNameOwnerAddress)
+	if !ok {
+		return address.Address{}
+	}
+	astr, ok := a.(string)
+	if !ok {
+		op.log.Errorf("wrong owner address string")
+		return address.Address{}
+	}
+	ret, err := address.FromBase58(astr)
+	if err != nil {
+		op.log.Errorf("wrong owner address string")
+		return address.Address{}
+	}
+	return ret
 }

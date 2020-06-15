@@ -7,7 +7,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -47,7 +46,8 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		Address:         *op.committee.Address(),
 		Color:           *op.committee.Color(),
 		Balances:        par.balances,
-		RewardAddress:   *registry.GetRewardAddress(op.committee.Address()),
+		OwnerAddress:    op.getOwnerAddress(),
+		RewardAddress:   op.getRewardAddress(),
 		Requests:        takeRefs(par.requests),
 		Timestamp:       par.timestamp,
 		VariableState:   op.variableState,

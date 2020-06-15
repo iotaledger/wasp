@@ -71,7 +71,7 @@ func (op *operator) startProcessingIfNeeded() {
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
-		RewardAddress: *rewardAddress,
+		RewardAddress: rewardAddress,
 		Balances:      op.balances,
 		RequestIds:    reqIds,
 	})
@@ -105,7 +105,7 @@ func (op *operator) startProcessingIfNeeded() {
 		leaderPeerIndex: op.committee.OwnPeerIndex(),
 		balances:        op.balances,
 		timestamp:       ts,
-		rewardAddress:   *rewardAddress,
+		rewardAddress:   rewardAddress,
 	})
 }
 

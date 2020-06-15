@@ -20,6 +20,7 @@ type VMTask struct {
 	Address         address.Address
 	Color           balance.Color
 	Balances        map[valuetransaction.ID][]*balance.Balance
+	OwnerAddress    address.Address
 	RewardAddress   address.Address
 	Requests        []sctransaction.RequestRef
 	Timestamp       int64
