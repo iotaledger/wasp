@@ -2,7 +2,6 @@ package runvm
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -135,21 +134,11 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proc
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
 	for _, reqRef := range ctx.Requests {
-		// destroy token corresponding to request
-		// NOTE: it is assumed here that balances contain all necessary request token balances
-		// it is checked in the dispatcher.dispatchAddressUpdate
-		err := txbuilder.EraseColor(ctx.Address, (balance.Color)(reqRef.Tx.ID()), 1)
-		if err != nil {
-			// not enough balance for requests tokens
-			// major inconsistency
-			ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
-				reqRef.RequestId().String(), err)
-		}
-		// run processor
+
 		vmctx.Request = reqRef
 		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
 
-		processor.Run(vmctx)
+		runTheRequest(vmctx, processor)
 
 		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
 		// update state

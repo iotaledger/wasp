@@ -34,6 +34,12 @@ type VMTask struct {
 }
 
 type Processor interface {
+	// returns true if processor can process specific request code
+	// valid only for not reserved codes
+	// to return true for reserved codes is ignored
+	// the best way to implement is with meta-data next to the Wasm binary
+	Supports(code sctransaction.RequestCode) bool
+	// run the VM in the context
 	Run(ctx *VMContext)
 }
 
@@ -48,12 +54,12 @@ type VMContext struct {
 	Timestamp int64
 	// initial state of the batch
 	VariableState state.VariableState
-	// log
-	Log *logger.Logger
 	// set for each call
 	Request sctransaction.RequestRef
 	// IsEmpty state update upon call, result of the call.
 	StateUpdate state.StateUpdate
+	// log
+	Log *logger.Logger
 }
 
 func BatchHash(reqids []sctransaction.RequestId, ts int64) hashing.HashValue {

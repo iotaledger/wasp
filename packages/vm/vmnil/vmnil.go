@@ -1,6 +1,7 @@
 package vmnil
 
 import (
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -19,4 +20,9 @@ func (v vmnil) Run(inp *vm.VMContext) {
 		"state index", inp.VariableState.StateIndex(),
 		"req", inp.Request.RequestId().String(),
 	)
+}
+
+// all calls to this processor are equivalent to NOP
+func (v vmnil) Supports(code sctransaction.RequestCode) bool {
+	return false
 }

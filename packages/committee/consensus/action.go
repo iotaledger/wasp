@@ -185,14 +185,7 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 
 	op.resetLeader(stateTx.ID().Bytes())
 
-	// clear all request notifications from the current state
-	for _, req := range op.requests {
-		setAllFalse(req.notifications)
-		req.notifications[op.peerIndex()] = req.reqTx != nil
-	}
-	// mark request notified from the current notifications backlog and then clear it
-	op.markRequestsNotified(op.notificationsBacklog)
-	op.notificationsBacklog = op.notificationsBacklog[:0]
+	op.adjustNotifications()
 }
 
 const requestBalancesPeriod = 10 * time.Second

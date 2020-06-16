@@ -105,7 +105,7 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
-	op.notificationsBacklog = append(op.notificationsBacklog, msg)
+	op.storeNotificationIfNeeded(msg)
 	op.markRequestsNotified([]*committee.NotifyReqMsg{msg})
 
 	op.takeAction()
