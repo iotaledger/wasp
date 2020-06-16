@@ -122,6 +122,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
+		OwnerAddress:  ctx.OwnerAddress,
 		ProgramHash:   ctx.ProgramHash,
 		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,

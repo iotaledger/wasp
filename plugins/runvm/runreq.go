@@ -29,12 +29,26 @@ func runTheRequest(ctx *vm.VMContext) {
 	}
 	var processor vm.Processor
 	reqBlock := ctx.Request.RequestBlock()
+
+	// TODO handle rewards
+
+	if reqBlock.RequestCode().IsProtected() && !ctx.Request.IsAuthorised(&ctx.OwnerAddress) {
+		// if protected call is not authorised by the containing transaction, do nothing
+		// the result will be taking all iotas ans NOP
+		// Maybe it is nice to return back all iotas exceeding reward and minimum ??? TODO
+		return
+	}
+
+	if reqBlock.RequestCode().IsReserved() {
+		// TODO process hardcoded request logic without calling processor
+	}
+
 	if reqBlock.RequestCode().IsUserDefined() {
 		processor, err = getProcessor(ctx.ProgramHash.String())
 		if err != nil {
+			// it should not come to this point if processro is not ready
 			ctx.Log.Panicf("major inconsistency: %v", err)
 		}
 		processor.Run(ctx)
 	}
-	// TODO not finished
 }

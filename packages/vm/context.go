@@ -50,6 +50,8 @@ type VMContext struct {
 	Address address.Address
 	// programHash
 	ProgramHash hashing.HashValue
+	// owner address
+	OwnerAddress address.Address
 	// tx builder to build the final transaction
 	TxBuilder *TransactionBuilder
 	// timestamp of the batch

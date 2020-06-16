@@ -151,3 +151,9 @@ func TakeRequestIds(lst []RequestRef) []RequestId {
 	}
 	return ret
 }
+
+// request block is authorised if the containing transaction's inputs contain owner's address
+func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
+	_, ok := ref.Tx.Transaction.Inputs().Get(ownerAddr)
+	return ok
+}
