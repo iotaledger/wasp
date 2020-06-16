@@ -86,6 +86,11 @@ func (op *operator) selectRequestsToProcess() []*request {
 	if len(candidates) == 0 {
 		return nil
 	}
+	candidates = op.filterNotReadyYet(candidates)
+	if len(candidates) == 0 {
+		return nil
+	}
+
 	ret := []*request{candidates[0]}
 	intersection := make([]bool, op.size())
 	copy(intersection, candidates[0].notifications)
@@ -195,7 +200,7 @@ func (op *operator) filterFullRequestTokenConsumers(reqs []*request) []*request 
 	}
 	coltxs, _ := util.BalancesByColor(op.balances)
 
-	ret := make([]*request, 0)
+	ret := reqs[:0] // same underlying array, different slice
 	for _, req := range reqs {
 		txid := *req.reqId.TransactionId()
 		sum, ok := coltxs[(balance.Color)(txid)]
@@ -211,27 +216,22 @@ func (op *operator) filterFullRequestTokenConsumers(reqs []*request) []*request 
 	return ret
 }
 
-// requestsForProcessing checks all ids and returns list of corresponding request records
-// return empty list if not all requests in the list can be processed by the node
-func (op *operator) requestsForProcessing(reqIds []sctransaction.RequestId) []*request {
-	ret := make([]*request, len(reqIds))
-	allValid := true
+// filterNotReadyYet checks all ids and returns list of corresponding request records
+// return empty list if not all requests in the list can be processed by the node atm
+// note, that filter out criteria are temporary, so the same request may bast next tyme
+func (op *operator) filterNotReadyYet(reqs []*request) []*request {
+	ret := reqs[:0] // same underlying array, different slice
 
-	for i := range ret {
-		ret[i], _ = op.requestFromId(reqIds[i])
-		if ret[i] == nil {
-			op.log.Debugf("request %s is already processed", reqIds[i].Short())
-			allValid = false
+	for _, req := range reqs {
+		if req.reqTx == nil {
+			op.log.Debugf("request %s not known by the node: can't be processed", req.reqId.Short())
 			continue
 		}
-		if ret[i].reqTx == nil {
-			op.log.Debugf("request %s not known by the node: can't be processed", reqIds[i].Short())
-			allValid = false
-			continue
+		reqBlock := req.reqTx.Requests()[req.reqId.Index()]
+		if reqBlock.RequestCode().IsUserDefined() && !op.processorReady {
+			op.log.Debugf("request %s can't be processed: processro not ready", req.reqId.Short())
 		}
-	}
-	if !allValid {
-		return nil
+		ret = append(ret, req)
 	}
 	return ret
 }
@@ -256,6 +256,18 @@ func idsShortStr(ids []sctransaction.RequestId) []string {
 	ret := make([]string, len(ids))
 	for i := range ret {
 		ret[i] = ids[i].Short()
+	}
+	return ret
+}
+
+func (op *operator) takeFromIds(reqIds []sctransaction.RequestId) []*request {
+	ret := make([]*request, 0, len(reqIds))
+	for _, reqId := range reqIds {
+		req, _ := op.requestFromId(reqId)
+		if req == nil {
+			continue
+		}
+		ret = append(ret, req)
 	}
 	return ret
 }

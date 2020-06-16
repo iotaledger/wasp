@@ -16,7 +16,7 @@ import (
 // - in case of something not correct:
 //  --- sends all funds transferred by the request transaction to the SC address less reward back
 //  --- the whole operation is NOP wrt the SC state.
-func runTheRequest(ctx *vm.VMContext, processor vm.Processor) {
+func runTheRequest(ctx *vm.VMContext) {
 	// destroy token corresponding to request
 	// NOTE: it is assumed here that balances contain all necessary request token balances
 	// it is checked in the dispatcher.dispatchAddressUpdate
@@ -27,5 +27,14 @@ func runTheRequest(ctx *vm.VMContext, processor vm.Processor) {
 		ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
 			ctx.Request.RequestId().String(), err)
 	}
-
+	var processor vm.Processor
+	reqBlock := ctx.Request.RequestBlock()
+	if reqBlock.RequestCode().IsUserDefined() {
+		processor, err = getProcessor(ctx.ProgramHash.String())
+		if err != nil {
+			ctx.Log.Panicf("major inconsistency: %v", err)
+		}
+		processor.Run(ctx)
+	}
+	// TODO not finished
 }

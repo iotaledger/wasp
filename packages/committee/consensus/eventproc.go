@@ -125,9 +125,15 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		return
 	}
 
-	reqs := op.requestsForProcessing(msg.RequestIds)
-	if len(reqs) == 0 {
-		op.log.Debugf("batch can't be processed by the node")
+	numOrig := len(msg.RequestIds)
+	reqs := op.takeFromIds(msg.RequestIds)
+	if len(reqs) != numOrig {
+		op.log.Debugf("node can't process the batch: some requests are already processed")
+		return
+	}
+	reqs = op.filterNotReadyYet(reqs)
+	if len(reqs) != numOrig {
+		op.log.Debugf("node is not ready to process the batch")
 		return
 	}
 	// start async calculation

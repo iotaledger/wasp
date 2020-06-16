@@ -60,7 +60,7 @@ func TestTxBuilder2(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = txb.Transfer(addr, color, 1)
+	err = txb.MoveTokens(addr, color, 1)
 	assert.Equal(t, err == nil, false)
 
 	b, ok := txb.GetInputBalance(color)
@@ -71,7 +71,7 @@ func TestTxBuilder2(t *testing.T) {
 	assert.Equal(t, ok, true)
 	assert.Equal(t, b, int64(100))
 
-	err = txb.Transfer(addr, balance.ColorIOTA, 99)
+	err = txb.MoveTokens(addr, balance.ColorIOTA, 99)
 	assert.NoError(t, err)
 
 	b, ok = txb.GetInputBalance(balance.ColorIOTA)
@@ -82,7 +82,7 @@ func TestTxBuilder2(t *testing.T) {
 	assert.Equal(t, ok, true)
 	assert.Equal(t, b, int64(99))
 
-	err = txb.Transfer(addr, balance.ColorIOTA, 5)
+	err = txb.MoveTokens(addr, balance.ColorIOTA, 5)
 	assert.Equal(t, err == nil, false)
 
 	b, ok = txb.GetInputBalance(balance.ColorIOTA)
@@ -93,10 +93,10 @@ func TestTxBuilder2(t *testing.T) {
 	assert.Equal(t, ok, true)
 	assert.Equal(t, b, int64(99))
 
-	err = txb.Transfer(addr, balance.ColorIOTA, 1)
+	err = txb.MoveTokens(addr, balance.ColorIOTA, 1)
 	assert.NoError(t, err)
 
-	err = txb.Transfer(addr, balance.ColorIOTA, 1)
+	err = txb.MoveTokens(addr, balance.ColorIOTA, 1)
 	assert.Equal(t, err == nil, false)
 }
 
@@ -117,7 +117,7 @@ func TestTxBuilder3(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = txb.Transfer(addr, color, 1)
+	err = txb.MoveTokens(addr, color, 1)
 	assert.Equal(t, err == nil, false)
 
 	b, ok := txb.GetInputBalance(color)
@@ -128,7 +128,7 @@ func TestTxBuilder3(t *testing.T) {
 	assert.Equal(t, ok, true)
 	assert.Equal(t, b, int64(100))
 
-	err = txb.Transfer(addr, balance.ColorIOTA, 95)
+	err = txb.MoveTokens(addr, balance.ColorIOTA, 95)
 	assert.NoError(t, err)
 
 	b, ok = txb.GetInputBalance(balance.ColorIOTA)
@@ -139,7 +139,7 @@ func TestTxBuilder3(t *testing.T) {
 	assert.Equal(t, ok, true)
 	assert.Equal(t, b, int64(95))
 
-	err = txb.Transfer(addr, balance.ColorIOTA, 6)
+	err = txb.MoveTokens(addr, balance.ColorIOTA, 6)
 	assert.Equal(t, err == nil, false)
 
 	b, ok = txb.GetInputBalance(balance.ColorIOTA)

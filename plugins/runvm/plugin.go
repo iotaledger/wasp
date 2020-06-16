@@ -87,12 +87,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	if len(ctx.Requests) == 0 {
 		return fmt.Errorf("must be at least 1 request")
 	}
-	// TODO wrap VM
 
-	processor, err := getProcessor(ctx.ProgramHash.String())
-	if err != nil {
-		return err
-	}
 	txbuilder, err := vm.NewTxBuilder(vm.TransactionBuilderParams{
 		Balances:   ctx.Balances,
 		OwnColor:   ctx.Color,
@@ -108,13 +103,13 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	taskName := ctx.Address.String() + "." + bh.String()
 
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		runTask(ctx, txbuilder, processor, shutdownSignal)
+		runTask(ctx, txbuilder, shutdownSignal)
 	})
 	return err
 }
 
 // runs batch
-func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Processor, shutdownSignal <-chan struct{}) {
+func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-chan struct{}) {
 	ctx.Log.Debugw("runTask IN",
 		"addr", ctx.Address.String(),
 		"finalTimestamp", ctx.Timestamp,
@@ -127,6 +122,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proc
 
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
+		ProgramHash:   ctx.ProgramHash,
 		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,
 		VariableState: state.NewVariableState(ctx.VariableState), // clone
@@ -138,7 +134,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, processor vm.Proc
 		vmctx.Request = reqRef
 		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
 
-		runTheRequest(vmctx, processor)
+		runTheRequest(vmctx)
 
 		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
 		// update state

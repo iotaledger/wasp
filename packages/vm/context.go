@@ -48,6 +48,8 @@ type VMContext struct {
 	// invariant through the batch
 	// address of the smart contract
 	Address address.Address
+	// programHash
+	ProgramHash hashing.HashValue
 	// tx builder to build the final transaction
 	TxBuilder *TransactionBuilder
 	// timestamp of the batch

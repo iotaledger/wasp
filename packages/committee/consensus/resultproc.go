@@ -27,11 +27,11 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		op.log.Debugf("runCalculationsAsync: variable state is not known")
 		return
 	}
-	if !op.processorReady {
-		op.log.Debugf("runCalculationsAsync: processor not ready")
+	numReqs := len(par.requests)
+	if len(op.filterNotReadyYet(par.requests)) != numReqs {
+		op.log.Errorf("runCalculationsAsync: inconsistency: some requests not ready yet")
 		return
 	}
-
 	progHashStr, ok := op.getProgramHashStr()
 	if !ok {
 		return

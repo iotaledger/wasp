@@ -135,6 +135,10 @@ func (rid *RequestId) Short() string {
 
 // request ref
 
+func (ref *RequestRef) RequestBlock() *RequestBlock {
+	return ref.Tx.Requests()[ref.Index]
+}
+
 func (ref *RequestRef) RequestId() *RequestId {
 	ret := NewRequestId(ref.Tx.ID(), ref.Index)
 	return &ret
