@@ -18,12 +18,14 @@ func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vm.EntryPoi
 	return v, true
 }
 
-func (v nilProcessor) Run(inp *vm.VMContext) {
-	// does nothing, i.e. resulting state update is empty
-	inp.Log.Debugw("run nilprocessor",
-		"addr", inp.Address.String(),
-		"ts", inp.Timestamp,
-		"state index", inp.VariableState.StateIndex(),
-		"req", inp.Request.RequestId().String(),
+// does nothing, i.e. resulting state update is empty
+func (v nilProcessor) Run(ctx vm.Sandbox) {
+	reqId := ctx.GetRequestID()
+	ctx.GetLog().Debugw("run nilProcessor",
+		"request code", ctx.GetRequestCode(),
+		"addr", ctx.GetAddress().String(),
+		"ts", ctx.GetTimestamp(),
+		"state index", ctx.GetStateIndex(),
+		"req", reqId.String(),
 	)
 }

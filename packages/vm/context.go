@@ -43,34 +43,7 @@ type Processor interface {
 }
 
 type EntryPoint interface {
-	Run(ctx *VMContext)
-}
-
-// context of one VM call (for one request)
-type VMContext struct {
-	// invariant through the batch
-	// address of the smart contract
-	Address address.Address
-	// programHash
-	ProgramHash hashing.HashValue
-	// owner address
-	OwnerAddress address.Address
-	// reward address
-	RewardAddress address.Address
-	// minimum reward
-	MinimumReward int64
-	// tx builder to build the final transaction
-	TxBuilder *TransactionBuilder
-	// timestamp of the batch
-	Timestamp int64
-	// initial state of the batch
-	VariableState state.VariableState
-	// set for each call
-	Request sctransaction.RequestRef
-	// IsEmpty state update upon call, result of the call.
-	StateUpdate state.StateUpdate
-	// log
-	Log *logger.Logger
+	Run(ctx Sandbox)
 }
 
 func BatchHash(reqids []sctransaction.RequestId, ts int64) hashing.HashValue {

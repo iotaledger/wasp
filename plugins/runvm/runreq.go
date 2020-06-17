@@ -7,17 +7,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtin"
 )
 
-// runTheRequest is a wrapper which
-// - check and validates the context
-// - checks authorisations for protected requests
-// - checks if requests are protected
+// runTheRequest:
 // - handles request token
 // - processes reward logic
+// - checks authorisations for protected requests
 // - redirects reserved request codes (is supported) to hardcoded processing
 // - redirects not reserved codes (is supported) to SC VM
-// - in case of something not correct:
-//  --- sends all funds transferred by the request transaction to the SC address less reward back
-//  --- the whole operation is NOP wrt the SC state.
+// - in case of something not correct the whole operation is NOP, however
+//   all the sent fees and other funds remains in the SC address (this may change).
 func runTheRequest(ctx *vm.VMContext) {
 	mustHandleRequestToken(ctx)
 
@@ -29,11 +26,12 @@ func runTheRequest(ctx *vm.VMContext) {
 	if reqBlock.RequestCode().IsProtected() && !ctx.Request.IsAuthorised(&ctx.OwnerAddress) {
 		// if protected call is not authorised by the containing transaction, do nothing
 		// the result will be taking all iotas and no effect
-		// Maybe it is nice to return back all iotas exceeding reward and minimum ??? TODO
+		// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
 		return
 	}
 
 	if reqBlock.RequestCode().IsReserved() {
+		// processing of built-in requests
 		entryPoint, ok := builtin.Processor.GetEntryPoint(reqBlock.RequestCode())
 		if !ok {
 			return
@@ -43,7 +41,6 @@ func runTheRequest(ctx *vm.VMContext) {
 	}
 
 	// here reqBlock.RequestCode().IsUserDefined()
-
 	processor, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		// it should not come to this point if processor is not ready
