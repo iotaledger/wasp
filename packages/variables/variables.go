@@ -132,6 +132,18 @@ func (vr *variables) GetInt(key string) (int, bool) {
 	}
 }
 
+func (vr *variables) GetString(key string) (string, bool) {
+	v, ok := vr.Get(key)
+	if !ok {
+		return "", false
+	}
+	s, ok := v.(string)
+	if !ok {
+		return "", false
+	}
+	return s, true
+}
+
 const (
 	byteUint16 = iota
 	byteUint32

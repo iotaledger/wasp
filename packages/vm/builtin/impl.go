@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -27,9 +28,10 @@ func (ep builtinEntryPoint) Run(ctx vm.Sandbox) {
 	ep(ctx)
 }
 
-func stub(ctx vm.Sandbox) {
+func stub(ctx vm.Sandbox, text string) {
 	reqId := ctx.GetRequestID()
-	ctx.GetLog().Debugw("run builtInProcessor: not implemented",
+	ctx.GetLog().Debugw("run builtInProcessor",
+		"text", text,
 		"request code", ctx.GetRequestCode(),
 		"addr", ctx.GetAddress().String(),
 		"ts", ctx.GetTimestamp(),
@@ -39,13 +41,19 @@ func stub(ctx vm.Sandbox) {
 }
 
 func nopRequest(ctx vm.Sandbox) {
-	stub(ctx)
+	stub(ctx, "")
 }
 
 func setMinimumRewardRequest(ctx vm.Sandbox) {
-	stub(ctx)
+	stub(ctx, "setMinimumRewardRequest")
+	if v, ok := ctx.GetIntRequest("value"); ok && v >= 0 {
+		ctx.SetInt(origin.VarNameMinimumReward, v)
+	}
 }
 
 func setDescriptionRequest(ctx vm.Sandbox) {
-	stub(ctx)
+	stub(ctx, "setDescriptionRequest")
+	if v, ok := ctx.GetStringRequest("value"); ok && v != "" {
+		ctx.SetString("description", v)
+	}
 }

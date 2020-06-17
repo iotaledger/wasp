@@ -14,4 +14,11 @@ type Sandbox interface {
 	GetRequestID() sctransaction.RequestId
 	GetRequestCode() sctransaction.RequestCode
 	GetLog() *logger.Logger
+	// request Getters
+	GetIntRequest(name string) (int, bool)
+	GetStringRequest(name string) (string, bool)
+	// state Getters
+	// state setters
+	SetInt(name string, value int)
+	SetString(name string, value string)
 }
