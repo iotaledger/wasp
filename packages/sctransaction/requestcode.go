@@ -8,8 +8,9 @@ type RequestCode uint16
 // unprotected from 0 to 2^14-1
 // protected from 2^16 - 2^14 - 1
 const (
-	requestCodeReserved  = uint16(0x80)
-	requestCodeProtected = uint16(0x40)
+	requestCodeReserved     = uint16(0x80)
+	requestCodeProtected    = uint16(0x40)
+	FirstBuiltInRequestCode = RequestCode(requestCodeReserved | requestCodeProtected)
 )
 
 func (rc RequestCode) IsProtected() bool {
