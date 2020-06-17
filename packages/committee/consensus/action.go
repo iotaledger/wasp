@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -63,7 +62,7 @@ func (op *operator) startProcessingIfNeeded() {
 		"stateIdx", op.stateTx.MustState().StateIndex(),
 		"batch", reqIdsStr,
 	)
-	rewardAddress := registry.GetRewardAddress(op.committee.Address())
+	rewardAddress := op.getRewardAddress()
 
 	// send to subordinate the request to process the batch
 	msgData := util.MustBytes(&committee.StartProcessingBatchMsg{

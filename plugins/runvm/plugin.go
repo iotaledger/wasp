@@ -123,7 +123,9 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
 		OwnerAddress:  ctx.OwnerAddress,
+		RewardAddress: ctx.RewardAddress,
 		ProgramHash:   ctx.ProgramHash,
+		MinimumReward: ctx.MinimumReward,
 		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,
 		VariableState: state.NewVariableState(ctx.VariableState), // clone

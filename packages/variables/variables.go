@@ -11,6 +11,7 @@ type Variables interface {
 	// TODO tbd
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
+	GetInt(key string) (int, bool)
 	Apply(Variables)
 	ForEach(func(key string, value interface{}) bool)
 	IsEmpty() bool
@@ -112,6 +113,23 @@ func (vr *variables) Set(key string, value interface{}) {
 func (vr *variables) Get(key string) (interface{}, bool) {
 	ret, ok := vr.m[key]
 	return ret, ok
+}
+
+func (vr *variables) GetInt(key string) (int, bool) {
+	v, ok := vr.Get(key)
+	if !ok {
+		return 0, false
+	}
+	switch vt := v.(type) {
+	case uint16:
+		return int(vt), true
+
+	case uint32:
+		return int(vt), true
+
+	default:
+		return 0, false
+	}
 }
 
 const (

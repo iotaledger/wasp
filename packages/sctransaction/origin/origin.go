@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	VarNameOwnerAddress = "$owneraddr$"
-	VarNameProgramHash  = "$proghash$"
+	VarNameOwnerAddress  = "$owneraddr$"
+	VarNameProgramHash   = "$proghash$"
+	VarNameMinimumReward = "$minreward$"
 )
 
 type NewOriginParams struct {

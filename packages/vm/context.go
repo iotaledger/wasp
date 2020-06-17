@@ -22,6 +22,7 @@ type VMTask struct {
 	Balances        map[valuetransaction.ID][]*balance.Balance
 	OwnerAddress    address.Address
 	RewardAddress   address.Address
+	MinimumReward   int64
 	Requests        []sctransaction.RequestRef
 	Timestamp       int64
 	VariableState   state.VariableState // input immutable
@@ -38,8 +39,10 @@ type Processor interface {
 	// valid only for not reserved codes
 	// to return true for reserved codes is ignored
 	// the best way to implement is with meta-data next to the Wasm binary
-	Supports(code sctransaction.RequestCode) bool
-	// run the VM in the context
+	GetEntryPoint(code sctransaction.RequestCode) (EntryPoint, bool)
+}
+
+type EntryPoint interface {
 	Run(ctx *VMContext)
 }
 
@@ -52,6 +55,10 @@ type VMContext struct {
 	ProgramHash hashing.HashValue
 	// owner address
 	OwnerAddress address.Address
+	// reward address
+	RewardAddress address.Address
+	// minimum reward
+	MinimumReward int64
 	// tx builder to build the final transaction
 	TxBuilder *TransactionBuilder
 	// timestamp of the batch

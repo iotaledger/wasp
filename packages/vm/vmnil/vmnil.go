@@ -1,3 +1,5 @@
+// nil processor takes any request and dos nothing, i.e. produces empty state update
+// it is useful for testing
 package vmnil
 
 import (
@@ -5,24 +7,23 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type vmnil struct {
+type nilProcessor struct {
 }
 
 func New() vm.Processor {
-	return vmnil{}
+	return nilProcessor{}
 }
 
-func (v vmnil) Run(inp *vm.VMContext) {
+func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vm.EntryPoint, bool) {
+	return v, true
+}
+
+func (v nilProcessor) Run(inp *vm.VMContext) {
 	// does nothing, i.e. resulting state update is empty
-	inp.Log.Debugw("run vmnil",
+	inp.Log.Debugw("run nilprocessor",
 		"addr", inp.Address.String(),
 		"ts", inp.Timestamp,
 		"state index", inp.VariableState.StateIndex(),
 		"req", inp.Request.RequestId().String(),
 	)
-}
-
-// all calls to this processor are equivalent to NOP
-func (v vmnil) Supports(code sctransaction.RequestCode) bool {
-	return false
 }

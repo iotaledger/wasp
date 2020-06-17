@@ -163,3 +163,14 @@ func (op *operator) getOwnerAddress() address.Address {
 	}
 	return ret
 }
+
+func (op *operator) getMinimumReward() int64 {
+	if _, ok := op.stateIndex(); !ok {
+		return 0
+	}
+	vt, ok := op.variableState.Variables().GetInt(origin.VarNameMinimumReward)
+	if !ok {
+		return 0
+	}
+	return (int64)(vt)
+}
