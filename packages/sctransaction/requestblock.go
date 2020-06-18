@@ -3,11 +3,13 @@ package sctransaction
 import (
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
+	"github.com/iotaledger/wasp/packages/variables"
 )
 
 const RequestIdSize = hashing.HashSize + 2
@@ -19,7 +21,7 @@ type RequestBlock struct {
 	// request code
 	reqCode RequestCode
 	// small variable state with variable/value pairs
-	params Params
+	params variables.Variables
 }
 
 type RequestRef struct {
@@ -33,7 +35,7 @@ func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
 		reqCode: reqCode,
-		params:  make(Params),
+		params:  variables.New(nil),
 	}
 }
 
@@ -41,7 +43,7 @@ func (req *RequestBlock) Address() address.Address {
 	return req.address
 }
 
-func (req *RequestBlock) Params() Params {
+func (req *RequestBlock) Params() variables.Variables {
 	return req.params
 }
 
@@ -75,7 +77,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	}
 	req.reqCode = RequestCode(rc)
 
-	req.params = make(Params)
+	req.params = variables.New(nil)
 	if err := req.params.Read(r); err != nil {
 		return err
 	}

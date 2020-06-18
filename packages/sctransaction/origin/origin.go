@@ -23,7 +23,7 @@ type NewOriginParams struct {
 	Address              address.Address
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	ProgramHash          hashing.HashValue
-	Mutations            []variables.Mutation
+	Variables            variables.Variables
 }
 
 type NewOriginTransactionParams struct {
@@ -39,7 +39,7 @@ type NewOriginTransactionParams struct {
 func NewOriginBatch(par NewOriginParams) state.Batch {
 	stateUpd := state.NewStateUpdate(nil)
 
-	for _, mut := range par.Mutations {
+	for _, mut := range par.Variables.Mutations() {
 		stateUpd.AddMutation(mut)
 	}
 

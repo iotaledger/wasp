@@ -93,9 +93,9 @@ func CreateOriginDataUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Tr
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Mutations: []variables.Mutation{
-			variables.NewMutationSet("description", []byte(scdata.Description)),
-		},
+		Variables: variables.FromMap(map[string][]byte{
+			"description": []byte(scdata.Description),
+		}),
 	})
 	if err != nil {
 		return nil, nil, err
@@ -117,9 +117,9 @@ func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransac
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Mutations: []variables.Mutation{
-			variables.NewMutationSet("description", []byte(scdata.Description)),
-		},
+		Variables: variables.FromMap(map[string][]byte{
+			"description": []byte(scdata.Description),
+		}),
 	})
 	if err != nil {
 		return nil, nil, err

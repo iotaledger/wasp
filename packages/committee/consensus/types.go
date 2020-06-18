@@ -163,7 +163,7 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok := op.variableState.Variables().GetInt64(origin.VarNameMinimumReward)
+	vt, ok := op.variableState.Variables().MustGetInt64(origin.VarNameMinimumReward)
 	if !ok {
 		return 0
 	}

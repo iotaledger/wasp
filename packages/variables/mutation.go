@@ -9,7 +9,9 @@ import (
 
 type Mutation interface {
 	Write(io.Writer) error
+
 	String() string
+
 	Apply(vs Variables)
 }
 
@@ -52,7 +54,7 @@ func (m *MutationSet) Write(w io.Writer) error {
 	if err := util.WriteString16(w, m.k); err != nil {
 		return err
 	}
-	if err := util.WriteBytes16(w, m.v); err != nil {
+	if err := util.WriteBytes32(w, m.v); err != nil {
 		return err
 	}
 	return nil
@@ -63,7 +65,7 @@ func readMutationSet(r io.Reader) (*MutationSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	v, err := util.ReadBytes16(r)
+	v, err := util.ReadBytes32(r)
 	if err != nil {
 		return nil, err
 	}

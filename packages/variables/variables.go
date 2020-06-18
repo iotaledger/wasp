@@ -7,6 +7,12 @@ import (
 	"sort"
 )
 
+// Variables represents a key-value map where both keys and values are
+// arbitrary byte slices.
+//
+// Since map cannot have []byte as key, to avoid unnecessary conversions
+// between string and []byte, we use string as key data type, but it may
+// not necessarily a valid UTF-8 string.
 type Variables interface {
 	Set(key string, value []byte)
 	Del(key string)
@@ -20,11 +26,14 @@ type Variables interface {
 
 	String() string
 
+	Mutations() []Mutation
+
 	// TODO: move to a separate interface
 	SetString(key string, value string)
 	GetString(key string) (string, bool)
 	SetInt64(key string, value int64)
-	GetInt64(key string) (int64, bool)
+	GetInt64(key string) (int64, bool, error)
+	MustGetInt64(key string) (int64, bool)
 }
 
 type variables map[string][]byte
@@ -41,6 +50,10 @@ func New(vars Variables) Variables {
 	return ret
 }
 
+func FromMap(m map[string][]byte) Variables {
+	return variables(m)
+}
+
 func (vr variables) sortedKeys() []string {
 	keys := make([]string, 0)
 	for k := range vr {
@@ -55,6 +68,15 @@ func (vr variables) String() string {
 	for _, key := range vr.sortedKeys() {
 		ret += fmt.Sprintf("           %s: %v\n", key, vr[key])
 	}
+	return ret
+}
+
+func (vr variables) Mutations() []Mutation {
+	ret := make([]Mutation, 0)
+	vr.ForEach(func(key string, value []byte) bool {
+		ret = append(ret, NewMutationSet(key, value))
+		return true
+	})
 	return ret
 }
 
@@ -135,10 +157,21 @@ func (vr variables) SetInt64(key string, value int64) {
 	vr.Set(key, util.Uint64To8Bytes(uint64(value)))
 }
 
-func (vr variables) GetInt64(key string) (int64, bool) {
+func (vr variables) GetInt64(key string) (int64, bool, error) {
 	b, ok := vr.Get(key)
 	if !ok {
-		return 0, false
+		return 0, false, nil
 	}
-	return int64(util.Uint64From8Bytes(b)), true
+	if len(b) != 8 {
+		return 0, false, fmt.Errorf("variable %s: %v is not an int64", key, b)
+	}
+	return int64(util.Uint64From8Bytes(b)), true, nil
+}
+
+func (vr variables) MustGetInt64(key string) (int64, bool) {
+	v, ok, err := vr.GetInt64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v, ok
 }

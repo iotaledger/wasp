@@ -64,7 +64,7 @@ func (vctx *VMContext) GetRequestCode() sctransaction.RequestCode {
 }
 
 func (vctx *VMContext) GetInt64RequestParam(name string) (int64, bool) {
-	return vctx.Request.RequestBlock().Params().GetInt64(name)
+	return vctx.Request.RequestBlock().Params().MustGetInt64(name)
 }
 
 func (vctx *VMContext) SetInt64(name string, value int64) {
