@@ -1,9 +1,11 @@
 package variables
 
 import (
+	"bytes"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBasicVariables(t *testing.T) {
@@ -87,4 +89,22 @@ func TestDetereminism(t *testing.T) {
 
 	t.Logf("\n%s", vars1.String())
 	t.Logf("\n%s", vars2.String())
+}
+
+func TestMarshaling(t *testing.T) {
+	vars1 := New(nil)
+	vars1.Set("k1", []byte("kuku"))
+	vars1.Set("k2", []byte{42})
+	vars1.Set("k3", []byte("kuku"))
+	vars1.Set("k4", []byte{2})
+
+	var buf bytes.Buffer
+	err := vars1.Write(&buf)
+	assert.NoError(t, err)
+
+	vars2 := New(nil)
+	err = vars2.Read(bytes.NewBuffer(buf.Bytes()))
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
 }
