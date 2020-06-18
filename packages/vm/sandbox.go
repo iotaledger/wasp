@@ -19,6 +19,6 @@ type Sandbox interface {
 	GetStringRequestParam(name string) (string, bool)
 	// state Getters
 	// state setters
-	SetInt(name string, value int)
+	SetInt64(name string, value int64)
 	SetString(name string, value string)
 }

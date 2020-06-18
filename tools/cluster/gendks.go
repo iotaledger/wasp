@@ -80,9 +80,6 @@ func calcColorUtxodb(scdata *SmartContractFinalConfig) error {
 }
 
 func CreateOriginDataUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transaction, state.Batch, error) {
-	vars := variables.New(nil)
-	vars.Set("description", scdata.Description)
-
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
 		return nil, nil, err
@@ -96,7 +93,9 @@ func CreateOriginDataUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Tr
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Variables:            vars,
+		Mutations: []variables.Mutation{
+			variables.NewMutationSet("description", []byte(scdata.Description)),
+		},
 	})
 	if err != nil {
 		return nil, nil, err
@@ -105,9 +104,6 @@ func CreateOriginDataUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Tr
 }
 
 func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, state.Batch, error) {
-	vars := variables.New(nil)
-	vars.Set("description", scdata.Description)
-
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
 		return nil, nil, err
@@ -121,7 +117,9 @@ func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransac
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Variables:            vars,
+		Mutations: []variables.Mutation{
+			variables.NewMutationSet("description", []byte(scdata.Description)),
+		},
 	})
 	if err != nil {
 		return nil, nil, err

@@ -74,18 +74,21 @@ func (h *HashValue) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
-func HashValueFromString(s string) (HashValue, error) {
-	b, err := base58.Decode(s)
-	//b, err := hex.DecodeString(s)
-	if err != nil {
-		return nilHash, err
-	}
+func HashValueFromBytes(b []byte) (HashValue, error) {
 	if len(b) != HashSize {
-		return nilHash, errors.New("wrong hex encoded string. Can't convert to HashValue")
+		return nilHash, errors.New("wrong HashValue bytes length")
 	}
 	var ret HashValue
 	copy(ret.Bytes(), b)
 	return ret, nil
+}
+
+func HashValueFromString(s string) (HashValue, error) {
+	b, err := base58.Decode(s)
+	if err != nil {
+		return nilHash, err
+	}
+	return HashValueFromBytes(b)
 }
 
 func HashData(data ...[]byte) *HashValue {

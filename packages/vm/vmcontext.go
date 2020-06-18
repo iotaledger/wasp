@@ -6,6 +6,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/variables"
 )
 
 // context of one VM call (for one request)
@@ -65,8 +67,8 @@ func (vctx *VMContext) GetInt64RequestParam(name string) (int64, bool) {
 	return vctx.Request.RequestBlock().Params().GetInt64(name)
 }
 
-func (vctx *VMContext) SetInt(name string, value int) {
-	vctx.StateUpdate.Variables().Set(name, uint32(value))
+func (vctx *VMContext) SetInt64(name string, value int64) {
+	vctx.StateUpdate.AddMutation(variables.NewMutationSet(name, util.Uint64To8Bytes(uint64(value))))
 }
 
 func (vctx *VMContext) GetStringRequestParam(name string) (string, bool) {
@@ -74,5 +76,5 @@ func (vctx *VMContext) GetStringRequestParam(name string) (string, bool) {
 }
 
 func (vctx *VMContext) SetString(name string, value string) {
-	vctx.StateUpdate.Variables().Set(name, value)
+	vctx.StateUpdate.AddMutation(variables.NewMutationSet(name, []byte(value)))
 }

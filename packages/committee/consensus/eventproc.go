@@ -12,8 +12,8 @@ import (
 
 func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 	op.processorReady = false
-	progHashStr, ok := op.getProgramHashStr()
-	op.processorReady = ok && msg.ProgramHash == progHashStr
+	progHash, ok := op.getProgramHash()
+	op.processorReady = ok && msg.ProgramHash == progHash.String()
 }
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
@@ -38,14 +38,13 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 
 	// check is processor is ready for the current varstate. If no, initiate load of the processor
 	op.processorReady = false
-	progHashStr, ok := op.getProgramHashStr()
+	progHash, ok := op.getProgramHash()
 	if !ok {
 		op.log.Errorf("major inconsistency: undefined program hash at state #%d", op.mustStateIndex())
 		op.committee.Dismiss()
 		return
 	}
-
-	//op.log.Debugf("++++++++++++++++++++++++++++ proghash = %s", progHashStr)
+	progHashStr := progHash.String()
 
 	op.processorReady = runvm.CheckProcessor(progHashStr)
 	if !op.processorReady {

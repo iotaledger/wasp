@@ -47,7 +47,7 @@ func nopRequest(ctx vm.Sandbox) {
 func setMinimumRewardRequest(ctx vm.Sandbox) {
 	stub(ctx, "setMinimumRewardRequest")
 	if v, ok := ctx.GetInt64RequestParam("value"); ok && v >= 0 {
-		ctx.SetInt(origin.VarNameMinimumReward, int(v))
+		ctx.SetInt64(origin.VarNameMinimumReward, v)
 	}
 }
 
