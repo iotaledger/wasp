@@ -39,12 +39,11 @@ type NewOriginTransactionParams struct {
 func NewOriginBatch(par NewOriginParams) state.Batch {
 	stateUpd := state.NewStateUpdate(nil)
 
-	for _, mut := range par.Variables.Mutations() {
-		stateUpd.AddMutation(mut)
-	}
-
-	stateUpd.AddMutation(variables.NewMutationSet(VarNameOwnerAddress, par.OwnerSignatureScheme.Address().Bytes()))
-	stateUpd.AddMutation(variables.NewMutationSet(VarNameProgramHash, par.ProgramHash.Bytes()))
+	stateUpd.Mutations().AddAll(par.Variables.Mutations())
+	stateUpd.Mutations().AddAll(variables.FromMap(map[string][]byte{
+		VarNameOwnerAddress: par.OwnerSignatureScheme.Address().Bytes(),
+		VarNameProgramHash:  par.ProgramHash.Bytes(),
+	}).Mutations())
 
 	ret, err := state.NewBatch([]state.StateUpdate{stateUpd})
 	if err != nil {

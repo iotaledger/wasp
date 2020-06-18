@@ -13,7 +13,7 @@ type stateUpdate struct {
 	batchIndex uint16
 	requestId  sctransaction.RequestId
 	timestamp  int64
-	mutations  []variables.Mutation
+	mutations  variables.MutationSequence
 }
 
 func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
@@ -23,7 +23,7 @@ func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
 	}
 	return &stateUpdate{
 		requestId: req,
-		mutations: make([]variables.Mutation, 0),
+		mutations: variables.NewMutationSequence(),
 	}
 }
 
@@ -35,15 +35,8 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 // StateUpdate
 
 func (su *stateUpdate) String() string {
-	ret := fmt.Sprintf("reqid: %s, ts: %d", su.requestId.String(), su.Timestamp())
-	for _, mut := range su.mutations {
-		ret += fmt.Sprintf(" [%s]", mut.String())
-	}
+	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestId.String(), su.Timestamp(), su.mutations)
 	return ret
-}
-
-func (su *stateUpdate) AddMutation(mut variables.Mutation) {
-	su.mutations = append(su.mutations, mut)
 }
 
 func (su *stateUpdate) Timestamp() int64 {
@@ -59,7 +52,7 @@ func (su *stateUpdate) RequestId() *sctransaction.RequestId {
 	return &su.requestId
 }
 
-func (su *stateUpdate) Mutations() []variables.Mutation {
+func (su *stateUpdate) Mutations() variables.MutationSequence {
 	return su.mutations
 }
 
@@ -67,17 +60,8 @@ func (su *stateUpdate) Write(w io.Writer) error {
 	if _, err := w.Write(su.requestId[:]); err != nil {
 		return err
 	}
-	n := len(su.mutations)
-	if n > util.MaxUint16 {
-		return fmt.Errorf("StateUpdate has too many mutations")
-	}
-	if err := util.WriteUint16(w, uint16(n)); err != nil {
+	if err := su.mutations.Write(w); err != nil {
 		return err
-	}
-	for _, mut := range su.mutations {
-		if err := mut.Write(w); err != nil {
-			return err
-		}
 	}
 	return util.WriteUint64(w, uint64(su.timestamp))
 }
@@ -90,13 +74,8 @@ func (su *stateUpdate) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &n); err != nil {
 		return err
 	}
-	su.mutations = make([]variables.Mutation, n)
-	for i := uint16(0); i < n; i++ {
-		mut, err := variables.ReadMutation(r)
-		if err != nil {
-			return err
-		}
-		su.mutations[i] = mut
+	if err := su.mutations.Read(r); err != nil {
+		return err
 	}
 	var ts uint64
 	if err := util.ReadUint64(r, &ts); err != nil {

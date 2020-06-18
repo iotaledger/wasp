@@ -68,7 +68,7 @@ func (vctx *VMContext) GetInt64RequestParam(name string) (int64, bool) {
 }
 
 func (vctx *VMContext) SetInt64(name string, value int64) {
-	vctx.StateUpdate.AddMutation(variables.NewMutationSet(name, util.Uint64To8Bytes(uint64(value))))
+	vctx.StateUpdate.Mutations().Add(variables.NewMutationSet(name, util.Uint64To8Bytes(uint64(value))))
 }
 
 func (vctx *VMContext) GetStringRequestParam(name string) (string, bool) {
@@ -76,5 +76,5 @@ func (vctx *VMContext) GetStringRequestParam(name string) (string, bool) {
 }
 
 func (vctx *VMContext) SetString(name string, value string) {
-	vctx.StateUpdate.AddMutation(variables.NewMutationSet(name, []byte(value)))
+	vctx.StateUpdate.Mutations().Add(variables.NewMutationSet(name, []byte(value)))
 }

@@ -26,7 +26,7 @@ type Variables interface {
 
 	String() string
 
-	Mutations() []Mutation
+	Mutations() MutationSequence
 
 	// TODO: move to a separate interface
 	SetString(key string, value string)
@@ -71,13 +71,13 @@ func (vr variables) String() string {
 	return ret
 }
 
-func (vr variables) Mutations() []Mutation {
-	ret := make([]Mutation, 0)
+func (vr variables) Mutations() MutationSequence {
+	ms := NewMutationSequence()
 	vr.ForEach(func(key string, value []byte) bool {
-		ret = append(ret, NewMutationSet(key, value))
+		ms.Add(NewMutationSet(key, value))
 		return true
 	})
-	return ret
+	return ms
 }
 
 func (vr variables) ForEach(fun func(key string, value []byte) bool) {

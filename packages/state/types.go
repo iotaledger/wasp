@@ -43,8 +43,7 @@ type StateUpdate interface {
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
 	String() string
-	Mutations() []variables.Mutation
-	AddMutation(mut variables.Mutation)
+	Mutations() variables.MutationSequence
 	Write(io.Writer) error
 	Read(io.Reader) error
 }
