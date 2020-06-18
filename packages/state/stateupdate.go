@@ -70,10 +70,6 @@ func (su *stateUpdate) Read(r io.Reader) error {
 	if _, err := r.Read(su.requestId[:]); err != nil {
 		return err
 	}
-	var n uint16
-	if err := util.ReadUint16(r, &n); err != nil {
-		return err
-	}
 	if err := su.mutations.Read(r); err != nil {
 		return err
 	}
