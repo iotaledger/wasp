@@ -17,7 +17,6 @@ type VariableState interface {
 	ApplyStateIndex(uint32)
 	// timestamp
 	Timestamp() int64
-	ApplyTimestamp(int64)
 	// updates state without changing state index
 	ApplyStateUpdate(stateUpd StateUpdate)
 	// applies batch of state updates, state index and timestamp

@@ -57,13 +57,6 @@ func (vs *variableState) Timestamp() int64 {
 	return vs.timestamp
 }
 
-func (vs *variableState) ApplyTimestamp(ts int64) {
-	vh := vs.Hash()
-	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint64To8Bytes(uint64(ts)))
-	vs.empty = false
-	vs.timestamp = ts
-}
-
 // applies batch of state updates. Increases state index
 func (vs *variableState) ApplyBatch(batch Batch) error {
 	if !vs.empty {
@@ -81,17 +74,16 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 		return true
 	})
 	vs.ApplyStateIndex(batch.StateIndex())
-	vs.ApplyTimestamp(batch.Timestamp())
 	return nil
 }
 
 // applies one state update. Doesn't change state index
 func (vs *variableState) ApplyStateUpdate(stateUpd StateUpdate) {
 	vs.Variables().Apply(stateUpd.Variables())
-
+	vs.timestamp = stateUpd.Timestamp()
 	vh := vs.Hash()
 	sh := util.GetHashValue(stateUpd)
-	vs.stateHash = *hashing.HashData(vh.Bytes(), sh.Bytes())
+	vs.stateHash = *hashing.HashData(vh.Bytes(), sh.Bytes(), util.Uint64To8Bytes(uint64(vs.timestamp)))
 	vs.empty = false
 }
 
