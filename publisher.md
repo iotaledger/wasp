@@ -1,8 +1,9 @@
 # Wasp Publisher messages
 
-Wasp publishes important events via Nanomsg message stream (just like ZMQ is used in IRI).
-Anyone can subscribe to the Nanomsg stream. In Golang you can use `packages/subscribe` package provided in Wasp.
-The publisher's output port is configured in ```config.json``` like this:
+Wasp publishes important events via Nanomsg message stream (just like ZMQ is used in IRI. Possibly  in the future ZMQ and MQTT publishers will be supported too).
+
+Anyone can subscribe to the Nanomsg output stream of the node. In Golang you can use `packages/subscribe` package provided in Wasp for this.
+The publisher's output port can be configured in ```config.json``` like this:
 ```
   "nanomsg":{
     "port": 5550
