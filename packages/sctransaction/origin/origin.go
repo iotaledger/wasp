@@ -2,7 +2,6 @@ package origin
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/variables"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -11,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/variables"
 )
 
 const (
@@ -39,16 +39,11 @@ type NewOriginTransactionParams struct {
 func NewOriginBatch(par NewOriginParams) state.Batch {
 	stateUpd := state.NewStateUpdate(nil)
 
-	vars := stateUpd.Variables()
-	if par.Variables != nil {
-		par.Variables.ForEach(func(key string, value interface{}) bool {
-			vars.Set(key, value)
-			return true
-		})
-	}
-
-	vars.Set(VarNameOwnerAddress, par.OwnerSignatureScheme.Address().String())
-	vars.Set(VarNameProgramHash, par.ProgramHash.String())
+	stateUpd.Mutations().AddAll(par.Variables.Mutations())
+	stateUpd.Mutations().AddAll(variables.FromMap(map[string][]byte{
+		VarNameOwnerAddress: par.OwnerSignatureScheme.Address().Bytes(),
+		VarNameProgramHash:  par.ProgramHash.Bytes(),
+	}).Mutations())
 
 	ret, err := state.NewBatch([]state.StateUpdate{stateUpd})
 	if err != nil {

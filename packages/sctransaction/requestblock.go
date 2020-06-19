@@ -3,12 +3,13 @@ package sctransaction
 import (
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
-	"io"
 )
 
 const RequestIdSize = hashing.HashSize + 2
@@ -20,7 +21,7 @@ type RequestBlock struct {
 	// request code
 	reqCode RequestCode
 	// small variable state with variable/value pairs
-	vars variables.Variables
+	params variables.Variables
 }
 
 type RequestRef struct {
@@ -34,7 +35,7 @@ func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
 		reqCode: reqCode,
-		vars:    variables.New(nil),
+		params:  variables.New(nil),
 	}
 }
 
@@ -42,8 +43,8 @@ func (req *RequestBlock) Address() address.Address {
 	return req.address
 }
 
-func (req *RequestBlock) Variables() variables.Variables {
-	return req.vars
+func (req *RequestBlock) Params() variables.Variables {
+	return req.params
 }
 
 func (req *RequestBlock) RequestCode() RequestCode {
@@ -60,7 +61,7 @@ func (req *RequestBlock) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, uint16(req.reqCode)); err != nil {
 		return err
 	}
-	if err := req.vars.Write(w); err != nil {
+	if err := req.params.Write(w); err != nil {
 		return err
 	}
 	return nil
@@ -76,8 +77,8 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	}
 	req.reqCode = RequestCode(rc)
 
-	req.vars = variables.New(nil)
-	if err := req.vars.Read(r); err != nil {
+	req.params = variables.New(nil)
+	if err := req.params.Read(r); err != nil {
 		return err
 	}
 	return nil

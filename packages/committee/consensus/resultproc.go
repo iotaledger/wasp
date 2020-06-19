@@ -32,17 +32,13 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		op.log.Errorf("runCalculationsAsync: inconsistency: some requests not ready yet")
 		return
 	}
-	progHashStr, ok := op.getProgramHashStr()
+	progHash, ok := op.getProgramHash()
 	if !ok {
-		return
-	}
-	progHash, err := hashing.HashValueFromString(progHashStr)
-	if err != nil {
 		return
 	}
 	ctx := &vm.VMTask{
 		LeaderPeerIndex: par.leaderPeerIndex,
-		ProgramHash:     progHash,
+		ProgramHash:     *progHash,
 		Address:         *op.committee.Address(),
 		Color:           *op.committee.Color(),
 		Balances:        par.balances,

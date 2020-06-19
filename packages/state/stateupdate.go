@@ -2,17 +2,18 @@ package state
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
-	"io"
 )
 
 type stateUpdate struct {
 	batchIndex uint16
 	requestId  sctransaction.RequestId
 	timestamp  int64
-	vars       variables.Variables
+	mutations  variables.MutationSequence
 }
 
 func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
@@ -22,7 +23,7 @@ func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
 	}
 	return &stateUpdate{
 		requestId: req,
-		vars:      variables.New(nil),
+		mutations: variables.NewMutationSequence(),
 	}
 }
 
@@ -34,10 +35,7 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 // StateUpdate
 
 func (su *stateUpdate) String() string {
-	ret := fmt.Sprintf("reqid: %s, ts: %d", su.requestId.String(), su.Timestamp())
-	if !su.Variables().IsEmpty() {
-		ret += fmt.Sprintf("\n%s", su.Variables().String())
-	}
+	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestId.String(), su.Timestamp(), su.mutations)
 	return ret
 }
 
@@ -54,15 +52,15 @@ func (su *stateUpdate) RequestId() *sctransaction.RequestId {
 	return &su.requestId
 }
 
-func (su *stateUpdate) Variables() variables.Variables {
-	return su.vars
+func (su *stateUpdate) Mutations() variables.MutationSequence {
+	return su.mutations
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
 	if _, err := w.Write(su.requestId[:]); err != nil {
 		return err
 	}
-	if err := su.vars.Write(w); err != nil {
+	if err := su.mutations.Write(w); err != nil {
 		return err
 	}
 	return util.WriteUint64(w, uint64(su.timestamp))
@@ -72,7 +70,7 @@ func (su *stateUpdate) Read(r io.Reader) error {
 	if _, err := r.Read(su.requestId[:]); err != nil {
 		return err
 	}
-	if err := su.vars.Read(r); err != nil {
+	if err := su.mutations.Read(r); err != nil {
 		return err
 	}
 	var ts uint64

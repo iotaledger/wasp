@@ -124,39 +124,34 @@ func (op *operator) mustStateIndex() uint32 {
 	return ret
 }
 
-func (op *operator) getProgramHashStr() (string, bool) {
+func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.variableState == nil {
-		return "", false
+		return nil, false
 	}
-	p, ok := op.variableState.Variables().Get(origin.VarNameProgramHash)
+	b, ok := op.variableState.Variables().Get(origin.VarNameProgramHash)
 	if !ok {
-		return "", false
+		return nil, false
 	}
-	progHashStr, ok := p.(string)
-	if !ok {
-		return "", false
+	hash, err := hashing.HashValueFromBytes(b)
+	if err != nil {
+		return nil, false
 	}
-	return progHashStr, true
+	return &hash, true
 }
 
 func (op *operator) getRewardAddress() address.Address {
 	return registry.GetRewardAddress(op.committee.Address())
 }
 
-func (op *operator) getOwnerAddress() address.Address {
+func (op *operator) getOwnerAddress() (ret address.Address) {
 	if _, ok := op.stateIndex(); !ok {
 		return address.Address{}
 	}
-	a, ok := op.variableState.Variables().Get(origin.VarNameOwnerAddress)
+	b, ok := op.variableState.Variables().Get(origin.VarNameOwnerAddress)
 	if !ok {
 		return address.Address{}
 	}
-	astr, ok := a.(string)
-	if !ok {
-		op.log.Errorf("wrong owner address string")
-		return address.Address{}
-	}
-	ret, err := address.FromBase58(astr)
+	ret, _, err := address.FromBytes(b)
 	if err != nil {
 		op.log.Errorf("wrong owner address string")
 		return address.Address{}
@@ -168,9 +163,9 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok := op.variableState.Variables().GetInt(origin.VarNameMinimumReward)
+	vt, ok := op.variableState.Variables().MustGetInt64(origin.VarNameMinimumReward)
 	if !ok {
 		return 0
 	}
-	return (int64)(vt)
+	return vt
 }

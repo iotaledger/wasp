@@ -15,10 +15,10 @@ type Sandbox interface {
 	GetRequestCode() sctransaction.RequestCode
 	GetLog() *logger.Logger
 	// request Getters
-	GetIntRequest(name string) (int, bool)
-	GetStringRequest(name string) (string, bool)
+	GetInt64RequestParam(name string) (int64, bool)
+	GetStringRequestParam(name string) (string, bool)
 	// state Getters
 	// state setters
-	SetInt(name string, value int)
+	SetInt64(name string, value int64)
 	SetString(name string, value string)
 }

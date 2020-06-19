@@ -7,245 +7,171 @@ import (
 	"sort"
 )
 
+// Variables represents a key-value map where both keys and values are
+// arbitrary byte slices.
+//
+// Since map cannot have []byte as key, to avoid unnecessary conversions
+// between string and []byte, we use string as key data type, but it may
+// not necessarily a valid UTF-8 string.
 type Variables interface {
-	// TODO tbd
-	Set(key string, value interface{})
-	Get(key string) (interface{}, bool)
-	GetInt(key string) (int, bool)
-	Apply(Variables)
-	ForEach(func(key string, value interface{}) bool)
+	Set(key string, value []byte)
+	Del(key string)
+	Get(key string) ([]byte, bool)
 	IsEmpty() bool
+
+	ForEach(func(key string, value []byte) bool)
+
 	Read(io.Reader) error
 	Write(io.Writer) error
+
 	String() string
+
+	Mutations() MutationSequence
+
+	// TODO: move to a separate interface
+	SetString(key string, value string)
+	GetString(key string) (string, bool)
+	SetInt64(key string, value int64)
+	GetInt64(key string) (int64, bool, error)
+	MustGetInt64(key string) (int64, bool)
 }
 
-type variables struct {
-	m map[string]interface{}
-}
+type variables map[string][]byte
 
 // create/clone
 func New(vars Variables) Variables {
-	return newVars(vars)
-}
-
-func newVars(vars Variables) *variables {
-	ret := &variables{m: make(map[string]interface{})}
-	if vars == nil {
-		return ret
+	ret := make(variables)
+	if vars != nil {
+		vars.ForEach(func(key string, value []byte) bool {
+			ret[key] = value
+			return true
+		})
 	}
-	vars.ForEach(func(key string, value interface{}) bool {
-		if value != nil {
-			ret.m[key] = value
-		}
-		return true
-	})
 	return ret
 }
 
-func (vr *variables) String() string {
+func FromMap(m map[string][]byte) Variables {
+	return variables(m)
+}
+
+func (vr variables) sortedKeys() []string {
 	keys := make([]string, 0)
-	for k := range vr.m {
+	for k := range vr {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	return keys
+}
+
+func (vr variables) String() string {
 	ret := ""
-	for _, key := range keys {
-		value := vr.m[key]
-		if value == nil {
-			ret += fmt.Sprintf("           %s: nil\n", key)
-			continue
-		}
-		switch v := value.(type) {
-		case uint16:
-			ret += fmt.Sprintf("           %s: %d\n", key, v)
-		case uint32:
-			ret += fmt.Sprintf("           %s: %d\n", key, v)
-		case string:
-			ret += fmt.Sprintf("           %s: %s\n", key, v)
-		default:
-			panic("wrong value type")
-		}
+	for _, key := range vr.sortedKeys() {
+		ret += fmt.Sprintf("           %s: %v\n", key, vr[key])
 	}
 	return ret
 }
 
-// applying update to variables, var per var.
-// newVars value nil mean deleting the variable
-func (vr *variables) Apply(upd Variables) {
-	upd.ForEach(func(key string, value interface{}) bool {
-		if value == nil {
-			delete(vr.m, key)
-		} else {
-			vr.Set(key, value)
-		}
+func (vr variables) Mutations() MutationSequence {
+	ms := NewMutationSequence()
+	vr.ForEach(func(key string, value []byte) bool {
+		ms.Add(NewMutationSet(key, value))
 		return true
 	})
+	return ms
 }
 
-func (vr *variables) ForEach(fun func(key string, value interface{}) bool) {
-	for k, v := range vr.m {
+func (vr variables) ForEach(fun func(key string, value []byte) bool) {
+	for k, v := range vr {
 		if !fun(k, v) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (vr *variables) IsEmpty() bool {
-	return len(vr.m) == 0
+func (vr variables) IsEmpty() bool {
+	return len(vr) == 0
 }
 
-func (vr *variables) Set(key string, value interface{}) {
+func (vr variables) Set(key string, value []byte) {
 	if value == nil {
-		vr.m[key] = nil
-		return
+		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
-	switch value.(type) {
-	case uint16:
-	case uint32:
-	case string:
-	default:
-		panic("wrong value type")
-	}
-	vr.m[key] = value
+	vr[key] = value
 }
 
-func (vr *variables) Get(key string) (interface{}, bool) {
-	ret, ok := vr.m[key]
+func (vr variables) Del(key string) {
+	delete(vr, key)
+}
+
+func (vr variables) Get(key string) ([]byte, bool) {
+	ret, ok := vr[key]
 	return ret, ok
 }
 
-func (vr *variables) GetInt(key string) (int, bool) {
-	v, ok := vr.Get(key)
-	if !ok {
-		return 0, false
-	}
-	switch vt := v.(type) {
-	case uint16:
-		return int(vt), true
-
-	case uint32:
-		return int(vt), true
-
-	default:
-		return 0, false
-	}
-}
-
-func (vr *variables) GetString(key string) (string, bool) {
-	v, ok := vr.Get(key)
-	if !ok {
-		return "", false
-	}
-	s, ok := v.(string)
-	if !ok {
-		return "", false
-	}
-	return s, true
-}
-
-const (
-	byteUint16 = iota
-	byteUint32
-	byteString
-	nilValue
-)
-
-func (vr *variables) Write(w io.Writer) error {
-	ordered := make([]string, 0, len(vr.m))
-	for k := range vr.m {
-		ordered = append(ordered, k)
-	}
-	sort.Strings(ordered)
-	if err := util.WriteUint16(w, uint16(len(ordered))); err != nil {
+func (vr variables) Write(w io.Writer) error {
+	keys := vr.sortedKeys()
+	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
 	}
-	for _, k := range ordered {
+	for _, k := range keys {
 		if err := util.WriteString16(w, k); err != nil {
 			return err
 		}
-		if vr.m[k] == nil {
-			if err := util.WriteByte(w, nilValue); err != nil {
-				return err
-			}
-		} else {
-			switch tv := vr.m[k].(type) {
-			case uint16:
-				if err := util.WriteByte(w, byteUint16); err != nil {
-					return err
-				}
-				if err := util.WriteUint16(w, tv); err != nil {
-					return err
-				}
-
-			case uint32:
-				if err := util.WriteByte(w, byteUint32); err != nil {
-					return err
-				}
-				if err := util.WriteUint32(w, tv); err != nil {
-					return err
-				}
-
-			case string:
-				if err := util.WriteByte(w, byteString); err != nil {
-					return err
-				}
-				if err := util.WriteString16(w, tv); err != nil {
-					return err
-				}
-
-			default:
-				panic("wrong type")
-			}
-
+		if err := util.WriteBytes32(w, vr[k]); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (vr *variables) Read(r io.Reader) error {
-	var num uint16
-	err := util.ReadUint16(r, &num)
+func (vr variables) Read(r io.Reader) error {
+	var num uint64
+	err := util.ReadUint64(r, &num)
 	if err != nil {
 		return err
 	}
-	var b byte
-	var k string
-	for i := uint16(0); i < num; i++ {
-		if k, err = util.ReadString16(r); err != nil {
+	for i := uint64(0); i < num; i++ {
+		k, err := util.ReadString16(r)
+		if err != nil {
 			return err
 		}
-		if b, err = util.ReadByte(r); err != nil {
+		v, err := util.ReadBytes32(r)
+		if err != nil {
 			return err
 		}
-		switch b {
-		case nilValue:
-			vr.Set(k, nil)
-
-		case byteUint16:
-			var v uint16
-			if err = util.ReadUint16(r, &v); err != nil {
-				return err
-			}
-			vr.Set(k, v)
-
-		case byteUint32:
-			var v uint32
-			if err = util.ReadUint32(r, &v); err != nil {
-				return err
-			}
-			vr.Set(k, v)
-
-		case byteString:
-			var s string
-			if s, err = util.ReadString16(r); err != nil {
-				return err
-			}
-			vr.Set(k, s)
-
-		default:
-			panic("wrong type byte")
-		}
+		vr.Set(k, v)
 	}
 	return nil
+}
+
+func (vr variables) SetString(key string, value string) {
+	vr.Set(key, []byte(value))
+}
+
+func (vr variables) GetString(key string) (string, bool) {
+	b, ok := vr.Get(key)
+	return string(b), ok
+}
+
+func (vr variables) SetInt64(key string, value int64) {
+	vr.Set(key, util.Uint64To8Bytes(uint64(value)))
+}
+
+func (vr variables) GetInt64(key string) (int64, bool, error) {
+	b, ok := vr.Get(key)
+	if !ok {
+		return 0, false, nil
+	}
+	if len(b) != 8 {
+		return 0, false, fmt.Errorf("variable %s: %v is not an int64", key, b)
+	}
+	return int64(util.Uint64From8Bytes(b)), true, nil
+}
+
+func (vr variables) MustGetInt64(key string) (int64, bool) {
+	v, ok, err := vr.GetInt64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v, ok
 }

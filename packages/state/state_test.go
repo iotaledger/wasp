@@ -1,13 +1,14 @@
 package state
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestVariableStateBasic(t *testing.T) {
@@ -21,13 +22,13 @@ func TestVariableStateBasic(t *testing.T) {
 	assert.EqualValues(t, h1, h2)
 	assert.EqualValues(t, vs1.StateIndex(), vs1.StateIndex())
 
-	vs1.Variables().Set("num", uint16(123))
-	vs1.Variables().Set("kuku", "A")
-	vs1.Variables().Set("mumu", "B")
+	vs1.Variables().SetInt64("num", int64(123))
+	vs1.Variables().SetString("kuku", "A")
+	vs1.Variables().SetString("mumu", "B")
 
-	vs2.Variables().Set("mumu", "B")
-	vs2.Variables().Set("kuku", "A")
-	vs2.Variables().Set("num", uint16(123))
+	vs2.Variables().SetString("mumu", "B")
+	vs2.Variables().SetString("kuku", "A")
+	vs2.Variables().SetInt64("num", int64(123))
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 
@@ -56,12 +57,12 @@ func TestBatches(t *testing.T) {
 	batch1, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	batch1.WithStateIndex(2)
-	assert.Equal(t, batch1.Size(), uint16(2))
+	assert.Equal(t, uint16(2), batch1.Size())
 
 	batch2, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	batch2.WithStateIndex(2)
-	assert.Equal(t, batch1.Size(), uint16(2))
+	assert.Equal(t, uint16(2), batch2.Size())
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
@@ -99,11 +100,11 @@ func TestApply(t *testing.T) {
 
 	batch1, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	assert.Equal(t, batch1.Size(), uint16(2))
+	assert.Equal(t, uint16(2), batch1.Size())
 
 	batch2, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	assert.Equal(t, batch1.Size(), uint16(2))
+	assert.Equal(t, uint16(2), batch2.Size())
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
@@ -171,18 +172,35 @@ func TestApply3(t *testing.T) {
 	vs1 := NewVariableState(nil)
 	vs2 := NewVariableState(nil)
 
-	nowis := time.Now()
-
 	vs1.ApplyStateUpdate(su1)
 	vs1.ApplyStateUpdate(su2)
 	vs1.ApplyStateIndex(0)
-	vs1.ApplyTimestamp(nowis)
 
 	batch, err := NewBatch([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	batch.WithStateIndex(0).WithTimestamp(nowis)
 	err = vs2.ApplyBatch(batch)
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
+}
+
+func TestMarshaling(t *testing.T) {
+	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	reqid1 := sctransaction.NewRequestId(txid1, 0)
+	reqid2 := sctransaction.NewRequestId(txid1, 2)
+	su1 := NewStateUpdate(&reqid1)
+	su1.Mutations().Add(variables.NewMutationSet("k", []byte{1}))
+	su2 := NewStateUpdate(&reqid2)
+	su1.Mutations().Add(variables.NewMutationSet("k", []byte{2}))
+	batch1, err := NewBatch([]StateUpdate{su1, su2})
+	assert.NoError(t, err)
+	batch1.WithStateIndex(2)
+
+	b, err := util.Bytes(batch1)
+	assert.NoError(t, err)
+
+	batch2, err := BatchFromBytes(b)
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 }

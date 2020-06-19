@@ -79,7 +79,7 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 
 // applies one state update. Doesn't change state index
 func (vs *variableState) ApplyStateUpdate(stateUpd StateUpdate) {
-	vs.Variables().Apply(stateUpd.Variables())
+	stateUpd.Mutations().ApplyTo(vs.Variables())
 	vs.timestamp = stateUpd.Timestamp()
 	vh := vs.Hash()
 	sh := util.GetHashValue(stateUpd)
