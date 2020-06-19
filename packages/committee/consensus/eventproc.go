@@ -50,8 +50,10 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	if !op.processorReady {
 		runvm.LoadProcessorAsync(progHashStr, func(err error) {
 			op.committee.ReceiveMessage(committee.ProcessorIsReady{ProgramHash: progHashStr})
-			publisher.Publish("loadvm", progHashStr)
+			publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 		})
+	} else {
+		publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 	}
 
 	op.takeAction()
@@ -83,7 +85,7 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 	req, newRequest := op.requestFromMsg(reqMsg)
 
 	if newRequest {
-		publisher.Publish("request", "in",
+		publisher.Publish("request_in",
 			op.committee.Address().String(),
 			reqMsg.Transaction.ID().String(),
 			fmt.Sprintf("%d", reqMsg.Index),

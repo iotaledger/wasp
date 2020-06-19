@@ -67,50 +67,17 @@ func (sm *stateManager) checkStateApproval() bool {
 			return false
 		}
 
-		//sm.log.Debugf("$$$$$$$$$$$$ COMMITTED STATE\nvarstate: %s\nbatch: %s",
-		//	pending.nextVariableState.String(), pending.batch.String())
-
 		if sm.solidVariableState != nil {
-			publisher.Publish("state",
-				sm.committee.Address().String(),
-				fmt.Sprintf("%d", sm.solidVariableState.StateIndex()),
-				fmt.Sprintf("%d", pending.nextVariableState.StateIndex()),
-				sm.nextStateTransaction.ID().String(),
-				varStateHash.String(),
-			)
-
 			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s, batch essence: %s",
 				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		} else {
-			publisher.Publish("state",
-				sm.committee.Address().String(),
-				"-1",
-				"0",
-				sm.nextStateTransaction.ID().String(),
-				varStateHash.String(),
-			)
-
 			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		}
 
-		// publish processed requests
-		for _, reqid := range pending.batch.RequestIds() {
-			publisher.Publish("request", "out",
-				sm.committee.Address().String(),
-				reqid.TransactionId().String(),
-				fmt.Sprintf("%d", reqid.Index()),
-			)
-		}
 	} else {
 		// initial load
-		publisher.Publish("state", sm.committee.Address().String(),
-			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
-			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
-			sm.nextStateTransaction.ID().String(),
-			varStateHash.String(),
-		)
 
 		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",
 			sm.solidVariableState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
@@ -125,6 +92,27 @@ func (sm *stateManager) checkStateApproval() bool {
 	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clear pending batches
 	sm.permutation.Shuffle(varStateHash.Bytes())
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
+
+	// publish state transition
+	publisher.Publish("state",
+		sm.committee.Address().String(),
+		strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+		strconv.Itoa(int(pending.batch.Size())),
+		saveTx.ID().String(),
+		varStateHash.String(),
+		fmt.Sprintf("%d", pending.batch.Timestamp()),
+	)
+	// publish processed requests
+	for i, reqid := range pending.batch.RequestIds() {
+		publisher.Publish("request_out",
+			sm.committee.Address().String(),
+			reqid.TransactionId().String(),
+			fmt.Sprintf("%d", reqid.Index()),
+			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+			strconv.Itoa(i),
+			strconv.Itoa(int(pending.batch.Size())),
+		)
+	}
 
 	go func() {
 		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{

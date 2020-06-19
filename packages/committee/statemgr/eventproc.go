@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 // respond to sync request 'GetStateUpdate'
@@ -163,12 +162,6 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 		}
 	}
 	sm.nextStateTransaction = msg.Transaction
-
-	// new state transaction accepted by the state manager
-	publisher.Publish("statetx", "in",
-		sm.committee.Address().String(),
-		sm.nextStateTransaction.ID().String(),
-	)
 
 	sm.takeAction()
 }
