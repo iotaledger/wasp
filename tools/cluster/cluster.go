@@ -11,6 +11,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -60,9 +62,13 @@ type Cluster struct {
 	Started             bool
 	cmds                []*exec.Cmd
 	// reading publisher's output
-	messagesCh  chan *subscribe.HostMessage
-	stopReading chan bool
-	counters    map[string]int
+	messagesCh   chan *subscribe.HostMessage
+	stopReading  chan bool
+	expectations map[string]int
+	topics       []string
+	counters     map[string]map[string]int
+	allMessages  []*subscribe.HostMessage
+	testName     string
 }
 
 func (sc *SmartContractFinalConfig) AllNodes() []int {
@@ -169,7 +175,8 @@ func fileExists(path string) (bool, error) {
 }
 
 // Init creates in DataPath a directory with config.json for each node
-func (cluster *Cluster) Init(resetDataPath bool) error {
+func (cluster *Cluster) Init(resetDataPath bool, name string) error {
+	cluster.testName = name
 	exists, err := fileExists(cluster.DataPath)
 	if err != nil {
 		return err
@@ -202,7 +209,6 @@ func (cluster *Cluster) Init(resetDataPath bool) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -434,34 +440,40 @@ func (cluster *Cluster) WaspHosts(nodeIndexes []int, getHost func(w *WaspNodeCon
 	return hosts
 }
 
-func (cluster *Cluster) ListenToMessages(topics ...string) error {
+func (cluster *Cluster) ListenToMessages(expectations map[string]int) error {
 	allNodesNanomsg := cluster.WaspHosts(cluster.AllWaspNodes(), (*WaspNodeConfig).NanomsgHost)
 
-	fmt.Printf("[cluster] will be listening on topics %+v from %+v\n", topics, allNodesNanomsg)
-
+	cluster.expectations = expectations
 	cluster.messagesCh = make(chan *subscribe.HostMessage, 1000)
 	cluster.stopReading = make(chan bool)
-	cluster.counters = make(map[string]int)
+	cluster.counters = make(map[string]map[string]int)
+
+	cluster.topics = make([]string, 0)
+	for t := range expectations {
+		cluster.topics = append(cluster.topics, t)
+	}
+	sort.Strings(cluster.topics)
 
 	for _, host := range allNodesNanomsg {
-		for _, t := range topics {
-			cluster.counters[t+"--"+host] = 0
+		cluster.counters[host] = make(map[string]int)
+		for msgType := range expectations {
+			cluster.counters[host][msgType] = 0
 		}
 	}
 
-	return subscribe.SubscribeMulti(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, topics...)
+	return subscribe.SubscribeMulti(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, cluster.topics...)
 }
 
-func (cluster *Cluster) CountMessages(duration time.Duration) ([]*subscribe.HostMessage, map[string]int) {
-	fmt.Printf("[cluster] counting publisher's messages for %v\n", duration)
+func (cluster *Cluster) CollectMessages(duration time.Duration) {
+	fmt.Printf("[cluster] collecting publisher's messages for %v\n", duration)
 
-	all := make([]*subscribe.HostMessage, 0)
+	cluster.allMessages = make([]*subscribe.HostMessage, 0)
 	deadline := time.Now().Add(duration)
 	for {
 		select {
 		case msg := <-cluster.messagesCh:
-			all = append(all, msg)
-			cluster.counters[msg.Message[0]+"--"+msg.Sender] += 1
+			cluster.allMessages = append(cluster.allMessages, msg)
+			cluster.counters[msg.Sender][msg.Message[0]] += 1
 
 		case <-time.After(500 * time.Millisecond):
 		}
@@ -469,5 +481,25 @@ func (cluster *Cluster) CountMessages(duration time.Duration) ([]*subscribe.Host
 			break
 		}
 	}
-	return all, cluster.counters
+}
+
+func (cluster *Cluster) Report() bool {
+	fmt.Printf("\n[cluster] Message statistics for '%s':\n", cluster.testName)
+
+	pass := true
+	for host, counters := range cluster.counters {
+		fmt.Printf("\n[cluster] Node: %s\n", host)
+		for _, t := range cluster.topics {
+			res, _ := counters[t]
+			exp, _ := cluster.expectations[t]
+			e := "-"
+			if exp >= 0 {
+				e = strconv.Itoa(exp)
+				pass = pass && res == exp
+			}
+			fmt.Printf("          %s: %d (%s)\n", t, res, e)
+		}
+	}
+	fmt.Println()
+	return pass
 }

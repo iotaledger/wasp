@@ -1,18 +1,22 @@
 package wasptest
 
 import (
-	"fmt"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 )
 
 func TestSend1Request(t *testing.T) {
 	// setup
-	wasps := setup(t)
+	wasps := setup(t, "TestSend1Request")
 
-	err := wasps.ListenToMessages("bootuprec", "active_committee", "dismissed_committee", "state", "request")
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          1,
+		"request_out":         2,
+		"state":               2,
+	})
 	check(err, t)
 
 	err = Put3BootupRecords(wasps)
@@ -26,29 +30,25 @@ func TestSend1Request(t *testing.T) {
 	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1, 0)
 	check(err, t)
 
-	allMsg, counters := wasps.CountMessages(15 * time.Second)
+	wasps.CollectMessages(15 * time.Second)
 
-	fmt.Printf("[cluster] ++++++++++ counters\n")
-	keys := make([]string, 0)
-	for k := range counters {
-		keys = append(keys, k)
+	if !wasps.Report() {
+		t.Fail()
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
-	}
-
-	for _, msg := range allMsg {
-		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
-	}
-	// verify
 }
 
 func TestSend5Requests1Sec(t *testing.T) {
 	// setup
-	wasps := setup(t)
+	wasps := setup(t, "TestSend5Requests1Sec")
 
-	err := wasps.ListenToMessages("bootuprec", "active_committee", "dismissed_committee", "state", "request")
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          5,
+		"request_out":         6,
+		"state":               6,
+	})
 	check(err, t)
 
 	err = Put3BootupRecords(wasps)
@@ -62,29 +62,25 @@ func TestSend5Requests1Sec(t *testing.T) {
 	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 5, 1*time.Second)
 	check(err, t)
 
-	allMsg, counters := wasps.CountMessages(20 * time.Second)
+	wasps.CollectMessages(20 * time.Second)
 
-	fmt.Printf("[cluster] ++++++++++ counters\n")
-	keys := make([]string, 0)
-	for k := range counters {
-		keys = append(keys, k)
+	if !wasps.Report() {
+		t.Fail()
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
-	}
-
-	for _, msg := range allMsg {
-		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
-	}
-	// verify
 }
 
 func TestSend10Requests0Sec(t *testing.T) {
 	// setup
-	wasps := setup(t)
+	wasps := setup(t, "TestSend10Requests0Sec")
 
-	err := wasps.ListenToMessages("bootuprec", "active_committee", "dismissed_committee", "state", "request")
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          10,
+		"request_out":         11,
+		"state":               -1,
+	})
 	check(err, t)
 
 	err = Put3BootupRecords(wasps)
@@ -98,20 +94,9 @@ func TestSend10Requests0Sec(t *testing.T) {
 	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 10, 0*time.Second)
 	check(err, t)
 
-	allMsg, counters := wasps.CountMessages(20 * time.Second)
+	wasps.CollectMessages(20 * time.Second)
 
-	fmt.Printf("[cluster] ++++++++++ counters\n")
-	keys := make([]string, 0)
-	for k := range counters {
-		keys = append(keys, k)
+	if !wasps.Report() {
+		t.Fail()
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		fmt.Printf("[cluster] ++++++++++ %s :%d\n", k, counters[k])
-	}
-
-	for _, msg := range allMsg {
-		fmt.Printf("%s => '%s'\n", msg.Sender, strings.Join(msg.Message, " "))
-	}
-	// verify
 }
