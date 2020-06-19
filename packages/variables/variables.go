@@ -20,6 +20,7 @@ type Variables interface {
 	IsEmpty() bool
 
 	ForEach(func(key string, value []byte) bool)
+	ForEachDeterministic(func(key string, value []byte) bool)
 
 	Read(io.Reader) error
 	Write(io.Writer) error
@@ -73,16 +74,26 @@ func (vr variables) String() string {
 
 func (vr variables) Mutations() MutationSequence {
 	ms := NewMutationSequence()
-	vr.ForEach(func(key string, value []byte) bool {
+	vr.ForEachDeterministic(func(key string, value []byte) bool {
 		ms.Add(NewMutationSet(key, value))
 		return true
 	})
 	return ms
 }
 
+// NON DETERMINISTIC!
 func (vr variables) ForEach(fun func(key string, value []byte) bool) {
 	for k, v := range vr {
 		if !fun(k, v) {
+			return // abort when callback returns false
+		}
+	}
+}
+
+func (vr variables) ForEachDeterministic(fun func(key string, value []byte) bool) {
+	vr.sortedKeys()
+	for _, k := range vr.sortedKeys() {
+		if !fun(k, vr[k]) {
 			return // abort when callback returns false
 		}
 	}
