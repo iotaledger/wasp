@@ -208,7 +208,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
-	if msg%200 == 0 {
+	if msg%40 == 0 {
 		stateIndex, ok := op.stateIndex()
 		si := int32(-1)
 		if ok {
@@ -222,7 +222,7 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 			"notif backlog", len(op.notificationsBacklog),
 		)
 	}
-	if msg%10 == 0 {
+	if msg%2 == 0 {
 		op.takeAction()
 	}
 }

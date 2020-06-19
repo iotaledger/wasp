@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	useTimer        = true
-	timerTickPeriod = 20 * time.Millisecond
+	timerTickPeriod = 100 * time.Millisecond
 )
 
 type committeeObj struct {
@@ -75,7 +74,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 	}
 
 	ret := &committeeObj{
-		chMsg:   make(chan interface{}),
+		chMsg:   make(chan interface{}, 100),
 		address: bootupData.Address,
 		color:   bootupData.Color,
 		peers:   make([]*peering.Peer, 0),
@@ -105,17 +104,6 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 			ret.dispatchMessage(msg)
 		}
 	}()
-
-	if useTimer {
-		go func() {
-			tick := 0
-			for {
-				time.Sleep(timerTickPeriod)
-				ret.ReceiveMessage(committee.TimerTick(tick))
-				tick++
-			}
-		}()
-	}
 
 	return ret
 }

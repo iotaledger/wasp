@@ -187,7 +187,7 @@ func (sm *stateManager) EventPendingBatchMsg(msg committee.PendingBatchMsg) {
 }
 
 func (sm *stateManager) EventTimerMsg(msg committee.TimerTick) {
-	if msg%10 == 0 {
+	if msg%2 == 0 {
 		sm.takeAction()
 	}
 }

@@ -48,11 +48,24 @@ func (c *committeeObj) SetReadyConsensus() {
 func (c *committeeObj) checkReady() bool {
 	if c.isReadyConsensus && c.isReadyStateManager {
 		c.isOpenQueue.Store(true)
+		c.startTimer()
+
 		c.log.Debugf("committee now is fully initialized")
 
 		publisher.Publish("active_committee", c.address.String())
 	}
 	return c.isReadyConsensus && c.isReadyStateManager
+}
+
+func (c *committeeObj) startTimer() {
+	go func() {
+		tick := 0
+		for c.isOpenQueue.Load() {
+			time.Sleep(timerTickPeriod)
+			c.ReceiveMessage(committee.TimerTick(tick))
+			tick++
+		}
+	}()
 }
 
 func (c *committeeObj) Dismiss() {
@@ -95,7 +108,8 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 		select {
 		case c.chMsg <- msg:
 		case <-time.After(500 * time.Millisecond):
-			c.log.Warnf("timeout on ReceiveMessage. message was lost")
+			c.log.Warnf("timeout on ReceiveMessage type '%T'. Will be repeated", msg)
+			go c.ReceiveMessage(msg)
 		}
 	}
 }
