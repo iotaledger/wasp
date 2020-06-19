@@ -29,35 +29,37 @@ To run tests, do the following:
 - run tests using standard Go testing infrastructure. 
 All tests are configured to run on in-memory database and are using mocked Value Tangle on Goshimmer.
 
-The purpose of the integration test `TestSend10Requests0Sec` is to test how nodes are syncing 
-and requests are processed in difficult conditions and at hight TPS. 
-Testing program does not wait for nodes to finish bootup nor to sync, so requests may reach the Wasp nodes
-in any unprepared situation, messages may be lost, nodes may go out of sync (left behind the majority).
-All 10 messages are sent without any delays, essentially all at once. 
-Normally, in real situation Tangle would have to confirm each 
-request transaction before it will reach the Wasp.
+For example, the purpose of the integration test `TestSend10Requests0Sec` is to test how nodes synchronisation 
+and requests processing in difficult conditions and at hight TPS. 
+The testing program does not wait for nodes to finish bootup nor to sync, so requests may reach the Wasp nodes
+in any unprepared situation, messages may be lost, nodes may be left behind by the majority of other nodes (go out of sync).
+All 10 requests are sent without any delays, essentially all at once. 
+In real situation Tangle would have to confirm each request transaction before it will reach the Wasp. 
+So, sending all requests at once creates "high TPS" situation.
 
-The test goes through the following steps:
+The test `TestSend10Requests0Sec` goes through the following steps:
 
 - starts 1 Goshimmer node and 4 Wasp nodes in the background
-- imports distributed private BLS keys of 3 test smart contracts to all 4 Wasp nodes.  
-(Wasp nodes can generate distributed keys itself but for testing purpose and determinism 
-we import pre-generated keys as well as other SC data from file `keys.json`)
-- creates bootup records for all 3 test smart contracts in 4 Wasp nodes
-- creates **origin transaction** for the first smart contract and sends it to the Value Tangle (Goshimeer)
-- activates first test smart contract on Wasp nodes. At this point smart contract becomes active and ready to 
-accept requests. The first testing smart contract runs empty program (which does not update the state variables). 
-However, state transitions occur and each has own timestamp.
-- sends 10 smart contract requests to active test smart contract. 
-Each request is wrapped in separate value transaction and is sent to Goshimmer 
-(to send requests to smart contract Wasp node is not needed).
+- imports distributed private BLS keys of 3 testing smart contracts to all 4 Wasp nodes.  
+Committees of Wasp nodes can generate distributed keys itself but for testing purpose and determinism 
+we import pre-generated keys as well as other SC data from file `keys.json`.
+- creates bootup records for all 3 test smart contracts in all 4 Wasp nodes
+- creates **origin transaction** for one of testing smart contracts and sends it to the Value Tangle (Goshimeer)
+- activates the testing smart contract on the committee of Wasp nodes. 
+- at this point smart contract is active and ready to accept requests. The testing smart contract 
+runs empty program. It does not update the state variables, however state transitions occur: 
+colored smart contract token is moved, request tokens are created and destroyed. 
+Each state has own timestamp, hash and token balance.
+- sends 10 smart contract requests to the active testing smart contract. 
+Each request is wrapped in separate value transaction and is sent to Goshimmer. To send requests to 
+smart contract Wasp node is not needed.
 - All 4 Wasp nodes in the committee process all 10 requests and posts resulting transaction(s)
 to the Value Tangle (Goshimmer). Depending on how it goes, all 10 requests may be processed in 1 **batch**. 
 In this case 1 state transaction will be sent to Goshimmer. 
-But sometimes it may happen that 10 requests will be split in several batches and in this case 
-the test will result in several state transitions and several state transactions sent to Goshimmer. 
+Sometimes may happen that 10 requests will be split into several batches. In this case 
+the test will result in several state transitions and several state transactions will be sent to Goshimmer. 
  
-To run it:  
+To run the test:  
 
 `cd ./tools/cluster/tests/wasptest`
 
