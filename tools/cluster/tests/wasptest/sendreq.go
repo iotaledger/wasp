@@ -1,7 +1,6 @@
 package wasptest
 
 import (
-	"fmt"
 	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -20,7 +19,7 @@ func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n 
 		if err != nil {
 			return err
 		}
-		fmt.Printf("[cluster] posted request txid %s", tx.ID().String())
+		//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
 		time.Sleep(wait)
 	}
 	return nil

@@ -493,11 +493,18 @@ func (cluster *Cluster) Report() bool {
 			res, _ := counters[t]
 			exp, _ := cluster.expectations[t]
 			e := "-"
+			f := ""
 			if exp >= 0 {
 				e = strconv.Itoa(exp)
 				pass = pass && res == exp
+				if res == exp {
+					f = "ok"
+				} else {
+					f = "fail"
+
+				}
 			}
-			fmt.Printf("          %s: %d (%s)\n", t, res, e)
+			fmt.Printf("          %s: %d (%s) %s\n", t, res, e, f)
 		}
 	}
 	fmt.Println()

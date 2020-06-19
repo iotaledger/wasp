@@ -68,8 +68,8 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 
 		if sm.solidVariableState != nil {
-			sm.log.Infof("TRANSITION TO THE NEXT STATE #%d --> #%d. State hash: %s, state txid: %s, batch essence: %s",
-				sm.solidVariableState.StateIndex(), pending.nextVariableState.StateIndex(),
+			sm.log.Infof("STATE TRANSITION TO #%d. State hash: %s, state txid: %s, batch essence: %s",
+				pending.nextVariableState.StateIndex(),
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		} else {
 			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",

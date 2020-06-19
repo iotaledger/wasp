@@ -48,8 +48,8 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 
 func (op *operator) storeNotificationIfNeeded(msg *committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
-	if stateDefined && msg.StateIndex <= stateIndex {
-		// don't save from the current state and earlier
+	if stateDefined && msg.StateIndex < stateIndex {
+		// don't save from earlier. The current state saved only for tracking
 		return
 	}
 	op.notificationsBacklog = append(op.notificationsBacklog, msg)
@@ -93,7 +93,7 @@ func (op *operator) adjustNotifications() {
 	// clean notification backlog from messages from current and and past states
 	newBacklog := op.notificationsBacklog[:0] // new slice, same underlying array!
 	for _, msg := range op.notificationsBacklog {
-		if msg.StateIndex <= stateIndex {
+		if msg.StateIndex < stateIndex {
 			continue
 		}
 		newBacklog = append(newBacklog, msg)

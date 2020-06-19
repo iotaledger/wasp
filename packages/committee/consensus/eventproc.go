@@ -216,7 +216,7 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 		if ok {
 			si = int32(stateIndex)
 		}
-		op.log.Debugw("timer tick",
+		op.log.Infow("timer tick",
 			"#", msg,
 			"state index", si,
 			"req backlog", len(op.requests),

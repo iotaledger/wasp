@@ -23,9 +23,9 @@ func (op *operator) rotateLeaderIfNeeded() {
 	if !op.synchronized {
 		return
 	}
-	if op.iAmCurrentLeader() {
-		return
-	}
+	//if op.iAmCurrentLeader() {
+	//	return
+	//}
 	if !op.leaderRotationDeadlineSet {
 		return
 	}
@@ -34,7 +34,7 @@ func (op *operator) rotateLeaderIfNeeded() {
 	}
 	prevlead, _ := op.currentLeader()
 	leader := op.moveToNextLeader()
-	op.log.Debugf("LEADER ROTATED #%d --> #%d", prevlead, leader)
+	op.log.Infof("LEADER ROTATED #%d --> #%d", prevlead, leader)
 	op.sendRequestNotificationsToLeader(nil)
 }
 

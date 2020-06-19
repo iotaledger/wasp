@@ -30,7 +30,7 @@ func TestSend1Request(t *testing.T) {
 	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1, 0)
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
+	wasps.CollectMessages(60 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()

@@ -40,19 +40,17 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 			ret = op.peerPermutation.Current()
 			break
 		}
-		op.log.Debugf("peer #%d is dead", op.peerPermutation.Current())
+		op.log.Infof("peer #%d is dead", op.peerPermutation.Current())
 		op.peerPermutation.Next()
 	}
 	return ret
 }
 
 func (op *operator) setLeaderRotationDeadline() {
-	if len(op.requestMsgList()) == 0 || op.iAmCurrentLeader() {
+	if len(op.requestMsgList()) == 0 {
 		op.leaderRotationDeadlineSet = false
 		return
 	}
-	if !op.leaderRotationDeadlineSet {
-		op.leaderRotationDeadlineSet = true
-		op.leaderRotationDeadline = time.Now().Add(leaderRotationPeriod)
-	}
+	op.leaderRotationDeadlineSet = true
+	op.leaderRotationDeadline = time.Now().Add(leaderRotationPeriod)
 }
