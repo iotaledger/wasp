@@ -48,9 +48,9 @@ we import pre-generated keys as well as other SC data from file `keys.json`)
 - activates first test smart contract on Wasp nodes. At this point smart contract becomes active and ready to 
 accept requests. The first testing smart contract runs empty program (which does not update the state variables). 
 However, state transitions occur and each has own timestamp.
-- sends 10 smart contract requests to first test smart contract. 
-Each request is contained in separate value transaction and is sent to Goshimmer. 
-(to send requests to smart contract Wasp node is no needed)
+- sends 10 smart contract requests to active test smart contract. 
+Each request is wrapped in separate value transaction and is sent to Goshimmer 
+(to send requests to smart contract Wasp node is not needed).
 - All 4 Wasp nodes in the committee process all 10 requests and posts resulting transaction(s)
 to the Value Tangle (Goshimmer). Depending on how it goes, all 10 requests may be processed in 1 **batch**. 
 In this case 1 state transaction will be sent to Goshimmer. 
