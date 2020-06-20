@@ -9,6 +9,7 @@ const (
 
 	MsgTypeHeartbeat = byte(0)
 	MsgTypeHandshake = byte(1)
+	MsgTypeMsgChunk  = byte(2)
 
 	restartAfter = 1 * time.Second
 	dialTimeout  = 1 * time.Second

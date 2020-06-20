@@ -3,7 +3,9 @@ package peering
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"github.com/iotaledger/hive.go/backoff"
+	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"go.uber.org/atomic"
 	"net"
 	"sync"
@@ -154,11 +156,31 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 		return errors.New("reserved message code")
 	}
 	data, ts := encodeMessage(msg)
+
+	peer.lastHeartbeatSent = ts
+
+	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-ChunkMessageOverhead)
+
 	peer.RLock()
 	defer peer.RUnlock()
 
-	peer.lastHeartbeatSent = ts
-	return peer.sendData(data)
+	if !chopped {
+		return peer.sendData(data)
+	}
+	return peer.sendChunks(choppedData)
+}
+
+func (peer *Peer) sendChunks(chopped [][]byte) error {
+	for _, piece := range chopped {
+		d, _ := encodeMessage(&PeerMessage{
+			MsgType: MsgTypeMsgChunk,
+			MsgData: piece,
+		})
+		if err := peer.sendData(d); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // sends same msg to all peers in the slice which are not nil
@@ -169,15 +191,23 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 	}
 	// timestamped here, once
 	data, ts := encodeMessage(msg)
+	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-ChunkMessageOverhead)
+
 	ret := uint16(0)
 	for _, peer := range peers {
 		if peer == nil {
 			continue
 		}
 		peer.RLock()
-		peer.lastHeartbeatSent = ts
-		if err := peer.sendData(data); err == nil {
-			ret++
+		if !chopped {
+			peer.lastHeartbeatSent = ts
+			if err := peer.sendData(data); err == nil {
+				ret++
+			}
+		} else {
+			if err := peer.sendChunks(choppedData); err == nil {
+				ret++
+			}
 		}
 		peer.RUnlock()
 	}

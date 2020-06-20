@@ -40,7 +40,7 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 			ret = op.peerPermutation.Current()
 			break
 		}
-		op.log.Infof("peer #%d is dead", op.peerPermutation.Current())
+		op.log.Debugf("peer #%d is dead", op.peerPermutation.Current())
 		op.peerPermutation.Next()
 	}
 	return ret

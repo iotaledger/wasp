@@ -17,7 +17,9 @@ import (
 // Address 32 bytes
 // SenderIndex 2 bytes
 // MsgData variable bytes to the end
-//  -- otherwise panicL wrong MsgType
+//  -- otherwise panic wrong MsgType
+
+const ChunkMessageOverhead = 8 + 1
 
 // always puts timestamp into first 8 bytes and 1 byte msg type
 func encodeMessage(msg *PeerMessage) ([]byte, int64) {
@@ -34,6 +36,10 @@ func encodeMessage(msg *PeerMessage) ([]byte, int64) {
 
 	case msg.MsgType == MsgTypeHandshake:
 		buf.WriteByte(MsgTypeHandshake)
+		buf.Write(msg.MsgData)
+
+	case msg.MsgType == MsgTypeMsgChunk:
+		buf.WriteByte(MsgTypeMsgChunk)
 		buf.Write(msg.MsgData)
 
 	case msg.MsgType >= FirstCommitteeMsgCode:
@@ -73,6 +79,10 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 		ret.MsgData = rdr.Bytes()
 		return ret, nil
 
+	case ret.MsgType == MsgTypeMsgChunk:
+		ret.MsgData = rdr.Bytes()
+		return ret, nil
+
 	case ret.MsgType >= FirstCommitteeMsgCode:
 		// committee message
 		if err = util.ReadAddress(rdr, &ret.Address); err != nil {
@@ -86,5 +96,5 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 		}
 		return ret, nil
 	}
-	return nil, fmt.Errorf("wrong message type %d", ret.MsgType)
+	return nil, fmt.Errorf("wrong message type = %d", ret.MsgType)
 }

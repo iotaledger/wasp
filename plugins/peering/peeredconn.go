@@ -1,6 +1,7 @@
 package peering
 
 import (
+	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"net"
@@ -41,9 +42,19 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 func (bconn *peeredConnection) receiveData(data []byte) {
 	msg, err := decodeMessage(data)
 	if err != nil {
-		log.Error("decodeMessage: %v", err)
+		log.Errorf("decodeMessage: %v", err)
 		bconn.peer.closeConn()
 		return
+	}
+	if msg.MsgType == MsgTypeMsgChunk {
+		finalMsg, err := chopper.IncomingChunk(msg.MsgData, buffconn.MaxMessageSize-ChunkMessageOverhead)
+		if err != nil {
+			log.Errorf("decodeMessage: %v", err)
+			return
+		}
+		if finalMsg != nil {
+			bconn.receiveData(finalMsg)
+		}
 	}
 	if bconn.peer != nil {
 		// it is peered but maybe not handshaked yet (can only be outbound)

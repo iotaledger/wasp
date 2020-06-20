@@ -2,7 +2,9 @@ package nodeconn
 
 import (
 	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"time"
 )
 
@@ -26,6 +28,16 @@ func msgDataToEvent(data []byte) {
 	//log.Debugf("received msg type %T data len = %d", msg, len(data))
 
 	switch msgt := msg.(type) {
+	case *waspconn.WaspMsgChunk:
+		finalData, err := chopper.IncomingChunk(msgt.Data, buffconn.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
+		if err != nil {
+			log.Errorf("receiving message chunk: %v", err)
+			return
+		}
+		if finalData != nil {
+			msgDataToEvent(finalData)
+		}
+
 	case *waspconn.WaspPingMsg:
 		roundtrip := time.Since(time.Unix(0, msgt.Timestamp))
 		log.Infof("PING %d response from node. Roundtrip %v", msgt.Id, roundtrip)

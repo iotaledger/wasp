@@ -4,6 +4,8 @@ package nodeconn
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
@@ -98,14 +100,31 @@ func retryNodeConnect() {
 }
 
 func SendDataToNode(data []byte) error {
+	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
+
 	bconnMutex.RLock()
 	defer bconnMutex.RUnlock()
 
+	if bconn == nil {
+		return fmt.Errorf("SendDataToNode: not connected to node")
+	}
 	var err error
-	if bconn != nil {
+	if !chopped {
 		_, err = bconn.Write(data)
 	} else {
-		return fmt.Errorf("SendDataToNode: not connected to node")
+		for _, piece := range choppedData {
+			var d []byte
+			d, err = waspconn.EncodeMsg(&waspconn.WaspMsgChunk{
+				Data: piece,
+			})
+			if err != nil {
+				break
+			}
+			_, err = bconn.Write(d)
+			if err != nil {
+				break
+			}
+		}
 	}
 	return err
 }
