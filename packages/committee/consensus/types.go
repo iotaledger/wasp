@@ -21,7 +21,7 @@ type operator struct {
 	committee committee.Committee
 	dkshare   *tcrypto.DKShare
 	//state
-	variableState state.VariableState
+	variableState state.VirtualState
 	stateTx       *sctransaction.Transaction
 	balances      map[valuetransaction.ID][]*balance.Balance
 	synchronized  bool
@@ -141,22 +141,6 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 
 func (op *operator) getRewardAddress() address.Address {
 	return registry.GetRewardAddress(op.committee.Address())
-}
-
-func (op *operator) getOwnerAddress() (ret address.Address) {
-	if _, ok := op.stateIndex(); !ok {
-		return address.Address{}
-	}
-	b, ok := op.variableState.Variables().Get(origin.VarNameOwnerAddress)
-	if !ok {
-		return address.Address{}
-	}
-	ret, _, err := address.FromBytes(b)
-	if err != nil {
-		op.log.Errorf("wrong owner address string")
-		return address.Address{}
-	}
-	return ret
 }
 
 func (op *operator) getMinimumReward() int64 {

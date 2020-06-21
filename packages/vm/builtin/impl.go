@@ -11,6 +11,7 @@ type builtinProcessor map[sctransaction.RequestCode]builtinEntryPoint
 type builtinEntryPoint func(ctx vm.Sandbox)
 
 var Processor = builtinProcessor{
+	RequestCodeInit:             initRequest,
 	RequestCodeNOP:              nopRequest,
 	RequestCodeSetMinimumReward: setMinimumRewardRequest,
 	RequestCodeSetDescription:   setDescriptionRequest,
@@ -29,31 +30,54 @@ func (ep builtinEntryPoint) Run(ctx vm.Sandbox) {
 }
 
 func stub(ctx vm.Sandbox, text string) {
-	reqId := ctx.GetRequestID()
+	reqId := ctx.Request().ID()
 	ctx.GetLog().Debugw("run builtInProcessor",
 		"text", text,
-		"request code", ctx.GetRequestCode(),
+		"request code", ctx.Request().Code(),
 		"addr", ctx.GetAddress().String(),
 		"ts", ctx.GetTimestamp(),
-		"state index", ctx.GetStateIndex(),
+		"state index", ctx.State().Index(),
 		"req", reqId.String(),
 	)
 }
 
 func nopRequest(ctx vm.Sandbox) {
-	stub(ctx, "")
+	stub(ctx, "nopRequest")
+}
+
+// request initializes SC state, must be called in 0 state (usually the origin transaction)
+func initRequest(ctx vm.Sandbox) {
+	stub(ctx, "initRequest")
+	if ctx.State().Index() != 0 {
+		// call not in the 0 state is ignored
+		ctx.Rollback()
+		return
+	}
+	ownerAddress, ok := ctx.Request().GetString(origin.VarNameOwnerAddress)
+	if !ok || ownerAddress == "" {
+		ctx.Rollback()
+		return
+	}
+	ctx.State().SetString(origin.VarNameOwnerAddress, ownerAddress)
+
+	progHashStr, ok := ctx.Request().GetString(origin.VarNameProgramHash)
+	if !ok || progHashStr == "" {
+		// program hash not set, smart contract will be able to process only built in requests
+		return
+	}
+	ctx.State().SetString(origin.VarNameProgramHash, progHashStr)
 }
 
 func setMinimumRewardRequest(ctx vm.Sandbox) {
 	stub(ctx, "setMinimumRewardRequest")
-	if v, ok := ctx.GetInt64RequestParam("value"); ok && v >= 0 {
-		ctx.SetInt64(origin.VarNameMinimumReward, v)
+	if v, ok := ctx.Request().GetInt64("value"); ok && v >= 0 {
+		ctx.State().SetInt64(origin.VarNameMinimumReward, v)
 	}
 }
 
 func setDescriptionRequest(ctx vm.Sandbox) {
 	stub(ctx, "setDescriptionRequest")
-	if v, ok := ctx.GetStringRequestParam("value"); ok && v != "" {
-		ctx.SetString("description", v)
+	if v, ok := ctx.Request().GetString("value"); ok && v != "" {
+		ctx.State().SetString("description", v)
 	}
 }

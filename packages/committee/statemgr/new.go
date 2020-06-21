@@ -33,7 +33,7 @@ type stateManager struct {
 
 	// last variable state stored in the database
 	// it may be nil at bootstrap when origin variable state is calculated
-	solidVariableState state.VariableState
+	solidVariableState state.VirtualState
 
 	// largest state index evidenced by other messages. If this index is more than 1 step ahead
 	// of the solid variable state, it means the state of the smart contract in the current node
@@ -64,7 +64,7 @@ type pendingBatch struct {
 	// batch of state updates, not validated yet
 	batch state.Batch
 	// resulting variable state after applied the batch to the solidVariableState
-	nextVariableState state.VariableState
+	nextVariableState state.VirtualState
 	// state transaction request deadline. For committed batches only
 	stateTransactionRequestDeadline time.Time
 }
@@ -104,7 +104,8 @@ func (sm *stateManager) initLoadState() {
 		)
 	} else {
 		// pre-origin state
-		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN")
+		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
+		sm.addPendingBatch(state.MustNewOriginBatch(sm.committee.Color()))
 	}
 
 	// open msg queue for the committee

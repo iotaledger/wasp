@@ -39,6 +39,15 @@ func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	}
 }
 
+func (req *RequestBlock) Clone() *RequestBlock {
+	if req == nil {
+		return nil
+	}
+	ret := NewRequestBlock(req.address, req.reqCode)
+	ret.params = variables.New(req.params)
+	return ret
+}
+
 func (req *RequestBlock) Address() address.Address {
 	return req.address
 }

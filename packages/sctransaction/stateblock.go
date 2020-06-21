@@ -42,6 +42,18 @@ func NewStateBlock(par NewStateBlockParams) *StateBlock {
 	}
 }
 
+func (sb *StateBlock) Clone() *StateBlock {
+	if sb == nil {
+		return nil
+	}
+	return NewStateBlock(NewStateBlockParams{
+		Color:      sb.color,
+		StateIndex: sb.stateIndex,
+		StateHash:  sb.variableStateHash,
+		Timestamp:  sb.timestamp,
+	})
+}
+
 func (sb *StateBlock) Color() balance.Color {
 	return sb.color
 }

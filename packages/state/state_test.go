@@ -12,12 +12,12 @@ import (
 )
 
 func TestVariableStateBasic(t *testing.T) {
-	vs1 := NewVariableState(nil)
+	vs1 := NewVirtualState(nil)
 	h1 := vs1.Hash()
 	assert.Equal(t, h1 == *hashing.NilHash, true)
 	assert.Equal(t, vs1.StateIndex(), uint32(0))
 
-	vs2 := NewVariableState(vs1)
+	vs2 := NewVirtualState(vs1)
 	h2 := vs2.Hash()
 	assert.EqualValues(t, h1, h2)
 	assert.EqualValues(t, vs1.StateIndex(), vs1.StateIndex())
@@ -32,8 +32,8 @@ func TestVariableStateBasic(t *testing.T) {
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 
-	vs3 := NewVariableState(vs1)
-	vs4 := NewVariableState(vs2)
+	vs3 := NewVirtualState(vs1)
+	vs4 := NewVirtualState(vs2)
 
 	assert.EqualValues(t, vs3.Hash(), vs4.Hash())
 }
@@ -116,8 +116,8 @@ func TestApply(t *testing.T) {
 
 	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 
-	vs1 := NewVariableState(nil)
-	vs2 := NewVariableState(nil)
+	vs1 := NewVirtualState(nil)
+	vs2 := NewVirtualState(nil)
 
 	err = vs1.ApplyBatch(batch1)
 	assert.NoError(t, err)
@@ -136,8 +136,8 @@ func TestApply2(t *testing.T) {
 	su2 := NewStateUpdate(&reqid2)
 	su3 := NewStateUpdate(&reqid3)
 
-	vs1 := NewVariableState(nil)
-	vs2 := NewVariableState(nil)
+	vs1 := NewVirtualState(nil)
+	vs2 := NewVirtualState(nil)
 
 	batch23, err := NewBatch([]StateUpdate{su2, su3})
 	assert.NoError(t, err)
@@ -169,8 +169,8 @@ func TestApply3(t *testing.T) {
 	su1 := NewStateUpdate(&reqid1)
 	su2 := NewStateUpdate(&reqid2)
 
-	vs1 := NewVariableState(nil)
-	vs2 := NewVariableState(nil)
+	vs1 := NewVirtualState(nil)
+	vs2 := NewVirtualState(nil)
 
 	vs1.ApplyStateUpdate(su1)
 	vs1.ApplyStateUpdate(su2)

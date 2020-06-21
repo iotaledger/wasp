@@ -213,7 +213,7 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 			}
 		}
 	}
-	varStateToApprove := state.NewVariableState(sm.solidVariableState) // clone
+	varStateToApprove := state.NewVirtualState(sm.solidVariableState) // clone
 
 	if sm.solidStateValid || sm.solidVariableState == nil {
 		// we need to approve the solidVariableState.

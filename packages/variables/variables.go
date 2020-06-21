@@ -30,6 +30,8 @@ type Variables interface {
 	Mutations() MutationSequence
 
 	// TODO: move to a separate interface
+	// proposal: to wrap to another interface in a way, that this interface has a call which
+	// returns wrapper interface
 	SetString(key string, value string)
 	GetString(key string) (string, bool)
 	SetInt64(key string, value int64)

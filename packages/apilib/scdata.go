@@ -16,6 +16,7 @@ import (
 func PutSCData(host string, bd registry.BootupData) error {
 	data, err := json.Marshal(&admapi.BootupDataJsonable{
 		Address:        bd.Address.String(),
+		OwnerAddress:   bd.OwnerAddress.String(),
 		Color:          bd.Color.String(),
 		CommitteeNodes: bd.CommitteeNodes,
 		AccessNodes:    bd.AccessNodes,

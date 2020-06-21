@@ -218,7 +218,7 @@ func (op *operator) filterFullRequestTokenConsumers(reqs []*request) []*request 
 
 // filterNotReadyYet checks all ids and returns list of corresponding request records
 // return empty list if not all requests in the list can be processed by the node atm
-// note, that filter out criteria are temporary, so the same request may bast next tyme
+// note, that filter out criteria are temporary, so the same request may ready next time
 func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 	ret := reqs[:0] // same underlying array, different slice
 
@@ -229,7 +229,7 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 		}
 		reqBlock := req.reqTx.Requests()[req.reqId.Index()]
 		if reqBlock.RequestCode().IsUserDefined() && !op.processorReady {
-			op.log.Debugf("request %s can't be processed: processro not ready", req.reqId.Short())
+			op.log.Debugf("request %s can't be processed: processor not ready", req.reqId.Short())
 		}
 		ret = append(ret, req)
 	}

@@ -128,13 +128,13 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 		MinimumReward: ctx.MinimumReward,
 		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,
-		VariableState: state.NewVariableState(ctx.VariableState), // clone
+		VariableState: state.NewVirtualState(ctx.VariableState), // clone
 		Log:           ctx.Log,
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
 	for _, reqRef := range ctx.Requests {
 
-		vmctx.Request = reqRef
+		vmctx.RequestRef = reqRef
 		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
 
 		runTheRequest(vmctx)
@@ -165,7 +165,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
 
 	// create final transaction
-	vsClone := state.NewVariableState(ctx.VariableState)
+	vsClone := state.NewVirtualState(ctx.VariableState)
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
 		ctx.Log.Errorf("RunVM: %v", err)
 		return

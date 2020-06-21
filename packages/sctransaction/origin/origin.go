@@ -2,6 +2,8 @@ package origin
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtin"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -9,8 +11,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/variables"
 )
 
 const (
@@ -19,38 +19,13 @@ const (
 	VarNameMinimumReward = "$minreward$"
 )
 
-type NewOriginParams struct {
-	Address              address.Address
-	OwnerSignatureScheme signaturescheme.SignatureScheme
-	ProgramHash          hashing.HashValue
-	Variables            variables.Variables
-}
-
 type NewOriginTransactionParams struct {
 	Address              address.Address
 	OwnerSignatureScheme signaturescheme.SignatureScheme
+	ProgramHash          hashing.HashValue
 	Input                valuetransaction.OutputID
 	InputBalances        []*balance.Balance
 	InputColor           balance.Color // default is ColorIOTA
-	StateHash            hashing.HashValue
-}
-
-// content of the origin variable state. It is not linked to the origin transaction yet
-func NewOriginBatch(par NewOriginParams) state.Batch {
-	stateUpd := state.NewStateUpdate(nil)
-
-	stateUpd.Mutations().AddAll(par.Variables.Mutations())
-	stateUpd.Mutations().AddAll(variables.FromMap(map[string][]byte{
-		VarNameOwnerAddress: par.OwnerSignatureScheme.Address().Bytes(),
-		VarNameProgramHash:  par.ProgramHash.Bytes(),
-	}).Mutations())
-
-	ret, err := state.NewBatch([]state.StateUpdate{stateUpd})
-	if err != nil {
-		panic(err)
-	}
-
-	return ret
 }
 
 func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transaction, error) {
@@ -80,12 +55,26 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	for _, remb := range reminderBalances {
 		txb.AddBalanceToOutput(par.Input.Address(), remb)
 	}
+
+	originState := state.NewVirtualState(nil)
+	if err := originState.ApplyBatch(state.MustNewOriginBatch(nil)); err != nil {
+		return nil, err
+	}
+
 	txb.AddStateBlock(sctransaction.NewStateBlockParams{
 		Color:      balance.ColorNew,
 		StateIndex: 0,
-		StateHash:  par.StateHash,
-		Timestamp:  0, // <<<< to have deterministic origin tx hash
+		StateHash:  originState.Hash(), // hash of the origin state does not depend on color
+		Timestamp:  0,                  // <<<< to have deterministic origin tx hash
 	})
+
+	// add init request
+	initRequest := sctransaction.NewRequestBlock(par.Address, builtin.RequestCodeInit)
+	initRequest.Params().SetString(VarNameOwnerAddress, par.OwnerSignatureScheme.Address().String())
+	if par.ProgramHash != *hashing.NilHash {
+		initRequest.Params().SetString(VarNameProgramHash, par.ProgramHash.String())
+	}
+	txb.AddRequestBlock(initRequest)
 
 	ret, err := txb.Finalize()
 	if err != nil {

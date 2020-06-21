@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -34,6 +35,19 @@ func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
 	return &batch{
 		stateUpdates: stateUpdates,
 	}, nil
+}
+
+// batch with empty state update and nil state hash
+func MustNewOriginBatch(color *balance.Color) Batch {
+	ret, err := NewBatch([]StateUpdate{NewStateUpdate(nil)})
+	if err != nil {
+		log.Panic(err)
+	}
+	var col balance.Color
+	if color != nil {
+		col = *color
+	}
+	return ret.WithStateTransaction((valuetransaction.ID)(col))
 }
 
 func (b *batch) String() string {

@@ -10,15 +10,25 @@ import (
 type Sandbox interface {
 	GetAddress() address.Address
 	GetTimestamp() int64
-	GetStateIndex() uint32
-	GetRequestID() sctransaction.RequestId
-	GetRequestCode() sctransaction.RequestCode
+	Rollback()
+	Request() Request
+	State() State
 	GetLog() *logger.Logger
-	// request Getters
-	GetInt64RequestParam(name string) (int64, bool)
-	GetStringRequestParam(name string) (string, bool)
-	// state Getters
-	// state setters
+}
+
+// access to request parameters
+type Request interface {
+	ID() sctransaction.RequestId
+	Code() sctransaction.RequestCode
+	GetInt64(name string) (int64, bool)
+	GetString(name string) (string, bool)
+}
+
+type State interface {
+	Index() uint32
+	// getters
+	// TODO
+	// setters
 	SetInt64(name string, value int64)
 	SetString(name string, value string)
 }

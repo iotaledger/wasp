@@ -22,7 +22,7 @@ func TestReadWrite(t *testing.T) {
 	scAddr, err := address.FromBase58(scAddrStr)
 	assert.NoError(t, err)
 
-	tx, _, _ := CreateOriginDataUtxodb(origin.NewOriginParams{
+	tx, _, _ := CreateOriginUtxodb(origin.NewOriginParams{
 		Address:              scAddr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(1)),
 		ProgramHash:          *hashing.HashStrings(dscr),

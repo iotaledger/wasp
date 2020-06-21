@@ -174,7 +174,7 @@ func (op *operator) checkQuorum() bool {
 }
 
 // sets new state transaction and initializes respective variables
-func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState, synchronized bool) {
+func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
 	op.variableState = variableState
 	op.synchronized = synchronized

@@ -59,6 +59,10 @@ func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
 	return ret, nil
 }
 
+func (txb *TransactionBuilder) Clone() *TransactionBuilder {
+	panic("implement me")
+}
+
 func (txb *TransactionBuilder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
 	// create and transfer request token to the target SC address
 	if err := txb.NewColor(reqBlk.Address(), balance.ColorIOTA, 1); err != nil {

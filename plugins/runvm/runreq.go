@@ -22,8 +22,8 @@ func runTheRequest(ctx *vm.VMContext) {
 		return
 	}
 
-	reqBlock := ctx.Request.RequestBlock()
-	if reqBlock.RequestCode().IsProtected() && !ctx.Request.IsAuthorised(&ctx.OwnerAddress) {
+	reqBlock := ctx.RequestRef.RequestBlock()
+	if reqBlock.RequestCode().IsProtected() && !ctx.RequestRef.IsAuthorised(&ctx.OwnerAddress) {
 		// if protected call is not authorised by the containing transaction, do nothing
 		// the result will be taking all iotas and no effect
 		// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
@@ -36,7 +36,7 @@ func runTheRequest(ctx *vm.VMContext) {
 		if !ok {
 			return
 		}
-		entryPoint.Run(ctx)
+		entryPoint.Run(vm.NewSandbox(ctx))
 		return
 	}
 
@@ -50,19 +50,19 @@ func runTheRequest(ctx *vm.VMContext) {
 	if !ok {
 		return
 	}
-	entryPoint.Run(ctx)
+	entryPoint.Run(vm.NewSandbox(ctx))
 }
 
 func mustHandleRequestToken(ctx *vm.VMContext) {
 	// destroy token corresponding to request
 	// NOTE: it is assumed here that balances contain all necessary request token balances
 	// it is checked in the dispatcher.dispatchAddressUpdate
-	err := ctx.TxBuilder.EraseColor(ctx.Address, (balance.Color)(ctx.Request.Tx.ID()), 1)
+	err := ctx.TxBuilder.EraseColor(ctx.Address, (balance.Color)(ctx.RequestRef.Tx.ID()), 1)
 	if err != nil {
 		// not enough balance for requests tokens
 		// major inconsistency, it must had been checked before
 		ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
-			ctx.Request.RequestId().String(), err)
+			ctx.RequestRef.RequestId().String(), err)
 	}
 }
 
@@ -76,7 +76,7 @@ func handleRewards(ctx *vm.VMContext) bool {
 		return true
 	}
 
-	totalIotaOutput := sctransaction.BalanceOfOutputToColor(ctx.Request.Tx, ctx.Address, balance.ColorIOTA)
+	totalIotaOutput := sctransaction.BalanceOfOutputToColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
 	var err error
 
 	var proceed bool

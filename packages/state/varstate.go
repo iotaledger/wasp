@@ -21,8 +21,8 @@ type variableState struct {
 	vars       variables.Variables
 }
 
-// VariableState new empty or clone
-func NewVariableState(varState VariableState) VariableState {
+// VirtualState new empty or clone
+func NewVirtualState(varState VirtualState) VirtualState {
 	if varState == nil {
 		return &variableState{
 			vars:  variables.New(nil),
@@ -179,7 +179,7 @@ func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
 	return util.StoreSetToDb(db, keys, values)
 }
 
-func LoadSolidState(addr *address.Address) (VariableState, Batch, bool, error) {
+func LoadSolidState(addr *address.Address) (VirtualState, Batch, bool, error) {
 	db := database.GetPartition(addr)
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
@@ -196,7 +196,7 @@ func LoadSolidState(addr *address.Address) (VariableState, Batch, bool, error) {
 		return nil, nil, false, err
 	}
 
-	varState := NewVariableState(nil).(*variableState)
+	varState := NewVirtualState(nil).(*variableState)
 	if err = varState.Read(bytes.NewReader(values[0])); err != nil {
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
