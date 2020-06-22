@@ -1,55 +1,79 @@
 package origin
 
 import (
+	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 type NewOriginTransactionParams struct {
 	Address              address.Address
 	OwnerSignatureScheme signaturescheme.SignatureScheme
+	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
 	ProgramHash          hashing.HashValue
-	Input                valuetransaction.OutputID
-	InputBalances        []*balance.Balance
 	InputColor           balance.Color // default is ColorIOTA
 }
 
 func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transaction, error) {
-	reminderBalances := make([]*balance.Balance, 0, len(par.InputBalances))
-	hasColor := false
-	for _, bal := range par.InputBalances {
-		if bal.Color() == par.InputColor {
-			if bal.Value() > 1 {
-				reminderBalances = append(reminderBalances, balance.New(par.InputColor, bal.Value()-1))
-			}
-			hasColor = true
-		} else {
-			reminderBalances = append(reminderBalances, bal)
-		}
+	// need 2 tokens: one for SC token, another for init request
+	tokens := int64(2)
+	outs := util.SelectOutputsForAmount(par.AllInputs, balance.ColorIOTA, tokens) // must be deterministic!
+	if len(outs) == 0 {
+		return nil, errors.New("inconsistency: not enough outputs for 2 tokens")
 	}
-	if !hasColor {
-		return nil, fmt.Errorf("wrong input color")
-	}
+
+	fmt.Printf("++++++++++++++++ \n%+v\n", outs)
+
+	byCol, total := util.BalancesOfInputAddressByColor(par.OwnerSignatureScheme.Address(), outs)
+	fmt.Printf("++++++++++++++++ \n%+v\n", byCol)
+
 	txb := sctransaction.NewTransactionBuilder()
 
-	if err := txb.AddInputs(par.Input); err != nil {
+	txb.AddBalanceToOutput(par.Address, balance.New(balance.ColorNew, tokens))
+
+	tokensRem := tokens
+	reminderBalances := make([]*balance.Balance, 0, len(outs))
+	reminderTotal := int64(0)
+	for col, b := range byCol {
+		if col == par.InputColor {
+			if b > tokensRem {
+				reminderBalances = append(reminderBalances, balance.New(par.InputColor, b-tokens))
+				reminderTotal += b - tokens
+				tokensRem = 0
+			} else {
+				tokensRem -= b
+			}
+		} else {
+			reminderBalances = append(reminderBalances, balance.New(col, b))
+			reminderTotal += b
+		}
+	}
+	if reminderTotal+tokens != total {
+		panic("reminderTotal + tokens != total")
+	}
+
+	// reminder outputs if any
+
+	for _, remb := range reminderBalances {
+		txb.AddBalanceToOutput(par.Address, remb)
+	}
+	oids := make([]valuetransaction.OutputID, 0, len(outs))
+	for oid := range outs {
+		oids = append(oids, oid)
+	}
+	if err := txb.AddInputs(oids...); err != nil {
 		return nil, err
 	}
 
-	// adding 2 iotas: one for SC token, another for the init request
-	txb.AddBalanceToOutput(par.Address, balance.New(balance.ColorNew, 2))
-	// reminder outputs if any
-	for _, remb := range reminderBalances {
-		txb.AddBalanceToOutput(par.Input.Address(), remb)
-	}
+	// adding 2 tokens: one for SC token, another for the init request
 
 	originState := state.NewVirtualState(nil)
 	if err := originState.ApplyBatch(state.MustNewOriginBatch(nil)); err != nil {

@@ -12,6 +12,7 @@ import (
 
 // object with interface to build SC transaction and value transaction within it
 // object panics if attempted to modify structure after finalization
+// Does not handle reminders
 type TransactionBuilder struct {
 	inputs        *valuetransaction.Inputs
 	outputs       map[address.Address]map[balance.Color]int64

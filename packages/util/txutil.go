@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,9 +12,9 @@ import (
 
 // SelectOutputsForAmount selects outputs out of given outputs just enough to transfer the amount
 // outputs are selected in the descending order of balances with specified color
-// the logic is to use small inputs first
+// the logic is to use bigger inputs first
 // returns nil if outputs are not enough for the amount
-// the set of resulting outputs must be DETERMINISTIC, despite map input and output
+// the set of resulting outputs must be DETERMINISTIC, despite map in input and output
 func SelectOutputsForAmount(outputs map[valuetransaction.OutputID][]*balance.Balance, color balance.Color, amount int64) map[valuetransaction.OutputID][]*balance.Balance {
 	oids := make([]valuetransaction.OutputID, 0, len(outputs))
 	for k := range outputs {
@@ -94,6 +95,26 @@ func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balan
 		}
 	}
 	return ret, total
+}
+
+func BalancesOfInputAddressByColor(addr address.Address, inputs map[valuetransaction.OutputID][]*balance.Balance) (map[balance.Color]int64, int64) {
+	ret := make(map[balance.Color]int64)
+	var retTotal int64
+
+	for oid, bals := range inputs {
+		if oid.Address() != addr {
+			continue
+		}
+		for _, b := range bals {
+			retTotal += b.Value()
+			col := b.Color()
+			if _, ok := ret[col]; !ok {
+				ret[col] = 0
+			}
+			ret[col] += b.Value()
+		}
+	}
+	return ret, retTotal
 }
 
 func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {

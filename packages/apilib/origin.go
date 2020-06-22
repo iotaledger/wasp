@@ -1,7 +1,6 @@
 package apilib
 
 import (
-	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -11,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
 )
 
@@ -42,28 +40,12 @@ func CreateOriginUtxodb(par CreateOriginParams) (*sctransaction.Transaction, err
 	return createOrigin(par, allOuts)
 }
 
-// TODO revisit whole transaction construction logic, wrt request coins and selecting inout for it
 func createOrigin(par CreateOriginParams, allOutputs map[valuetransaction.OutputID][]*balance.Balance) (*sctransaction.Transaction, error) {
-	// need 2 iotas: one for SC token, another for init request
-	outs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 2) // must be deterministic!
-	if len(outs) == 0 {
-		return nil, errors.New("inconsistency: not enough outputs for 1 iota")
-	}
-	// select first and the only
-	var input valuetransaction.OutputID
-	var inputBalances []*balance.Balance
-
-	for oid, v := range outs {
-		input = oid
-		inputBalances = v
-		break
-	}
 
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              par.Address,
 		OwnerSignatureScheme: par.OwnerSignatureScheme,
-		Input:                input,
-		InputBalances:        inputBalances,
+		AllInputs:            allOutputs,
 		InputColor:           balance.ColorIOTA,
 	})
 	if err != nil {
