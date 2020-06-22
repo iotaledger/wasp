@@ -2,7 +2,6 @@ package origin
 
 import (
 	"errors"
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -30,10 +29,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 		return nil, errors.New("inconsistency: not enough outputs for 2 tokens")
 	}
 
-	fmt.Printf("++++++++++++++++ \n%+v\n", outs)
-
 	byCol, total := util.BalancesOfInputAddressByColor(par.OwnerSignatureScheme.Address(), outs)
-	fmt.Printf("++++++++++++++++ \n%+v\n", byCol)
 
 	txb := sctransaction.NewTransactionBuilder()
 

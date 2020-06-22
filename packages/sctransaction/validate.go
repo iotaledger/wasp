@@ -17,10 +17,7 @@ func (tx *Transaction) ValidateBlocks(addr *address.Address) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if isOrigin {
-		return true, nil
-	}
-	return false, tx.validateRequests()
+	return isOrigin, tx.validateRequests(isOrigin)
 }
 
 // check correctness of the SC token
@@ -31,12 +28,7 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 	}
 
 	color := stateBlock.Color()
-	mayBeOrigin := false
-	if color == balance.ColorNew {
-		// may be origin
-		color = (balance.Color)(tx.ID())
-		mayBeOrigin = true
-	}
+	mayBeOrigin := color == balance.ColorNew
 
 	balances, hasAddress := tx.OutputBalancesByAddress(addr)
 	if !hasAddress {
@@ -44,11 +36,12 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 		return false, fmt.Errorf("invalid state block: SC state output not found")
 	}
 	outBalance := util.BalanceOfColor(balances, color)
-	if outBalance == 0 && mayBeOrigin {
-		outBalance = util.BalanceOfColor(balances, balance.ColorNew)
+	expectedOutputBalance := int64(1)
+	if mayBeOrigin {
+		expectedOutputBalance += int64(len(tx.Requests()))
 	}
-	if outBalance != 1 {
-		// supply of the SC token must be exactly 1
+	// expected 1 SC token if tx is not origin or 1 + number of request if color is NewColor (origin)
+	if outBalance != expectedOutputBalance {
 		return false, fmt.Errorf("non-existent or wrong output with SC token")
 	}
 	if mayBeOrigin && stateBlock.StateIndex() != 0 {
@@ -58,16 +51,36 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 }
 
 // check correctness of the request tokens
-func (tx *Transaction) validateRequests() error {
-	sumReqTokens := int64(0)
+func (tx *Transaction) validateRequests(isOrigin bool) error {
+	newByAddress := make(map[address.Address]int64)
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		sumReqTokens += util.BalanceOfColor(bals, balance.ColorNew)
+		s := util.BalanceOfColor(bals, balance.ColorNew)
+		if s != 0 {
+			newByAddress[addr] = s
+		}
 		return true
 	})
-	if sumReqTokens != int64(len(tx.Requests())) {
-		return fmt.Errorf("wrong number of request tokens")
+	for _, reqBlock := range tx.Requests() {
+		s, ok := newByAddress[reqBlock.Address()]
+		if !ok {
+			return errors.New("invalid request tokens")
+		}
+		newByAddress[reqBlock.Address()] = s - 1
 	}
-	return nil
+	sum := int64(0)
+	for _, s := range newByAddress {
+		sum += s
+		if s != 0 && s != 1 {
+			return errors.New("invalid tokens")
+		}
+	}
+	if isOrigin && sum == 1 {
+		return nil
+	}
+	if !isOrigin && sum == 0 {
+		return nil
+	}
+	return errors.New("invalid tokens")
 }
 
 // checks if transaction value part:
