@@ -101,7 +101,7 @@ func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transa
 	return origTx, nil
 }
 
-func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
+func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
 		return nil, err

@@ -36,7 +36,6 @@ var PLUGINS = node.Plugins(
 )
 
 var TestPLUGINS = node.Plugins(
-	//builtinsc.Plugin,
 	roundtrip.Plugin,
 	nodeping.Plugin,
 )

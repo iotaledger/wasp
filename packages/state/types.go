@@ -15,6 +15,8 @@ type VirtualState interface {
 	// index 0 means origin state
 	StateIndex() uint32
 	ApplyStateIndex(uint32)
+	// check if state contains record with owner address
+	InitiatedBy(*address.Address) bool
 	// timestamp
 	Timestamp() int64
 	// updates state without changing state index

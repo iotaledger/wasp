@@ -1,8 +1,9 @@
-package vm
+package processor
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
@@ -22,6 +23,8 @@ type Request interface {
 	Code() sctransaction.RequestCode
 	GetInt64(name string) (int64, bool)
 	GetString(name string) (string, bool)
+	GetAddressValue(name string) (address.Address, bool)
+	GetHashValue(name string) (hashing.HashValue, bool)
 }
 
 type State interface {
@@ -31,4 +34,6 @@ type State interface {
 	// setters
 	SetInt64(name string, value int64)
 	SetString(name string, value string)
+	SetAddressValue(name string, addr address.Address)
+	SetHashValue(name string, h hashing.HashValue)
 }

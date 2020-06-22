@@ -33,7 +33,7 @@ type stateManager struct {
 
 	// last variable state stored in the database
 	// it may be nil at bootstrap when origin variable state is calculated
-	solidVariableState state.VirtualState
+	solidState state.VirtualState
 
 	// largest state index evidenced by other messages. If this index is more than 1 step ahead
 	// of the solid variable state, it means the state of the smart contract in the current node
@@ -63,8 +63,8 @@ type syncedBatch struct {
 type pendingBatch struct {
 	// batch of state updates, not validated yet
 	batch state.Batch
-	// resulting variable state after applied the batch to the solidVariableState
-	nextVariableState state.VirtualState
+	// resulting variable state after applied the batch to the solidState
+	nextState state.VirtualState
 	// state transaction request deadline. For committed batches only
 	stateTransactionRequestDeadline time.Time
 }
@@ -87,7 +87,7 @@ func (sm *stateManager) initLoadState() {
 	var batch state.Batch
 	var stateExists bool
 
-	sm.solidVariableState, batch, stateExists, err = state.LoadSolidState(sm.committee.Address())
+	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.committee.Address())
 	if err != nil {
 		sm.log.Error(err)
 		sm.committee.Dismiss()
@@ -95,17 +95,20 @@ func (sm *stateManager) initLoadState() {
 	}
 
 	if stateExists {
-		h := sm.solidVariableState.Hash()
+		sm.addPendingBatch(batch)
+
+		h := sm.solidState.Hash()
 		txh := batch.StateTransactionId()
 		sm.log.Debugw("solid state state has been loaded",
-			"state index", sm.solidVariableState.StateIndex(),
+			"state index", sm.solidState.StateIndex(),
 			"state hash", h.String(),
 			"approving tx", txh.String(),
 		)
 	} else {
 		// pre-origin state
-		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 		sm.addPendingBatch(state.MustNewOriginBatch(sm.committee.Color()))
+
+		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 
 	// open msg queue for the committee

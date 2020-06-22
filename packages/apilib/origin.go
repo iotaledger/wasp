@@ -42,9 +42,10 @@ func CreateOriginUtxodb(par CreateOriginParams) (*sctransaction.Transaction, err
 	return createOrigin(par, allOuts)
 }
 
-//
+// TODO revisit whole transaction construction logic, wrt request coins and selecting inout for it
 func createOrigin(par CreateOriginParams, allOutputs map[valuetransaction.OutputID][]*balance.Balance) (*sctransaction.Transaction, error) {
-	outs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 1) // must be deterministic!
+	// need 2 iotas: one for SC token, another for init request
+	outs := util.SelectOutputsForAmount(allOutputs, balance.ColorIOTA, 2) // must be deterministic!
 	if len(outs) == 0 {
 		return nil, errors.New("inconsistency: not enough outputs for 1 iota")
 	}

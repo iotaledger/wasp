@@ -9,11 +9,12 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
 )
 
-type variableState struct {
+type virtualState struct {
 	stateIndex uint32
 	timestamp  int64
 	empty      bool
@@ -24,12 +25,12 @@ type variableState struct {
 // VirtualState new empty or clone
 func NewVirtualState(varState VirtualState) VirtualState {
 	if varState == nil {
-		return &variableState{
+		return &virtualState{
 			vars:  variables.New(nil),
 			empty: true,
 		}
 	}
-	return &variableState{
+	return &virtualState{
 		timestamp:  varState.Timestamp(),
 		stateIndex: varState.StateIndex(),
 		stateHash:  varState.Hash(),
@@ -37,28 +38,36 @@ func NewVirtualState(varState VirtualState) VirtualState {
 	}
 }
 
-func (vs *variableState) String() string {
+func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
+	addr, ok, err := vs.Variables().GetAddress(vmconst.VarNameOwnerAddress)
+	if !ok || err != nil {
+		return false
+	}
+	return addr == *ownerAddr
+}
+
+func (vs *virtualState) String() string {
 	return fmt.Sprintf("#%d, ts: %d, hash, %s\n%s",
 		vs.stateIndex, vs.timestamp, vs.stateHash.String(), vs.Variables().String())
 }
 
-func (vs *variableState) StateIndex() uint32 {
+func (vs *virtualState) StateIndex() uint32 {
 	return vs.stateIndex
 }
 
-func (vs *variableState) ApplyStateIndex(stateIndex uint32) {
+func (vs *virtualState) ApplyStateIndex(stateIndex uint32) {
 	vh := vs.Hash()
 	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(stateIndex))
 	vs.empty = false
 	vs.stateIndex = stateIndex
 }
 
-func (vs *variableState) Timestamp() int64 {
+func (vs *virtualState) Timestamp() int64 {
 	return vs.timestamp
 }
 
 // applies batch of state updates. Increases state index
-func (vs *variableState) ApplyBatch(batch Batch) error {
+func (vs *virtualState) ApplyBatch(batch Batch) error {
 	if !vs.empty {
 		if batch.StateIndex() != vs.stateIndex+1 {
 			return fmt.Errorf("batch state index #%d can't be applied to the state #%d",
@@ -78,7 +87,7 @@ func (vs *variableState) ApplyBatch(batch Batch) error {
 }
 
 // applies one state update. Doesn't change state index
-func (vs *variableState) ApplyStateUpdate(stateUpd StateUpdate) {
+func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	stateUpd.Mutations().ApplyTo(vs.Variables())
 	vs.timestamp = stateUpd.Timestamp()
 	vh := vs.Hash()
@@ -87,15 +96,15 @@ func (vs *variableState) ApplyStateUpdate(stateUpd StateUpdate) {
 	vs.empty = false
 }
 
-func (vs *variableState) Hash() hashing.HashValue {
+func (vs *virtualState) Hash() hashing.HashValue {
 	return vs.stateHash
 }
 
-func (vs *variableState) Variables() variables.Variables {
+func (vs *virtualState) Variables() variables.Variables {
 	return vs.vars
 }
 
-func (vs *variableState) saveToDb(addr *address.Address) error {
+func (vs *virtualState) saveToDb(addr *address.Address) error {
 	data, err := util.Bytes(vs)
 	if err != nil {
 		return err
@@ -114,7 +123,7 @@ func (vs *variableState) saveToDb(addr *address.Address) error {
 	return nil
 }
 
-func (vs *variableState) Write(w io.Writer) error {
+func (vs *virtualState) Write(w io.Writer) error {
 	if _, err := w.Write(util.Uint32To4Bytes(vs.stateIndex)); err != nil {
 		return err
 	}
@@ -130,7 +139,7 @@ func (vs *variableState) Write(w io.Writer) error {
 	return nil
 }
 
-func (vs *variableState) Read(r io.Reader) error {
+func (vs *virtualState) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &vs.stateIndex); err != nil {
 		return err
 	}
@@ -149,7 +158,7 @@ func (vs *variableState) Read(r io.Reader) error {
 }
 
 // saves variable state to db atomically with the batch of state updates and records of processed requests
-func (vs *variableState) CommitToDb(addr address.Address, b Batch) error {
+func (vs *virtualState) CommitToDb(addr address.Address, b Batch) error {
 	batchData, err := util.Bytes(b)
 	if err != nil {
 		return err
@@ -196,7 +205,7 @@ func LoadSolidState(addr *address.Address) (VirtualState, Batch, bool, error) {
 		return nil, nil, false, err
 	}
 
-	varState := NewVirtualState(nil).(*variableState)
+	varState := NewVirtualState(nil).(*virtualState)
 	if err = varState.Read(bytes.NewReader(values[0])); err != nil {
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}

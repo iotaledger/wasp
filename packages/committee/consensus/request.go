@@ -203,9 +203,14 @@ func (op *operator) filterFullRequestTokenConsumers(reqs []*request) []*request 
 	ret := reqs[:0] // same underlying array, different slice
 	for _, req := range reqs {
 		txid := *req.reqId.TransactionId()
+		isOriginTx := txid == (valuetransaction.ID)(*op.committee.Color())
 		sum, ok := coltxs[(balance.Color)(txid)]
 		if !ok {
 			continue
+		}
+		if isOriginTx {
+			// one token is smart contract token
+			sum = sum - 1
 		}
 		numreq := reqtxs[txid]
 		if sum != int64(numreq) {

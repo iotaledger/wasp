@@ -9,11 +9,11 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"time"
 )
 
@@ -128,7 +128,7 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.variableState == nil {
 		return nil, false
 	}
-	b, ok := op.variableState.Variables().Get(origin.VarNameProgramHash)
+	b, ok := op.variableState.Variables().Get(vmconst.VarNameProgramHash)
 	if !ok {
 		return nil, false
 	}
@@ -147,7 +147,7 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok := op.variableState.Variables().MustGetInt64(origin.VarNameMinimumReward)
+	vt, ok := op.variableState.Variables().MustGetInt64(vmconst.VarNameMinimumReward)
 	if !ok {
 		return 0
 	}

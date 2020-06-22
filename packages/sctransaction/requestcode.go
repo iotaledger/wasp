@@ -8,17 +8,17 @@ type RequestCode uint16
 // unprotected from 0 to 2^14-1
 // protected from 2^16 - 2^14 - 1
 const (
-	requestCodeReserved     = uint16(0x80)
-	requestCodeProtected    = uint16(0x40)
-	FirstBuiltInRequestCode = RequestCode(requestCodeReserved | requestCodeProtected)
+	RequestCodeReserved          = uint16(0x8000)
+	RequestCodeProtected         = uint16(0x4000)
+	RequestCodeProtectedReserved = RequestCodeReserved | RequestCodeProtected
 )
 
 func (rc RequestCode) IsProtected() bool {
-	return uint16(rc)&(requestCodeProtected|requestCodeReserved) != 0
+	return uint16(rc)&(RequestCodeProtected|RequestCodeReserved) != 0
 }
 
 func (rc RequestCode) IsUserDefined() bool {
-	return uint16(rc)&requestCodeReserved == 0
+	return uint16(rc)&RequestCodeReserved == 0
 }
 
 func (rc RequestCode) IsReserved() bool {

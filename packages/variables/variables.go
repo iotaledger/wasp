@@ -2,6 +2,8 @@ package variables
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"sort"
@@ -34,9 +36,18 @@ type Variables interface {
 	// returns wrapper interface
 	SetString(key string, value string)
 	GetString(key string) (string, bool)
+
 	SetInt64(key string, value int64)
 	GetInt64(key string) (int64, bool, error)
 	MustGetInt64(key string) (int64, bool)
+
+	SetAddress(key string, value address.Address)
+	GetAddress(key string) (address.Address, bool, error)
+	MustGetAddress(key string) (address.Address, bool)
+
+	SetHashValue(key string, value hashing.HashValue)
+	GetHashValue(key string) (hashing.HashValue, bool, error)
+	MustGetHashValue(key string) (hashing.HashValue, bool)
 }
 
 type variables map[string][]byte
@@ -187,4 +198,50 @@ func (vr variables) MustGetInt64(key string) (int64, bool) {
 		panic(err)
 	}
 	return v, ok
+}
+
+func (vr variables) SetAddress(key string, addr address.Address) {
+	vr.Set(key, addr[:])
+}
+
+func (vr variables) GetAddress(key string) (ret address.Address, ok bool, err error) {
+	var b []byte
+	b, ok = vr.Get(key)
+	if !ok {
+		return
+	}
+	ret, _, err = address.FromBytes(b)
+	return
+}
+
+func (vr variables) MustGetAddress(key string) (ret address.Address, ok bool) {
+	var err error
+	ret, ok, err = vr.GetAddress(key)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+func (vr variables) SetHashValue(key string, h hashing.HashValue) {
+	vr.Set(key, h[:])
+}
+
+func (vr variables) GetHashValue(key string) (ret hashing.HashValue, ok bool, err error) {
+	var b []byte
+	b, ok = vr.Get(key)
+	if !ok {
+		return
+	}
+	ret, err = hashing.HashValueFromBytes(b)
+	return
+}
+
+func (vr variables) MustGetHashValue(key string) (ret hashing.HashValue, ok bool) {
+	var err error
+	ret, ok, err = vr.GetHashValue(key)
+	if err != nil {
+		panic(err)
+	}
+	return
 }

@@ -46,9 +46,6 @@ func (op *operator) startProcessingIfNeeded() {
 		// request already selected and calculations initialized
 		return
 	}
-	if !op.processorReady {
-		return
-	}
 
 	reqs := op.selectRequestsToProcess()
 	if len(reqs) == 0 {

@@ -3,7 +3,7 @@ package origin
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/builtin"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -11,12 +11,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-)
-
-const (
-	VarNameOwnerAddress  = "$owneraddr$"
-	VarNameProgramHash   = "$proghash$"
-	VarNameMinimumReward = "$minreward$"
 )
 
 type NewOriginTransactionParams struct {
@@ -50,7 +44,8 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 		return nil, err
 	}
 
-	txb.AddBalanceToOutput(par.Address, balance.New(balance.ColorNew, 1))
+	// adding 2 iotas: one for SC token, another for the init request
+	txb.AddBalanceToOutput(par.Address, balance.New(balance.ColorNew, 2))
 	// reminder outputs if any
 	for _, remb := range reminderBalances {
 		txb.AddBalanceToOutput(par.Input.Address(), remb)
@@ -69,10 +64,10 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	})
 
 	// add init request
-	initRequest := sctransaction.NewRequestBlock(par.Address, builtin.RequestCodeInit)
-	initRequest.Params().SetString(VarNameOwnerAddress, par.OwnerSignatureScheme.Address().String())
+	initRequest := sctransaction.NewRequestBlock(par.Address, vmconst.RequestCodeInit)
+	initRequest.Args().SetAddress(vmconst.VarNameOwnerAddress, par.OwnerSignatureScheme.Address())
 	if par.ProgramHash != *hashing.NilHash {
-		initRequest.Params().SetString(VarNameProgramHash, par.ProgramHash.String())
+		initRequest.Args().SetHashValue(vmconst.VarNameProgramHash, par.ProgramHash)
 	}
 	txb.AddRequestBlock(initRequest)
 

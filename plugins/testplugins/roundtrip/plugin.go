@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/plugins/committees"
-	"github.com/iotaledger/wasp/plugins/testplugins"
 	"time"
 )
 
@@ -16,7 +15,7 @@ const PluginName = "TestingRoundTrip"
 
 var (
 	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)
+	Plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
 	log    *logger.Logger
 )
 

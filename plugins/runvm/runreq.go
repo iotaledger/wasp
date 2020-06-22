@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
+	"github.com/iotaledger/wasp/packages/vm/processor"
 )
 
 // runTheRequest:
@@ -23,9 +24,17 @@ func runTheRequest(ctx *vm.VMContext) {
 	}
 
 	reqBlock := ctx.RequestRef.RequestBlock()
-	if reqBlock.RequestCode().IsProtected() && !ctx.RequestRef.IsAuthorised(&ctx.OwnerAddress) {
+	if reqBlock.RequestCode().IsProtected() {
+		if !ctx.RequestRef.IsAuthorised(&ctx.OwnerAddress) {
+			return
+		}
+		if ctx.VirtualState.StateIndex() > 0 && !ctx.VirtualState.InitiatedBy(&ctx.OwnerAddress) {
+			// for states after #0 it is required to have record about initiator's address
+			// to prevent attack when owner (initiator) address is overwritten in the quorum of bootup records
+			return
+		}
 		// if protected call is not authorised by the containing transaction, do nothing
-		// the result will be taking all iotas and no effect
+		// the result will be taking all iotas and no effect on state
 		// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
 		return
 	}
@@ -36,21 +45,21 @@ func runTheRequest(ctx *vm.VMContext) {
 		if !ok {
 			return
 		}
-		entryPoint.Run(vm.NewSandbox(ctx))
+		entryPoint.Run(processor.NewSandbox(ctx))
 		return
 	}
 
 	// here reqBlock.RequestCode().IsUserDefined()
-	processor, err := getProcessor(ctx.ProgramHash.String())
+	proc, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		// it should not come to this point if processor is not ready
 		ctx.Log.Panicf("major inconsistency: %v", err)
 	}
-	entryPoint, ok := processor.GetEntryPoint(reqBlock.RequestCode())
+	entryPoint, ok := proc.GetEntryPoint(reqBlock.RequestCode())
 	if !ok {
 		return
 	}
-	entryPoint.Run(vm.NewSandbox(ctx))
+	entryPoint.Run(processor.NewSandbox(ctx))
 }
 
 func mustHandleRequestToken(ctx *vm.VMContext) {

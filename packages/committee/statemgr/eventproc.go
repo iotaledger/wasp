@@ -143,20 +143,20 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 	sm.EvidenceStateIndex(stateBlock.StateIndex())
 
 	if sm.solidStateValid {
-		if stateBlock.StateIndex() != sm.solidVariableState.StateIndex()+1 {
+		if stateBlock.StateIndex() != sm.solidState.StateIndex()+1 {
 			sm.log.Debugf("only interested for the state transaction to verify latest state update")
 			return
 		}
 	} else {
-		if sm.solidVariableState == nil {
+		if sm.solidState == nil {
 			// pre-origin
 			if stateBlock.StateIndex() != 0 {
-				sm.log.Debugf("sm.solidVariableState == nil && stateBlock.StateIndex() != 0")
+				sm.log.Debugf("sm.solidState == nil && stateBlock.StateIndex() != 0")
 				return
 			}
 		} else {
-			if stateBlock.StateIndex() != sm.solidVariableState.StateIndex() {
-				sm.log.Debugf("sm.solidVariableState == nil && stateBlock.StateIndex() != sm.solidVariableState.StateIndex()")
+			if stateBlock.StateIndex() != sm.solidState.StateIndex() {
+				sm.log.Debugf("sm.solidState == nil && stateBlock.StateIndex() != sm.solidState.StateIndex()")
 				return
 			}
 		}

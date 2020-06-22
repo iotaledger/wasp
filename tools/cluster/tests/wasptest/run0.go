@@ -3,6 +3,7 @@ package wasptest
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
@@ -45,6 +46,7 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 		err = waspapi.PutSCData(host, registry.BootupData{
 			Address:        addr,
 			Color:          color,
+			OwnerAddress:   utxodb.GetAddress(sc.OwnerIndexUtxodb),
 			CommitteeNodes: committeePeerNodes,
 			AccessNodes:    accessPeerNodes,
 		})

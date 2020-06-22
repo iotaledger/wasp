@@ -97,9 +97,9 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	for k, v := range reqBlkJson.Vars {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			ret.Params().SetString(k, v)
+			ret.Args().SetString(k, v)
 		} else {
-			ret.Params().SetInt64(k, int64(n))
+			ret.Args().SetInt64(k, int64(n))
 		}
 	}
 	return ret, nil

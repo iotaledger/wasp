@@ -21,7 +21,7 @@ type RequestBlock struct {
 	// request code
 	reqCode RequestCode
 	// small variable state with variable/value pairs
-	params variables.Variables
+	args variables.Variables
 }
 
 type RequestRef struct {
@@ -35,7 +35,7 @@ func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
 		reqCode: reqCode,
-		params:  variables.New(nil),
+		args:    variables.New(nil),
 	}
 }
 
@@ -44,7 +44,7 @@ func (req *RequestBlock) Clone() *RequestBlock {
 		return nil
 	}
 	ret := NewRequestBlock(req.address, req.reqCode)
-	ret.params = variables.New(req.params)
+	ret.args = variables.New(req.args)
 	return ret
 }
 
@@ -52,8 +52,8 @@ func (req *RequestBlock) Address() address.Address {
 	return req.address
 }
 
-func (req *RequestBlock) Params() variables.Variables {
-	return req.params
+func (req *RequestBlock) Args() variables.Variables {
+	return req.args
 }
 
 func (req *RequestBlock) RequestCode() RequestCode {
@@ -70,7 +70,7 @@ func (req *RequestBlock) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, uint16(req.reqCode)); err != nil {
 		return err
 	}
-	if err := req.params.Write(w); err != nil {
+	if err := req.args.Write(w); err != nil {
 		return err
 	}
 	return nil
@@ -86,8 +86,8 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	}
 	req.reqCode = RequestCode(rc)
 
-	req.params = variables.New(nil)
-	if err := req.params.Read(r); err != nil {
+	req.args = variables.New(nil)
+	if err := req.args.Read(r); err != nil {
 		return err
 	}
 	return nil

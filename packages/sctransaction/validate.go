@@ -38,10 +38,6 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 		mayBeOrigin = true
 	}
 
-	if mayBeOrigin && len(tx.Requests()) > 0 {
-		return false, fmt.Errorf("origin transaction can't contain requests")
-	}
-
 	balances, hasAddress := tx.OutputBalancesByAddress(addr)
 	if !hasAddress {
 		// invalid state

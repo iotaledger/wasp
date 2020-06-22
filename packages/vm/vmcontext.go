@@ -26,7 +26,7 @@ type VMContext struct {
 	// timestamp of the batch
 	Timestamp int64
 	// initial state of the call
-	VariableState state.VirtualState
+	VirtualState state.VirtualState
 	// set for each call
 	RequestRef sctransaction.RequestRef
 	// IsEmpty state update upon call, result of the call.
