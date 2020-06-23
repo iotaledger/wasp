@@ -92,7 +92,7 @@ func TestCreateOrigin(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"state":               1,
+		"state":               2,
 		"request_in":          1,
 		"request_out":         2,
 	})

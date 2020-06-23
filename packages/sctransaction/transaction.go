@@ -173,7 +173,8 @@ func (tx *Transaction) String() string {
 	}
 	for i, reqBlk := range tx.Requests() {
 		addr := reqBlk.Address()
-		ret += fmt.Sprintf("Req #%d: addr: %s code: %d\n", i, util.Short(addr.String()), reqBlk.RequestCode())
+		ret += fmt.Sprintf("Req #%d: addr: %s code: %s\n", i,
+			util.Short(addr.String()), reqBlk.RequestCode().String())
 	}
 	return ret
 }
@@ -192,9 +193,9 @@ func (tx *Transaction) StateAddress() (address.Address, bool, error) {
 	if stateBlock.Color() != balance.ColorNew {
 		tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
 			for _, bal := range bals {
-				if bal.Color() == stateBlock.Color() {
+				if bal.Color == stateBlock.Color() {
 					ret = addr
-					totalTokens += bal.Value()
+					totalTokens += bal.Value
 				}
 			}
 			return true

@@ -36,11 +36,15 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 	}
 	senderAddr := senderSigScheme.Address()
 	allOuts, err := nodeapi.GetAccountOutputs(node, &senderAddr)
+
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
+	fmt.Printf("CreateRequestTransaction: addlOuts: %+v\ntotalAmount: %d\nsender address: %s\n node %s\n",
+		allOuts, totalAmount, senderAddr.String(), node)
 
 	selectedOutputs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, totalAmount)
+
 	if len(selectedOutputs) == 0 {
 		return nil, errors.New("not enough funds")
 	}

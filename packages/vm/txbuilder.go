@@ -39,13 +39,13 @@ func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
 	}
 	for _, lst := range par.Balances {
 		for _, b := range lst {
-			s, ok := ret.inputBalances[b.Color()]
+			s, ok := ret.inputBalances[b.Color]
 			if ok {
-				ret.inputBalances[b.Color()] = s + b.Value()
+				ret.inputBalances[b.Color] = s + b.Value
 			} else {
-				ret.inputBalances[b.Color()] = b.Value()
+				ret.inputBalances[b.Color] = b.Value
 			}
-			ret.total += b.Value()
+			ret.total += b.Value
 		}
 	}
 	if ret.total == 0 {

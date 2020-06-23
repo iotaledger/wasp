@@ -126,10 +126,10 @@ func (tx *Transaction) ValidateConsumptionOfInputs(addr *address.Address, inputB
 	outputBalancesByColor := make(map[balance.Color]int64)
 	tx.Outputs().ForEach(func(_ address.Address, bals []*balance.Balance) bool {
 		for _, b := range bals {
-			if s, ok := outputBalancesByColor[b.Color()]; !ok {
-				outputBalancesByColor[b.Color()] = b.Value()
+			if s, ok := outputBalancesByColor[b.Color]; !ok {
+				outputBalancesByColor[b.Color] = b.Value
 			} else {
-				outputBalancesByColor[b.Color()] = s + b.Value()
+				outputBalancesByColor[b.Color] = s + b.Value
 			}
 		}
 		return true

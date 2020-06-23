@@ -122,10 +122,10 @@ func (txb *TransactionBuilder) AddBalanceToOutput(addr address.Address, bal *bal
 		txb.outputs[addr] = make(map[balance.Color]int64)
 	}
 	balances := txb.outputs[addr]
-	if val, ok := balances[bal.Color()]; ok {
-		balances[bal.Color()] = val + bal.Value()
+	if val, ok := balances[bal.Color]; ok {
+		balances[bal.Color] = val + bal.Value
 	} else {
-		balances[bal.Color()] = bal.Value()
+		balances[bal.Color] = bal.Value
 	}
 }
 

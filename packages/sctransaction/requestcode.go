@@ -1,6 +1,9 @@
 package sctransaction
 
-import "github.com/iotaledger/wasp/packages/util"
+import (
+	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
+)
 
 type RequestCode uint16
 
@@ -12,6 +15,19 @@ const (
 	RequestCodeProtected         = uint16(0x4000)
 	RequestCodeProtectedReserved = RequestCodeReserved | RequestCodeProtected
 )
+
+func (rc RequestCode) String() string {
+	p := "."
+	if rc.IsProtected() {
+		p = "p"
+	}
+	r := "."
+	if rc.IsReserved() {
+		r = "r"
+	}
+
+	return fmt.Sprintf("%#x(%s%s)", uint16(rc), p, r)
+}
 
 func (rc RequestCode) IsProtected() bool {
 	return uint16(rc)&(RequestCodeProtected|RequestCodeReserved) != 0

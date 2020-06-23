@@ -17,6 +17,16 @@ import (
 // - in case of something not correct the whole operation is NOP, however
 //   all the sent fees and other funds remains in the SC address (this may change).
 func runTheRequest(ctx *vm.VMContext) {
+	ctx.Log.Debugw("runTheRequest IN",
+		"reqId", ctx.RequestRef.RequestId().Short(),
+		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
+	)
+	defer ctx.Log.Debugw("runTheRequest OUT",
+		"reqId", ctx.RequestRef.RequestId().Short(),
+		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
+		"state update", ctx.StateUpdate.String(),
+	)
+
 	mustHandleRequestToken(ctx)
 
 	if !handleRewards(ctx) {
