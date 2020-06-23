@@ -40,7 +40,7 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
-	fmt.Printf("CreateRequestTransaction: addlOuts: %+v\ntotalAmount: %d\nsender address: %s\n node %s\n",
+	fmt.Printf("[waspapi] CreateRequestTransaction: addlOuts: %+v\ntotalAmount: %d\nsender address: %s\n node %s\n",
 		allOuts, totalAmount, senderAddr.String(), node)
 
 	selectedOutputs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, totalAmount)

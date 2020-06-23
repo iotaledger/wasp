@@ -59,7 +59,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	// reminder outputs if any
 
 	for _, remb := range reminderBalances {
-		txb.AddBalanceToOutput(par.Address, remb)
+		txb.AddBalanceToOutput(par.OwnerSignatureScheme.Address(), remb)
 	}
 	oids := make([]valuetransaction.OutputID, 0, len(outs))
 	for oid := range outs {

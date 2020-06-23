@@ -185,7 +185,7 @@ var errorWrongTokens = errors.New("rong number of request tokens")
 func (tx *Transaction) StateAddress() (address.Address, bool, error) {
 	stateBlock, ok := tx.State()
 	if !ok {
-		return address.Address{}, false, errors.New("not a state transaction")
+		return address.Address{}, false, nil
 	}
 
 	var ret address.Address

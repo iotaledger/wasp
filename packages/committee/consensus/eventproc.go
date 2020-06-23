@@ -23,14 +23,13 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	//op.log.Debugf("new varstate:\n%s\n", msg.VirtualState.String())
-
 	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.variableState.Hash()
-	op.log.Infof("NEW STATE FOR CONSENSUS #%d, synced: %v, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
-		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(),
-		op.stateTx.ID().String(), vh.String(), op.iAmCurrentLeader())
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v",
+		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader())
+	op.log.Debugf("STATE FOR CONSENSUS #%d, state txid: %s, state hash: %s",
+		op.mustStateIndex(), op.stateTx.ID().String(), vh.String())
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {

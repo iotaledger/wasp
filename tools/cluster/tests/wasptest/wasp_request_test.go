@@ -13,8 +13,8 @@ func TestSend1Request(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          1,
-		"request_out":         2,
+		"request_in":          2,
+		"request_out":         3,
 		"state":               2,
 	})
 	check(err, t)
@@ -30,7 +30,7 @@ func TestSend1Request(t *testing.T) {
 	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1, 0)
 	check(err, t)
 
-	wasps.CollectMessages(60 * time.Second)
+	wasps.CollectMessages(30 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()

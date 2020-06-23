@@ -106,7 +106,7 @@ func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
 
 	stateAddr, ok, err := tx.StateAddress()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("getCommitteeByState: StateAddress returned for txid = %s: %v", tx.ID().String(), err)
 	}
 	if !ok || err != nil {
 		return nil

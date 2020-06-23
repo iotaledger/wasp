@@ -39,7 +39,7 @@
     "port": 14666
   },
   "logger": {
-    "level": "debug",
+    "level": "info",
     "disableCaller": false,
     "disableStacktrace": false,
     "encoding": "console",

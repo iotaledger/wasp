@@ -68,11 +68,14 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 
 		if sm.solidState != nil {
-			sm.log.Infof("STATE TRANSITION TO #%d. State hash: %s, state txid: %s, batch essence: %s",
-				pending.nextState.StateIndex(),
-				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
+			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s",
+				pending.nextState.StateIndex(), sm.nextStateTransaction.ID().String())
+			sm.log.Debugf("STATE TRANSITION. State hash: %s, batch essence: %s",
+				varStateHash.String(), pending.batch.EssenceHash().String())
 		} else {
-			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
+			sm.log.Infof("ORIGIN STATE SAVED. Origin transaction: %s",
+				sm.nextStateTransaction.ID().String())
+			sm.log.Debugf("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		}
 
