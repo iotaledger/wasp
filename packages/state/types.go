@@ -10,18 +10,20 @@ import (
 )
 
 // represents an interface to the mutable state of the smart contract
-type VariableState interface {
+type VirtualState interface {
 	// index of the current state. State index is incremented when state transition occurs
 	// index 0 means origin state
 	StateIndex() uint32
 	ApplyStateIndex(uint32)
+	// check if state contains record with owner address
+	InitiatedBy(*address.Address) bool
 	// timestamp
 	Timestamp() int64
 	// updates state without changing state index
 	ApplyStateUpdate(stateUpd StateUpdate)
 	// applies batch of state updates, state index and timestamp
 	ApplyBatch(Batch) error
-	// commit means saving variable state to sc db, making it persistent
+	// commit means saving virtual state to sc db, making it persistent (solid)
 	CommitToDb(address address.Address, batch Batch) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
@@ -44,6 +46,7 @@ type StateUpdate interface {
 	// the payload of variables/values
 	String() string
 	Mutations() variables.MutationSequence
+	Clear()
 	Write(io.Writer) error
 	Read(io.Reader) error
 }

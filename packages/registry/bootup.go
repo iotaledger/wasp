@@ -17,9 +17,10 @@ import (
 // it is up to the node (not smart contract) to check authorisations to create/update this record
 type BootupData struct {
 	Address        address.Address
-	Color          balance.Color // origin tx hash
-	CommitteeNodes []string      // "host_addr:port"
-	AccessNodes    []string      // "host_addr:port"
+	OwnerAddress   address.Address // only needed for committee nodes, can be nil for access nodes
+	Color          balance.Color   // origin tx hash
+	CommitteeNodes []string        // "host_addr:port"
+	AccessNodes    []string        // "host_addr:port"
 }
 
 func dbkeyBootupData(addr *address.Address) []byte {
@@ -41,7 +42,7 @@ func SaveBootupData(bd *BootupData, overwrite bool) error {
 			return err
 		}
 		if exist {
-			return fmt.Errorf("smart contract with address %s aldready exist in the registry", bd.Address.String())
+			return fmt.Errorf("smart contract with address %s already exist in the registry", bd.Address.String())
 		}
 	}
 	var buf bytes.Buffer
@@ -89,6 +90,9 @@ func (bd *BootupData) Write(w io.Writer) error {
 	if _, err := w.Write(bd.Address[:]); err != nil {
 		return err
 	}
+	if _, err := w.Write(bd.OwnerAddress[:]); err != nil {
+		return err
+	}
 	if _, err := w.Write(bd.Color[:]); err != nil {
 		return err
 	}
@@ -104,6 +108,9 @@ func (bd *BootupData) Write(w io.Writer) error {
 func (bd *BootupData) Read(r io.Reader) error {
 	var err error
 	if err = util.ReadAddress(r, &bd.Address); err != nil {
+		return err
+	}
+	if err = util.ReadAddress(r, &bd.OwnerAddress); err != nil {
 		return err
 	}
 	if err = util.ReadColor(r, &bd.Color); err != nil {

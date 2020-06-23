@@ -173,7 +173,67 @@ func (tx *Transaction) String() string {
 	}
 	for i, reqBlk := range tx.Requests() {
 		addr := reqBlk.Address()
-		ret += fmt.Sprintf("Req #%d: addr: %s code: %d\n", i, util.Short(addr.String()), reqBlk.RequestCode())
+		ret += fmt.Sprintf("Req #%d: addr: %s code: %s\n", i,
+			util.Short(addr.String()), reqBlk.RequestCode().String())
 	}
 	return ret
+}
+
+var errorWrongTokens = errors.New("rong number of request tokens")
+
+// StateAddress returns address of the smart contract the state block is targeted to
+func (tx *Transaction) StateAddress() (address.Address, bool, error) {
+	stateBlock, ok := tx.State()
+	if !ok {
+		return address.Address{}, false, nil
+	}
+
+	var ret address.Address
+	var totalTokens int64
+	if stateBlock.Color() != balance.ColorNew {
+		tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
+			for _, bal := range bals {
+				if bal.Color == stateBlock.Color() {
+					ret = addr
+					totalTokens += bal.Value
+				}
+			}
+			return true
+		})
+		if totalTokens != 1 {
+			return address.Address{}, false, errorWrongTokens
+		}
+		return ret, true, nil
+	}
+	// origin case
+	newByAddress := make(map[address.Address]int64)
+	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
+		s := util.BalanceOfColor(bals, balance.ColorNew)
+		if s != 0 {
+			newByAddress[addr] = s
+		}
+		return true
+	})
+	for _, reqBlock := range tx.Requests() {
+		s, ok := newByAddress[reqBlock.Address()]
+		if !ok {
+			return address.Address{}, false, errorWrongTokens
+		}
+		newByAddress[reqBlock.Address()] = s - 1
+	}
+	// must be left only one token with 1 and the rest with 0
+	sum := int64(0)
+	for addr, s := range newByAddress {
+		if s == 1 {
+			ret = addr
+		}
+		if s != 0 && s != 1 {
+			return address.Address{}, false, errorWrongTokens
+		}
+		sum += s
+	}
+	if sum != 1 {
+		return address.Address{}, false, errorWrongTokens
+	}
+	return ret, true, nil
 }

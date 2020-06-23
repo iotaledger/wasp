@@ -4,28 +4,28 @@ package vmnil
 
 import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/processor"
 )
 
 type nilProcessor struct {
 }
 
-func New() vm.Processor {
+func New() processor.Processor {
 	return nilProcessor{}
 }
 
-func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vm.EntryPoint, bool) {
+func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (processor.EntryPoint, bool) {
 	return v, true
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Run(ctx vm.Sandbox) {
-	reqId := ctx.GetRequestID()
+func (v nilProcessor) Run(ctx processor.Sandbox) {
+	reqId := ctx.Request().ID()
 	ctx.GetLog().Debugw("run nilProcessor",
-		"request code", ctx.GetRequestCode(),
+		"request code", ctx.Request().Code(),
 		"addr", ctx.GetAddress().String(),
 		"ts", ctx.GetTimestamp(),
-		"state index", ctx.GetStateIndex(),
+		"state index", ctx.State().Index(),
 		"req", reqId.String(),
 	)
 }

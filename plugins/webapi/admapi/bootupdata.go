@@ -10,6 +10,7 @@ import (
 
 type BootupDataJsonable struct {
 	Address        string   `json:"address"`
+	OwnerAddress   string   `json:"owner_address"`
 	Color          string   `json:"color"`
 	CommitteeNodes []string `json:"committee_nodes"`
 	AccessNodes    []string `json:"access_nodes"`
@@ -29,9 +30,17 @@ func HandlerPutSCData(c echo.Context) error {
 	if rec.Address, err = address.FromBase58(req.Address); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
+
 	if rec.Color, err = util.ColorFromString(req.Color); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
+
+	if rec.OwnerAddress, err = address.FromBase58(req.OwnerAddress); err != nil {
+		log.Warnf("Bootup record doesn't contain a valid owner address: note won't be able to be a committee node"+
+			"addr = %s color: %s", rec.Address.String(), rec.Color.String())
+		rec.OwnerAddress = address.Address{}
+	}
+
 	rec.CommitteeNodes = req.CommitteeNodes
 	rec.AccessNodes = req.AccessNodes
 

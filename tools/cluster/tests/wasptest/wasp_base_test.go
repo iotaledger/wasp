@@ -1,10 +1,6 @@
 package wasptest
 
 import (
-	"fmt"
-	"github.com/iotaledger/wasp/packages/subscribe"
-	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -13,34 +9,25 @@ func TestPutBootupRecords(t *testing.T) {
 	// setup
 	wasps := setup(t, "TestPutBootupRecords")
 
-	allNodesNanomsg := wasps.WaspHosts(wasps.AllWaspNodes(), (*cluster.WaspNodeConfig).NanomsgHost)
-
-	messages := make(chan *subscribe.HostMessage)
-	done := make(chan bool)
-	defer close(done)
-	err := subscribe.SubscribeMulti(allNodesNanomsg, messages, done,
-		"bootuprec", "active_committee", "dismissed_committee")
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    0,
+		"dismissed_committee": 0,
+		"request_in":          0,
+		"request_out":         0,
+		"state":               0,
+	})
 	check(err, t)
 
 	// exercise
 	err = Put3BootupRecords(wasps)
 	check(err, t)
 
-	// verify
-	expected := make(map[string]int)
-	for _, sc := range wasps.SmartContractConfig {
-		for _, wasp := range allNodesNanomsg {
-			expected[wasp+sc.Address] = 1
-		}
-	}
-	received := make(map[string]int)
-	for i := 0; i < len(allNodesNanomsg)*len(wasps.SmartContractConfig); i++ {
-		msg := <-messages
-		received[msg.Sender+msg.Message[1]] += 1
-	}
+	wasps.CollectMessages(10 * time.Second)
 
-	fmt.Printf("[cluster] waiting 10 sec...\n")
-	assert.Equal(t, expected, received)
+	if !wasps.Report() {
+		t.Fail()
+	}
 }
 
 func TestActivate1SC(t *testing.T) {
@@ -50,7 +37,11 @@ func TestActivate1SC(t *testing.T) {
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
 		"active_committee":    1,
-		"dismissed_committee": 1})
+		"dismissed_committee": 0,
+		"request_in":          0,
+		"request_out":         0,
+		"state":               0,
+	})
 	check(err, t)
 
 	err = Put3BootupRecords(wasps)
@@ -61,7 +52,9 @@ func TestActivate1SC(t *testing.T) {
 	check(err, t)
 
 	wasps.CollectMessages(5 * time.Second)
-	wasps.Report()
+	if !wasps.Report() {
+		t.Fail()
+	}
 }
 
 func TestActivate3SC(t *testing.T) {
@@ -71,7 +64,11 @@ func TestActivate3SC(t *testing.T) {
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
 		"active_committee":    3,
-		"dismissed_committee": 3})
+		"dismissed_committee": 0,
+		"request_in":          0,
+		"request_out":         0,
+		"state":               0,
+	})
 	check(err, t)
 
 	err = Put3BootupRecords(wasps)
@@ -82,7 +79,9 @@ func TestActivate3SC(t *testing.T) {
 	check(err, t)
 
 	wasps.CollectMessages(5 * time.Second)
-	wasps.Report()
+	if !wasps.Report() {
+		t.Fail()
+	}
 }
 
 func TestCreateOrigin(t *testing.T) {
@@ -92,10 +91,10 @@ func TestCreateOrigin(t *testing.T) {
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
 		"active_committee":    1,
-		"dismissed_committee": 1,
-		"state":               1,
-		"request_in":          0,
-		"request_out":         1,
+		"dismissed_committee": 0,
+		"state":               2,
+		"request_in":          1,
+		"request_out":         2,
 	})
 	check(err, t)
 
@@ -108,6 +107,8 @@ func TestCreateOrigin(t *testing.T) {
 	err = CreateOrigin1SC(wasps)
 	check(err, t)
 
-	wasps.CollectMessages(5 * time.Second)
-	wasps.Report()
+	wasps.CollectMessages(10 * time.Second)
+	if !wasps.Report() {
+		t.Fail()
+	}
 }

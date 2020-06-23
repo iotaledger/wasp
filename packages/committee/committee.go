@@ -10,6 +10,7 @@ import (
 
 type Committee interface {
 	Address() *address.Address
+	OwnerAddress() *address.Address
 	Color() *balance.Color
 	Size() uint16
 	OwnPeerIndex() uint16

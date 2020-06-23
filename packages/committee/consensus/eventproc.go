@@ -11,21 +11,25 @@ import (
 )
 
 func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
-	op.processorReady = false
+	if op.processorReady {
+		return
+	}
 	progHash, ok := op.getProgramHash()
 	op.processorReady = ok && msg.ProgramHash == progHash.String()
+	if op.processorReady {
+		op.log.Infof("User defined VM processor is ready. Program hash: %s", progHash)
+	}
 }
 
 // EventStateTransitionMsg is triggered by new state transition message sent by state manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	//op.log.Debugf("new varstate:\n%s\n", msg.VariableState.String())
-
 	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.variableState.Hash()
-	op.log.Infof("NEW STATE FOR CONSENSUS #%d, synced: %v, leader: %d, state txid: %s, state hash: %s iAmTheLeader: %v",
-		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(),
-		op.stateTx.ID().String(), vh.String(), op.iAmCurrentLeader())
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v",
+		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader())
+	op.log.Debugf("STATE FOR CONSENSUS #%d, state txid: %s, state hash: %s",
+		op.mustStateIndex(), op.stateTx.ID().String(), vh.String())
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
@@ -40,8 +44,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.processorReady = false
 	progHash, ok := op.getProgramHash()
 	if !ok {
-		op.log.Errorf("major inconsistency: undefined program hash at state #%d", op.mustStateIndex())
-		op.committee.Dismiss()
+		op.log.Warnf("program hash is undefined. Committee won't be able to run VM")
 		return
 	}
 	progHashStr := progHash.String()
@@ -52,8 +55,6 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 			op.committee.ReceiveMessage(committee.ProcessorIsReady{ProgramHash: progHashStr})
 			publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 		})
-	} else {
-		publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 	}
 
 	op.takeAction()

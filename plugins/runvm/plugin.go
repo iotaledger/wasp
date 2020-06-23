@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/packages/vm/vmnil"
 	"sync"
 	"time"
@@ -24,7 +25,7 @@ var (
 	log    *logger.Logger
 
 	vmDaemon        = daemon.New()
-	processors      = make(map[string]vm.Processor)
+	processors      = make(map[string]processor.Processor)
 	processorsMutex sync.RWMutex
 )
 
@@ -71,7 +72,7 @@ func CheckProcessor(programHash string) bool {
 	return err == nil
 }
 
-func getProcessor(programHash string) (vm.Processor, error) {
+func getProcessor(programHash string) (processor.Processor, error) {
 	processorsMutex.RLock()
 	defer processorsMutex.RUnlock()
 
@@ -128,20 +129,20 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 		MinimumReward: ctx.MinimumReward,
 		TxBuilder:     txbuilder,
 		Timestamp:     ctx.Timestamp,
-		VariableState: state.NewVariableState(ctx.VariableState), // clone
+		VirtualState:  state.NewVirtualState(ctx.VariableState), // clone
 		Log:           ctx.Log,
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
 	for _, reqRef := range ctx.Requests {
 
-		vmctx.Request = reqRef
+		vmctx.RequestRef = reqRef
 		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
 
 		runTheRequest(vmctx)
 
 		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
 		// update state
-		vmctx.VariableState.ApplyStateUpdate(vmctx.StateUpdate)
+		vmctx.VirtualState.ApplyStateUpdate(vmctx.StateUpdate)
 		if vmctx.Timestamp != 0 {
 			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
@@ -165,7 +166,7 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
 
 	// create final transaction
-	vsClone := state.NewVariableState(ctx.VariableState)
+	vsClone := state.NewVirtualState(ctx.VariableState)
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
 		ctx.Log.Errorf("RunVM: %v", err)
 		return

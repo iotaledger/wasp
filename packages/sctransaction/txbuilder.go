@@ -12,6 +12,7 @@ import (
 
 // object with interface to build SC transaction and value transaction within it
 // object panics if attempted to modify structure after finalization
+// Does not handle reminders
 type TransactionBuilder struct {
 	inputs        *valuetransaction.Inputs
 	outputs       map[address.Address]map[balance.Color]int64
@@ -25,6 +26,34 @@ func NewTransactionBuilder() *TransactionBuilder {
 		inputs:        valuetransaction.NewInputs(),
 		outputs:       make(map[address.Address]map[balance.Color]int64),
 		requestBlocks: make([]*RequestBlock, 0),
+	}
+}
+
+func (txb *TransactionBuilder) Clone() *TransactionBuilder {
+	if txb.finalized {
+		panic("attempt to clone already finalized transaction builder")
+	}
+	clonedInputs, _, err := valuetransaction.InputsFromBytes(txb.inputs.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	clonedOutputs := make(map[address.Address]map[balance.Color]int64)
+	for addr, amap := range txb.outputs {
+		t := make(map[balance.Color]int64)
+		clonedOutputs[addr] = t
+		for col, b := range amap {
+			t[col] = b
+		}
+	}
+	clonedRequests := make([]*RequestBlock, len(txb.requestBlocks))
+	for i := range clonedRequests {
+		clonedRequests[i] = txb.requestBlocks[i].Clone()
+	}
+	return &TransactionBuilder{
+		inputs:        clonedInputs,
+		outputs:       clonedOutputs,
+		requestBlocks: clonedRequests,
+		stateBlock:    txb.stateBlock.Clone(),
 	}
 }
 
@@ -93,10 +122,10 @@ func (txb *TransactionBuilder) AddBalanceToOutput(addr address.Address, bal *bal
 		txb.outputs[addr] = make(map[balance.Color]int64)
 	}
 	balances := txb.outputs[addr]
-	if val, ok := balances[bal.Color()]; ok {
-		balances[bal.Color()] = val + bal.Value()
+	if val, ok := balances[bal.Color]; ok {
+		balances[bal.Color] = val + bal.Value
 	} else {
-		balances[bal.Color()] = bal.Value()
+		balances[bal.Color] = bal.Value
 	}
 }
 

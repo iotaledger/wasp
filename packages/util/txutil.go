@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,9 +12,9 @@ import (
 
 // SelectOutputsForAmount selects outputs out of given outputs just enough to transfer the amount
 // outputs are selected in the descending order of balances with specified color
-// the logic is to use small inputs first
+// the logic is to use bigger inputs first
 // returns nil if outputs are not enough for the amount
-// the set of resulting outputs must be DETERMINISTIC, despite map input and output
+// the set of resulting outputs must be DETERMINISTIC, despite map in input and output
 func SelectOutputsForAmount(outputs map[valuetransaction.OutputID][]*balance.Balance, color balance.Color, amount int64) map[valuetransaction.OutputID][]*balance.Balance {
 	oids := make([]valuetransaction.OutputID, 0, len(outputs))
 	for k := range outputs {
@@ -74,7 +75,7 @@ func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
 		bals := outs[txid]
 		ret += txid.String() + ":\n"
 		for _, bal := range bals {
-			ret += fmt.Sprintf("         %s: %d\n", bal.Color().String(), bal.Value())
+			ret += fmt.Sprintf("         %s: %d\n", bal.Color.String(), bal.Value)
 		}
 	}
 	return ret
@@ -85,22 +86,42 @@ func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balan
 	var total int64
 	for _, bals := range outs {
 		for _, b := range bals {
-			if s, ok := ret[b.Color()]; !ok {
-				ret[b.Color()] = b.Value()
+			if s, ok := ret[b.Color]; !ok {
+				ret[b.Color] = b.Value
 			} else {
-				ret[b.Color()] = s + b.Value()
+				ret[b.Color] = s + b.Value
 			}
-			total += b.Value()
+			total += b.Value
 		}
 	}
 	return ret, total
 }
 
+func BalancesOfInputAddressByColor(addr address.Address, inputs map[valuetransaction.OutputID][]*balance.Balance) (map[balance.Color]int64, int64) {
+	ret := make(map[balance.Color]int64)
+	var retTotal int64
+
+	for oid, bals := range inputs {
+		if oid.Address() != addr {
+			continue
+		}
+		for _, b := range bals {
+			retTotal += b.Value
+			col := b.Color
+			if _, ok := ret[col]; !ok {
+				ret[col] = 0
+			}
+			ret[col] += b.Value
+		}
+	}
+	return ret, retTotal
+}
+
 func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
 	sum := int64(0)
 	for _, b := range bals {
-		if b.Color() == color {
-			sum += b.Value()
+		if b.Color == color {
+			sum += b.Value
 		}
 	}
 	return sum
@@ -109,7 +130,7 @@ func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
 func BalancesSumTotal(bals []*balance.Balance) int64 {
 	var ret int64
 	for _, b := range bals {
-		ret += b.Value()
+		ret += b.Value
 	}
 	return ret
 }
@@ -127,8 +148,8 @@ func BalancesHash(outs map[valuetransaction.ID][]*balance.Balance) *hashing.Hash
 	for _, txid := range ids {
 		buf.Write(txid[:])
 		for _, b := range outs[txid] {
-			buf.Write(b.Color().Bytes())
-			_ = WriteUint64(&buf, uint64(b.Value()))
+			buf.Write(b.Color.Bytes())
+			_ = WriteUint64(&buf, uint64(b.Value))
 		}
 	}
 	return hashing.HashData(buf.Bytes())

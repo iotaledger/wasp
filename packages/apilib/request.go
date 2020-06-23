@@ -36,11 +36,15 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 	}
 	senderAddr := senderSigScheme.Address()
 	allOuts, err := nodeapi.GetAccountOutputs(node, &senderAddr)
+
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
+	fmt.Printf("[waspapi] CreateRequestTransaction: addlOuts: %+v\ntotalAmount: %d\nsender address: %s\n node %s\n",
+		allOuts, totalAmount, senderAddr.String(), node)
 
 	selectedOutputs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, totalAmount)
+
 	if len(selectedOutputs) == 0 {
 		return nil, errors.New("not enough funds")
 	}
@@ -97,9 +101,9 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	for k, v := range reqBlkJson.Vars {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			ret.Params().SetString(k, v)
+			ret.Args().SetString(k, v)
 		} else {
-			ret.Params().SetInt64(k, int64(n))
+			ret.Args().SetInt64(k, int64(n))
 		}
 	}
 	return ret, nil

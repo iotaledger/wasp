@@ -40,8 +40,6 @@ func configure(_ *node.Plugin) {
 		log.Panicf("Failed to check database version: %s", err)
 	}
 
-	deleteTestingPartitions() // for testing only
-
 	// we open the database in the configure, so we must also make sure it's closed here
 	err = daemon.BackgroundWorker(PluginName, closeDB, shutdown.PriorityDatabase)
 	if err != nil {

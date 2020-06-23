@@ -27,15 +27,16 @@ type committeeObj struct {
 	dismissed           atomic.Bool
 	dismissOnce         sync.Once
 	//
-	address  address.Address
-	color    balance.Color
-	peers    []*peering.Peer
-	size     uint16
-	ownIndex uint16
-	chMsg    chan interface{}
-	stateMgr committee.StateManager
-	operator committee.Operator
-	log      *logger.Logger
+	address      address.Address
+	ownerAddress address.Address
+	color        balance.Color
+	peers        []*peering.Peer
+	size         uint16
+	ownIndex     uint16
+	chMsg        chan interface{}
+	stateMgr     committee.StateManager
+	operator     committee.Operator
+	log          *logger.Logger
 }
 
 func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) committee.Committee {
@@ -71,14 +72,21 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 				peering.MyNetworkId(), addr.String(), bootupData.CommitteeNodes)
 			return nil
 		}
+		// check for owner address. It is mandatory for the committee node
+		var niladdr address.Address
+		if bootupData.OwnerAddress == niladdr {
+			log.Errorf("undefined owner address for the committee node. Dismiss. Addr = %s", addr.String())
+			return nil
+		}
 	}
 
 	ret := &committeeObj{
-		chMsg:   make(chan interface{}, 100),
-		address: bootupData.Address,
-		color:   bootupData.Color,
-		peers:   make([]*peering.Peer, 0),
-		log:     log.Named(util.Short(bootupData.Address.String())),
+		chMsg:        make(chan interface{}, 100),
+		address:      bootupData.Address,
+		ownerAddress: bootupData.OwnerAddress,
+		color:        bootupData.Color,
+		peers:        make([]*peering.Peer, 0),
+		log:          log.Named(util.Short(bootupData.Address.String())),
 	}
 	if keyExists {
 		ret.ownIndex = dkshare.Index

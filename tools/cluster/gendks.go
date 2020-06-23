@@ -9,8 +9,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/variables"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -71,7 +69,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 }
 
 func calcColorUtxodb(scdata *SmartContractFinalConfig) error {
-	origTx, _, err := CreateOriginDataUtxodb(scdata)
+	origTx, err := CreateOriginUtxodb(scdata)
 	if err != nil {
 		return err
 	}
@@ -79,17 +77,17 @@ func calcColorUtxodb(scdata *SmartContractFinalConfig) error {
 	return nil
 }
 
-func CreateOriginDataUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transaction, state.Batch, error) {
+func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	progHash, err := hashing.HashValueFromString(scdata.ProgramHash)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// creating origin transaction just to determine color
-	origTx, batch, err := waspapi.CreateOriginDataUtxodb(origin.NewOriginParams{
+	origTx, err := waspapi.CreateOriginUtxodb(waspapi.CreateOriginParams{
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
@@ -98,22 +96,22 @@ func CreateOriginDataUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Tr
 		}),
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return origTx, batch, nil
+	return origTx, nil
 }
 
-func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, state.Batch, error) {
+func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	progHash, err := hashing.HashValueFromString(scdata.ProgramHash)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// creating origin transaction just to determine color
-	origTx, batch, err := waspapi.CreateOriginData(host, origin.NewOriginParams{
+	origTx, err := waspapi.CreateOrigin(host, waspapi.CreateOriginParams{
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
@@ -122,9 +120,9 @@ func CreateOriginData(host string, scdata *SmartContractFinalConfig) (*sctransac
 		}),
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	fmt.Printf("[cluster] created origin data: addr : %s descr: %s program hash: %s\n",
 		addr.String(), scdata.Description, scdata.ProgramHash)
-	return origTx, batch, nil
+	return origTx, nil
 }

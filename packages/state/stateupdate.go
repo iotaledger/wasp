@@ -34,6 +34,10 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 
 // StateUpdate
 
+func (su *stateUpdate) Clear() {
+	su.mutations = variables.NewMutationSequence()
+}
+
 func (su *stateUpdate) String() string {
 	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestId.String(), su.Timestamp(), su.mutations)
 	return ret

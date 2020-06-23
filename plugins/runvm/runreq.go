@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
+	"github.com/iotaledger/wasp/packages/vm/processor"
 )
 
 // runTheRequest:
@@ -16,16 +17,34 @@ import (
 // - in case of something not correct the whole operation is NOP, however
 //   all the sent fees and other funds remains in the SC address (this may change).
 func runTheRequest(ctx *vm.VMContext) {
+	ctx.Log.Debugw("runTheRequest IN",
+		"reqId", ctx.RequestRef.RequestId().Short(),
+		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
+	)
+	defer ctx.Log.Debugw("runTheRequest OUT",
+		"reqId", ctx.RequestRef.RequestId().Short(),
+		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
+		"state update", ctx.StateUpdate.String(),
+	)
+
 	mustHandleRequestToken(ctx)
 
 	if !handleRewards(ctx) {
 		return
 	}
 
-	reqBlock := ctx.Request.RequestBlock()
-	if reqBlock.RequestCode().IsProtected() && !ctx.Request.IsAuthorised(&ctx.OwnerAddress) {
+	reqBlock := ctx.RequestRef.RequestBlock()
+	if reqBlock.RequestCode().IsProtected() {
+		if !ctx.RequestRef.IsAuthorised(&ctx.OwnerAddress) {
+			return
+		}
+		if ctx.VirtualState.StateIndex() > 0 && !ctx.VirtualState.InitiatedBy(&ctx.OwnerAddress) {
+			// for states after #0 it is required to have record about initiator's address
+			// to prevent attack when owner (initiator) address is overwritten in the quorum of bootup records
+			return
+		}
 		// if protected call is not authorised by the containing transaction, do nothing
-		// the result will be taking all iotas and no effect
+		// the result will be taking all iotas and no effect on state
 		// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
 		return
 	}
@@ -36,33 +55,33 @@ func runTheRequest(ctx *vm.VMContext) {
 		if !ok {
 			return
 		}
-		entryPoint.Run(ctx)
+		entryPoint.Run(processor.NewSandbox(ctx))
 		return
 	}
 
 	// here reqBlock.RequestCode().IsUserDefined()
-	processor, err := getProcessor(ctx.ProgramHash.String())
+	proc, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		// it should not come to this point if processor is not ready
 		ctx.Log.Panicf("major inconsistency: %v", err)
 	}
-	entryPoint, ok := processor.GetEntryPoint(reqBlock.RequestCode())
+	entryPoint, ok := proc.GetEntryPoint(reqBlock.RequestCode())
 	if !ok {
 		return
 	}
-	entryPoint.Run(ctx)
+	entryPoint.Run(processor.NewSandbox(ctx))
 }
 
 func mustHandleRequestToken(ctx *vm.VMContext) {
 	// destroy token corresponding to request
 	// NOTE: it is assumed here that balances contain all necessary request token balances
 	// it is checked in the dispatcher.dispatchAddressUpdate
-	err := ctx.TxBuilder.EraseColor(ctx.Address, (balance.Color)(ctx.Request.Tx.ID()), 1)
+	err := ctx.TxBuilder.EraseColor(ctx.Address, (balance.Color)(ctx.RequestRef.Tx.ID()), 1)
 	if err != nil {
 		// not enough balance for requests tokens
 		// major inconsistency, it must had been checked before
 		ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
-			ctx.Request.RequestId().String(), err)
+			ctx.RequestRef.RequestId().String(), err)
 	}
 }
 
@@ -76,7 +95,7 @@ func handleRewards(ctx *vm.VMContext) bool {
 		return true
 	}
 
-	totalIotaOutput := sctransaction.BalanceOfOutputToColor(ctx.Request.Tx, ctx.Address, balance.ColorIOTA)
+	totalIotaOutput := sctransaction.BalanceOfOutputToColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
 	var err error
 
 	var proceed bool

@@ -46,9 +46,6 @@ func (op *operator) startProcessingIfNeeded() {
 		// request already selected and calculations initialized
 		return
 	}
-	if !op.processorReady {
-		return
-	}
 
 	reqs := op.selectRequestsToProcess()
 	if len(reqs) == 0 {
@@ -119,6 +116,7 @@ func (op *operator) checkQuorum() bool {
 	// collect signature shares available
 	mainHash := op.leaderStatus.signedResults[op.committee.OwnPeerIndex()].essenceHash
 	sigShares := make([][]byte, 0, op.committee.Size())
+	contributingPeers := make([]uint16, 0, op.size())
 	for i := range op.leaderStatus.signedResults {
 		if op.leaderStatus.signedResults[i] == nil {
 			continue
@@ -135,7 +133,10 @@ func (op *operator) checkQuorum() bool {
 			continue
 		}
 
-		sigShares = append(sigShares, op.leaderStatus.signedResults[i].sigShare)
+		sigShare := op.leaderStatus.signedResults[i].sigShare
+		idx, _ := sigShare.Index()
+		sigShares = append(sigShares, sigShare)
+		contributingPeers = append(contributingPeers, uint16(idx))
 	}
 
 	if len(sigShares) < int(op.quorum()) {
@@ -159,10 +160,8 @@ func (op *operator) checkQuorum() bool {
 	}
 
 	sh := op.leaderStatus.resultTx.MustState().VariableStateHash()
-	op.log.Infof("FINALIZED RESULT. Posting transaction to the Value Tangle. txid = %s state hash = %s",
-		op.leaderStatus.resultTx.ID().String(),
-		sh.String(),
-	)
+	op.log.Infof("FINALIZED RESULT. txid: %s, state hash: %s contributors: %+v",
+		op.leaderStatus.resultTx.ID().String(), sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
 	if err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction); err != nil {
@@ -174,7 +173,7 @@ func (op *operator) checkQuorum() bool {
 }
 
 // sets new state transaction and initializes respective variables
-func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VariableState, synchronized bool) {
+func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
 	op.variableState = variableState
 	op.synchronized = synchronized

@@ -37,7 +37,7 @@ func main() {
 		initFlags := flag.NewFlagSet("init", flag.ExitOnError)
 		resetDataPath := initFlags.Bool("r", false, "Reset data path if it exists")
 		initFlags.Parse(globalFlags.Args()[1:])
-		err = wasps.Init(*resetDataPath)
+		err = wasps.Init(*resetDataPath, "init")
 		check(err)
 
 	case "start":

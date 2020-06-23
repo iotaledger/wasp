@@ -109,7 +109,7 @@ type TestTraceMsg struct {
 // state transition is always from state N to state N+1
 type StateTransitionMsg struct {
 	// new variable state
-	VariableState state.VariableState
+	VariableState state.VirtualState
 	// corresponding state transaction
 	StateTransaction *sctransaction.Transaction
 	// processed requests

@@ -21,7 +21,7 @@ type runCalculationsParams struct {
 	timestamp       int64
 }
 
-// runs the VM for the request and posts result to committee's queue
+// runs the VM for requests and posts result to committee's queue
 func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 	if op.variableState == nil {
 		op.log.Debugf("runCalculationsAsync: variable state is not known")
@@ -32,17 +32,18 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		op.log.Errorf("runCalculationsAsync: inconsistency: some requests not ready yet")
 		return
 	}
-	progHash, ok := op.getProgramHash()
-	if !ok {
-		return
+	var progHash hashing.HashValue
+	if ph, ok := op.getProgramHash(); ok {
+		// may not be needed if ready requests are only built-in
+		progHash = *ph
 	}
 	ctx := &vm.VMTask{
 		LeaderPeerIndex: par.leaderPeerIndex,
-		ProgramHash:     *progHash,
+		ProgramHash:     progHash,
 		Address:         *op.committee.Address(),
 		Color:           *op.committee.Color(),
 		Balances:        par.balances,
-		OwnerAddress:    op.getOwnerAddress(),
+		OwnerAddress:    *op.committee.OwnerAddress(),
 		RewardAddress:   par.rewardAddress,
 		MinimumReward:   op.getMinimumReward(),
 		Requests:        takeRefs(par.requests),

@@ -16,7 +16,7 @@ const PluginName = "TestingNodeServices"
 
 var (
 	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, testplugins.Status(PluginName), configure, run)
+	Plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
 	log    *logger.Logger
 )
 

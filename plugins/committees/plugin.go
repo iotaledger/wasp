@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"github.com/iotaledger/wasp/plugins/testplugins/testaddresses"
 	"sync"
 )
 
@@ -43,10 +42,6 @@ func run(_ *node.Plugin) {
 
 		addrs := make([]address.Address, 0, len(lst))
 		for _, scdata := range lst {
-			if testaddresses.IsAddressDisabled(scdata.Address) {
-				log.Debugf("skipping disabled address %s", scdata.Address.String())
-				continue
-			}
 			if cmt := ActivateCommittee(scdata, false); cmt != nil {
 				addrs = append(addrs, scdata.Address)
 			}

@@ -52,8 +52,8 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 	}
 
-	if sm.solidStateValid || sm.solidVariableState == nil {
-		if sm.solidVariableState == nil {
+	if sm.solidStateValid || sm.solidState == nil {
+		if sm.solidState == nil {
 			// pre-origin
 			if sm.nextStateTransaction.ID() != (valuetransaction.ID)(*sm.committee.Color()) {
 				sm.log.Errorf("major inconsistency: origin transaction hash %s not equal to the color of the SC %s",
@@ -62,17 +62,20 @@ func (sm *stateManager) checkStateApproval() bool {
 				return false
 			}
 		}
-		if err := pending.nextVariableState.CommitToDb(*sm.committee.Address(), pending.batch); err != nil {
-			sm.log.Errorw("failed to save state at index #%d", pending.nextVariableState.StateIndex())
+		if err := pending.nextState.CommitToDb(*sm.committee.Address(), pending.batch); err != nil {
+			sm.log.Errorw("failed to save state at index #%d", pending.nextState.StateIndex())
 			return false
 		}
 
-		if sm.solidVariableState != nil {
-			sm.log.Infof("STATE TRANSITION TO #%d. State hash: %s, state txid: %s, batch essence: %s",
-				pending.nextVariableState.StateIndex(),
-				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
+		if sm.solidState != nil {
+			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s",
+				pending.nextState.StateIndex(), sm.nextStateTransaction.ID().String())
+			sm.log.Debugf("STATE TRANSITION. State hash: %s, batch essence: %s",
+				varStateHash.String(), pending.batch.EssenceHash().String())
 		} else {
-			sm.log.Infof("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
+			sm.log.Infof("ORIGIN STATE SAVED. Origin transaction: %s",
+				sm.nextStateTransaction.ID().String())
+			sm.log.Debugf("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		}
 
@@ -80,10 +83,10 @@ func (sm *stateManager) checkStateApproval() bool {
 		// initial load
 
 		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",
-			sm.solidVariableState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
+			sm.solidState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
 	}
 	sm.solidStateValid = true
-	sm.solidVariableState = pending.nextVariableState
+	sm.solidState = pending.nextState
 
 	saveTx := sm.nextStateTransaction
 
@@ -96,7 +99,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// publish state transition
 	publisher.Publish("state",
 		sm.committee.Address().String(),
-		strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+		strconv.Itoa(int(sm.solidState.StateIndex())),
 		strconv.Itoa(int(pending.batch.Size())),
 		saveTx.ID().String(),
 		varStateHash.String(),
@@ -108,7 +111,7 @@ func (sm *stateManager) checkStateApproval() bool {
 			sm.committee.Address().String(),
 			reqid.TransactionId().String(),
 			fmt.Sprintf("%d", reqid.Index()),
-			strconv.Itoa(int(sm.solidVariableState.StateIndex())),
+			strconv.Itoa(int(sm.solidState.StateIndex())),
 			strconv.Itoa(i),
 			strconv.Itoa(int(pending.batch.Size())),
 		)
@@ -116,7 +119,7 @@ func (sm *stateManager) checkStateApproval() bool {
 
 	go func() {
 		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
-			VariableState:    sm.solidVariableState,
+			VariableState:    sm.solidState,
 			StateTransaction: saveTx,
 			Synchronized:     sm.isSynchronized(),
 		})
@@ -127,8 +130,9 @@ func (sm *stateManager) checkStateApproval() bool {
 const periodBetweenSyncMessages = 1 * time.Second
 
 func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
-	if sm.isSynchronized() {
+	if sm.isSynchronized() || sm.solidState == nil {
 		// state is synced, no need for more info
+		// or it is in the pre-origin state, the 0 batch is deterministically known
 		return
 	}
 	// not synced
@@ -138,8 +142,8 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	}
 	// it is time to ask for the next state update to next peer in the permutation
 	stateIndex := uint32(0)
-	if sm.solidVariableState != nil {
-		stateIndex = sm.solidVariableState.StateIndex() + 1
+	if sm.solidState != nil {
+		stateIndex = sm.solidState.StateIndex() + 1
 	}
 	data := util.MustBytes(&committee.GetBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
@@ -163,8 +167,8 @@ func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
 	wasSynchronized := sm.isSynchronized()
 
 	currStateIndex := int32(-1)
-	if sm.solidVariableState != nil {
-		currStateIndex = int32(sm.solidVariableState.StateIndex())
+	if sm.solidState != nil {
+		currStateIndex = int32(sm.solidState.StateIndex())
 	}
 
 	if stateIndex > sm.largestEvidencedStateIndex {
@@ -176,29 +180,36 @@ func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
 		sm.log.Debugf("NOT SYNCED: current state index: %d, largest evidenced index: %d",
 			currStateIndex, sm.largestEvidencedStateIndex)
 	case sm.isSynchronized() && !wasSynchronized:
-		sm.log.Debugf("SYNCED: current state index: %d", sm.solidVariableState.StateIndex())
+		sm.log.Debugf("SYNCED: current state index: %d", sm.solidState.StateIndex())
 	}
 }
 
 func (sm *stateManager) isSynchronized() bool {
-	if sm.solidVariableState == nil {
-		return false
+	if sm.solidState == nil {
+		return sm.largestEvidencedStateIndex == 0
 	}
-	return sm.largestEvidencedStateIndex == sm.solidVariableState.StateIndex()
+	return sm.largestEvidencedStateIndex == sm.solidState.StateIndex()
 }
 
 var niltxid valuetransaction.ID
 
 // adding batch of state updates to the 'pending' map
 func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
+	sm.log.Debugw("addPendingBatch",
+		"state index", batch.StateIndex(),
+		"timestamp", batch.Timestamp(),
+		"size", batch.Size(),
+		"state tx", batch.StateTransactionId().String(),
+	)
+
 	if sm.solidStateValid {
-		if batch.StateIndex() != sm.solidVariableState.StateIndex()+1 {
+		if batch.StateIndex() != sm.solidState.StateIndex()+1 {
 			// if current state is validated, only interested in the batches of state updates for the next state
 			return false
 		}
 	} else {
 		// initial loading
-		if sm.solidVariableState == nil {
+		if sm.solidState == nil {
 			// origin state
 			if batch.StateIndex() != 0 {
 				sm.log.Errorf("expected batch index 0 got %d", batch.StateIndex())
@@ -206,33 +217,33 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 			}
 		} else {
 			// not origin state, the loaded state must be approved by the transaction
-			if batch.StateIndex() != sm.solidVariableState.StateIndex() {
+			if batch.StateIndex() != sm.solidState.StateIndex() {
 				sm.log.Errorf("expected batch index %d got %d",
-					sm.solidVariableState.StateIndex(), batch.StateIndex())
+					sm.solidState.StateIndex(), batch.StateIndex())
 				return false
 			}
 		}
 	}
-	varStateToApprove := state.NewVariableState(sm.solidVariableState) // clone
+	stateToApprove := state.NewVirtualState(sm.solidState) // clone
 
-	if sm.solidStateValid || sm.solidVariableState == nil {
-		// we need to approve the solidVariableState.
+	if sm.solidStateValid || sm.solidState == nil {
+		// we need to approve the solidState.
 		// In case of origin, the next state is origin batch applied to the empty state
-		if err := varStateToApprove.ApplyBatch(batch); err != nil {
+		if err := stateToApprove.ApplyBatch(batch); err != nil {
 			sm.log.Errorw("can't apply update to the current state",
-				"cur state index", sm.solidVariableState.StateIndex(),
+				"cur state index", sm.solidState.StateIndex(),
 				"err", err,
 			)
 			return false
 		}
 	}
 	// include the bach to pending batches map
-	vh := varStateToApprove.Hash()
+	vh := stateToApprove.Hash()
 	pb, ok := sm.pendingBatches[vh]
 	if !ok || pb.batch.StateTransactionId() == niltxid {
 		pb = &pendingBatch{
-			batch:             batch,
-			nextVariableState: varStateToApprove,
+			batch:     batch,
+			nextState: stateToApprove,
 		}
 		sm.pendingBatches[vh] = pb
 	}

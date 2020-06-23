@@ -496,12 +496,11 @@ func (cluster *Cluster) Report() bool {
 			f := ""
 			if exp >= 0 {
 				e = strconv.Itoa(exp)
-				pass = pass && res == exp
 				if res == exp {
 					f = "ok"
 				} else {
 					f = "fail"
-
+					pass = false
 				}
 			}
 			fmt.Printf("          %s: %d (%s) %s\n", t, res, e, f)

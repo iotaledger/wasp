@@ -25,25 +25,13 @@ type VMTask struct {
 	MinimumReward   int64
 	Requests        []sctransaction.RequestRef
 	Timestamp       int64
-	VariableState   state.VariableState // input immutable
+	VariableState   state.VirtualState // input immutable
 	Log             *logger.Logger
 	// call when finished
 	OnFinish func()
 	// outputs
 	ResultTransaction *sctransaction.Transaction
 	ResultBatch       state.Batch
-}
-
-type Processor interface {
-	// returns true if processor can process specific request code
-	// valid only for not reserved codes
-	// to return true for reserved codes is ignored
-	// the best way to implement is with meta-data next to the Wasm binary
-	GetEntryPoint(code sctransaction.RequestCode) (EntryPoint, bool)
-}
-
-type EntryPoint interface {
-	Run(ctx Sandbox)
 }
 
 func BatchHash(reqids []sctransaction.RequestId, ts int64) hashing.HashValue {

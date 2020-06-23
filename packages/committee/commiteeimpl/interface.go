@@ -95,6 +95,10 @@ func (c *committeeObj) Address() *address.Address {
 	return &c.address
 }
 
+func (c *committeeObj) OwnerAddress() *address.Address {
+	return &c.ownerAddress
+}
+
 func (c *committeeObj) Color() *balance.Color {
 	return &c.color
 }

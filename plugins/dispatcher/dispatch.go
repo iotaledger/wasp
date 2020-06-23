@@ -7,7 +7,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/committees"
 )
 
@@ -69,11 +68,6 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 	for i, reqBlk := range tx.Requests() {
 		if reqBlk.Address() == addr {
-			reqid := sctransaction.NewRequestId(tx.ID(), uint16(i))
-			log.Debugw("request dispatched",
-				"addr", addr.String(),
-				"req", reqid.String(),
-			)
 			requestMsgs = append(requestMsgs, committee.RequestMsg{
 				Transaction: tx,
 				Index:       uint16(i),
@@ -88,34 +82,39 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 	if stateTxMsg.Transaction != nil {
 		cmt.ReceiveMessage(stateTxMsg)
+
+		sh := stateTxMsg.Transaction.MustState().VariableStateHash()
+		log.Debugw("state tx dispatched",
+			"txid", stateTxMsg.Transaction.ID().String(),
+			"state index", stateTxMsg.Transaction.MustState().StateIndex(),
+			"state hash", sh.String(),
+		)
 	}
 	for _, reqMsg := range requestMsgs {
 		cmt.ReceiveMessage(reqMsg)
+
+		reqid := sctransaction.NewRequestId(tx.ID(), reqMsg.Index)
+		log.Debugw("request dispatched",
+			"addr", addr.String(),
+			"req", reqid.String(),
+		)
 	}
 }
 
 func getCommitteeByState(tx *sctransaction.Transaction) committee.Committee {
 	//log.Debugw("getCommitteeByState", "txid", tx.ID().String())
 
-	stateBlock, hasState := tx.State()
-	if !hasState {
+	stateAddr, ok, err := tx.StateAddress()
+	if err != nil {
+		log.Errorf("getCommitteeByState: StateAddress returned for txid = %s: %v", tx.ID().String(), err)
+	}
+	if !ok || err != nil {
 		return nil
 	}
-	color := stateBlock.Color()
-
-	var addr address.Address
-	tx.Outputs().ForEach(func(a address.Address, b []*balance.Balance) bool {
-		if util.BalanceOfColor(b, color) == 1 {
-			addr = a
-			return false
-		}
-		return true
-	})
 	log.Debugw("getCommitteeByState",
 		"txid", tx.ID().String(),
-		"color", color.String(),
-		"addr", addr.String(),
+		"addr", stateAddr.String(),
 	)
 
-	return committees.CommitteeByAddress(addr)
+	return committees.CommitteeByAddress(stateAddr)
 }
