@@ -154,3 +154,25 @@ func BalancesHash(outs map[valuetransaction.ID][]*balance.Balance) *hashing.Hash
 	}
 	return hashing.HashData(buf.Bytes())
 }
+
+func InputsToStringByAddress(inputs *valuetransaction.Inputs) string {
+	imap := make(map[string][]string)
+	inputs.ForEach(func(oid valuetransaction.OutputID) bool {
+		a := oid.Address().String()
+		m, ok := imap[a]
+		if !ok {
+			m = make([]string, 0)
+		}
+		m = append(m, oid.TransactionID().String())
+		imap[a] = m
+		return true
+	})
+	ret := ""
+	for a, m := range imap {
+		ret += a + ":\n"
+		for _, t := range m {
+			ret += "    " + t + "\n"
+		}
+	}
+	return ret
+}

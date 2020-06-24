@@ -26,7 +26,7 @@ func (rc RequestCode) String() string {
 		r = "r"
 	}
 
-	return fmt.Sprintf("%#x(%s%s)", uint16(rc), p, r)
+	return fmt.Sprintf("%#X(%s%s)", uint16(rc), p, r)
 }
 
 func (rc RequestCode) IsProtected() bool {
