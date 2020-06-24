@@ -45,18 +45,18 @@ func handleAddLogRequest(ctx processor.Sandbox) {
 		return
 	}
 
-	index, ok, err := ctx.State().GetInt64(logArrayKey)
+	length, ok, err := ctx.State().GetInt64(logArrayKey)
 	if err != nil {
 		fmt.Printf("[logsc] %v", err)
 		return
 	}
 	if !ok {
-		index = 0
+		length = 0
 	}
 
-	index += 1
-	ctx.State().SetInt64(logArrayKey, index)
-	ctx.State().SetString(fmt.Sprintf("%s:%d", logArrayKey, index), msg)
+	length += 1
+	ctx.State().SetInt64(logArrayKey, length)
+	ctx.State().SetString(fmt.Sprintf("%s:%d", logArrayKey, length-1), msg)
 
-	publisher.Publish("logsc-addlog", fmt.Sprintf("index=%d", index), fmt.Sprintf("msg=[%s]", msg))
+	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

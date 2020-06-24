@@ -10,32 +10,41 @@ import (
 	"time"
 )
 
-func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n int, code sctransaction.RequestCode, args map[string]string, wait time.Duration) error {
+func SendRequestNTimes(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n int, code sctransaction.RequestCode, args map[string]string, wait time.Duration) error {
 	for i := 0; i < n; i++ {
 		// in real situation one must wait until the previous request is confirmed
 		// (because of access to the same owner address)
-		tx, err := createRequestTx(clu.Config.Goshimmer.BindAddress, sc, code, args)
+		err := SendRequests(clu, sc, []*waspapi.RequestBlockJson{
+			&waspapi.RequestBlockJson{
+				Address:     sc.Address,
+				RequestCode: uint16(code),
+				Vars:        args,
+			},
+		})
 		if err != nil {
 			return err
 		}
-		fmt.Printf("[cluster] created request tx: %s\n", tx.String())
-
-		err = nodeapi.PostTransaction(clu.Config.Goshimmer.BindAddress, tx.Transaction)
-		if err != nil {
-			return err
-		}
-		//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
 		time.Sleep(wait)
 	}
 	return nil
 }
 
-func createRequestTx(node string, sc *cluster.SmartContractFinalConfig, code sctransaction.RequestCode, args map[string]string) (*sctransaction.Transaction, error) {
-	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(sc.OwnerIndexUtxodb))
-	reqBlock := &waspapi.RequestBlockJson{
-		RequestCode: uint16(code),
-		Address:     sc.Address,
-		Vars:        args,
+func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, reqs []*waspapi.RequestBlockJson) error {
+	tx, err := createRequestTx(clu.Config.Goshimmer.BindAddress, sc, reqs)
+	if err != nil {
+		return err
 	}
-	return waspapi.CreateRequestTransaction(node, sigScheme, []*waspapi.RequestBlockJson{reqBlock})
+	fmt.Printf("[cluster] created request tx: %s\n", tx.String())
+
+	err = nodeapi.PostTransaction(clu.Config.Goshimmer.BindAddress, tx.Transaction)
+	if err != nil {
+		return err
+	}
+	//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
+	return nil
+}
+
+func createRequestTx(node string, sc *cluster.SmartContractFinalConfig, reqs []*waspapi.RequestBlockJson) (*sctransaction.Transaction, error) {
+	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(sc.OwnerIndexUtxodb))
+	return waspapi.CreateRequestTransaction(node, sigScheme, reqs)
 }

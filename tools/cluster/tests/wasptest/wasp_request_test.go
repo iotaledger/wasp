@@ -29,7 +29,7 @@ func TestSend1Request(t *testing.T) {
 	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 0)
+	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 0)
 	check(err, t)
 
 	wasps.CollectMessages(30 * time.Second)
@@ -61,7 +61,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 1*time.Second)
+	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -93,7 +93,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 10, vmconst.RequestCodeNOP, nil, 0*time.Second)
+	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 10, vmconst.RequestCodeNOP, nil, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -125,7 +125,7 @@ func TestSend60Requests(t *testing.T) {
 	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 500*time.Millisecond)
+	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 500*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(1 * time.Minute)
@@ -157,7 +157,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	err = SendRequests(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 0*time.Millisecond)
+	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(1 * time.Minute)
