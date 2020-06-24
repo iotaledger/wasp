@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -12,13 +13,26 @@ import (
 
 type sandbox struct {
 	*vm.VMContext
-	saveTxBuilder *vm.TransactionBuilder // for rollback
+	saveTxBuilder  *vm.TransactionBuilder // for rollback
+	requestWrapper *requestWrapper
+	stateWrapper   *stateWrapper
+}
+
+type requestWrapper struct {
+	ref *sctransaction.RequestRef
+}
+
+type stateWrapper struct {
+	virtualState state.VirtualState
+	stateUpdate  state.StateUpdate
 }
 
 func NewSandbox(vctx *vm.VMContext) Sandbox {
 	return &sandbox{
-		VMContext:     vctx,
-		saveTxBuilder: vctx.TxBuilder.Clone(),
+		VMContext:      vctx,
+		saveTxBuilder:  vctx.TxBuilder.Clone(),
+		requestWrapper: &requestWrapper{&vctx.RequestRef},
+		stateWrapper:   &stateWrapper{vctx.VirtualState, vctx.StateUpdate},
 	}
 }
 
@@ -38,60 +52,65 @@ func (vctx *sandbox) GetTimestamp() int64 {
 	return vctx.Timestamp
 }
 
-func (vctx *sandbox) Index() uint32 {
-	return vctx.VirtualState.StateIndex()
-}
-
-func (vctx *sandbox) ID() sctransaction.RequestId {
-	return *vctx.RequestRef.RequestId()
-}
-
 func (vctx *sandbox) GetLog() *logger.Logger {
 	return vctx.Log
-}
-
-func (vctx *sandbox) Code() sctransaction.RequestCode {
-	return vctx.RequestRef.RequestBlock().RequestCode()
 }
 
 // request arguments
 
 func (vctx *sandbox) Request() Request {
-	return vctx
+	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) GetInt64(name string) (int64, bool) {
-	return vctx.RequestRef.RequestBlock().Args().MustGetInt64(name)
+func (r *requestWrapper) ID() sctransaction.RequestId {
+	return *r.ref.RequestId()
 }
 
-func (vctx *sandbox) GetString(name string) (string, bool) {
-	return vctx.RequestRef.RequestBlock().Args().GetString(name)
+func (r *requestWrapper) Code() sctransaction.RequestCode {
+	return r.ref.RequestBlock().RequestCode()
 }
 
-func (vctx *sandbox) GetAddressValue(name string) (address.Address, bool) {
-	return vctx.RequestRef.RequestBlock().Args().MustGetAddress(name)
+func (r *requestWrapper) GetInt64(name string) (int64, bool) {
+	return r.ref.RequestBlock().Args().MustGetInt64(name)
 }
 
-func (vctx *sandbox) GetHashValue(name string) (hashing.HashValue, bool) {
-	return vctx.RequestRef.RequestBlock().Args().MustGetHashValue(name)
+func (r *requestWrapper) GetString(name string) (string, bool) {
+	return r.ref.RequestBlock().Args().GetString(name)
+}
+
+func (r *requestWrapper) GetAddressValue(name string) (address.Address, bool) {
+	return r.ref.RequestBlock().Args().MustGetAddress(name)
+}
+
+func (r *requestWrapper) GetHashValue(name string) (hashing.HashValue, bool) {
+	return r.ref.RequestBlock().Args().MustGetHashValue(name)
 }
 
 func (vctx *sandbox) State() State {
-	return vctx
+	return vctx.stateWrapper
 }
 
-func (vctx *sandbox) SetInt64(name string, value int64) {
-	vctx.StateUpdate.Mutations().Add(variables.NewMutationSet(name, util.Uint64To8Bytes(uint64(value))))
+func (s *stateWrapper) Index() uint32 {
+	return s.virtualState.StateIndex()
 }
 
-func (vctx *sandbox) SetString(name string, value string) {
-	vctx.StateUpdate.Mutations().Add(variables.NewMutationSet(name, []byte(value)))
+func (s *stateWrapper) GetInt64(name string) (int64, bool, error) {
+	// TODO: look in state update mutations?
+	return s.virtualState.Variables().GetInt64(name)
 }
 
-func (vctx *sandbox) SetAddressValue(name string, addr address.Address) {
-	vctx.StateUpdate.Mutations().Add(variables.NewMutationSet(name, addr[:]))
+func (s *stateWrapper) SetInt64(name string, value int64) {
+	s.stateUpdate.Mutations().Add(variables.NewMutationSet(name, util.Uint64To8Bytes(uint64(value))))
 }
 
-func (vctx *sandbox) SetHashValue(name string, h hashing.HashValue) {
-	vctx.StateUpdate.Mutations().Add(variables.NewMutationSet(name, h[:]))
+func (s *stateWrapper) SetString(name string, value string) {
+	s.stateUpdate.Mutations().Add(variables.NewMutationSet(name, []byte(value)))
+}
+
+func (s *stateWrapper) SetAddressValue(name string, addr address.Address) {
+	s.stateUpdate.Mutations().Add(variables.NewMutationSet(name, addr[:]))
+}
+
+func (s *stateWrapper) SetHashValue(name string, h hashing.HashValue) {
+	s.stateUpdate.Mutations().Add(variables.NewMutationSet(name, h[:]))
 }

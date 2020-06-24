@@ -128,15 +128,11 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.variableState == nil {
 		return nil, false
 	}
-	b, ok := op.variableState.Variables().Get(vmconst.VarNameProgramHash)
-	if !ok {
+	h, ok, err := op.variableState.Variables().GetHashValue(vmconst.VarNameProgramHash)
+	if !ok || err != nil {
 		return nil, false
 	}
-	hash, err := hashing.HashValueFromBytes(b)
-	if err != nil {
-		return nil, false
-	}
-	return &hash, true
+	return &h, true
 }
 
 func (op *operator) getRewardAddress() address.Address {

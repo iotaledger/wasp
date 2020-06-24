@@ -7,6 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processor"
 )
 
+const ProgramHash = "67F3YgmwXT23PuRwVzDYNLhyXxwQz8WubwmYoWK2hUmE"
+
 type nilProcessor struct {
 }
 

@@ -7,11 +7,10 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func CreateOrigin1SC(clu *cluster.Cluster) error {
+func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	//fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
-	sc := clu.SmartContractConfig[0]
-	tx, err := cluster.CreateOrigin(clu.Config.Goshimmer.BindAddress, &sc)
+	tx, err := cluster.CreateOrigin(clu.Config.Goshimmer.BindAddress, sc)
 	if err != nil {
 		return err
 	}
@@ -22,6 +21,10 @@ func CreateOrigin1SC(clu *cluster.Cluster) error {
 	sh := tx.MustState().VariableStateHash()
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
+
+	if tx.ID().String() != sc.Color {
+		return fmt.Errorf("mismatch: origin tx id %s should be equal to SC color %s", tx.ID().String(), sc.Color)
+	}
 
 	// in real situation we have to wait for confirmation
 	err = nodeapi.PostTransaction(clu.Config.Goshimmer.BindAddress, tx.Transaction)
