@@ -47,6 +47,7 @@ func createOrigin(par CreateOriginParams, allOutputs map[valuetransaction.Output
 		OwnerSignatureScheme: par.OwnerSignatureScheme,
 		AllInputs:            allOutputs,
 		InputColor:           balance.ColorIOTA,
+		ProgramHash:          par.ProgramHash,
 	})
 	if err != nil {
 		return nil, err
