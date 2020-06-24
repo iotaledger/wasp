@@ -235,6 +235,7 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 		reqBlock := req.reqTx.Requests()[req.reqId.Index()]
 		if reqBlock.RequestCode().IsUserDefined() && !op.processorReady {
 			op.log.Debugf("request %s can't be processed: processor not ready", req.reqId.Short())
+			continue
 		}
 		ret = append(ret, req)
 	}
