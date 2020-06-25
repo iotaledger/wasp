@@ -21,10 +21,12 @@ import (
 func runTheRequest(ctx *vm.VMContext) {
 	ctx.Log.Debugw("runTheRequest IN",
 		"reqId", ctx.RequestRef.RequestId().Short(),
+		"programHash", ctx.ProgramHash.String(),
 		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
 	)
 	defer ctx.Log.Debugw("runTheRequest OUT",
 		"reqId", ctx.RequestRef.RequestId().Short(),
+		"programHash", ctx.ProgramHash.String(),
 		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
 		"state update", ctx.StateUpdate.String(),
 	)

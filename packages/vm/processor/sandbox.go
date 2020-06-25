@@ -30,7 +30,7 @@ type Request interface {
 type State interface {
 	Index() uint32
 	// getters
-	// TODO
+	GetInt64(name string) (int64, bool, error)
 	// setters
 	SetInt64(name string, value int64)
 	SetString(name string, value string)

@@ -1,12 +1,14 @@
 package variables
 
 import (
+	"encoding/hex"
 	"fmt"
+	"io"
+	"sort"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
-	"sort"
 )
 
 // Variables represents a key-value map where both keys and values are
@@ -20,6 +22,8 @@ type Variables interface {
 	Del(key string)
 	Get(key string) ([]byte, bool)
 	IsEmpty() bool
+
+	ToMap() map[string][]byte
 
 	ForEach(func(key string, value []byte) bool)
 	ForEachDeterministic(func(key string, value []byte) bool)
@@ -68,6 +72,10 @@ func FromMap(m map[string][]byte) Variables {
 	return variables(m)
 }
 
+func (vr variables) ToMap() map[string][]byte {
+	return variables(vr)
+}
+
 func (vr variables) sortedKeys() []string {
 	keys := make([]string, 0)
 	for k := range vr {
@@ -80,7 +88,7 @@ func (vr variables) sortedKeys() []string {
 func (vr variables) String() string {
 	ret := ""
 	for _, key := range vr.sortedKeys() {
-		ret += fmt.Sprintf("           %s: %v\n", key, vr[key])
+		ret += fmt.Sprintf("           %s: %s\n", key, hex.EncodeToString(vr[key]))
 	}
 	return ret
 }

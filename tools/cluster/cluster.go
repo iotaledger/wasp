@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,6 +15,13 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 
 	nodeapi "github.com/iotaledger/wasp/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -507,5 +513,52 @@ func (cluster *Cluster) Report() bool {
 		}
 	}
 	fmt.Println()
+	return pass
+}
+
+func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[string][]byte) bool {
+	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+
+	scProgHash, err := hashing.HashValueFromString(sc.ProgramHash)
+	if err != nil {
+		panic("could not convert SC program hash")
+	}
+
+	pass := true
+	for _, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
+		fmt.Printf("[cluster] State verification for node %s\n", host)
+		actual, err := waspapi.DumpSCState(host, sc.Address)
+		if err != nil {
+			pass = false
+			fmt.Printf("   FAIL: %s\n", err)
+			continue
+		}
+		if !actual.Exists {
+			pass = false
+			fmt.Printf("   FAIL: state does not exist\n")
+			continue
+		}
+
+		vexp := variables.FromMap(expectedVariables)
+		vexp.SetAddress(vmconst.VarNameOwnerAddress, ownerAddr)
+		vexp.SetHashValue(vmconst.VarNameProgramHash, scProgHash)
+
+		vact := variables.FromMap(actual.Variables)
+
+		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, vexp)
+		fmt.Printf("      Actual: index %d\n%s\n", actual.Index, vact)
+
+		if actual.Index != expectedIndex {
+			pass = false
+			fmt.Printf("   FAIL: index mismatch\n")
+			continue
+		}
+
+		if util.GetHashValue(vexp) != util.GetHashValue(vact) {
+			pass = false
+			fmt.Printf("   FAIL: variables mismatch\n")
+			continue
+		}
+	}
 	return pass
 }
