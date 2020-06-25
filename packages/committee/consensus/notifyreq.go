@@ -9,7 +9,7 @@ import (
 func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	stateIndex, ok := op.stateIndex()
 	if !ok {
-		op.log.Debugf("sendRequestNotificationsToLeader: current state is undefined")
+		op.log.Debugf("sendRequestNotificationsToLeader: current currentState is undefined")
 		return
 	}
 	currentLeaderPeerIndex, ok := op.currentLeader()
@@ -37,7 +37,7 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	// send until first success, but no more than number of nodes in the committee
 	op.log.Debugw("sendRequestNotificationsToLeader",
 		"leader", currentLeaderPeerIndex,
-		"state index", stateIndex,
+		"currentState index", stateIndex,
 		"reqs", idsShortStr(reqIds),
 	)
 
@@ -49,13 +49,13 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 func (op *operator) storeNotificationIfNeeded(msg *committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if stateDefined && msg.StateIndex < stateIndex {
-		// don't save from earlier. The current state saved only for tracking
+		// don't save from earlier. The current currentState saved only for tracking
 		return
 	}
 	op.notificationsBacklog = append(op.notificationsBacklog, msg)
 }
 
-// stores information about notification in the current state
+// stores information about notification in the current currentState
 func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
@@ -76,7 +76,7 @@ func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
 	}
 }
 
-// adjust all notification information to the current state index
+// adjust all notification information to the current currentState index
 func (op *operator) adjustNotifications() {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
@@ -87,7 +87,7 @@ func (op *operator) adjustNotifications() {
 		setAllFalse(req.notifications)
 		req.notifications[op.peerIndex()] = req.reqTx != nil
 	}
-	// put markers of the current state
+	// put markers of the current currentState
 	op.markRequestsNotified(op.notificationsBacklog)
 
 	// clean notification backlog from messages from current and and past states

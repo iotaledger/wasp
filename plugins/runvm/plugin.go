@@ -68,7 +68,7 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 			onFinish(nil)
 
 		default:
-			onFinish(fmt.Errorf("can't create processor for progam hash %s", programHash))
+			onFinish(fmt.Errorf("can't create processor for program hash %s", programHash))
 		}
 	}()
 }

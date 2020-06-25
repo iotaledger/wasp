@@ -160,7 +160,7 @@ func (op *operator) checkQuorum() bool {
 	}
 
 	sh := op.leaderStatus.resultTx.MustState().VariableStateHash()
-	op.log.Infof("FINALIZED RESULT. txid: %s, state hash: %s contributors: %+v",
+	op.log.Infof("FINALIZED RESULT. txid: %s, currentState hash: %s contributors: %+v",
 		op.leaderStatus.resultTx.ID().String(), sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
@@ -172,10 +172,10 @@ func (op *operator) checkQuorum() bool {
 	return true
 }
 
-// sets new state transaction and initializes respective variables
+// sets new currentState transaction and initializes respective variables
 func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
-	op.variableState = variableState
+	op.currentState = variableState
 	op.synchronized = synchronized
 
 	op.requestBalancesDeadline = time.Now()

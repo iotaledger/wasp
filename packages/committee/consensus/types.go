@@ -20,16 +20,16 @@ import (
 type operator struct {
 	committee committee.Committee
 	dkshare   *tcrypto.DKShare
-	//state
-	variableState state.VirtualState
-	stateTx       *sctransaction.Transaction
-	balances      map[valuetransaction.ID][]*balance.Balance
-	synchronized  bool
+	//currentState
+	currentState state.VirtualState
+	stateTx      *sctransaction.Transaction
+	balances     map[valuetransaction.ID][]*balance.Balance
+	synchronized bool
 
 	requestBalancesDeadline time.Time
 	processorReady          bool
 
-	// notifications with future state indices
+	// notifications with future currentState indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
 	requests map[sctransaction.RequestId]*request
@@ -79,7 +79,7 @@ type request struct {
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
 
-	// notification vector for the current state
+	// notification vector for the current currentState
 	notifications []bool
 
 	log *logger.Logger
@@ -110,10 +110,10 @@ func (op *operator) size() uint16 {
 }
 
 func (op *operator) stateIndex() (uint32, bool) {
-	if op.variableState == nil {
+	if op.currentState == nil {
 		return 0, false
 	}
-	return op.variableState.StateIndex(), true
+	return op.currentState.StateIndex(), true
 }
 
 func (op *operator) mustStateIndex() uint32 {
@@ -125,10 +125,10 @@ func (op *operator) mustStateIndex() uint32 {
 }
 
 func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
-	if op.variableState == nil {
+	if op.currentState == nil {
 		return nil, false
 	}
-	h, ok, err := op.variableState.Variables().GetHashValue(vmconst.VarNameProgramHash)
+	h, ok, err := op.currentState.Variables().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || err != nil {
 		return nil, false
 	}
@@ -143,7 +143,7 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok := op.variableState.Variables().MustGetInt64(vmconst.VarNameMinimumReward)
+	vt, ok := op.currentState.Variables().MustGetInt64(vmconst.VarNameMinimumReward)
 	if !ok {
 		return 0
 	}
