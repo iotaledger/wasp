@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -22,7 +23,7 @@ type VMContext struct {
 	// minimum reward
 	MinimumReward int64
 	// tx builder to build the final transaction
-	TxBuilder *TransactionBuilder
+	TxBuilder *txbuilder.Builder
 	// timestamp of the batch
 	Timestamp int64
 	// initial state of the call

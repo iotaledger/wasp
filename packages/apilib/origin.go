@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -29,7 +28,13 @@ func CreateOrigin(nodeurl string, par CreateOriginParams) (*sctransaction.Transa
 	if err != nil {
 		return nil, err
 	}
-	return createOrigin(par, allOuts)
+	return origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+		Address:              par.Address,
+		OwnerSignatureScheme: par.OwnerSignatureScheme,
+		AllInputs:            allOuts,
+		InputColor:           balance.ColorIOTA,
+		ProgramHash:          par.ProgramHash,
+	})
 }
 
 // same as above only gets inputs form local utxodb rather than goshimmer
@@ -37,21 +42,11 @@ func CreateOrigin(nodeurl string, par CreateOriginParams) (*sctransaction.Transa
 func CreateOriginUtxodb(par CreateOriginParams) (*sctransaction.Transaction, error) {
 	ownerAddress := par.OwnerSignatureScheme.Address()
 	allOuts := utxodb.GetAddressOutputs(ownerAddress)
-	return createOrigin(par, allOuts)
-}
-
-func createOrigin(par CreateOriginParams, allOutputs map[valuetransaction.OutputID][]*balance.Balance) (*sctransaction.Transaction, error) {
-
-	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+	return origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              par.Address,
 		OwnerSignatureScheme: par.OwnerSignatureScheme,
-		AllInputs:            allOutputs,
+		AllInputs:            allOuts,
 		InputColor:           balance.ColorIOTA,
 		ProgramHash:          par.ProgramHash,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return originTx, nil
 }

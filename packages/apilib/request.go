@@ -3,15 +3,14 @@ package apilib
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/util"
 	"strconv"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 type RequestBlockJson struct {
@@ -26,35 +25,16 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 	if len(reqsJson) == 0 {
 		return nil, errors.New("CreateRequestTransaction: must be at least 1 request block")
 	}
-	totalAmount := int64(0)
-	for _, r := range reqsJson {
-		a := r.Amount
-		if a <= 0 {
-			a = 1
-		}
-		totalAmount += a
-	}
 	senderAddr := senderSigScheme.Address()
 	allOuts, err := nodeapi.GetAccountOutputs(node, &senderAddr)
-
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
-	fmt.Printf("[waspapi] CreateRequestTransaction: addlOuts: %+v\ntotalAmount: %d\nsender address: %s\n node %s\n",
-		allOuts, totalAmount, senderAddr.String(), node)
+	fmt.Printf("[[[[]]]] CreateRequestTransaction:\nall inputs: %s sender addr: %s\nnode: %s\n",
+		util.InputBalancesToString(allOuts), senderAddr.String(), node)
 
-	selectedOutputs := util.SelectOutputsForAmount(allOuts, balance.ColorIOTA, totalAmount)
-
-	if len(selectedOutputs) == 0 {
-		return nil, errors.New("not enough funds")
-	}
-	oids := make([]valuetransaction.OutputID, 0, len(selectedOutputs))
-	for oid := range selectedOutputs {
-		oids = append(oids, oid)
-	}
-
-	txb := sctransaction.NewTransactionBuilder()
-	if err := txb.AddInputs(oids...); err != nil {
+	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	if err != nil {
 		return nil, err
 	}
 
@@ -64,29 +44,19 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 			return nil, err
 		}
 		// add request block
-		txb.AddRequestBlock(reqBlk)
-		// add new request token to outputs
-		a := reqBlkJson.Amount
-		if a <= 0 {
-			a = 1
-		}
-		txb.AddBalanceToOutput(reqBlk.Address(), balance.New(balance.ColorNew, 1))
-		if a > 1 {
-			txb.AddBalanceToOutput(reqBlk.Address(), balance.New(balance.ColorIOTA, a-1))
+		if err = txb.AddRequestBlock(reqBlk); err != nil {
+			return nil, err
 		}
 	}
-	totalInputs := TotalBalanceOfInputs(selectedOutputs)
-	if totalInputs > totalAmount {
-		// add reminder
-		txb.AddBalanceToOutput(senderAddr, balance.New(balance.ColorIOTA, totalInputs-totalAmount))
-	}
-	tx, err := txb.Finalize()
+	tx, err := txb.Build(false)
 	if err != nil {
 		return nil, err
 	}
 	tx.Sign(senderSigScheme)
 
 	MustNotNullInputs(tx.Transaction)
+	fmt.Printf("[[[[]]]] create request tx:\n%s\n", tx.String())
+
 	return tx, nil
 }
 

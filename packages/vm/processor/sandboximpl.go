@@ -2,6 +2,7 @@ package processor
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
@@ -15,7 +16,7 @@ import (
 
 type sandbox struct {
 	*vm.VMContext
-	saveTxBuilder  *vm.TransactionBuilder // for rollback
+	saveTxBuilder  *txbuilder.Builder // for rollback
 	requestWrapper *requestWrapper
 	stateWrapper   *stateWrapper
 }

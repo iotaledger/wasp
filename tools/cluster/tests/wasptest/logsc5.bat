@@ -1,0 +1,1 @@
+go test -run TestLogsc5

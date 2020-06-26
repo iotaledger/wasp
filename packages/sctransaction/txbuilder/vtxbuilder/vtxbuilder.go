@@ -4,6 +4,7 @@ package vtxbuilder
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -36,18 +37,8 @@ func newVTBuilder(orig *Builder) *Builder {
 	}
 	for i := range ret.inputBalancesByOutput {
 		ret.inputBalancesByOutput[i].outputId = orig.inputBalancesByOutput[i].outputId
-
-		ret.inputBalancesByOutput[i].reminder = make([]*balance.Balance, len(orig.inputBalancesByOutput[i].reminder))
-		for j := range ret.inputBalancesByOutput[i].reminder {
-			ret.inputBalancesByOutput[i].reminder[j] =
-				balance.New(orig.inputBalancesByOutput[i].reminder[j].Color, orig.inputBalancesByOutput[i].reminder[j].Value)
-		}
-
-		ret.inputBalancesByOutput[i].consumed = make([]*balance.Balance, len(orig.inputBalancesByOutput[i].consumed))
-		for j := range ret.inputBalancesByOutput[i].consumed {
-			ret.inputBalancesByOutput[i].consumed[j] =
-				balance.New(orig.inputBalancesByOutput[i].consumed[j].Color, orig.inputBalancesByOutput[i].consumed[j].Value)
-		}
+		ret.inputBalancesByOutput[i].reminder = util.CloneBalances(orig.inputBalancesByOutput[i].reminder)
+		ret.inputBalancesByOutput[i].consumed = util.CloneBalances(orig.inputBalancesByOutput[i].consumed)
 	}
 	for addr, bals := range orig.outputBalances {
 		ret.outputBalances[addr] = make(map[balance.Color]int64)
@@ -73,10 +64,9 @@ func NewFromAddressBalances(addr *address.Address, addressBalances map[valuetran
 		}
 		inb := inputBalances{
 			outputId: valuetransaction.NewOutputID(*addr, txid),
-			reminder: make([]*balance.Balance, 0, len(bals)),
+			reminder: util.CloneBalances(bals),
 			consumed: make([]*balance.Balance, 0, len(bals)),
 		}
-		copy(inb.reminder, bals)
 		inb.reminder, err = compressAndSortBalances(inb.reminder)
 		if err != nil {
 			return nil, err
@@ -95,10 +85,9 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 		}
 		inb := inputBalances{
 			outputId: oid,
-			reminder: make([]*balance.Balance, len(bals)),
+			reminder: util.CloneBalances(bals),
 			consumed: make([]*balance.Balance, 0, len(bals)),
 		}
-		copy(inb.reminder, bals)
 		inb.reminder, err = compressAndSortBalances(inb.reminder)
 		if err != nil {
 			return nil, err
@@ -261,8 +250,10 @@ func (vtxb *Builder) EraseColor(targetAddr address.Address, col balance.Color, a
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}
-	if vtxb.GetInputBalance(col) < amount {
-		return errorNotEnoughBalance
+	actualBalance := vtxb.GetInputBalance(col)
+	if actualBalance < amount {
+		return fmt.Errorf("not enough balance: need %d, found %d, color %s",
+			amount, actualBalance, col.String())
 	}
 	vtxb.moveAmount(targetAddr, col, balance.ColorIOTA, amount)
 	return nil
@@ -301,8 +292,10 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 	}
 	for i := range vtxb.inputBalancesByOutput {
 		for _, bal := range vtxb.inputBalancesByOutput[i].reminder {
-			vtxb.addToOutputs(vtxb.inputBalancesByOutput[i].outputId.Address(), bal.Color, bal.Value)
-			bal.Value = 0
+			if bal.Value > 0 {
+				vtxb.addToOutputs(vtxb.inputBalancesByOutput[i].outputId.Address(), bal.Color, bal.Value)
+				bal.Value = 0
+			}
 		}
 	}
 	inps := make([]valuetransaction.OutputID, len(vtxb.inputBalancesByOutput))
@@ -316,6 +309,9 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 	for addr, balmap := range vtxb.outputBalances {
 		outmap[addr] = make([]*balance.Balance, 0, len(balmap))
 		for col, b := range balmap {
+			if b <= 0 {
+				panic("internal inconsistency: balance value must be positive")
+			}
 			outmap[addr] = append(outmap[addr], balance.New(col, b))
 		}
 		sort.Slice(outmap[addr], func(i, j int) bool {
@@ -326,4 +322,18 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 		valuetransaction.NewInputs(inps...),
 		valuetransaction.NewOutputs(outmap),
 	)
+}
+
+func (vtxb *Builder) Dump() string {
+	ret := ""
+	// reminder
+	for i := range vtxb.inputBalancesByOutput {
+		ret += vtxb.inputBalancesByOutput[i].outputId.Address().String() + "-" +
+			vtxb.inputBalancesByOutput[i].outputId.TransactionID().String() + "\n"
+		for _, bal := range vtxb.inputBalancesByOutput[i].reminder {
+			ret += fmt.Sprintf("      %s: %d\n", bal.Color.String(), bal.Value)
+		}
+	}
+	// TODO the rest
+	return ret
 }

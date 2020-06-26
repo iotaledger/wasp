@@ -154,10 +154,10 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
-	if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(op.committee.Address(), op.leaderStatus.balances); err != nil {
-		op.log.Errorf("ValidateConsumptionOfInputs: final tx invalid: %v", err)
-		return false
-	}
+	//if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(op.committee.Address(), op.leaderStatus.balances); err != nil {
+	//	op.log.Errorf("ValidateConsumptionOfInputs: final tx invalid: %v", err)
+	//	return false
+	//}
 
 	sh := op.leaderStatus.resultTx.MustState().StateHash()
 	op.log.Infof("FINALIZED RESULT. txid: %s, currentState hash: %s contributors: %+v",
