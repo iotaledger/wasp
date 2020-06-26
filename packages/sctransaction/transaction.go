@@ -28,17 +28,15 @@ func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateBlock, r
 		stateBlock:    stateBlock,
 		requestBlocks: requestBlocks,
 	}
-	scpayload, err := ret.DataScPayloadBytes()
-	if err != nil {
+	var buf bytes.Buffer
+	if err := ret.writeDataPayload(&buf); err != nil {
 		return nil, err
 	}
-	if err := vtx.SetDataPayload(scpayload); err != nil {
+	if err := vtx.SetDataPayload(buf.Bytes()); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
-
-// 1 + balance.ColorLength // metabyte + color
 
 func NewFromBytes(data []byte) (*Transaction, error) {
 	vtx, _, err := valuetransaction.FromBytes(data)
@@ -82,14 +80,6 @@ func (tx *Transaction) MustRequest(index uint16) *RequestBlock {
 	return tx.requestBlocks[index]
 }
 
-func (tx *Transaction) DataScPayloadBytes() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := tx.WriteDataPayload(&buf); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
 func (tx *Transaction) OutputBalancesByAddress(addr *address.Address) ([]*balance.Balance, bool) {
 	untyped, ok := tx.Outputs().Get(*addr)
 	if !ok {
@@ -104,7 +94,7 @@ func (tx *Transaction) OutputBalancesByAddress(addr *address.Address) ([]*balanc
 }
 
 // function writes bytes of the SC transaction-specific part
-func (tx *Transaction) WriteDataPayload(w io.Writer) error {
+func (tx *Transaction) writeDataPayload(w io.Writer) error {
 	if tx.stateBlock == nil && len(tx.requestBlocks) == 0 {
 		return errors.New("can't encode empty sc transaction")
 	}
@@ -163,7 +153,7 @@ func (tx *Transaction) String() string {
 	ret := fmt.Sprintf("TX: %s\n", tx.Transaction.ID().String())
 	stateBlock, ok := tx.State()
 	if ok {
-		vh := stateBlock.VariableStateHash()
+		vh := stateBlock.StateHash()
 		ret += fmt.Sprintf("State: color: %s statehash: %s, ts: %d\n",
 			stateBlock.Color().String(),
 			vh.String(), stateBlock.Timestamp(),

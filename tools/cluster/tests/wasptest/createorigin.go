@@ -18,7 +18,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	//fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
 
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
-	sh := tx.MustState().VariableStateHash()
+	sh := tx.MustState().StateHash()
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
 

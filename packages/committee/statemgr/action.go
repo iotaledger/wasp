@@ -29,7 +29,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	}
 	// among pending state update batches we locate the one which
 	// is approved by the transaction
-	varStateHash := sm.nextStateTransaction.MustState().VariableStateHash()
+	varStateHash := sm.nextStateTransaction.MustState().StateHash()
 	pending, ok := sm.pendingBatches[varStateHash]
 	if !ok {
 		// corresponding batch wasn't found among pending state updates

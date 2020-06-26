@@ -23,7 +23,7 @@ type StateBlock struct {
 	// requestId = tx hash + requestId index which originated this state update
 	// the list is needed for batches of requests
 	// this reference makes requestIds (inputs to state update) immutable part of the state update
-	variableStateHash hashing.HashValue
+	stateHash hashing.HashValue
 }
 
 type NewStateBlockParams struct {
@@ -35,10 +35,10 @@ type NewStateBlockParams struct {
 
 func NewStateBlock(par NewStateBlockParams) *StateBlock {
 	return &StateBlock{
-		color:             par.Color,
-		stateIndex:        par.StateIndex,
-		variableStateHash: par.StateHash,
-		timestamp:         par.Timestamp,
+		color:      par.Color,
+		stateIndex: par.StateIndex,
+		stateHash:  par.StateHash,
+		timestamp:  par.Timestamp,
 	}
 }
 
@@ -49,7 +49,7 @@ func (sb *StateBlock) Clone() *StateBlock {
 	return NewStateBlock(NewStateBlockParams{
 		Color:      sb.color,
 		StateIndex: sb.stateIndex,
-		StateHash:  sb.variableStateHash,
+		StateHash:  sb.stateHash,
 		Timestamp:  sb.timestamp,
 	})
 }
@@ -66,8 +66,8 @@ func (sb *StateBlock) Timestamp() int64 {
 	return sb.timestamp
 }
 
-func (sb *StateBlock) VariableStateHash() hashing.HashValue {
-	return sb.variableStateHash
+func (sb *StateBlock) StateHash() hashing.HashValue {
+	return sb.stateHash
 }
 
 func (sb *StateBlock) WithTimestamp(ts int64) *StateBlock {
@@ -76,7 +76,7 @@ func (sb *StateBlock) WithTimestamp(ts int64) *StateBlock {
 }
 
 func (sb *StateBlock) WithVariableStateHash(h *hashing.HashValue) *StateBlock {
-	sb.variableStateHash = *h
+	sb.stateHash = *h
 	return sb
 }
 
@@ -93,7 +93,7 @@ func (sb *StateBlock) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, uint64(sb.timestamp)); err != nil {
 		return err
 	}
-	if err := sb.variableStateHash.Write(w); err != nil {
+	if err := sb.stateHash.Write(w); err != nil {
 		return err
 	}
 	return nil
@@ -111,7 +111,7 @@ func (sb *StateBlock) Read(r io.Reader) error {
 		return err
 	}
 	sb.timestamp = int64(timestamp)
-	if err := sb.variableStateHash.Read(r); err != nil {
+	if err := sb.stateHash.Read(r); err != nil {
 		return err
 	}
 	return nil

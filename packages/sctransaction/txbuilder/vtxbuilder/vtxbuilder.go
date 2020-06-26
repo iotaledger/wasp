@@ -135,6 +135,15 @@ func (vtxb *Builder) Clone() *Builder {
 	return newVTBuilder(vtxb)
 }
 
+// ForEachInputBalance iterates through reminders
+func (vtxb *Builder) ForEachInputBalance(consumer func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool) {
+	for i := range vtxb.inputBalancesByOutput {
+		if !consumer(&vtxb.inputBalancesByOutput[i].outputId, vtxb.inputBalancesByOutput[i].reminder) {
+			return
+		}
+	}
+}
+
 func (vtxb *Builder) SetConsumerPrioritySmallerBalances() {
 	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
 		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].reminder)

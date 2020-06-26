@@ -159,7 +159,7 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
-	sh := op.leaderStatus.resultTx.MustState().VariableStateHash()
+	sh := op.leaderStatus.resultTx.MustState().StateHash()
 	op.log.Infof("FINALIZED RESULT. txid: %s, currentState hash: %s contributors: %+v",
 		op.leaderStatus.resultTx.ID().String(), sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
