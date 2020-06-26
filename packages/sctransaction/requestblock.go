@@ -164,6 +164,18 @@ func TakeRequestIds(lst []RequestRef) []RequestId {
 
 // request block is authorised if the containing transaction's inputs contain owner's address
 func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
-	_, ok := ref.Tx.Transaction.Inputs().Get(ownerAddr)
-	return ok
+	// would be better to have something like tx.IsSignedBy(addr)
+
+	if !ref.Tx.Transaction.SignaturesValid() {
+		return false // not needed, just in case
+	}
+	auth := false
+	ref.Tx.Transaction.Inputs().ForEach(func(oid valuetransaction.OutputID) bool {
+		if oid.Address() == *ownerAddr {
+			auth = true
+			return false
+		}
+		return true
+	})
+	return auth
 }

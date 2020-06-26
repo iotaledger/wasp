@@ -1,0 +1,43 @@
+{
+  "database": {
+    "inMemory": true,
+    "directory": "waspdb"
+  },
+  "logger": {
+    "level": "info",
+    "disableCaller": false,
+    "disableStacktrace": true,
+    "encoding": "console",
+    "outputPaths": [
+      "stdout",
+      "wasp.log"
+    ],
+    "disableEvents": true
+  },
+  "network": {
+    "bindAddress": "0.0.0.0",
+    "externalAddress": "auto"
+  },
+  "node": {
+    "disablePlugins": [],
+    "enablePlugins": []
+  },
+  "webapi": {
+    "auth": {
+      "password": "wasp",
+      "privateKey": "",
+      "username": "wasp"
+    },
+    "bindAddress": "{{.NetAddress}}:{{.ApiPort}}"
+  },
+  "peering":{
+    "port": {{.PeeringPort}},
+    "netid": "127.0.0.1:{{.PeeringPort}}"
+  },
+  "nodeconn": {
+    "address": "127.0.0.1:5000"
+  },
+  "nanomsg":{
+    "port": {{.NanomsgPort}}
+  }
+}

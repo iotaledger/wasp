@@ -83,7 +83,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	if stateTxMsg.Transaction != nil {
 		cmt.ReceiveMessage(stateTxMsg)
 
-		sh := stateTxMsg.Transaction.MustState().VariableStateHash()
+		sh := stateTxMsg.Transaction.MustState().StateHash()
 		log.Debugw("state tx dispatched",
 			"txid", stateTxMsg.Transaction.ID().String(),
 			"state index", stateTxMsg.Transaction.MustState().StateIndex(),

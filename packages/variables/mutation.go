@@ -16,6 +16,9 @@ type Mutation interface {
 
 	ApplyTo(vs Variables)
 
+	Key() string
+	Value() (v []byte, ok bool)
+
 	getMagic() int
 }
 
@@ -26,6 +29,8 @@ type MutationSequence interface {
 	String() string
 
 	ForEach(func(mut Mutation))
+	At(i int) *Mutation
+	Len() int
 
 	Add(mut Mutation)
 	AddAll(ms MutationSequence)
@@ -101,6 +106,14 @@ func (ms *mutationSequence) ForEach(f func(mut Mutation)) {
 	}
 }
 
+func (ms *mutationSequence) Len() int {
+	return len(ms.muts)
+}
+
+func (ms *mutationSequence) At(i int) *Mutation {
+	return &ms.muts[i]
+}
+
 func (ms *mutationSequence) Add(mut Mutation) {
 	ms.muts = append(ms.muts, mut)
 }
@@ -172,6 +185,14 @@ func (m *mutationSet) String() string {
 	return fmt.Sprintf("SET \"%s\"={%x}", m.k, m.v)
 }
 
+func (m *mutationSet) Key() string {
+	return m.k
+}
+
+func (m *mutationSet) Value() (v []byte, ok bool) {
+	return m.v, true
+}
+
 func (m *mutationSet) ApplyTo(vs Variables) {
 	vs.Set(m.k, m.v)
 }
@@ -199,6 +220,14 @@ func (m *mutationDel) Read(r io.Reader) error {
 
 func (m *mutationDel) String() string {
 	return fmt.Sprintf("DEL %s", m.k)
+}
+
+func (m *mutationDel) Key() string {
+	return m.k
+}
+
+func (m *mutationDel) Value() (v []byte, ok bool) {
+	return nil, false
 }
 
 func (m *mutationDel) ApplyTo(vs Variables) {

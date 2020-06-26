@@ -2,6 +2,9 @@ package runvm
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -10,10 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/packages/vm/vmnil"
-	"sync"
-	"time"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -57,12 +59,16 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 		defer processorsMutex.Unlock()
 
 		switch programHash {
-		case "67F3YgmwXT23PuRwVzDYNLhyXxwQz8WubwmYoWK2hUmE": // sc0
+		case vmnil.ProgramHash:
 			processors[programHash] = vmnil.New()
 			onFinish(nil)
 
+		case logsc.ProgramHash:
+			processors[programHash] = logsc.New()
+			onFinish(nil)
+
 		default:
-			onFinish(fmt.Errorf("can't create processor for progam hash %s", programHash))
+			onFinish(fmt.Errorf("can't create processor for program hash %s", programHash))
 		}
 	}()
 }

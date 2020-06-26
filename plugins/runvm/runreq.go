@@ -3,9 +3,11 @@ package runvm
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
 	"github.com/iotaledger/wasp/packages/vm/processor"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 // runTheRequest:
@@ -19,10 +21,12 @@ import (
 func runTheRequest(ctx *vm.VMContext) {
 	ctx.Log.Debugw("runTheRequest IN",
 		"reqId", ctx.RequestRef.RequestId().Short(),
+		"programHash", ctx.ProgramHash.String(),
 		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
 	)
 	defer ctx.Log.Debugw("runTheRequest OUT",
 		"reqId", ctx.RequestRef.RequestId().Short(),
+		"programHash", ctx.ProgramHash.String(),
 		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
 		"state update", ctx.StateUpdate.String(),
 	)
@@ -35,31 +39,49 @@ func runTheRequest(ctx *vm.VMContext) {
 
 	reqBlock := ctx.RequestRef.RequestBlock()
 	if reqBlock.RequestCode().IsProtected() {
+		// check authorisation
 		if !ctx.RequestRef.IsAuthorised(&ctx.OwnerAddress) {
+			// if protected call is not authorised by the containing transaction, do nothing
+			// the result will be taking all iotas and no effect on state
+			// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
+
+			ctx.Log.Warnf("protected request %s (code %s) is not authorised by %s",
+				ctx.RequestRef.RequestId().String(), reqBlock.RequestCode(), ctx.OwnerAddress.String(),
+			)
+			ctx.Log.Debugw("protexted request is not authorised",
+				"req", ctx.RequestRef.RequestId().String(),
+				"code", reqBlock.RequestCode(),
+				"owner", ctx.OwnerAddress.String(),
+				"inputs", util.InputsToStringByAddress(ctx.RequestRef.Tx.Inputs()),
+			)
 			return
 		}
 		if ctx.VirtualState.StateIndex() > 0 && !ctx.VirtualState.InitiatedBy(&ctx.OwnerAddress) {
-			// for states after #0 it is required to have record about initiator's address
+			// for states after #0 it is required to have record about initiator's address in the solid state
 			// to prevent attack when owner (initiator) address is overwritten in the quorum of bootup records
+			// TODO protection must also be set at the lowest level of the solid state. i.e. some metadata that variable
+			// is protected by some address and authorisation with that address is needed to modify the value
+
+			ctx.Log.Errorf("inconsistent state: variable '%s' != owner record from bootup record '%s'",
+				vmconst.VarNameOwnerAddress, ctx.OwnerAddress.String())
+
 			return
 		}
-		// if protected call is not authorised by the containing transaction, do nothing
-		// the result will be taking all iotas and no effect on state
-		// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
-		return
 	}
+	// authorisation check passed
 
 	if reqBlock.RequestCode().IsReserved() {
-		// processing of built-in requests
+		// finding and running builtin entry point
 		entryPoint, ok := builtin.Processor.GetEntryPoint(reqBlock.RequestCode())
 		if !ok {
+			ctx.Log.Warnf("can't find entry point for request code %s in the builtin processor", reqBlock.RequestCode())
 			return
 		}
 		entryPoint.Run(processor.NewSandbox(ctx))
 		return
 	}
 
-	// here reqBlock.RequestCode().IsUserDefined()
+	// request requires user-defined program on VM
 	proc, err := getProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		// it should not come to this point if processor is not ready
@@ -67,6 +89,8 @@ func runTheRequest(ctx *vm.VMContext) {
 	}
 	entryPoint, ok := proc.GetEntryPoint(reqBlock.RequestCode())
 	if !ok {
+		ctx.Log.Warnf("can't find entry point for request code %s in the user-defined processor prog hash: %s",
+			reqBlock.RequestCode(), ctx.ProgramHash.String())
 		return
 	}
 	entryPoint.Run(processor.NewSandbox(ctx))

@@ -133,7 +133,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionM
 		return
 	}
 
-	vh := stateBlock.VariableStateHash()
+	vh := stateBlock.StateHash()
 	sm.log.Debugw("EventStateTransactionMsg",
 		"txid", msg.ID().String(),
 		"state index", stateBlock.StateIndex(),

@@ -60,7 +60,30 @@ func NewTxBuilder(par TransactionBuilderParams) (*TransactionBuilder, error) {
 }
 
 func (txb *TransactionBuilder) Clone() *TransactionBuilder {
-	panic("implement me")
+	ret := &TransactionBuilder{
+		sctxbuilder:    txb.sctxbuilder.Clone(),
+		scAddress:      txb.scAddress,
+		scColor:        txb.scColor,
+		total:          txb.total,
+		balances:       make(map[valuetransaction.ID][]*balance.Balance),
+		inputBalances:  make(map[balance.Color]int64),
+		outputBalances: make(map[address.Address]map[balance.Color]int64),
+	}
+	for txid, bals := range txb.balances {
+		balsClone := make([]*balance.Balance, len(bals))
+		copy(balsClone, bals)
+		ret.balances[txid] = balsClone
+	}
+	for col, b := range txb.inputBalances {
+		ret.inputBalances[col] = b
+	}
+	for addr, mbals := range txb.outputBalances {
+		ret.outputBalances[addr] = make(map[balance.Color]int64)
+		for col, b := range mbals {
+			ret.outputBalances[addr][col] = b
+		}
+	}
+	return ret
 }
 
 func (txb *TransactionBuilder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
