@@ -43,6 +43,18 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 	}, nil
 }
 
+func (txb *Builder) Clone() *Builder {
+	ret := &Builder{
+		Builder:       txb.Builder.Clone(),
+		stateBlock:    txb.stateBlock.Clone(),
+		requestBlocks: make([]*sctransaction.RequestBlock, len(txb.requestBlocks)),
+	}
+	for i := range ret.requestBlocks {
+		ret.requestBlocks[i] = txb.requestBlocks[i].Clone()
+	}
+	return ret
+}
+
 func (txb *Builder) AddOriginStateBlock(stateHash *hashing.HashValue, scAddress *address.Address) error {
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")

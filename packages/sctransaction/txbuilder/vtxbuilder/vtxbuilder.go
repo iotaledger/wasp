@@ -35,15 +35,18 @@ func newVTBuilder(orig *Builder) *Builder {
 		outputBalances:        make(map[address.Address]map[balance.Color]int64),
 	}
 	for i := range ret.inputBalancesByOutput {
+		ret.inputBalancesByOutput[i].outputId = orig.inputBalancesByOutput[i].outputId
+
 		ret.inputBalancesByOutput[i].reminder = make([]*balance.Balance, len(orig.inputBalancesByOutput[i].reminder))
 		for j := range ret.inputBalancesByOutput[i].reminder {
 			ret.inputBalancesByOutput[i].reminder[j] =
-				balance.New(ret.inputBalancesByOutput[i].reminder[j].Color, ret.inputBalancesByOutput[i].reminder[j].Value)
+				balance.New(orig.inputBalancesByOutput[i].reminder[j].Color, orig.inputBalancesByOutput[i].reminder[j].Value)
 		}
+
 		ret.inputBalancesByOutput[i].consumed = make([]*balance.Balance, len(orig.inputBalancesByOutput[i].consumed))
 		for j := range ret.inputBalancesByOutput[i].consumed {
 			ret.inputBalancesByOutput[i].consumed[j] =
-				balance.New(ret.inputBalancesByOutput[i].consumed[j].Color, ret.inputBalancesByOutput[i].consumed[j].Value)
+				balance.New(orig.inputBalancesByOutput[i].consumed[j].Color, orig.inputBalancesByOutput[i].consumed[j].Value)
 		}
 	}
 	for addr, bals := range orig.outputBalances {

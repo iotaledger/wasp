@@ -176,3 +176,34 @@ func TestNextState(t *testing.T) {
 	assert.Equal(t, int64(5), sumIota)
 	assert.Equal(t, int64(1), sumReq)
 }
+
+func TestClone(t *testing.T) {
+	initUtxodb()
+
+	outs := utxodb.GetAddressOutputs(utxodb.GetAddress(1))
+	txb, err := NewFromOutputBalances(outs)
+	assert.NoError(t, err)
+
+	sh := hashing.RandomHash(nil)
+	err = txb.AddOriginStateBlock(sh, &scAddress)
+	assert.NoError(t, err)
+
+	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	assert.NoError(t, err)
+
+	txbClone := txb.Clone()
+
+	tx, err := txb.Build(false)
+	assert.NoError(t, err)
+
+	tx.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	assert.True(t, tx.SignaturesValid())
+
+	txClone, err := txbClone.Build(false)
+	assert.NoError(t, err)
+
+	txClone.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	assert.True(t, tx.SignaturesValid())
+
+	assert.EqualValues(t, tx.ID(), txClone.ID())
+}
