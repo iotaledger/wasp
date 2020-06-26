@@ -30,8 +30,11 @@ type Request interface {
 type State interface {
 	Index() uint32
 	// getters
+	Get(name string) ([]byte, bool)
 	GetInt64(name string) (int64, bool, error)
 	// setters
+	Del(name string)
+	Set(name string, value []byte)
 	SetInt64(name string, value int64)
 	SetString(name string, value string)
 	SetAddressValue(name string, addr address.Address)
