@@ -101,3 +101,8 @@ func (txb *Builder) Build(useAllInputs bool) (*sctransaction.Transaction, error)
 		txb.requestBlocks,
 	)
 }
+
+// ignores SC part
+func (txb *Builder) BuildValueTransactionOnly(useAllInputs bool) *valuetransaction.Transaction {
+	return txb.Builder.Build(useAllInputs)
+}
