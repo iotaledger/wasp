@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
+	"github.com/iotaledger/wasp/packages/vm/loader"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
@@ -82,7 +83,7 @@ func runTheRequest(ctx *vm.VMContext) {
 	}
 
 	// request requires user-defined program on VM
-	proc, err := getProcessor(ctx.ProgramHash.String())
+	proc, err := loader.GetProcessor(ctx.ProgramHash.String())
 	if err != nil {
 		// it should not come to this point if processor is not ready
 		ctx.Log.Panicf("major inconsistency: %v", err)

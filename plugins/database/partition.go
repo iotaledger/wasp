@@ -20,6 +20,8 @@ const (
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
 	ObjectTypeSolidStateIndex
+	ObjectTypeProgramMetadata
+	ObjectTypeProgramCode
 )
 
 var (

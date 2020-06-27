@@ -3,7 +3,6 @@ package runvm
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -14,22 +13,17 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
-	"github.com/iotaledger/wasp/packages/vm/processor"
-	"github.com/iotaledger/wasp/packages/vm/vmnil"
 )
 
-// PluginName is the name of the NodeConn plugin.
-const PluginName = "VM"
+// PluginName is the name of the RunVM plugin.
+const PluginName = "RunVM"
 
 var (
 	// Plugin is the plugin instance of the database plugin.
 	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log    *logger.Logger
 
-	vmDaemon        = daemon.New()
-	processors      = make(map[string]processor.Processor)
-	processorsMutex sync.RWMutex
+	vmDaemon = daemon.New()
 )
 
 func configure(_ *node.Plugin) {
@@ -44,50 +38,11 @@ func run(_ *node.Plugin) {
 		<-shutdownSignal
 
 		vmDaemon.Shutdown()
-		log.Infof("shutdown VM...  Done")
+		log.Infof("shutdown RunVM...  Done")
 	})
 	if err != nil {
-		log.Errorf("failed to start NodeConn worker")
+		log.Errorf("failed to start RunVM worker")
 	}
-}
-
-// LoadProcessorAsync creates and registers processor for program hash
-// asynchronously
-// possibly, locates Wasm program code in IPFS and caches here
-func LoadProcessorAsync(programHash string, onFinish func(err error)) {
-	go func() {
-		processorsMutex.Lock()
-		defer processorsMutex.Unlock()
-
-		switch programHash {
-		case vmnil.ProgramHash:
-			processors[programHash] = vmnil.New()
-			onFinish(nil)
-
-		case logsc.ProgramHash:
-			processors[programHash] = logsc.New()
-			onFinish(nil)
-
-		default:
-			onFinish(fmt.Errorf("can't create processor for program hash %s", programHash))
-		}
-	}()
-}
-
-func CheckProcessor(programHash string) bool {
-	_, err := getProcessor(programHash)
-	return err == nil
-}
-
-func getProcessor(programHash string) (processor.Processor, error) {
-	processorsMutex.RLock()
-	defer processorsMutex.RUnlock()
-
-	ret, ok := processors[programHash]
-	if !ok {
-		return nil, fmt.Errorf("no such processor: %v", programHash)
-	}
-	return ret, nil
 }
 
 // RunComputationsAsync runs computations for the batch of requests in the background

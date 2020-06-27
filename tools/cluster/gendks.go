@@ -82,7 +82,7 @@ func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transa
 	if err != nil {
 		return nil, err
 	}
-	progHash, err := hashing.HashValueFromString(scdata.ProgramHash)
+	progHash, err := hashing.HashValueFromBase58(scdata.ProgramHash)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction
 	if err != nil {
 		return nil, err
 	}
-	progHash, err := hashing.HashValueFromString(scdata.ProgramHash)
+	progHash, err := hashing.HashValueFromBase58(scdata.ProgramHash)
 	if err != nil {
 		return nil, err
 	}

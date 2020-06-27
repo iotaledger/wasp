@@ -21,7 +21,7 @@ func (s *SampleSource) Seed(seed int64) {
 
 func TestHashValueFromString(t *testing.T) {
 	var h1 = HashStrings("test string")
-	h2, e := HashValueFromString(h1.String())
+	h2, e := HashValueFromBase58(h1.String())
 	if e != nil {
 		t.Fatalf("error occurs")
 	}
@@ -78,10 +78,10 @@ func TestHashInList(t *testing.T) {
 	var seed2 = HashStrings("bob").String()
 	var seed3 = HashStrings("crea").String()
 	var seed4 = HashStrings("david").String()
-	h1, _ := HashValueFromString(seed1)
-	h2, _ := HashValueFromString(seed2)
-	h3, _ := HashValueFromString(seed3)
-	h4, _ := HashValueFromString(seed4)
+	h1, _ := HashValueFromBase58(seed1)
+	h2, _ := HashValueFromBase58(seed2)
+	h3, _ := HashValueFromBase58(seed3)
+	h4, _ := HashValueFromBase58(seed4)
 	hashArray := []*HashValue{h1, h2, h3}
 	res1 := HashInList(h1, hashArray)
 	if !res1 {

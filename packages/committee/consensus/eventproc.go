@@ -5,8 +5,8 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/loader"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"github.com/iotaledger/wasp/plugins/runvm"
 	"time"
 )
 
@@ -40,20 +40,26 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.sendRequestNotificationsToLeader(nil)
 	op.setLeaderRotationDeadline()
 
-	// check is processor is ready for the current varstate. If no, initiate load of the processor
+	// check is processor is ready for the current state. If no, initiate load of the processor
 	op.processorReady = false
 	progHash, ok := op.getProgramHash()
 	if !ok {
-		op.log.Warnf("program hash is undefined. Committee won't be able to run VM")
+		op.log.Warnf("program hash is undefined. Committee isn't be able to load and run VM")
 		return
 	}
 	progHashStr := progHash.String()
 
-	op.processorReady = runvm.CheckProcessor(progHashStr)
+	op.processorReady = loader.CheckProcessor(progHashStr)
 	if !op.processorReady {
-		runvm.LoadProcessorAsync(progHashStr, func(err error) {
-			op.committee.ReceiveMessage(committee.ProcessorIsReady{ProgramHash: progHashStr})
-			publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
+		loader.LoadProcessorAsync(progHashStr, func(err error) {
+			if err != nil {
+				op.committee.ReceiveMessage(committee.ProcessorIsReady{
+					ProgramHash: progHashStr,
+				})
+				publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
+			} else {
+				op.log.Errorf("failed to load processor")
+			}
 		})
 	}
 

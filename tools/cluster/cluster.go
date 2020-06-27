@@ -519,7 +519,7 @@ func (cluster *Cluster) Report() bool {
 func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[string][]byte) bool {
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 
-	scProgHash, err := hashing.HashValueFromString(sc.ProgramHash)
+	scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
 	if err != nil {
 		panic("could not convert SC program hash")
 	}
