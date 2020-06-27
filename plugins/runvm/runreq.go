@@ -122,7 +122,7 @@ func handleRewards(ctx *vm.VMContext) bool {
 		return true
 	}
 
-	totalIotaOutput := sctransaction.BalanceOfOutputToColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
+	totalIotaOutput := sctransaction.OutputValueOfColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
 	var err error
 
 	var proceed bool

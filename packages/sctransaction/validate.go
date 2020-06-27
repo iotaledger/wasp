@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -87,69 +85,69 @@ func (tx *Transaction) validateRequests(isOrigin bool) error {
 // - contains only inputs from the address
 // - contains all inputs
 // - correctness of colored balances
-func (tx *Transaction) ValidateConsumptionOfInputs(addr *address.Address, inputBalances map[valuetransaction.ID][]*balance.Balance) error {
-	if err := waspconn.ValidateBalances(inputBalances); err != nil {
-		return err
-	}
-	var err error
-	var first bool
-	var addrTmp address.Address
-	var totalInputs2 int64
-
-	inputBalancesByColor, totalInputs1 := util.BalancesByColor(inputBalances)
-
-	tx.Inputs().ForEach(func(outputId valuetransaction.OutputID) bool {
-		if !first {
-			addrTmp = outputId.Address()
-			first = true
-		}
-		if addrTmp != outputId.Address() {
-			err = errors.New("only 1 address is allowed in inputs")
-			return false
-		}
-		bals, ok := inputBalances[outputId.TransactionID()]
-		if !ok {
-			err = errors.New("unexpected txid in inputs")
-			return false
-		}
-		totalInputs2 += util.BalancesSumTotal(bals)
-		return true
-	})
-	if err != nil {
-		return err
-	}
-
-	if totalInputs1 != totalInputs2 {
-		return errors.New("not all provided inputs are consumed")
-	}
-
-	outputBalancesByColor := make(map[balance.Color]int64)
-	tx.Outputs().ForEach(func(_ address.Address, bals []*balance.Balance) bool {
-		for _, b := range bals {
-			if s, ok := outputBalancesByColor[b.Color]; !ok {
-				outputBalancesByColor[b.Color] = b.Value
-			} else {
-				outputBalancesByColor[b.Color] = s + b.Value
-			}
-		}
-		return true
-	})
-
-	for col, inb := range inputBalancesByColor {
-		if !(col != balance.ColorNew) {
-			return errors.New("assertion failed: col != balance.ColorNew")
-		}
-		if col == balance.ColorIOTA {
-			continue
-		}
-		outb, ok := outputBalancesByColor[col]
-		if !ok {
-			continue
-		}
-		if outb > inb {
-			// colored supply can't be inflated
-			return errors.New("colored supply can't be inflated")
-		}
-	}
-	return nil
-}
+//func (tx *Transaction) ValidateConsumptionOfInputs(addr *address.Address, inputBalances map[valuetransaction.ID][]*balance.Balance) error {
+//	if err := waspconn.ValidateBalances(inputBalances); err != nil {
+//		return err
+//	}
+//	var err error
+//	var first bool
+//	var addrTmp address.Address
+//	var totalInputs2 int64
+//
+//	inputBalancesByColor, totalInputs1 := util.BalancesByColor(inputBalances)
+//
+//	tx.Inputs().ForEach(func(outputId valuetransaction.OutputID) bool {
+//		if !first {
+//			addrTmp = outputId.Address()
+//			first = true
+//		}
+//		if addrTmp != outputId.Address() {
+//			err = errors.New("only 1 address is allowed in inputs")
+//			return false
+//		}
+//		bals, ok := inputBalances[outputId.TransactionID()]
+//		if !ok {
+//			err = errors.New("unexpected txid in inputs")
+//			return false
+//		}
+//		totalInputs2 += util.BalancesSumTotal(bals)
+//		return true
+//	})
+//	if err != nil {
+//		return err
+//	}
+//
+//	if totalInputs1 != totalInputs2 {
+//		return errors.New("not all provided inputs are consumed")
+//	}
+//
+//	outputBalancesByColor := make(map[balance.Color]int64)
+//	tx.Outputs().ForEach(func(_ address.Address, bals []*balance.Balance) bool {
+//		for _, b := range bals {
+//			if s, ok := outputBalancesByColor[b.Color]; !ok {
+//				outputBalancesByColor[b.Color] = b.Value
+//			} else {
+//				outputBalancesByColor[b.Color] = s + b.Value
+//			}
+//		}
+//		return true
+//	})
+//
+//	for col, inb := range inputBalancesByColor {
+//		if !(col != balance.ColorNew) {
+//			return errors.New("assertion failed: col != balance.ColorNew")
+//		}
+//		if col == balance.ColorIOTA {
+//			continue
+//		}
+//		outb, ok := outputBalancesByColor[col]
+//		if !ok {
+//			continue
+//		}
+//		if outb > inb {
+//			// colored supply can't be inflated
+//			return errors.New("colored supply can't be inflated")
+//		}
+//	}
+//	return nil
+//}

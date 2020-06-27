@@ -164,7 +164,6 @@ func (op *operator) checkQuorum() bool {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}
-	//nodeconn.PostTransactionToNodeAsyncWithRetry(op.leaderStatus.resultTx.Transaction, 2*time.Second, 7*time.Second, op.log)
 	return true
 }
 
