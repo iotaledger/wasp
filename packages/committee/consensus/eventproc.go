@@ -44,21 +44,20 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.processorReady = false
 	progHash, ok := op.getProgramHash()
 	if !ok {
-		op.log.Warnf("program hash is undefined. Committee isn't be able to load and run VM")
+		op.log.Warnf("program hash is undefined. Committee isn't able to load and run VM")
 		return
 	}
 	progHashStr := progHash.String()
-
 	op.processorReady = loader.CheckProcessor(progHashStr)
 	if !op.processorReady {
 		loader.LoadProcessorAsync(progHashStr, func(err error) {
-			if err != nil {
+			if err == nil {
 				op.committee.ReceiveMessage(committee.ProcessorIsReady{
 					ProgramHash: progHashStr,
 				})
 				publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 			} else {
-				op.log.Errorf("failed to load processor")
+				op.log.Warn("failed to load processor")
 			}
 		})
 	}

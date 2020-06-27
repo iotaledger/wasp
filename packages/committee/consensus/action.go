@@ -154,14 +154,10 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
-	//if err := op.leaderStatus.resultTx.ValidateConsumptionOfInputs(op.committee.Address(), op.leaderStatus.balances); err != nil {
-	//	op.log.Errorf("ValidateConsumptionOfInputs: final tx invalid: %v", err)
-	//	return false
-	//}
-
 	sh := op.leaderStatus.resultTx.MustState().StateHash()
-	op.log.Infof("FINALIZED RESULT. txid: %s, currentState hash: %s contributors: %+v",
-		op.leaderStatus.resultTx.ID().String(), sh.String(), contributingPeers)
+	stateIndex := op.leaderStatus.resultTx.MustState().StateIndex()
+	op.log.Infof("FINALIZED RESULT. txid: %s, state index: #%d, state hash: %s, contributors: %+v",
+		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
 	if err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction); err != nil {
