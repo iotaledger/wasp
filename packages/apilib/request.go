@@ -9,7 +9,6 @@ import (
 	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/util"
 	"strconv"
 )
 
@@ -30,8 +29,6 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
-	fmt.Printf("[[[[]]]] CreateRequestTransaction:\nall inputs: %s sender addr: %s\nnode: %s\n",
-		util.InputBalancesToString(allOuts), senderAddr.String(), node)
 
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
 	if err != nil {
@@ -55,7 +52,6 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 	tx.Sign(senderSigScheme)
 
 	MustNotNullInputs(tx.Transaction)
-	fmt.Printf("[[[[]]]] create request tx:\n%s\n", tx.String())
 
 	return tx, nil
 }

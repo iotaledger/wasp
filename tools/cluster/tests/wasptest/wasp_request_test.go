@@ -32,7 +32,7 @@ func TestSend1Request(t *testing.T) {
 	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 0)
 	check(err, t)
 
-	wasps.CollectMessages(30 * time.Second)
+	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()
@@ -47,9 +47,9 @@ func TestSend5Requests1Sec(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          5,
-		"request_out":         6,
-		"state":               6,
+		"request_in":          6,
+		"request_out":         7,
+		"state":               7,
 	})
 	check(err, t)
 
@@ -61,10 +61,10 @@ func TestSend5Requests1Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 1*time.Second)
+	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 5, vmconst.RequestCodeNOP, nil, 1*time.Second)
 	check(err, t)
 
-	wasps.CollectMessages(20 * time.Second)
+	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()
@@ -79,8 +79,8 @@ func TestSend10Requests0Sec(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          10,
-		"request_out":         11,
+		"request_in":          11,
+		"request_out":         12,
 		"state":               -1,
 	})
 	check(err, t)
@@ -103,7 +103,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	}
 }
 
-func TestSend60Requests(t *testing.T) {
+func TestSend60Requests500msec(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend60Requests")
 
@@ -111,9 +111,9 @@ func TestSend60Requests(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          60,
-		"request_out":         61,
-		"state":               -1,
+		"request_in":          61,
+		"request_out":         62,
+		"state":               60,
 	})
 	check(err, t)
 
@@ -128,7 +128,7 @@ func TestSend60Requests(t *testing.T) {
 	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 500*time.Millisecond)
 	check(err, t)
 
-	wasps.CollectMessages(1 * time.Minute)
+	wasps.CollectMessages(40 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()
@@ -143,8 +143,8 @@ func TestSend60Requests0Sec(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          60,
-		"request_out":         61,
+		"request_in":          61,
+		"request_out":         62,
 		"state":               -1,
 	})
 	check(err, t)
@@ -160,7 +160,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 0*time.Millisecond)
 	check(err, t)
 
-	wasps.CollectMessages(1 * time.Minute)
+	wasps.CollectMessages(40 * time.Minute)
 
 	if !wasps.Report() {
 		t.Fail()
