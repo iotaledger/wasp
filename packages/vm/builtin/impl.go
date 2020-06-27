@@ -5,12 +5,13 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/processor"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 type builtinProcessor map[sctransaction.RequestCode]builtinEntryPoint
 
-type builtinEntryPoint func(ctx processor.Sandbox)
+type builtinEntryPoint func(ctx sandbox.Sandbox)
 
 var Processor = builtinProcessor{
 	vmconst.RequestCodeInit:             initRequest,
@@ -27,62 +28,59 @@ func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (proces
 	return ep, ok
 }
 
-func (ep builtinEntryPoint) Run(ctx processor.Sandbox) {
+func (ep builtinEntryPoint) Run(ctx sandbox.Sandbox) {
 	ep(ctx)
 }
 
-func stub(ctx processor.Sandbox, text string) {
-	reqId := ctx.Request().ID()
+func stub(ctx sandbox.Sandbox, text string) {
+	reqId := ctx.AccessRequest().ID()
 	ctx.GetLog().Debugw("run builtInProcessor",
 		"text", text,
-		"request code", ctx.Request().Code(),
+		"request code", ctx.AccessRequest().Code(),
 		"addr", ctx.GetAddress().String(),
 		"ts", ctx.GetTimestamp(),
-		"state index", ctx.State().Index(),
 		"req", reqId.String(),
 	)
 }
 
-func nopRequest(ctx processor.Sandbox) {
+func nopRequest(ctx sandbox.Sandbox) {
 	stub(ctx, "nopRequest")
 }
 
 // request initializes SC state, must be called in 0 state (usually the origin transaction)
 // TODO currently takes into account only owner addr and program hash
-func initRequest(ctx processor.Sandbox) {
+func initRequest(ctx sandbox.Sandbox) {
 	stub(ctx, "initRequest")
-	if ctx.State().Index() != 0 {
+	if ctx.IsOriginState() {
 		// call not in the 0 state is ignored
-		ctx.Rollback()
 		return
 	}
 	var niladdr address.Address
-	ownerAddress, ok := ctx.Request().GetAddressValue(vmconst.VarNameOwnerAddress)
+	ownerAddress, ok := ctx.AccessRequest().GetAddressValue(vmconst.VarNameOwnerAddress)
 	if !ok || ownerAddress == niladdr {
 		// can't proceed if ownerAddress is not known
-		ctx.Rollback()
 		return
 	}
-	ctx.State().SetAddressValue(vmconst.VarNameOwnerAddress, ownerAddress)
+	ctx.AccessState().SetAddressValue(vmconst.VarNameOwnerAddress, ownerAddress)
 
-	progHash, ok := ctx.Request().GetHashValue(vmconst.VarNameProgramHash)
+	progHash, ok := ctx.AccessRequest().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || progHash == *hashing.NilHash {
 		// program hash not set, smart contract will be able to process only built-in requests
 		return
 	}
-	ctx.State().SetHashValue(vmconst.VarNameProgramHash, progHash)
+	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, &progHash)
 }
 
-func setMinimumRewardRequest(ctx processor.Sandbox) {
+func setMinimumRewardRequest(ctx sandbox.Sandbox) {
 	stub(ctx, "setMinimumRewardRequest")
-	if v, ok := ctx.Request().GetInt64("value"); ok && v >= 0 {
-		ctx.State().SetInt64(vmconst.VarNameMinimumReward, v)
+	if v, ok := ctx.AccessRequest().GetInt64("value"); ok && v >= 0 {
+		ctx.AccessState().SetInt64(vmconst.VarNameMinimumReward, v)
 	}
 }
 
-func setDescriptionRequest(ctx processor.Sandbox) {
+func setDescriptionRequest(ctx sandbox.Sandbox) {
 	stub(ctx, "setDescriptionRequest")
-	if v, ok := ctx.Request().GetString("value"); ok && v != "" {
-		ctx.State().SetString("description", v)
+	if v, ok := ctx.AccessRequest().GetString("value"); ok && v != "" {
+		ctx.AccessState().SetString("description", v)
 	}
 }

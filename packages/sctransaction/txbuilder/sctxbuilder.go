@@ -59,7 +59,7 @@ func (txb *Builder) AddOriginStateBlock(stateHash *hashing.HashValue, scAddress 
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
-	if err := txb.NewColor(*scAddress, balance.ColorIOTA, 1); err != nil {
+	if err := txb.MintColor(*scAddress, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
 	txb.stateBlock = sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
@@ -99,7 +99,7 @@ func (txb *Builder) AddStateBlock(stateBlock *sctransaction.StateBlock) error {
 }
 
 func (txb *Builder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
-	if err := txb.NewColor(reqBlk.Address(), balance.ColorIOTA, 1); err != nil {
+	if err := txb.MintColor(reqBlk.Address(), balance.ColorIOTA, 1); err != nil {
 		return err
 	}
 	txb.requestBlocks = append(txb.requestBlocks, reqBlk)

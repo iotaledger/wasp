@@ -5,6 +5,7 @@ package vmnil
 import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/processor"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 )
 
 const ProgramHash = "67F3YgmwXT23PuRwVzDYNLhyXxwQz8WubwmYoWK2hUmE"
@@ -21,13 +22,12 @@ func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (processor.E
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Run(ctx processor.Sandbox) {
-	reqId := ctx.Request().ID()
+func (v nilProcessor) Run(ctx sandbox.Sandbox) {
+	reqId := ctx.AccessRequest().ID()
 	ctx.GetLog().Debugw("run nilProcessor",
-		"request code", ctx.Request().Code(),
+		"request code", ctx.AccessRequest().Code(),
 		"addr", ctx.GetAddress().String(),
 		"ts", ctx.GetTimestamp(),
-		"state index", ctx.State().Index(),
 		"req", reqId.String(),
 	)
 }

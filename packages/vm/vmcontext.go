@@ -22,6 +22,8 @@ type VMContext struct {
 	RewardAddress address.Address
 	// minimum reward
 	MinimumReward int64
+	// deterministic source of entropy. Equal the the hash of the previous
+	Entropy hashing.HashValue
 	// tx builder to build the final transaction
 	TxBuilder *txbuilder.Builder
 	// timestamp of the batch

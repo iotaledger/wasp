@@ -28,7 +28,7 @@ func TestColor(t *testing.T) {
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.NewColor(utxodb.GetAddress(1), balance.ColorIOTA, 10)
+	err = txb.MintColor(utxodb.GetAddress(1), balance.ColorIOTA, 10)
 	assert.NoError(t, err)
 
 	tx := txb.Build(false)

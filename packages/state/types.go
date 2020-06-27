@@ -11,7 +11,7 @@ import (
 
 // represents an interface to the mutable state of the smart contract
 type VirtualState interface {
-	// index of the current state. State index is incremented when state transition occurs
+	// index of the current state. AccessState index is incremented when state transition occurs
 	// index 0 means origin state
 	StateIndex() uint32
 	ApplyStateIndex(uint32)
@@ -33,9 +33,9 @@ type VirtualState interface {
 	String() string
 }
 
-// State update represents update to the variable state
+// AccessState update represents update to the variable state
 // it is calculated by the VM (in batches)
-// State updates comes in batches, all state updates within one batch
+// AccessState updates comes in batches, all state updates within one batch
 // has same state index, state tx id and batch size. ResultBatch index is unique in batch
 // ResultBatch is completed when it contains one state update for each index
 type StateUpdate interface {

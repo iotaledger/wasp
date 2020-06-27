@@ -81,7 +81,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          11,
 		"request_out":         12,
-		"vmready":             1,
+		"vmready":             -1,
 		"state":               -1,
 	})
 	check(err, t)

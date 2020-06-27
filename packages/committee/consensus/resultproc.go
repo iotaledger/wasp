@@ -42,6 +42,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		ProgramHash:     progHash,
 		Address:         *op.committee.Address(),
 		Color:           *op.committee.Color(),
+		Entropy:         (hashing.HashValue)(op.stateTx.ID()),
 		Balances:        par.balances,
 		OwnerAddress:    *op.committee.OwnerAddress(),
 		RewardAddress:   par.rewardAddress,

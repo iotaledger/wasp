@@ -7,6 +7,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
 	"github.com/iotaledger/wasp/packages/vm/processor"
+	"github.com/iotaledger/wasp/plugins/config"
+	"io/ioutil"
+	"net/url"
+	"path"
 	"sync"
 )
 
@@ -17,7 +21,7 @@ var (
 
 // LoadProcessorAsync creates and registers processor for program hash
 // asynchronously
-// possibly, locates Wasm program code in IPFS and caches here
+// possibly, locates Wasm program code in the file system, in IPFS etc
 func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 	go func() {
 		proc, err := loadProcessor(programHash)
@@ -69,14 +73,34 @@ func loadProcessor(progHashStr string) (processor.Processor, error) {
 	}
 }
 
-func processorFromBinaryCode(binaryCode []byte) (processor.Processor, error) {
-	panic("implement me")
-}
-
 // loads binary code of the VM, possibly from remote location
 // caches it into the the registry
 func loadBinaryCode(location string, progHash *hashing.HashValue) ([]byte, error) {
-	panic("implement me")
+	urlStruct, err := url.Parse(location)
+	if err != nil {
+		return nil, err
+	}
+	var data []byte
+	switch urlStruct.Scheme {
+	case "file":
+		file := path.Join(config.Node.GetString(CfgWasmBinaryDir), urlStruct.Host)
+		if data, err = ioutil.ReadFile(file); err != nil {
+			return nil, err
+		}
+
+	default:
+		return nil, fmt.Errorf("unknown Wasm binary location scheme '%s'", urlStruct.Scheme)
+	}
+
+	h := hashing.HashData(data)
+	if *h != *progHash {
+		return nil, fmt.Errorf("binary data or hash is not valid")
+	}
+	_, err = registry.SaveProgramCode(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func CheckProcessor(programHash string) bool {

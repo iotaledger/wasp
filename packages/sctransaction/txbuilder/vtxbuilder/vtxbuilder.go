@@ -259,7 +259,7 @@ func (vtxb *Builder) EraseColor(targetAddr address.Address, col balance.Color, a
 	return nil
 }
 
-func (vtxb *Builder) NewColor(targetAddr address.Address, col balance.Color, amount int64) error {
+func (vtxb *Builder) MintColor(targetAddr address.Address, col balance.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}

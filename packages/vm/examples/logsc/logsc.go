@@ -3,6 +3,7 @@ package logsc
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/processor"
@@ -15,7 +16,7 @@ const (
 	RequestCodeAddLog = sctransaction.RequestCode(uint16(0))
 )
 
-type logscEntryPoint func(ctx processor.Sandbox)
+type logscEntryPoint func(ctx sandbox.Sandbox)
 
 type logscProcessor map[sctransaction.RequestCode]logscEntryPoint
 
@@ -32,20 +33,20 @@ func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (processor
 	return ep, ok
 }
 
-func (ep logscEntryPoint) Run(ctx processor.Sandbox) {
+func (ep logscEntryPoint) Run(ctx sandbox.Sandbox) {
 	ep(ctx)
 }
 
 const logArrayKey = "log"
 
-func handleAddLogRequest(ctx processor.Sandbox) {
-	msg, ok := ctx.Request().GetString("message")
+func handleAddLogRequest(ctx sandbox.Sandbox) {
+	msg, ok := ctx.AccessRequest().GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")
 		return
 	}
 
-	length, ok, err := ctx.State().GetInt64(logArrayKey)
+	length, ok, err := ctx.AccessState().GetInt64(logArrayKey)
 	if err != nil {
 		fmt.Printf("[logsc] %v", err)
 		return
@@ -55,8 +56,8 @@ func handleAddLogRequest(ctx processor.Sandbox) {
 	}
 
 	length += 1
-	ctx.State().SetInt64(logArrayKey, length)
-	ctx.State().SetString(fmt.Sprintf("%s:%d", logArrayKey, length-1), msg)
+	ctx.AccessState().SetInt64(logArrayKey, length)
+	ctx.AccessState().SetString(fmt.Sprintf("%s:%d", logArrayKey, length-1), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

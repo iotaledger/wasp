@@ -19,14 +19,16 @@ type VMTask struct {
 	ProgramHash     hashing.HashValue
 	Address         address.Address
 	Color           balance.Color
-	Balances        map[valuetransaction.ID][]*balance.Balance
-	OwnerAddress    address.Address
-	RewardAddress   address.Address
-	MinimumReward   int64
-	Requests        []sctransaction.RequestRef
-	Timestamp       int64
-	VirtualState    state.VirtualState // input immutable
-	Log             *logger.Logger
+	// deterministic source of entropy (pseudorandom, unpredictable for parties)
+	Entropy       hashing.HashValue
+	Balances      map[valuetransaction.ID][]*balance.Balance
+	OwnerAddress  address.Address
+	RewardAddress address.Address
+	MinimumReward int64
+	Requests      []sctransaction.RequestRef
+	Timestamp     int64
+	VirtualState  state.VirtualState // input immutable
+	Log           *logger.Logger
 	// call when finished
 	OnFinish func()
 	// outputs

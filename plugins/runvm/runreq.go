@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
 	"github.com/iotaledger/wasp/packages/vm/loader"
-	"github.com/iotaledger/wasp/packages/vm/processor"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -78,7 +78,7 @@ func runTheRequest(ctx *vm.VMContext) {
 			ctx.Log.Warnf("can't find entry point for request code %s in the builtin processor", reqBlock.RequestCode())
 			return
 		}
-		entryPoint.Run(processor.NewSandbox(ctx))
+		entryPoint.Run(sandbox.NewSandbox(ctx))
 		return
 	}
 
@@ -94,7 +94,7 @@ func runTheRequest(ctx *vm.VMContext) {
 			reqBlock.RequestCode(), ctx.ProgramHash.String())
 		return
 	}
-	entryPoint.Run(processor.NewSandbox(ctx))
+	entryPoint.Run(sandbox.NewSandbox(ctx))
 }
 
 func mustHandleRequestToken(ctx *vm.VMContext) {
@@ -119,6 +119,10 @@ func handleRewards(ctx *vm.VMContext) bool {
 		return true
 	}
 	if ctx.MinimumReward <= 0 {
+		return true
+	}
+	if ctx.RequestRef.IsAuthorised(&ctx.Address) {
+		// no need for rewards from itself
 		return true
 	}
 

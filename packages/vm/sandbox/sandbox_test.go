@@ -1,4 +1,4 @@
-package processor
+package sandbox
 
 import (
 	"testing"

@@ -38,7 +38,7 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 	if mayBeOrigin {
 		expectedOutputBalance += int64(len(tx.Requests()))
 	}
-	// expected 1 SC token if tx is not origin or 1 + number of request if color is NewColor (origin)
+	// expected 1 SC token if tx is not origin or 1 + number of request if color is MintColor (origin)
 	if outBalance != expectedOutputBalance {
 		return false, fmt.Errorf("non-existent or wrong output with SC token")
 	}

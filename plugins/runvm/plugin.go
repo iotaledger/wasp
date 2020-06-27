@@ -83,8 +83,9 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		RewardAddress: ctx.RewardAddress,
 		ProgramHash:   ctx.ProgramHash,
 		MinimumReward: ctx.MinimumReward,
-		TxBuilder:     txb, //mutates
-		Timestamp:     ctx.Timestamp,
+		Entropy:       ctx.Entropy,                             // mutates deterministcially
+		TxBuilder:     txb,                                     // mutates
+		Timestamp:     ctx.Timestamp,                           // mutate by incrementing 1 nanosec
 		VirtualState:  state.NewVirtualState(ctx.VirtualState), // clone
 		Log:           ctx.Log,
 	}
@@ -104,6 +105,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
 			vmctx.Timestamp += 1
 		}
+		vmctx.Entropy = *hashing.HashData(vmctx.Entropy[:])
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
