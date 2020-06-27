@@ -48,7 +48,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		MinimumReward:   op.getMinimumReward(),
 		Requests:        takeRefs(par.requests),
 		Timestamp:       par.timestamp,
-		VariableState:   op.currentState,
+		VirtualState:    op.currentState,
 		Log:             op.log,
 	}
 	ctx.OnFinish = func() {

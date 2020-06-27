@@ -7,8 +7,6 @@ import (
 )
 
 func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
-	fmt.Printf("-----------------------------     Test 1: activation of 1 smart contract  \n")
-
 	if err := activate(sc, clu); err != nil {
 		return fmt.Errorf("activate %s: %v\n", sc.Address, err)
 	}
@@ -17,8 +15,6 @@ func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) err
 }
 
 func Activate3SC(clu *cluster.Cluster) error {
-	fmt.Printf("------------------------------   Test 2: activation of 3 smart contract  \n")
-
 	for _, sc := range clu.SmartContractConfig {
 		if err := activate(&sc, clu); err != nil {
 			return fmt.Errorf("activate %s: %v\n", sc.Address, err)

@@ -2,6 +2,7 @@ package runvm
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"sync"
 	"time"
 
@@ -95,11 +96,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return fmt.Errorf("must be at least 1 request")
 	}
 
-	txbuilder, err := vm.NewTxBuilder(vm.TransactionBuilderParams{
-		Balances:   ctx.Balances,
-		OwnColor:   ctx.Color,
-		OwnAddress: ctx.Address,
-	})
+	txb, err := txbuilder.NewFromAddressBalances(&ctx.Address, ctx.Balances)
 	if err != nil {
 		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, util.BalancesToString(ctx.Balances))
 		return err
@@ -110,22 +107,20 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	taskName := ctx.Address.String() + "." + bh.String()
 
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		runTask(ctx, txbuilder, shutdownSignal)
+		runTask(ctx, txb, shutdownSignal)
 	})
 	return err
 }
 
 // runs batch
-func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-chan struct{}) {
+func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struct{}) {
 	ctx.Log.Debugw("runTask IN",
 		"addr", ctx.Address.String(),
 		"finalTimestamp", ctx.Timestamp,
-		"balances hash", util.BalancesHash(ctx.Balances),
-		"state index", ctx.VariableState.StateIndex(),
+		"state index", ctx.VirtualState.StateIndex(),
 		"num req", len(ctx.Requests),
 		"leader", ctx.LeaderPeerIndex,
 	)
-	//ctx.Log.Debugf("input balances:\n%s", util.BalancesToString(ctx.Balances))
 
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
@@ -133,9 +128,9 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 		RewardAddress: ctx.RewardAddress,
 		ProgramHash:   ctx.ProgramHash,
 		MinimumReward: ctx.MinimumReward,
-		TxBuilder:     txbuilder,
+		TxBuilder:     txb, //mutates
 		Timestamp:     ctx.Timestamp,
-		VirtualState:  state.NewVirtualState(ctx.VariableState), // clone
+		VirtualState:  state.NewVirtualState(ctx.VirtualState), // clone
 		Log:           ctx.Log,
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
@@ -169,31 +164,45 @@ func runTask(ctx *vm.VMTask, txbuilder *vm.TransactionBuilder, shutdownSignal <-
 		ctx.Log.Errorf("RunVM: %v", err)
 		return
 	}
-	ctx.ResultBatch.WithStateIndex(ctx.VariableState.StateIndex() + 1)
+	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
 
-	// create final transaction
-	vsClone := state.NewVirtualState(ctx.VariableState)
+	// calculate resulting state hash
+	vsClone := state.NewVirtualState(ctx.VirtualState)
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
 		ctx.Log.Errorf("RunVM: %v", err)
 		return
 	}
-	vsh := vsClone.Hash()
-	ctx.ResultTransaction = vmctx.TxBuilder.Finalize(
-		ctx.VariableState.StateIndex()+1,
-		vsh,
-		ctx.ResultBatch.Timestamp(),
-	)
+	stateHash := vsClone.Hash()
 
-	// check of all provided inputs were properly consumed
-	if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
-		ctx.Log.Errorf("RunVM.ValidateConsumptionOfInputs: wrong result transaction: %v", err)
+	// add state block
+	err = vmctx.TxBuilder.AddStateBlock(sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
+		Color:      ctx.Color,
+		StateIndex: ctx.VirtualState.StateIndex() + 1,
+		StateHash:  vsClone.Hash(),
+		Timestamp:  vsClone.Timestamp(),
+	}))
+	if err != nil {
+		ctx.Log.Errorf("RunVM.AddStateBlock: %v", err)
 		return
 	}
+	// create result transaction
+	ctx.ResultTransaction, err = vmctx.TxBuilder.Build(false)
+	if err != nil {
+		ctx.Log.Errorf("RunVM.txbuilder.Build: %v", err)
+		return
+	}
+
+	// deprecate
+	// check of all provided inputs were properly consumed
+	//if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
+	//	ctx.Log.Errorf("RunVM.ValidateConsumptionOfInputs: wrong result transaction: %v", err)
+	//	return
+	//}
 
 	ctx.Log.Debugw("runTask OUT",
 		"result batch size", ctx.ResultBatch.Size(),
 		"result batch state index", ctx.ResultBatch.StateIndex(),
-		"result variable state hash", vsh.String(),
+		"result variable state hash", stateHash.String(),
 		"result essence hash", hashing.HashData(ctx.ResultTransaction.EssenceBytes()).String(),
 		"result tx finalTimestamp", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
 	)

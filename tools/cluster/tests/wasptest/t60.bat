@@ -1,1 +1,1 @@
-go test -run TestSend60Requests
+go test -run TestSend60Requests500msec

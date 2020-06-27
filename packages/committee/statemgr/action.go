@@ -68,8 +68,8 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 
 		if sm.solidState != nil {
-			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s",
-				pending.nextState.StateIndex(), sm.nextStateTransaction.ID().String())
+			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s, batch size: %d",
+				pending.nextState.StateIndex(), sm.nextStateTransaction.ID().String(), pending.batch.Size())
 			sm.log.Debugf("STATE TRANSITION. State hash: %s, batch essence: %s",
 				varStateHash.String(), pending.batch.EssenceHash().String())
 		} else {

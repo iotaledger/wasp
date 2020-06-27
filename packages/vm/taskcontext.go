@@ -25,7 +25,7 @@ type VMTask struct {
 	MinimumReward   int64
 	Requests        []sctransaction.RequestRef
 	Timestamp       int64
-	VariableState   state.VirtualState // input immutable
+	VirtualState    state.VirtualState // input immutable
 	Log             *logger.Logger
 	// call when finished
 	OnFinish func()

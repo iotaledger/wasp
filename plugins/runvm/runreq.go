@@ -48,7 +48,7 @@ func runTheRequest(ctx *vm.VMContext) {
 			ctx.Log.Warnf("protected request %s (code %s) is not authorised by %s",
 				ctx.RequestRef.RequestId().String(), reqBlock.RequestCode(), ctx.OwnerAddress.String(),
 			)
-			ctx.Log.Debugw("protexted request is not authorised",
+			ctx.Log.Debugw("protected request is not authorised",
 				"req", ctx.RequestRef.RequestId().String(),
 				"code", reqBlock.RequestCode(),
 				"owner", ctx.OwnerAddress.String(),
@@ -102,6 +102,8 @@ func mustHandleRequestToken(ctx *vm.VMContext) {
 	// it is checked in the dispatcher.dispatchAddressUpdate
 	err := ctx.TxBuilder.EraseColor(ctx.Address, (balance.Color)(ctx.RequestRef.Tx.ID()), 1)
 	if err != nil {
+		//
+		ctx.Log.Errorf("dump balances:\n%s\n", ctx.TxBuilder.Dump())
 		// not enough balance for requests tokens
 		// major inconsistency, it must had been checked before
 		ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
@@ -124,11 +126,11 @@ func handleRewards(ctx *vm.VMContext) bool {
 
 	var proceed bool
 	if totalIotaOutput >= ctx.MinimumReward {
-		err = ctx.TxBuilder.MoveTokens(ctx.RewardAddress, balance.ColorIOTA, ctx.MinimumReward)
+		err = ctx.TxBuilder.MoveToAddress(ctx.RewardAddress, balance.ColorIOTA, ctx.MinimumReward)
 		proceed = true
 	} else {
 		// if reward is not enough, the state update will be empty, i.e. NOP (but the fee will be taken)
-		err = ctx.TxBuilder.MoveTokens(ctx.RewardAddress, balance.ColorIOTA, totalIotaOutput)
+		err = ctx.TxBuilder.MoveToAddress(ctx.RewardAddress, balance.ColorIOTA, totalIotaOutput)
 		proceed = false
 	}
 	if err != nil {
