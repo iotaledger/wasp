@@ -9,7 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/variables"
 )
 
-// Sandbox is an interface given to the processor to access the VMContext.
+// Sandbox is an interface given to the processor to access the VMContext
+// and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	// general function
 	IsOriginState() bool
