@@ -14,6 +14,7 @@ func New() *Lock {
 	return ret
 }
 
+// must be called otherwise leaks the channel
 func (sem *Lock) Dispose() {
 	close(sem.ch)
 }

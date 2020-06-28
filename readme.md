@@ -92,10 +92,14 @@ Currently supported messages and formats (space separated list of strings):
 |VM (processor) initialized succesfully|```vmready <SC address> <program hash>```|
 
 ## Pluggable VM abstraction
-_(experimental, not properly tested yet)_
+_(for experimenting. Not secure in general)_
 
-Wasp implements VM abstraction to make it possible to use any VM or language interpreter available on the market 
-as smart contract VM. At least theoretically. Only make sure it is deterministic ;)
+Wasp implements VM abstraction to make it possible to use any VM or even language interpreter available on the market 
+as smart contract VM processor. At least theoretically. Requirements for the VM processor:
+
+- shoudn't be able to access anything on the host but the sandbox. Otherwise, security breach.
+
+- must be deterministic. Otherwise, smart contract committee won't come to consensus on result.
 
 To plug your VM into the Wasp code, follow the following steps:
 
