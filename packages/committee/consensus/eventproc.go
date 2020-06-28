@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/loader"
+	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/plugins/publisher"
 	"time"
 )
@@ -48,9 +48,9 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 		return
 	}
 	progHashStr := progHash.String()
-	op.processorReady = loader.CheckProcessor(progHashStr)
+	op.processorReady = processor.CheckProcessor(progHashStr)
 	if !op.processorReady {
-		loader.LoadProcessorAsync(progHashStr, func(err error) {
+		processor.LoadProcessorAsync(progHashStr, func(err error) {
 			if err == nil {
 				op.committee.ReceiveMessage(committee.ProcessorIsReady{
 					ProgramHash: progHashStr,

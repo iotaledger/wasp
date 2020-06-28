@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
@@ -28,7 +29,7 @@ type stateWrapper struct {
 	stateUpdate  state.StateUpdate
 }
 
-func NewSandbox(vctx *vm.VMContext) Sandbox {
+func NewSandbox(vctx *vm.VMContext) vmtypes.Sandbox {
 	return &sandbox{
 		VMContext:      vctx,
 		saveTxBuilder:  vctx.TxBuilder.Clone(),
@@ -67,19 +68,19 @@ func (vctx *sandbox) GetLog() *logger.Logger {
 
 // request arguments
 
-func (vctx *sandbox) AccessRequest() RequestAccess {
+func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) AccessState() StateAccess {
+func (vctx *sandbox) AccessState() vmtypes.StateAccess {
 	return vctx.stateWrapper
 }
 
-func (vctx *sandbox) AccessAccount() AccountAccess {
+func (vctx *sandbox) AccessAccount() vmtypes.AccountAccess {
 	return vctx
 }
 
-func (vctx *sandbox) SendRequest(par NewRequestParams) bool {
+func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	if par.IncludeReward > 0 {
 		availableIotas := vctx.TxBuilder.GetInputBalance(balance.ColorIOTA)
 		if par.IncludeReward+1 > availableIotas {
@@ -100,7 +101,7 @@ func (vctx *sandbox) SendRequest(par NewRequestParams) bool {
 }
 
 func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args variables.Variables) bool {
-	return vctx.SendRequest(NewRequestParams{
+	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,
 		Args:          args,

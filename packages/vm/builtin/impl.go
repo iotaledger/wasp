@@ -4,14 +4,13 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/vm/processor"
-	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type builtinProcessor map[sctransaction.RequestCode]builtinEntryPoint
 
-type builtinEntryPoint func(ctx sandbox.Sandbox)
+type builtinEntryPoint func(ctx vmtypes.Sandbox)
 
 var Processor = builtinProcessor{
 	vmconst.RequestCodeInit:             initRequest,
@@ -20,7 +19,7 @@ var Processor = builtinProcessor{
 	vmconst.RequestCodeSetDescription:   setDescriptionRequest,
 }
 
-func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (processor.EntryPoint, bool) {
+func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
 	if !code.IsReserved() {
 		return nil, false
 	}
@@ -28,11 +27,11 @@ func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (proces
 	return ep, ok
 }
 
-func (ep builtinEntryPoint) Run(ctx sandbox.Sandbox) {
+func (ep builtinEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
 }
 
-func stub(ctx sandbox.Sandbox, text string) {
+func stub(ctx vmtypes.Sandbox, text string) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetLog().Debugw("run builtInProcessor",
 		"text", text,
@@ -43,13 +42,13 @@ func stub(ctx sandbox.Sandbox, text string) {
 	)
 }
 
-func nopRequest(ctx sandbox.Sandbox) {
+func nopRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "nopRequest")
 }
 
 // request initializes SC state, must be called in 0 state (usually the origin transaction)
 // TODO currently takes into account only owner addr and program hash
-func initRequest(ctx sandbox.Sandbox) {
+func initRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "initRequest")
 	if ctx.IsOriginState() {
 		// call not in the 0 state is ignored
@@ -71,14 +70,14 @@ func initRequest(ctx sandbox.Sandbox) {
 	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, &progHash)
 }
 
-func setMinimumRewardRequest(ctx sandbox.Sandbox) {
+func setMinimumRewardRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "setMinimumRewardRequest")
 	if v, ok := ctx.AccessRequest().GetInt64("value"); ok && v >= 0 {
 		ctx.AccessState().SetInt64(vmconst.VarNameMinimumReward, v)
 	}
 }
 
-func setDescriptionRequest(ctx sandbox.Sandbox) {
+func setDescriptionRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "setDescriptionRequest")
 	if v, ok := ctx.AccessRequest().GetString("value"); ok && v != "" {
 		ctx.AccessState().SetString("description", v)

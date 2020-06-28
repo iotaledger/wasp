@@ -1,4 +1,4 @@
-package sandbox
+package vmtypes
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"

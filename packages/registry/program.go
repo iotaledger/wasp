@@ -11,13 +11,15 @@ import (
 	"io"
 )
 
-// each program is uniquely identified by the hash of it's code
+// each program is uniquely identified by the hash of it's (binary) code
 
 type ProgramMetadata struct {
 	// program hash. Persist in key
 	ProgramHash hashing.HashValue
 	// it is interpreted by the loader to locate and cache program's code
 	Location string
+	// VM type. It is used to distinguish between several types of VMs
+	VMType string
 	// description any text
 	Description string
 }
@@ -95,6 +97,9 @@ func (md *ProgramMetadata) Write(w io.Writer) error {
 	if err := util.WriteString16(w, md.Location); err != nil {
 		return err
 	}
+	if err := util.WriteString16(w, md.VMType); err != nil {
+		return err
+	}
 	if err := util.WriteString16(w, md.Description); err != nil {
 		return err
 	}
@@ -104,6 +109,9 @@ func (md *ProgramMetadata) Write(w io.Writer) error {
 func (md *ProgramMetadata) Read(r io.Reader) error {
 	var err error
 	if md.Location, err = util.ReadString16(r); err != nil {
+		return err
+	}
+	if md.VMType, err = util.ReadString16(r); err != nil {
 		return err
 	}
 	if md.Description, err = util.ReadString16(r); err != nil {

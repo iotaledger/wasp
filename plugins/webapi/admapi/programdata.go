@@ -10,6 +10,7 @@ import (
 type ProgramMetadataJsonable struct {
 	ProgramHash string `json:"program_hash"`
 	Location    string `json:"location"`
+	VMType      string `json:"vm_type"`
 	Description string `json:"description"`
 }
 
@@ -28,6 +29,7 @@ func HandlerPutProgramMetaData(c echo.Context) error {
 		return misc.OkJsonErr(c, err)
 	}
 	rec.Location = req.Location
+	rec.VMType = req.VMType
 	rec.Description = req.Description
 
 	// TODO it is always overwritten!
@@ -79,6 +81,7 @@ func HandlerGetProgramMetadata(c echo.Context) error {
 		ProgramMetadataJsonable: ProgramMetadataJsonable{
 			ProgramHash: md.ProgramHash.String(),
 			Location:    md.Location,
+			VMType:      md.VMType,
 			Description: md.Description,
 		},
 		ExistsMetadata: true,

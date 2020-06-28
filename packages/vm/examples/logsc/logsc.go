@@ -3,10 +3,9 @@ package logsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
@@ -16,7 +15,7 @@ const (
 	RequestCodeAddLog = sctransaction.RequestCode(uint16(0))
 )
 
-type logscEntryPoint func(ctx sandbox.Sandbox)
+type logscEntryPoint func(ctx vmtypes.Sandbox)
 
 type logscProcessor map[sctransaction.RequestCode]logscEntryPoint
 
@@ -24,22 +23,22 @@ var Processor = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
 }
 
-func New() processor.Processor {
+func New() vmtypes.Processor {
 	return Processor
 }
 
-func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (processor.EntryPoint, bool) {
+func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
 	ep, ok := p[code]
 	return ep, ok
 }
 
-func (ep logscEntryPoint) Run(ctx sandbox.Sandbox) {
+func (ep logscEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
 }
 
 const logArrayKey = "log"
 
-func handleAddLogRequest(ctx sandbox.Sandbox) {
+func handleAddLogRequest(ctx vmtypes.Sandbox) {
 	msg, ok := ctx.AccessRequest().GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
-	"github.com/iotaledger/wasp/packages/vm/loader"
+	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
@@ -83,11 +83,13 @@ func runTheRequest(ctx *vm.VMContext) {
 	}
 
 	// request requires user-defined program on VM
-	proc, err := loader.GetProcessor(ctx.ProgramHash.String())
+	proc, err := processor.Acquire(ctx.ProgramHash.String())
 	if err != nil {
-		// it should not come to this point if processor is not ready
-		ctx.Log.Panicf("major inconsistency: %v", err)
+		ctx.Log.Warn(err)
+		return
 	}
+	defer processor.Release(ctx.ProgramHash.String())
+
 	entryPoint, ok := proc.GetEntryPoint(reqBlock.RequestCode())
 	if !ok {
 		ctx.Log.Warnf("can't find entry point for request code %s in the user-defined processor prog hash: %s",
