@@ -104,7 +104,7 @@ runtime environment via `vmtypes.Sandbox` interface.
 
 - implement your VM binary loader (constructor) and register it with `vmtype.RegisterVMType` function in your init code. 
 
-Smart contract loader will be reading program metadata from the registry (see for example `apilib.PutProgramMetadata`). 
+Smart contract loader will be reading program metadata from the registry (see `registry.ProgramMetadata`). 
 It will locate program binary (for example `.wasm` file) as specified in the `Location` of the metadata, load it from there 
 and will use constructor function to create a VM processor instance from the loaded binary. 
 Currently, `Location` is interpreted as `file://<file>` and Wasp will be looking for the binary file `<file>` in the `./wasm` directory.
