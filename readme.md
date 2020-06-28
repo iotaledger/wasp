@@ -91,3 +91,26 @@ Currently supported messages and formats (space separated list of strings):
 |State transition (new state has been committed to DB)| ```state <SC address> <state index> <batch size> <state tx ID> <state hash> <timestamp>```|
 |VM (processor) initialized succesfully|```vmready <SC address> <program hash>```|
 
+## Pluggable VM abstraction
+_(for experimenting. Not secure in general)_
+
+Wasp implements VM abstraction to make it possible to use any VM or even language interpreter available on the market 
+as smart contract VM processor. At least theoretically. Requirements for the VM processor:
+
+- shoudn't be able to access anything on the host but the sandbox. Otherwise, security breach.
+
+- must be deterministic. Otherwise, smart contract committee won't come to consensus on result.
+
+To plug your VM into the Wasp code, follow the following steps:
+
+- implement `vmtypes.Processor` and `vmtypes.EntryPoint` interfaces for your VM. The VM will be accessing 
+runtime environment via `vmtypes.Sandbox` interface.
+
+- implement your VM binary loader (constructor) and register it with `vmtype.RegisterVMType` function in your init code. 
+
+Smart contract loader will be reading program metadata from the registry (see `registry.ProgramMetadata`). 
+It will locate program binary (for example `.wasm` file) as specified in the `Location` of the metadata, load it from there 
+and will use constructor function to create a VM processor instance from the loaded binary. 
+Currently, `Location` is expected to be `file://<file>` and Wasp will be looking for the binary file `<file>` in the `./wasm` directory.
+
+ 

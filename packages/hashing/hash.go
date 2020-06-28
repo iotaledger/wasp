@@ -66,7 +66,7 @@ func (h *HashValue) UnmarshalJSON(buf []byte) error {
 	if err != nil {
 		return err
 	}
-	ret, err := HashValueFromString(s)
+	ret, err := HashValueFromBase58(s)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 	return ret, nil
 }
 
-func HashValueFromString(s string) (HashValue, error) {
+func HashValueFromBase58(s string) (HashValue, error) {
 	b, err := base58.Decode(s)
 	if err != nil {
 		return nilHash, err

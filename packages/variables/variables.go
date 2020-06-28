@@ -22,6 +22,7 @@ type Variables interface {
 	Del(key string)
 	Get(key string) ([]byte, bool)
 	IsEmpty() bool
+	SetAll(vars Variables)
 
 	ToMap() map[string][]byte
 
@@ -118,6 +119,13 @@ func (vr variables) ForEachDeterministic(fun func(key string, value []byte) bool
 			return // abort when callback returns false
 		}
 	}
+}
+
+func (vr variables) SetAll(vars Variables) {
+	vars.ForEach(func(key string, value []byte) bool {
+		vr.Set(key, value)
+		return true
+	})
 }
 
 func (vr variables) IsEmpty() bool {

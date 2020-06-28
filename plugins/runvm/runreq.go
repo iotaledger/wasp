@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
 	"github.com/iotaledger/wasp/packages/vm/processor"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -77,23 +78,25 @@ func runTheRequest(ctx *vm.VMContext) {
 			ctx.Log.Warnf("can't find entry point for request code %s in the builtin processor", reqBlock.RequestCode())
 			return
 		}
-		entryPoint.Run(processor.NewSandbox(ctx))
+		entryPoint.Run(sandbox.NewSandbox(ctx))
 		return
 	}
 
 	// request requires user-defined program on VM
-	proc, err := getProcessor(ctx.ProgramHash.String())
+	proc, err := processor.Acquire(ctx.ProgramHash.String())
 	if err != nil {
-		// it should not come to this point if processor is not ready
-		ctx.Log.Panicf("major inconsistency: %v", err)
+		ctx.Log.Warn(err)
+		return
 	}
+	defer processor.Release(ctx.ProgramHash.String())
+
 	entryPoint, ok := proc.GetEntryPoint(reqBlock.RequestCode())
 	if !ok {
 		ctx.Log.Warnf("can't find entry point for request code %s in the user-defined processor prog hash: %s",
 			reqBlock.RequestCode(), ctx.ProgramHash.String())
 		return
 	}
-	entryPoint.Run(processor.NewSandbox(ctx))
+	entryPoint.Run(sandbox.NewSandbox(ctx))
 }
 
 func mustHandleRequestToken(ctx *vm.VMContext) {
@@ -120,8 +123,12 @@ func handleRewards(ctx *vm.VMContext) bool {
 	if ctx.MinimumReward <= 0 {
 		return true
 	}
+	if ctx.RequestRef.IsAuthorised(&ctx.Address) {
+		// no need for rewards from itself
+		return true
+	}
 
-	totalIotaOutput := sctransaction.BalanceOfOutputToColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
+	totalIotaOutput := sctransaction.OutputValueOfColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
 	var err error
 
 	var proceed bool

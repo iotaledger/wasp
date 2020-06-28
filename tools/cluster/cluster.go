@@ -519,14 +519,14 @@ func (cluster *Cluster) Report() bool {
 func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[string][]byte) bool {
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 
-	scProgHash, err := hashing.HashValueFromString(sc.ProgramHash)
+	scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
 	if err != nil {
 		panic("could not convert SC program hash")
 	}
 
 	pass := true
 	for _, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
-		fmt.Printf("[cluster] State verification for node %s\n", host)
+		fmt.Printf("[cluster] AccessState verification for node %s\n", host)
 		actual, err := waspapi.DumpSCState(host, sc.Address)
 		if err != nil {
 			pass = false

@@ -32,7 +32,7 @@ func (c *committeeObj) SetReadyStateManager() {
 	defer c.mutexIsReady.Unlock()
 
 	c.isReadyStateManager = true
-	c.log.Debugf("State Manager is ready")
+	c.log.Debugf("AccessState Manager is ready")
 	c.checkReady()
 }
 

@@ -19,7 +19,7 @@ func ReadRequestId(r io.Reader, reqid *RequestId) error {
 	return nil
 }
 
-func BalanceOfOutputToColor(tx *Transaction, addr address.Address, color balance.Color) int64 {
+func OutputValueOfColor(tx *Transaction, addr address.Address, color balance.Color) int64 {
 	bals, ok := tx.Outputs().Get(addr)
 	if !ok {
 		return 0
