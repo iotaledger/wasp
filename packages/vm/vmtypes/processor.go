@@ -31,6 +31,5 @@ type Processor interface {
 // as a side effect on the Sandbox interface
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
-	WithTimeLimitMillis(int) EntryPoint
 	Run(ctx Sandbox)
 }

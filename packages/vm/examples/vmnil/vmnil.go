@@ -34,7 +34,3 @@ func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
 func (v nilProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return v
 }
-
-func (v nilProcessor) WithTimeLimitMillis(_ int) vmtypes.EntryPoint {
-	return v
-}

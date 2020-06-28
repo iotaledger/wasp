@@ -35,10 +35,6 @@ func (v builtinEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return v
 }
 
-func (v builtinEntryPoint) WithTimeLimitMillis(_ int) vmtypes.EntryPoint {
-	return v
-}
-
 func stub(ctx vmtypes.Sandbox, text string) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetLog().Debugw("run builtInProcessor",
