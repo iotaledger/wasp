@@ -36,6 +36,14 @@ func (ep logscEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
 }
 
+func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+	return v
+}
+
+func (v logscEntryPoint) WithTimeLimitMillis(_ int) vmtypes.EntryPoint {
+	return v
+}
+
 const logArrayKey = "log"
 
 func handleAddLogRequest(ctx vmtypes.Sandbox) {

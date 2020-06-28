@@ -30,5 +30,7 @@ type Processor interface {
 // VM is expected to be fully deterministic and it result is 100% reflected
 // as a side effect on the Sandbox interface
 type EntryPoint interface {
+	WithGasLimit(int) EntryPoint
+	WithTimeLimitMillis(int) EntryPoint
 	Run(ctx Sandbox)
 }

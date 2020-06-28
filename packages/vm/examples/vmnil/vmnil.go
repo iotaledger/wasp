@@ -30,3 +30,11 @@ func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
 		"req", reqId.String(),
 	)
 }
+
+func (v nilProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
+	return v
+}
+
+func (v nilProcessor) WithTimeLimitMillis(_ int) vmtypes.EntryPoint {
+	return v
+}
