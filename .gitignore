@@ -2,5 +2,3 @@ wasp.log
 waspdb/
 cluster-data/
 *.bat
-
-/tools/examples/perlin/rust-wasm/target/
