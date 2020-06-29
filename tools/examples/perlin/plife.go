@@ -35,9 +35,12 @@ func (r *Resolver) ResolveGlobal(module, field string) int64 {
 	panic("we're not resolving global variables for now")
 }
 
-const fname = "example1.wasm"
+const fname = "rust_wasm_example1.wasm"
 
 func main() {
+	fmt.Println("---------------------------------------")
+	fmt.Printf("An example of compiling Rust code to WebAssembly and then\nrunning it on Perlin Wasm VM" +
+		"Wasm code calls back functions on Go host.\nThat is what is needed for the Wasp VM PoC\n\n")
 	input, err := ioutil.ReadFile(fname)
 	checkErr(err)
 
@@ -52,7 +55,11 @@ func main() {
 		vmach.PrintStackTrace()
 		panic(err)
 	}
-	fmt.Printf("return value = %d\n", ret)
+	if ret == 0 {
+		fmt.Printf("Success!!\n")
+	} else {
+		fmt.Printf("return value = %d\n", ret)
+	}
 }
 
 func checkErr(err error) {
