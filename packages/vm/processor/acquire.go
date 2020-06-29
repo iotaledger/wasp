@@ -28,7 +28,7 @@ func Acquire(programHash string) (vmtypes.Processor, error) {
 		defer processorsMutex.RUnlock()
 		return nil, fmt.Errorf("no such processor: %v", programHash)
 	}
-	processorsMutex.Unlock()
+	processorsMutex.RUnlock()
 
 	if !ret.timedLock.Acquire(processorAcquireTimeout) {
 		return nil, fmt.Errorf("timeout: wasn't able to acquire processor for %v", processorAcquireTimeout)
@@ -45,7 +45,7 @@ func Release(programHash string) {
 		processorsMutex.RUnlock()
 		return
 	}
-	processorsMutex.Unlock()
+	processorsMutex.RUnlock()
 
 	ret.timedLock.Release()
 }

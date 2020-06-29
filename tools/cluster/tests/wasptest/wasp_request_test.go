@@ -161,7 +161,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 0*time.Millisecond)
 	check(err, t)
 
-	wasps.CollectMessages(40 * time.Minute)
+	wasps.CollectMessages(40 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()

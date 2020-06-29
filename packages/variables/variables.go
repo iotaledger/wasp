@@ -3,6 +3,7 @@ package variables
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/mr-tron/base58"
 	"io"
 	"sort"
 
@@ -89,7 +90,8 @@ func (vr variables) sortedKeys() []string {
 func (vr variables) String() string {
 	ret := ""
 	for _, key := range vr.sortedKeys() {
-		ret += fmt.Sprintf("           %s: %s\n", key, hex.EncodeToString(vr[key]))
+		ret += fmt.Sprintf("           %s: %s (%s)\n", key,
+			hex.EncodeToString(vr[key]), base58.Encode(vr[key]))
 	}
 	return ret
 }

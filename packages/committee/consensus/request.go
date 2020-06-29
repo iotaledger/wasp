@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -75,6 +74,10 @@ func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool)
 	return ret, true
 }
 
+func (req *request) requestCode() sctransaction.RequestCode {
+	return req.reqTx.Requests()[req.reqId.Index()].RequestCode()
+}
+
 // selectRequestsToProcess select requests to process in the batch by counting votes of notification messages
 // first it selects candidates with >= quorum 'seen' votes and sorts by num votes
 // then it selects maximum number of requests which has been seen by at least quorum of common peers
@@ -108,12 +111,12 @@ func (op *operator) selectRequestsToProcess() []*request {
 		return nil
 	}
 	before := idsShortStr(takeIds(ret))
-	ret = op.filterFullRequestTokenConsumers(ret)
+	ret = op.filterNotCompletePackages(ret)
 
 	after := idsShortStr(takeIds(ret))
 
 	if len(after) != len(before) {
-		op.log.Debugf("filterFullRequestTokenConsumers: %+v --> %+v\nbalances: %s",
+		op.log.Debugf("filterNotCompletePackages: %+v --> %+v\nbalances: %s",
 			before, after, util.BalancesToString(op.balances))
 	}
 
@@ -181,39 +184,42 @@ func (op *operator) deleteCompletedRequests() error {
 	return nil
 }
 
-// selects only those requests which together consume ALL request tokens from current balances
-func (op *operator) filterFullRequestTokenConsumers(reqs []*request) []*request {
+type txReqNums struct {
+	totalNumOfRequestsInTx int
+	numOfRequestsInTheList int
+}
+
+// ensure that ether ALL user-defined requests to this smart contract are in the batch or none
+func (op *operator) filterNotCompletePackages(reqs []*request) []*request {
 	if len(reqs) == 0 {
 		return nil
 	}
 	if op.balances == nil {
 		return nil
 	}
-	// count number of requests by request transaction
-	reqtxs := make(map[valuetransaction.ID]int)
+	// count number of user-defined requests by request transaction
+	reqstats := make(map[valuetransaction.ID]*txReqNums)
 	for _, req := range reqs {
-		txid := req.reqId.TransactionId()
-		if _, ok := reqtxs[*txid]; !ok {
-			reqtxs[*txid] = 0
-		}
-		reqtxs[*txid] += 1
-	}
-	coltxs, _ := util.BalancesByColor(op.balances)
-
-	ret := reqs[:0] // same underlying array, different slice
-	for _, req := range reqs {
-		txid := *req.reqId.TransactionId()
-		isOriginTx := txid == (valuetransaction.ID)(*op.committee.Color())
-		sum, ok := coltxs[(balance.Color)(txid)]
-		if !ok {
+		if !req.requestCode().IsUserDefined() {
 			continue
 		}
-		if isOriginTx {
-			// one token is smart contract token
-			sum = sum - 1
+		txid := req.reqTx.ID()
+		if _, ok := reqstats[txid]; !ok {
+			reqstats[txid] = &txReqNums{
+				totalNumOfRequestsInTx: len(req.reqTx.RequestsToAddress(op.committee.Address())),
+				numOfRequestsInTheList: 0,
+			}
 		}
-		numreq := reqtxs[txid]
-		if sum != int64(numreq) {
+		reqstats[txid].numOfRequestsInTheList += 1
+	}
+	if len(reqstats) == 0 {
+		// no user defined-requests
+		return reqs
+	}
+	ret := reqs[:0] // same underlying array, different slice
+	for _, req := range reqs {
+		st := reqstats[req.reqTx.ID()]
+		if st.numOfRequestsInTheList != st.totalNumOfRequestsInTx {
 			continue
 		}
 		ret = append(ret, req)
@@ -232,8 +238,7 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 			op.log.Debugf("request %s not known by the node: can't be processed", req.reqId.Short())
 			continue
 		}
-		reqBlock := req.reqTx.Requests()[req.reqId.Index()]
-		if reqBlock.RequestCode().IsUserDefined() && !op.processorReady {
+		if req.requestCode().IsUserDefined() && !op.processorReady {
 			op.log.Debugf("request %s can't be processed: processor not ready", req.reqId.Short())
 			continue
 		}

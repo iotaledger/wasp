@@ -54,14 +54,16 @@ func nopRequest(ctx vmtypes.Sandbox) {
 // TODO currently takes into account only owner addr and program hash
 func initRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "initRequest")
-	if ctx.IsOriginState() {
+	if !ctx.IsOriginState() {
 		// call not in the 0 state is ignored
+		ctx.GetLog().Debugf("@@@@@@@@@@@ exit 1")
 		return
 	}
 	var niladdr address.Address
 	ownerAddress, ok := ctx.AccessRequest().GetAddressValue(vmconst.VarNameOwnerAddress)
 	if !ok || ownerAddress == niladdr {
 		// can't proceed if ownerAddress is not known
+		ctx.GetLog().Debugf("@@@@@@@@@@@ exit 2")
 		return
 	}
 	ctx.AccessState().SetAddressValue(vmconst.VarNameOwnerAddress, ownerAddress)
@@ -69,6 +71,7 @@ func initRequest(ctx vmtypes.Sandbox) {
 	progHash, ok := ctx.AccessRequest().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || progHash == *hashing.NilHash {
 		// program hash not set, smart contract will be able to process only built-in requests
+		ctx.GetLog().Debugf("@@@@@@@@@@@ exit 3")
 		return
 	}
 	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, &progHash)

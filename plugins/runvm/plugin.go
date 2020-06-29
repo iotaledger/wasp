@@ -2,6 +2,8 @@ package runvm
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -80,13 +82,19 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		"leader", ctx.LeaderPeerIndex,
 	)
 
+	if err := handleRequestTokens(&ctx.Address, ctx.Requests, txb); err != nil {
+		ctx.Log.Debugf("handleRequestTokens: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
+		ctx.OnFinish(err)
+		return
+	}
+
 	vmctx := &vm.VMContext{
 		Address:       ctx.Address,
 		OwnerAddress:  ctx.OwnerAddress,
 		RewardAddress: ctx.RewardAddress,
 		ProgramHash:   ctx.ProgramHash,
 		MinimumReward: ctx.MinimumReward,
-		Entropy:       ctx.Entropy,                             // mutates deterministcially
+		Entropy:       *hashing.HashData(ctx.Entropy[:]),       // mutates deterministically
 		TxBuilder:     txb,                                     // mutates
 		Timestamp:     ctx.Timestamp,                           // mutate by incrementing 1 nanosec
 		VirtualState:  state.NewVirtualState(ctx.VirtualState), // clone
@@ -112,7 +120,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
-		ctx.Log.Errorf("RunVM: no state updates were produced")
+		ctx.OnFinish(fmt.Errorf("RunVM: no state updates were produced"))
 		return
 	}
 
@@ -121,7 +129,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	// create batch from state updates.
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
-		ctx.Log.Errorf("RunVM: %v", err)
+		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
 		return
 	}
 	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
@@ -129,7 +137,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	// calculate resulting state hash
 	vsClone := state.NewVirtualState(ctx.VirtualState)
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
-		ctx.Log.Errorf("RunVM: %v", err)
+		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
@@ -142,13 +150,13 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		Timestamp:  vsClone.Timestamp(),
 	}))
 	if err != nil {
-		ctx.Log.Errorf("RunVM.AddStateBlock: %v", err)
+		ctx.OnFinish(fmt.Errorf("RunVM.AddStateBlock: %v", err))
 		return
 	}
 	// create result transaction
 	ctx.ResultTransaction, err = vmctx.TxBuilder.Build(false)
 	if err != nil {
-		ctx.Log.Errorf("RunVM.txbuilder.Build: %v", err)
+		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Build: %v", err))
 		return
 	}
 
@@ -167,5 +175,15 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		"result tx finalTimestamp", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
 	)
 	// call back
-	ctx.OnFinish()
+	ctx.OnFinish(nil)
+}
+
+// transfers and erases all request tokens before making txbuiler available to the VM
+func handleRequestTokens(scAddress *address.Address, reqs []sctransaction.RequestRef, txb *txbuilder.Builder) error {
+	for _, reqRef := range reqs {
+		if err := txb.EraseColor(*scAddress, (balance.Color)(reqRef.Tx.ID()), 1); err != nil {
+			return err
+		}
+	}
+	return nil
 }

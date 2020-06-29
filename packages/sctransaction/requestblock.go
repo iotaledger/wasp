@@ -60,6 +60,11 @@ func (req *RequestBlock) RequestCode() RequestCode {
 	return req.reqCode
 }
 
+func (req *RequestBlock) String(reqId *RequestId) string {
+	return fmt.Sprintf("Request: %s to: %s, code: %s\n%s",
+		reqId.Short(), req.Address().String(), req.reqCode.String(), req.Args().String())
+}
+
 // encoding
 // important: each block starts with 65 bytes of scid
 

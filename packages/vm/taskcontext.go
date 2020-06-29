@@ -30,7 +30,7 @@ type VMTask struct {
 	VirtualState  state.VirtualState // input immutable
 	Log           *logger.Logger
 	// call when finished
-	OnFinish func()
+	OnFinish func(error)
 	// outputs
 	ResultTransaction *sctransaction.Transaction
 	ResultBatch       state.Batch

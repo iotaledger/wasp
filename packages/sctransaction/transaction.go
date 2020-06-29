@@ -227,3 +227,14 @@ func (tx *Transaction) StateAddress() (address.Address, bool, error) {
 	}
 	return ret, true, nil
 }
+
+func (tx *Transaction) RequestsToAddress(addr *address.Address) []*RequestBlock {
+	ret := make([]*RequestBlock, 0, len(tx.Requests()))
+	for _, reqBlock := range tx.Requests() {
+		if reqBlock.Address() != *addr {
+			continue
+		}
+		ret = append(ret, reqBlock)
+	}
+	return ret
+}

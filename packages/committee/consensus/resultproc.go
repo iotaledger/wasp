@@ -52,7 +52,11 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		VirtualState:    op.currentState,
 		Log:             op.log,
 	}
-	ctx.OnFinish = func() {
+	ctx.OnFinish = func(err error) {
+		if err != nil {
+			op.log.Errorf("VM task failed: %v", err)
+			return
+		}
 		op.committee.ReceiveMessage(ctx)
 	}
 	if err := runvm.RunComputationsAsync(ctx); err != nil {

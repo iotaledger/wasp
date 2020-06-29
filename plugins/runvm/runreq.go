@@ -20,19 +20,7 @@ import (
 // - in case of something not correct the whole operation is NOP, however
 //   all the sent fees and other funds remains in the SC address (this may change).
 func runTheRequest(ctx *vm.VMContext) {
-	ctx.Log.Debugw("runTheRequest IN",
-		"reqId", ctx.RequestRef.RequestId().Short(),
-		"programHash", ctx.ProgramHash.String(),
-		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
-	)
-	defer ctx.Log.Debugw("runTheRequest OUT",
-		"reqId", ctx.RequestRef.RequestId().Short(),
-		"programHash", ctx.ProgramHash.String(),
-		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
-		"state update", ctx.StateUpdate.String(),
-	)
-
-	mustHandleRequestToken(ctx)
+	ctx.Log.Debugf("runTheRequest IN:\n%s\n", ctx.RequestRef.RequestBlock().String(ctx.RequestRef.RequestId()))
 
 	if !handleRewards(ctx) {
 		return
@@ -60,7 +48,7 @@ func runTheRequest(ctx *vm.VMContext) {
 		if ctx.VirtualState.StateIndex() > 0 && !ctx.VirtualState.InitiatedBy(&ctx.OwnerAddress) {
 			// for states after #0 it is required to have record about initiator's address in the solid state
 			// to prevent attack when owner (initiator) address is overwritten in the quorum of bootup records
-			// TODO protection must also be set at the lowest level of the solid state. i.e. some metadata that variable
+			// TODO protection may also be set at the lowest level of the solid state. i.e. some metadata that variable
 			// is protected by some address and authorisation with that address is needed to modify the value
 
 			ctx.Log.Errorf("inconsistent state: variable '%s' != owner record from bootup record '%s'",
@@ -70,7 +58,6 @@ func runTheRequest(ctx *vm.VMContext) {
 		}
 	}
 	// authorisation check passed
-
 	if reqBlock.RequestCode().IsReserved() {
 		// finding and running builtin entry point
 		entryPoint, ok := builtin.Processor.GetEntryPoint(reqBlock.RequestCode())
@@ -79,6 +66,13 @@ func runTheRequest(ctx *vm.VMContext) {
 			return
 		}
 		entryPoint.Run(sandbox.NewSandbox(ctx))
+
+		defer ctx.Log.Debugw("runTheRequest OUT HARDCODED",
+			"reqId", ctx.RequestRef.RequestId().Short(),
+			"programHash", ctx.ProgramHash.String(),
+			"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
+			"state update", ctx.StateUpdate.String(),
+		)
 		return
 	}
 
@@ -97,21 +91,13 @@ func runTheRequest(ctx *vm.VMContext) {
 		return
 	}
 	entryPoint.Run(sandbox.NewSandbox(ctx))
-}
 
-func mustHandleRequestToken(ctx *vm.VMContext) {
-	// destroy token corresponding to request
-	// NOTE: it is assumed here that balances contain all necessary request token balances
-	// it is checked in the dispatcher.dispatchAddressUpdate
-	err := ctx.TxBuilder.EraseColor(ctx.Address, (balance.Color)(ctx.RequestRef.Tx.ID()), 1)
-	if err != nil {
-		//
-		ctx.Log.Errorf("dump balances:\n%s\n", ctx.TxBuilder.Dump())
-		// not enough balance for requests tokens
-		// major inconsistency, it must had been checked before
-		ctx.Log.Panicf("something wrong with request token for reqid = %s. Not all requests were processed: %v",
-			ctx.RequestRef.RequestId().String(), err)
-	}
+	defer ctx.Log.Debugw("runTheRequest OUT USER DEFINED",
+		"reqId", ctx.RequestRef.RequestId().Short(),
+		"programHash", ctx.ProgramHash.String(),
+		"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
+		"state update", ctx.StateUpdate.String(),
+	)
 }
 
 // handleRewards return true if to continue with request processing
