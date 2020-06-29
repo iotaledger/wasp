@@ -50,15 +50,15 @@ func (vctx *sandbox) Rollback() {
 	vctx.StateUpdate.Clear()
 }
 
-func (vctx *sandbox) GetAddress() address.Address {
-	return vctx.Address
+func (vctx *sandbox) GetAddress() *address.Address {
+	return &vctx.Address
 }
 
 func (vctx *sandbox) GetTimestamp() int64 {
 	return vctx.Timestamp
 }
 
-func (vctx *sandbox) Entropy() hashing.HashValue {
+func (vctx *sandbox) GetEntropy() hashing.HashValue {
 	return vctx.VMContext.Entropy
 }
 

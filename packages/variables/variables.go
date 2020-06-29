@@ -107,6 +107,9 @@ func (vr variables) Mutations() MutationSequence {
 
 // NON DETERMINISTIC!
 func (vr variables) ForEach(fun func(key string, value []byte) bool) {
+	if vr == nil {
+		return
+	}
 	for k, v := range vr {
 		if !fun(k, v) {
 			return // abort when callback returns false
@@ -115,6 +118,9 @@ func (vr variables) ForEach(fun func(key string, value []byte) bool) {
 }
 
 func (vr variables) ForEachDeterministic(fun func(key string, value []byte) bool) {
+	if vr == nil {
+		return
+	}
 	vr.sortedKeys()
 	for _, k := range vr.sortedKeys() {
 		if !fun(k, vr[k]) {

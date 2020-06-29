@@ -111,6 +111,22 @@ func ReadUint64(r io.Reader, pval *uint64) error {
 	return nil
 }
 
+func WriteInt64(w io.Writer, val int64) error {
+	_, err := w.Write(Uint64To8Bytes(uint64(val)))
+	return err
+}
+
+func ReadInt64(r io.Reader, pval *int64) error {
+	var tmp8 [8]byte
+	_, err := r.Read(tmp8[:])
+	if err != nil {
+		return err
+	}
+	uval := binary.LittleEndian.Uint64(tmp8[:])
+	*pval = int64(uval)
+	return nil
+}
+
 const MaxUint16 = int(^uint16(0))
 
 func WriteBytes16(w io.Writer, data []byte) error {

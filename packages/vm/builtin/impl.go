@@ -15,8 +15,8 @@ type builtinEntryPoint func(ctx vmtypes.Sandbox)
 var Processor = builtinProcessor{
 	vmconst.RequestCodeInit:             initRequest,
 	vmconst.RequestCodeNOP:              nopRequest,
-	vmconst.RequestCodeSetMinimumReward: setMinimumRewardRequest,
-	vmconst.RequestCodeSetDescription:   setDescriptionRequest,
+	vmconst.RequestCodeSetMinimumReward: setMinimumReward,
+	vmconst.RequestCodeSetDescription:   setDescription,
 }
 
 func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
@@ -50,20 +50,20 @@ func nopRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "nopRequest")
 }
 
-// request initializes SC state, must be called in 0 state (usually the origin transaction)
+// request initializes SC state, must be called in 0 state (the origin transaction)
 // TODO currently takes into account only owner addr and program hash
 func initRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "initRequest")
 	if !ctx.IsOriginState() {
 		// call not in the 0 state is ignored
-		ctx.GetLog().Debugf("@@@@@@@@@@@ exit 1")
+		//ctx.GetLog().Debugf("@@@@@@@@@@@ exit 1")
 		return
 	}
 	var niladdr address.Address
 	ownerAddress, ok := ctx.AccessRequest().GetAddressValue(vmconst.VarNameOwnerAddress)
 	if !ok || ownerAddress == niladdr {
 		// can't proceed if ownerAddress is not known
-		ctx.GetLog().Debugf("@@@@@@@@@@@ exit 2")
+		//ctx.GetLog().Debugf("@@@@@@@@@@@ exit 2")
 		return
 	}
 	ctx.AccessState().SetAddressValue(vmconst.VarNameOwnerAddress, ownerAddress)
@@ -71,21 +71,21 @@ func initRequest(ctx vmtypes.Sandbox) {
 	progHash, ok := ctx.AccessRequest().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || progHash == *hashing.NilHash {
 		// program hash not set, smart contract will be able to process only built-in requests
-		ctx.GetLog().Debugf("@@@@@@@@@@@ exit 3")
+		//ctx.GetLog().Debugf("@@@@@@@@@@@ exit 3")
 		return
 	}
 	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, &progHash)
 }
 
-func setMinimumRewardRequest(ctx vmtypes.Sandbox) {
-	stub(ctx, "setMinimumRewardRequest")
+func setMinimumReward(ctx vmtypes.Sandbox) {
+	stub(ctx, "setMinimumReward")
 	if v, ok := ctx.AccessRequest().GetInt64("value"); ok && v >= 0 {
 		ctx.AccessState().SetInt64(vmconst.VarNameMinimumReward, v)
 	}
 }
 
-func setDescriptionRequest(ctx vmtypes.Sandbox) {
-	stub(ctx, "setDescriptionRequest")
+func setDescription(ctx vmtypes.Sandbox) {
+	stub(ctx, "setDescription")
 	if v, ok := ctx.AccessRequest().GetString("value"); ok && v != "" {
 		ctx.AccessState().SetString("description", v)
 	}

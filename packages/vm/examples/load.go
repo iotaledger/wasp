@@ -1,6 +1,7 @@
 package examples
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -9,10 +10,13 @@ import (
 func LoadProcessor(progHashStr string) (vmtypes.Processor, bool) {
 	switch progHashStr {
 	case vmnil.ProgramHash:
-		return vmnil.New(), true
+		return vmnil.GetProcessor(), true
 
 	case logsc.ProgramHash:
-		return logsc.New(), true
+		return logsc.GetProcessor(), true
+
+	case fairroulette.ProgramHash:
+		return fairroulette.GetProcessor(), true
 	}
 	return nil, false
 }

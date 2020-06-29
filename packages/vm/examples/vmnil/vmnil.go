@@ -12,7 +12,7 @@ const ProgramHash = "67F3YgmwXT23PuRwVzDYNLhyXxwQz8WubwmYoWK2hUmE"
 type nilProcessor struct {
 }
 
-func New() vmtypes.Processor {
+func GetProcessor() vmtypes.Processor {
 	return nilProcessor{}
 }
 

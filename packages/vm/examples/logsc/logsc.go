@@ -19,12 +19,12 @@ type logscEntryPoint func(ctx vmtypes.Sandbox)
 
 type logscProcessor map[sctransaction.RequestCode]logscEntryPoint
 
-var Processor = logscProcessor{
+var entryPoints = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
 }
 
-func New() vmtypes.Processor {
-	return Processor
+func GetProcessor() vmtypes.Processor {
+	return entryPoints
 }
 
 func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {

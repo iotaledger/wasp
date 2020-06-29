@@ -14,11 +14,11 @@ import (
 type Sandbox interface {
 	// general function
 	IsOriginState() bool
-	GetAddress() address.Address
+	GetAddress() *address.Address
 	GetTimestamp() int64
-	Rollback()
+	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	GetLog() *logger.Logger
-	Entropy() hashing.HashValue
+	Rollback()
 	// sub interfaces
 	// access to the request block
 	AccessRequest() RequestAccess
@@ -28,6 +28,8 @@ type Sandbox interface {
 	AccessAccount() AccountAccess
 	// Send request
 	SendRequest(par NewRequestParams) bool
+	// Send request to itself
+	SendRequestToSelf(reqCode sctransaction.RequestCode, args variables.Variables) bool
 }
 
 // access to request parameters (arguments)
@@ -39,6 +41,7 @@ type RequestAccess interface {
 	GetAddressValue(name string) (address.Address, bool)
 	GetHashValue(name string) (hashing.HashValue, bool)
 	IsAuthorisedByAddress(addr *address.Address) bool
+	Senders() []address.Address
 }
 
 // access to the virtual state
