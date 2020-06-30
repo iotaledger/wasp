@@ -1,13 +1,14 @@
 package fairroulette
 
 import (
-	"fmt"
+	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"io"
+	"sort"
 )
 
 type fairRouletteProcessor map[sctransaction.RequestCode]fairRouletteEntryPoint
@@ -29,11 +30,13 @@ var entryPoints = fairRouletteProcessor{
 const (
 	ProgramHash = "3wo28GRrJu37v6D4xkjZsRLiVQrk3iMn7PifpMFoJEiM"
 
-	ReqVarColor        = "color"
-	StateVarNumBets    = "numbets"
-	StateVarBets       = "bets"
-	StateVarLockedBets = "lockedBest"
-	StateVarNumVotes   = "numvotes"
+	ReqVarColor              = "color"
+	StateVarBets             = "bets"
+	StateVarNumBets          = "numBets"
+	StateVarLockedBets       = "lockedBest"
+	StateVarNumLockedBets    = "numBets"
+	StateVarNumVotes         = "numvotes"
+	StateVarLastWinningColor = "lastWinningColor"
 
 	NumColors       = 8
 	NumVotesForPlay = 10
@@ -64,7 +67,7 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 
 // the request places bet into the smart contract
 func placeBet(ctx vmtypes.Sandbox) {
-	// take sender. Must exactly 1
+	// take senders. Must be exactly 1
 	senders := ctx.AccessRequest().Senders()
 	if len(senders) != 1 {
 		return
@@ -77,29 +80,26 @@ func placeBet(ctx vmtypes.Sandbox) {
 		// nothing to bet
 		return
 	}
-	// see if there's a color
+	// see if there's a color among args
 	col, ok := ctx.AccessRequest().GetInt64(ReqVarColor)
 	if !ok {
 		// wrong request, no color specified
 		return
 	}
-	// marshal bet data to binary.
-	betData, err := util.Bytes(&betInfo{
+	data, ok := ctx.AccessState().Get(StateVarBets)
+	var bets []*betInfo
+	if ok {
+		bets = decodeBets(data)
+	} else {
+		bets = make([]*betInfo, 0)
+	}
+	bets = append(bets, &betInfo{
 		player: sender,
 		sum:    sum,
 		color:  byte(col % NumColors),
 	})
-	if err != nil {
-		return
-	}
-	// push bet data into the state
-	// the following shall be replaced with one call
-	// ctx.Push(StateVarNumBets, betData)
-	// we are not limited to the number of bets
-	numBets, _, _ := ctx.AccessState().GetInt64(StateVarNumBets)
-	key := fmt.Sprintf("%s:%d", StateVarBets, numBets)
-	ctx.AccessState().Set(key, betData)
-	ctx.AccessState().SetInt64(StateVarNumBets, numBets+1)
+	ctx.AccessState().Set(StateVarBets, encodeBets(bets))
+	ctx.AccessState().SetInt64(StateVarNumBets, int64(len(bets)))
 }
 
 // anyone can vote, they can't predict the outcome anyway
@@ -110,26 +110,136 @@ func vote(ctx vmtypes.Sandbox) {
 		ctx.AccessState().SetInt64(StateVarNumVotes, numVotes+1)
 		return
 	}
+	// number of votes reached NumVotesForPlay.
+	// Lock current bets and send the 'PlayAndDistribute' request to itself
+	// get locked bets
+	lockedBetsData, ok := ctx.AccessState().Get(StateVarLockedBets)
+	var lockedBets []*betInfo
+	if ok {
+		lockedBets = decodeBets(lockedBetsData)
+	} else {
+		lockedBets = make([]*betInfo, 0)
+	}
+	// get current bets
+	data, ok := ctx.AccessState().Get(StateVarBets)
+	var bets []*betInfo
+	if ok {
+		bets = decodeBets(data)
+	} else {
+		bets = make([]*betInfo, 0)
+	}
+	// append current bets to locked bets
+	lockedBets = append(lockedBets, bets...)
+	// store locked bets
+	ctx.AccessState().Set(StateVarLockedBets, encodeBets(lockedBets))
+	ctx.AccessState().SetInt64(StateVarNumLockedBets, int64(len(lockedBets)))
+	// clear current bets
+	ctx.AccessState().Del(StateVarBets)
+	ctx.AccessState().SetInt64(StateVarNumBets, 0)
+
 	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
 	ctx.AccessState().SetInt64(StateVarNumVotes, 0)
-	// move all bets from StateVarBets to StateVarLockedBets
-	// clear bets from StateVarBets
 }
 
 func playAndDistribute(ctx vmtypes.Sandbox) {
-	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetAddress()) {
+	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
 		// ignore if request is not from itself
 		return
 	}
-	// take StateVarLockedBets
-	// take Entropy
-	// sum up bets on each color
-	// run entropy on betters proportionally betted sums on each color
-	// select winning color
-	// distribute ALL betted iotas to those who betted on winning color proportionally to the
-	// betted sums.
-	// distribute sums
-	// reset locked bets
+	numLocked, _, _ := ctx.AccessState().GetInt64(StateVarNumLockedBets)
+	if numLocked == 0 {
+		// nothing is to play
+		return
+	}
+
+	// entropy includes signature of the locked bets. It was not possible to predict it
+	// at the moment of locking
+	entropy := ctx.GetEntropy()
+	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) / NumColors)
+	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
+
+	// take locked bets
+	lockedBetsData, ok := ctx.AccessState().Get(StateVarLockedBets)
+	var lockedBets []*betInfo
+	if ok {
+		lockedBets = decodeBets(lockedBetsData)
+	} else {
+		lockedBets = make([]*betInfo, 0)
+	}
+	totalLockedAmount := int64(0)
+	for _, bet := range lockedBets {
+		totalLockedAmount += bet.sum
+	}
+	// select bets on winning color
+	winningBets := lockedBets[:0] // same underlying array
+	for _, bet := range lockedBets {
+		if bet.color == winningColor {
+			winningBets = append(winningBets, bet)
+		}
+	}
+
+	ctx.AccessState().Del(StateVarLockedBets)
+	ctx.AccessState().SetInt64(StateVarNumLockedBets, 0)
+	ctx.AccessState().SetInt64(StateVarNumVotes, 0)
+
+	if len(winningBets) == 0 {
+		// nobody played on winning color -> all sums stay in smart contract
+		// move tokens to itself in order to compress number of outputs in the address
+		if !ctx.AccessAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
+			ctx.Rollback()
+			return
+		}
+	}
+
+	if !distribute(ctx, winningBets, totalLockedAmount) {
+		ctx.Rollback()
+		return
+	}
+}
+
+func distribute(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmount int64) bool {
+	sumsByPlayers := make(map[address.Address]int64)
+	totalWinningAmount := int64(0)
+	for _, bet := range bets {
+		if _, ok := sumsByPlayers[bet.player]; !ok {
+			sumsByPlayers[bet.player] = 0
+		}
+		sumsByPlayers[bet.player] += bet.sum
+		totalWinningAmount += bet.sum
+	}
+
+	// NOTE 1: float64 was avoided for determinism reasons
+	// NOTE: beware overflows
+	for player, sum := range sumsByPlayers {
+		sumsByPlayers[player] = (totalLockedAmount * sum) / totalWinningAmount
+	}
+	// make deterministic sequence
+	seqPlayers := make([]address.Address, 0, len(sumsByPlayers))
+	resulSum := int64(0)
+	for player, sum := range sumsByPlayers {
+		seqPlayers = append(seqPlayers, player)
+		resulSum += sum
+	}
+	sort.Slice(seqPlayers, func(i, j int) bool {
+		return bytes.Compare(seqPlayers[i][:], seqPlayers[j][:]) < 0
+	})
+
+	if resulSum > totalLockedAmount {
+		sumsByPlayers[seqPlayers[0]] -= resulSum - totalLockedAmount
+	}
+	finalWinners := seqPlayers[:0]
+	for _, player := range seqPlayers {
+		if sumsByPlayers[player] <= 0 {
+			continue
+		}
+		finalWinners = append(finalWinners, player)
+	}
+	for _, player := range finalWinners {
+		if !ctx.AccessAccount().MoveTokens(&player, &balance.ColorIOTA, sumsByPlayers[player]) {
+			return false
+		}
+	}
+	return true
 }
 
 func (bi *betInfo) Write(w io.Writer) error {
@@ -151,4 +261,25 @@ func (bi *betInfo) Read(r io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func encodeBets(bets []*betInfo) []byte {
+	var buf bytes.Buffer
+	_ = util.WriteUint16(&buf, uint16(len(bets)))
+	for _, bet := range bets {
+		_ = bet.Write(&buf)
+	}
+	return buf.Bytes()
+}
+
+func decodeBets(data []byte) []*betInfo {
+	var size uint16
+	rdr := bytes.NewReader(data)
+	_ = util.ReadUint16(rdr, &size)
+	ret := make([]*betInfo, size)
+	for i := range ret {
+		ret[i] = new(betInfo)
+		_ = ret[i].Read(rdr)
+	}
+	return ret
 }

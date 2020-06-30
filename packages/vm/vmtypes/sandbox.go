@@ -14,7 +14,7 @@ import (
 type Sandbox interface {
 	// general function
 	IsOriginState() bool
-	GetAddress() *address.Address
+	GetOwnAddress() *address.Address
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	GetLog() *logger.Logger

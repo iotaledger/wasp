@@ -40,7 +40,7 @@ func stub(ctx vmtypes.Sandbox, text string) {
 	ctx.GetLog().Debugw("run builtInProcessor",
 		"text", text,
 		"request code", ctx.AccessRequest().Code(),
-		"addr", ctx.GetAddress().String(),
+		"addr", ctx.GetOwnAddress().String(),
 		"ts", ctx.GetTimestamp(),
 		"req", reqId.String(),
 	)

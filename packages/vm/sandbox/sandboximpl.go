@@ -50,7 +50,7 @@ func (vctx *sandbox) Rollback() {
 	vctx.StateUpdate.Clear()
 }
 
-func (vctx *sandbox) GetAddress() *address.Address {
+func (vctx *sandbox) GetOwnAddress() *address.Address {
 	return &vctx.Address
 }
 
