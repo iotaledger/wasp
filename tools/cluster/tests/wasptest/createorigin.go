@@ -7,10 +7,21 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
+const goshimmerDirectly = true
+
 func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	//fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
-	tx, err := cluster.CreateOrigin(clu.Config.Goshimmer.BindAddress, sc)
+	var bindAddress string
+	if goshimmerDirectly {
+		bindAddress = clu.Config.Goshimmer.BindAddress
+	} else {
+		bindAddress = clu.ApiHosts()[0]
+	}
+
+	fmt.Printf("++++++++++ create origin bind address: %s\n", bindAddress)
+
+	tx, err := cluster.CreateOrigin(bindAddress, sc)
 	if err != nil {
 		return err
 	}
@@ -27,7 +38,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	}
 
 	// in real situation we have to wait for confirmation
-	err = nodeapi.PostTransaction(clu.Config.Goshimmer.BindAddress, tx.Transaction)
+	err = nodeapi.PostTransaction(bindAddress, tx.Transaction)
 	if err != nil {
 		return err
 	}

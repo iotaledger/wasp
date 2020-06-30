@@ -35,7 +35,8 @@
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
   "nodeconn": {
-    "address": "127.0.0.1:5000"
+    "address": "127.0.0.1:5000",
+    "webapi": "127.0.0.1:8080"
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}
