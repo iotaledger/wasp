@@ -61,9 +61,14 @@ type StateAccess interface {
 // access to token operations (txbuilder)
 // mint (create new color) is not here on purpose: ColorNew is used for request tokens
 type AccountAccess interface {
+	// access to total available outputs/balances
 	AvailableBalance(col *balance.Color) int64
 	MoveTokens(targetAddr *address.Address, col *balance.Color, amount int64) bool
 	EraseColor(targetAddr *address.Address, col *balance.Color, amount int64) bool
+	// part of the outputs/balances which are coming from the current request transaction
+	AvailableBalanceFromRequest(col *balance.Color) int64
+	MoveTokensFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
+	EraseColorFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
 }
 
 type NewRequestParams struct {

@@ -173,6 +173,22 @@ func (vtxb *Builder) GetInputBalance(col balance.Color) int64 {
 	return ret
 }
 
+// GetInputBalanceFromTransaction calculates what is available in inputs from outputs
+// of the given transaction
+func (vtxb *Builder) GetInputBalanceFromTransaction(col balance.Color, txid valuetransaction.ID) int64 {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	ret := int64(0)
+	for _, inp := range vtxb.inputBalancesByOutput {
+		if inp.outputId.TransactionID() != txid {
+			continue
+		}
+		ret += util.BalanceOfColor(inp.reminder, col)
+	}
+	return ret
+}
+
 // Returns unconsumed total
 func subtractAmount(bals []*balance.Balance, col balance.Color, amount int64) int64 {
 	if amount == 0 {
@@ -224,6 +240,27 @@ func (vtxb *Builder) moveAmount(targetAddr address.Address, origColor, targetCol
 	vtxb.addToOutputs(targetAddr, targetColor, saveAmount)
 }
 
+func (vtxb *Builder) moveAmountFromTransaction(targetAddr address.Address, origColor, targetColor balance.Color, amount int64, txid valuetransaction.ID) {
+	saveAmount := amount
+	if amount == 0 {
+		return
+	}
+	for i := range vtxb.inputBalancesByOutput {
+		if vtxb.inputBalancesByOutput[i].outputId.TransactionID() != txid {
+			continue
+		}
+		amount = subtractAmount(vtxb.inputBalancesByOutput[i].reminder, origColor, amount)
+		if amount == 0 {
+			vtxb.inputBalancesByOutput[i].consumed = addAmount(vtxb.inputBalancesByOutput[i].consumed, origColor, saveAmount)
+			break
+		}
+	}
+	if amount > 0 {
+		panic(errorNotEnoughBalance)
+	}
+	vtxb.addToOutputs(targetAddr, targetColor, saveAmount)
+}
+
 func (vtxb *Builder) addToOutputs(targetAddr address.Address, col balance.Color, amount int64) {
 	cmap, ok := vtxb.outputBalances[targetAddr]
 	if !ok {
@@ -234,7 +271,7 @@ func (vtxb *Builder) addToOutputs(targetAddr address.Address, col balance.Color,
 	cmap[col] = b + amount
 }
 
-// move token without changing color
+// MoveToAddress move token without changing color
 func (vtxb *Builder) MoveToAddress(targetAddr address.Address, col balance.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
@@ -267,6 +304,41 @@ func (vtxb *Builder) MintColor(targetAddr address.Address, col balance.Color, am
 		return errorNotEnoughBalance
 	}
 	vtxb.moveAmount(targetAddr, col, balance.ColorNew, amount)
+	return nil
+}
+
+func (vtxb *Builder) MoveToAddressFromTransaction(targetAddr address.Address, col balance.Color, amount int64, txid valuetransaction.ID) error {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	if vtxb.GetInputBalanceFromTransaction(col, txid) < amount {
+		return errorNotEnoughBalance
+	}
+	vtxb.moveAmountFromTransaction(targetAddr, col, col, amount, txid)
+	return nil
+}
+
+func (vtxb *Builder) EraseColorFromTransaction(targetAddr address.Address, col balance.Color, amount int64, txid valuetransaction.ID) error {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	actualBalance := vtxb.GetInputBalanceFromTransaction(col, txid)
+	if actualBalance < amount {
+		return fmt.Errorf("not enough balance: need %d, found %d, color %s",
+			amount, actualBalance, col.String())
+	}
+	vtxb.moveAmountFromTransaction(targetAddr, col, balance.ColorIOTA, amount, txid)
+	return nil
+}
+
+func (vtxb *Builder) MintColorFromTransaction(targetAddr address.Address, col balance.Color, amount int64, txid valuetransaction.ID) error {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	if vtxb.GetInputBalanceFromTransaction(col, txid) < amount {
+		return errorNotEnoughBalance
+	}
+	vtxb.moveAmountFromTransaction(targetAddr, col, balance.ColorNew, amount, txid)
 	return nil
 }
 

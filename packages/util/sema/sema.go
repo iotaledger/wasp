@@ -19,6 +19,7 @@ func (sem *Lock) Dispose() {
 	close(sem.ch)
 }
 
+// locks indefinitely if tiemout < 0
 func (sem *Lock) Acquire(timeout time.Duration) bool {
 	if timeout < 0 {
 		sem.ch <- struct{}{}

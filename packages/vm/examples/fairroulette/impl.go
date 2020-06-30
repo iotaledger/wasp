@@ -66,6 +66,7 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 }
 
 // the request places bet into the smart contract
+// all current bets are kept as one marshalled binary blob in state variable 'StateVarBets'
 func placeBet(ctx vmtypes.Sandbox) {
 	// take senders. Must be exactly 1
 	senders := ctx.AccessRequest().Senders()
@@ -74,8 +75,8 @@ func placeBet(ctx vmtypes.Sandbox) {
 	}
 	sender := senders[0]
 	// look if there're some iotas left for the bet.
-	// it is after min rewards.
-	sum := ctx.AccessAccount().AvailableBalance(&balance.ColorIOTA)
+	// it is after min rewards. Here we accessing only part which is coming with the current request
+	sum := ctx.AccessAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return
@@ -191,13 +192,13 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	if !distribute(ctx, winningBets, totalLockedAmount) {
+	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
 		ctx.Rollback()
 		return
 	}
 }
 
-func distribute(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmount int64) bool {
+func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmount int64) bool {
 	sumsByPlayers := make(map[address.Address]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
