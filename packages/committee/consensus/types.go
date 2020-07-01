@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"time"
 )
 
 type operator struct {
@@ -128,11 +129,11 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.currentState == nil {
 		return nil, false
 	}
-	h, ok, err := op.currentState.Variables().GetHashValue(vmconst.VarNameProgramHash)
+	h, ok, err := op.currentState.Variables().Codec().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || err != nil {
 		return nil, false
 	}
-	return &h, true
+	return h, true
 }
 
 func (op *operator) getRewardAddress() address.Address {
@@ -143,7 +144,10 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok := op.currentState.Variables().MustGetInt64(vmconst.VarNameMinimumReward)
+	vt, ok, err := op.currentState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
+	if err != nil {
+		panic(err)
+	}
 	if !ok {
 		return 0
 	}

@@ -3,14 +3,13 @@ package sandbox
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -19,14 +18,6 @@ type sandbox struct {
 	saveTxBuilder  *txbuilder.Builder // for rollback
 	requestWrapper *requestWrapper
 	stateWrapper   *stateWrapper
-}
-type requestWrapper struct {
-	ref *sctransaction.RequestRef
-}
-
-type stateWrapper struct {
-	virtualState state.VirtualState
-	stateUpdate  state.StateUpdate
 }
 
 func NewSandbox(vctx *vm.VMContext) vmtypes.Sandbox {
@@ -92,7 +83,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 		}
 	}
 	reqBlock := sctransaction.NewRequestBlock(*par.TargetAddress, par.RequestCode)
-	reqBlock.Args().SetAll(par.Args)
+	reqBlock.SetArgs(par.Args)
 
 	if err := vctx.TxBuilder.AddRequestBlock(reqBlock); err != nil {
 		return false
@@ -100,7 +91,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	return true
 }
 
-func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args variables.Variables) bool {
+func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args table.MemTable) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,

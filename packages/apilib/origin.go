@@ -9,14 +9,14 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/table"
 )
 
 type CreateOriginParams struct {
 	Address              address.Address
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	ProgramHash          hashing.HashValue
-	Variables            variables.Variables
+	Variables            table.MemTable
 }
 
 // CreateOrigin creates origin transaction. It asks for inputs from goshimmer node

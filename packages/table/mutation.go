@@ -1,4 +1,4 @@
-package variables
+package table
 
 import (
 	"fmt"
@@ -7,17 +7,19 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// Mutation represents a single operation over a Variables key-value
+// Mutation represents a single "set" or "del" operation over a Table
 type Mutation interface {
 	Read(io.Reader) error
 	Write(io.Writer) error
 
 	String() string
 
-	ApplyTo(vs Variables)
+	ApplyTo(kv Table)
 
-	Key() string
-	Value() (v []byte, ok bool)
+	// Key returns the key that is mutated
+	Key() Key
+	// Value returns the value after the mutation (nil if deleted)
+	Value() []byte
 
 	getMagic() int
 }
@@ -35,7 +37,15 @@ type MutationSequence interface {
 	Add(mut Mutation)
 	AddAll(ms MutationSequence)
 
-	ApplyTo(vs Variables)
+	ApplyTo(kv Table)
+}
+
+// MutationMap stores the latest mutation applied to each key
+type MutationMap interface {
+	Get(key Key) Mutation
+	Add(mut Mutation)
+	Clone() MutationMap
+	Iterate(func(Key, Mutation) bool)
 }
 
 const (
@@ -124,19 +134,50 @@ func (ms *mutationSequence) AddAll(other MutationSequence) {
 	})
 }
 
-func (ms *mutationSequence) ApplyTo(v Variables) {
+func (ms *mutationSequence) ApplyTo(kv Table) {
 	for _, mut := range ms.muts {
-		mut.ApplyTo(v)
+		mut.ApplyTo(kv)
 	}
 }
 
+type mutationMap map[Key]Mutation
+
+func NewMutationMap() MutationMap {
+	return make(mutationMap)
+}
+
+func (m mutationMap) Get(key Key) Mutation {
+	v, _ := m[key]
+	return v
+}
+
+func (m mutationMap) Add(mut Mutation) {
+	m[mut.Key()] = mut
+}
+
+func (m mutationMap) Iterate(f func(Key, Mutation) bool) {
+	for k, v := range m {
+		if !f(k, v) {
+			break
+		}
+	}
+}
+
+func (m mutationMap) Clone() MutationMap {
+	clone := make(mutationMap)
+	for k, v := range m {
+		clone[k] = v
+	}
+	return clone
+}
+
 type mutationSet struct {
-	k string
+	k Key
 	v []byte
 }
 
 type mutationDel struct {
-	k string
+	k Key
 }
 
 func newFromMagic(magic int) (Mutation, error) {
@@ -149,7 +190,7 @@ func newFromMagic(magic int) (Mutation, error) {
 	return nil, fmt.Errorf("Unknown mutation magic %d", magic)
 }
 
-func NewMutationSet(k string, v []byte) *mutationSet {
+func NewMutationSet(k Key, v []byte) *mutationSet {
 	return &mutationSet{k: k, v: v}
 }
 
@@ -158,7 +199,7 @@ func (m *mutationSet) getMagic() int {
 }
 
 func (m *mutationSet) Write(w io.Writer) error {
-	if err := util.WriteString16(w, m.k); err != nil {
+	if err := util.WriteBytes16(w, []byte(m.k)); err != nil {
 		return err
 	}
 	if err := util.WriteBytes32(w, m.v); err != nil {
@@ -168,7 +209,7 @@ func (m *mutationSet) Write(w io.Writer) error {
 }
 
 func (m *mutationSet) Read(r io.Reader) error {
-	k, err := util.ReadString16(r)
+	k, err := util.ReadBytes16(r)
 	if err != nil {
 		return err
 	}
@@ -176,7 +217,7 @@ func (m *mutationSet) Read(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	m.k = k
+	m.k = Key(k)
 	m.v = v
 	return nil
 }
@@ -185,36 +226,36 @@ func (m *mutationSet) String() string {
 	return fmt.Sprintf("SET \"%s\"={%x}", m.k, m.v)
 }
 
-func (m *mutationSet) Key() string {
+func (m *mutationSet) Key() Key {
 	return m.k
 }
 
-func (m *mutationSet) Value() (v []byte, ok bool) {
-	return m.v, true
+func (m *mutationSet) Value() []byte {
+	return m.v
 }
 
-func (m *mutationSet) ApplyTo(vs Variables) {
-	vs.Set(m.k, m.v)
+func (m *mutationSet) ApplyTo(kv Table) {
+	kv.Set(m.k, m.v)
 }
 
 func (m *mutationDel) getMagic() int {
 	return mutationMagicDel
 }
 
-func NewMutationDel(k string) *mutationDel {
+func NewMutationDel(k Key) *mutationDel {
 	return &mutationDel{k: k}
 }
 
 func (m *mutationDel) Write(w io.Writer) error {
-	return util.WriteString16(w, m.k)
+	return util.WriteBytes16(w, []byte(m.k))
 }
 
 func (m *mutationDel) Read(r io.Reader) error {
-	k, err := util.ReadString16(r)
+	k, err := util.ReadBytes16(r)
 	if err != nil {
 		return err
 	}
-	m.k = k
+	m.k = Key(k)
 	return nil
 }
 
@@ -222,14 +263,14 @@ func (m *mutationDel) String() string {
 	return fmt.Sprintf("DEL %s", m.k)
 }
 
-func (m *mutationDel) Key() string {
+func (m *mutationDel) Key() Key {
 	return m.k
 }
 
-func (m *mutationDel) Value() (v []byte, ok bool) {
-	return nil, false
+func (m *mutationDel) Value() []byte {
+	return nil
 }
 
-func (m *mutationDel) ApplyTo(vs Variables) {
-	vs.Del(m.k)
+func (m *mutationDel) ApplyTo(kv Table) {
+	kv.Del(m.k)
 }

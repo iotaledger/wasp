@@ -62,7 +62,7 @@ func (sm *stateManager) checkStateApproval() bool {
 				return false
 			}
 		}
-		if err := pending.nextState.CommitToDb(*sm.committee.Address(), pending.batch); err != nil {
+		if err := pending.nextState.CommitToDb(pending.batch); err != nil {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextState.StateIndex())
 			return false
 		}
@@ -224,7 +224,8 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 			}
 		}
 	}
-	stateToApprove := state.NewVirtualState(sm.solidState) // clone
+
+	stateToApprove := sm.createStateToApprove()
 
 	if sm.solidStateValid || sm.solidState == nil {
 		// we need to approve the solidState.
@@ -237,6 +238,7 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 			return false
 		}
 	}
+
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
 	pb, ok := sm.pendingBatches[vh]
@@ -258,6 +260,13 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 		sm.requestStateTransaction(pb)
 	}
 	return true
+}
+
+func (sm *stateManager) createStateToApprove() state.VirtualState {
+	if sm.solidState == nil {
+		return state.NewEmptyVirtualState(sm.committee.Address())
+	}
+	return sm.solidState.Clone()
 }
 
 const stateTransactionRequestTimeout = 10 * time.Second

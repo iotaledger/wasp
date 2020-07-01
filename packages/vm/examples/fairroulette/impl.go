@@ -93,12 +93,12 @@ func placeBet(ctx vmtypes.Sandbox) {
 		return
 	}
 	// see if there's a color among args
-	col, ok := ctx.AccessRequest().GetInt64(ReqVarColor)
+	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
-		// wrong request, no color specified
+		ctx.GetLog().Errorf("wrong request, no color specified")
 		return
 	}
-	data, ok := ctx.AccessState().Get(StateVarBets)
+	data, _ := ctx.AccessState().Variables().Get(StateVarBets)
 	var bets []*betInfo
 	if ok {
 		bets = decodeBets(data)
@@ -111,32 +111,32 @@ func placeBet(ctx vmtypes.Sandbox) {
 		reqId:  ctx.AccessRequest().ID(),
 		color:  byte(col % NumColors),
 	})
-	ctx.AccessState().Set(StateVarBets, encodeBets(bets))
-	ctx.AccessState().SetInt64(StateVarNumBets, int64(len(bets)))
+	ctx.AccessState().Variables().Set(StateVarBets, encodeBets(bets))
+	ctx.AccessState().Variables().SetInt64(StateVarNumBets, int64(len(bets)))
 }
 
 // anyone can vote, they can't predict the outcome anyway
 // alternatively, only betters could be allowed to bet --> need for hashmap structure
 func vote(ctx vmtypes.Sandbox) {
-	numVotes, _, _ := ctx.AccessState().GetInt64(StateVarNumVotes)
+	numVotes, _, _ := ctx.AccessState().Variables().GetInt64(StateVarNumVotes)
 	if numVotes+1 < NumVotesForPlay {
-		ctx.AccessState().SetInt64(StateVarNumVotes, numVotes+1)
+		ctx.AccessState().Variables().SetInt64(StateVarNumVotes, numVotes+1)
 		return
 	}
 	// number of votes reached NumVotesForPlay.
 	// Lock current bets and send the 'PlayAndDistribute' request to itself
 	// get locked bets
-	lockedBetsData, ok := ctx.AccessState().Get(StateVarLockedBets)
+	lockedBetsData, _ := ctx.AccessState().Variables().Get(StateVarLockedBets)
 	var lockedBets []*betInfo
-	if ok {
+	if lockedBetsData != nil {
 		lockedBets = decodeBets(lockedBetsData)
 	} else {
 		lockedBets = make([]*betInfo, 0)
 	}
 	// get current bets
-	data, ok := ctx.AccessState().Get(StateVarBets)
+	data, _ := ctx.AccessState().Variables().Get(StateVarBets)
 	var bets []*betInfo
-	if ok {
+	if data != nil {
 		bets = decodeBets(data)
 	} else {
 		bets = make([]*betInfo, 0)
@@ -144,14 +144,14 @@ func vote(ctx vmtypes.Sandbox) {
 	// append current bets to locked bets
 	lockedBets = append(lockedBets, bets...)
 	// store locked bets
-	ctx.AccessState().Set(StateVarLockedBets, encodeBets(lockedBets))
-	ctx.AccessState().SetInt64(StateVarNumLockedBets, int64(len(lockedBets)))
+	ctx.AccessState().Variables().Set(StateVarLockedBets, encodeBets(lockedBets))
+	ctx.AccessState().Variables().SetInt64(StateVarNumLockedBets, int64(len(lockedBets)))
 	// clear current bets
-	ctx.AccessState().Del(StateVarBets)
-	ctx.AccessState().SetInt64(StateVarNumBets, 0)
+	ctx.AccessState().Variables().Del(StateVarBets)
+	ctx.AccessState().Variables().SetInt64(StateVarNumBets, 0)
 
 	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
-	ctx.AccessState().SetInt64(StateVarNumVotes, 0)
+	ctx.AccessState().Variables().SetInt64(StateVarNumVotes, 0)
 }
 
 func playAndDistribute(ctx vmtypes.Sandbox) {
@@ -159,7 +159,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		// ignore if request is not from itself
 		return
 	}
-	numLocked, _, _ := ctx.AccessState().GetInt64(StateVarNumLockedBets)
+	numLocked, _, _ := ctx.AccessState().Variables().GetInt64(StateVarNumLockedBets)
 	if numLocked == 0 {
 		// nothing is to play
 		return
@@ -169,12 +169,12 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	// at the moment of locking
 	entropy := ctx.GetEntropy()
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) / NumColors)
-	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
+	ctx.AccessState().Variables().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	// take locked bets
-	lockedBetsData, ok := ctx.AccessState().Get(StateVarLockedBets)
+	lockedBetsData, _ := ctx.AccessState().Variables().Get(StateVarLockedBets)
 	var lockedBets []*betInfo
-	if ok {
+	if lockedBetsData != nil {
 		lockedBets = decodeBets(lockedBetsData)
 	} else {
 		lockedBets = make([]*betInfo, 0)
@@ -191,9 +191,9 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	ctx.AccessState().Del(StateVarLockedBets)
-	ctx.AccessState().SetInt64(StateVarNumLockedBets, 0)
-	ctx.AccessState().SetInt64(StateVarNumVotes, 0)
+	ctx.AccessState().Variables().Del(StateVarLockedBets)
+	ctx.AccessState().Variables().SetInt64(StateVarNumLockedBets, 0)
+	ctx.AccessState().Variables().SetInt64(StateVarNumVotes, 0)
 
 	if len(winningBets) == 0 {
 		// nobody played on winning color -> all sums stay in smart contract

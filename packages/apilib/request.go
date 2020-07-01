@@ -3,13 +3,15 @@ package apilib
 import (
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"strconv"
+	"github.com/iotaledger/wasp/packages/table"
 )
 
 type RequestBlockJson struct {
@@ -64,14 +66,17 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	}
 	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
 
+	args := table.NewMemTable()
 	for k, v := range reqBlkJson.Vars {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			ret.Args().SetString(k, v)
+			args.Codec().SetString(table.Key(k), v)
 		} else {
-			ret.Args().SetInt64(k, int64(n))
+			args.Codec().SetInt64(table.Key(k), int64(n))
 		}
 	}
+	ret.SetArgs(args)
+
 	return ret, nil
 }
 

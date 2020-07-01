@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/table"
 )
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -29,33 +29,21 @@ type Sandbox interface {
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
-	SendRequestToSelf(reqCode sctransaction.RequestCode, args variables.Variables) bool
+	SendRequestToSelf(reqCode sctransaction.RequestCode, args table.MemTable) bool
 }
 
 // access to request parameters (arguments)
 type RequestAccess interface {
 	ID() sctransaction.RequestId
 	Code() sctransaction.RequestCode
-	GetInt64(name string) (int64, bool)
-	GetString(name string) (string, bool)
-	GetAddressValue(name string) (address.Address, bool)
-	GetHashValue(name string) (hashing.HashValue, bool)
 	IsAuthorisedByAddress(addr *address.Address) bool
 	Senders() []address.Address
+	Args() table.RCodec
 }
 
 // access to the virtual state
 type StateAccess interface {
-	// getters
-	Get(name string) ([]byte, bool)
-	GetInt64(name string) (int64, bool, error)
-	// setters
-	Del(name string)
-	Set(name string, value []byte)
-	SetInt64(name string, value int64)
-	SetString(name string, value string)
-	SetAddressValue(name string, addr address.Address)
-	SetHashValue(name string, h *hashing.HashValue)
+	Variables() table.Codec
 }
 
 // access to token operations (txbuilder)
@@ -74,6 +62,6 @@ type AccountAccess interface {
 type NewRequestParams struct {
 	TargetAddress *address.Address
 	RequestCode   sctransaction.RequestCode
-	Args          variables.Variables
+	Args          table.MemTable
 	IncludeReward int64
 }

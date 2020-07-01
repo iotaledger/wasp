@@ -16,10 +16,11 @@ const (
 	ObjectTypeDBSchemaVersion byte = iota
 	ObjectTypeBootupData
 	ObjectTypeDistributedKeyData
-	ObjectTypeVariableState
+	ObjectTypeSolidState
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
 	ObjectTypeSolidStateIndex
+	ObjectTypeStateVariable
 	ObjectTypeProgramMetadata
 	ObjectTypeProgramCode
 )

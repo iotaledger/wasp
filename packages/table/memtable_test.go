@@ -1,4 +1,4 @@
-package variables
+package table
 
 import (
 	"bytes"
@@ -9,26 +9,28 @@ import (
 )
 
 func TestBasicVariables(t *testing.T) {
-	vars := New(nil)
+	vars := NewMemTable()
 
-	_, ok := vars.Get("k1")
-	assert.False(t, ok)
+	v, err := vars.Get("k1")
+	assert.NoError(t, err)
+	assert.Nil(t, v)
 
 	vars.Set("k1", []byte("v1"))
-	v, ok := vars.Get("k1")
-	assert.True(t, ok)
+	v, err = vars.Get("k1")
+	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
 	vars.Del("k1")
-	_, ok = vars.Get("v1")
-	assert.False(t, ok)
+	v, err = vars.Get("v1")
+	assert.NoError(t, err)
+	assert.Nil(t, v)
 }
 
 func TestBytes(t *testing.T) {
-	vars1 := New(nil)
+	vars1 := NewMemTable()
 	h1 := util.GetHashValue(vars1)
 
-	vars2 := New(vars1)
+	vars2 := vars1.Clone()
 	h2 := util.GetHashValue(vars2)
 
 	assert.EqualValues(t, h1, h2)
@@ -61,10 +63,10 @@ func TestBytes(t *testing.T) {
 }
 
 func TestDetereminism(t *testing.T) {
-	vars1 := New(nil)
+	vars1 := NewMemTable()
 	h1 := util.GetHashValue(vars1)
 
-	vars2 := New(vars1)
+	vars2 := vars1.Clone()
 	h2 := util.GetHashValue(vars2)
 
 	assert.EqualValues(t, h1, h2)
@@ -92,7 +94,7 @@ func TestDetereminism(t *testing.T) {
 }
 
 func TestMarshaling(t *testing.T) {
-	vars1 := New(nil)
+	vars1 := NewMemTable()
 	vars1.Set("k1", []byte("kuku"))
 	vars1.Set("k2", []byte{42})
 	vars1.Set("k3", []byte("kuku"))
@@ -102,7 +104,7 @@ func TestMarshaling(t *testing.T) {
 	err := vars1.Write(&buf)
 	assert.NoError(t, err)
 
-	vars2 := New(nil)
+	vars2 := NewMemTable()
 	err = vars2.Read(bytes.NewBuffer(buf.Bytes()))
 	assert.NoError(t, err)
 
