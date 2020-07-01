@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -22,11 +21,12 @@ func TestReadWrite(t *testing.T) {
 	scAddr, err := address.FromBase58(scAddrStr)
 	assert.NoError(t, err)
 
-	tx, _, _ := CreateOriginUtxodb(origin.NewOriginParams{
+	tx, err := CreateOriginUtxodb(CreateOriginParams{
 		Address:              scAddr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(1)),
 		ProgramHash:          *hashing.HashStrings(dscr),
 	})
+	assert.NoError(t, err)
 	t.Logf("created transaction txid = %s", tx.ID().String())
 
 	data := tx.Bytes()

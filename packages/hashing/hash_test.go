@@ -82,12 +82,12 @@ func TestHashInList(t *testing.T) {
 	h2, _ := HashValueFromBase58(seed2)
 	h3, _ := HashValueFromBase58(seed3)
 	h4, _ := HashValueFromBase58(seed4)
-	hashArray := []*HashValue{h1, h2, h3}
-	res1 := HashInList(h1, hashArray)
+	hashArray := []*HashValue{&h1, &h2, &h3}
+	res1 := HashInList(&h1, hashArray)
 	if !res1 {
 		t.Fatalf("failed to check")
 	}
-	res2 := HashInList(h4, hashArray)
+	res2 := HashInList(&h4, hashArray)
 	if res2 == true {
 		t.Fatalf("failed to check")
 	}

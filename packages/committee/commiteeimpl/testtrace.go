@@ -9,7 +9,7 @@ import (
 )
 
 func (c *committeeObj) testTrace(msg *committee.TestTraceMsg) {
-	log.Debug("++++ received TestTraceMsg from #%d", msg.SenderIndex)
+	log.Debugf("++++ received TestTraceMsg from #%d", msg.SenderIndex)
 
 	if len(msg.Sequence) != int(c.Size()) || !util.ValidPermutation(msg.Sequence) {
 		c.log.Panicf("wrong permutation %+v received from #%d", msg.Sequence, msg.SenderIndex)
