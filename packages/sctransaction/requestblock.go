@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -63,6 +65,27 @@ func (req *RequestBlock) RequestCode() RequestCode {
 func (req *RequestBlock) String(reqId *RequestId) string {
 	return fmt.Sprintf("Request: %s to: %s, code: %s\n%s",
 		reqId.Short(), req.Address().String(), req.reqCode.String(), req.Args().String())
+}
+
+func NewRequestIdFromString(reqIdStr string) (ret RequestId, err error) {
+	splitStr := strings.Split(reqIdStr, "]")
+	if len(splitStr) != 2 {
+		err = fmt.Errorf("wrong request id string")
+		return
+	}
+	indexStr := splitStr[0][1:]
+	indexInt, err := strconv.Atoi(indexStr)
+	if err != nil {
+		err = fmt.Errorf("wrong request id string")
+		return
+	}
+	index := uint16(indexInt)
+	txid, err := valuetransaction.IDFromBase58(splitStr[1])
+	if err != nil {
+		return
+	}
+	ret = NewRequestId(txid, index)
+	return
 }
 
 // encoding

@@ -2,11 +2,13 @@ package fairroulette
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/mr-tron/base58"
 	"io"
 	"sort"
 )
@@ -44,8 +46,17 @@ const (
 
 type betInfo struct {
 	player address.Address
+	reqId  sctransaction.RequestId
 	sum    int64
 	color  byte
+}
+
+// all strings base58
+type betInfoJson struct {
+	playerAddr string `json:"player_addr"`
+	reqId      string `json:"req_id"`
+	sum        int64  `json:"sum"`
+	color      byte   `json:"color"`
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -97,6 +108,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 	bets = append(bets, &betInfo{
 		player: sender,
 		sum:    sum,
+		reqId:  ctx.AccessRequest().ID(),
 		color:  byte(col % NumColors),
 	})
 	ctx.AccessState().Set(StateVarBets, encodeBets(bets))
@@ -264,23 +276,51 @@ func (bi *betInfo) Read(r io.Reader) error {
 	return nil
 }
 
-func encodeBets(bets []*betInfo) []byte {
-	var buf bytes.Buffer
-	_ = util.WriteUint16(&buf, uint16(len(bets)))
-	for _, bet := range bets {
-		_ = bet.Write(&buf)
+func toJsonable(bi *betInfo) *betInfoJson {
+	return &betInfoJson{
+		playerAddr: bi.player.String(),
+		reqId:      base58.Encode(bi.reqId[:]),
+		sum:        bi.sum,
+		color:      bi.color,
 	}
-	return buf.Bytes()
+}
+
+func fromJsonable(biJson *betInfoJson) *betInfo {
+	playerAddr, err := address.FromBase58(biJson.playerAddr)
+	if err != nil {
+		playerAddr = address.Address{}
+	}
+	reqId, err := sctransaction.NewRequestIdFromString(biJson.reqId)
+	if err != nil {
+		reqId = sctransaction.RequestId{}
+	}
+
+	return &betInfo{
+		player: playerAddr,
+		reqId:  reqId,
+		sum:    biJson.sum,
+		color:  biJson.color,
+	}
+}
+
+func encodeBets(bets []*betInfo) []byte {
+	betsJson := make([]*betInfoJson, len(bets))
+	for i, bi := range bets {
+		betsJson[i] = toJsonable(bi)
+	}
+	data, _ := json.Marshal(betsJson)
+	return data
 }
 
 func decodeBets(data []byte) []*betInfo {
-	var size uint16
-	rdr := bytes.NewReader(data)
-	_ = util.ReadUint16(rdr, &size)
-	ret := make([]*betInfo, size)
+	tmpLst := make([]*betInfoJson, 0)
+	if err := json.Unmarshal(data, &tmpLst); err != nil {
+		return []*betInfo{}
+	}
+
+	ret := make([]*betInfo, len(tmpLst))
 	for i := range ret {
-		ret[i] = new(betInfo)
-		_ = ret[i].Read(rdr)
+		ret[i] = fromJsonable(tmpLst[i])
 	}
 	return ret
 }
