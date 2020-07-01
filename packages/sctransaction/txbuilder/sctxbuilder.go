@@ -2,6 +2,7 @@ package txbuilder
 
 import (
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -71,17 +72,33 @@ func (txb *Builder) AddOriginStateBlock(stateHash *hashing.HashValue, scAddress 
 	return nil
 }
 
+// CreateStateBlock creates state block and transfers smart contract token.
+// state block will have 0 state index, 0 timestamp, nil stateHash
+func (txb *Builder) CreateStateBlock(color balance.Color) error {
+	return txb.AddStateBlock(sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
+		Color: color,
+	}))
+}
+
+func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashValue, timestamp int64) error {
+	if txb.stateBlock == nil {
+		return fmt.Errorf("state block not set")
+	}
+	txb.stateBlock.WithStateParams(stateIndex, stateHash, timestamp)
+	return nil
+}
+
 func (txb *Builder) AddStateBlock(stateBlock *sctransaction.StateBlock) error {
 	if stateBlock.Color() == balance.ColorNew {
 		return errors.New("can't use 'ColorNew'")
 	}
-	if txb.GetInputBalance(stateBlock.Color()) != 1 {
-		return errorWrongScToken
+	if txb.GetInputBalance(stateBlock.Color()) == 0 {
+		return fmt.Errorf("non existent smart contract token with color %s", stateBlock.Color().String())
 	}
 	foundAddress := false
 	var scAddress address.Address
 	txb.ForEachInputBalance(func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool {
-		if util.BalanceOfColor(bals, stateBlock.Color()) == 1 {
+		if util.BalanceOfColor(bals, stateBlock.Color()) > 0 {
 			scAddress = oid.Address()
 			foundAddress = true
 			return false

@@ -2,7 +2,6 @@ package runvm
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -82,10 +81,20 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		"leader", ctx.LeaderPeerIndex,
 	)
 
-	if err := handleRequestTokens(&ctx.Address, ctx.Requests, txb); err != nil {
+	// create state block and move smart contract state token
+	if err := txb.CreateStateBlock(ctx.Color); err != nil {
 		ctx.Log.Debugf("handleRequestTokens: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
 		ctx.OnFinish(err)
 		return
+	}
+
+	// erase all request tokens
+	for _, reqRef := range ctx.Requests {
+		if err := txb.EraseColor(ctx.Address, (balance.Color)(reqRef.Tx.ID()), 1); err != nil {
+			ctx.Log.Debugf("handleRequestTokens: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
+			ctx.OnFinish(err)
+			return
+		}
 	}
 
 	vmctx := &vm.VMContext{
@@ -143,14 +152,9 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	stateHash := vsClone.Hash()
 
 	// add state block
-	err = vmctx.TxBuilder.AddStateBlock(sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
-		Color:      ctx.Color,
-		StateIndex: ctx.VirtualState.StateIndex() + 1,
-		StateHash:  vsClone.Hash(),
-		Timestamp:  vsClone.Timestamp(),
-	}))
+	err = vmctx.TxBuilder.SetStateParams(ctx.VirtualState.StateIndex()+1, &stateHash, vsClone.Timestamp())
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.AddStateBlock: %v", err))
+		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.SetStateParams: %v", err))
 		return
 	}
 	// create result transaction
@@ -176,14 +180,4 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	)
 	// call back
 	ctx.OnFinish(nil)
-}
-
-// transfers and erases all request tokens before making txbuiler available to the VM
-func handleRequestTokens(scAddress *address.Address, reqs []sctransaction.RequestRef, txb *txbuilder.Builder) error {
-	for _, reqRef := range reqs {
-		if err := txb.EraseColor(*scAddress, (balance.Color)(reqRef.Tx.ID()), 1); err != nil {
-			return err
-		}
-	}
-	return nil
 }
