@@ -24,9 +24,14 @@ const (
 	ObjectTypeProgramCode
 )
 
+type Partition struct {
+	kvstore.KVStore
+	mut *sync.RWMutex
+}
+
 var (
 	// to be able to work with MapsDB
-	partitions      = make(map[address.Address]kvstore.KVStore)
+	partitions      = make(map[address.Address]*Partition)
 	partitionsMutex sync.RWMutex
 )
 
@@ -44,7 +49,7 @@ func storeRealm(realm kvstore.Realm) kvstore.KVStore {
 // Partition returns store prefixed with the smart contract address
 // Wasp ledger is partitioned by smart contract addresses
 // cached to be able to work with MapsDB TODO
-func GetPartition(addr *address.Address) kvstore.KVStore {
+func GetPartition(addr *address.Address) *Partition {
 	partitionsMutex.RLock()
 	ret, ok := partitions[*addr]
 	if ok {
@@ -56,13 +61,32 @@ func GetPartition(addr *address.Address) kvstore.KVStore {
 	partitionsMutex.Lock()
 	defer partitionsMutex.Unlock()
 
-	partitions[*addr] = storeRealm(addr[:])
+	partitions[*addr] = &Partition{
+		KVStore: storeRealm(addr[:]),
+		mut:     &sync.RWMutex{},
+	}
 	return partitions[*addr]
 }
 
 func GetRegistryPartition() kvstore.KVStore {
 	var niladdr address.Address
 	return GetPartition(&niladdr)
+}
+
+func (part *Partition) RLock() {
+	part.mut.RLock()
+}
+
+func (part *Partition) RUnlock() {
+	part.mut.RUnlock()
+}
+
+func (part *Partition) Lock() {
+	part.mut.Lock()
+}
+
+func (part *Partition) Unlock() {
+	part.mut.Unlock()
 }
 
 // MakeKey makes key within the partition. It consists to one byte for object type
@@ -92,9 +116,4 @@ func createStore() {
 	}
 
 	store = db.NewStore()
-}
-
-func KeyExistInPartition(addr *address.Address, objType byte, keyBytes ...[]byte) (bool, error) {
-	exist, err := GetPartition(addr).Has(MakeKey(objType, keyBytes...))
-	return exist, err
 }
