@@ -16,7 +16,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/table"

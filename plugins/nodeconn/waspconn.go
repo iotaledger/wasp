@@ -4,8 +4,8 @@ package nodeconn
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/waspconn"
-	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"

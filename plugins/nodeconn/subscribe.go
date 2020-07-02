@@ -2,7 +2,7 @@ package nodeconn
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 )
 
 func Subscribe(addrs []address.Address) {

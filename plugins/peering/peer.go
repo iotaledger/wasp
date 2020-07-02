@@ -3,7 +3,7 @@ package peering
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"go.uber.org/atomic"

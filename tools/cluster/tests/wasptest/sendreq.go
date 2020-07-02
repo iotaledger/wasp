@@ -2,8 +2,8 @@ package wasptest
 
 import (
 	"fmt"
-	nodeapi "github.com/iotaledger/goshimmer/packages/waspconn/apilib"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/cluster"
