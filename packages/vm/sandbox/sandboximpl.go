@@ -68,7 +68,7 @@ func (vctx *sandbox) AccessState() vmtypes.StateAccess {
 	return vctx.stateWrapper
 }
 
-func (vctx *sandbox) AccessAccount() vmtypes.AccountAccess {
+func (vctx *sandbox) AccessOwnAccount() vmtypes.AccountAccess {
 	return vctx
 }
 

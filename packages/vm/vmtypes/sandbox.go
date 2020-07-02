@@ -24,8 +24,8 @@ type Sandbox interface {
 	AccessRequest() RequestAccess
 	// base level of virtual state access
 	AccessState() StateAccess
-	// AccessAccount
-	AccessAccount() AccountAccess
+	// AccessOwnAccount
+	AccessOwnAccount() AccountAccess
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself

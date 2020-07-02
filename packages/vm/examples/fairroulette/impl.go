@@ -87,7 +87,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 	sender := senders[0]
 	// look if there're some iotas left for the bet.
 	// it is after min rewards. Here we accessing only part which is coming with the current request
-	sum := ctx.AccessAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+	sum := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return
@@ -198,7 +198,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	if len(winningBets) == 0 {
 		// nobody played on winning color -> all sums stay in smart contract
 		// move tokens to itself in order to compress number of outputs in the address
-		if !ctx.AccessAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
+		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
 			ctx.Rollback()
 			return
 		}
@@ -248,7 +248,7 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 		finalWinners = append(finalWinners, player)
 	}
 	for _, player := range finalWinners {
-		if !ctx.AccessAccount().MoveTokens(&player, &balance.ColorIOTA, sumsByPlayers[player]) {
+		if !ctx.AccessOwnAccount().MoveTokens(&player, &balance.ColorIOTA, sumsByPlayers[player]) {
 			return false
 		}
 	}
