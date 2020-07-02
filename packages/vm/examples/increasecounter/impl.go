@@ -1,6 +1,7 @@
 package increasecounter
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -37,5 +38,6 @@ func (ep increaseEntryPoint) Run(ctx vmtypes.Sandbox) {
 
 func increaseCounter(ctx vmtypes.Sandbox) {
 	val, _, _ := ctx.AccessState().Variables().GetInt64("counter")
+	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 	ctx.AccessState().Variables().SetInt64("counter", val+1)
 }

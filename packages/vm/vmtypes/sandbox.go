@@ -30,6 +30,8 @@ type Sandbox interface {
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
 	SendRequestToSelf(reqCode sctransaction.RequestCode, args table.MemTable) bool
+	// Publish "vmmsg" message through Publisher
+	Publish(msg string)
 }
 
 // access to request parameters (arguments)

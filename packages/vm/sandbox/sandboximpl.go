@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/plugins/publisher"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
@@ -98,4 +99,8 @@ func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args t
 		Args:          args,
 		IncludeReward: 0,
 	})
+}
+
+func (vctx *sandbox) Publish(msg string) {
+	publisher.Publish("vmmsg", vctx.ProgramHash.String(), msg)
 }

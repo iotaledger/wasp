@@ -146,6 +146,7 @@ func TestSend60ReqIncrease0Sec(t *testing.T) {
 		"request_in":          61,
 		"request_out":         62,
 		"state":               -1,
+		"vmmsg":               -1,
 	})
 	check(err, t)
 
