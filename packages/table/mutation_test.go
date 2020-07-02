@@ -1,4 +1,4 @@
-package variables
+package table
 
 import (
 	"bytes"
@@ -9,25 +9,24 @@ import (
 )
 
 func TestApplyMutationSet(t *testing.T) {
-	vars := New(nil)
+	vars := NewMemTable()
 
 	mset := NewMutationSet("k1", []byte("v1"))
 	mset.ApplyTo(vars)
 
-	v, ok := vars.Get("k1")
-	assert.Equal(t, true, ok)
+	v, _ := vars.Get("k1")
 	assert.Equal(t, []byte("v1"), v)
 }
 
 func TestApplyMutationDel(t *testing.T) {
-	vars := New(nil)
+	vars := NewMemTable()
 	vars.Set("k1", []byte("v1"))
 
 	mset := NewMutationDel("k1")
 	mset.ApplyTo(vars)
 
-	_, ok := vars.Get("k1")
-	assert.Equal(t, false, ok)
+	v, _ := vars.Get("k1")
+	assert.Nil(t, v)
 }
 
 func TestEmptyMutationSequence(t *testing.T) {

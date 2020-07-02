@@ -19,8 +19,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 
 	nodeapi "github.com/iotaledger/wasp/packages/apilib"
@@ -516,7 +516,7 @@ func (cluster *Cluster) Report() bool {
 	return pass
 }
 
-func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[string][]byte) bool {
+func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[table.Key][]byte) bool {
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 
 	scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
@@ -539,11 +539,11 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 			continue
 		}
 
-		vexp := variables.FromMap(expectedVariables)
-		vexp.SetAddress(vmconst.VarNameOwnerAddress, ownerAddr)
-		vexp.SetHashValue(vmconst.VarNameProgramHash, scProgHash)
+		vexp := table.FromMap(expectedVariables)
+		vexp.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddr)
+		vexp.Codec().SetHashValue(vmconst.VarNameProgramHash, &scProgHash)
 
-		vact := variables.FromMap(actual.Variables)
+		vact := table.FromMap(actual.Variables)
 
 		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, vexp)
 		fmt.Printf("      Actual: index %d\n%s\n", actual.Index, vact)

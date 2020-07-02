@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/variables"
+	"github.com/iotaledger/wasp/packages/table"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
@@ -91,7 +91,7 @@ func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transa
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Variables: variables.FromMap(map[string][]byte{
+		Variables: table.FromMap(map[table.Key][]byte{
 			"description": []byte(scdata.Description),
 		}),
 	})
@@ -115,7 +115,7 @@ func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Variables: variables.FromMap(map[string][]byte{
+		Variables: table.FromMap(map[table.Key][]byte{
 			"description": []byte(scdata.Description),
 		}),
 	})

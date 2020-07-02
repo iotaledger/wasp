@@ -106,7 +106,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		Entropy:       *hashing.HashData(ctx.Entropy[:]),       // mutates deterministically
 		TxBuilder:     txb,                                     // mutates
 		Timestamp:     ctx.Timestamp,                           // mutate by incrementing 1 nanosec
-		VirtualState:  state.NewVirtualState(ctx.VirtualState), // clone
+		VirtualState:  ctx.VirtualState.Clone(),
 		Log:           ctx.Log,
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
@@ -144,7 +144,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
 
 	// calculate resulting state hash
-	vsClone := state.NewVirtualState(ctx.VirtualState)
+	vsClone := ctx.VirtualState.Clone()
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
 		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
 		return

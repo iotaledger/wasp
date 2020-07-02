@@ -4,6 +4,7 @@ package stateapi
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
@@ -49,7 +50,7 @@ func HandlerQueryState(c echo.Context) error {
 		Values: make(map[string]string),
 	}
 	for _, v := range req.Variables {
-		data, _ := state.Variables().Get(v)
+		data, _ := state.Variables().Get(table.Key(v))
 		ret.Values[v] = base58.Encode(data)
 	}
 	return misc.OkJson(c, ret)

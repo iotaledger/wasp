@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 )
 
-func StoreSetToDb(store kvstore.KVStore, keys [][]byte, values [][]byte) error {
+func DbSetMulti(store kvstore.KVStore, keys [][]byte, values [][]byte) error {
 	if len(keys) != len(values) {
 		return fmt.Errorf("number of keys muts be equal to number of values")
 	}
@@ -18,7 +18,7 @@ func StoreSetToDb(store kvstore.KVStore, keys [][]byte, values [][]byte) error {
 	return atomic.Commit()
 }
 
-func GetSetFromDb(store kvstore.KVStore, keys [][]byte) ([][]byte, error) {
+func DbGetMulti(store kvstore.KVStore, keys [][]byte) ([][]byte, error) {
 	ret := make([][]byte, len(keys))
 	var err error
 	for i, k := range keys {

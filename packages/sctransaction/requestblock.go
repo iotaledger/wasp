@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/variables"
 )
 
 const RequestIdSize = hashing.HashSize + 2
@@ -23,7 +23,7 @@ type RequestBlock struct {
 	// request code
 	reqCode RequestCode
 	// small variable state with variable/value pairs
-	args variables.Variables
+	args table.MemTable
 }
 
 type RequestRef struct {
@@ -37,7 +37,7 @@ func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
 		reqCode: reqCode,
-		args:    variables.New(nil),
+		args:    table.NewMemTable(),
 	}
 }
 
@@ -46,7 +46,7 @@ func (req *RequestBlock) Clone() *RequestBlock {
 		return nil
 	}
 	ret := NewRequestBlock(req.address, req.reqCode)
-	ret.args = variables.New(req.args)
+	ret.args = req.args.Clone()
 	return ret
 }
 
@@ -54,8 +54,12 @@ func (req *RequestBlock) Address() address.Address {
 	return req.address
 }
 
-func (req *RequestBlock) Args() variables.Variables {
-	return req.args
+func (req *RequestBlock) SetArgs(args table.MemTable) {
+	req.args = args.Clone()
+}
+
+func (req *RequestBlock) Args() table.RCodec {
+	return req.args.Codec()
 }
 
 func (req *RequestBlock) RequestCode() RequestCode {
@@ -64,7 +68,7 @@ func (req *RequestBlock) RequestCode() RequestCode {
 
 func (req *RequestBlock) String(reqId *RequestId) string {
 	return fmt.Sprintf("Request: %s to: %s, code: %s\n%s",
-		reqId.Short(), req.Address().String(), req.reqCode.String(), req.Args().String())
+		reqId.Short(), req.Address().String(), req.reqCode.String(), req.args.String())
 }
 
 func NewRequestIdFromString(reqIdStr string) (ret RequestId, err error) {
@@ -114,7 +118,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	}
 	req.reqCode = RequestCode(rc)
 
-	req.args = variables.New(nil)
+	req.args = table.NewMemTable()
 	if err := req.args.Read(r); err != nil {
 		return err
 	}

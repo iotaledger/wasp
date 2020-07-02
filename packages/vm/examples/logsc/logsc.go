@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
@@ -40,16 +41,16 @@ func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return v
 }
 
-const logArrayKey = "log"
+const logArrayKey = table.Key("log")
 
 func handleAddLogRequest(ctx vmtypes.Sandbox) {
-	msg, ok := ctx.AccessRequest().GetString("message")
+	msg, ok, _ := ctx.AccessRequest().Args().GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")
 		return
 	}
 
-	length, ok, err := ctx.AccessState().GetInt64(logArrayKey)
+	length, ok, err := ctx.AccessState().Variables().GetInt64(logArrayKey)
 	if err != nil {
 		fmt.Printf("[logsc] %v", err)
 		return
@@ -59,8 +60,8 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 	}
 
 	length += 1
-	ctx.AccessState().SetInt64(logArrayKey, length)
-	ctx.AccessState().SetString(fmt.Sprintf("%s:%d", logArrayKey, length-1), msg)
+	ctx.AccessState().Variables().SetInt64(logArrayKey, length)
+	ctx.AccessState().Variables().SetString(table.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

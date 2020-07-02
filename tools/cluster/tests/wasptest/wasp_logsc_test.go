@@ -6,6 +6,7 @@ import (
 	"time"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -50,7 +51,7 @@ func TestLogsc1(t *testing.T) {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[string][]byte{
+	if !clu.VerifySCState(sc, 2, map[table.Key][]byte{
 		"log":   util.Uint64To8Bytes(uint64(1)),
 		"log:0": []byte("message 0"),
 	}) {
@@ -78,7 +79,7 @@ func TestLogsc5(t *testing.T) {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[string][]byte{
+	if !clu.VerifySCState(sc, 2, map[table.Key][]byte{
 		"log":   util.Uint64To8Bytes(uint64(5)),
 		"log:0": []byte("message 0"),
 		"log:1": []byte("message 1"),

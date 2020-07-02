@@ -1,8 +1,6 @@
 package builtin
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -56,37 +54,43 @@ func initRequest(ctx vmtypes.Sandbox) {
 	stub(ctx, "initRequest")
 	if !ctx.IsOriginState() {
 		// call not in the 0 state is ignored
-		//ctx.GetLog().Debugf("@@@@@@@@@@@ exit 1")
+		ctx.GetLog().Debugf("initRequest: not in origin state.")
 		return
 	}
-	var niladdr address.Address
-	ownerAddress, ok := ctx.AccessRequest().GetAddressValue(vmconst.VarNameOwnerAddress)
-	if !ok || ownerAddress == niladdr {
-		// can't proceed if ownerAddress is not known
-		//ctx.GetLog().Debugf("@@@@@@@@@@@ exit 2")
+	ownerAddress, ok, err := ctx.AccessRequest().Args().GetAddress(vmconst.VarNameOwnerAddress)
+	if err != nil {
+		ctx.GetLog().Errorf("initRequest: Could not read request argument: %s", err.Error())
 		return
 	}
-	ctx.AccessState().SetAddressValue(vmconst.VarNameOwnerAddress, ownerAddress)
+	if !ok {
+		ctx.GetLog().Debugf("initRequest: owner address not known.")
+		return
+	}
+	ctx.AccessState().Variables().SetAddress(vmconst.VarNameOwnerAddress, ownerAddress)
 
-	progHash, ok := ctx.AccessRequest().GetHashValue(vmconst.VarNameProgramHash)
-	if !ok || progHash == *hashing.NilHash {
-		// program hash not set, smart contract will be able to process only built-in requests
-		//ctx.GetLog().Debugf("@@@@@@@@@@@ exit 3")
+	progHash, ok, err := ctx.AccessRequest().Args().GetHashValue(vmconst.VarNameProgramHash)
+	if err != nil {
+		ctx.GetLog().Errorf("initRequest: Could not read request argument: %s", err.Error())
 		return
 	}
-	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, &progHash)
+	if !ok {
+		ctx.GetLog().Debugf("initRequest: program hash not set; smart contract will be able to process only built-in requests.")
+		return
+	}
+	ctx.GetLog().Debugf("initRequest: Setting program hash to %s.", progHash.String())
+	ctx.AccessState().Variables().SetHashValue(vmconst.VarNameProgramHash, progHash)
 }
 
 func setMinimumReward(ctx vmtypes.Sandbox) {
 	stub(ctx, "setMinimumReward")
-	if v, ok := ctx.AccessRequest().GetInt64("value"); ok && v >= 0 {
-		ctx.AccessState().SetInt64(vmconst.VarNameMinimumReward, v)
+	if v, ok, _ := ctx.AccessRequest().Args().GetInt64("value"); ok && v >= 0 {
+		ctx.AccessState().Variables().SetInt64(vmconst.VarNameMinimumReward, v)
 	}
 }
 
 func setDescription(ctx vmtypes.Sandbox) {
 	stub(ctx, "setDescription")
-	if v, ok := ctx.AccessRequest().GetString("value"); ok && v != "" {
-		ctx.AccessState().SetString("description", v)
+	if v, ok, _ := ctx.AccessRequest().Args().GetString("value"); ok && v != "" {
+		ctx.AccessState().Variables().SetString("description", v)
 	}
 }

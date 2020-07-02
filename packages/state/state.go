@@ -7,48 +7,74 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
 )
 
 type virtualState struct {
-	stateIndex uint32
-	timestamp  int64
-	empty      bool
-	stateHash  hashing.HashValue
-	vars       variables.Variables
+	scAddress    address.Address
+	getPartition func(*address.Address) kvstore.KVStore // for unit testing
+	stateIndex   uint32
+	timestamp    int64
+	empty        bool
+	stateHash    hashing.HashValue
+	variables    table.DBTable
 }
 
-// VirtualState new empty or clone
-func NewVirtualState(varState VirtualState) VirtualState {
-	if varState == nil {
-		return &virtualState{
-			vars:  variables.New(nil),
-			empty: true,
-		}
-	}
+func newVirtualState(scAddress *address.Address, getPartition func(*address.Address) kvstore.KVStore) *virtualState {
 	return &virtualState{
-		timestamp:  varState.Timestamp(),
-		stateIndex: varState.StateIndex(),
-		stateHash:  varState.Hash(),
-		vars:       variables.New(varState.Variables()),
+		scAddress:    *scAddress,
+		getPartition: getPartition,
+		variables: table.NewDBTableOnSubrealm(
+			func() kvstore.KVStore { return getPartition(scAddress) },
+			[]byte{database.ObjectTypeStateVariable},
+		),
+		empty: true,
+	}
+}
+
+func getSCPartition(addr *address.Address) kvstore.KVStore {
+	return database.GetPartition(addr)
+}
+
+func NewEmptyVirtualState(addr *address.Address) VirtualState {
+	return newVirtualState(addr, getSCPartition)
+}
+
+func (vs *virtualState) Clone() VirtualState {
+	return &virtualState{
+		scAddress:    vs.scAddress,
+		getPartition: vs.getPartition,
+		stateIndex:   vs.stateIndex,
+		timestamp:    vs.timestamp,
+		empty:        vs.empty,
+		stateHash:    vs.stateHash,
+		variables:    vs.variables.Clone(),
 	}
 }
 
 func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
-	addr, ok, err := vs.Variables().GetAddress(vmconst.VarNameOwnerAddress)
+	addr, ok, err := vs.Variables().Codec().GetAddress(vmconst.VarNameOwnerAddress)
 	if !ok || err != nil {
 		return false
 	}
-	return addr == *ownerAddr
+	return *addr == *ownerAddr
 }
 
-func (vs *virtualState) String() string {
+func (vs *virtualState) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %d, hash, %s\n%s",
-		vs.stateIndex, vs.timestamp, vs.stateHash.String(), vs.Variables().String())
+		vs.stateIndex,
+		vs.timestamp,
+		vs.stateHash.String(),
+		vs.Variables().DangerouslyDumpToString(),
+	)
+}
+
+func (vs *virtualState) Variables() table.DBTable {
+	return vs.variables
 }
 
 func (vs *virtualState) StateIndex() uint32 {
@@ -100,29 +126,6 @@ func (vs *virtualState) Hash() hashing.HashValue {
 	return vs.stateHash
 }
 
-func (vs *virtualState) Variables() variables.Variables {
-	return vs.vars
-}
-
-func (vs *virtualState) saveToDb(addr *address.Address) error {
-	data, err := util.Bytes(vs)
-	if err != nil {
-		return err
-	}
-
-	if err := database.GetPartition(addr).Set(database.MakeKey(database.ObjectTypeVariableState), data); err != nil {
-		return err
-	}
-
-	h := vs.Hash()
-	log.Debugw("state saving to db",
-		"addr", addr.String(),
-		"state index", vs.StateIndex(),
-		"stateHash", h.String(),
-	)
-	return nil
-}
-
 func (vs *virtualState) Write(w io.Writer) error {
 	if _, err := w.Write(util.Uint32To4Bytes(vs.stateIndex)); err != nil {
 		return err
@@ -131,9 +134,6 @@ func (vs *virtualState) Write(w io.Writer) error {
 		return err
 	}
 	if _, err := w.Write(vs.stateHash.Bytes()); err != nil {
-		return err
-	}
-	if err := vs.vars.Write(w); err != nil {
 		return err
 	}
 	return nil
@@ -151,14 +151,11 @@ func (vs *virtualState) Read(r io.Reader) error {
 	if _, err := r.Read(vs.stateHash[:]); err != nil {
 		return err
 	}
-	if err := vs.vars.Read(r); err != nil {
-		return err
-	}
 	return nil
 }
 
 // saves variable state to db atomically with the batch of state updates and records of processed requests
-func (vs *virtualState) CommitToDb(addr address.Address, b Batch) error {
+func (vs *virtualState) CommitToDb(b Batch) error {
 	batchData, err := util.Bytes(b)
 	if err != nil {
 		return err
@@ -169,7 +166,7 @@ func (vs *virtualState) CommitToDb(addr address.Address, b Batch) error {
 	if err != nil {
 		return err
 	}
-	varStateDbkey := database.MakeKey(database.ObjectTypeVariableState)
+	varStateDbkey := database.MakeKey(database.ObjectTypeSolidState)
 
 	solidStateValue := util.Uint32To4Bytes(vs.StateIndex())
 	solidStateKey := database.MakeKey(database.ObjectTypeSolidStateIndex)
@@ -183,13 +180,31 @@ func (vs *virtualState) CommitToDb(addr address.Address, b Batch) error {
 		values = append(values, []byte{0})
 	}
 
-	db := database.GetPartition(&addr)
+	// store uncommitted mutations
+	vs.variables.Mutations().Iterate(func(k table.Key, mut table.Mutation) bool {
+		keys = append(keys, dbkeyStateVariable(k))
 
-	return util.StoreSetToDb(db, keys, values)
+		// if mutation is MutationDel, mut.Value() = nil and the key is deleted
+		values = append(values, mut.Value())
+		return true
+	})
+
+	db := vs.getPartition(&vs.scAddress)
+	err = util.DbSetMulti(db, keys, values)
+	if err != nil {
+		return err
+	}
+	vs.variables.ClearMutations()
+	return nil
 }
 
 func LoadSolidState(addr *address.Address) (VirtualState, Batch, bool, error) {
-	db := database.GetPartition(addr)
+	return loadSolidState(addr, getSCPartition)
+}
+
+func loadSolidState(scAddress *address.Address, getPartition func(*address.Address) kvstore.KVStore) (VirtualState, Batch, bool, error) {
+	db := getPartition(scAddress)
+
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
@@ -197,16 +212,16 @@ func LoadSolidState(addr *address.Address) (VirtualState, Batch, bool, error) {
 	if err != nil {
 		return nil, nil, false, err
 	}
-	values, err := util.GetSetFromDb(db, [][]byte{
-		database.MakeKey(database.ObjectTypeVariableState),
+	values, err := util.DbGetMulti(db, [][]byte{
+		database.MakeKey(database.ObjectTypeSolidState),
 		dbkeyBatch(util.Uint32From4Bytes(stateIndexBin)),
 	})
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	varState := NewVirtualState(nil).(*virtualState)
-	if err = varState.Read(bytes.NewReader(values[0])); err != nil {
+	vs := newVirtualState(scAddress, getPartition)
+	if err = vs.Read(bytes.NewReader(values[0])); err != nil {
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
 
@@ -214,10 +229,14 @@ func LoadSolidState(addr *address.Address) (VirtualState, Batch, bool, error) {
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("loading batch: %v", err)
 	}
-	if varState.StateIndex() != batch.StateIndex() {
+	if vs.StateIndex() != batch.StateIndex() {
 		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")
 	}
-	return varState, batch, true, nil
+	return vs, batch, true, nil
+}
+
+func dbkeyStateVariable(key table.Key) []byte {
+	return database.MakeKey(database.ObjectTypeStateVariable, []byte(key))
 }
 
 func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
@@ -225,22 +244,22 @@ func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
 }
 
 func MarkRequestProcessedFailure(addr *address.Address, reqid *sctransaction.RequestId) error {
-	has, err := database.GetPartition(addr).Has(dbkeyRequest(reqid))
+	has, err := getSCPartition(addr).Has(dbkeyRequest(reqid))
 	if err != nil {
 		return err
 	}
 	dbkey := dbkeyRequest(reqid)
 	if !has {
-		return database.GetPartition(addr).Set(dbkey, []byte{1})
+		return getSCPartition(addr).Set(dbkey, []byte{1})
 	}
-	value, err := database.GetPartition(addr).Get(dbkey)
+	value, err := getSCPartition(addr).Get(dbkey)
 	if err != nil {
 		return err
 	}
 	if len(value) != 1 {
 		return fmt.Errorf("inconistency: len(value) != 1")
 	}
-	return database.GetPartition(addr).Set(dbkey, []byte{value[0] + 1})
+	return getSCPartition(addr).Set(dbkey, []byte{value[0] + 1})
 }
 
 const maxRetriesForRequest = byte(5)
@@ -248,14 +267,14 @@ const maxRetriesForRequest = byte(5)
 // IsRequestCompleted returns true if it was completed successfully or number of retries reached maximum
 func IsRequestCompleted(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
 	dbkey := dbkeyRequest(reqid)
-	has, err := database.GetPartition(addr).Has(dbkey)
+	has, err := getSCPartition(addr).Has(dbkey)
 	if err != nil {
 		return false, err
 	}
 	if !has {
 		return false, nil
 	}
-	val, err := database.GetPartition(addr).Get(dbkey)
+	val, err := getSCPartition(addr).Get(dbkey)
 	if err != nil {
 		return false, err
 	}

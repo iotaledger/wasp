@@ -2,12 +2,13 @@ package consensus
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"time"
 )
 
 func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
