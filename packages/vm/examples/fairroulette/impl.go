@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/mr-tron/base58"
-	"io"
 	"sort"
 )
 
@@ -32,7 +31,7 @@ var entryPoints = fairRouletteProcessor{
 const (
 	ProgramHash = "3wo28GRrJu37v6D4xkjZsRLiVQrk3iMn7PifpMFoJEiM"
 
-	ReqVarColor              = "color"
+	ReqVarColor              = "Color"
 	StateVarBets             = "bets"
 	StateVarNumBets          = "numBets"
 	StateVarLockedBets       = "lockedBest"
@@ -53,10 +52,10 @@ type betInfo struct {
 
 // all strings base58
 type betInfoJson struct {
-	playerAddr string `json:"player_addr"`
-	reqId      string `json:"req_id"`
-	sum        int64  `json:"sum"`
-	color      byte   `json:"color"`
+	PlayerAddr string `json:"player_addr"`
+	ReqId      string `json:"req_id"`
+	Sum        int64  `json:"sum"`
+	Color      byte   `json:"color"`
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -92,10 +91,10 @@ func placeBet(ctx vmtypes.Sandbox) {
 		// nothing to bet
 		return
 	}
-	// see if there's a color among args
+	// see if there's a Color among args
 	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
-		ctx.GetLog().Errorf("wrong request, no color specified")
+		ctx.GetLog().Errorf("wrong request, no Color specified")
 		return
 	}
 	data, _ := ctx.AccessState().Variables().Get(StateVarBets)
@@ -183,7 +182,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	for _, bet := range lockedBets {
 		totalLockedAmount += bet.sum
 	}
-	// select bets on winning color
+	// select bets on winning Color
 	winningBets := lockedBets[:0] // same underlying array
 	for _, bet := range lockedBets {
 		if bet.color == winningColor {
@@ -196,7 +195,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	ctx.AccessState().Variables().SetInt64(StateVarNumVotes, 0)
 
 	if len(winningBets) == 0 {
-		// nobody played on winning color -> all sums stay in smart contract
+		// nobody played on winning Color -> all sums stay in smart contract
 		// move tokens to itself in order to compress number of outputs in the address
 		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
 			ctx.Rollback()
@@ -255,42 +254,21 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 	return true
 }
 
-func (bi *betInfo) Write(w io.Writer) error {
-	_, _ = w.Write(bi.player[:])
-	_ = util.WriteInt64(w, bi.sum)
-	_ = util.WriteByte(w, bi.color)
-	return nil
-}
-
-func (bi *betInfo) Read(r io.Reader) error {
-	var err error
-	if err = util.ReadAddress(r, &bi.player); err != nil {
-		return err
-	}
-	if err = util.ReadInt64(r, &bi.sum); err != nil {
-		return err
-	}
-	if bi.color, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	return nil
-}
-
 func toJsonable(bi *betInfo) *betInfoJson {
 	return &betInfoJson{
-		playerAddr: bi.player.String(),
-		reqId:      base58.Encode(bi.reqId[:]),
-		sum:        bi.sum,
-		color:      bi.color,
+		PlayerAddr: bi.player.String(),
+		ReqId:      base58.Encode(bi.reqId[:]),
+		Sum:        bi.sum,
+		Color:      bi.color,
 	}
 }
 
 func fromJsonable(biJson *betInfoJson) *betInfo {
-	playerAddr, err := address.FromBase58(biJson.playerAddr)
+	playerAddr, err := address.FromBase58(biJson.PlayerAddr)
 	if err != nil {
 		playerAddr = address.Address{}
 	}
-	reqId, err := sctransaction.NewRequestIdFromString(biJson.reqId)
+	reqId, err := sctransaction.NewRequestIdFromString(biJson.ReqId)
 	if err != nil {
 		reqId = sctransaction.RequestId{}
 	}
@@ -298,8 +276,8 @@ func fromJsonable(biJson *betInfoJson) *betInfo {
 	return &betInfo{
 		player: playerAddr,
 		reqId:  reqId,
-		sum:    biJson.sum,
-		color:  biJson.color,
+		sum:    biJson.Sum,
+		color:  biJson.Color,
 	}
 }
 
