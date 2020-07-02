@@ -11,7 +11,7 @@ import (
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 type RequestBlockJson struct {
@@ -66,13 +66,13 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	}
 	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
 
-	args := table.NewMemTable()
+	args := kv.NewMap()
 	for k, v := range reqBlkJson.Vars {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			args.Codec().SetString(table.Key(k), v)
+			args.Codec().SetString(kv.Key(k), v)
 		} else {
-			args.Codec().SetInt64(table.Key(k), int64(n))
+			args.Codec().SetInt64(kv.Key(k), int64(n))
 		}
 	}
 	ret.SetArgs(args)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 // access to the request block
@@ -22,7 +22,7 @@ func (r *requestWrapper) Code() sctransaction.RequestCode {
 	return r.ref.RequestBlock().RequestCode()
 }
 
-func (r *requestWrapper) Args() table.RCodec {
+func (r *requestWrapper) Args() kv.RCodec {
 	return r.ref.RequestBlock().Args()
 }
 

@@ -3,7 +3,7 @@ package sandbox
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
 
@@ -92,7 +92,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	return true
 }
 
-func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args table.MemTable) bool {
+func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,

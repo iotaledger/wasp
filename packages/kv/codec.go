@@ -1,4 +1,4 @@
-package table
+package kv
 
 import (
 	"fmt"
@@ -9,14 +9,14 @@ import (
 )
 
 // Codec is an interface that offers easy conversions between []byte and other types when
-// manipulating a Table
+// manipulating a KVStore
 type Codec interface {
 	RCodec
 	WCodec
 }
 
 // RCodec is an interface that offers easy conversions between []byte and other types when
-// manipulating a read-only Table
+// manipulating a read-only KVStore
 type RCodec interface {
 	Get(key Key) ([]byte, error)
 	GetString(key Key) (string, bool, error)
@@ -26,7 +26,7 @@ type RCodec interface {
 }
 
 // WCodec is an interface that offers easy conversions between []byte and other types when
-// manipulating a write-only Table
+// manipulating a write-only KVStore
 type WCodec interface {
 	Del(key Key)
 	Set(key Key, value []byte)
@@ -37,14 +37,14 @@ type WCodec interface {
 }
 
 type codec struct {
-	kv Table
+	kv KVStore
 }
 
-func NewCodec(kv Table) Codec {
+func NewCodec(kv KVStore) Codec {
 	return codec{kv}
 }
 
-func NewRCodec(kv Table) RCodec {
+func NewRCodec(kv KVStore) RCodec {
 	return codec{kv}
 }
 

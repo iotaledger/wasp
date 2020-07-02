@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -168,7 +168,7 @@ func TestCommit(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
 	reqid1 := sctransaction.NewRequestId(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
-	su1.Mutations().Add(table.NewMutationSet("x", []byte{1}))
+	su1.Mutations().Add(kv.NewMutationSet("x", []byte{1}))
 	batch1, err := NewBatch([]StateUpdate{su1})
 	assert.NoError(t, err)
 
@@ -177,19 +177,19 @@ func TestCommit(t *testing.T) {
 	err = vs1.ApplyBatch(batch1)
 	assert.NoError(t, err)
 
-	v, _ := vs1.Variables().Get(table.Key([]byte("x")))
+	v, _ := vs1.Variables().Get(kv.Key([]byte("x")))
 	assert.Equal(t, []byte{1}, v)
 
-	v, _ = getPartition(&addr).Get(dbkeyStateVariable(table.Key([]byte("x"))))
+	v, _ = getPartition(&addr).Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	assert.Nil(t, v)
 
 	err = vs1.CommitToDb(batch1)
 	assert.NoError(t, err)
 
-	v, _ = vs1.Variables().Get(table.Key([]byte("x")))
+	v, _ = vs1.Variables().Get(kv.Key([]byte("x")))
 	assert.Equal(t, []byte{1}, v)
 
-	v, _ = getPartition(&addr).Get(dbkeyStateVariable(table.Key([]byte("x"))))
+	v, _ = getPartition(&addr).Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	assert.Equal(t, []byte{1}, v)
 
 	vs2, batch2, _, err := loadSolidState(&addr, getPartition)
@@ -198,6 +198,6 @@ func TestCommit(t *testing.T) {
 	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 
-	v, _ = vs2.Variables().Get(table.Key([]byte("x")))
+	v, _ = vs2.Variables().Get(kv.Key([]byte("x")))
 	assert.Equal(t, []byte{1}, v)
 }

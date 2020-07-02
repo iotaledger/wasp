@@ -1,4 +1,4 @@
-package table
+package kv
 
 import (
 	"encoding/hex"
@@ -8,15 +8,15 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-// DBTable represents a Table backed by a database. Writes are cached in-memory as
+// BufferedKVStore represents a KVStore backed by a database. Writes are cached in-memory as
 // a MutationMap; reads are delegated to the backing database when not cached.
-type DBTable interface {
-	Table
+type BufferedKVStore interface {
+	KVStore
 
 	// the uncommitted mutations
 	Mutations() MutationMap
 	ClearMutations()
-	Clone() DBTable
+	Clone() BufferedKVStore
 
 	Codec() Codec
 
@@ -36,21 +36,21 @@ type dbtable struct {
 	mutations MutationMap
 }
 
-func NewDBTable(db DB) DBTable {
+func NewBufferedKVStore(db DB) BufferedKVStore {
 	return &dbtable{
 		db:        db,
 		mutations: NewMutationMap(),
 	}
 }
 
-func NewDBTableOnSubrealm(db func() kvstore.KVStore, prefix kvstore.KeyPrefix) DBTable {
-	return NewDBTable(&subrealm{
+func NewBufferedKVStoreOnSubrealm(db func() kvstore.KVStore, prefix kvstore.KeyPrefix) BufferedKVStore {
+	return NewBufferedKVStore(&subrealm{
 		db:     db,
 		prefix: prefix,
 	})
 }
 
-func (c *dbtable) Clone() DBTable {
+func (c *dbtable) Clone() BufferedKVStore {
 	return &dbtable{
 		db:        c.db,
 		mutations: c.mutations.Clone(),
@@ -93,7 +93,7 @@ func (c *dbtable) DangerouslyDumpToMap() map[Key][]byte {
 
 // iterates over all key-value pairs in KVStore
 func (c *dbtable) DangerouslyDumpToString() string {
-	ret := "         DBTable:\n"
+	ret := "         BufferedKVStore:\n"
 	for k, v := range c.DangerouslyDumpToMap() {
 		ret += fmt.Sprintf(
 			"           [%s] 0x%s: 0x%s (base58: %s)\n",

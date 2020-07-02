@@ -1,4 +1,4 @@
-package table
+package kv
 
 import (
 	"bytes"
@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBasicVariables(t *testing.T) {
-	vars := NewMemTable()
+func TestBasicKVMap(t *testing.T) {
+	vars := NewMap()
 
 	v, err := vars.Get("k1")
 	assert.NoError(t, err)
@@ -27,7 +27,7 @@ func TestBasicVariables(t *testing.T) {
 }
 
 func TestBytes(t *testing.T) {
-	vars1 := NewMemTable()
+	vars1 := NewMap()
 	h1 := util.GetHashValue(vars1)
 
 	vars2 := vars1.Clone()
@@ -63,7 +63,7 @@ func TestBytes(t *testing.T) {
 }
 
 func TestDetereminism(t *testing.T) {
-	vars1 := NewMemTable()
+	vars1 := NewMap()
 	h1 := util.GetHashValue(vars1)
 
 	vars2 := vars1.Clone()
@@ -94,7 +94,7 @@ func TestDetereminism(t *testing.T) {
 }
 
 func TestMarshaling(t *testing.T) {
-	vars1 := NewMemTable()
+	vars1 := NewMap()
 	vars1.Set("k1", []byte("kuku"))
 	vars1.Set("k2", []byte{42})
 	vars1.Set("k3", []byte("kuku"))
@@ -104,7 +104,7 @@ func TestMarshaling(t *testing.T) {
 	err := vars1.Write(&buf)
 	assert.NoError(t, err)
 
-	vars2 := NewMemTable()
+	vars2 := NewMap()
 	err = vars2.Read(bytes.NewBuffer(buf.Bytes()))
 	assert.NoError(t, err)
 

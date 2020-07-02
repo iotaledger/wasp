@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -23,7 +23,7 @@ type RequestBlock struct {
 	// request code
 	reqCode RequestCode
 	// small variable state with variable/value pairs
-	args table.MemTable
+	args kv.Map
 }
 
 type RequestRef struct {
@@ -37,7 +37,7 @@ func NewRequestBlock(addr address.Address, reqCode RequestCode) *RequestBlock {
 	return &RequestBlock{
 		address: addr,
 		reqCode: reqCode,
-		args:    table.NewMemTable(),
+		args:    kv.NewMap(),
 	}
 }
 
@@ -54,11 +54,11 @@ func (req *RequestBlock) Address() address.Address {
 	return req.address
 }
 
-func (req *RequestBlock) SetArgs(args table.MemTable) {
+func (req *RequestBlock) SetArgs(args kv.Map) {
 	req.args = args.Clone()
 }
 
-func (req *RequestBlock) Args() table.RCodec {
+func (req *RequestBlock) Args() kv.RCodec {
 	return req.args.Codec()
 }
 
@@ -118,7 +118,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	}
 	req.reqCode = RequestCode(rc)
 
-	req.args = table.NewMemTable()
+	req.args = kv.NewMap()
 	if err := req.args.Read(r); err != nil {
 		return err
 	}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/labstack/echo"
 )
 
@@ -13,7 +13,7 @@ type DumpSCStateResponse struct {
 	Err       string               `json:"error"`
 	Exists    bool                 `json:"exists"`
 	Index     uint32               `json:"index"`
-	Variables map[table.Key][]byte `json:"variables"`
+	Variables map[kv.Key][]byte `json:"variables"`
 }
 
 func HandlerDumpSCState(c echo.Context) error {

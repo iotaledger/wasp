@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -21,14 +21,14 @@ type virtualState struct {
 	timestamp    int64
 	empty        bool
 	stateHash    hashing.HashValue
-	variables    table.DBTable
+	variables    kv.BufferedKVStore
 }
 
 func newVirtualState(scAddress *address.Address, getPartition func(*address.Address) kvstore.KVStore) *virtualState {
 	return &virtualState{
 		scAddress:    *scAddress,
 		getPartition: getPartition,
-		variables: table.NewDBTableOnSubrealm(
+		variables: kv.NewBufferedKVStoreOnSubrealm(
 			func() kvstore.KVStore { return getPartition(scAddress) },
 			[]byte{database.ObjectTypeStateVariable},
 		),
@@ -73,7 +73,7 @@ func (vs *virtualState) DangerouslyConvertToString() string {
 	)
 }
 
-func (vs *virtualState) Variables() table.DBTable {
+func (vs *virtualState) Variables() kv.BufferedKVStore {
 	return vs.variables
 }
 
@@ -181,7 +181,7 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	}
 
 	// store uncommitted mutations
-	vs.variables.Mutations().Iterate(func(k table.Key, mut table.Mutation) bool {
+	vs.variables.Mutations().Iterate(func(k kv.Key, mut kv.Mutation) bool {
 		keys = append(keys, dbkeyStateVariable(k))
 
 		// if mutation is MutationDel, mut.Value() = nil and the key is deleted
@@ -235,7 +235,7 @@ func loadSolidState(scAddress *address.Address, getPartition func(*address.Addre
 	return vs, batch, true, nil
 }
 
-func dbkeyStateVariable(key table.Key) []byte {
+func dbkeyStateVariable(key kv.Key) []byte {
 	return database.MakeKey(database.ObjectTypeStateVariable, []byte(key))
 }
 
