@@ -2,6 +2,7 @@ package examples
 
 import (
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
+	"github.com/iotaledger/wasp/packages/vm/examples/increasecounter"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -17,6 +18,9 @@ func LoadProcessor(progHashStr string) (vmtypes.Processor, bool) {
 
 	case fairroulette.ProgramHash:
 		return fairroulette.GetProcessor(), true
+
+	case increasecounter.ProgramHash:
+		return increasecounter.GetProcessor(), true
 	}
 	return nil, false
 }
