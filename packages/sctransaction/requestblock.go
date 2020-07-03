@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -19,10 +20,17 @@ const RequestIdSize = hashing.HashSize + 2
 type RequestId [RequestIdSize]byte
 
 type RequestBlock struct {
+	// address of the target smart contract
 	address address.Address
 	// request code
 	reqCode RequestCode
-	// small variable state with variable/value pairs
+	// timelock in Unix seconds.
+	// Request will only be processed when time reaches
+	// specified moment. It is guaranteed that timestamp of the state transaction which
+	// settles the request is greater or equal to the request timelock.
+	// 0 timelock naturally means it has no effect
+	timelock uint32
+	// input arguments in the form of variable/value pairs
 	args kv.Map
 }
 
@@ -66,9 +74,22 @@ func (req *RequestBlock) RequestCode() RequestCode {
 	return req.reqCode
 }
 
+func (req *RequestBlock) Timelock() uint32 {
+	return req.timelock
+}
+
+func (req *RequestBlock) WithTimelock(tl uint32) *RequestBlock {
+	req.timelock = tl
+	return req
+}
+
+func (req *RequestBlock) WithTimelockUntil(deadline time.Time) *RequestBlock {
+	return req.WithTimelock(uint32(deadline.Unix()))
+}
+
 func (req *RequestBlock) String(reqId *RequestId) string {
-	return fmt.Sprintf("Request: %s to: %s, code: %s\n%s",
-		reqId.Short(), req.Address().String(), req.reqCode.String(), req.args.String())
+	return fmt.Sprintf("Request: %s to: %s, code: %s, timelock: %d\n%s",
+		reqId.Short(), req.Address().String(), req.reqCode.String(), req.timelock, req.args.String())
 }
 
 func NewRequestIdFromString(reqIdStr string) (ret RequestId, err error) {
@@ -93,10 +114,12 @@ func NewRequestIdFromString(reqIdStr string) (ret RequestId, err error) {
 }
 
 // encoding
-// important: each block starts with 65 bytes of scid
 
 func (req *RequestBlock) Write(w io.Writer) error {
 	if _, err := w.Write(req.address.Bytes()); err != nil {
+		return err
+	}
+	if err := util.WriteUint32(w, req.timelock); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(req.reqCode)); err != nil {
@@ -111,6 +134,9 @@ func (req *RequestBlock) Write(w io.Writer) error {
 func (req *RequestBlock) Read(r io.Reader) error {
 	if err := util.ReadAddress(r, &req.address); err != nil {
 		return fmt.Errorf("error while reading address: %v", err)
+	}
+	if err := util.ReadUint32(r, &req.timelock); err != nil {
+		return err
 	}
 	var rc uint16
 	if err := util.ReadUint16(r, &rc); err != nil {
@@ -127,12 +153,6 @@ func (req *RequestBlock) Read(r io.Reader) error {
 
 func NewRequestId(txid valuetransaction.ID, index uint16) (ret RequestId) {
 	copy(ret[:valuetransaction.IDLength], txid.Bytes())
-	copy(ret[valuetransaction.IDLength:], util.Uint16To2Bytes(index)[:])
-	return
-}
-
-func NewRandomRequestId(index uint16) (ret RequestId) {
-	copy(ret[:valuetransaction.IDLength], hashing.RandomHash(nil).Bytes())
 	copy(ret[valuetransaction.IDLength:], util.Uint16To2Bytes(index)[:])
 	return
 }

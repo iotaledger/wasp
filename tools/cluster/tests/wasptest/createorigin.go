@@ -19,14 +19,14 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 		bindAddress = clu.ApiHosts()[0]
 	}
 
-	fmt.Printf("++++++++++ create origin bind address: %s\n", bindAddress)
+	//fmt.Printf("++++++++++ create origin bind address: %s\n", bindAddress)
 
 	tx, err := cluster.CreateOrigin(bindAddress, sc)
 	if err != nil {
 		return err
 	}
 
-	//fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
+	fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
 
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 	sh := tx.MustState().StateHash()

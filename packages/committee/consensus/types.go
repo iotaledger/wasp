@@ -61,16 +61,8 @@ type signedResult struct {
 	sigShare    tbdn.SigShare
 }
 
-type computationRequest struct {
-	ts              time.Time
-	leaderPeerIndex uint16
-	req             *request
-	processed       bool
-}
-
 // keeps stateTx of the request
 type request struct {
-
 	// id of the hash of request tx id and request block index
 	reqId sctransaction.RequestId
 

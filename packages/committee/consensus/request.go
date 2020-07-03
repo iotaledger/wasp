@@ -78,6 +78,11 @@ func (req *request) requestCode() sctransaction.RequestCode {
 	return req.reqTx.Requests()[req.reqId.Index()].RequestCode()
 }
 
+func (req *request) isTimelocked(nowis time.Time) bool {
+	timelock := req.reqTx.Requests()[req.reqId.Index()].Timelock()
+	return timelock > uint32(nowis.Unix())
+}
+
 // selectRequestsToProcess select requests to process in the batch by counting votes of notification messages
 // first it selects candidates with >= quorum 'seen' votes and sorts by num votes
 // then it selects maximum number of requests which has been seen by at least quorum of common peers
@@ -227,11 +232,24 @@ func (op *operator) filterNotCompletePackages(reqs []*request) []*request {
 	return ret
 }
 
+func filterTimelocked(reqs []*request) []*request {
+	ret := reqs[:0]
+	nowis := time.Now()
+	for _, req := range reqs {
+		if req.isTimelocked(nowis) {
+			continue
+		}
+		ret = append(ret, req)
+	}
+	return ret
+}
+
 // filterNotReadyYet checks all ids and returns list of corresponding request records
 // return empty list if not all requests in the list can be processed by the node atm
-// note, that filter out criteria are temporary, so the same request may ready next time
+// note, that filter out criteria are temporary, so the same request may be ready next time
 func (op *operator) filterNotReadyYet(reqs []*request) []*request {
-	ret := reqs[:0] // same underlying array, different slice
+	ret := filterTimelocked(reqs)
+	ret = ret[:0] // same underlying array, different slice
 
 	for _, req := range reqs {
 		if req.reqTx == nil {

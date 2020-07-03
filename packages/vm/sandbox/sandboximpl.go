@@ -1,17 +1,16 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/plugins/publisher"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 type sandbox struct {
@@ -84,6 +83,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 		}
 	}
 	reqBlock := sctransaction.NewRequestBlock(*par.TargetAddress, par.RequestCode)
+	reqBlock.WithTimelock(par.Timelock)
 	reqBlock.SetArgs(par.Args)
 
 	if err := vctx.TxBuilder.AddRequestBlock(reqBlock); err != nil {
@@ -97,6 +97,16 @@ func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args k
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,
 		Args:          args,
+		IncludeReward: 0,
+	})
+}
+
+func (vctx *sandbox) SendRequestToSelfWithDefer(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool {
+	return vctx.SendRequest(vmtypes.NewRequestParams{
+		TargetAddress: &vctx.Address,
+		RequestCode:   reqCode,
+		Args:          args,
+		Timelock:      uint32(vctx.Timestamp/1e6) + deferForSec,
 		IncludeReward: 0,
 	})
 }

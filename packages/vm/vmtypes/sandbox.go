@@ -30,6 +30,8 @@ type Sandbox interface {
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
 	SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool
+	// Send request to itself with timelock for some seconds after the current timestamp
+	SendRequestToSelfWithDefer(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
 }
@@ -64,6 +66,7 @@ type AccountAccess interface {
 type NewRequestParams struct {
 	TargetAddress *address.Address
 	RequestCode   sctransaction.RequestCode
+	Timelock      uint32
 	Args          kv.Map
 	IncludeReward int64
 }

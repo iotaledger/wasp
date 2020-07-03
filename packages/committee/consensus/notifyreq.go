@@ -7,6 +7,8 @@ import (
 
 // notifies current leader about requests in the order of arrival
 func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
+	reqs = filterTimelocked(reqs)
+
 	stateIndex, ok := op.stateIndex()
 	if !ok {
 		op.log.Debugf("sendRequestNotificationsToLeader: current currentState is undefined")

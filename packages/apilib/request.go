@@ -9,14 +9,15 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/kv"
 )
 
 type RequestBlockJson struct {
 	Address     string            `json:"address"`
 	RequestCode uint16            `json:"request_code"`
+	Timelock    uint32            `json:"timelock"`
 	Amount      int64             `json:"amount"` // minimum 1i
 	Vars        map[string]string `json:"vars"`
 }
@@ -65,6 +66,7 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 		return nil, err
 	}
 	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
+	ret.WithTimelock(reqBlkJson.Timelock)
 
 	args := kv.NewMap()
 	for k, v := range reqBlkJson.Vars {

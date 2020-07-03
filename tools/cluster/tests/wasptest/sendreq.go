@@ -15,8 +15,7 @@ func SendRequestNTimes(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfi
 		// in real situation one must wait until the previous request is confirmed
 		// (because of access to the same owner address)
 		err := SendRequests(clu, sc, []*waspapi.RequestBlockJson{
-			&waspapi.RequestBlockJson{
-				Address:     sc.Address,
+			{Address: sc.Address,
 				RequestCode: uint16(code),
 				Vars:        args,
 			},
