@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
@@ -41,7 +41,7 @@ func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return v
 }
 
-const logArrayKey = table.Key("log")
+const logArrayKey = kv.Key("log")
 
 func handleAddLogRequest(ctx vmtypes.Sandbox) {
 	msg, ok, _ := ctx.AccessRequest().Args().GetString("message")
@@ -61,7 +61,7 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 
 	length += 1
 	ctx.AccessState().Variables().SetInt64(logArrayKey, length)
-	ctx.AccessState().Variables().SetString(table.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
+	ctx.AccessState().Variables().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

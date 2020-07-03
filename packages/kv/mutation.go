@@ -1,4 +1,4 @@
-package table
+package kv
 
 import (
 	"fmt"
@@ -7,14 +7,14 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// Mutation represents a single "set" or "del" operation over a Table
+// Mutation represents a single "set" or "del" operation over a KVStore
 type Mutation interface {
 	Read(io.Reader) error
 	Write(io.Writer) error
 
 	String() string
 
-	ApplyTo(kv Table)
+	ApplyTo(kv KVStore)
 
 	// Key returns the key that is mutated
 	Key() Key
@@ -37,7 +37,7 @@ type MutationSequence interface {
 	Add(mut Mutation)
 	AddAll(ms MutationSequence)
 
-	ApplyTo(kv Table)
+	ApplyTo(kv KVStore)
 }
 
 // MutationMap stores the latest mutation applied to each key
@@ -134,7 +134,7 @@ func (ms *mutationSequence) AddAll(other MutationSequence) {
 	})
 }
 
-func (ms *mutationSequence) ApplyTo(kv Table) {
+func (ms *mutationSequence) ApplyTo(kv KVStore) {
 	for _, mut := range ms.muts {
 		mut.ApplyTo(kv)
 	}
@@ -234,7 +234,7 @@ func (m *mutationSet) Value() []byte {
 	return m.v
 }
 
-func (m *mutationSet) ApplyTo(kv Table) {
+func (m *mutationSet) ApplyTo(kv KVStore) {
 	kv.Set(m.k, m.v)
 }
 
@@ -271,6 +271,6 @@ func (m *mutationDel) Value() []byte {
 	return nil
 }
 
-func (m *mutationDel) ApplyTo(kv Table) {
+func (m *mutationDel) ApplyTo(kv KVStore) {
 	kv.Del(m.k)
 }

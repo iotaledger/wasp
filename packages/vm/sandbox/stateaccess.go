@@ -1,8 +1,8 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/table"
 )
 
 type stateWrapper struct {
@@ -10,11 +10,11 @@ type stateWrapper struct {
 	stateUpdate  state.StateUpdate
 }
 
-func (s *stateWrapper) Variables() table.Codec {
-	return table.NewCodec(s)
+func (s *stateWrapper) Variables() kv.Codec {
+	return kv.NewCodec(s)
 }
 
-func (s *stateWrapper) Get(name table.Key) ([]byte, error) {
+func (s *stateWrapper) Get(name kv.Key) ([]byte, error) {
 	// FIXME: this is O(N) with N = amount of accumulated mutations
 	// it could be improved by caching the latest mutation for evey key
 	muts := s.stateUpdate.Mutations()
@@ -32,10 +32,10 @@ func (s *stateWrapper) Get(name table.Key) ([]byte, error) {
 	return s.virtualState.Variables().Get(name)
 }
 
-func (s *stateWrapper) Del(name table.Key) {
-	s.stateUpdate.Mutations().Add(table.NewMutationDel(name))
+func (s *stateWrapper) Del(name kv.Key) {
+	s.stateUpdate.Mutations().Add(kv.NewMutationDel(name))
 }
 
-func (s *stateWrapper) Set(name table.Key, value []byte) {
-	s.stateUpdate.Mutations().Add(table.NewMutationSet(name, value))
+func (s *stateWrapper) Set(name kv.Key, value []byte) {
+	s.stateUpdate.Mutations().Add(kv.NewMutationSet(name, value))
 }

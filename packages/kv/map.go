@@ -1,4 +1,4 @@
-package table
+package kv
 
 import (
 	"encoding/hex"
@@ -10,17 +10,17 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// MemTable is a Table backed by an in-memory map
-type MemTable interface {
-	Table
+// Map is a KVStore backed by an in-memory map
+type Map interface {
+	KVStore
 
 	IsEmpty() bool
 
-	ToMap() map[Key][]byte
+	ToGoMap() map[Key][]byte
 
 	ForEach(func(key Key, value []byte) bool)
 	ForEachDeterministic(func(key Key, value []byte) bool)
-	Clone() MemTable
+	Clone() Map
 
 	Read(io.Reader) error
 	Write(io.Writer) error
@@ -32,28 +32,28 @@ type MemTable interface {
 	Codec() Codec
 }
 
-type memtable map[Key][]byte
+type kvmap map[Key][]byte
 
 // create/clone
-func NewMemTable() MemTable {
-	return make(memtable)
+func NewMap() Map {
+	return make(kvmap)
 }
 
-func (vr memtable) Clone() MemTable {
-	clone := make(memtable)
-	vr.ForEach(func(key Key, value []byte) bool {
+func (m kvmap) Clone() Map {
+	clone := make(kvmap)
+	m.ForEach(func(key Key, value []byte) bool {
 		clone.Set(key, value)
 		return true
 	})
 	return clone
 }
 
-func FromMap(m map[Key][]byte) MemTable {
-	return memtable(m)
+func FromGoMap(m map[Key][]byte) Map {
+	return kvmap(m)
 }
 
-func (vr memtable) ToMap() map[Key][]byte {
-	return memtable(vr)
+func (m kvmap) ToGoMap() map[Key][]byte {
+	return m
 }
 
 type keySlice []Key
@@ -62,23 +62,23 @@ func (a keySlice) Len() int           { return len(a) }
 func (a keySlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a keySlice) Less(i, j int) bool { return a[i] < a[j] }
 
-func (vr memtable) sortedKeys() []Key {
+func (m kvmap) sortedKeys() []Key {
 	keys := make([]Key, 0)
-	for k := range vr {
+	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Sort(keySlice(keys))
 	return keys
 }
 
-func (vr memtable) String() string {
-	ret := "         MemTable:\n"
-	for _, key := range vr.sortedKeys() {
+func (m kvmap) String() string {
+	ret := "         Map:\n"
+	for _, key := range m.sortedKeys() {
 		ret += fmt.Sprintf(
 			"           0x%s: 0x%s (base58: %s)\n",
 			slice(hex.EncodeToString([]byte(key))),
-			slice(hex.EncodeToString(vr[key])),
-			slice(base58.Encode(vr[key])),
+			slice(hex.EncodeToString(m[key])),
+			slice(base58.Encode(m[key])),
 		)
 	}
 	return ret
@@ -91,13 +91,13 @@ func slice(s string) string {
 	return s
 }
 
-func (vr memtable) Codec() Codec {
-	return NewCodec(vr)
+func (m kvmap) Codec() Codec {
+	return NewCodec(m)
 }
 
-func (vr memtable) Mutations() MutationSequence {
+func (m kvmap) Mutations() MutationSequence {
 	ms := NewMutationSequence()
-	vr.ForEachDeterministic(func(key Key, value []byte) bool {
+	m.ForEachDeterministic(func(key Key, value []byte) bool {
 		ms.Add(NewMutationSet(key, value))
 		return true
 	})
@@ -105,47 +105,47 @@ func (vr memtable) Mutations() MutationSequence {
 }
 
 // NON DETERMINISTIC!
-func (vr memtable) ForEach(fun func(key Key, value []byte) bool) {
-	for k, v := range vr {
+func (m kvmap) ForEach(fun func(key Key, value []byte) bool) {
+	for k, v := range m {
 		if !fun(k, v) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (vr memtable) ForEachDeterministic(fun func(key Key, value []byte) bool) {
-	if vr == nil {
+func (m kvmap) ForEachDeterministic(fun func(key Key, value []byte) bool) {
+	if m == nil {
 		return
 	}
-	for _, k := range vr.sortedKeys() {
-		if !fun(k, vr[k]) {
+	for _, k := range m.sortedKeys() {
+		if !fun(k, m[k]) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (vr memtable) IsEmpty() bool {
-	return len(vr) == 0
+func (m kvmap) IsEmpty() bool {
+	return len(m) == 0
 }
 
-func (vr memtable) Set(key Key, value []byte) {
+func (m kvmap) Set(key Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
-	vr[key] = value
+	m[key] = value
 }
 
-func (vr memtable) Del(key Key) {
-	delete(vr, key)
+func (m kvmap) Del(key Key) {
+	delete(m, key)
 }
 
-func (vr memtable) Get(key Key) ([]byte, error) {
-	v, _ := vr[key]
+func (m kvmap) Get(key Key) ([]byte, error) {
+	v, _ := m[key]
 	return v, nil
 }
 
-func (vr memtable) Write(w io.Writer) error {
-	keys := vr.sortedKeys()
+func (m kvmap) Write(w io.Writer) error {
+	keys := m.sortedKeys()
 	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
 	}
@@ -153,14 +153,14 @@ func (vr memtable) Write(w io.Writer) error {
 		if err := util.WriteBytes16(w, []byte(k)); err != nil {
 			return err
 		}
-		if err := util.WriteBytes32(w, vr[k]); err != nil {
+		if err := util.WriteBytes32(w, m[k]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (vr memtable) Read(r io.Reader) error {
+func (m kvmap) Read(r io.Reader) error {
 	var num uint64
 	err := util.ReadUint64(r, &num)
 	if err != nil {
@@ -175,7 +175,7 @@ func (vr memtable) Read(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		vr.Set(Key(k), v)
+		m.Set(Key(k), v)
 	}
 	return nil
 }

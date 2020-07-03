@@ -8,8 +8,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/table"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
@@ -91,7 +91,7 @@ func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transa
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Variables: table.FromMap(map[table.Key][]byte{
+		Variables: kv.FromGoMap(map[kv.Key][]byte{
 			"description": []byte(scdata.Description),
 		}),
 	})
@@ -115,7 +115,7 @@ func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction
 		Address:              addr,
 		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
 		ProgramHash:          progHash,
-		Variables: table.FromMap(map[table.Key][]byte{
+		Variables: kv.FromGoMap(map[kv.Key][]byte{
 			"description": []byte(scdata.Description),
 		}),
 	})

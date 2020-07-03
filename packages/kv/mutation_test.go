@@ -1,4 +1,4 @@
-package table
+package kv
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestApplyMutationSet(t *testing.T) {
-	vars := NewMemTable()
+	vars := NewMap()
 
 	mset := NewMutationSet("k1", []byte("v1"))
 	mset.ApplyTo(vars)
@@ -19,7 +19,7 @@ func TestApplyMutationSet(t *testing.T) {
 }
 
 func TestApplyMutationDel(t *testing.T) {
-	vars := NewMemTable()
+	vars := NewMap()
 	vars.Set("k1", []byte("v1"))
 
 	mset := NewMutationDel("k1")

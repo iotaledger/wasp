@@ -6,10 +6,10 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/table"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -34,7 +34,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	}
 
 	initRequest := sctransaction.NewRequestBlock(par.Address, vmconst.RequestCodeInit)
-	args := table.NewMemTable()
+	args := kv.NewMap()
 	ownerAddress := par.OwnerSignatureScheme.Address()
 	args.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddress)
 	if par.ProgramHash != *hashing.NilHash {

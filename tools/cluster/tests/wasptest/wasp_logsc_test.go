@@ -6,7 +6,7 @@ import (
 	"time"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/table"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -51,7 +51,7 @@ func TestLogsc1(t *testing.T) {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[table.Key][]byte{
+	if !clu.VerifySCState(sc, 2, map[kv.Key][]byte{
 		"log":   util.Uint64To8Bytes(uint64(1)),
 		"log:0": []byte("message 0"),
 	}) {
@@ -79,8 +79,9 @@ func TestLogsc5(t *testing.T) {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[table.Key][]byte{
-		"log":   util.Uint64To8Bytes(uint64(5)),
+	if !clu.VerifySCState(sc, 2, map[kv.Key][]byte{
+		"log": util.Uint64To8Bytes(uint64(5)),
+		// FIXME: order is not deterministic
 		"log:0": []byte("message 0"),
 		"log:1": []byte("message 1"),
 		"log:2": []byte("message 2"),

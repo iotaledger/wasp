@@ -5,8 +5,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/table"
 )
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -29,7 +29,7 @@ type Sandbox interface {
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
-	SendRequestToSelf(reqCode sctransaction.RequestCode, args table.MemTable) bool
+	SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
 }
@@ -40,12 +40,12 @@ type RequestAccess interface {
 	Code() sctransaction.RequestCode
 	IsAuthorisedByAddress(addr *address.Address) bool
 	Senders() []address.Address
-	Args() table.RCodec
+	Args() kv.RCodec
 }
 
 // access to the virtual state
 type StateAccess interface {
-	Variables() table.Codec
+	Variables() kv.Codec
 }
 
 // access to token operations (txbuilder)
@@ -64,6 +64,6 @@ type AccountAccess interface {
 type NewRequestParams struct {
 	TargetAddress *address.Address
 	RequestCode   sctransaction.RequestCode
-	Args          table.MemTable
+	Args          kv.Map
 	IncludeReward int64
 }

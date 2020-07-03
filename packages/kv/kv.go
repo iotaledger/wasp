@@ -1,13 +1,13 @@
-package table
+package kv
 
 // Since map cannot have []byte as key, to avoid unnecessary conversions
 // between string and []byte, we use string as key data type, but it does
 // not necessarily have to be a valid UTF-8 string.
 type Key string
 
-// Table represents a key-value map where both keys and values are
+// KVStore represents a key-value store where both keys and values are
 // arbitrary byte slices.
-type Table interface {
+type KVStore interface {
 	Set(key Key, value []byte)
 	Del(key Key)
 	// Get returns the value, or nil if not found
