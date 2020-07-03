@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
@@ -50,7 +50,7 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	length, ok, err := ctx.AccessState().Variables().GetInt64(logArrayKey)
+	length, ok, err := ctx.AccessState().Codec().GetInt64(logArrayKey)
 	if err != nil {
 		fmt.Printf("[logsc] %v", err)
 		return
@@ -60,8 +60,8 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 	}
 
 	length += 1
-	ctx.AccessState().Variables().SetInt64(logArrayKey, length)
-	ctx.AccessState().Variables().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
+	ctx.AccessState().Codec().SetInt64(logArrayKey, length)
+	ctx.AccessState().Codec().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

@@ -10,7 +10,7 @@ type stateWrapper struct {
 	stateUpdate  state.StateUpdate
 }
 
-func (s *stateWrapper) Variables() kv.Codec {
+func (s *stateWrapper) Codec() kv.Codec {
 	return kv.NewCodec(s)
 }
 

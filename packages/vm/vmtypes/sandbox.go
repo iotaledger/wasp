@@ -47,7 +47,7 @@ type RequestAccess interface {
 
 // access to the virtual state
 type StateAccess interface {
-	Variables() kv.Codec
+	Codec() kv.Codec
 }
 
 // access to token operations (txbuilder)

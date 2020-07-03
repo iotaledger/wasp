@@ -66,7 +66,7 @@ func initRequest(ctx vmtypes.Sandbox) {
 		ctx.GetLog().Debugf("initRequest: owner address not known.")
 		return
 	}
-	ctx.AccessState().Variables().SetAddress(vmconst.VarNameOwnerAddress, ownerAddress)
+	ctx.AccessState().Codec().SetAddress(vmconst.VarNameOwnerAddress, ownerAddress)
 
 	progHash, ok, err := ctx.AccessRequest().Args().GetHashValue(vmconst.VarNameProgramHash)
 	if err != nil {
@@ -78,19 +78,19 @@ func initRequest(ctx vmtypes.Sandbox) {
 		return
 	}
 	ctx.GetLog().Debugf("initRequest: Setting program hash to %s.", progHash.String())
-	ctx.AccessState().Variables().SetHashValue(vmconst.VarNameProgramHash, progHash)
+	ctx.AccessState().Codec().SetHashValue(vmconst.VarNameProgramHash, progHash)
 }
 
 func setMinimumReward(ctx vmtypes.Sandbox) {
 	stub(ctx, "setMinimumReward")
 	if v, ok, _ := ctx.AccessRequest().Args().GetInt64("value"); ok && v >= 0 {
-		ctx.AccessState().Variables().SetInt64(vmconst.VarNameMinimumReward, v)
+		ctx.AccessState().Codec().SetInt64(vmconst.VarNameMinimumReward, v)
 	}
 }
 
 func setDescription(ctx vmtypes.Sandbox) {
 	stub(ctx, "setDescription")
 	if v, ok, _ := ctx.AccessRequest().Args().GetString("value"); ok && v != "" {
-		ctx.AccessState().Variables().SetString("description", v)
+		ctx.AccessState().Codec().SetString("description", v)
 	}
 }

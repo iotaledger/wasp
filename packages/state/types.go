@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 // represents an interface to the mutable state of the smart contract
@@ -16,7 +16,7 @@ type VirtualState interface {
 	// index 0 means origin state
 	StateIndex() uint32
 	ApplyStateIndex(uint32)
-	// check if state contains record with owner address
+	// check if state contains record with the given owner address
 	InitiatedBy(*address.Address) bool
 	// timestamp
 	Timestamp() int64
