@@ -526,7 +526,7 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 
 	pass := true
 	for _, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
-		fmt.Printf("[cluster] AccessState verification for node %s\n", host)
+		fmt.Printf("[cluster] State verification for node %s\n", host)
 		actual, err := waspapi.DumpSCState(host, sc.Address)
 		if err != nil {
 			pass = false

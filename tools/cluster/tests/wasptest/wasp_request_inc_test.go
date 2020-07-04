@@ -55,9 +55,9 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          11,
-		"request_out":         10,
-		"state":               10,
+		"request_in":          3,
+		"request_out":         4,
+		"state":               -1,
 	})
 	check(err, t)
 
@@ -79,8 +79,8 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	if !wasps.VerifySCState(sc, 10, map[kv.Key][]byte{
-		"counter": util.Uint64To8Bytes(uint64(10)),
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(2)),
 	}) {
 		t.Fail()
 	}

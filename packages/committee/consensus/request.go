@@ -78,9 +78,12 @@ func (req *request) requestCode() sctransaction.RequestCode {
 	return req.reqTx.Requests()[req.reqId.Index()].RequestCode()
 }
 
+func (req *request) timelock() uint32 {
+	return req.reqTx.Requests()[req.reqId.Index()].Timelock()
+}
+
 func (req *request) isTimelocked(nowis time.Time) bool {
-	timelock := req.reqTx.Requests()[req.reqId.Index()].Timelock()
-	return timelock > uint32(nowis.Unix())
+	return req.timelock() > uint32(nowis.Unix())
 }
 
 // selectRequestsToProcess select requests to process in the batch by counting votes of notification messages
@@ -237,7 +240,13 @@ func filterTimelocked(reqs []*request) []*request {
 	nowis := time.Now()
 	for _, req := range reqs {
 		if req.isTimelocked(nowis) {
+			if req.timelock() > 0 {
+				req.log.Debugf("timelocked until %d: filtered out. nowis %d", req.timelock(), nowis.Unix())
+			}
 			continue
+		}
+		if req.timelock() > 0 {
+			req.log.Debugf("timelocked until %d: pass. nowis %d", req.timelock(), nowis.Unix())
 		}
 		ret = append(ret, req)
 	}
@@ -248,12 +257,15 @@ func filterTimelocked(reqs []*request) []*request {
 // return empty list if not all requests in the list can be processed by the node atm
 // note, that filter out criteria are temporary, so the same request may be ready next time
 func (op *operator) filterNotReadyYet(reqs []*request) []*request {
-	ret := filterTimelocked(reqs)
-	ret = ret[:0] // same underlying array, different slice
+	notTimeLocked := filterTimelocked(reqs)
 
-	for _, req := range reqs {
+	op.log.Debugf("Number of timelocked requests filtered out: %d", len(reqs)-len(notTimeLocked))
+
+	ret := notTimeLocked[:0] // same underlying array, different slice
+
+	for _, req := range notTimeLocked {
 		if req.reqTx == nil {
-			op.log.Debugf("request %s not known by the node: can't be processed", req.reqId.Short())
+			op.log.Debugf("request %s not known to the node: can't be processed", req.reqId.Short())
 			continue
 		}
 		if req.requestCode().IsUserDefined() && !op.processorReady {

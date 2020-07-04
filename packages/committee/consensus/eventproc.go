@@ -99,6 +99,11 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 		)
 	}
 
+	if reqMsg.Timelock() != 0 {
+		req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
+			reqMsg.RequestBlock().String(reqMsg.RequestId()), time.Now().Unix())
+	}
+
 	op.sendRequestNotificationsToLeader([]*request{req})
 	if !op.leaderRotationDeadlineSet {
 		op.setLeaderRotationDeadline()

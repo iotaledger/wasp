@@ -25,3 +25,11 @@ func (reqMsg *RequestMsg) RequestId() *sctransaction.RequestId {
 	ret := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
 	return &ret
 }
+
+func (reqMsg *RequestMsg) RequestBlock() *sctransaction.RequestBlock {
+	return reqMsg.Requests()[reqMsg.Index]
+}
+
+func (reqMsg *RequestMsg) Timelock() uint32 {
+	return reqMsg.RequestBlock().Timelock()
+}

@@ -26,8 +26,12 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (f incCounterProcessor) GetEntryPoint(_ sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
-	return (incEntryPoint)(incCounter), true
+func (proc incCounterProcessor) GetEntryPoint(rc sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+	f, ok := proc[rc]
+	if !ok {
+		return nil, false
+	}
+	return f, true
 }
 
 func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
@@ -48,11 +52,12 @@ func incCounter(ctx vmtypes.Sandbox) {
 func incCounterAndRepeat(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
 	val, _, _ := state.GetInt64("counter")
+
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64("counter", val+1)
-	if val+1 < 10 {
-		ctx.GetWaspLog().Infof("[+++VM+++] val = %d%", val)
+	if val == 0 {
+		ctx.GetWaspLog().Infof("[+++VM+++] val = %d", val)
 
-		ctx.SendRequestToSelfWithDelay(RequestIncAndRepeat, nil, 1)
+		ctx.SendRequestToSelfWithDelay(RequestIncAndRepeat, nil, 3)
 	}
 }

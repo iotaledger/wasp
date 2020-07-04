@@ -63,7 +63,9 @@ func (req *RequestBlock) Address() address.Address {
 }
 
 func (req *RequestBlock) SetArgs(args kv.Map) {
-	req.args = args.Clone()
+	if args != nil {
+		req.args = args.Clone()
+	}
 }
 
 func (req *RequestBlock) Args() kv.RCodec {

@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
@@ -101,12 +102,14 @@ func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args k
 	})
 }
 
-func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool {
+func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, delaySec uint32) bool {
+	timelock := util.NanoSecToUnixSec(vctx.Timestamp) + delaySec
+
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,
 		Args:          args,
-		Timelock:      uint32(vctx.Timestamp/1e6) + deferForSec,
+		Timelock:      timelock,
 		IncludeReward: 0,
 	})
 }

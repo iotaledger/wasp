@@ -1,5 +1,7 @@
 package util
 
+import "time"
+
 func Short(s string) string {
 	if len(s) <= 6 {
 		return s
@@ -39,4 +41,8 @@ func ContainsInList(elem string, lst []string) bool {
 		}
 	}
 	return false
+}
+
+func NanoSecToUnixSec(ts int64) uint32 {
+	return uint32(ts / int64(time.Second))
 }
