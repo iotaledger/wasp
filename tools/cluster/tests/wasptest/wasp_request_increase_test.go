@@ -3,7 +3,7 @@ package wasptest
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/examples/increasecounter"
+	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"testing"
 	"time"
 )
@@ -32,7 +32,7 @@ func TestSend1ReqIncrease(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 1, increasecounter.RequestIncrease, nil, 0)
+	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestInc, nil, 0)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -42,6 +42,45 @@ func TestSend1ReqIncrease(t *testing.T) {
 	}
 	if !wasps.VerifySCState(sc, 2, map[kv.Key][]byte{
 		"counter": util.Uint64To8Bytes(uint64(1)),
+	}) {
+		t.Fail()
+	}
+}
+
+func TestSend1ReqIncTimelock(t *testing.T) {
+	// setup
+	wasps := setup(t, "test_cluster", "TestSend1ReqIncTimelock")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          11,
+		"request_out":         10,
+		"state":               10,
+	})
+	check(err, t)
+
+	err = Put3BootupRecords(wasps)
+	check(err, t)
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
+	check(err, t)
+
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
+
+	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestIncAndRepeat, nil, 0)
+	check(err, t)
+
+	wasps.CollectMessages(15 * time.Second)
+
+	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 10, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(10)),
 	}) {
 		t.Fail()
 	}
@@ -72,7 +111,7 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 5, increasecounter.RequestIncrease, nil, 1*time.Second)
+	err = SendRequestNTimes(wasps, sc, 5, inccounter.RequestInc, nil, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -112,7 +151,7 @@ func TestSend10ReqIncrease0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 10, increasecounter.RequestIncrease, nil, 0*time.Second)
+	err = SendRequestNTimes(wasps, sc, 10, inccounter.RequestInc, nil, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -152,7 +191,7 @@ func TestSend60ReqIncrease500msec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 60, increasecounter.RequestIncrease, nil, 500*time.Millisecond)
+	err = SendRequestNTimes(wasps, sc, 60, inccounter.RequestInc, nil, 500*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
@@ -192,7 +231,7 @@ func TestSend60ReqIncrease0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 60, increasecounter.RequestIncrease, nil, 0*time.Millisecond)
+	err = SendRequestNTimes(wasps, sc, 60, inccounter.RequestInc, nil, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
