@@ -49,7 +49,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          6,
 		"request_out":         7,
-		"state":               7,
+		"state":               -1,
 	})
 	check(err, t)
 
