@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func TestSend1ReqIncrease(t *testing.T) {
+func TestSend1ReqInc(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend1ReqIncrease")
+	wasps := setup(t, "test_cluster", "TestSend1ReqInc")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
@@ -206,9 +206,9 @@ func TestSend60ReqIncrease500msec(t *testing.T) {
 	}
 }
 
-func TestSend60ReqIncrease0Sec(t *testing.T) {
+func TestSend60ReqInc0Sec(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend60ReqIncrease0Sec")
+	wasps := setup(t, "test_cluster", "TestSend60ReqInc0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
