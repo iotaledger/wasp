@@ -71,7 +71,48 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestIncAndRepeat, nil, 0)
+	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestIncAndRepeatOnce, nil, 0)
+	check(err, t)
+
+	wasps.CollectMessages(15 * time.Second)
+
+	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(2)),
+	}) {
+		t.Fail()
+	}
+}
+
+func TestChainIncTimelock(t *testing.T) {
+	// setup
+	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          3,
+		"request_out":         4,
+		"state":               -1,
+	})
+	check(err, t)
+
+	err = Put3BootupRecords(wasps)
+	check(err, t)
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
+	check(err, t)
+
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
+
+	// TODO not finished: pass parameter as request argument
+
+	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestIncAndRepeatMany, nil, 0)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
