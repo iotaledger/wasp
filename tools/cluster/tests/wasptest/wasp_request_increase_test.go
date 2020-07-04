@@ -58,6 +58,7 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 		"request_in":          6,
 		"request_out":         7,
 		"state":               -1,
+		"vmmsg":               5,
 	})
 	check(err, t)
 
@@ -79,8 +80,8 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	if !wasps.VerifySCState(sc, 2, map[kv.Key][]byte{
-		"counter": util.Uint64To8Bytes(uint64(1)),
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(5)),
 	}) {
 		t.Fail()
 	}
@@ -103,18 +104,25 @@ func TestSend10ReqIncrease0Sec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[2])
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[2])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[2], 10, increasecounter.RequestIncrease, nil, 0*time.Second)
+	err = SendRequestNTimes(wasps, sc, 10, increasecounter.RequestIncrease, nil, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(10)),
+	}) {
 		t.Fail()
 	}
 }
@@ -168,18 +176,25 @@ func TestSend60ReqIncrease0Sec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[2])
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[2])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[2], 60, increasecounter.RequestIncrease, nil, 0*time.Millisecond)
+	err = SendRequestNTimes(wasps, sc, 60, increasecounter.RequestIncrease, nil, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(60)),
+	}) {
 		t.Fail()
 	}
 }

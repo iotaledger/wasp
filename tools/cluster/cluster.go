@@ -548,7 +548,7 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, vexp)
 		fmt.Printf("      Actual: index %d\n%s\n", actual.Index, vact)
 
-		if actual.Index != expectedIndex {
+		if expectedIndex > 0 && actual.Index != expectedIndex {
 			pass = false
 			fmt.Printf("   FAIL: index mismatch\n")
 			continue
