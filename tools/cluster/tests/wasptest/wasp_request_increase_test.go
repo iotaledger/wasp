@@ -137,24 +137,32 @@ func TestSend60ReqIncrease500msec(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          61,
 		"request_out":         62,
-		"state":               60,
+		"state":               61,
+		"vmmsg":               60,
 	})
 	check(err, t)
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[2])
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[2])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[2], 60, increasecounter.RequestIncrease, nil, 500*time.Millisecond)
+	err = SendRequestNTimes(wasps, sc, 60, increasecounter.RequestIncrease, nil, 500*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 60, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(60)),
+	}) {
 		t.Fail()
 	}
 }
