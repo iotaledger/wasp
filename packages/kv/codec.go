@@ -13,8 +13,8 @@ import (
 type Codec interface {
 	RCodec
 	WCodec
-	GetList(Key) List
-	// TODO GetLargeList, GetLog, GetMap
+	GetArray(Key) Array
+	// TODO GetLog, GetMap
 }
 
 // RCodec is an interface that offers easy conversions between []byte and other types when
@@ -50,7 +50,7 @@ func NewRCodec(kv KVStore) RCodec {
 	return codec{kv}
 }
 
-func (c codec) GetList(key Key) List {
+func (c codec) GetArray(key Key) Array {
 	return newListCodec(c, string(key))
 }
 

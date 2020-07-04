@@ -53,7 +53,7 @@ func (vctx *sandbox) GetEntropy() hashing.HashValue {
 	return vctx.VMContext.Entropy
 }
 
-func (vctx *sandbox) GetLog() *logger.Logger {
+func (vctx *sandbox) GetWaspLog() *logger.Logger {
 	return vctx.Log
 }
 
@@ -63,8 +63,8 @@ func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) AccessState() vmtypes.StateAccess {
-	return vctx.stateWrapper
+func (vctx *sandbox) AccessState() kv.Codec {
+	return vctx.stateWrapper.Codec()
 }
 
 func (vctx *sandbox) AccessOwnAccount() vmtypes.AccountAccess {
@@ -101,7 +101,7 @@ func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args k
 	})
 }
 
-func (vctx *sandbox) SendRequestToSelfWithDefer(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool {
+func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,

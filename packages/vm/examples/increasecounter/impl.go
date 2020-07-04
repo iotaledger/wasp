@@ -37,7 +37,7 @@ func (ep increaseEntryPoint) Run(ctx vmtypes.Sandbox) {
 }
 
 func increaseCounter(ctx vmtypes.Sandbox) {
-	val, _, _ := ctx.AccessState().Codec().GetInt64("counter")
+	val, _, _ := ctx.AccessState().GetInt64("counter")
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
-	ctx.AccessState().Codec().SetInt64("counter", val+1)
+	ctx.AccessState().SetInt64("counter", val+1)
 }

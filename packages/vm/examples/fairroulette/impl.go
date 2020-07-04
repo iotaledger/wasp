@@ -2,13 +2,12 @@ package fairroulette
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/mr-tron/base58"
+	"io"
 	"sort"
 )
 
@@ -18,29 +17,27 @@ type fairRouletteEntryPoint func(ctx vmtypes.Sandbox)
 
 const (
 	RequestPlaceBet          = sctransaction.RequestCode(uint16(1))
-	RequestVoteForPlay       = sctransaction.RequestCode(uint16(2))
+	RequestLockBets          = sctransaction.RequestCode(uint16(2))
 	RequestPlayAndDistribute = sctransaction.RequestCode(uint16(3))
 )
 
 var entryPoints = fairRouletteProcessor{
 	RequestPlaceBet:          placeBet,
-	RequestVoteForPlay:       vote,
+	RequestLockBets:          lockBets,
 	RequestPlayAndDistribute: playAndDistribute,
 }
 
 const (
 	ProgramHash = "3wo28GRrJu37v6D4xkjZsRLiVQrk3iMn7PifpMFoJEiM"
 
-	ReqVarColor              = "Color"
-	StateVarBets             = "bets"
-	StateVarNumBets          = "numBets"
-	StateVarLockedBets       = "lockedBest"
-	StateVarNumLockedBets    = "numBets"
-	StateVarNumVotes         = "numvotes"
-	StateVarLastWinningColor = "lastWinningColor"
+	ReqVarColor                = "Color"
+	StateVarBets               = "bets"
+	StateVarLockedBets         = "lockedBest"
+	StateVarLastWinningColor   = "lastWinningColor"
+	StateVarEntropyFromLocking = "entropyFromLocking"
 
-	NumColors       = 8
-	NumVotesForPlay = 10
+	NumColors   = 8
+	PlayEverSec = 120
 )
 
 type betInfo struct {
@@ -76,8 +73,18 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 }
 
 // the request places bet into the smart contract
-// all current bets are kept as one marshalled binary blob in state variable 'StateVarBets'
 func placeBet(ctx vmtypes.Sandbox) {
+	state := ctx.AccessState()
+
+	if state.GetArray(StateVarLockedBets).Len() > 0 {
+		// if there are some bets locked, save the entropy derived immediately from it.
+		// it is not predictable at the moment of locking and saving makes it no playable later
+		_, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
+		if !ok || err != nil {
+			ehv := ctx.GetEntropy()
+			state.SetHashValue(StateVarEntropyFromLocking, &ehv)
+		}
+	}
 	// take senders. Must be exactly 1
 	senders := ctx.AccessRequest().Senders()
 	if len(senders) != 1 {
@@ -94,90 +101,77 @@ func placeBet(ctx vmtypes.Sandbox) {
 	// see if there's a Color among args
 	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
-		ctx.GetLog().Errorf("wrong request, no Color specified")
+		ctx.GetWaspLog().Errorf("wrong request, no Color specified")
 		return
 	}
-	data, _ := ctx.AccessState().Codec().Get(StateVarBets)
-	var bets []*betInfo
-	if ok {
-		bets = decodeBets(data)
-	} else {
-		bets = make([]*betInfo, 0)
-	}
-	bets = append(bets, &betInfo{
+	noBets := ctx.AccessState().GetArray(StateVarBets).Len() == 0
+	ctx.AccessState().GetArray(StateVarBets).Push(encodeBetInfo(&betInfo{
 		player: sender,
 		sum:    sum,
 		reqId:  ctx.AccessRequest().ID(),
 		color:  byte(col % NumColors),
-	})
-	ctx.AccessState().Codec().Set(StateVarBets, encodeBets(bets))
-	ctx.AccessState().Codec().SetInt64(StateVarNumBets, int64(len(bets)))
+	}))
+	if noBets {
+		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, PlayEverSec)
+	}
 }
 
-// anyone can vote, they can't predict the outcome anyway
+// anyone can lockBets, they can't predict the outcome anyway
 // alternatively, only betters could be allowed to bet --> need for hashmap structure
-func vote(ctx vmtypes.Sandbox) {
-	numVotes, _, _ := ctx.AccessState().Codec().GetInt64(StateVarNumVotes)
-	if numVotes+1 < NumVotesForPlay {
-		ctx.AccessState().Codec().SetInt64(StateVarNumVotes, numVotes+1)
-		return
-	}
-	// number of votes reached NumVotesForPlay.
-	// Lock current bets and send the 'PlayAndDistribute' request to itself
-	// get locked bets
-	lockedBetsData, _ := ctx.AccessState().Codec().Get(StateVarLockedBets)
-	var lockedBets []*betInfo
-	if lockedBetsData != nil {
-		lockedBets = decodeBets(lockedBetsData)
-	} else {
-		lockedBets = make([]*betInfo, 0)
-	}
-	// get current bets
-	data, _ := ctx.AccessState().Codec().Get(StateVarBets)
-	var bets []*betInfo
-	if data != nil {
-		bets = decodeBets(data)
-	} else {
-		bets = make([]*betInfo, 0)
-	}
-	// append current bets to locked bets
-	lockedBets = append(lockedBets, bets...)
-	// store locked bets
-	ctx.AccessState().Codec().Set(StateVarLockedBets, encodeBets(lockedBets))
-	ctx.AccessState().Codec().SetInt64(StateVarNumLockedBets, int64(len(lockedBets)))
-	// clear current bets
-	ctx.AccessState().Codec().Del(StateVarBets)
-	ctx.AccessState().Codec().SetInt64(StateVarNumBets, 0)
-
-	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
-	ctx.AccessState().Codec().SetInt64(StateVarNumVotes, 0)
-}
-
-func playAndDistribute(ctx vmtypes.Sandbox) {
+func lockBets(ctx vmtypes.Sandbox) {
 	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
 		// ignore if request is not from itself
 		return
 	}
-	numLocked, _, _ := ctx.AccessState().Codec().GetInt64(StateVarNumLockedBets)
-	if numLocked == 0 {
+	ctx.AccessState().GetArray(StateVarLockedBets).Append(ctx.AccessState().GetArray(StateVarBets))
+	ctx.AccessState().GetArray(StateVarBets).Erase()
+
+	// clear entropy to be picked in the next request
+	ctx.AccessState().Del(StateVarEntropyFromLocking)
+
+	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
+}
+
+func playAndDistribute(ctx vmtypes.Sandbox) {
+	state := ctx.AccessState()
+
+	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
+		// ignore if request is not from itself
+		return
+	}
+	lockedBetsArray := state.GetArray(StateVarLockedBets)
+	numLockedBets := lockedBetsArray.Len()
+	if numLockedBets == 0 {
 		// nothing is to play
 		return
 	}
 
-	// entropy includes signature of the locked bets. It was not possible to predict it
-	// at the moment of locking
-	entropy := ctx.GetEntropy()
+	// take the entropy from the signing of the locked bets
+	entropy, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
+	if !ok || err != nil {
+		h := ctx.GetEntropy()
+		entropy = &h
+	}
+
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) / NumColors)
-	ctx.AccessState().Codec().SetInt64(StateVarLastWinningColor, int64(winningColor))
+	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	// take locked bets
-	lockedBetsData, _ := ctx.AccessState().Codec().Get(StateVarLockedBets)
-	var lockedBets []*betInfo
-	if lockedBetsData != nil {
-		lockedBets = decodeBets(lockedBetsData)
-	} else {
-		lockedBets = make([]*betInfo, 0)
+	lockedBets := make([]*betInfo, numLockedBets)
+	for i := range lockedBets {
+		biData, ok := lockedBetsArray.At(uint16(i))
+		if !ok {
+			// inconsistency
+			return
+		}
+		bi, err := decodeBetInfo(biData)
+		if err != nil {
+			// inconsistency
+			return
+		}
+		lockedBets = append(lockedBets, bi)
 	}
+
 	totalLockedAmount := int64(0)
 	for _, bet := range lockedBets {
 		totalLockedAmount += bet.sum
@@ -190,12 +184,12 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	ctx.AccessState().Codec().Del(StateVarLockedBets)
-	ctx.AccessState().Codec().SetInt64(StateVarNumLockedBets, 0)
-	ctx.AccessState().Codec().SetInt64(StateVarNumVotes, 0)
+	// locked bets are not needed anymore
+	lockedBetsArray.Erase()
+	state.Del(StateVarEntropyFromLocking)
 
 	if len(winningBets) == 0 {
-		// nobody played on winning Color -> all sums stay in smart contract
+		// nobody played on winning Color -> all sums stay in the smart contract
 		// move tokens to itself in order to compress number of outputs in the address
 		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
 			ctx.Rollback()
@@ -227,17 +221,17 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 	}
 	// make deterministic sequence
 	seqPlayers := make([]address.Address, 0, len(sumsByPlayers))
-	resulSum := int64(0)
+	resultSum := int64(0)
 	for player, sum := range sumsByPlayers {
 		seqPlayers = append(seqPlayers, player)
-		resulSum += sum
+		resultSum += sum
 	}
 	sort.Slice(seqPlayers, func(i, j int) bool {
 		return bytes.Compare(seqPlayers[i][:], seqPlayers[j][:]) < 0
 	})
 
-	if resulSum > totalLockedAmount {
-		sumsByPlayers[seqPlayers[0]] -= resulSum - totalLockedAmount
+	if resultSum > totalLockedAmount {
+		sumsByPlayers[seqPlayers[0]] -= resultSum - totalLockedAmount
 	}
 	finalWinners := seqPlayers[:0]
 	for _, player := range seqPlayers {
@@ -254,51 +248,48 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 	return true
 }
 
-func toJsonable(bi *betInfo) *betInfoJson {
-	return &betInfoJson{
-		PlayerAddr: bi.player.String(),
-		ReqId:      base58.Encode(bi.reqId[:]),
-		Sum:        bi.sum,
-		Color:      bi.color,
-	}
-}
-
-func fromJsonable(biJson *betInfoJson) *betInfo {
-	playerAddr, err := address.FromBase58(biJson.PlayerAddr)
-	if err != nil {
-		playerAddr = address.Address{}
-	}
-	reqId, err := sctransaction.NewRequestIdFromString(biJson.ReqId)
-	if err != nil {
-		reqId = sctransaction.RequestId{}
-	}
-
-	return &betInfo{
-		player: playerAddr,
-		reqId:  reqId,
-		sum:    biJson.Sum,
-		color:  biJson.Color,
-	}
-}
-
-func encodeBets(bets []*betInfo) []byte {
-	betsJson := make([]*betInfoJson, len(bets))
-	for i, bi := range bets {
-		betsJson[i] = toJsonable(bi)
-	}
-	data, _ := json.Marshal(betsJson)
-	return data
-}
-
-func decodeBets(data []byte) []*betInfo {
-	tmpLst := make([]*betInfoJson, 0)
-	if err := json.Unmarshal(data, &tmpLst); err != nil {
-		return []*betInfo{}
-	}
-
-	ret := make([]*betInfo, len(tmpLst))
-	for i := range ret {
-		ret[i] = fromJsonable(tmpLst[i])
-	}
+func encodeBetInfo(bi *betInfo) []byte {
+	ret, _ := util.Bytes(bi)
 	return ret
+}
+
+func decodeBetInfo(data []byte) (*betInfo, error) {
+	var ret betInfo
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return &ret, nil
+}
+
+func (bi *betInfo) Write(w io.Writer) error {
+	if _, err := w.Write(bi.player[:]); err != nil {
+		return err
+	}
+	if err := bi.reqId.Write(w); err != nil {
+		return err
+	}
+	if err := util.WriteInt64(w, bi.sum); err != nil {
+		return err
+	}
+	if err := util.WriteByte(w, bi.color); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (bi *betInfo) Read(r io.Reader) error {
+	var err error
+	if err = util.ReadAddress(r, &bi.player); err != nil {
+		return err
+	}
+	if err = bi.reqId.Read(r); err != nil {
+		return err
+	}
+	if err = util.ReadInt64(r, &bi.sum); err != nil {
+		return err
+	}
+	if bi.color, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	return nil
 }

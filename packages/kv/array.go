@@ -5,11 +5,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type List interface {
+type Array interface {
 	Push(value []byte)
+	Append(Array)
 	Len() uint16
 	Erase()
-	ForEach(func(i uint16, value []byte) bool)
+	At(uint16) ([]byte, bool)
 }
 
 type listStruct struct {
@@ -17,7 +18,7 @@ type listStruct struct {
 	name string
 }
 
-func newListCodec(kv KVStore, name string) List {
+func newListCodec(kv KVStore, name string) Array {
 	return &listStruct{
 		kv:   kv,
 		name: name,
@@ -69,6 +70,13 @@ func (l *listStruct) Push(value []byte) {
 	l.setSize(size + 1)
 }
 
+func (l *listStruct) Append(arr Array) {
+	for i := uint16(0); i < arr.Len(); i++ {
+		v, _ := arr.At(i)
+		l.Push(v)
+	}
+}
+
 func (l *listStruct) Erase() {
 	for i := uint16(0); i < l.Len(); i++ {
 		l.kv.Del(l.getElemKey(i))
@@ -76,14 +84,13 @@ func (l *listStruct) Erase() {
 	l.setSize(0)
 }
 
-func (l *listStruct) ForEach(consumer func(i uint16, value []byte) bool) {
-	for i := uint16(0); i < l.Len(); i++ {
-		v, err := l.kv.Get(l.getElemKey(i))
-		if err != nil {
-			break
-		}
-		if !consumer(i, v) {
-			break
-		}
+func (l *listStruct) At(idx uint16) ([]byte, bool) {
+	if idx >= l.Len() {
+		return nil, false
 	}
+	ret, err := l.kv.Get(l.getElemKey(idx))
+	if err != nil {
+		return nil, false
+	}
+	return ret, true
 }

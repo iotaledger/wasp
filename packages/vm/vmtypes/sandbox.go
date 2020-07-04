@@ -17,13 +17,12 @@ type Sandbox interface {
 	GetOwnAddress() *address.Address
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
-	GetLog() *logger.Logger
 	Rollback()
 	// sub interfaces
 	// access to the request block
 	AccessRequest() RequestAccess
 	// base level of virtual state access
-	AccessState() StateAccess
+	AccessState() kv.Codec
 	// AccessOwnAccount
 	AccessOwnAccount() AccountAccess
 	// Send request
@@ -31,9 +30,11 @@ type Sandbox interface {
 	// Send request to itself
 	SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool
 	// Send request to itself with timelock for some seconds after the current timestamp
-	SendRequestToSelfWithDefer(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool
+	SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool
+	// for testing
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
+	GetWaspLog() *logger.Logger
 }
 
 // access to request parameters (arguments)
@@ -43,11 +44,6 @@ type RequestAccess interface {
 	IsAuthorisedByAddress(addr *address.Address) bool
 	Senders() []address.Address
 	Args() kv.RCodec
-}
-
-// access to the virtual state
-type StateAccess interface {
-	Codec() kv.Codec
 }
 
 // access to token operations (txbuilder)

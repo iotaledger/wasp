@@ -1,6 +1,8 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/increasecounter"
 	"testing"
 	"time"
@@ -22,18 +24,25 @@ func TestSend1ReqIncrease(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[2])
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[2])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[2], 1, increasecounter.RequestIncrease, nil, 0)
+	err = SendRequestNTimes(wasps, sc, 1, increasecounter.RequestIncrease, nil, 0)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 2, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(1)),
+	}) {
 		t.Fail()
 	}
 }
@@ -54,18 +63,25 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[2])
+
+	sc := &wasps.SmartContractConfig[2]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[2])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[2], 5, increasecounter.RequestIncrease, nil, 1*time.Second)
+	err = SendRequestNTimes(wasps, sc, 5, increasecounter.RequestIncrease, nil, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 2, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(1)),
+	}) {
 		t.Fail()
 	}
 }
