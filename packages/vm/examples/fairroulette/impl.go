@@ -1,3 +1,21 @@
+// fairroulette is a PoC smart contract for IOTA Smart Contracts, the Wasp node
+// In this package smart contract is implemented as a hardcoded program. However, the program
+// is wrapped into the VM wrapper interfaces and uses exactly the same sandbox interface
+// as if it were Wasm VM.
+// The smart contract implements simple gambling dapp.
+// Players can place bets by sending requests to the smart contract. Each request is a value transaction.
+// Committee is taking some minimum number of iotas as a reward for processing the transaction
+// (configurable, usually several thousands).
+// The rest of the iotas transferred to the smart contracts are taken as
+// a bet placed on particular color on the roulette wheel.
+//
+// 2 minutes after first bet the smart contract automatically plays roulette wheel using
+// unpredictable entropy provided by the BLS threshold signatures. Therefore FairRoulette is provably fair
+// because even committee members can't predict the winning color.
+//
+// Then smart contract automatically distributes total staked amount to those players which placed their
+// bets on the winning color proportionally to the amount staked.
+// If nobody places on the winning color the total staked amount remains in the smart contracts account
 package fairroulette
 
 import (
@@ -16,8 +34,11 @@ type fairRouletteProcessor map[sctransaction.RequestCode]fairRouletteEntryPoint
 type fairRouletteEntryPoint func(ctx vmtypes.Sandbox)
 
 const (
-	RequestPlaceBet          = sctransaction.RequestCode(uint16(1))
-	RequestLockBets          = sctransaction.RequestCode(uint16(2))
+	// request to place the bet. Public
+	RequestPlaceBet = sctransaction.RequestCode(uint16(1))
+	// request to lock the bets. Rejected if sent not from the smart contract itself
+	RequestLockBets = sctransaction.RequestCode(uint16(2))
+	// request to play and distribute. Rejected if sent not from the smart contract itself
 	RequestPlayAndDistribute = sctransaction.RequestCode(uint16(3))
 )
 
@@ -30,14 +51,21 @@ var entryPoints = fairRouletteProcessor{
 const (
 	ProgramHash = "3wo28GRrJu37v6D4xkjZsRLiVQrk3iMn7PifpMFoJEiM"
 
-	ReqVarColor                = "Color"
-	StateVarBets               = "bets"
-	StateVarLockedBets         = "lockedBest"
-	StateVarLastWinningColor   = "lastWinningColor"
+	// request argument to specify color of the bet. It always is taken modulo 5, so there are 5 possible colors
+	ReqVarColor = "color"
+	// state array to store all current bets
+	StateVarBets = "bets"
+	// state array to store locked bets
+	StateVarLockedBets = "lockedBest"
+	// state variable to store last winning color. Just for information
+	StateVarLastWinningColor = "lastWinningColor"
+	// 32 bytes of entropy taken from the hash of the transaction which locked current bets
 	StateVarEntropyFromLocking = "entropyFromLocking"
 
-	NumColors   = 8
-	PlayEverSec = 120
+	// number of colors
+	NumColors = 5
+	// automatically lock and play 2 min after first current bet is confirmed
+	PlaySecondsAfterFirstBet = 120
 )
 
 type betInfo struct {
@@ -45,14 +73,6 @@ type betInfo struct {
 	reqId  sctransaction.RequestId
 	sum    int64
 	color  byte
-}
-
-// all strings base58
-type betInfoJson struct {
-	PlayerAddr string `json:"player_addr"`
-	ReqId      string `json:"req_id"`
-	Sum        int64  `json:"sum"`
-	Color      byte   `json:"color"`
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -64,6 +84,7 @@ func (f fairRouletteProcessor) GetEntryPoint(code sctransaction.RequestCode) (vm
 	return ep, ok
 }
 
+// WithGasLimit: not implemented, has no effect
 func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f
 }
@@ -76,102 +97,122 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 func placeBet(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
 
+	// if there are some bets locked, save the entropy derived immediately from it.
+	// it is not predictable at the moment of locking and this saving makes it not playable later
+	// entropy saved this way is essentially derived (hashed) from the locking transaction hash
 	if state.GetArray(StateVarLockedBets).Len() > 0 {
-		// if there are some bets locked, save the entropy derived immediately from it.
-		// it is not predictable at the moment of locking and saving makes it no playable later
 		_, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
 		if !ok || err != nil {
 			ehv := ctx.GetEntropy()
 			state.SetHashValue(StateVarEntropyFromLocking, &ehv)
 		}
 	}
-	// take senders. Must be exactly 1
+
+	// take input addresses of the request transaction. Must be exactly 1 otherwise.
+	// Theoretically the transaction may have several addresses in inputs, then it is ignored
 	senders := ctx.AccessRequest().Senders()
 	if len(senders) != 1 {
 		return
 	}
 	sender := senders[0]
 	// look if there're some iotas left for the bet.
-	// it is after min rewards. Here we accessing only part which is coming with the current request
+	// it is after minimum rewards are already taken. Here we accessing only the part of the smart contract
+	// UTXOs: the ones which are coming with the current request
 	sum := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return
 	}
-	// see if there's a Color among args
+	// check if there's a Color variable among args
+	// if not, ignore the request
 	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
 		ctx.GetWaspLog().Errorf("wrong request, no Color specified")
 		return
 	}
-	noBets := ctx.AccessState().GetArray(StateVarBets).Len() == 0
+	firstBet := ctx.AccessState().GetArray(StateVarBets).Len() == 0
+
+	// save the bet info in the array
 	ctx.AccessState().GetArray(StateVarBets).Push(encodeBetInfo(&betInfo{
 		player: sender,
 		sum:    sum,
 		reqId:  ctx.AccessRequest().ID(),
 		color:  byte(col % NumColors),
 	}))
-	if noBets {
-		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, PlayEverSec)
+
+	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
+	// it will be time-locked for the next 2 minutes, the it will be processed by smart contract
+	if firstBet {
+		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, PlaySecondsAfterFirstBet)
 	}
 }
 
-// anyone can lockBets, they can't predict the outcome anyway
-// alternatively, only betters could be allowed to bet --> need for hashmap structure
+// lockBet moves all current bets into the LockedBets array and erases current bets array
+// it only processed if sent from the smart contract to itself
 func lockBets(ctx vmtypes.Sandbox) {
 	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
 		// ignore if request is not from itself
 		return
 	}
-	ctx.AccessState().GetArray(StateVarLockedBets).Append(ctx.AccessState().GetArray(StateVarBets))
-	ctx.AccessState().GetArray(StateVarBets).Erase()
+	state := ctx.AccessState()
+	// append all current bets to the locked bets array
+	state.GetArray(StateVarLockedBets).Append(state.GetArray(StateVarBets))
+	state.GetArray(StateVarBets).Erase()
 
 	// clear entropy to be picked in the next request
-	ctx.AccessState().Del(StateVarEntropyFromLocking)
+	state.Del(StateVarEntropyFromLocking)
 
+	// send request to self for playing the wheel with the entropy whicl will be known
+	// after signing this state update transaction therefore unpredictable
 	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
 }
 
+// playAndDistribute takes the entropy, plays the game and distributes rewards to winners
 func playAndDistribute(ctx vmtypes.Sandbox) {
-	state := ctx.AccessState()
-
 	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
 		// ignore if request is not from itself
 		return
 	}
+	state := ctx.AccessState()
+
 	lockedBetsArray := state.GetArray(StateVarLockedBets)
 	numLockedBets := lockedBetsArray.Len()
 	if numLockedBets == 0 {
-		// nothing is to play
+		// nothing to play. Should not happen
 		return
 	}
 
 	// take the entropy from the signing of the locked bets
+	// it was saved by some 'place bet' request or otherwise it is taken from
+	// the current context
 	entropy, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
 	if !ok || err != nil {
 		h := ctx.GetEntropy()
 		entropy = &h
 	}
 
+	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
+	// calculating it modulo 5.
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) / NumColors)
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
-	// take locked bets
+	// take locked bets from the array
 	lockedBets := make([]*betInfo, numLockedBets)
 	for i := range lockedBets {
 		biData, ok := lockedBetsArray.At(uint16(i))
 		if !ok {
-			// inconsistency
+			// inconsistency. Very sad
 			return
 		}
 		bi, err := decodeBetInfo(biData)
 		if err != nil {
-			// inconsistency
+			// inconsistency. Even more sad
 			return
 		}
 		lockedBets = append(lockedBets, bi)
 	}
 
+	// calculate total placed amount
 	totalLockedAmount := int64(0)
 	for _, bet := range lockedBets {
 		totalLockedAmount += bet.sum
@@ -184,25 +225,30 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	// locked bets are not needed anymore
+	// locked bets neither entropy are not needed anymore
 	lockedBetsArray.Erase()
 	state.Del(StateVarEntropyFromLocking)
 
 	if len(winningBets) == 0 {
 		// nobody played on winning Color -> all sums stay in the smart contract
-		// move tokens to itself in order to compress number of outputs in the address
+		// move tokens to itself.
+		// It is not necessary because all tokens are in the own account anyway.
+		// However, it is healthy to compress number of outputs in the address
 		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
+			// inconsistency. A disaster
 			ctx.Rollback()
 			return
 		}
 	}
 
+	// distribute total staked amount to players
 	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
 		ctx.Rollback()
 		return
 	}
 }
 
+// distributeLockedAmount distributes total locked amount proportionally to placed sums
 func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmount int64) bool {
 	sumsByPlayers := make(map[address.Address]int64)
 	totalWinningAmount := int64(0)
@@ -215,11 +261,13 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 	}
 
 	// NOTE 1: float64 was avoided for determinism reasons
-	// NOTE: beware overflows
+	// NOTE 2: beware overflows
+
 	for player, sum := range sumsByPlayers {
 		sumsByPlayers[player] = (totalLockedAmount * sum) / totalWinningAmount
 	}
-	// make deterministic sequence
+
+	// make deterministic sequence by sorting. Eliminate possible rounding effects
 	seqPlayers := make([]address.Address, 0, len(sumsByPlayers))
 	resultSum := int64(0)
 	for player, sum := range sumsByPlayers {
@@ -230,9 +278,12 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 		return bytes.Compare(seqPlayers[i][:], seqPlayers[j][:]) < 0
 	})
 
+	// ensure we distribute not more than totalLockedAmount iotas
 	if resultSum > totalLockedAmount {
 		sumsByPlayers[seqPlayers[0]] -= resultSum - totalLockedAmount
 	}
+
+	// filter out those who proportionally got 0
 	finalWinners := seqPlayers[:0]
 	for _, player := range seqPlayers {
 		if sumsByPlayers[player] <= 0 {
@@ -240,8 +291,9 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 		}
 		finalWinners = append(finalWinners, player)
 	}
-	for _, player := range finalWinners {
-		if !ctx.AccessOwnAccount().MoveTokens(&player, &balance.ColorIOTA, sumsByPlayers[player]) {
+	// distribute iotas
+	for i := range finalWinners {
+		if !ctx.AccessOwnAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
 			return false
 		}
 	}

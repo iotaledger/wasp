@@ -67,7 +67,7 @@ func runTheRequest(ctx *vm.VMContext) {
 		}
 		entryPoint.Run(sandbox.NewSandbox(ctx))
 
-		defer ctx.Log.Debugw("runTheRequest OUT HARDCODED",
+		defer ctx.Log.Debugw("runTheRequest OUT BUILTIN",
 			"reqId", ctx.RequestRef.RequestId().Short(),
 			"programHash", ctx.ProgramHash.String(),
 			"code", ctx.RequestRef.RequestBlock().RequestCode().String(),
