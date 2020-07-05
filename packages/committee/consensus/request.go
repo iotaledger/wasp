@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -23,7 +24,6 @@ func (op *operator) newRequest(reqId sctransaction.RequestId) *request {
 		log:           reqLog,
 		notifications: make([]bool, op.size()),
 	}
-	reqLog.Info("NEW REQUEST")
 	return ret
 }
 
@@ -37,8 +37,41 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 	if !ok {
 		ret = op.newRequest(reqId)
 		op.requests[reqId] = ret
+		ret.log.Info("NEW REQUEST from id")
 	}
 	return ret, true
+}
+
+// request record retrieved (or created) by request message
+func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool) {
+	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
+	ret, ok := op.requests[reqId]
+	msgFirstTime := !ok || ret.reqTx == nil
+
+	if ok {
+		if msgFirstTime {
+			ret.reqTx = reqMsg.Transaction
+			ret.whenMsgReceived = time.Now()
+		}
+	} else {
+		ret = op.newRequest(reqId)
+		ret.whenMsgReceived = time.Now()
+		ret.reqTx = reqMsg.Transaction
+		op.requests[reqId] = ret
+	}
+	ret.notifications[op.peerIndex()] = true
+
+	nowis := time.Now()
+	if msgFirstTime && ret.isTimelocked(nowis) {
+		ret.expectTimeUnlockEvent = true
+	}
+	tl := ""
+	if ret.isTimelocked(nowis) {
+		tl = fmt.Sprintf(". Time locked until %d", ret.timelock())
+	}
+	ret.log.Infof("NEW REQUEST from msg%s", tl)
+
+	return ret, msgFirstTime
 }
 
 func (op *operator) requestCandidateList() []*request {
@@ -54,29 +87,6 @@ func (op *operator) requestCandidateList() []*request {
 		ret = append(ret, req)
 	}
 	return ret
-}
-
-// request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool) {
-	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
-	ret, ok := op.requests[reqId]
-	if ok {
-		newreq := ret.reqTx == nil
-		if newreq {
-			ret.reqTx = reqMsg.Transaction
-			ret.whenMsgReceived = time.Now()
-		}
-		return ret, newreq
-	}
-	if !ok {
-		ret = op.newRequest(reqId)
-		ret.whenMsgReceived = time.Now()
-		ret.reqTx = reqMsg.Transaction
-		op.requests[reqId] = ret
-	}
-	ret.notifications[op.peerIndex()] = true
-
-	return ret, true
 }
 
 func (req *request) requestCode() sctransaction.RequestCode {

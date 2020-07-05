@@ -48,5 +48,9 @@ func NanoSecToUnixSec(ts int64) uint32 {
 }
 
 func UnixAfterSec(sec int) uint32 {
-	return uint32(time.Now().Unix()) + uint32(sec)
+	return TimeNowUnix() + uint32(sec)
+}
+
+func TimeNowUnix() uint32 {
+	return uint32(time.Now().Unix())
 }

@@ -65,15 +65,14 @@ type signedResult struct {
 type request struct {
 	// id of the hash of request tx id and request block index
 	reqId sctransaction.RequestId
-
 	// from request message. nil if request message wasn't received yet
 	reqTx *sctransaction.Transaction
-
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
-
 	// notification vector for the current currentState
 	notifications []bool
+	// send notification when unlocked
+	expectTimeUnlockEvent bool
 
 	log *logger.Logger
 }

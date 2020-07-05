@@ -36,12 +36,12 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	reqs := []*waspapi.RequestBlockJson{{
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestInc,
-		Timelock:    util.UnixAfterSec(5),
+		Timelock:    util.UnixAfterSec(3),
 	}}
 	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
+	wasps.CollectMessages(20 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()
@@ -61,8 +61,8 @@ func TestSend1ReqIncRepeatTimelock(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          2,
-		"request_out":         3,
+		"request_in":          3,
+		"request_out":         4,
 		"state":               -1,
 	})
 	check(err, t)
@@ -89,12 +89,14 @@ func TestSend1ReqIncRepeatTimelock(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	if !wasps.VerifySCState(sc, 2, map[kv.Key][]byte{
-		"counter": util.Uint64To8Bytes(uint64(1)),
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		"counter": util.Uint64To8Bytes(uint64(2)),
 	}) {
 		t.Fail()
 	}
 }
+
+const chainOfRequestsLength = 5
 
 func TestChainIncTimelock(t *testing.T) {
 	// setup
@@ -104,8 +106,8 @@ func TestChainIncTimelock(t *testing.T) {
 		"bootuprec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          3,
-		"request_out":         4,
+		"request_in":          chainOfRequestsLength + 2,
+		"request_out":         chainOfRequestsLength + 3,
 		"state":               -1,
 	})
 	check(err, t)
@@ -124,19 +126,20 @@ func TestChainIncTimelock(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestIncAndRepeatMany,
 		Vars: map[string]interface{}{
-			inccounter.ArgNumRepeats: 3,
+			inccounter.ArgNumRepeats: chainOfRequestsLength,
 		},
 	}}
 	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
+	wasps.CollectMessages(30 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()
 	}
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
-		"counter": util.Uint64To8Bytes(uint64(2)),
+		"counter":                util.Uint64To8Bytes(uint64(chainOfRequestsLength + 1)),
+		inccounter.ArgNumRepeats: util.Uint64To8Bytes(0),
 	}) {
 		t.Fail()
 	}

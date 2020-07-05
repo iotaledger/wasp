@@ -17,6 +17,36 @@ func (op *operator) takeAction() {
 	}
 	op.checkQuorum()
 	op.rotateLeaderIfNeeded()
+	op.sendNotificationsOnTimeUnlock()
+}
+
+func (op *operator) sendNotificationsOnTimeUnlock() {
+	numlocked := 0
+	nowis := time.Now()
+	reqs := make([]*request, 0)
+	for _, req := range op.requests {
+		if req.reqTx == nil {
+			continue
+		}
+		if req.isTimelocked(nowis) {
+			numlocked++
+			continue
+		}
+		if !req.expectTimeUnlockEvent {
+			continue
+		}
+		// request was just unlocked -> notifications to be sent to the leader
+		reqs = append(reqs, req)
+		req.expectTimeUnlockEvent = false
+	}
+
+	if len(reqs) == 0 {
+		return
+	}
+	for _, req := range reqs {
+		req.log.Infof("unlocked time lock at %d", util.TimeNowUnix())
+	}
+	op.sendRequestNotificationsToLeader(reqs)
 }
 
 func (op *operator) rotateLeaderIfNeeded() {

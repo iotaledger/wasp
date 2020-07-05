@@ -60,7 +60,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64("counter", val+1)
 	if val == 0 {
-		ctx.GetWaspLog().Info("SendRequestToSelfWithDelay 3 sec")
+		ctx.GetWaspLog().Info("SendRequestToSelfWithDelay 5 sec")
 
 		ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatOnceAfter5s, nil, 5)
 	}
@@ -68,25 +68,31 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
+
+	val, _, _ := state.GetInt64("counter")
+	state.SetInt64("counter", val+1)
+	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
+
 	numRepeats, ok, err := ctx.AccessRequest().Args().GetInt64(ArgNumRepeats)
 	if err != nil {
+		ctx.Rollback()
 		return
 	}
 	if !ok {
 		numRepeats, ok, err = state.GetInt64(ArgNumRepeats)
-		if !ok || err != nil {
+		if err != nil {
+			ctx.Rollback()
 			return
 		}
 	}
 	if numRepeats == 0 {
+		ctx.GetWaspLog().Infof("finished chain of requests")
 		return
 	}
+
+	ctx.GetWaspLog().Infof("chain of %d requests ahead", numRepeats)
+
 	state.SetInt64(ArgNumRepeats, numRepeats-1)
-
-	val, _, _ := state.GetInt64("counter")
-
-	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
-	state.SetInt64("counter", val+1)
 
 	ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatMany, nil, 3)
 }
