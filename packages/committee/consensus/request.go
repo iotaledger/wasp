@@ -41,12 +41,17 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 	return ret, true
 }
 
-func (op *operator) requestMsgList() []*request {
+func (op *operator) requestCandidateList() []*request {
 	ret := make([]*request, 0, len(op.requests))
+	nowis := time.Now()
 	for _, req := range op.requests {
-		if req.reqTx != nil {
-			ret = append(ret, req)
+		if req.reqTx == nil {
+			continue
 		}
+		if req.isTimelocked(nowis) {
+			continue
+		}
+		ret = append(ret, req)
 	}
 	return ret
 }

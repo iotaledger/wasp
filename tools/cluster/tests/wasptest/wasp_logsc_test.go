@@ -18,7 +18,7 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 	err := clu.ListenToMessages(expectations)
 	check(err, t)
 
-	sc := &clu.SmartContractConfig[0]
+	sc := &clu.SmartContractConfig[1]
 	err = putScData(sc, clu)
 	check(err, t)
 
@@ -89,7 +89,7 @@ func TestLogsc5(t *testing.T) {
 	err := SendRequestsNTimes(clu, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
-	clu.CollectMessages(30 * time.Second)
+	clu.CollectMessages(20 * time.Second)
 
 	if !clu.Report() {
 		t.Fail()

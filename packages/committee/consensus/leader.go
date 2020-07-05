@@ -47,7 +47,7 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 }
 
 func (op *operator) setLeaderRotationDeadline() {
-	if len(op.requestMsgList()) == 0 {
+	if len(op.requestCandidateList()) == 0 {
 		op.leaderRotationDeadlineSet = false
 		return
 	}

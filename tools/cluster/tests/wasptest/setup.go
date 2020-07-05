@@ -1,7 +1,6 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/assert"
 	"path"
@@ -33,8 +32,4 @@ func setup(t *testing.T, configPath string, testName string) *cluster.Cluster {
 	t.Cleanup(wasps.Stop)
 
 	return wasps
-}
-
-func count(msgs []*subscribe.HostMessage) {
-
 }

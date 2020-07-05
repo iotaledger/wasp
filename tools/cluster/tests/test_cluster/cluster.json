@@ -15,7 +15,7 @@
       "quorum": 3
     },
     {
-      "description": "Smart Contract nil program 2",
+      "description": "Smart Contract log program",
       "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     },

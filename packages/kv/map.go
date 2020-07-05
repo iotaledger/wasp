@@ -56,18 +56,14 @@ func (m kvmap) ToGoMap() map[Key][]byte {
 	return m
 }
 
-type keySlice []Key
-
-func (a keySlice) Len() int           { return len(a) }
-func (a keySlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a keySlice) Less(i, j int) bool { return a[i] < a[j] }
-
 func (m kvmap) sortedKeys() []Key {
 	keys := make([]Key, 0)
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Sort(keySlice(keys))
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
 	return keys
 }
 
