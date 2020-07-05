@@ -1,6 +1,7 @@
 package wasptest
 
 import (
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -8,9 +9,9 @@ import (
 	"time"
 )
 
-func TestSend1ReqInc(t *testing.T) {
+func TestSend1ReqIncSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend1ReqInc")
+	wasps := setup(t, "test_cluster", "TestSend1ReqIncSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
@@ -32,7 +33,11 @@ func TestSend1ReqInc(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestInc, nil, 0)
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: inccounter.RequestInc,
+	}}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -47,89 +52,9 @@ func TestSend1ReqInc(t *testing.T) {
 	}
 }
 
-func TestSend1ReqIncTimelock(t *testing.T) {
+func TestSend5ReqInc1SecSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend1ReqIncTimelock")
-
-	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"request_in":          3,
-		"request_out":         4,
-		"state":               -1,
-	})
-	check(err, t)
-
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-
-	sc := &wasps.SmartContractConfig[2]
-	err = Activate1SC(wasps, sc)
-	check(err, t)
-
-	err = CreateOrigin1SC(wasps, sc)
-	check(err, t)
-
-	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestIncAndRepeatOnce, nil, 0)
-	check(err, t)
-
-	wasps.CollectMessages(15 * time.Second)
-
-	if !wasps.Report() {
-		t.Fail()
-	}
-	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
-		"counter": util.Uint64To8Bytes(uint64(2)),
-	}) {
-		t.Fail()
-	}
-}
-
-func TestChainIncTimelock(t *testing.T) {
-	// setup
-	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
-
-	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"request_in":          3,
-		"request_out":         4,
-		"state":               -1,
-	})
-	check(err, t)
-
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-
-	sc := &wasps.SmartContractConfig[2]
-	err = Activate1SC(wasps, sc)
-	check(err, t)
-
-	err = CreateOrigin1SC(wasps, sc)
-	check(err, t)
-
-	// TODO not finished: pass parameter as request argument
-
-	err = SendRequestNTimes(wasps, sc, 1, inccounter.RequestIncAndRepeatMany, nil, 0)
-	check(err, t)
-
-	wasps.CollectMessages(15 * time.Second)
-
-	if !wasps.Report() {
-		t.Fail()
-	}
-	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
-		"counter": util.Uint64To8Bytes(uint64(2)),
-	}) {
-		t.Fail()
-	}
-}
-
-func TestSend5ReqIncrease1Sec(t *testing.T) {
-	// setup
-	wasps := setup(t, "test_cluster", "TestSend5ReqIncrease1Sec")
+	wasps := setup(t, "test_cluster", "TestSend5ReqInc1SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
@@ -138,7 +63,7 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 		"request_in":          6,
 		"request_out":         7,
 		"state":               -1,
-		"vmmsg":               5,
+		"vmmsg":               -1,
 	})
 	check(err, t)
 
@@ -152,7 +77,11 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 5, inccounter.RequestInc, nil, 1*time.Second)
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: inccounter.RequestInc,
+	}}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 5, reqs, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -167,9 +96,9 @@ func TestSend5ReqIncrease1Sec(t *testing.T) {
 	}
 }
 
-func TestSend10ReqIncrease0Sec(t *testing.T) {
+func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend10ReqIncrease0Sec")
+	wasps := setup(t, "test_cluster", "TestSend10ReqIncrease0SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
@@ -192,7 +121,11 @@ func TestSend10ReqIncrease0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 10, inccounter.RequestInc, nil, 0*time.Second)
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: inccounter.RequestInc,
+	}}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 10, reqs, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -207,9 +140,9 @@ func TestSend10ReqIncrease0Sec(t *testing.T) {
 	}
 }
 
-func TestSend60ReqIncrease500msec(t *testing.T) {
+func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend60Requests500msec")
+	wasps := setup(t, "test_cluster", "TestSend60ReqIncrease500msecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
@@ -217,7 +150,7 @@ func TestSend60ReqIncrease500msec(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          61,
 		"request_out":         62,
-		"state":               61,
+		"state":               -1,
 		"vmmsg":               60,
 	})
 	check(err, t)
@@ -232,7 +165,11 @@ func TestSend60ReqIncrease500msec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 60, inccounter.RequestInc, nil, 500*time.Millisecond)
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: inccounter.RequestInc,
+	}}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 60, reqs, 500*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
@@ -240,16 +177,16 @@ func TestSend60ReqIncrease500msec(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	if !wasps.VerifySCState(sc, 60, map[kv.Key][]byte{
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter": util.Uint64To8Bytes(uint64(60)),
 	}) {
 		t.Fail()
 	}
 }
 
-func TestSend60ReqInc0Sec(t *testing.T) {
+func TestSend60ReqInc0SecSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend60ReqInc0Sec")
+	wasps := setup(t, "test_cluster", "TestSend60ReqInc0SeSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           3,
@@ -272,7 +209,11 @@ func TestSend60ReqInc0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, sc, 60, inccounter.RequestInc, nil, 0*time.Millisecond)
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: inccounter.RequestInc,
+	}}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 60, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)

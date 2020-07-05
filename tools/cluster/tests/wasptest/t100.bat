@@ -1,1 +1,0 @@
-go test -run TestSend10Requests0Sec

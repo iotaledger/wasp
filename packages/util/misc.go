@@ -46,3 +46,7 @@ func ContainsInList(elem string, lst []string) bool {
 func NanoSecToUnixSec(ts int64) uint32 {
 	return uint32(ts / int64(time.Second))
 }
+
+func UnixAfterSec(sec int) uint32 {
+	return uint32(time.Now().Unix()) + uint32(sec)
+}

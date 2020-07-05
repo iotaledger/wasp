@@ -11,17 +11,17 @@ type incCounterProcessor map[sctransaction.RequestCode]incEntryPoint
 const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
 
-	RequestInc              = sctransaction.RequestCode(uint16(1))
-	RequestIncAndRepeatOnce = sctransaction.RequestCode(uint16(2))
-	RequestIncAndRepeatMany = sctransaction.RequestCode(uint16(3))
+	RequestInc                     = sctransaction.RequestCode(uint16(1))
+	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(uint16(2))
+	RequestIncAndRepeatMany        = sctransaction.RequestCode(uint16(3))
 
 	ArgNumRepeats = "numrepeats"
 )
 
 var entryPoints = incCounterProcessor{
-	RequestInc:              incCounter,
-	RequestIncAndRepeatOnce: incCounterAndRepeatOnce,
-	RequestIncAndRepeatMany: incCounterAndRepeatMany,
+	RequestInc:                     incCounter,
+	RequestIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
+	RequestIncAndRepeatMany:        incCounterAndRepeatMany,
 }
 
 type incEntryPoint func(ctx vmtypes.Sandbox)
@@ -62,7 +62,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 	if val == 0 {
 		ctx.GetWaspLog().Info("SendRequestToSelfWithDelay 3 sec")
 
-		ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatOnce, nil, 3)
+		ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatOnceAfter5s, nil, 5)
 	}
 }
 

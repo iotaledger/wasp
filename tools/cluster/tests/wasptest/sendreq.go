@@ -10,16 +10,19 @@ import (
 	"time"
 )
 
-func SendRequestNTimes(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, n int, code sctransaction.RequestCode, args map[string]string, wait time.Duration) error {
+func MakeRequests(n int, constr func(int) *waspapi.RequestBlockJson) []*waspapi.RequestBlockJson {
+	ret := make([]*waspapi.RequestBlockJson, n)
+	for i := range ret {
+		ret[i] = constr(i)
+	}
+	return ret
+}
+
+func SendRequestsNTimes(clu *cluster.Cluster, senderIndexUtxodb int, n int, reqs []*waspapi.RequestBlockJson, wait time.Duration) error {
 	for i := 0; i < n; i++ {
 		// in real situation one must wait until the previous request is confirmed
 		// (because of access to the same owner address)
-		err := SendRequests(clu, sc, []*waspapi.RequestBlockJson{
-			{Address: sc.Address,
-				RequestCode: uint16(code),
-				Vars:        args,
-			},
-		})
+		err := SendRequests(clu, senderIndexUtxodb, reqs)
 		if err != nil {
 			return err
 		}
@@ -28,8 +31,8 @@ func SendRequestNTimes(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfi
 	return nil
 }
 
-func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, reqs []*waspapi.RequestBlockJson) error {
-	tx, err := createRequestTx(clu.Config.Goshimmer.BindAddress, sc, reqs)
+func SendRequests(clu *cluster.Cluster, senderIndexUtxodb int, reqs []*waspapi.RequestBlockJson) error {
+	tx, err := createRequestTx(clu.Config.Goshimmer.BindAddress, senderIndexUtxodb, reqs)
 	if err != nil {
 		return err
 	}
@@ -43,7 +46,7 @@ func SendRequests(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig, re
 	return nil
 }
 
-func createRequestTx(node string, sc *cluster.SmartContractFinalConfig, reqs []*waspapi.RequestBlockJson) (*sctransaction.Transaction, error) {
-	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(sc.OwnerIndexUtxodb))
+func createRequestTx(node string, senderIndexUtxodb int, reqs []*waspapi.RequestBlockJson) (*sctransaction.Transaction, error) {
+	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(senderIndexUtxodb))
 	return waspapi.CreateRequestTransaction(node, sigScheme, reqs)
 }

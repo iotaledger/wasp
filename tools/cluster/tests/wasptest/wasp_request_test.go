@@ -1,6 +1,7 @@
 package wasptest
 
 import (
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"testing"
 	"time"
 
@@ -23,13 +24,20 @@ func TestSend1Request(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+
+	sc := &wasps.SmartContractConfig[0]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 0)
+	reqs := []*waspapi.RequestBlockJson{
+		{Address: sc.Address,
+			RequestCode: vmconst.RequestCodeNOP,
+		},
+	}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -55,13 +63,20 @@ func TestSend5Requests1Sec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+
+	sc := &wasps.SmartContractConfig[0]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 5, vmconst.RequestCodeNOP, nil, 1*time.Second)
+	reqs := []*waspapi.RequestBlockJson{
+		{Address: sc.Address,
+			RequestCode: vmconst.RequestCodeNOP,
+		},
+	}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 5, reqs, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -88,13 +103,20 @@ func TestSend10Requests0Sec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+
+	sc := &wasps.SmartContractConfig[0]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 10, vmconst.RequestCodeNOP, nil, 0*time.Second)
+	reqs := []*waspapi.RequestBlockJson{
+		{Address: sc.Address,
+			RequestCode: vmconst.RequestCodeNOP,
+		},
+	}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 10, reqs, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -120,13 +142,20 @@ func TestSend60Requests500msec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+
+	sc := &wasps.SmartContractConfig[0]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 500*time.Millisecond)
+	reqs := []*waspapi.RequestBlockJson{
+		{Address: sc.Address,
+			RequestCode: vmconst.RequestCodeNOP,
+		},
+	}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 60, reqs, 500*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
@@ -152,13 +181,20 @@ func TestSend60Requests0Sec(t *testing.T) {
 
 	err = Put3BootupRecords(wasps)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+
+	sc := &wasps.SmartContractConfig[0]
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 0*time.Millisecond)
+	reqs := []*waspapi.RequestBlockJson{
+		{Address: sc.Address,
+			RequestCode: vmconst.RequestCodeNOP,
+		},
+	}
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 60, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)

@@ -3,23 +3,23 @@ package apilib
 import (
 	"errors"
 	"fmt"
-	"strconv"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"strconv"
 )
 
 type RequestBlockJson struct {
-	Address     string            `json:"address"`
-	RequestCode uint16            `json:"request_code"`
-	Timelock    uint32            `json:"timelock"`
-	Amount      int64             `json:"amount"` // minimum 1i
-	Vars        map[string]string `json:"vars"`
+	Address     string                    `json:"address"`
+	RequestCode sctransaction.RequestCode `json:"request_code"`
+	Timelock    uint32                    `json:"timelock"`
+	AmountIotas int64                     `json:"amount_iotas"` // minimum 1 iota will be taken anyway
+	Vars        map[string]interface{}    `json:"vars"`
 }
 
 func CreateRequestTransaction(node string, senderSigScheme signaturescheme.SignatureScheme, reqsJson []*RequestBlockJson) (*sctransaction.Transaction, error) {
@@ -43,9 +43,14 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 		if err != nil {
 			return nil, err
 		}
-		// add request block
+		// add request block. It also move 1 iota as ColorNew for request token
 		if err = txb.AddRequestBlock(reqBlk); err != nil {
 			return nil, err
+		}
+		if reqBlkJson.AmountIotas > 1 {
+			if err = txb.MoveToAddress(senderAddr, balance.ColorIOTA, reqBlkJson.AmountIotas-1); err != nil {
+				return nil, err
+			}
 		}
 	}
 	tx, err := txb.Build(false)
@@ -68,13 +73,36 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
 	ret.WithTimelock(reqBlkJson.Timelock)
 
+	if reqBlkJson.Vars == nil {
+		// no args
+		return ret, nil
+	}
+
 	args := kv.NewMap()
 	for k, v := range reqBlkJson.Vars {
-		n, err := strconv.Atoi(v)
-		if err != nil {
-			args.Codec().SetString(kv.Key(k), v)
-		} else {
-			args.Codec().SetInt64(kv.Key(k), int64(n))
+		switch vt := v.(type) {
+		case int:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case byte:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case int16:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case int32:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case int64:
+			args.Codec().SetInt64(kv.Key(k), vt)
+		case uint16:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case uint32:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case uint64:
+			args.Codec().SetInt64(kv.Key(k), int64(vt))
+		case string:
+			if n, err := strconv.Atoi(vt); err == nil {
+				args.Codec().SetInt64(kv.Key(k), int64(n))
+			} else {
+				args.Codec().SetString(kv.Key(k), vt)
+			}
 		}
 	}
 	ret.SetArgs(args)

@@ -239,6 +239,10 @@ func filterTimelocked(reqs []*request) []*request {
 	ret := reqs[:0]
 	nowis := time.Now()
 	for _, req := range reqs {
+		if req.reqTx == nil {
+			// just in case??
+			continue
+		}
 		if req.isTimelocked(nowis) {
 			if req.timelock() > 0 {
 				req.log.Debugf("timelocked until %d: filtered out. nowis %d", req.timelock(), nowis.Unix())
@@ -257,13 +261,9 @@ func filterTimelocked(reqs []*request) []*request {
 // return empty list if not all requests in the list can be processed by the node atm
 // note, that filter out criteria are temporary, so the same request may be ready next time
 func (op *operator) filterNotReadyYet(reqs []*request) []*request {
-	notTimeLocked := filterTimelocked(reqs)
+	ret := reqs[:0] // same underlying array, different slice
 
-	op.log.Debugf("Number of timelocked requests filtered out: %d", len(reqs)-len(notTimeLocked))
-
-	ret := notTimeLocked[:0] // same underlying array, different slice
-
-	for _, req := range notTimeLocked {
+	for _, req := range reqs {
 		if req.reqTx == nil {
 			op.log.Debugf("request %s not known to the node: can't be processed", req.reqId.Short())
 			continue
@@ -274,6 +274,12 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 		}
 		ret = append(ret, req)
 	}
+	before := len(ret)
+	ret = filterTimelocked(ret)
+	after := len(ret)
+
+	op.log.Debugf("Number of timelocked requests filtered out: %d", before-after)
+
 	return ret
 }
 

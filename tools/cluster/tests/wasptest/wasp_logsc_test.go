@@ -42,7 +42,14 @@ func TestLogsc1(t *testing.T) {
 		"logsc-addlog":        1,
 	})
 
-	err := SendRequests(clu, sc, makeLogRequests(sc, 1))
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: logsc.RequestCodeAddLog,
+		Vars: map[string]interface{}{
+			"message": "message 0",
+		},
+	}}
+	err := SendRequestsNTimes(clu, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	clu.CollectMessages(30 * time.Second)
@@ -70,7 +77,16 @@ func TestLogsc5(t *testing.T) {
 		"logsc-addlog":        5,
 	})
 
-	err := SendRequests(clu, sc, makeLogRequests(sc, 5))
+	reqs := MakeRequests(5, func(i int) *waspapi.RequestBlockJson {
+		return &waspapi.RequestBlockJson{
+			Address:     sc.Address,
+			RequestCode: logsc.RequestCodeAddLog,
+			Vars: map[string]interface{}{
+				"message": fmt.Sprintf("message %d", i),
+			},
+		}
+	})
+	err := SendRequestsNTimes(clu, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	clu.CollectMessages(30 * time.Second)
@@ -90,17 +106,4 @@ func TestLogsc5(t *testing.T) {
 	}) {
 		t.Fail()
 	}
-}
-
-func makeLogRequests(sc *cluster.SmartContractFinalConfig, n int) []*waspapi.RequestBlockJson {
-	reqs := make([]*waspapi.RequestBlockJson, 0)
-	for i := 0; i < n; i++ {
-		reqs = append(reqs, &waspapi.RequestBlockJson{
-			Address:     sc.Address,
-			RequestCode: uint16(logsc.RequestCodeAddLog),
-			Vars:        map[string]string{"message": fmt.Sprintf("message %d", i)},
-		})
-	}
-
-	return reqs
 }

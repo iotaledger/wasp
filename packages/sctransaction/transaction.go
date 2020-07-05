@@ -154,12 +154,12 @@ func (tx *Transaction) String() string {
 	stateBlock, ok := tx.State()
 	if ok {
 		vh := stateBlock.StateHash()
-		ret += fmt.Sprintf("AccessState: color: %s statehash: %s, ts: %d\n",
+		ret += fmt.Sprintf("State: color: %s statehash: %s, ts: %d\n",
 			stateBlock.Color().String(),
 			vh.String(), stateBlock.Timestamp(),
 		)
 	} else {
-		ret += "AccessState: none\n"
+		ret += "State: none\n"
 	}
 	for i, reqBlk := range tx.Requests() {
 		addr := reqBlk.Address()
