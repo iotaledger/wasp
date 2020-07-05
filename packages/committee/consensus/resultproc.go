@@ -79,7 +79,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
-	batchHash := vm.BatchHash(reqids, result.Timestamp)
+	batchHash := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)
 
 	op.log.Debugw("sendResultToTheLeader",
 		"leader", result.LeaderPeerIndex,
@@ -115,7 +115,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		reqids[i] = *result.Requests[i].RequestId()
 	}
 
-	bh := vm.BatchHash(reqids, result.Timestamp)
+	bh := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)
 	if bh != op.leaderStatus.batchHash {
 		panic("bh != op.leaderStatus.batchHash")
 	}

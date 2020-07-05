@@ -36,11 +36,14 @@ type VMTask struct {
 	ResultBatch       state.Batch
 }
 
-func BatchHash(reqids []sctransaction.RequestId, ts int64) hashing.HashValue {
+// BatchHash is used to uniquely identify the VM task
+func BatchHash(reqids []sctransaction.RequestId, ts int64, leaderIndex uint16) hashing.HashValue {
 	var buf bytes.Buffer
 	for i := range reqids {
 		buf.Write(reqids[i].Bytes())
 	}
-	_ = util.WriteUint64(&buf, uint64(ts))
+	_ = util.WriteInt64(&buf, ts)
+	_ = util.WriteUint16(&buf, leaderIndex)
+
 	return *hashing.HashData(buf.Bytes())
 }

@@ -125,7 +125,8 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 }
 
 func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
-	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp)
+	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
+
 	op.log.Debugw("EventStartProcessingBatchMsg",
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,

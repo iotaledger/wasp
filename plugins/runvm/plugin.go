@@ -62,7 +62,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	}
 
 	reqids := sctransaction.TakeRequestIds(ctx.Requests)
-	bh := vm.BatchHash(reqids, ctx.Timestamp)
+	bh := vm.BatchHash(reqids, ctx.Timestamp, ctx.LeaderPeerIndex)
 	taskName := ctx.Address.String() + "." + bh.String()
 
 	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
@@ -103,9 +103,9 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		RewardAddress: ctx.RewardAddress,
 		ProgramHash:   ctx.ProgramHash,
 		MinimumReward: ctx.MinimumReward,
-		Entropy:       *hashing.HashData(ctx.Entropy[:]),       // mutates deterministically
-		TxBuilder:     txb,                                     // mutates
-		Timestamp:     ctx.Timestamp,                           // mutate by incrementing 1 nanosec
+		Entropy:       *hashing.HashData(ctx.Entropy[:]), // mutates deterministically
+		TxBuilder:     txb,                               // mutates
+		Timestamp:     ctx.Timestamp,                     // mutate by incrementing 1 nanosec
 		VirtualState:  ctx.VirtualState.Clone(),
 		Log:           ctx.Log,
 	}

@@ -82,7 +82,7 @@ func (op *operator) startProcessingIfNeeded() {
 		return
 	}
 
-	batchHash := vm.BatchHash(reqIds, ts)
+	batchHash := vm.BatchHash(reqIds, ts, op.peerIndex())
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
 		batchHash:     batchHash,
