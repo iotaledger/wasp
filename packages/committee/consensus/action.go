@@ -152,7 +152,8 @@ func (op *operator) checkQuorum() bool {
 			continue
 		}
 		if op.leaderStatus.signedResults[i].essenceHash != mainHash {
-			op.log.Warnf("wrong EssenceHash from peer #%d", i)
+			op.log.Warnf("wrong EssenceHash from peer #%d: %s",
+				i, op.leaderStatus.signedResults[i].essenceHash.String())
 			op.leaderStatus.signedResults[i] = nil // ignoring
 			continue
 		}

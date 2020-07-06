@@ -73,6 +73,8 @@ func NewFromAddressBalances(addr *address.Address, addressBalances map[valuetran
 		}
 		ret.inputBalancesByOutput = append(ret.inputBalancesByOutput, inb)
 	}
+	ret.sortInputBalancesById() // for determinism
+	ret.SetConsumerPrioritySmallerBalances()
 	return ret, nil
 }
 
@@ -94,6 +96,8 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 		}
 		ret.inputBalancesByOutput = append(ret.inputBalancesByOutput, inb)
 	}
+	ret.sortInputBalancesById() // for determinism
+	ret.SetConsumerPrioritySmallerBalances()
 	return ret, nil
 }
 
@@ -134,6 +138,12 @@ func (vtxb *Builder) ForEachInputBalance(consumer func(oid *valuetransaction.Out
 			return
 		}
 	}
+}
+
+func (vtxb *Builder) sortInputBalancesById() {
+	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
+		return bytes.Compare(vtxb.inputBalancesByOutput[i].outputId[:], vtxb.inputBalancesByOutput[j].outputId[:]) < 0
+	})
 }
 
 func (vtxb *Builder) SetConsumerPrioritySmallerBalances() {
