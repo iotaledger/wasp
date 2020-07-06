@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-// FIXME move log tests to the same keys.json as other tests
+// FIXME move log tests to the same keys.json file with other tests
 
 func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.SmartContractFinalConfig) {
 	clu := setup(t, "logsc_cluster", "TestLogsc")
