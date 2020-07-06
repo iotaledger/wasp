@@ -1,7 +1,6 @@
 package wasptest
 
 import (
-	"fmt"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -36,7 +35,9 @@ func SendRequests(clu *cluster.Cluster, senderIndexUtxodb int, reqs []*waspapi.R
 	if err != nil {
 		return err
 	}
-	fmt.Printf("[cluster] created request tx: %s\n", tx.String())
+
+	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
+	//fmt.Printf("[cluster] created value tx: %s\n", tx.Transaction.String())
 
 	err = nodeapi.PostTransaction(clu.Config.Goshimmer.BindAddress, tx.Transaction)
 	if err != nil {

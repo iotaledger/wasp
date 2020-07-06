@@ -400,10 +400,10 @@ func (vtxb *Builder) Dump() string {
 	ret := ""
 	// reminder
 	for i := range vtxb.inputBalancesByOutput {
-		ret += vtxb.inputBalancesByOutput[i].outputId.Address().String() + "-" +
+		ret += vtxb.inputBalancesByOutput[i].outputId.Address().String() + " - " +
 			vtxb.inputBalancesByOutput[i].outputId.TransactionID().String() + "\n"
 		for _, bal := range vtxb.inputBalancesByOutput[i].reminder {
-			ret += fmt.Sprintf("      %s: %d\n", bal.Color.String(), bal.Value)
+			ret += fmt.Sprintf("      %d %s\n", bal.Value, bal.Color.String())
 		}
 	}
 	// TODO the rest

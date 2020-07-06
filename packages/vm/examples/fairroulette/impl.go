@@ -20,6 +20,7 @@ package fairroulette
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -95,6 +96,9 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 
 // the request places bet into the smart contract
 func placeBet(ctx vmtypes.Sandbox) {
+	ctx.Publish("placeBet")
+	//ctx.GetWaspLog().Infof("$$$$$$$$$$ dump:\n%s\n", ctx.DumpAccount())
+
 	state := ctx.AccessState()
 
 	// if there are some bets locked, save the entropy derived immediately from it.
@@ -121,24 +125,28 @@ func placeBet(ctx vmtypes.Sandbox) {
 	sum := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
+		ctx.Publish("placeBet: sum == 0: nothing to bet")
 		return
 	}
 	// check if there's a Color variable among args
 	// if not, ignore the request
 	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
-		ctx.GetWaspLog().Errorf("wrong request, no Color specified")
+		ctx.Publish("wrong request, no Color specified")
 		return
 	}
-	firstBet := ctx.AccessState().GetArray(StateVarBets).Len() == 0
+	firstBet := state.GetArray(StateVarBets).Len() == 0
 
 	// save the bet info in the array
-	ctx.AccessState().GetArray(StateVarBets).Push(encodeBetInfo(&betInfo{
+	reqid := ctx.AccessRequest().ID()
+	state.GetArray(StateVarBets).Push(encodeBetInfo(&betInfo{
 		player: sender,
 		sum:    sum,
-		reqId:  ctx.AccessRequest().ID(),
+		reqId:  reqid,
 		color:  byte(col % NumColors),
 	}))
+	ctx.Publish(fmt.Sprintf("Place bet. player: %s sum: %d color: %d req: %s",
+		sender.String(), sum, col, reqid.Short()))
 
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
 	// it will be time-locked for the next 2 minutes, the it will be processed by smart contract

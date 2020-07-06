@@ -48,7 +48,7 @@ func CreateRequestTransaction(node string, senderSigScheme signaturescheme.Signa
 			return nil, err
 		}
 		if reqBlkJson.AmountIotas > 1 {
-			if err = txb.MoveToAddress(senderAddr, balance.ColorIOTA, reqBlkJson.AmountIotas-1); err != nil {
+			if err = txb.MoveToAddress(reqBlk.Address(), balance.ColorIOTA, reqBlkJson.AmountIotas-1); err != nil {
 				return nil, err
 			}
 		}

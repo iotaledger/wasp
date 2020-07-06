@@ -58,6 +58,10 @@ func (vctx *sandbox) GetWaspLog() *logger.Logger {
 	return vctx.Log
 }
 
+func (vctx *sandbox) DumpAccount() string {
+	return vctx.TxBuilder.Dump()
+}
+
 // request arguments
 
 func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {

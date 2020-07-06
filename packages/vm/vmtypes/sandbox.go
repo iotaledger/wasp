@@ -35,6 +35,7 @@ type Sandbox interface {
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
 	GetWaspLog() *logger.Logger
+	DumpAccount() string
 }
 
 // access to request parameters (arguments)

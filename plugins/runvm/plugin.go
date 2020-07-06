@@ -61,6 +61,8 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return err
 	}
 
+	//ctx.Log.Infof("$$$$ dump orig txbuilder\n%s\n", txb.Dump())
+
 	reqids := sctransaction.TakeRequestIds(ctx.Requests)
 	bh := vm.BatchHash(reqids, ctx.Timestamp, ctx.LeaderPeerIndex)
 	taskName := ctx.Address.String() + "." + bh.String()
