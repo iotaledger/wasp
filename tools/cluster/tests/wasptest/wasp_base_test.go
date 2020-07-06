@@ -10,7 +10,7 @@ func TestPutBootupRecords(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestPutBootupRecords")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           5,
 		"active_committee":    0,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -35,7 +35,7 @@ func TestActivate1SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           5,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -62,7 +62,7 @@ func TestActivate3SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivate3SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           5,
 		"active_committee":    3,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -89,7 +89,7 @@ func TestCreateOrigin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestCreateOrigin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           5,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,

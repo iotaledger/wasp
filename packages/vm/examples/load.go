@@ -16,11 +16,11 @@ func LoadProcessor(progHashStr string) (vmtypes.Processor, bool) {
 	case logsc.ProgramHash:
 		return logsc.GetProcessor(), true
 
-	case fairroulette.ProgramHash:
-		return fairroulette.GetProcessor(), true
-
 	case inccounter.ProgramHash:
 		return inccounter.GetProcessor(), true
+
+	case fairroulette.ProgramHash:
+		return fairroulette.GetProcessor(), true
 	}
 	return nil, false
 }

@@ -23,6 +23,16 @@
       "description": "Smart Contract increment program",
       "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
+    },
+    {
+      "description": "Fair Roulette program",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
+    },
+    {
+      "description": "Stock price Oracle program",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
     }
   ]
 }

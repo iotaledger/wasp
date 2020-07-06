@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
-const ProgramHash = "3gLcWQuoTRvQoTE7x7A64MdeJgDg6A8aXYVUgFUbxGBG"
+const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
 const (
 	RequestCodeAddLog = sctransaction.RequestCode(uint16(0))

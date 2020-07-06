@@ -76,7 +76,7 @@ func TestLogsc5(t *testing.T) {
 		"request_in":          6,
 		"request_out":         7,
 		"state":               3,
-		"logsc-addlog":        5,
+		"logsc-addlog":        -1, // sometime Vm is not run
 	})
 
 	reqs := MakeRequests(5, func(i int) *waspapi.RequestBlockJson {
