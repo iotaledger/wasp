@@ -12,7 +12,7 @@ func TestSend1Bet(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Bet")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           5,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -24,7 +24,7 @@ func TestSend1Bet(t *testing.T) {
 	err = Put3BootupRecords(wasps)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[0]
+	sc := &wasps.SmartContractConfig[3]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 

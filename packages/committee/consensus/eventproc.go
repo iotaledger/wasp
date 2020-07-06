@@ -58,7 +58,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 				})
 				publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 			} else {
-				op.log.Warn("failed to load processor")
+				op.log.Warnf("failed to load processor: %v", err)
 			}
 		})
 	}

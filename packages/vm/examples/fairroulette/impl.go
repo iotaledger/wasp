@@ -49,7 +49,7 @@ var entryPoints = fairRouletteProcessor{
 }
 
 const (
-	ProgramHash = "cg1FdevRyHnovb3xbFSbrvtGLGrcHY19DKwjNzSHakg3"
+	ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 
 	// request argument to specify color of the bet. It always is taken modulo 5, so there are 5 possible colors
 	ReqVarColor = "color"
