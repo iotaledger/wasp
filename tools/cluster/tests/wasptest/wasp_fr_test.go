@@ -1,8 +1,11 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -47,6 +50,17 @@ func TestSend1Bet(t *testing.T) {
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+
+	tmp, err := valuetransaction.IDFromBase58(sc.Color)
+	assert.NoError(t, err)
+	scColor := (balance.Color)(tmp)
+
+	if !wasps.VerifySCAccountBalances(sc, map[balance.Color]int64{
+		balance.ColorIOTA: 10001,
+		scColor:           1,
+	}) {
 		t.Fail()
 	}
 }
@@ -94,6 +108,16 @@ func TestSend5Bets(t *testing.T) {
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	tmp, err := valuetransaction.IDFromBase58(sc.Color)
+	assert.NoError(t, err)
+	scColor := (balance.Color)(tmp)
+
+	if !wasps.VerifySCAccountBalances(sc, map[balance.Color]int64{
+		balance.ColorIOTA: 50005,
+		scColor:           1,
+	}) {
 		t.Fail()
 	}
 }

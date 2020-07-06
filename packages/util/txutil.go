@@ -73,6 +73,22 @@ func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balan
 	return ret, total
 }
 
+func OutputBalancesByColor(outs map[valuetransaction.OutputID][]*balance.Balance) (map[balance.Color]int64, int64) {
+	ret := make(map[balance.Color]int64)
+	var total int64
+	for _, bals := range outs {
+		for _, b := range bals {
+			if s, ok := ret[b.Color]; !ok {
+				ret[b.Color] = b.Value
+			} else {
+				ret[b.Color] = s + b.Value
+			}
+			total += b.Value
+		}
+	}
+	return ret, total
+}
+
 func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
 	sum := int64(0)
 	for _, b := range bals {

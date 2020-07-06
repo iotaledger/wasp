@@ -2,9 +2,12 @@ package cluster
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"io"
 	"io/ioutil"
 	"os"
@@ -23,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 
-	nodeapi "github.com/iotaledger/wasp/packages/apilib"
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
 
@@ -561,4 +564,64 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 		}
 	}
 	return pass
+}
+
+func (cluster *Cluster) VerifySCAccountBalances(sc *SmartContractFinalConfig, expect map[balance.Color]int64) bool {
+	host := cluster.Config.Goshimmer.BindAddress
+	scAddr, err := address.FromBase58(sc.Address)
+	if err != nil {
+		fmt.Printf("[cluster] error: %v\n", err)
+		return false
+	}
+	allOuts, err := nodeapi.GetAccountOutputs(host, &scAddr)
+	if err != nil {
+		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
+		return false
+	}
+	byColor, total := util.OutputBalancesByColor(allOuts)
+	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
+	if !assertionOk {
+		fmt.Printf("[cluster] assertion on balances failed\n")
+	}
+
+	fmt.Printf("[cluster] Balances of the address %s\n      Total tokens: %d\n%s\n", sc.Address, total, dumpStr)
+	return assertionOk
+}
+
+func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) {
+	assertionOk := true
+	lst := make([]balance.Color, 0, len(expect))
+	for col := range expect {
+		lst = append(lst, col)
+	}
+	sort.Slice(lst, func(i, j int) bool {
+		return bytes.Compare(lst[i][:], lst[j][:]) < 0
+	})
+	ret := ""
+	for _, col := range lst {
+		act, _ := actual[col]
+		isOk := "OK"
+		if act != expect[col] {
+			assertionOk = false
+			isOk = "FAIL"
+		}
+		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
+	}
+	lst = lst[:0]
+	for col := range actual {
+		if _, ok := expect[col]; !ok {
+			lst = append(lst, col)
+		}
+	}
+	if len(lst) == 0 {
+		return ret, assertionOk
+	}
+	sort.Slice(lst, func(i, j int) bool {
+		return bytes.Compare(lst[i][:], lst[j][:]) < 0
+	})
+	ret += "      Unexpected colors in actual outputs:\n"
+	for _, col := range lst {
+		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
+	}
+	return ret, assertionOk
 }
