@@ -56,7 +56,7 @@ func (l *listStruct) setSize(size uint16) {
 // Len == 0/empty/non-existent are equivalent
 func (l *listStruct) Len() uint16 {
 	v, err := l.kv.Get(l.getSizeKey())
-	if err != nil {
+	if err != nil || len(v) != 2 {
 		return 0
 	}
 	return util.Uint16From2Bytes(v)

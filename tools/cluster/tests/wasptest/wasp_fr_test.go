@@ -2,7 +2,7 @@ package wasptest
 
 import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"testing"
 	"time"
 )
@@ -17,7 +17,7 @@ func TestSend1Bet(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          2,
 		"request_out":         3,
-		"state":               2,
+		"state":               -1,
 	})
 	check(err, t)
 
@@ -32,8 +32,13 @@ func TestSend1Bet(t *testing.T) {
 	check(err, t)
 
 	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
-			RequestCode: vmconst.RequestCodeNOP,
+		{
+			Address:     sc.Address,
+			RequestCode: fairroulette.RequestPlaceBet,
+			AmountIotas: 10001,
+			Vars: map[string]interface{}{
+				fairroulette.ReqVarColor: 3,
+			},
 		},
 	}
 	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Second)

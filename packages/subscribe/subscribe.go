@@ -3,19 +3,29 @@ package subscribe
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/sub"
 	_ "go.nanomsg.org/mangos/v3/transport/all"
 )
 
-func Subscribe(host string, messages chan<- []string, done <-chan bool, topics ...string) error {
+func Subscribe(host string, messages chan<- []string, done <-chan bool, keepTrying bool, topics ...string) error {
 	socket, err := sub.NewSocket()
 	if err != nil {
 		return err
 	}
-	if err = socket.Dial("tcp://" + host); err != nil {
-		return fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
+	for {
+		err = socket.Dial("tcp://" + host)
+		if err != nil {
+			if keepTrying {
+				time.Sleep(200 * time.Millisecond)
+				continue
+			} else {
+				return fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
+			}
+		}
+		break
 	}
 	for _, topic := range topics {
 		err = socket.SetOption(mangos.OptionSubscribe, []byte(topic))
@@ -29,6 +39,7 @@ func Subscribe(host string, messages chan<- []string, done <-chan bool, topics .
 			var buf []byte
 			//fmt.Printf("recv\n")
 			if buf, err = socket.Recv(); err != nil {
+				close(messages)
 				return
 			}
 			//fmt.Printf("received nanomsg '%s'\n", string(buf))
@@ -55,7 +66,7 @@ type HostMessage struct {
 func SubscribeMulti(hosts []string, messages chan<- *HostMessage, done chan bool, topics ...string) error {
 	for _, host := range hosts {
 		hostMessages := make(chan []string)
-		err := Subscribe(host, hostMessages, done, topics...)
+		err := Subscribe(host, hostMessages, done, false, topics...)
 		if err != nil {
 			return err
 		}
