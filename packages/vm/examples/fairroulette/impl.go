@@ -41,12 +41,15 @@ const (
 	RequestLockBets = sctransaction.RequestCode(uint16(2))
 	// request to play and distribute. Rejected if sent not from the smart contract itself
 	RequestPlayAndDistribute = sctransaction.RequestCode(uint16(3))
+	// request to set the play period. By default it is 2 minutes
+	RequestSetPlayPeriod = sctransaction.RequestCode(uint16(4) | sctransaction.RequestCodeProtected)
 )
 
 var entryPoints = fairRouletteProcessor{
 	RequestPlaceBet:          placeBet,
 	RequestLockBets:          lockBets,
 	RequestPlayAndDistribute: playAndDistribute,
+	RequestSetPlayPeriod:     setPlayPeriod,
 }
 
 const (
@@ -62,11 +65,13 @@ const (
 	StateVarLastWinningColor = "lastWinningColor"
 	// 32 bytes of entropy taken from the hash of the transaction which locked current bets
 	StateVarEntropyFromLocking = "entropyFromLocking"
+	// set play period in seconds
+	VarPlayPeriodSec = "playPeriod"
 
 	// number of colors
 	NumColors = 5
 	// automatically lock and play 2 min after first current bet is confirmed
-	PlaySecondsAfterFirstBet = 120
+	DefaultPlaySecondsAfterFirstBet = 120
 )
 
 type betInfo struct {
@@ -97,6 +102,7 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 // the request places bet into the smart contract
 func placeBet(ctx vmtypes.Sandbox) {
 	ctx.Publish("placeBet")
+
 	//ctx.GetWaspLog().Infof("$$$$$$$$$$ dump:\n%s\n", ctx.DumpAccount())
 
 	state := ctx.AccessState()
@@ -149,23 +155,48 @@ func placeBet(ctx vmtypes.Sandbox) {
 		sender.String(), sum, col, reqid.Short()))
 
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
-	// it will be time-locked for the next 2 minutes, the it will be processed by smart contract
+	// it will be time-locked by default for the next 2 minutes, the it will be processed by smart contract
 	if firstBet {
-		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, PlaySecondsAfterFirstBet)
+		period, ok, err := state.GetInt64(VarPlayPeriodSec)
+		if err != nil || !ok || period < 10 {
+			period = DefaultPlaySecondsAfterFirstBet
+		}
+		ctx.Publish(fmt.Sprintf("SendRequestToSelfWithDelay period = %d", period))
+		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period))
 	}
+}
+
+func setPlayPeriod(ctx vmtypes.Sandbox) {
+	ctx.Publish("setPlayPeriod")
+
+	period, ok, err := ctx.AccessRequest().Args().GetInt64(VarPlayPeriodSec)
+	if err != nil || !ok || period < 10 {
+		// incorrect request arguments
+		// minimum is 10 seconds
+		return
+	}
+	ctx.AccessState().SetInt64(VarPlayPeriodSec, period)
+
+	ctx.Publish(fmt.Sprintf("setPlayPeriod = %d", period))
 }
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
 func lockBets(ctx vmtypes.Sandbox) {
+	ctx.Publish("lockBets")
+
 	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
 		// ignore if request is not from itself
 		return
 	}
 	state := ctx.AccessState()
 	// append all current bets to the locked bets array
-	state.GetArray(StateVarLockedBets).Append(state.GetArray(StateVarBets))
+	lockedBets := state.GetArray(StateVarLockedBets)
+	lockedBets.Append(state.GetArray(StateVarBets))
 	state.GetArray(StateVarBets).Erase()
+
+	numLockedBets := lockedBets.Len()
+	ctx.Publish(fmt.Sprintf("lockBets: num = %d", numLockedBets))
 
 	// clear entropy to be picked in the next request
 	state.Del(StateVarEntropyFromLocking)
@@ -177,6 +208,8 @@ func lockBets(ctx vmtypes.Sandbox) {
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
 func playAndDistribute(ctx vmtypes.Sandbox) {
+	ctx.Publish("playAndDistribute")
+
 	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetOwnAddress()) {
 		// ignore if request is not from itself
 		return
