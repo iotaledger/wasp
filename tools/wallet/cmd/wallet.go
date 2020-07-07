@@ -20,26 +20,20 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/wallet"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
+	"github.com/iotaledger/wasp/tools/wallet"
 )
 
 const goshimmerApi = "127.0.0.1:8080"
-
-type walletConfig struct {
-	Seed []byte
-}
 
 func main() {
 	globalFlags := flag.NewFlagSet("", flag.ExitOnError)
@@ -50,23 +44,28 @@ func main() {
 		usage(globalFlags)
 	}
 
-	switch globalFlags.Arg(0) {
-	case "init":
-		initWallet(*walletPath)
+	if globalFlags.Arg(0) == "init" {
+		check(wallet.Init(*walletPath))
+		return
+	}
 
+	wallet, err := wallet.Load(*walletPath)
+	check(err)
+
+	switch globalFlags.Arg(0) {
 	case "address":
 		flags := flag.NewFlagSet("address", flag.ExitOnError)
 		n := flags.Int("n", 0, "address index")
 		flags.Parse(globalFlags.Args()[1:])
 
-		dumpAddress(loadWallet(*walletPath), *n)
+		dumpAddress(wallet, *n)
 
 	case "balance":
 		flags := flag.NewFlagSet("balance", flag.ExitOnError)
 		n := flags.Int("n", 0, "address index")
 		flags.Parse(globalFlags.Args()[1:])
 
-		dumpBalance(loadWallet(*walletPath), *n)
+		dumpBalance(wallet, *n)
 
 	case "transfer":
 		flags := flag.NewFlagSet("transfer", flag.ExitOnError)
@@ -74,7 +73,7 @@ func main() {
 		flags.Parse(globalFlags.Args()[1:])
 
 		if flags.NArg() < 2 {
-			transferUsage(flags)
+			transferUsage(globalFlags, flags)
 		}
 
 		utxodbIndex, err := strconv.Atoi(flags.Arg(0))
@@ -82,7 +81,7 @@ func main() {
 		amount, err := strconv.Atoi(flags.Arg(1))
 		check(err)
 
-		transfer(loadWallet(*walletPath), *n, utxodbIndex, amount)
+		transfer(wallet, *n, utxodbIndex, amount)
 
 	default:
 		usage(globalFlags)
@@ -97,36 +96,16 @@ func check(err error) {
 }
 
 func usage(globalFlags *flag.FlagSet) {
-	fmt.Printf("Usage: %s [options] [init|address|balance]\n", os.Args[0])
+	fmt.Printf("Usage: %s [options] [init|address|balance|transfer]\n", os.Args[0])
 	globalFlags.PrintDefaults()
 	os.Exit(1)
 }
 
-func transferUsage(flags *flag.FlagSet) {
-	fmt.Printf("Usage: %s transfer [-n <index>] <utxodb-index> <amount>\n", os.Args[0])
+func transferUsage(globalFlags *flag.FlagSet, flags *flag.FlagSet) {
+	fmt.Printf("Usage: %s [options] transfer [-n index] <utxodb-index> <amount>\n", os.Args[0])
+	globalFlags.PrintDefaults()
 	flags.PrintDefaults()
 	os.Exit(1)
-}
-
-func initWallet(walletPath string) {
-	walletConfig := &walletConfig{
-		Seed: wallet.New().Seed().Bytes(),
-	}
-
-	jsonBytes, err := json.MarshalIndent(walletConfig, "", "  ")
-	check(err)
-
-	check(ioutil.WriteFile(walletPath, jsonBytes, 0644))
-}
-
-func loadWallet(walletPath string) *wallet.Wallet {
-	bytes, err := ioutil.ReadFile(walletPath)
-	check(err)
-
-	var wc walletConfig
-	check(json.Unmarshal(bytes, &wc))
-
-	return wallet.New(wc.Seed)
 }
 
 func dumpAddress(wallet *wallet.Wallet, n int) {
@@ -168,7 +147,8 @@ func transfer(wallet *wallet.Wallet, n int, utxodbIndex int, amount int) {
 
 func makeTransferTx(target address.Address, utxodbIndex int, amount int64) *transaction.Transaction {
 	source := utxodb.GetAddress(utxodbIndex)
-	sourceOutputs := utxodb.GetAddressOutputs(source)
+	sourceOutputs, err := nodeapi.GetAccountOutputs(goshimmerApi, &source)
+	check(err)
 
 	oids := make([]transaction.OutputID, 0)
 	sum := int64(0)
