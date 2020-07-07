@@ -14,8 +14,8 @@ import (
 )
 
 type ioParams struct {
-	Hosts       []string                    `json:"hosts"`
-	RequestData registry.SCMetaDataJsonable `json:"request_data"`
+	Hosts       []string            `json:"hosts"`
+	RequestData registry.BootupData `json:"request_data"`
 }
 
 type ioGetParams struct {
@@ -88,7 +88,7 @@ func Newsc(fname string) {
 	if err != nil {
 		panic(err)
 	}
-	params.RequestData.NodeLocations = params.Hosts
+	params.RequestData.CommitteeNodes = params.Hosts
 	for _, h := range params.Hosts {
 		err = apilib.PutSCData(h, params.RequestData)
 		if err != nil {
@@ -126,7 +126,7 @@ func GetSc(fname string) {
 		panic(err)
 	}
 
-	res := make(map[string]*registry.SCMetaDataJsonable)
+	res := make(map[string]*registry.BootupData)
 	for _, h := range params.Hosts {
 		scData, exists, err := apilib.GetSCData(h, &addr)
 		if err != nil {
@@ -160,7 +160,7 @@ func GetSc(fname string) {
 	}
 	fmt.Printf("%d SC data records was retrived\nChecking for consistency...\n", len(res))
 	// checking if all data records are identical
-	var scDataCheck *registry.SCMetaDataJsonable
+	var scDataCheck *registry.BootupData
 	var inconsistent bool
 	for _, scData := range res {
 		if scDataCheck == nil {
@@ -171,15 +171,11 @@ func GetSc(fname string) {
 			inconsistent = true
 			break
 		}
-		if scDataCheck.Description != scData.Description {
-			inconsistent = true
-			break
-		}
 		if scDataCheck.OwnerAddress != scData.OwnerAddress {
 			inconsistent = true
 			break
 		}
-		if scDataCheck.ProgramHash != scData.ProgramHash {
+		if scDataCheck.Color != scData.Color {
 			inconsistent = true
 			break
 		}
