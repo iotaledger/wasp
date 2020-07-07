@@ -10,42 +10,43 @@ type Array interface {
 	Append(Array)
 	Len() uint16
 	Erase()
-	At(uint16) ([]byte, bool)
+	GetAt(uint16) ([]byte, bool)
+	SetAt(idx uint16, value []byte) bool
 }
 
-type listStruct struct {
+type arrayStruct struct {
 	kv   KVStore
 	name string
 }
 
-func newListCodec(kv KVStore, name string) Array {
-	return &listStruct{
+func newArray(kv KVStore, name string) Array {
+	return &arrayStruct{
 		kv:   kv,
 		name: name,
 	}
 }
 
 const (
-	sizeKeyCode = byte(0)
-	elemKeyCode = byte(1)
+	arraySizeKeyCode = byte(0)
+	arrayElemKeyCode = byte(1)
 )
 
-func (l *listStruct) getSizeKey() Key {
+func (l *arrayStruct) getSizeKey() Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(l.name))
-	buf.WriteByte(sizeKeyCode)
+	buf.WriteByte(arraySizeKeyCode)
 	return Key(buf.Bytes())
 }
 
-func (l *listStruct) getElemKey(idx uint16) Key {
+func (l *arrayStruct) getElemKey(idx uint16) Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(l.name))
-	buf.WriteByte(elemKeyCode)
+	buf.WriteByte(arrayElemKeyCode)
 	_ = util.WriteUint16(&buf, idx)
 	return Key(buf.Bytes())
 }
 
-func (l *listStruct) setSize(size uint16) {
+func (l *arrayStruct) setSize(size uint16) {
 	if size == 0 {
 		l.kv.Del(l.getSizeKey())
 		return
@@ -54,7 +55,7 @@ func (l *listStruct) setSize(size uint16) {
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (l *listStruct) Len() uint16 {
+func (l *arrayStruct) Len() uint16 {
 	v, err := l.kv.Get(l.getSizeKey())
 	if err != nil || len(v) != 2 {
 		return 0
@@ -63,28 +64,28 @@ func (l *listStruct) Len() uint16 {
 }
 
 // adds to the end of the list
-func (l *listStruct) Push(value []byte) {
+func (l *arrayStruct) Push(value []byte) {
 	size := l.Len()
 	k := l.getElemKey(size)
 	l.kv.Set(k, value)
 	l.setSize(size + 1)
 }
 
-func (l *listStruct) Append(arr Array) {
+func (l *arrayStruct) Append(arr Array) {
 	for i := uint16(0); i < arr.Len(); i++ {
-		v, _ := arr.At(i)
+		v, _ := arr.GetAt(i)
 		l.Push(v)
 	}
 }
 
-func (l *listStruct) Erase() {
+func (l *arrayStruct) Erase() {
 	for i := uint16(0); i < l.Len(); i++ {
 		l.kv.Del(l.getElemKey(i))
 	}
 	l.setSize(0)
 }
 
-func (l *listStruct) At(idx uint16) ([]byte, bool) {
+func (l *arrayStruct) GetAt(idx uint16) ([]byte, bool) {
 	if idx >= l.Len() {
 		return nil, false
 	}
@@ -93,4 +94,12 @@ func (l *listStruct) At(idx uint16) ([]byte, bool) {
 		return nil, false
 	}
 	return ret, true
+}
+
+func (l *arrayStruct) SetAt(idx uint16, value []byte) bool {
+	if idx >= l.Len() {
+		return false
+	}
+	l.kv.Set(l.getElemKey(idx), value)
+	return true
 }

@@ -9,7 +9,10 @@ type Key string
 // arbitrary byte slices.
 type KVStore interface {
 	Set(key Key, value []byte)
+	// TODO Del(key Key)
 	Del(key Key)
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
+	// TODO implement Has. It checks existence of the key without loading the value. Much faster with DB
+	// Hash(key Key) bool
 }

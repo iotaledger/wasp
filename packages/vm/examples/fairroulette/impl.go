@@ -242,7 +242,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	totalLockedAmount := int64(0)
 	lockedBets := make([]*betInfo, numLockedBets)
 	for i := range lockedBets {
-		biData, ok := lockedBetsArray.At(uint16(i))
+		biData, ok := lockedBetsArray.GetAt(uint16(i))
 		if !ok {
 			// inconsistency. Very sad
 			return

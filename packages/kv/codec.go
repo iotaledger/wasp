@@ -14,7 +14,8 @@ type Codec interface {
 	RCodec
 	WCodec
 	GetArray(Key) Array
-	// TODO GetLog, GetMap
+	GetDictionary(Key) Dictionary
+	// TODO GetTimedLog
 }
 
 // RCodec is an interface that offers easy conversions between []byte and other types when
@@ -51,7 +52,11 @@ func NewRCodec(kv KVStore) RCodec {
 }
 
 func (c codec) GetArray(key Key) Array {
-	return newListCodec(c, string(key))
+	return newArray(c, string(key))
+}
+
+func (c codec) GetDictionary(key Key) Dictionary {
+	return newDict(c, string(key))
 }
 
 func (c codec) Get(key Key) ([]byte, error) {
