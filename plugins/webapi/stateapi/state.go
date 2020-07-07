@@ -2,56 +2,57 @@
 package stateapi
 
 import (
+	"net/http"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
-	"github.com/mr-tron/base58"
 )
 
 type QueryStateRequest struct {
-	Address   string   `json:"address"`
-	Variables []string `json:"variables"`
+	Address string   `json:"address"`
+	Keys    [][]byte `json:"keys"`
+}
+
+type KeyValuePair struct {
+	Key   []byte `json:"k"`
+	Value []byte `json:"v"`
 }
 
 type QueryStateResponse struct {
-	Values map[string]string `json:"values"` // variable name: base85 encoded binary data
-	Error  string            `json:"error"`
+	Values []KeyValuePair `json:"values"`
+	Error  string         `json:"error"`
 }
 
 func HandlerQueryState(c echo.Context) error {
 	var req QueryStateRequest
 
 	if err := c.Bind(&req); err != nil {
-		return misc.OkJson(c, &QueryStateResponse{
-			Error: err.Error(),
-		})
+		return c.JSON(http.StatusBadRequest, &QueryStateResponse{Error: err.Error()})
 	}
 	addr, err := address.FromBase58(req.Address)
 	if err != nil {
-		return misc.OkJson(c, &QueryStateResponse{
-			Error: err.Error(),
-		})
+		return c.JSON(http.StatusBadRequest, &QueryStateResponse{Error: err.Error()})
 	}
 	// TODO serialize access to solid state
 	state, _, exist, err := state.LoadSolidState(&addr)
 	if err != nil {
-		return misc.OkJson(c, &QueryStateResponse{
-			Error: err.Error(),
-		})
+		return c.JSON(http.StatusInternalServerError, &QueryStateResponse{Error: err.Error()})
 	}
 	if !exist {
-		return misc.OkJson(c, &QueryStateResponse{
-			Error: "empty state",
-		})
+		return c.JSON(http.StatusNotFound, &QueryStateResponse{Error: err.Error()})
 	}
 	ret := &QueryStateResponse{
-		Values: make(map[string]string),
+		Values: make([]KeyValuePair, 0),
 	}
-	for _, v := range req.Variables {
-		data, _ := state.Variables().Get(kv.Key(v))
-		ret.Values[v] = base58.Encode(data)
+	for _, k := range req.Keys {
+		data, err := state.Variables().Get(kv.Key(k))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, &QueryStateResponse{Error: err.Error()})
+		}
+		ret.Values = append(ret.Values, KeyValuePair{Key: k, Value: data})
 	}
 	return misc.OkJson(c, ret)
 }

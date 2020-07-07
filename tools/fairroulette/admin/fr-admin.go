@@ -37,14 +37,14 @@ type scConfig struct {
 	programHash  string
 }
 
-type globalConfig struct {
+type adminConfig struct {
 	waspCommitteeApi     []string
 	waspCommitteePeering []string
 	goshimmerHost        string
 	sc                   scConfig
 }
 
-var config = globalConfig{
+var config = adminConfig{
 	waspCommitteeApi: []string{
 		"127.0.0.1:9090",
 		"127.0.0.1:9091",
