@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"fmt"
@@ -8,15 +8,17 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 )
 
-func dumpState(scAddress string) {
-	state, err := waspapi.QuerySCState(config.waspApi, scAddress, []kv.Key{
+func DumpState(waspApi string, scAddress string) error {
+	state, err := waspapi.QuerySCState(waspApi, scAddress, []kv.Key{
 		kv.ArraySizeKey(fairroulette.StateVarBets),       // array
 		kv.ArraySizeKey(fairroulette.StateVarLockedBets), // array
 		fairroulette.StateVarLastWinningColor,            // int64
 		fairroulette.StateVarEntropyFromLocking,          // hash
 		fairroulette.VarPlayPeriodSec,                    // int64
 	})
-	check(err)
+	if err != nil {
+		return err
+	}
 
 	codec := state.Codec()
 
@@ -29,14 +31,21 @@ func dumpState(scAddress string) {
 	fmt.Printf("locked bets: %d\n", nLockedBets)
 
 	lastwc, _, err := codec.GetInt64(fairroulette.StateVarLastWinningColor)
-	check(err)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("last winning color: %d\n", lastwc)
 
 	entropy, _, err := codec.GetHashValue(fairroulette.StateVarEntropyFromLocking)
-	check(err)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("entropy: %s\n", entropy)
 
 	playPeriod, _, err := codec.GetInt64(fairroulette.VarPlayPeriodSec)
-	check(err)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("play period (s): %d\n", playPeriod)
+	return nil
 }
