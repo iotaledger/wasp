@@ -20,7 +20,6 @@ package fairroulette
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -151,8 +150,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 		reqId:  reqid,
 		color:  byte(col % NumColors),
 	}))
-	ctx.Publish(fmt.Sprintf("Place bet. player: %s sum: %d color: %d req: %s",
-		sender.String(), sum, col, reqid.Short()))
+	ctx.Publishf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
 
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
 	// it will be time-locked by default for the next 2 minutes, the it will be processed by smart contract
@@ -161,7 +159,8 @@ func placeBet(ctx vmtypes.Sandbox) {
 		if err != nil || !ok || period < 10 {
 			period = DefaultPlaySecondsAfterFirstBet
 		}
-		ctx.Publish(fmt.Sprintf("SendRequestToSelfWithDelay period = %d", period))
+		ctx.Publishf("SendRequestToSelfWithDelay period = %d", period)
+
 		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period))
 	}
 }
@@ -177,7 +176,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) {
 	}
 	ctx.AccessState().SetInt64(VarPlayPeriodSec, period)
 
-	ctx.Publish(fmt.Sprintf("setPlayPeriod = %d", period))
+	ctx.Publishf("setPlayPeriod = %d", period)
 }
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
@@ -196,7 +195,7 @@ func lockBets(ctx vmtypes.Sandbox) {
 	state.GetArray(StateVarBets).Erase()
 
 	numLockedBets := lockedBets.Len()
-	ctx.Publish(fmt.Sprintf("lockBets: num = %d", numLockedBets))
+	ctx.Publishf("lockBets: num = %d", numLockedBets)
 
 	// clear entropy to be picked in the next request
 	state.Del(StateVarEntropyFromLocking)
@@ -234,10 +233,13 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
 	// calculating it modulo 5.
-	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) / NumColors)
+	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
+	ctx.Publishf("$$$$$$$$$$ winning color is = %d", winningColor)
+
 	// take locked bets from the array
+	totalLockedAmount := int64(0)
 	lockedBets := make([]*betInfo, numLockedBets)
 	for i := range lockedBets {
 		biData, ok := lockedBetsArray.At(uint16(i))
@@ -250,14 +252,12 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 			// inconsistency. Even more sad
 			return
 		}
-		lockedBets = append(lockedBets, bi)
+		totalLockedAmount += bi.sum
+		lockedBets[i] = bi
 	}
 
-	// calculate total placed amount
-	totalLockedAmount := int64(0)
-	for _, bet := range lockedBets {
-		totalLockedAmount += bet.sum
-	}
+	ctx.Publishf("$$$$$$$$$$ totalLockedAmount = %d", totalLockedAmount)
+
 	// select bets on winning Color
 	winningBets := lockedBets[:0] // same underlying array
 	for _, bet := range lockedBets {
@@ -266,17 +266,23 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		}
 	}
 
+	ctx.Publishf("$$$$$$$$$$ winningBets: %d", len(winningBets))
+
 	// locked bets neither entropy are not needed anymore
 	lockedBetsArray.Erase()
 	state.Del(StateVarEntropyFromLocking)
 
 	if len(winningBets) == 0 {
+
+		ctx.Publishf("$$$$$$$$$$ nobody wins: amount of %d stays in the smart contract", totalLockedAmount)
+
 		// nobody played on winning Color -> all sums stay in the smart contract
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
 		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetOwnAddress(), &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
+			ctx.Publishf("$$$$$$$$$$ something wrong 1")
 			ctx.Rollback()
 			return
 		}
@@ -284,6 +290,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 
 	// distribute total staked amount to players
 	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
+		ctx.Publishf("$$$$$$$$$$ something wrong 2")
 		ctx.Rollback()
 		return
 	}

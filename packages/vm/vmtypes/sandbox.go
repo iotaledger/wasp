@@ -34,6 +34,8 @@ type Sandbox interface {
 	// for testing
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
+	Publishf(format string, args ...interface{})
+
 	GetWaspLog() *logger.Logger
 	DumpAccount() string
 }

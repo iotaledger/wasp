@@ -67,7 +67,7 @@ func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool)
 	}
 	tl := ""
 	if ret.isTimelocked(nowis) {
-		tl = fmt.Sprintf(". Time locked until %d", ret.timelock())
+		tl = fmt.Sprintf(". Time locked until %d (nowis = %d)", ret.timelock(), util.TimeNowUnix())
 	}
 	ret.log.Infof("NEW REQUEST from msg%s", tl)
 

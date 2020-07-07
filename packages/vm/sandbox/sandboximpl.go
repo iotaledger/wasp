@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
@@ -119,5 +120,11 @@ func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCod
 }
 
 func (vctx *sandbox) Publish(msg string) {
+	vctx.Log.Infof("VMMSG: %s %s", vctx.ProgramHash.String(), msg)
 	publisher.Publish("vmmsg", vctx.ProgramHash.String(), msg)
+}
+
+func (vctx *sandbox) Publishf(format string, args ...interface{}) {
+	vctx.Log.Infof("VMMSG: "+format, args...)
+	publisher.Publish("vmmsg", vctx.ProgramHash.String(), fmt.Sprintf(format, args...))
 }

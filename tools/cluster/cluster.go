@@ -566,14 +566,9 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 	return pass
 }
 
-func (cluster *Cluster) VerifySCAccountBalances(sc *SmartContractFinalConfig, expect map[balance.Color]int64) bool {
+func (cluster *Cluster) VerifySCAddressBalances(addr address.Address, expect map[balance.Color]int64) bool {
 	host := cluster.Config.Goshimmer.BindAddress
-	scAddr, err := address.FromBase58(sc.Address)
-	if err != nil {
-		fmt.Printf("[cluster] error: %v\n", err)
-		return false
-	}
-	allOuts, err := nodeapi.GetAccountOutputs(host, &scAddr)
+	allOuts, err := nodeapi.GetAccountOutputs(host, &addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
 		return false
@@ -584,7 +579,7 @@ func (cluster *Cluster) VerifySCAccountBalances(sc *SmartContractFinalConfig, ex
 		fmt.Printf("[cluster] assertion on balances failed\n")
 	}
 
-	fmt.Printf("[cluster] Balances of the address %s\n      Total tokens: %d\n%s\n", sc.Address, total, dumpStr)
+	fmt.Printf("[cluster] Balances of the address %s\n      Total tokens: %d\n%s\n", addr.String(), total, dumpStr)
 	return assertionOk
 }
 
