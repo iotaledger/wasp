@@ -10,7 +10,7 @@ type TimestampedLog interface {
 	Append(ts int64, data []byte) error
 	Len() uint32
 	Latest() int64
-	GetTimeSlice(fromTs, toTs int64) (uint32, uint32)
+	GetTimeSlice(fromTs, toTs int64) (uint32, uint32, bool)
 	LoadSlice(fromIdx, toIdx uint32) []*LogRecord
 	Erase()
 }
@@ -130,37 +130,95 @@ func (l *tslStruct) getTimestampAtIndex(idx uint32) int64 {
 
 // binary search. Return 2 indices, i1 < i2, where [i1:i2] (i2 not including) contains all
 // records with timestamp from 'fromTs' to 'toTs' (inclusive).
-func (l *tslStruct) GetTimeSlice(fromTs, toTs int64) (uint32, uint32) {
-	if fromTs > toTs {
-		return 0, 0
+func (l *tslStruct) GetTimeSlice(fromTs, toTs int64) (uint32, uint32, bool) {
+	if l.Len() == 0 {
+		return 0, 0, false
 	}
-	panic("implement me")
+	if fromTs > toTs {
+		return 0, 0, false
+	}
+	lowerIdx, ok := l.findLowerIdx(fromTs, 0, l.Len()-1)
+	if !ok {
+		return 0, 0, false
+	}
+	upperIdx, ok := l.findUpperIdx(toTs, 0, l.Len()-1)
+	if !ok {
+		return 0, 0, false
+	}
+	if lowerIdx > upperIdx {
+		return 0, 0, false
+	}
+	return lowerIdx, upperIdx, true
 }
 
-// find largest which has timestamp >= to ts and index-1 has timestamp < ts
 func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool) {
-	if fromIdx >= toIdx {
+	if fromIdx > toIdx {
 		return 0, false
 	}
-	if toIdx >= l.Len() {
-		toIdx = l.Len() - 1
+	if fromIdx >= l.Len() || toIdx >= l.Len() {
+		panic("fromIdx >= l.Len() || toIdx >= l.Len()")
 	}
-	//toTs := l.getTimestampAtIndex(toIdx)
-	//switch {
-	//case ts > toTs:
-	//	return 0, false
-	//case ts == upperTs:
-	//	if ret, ok := l.findLowerIdx(ts, upperIdx / 2); ok{
-	//		return ret, true
-	//	}
-	//
-	//case ts > upperTs:
-	//}
-	//if upperTs > ts{
-	//	return 0, false
-	//}
-	panic("implement me")
+	lowerTs := l.getTimestampAtIndex(fromIdx)
+	switch {
+	case ts <= lowerTs:
+		return fromIdx, true
+	case fromIdx == toIdx:
+		return 0, false
+	}
+	if !(ts > lowerTs && fromIdx < toIdx) {
+		panic("assertion failed: ts > lowerTs && fromIdx < toIdx")
+	}
+	upperTs := l.getTimestampAtIndex(toIdx)
+	if ts > upperTs {
+		return 0, false
+	}
+	// lowerTs < ts <= upperTs && fromIdx < toIdx
+	if fromIdx+1 == toIdx {
+		return toIdx, true
+	}
+	// index is somewhere in between two different
+	middleIdx := (fromIdx + toIdx) / 2
+
+	ret, ok := l.findLowerIdx(ts, fromIdx, middleIdx)
+	if ok {
+		return ret, true
+	}
+	return l.findLowerIdx(ts, middleIdx, toIdx)
 }
+
+func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool) {
+	if fromIdx > toIdx {
+		return 0, false
+	}
+	if fromIdx >= l.Len() || toIdx >= l.Len() {
+		panic("fromIdx >= l.Len() || toIdx >= l.Len()")
+	}
+	upperTs := l.getTimestampAtIndex(toIdx)
+	switch {
+	case ts >= upperTs:
+		return toIdx, true
+	case fromIdx == toIdx:
+		return 0, false
+	}
+	if !(ts < upperTs && fromIdx < toIdx) {
+		panic("assertion failed: ts < upperTs && fromIdx < toIdx")
+	}
+	lowerTs := l.getTimestampAtIndex(fromIdx)
+	if ts < lowerTs {
+		return 0, false
+	}
+	// lowerTs <= ts < upperTs && fromIdx < toIdx
+	// index is somewhere in between two different
+	middleIdx := (fromIdx + toIdx) / 2
+
+	ret, ok := l.findUpperIdx(ts, middleIdx, toIdx)
+	if ok {
+		return ret, true
+	}
+	return l.findUpperIdx(ts, fromIdx, middleIdx)
+}
+
+// TODO not finished
 
 func (l *tslStruct) LoadSlice(fromIdx, toIdx uint32) []*LogRecord {
 	panic("implement me")
