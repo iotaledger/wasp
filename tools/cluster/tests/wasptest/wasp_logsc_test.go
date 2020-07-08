@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/stretchr/testify/assert"
 )
 
 // FIXME move log tests to the same keys.json file with other tests
@@ -97,15 +99,22 @@ func TestLogsc5(t *testing.T) {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[kv.Key][]byte{
-		"log": util.Uint64To8Bytes(uint64(5)),
-		// FIXME: order is not deterministic
-		"log:0": []byte("message 0"),
-		"log:1": []byte("message 1"),
-		"log:2": []byte("message 2"),
-		"log:3": []byte("message 3"),
-		"log:4": []byte("message 4"),
-	}) {
-		t.Fail()
-	}
+	clu.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+		assert.EqualValues(t, 2, stateIndex)
+		{
+			state := state.ToGoMap()
+			assert.EqualValues(t, 8, len(state)) // 5 log items + log length + program_hash + owner address
+			assert.Equal(t, util.Uint64To8Bytes(uint64(5)), state["log"])
+			foundValues := make(map[string]bool)
+			for i := 0; i < 5; i++ {
+				key := kv.Key(fmt.Sprintf("log:%d", i))
+				value := string(state[key])
+				assert.NotNil(t, state[key])
+				foundValues[value] = true
+				assert.True(t, strings.HasPrefix(value, "message "))
+			}
+			assert.EqualValues(t, 5, len(foundValues))
+		}
+		return true
+	})
 }

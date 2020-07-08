@@ -57,7 +57,7 @@ Use the SC address copied in step 5.
 10. Query the SC state:
 
 ```
-$ fr-client -sc <sc-address> state
+$ fr-client -sc <sc-address> status
 FairRoulette Smart Contract State:
 bets: 1
 locked bets: 0

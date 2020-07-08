@@ -117,7 +117,7 @@ func putScData(scAddress *address.Address, color *balance.Color) {
 }
 
 func createOriginTx(scAddress *address.Address) *sctransaction.Transaction {
-	origTx, err := waspapi.CreateOriginUtxodb(waspapi.CreateOriginParams{
+	origTx, err := waspapi.CreateOrigin(config.goshimmerHost, waspapi.CreateOriginParams{
 		Address:              *scAddress,
 		OwnerSignatureScheme: utxodb.GetSigScheme(config.sc.ownerAddress),
 		ProgramHash:          progHash(),

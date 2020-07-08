@@ -50,6 +50,7 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 		return
 	}
 
+	// TODO: implement using tlog
 	length, ok, err := ctx.AccessState().GetInt64(logArrayKey)
 	if err != nil {
 		fmt.Printf("[logsc] %v", err)

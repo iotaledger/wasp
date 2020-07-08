@@ -519,22 +519,43 @@ func (cluster *Cluster) Report() bool {
 	return pass
 }
 
-func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[kv.Key][]byte) bool {
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
+	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+		fmt.Printf("[cluster] State verification for node %s\n", host)
 
-	scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
-	if err != nil {
-		panic("could not convert SC program hash")
-	}
+		ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 
+		scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
+		if err != nil {
+			panic("could not convert SC program hash")
+		}
+
+		expectedState := kv.FromGoMap(expectedState)
+		expectedState.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddr)
+		expectedState.Codec().SetHashValue(vmconst.VarNameProgramHash, &scProgHash)
+
+		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
+		fmt.Printf("      Actual: index %d\n%s\n", stateIndex, state)
+
+		if expectedIndex > 0 && stateIndex != expectedIndex {
+			fmt.Printf("   FAIL: index mismatch\n")
+			return false
+		}
+
+		if util.GetHashValue(expectedState) != util.GetHashValue(state) {
+			fmt.Printf("   FAIL: variables mismatch\n")
+			return false
+		}
+		return true
+	})
+}
+
+func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host string, stateIndex uint32, state kv.Map) bool) bool {
 	pass := true
 	for _, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
-		fmt.Printf("[cluster] State verification for node %s\n", host)
 		actual, err := waspapi.DumpSCState(host, sc.Address)
 		if err != nil {
-			pass = false
-			fmt.Printf("   FAIL: %s\n", err)
-			continue
+			panic(err)
 		}
 		if !actual.Exists {
 			pass = false
@@ -542,25 +563,8 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 			continue
 		}
 
-		vexp := kv.FromGoMap(expectedVariables)
-		vexp.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddr)
-		vexp.Codec().SetHashValue(vmconst.VarNameProgramHash, &scProgHash)
-
-		vact := kv.FromGoMap(actual.Variables)
-
-		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, vexp)
-		fmt.Printf("      Actual: index %d\n%s\n", actual.Index, vact)
-
-		if expectedIndex > 0 && actual.Index != expectedIndex {
+		if !f(host, actual.Index, kv.FromGoMap(actual.Variables)) {
 			pass = false
-			fmt.Printf("   FAIL: index mismatch\n")
-			continue
-		}
-
-		if util.GetHashValue(vexp) != util.GetHashValue(vact) {
-			pass = false
-			fmt.Printf("   FAIL: variables mismatch\n")
-			continue
 		}
 	}
 	return pass
