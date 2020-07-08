@@ -29,7 +29,7 @@ func main() {
 
 	switch globalFlags.Arg(0) {
 
-	case "state":
+	case "status":
 		check(fairroulette.DumpState(waspApi, *scAddress))
 
 	case "bet":
@@ -67,7 +67,7 @@ func check(err error) {
 }
 
 func usage(globalFlags *flag.FlagSet) {
-	fmt.Printf("Usage: %s [options] [state]\n", os.Args[0])
+	fmt.Printf("Usage: %s [options] [status|bet]\n", os.Args[0])
 	globalFlags.PrintDefaults()
 	os.Exit(1)
 }

@@ -36,12 +36,6 @@ func DumpState(waspApi string, scAddress string) error {
 	}
 	fmt.Printf("last winning color: %d\n", lastwc)
 
-	entropy, _, err := codec.GetHashValue(fairroulette.StateVarEntropyFromLocking)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("entropy: %s\n", entropy)
-
 	playPeriod, _, err := codec.GetInt64(fairroulette.VarPlayPeriodSec)
 	if err != nil {
 		return err
