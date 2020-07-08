@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wallet"
 )
 
@@ -111,7 +112,7 @@ func transferUsage(globalFlags *flag.FlagSet, flags *flag.FlagSet) {
 func dumpAddress(wallet *wallet.Wallet, n int) {
 	seed := wallet.Seed()
 	kp := seed.KeyPair(uint64(n))
-	fmt.Printf("Index %d\n", n)
+	fmt.Printf("Account index %d\n", n)
 	fmt.Printf("  Private key: %s\n", kp.PrivateKey)
 	fmt.Printf("  Public key:  %s\n", kp.PublicKey)
 	fmt.Printf("  Address:     %s\n", seed.Address(uint64(n)))
@@ -124,18 +125,16 @@ func dumpBalance(wallet *wallet.Wallet, n int) {
 	r, err := nodeapi.GetAccountOutputs(goshimmerApi, &address)
 	check(err)
 
-	fmt.Printf("Index %d\n", n)
+	byColor, total := util.OutputBalancesByColor(r)
+
+	fmt.Printf("Account index %d\n", n)
 	fmt.Printf("  Address: %s\n", address)
-	fmt.Printf("  Balances:\n")
-	if len(r) == 0 {
-		fmt.Printf("    (empty)\n")
-	} else {
-		for _, balances := range r {
-			for _, bal := range balances {
-				fmt.Printf("    %d %s\n", bal.Value, bal.Color.String())
-			}
-		}
+	fmt.Printf("  Balance:\n")
+	for color, value := range byColor {
+		fmt.Printf("    %s: %d\n", color.String(), value)
 	}
+	fmt.Printf("    ------\n")
+	fmt.Printf("    Total: %d\n", total)
 }
 
 func transfer(wallet *wallet.Wallet, n int, utxodbIndex int, amount int) {
