@@ -1,4 +1,4 @@
-package client
+package fairroulette
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"

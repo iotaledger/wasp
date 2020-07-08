@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/wasp/tools/fairroulette/client"
+	"github.com/iotaledger/wasp/tools/fairroulette"
 	"github.com/iotaledger/wasp/tools/wallet"
 )
 
@@ -30,7 +30,7 @@ func main() {
 	switch globalFlags.Arg(0) {
 
 	case "state":
-		check(client.DumpState(waspApi, *scAddress))
+		check(fairroulette.DumpState(waspApi, *scAddress))
 
 	case "bet":
 		flags := flag.NewFlagSet("bet", flag.ExitOnError)
@@ -53,7 +53,7 @@ func main() {
 
 		sigScheme := signaturescheme.ED25519(*wallet.Seed().KeyPair(uint64(*addressIndex)))
 
-		check(client.PlaceBet(goshimmerApi, scAddress, color, amount, sigScheme))
+		check(fairroulette.PlaceBet(goshimmerApi, scAddress, color, amount, sigScheme))
 
 	default:
 		usage(globalFlags)
