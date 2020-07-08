@@ -32,15 +32,23 @@ const (
 )
 
 func (l *arrayStruct) getSizeKey() Key {
+	return ArraySizeKey(l.name)
+}
+
+func ArraySizeKey(name string) Key {
 	var buf bytes.Buffer
-	buf.Write([]byte(l.name))
+	buf.Write([]byte(name))
 	buf.WriteByte(arraySizeKeyCode)
 	return Key(buf.Bytes())
 }
 
 func (l *arrayStruct) getElemKey(idx uint16) Key {
+	return ArrayElemKey(l.name, idx)
+}
+
+func ArrayElemKey(name string, idx uint16) Key {
 	var buf bytes.Buffer
-	buf.Write([]byte(l.name))
+	buf.Write([]byte(name))
 	buf.WriteByte(arrayElemKeyCode)
 	_ = util.WriteUint16(&buf, idx)
 	return Key(buf.Bytes())

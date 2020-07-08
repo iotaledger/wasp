@@ -16,6 +16,12 @@ func check(err error) {
 	}
 }
 
+func usage(globalFlags *flag.FlagSet) {
+	fmt.Printf("Usage: %s [options] [init|start|gendksets]\n", os.Args[0])
+	globalFlags.PrintDefaults()
+	os.Exit(1)
+}
+
 func main() {
 	globalFlags := flag.NewFlagSet("", flag.ExitOnError)
 	configPath := globalFlags.String("config", ".", "Config path")
@@ -26,9 +32,7 @@ func main() {
 	check(err)
 
 	if globalFlags.NArg() < 1 {
-		fmt.Printf("Usage: %s [options] [init|start|gendksets]\n", os.Args[0])
-		globalFlags.PrintDefaults()
-		return
+		usage(globalFlags)
 	}
 
 	switch globalFlags.Arg(0) {
@@ -59,6 +63,9 @@ func main() {
 		err = wasps.GenerateDKSets()
 		check(err)
 		wasps.Stop()
+
+	default:
+		usage(globalFlags)
 	}
 }
 

@@ -20,7 +20,7 @@
   },
   "node": {
     "disablePlugins": [],
-    "enablePlugins": ["Publisher"]
+    "enablePlugins": []
   },
   "webapi": {
     "auth": {
