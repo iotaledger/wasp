@@ -10,7 +10,7 @@ type TimestampedLog interface {
 	Append(ts int64, data []byte) error
 	Len() uint32
 	Latest() int64
-	GetTimeSlice(fromTs, toTs int64) (uint32, uint32, bool)
+	TakeTimeSlice(fromTs, toTs int64) *TimeSlice
 	LoadSlice(fromIdx, toIdx uint32) []*LogRecord
 	Erase()
 }
@@ -19,6 +19,12 @@ type LogRecord struct {
 	Index     uint32
 	Timestamp int64
 	Data      []byte
+}
+
+type TimeSlice struct {
+	tslog    *tslStruct
+	firstIdx uint32
+	lastIdx  uint32
 }
 
 type tslStruct struct {
@@ -114,41 +120,63 @@ func (l *tslStruct) latest() int64 {
 	return int64(util.Uint64From8Bytes(data[:8]))
 }
 
-func (l *tslStruct) getTimestampAtIndex(idx uint32) int64 {
-	if idx >= l.cachedLen {
+func (l *tslStruct) earliest() int64 {
+	if l.Len() == 0 {
 		return 0
 	}
-	v, err := l.kv.Get(l.getElemKey(idx))
+	data, err := l.kv.Get(l.getElemKey(0))
 	if err != nil {
 		return 0
 	}
-	if len(v) < 8 {
+	if len(data) < 8 {
 		return 0
 	}
-	return int64(util.Uint64From8Bytes(v[:8]))
+	return int64(util.Uint64From8Bytes(data[:8]))
+}
+
+func (l *tslStruct) getRecordAtIndex(idx uint32) *LogRecord {
+	if idx >= l.cachedLen {
+		return nil
+	}
+	v, err := l.kv.Get(l.getElemKey(idx))
+	if err != nil {
+		return nil
+	}
+	if len(v) < 8 {
+		return nil
+	}
+	return &LogRecord{
+		Index:     idx,
+		Timestamp: int64(util.Uint64From8Bytes(v[:8])),
+		Data:      v[8:],
+	}
 }
 
 // binary search. Return 2 indices, i1 < i2, where [i1:i2] (i2 not including) contains all
 // records with timestamp from 'fromTs' to 'toTs' (inclusive).
-func (l *tslStruct) GetTimeSlice(fromTs, toTs int64) (uint32, uint32, bool) {
+func (l *tslStruct) TakeTimeSlice(fromTs, toTs int64) *TimeSlice {
 	if l.Len() == 0 {
-		return 0, 0, false
+		return nil
 	}
 	if fromTs > toTs {
-		return 0, 0, false
+		return nil
 	}
 	lowerIdx, ok := l.findLowerIdx(fromTs, 0, l.Len()-1)
 	if !ok {
-		return 0, 0, false
+		return nil
 	}
 	upperIdx, ok := l.findUpperIdx(toTs, 0, l.Len()-1)
 	if !ok {
-		return 0, 0, false
+		return nil
 	}
 	if lowerIdx > upperIdx {
-		return 0, 0, false
+		return nil
 	}
-	return lowerIdx, upperIdx, true
+	return &TimeSlice{
+		tslog:    l,
+		firstIdx: lowerIdx,
+		lastIdx:  upperIdx,
+	}
 }
 
 func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool) {
@@ -158,7 +186,11 @@ func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool)
 	if fromIdx >= l.Len() || toIdx >= l.Len() {
 		panic("fromIdx >= l.Len() || toIdx >= l.Len()")
 	}
-	lowerTs := l.getTimestampAtIndex(fromIdx)
+	r := l.getRecordAtIndex(fromIdx)
+	if r == nil {
+		return 0, false
+	}
+	lowerTs := r.Timestamp
 	switch {
 	case ts <= lowerTs:
 		return fromIdx, true
@@ -168,7 +200,11 @@ func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool)
 	if !(ts > lowerTs && fromIdx < toIdx) {
 		panic("assertion failed: ts > lowerTs && fromIdx < toIdx")
 	}
-	upperTs := l.getTimestampAtIndex(toIdx)
+	r = l.getRecordAtIndex(toIdx)
+	if r == nil {
+		return 0, false
+	}
+	upperTs := r.Timestamp
 	if ts > upperTs {
 		return 0, false
 	}
@@ -193,7 +229,11 @@ func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool)
 	if fromIdx >= l.Len() || toIdx >= l.Len() {
 		panic("fromIdx >= l.Len() || toIdx >= l.Len()")
 	}
-	upperTs := l.getTimestampAtIndex(toIdx)
+	r := l.getRecordAtIndex(toIdx)
+	if r == nil {
+		return 0, false
+	}
+	upperTs := r.Timestamp
 	switch {
 	case ts >= upperTs:
 		return toIdx, true
@@ -203,7 +243,11 @@ func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool)
 	if !(ts < upperTs && fromIdx < toIdx) {
 		panic("assertion failed: ts < upperTs && fromIdx < toIdx")
 	}
-	lowerTs := l.getTimestampAtIndex(fromIdx)
+	r = l.getRecordAtIndex(fromIdx)
+	if r == nil {
+		return 0, false
+	}
+	lowerTs := r.Timestamp
 	if ts < lowerTs {
 		return 0, false
 	}
@@ -226,4 +270,45 @@ func (l *tslStruct) LoadSlice(fromIdx, toIdx uint32) []*LogRecord {
 
 func (l *tslStruct) Erase() {
 	panic("implement me")
+}
+
+func (sl *TimeSlice) IsEmpty() bool {
+	return sl == nil || sl.firstIdx > sl.lastIdx
+}
+
+func (sl *TimeSlice) NumPoints() uint32 {
+	if sl.IsEmpty() {
+		return 0
+	}
+	return sl.lastIdx - sl.firstIdx + 1
+}
+
+func (sl *TimeSlice) Earliest() int64 {
+	if sl.IsEmpty() {
+		return 0
+	}
+	r := sl.tslog.getRecordAtIndex(sl.firstIdx)
+	if r == nil {
+		return 0
+	}
+	return r.Timestamp
+}
+
+func (sl *TimeSlice) Latest() int64 {
+	if sl.IsEmpty() {
+		return 0
+	}
+	r := sl.tslog.getRecordAtIndex(sl.lastIdx)
+	if r == nil {
+		return 0
+	}
+	return r.Timestamp
+}
+
+func (sl *TimeSlice) LoadRecords() []*LogRecord {
+	ret := make([]*LogRecord, 0, sl.NumPoints())
+	for i := sl.firstIdx; i <= sl.lastIdx; i++ {
+		ret = append(ret, sl.tslog.getRecordAtIndex(i))
+	}
+	return ret
 }
