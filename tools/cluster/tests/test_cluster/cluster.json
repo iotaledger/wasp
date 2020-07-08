@@ -33,6 +33,11 @@
       "description": "Stock price Oracle program",
       "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
+    },
+    {
+      "description": "Wasm VM PoC program",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
     }
   ]
 }

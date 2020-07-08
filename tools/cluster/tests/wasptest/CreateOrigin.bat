@@ -1,1 +1,0 @@
-go test -run TestCreateOrigin

@@ -14,7 +14,7 @@ func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) err
 	return nil
 }
 
-func Activate3SC(clu *cluster.Cluster) error {
+func ActivateAllSC(clu *cluster.Cluster) error {
 	for _, sc := range clu.SmartContractConfig {
 		if err := activate(&sc, clu); err != nil {
 			return fmt.Errorf("activate %s: %v\n", sc.Address, err)

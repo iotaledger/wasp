@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -21,6 +22,9 @@ func LoadProcessor(progHashStr string) (vmtypes.Processor, bool) {
 
 	case fairroulette.ProgramHash:
 		return fairroulette.GetProcessor(), true
+
+	case wasmpoc.ProgramHash:
+		return wasmpoc.GetProcessor(), true
 	}
 	return nil, false
 }

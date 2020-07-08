@@ -114,7 +114,7 @@ func (l *tslStruct) latest() int64 {
 	return int64(util.Uint64From8Bytes(data[:8]))
 }
 
-func (l *tslStruct) getTsAtIndex(idx uint32) int64 {
+func (l *tslStruct) getTimestampAtIndex(idx uint32) int64 {
 	if idx >= l.cachedLen {
 		return 0
 	}
@@ -128,12 +128,37 @@ func (l *tslStruct) getTsAtIndex(idx uint32) int64 {
 	return int64(util.Uint64From8Bytes(v[:8]))
 }
 
-// binary search
+// binary search. Return 2 indices, i1 < i2, where [i1:i2] (i2 not including) contains all
+// records with timestamp from 'fromTs' to 'toTs' (inclusive).
 func (l *tslStruct) GetTimeSlice(fromTs, toTs int64) (uint32, uint32) {
+	if fromTs > toTs {
+		return 0, 0
+	}
 	panic("implement me")
 }
 
+// find largest which has timestamp >= to ts and index-1 has timestamp < ts
 func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool) {
+	if fromIdx >= toIdx {
+		return 0, false
+	}
+	if toIdx >= l.Len() {
+		toIdx = l.Len() - 1
+	}
+	//toTs := l.getTimestampAtIndex(toIdx)
+	//switch {
+	//case ts > toTs:
+	//	return 0, false
+	//case ts == upperTs:
+	//	if ret, ok := l.findLowerIdx(ts, upperIdx / 2); ok{
+	//		return ret, true
+	//	}
+	//
+	//case ts > upperTs:
+	//}
+	//if upperTs > ts{
+	//	return 0, false
+	//}
 	panic("implement me")
 }
 
