@@ -54,6 +54,18 @@ func ArrayElemKey(name string, idx uint16) Key {
 	return Key(buf.Bytes())
 }
 
+// ArrayRangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
+// assuming it has `length` elements.
+func ArrayRangeKeys(name string, length uint16, from uint16, to uint16) []Key {
+	keys := make([]Key, 0)
+	if to >= from {
+		for i := uint16(from); i < to && i < length; i++ {
+			keys = append(keys, ArrayElemKey(name, i))
+		}
+	}
+	return keys
+}
+
 func (l *arrayStruct) setSize(size uint16) {
 	if size == 0 {
 		l.kv.Del(l.getSizeKey())
