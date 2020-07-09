@@ -14,7 +14,7 @@ type Codec interface {
 	RCodec
 	WCodec
 	GetArray(Key) Array
-	GetDictionary(Key) Dictionary
+	GetDictionary(Key) (Dictionary, error)
 	// TODO GetTimedLog
 }
 
@@ -55,7 +55,7 @@ func (c codec) GetArray(key Key) Array {
 	return newArray(c, string(key))
 }
 
-func (c codec) GetDictionary(key Key) Dictionary {
+func (c codec) GetDictionary(key Key) (Dictionary, error) {
 	return newDict(c, string(key))
 }
 

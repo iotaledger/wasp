@@ -7,7 +7,8 @@ import (
 
 func TestBasicDic(t *testing.T) {
 	vars := NewMap()
-	dict := newDict(vars, "testDict")
+	dict, err := newDict(vars, "testDict")
+	assert.NoError(t, err)
 
 	assert.Zero(t, dict.Len())
 
@@ -19,39 +20,73 @@ func TestBasicDic(t *testing.T) {
 	v3 := []byte("datum3")
 
 	dict.SetAt(k1, v1)
-	assert.True(t, dict.HasAt(k1))
-	assert.False(t, dict.HasAt(k2))
-	assert.False(t, dict.HasAt(k3))
+	ok, err := dict.HasAt(k1)
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = dict.HasAt(k2)
+	assert.False(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = dict.HasAt(k3)
+	assert.False(t, ok)
+	assert.NoError(t, err)
 	assert.EqualValues(t, 1, dict.Len())
 
-	v := dict.GetAt(k1)
+	v, err := dict.GetAt(k1)
 	assert.EqualValues(t, v1, v)
 
-	v = dict.GetAt(k2)
+	v, err = dict.GetAt(k2)
+	assert.NoError(t, err)
 	assert.Nil(t, v)
 
 	dict.SetAt(k2, v2)
 	dict.SetAt(k3, v3)
-	assert.True(t, dict.HasAt(k1))
-	assert.True(t, dict.HasAt(k2))
-	assert.True(t, dict.HasAt(k3))
+
+	ok, err = dict.HasAt(k1)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = dict.HasAt(k2)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = dict.HasAt(k3)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
 	assert.EqualValues(t, 3, dict.Len())
 
-	v = dict.GetAt(k2)
+	v, err = dict.GetAt(k2)
+	assert.NoError(t, err)
 	assert.EqualValues(t, v2, v)
 
-	v = dict.GetAt(k3)
+	v, err = dict.GetAt(k3)
+	assert.NoError(t, err)
 	assert.EqualValues(t, v3, v)
 
-	dict.DelAt(k2)
-	assert.True(t, dict.HasAt(k1))
-	assert.False(t, dict.HasAt(k2))
-	assert.True(t, dict.HasAt(k3))
+	err = dict.DelAt(k2)
+	assert.NoError(t, err)
+
+	ok, err = dict.HasAt(k1)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = dict.HasAt(k2)
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
+	ok, err = dict.HasAt(k3)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
 	assert.EqualValues(t, 2, dict.Len())
 
-	v = dict.GetAt(k2)
+	v, err = dict.GetAt(k2)
+	assert.NoError(t, err)
 	assert.Nil(t, v)
 
-	v = dict.GetAt(k3)
+	v, err = dict.GetAt(k3)
+	assert.NoError(t, err)
 	assert.EqualValues(t, v3, v)
 }

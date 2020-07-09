@@ -13,7 +13,7 @@ type KVStore interface {
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
 
-	// TODO add Has(key Key) bool.
+	// TODO add Has(key Key) (bool, error).
 	// It would check existence of the key without fetching the value. Much faster with DB
 	// TODO add DelPrefix(prefix []byte)
 	// deletes all keys with the prefix. Currently we don't have a possibility to iterate over keys
