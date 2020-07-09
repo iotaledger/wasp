@@ -63,7 +63,7 @@ func committee(kind string, indices []int) []string {
 }
 
 func SetSCAddress(address string) {
-	viper.SetDefault("fairroulette.address", address)
+	viper.Set("fairroulette.address", address)
 	viper.WriteConfig()
 }
 

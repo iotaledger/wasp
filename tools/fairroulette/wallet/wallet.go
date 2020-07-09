@@ -21,7 +21,7 @@ type Wallet struct {
 
 func Init() error {
 	seed := wallet.New().Seed().Bytes()
-	viper.SetDefault("wallet.seed", base58.Encode(seed))
+	viper.Set("wallet.seed", base58.Encode(seed))
 	return viper.WriteConfig()
 }
 
