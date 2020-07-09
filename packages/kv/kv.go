@@ -18,5 +18,5 @@ type KVStore interface {
 	// TODO add DelPrefix(prefix []byte)
 	// deletes all keys with the prefix. Currently we don't have a possibility to iterate over keys
 	// and maybe we do not need one in the sandbox. However we need a possibility to efficiently clear arrays,
-	// dictionaries etc
+	// dictionaries and timestamped logs
 }
