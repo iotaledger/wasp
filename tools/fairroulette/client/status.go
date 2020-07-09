@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"time"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -17,6 +18,7 @@ func StatusCmd(args []string) {
 		fairroulette.StateVarLastWinningColor,            // int64
 		fairroulette.StateVarEntropyFromLocking,          // hash
 		fairroulette.VarPlayPeriodSec,                    // int64
+		fairroulette.VarNextPlayTimestamp,                // int64
 	})
 	check(err)
 
@@ -26,6 +28,8 @@ func StatusCmd(args []string) {
 	lastwc, _, err := codec.GetInt64(fairroulette.StateVarLastWinningColor)
 	check(err)
 	playPeriod, _, err := codec.GetInt64(fairroulette.VarPlayPeriodSec)
+	check(err)
+	nextPlayTimestamp, _, err := codec.GetInt64(fairroulette.VarNextPlayTimestamp)
 	check(err)
 
 	// in a second query we fetch the items
@@ -44,6 +48,17 @@ func StatusCmd(args []string) {
 	dumpBets(lockedBets)
 	fmt.Printf("  last winning color: %d\n", lastwc)
 	fmt.Printf("  play period (s): %d\n", playPeriod)
+	fmt.Printf("  next play in: %s\n", formatNextPlay(nextPlayTimestamp))
+}
+
+func formatNextPlay(ts int64) string {
+	diff := time.Unix(0, ts).Sub(time.Now())
+	// round to the second
+	diff -= diff % time.Second
+	if diff < 0 {
+		return "unknown"
+	}
+	return diff.String()
 }
 
 func decodeBets(state kv.Map, keys []kv.Key) []*fairroulette.BetInfo {

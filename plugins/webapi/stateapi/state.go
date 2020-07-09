@@ -2,6 +2,7 @@
 package stateapi
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -42,7 +43,9 @@ func HandlerQueryState(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &QueryStateResponse{Error: err.Error()})
 	}
 	if !exist {
-		return c.JSON(http.StatusNotFound, &QueryStateResponse{Error: err.Error()})
+		return c.JSON(http.StatusNotFound, &QueryStateResponse{
+			Error: fmt.Sprintf("State not found with address %s", addr),
+		})
 	}
 	ret := &QueryStateResponse{
 		Values: make([]KeyValuePair, 0),
