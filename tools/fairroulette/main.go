@@ -7,9 +7,9 @@ import (
 
 	"github.com/iotaledger/wasp/tools/fairroulette/admin"
 	"github.com/iotaledger/wasp/tools/fairroulette/client"
+	"github.com/iotaledger/wasp/tools/fairroulette/config"
 	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 func check(err error) {
@@ -27,33 +27,33 @@ var commands = map[string]func([]string){
 	"bet":         client.BetCmd,
 }
 
-func usage(globalFlags *pflag.FlagSet) {
+func usage(flags *pflag.FlagSet) {
 	cmdNames := make([]string, 0)
 	for k, _ := range commands {
 		cmdNames = append(cmdNames, k)
 	}
 
 	fmt.Printf("Usage: %s [options] [%s]\n", os.Args[0], strings.Join(cmdNames, "|"))
-	globalFlags.PrintDefaults()
+	flags.PrintDefaults()
 	os.Exit(1)
 }
 
 func main() {
-	globalFlags := pflag.NewFlagSet("global flags", pflag.ExitOnError)
-	configPath := globalFlags.StringP("config", "c", "fairroulette.json", "path to fairroulette.json")
-	pflag.IntP("address-index", "i", 0, "address index")
-	globalFlags.Parse(os.Args[1:])
+	flags := pflag.NewFlagSet("global flags", pflag.ExitOnError)
+	flags.AddFlagSet(config.HookFlags())
+	flags.AddFlagSet(wallet.HookFlags())
+	flags.AddFlagSet(admin.HookFlags())
+	flags.Parse(os.Args[1:])
 
-	viper.SetConfigFile(*configPath)
-	viper.ReadInConfig()
+	config.Read()
 
-	if globalFlags.NArg() < 1 {
-		usage(globalFlags)
+	if flags.NArg() < 1 {
+		usage(flags)
 	}
 
-	cmd, ok := commands[globalFlags.Arg(0)]
+	cmd, ok := commands[flags.Arg(0)]
 	if !ok {
-		usage(globalFlags)
+		usage(flags)
 	}
-	cmd(globalFlags.Args()[1:])
+	cmd(flags.Args()[1:])
 }

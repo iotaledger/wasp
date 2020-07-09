@@ -3,6 +3,7 @@ package admin
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
+	"github.com/iotaledger/wasp/tools/fairroulette/util"
 	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -22,6 +24,17 @@ import (
 const scDescription = "FairRoulette smart contract"
 const scProgramHash = fairroulette.ProgramHash
 
+var quorum int
+
+func HookFlags() *pflag.FlagSet {
+	flags := pflag.NewFlagSet("wallet init", pflag.ExitOnError)
+	flags.IntVarP(&quorum, "quorum", "t", 3, "quorum")
+	flags.IntSliceP("committee", "n", []int{0, 1, 2, 3}, "committee")
+
+	viper.BindPFlag("fairroulette.committee", flags.Lookup("committee"))
+	return flags
+}
+
 func AdminCmd(args []string) {
 	if len(args) < 1 {
 		usage()
@@ -29,14 +42,17 @@ func AdminCmd(args []string) {
 
 	switch args[0] {
 	case "init":
-		flags := pflag.NewFlagSet("init", pflag.ExitOnError)
-		quorum := flags.IntP("quorum", "t", 3, "quorum")
-		flags.IntSliceP("committee", "n", []int{0, 1, 2, 3}, "committee")
-		flags.Parse(args[1:])
+		initSC()
 
-		viper.BindPFlag("fairroulette.committee", flags.Lookup("committee"))
+	case "set-period":
+		if len(args) != 2 {
+			fmt.Printf("Usage: %s admin set-period <seconds>\n", os.Args[0])
+			os.Exit(1)
+		}
+		s, err := strconv.Atoi(args[1])
+		check(err)
+		setPeriod(s)
 
-		initSC(*quorum)
 	default:
 		usage()
 	}
@@ -50,12 +66,12 @@ func check(err error) {
 }
 
 func usage() {
-	fmt.Printf("Usage: %s admin [init]\n", os.Args[0])
+	fmt.Printf("Usage: %s admin [init|set-period <seconds>]\n", os.Args[0])
 	os.Exit(1)
 }
 
-func initSC(quorum int) {
-	scAddress := genDKSets(quorum)
+func initSC() {
+	scAddress := genDKSets()
 	origTx := createOriginTx(scAddress)
 	color := balance.Color(origTx.ID())
 	putScData(scAddress, &color)
@@ -66,7 +82,7 @@ func initSC(quorum int) {
 	config.SetSCAddress(scAddress.String())
 }
 
-func genDKSets(quorum int) *address.Address {
+func genDKSets() *address.Address {
 	scAddress, err := waspapi.GenerateNewDistributedKeySet(
 		config.CommitteeApi(committee()),
 		uint16(len(committee())),
@@ -124,4 +140,14 @@ func ownerAddress() address.Address {
 
 func committee() []int {
 	return viper.GetIntSlice("fairroulette.committee")
+}
+
+func setPeriod(seconds int) {
+	util.PostTransaction(&waspapi.RequestBlockJson{
+		Address:     config.GetSCAddress().String(),
+		RequestCode: fairroulette.RequestSetPlayPeriod,
+		Vars: map[string]interface{}{
+			fairroulette.VarPlayPeriodSec: int64(seconds),
+		},
+	})
 }

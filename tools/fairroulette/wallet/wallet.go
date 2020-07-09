@@ -16,7 +16,7 @@ type WalletConfig struct {
 }
 
 type Wallet struct {
-	*wallet.Wallet
+	goshimmerWallet *wallet.Wallet
 }
 
 func Init() error {
@@ -35,16 +35,14 @@ func Load() *Wallet {
 	return &Wallet{wallet.New(seed)}
 }
 
-func (w *Wallet) AccountIndex() int {
-	return viper.GetInt("address-index")
-}
+var addressIndex int
 
 func (w *Wallet) KeyPair() *ed25519.KeyPair {
-	return w.Seed().KeyPair(uint64(w.AccountIndex()))
+	return w.goshimmerWallet.Seed().KeyPair(uint64(addressIndex))
 }
 
 func (w *Wallet) Address() address.Address {
-	return w.Seed().Address(uint64(w.AccountIndex()))
+	return w.goshimmerWallet.Seed().Address(uint64(addressIndex))
 }
 
 func (w *Wallet) SignatureScheme() signaturescheme.SignatureScheme {

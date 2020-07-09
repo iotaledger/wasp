@@ -20,13 +20,15 @@ package fairroulette
 
 import (
 	"bytes"
+	"fmt"
+	"io"
+	"sort"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io"
-	"sort"
 )
 
 type fairRouletteProcessor map[sctransaction.RequestCode]fairRouletteEntryPoint
@@ -73,11 +75,15 @@ const (
 	DefaultPlaySecondsAfterFirstBet = 120
 )
 
-type betInfo struct {
+type BetInfo struct {
 	player address.Address
 	reqId  sctransaction.RequestId
 	sum    int64
 	color  byte
+}
+
+func (b *BetInfo) String() string {
+	return fmt.Sprintf("[player %s bets %d IOTAs on color %d]", b.player.String()[:6], b.sum, b.color)
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -144,7 +150,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 	// save the bet info in the array
 	reqid := ctx.AccessRequest().ID()
-	state.GetArray(StateVarBets).Push(encodeBetInfo(&betInfo{
+	state.GetArray(StateVarBets).Push(encodeBetInfo(&BetInfo{
 		player: sender,
 		sum:    sum,
 		reqId:  reqid,
@@ -240,14 +246,14 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 
 	// take locked bets from the array
 	totalLockedAmount := int64(0)
-	lockedBets := make([]*betInfo, numLockedBets)
+	lockedBets := make([]*BetInfo, numLockedBets)
 	for i := range lockedBets {
 		biData, ok := lockedBetsArray.GetAt(uint16(i))
 		if !ok {
 			// inconsistency. Very sad
 			return
 		}
-		bi, err := decodeBetInfo(biData)
+		bi, err := DecodeBetInfo(biData)
 		if err != nil {
 			// inconsistency. Even more sad
 			return
@@ -297,7 +303,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
-func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmount int64) bool {
+func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
 	sumsByPlayers := make(map[address.Address]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
@@ -348,20 +354,20 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*betInfo, totalLockedAmo
 	return true
 }
 
-func encodeBetInfo(bi *betInfo) []byte {
+func encodeBetInfo(bi *BetInfo) []byte {
 	ret, _ := util.Bytes(bi)
 	return ret
 }
 
-func decodeBetInfo(data []byte) (*betInfo, error) {
-	var ret betInfo
+func DecodeBetInfo(data []byte) (*BetInfo, error) {
+	var ret BetInfo
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return &ret, nil
 }
 
-func (bi *betInfo) Write(w io.Writer) error {
+func (bi *BetInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.player[:]); err != nil {
 		return err
 	}
@@ -377,7 +383,7 @@ func (bi *betInfo) Write(w io.Writer) error {
 	return nil
 }
 
-func (bi *betInfo) Read(r io.Reader) error {
+func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
 	if err = util.ReadAddress(r, &bi.player); err != nil {
 		return err
