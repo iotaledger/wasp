@@ -5,13 +5,11 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// TODO iteration over dictionary ??
-
 type Dictionary interface {
 	GetAt(key []byte) ([]byte, bool)
 	SetAt(key []byte, value []byte)
 	DelAt(key []byte)
-	ExistsAt(key []byte) bool
+	HasAt(key []byte) bool
 	Len() uint32
 	Erase()
 }
@@ -58,27 +56,31 @@ func (l *dictStruct) setSize(size uint32) {
 
 func (d *dictStruct) GetAt(key []byte) ([]byte, bool) {
 	ret, err := d.kv.Get(d.getElemKey(key))
-	return ret, err != nil
+	return ret, ret != nil && err == nil
 }
 
 func (d *dictStruct) SetAt(key []byte, value []byte) {
-	if !d.ExistsAt(key) {
-		d.setSize(d.Len() + 1)
+	if d.Len() == 0 {
+		d.setSize(1)
+	} else {
+		if !d.HasAt(key) {
+			d.setSize(d.Len() + 1)
+		}
 	}
 	d.kv.Set(d.getElemKey(key), value)
 }
 
 func (d *dictStruct) DelAt(key []byte) {
-	if d.ExistsAt(key) {
+	if d.HasAt(key) {
 		d.setSize(d.Len() - 1)
 	}
 	d.kv.Del(d.getElemKey(key))
 }
 
-func (d *dictStruct) ExistsAt(key []byte) bool {
+func (d *dictStruct) HasAt(key []byte) bool {
 	// TODO implement with Has
-	_, err := d.kv.Get(d.getElemKey(key))
-	return err == nil
+	v, err := d.kv.Get(d.getElemKey(key))
+	return v != nil && err == nil
 }
 
 func (d *dictStruct) Len() uint32 {
@@ -90,6 +92,6 @@ func (d *dictStruct) Len() uint32 {
 }
 
 func (d *dictStruct) Erase() {
-	// TODO needs iteration
+	// TODO needs DelPrefix method in KVStore
 	panic("implement me")
 }
