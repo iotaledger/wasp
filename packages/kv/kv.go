@@ -9,10 +9,14 @@ type Key string
 // arbitrary byte slices.
 type KVStore interface {
 	Set(key Key, value []byte)
-	// TODO Del(key Key)
 	Del(key Key)
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
-	// TODO implement Has. It checks existence of the key without loading the value. Much faster with DB
-	// Hash(key Key) bool
+
+	// TODO add Has(key Key) bool.
+	// It would check existence of the key without loading the value. Much faster with DB
+	// TODO add DelPrefix(prefix []byte)
+	// deletes all keys with the prefix. Currently we don't have a possibility to iterate over keys
+	// and maybe we do not need one in the sandbox. However we need a possibility to efficiently clear arrays,
+	// dictionaries etc
 }
