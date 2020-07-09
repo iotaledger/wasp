@@ -92,7 +92,7 @@ func initLog(t *testing.T, tl TimestampedLog) {
 
 func TestTlogBig(t *testing.T) {
 	vars := NewMap()
-	tl, err := newTimestampedLog(vars, "testTlog")
+	tl, err := newTimestampedLog(vars, "testTimestampedlog")
 	assert.NoError(t, err)
 
 	initLog(t, tl)
