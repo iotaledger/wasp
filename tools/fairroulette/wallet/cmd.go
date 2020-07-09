@@ -23,7 +23,15 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/spf13/pflag"
 )
+
+func HookFlags() *pflag.FlagSet {
+	flags := pflag.NewFlagSet("wallet", pflag.ExitOnError)
+	flags.IntVarP(&addressIndex, "address-index", "i", 0, "address index")
+	return flags
+}
 
 func Cmd(args []string) {
 	if len(args) == 0 {
@@ -71,4 +79,3 @@ func usage() {
 	fmt.Printf("Usage: %s wallet [init|address|balance|transfer]\n", os.Args[0])
 	os.Exit(1)
 }
-

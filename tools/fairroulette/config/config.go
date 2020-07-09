@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -20,6 +21,21 @@ func init() {
 	viper.SetDefault("wasp.1.peering", "127.0.0.1:4001")
 	viper.SetDefault("wasp.2.peering", "127.0.0.1:4002")
 	viper.SetDefault("wasp.3.peering", "127.0.0.1:4003")
+}
+
+var configPath string
+var Verbose bool
+
+func HookFlags() *pflag.FlagSet {
+	flags := pflag.NewFlagSet("wallet", pflag.ExitOnError)
+	flags.StringVarP(&configPath, "config", "c", "fairroulette.json", "path to fairroulette.json")
+	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
+	return flags
+}
+
+func Read() {
+	viper.SetConfigFile(configPath)
+	viper.ReadInConfig()
 }
 
 func GoshimmerApi() string {

@@ -22,6 +22,17 @@ import (
 const scDescription = "FairRoulette smart contract"
 const scProgramHash = fairroulette.ProgramHash
 
+var quorum int
+
+func HookFlags() *pflag.FlagSet {
+	flags := pflag.NewFlagSet("wallet init", pflag.ExitOnError)
+	flags.IntVarP(&quorum, "quorum", "t", 3, "quorum")
+	flags.IntSliceP("committee", "n", []int{0, 1, 2, 3}, "committee")
+
+	viper.BindPFlag("fairroulette.committee", flags.Lookup("committee"))
+	return flags
+}
+
 func AdminCmd(args []string) {
 	if len(args) < 1 {
 		usage()
@@ -29,14 +40,8 @@ func AdminCmd(args []string) {
 
 	switch args[0] {
 	case "init":
-		flags := pflag.NewFlagSet("init", pflag.ExitOnError)
-		quorum := flags.IntP("quorum", "t", 3, "quorum")
-		flags.IntSliceP("committee", "n", []int{0, 1, 2, 3}, "committee")
-		flags.Parse(args[1:])
+		initSC(quorum)
 
-		viper.BindPFlag("fairroulette.committee", flags.Lookup("committee"))
-
-		initSC(*quorum)
 	default:
 		usage()
 	}
