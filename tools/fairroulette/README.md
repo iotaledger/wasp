@@ -83,3 +83,5 @@ locked bets: 0
 last winning color: 0
 play period (s): 0
 ```
+
+14. Change the play period (as admin): `fairroulette admin set-period 10 -c owner.json`

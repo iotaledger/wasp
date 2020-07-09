@@ -70,7 +70,7 @@ func SetSCAddress(address string) {
 func GetSCAddress() address.Address {
 	b58 := viper.GetString("fairroulette.address")
 	if len(b58) == 0 {
-		check(fmt.Errorf("call `set-address` first"))
+		check(fmt.Errorf("call `set-address` or `admin init` first"))
 	}
 	address, err := address.FromBase58(b58)
 	check(err)
