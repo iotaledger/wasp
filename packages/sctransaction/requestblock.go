@@ -19,6 +19,10 @@ const RequestIdSize = hashing.HashSize + 2
 
 type RequestId [RequestIdSize]byte
 
+// FIXME timelock uint32 ref Year 2038 problem https://en.wikipedia.org/wiki/Year_2038_problem
+// signed int32 can store values uo to 03:14:07 UTC on 19 January 2038
+// But if we use uint32 we should extend the range twice, something like until 2092. Not a problem ???
+
 type RequestBlock struct {
 	// address of the target smart contract
 	address address.Address
