@@ -10,8 +10,8 @@ import (
 
 func TestTlogBasic(t *testing.T) {
 	vars := NewMap()
-	tl := newTimestampedLog(vars, "testTlog")
-
+	tl, err := newTimestampedLog(vars, "testTlog")
+	assert.NoError(t, err)
 	assert.Zero(t, tl.Len())
 
 	d1 := []byte("datum1")
@@ -25,7 +25,7 @@ func TestTlogBasic(t *testing.T) {
 	nowisNext1 := nowis + 100
 	nowisNext2 := nowis + 10000
 
-	err := tl.Append(nowis, d1)
+	err = tl.Append(nowis, d1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, tl.Len())
 
@@ -64,6 +64,7 @@ func TestTlogBasic(t *testing.T) {
 const (
 	numPoints     = 100
 	changeTsEvery = 5
+	step          = 1000
 )
 
 func initLog(t *testing.T, tl TimestampedLog) {
@@ -81,8 +82,8 @@ func initLog(t *testing.T, tl TimestampedLog) {
 		err = tl.Append(nowis, d)
 		latest = nowis
 		assert.NoError(t, err)
-		if i%changeTsEvery == 0 {
-			nowis += 1000
+		if (i+1)%changeTsEvery == 0 {
+			nowis += step
 		}
 	}
 	assert.EqualValues(t, timeStart, tl.Earliest())
@@ -91,20 +92,31 @@ func initLog(t *testing.T, tl TimestampedLog) {
 
 func TestTlogBig(t *testing.T) {
 	vars := NewMap()
-	tl := newTimestampedLog(vars, "testTlog")
+	tl, err := newTimestampedLog(vars, "testTlog")
+	assert.NoError(t, err)
 
 	initLog(t, tl)
 
 	assert.EqualValues(t, numPoints, tl.Len())
 
 	latest := tl.Latest()
-	err := tl.Append(latest-10000, nil)
+	err = tl.Append(latest-10000, nil)
 	assert.Error(t, err)
 
-	tslice := tl.TakeTimeSlice(tl.Earliest(), tl.Latest())
+	tslice, err := tl.TakeTimeSlice(tl.Earliest(), tl.Earliest())
+	assert.NoError(t, err)
+	assert.EqualValues(t, changeTsEvery, tslice.NumPoints())
+
+	tslice, err = tl.TakeTimeSlice(tl.Earliest(), tl.Earliest()+step)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2*changeTsEvery, tslice.NumPoints())
+
+	tslice, err = tl.TakeTimeSlice(tl.Latest(), tl.Latest())
+	assert.NoError(t, err)
+	assert.EqualValues(t, changeTsEvery, tslice.NumPoints())
+
+	tslice, err = tl.TakeTimeSlice(tl.Earliest(), tl.Latest())
 	assert.EqualValues(t, tl.Len(), tslice.NumPoints())
-
-	//tslice = tl.TakeTimeSlice(tl.Earliest(), tl.Earliest())
-	//assert.EqualValues(t, 1, tslice.NumPoints())
-
+	assert.NoError(t, err)
+	assert.EqualValues(t, tl.Len(), tslice.NumPoints())
 }

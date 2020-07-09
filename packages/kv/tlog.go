@@ -3,6 +3,7 @@ package kv
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -11,8 +12,7 @@ type TimestampedLog interface {
 	Len() uint32
 	Earliest() int64
 	Latest() int64
-	TakeTimeSlice(fromTs, toTs int64) *TimeSlice
-	LoadSlice(fromIdx, toIdx uint32) []*LogRecord
+	TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error)
 	Erase()
 }
 
@@ -26,23 +26,34 @@ type TimeSlice struct {
 	tslog    *tslStruct
 	firstIdx uint32
 	lastIdx  uint32
+	earliest int64
+	latest   int64
 }
 
 type tslStruct struct {
-	kv           KVStore
-	name         string
-	cachedLen    uint32
-	cachedLatest int64
+	kv             KVStore
+	name           string
+	cachedLen      uint32
+	cachedLatest   int64
+	cachedEarliest int64
 }
 
-func newTimestampedLog(kv KVStore, name string) TimestampedLog {
+func newTimestampedLog(kv KVStore, name string) (TimestampedLog, error) {
 	ret := &tslStruct{
 		kv:   kv,
 		name: name,
 	}
-	ret.cachedLen = ret.len()
-	ret.cachedLatest = ret.latest()
-	return ret
+	var err error
+	if ret.cachedLen, err = ret.len(); err != nil {
+		return nil, err
+	}
+	if ret.cachedLatest, err = ret.latest(); err != nil {
+		return nil, err
+	}
+	if ret.cachedEarliest, err = ret.earliest(); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 const (
@@ -74,12 +85,18 @@ func (l *tslStruct) setSize(size uint32) {
 	l.cachedLen = size
 }
 
-func (l *tslStruct) len() uint32 {
+func (l *tslStruct) len() (uint32, error) {
 	v, err := l.kv.Get(l.getSizeKey())
-	if err != nil || len(v) != 4 {
-		return 0
+	if err != nil {
+		return 0, err
 	}
-	return util.Uint32From4Bytes(v)
+	if v == nil {
+		return 0, nil
+	}
+	if len(v) != 4 {
+		return 0, errors.New("corrupted data")
+	}
+	return util.Uint32From4Bytes(v), nil
 }
 
 // Len == 0/empty/non-existent are equivalent
@@ -99,6 +116,9 @@ func (l *tslStruct) Append(ts int64, data []byte) error {
 	l.kv.Set(l.getElemKey(idx), buf.Bytes())
 	l.setSize(idx + 1)
 	l.cachedLatest = ts
+	if idx == 0 {
+		l.cachedEarliest = ts
+	}
 	return nil
 }
 
@@ -106,168 +126,207 @@ func (l *tslStruct) Latest() int64 {
 	return l.cachedLatest
 }
 
-func (l *tslStruct) latest() int64 {
+func (l *tslStruct) latest() (int64, error) {
 	idx := l.Len()
 	if idx == 0 {
-		return 0
+		return 0, nil
 	}
 	data, err := l.kv.Get(l.getElemKey(idx - 1))
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	if len(data) < 8 {
-		return 0
+		return 0, errors.New("corrupted data")
 	}
-	return int64(util.Uint64From8Bytes(data[:8]))
+	return int64(util.Uint64From8Bytes(data[:8])), nil
 }
 
 func (l *tslStruct) Earliest() int64 {
+	return l.cachedEarliest
+}
+
+func (l *tslStruct) earliest() (int64, error) {
 	if l.Len() == 0 {
-		return 0
+		return 0, nil
 	}
 	data, err := l.kv.Get(l.getElemKey(0))
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	if len(data) < 8 {
-		return 0
+		return 0, errors.New("corrupted data")
 	}
-	return int64(util.Uint64From8Bytes(data[:8]))
+	return int64(util.Uint64From8Bytes(data[:8])), nil
 }
 
-func (l *tslStruct) getRecordAtIndex(idx uint32) *LogRecord {
+func (l *tslStruct) getRecordAtIndex(idx uint32) (*LogRecord, error) {
 	if idx >= l.cachedLen {
-		return nil
+		return nil, nil
 	}
 	v, err := l.kv.Get(l.getElemKey(idx))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	if len(v) < 8 {
-		return nil
+		return nil, errors.New("corrupted data")
 	}
 	return &LogRecord{
 		Index:     idx,
 		Timestamp: int64(util.Uint64From8Bytes(v[:8])),
 		Data:      v[8:],
-	}
+	}, nil
 }
 
 // binary search. Return 2 indices, i1 < i2, where [i1:i2] (i2 not including) contains all
 // records with timestamp from 'fromTs' to 'toTs' (inclusive).
-func (l *tslStruct) TakeTimeSlice(fromTs, toTs int64) *TimeSlice {
+func (l *tslStruct) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
 	if l.Len() == 0 {
-		return nil
+		return nil, nil
 	}
 	if fromTs > toTs {
-		return nil
+		return nil, nil
 	}
-	lowerIdx, ok := l.findLowerIdx(fromTs, 0, l.Len()-1)
-	if !ok {
-		return nil
+	lowerIdx, ok, err := l.findLowerIdx(fromTs, 0, l.Len()-1)
+	if err != nil {
+		return nil, err
 	}
-	upperIdx, ok := l.findUpperIdx(toTs, 0, l.Len()-1)
 	if !ok {
-		return nil
+		return nil, nil
+	}
+	upperIdx, ok, err := l.findUpperIdx(toTs, 0, l.Len()-1)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
 	}
 	if lowerIdx > upperIdx {
-		return nil
+		return nil, nil
 	}
+	earliest, err := l.getRecordAtIndex(lowerIdx)
+	if err != nil {
+		return nil, err
+	}
+	latest, err := l.getRecordAtIndex(upperIdx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TimeSlice{
 		tslog:    l,
 		firstIdx: lowerIdx,
 		lastIdx:  upperIdx,
-	}
+		earliest: earliest.Timestamp,
+		latest:   latest.Timestamp,
+	}, nil
 }
 
-func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool) {
+func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
 	if fromIdx > toIdx {
-		return 0, false
+		return 0, false, nil
 	}
 	if fromIdx >= l.Len() || toIdx >= l.Len() {
-		panic("fromIdx >= l.Len() || toIdx >= l.Len()")
+		return 0, false, errors.New("wrong arguments")
 	}
-	r := l.getRecordAtIndex(fromIdx)
+	r, err := l.getRecordAtIndex(fromIdx)
+	if err != nil {
+		return 0, false, err
+	}
 	if r == nil {
-		return 0, false
+		panic("internal error 1: r == nil")
 	}
 	lowerTs := r.Timestamp
 	switch {
 	case ts <= lowerTs:
-		return fromIdx, true
+		return fromIdx, true, nil
 	case fromIdx == toIdx:
-		return 0, false
+		return 0, false, nil
 	}
 	if !(ts > lowerTs && fromIdx < toIdx) {
 		panic("assertion failed: ts > lowerTs && fromIdx < toIdx")
 	}
-	r = l.getRecordAtIndex(toIdx)
+	r, err = l.getRecordAtIndex(toIdx)
+	if err != nil {
+		return 0, false, err
+	}
 	if r == nil {
-		return 0, false
+		panic("internal error 1: r == nil")
 	}
 	upperTs := r.Timestamp
 	if ts > upperTs {
-		return 0, false
+		return 0, false, nil
 	}
 	// lowerTs < ts <= upperTs && fromIdx < toIdx
 	if fromIdx+1 == toIdx {
-		return toIdx, true
+		return toIdx, true, nil
 	}
 	// index is somewhere in between two different
 	middleIdx := (fromIdx + toIdx) / 2
 
-	ret, ok := l.findLowerIdx(ts, fromIdx, middleIdx)
+	ret, ok, err := l.findLowerIdx(ts, fromIdx, middleIdx)
+	if err != nil {
+		return 0, false, err
+	}
 	if ok {
-		return ret, true
+		return ret, true, nil
 	}
 	return l.findLowerIdx(ts, middleIdx, toIdx)
 }
 
-func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool) {
+func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
 	if fromIdx > toIdx {
-		return 0, false
+		return 0, false, nil
 	}
 	if fromIdx >= l.Len() || toIdx >= l.Len() {
 		panic("fromIdx >= l.Len() || toIdx >= l.Len()")
 	}
-	r := l.getRecordAtIndex(toIdx)
+	r, err := l.getRecordAtIndex(toIdx)
+	if err != nil {
+		return 0, false, err
+	}
 	if r == nil {
-		return 0, false
+		return 0, false, fmt.Errorf("missing index %d", toIdx)
 	}
 	upperTs := r.Timestamp
 	switch {
 	case ts >= upperTs:
-		return toIdx, true
+		return toIdx, true, nil
 	case fromIdx == toIdx:
-		return 0, false
+		return 0, false, nil
+
 	}
 	if !(ts < upperTs && fromIdx < toIdx) {
-		panic("assertion failed: ts < upperTs && fromIdx < toIdx")
+		panic("internal error: ts < upperTs && fromIdx < toIdx")
 	}
-	r = l.getRecordAtIndex(fromIdx)
+	r, err = l.getRecordAtIndex(fromIdx)
+	if err != nil {
+		return 0, false, err
+	}
 	if r == nil {
-		return 0, false
+		return 0, false, fmt.Errorf("missing index %d", fromIdx)
 	}
 	lowerTs := r.Timestamp
 	if ts < lowerTs {
-		return 0, false
+		return 0, false, nil
+	}
+	if fromIdx+1 == toIdx {
+		return fromIdx, true, nil
 	}
 	// lowerTs <= ts < upperTs && fromIdx < toIdx
 	// index is somewhere in between two different
 	middleIdx := (fromIdx + toIdx) / 2
 
-	ret, ok := l.findUpperIdx(ts, middleIdx, toIdx)
+	ret, ok, err := l.findUpperIdx(ts, middleIdx, toIdx)
+	if err != nil {
+		return 0, false, err
+	}
 	if ok {
-		return ret, true
+		return ret, true, nil
 	}
 	return l.findUpperIdx(ts, fromIdx, middleIdx)
 }
 
 // TODO not finished
-
-func (l *tslStruct) LoadSlice(fromIdx, toIdx uint32) []*LogRecord {
-	panic("implement me")
-}
 
 func (l *tslStruct) Erase() {
 	panic("implement me")
@@ -285,31 +344,24 @@ func (sl *TimeSlice) NumPoints() uint32 {
 }
 
 func (sl *TimeSlice) Earliest() int64 {
-	if sl.IsEmpty() {
-		return 0
-	}
-	r := sl.tslog.getRecordAtIndex(sl.firstIdx)
-	if r == nil {
-		return 0
-	}
-	return r.Timestamp
+	return sl.earliest
 }
 
 func (sl *TimeSlice) Latest() int64 {
 	if sl.IsEmpty() {
 		return 0
 	}
-	r := sl.tslog.getRecordAtIndex(sl.lastIdx)
-	if r == nil {
-		return 0
-	}
-	return r.Timestamp
+	return sl.latest
 }
 
-func (sl *TimeSlice) LoadRecords() []*LogRecord {
+func (sl *TimeSlice) LoadSlice() ([]*LogRecord, error) {
 	ret := make([]*LogRecord, 0, sl.NumPoints())
 	for i := sl.firstIdx; i <= sl.lastIdx; i++ {
-		ret = append(ret, sl.tslog.getRecordAtIndex(i))
+		r, err := sl.tslog.getRecordAtIndex(i)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, r)
 	}
-	return ret
+	return ret, nil
 }
