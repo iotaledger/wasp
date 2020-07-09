@@ -9,6 +9,7 @@ import (
 type TimestampedLog interface {
 	Append(ts int64, data []byte) error
 	Len() uint32
+	Earliest() int64
 	Latest() int64
 	TakeTimeSlice(fromTs, toTs int64) *TimeSlice
 	LoadSlice(fromIdx, toIdx uint32) []*LogRecord
@@ -120,7 +121,7 @@ func (l *tslStruct) latest() int64 {
 	return int64(util.Uint64From8Bytes(data[:8]))
 }
 
-func (l *tslStruct) earliest() int64 {
+func (l *tslStruct) Earliest() int64 {
 	if l.Len() == 0 {
 		return 0
 	}

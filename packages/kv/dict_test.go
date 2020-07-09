@@ -24,12 +24,10 @@ func TestBasicDic(t *testing.T) {
 	assert.False(t, dict.HasAt(k3))
 	assert.EqualValues(t, 1, dict.Len())
 
-	v, ok := dict.GetAt(k1)
-	assert.True(t, ok)
+	v := dict.GetAt(k1)
 	assert.EqualValues(t, v1, v)
 
-	v, ok = dict.GetAt(k2)
-	assert.False(t, ok)
+	v = dict.GetAt(k2)
 	assert.Nil(t, v)
 
 	dict.SetAt(k2, v2)
@@ -39,10 +37,21 @@ func TestBasicDic(t *testing.T) {
 	assert.True(t, dict.HasAt(k3))
 	assert.EqualValues(t, 3, dict.Len())
 
+	v = dict.GetAt(k2)
+	assert.EqualValues(t, v2, v)
+
+	v = dict.GetAt(k3)
+	assert.EqualValues(t, v3, v)
+
 	dict.DelAt(k2)
 	assert.True(t, dict.HasAt(k1))
 	assert.False(t, dict.HasAt(k2))
 	assert.True(t, dict.HasAt(k3))
 	assert.EqualValues(t, 2, dict.Len())
 
+	v = dict.GetAt(k2)
+	assert.Nil(t, v)
+
+	v = dict.GetAt(k3)
+	assert.EqualValues(t, v3, v)
 }

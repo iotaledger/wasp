@@ -6,7 +6,7 @@ import (
 )
 
 type Dictionary interface {
-	GetAt(key []byte) ([]byte, bool)
+	GetAt(key []byte) []byte
 	SetAt(key []byte, value []byte)
 	DelAt(key []byte)
 	HasAt(key []byte) bool
@@ -54,9 +54,12 @@ func (l *dictStruct) setSize(size uint32) {
 	l.kv.Set(l.getSizeKey(), util.Uint32To4Bytes(size))
 }
 
-func (d *dictStruct) GetAt(key []byte) ([]byte, bool) {
+func (d *dictStruct) GetAt(key []byte) []byte {
 	ret, err := d.kv.Get(d.getElemKey(key))
-	return ret, ret != nil && err == nil
+	if err != nil {
+		ret = nil
+	}
+	return ret
 }
 
 func (d *dictStruct) SetAt(key []byte, value []byte) {
