@@ -127,8 +127,6 @@ func (sm *stateManager) checkStateApproval() bool {
 	return true
 }
 
-const periodBetweenSyncMessages = 1 * time.Second
-
 func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	if sm.isSynchronized() || sm.solidState == nil {
 		// state is synced, no need for more info
@@ -155,7 +153,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		if err := sm.committee.SendMsg(sm.permutation.Next(), committee.MsgGetBatch, data); err == nil {
 			break
 		}
-		sm.syncMessageDeadline = time.Now().Add(periodBetweenSyncMessages)
+		sm.syncMessageDeadline = time.Now().Add(committee.PeriodBetweenSyncMessages)
 	}
 }
 
@@ -269,8 +267,6 @@ func (sm *stateManager) createStateToApprove() state.VirtualState {
 	return sm.solidState.Clone()
 }
 
-const stateTransactionRequestTimeout = 10 * time.Second
-
 // for committed batches request approving transaction if deadline has passed
 func (sm *stateManager) requestStateTransactionIfNeeded() {
 	if sm.nextStateTransaction != nil {
@@ -287,5 +283,5 @@ func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
 	txid := pb.batch.StateTransactionId()
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
 	_ = nodeconn.RequestTransactionFromNode(&txid)
-	pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
+	pb.stateTransactionRequestDeadline = time.Now().Add(committee.StateTransactionRequestTimeout)
 }

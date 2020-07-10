@@ -61,7 +61,7 @@ func (c *committeeObj) startTimer() {
 	go func() {
 		tick := 0
 		for c.isOpenQueue.Load() {
-			time.Sleep(timerTickPeriod)
+			time.Sleep(committee.TimerTickPeriod)
 			c.ReceiveMessage(committee.TimerTick(tick))
 			tick++
 		}
@@ -111,7 +111,7 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {
 		case c.chMsg <- msg:
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(committee.ReceiveMsgChannelTimeout):
 			c.log.Warnf("timeout on ReceiveMessage type '%T'. Will be repeated", msg)
 			go c.ReceiveMessage(msg)
 		}

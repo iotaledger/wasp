@@ -18,5 +18,5 @@ const (
 	// heartbeat msg
 	numHeartbeatsToKeep = 5               // number of heartbeats to save for average latencyRingBuf
 	heartbeatEvery      = 5 * time.Second // heartBeat period
-	isDeadAfterMissing  = 2               // is dead after 4 heartbeat periods missing
+	isDeadAfterMissing  = 2               // is dead after 2 heartbeat periods missing
 )

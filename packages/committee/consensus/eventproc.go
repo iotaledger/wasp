@@ -69,7 +69,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
 	op.balances = reqMsg.Balances
-	op.requestBalancesDeadline = time.Now().Add(requestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
 
 	op.takeAction()
 }

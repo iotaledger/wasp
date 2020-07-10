@@ -159,7 +159,7 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 
 	peer.lastHeartbeatSent = ts
 
-	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-ChunkMessageOverhead)
+	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-chunkMessageOverhead)
 
 	peer.RLock()
 	defer peer.RUnlock()
@@ -191,7 +191,7 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 	}
 	// timestamped here, once
 	data, ts := encodeMessage(msg)
-	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-ChunkMessageOverhead)
+	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-chunkMessageOverhead)
 
 	ret := uint16(0)
 	for _, peer := range peers {

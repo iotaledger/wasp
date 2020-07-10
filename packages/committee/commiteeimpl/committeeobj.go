@@ -12,11 +12,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
 	"sync"
-	"time"
-)
-
-const (
-	timerTickPeriod = 100 * time.Millisecond
 )
 
 type committeeObj struct {

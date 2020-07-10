@@ -212,8 +212,6 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	op.adjustNotifications()
 }
 
-const requestBalancesPeriod = 10 * time.Second
-
 func (op *operator) requestOutputsIfNeeded() {
 	if !op.synchronized {
 		return
@@ -224,5 +222,5 @@ func (op *operator) requestOutputsIfNeeded() {
 	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
 		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
 	}
-	op.requestBalancesDeadline = time.Now().Add(requestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
 }

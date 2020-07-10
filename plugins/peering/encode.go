@@ -19,7 +19,7 @@ import (
 // MsgData variable bytes to the end
 //  -- otherwise panic wrong MsgType
 
-const ChunkMessageOverhead = 8 + 1
+const chunkMessageOverhead = 8 + 1
 
 // always puts timestamp into first 8 bytes and 1 byte msg type
 func encodeMessage(msg *PeerMessage) ([]byte, int64) {

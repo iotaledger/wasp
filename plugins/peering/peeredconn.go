@@ -47,7 +47,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		return
 	}
 	if msg.MsgType == MsgTypeMsgChunk {
-		finalMsg, err := chopper.IncomingChunk(msg.MsgData, buffconn.MaxMessageSize-ChunkMessageOverhead)
+		finalMsg, err := chopper.IncomingChunk(msg.MsgData, buffconn.MaxMessageSize-chunkMessageOverhead)
 		if err != nil {
 			log.Errorf("decodeMessage: %v", err)
 			return
