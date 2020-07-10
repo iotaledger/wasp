@@ -30,12 +30,32 @@
       "quorum": 3
     },
     {
-      "description": "Stock price Oracle program",
+      "description": "Wasm VM PoC program",
       "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     },
     {
-      "description": "Wasm VM PoC program",
+      "description": "Test SC5",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
+    },
+    {
+      "description": "Test SC6",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
+    },
+    {
+      "description": "Test SC7",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
+    },
+    {
+      "description": "Test SC8",
+      "committee_nodes": [0, 1, 2, 3],
+      "quorum": 3
+    },
+    {
+      "description": "Test SC9",
       "committee_nodes": [0, 1, 2, 3],
       "quorum": 3
     }

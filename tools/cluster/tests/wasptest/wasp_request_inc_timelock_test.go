@@ -14,7 +14,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           6,
+		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -58,7 +58,7 @@ func TestSend1ReqIncRepeatTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           6,
+		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -103,7 +103,7 @@ func TestChainIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           6,
+		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          chainOfRequestsLength + 2,

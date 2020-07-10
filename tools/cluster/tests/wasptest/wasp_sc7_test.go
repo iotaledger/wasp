@@ -7,10 +7,12 @@ import (
 	"time"
 )
 
+const scNum7 = 7
+
 // sending 5 NOP requests with 1 sec sleep between each
-func TestWasmVMSend5Requests1Sec(t *testing.T) {
+func TestSC7Requests5Sec1(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestWasmVMSend5Requests1Sec")
+	wasps := setup(t, "test_cluster", "TestSC5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           wasps.NumSmartContracts(),
@@ -27,7 +29,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
-	sc := &wasps.SmartContractConfig[4]
+	sc := &wasps.SmartContractConfig[scNum7]
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)

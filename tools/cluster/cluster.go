@@ -134,6 +134,10 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	}, nil
 }
 
+func (cluster *Cluster) NumSmartContracts() int {
+	return len(cluster.Config.SmartContracts)
+}
+
 func (cluster *Cluster) readKeysConfig() ([]SmartContractFinalConfig, error) {
 	data, err := ioutil.ReadFile(cluster.ConfigKeysPath())
 	if err != nil {
