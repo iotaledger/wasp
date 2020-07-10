@@ -18,12 +18,11 @@ type Codec interface {
 	GetDictionary(Key) (*Dictionary, error)
 	// TODO GetTimedLog
 
-	// Must code does not return errors but instead calls error handler
+	// Must methods don't return errors but instead calls error handler
 	MustRCodec
 	MustGetArray(Key) *Array
 	MustGetDictionary(Key) *Dictionary
-	// error handling for Must.. methods
-	// default is panic
+	// error handling for Must.. methods. Default is panic
 	SetErrorHandler(fun func(msg ...string))
 }
 
