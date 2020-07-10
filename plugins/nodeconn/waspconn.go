@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"io"
 	"net"
@@ -29,7 +29,7 @@ var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetr
 
 // dials outbound address and established connection
 func nodeConnect() {
-	addr := config.Node.GetString(CfgNodeAddress)
+	addr := parameters.GetString(parameters.NodeAddress)
 	log.Infof("connecting with node at %s", addr)
 
 	var conn net.Conn

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 )
 
@@ -105,11 +105,11 @@ func createStore() {
 	log = logger.NewLogger(PluginName)
 
 	var err error
-	if config.Node.GetBool(CfgDatabaseInMemory) {
+	if parameters.GetBool(parameters.DatabaseInMemory) {
 		log.Infof("IN MEMORY DATABASE")
 		db, err = database.NewMemDB()
 	} else {
-		dbDir := config.Node.GetString(CfgDatabaseDir)
+		dbDir := parameters.GetString(parameters.DatabaseDir)
 		db, err = database.NewDB(dbDir)
 	}
 	if err != nil {

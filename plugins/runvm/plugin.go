@@ -3,10 +3,10 @@ package runvm
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/plugins/config"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -31,7 +31,7 @@ var (
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
-	vmtypes.SetDefaultVMType(config.Node.GetString(vmtypes.CfgDefaultVmType))
+	vmtypes.SetDefaultVMType(parameters.GetString(parameters.VMDefaultVmType))
 }
 
 func run(_ *node.Plugin) {

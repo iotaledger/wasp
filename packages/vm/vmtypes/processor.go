@@ -3,18 +3,7 @@ package vmtypes
 
 import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	flag "github.com/spf13/pflag"
 )
-
-const (
-	CfgVMBinaryDir   = "vm.binaries"
-	CfgDefaultVmType = "vm.defaultvm"
-)
-
-func init() {
-	flag.String(CfgVMBinaryDir, "wasm", "path where Wasm binaries are located (using file:// schema")
-	flag.String(CfgDefaultVmType, "dummmy", "default VM type")
-}
 
 // Processor is a abstract interface to the VM processor instance. It can be called via exported entry points
 // Each entry point is uniquely identified by the request code (uint16). The request code contains information

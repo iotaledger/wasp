@@ -3,6 +3,7 @@ package database
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/hive.go/timeutil"
-	"github.com/iotaledger/wasp/packages/shutdown"
 )
 
 // Database is the name of the database plugin.
@@ -41,14 +41,14 @@ func configure(_ *node.Plugin) {
 	}
 
 	// we open the database in the configure, so we must also make sure it's closed here
-	err = daemon.BackgroundWorker(PluginName, closeDB, shutdown.PriorityDatabase)
+	err = daemon.BackgroundWorker(PluginName, closeDB, parameters.PriorityDatabase)
 	if err != nil {
 		log.Panicf("Failed to start as daemon: %s", err)
 	}
 }
 
 func run(_ *node.Plugin) {
-	if err := daemon.BackgroundWorker(PluginName+"[GC]", runGC, shutdown.PriorityBadgerGarbageCollection); err != nil {
+	if err := daemon.BackgroundWorker(PluginName+"[GC]", runGC, parameters.PriorityBadgerGarbageCollection); err != nil {
 		log.Errorf("Failed to start as daemon: %s", err)
 	}
 }

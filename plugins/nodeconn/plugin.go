@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 	"time"
 )
@@ -48,7 +48,7 @@ func run(_ *node.Plugin) {
 			}
 		}()
 
-	}, shutdown.PriorityNodeConnection)
+	}, parameters.PriorityNodeConnection)
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
 	}

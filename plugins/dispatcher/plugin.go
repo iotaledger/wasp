@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/committee/commiteeimpl" // activate init
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -74,7 +74,7 @@ func run(_ *node.Plugin) {
 
 		log.Infof("dispatcher started")
 
-	}, shutdown.PriorityDispatcher)
+	}, parameters.PriorityDispatcher)
 
 	if err != nil {
 		log.Errorf("failed to start worker for %s: %v", PluginName, err)

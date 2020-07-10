@@ -19,8 +19,6 @@ func Init() {
 }
 
 func init() {
-	initFlags()
-
 	Plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
 		if err := logger.InitGlobalLogger(config.Node); err != nil {
 			panic(err)

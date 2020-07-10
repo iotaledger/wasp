@@ -3,11 +3,11 @@ package processor
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/sema"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/plugins/config"
 	"io/ioutil"
 	"net/url"
 	"path"
@@ -92,7 +92,7 @@ func loadBinaryCode(location string, progHash *hashing.HashValue) ([]byte, error
 	var data []byte
 	switch urlStruct.Scheme {
 	case "file":
-		file := path.Join(config.Node.GetString(vmtypes.CfgVMBinaryDir), urlStruct.Host)
+		file := path.Join(parameters.GetString(parameters.VMBinaryDir), urlStruct.Host)
 		if data, err = ioutil.ReadFile(file); err != nil {
 			return nil, err
 		}

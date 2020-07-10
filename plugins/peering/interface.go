@@ -1,12 +1,12 @@
 package peering
 
 import (
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 )
 
 func MyNetworkId() string {
-	return config.Node.GetString(CfgMyNetId)
+	return parameters.GetString(parameters.PeeringMyNetId)
 }
 
 // adds new connection to the peer pool

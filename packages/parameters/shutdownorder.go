@@ -1,4 +1,4 @@
-package shutdown
+package parameters
 
 const (
 	PriorityDatabase = iota
