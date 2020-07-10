@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -68,6 +69,8 @@ const (
 	StateVarEntropyFromLocking = "entropyFromLocking"
 	// set play period in seconds
 	VarPlayPeriodSec = "playPeriod"
+	// estimated timestamp for next play (nanoseconds)
+	VarNextPlayTimestamp = "nextPlayTimestamp"
 
 	// number of colors
 	NumColors = 5
@@ -165,6 +168,10 @@ func placeBet(ctx vmtypes.Sandbox) {
 		if err != nil || !ok || period < 10 {
 			period = DefaultPlaySecondsAfterFirstBet
 		}
+
+		nextPlayTimestamp := (time.Duration(ctx.GetTimestamp())*time.Nanosecond + time.Duration(period)*time.Second).Nanoseconds()
+		state.SetInt64(VarNextPlayTimestamp, nextPlayTimestamp)
+
 		ctx.Publishf("SendRequestToSelfWithDelay period = %d", period)
 
 		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period))
