@@ -7,7 +7,7 @@ import (
 
 func TestBasicDict(t *testing.T) {
 	vars := NewMap()
-	dict, err := newDict(vars, "testDict")
+	dict, err := newDictionary(vars, "testDict")
 	assert.NoError(t, err)
 
 	assert.Zero(t, dict.Len())

@@ -23,8 +23,8 @@ func StatusCmd(args []string) {
 	check(err)
 
 	codec := state.Codec()
-	nBets := codec.GetArray(fairroulette.StateVarBets).Len()
-	nLockedBets := codec.GetArray(fairroulette.StateVarLockedBets).Len()
+	nBets := codec.MustGetArray(fairroulette.StateVarBets).Len()
+	nLockedBets := codec.MustGetArray(fairroulette.StateVarLockedBets).Len()
 	lastwc, _, err := codec.GetInt64(fairroulette.StateVarLastWinningColor)
 	check(err)
 	playPeriod, _, err := codec.GetInt64(fairroulette.VarPlayPeriodSec)

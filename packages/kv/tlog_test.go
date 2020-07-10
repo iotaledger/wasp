@@ -67,7 +67,7 @@ const (
 	step          = 1000
 )
 
-func initLog(t *testing.T, tl TimestampedLog) {
+func initLog(t *testing.T, tl *TimestampedLog) {
 	data := make([][]byte, numPoints)
 
 	for i := 0; i < numPoints; i++ {

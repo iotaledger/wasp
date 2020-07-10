@@ -7,15 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type TimestampedLog interface {
-	Append(ts int64, data []byte) error
-	Len() uint32
-	Earliest() int64
-	Latest() int64
-	TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error)
-	Erase()
-}
-
 type LogRecord struct {
 	Index     uint32
 	Timestamp int64
@@ -23,14 +14,14 @@ type LogRecord struct {
 }
 
 type TimeSlice struct {
-	tslog    *tslStruct
+	tslog    *TimestampedLog
 	firstIdx uint32
 	lastIdx  uint32
 	earliest int64
 	latest   int64
 }
 
-type tslStruct struct {
+type TimestampedLog struct {
 	kv             KVStore
 	name           string
 	cachedLen      uint32
@@ -38,8 +29,8 @@ type tslStruct struct {
 	cachedEarliest int64
 }
 
-func newTimestampedLog(kv KVStore, name string) (TimestampedLog, error) {
-	ret := &tslStruct{
+func newTimestampedLog(kv KVStore, name string) (*TimestampedLog, error) {
+	ret := &TimestampedLog{
 		kv:   kv,
 		name: name,
 	}
@@ -61,14 +52,14 @@ const (
 	tslElemKeyCode = byte(1)
 )
 
-func (l *tslStruct) getSizeKey() Key {
+func (l *TimestampedLog) getSizeKey() Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(l.name))
 	buf.WriteByte(tslSizeKeyCode)
 	return Key(buf.Bytes())
 }
 
-func (l *tslStruct) getElemKey(idx uint32) Key {
+func (l *TimestampedLog) getElemKey(idx uint32) Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(l.name))
 	buf.WriteByte(tslElemKeyCode)
@@ -76,7 +67,7 @@ func (l *tslStruct) getElemKey(idx uint32) Key {
 	return Key(buf.Bytes())
 }
 
-func (l *tslStruct) setSize(size uint32) {
+func (l *TimestampedLog) setSize(size uint32) {
 	if size == 0 {
 		l.kv.Del(l.getSizeKey())
 	} else {
@@ -85,7 +76,7 @@ func (l *tslStruct) setSize(size uint32) {
 	l.cachedLen = size
 }
 
-func (l *tslStruct) len() (uint32, error) {
+func (l *TimestampedLog) len() (uint32, error) {
 	v, err := l.kv.Get(l.getSizeKey())
 	if err != nil {
 		return 0, err
@@ -100,11 +91,11 @@ func (l *tslStruct) len() (uint32, error) {
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (l *tslStruct) Len() uint32 {
+func (l *TimestampedLog) Len() uint32 {
 	return l.cachedLen
 }
 
-func (l *tslStruct) Append(ts int64, data []byte) error {
+func (l *TimestampedLog) Append(ts int64, data []byte) error {
 	if ts < l.cachedLatest {
 		return errors.New("wrong timestamp")
 	}
@@ -122,11 +113,11 @@ func (l *tslStruct) Append(ts int64, data []byte) error {
 	return nil
 }
 
-func (l *tslStruct) Latest() int64 {
+func (l *TimestampedLog) Latest() int64 {
 	return l.cachedLatest
 }
 
-func (l *tslStruct) latest() (int64, error) {
+func (l *TimestampedLog) latest() (int64, error) {
 	idx := l.Len()
 	if idx == 0 {
 		return 0, nil
@@ -141,11 +132,11 @@ func (l *tslStruct) latest() (int64, error) {
 	return int64(util.Uint64From8Bytes(data[:8])), nil
 }
 
-func (l *tslStruct) Earliest() int64 {
+func (l *TimestampedLog) Earliest() int64 {
 	return l.cachedEarliest
 }
 
-func (l *tslStruct) earliest() (int64, error) {
+func (l *TimestampedLog) earliest() (int64, error) {
 	if l.Len() == 0 {
 		return 0, nil
 	}
@@ -159,7 +150,7 @@ func (l *tslStruct) earliest() (int64, error) {
 	return int64(util.Uint64From8Bytes(data[:8])), nil
 }
 
-func (l *tslStruct) getRecordAtIndex(idx uint32) (*LogRecord, error) {
+func (l *TimestampedLog) getRecordAtIndex(idx uint32) (*LogRecord, error) {
 	if idx >= l.cachedLen {
 		return nil, nil
 	}
@@ -179,7 +170,7 @@ func (l *tslStruct) getRecordAtIndex(idx uint32) (*LogRecord, error) {
 
 // binary search. Return 2 indices, i1 < i2, where [i1:i2] (i2 not including) contains all
 // records with timestamp from 'fromTs' to 'toTs' (inclusive).
-func (l *tslStruct) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
+func (l *TimestampedLog) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
 	if l.Len() == 0 {
 		return nil, nil
 	}
@@ -221,7 +212,7 @@ func (l *tslStruct) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
 	}, nil
 }
 
-func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
+func (l *TimestampedLog) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
 	if fromIdx > toIdx {
 		return 0, false, nil
 	}
@@ -273,7 +264,7 @@ func (l *tslStruct) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool,
 	return l.findLowerIdx(ts, middleIdx, toIdx)
 }
 
-func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
+func (l *TimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
 	if fromIdx > toIdx {
 		return 0, false, nil
 	}
@@ -328,7 +319,7 @@ func (l *tslStruct) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool,
 
 // TODO not finished
 
-func (l *tslStruct) Erase() {
+func (l *TimestampedLog) Erase() {
 	panic("implement me")
 }
 

@@ -12,7 +12,7 @@ type Array struct {
 	cachedLen uint16
 }
 
-func NewArray(kv KVStore, name string) (*Array, error) {
+func newArray(kv KVStore, name string) (*Array, error) {
 	ret := &Array{
 		kv:   kv,
 		name: name,

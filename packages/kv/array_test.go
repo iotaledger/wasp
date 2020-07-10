@@ -7,7 +7,7 @@ import (
 
 func TestBasicArray(t *testing.T) {
 	vars := NewMap()
-	arr, err := NewArray(vars, "testArray")
+	arr, err := newArray(vars, "testArray")
 	assert.NoError(t, err)
 
 	d1 := []byte("datum1")
@@ -33,7 +33,7 @@ func TestBasicArray(t *testing.T) {
 	arr.Push(d4)
 	assert.EqualValues(t, 4, arr.Len())
 
-	arr2, err := NewArray(vars, "testArray2")
+	arr2, err := newArray(vars, "testArray2")
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, arr2.Len())
 
@@ -42,4 +42,8 @@ func TestBasicArray(t *testing.T) {
 
 	arr2.Push(d4)
 	assert.EqualValues(t, arr.Len()+1, arr2.Len())
+
+	assert.Panics(t, func() {
+		arr2.MustGetAt(arr2.Len())
+	})
 }
