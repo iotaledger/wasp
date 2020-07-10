@@ -7,6 +7,14 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+type TimestampedLog struct {
+	kv             KVStore
+	name           string
+	cachedLen      uint32
+	cachedLatest   int64
+	cachedEarliest int64
+}
+
 type LogRecord struct {
 	Index     uint32
 	Timestamp int64
@@ -19,14 +27,6 @@ type TimeSlice struct {
 	lastIdx  uint32
 	earliest int64
 	latest   int64
-}
-
-type TimestampedLog struct {
-	kv             KVStore
-	name           string
-	cachedLen      uint32
-	cachedLatest   int64
-	cachedEarliest int64
 }
 
 func newTimestampedLog(kv KVStore, name string) (*TimestampedLog, error) {
