@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestBasicDic(t *testing.T) {
+func TestBasicDict(t *testing.T) {
 	vars := NewMap()
 	dict, err := newDict(vars, "testDict")
 	assert.NoError(t, err)

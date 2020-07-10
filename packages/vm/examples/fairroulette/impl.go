@@ -115,7 +115,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 	// if there are some bets locked, save the entropy derived immediately from it.
 	// it is not predictable at the moment of locking and this saving makes it not playable later
 	// entropy saved this way is essentially derived (hashed) from the locking transaction hash
-	if state.GetArray(StateVarLockedBets).Len() > 0 {
+	if state.MustGetArray(StateVarLockedBets).Len() > 0 {
 		_, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
 		if !ok || err != nil {
 			ehv := ctx.GetEntropy()
@@ -146,11 +146,11 @@ func placeBet(ctx vmtypes.Sandbox) {
 		ctx.Publish("wrong request, no Color specified")
 		return
 	}
-	firstBet := state.GetArray(StateVarBets).Len() == 0
+	firstBet := state.MustGetArray(StateVarBets).Len() == 0
 
 	// save the bet info in the array
 	reqid := ctx.AccessRequest().ID()
-	state.GetArray(StateVarBets).Push(encodeBetInfo(&BetInfo{
+	state.MustGetArray(StateVarBets).Push(encodeBetInfo(&BetInfo{
 		player: sender,
 		sum:    sum,
 		reqId:  reqid,
@@ -196,9 +196,9 @@ func lockBets(ctx vmtypes.Sandbox) {
 	}
 	state := ctx.AccessState()
 	// append all current bets to the locked bets array
-	lockedBets := state.GetArray(StateVarLockedBets)
-	lockedBets.Append(state.GetArray(StateVarBets))
-	state.GetArray(StateVarBets).Erase()
+	lockedBets := state.MustGetArray(StateVarLockedBets)
+	lockedBets.Append(state.MustGetArray(StateVarBets))
+	state.MustGetArray(StateVarBets).Erase()
 
 	numLockedBets := lockedBets.Len()
 	ctx.Publishf("lockBets: num = %d", numLockedBets)
@@ -221,7 +221,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	}
 	state := ctx.AccessState()
 
-	lockedBetsArray := state.GetArray(StateVarLockedBets)
+	lockedBetsArray := state.MustGetArray(StateVarLockedBets)
 	numLockedBets := lockedBetsArray.Len()
 	if numLockedBets == 0 {
 		// nothing to play. Should not happen
@@ -248,12 +248,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	totalLockedAmount := int64(0)
 	lockedBets := make([]*BetInfo, numLockedBets)
 	for i := range lockedBets {
-		biData, ok := lockedBetsArray.GetAt(uint16(i))
-		if !ok {
-			// inconsistency. Very sad
-			return
-		}
-		bi, err := DecodeBetInfo(biData)
+		bi, err := DecodeBetInfo(lockedBetsArray.MustGetAt(uint16(i)))
 		if err != nil {
 			// inconsistency. Even more sad
 			return
