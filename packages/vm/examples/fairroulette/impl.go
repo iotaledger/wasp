@@ -1,20 +1,19 @@
-// fairroulette is a PoC smart contract for IOTA Smart Contracts, the Wasp node
-// In this package smart contract is implemented as a hardcoded program. However, the program
-// is wrapped into the VM wrapper interfaces and uses exactly the same sandbox interface
+// FairRoulette is a PoC smart contract for IOTA Smart Contracts and the Wasp node
+// In this package smart contract is implemented as a hardcoded Go program.
+// The program is wrapped into the VM wrapper interfaces and uses exactly the same sandbox interface
 // as if it were Wasm VM.
 // The smart contract implements simple gambling dapp.
 // Players can place bets by sending requests to the smart contract. Each request is a value transaction.
-// Committee is taking some minimum number of iotas as a reward for processing the transaction
+// Smart contract is taking some minimum number of iotas as a reward for processing the transaction
 // (configurable, usually several thousands).
-// The rest of the iotas transferred to the smart contracts are taken as
-// a bet placed on particular color on the roulette wheel.
+// The rest of the iotas are taken as a bet placed on particular color on the roulette wheel.
 //
-// 2 minutes after first bet the smart contract automatically plays roulette wheel using
-// unpredictable entropy provided by the BLS threshold signatures. Therefore FairRoulette is provably fair
+// Approx 2 minutes after first bet, the smart contract automatically plays roulette wheel using
+// unpredictable entropy provided by the BLS threshold signatures. This way FairRoulette is provably fair
 // because even committee members can't predict the winning color.
 //
-// Then smart contract automatically distributes total staked amount to those players which placed their
-// bets on the winning color proportionally to the amount staked.
+// Then smart contract automatically distributes total betted amount to those players which placed their
+// bets on the winning color proportionally to the amount.
 // If nobody places on the winning color the total staked amount remains in the smart contracts account
 package fairroulette
 
@@ -43,10 +42,12 @@ const (
 	RequestLockBets = sctransaction.RequestCode(uint16(2))
 	// request to play and distribute. Rejected if sent not from the smart contract itself
 	RequestPlayAndDistribute = sctransaction.RequestCode(uint16(3))
-	// request to set the play period. By default it is 2 minutes
+	// request to set the play period. By default it is 2 minutes.
+	// It only will be processed is sent by the owner of the smart contract
 	RequestSetPlayPeriod = sctransaction.RequestCode(uint16(4) | sctransaction.RequestCodeProtected)
 )
 
+// the processor is a map of entry points
 var entryPoints = fairRouletteProcessor{
 	RequestPlaceBet:          placeBet,
 	RequestLockBets:          lockBets,
@@ -117,7 +118,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 	// if there are some bets locked, save the entropy derived immediately from it.
 	// it is not predictable at the moment of locking and this saving makes it not playable later
-	// entropy saved this way is essentially derived (hashed) from the locking transaction hash
+	// entropy saved this way is derived (hashed) from the locking transaction hash
 	if state.MustGetArray(StateVarLockedBets).Len() > 0 {
 		_, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
 		if !ok || err != nil {
@@ -133,17 +134,16 @@ func placeBet(ctx vmtypes.Sandbox) {
 		return
 	}
 	sender := senders[0]
-	// look if there're some iotas left for the bet.
-	// it is after minimum rewards are already taken. Here we accessing only the part of the smart contract
-	// UTXOs: the ones which are coming with the current request
+
+	// look if there're some iotas left for the bet after minimum rewards are already taken.
+	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
 	sum := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		ctx.Publish("placeBet: sum == 0: nothing to bet")
 		return
 	}
-	// check if there's a Color variable among args
-	// if not, ignore the request
+	// check if there's a Color variable among args. If not, ignore the request
 	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
 		ctx.Publish("wrong request, no Color specified")
@@ -174,10 +174,13 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 		ctx.Publishf("SendRequestToSelfWithDelay period = %d", period)
 
+		// send the timelocked Lock request to self. Timelock is for number of seconds taken from the state variable
+		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
 		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period))
 	}
 }
 
+// admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
 func setPlayPeriod(ctx vmtypes.Sandbox) {
 	ctx.Publish("setPlayPeriod")
 
