@@ -186,7 +186,7 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 
 func TestSend60ReqInc0SecSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend60ReqInc0SeSimple")
+	wasps := setup(t, "test_cluster", "TestSend60ReqInc0SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           wasps.NumSmartContracts(),

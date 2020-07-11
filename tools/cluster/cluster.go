@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"io"
 	"io/ioutil"
 	"os"
@@ -627,4 +628,23 @@ func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) 
 		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
 	}
 	return ret, assertionOk
+}
+
+func (cluster *Cluster) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
+	err := nodeapi.PostTransaction(cluster.Config.Goshimmer.BindAddress, tx)
+	if err != nil {
+		return err
+	}
+	txid := tx.ID()
+	for {
+		conf, err := nodeapi.IsConfirmed(cluster.Config.Goshimmer.BindAddress, &txid)
+		if err != nil {
+			return err
+		}
+		if conf {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return nil
 }

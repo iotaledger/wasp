@@ -2,7 +2,6 @@ package wasptest
 
 import (
 	"fmt"
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -38,7 +37,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	}
 
 	// in real situation we have to wait for confirmation
-	err = nodeapi.PostTransaction(bindAddress, tx.Transaction)
+	err = clu.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return err
 	}
