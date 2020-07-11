@@ -89,6 +89,20 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.operator.EventNotifyReqMsg(msgt)
 		}
 
+	case committee.MsgNotifyFinalResultPosted:
+		msgt := &committee.NotifyFinalResultPostedMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+
+		if c.operator != nil {
+			c.operator.EventNotifyFinalResultPostedMsg(msgt)
+		}
+
 	case committee.MsgStartProcessingRequest:
 		msgt := &committee.StartProcessingBatchMsg{}
 		if err := msgt.Read(rdr); err != nil {

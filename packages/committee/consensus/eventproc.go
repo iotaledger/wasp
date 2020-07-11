@@ -124,6 +124,14 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.takeAction()
 }
 
+func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalResultPostedMsg) {
+	op.log.Infow("EventNotifyFinalResultPostedMsg",
+		"sender", msg.SenderIndex,
+		"stateIdx", msg.StateIndex,
+	)
+	// TODO deadline setting
+}
+
 func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
 

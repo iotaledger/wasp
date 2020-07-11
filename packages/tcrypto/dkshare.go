@@ -205,19 +205,10 @@ func (ks *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signat
 	if err != nil {
 		return nil, err
 	}
-	finalSignature := newBLSSignature(pubKeyBin, recoveredSignature)
+	finalSignature := signaturescheme.NewBLSSignature(pubKeyBin, recoveredSignature)
 
 	if finalSignature.Address() != *ks.Address {
 		panic("finalSignature.Address() != op.dkshare.Address")
 	}
 	return finalSignature, nil
-}
-
-// TODO export this function in "signaturescheme" package
-func newBLSSignature(pubKey, signature []byte) *signaturescheme.BLSSignature {
-	var ret signaturescheme.BLSSignature
-	ret[0] = address.VersionBLS
-	copy(ret[1:signaturescheme.BLSPublicKeySize+1], pubKey)
-	copy(ret[1+signaturescheme.BLSPublicKeySize:], signature)
-	return &ret
 }

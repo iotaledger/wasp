@@ -3,6 +3,7 @@ package consensus
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
@@ -138,15 +139,15 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	}
 }
 
-func (op *operator) aggregateSigShares(sigShares [][]byte) error {
+func (op *operator) aggregateSigShares(sigShares [][]byte) (signaturescheme.Signature, error) {
 	resTx := op.leaderStatus.resultTx
 
 	finalSignature, err := op.dkshare.RecoverFullSignature(sigShares, resTx.EssenceBytes())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := resTx.PutSignature(finalSignature); err != nil {
-		return fmt.Errorf("something wrong while aggregating final signature: %v", err)
+		return nil, fmt.Errorf("something wrong while aggregating final signature: %v", err)
 	}
-	return nil
+	return finalSignature, nil
 }

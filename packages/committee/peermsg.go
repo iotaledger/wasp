@@ -2,6 +2,7 @@ package committee
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -43,6 +44,32 @@ func (msg *NotifyReqMsg) Read(r io.Reader) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (msg *NotifyFinalResultPostedMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, msg.Signature.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *NotifyFinalResultPostedMsg) Read(r io.Reader) error {
+	err := util.ReadUint32(r, &msg.StateIndex)
+	if err != nil {
+		return err
+	}
+	sigbytes, err := util.ReadBytes16(r)
+	if err != nil {
+		return err
+	}
+	msg.Signature, _, err = signaturescheme.BLSSignatureFromBytes(sigbytes)
+	if err != nil {
+		return err
 	}
 	return nil
 }

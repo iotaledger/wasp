@@ -174,7 +174,7 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	// quorum detected
-	err := op.aggregateSigShares(sigShares)
+	finalSignature, err := op.aggregateSigShares(sigShares)
 	if err != nil {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
@@ -195,6 +195,17 @@ func (op *operator) checkQuorum() bool {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}
+
+	// notify peers about finalization
+	msgData := util.MustBytes(&committee.NotifyFinalResultPostedMsg{
+		PeerMsgHeader: committee.PeerMsgHeader{
+			// timestamp is set by SendMsgToCommitteePeers
+			StateIndex: op.stateTx.MustState().StateIndex(),
+		},
+		Signature: finalSignature,
+	})
+
+	op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
 	return true
 }
 

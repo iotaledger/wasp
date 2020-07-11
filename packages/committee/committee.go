@@ -39,15 +39,16 @@ type StateManager interface {
 }
 
 type Operator interface {
-	EventProcessorReady(msg ProcessorIsReady)
-	EventStateTransitionMsg(msg *StateTransitionMsg)
-	EventBalancesMsg(reqMsg BalancesMsg)
-	EventRequestMsg(reqMsg RequestMsg)
-	EventNotifyReqMsg(msg *NotifyReqMsg)
-	EventStartProcessingBatchMsg(msg *StartProcessingBatchMsg)
-	EventResultCalculated(result *vm.VMTask)
-	EventSignedHashMsg(msg *SignedHashMsg)
-	EventTimerMsg(msg TimerTick)
+	EventProcessorReady(ProcessorIsReady)
+	EventStateTransitionMsg(*StateTransitionMsg)
+	EventBalancesMsg(BalancesMsg)
+	EventRequestMsg(RequestMsg)
+	EventNotifyReqMsg(*NotifyReqMsg)
+	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
+	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
+	EventResultCalculated(*vm.VMTask)
+	EventSignedHashMsg(*SignedHashMsg)
+	EventTimerMsg(TimerTick)
 }
 
 var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger) Committee
