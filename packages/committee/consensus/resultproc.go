@@ -102,6 +102,8 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	if err := op.committee.SendMsg(result.LeaderPeerIndex, committee.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
 	}
+	// remember all sent transactions for this state index
+	op.sentResultsToLeader[result.LeaderPeerIndex] = result.ResultTransaction
 }
 
 func (op *operator) saveOwnResult(result *vm.VMTask) {

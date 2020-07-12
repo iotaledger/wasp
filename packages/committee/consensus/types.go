@@ -38,9 +38,9 @@ type operator struct {
 	peerPermutation           *util.Permutation16
 	leaderRotationDeadlineSet bool
 	leaderRotationDeadline    time.Time
-	// states of requests being processed: as leader and as subordinate
 
-	leaderStatus *leaderStatus
+	leaderStatus        *leaderStatus
+	sentResultsToLeader map[uint16]*sctransaction.Transaction
 
 	log *logger.Logger
 }
@@ -81,11 +81,12 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 	defer committee.SetReadyConsensus()
 
 	return &operator{
-		committee:       committee,
-		dkshare:         dkshare,
-		requests:        make(map[sctransaction.RequestId]*request),
-		peerPermutation: util.NewPermutation16(committee.Size(), nil),
-		log:             log.Named("c"),
+		committee:           committee,
+		dkshare:             dkshare,
+		requests:            make(map[sctransaction.RequestId]*request),
+		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
+		sentResultsToLeader: make(map[uint16]*sctransaction.Transaction),
+		log:                 log.Named("c"),
 	}
 }
 

@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/committee"
@@ -39,7 +40,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
-	op.setLeaderRotationDeadline()
+	op.setLeaderRotationDeadline(committee.LeaderRotationPeriod)
 
 	// check is processor is ready for the current state. If no, initiate load of the processor
 	op.processorReady = false
@@ -106,7 +107,7 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 
 	op.sendRequestNotificationsToLeader([]*request{req})
 	if !op.leaderRotationDeadlineSet {
-		op.setLeaderRotationDeadline()
+		op.setLeaderRotationDeadline(committee.LeaderRotationPeriod)
 	}
 
 	op.takeAction()
@@ -129,7 +130,21 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
-	// TODO deadline setting
+	resTx, ok := op.sentResultsToLeader[msg.SenderIndex]
+	if !ok {
+		// this is controversial: shall we postpone leader deadline for unseen transaction?
+		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.", committee.ConfirmationWaitingPeriod)
+		op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
+		return
+	}
+	essence := resTx.EssenceBytes()
+	if !msg.Signature.IsValid(essence) {
+		op.log.Errorf("received invalid final signature from peer #%d. State index: %d, essence hash: %s",
+			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
+		return
+	}
+	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more", committee.ConfirmationWaitingPeriod)
+	op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
 }
 
 func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {

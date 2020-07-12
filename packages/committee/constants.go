@@ -9,11 +9,14 @@ const (
 	TimerTickPeriod = 100 * time.Millisecond
 
 	// if leader actions does not reset deadline, leader is rotated according to current permutation
-	// after this period of time. usually this period of time should be larger than expected confirmation
-	// by the transaction on the value tangle (expected 6-10 sec)
+	// after this period of time.
 	// if this parameters is too small, conflicts are possible. If it is too large, the committee is too slow
 	// to change the leader when it is needed to come out of meta stable state.
+
+	// usual rotation period when leader is too slow in sending startProcessingMessage
 	LeaderRotationPeriod = 3 * time.Second
+	// timeout for confirmation after the leader notifies the committee it has posted result transaction to the tangle
+	ConfirmationWaitingPeriod = 6 * time.Second
 
 	// when idle, consensus object periodically refreshes balances of its own address
 	RequestBalancesPeriod = 10 * time.Second

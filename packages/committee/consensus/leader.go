@@ -18,7 +18,7 @@ func (op *operator) iAmCurrentLeader() bool {
 func (op *operator) moveToNextLeader() uint16 {
 	op.peerPermutation.Next()
 	ret := op.moveToFirstAliveLeader()
-	op.setLeaderRotationDeadline()
+	op.setLeaderRotationDeadline(committee.LeaderRotationPeriod)
 	return ret
 }
 
@@ -45,11 +45,11 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 	return ret
 }
 
-func (op *operator) setLeaderRotationDeadline() {
+func (op *operator) setLeaderRotationDeadline(period time.Duration) {
 	if len(op.requestCandidateList()) == 0 {
 		op.leaderRotationDeadlineSet = false
 		return
 	}
 	op.leaderRotationDeadlineSet = true
-	op.leaderRotationDeadline = time.Now().Add(committee.LeaderRotationPeriod)
+	op.leaderRotationDeadline = time.Now().Add(period)
 }

@@ -212,6 +212,9 @@ func (op *operator) checkQuorum() bool {
 // sets new currentState transaction and initializes respective variables
 func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
+	if len(op.sentResultsToLeader) > 0 {
+		op.sentResultsToLeader = make(map[uint16]*sctransaction.Transaction) //clear the map
+	}
 	op.currentState = variableState
 	op.synchronized = synchronized
 
