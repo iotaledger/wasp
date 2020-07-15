@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/tools/fairroulette/client"
@@ -32,11 +33,23 @@ func Cmd(args []string) {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Debug = true
+	e.HideBanner = true
 	e.Renderer = renderer
+
 	e.GET("/", func(c echo.Context) error {
+		var players []string
+		if len(c.QueryParam("players")) > 0 {
+			players = strings.Split(c.QueryParam("players"), ",")
+		}
+
+		status, err := client.FetchStatus(players)
+		if err != nil {
+			return err
+		}
 		return c.Render(http.StatusOK, "index", &IndexTemplateParams{
 			Now:    time.Now().UTC(),
-			Status: client.FetchStatus(args),
+			Status: status,
 		})
 	})
 
@@ -84,7 +97,7 @@ var renderer = &Template{
 			{{end}}
 			<ul>
 			{{range .Status.CurrentBets}}
-				<li>Player <code>{{slice (.Player.String) 0 6}}</code> bets {{.Sum}} IOTAs on color {{.Color}}</li>
+				<li>Player <code>{{.Player}}</code> bets {{.Sum}} IOTAs on color {{.Color}}</li>
 			{{end}}
 			</ul>
 		</div>
@@ -98,14 +111,25 @@ var renderer = &Template{
 				<li>Color {{$c}} won {{$w}} times so far</li>
 			{{end}}
 		</ul></div>
-		{{if gt (len .Status.PlayerStats) 0}}
-			<div>Player stats:<ul>
-				{{range $p, $stats := .Status.PlayerStats}}
-					<li>Player <code>{{slice ($p.String) 0 6}}</code>: {{$stats}}</li>
-				{{end}}
-			</ul></div>
-		{{end}}
+		<div>Player stats:<ul>
+			{{range $p, $stats := .Status.PlayerStats}}
+				<li>Player <code>{{$p}}</code>: {{$stats}}</li>
+			{{end}}
+			<form onsubmit="addAddress(document.getElementById('address').value); return false">
+				<div>Show player stats for address: <input type="text" maxlength="45" id="address"></input></div>
+				<input type="submit" value="Submit">
+			</form>
+		</ul></div>
 	</div>
+
+	<script>
+		function addAddress(address) {
+			const url = new URL(document.location);
+			const players = (url.searchParams.get('players') || '').split(',').filter(s => s.length > 0);
+			players.push(address)
+			document.location.href = document.location.href.split('?')[0] + '?players=' + players.join(',');
+		}
+	</script>
   </body>
 </html>
 `)),

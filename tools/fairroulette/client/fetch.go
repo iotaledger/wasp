@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
-	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
 )
 
 const BetsSliceLength = 10
@@ -41,18 +40,16 @@ func (s *Status) NextPlayIn() string {
 	return diff.String()
 }
 
-func FetchStatus(addresses []string) *Status {
+func FetchStatus(addresses []string) (*Status, error) {
 	status := &Status{}
 
 	players := make([]address.Address, 0)
-	if len(addresses) == 0 {
-		players = append(players, wallet.Load().Address())
-	} else {
-		for _, addr := range addresses {
-			addr, err := address.FromBase58(addr)
-			check(err)
-			players = append(players, addr)
+	for _, addr := range addresses {
+		addr, err := address.FromBase58(addr)
+		if err != nil {
+			return nil, err
 		}
+		players = append(players, addr)
 	}
 
 	// for arrays we fetch the length in the first query
@@ -76,22 +73,36 @@ func FetchStatus(addresses []string) *Status {
 	keys = append(keys, winsPerColorKeys...)
 
 	vars, err := waspapi.QuerySCState(config.WaspApi(), config.GetSCAddress().String(), keys)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	codec := vars.Codec()
 	status.CurrentBetsAmount = codec.MustGetArray(fairroulette.StateVarBets).Len()
 	status.LockedBetsAmount = codec.MustGetArray(fairroulette.StateVarLockedBets).Len()
 	status.LastWinningColor, _, err = codec.GetInt64(fairroulette.StateVarLastWinningColor)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 	status.PlayPeriodSeconds, _, err = codec.GetInt64(fairroulette.VarPlayPeriodSec)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 	nextPlayTimestamp, _, err := codec.GetInt64(fairroulette.VarNextPlayTimestamp)
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 
-	status.PlayerStats = decodePlayerStats(vars, players, playerKeys)
+	status.PlayerStats, err = decodePlayerStats(vars, players, playerKeys)
+	if err != nil {
+		return nil, err
+	}
 
-	status.WinsPerColor = decodeWinsPerColor(vars, winsPerColorKeys)
+	status.WinsPerColor, err = decodeWinsPerColor(vars, winsPerColorKeys)
+	if err != nil {
+		return nil, err
+	}
 
 	// in a second query we fetch the array items
 	betsKeys := kv.ArrayRangeKeys(fairroulette.StateVarBets, status.CurrentBetsAmount, 0, BetsSliceLength)
@@ -101,48 +112,66 @@ func FetchStatus(addresses []string) *Status {
 		config.GetSCAddress().String(),
 		append(betsKeys, lockedBetsKeys...),
 	)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 
-	status.CurrentBets = decodeBets(vars, betsKeys)
-	status.LockedBets = decodeBets(vars, lockedBetsKeys)
+	status.CurrentBets, err = decodeBets(vars, betsKeys)
+	if err != nil {
+		return nil, err
+	}
+	status.LockedBets, err = decodeBets(vars, lockedBetsKeys)
+	if err != nil {
+		return nil, err
+	}
 
-	return status
+	return status, nil
 }
 
-func decodeBets(state kv.Map, keys []kv.Key) []*fairroulette.BetInfo {
+func decodeBets(state kv.Map, keys []kv.Key) ([]*fairroulette.BetInfo, error) {
 	bets := make([]*fairroulette.BetInfo, 0)
 	for _, k := range keys {
 		b, err := state.Get(k)
-		check(err)
+		if err != nil {
+			return nil, err
+		}
 		bet, err := fairroulette.DecodeBetInfo(b)
-		check(err)
+		if err != nil {
+			return nil, err
+		}
 		bets = append(bets, bet)
 	}
-	return bets
+	return bets, nil
 }
 
-func decodeWinsPerColor(vars kv.Map, winsPerColorKeys []kv.Key) []uint32 {
+func decodeWinsPerColor(vars kv.Map, winsPerColorKeys []kv.Key) ([]uint32, error) {
 	ret := make([]uint32, 0)
 	for _, key := range winsPerColorKeys {
 		b, err := vars.Get(key)
-		check(err)
+		if err != nil {
+			return nil, err
+		}
 		var n uint32
 		if b != nil {
 			n = util.Uint32From4Bytes(b)
 		}
 		ret = append(ret, n)
 	}
-	return ret
+	return ret, nil
 }
 
-func decodePlayerStats(vars kv.Map, players []address.Address, playerKeys []kv.Key) map[address.Address]*fairroulette.PlayerStats {
+func decodePlayerStats(vars kv.Map, players []address.Address, playerKeys []kv.Key) (map[address.Address]*fairroulette.PlayerStats, error) {
 	playerStats := make(map[address.Address]*fairroulette.PlayerStats)
 	for i, addr := range players {
 		v, err := vars.Get(playerKeys[i])
-		check(err)
+		if err != nil {
+			return nil, err
+		}
 		ps, err := fairroulette.DecodePlayerStats(v)
-		check(err)
+		if err != nil {
+			return nil, err
+		}
 		playerStats[addr] = ps
 	}
-	return playerStats
+	return playerStats, nil
 }
