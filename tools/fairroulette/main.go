@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/tools/fairroulette/admin"
 	"github.com/iotaledger/wasp/tools/fairroulette/client"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
+	"github.com/iotaledger/wasp/tools/fairroulette/dashboard"
 	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
 	"github.com/spf13/pflag"
 )
@@ -25,6 +26,7 @@ var commands = map[string]func([]string){
 	"set-address": client.SetSCAddressCmd,
 	"status":      client.StatusCmd,
 	"bet":         client.BetCmd,
+	"dashboard":   dashboard.Cmd,
 }
 
 func usage(flags *pflag.FlagSet) {

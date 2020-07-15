@@ -85,10 +85,10 @@ const (
 )
 
 type BetInfo struct {
-	player address.Address
+	Player address.Address
 	reqId  sctransaction.RequestId
-	sum    int64
-	color  byte
+	Sum    int64
+	Color  byte
 }
 
 type PlayerStats struct {
@@ -159,10 +159,10 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 	reqid := ctx.AccessRequest().ID()
 	betInfo := &BetInfo{
-		player: sender,
-		sum:    sum,
+		Player: sender,
+		Sum:    sum,
 		reqId:  reqid,
-		color:  byte(col % NumColors),
+		Color:  byte(col % NumColors),
 	}
 
 	// save the bet info in the array
@@ -170,7 +170,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 	ctx.Publishf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
 
-	err := withPlayerStats(ctx, &betInfo.player, func(ps *PlayerStats) {
+	err := withPlayerStats(ctx, &betInfo.Player, func(ps *PlayerStats) {
 		ps.Bets += 1
 	})
 	if err != nil {
@@ -288,7 +288,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 			// inconsistency. Even more sad
 			return
 		}
-		totalLockedAmount += bi.sum
+		totalLockedAmount += bi.Sum
 		lockedBets[i] = bi
 	}
 
@@ -297,7 +297,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	// select bets on winning Color
 	winningBets := lockedBets[:0] // same underlying array
 	for _, bet := range lockedBets {
-		if bet.color == winningColor {
+		if bet.Color == winningColor {
 			winningBets = append(winningBets, bet)
 		}
 	}
@@ -332,7 +332,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	}
 
 	for _, betInfo := range winningBets {
-		err := withPlayerStats(ctx, &betInfo.player, func(ps *PlayerStats) {
+		err := withPlayerStats(ctx, &betInfo.Player, func(ps *PlayerStats) {
 			ps.Wins += 1
 		})
 		if err != nil {
@@ -367,11 +367,11 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	sumsByPlayers := make(map[address.Address]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
-		if _, ok := sumsByPlayers[bet.player]; !ok {
-			sumsByPlayers[bet.player] = 0
+		if _, ok := sumsByPlayers[bet.Player]; !ok {
+			sumsByPlayers[bet.Player] = 0
 		}
-		sumsByPlayers[bet.player] += bet.sum
-		totalWinningAmount += bet.sum
+		sumsByPlayers[bet.Player] += bet.Sum
+		totalWinningAmount += bet.Sum
 	}
 
 	// NOTE 1: float64 was avoided for determinism reasons
@@ -428,16 +428,16 @@ func DecodeBetInfo(data []byte) (*BetInfo, error) {
 }
 
 func (bi *BetInfo) Write(w io.Writer) error {
-	if _, err := w.Write(bi.player[:]); err != nil {
+	if _, err := w.Write(bi.Player[:]); err != nil {
 		return err
 	}
 	if err := bi.reqId.Write(w); err != nil {
 		return err
 	}
-	if err := util.WriteInt64(w, bi.sum); err != nil {
+	if err := util.WriteInt64(w, bi.Sum); err != nil {
 		return err
 	}
-	if err := util.WriteByte(w, bi.color); err != nil {
+	if err := util.WriteByte(w, bi.Color); err != nil {
 		return err
 	}
 	return nil
@@ -445,23 +445,23 @@ func (bi *BetInfo) Write(w io.Writer) error {
 
 func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
-	if err = util.ReadAddress(r, &bi.player); err != nil {
+	if err = util.ReadAddress(r, &bi.Player); err != nil {
 		return err
 	}
 	if err = bi.reqId.Read(r); err != nil {
 		return err
 	}
-	if err = util.ReadInt64(r, &bi.sum); err != nil {
+	if err = util.ReadInt64(r, &bi.Sum); err != nil {
 		return err
 	}
-	if bi.color, err = util.ReadByte(r); err != nil {
+	if bi.Color, err = util.ReadByte(r); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (b *BetInfo) String() string {
-	return fmt.Sprintf("[player %s bets %d IOTAs on color %d]", b.player.String()[:6], b.sum, b.color)
+	return fmt.Sprintf("[player %s bets %d IOTAs on color %d]", b.Player.String()[:6], b.Sum, b.Color)
 }
 
 func encodePlayerStats(ps *PlayerStats) []byte {
@@ -521,4 +521,3 @@ func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *Pl
 
 	return nil
 }
-

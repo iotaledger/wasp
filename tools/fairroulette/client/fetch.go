@@ -31,6 +31,16 @@ type Status struct {
 	WinsPerColor []uint32
 }
 
+func (s *Status) NextPlayIn() string {
+	diff := s.NextPlayTimestamp.Sub(time.Now())
+	// round to the second
+	diff -= diff % time.Second
+	if diff < 0 {
+		return "unknown"
+	}
+	return diff.String()
+}
+
 func FetchStatus(addresses []string) *Status {
 	status := &Status{}
 
