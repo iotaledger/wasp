@@ -3,11 +3,14 @@ package dashboard
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/iotaledger/wasp/tools/fairroulette/client"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 func check(err error) {
@@ -17,15 +20,6 @@ func check(err error) {
 }
 
 func Cmd(args []string) {
-	indexTemplate := template.Must(template.New("index").Parse(indexTemplate))
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		params := &IndexParams{
-			Now:    time.Now().UTC(),
-			Status: client.FetchStatus(args),
-		}
-		check(indexTemplate.Execute(w, params))
-	})
-
 	listenAddr := ":10000"
 	if len(args) > 0 {
 		if len(args) != 1 {
@@ -34,17 +28,38 @@ func Cmd(args []string) {
 		}
 		listenAddr = args[0]
 	}
+
+	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Renderer = renderer
+	e.GET("/", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "index", &IndexTemplateParams{
+			Now:    time.Now().UTC(),
+			Status: client.FetchStatus(args),
+		})
+	})
+
 	fmt.Printf("Serving dashboard on %s\n", listenAddr)
-	http.ListenAndServe(listenAddr, nil)
+	e.Logger.Fatal(e.Start(listenAddr))
 }
 
-type IndexParams struct {
+type IndexTemplateParams struct {
 	Now        time.Time
 	NextPlayIn string
 	Status     *client.Status
 }
 
-const indexTemplate = `
+type Template struct {
+	templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+var renderer = &Template{
+	templates: template.Must(template.New("index").Parse(`
 <!doctype html>
 <html lang="en">
   <head>
@@ -93,4 +108,5 @@ const indexTemplate = `
 	</div>
   </body>
 </html>
-`
+`)),
+}
