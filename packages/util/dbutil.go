@@ -11,7 +11,15 @@ func DbSetMulti(store kvstore.KVStore, keys [][]byte, values [][]byte) error {
 	}
 	atomic := store.Batched()
 	for i := range keys {
-		if err := atomic.Set(keys[i], values[i]); err != nil {
+		k := keys[i]
+		v := values[i]
+		var err error
+		if v == nil {
+			err = atomic.Delete(k)
+		} else {
+			err = atomic.Set(k, v)
+		}
+		if err != nil {
 			return err
 		}
 	}
