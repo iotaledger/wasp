@@ -60,6 +60,7 @@ const (
 
 	// request argument to specify color of the bet. It always is taken modulo 5, so there are 5 possible colors
 	ReqVarColor = "color"
+
 	// state array to store all current bets
 	StateVarBets = "bets"
 	// state array to store locked bets
@@ -72,6 +73,10 @@ const (
 	VarPlayPeriodSec = "playPeriod"
 	// estimated timestamp for next play (nanoseconds)
 	VarNextPlayTimestamp = "nextPlayTimestamp"
+	// array color => amount of wins so far
+	VarWinsPerColor = "winsPerColor"
+	// dictionary address => PlayerStats
+	VarPlayerStats = "playerStats"
 
 	// number of colors
 	NumColors = 5
@@ -86,8 +91,9 @@ type BetInfo struct {
 	color  byte
 }
 
-func (b *BetInfo) String() string {
-	return fmt.Sprintf("[player %s bets %d IOTAs on color %d]", b.player.String()[:6], b.sum, b.color)
+type PlayerStats struct {
+	Bets uint32
+	Wins uint32
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -151,15 +157,27 @@ func placeBet(ctx vmtypes.Sandbox) {
 	}
 	firstBet := state.MustGetArray(StateVarBets).Len() == 0
 
-	// save the bet info in the array
 	reqid := ctx.AccessRequest().ID()
-	state.MustGetArray(StateVarBets).Push(encodeBetInfo(&BetInfo{
+	betInfo := &BetInfo{
 		player: sender,
 		sum:    sum,
 		reqId:  reqid,
 		color:  byte(col % NumColors),
-	}))
+	}
+
+	// save the bet info in the array
+	state.MustGetArray(StateVarBets).Push(encodeBetInfo(betInfo))
+
 	ctx.Publishf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
+
+	err := withPlayerStats(ctx, &betInfo.player, func(ps *PlayerStats) {
+		ps.Bets += 1
+	})
+	if err != nil {
+		ctx.GetWaspLog().Error(err)
+		ctx.Rollback()
+		return
+	}
 
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
 	// it will be time-locked by default for the next 2 minutes, the it will be processed by smart contract
@@ -254,6 +272,13 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 
 	ctx.Publishf("$$$$$$$$$$ winning color is = %d", winningColor)
 
+	err = addToWinsPerColor(ctx, winningColor)
+	if err != nil {
+		ctx.GetWaspLog().Error(err)
+		ctx.Rollback()
+		return
+	}
+
 	// take locked bets from the array
 	totalLockedAmount := int64(0)
 	lockedBets := make([]*BetInfo, numLockedBets)
@@ -305,6 +330,36 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		ctx.Rollback()
 		return
 	}
+
+	for _, betInfo := range winningBets {
+		err := withPlayerStats(ctx, &betInfo.player, func(ps *PlayerStats) {
+			ps.Wins += 1
+		})
+		if err != nil {
+			ctx.GetWaspLog().Error(err)
+			ctx.Rollback()
+			return
+		}
+	}
+}
+
+func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) error {
+	winsPerColorArray := ctx.AccessState().MustGetArray(VarWinsPerColor)
+
+	// first time? Initialize counters
+	if winsPerColorArray.Len() == 0 {
+		for i := 0; i < NumColors; i++ {
+			winsPerColorArray.Push(util.Uint32To4Bytes(0))
+		}
+	}
+
+	winsb, err := winsPerColorArray.GetAt(uint16(winningColor))
+	if err != nil {
+		return err
+	}
+	wins := util.Uint32From4Bytes(winsb)
+	winsPerColorArray.SetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
+	return nil
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
@@ -404,3 +459,66 @@ func (bi *BetInfo) Read(r io.Reader) error {
 	}
 	return nil
 }
+
+func (b *BetInfo) String() string {
+	return fmt.Sprintf("[player %s bets %d IOTAs on color %d]", b.player.String()[:6], b.sum, b.color)
+}
+
+func encodePlayerStats(ps *PlayerStats) []byte {
+	ret, _ := util.Bytes(ps)
+	return ret
+}
+
+func DecodePlayerStats(data []byte) (*PlayerStats, error) {
+	var ret PlayerStats
+	if data != nil {
+		if err := ret.Read(bytes.NewReader(data)); err != nil {
+			return nil, err
+		}
+	}
+	return &ret, nil
+}
+
+func (ps *PlayerStats) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, ps.Bets); err != nil {
+		return err
+	}
+	if err := util.WriteUint32(w, ps.Wins); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ps *PlayerStats) Read(r io.Reader) error {
+	var err error
+	if err = util.ReadUint32(r, &ps.Bets); err != nil {
+		return err
+	}
+	if err = util.ReadUint32(r, &ps.Wins); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ps *PlayerStats) String() string {
+	return fmt.Sprintf("[bets: %d - wins: %d]", ps.Bets, ps.Wins)
+}
+
+func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *PlayerStats)) error {
+	statsArray := ctx.AccessState().MustGetDictionary(VarPlayerStats)
+	b, err := statsArray.GetAt(player.Bytes())
+	if err != nil {
+		return err
+	}
+	stats, err := DecodePlayerStats(b)
+	if err != nil {
+		return err
+	}
+
+	f(stats)
+
+	statsArray.SetAt(player.Bytes(), encodePlayerStats(stats))
+
+	return nil
+}
+

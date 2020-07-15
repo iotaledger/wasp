@@ -3,6 +3,7 @@ package kv
 import (
 	"bytes"
 	"errors"
+
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -38,11 +39,11 @@ func (l *Dictionary) getSizeKey() Key {
 }
 
 func (l *Dictionary) getElemKey(key []byte) Key {
-	var buf bytes.Buffer
-	buf.Write([]byte(l.name))
-	buf.WriteByte(dictElemKeyCode)
-	_, _ = buf.Write(key)
-	return Key(buf.Bytes())
+	return DictElemKey(Key(l.name), key)
+}
+
+func DictElemKey(dictKey Key, elemKey []byte) Key {
+	return Key(append([]byte(dictKey), elemKey...))
 }
 
 func (l *Dictionary) setSize(size uint32) {

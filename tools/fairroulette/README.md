@@ -4,16 +4,13 @@ Steps:
 
 1. Install `goshimmer` command: `go install` in the Goshimmer directory
 
-2. Install the `wasp` command: `go install`
-
-3. Install the `fairroulette` and `waspt` tools:
+2. Install the `wasp`, `fairroulette` and `waspt` commands:
 
 ```
-go install ./tools/waspt
-go install ./tools/fairroulette
+go install . ./tools/fairroulette ./tools/cluster/waspt
 ```
 
-4. Start the Wasp cluster in a console:
+3. Start the Wasp cluster in a console:
 
 ```
 $ cd tools/fairroulette/cluster
@@ -21,7 +18,7 @@ $ waspt init
 $ waspt start
 ```
 
-5. In another console, create a new wallet for the owner account:
+4. In another console, create a new wallet for the owner account:
 
 ```
 fairroulette -c owner.json wallet init
@@ -29,13 +26,13 @@ fairroulette -c owner.json wallet init
 
 This will create the file `owner.json` with the admin user's wallet.
 
-6. Transfer some funds to the owner address: `fairroulette -c owner.json wallet transfer 1 10000`.
+5. Transfer some funds to the owner address: `fairroulette -c owner.json wallet transfer 1 10000`.
 
 `1` is the `utxodb` address index used as source for the funds.
 
 `10000` is the amount of IOTAs to transfer.
 
-7. Initialize the FairRoulette smart contract:
+6. Initialize the FairRoulette smart contract:
 
 ```
 $ fairroulette -c owner.json admin init
@@ -45,7 +42,7 @@ SC Address: mUbfBM...
 
 Copy the generated SC address. (It is also saved in `owner.json`)
 
-8. Initialize a wallet for the client account:
+7. Initialize a wallet for the client account:
 
 ```
 fairroulette wallet init
@@ -53,9 +50,9 @@ fairroulette wallet init
 
 This creates `fairroulette.json` (can be changed with `-c`).
 
-9. Transfer some funds to your wallet: `fairroulette wallet transfer 1 10000`.
+8. Transfer some funds to your wallet: `fairroulette wallet transfer 1 10000`.
 
-10. Query your balance:
+9. Query your balance:
 
 ```
 $ fairroulette wallet balance
@@ -65,15 +62,19 @@ Index 0
     10000 IOTA
 ```
 
-11. Configure the SC address (obtained in step 7): `fairroulette set-address mUbfBM...`
+10. Configure the SC address in `fairroulette.json` (obtained in step 7):
 
-12. Make a bet: `fairroulette bet 2 100`
+```
+fairroulette set-address mUbfBM...
+```
+
+11. Make a bet: `fairroulette bet 2 100`
 
 `2` is the color to bet.
 
 `100` is the amount of IOTAs to bet.
 
-13. Query the SC state:
+12. Query the SC state:
 
 ```
 $ fairroulette status
@@ -84,4 +85,4 @@ last winning color: 0
 play period (s): 0
 ```
 
-14. Change the play period (as admin): `fairroulette admin set-period 10 -c owner.json`
+13. Change the play period (as admin): `fairroulette admin set-period 10 -c owner.json`
