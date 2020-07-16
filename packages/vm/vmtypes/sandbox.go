@@ -29,7 +29,7 @@ type Sandbox interface {
 	// access to the request block
 	AccessRequest() RequestAccess
 	// base level of virtual state access
-	AccessState() kv.Codec
+	AccessState() kv.MustCodec
 	// AccessOwnAccount
 	AccessOwnAccount() AccountAccess
 	// Send request

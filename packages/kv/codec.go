@@ -2,7 +2,6 @@ package kv
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -17,13 +16,15 @@ type Codec interface {
 	GetArray(Key) (*Array, error)
 	GetDictionary(Key) (*Dictionary, error)
 	// TODO GetTimedLog
+}
 
-	// Must methods don't return errors but instead calls error handler
+// MustCodec is like a Codec that automatically panics on error
+type MustCodec interface {
 	MustRCodec
-	MustGetArray(Key) *Array
-	MustGetDictionary(Key) *Dictionary
-	// error handling for Must.. methods. Default is panic
-	SetErrorHandler(fun func(msg ...string))
+	WCodec
+	GetArray(Key) *MustArray
+	GetDictionary(Key) *MustDictionary
+	// TODO GetTimedLog
 }
 
 // RCodec is an interface that offers easy conversions between []byte and other types when
@@ -36,12 +37,13 @@ type RCodec interface {
 	GetHashValue(key Key) (*hashing.HashValue, bool, error)
 }
 
+// MustrCodec is like a RCodec that automatically panics on error
 type MustRCodec interface {
-	MustGet(key Key) []byte
-	MustGetString(key Key) (string, bool)
-	MustGetInt64(key Key) (int64, bool)
-	MustGetAddress(key Key) (*address.Address, bool)
-	MustGetHashValue(key Key) (*hashing.HashValue, bool)
+	Get(key Key) []byte
+	GetString(key Key) (string, bool)
+	GetInt64(key Key) (int64, bool)
+	GetAddress(key Key) (*address.Address, bool)
+	GetHashValue(key Key) (*hashing.HashValue, bool)
 }
 
 // WCodec is an interface that offers easy conversions between []byte and other types when
@@ -56,65 +58,53 @@ type WCodec interface {
 }
 
 type codec struct {
-	kv          KVStore
-	errorHandle func(msg ...string)
+	kv KVStore
+}
+
+type mustcodec struct {
+	codec
 }
 
 func NewCodec(kv KVStore) Codec {
-	return codec{
-		kv:          kv,
-		errorHandle: defaultErrorHandler,
-	}
+	return codec{kv: kv}
 }
 
-func defaultErrorHandler(msg ...string) {
-	if len(msg) == 0 {
-		panic("unspecified error in codec")
-	} else {
-		panic(strings.Join(msg, " "))
-	}
-}
-
-func (c codec) riseError(err error) {
-	c.errorHandle(err.Error())
-}
-
-func (c codec) SetErrorHandler(fun func(msg ...string)) {
-	c.errorHandle = fun
+func NewMustCodec(kv KVStore) MustCodec {
+	return mustcodec{codec{kv: kv}}
 }
 
 func (c codec) GetArray(key Key) (*Array, error) {
 	return newArray(c, string(key))
 }
 
-func (c codec) MustGetArray(key Key) *Array {
-	ret, err := newArray(c, string(key))
+func (c mustcodec) GetArray(key Key) *MustArray {
+	array, err := c.codec.GetArray(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
-	return ret
+	return newMustArray(array)
 }
 
 func (c codec) GetDictionary(key Key) (*Dictionary, error) {
 	return newDictionary(c, string(key))
 }
 
-func (c codec) MustGetDictionary(key Key) *Dictionary {
-	ret, err := c.GetDictionary(key)
+func (c mustcodec) GetDictionary(key Key) *MustDictionary {
+	d, err := c.codec.GetDictionary(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
-	return ret
+	return newMustDictionary(d)
 }
 
 func (c codec) Get(key Key) ([]byte, error) {
 	return c.kv.Get(key)
 }
 
-func (c codec) MustGet(key Key) []byte {
-	ret, err := c.Get(key)
+func (c mustcodec) Get(key Key) []byte {
+	ret, err := c.codec.Get(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
 	return ret
 }
@@ -135,10 +125,10 @@ func (c codec) GetString(key Key) (string, bool, error) {
 	return string(b), true, nil
 }
 
-func (c codec) MustGetString(key Key) (string, bool) {
-	ret, ok, err := c.GetString(key)
+func (c mustcodec) GetString(key Key) (string, bool) {
+	ret, ok, err := c.codec.GetString(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
 	return ret, ok
 }
@@ -158,10 +148,10 @@ func (c codec) GetInt64(key Key) (int64, bool, error) {
 	return int64(util.Uint64From8Bytes(b)), true, nil
 }
 
-func (c codec) MustGetInt64(key Key) (int64, bool) {
-	ret, ok, err := c.GetInt64(key)
+func (c mustcodec) GetInt64(key Key) (int64, bool) {
+	ret, ok, err := c.codec.GetInt64(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
 	return ret, ok
 }
@@ -179,10 +169,10 @@ func (c codec) GetAddress(key Key) (*address.Address, bool, error) {
 	return &ret, true, nil
 }
 
-func (c codec) MustGetAddress(key Key) (*address.Address, bool) {
-	ret, ok, err := c.GetAddress(key)
+func (c mustcodec) GetAddress(key Key) (*address.Address, bool) {
+	ret, ok, err := c.codec.GetAddress(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
 	return ret, ok
 }
@@ -201,10 +191,10 @@ func (c codec) GetHashValue(key Key) (*hashing.HashValue, bool, error) {
 	return &ret, err == nil, err
 }
 
-func (c codec) MustGetHashValue(key Key) (*hashing.HashValue, bool) {
-	ret, ok, err := c.GetHashValue(key)
+func (c mustcodec) GetHashValue(key Key) (*hashing.HashValue, bool) {
+	ret, ok, err := c.codec.GetHashValue(key)
 	if err != nil {
-		c.riseError(err)
+		panic(err)
 	}
 	return ret, ok
 }

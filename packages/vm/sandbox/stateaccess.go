@@ -10,8 +10,8 @@ type stateWrapper struct {
 	stateUpdate  state.StateUpdate
 }
 
-func (s *stateWrapper) Codec() kv.Codec {
-	return kv.NewCodec(s)
+func (s *stateWrapper) MustCodec() kv.MustCodec {
+	return kv.NewMustCodec(s)
 }
 
 func (s *stateWrapper) Get(name kv.Key) ([]byte, error) {

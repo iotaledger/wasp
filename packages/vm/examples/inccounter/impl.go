@@ -48,14 +48,14 @@ func (ep incEntryPoint) Run(ctx vmtypes.Sandbox) {
 
 func incCounter(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
-	val, _, _ := state.GetInt64("counter")
+	val, _ := state.GetInt64("counter")
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64("counter", val+1)
 }
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
-	val, _, _ := state.GetInt64("counter")
+	val, _ := state.GetInt64("counter")
 
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64("counter", val+1)
@@ -69,7 +69,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
 
-	val, _, _ := state.GetInt64("counter")
+	val, _ := state.GetInt64("counter")
 	state.SetInt64("counter", val+1)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 
@@ -78,7 +78,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 		ctx.Panic(err)
 	}
 	if !ok {
-		numRepeats, ok, err = state.GetInt64(ArgNumRepeats)
+		numRepeats, ok = state.GetInt64(ArgNumRepeats)
 		if err != nil {
 			ctx.Panic(err)
 		}

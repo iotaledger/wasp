@@ -37,13 +37,13 @@ func TestBasicArray(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, arr2.Len())
 
-	arr2.Append(arr)
+	arr2.Extend(arr)
 	assert.EqualValues(t, arr.Len(), arr2.Len())
 
 	arr2.Push(d4)
 	assert.EqualValues(t, arr.Len()+1, arr2.Len())
 
 	assert.Panics(t, func() {
-		arr2.MustGetAt(arr2.Len())
+		newMustArray(arr2).GetAt(arr2.Len())
 	})
 }

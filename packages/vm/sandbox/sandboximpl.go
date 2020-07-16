@@ -76,8 +76,8 @@ func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) AccessState() kv.Codec {
-	return vctx.stateWrapper.Codec()
+func (vctx *sandbox) AccessState() kv.MustCodec {
+	return vctx.stateWrapper.MustCodec()
 }
 
 func (vctx *sandbox) AccessOwnAccount() vmtypes.AccountAccess {

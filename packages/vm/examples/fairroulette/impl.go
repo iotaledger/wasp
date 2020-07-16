@@ -125,9 +125,9 @@ func placeBet(ctx vmtypes.Sandbox) {
 	// if there are some bets locked, save the entropy derived immediately from it.
 	// it is not predictable at the moment of locking and this saving makes it not playable later
 	// entropy saved this way is derived (hashed) from the locking transaction hash
-	if state.MustGetArray(StateVarLockedBets).Len() > 0 {
-		_, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
-		if !ok || err != nil {
+	if state.GetArray(StateVarLockedBets).Len() > 0 {
+		_, ok := state.GetHashValue(StateVarEntropyFromLocking)
+		if !ok {
 			ehv := ctx.GetEntropy()
 			state.SetHashValue(StateVarEntropyFromLocking, &ehv)
 		}
@@ -155,7 +155,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 		ctx.Publish("wrong request, no Color specified")
 		return
 	}
-	firstBet := state.MustGetArray(StateVarBets).Len() == 0
+	firstBet := state.GetArray(StateVarBets).Len() == 0
 
 	reqid := ctx.AccessRequest().ID()
 	betInfo := &BetInfo{
@@ -166,7 +166,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 	}
 
 	// save the bet info in the array
-	state.MustGetArray(StateVarBets).Push(encodeBetInfo(betInfo))
+	state.GetArray(StateVarBets).Push(encodeBetInfo(betInfo))
 
 	ctx.Publishf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
 
@@ -180,8 +180,8 @@ func placeBet(ctx vmtypes.Sandbox) {
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
 	// it will be time-locked by default for the next 2 minutes, the it will be processed by smart contract
 	if firstBet {
-		period, ok, err := state.GetInt64(VarPlayPeriodSec)
-		if err != nil || !ok || period < 10 {
+		period, ok := state.GetInt64(VarPlayPeriodSec)
+		if !ok || period < 10 {
 			period = DefaultPlaySecondsAfterFirstBet
 		}
 
@@ -222,9 +222,9 @@ func lockBets(ctx vmtypes.Sandbox) {
 	}
 	state := ctx.AccessState()
 	// append all current bets to the locked bets array
-	lockedBets := state.MustGetArray(StateVarLockedBets)
-	lockedBets.Append(state.MustGetArray(StateVarBets))
-	state.MustGetArray(StateVarBets).Erase()
+	lockedBets := state.GetArray(StateVarLockedBets)
+	lockedBets.Extend(state.GetArray(StateVarBets))
+	state.GetArray(StateVarBets).Erase()
 
 	numLockedBets := lockedBets.Len()
 	ctx.Publishf("lockBets: num = %d", numLockedBets)
@@ -247,7 +247,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	}
 	state := ctx.AccessState()
 
-	lockedBetsArray := state.MustGetArray(StateVarLockedBets)
+	lockedBetsArray := state.GetArray(StateVarLockedBets)
 	numLockedBets := lockedBetsArray.Len()
 	if numLockedBets == 0 {
 		// nothing to play. Should not happen
@@ -257,8 +257,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	// take the entropy from the signing of the locked bets
 	// it was saved by some 'place bet' request or otherwise it is taken from
 	// the current context
-	entropy, ok, err := state.GetHashValue(StateVarEntropyFromLocking)
-	if !ok || err != nil {
+	entropy, ok := state.GetHashValue(StateVarEntropyFromLocking)
+	if !ok {
 		h := ctx.GetEntropy()
 		entropy = &h
 	}
@@ -270,19 +270,16 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 
 	ctx.Publishf("$$$$$$$$$$ winning color is = %d", winningColor)
 
-	err = addToWinsPerColor(ctx, winningColor)
-	if err != nil {
-		ctx.Panic(err)
-	}
+	addToWinsPerColor(ctx, winningColor)
 
 	// take locked bets from the array
 	totalLockedAmount := int64(0)
 	lockedBets := make([]*BetInfo, numLockedBets)
 	for i := range lockedBets {
-		bi, err := DecodeBetInfo(lockedBetsArray.MustGetAt(uint16(i)))
+		bi, err := DecodeBetInfo(lockedBetsArray.GetAt(uint16(i)))
 		if err != nil {
 			// inconsistency. Even more sad
-			return
+			panic(err)
 		}
 		totalLockedAmount += bi.Sum
 		lockedBets[i] = bi
@@ -335,8 +332,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	}
 }
 
-func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) error {
-	winsPerColorArray := ctx.AccessState().MustGetArray(VarWinsPerColor)
+func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
+	winsPerColorArray := ctx.AccessState().GetArray(VarWinsPerColor)
 
 	// first time? Initialize counters
 	if winsPerColorArray.Len() == 0 {
@@ -345,13 +342,9 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) error {
 		}
 	}
 
-	winsb, err := winsPerColorArray.GetAt(uint16(winningColor))
-	if err != nil {
-		return err
-	}
+	winsb := winsPerColorArray.GetAt(uint16(winningColor))
 	wins := util.Uint32From4Bytes(winsb)
 	winsPerColorArray.SetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
-	return nil
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
@@ -497,11 +490,8 @@ func (ps *PlayerStats) String() string {
 }
 
 func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *PlayerStats)) error {
-	statsArray := ctx.AccessState().MustGetDictionary(VarPlayerStats)
-	b, err := statsArray.GetAt(player.Bytes())
-	if err != nil {
-		return err
-	}
+	statsDict := ctx.AccessState().GetDictionary(VarPlayerStats)
+	b := statsDict.GetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)
 	if err != nil {
 		return err
@@ -509,7 +499,7 @@ func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *Pl
 
 	f(stats)
 
-	statsArray.SetAt(player.Bytes(), encodePlayerStats(stats))
+	statsDict.SetAt(player.Bytes(), encodePlayerStats(stats))
 
 	return nil
 }
