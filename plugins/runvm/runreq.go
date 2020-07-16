@@ -90,7 +90,17 @@ func runTheRequest(ctx *vm.VMContext) {
 			reqBlock.RequestCode(), ctx.ProgramHash.String())
 		return
 	}
-	entryPoint.Run(sandbox.NewSandbox(ctx))
+
+	sandbox := sandbox.NewSandbox(ctx)
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				ctx.Log.Errorf("Recovered from panic in SC: %v", r)
+				sandbox.Rollback()
+			}
+		}()
+		entryPoint.Run(sandbox)
+	}()
 
 	defer ctx.Log.Debugw("runTheRequest OUT USER DEFINED",
 		"reqId", ctx.RequestRef.RequestId().Short(),

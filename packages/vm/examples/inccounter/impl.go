@@ -75,14 +75,12 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 
 	numRepeats, ok, err := ctx.AccessRequest().Args().GetInt64(ArgNumRepeats)
 	if err != nil {
-		ctx.Rollback()
-		return
+		ctx.Panic(err)
 	}
 	if !ok {
 		numRepeats, ok, err = state.GetInt64(ArgNumRepeats)
 		if err != nil {
-			ctx.Rollback()
-			return
+			ctx.Panic(err)
 		}
 	}
 	if numRepeats == 0 {

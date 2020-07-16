@@ -41,7 +41,10 @@ func (vctx *sandbox) IsOriginState() bool {
 	return vctx.VirtualState.StateIndex() == 0
 }
 
-// clear all updates, restore same context as in the beginning of the VM call
+func (vctx *sandbox) Panic(v interface{}) {
+	panic(v)
+}
+
 func (vctx *sandbox) Rollback() {
 	vctx.TxBuilder = vctx.saveTxBuilder
 	vctx.StateUpdate.Clear()

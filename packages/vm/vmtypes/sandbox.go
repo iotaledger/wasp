@@ -17,7 +17,14 @@ type Sandbox interface {
 	GetOwnAddress() *address.Address
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
+
+	// Same as panic(), but added as a Sandbox method to emphasize that it's ok to panic from a SC.
+	// A panic will be recovered, and Rollback() will be automatically called after.
+	Panic(v interface{})
+
+	// clear all updates, restore same context as in the beginning of the VM call
 	Rollback()
+
 	// sub interfaces
 	// access to the request block
 	AccessRequest() RequestAccess
