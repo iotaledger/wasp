@@ -28,10 +28,10 @@ func newVirtualState(scAddress *address.Address, getPartition func(*address.Addr
 	return &virtualState{
 		scAddress:    *scAddress,
 		getPartition: getPartition,
-		variables: kv.NewBufferedKVStoreOnSubrealm(
-			func() kvstore.KVStore { return getPartition(scAddress) },
-			[]byte{database.ObjectTypeStateVariable},
-		),
+		variables: kv.NewBufferedKVStore(func() kvstore.KVStore {
+			p := getPartition(scAddress)
+			return p.WithRealm(append(p.Realm(), []byte{database.ObjectTypeStateVariable}...))
+		}),
 		empty: true,
 	}
 }

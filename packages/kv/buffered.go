@@ -43,60 +43,50 @@ func asDBError(e error) error {
 	return DBError{e}
 }
 
-type DB interface {
-	Get(key Key) ([]byte, error)
-	Iterate(func(key Key, value []byte) bool) error
-}
-
-type dbtable struct {
-	db        DB
+type bufferedKVStore struct {
+	db        func() kvstore.KVStore
 	mutations MutationMap
 }
 
-func NewBufferedKVStore(db DB) BufferedKVStore {
-	return &dbtable{
+func NewBufferedKVStore(db func() kvstore.KVStore) BufferedKVStore {
+	return &bufferedKVStore{
 		db:        db,
 		mutations: NewMutationMap(),
 	}
 }
 
-func NewBufferedKVStoreOnSubrealm(db func() kvstore.KVStore, prefix kvstore.KeyPrefix) BufferedKVStore {
-	return NewBufferedKVStore(&subrealm{
-		db:     db,
-		prefix: prefix,
-	})
-}
-
-func (c *dbtable) Clone() BufferedKVStore {
-	return &dbtable{
-		db:        c.db,
-		mutations: c.mutations.Clone(),
+func (b *bufferedKVStore) Clone() BufferedKVStore {
+	return &bufferedKVStore{
+		db:        b.db,
+		mutations: b.mutations.Clone(),
 	}
 }
 
-func (c *dbtable) Codec() Codec {
-	return NewCodec(c)
+func (b *bufferedKVStore) Codec() Codec {
+	return NewCodec(b)
 }
 
-func (c *dbtable) Mutations() MutationMap {
-	return c.mutations
+func (b *bufferedKVStore) Mutations() MutationMap {
+	return b.mutations
 }
 
-func (c *dbtable) ClearMutations() {
-	c.mutations = NewMutationMap()
+func (b *bufferedKVStore) ClearMutations() {
+	b.mutations = NewMutationMap()
 }
 
 // iterates over all key-value pairs in KVStore
-func (c *dbtable) DangerouslyDumpToMap() map[Key][]byte {
+func (b *bufferedKVStore) DangerouslyDumpToMap() map[Key][]byte {
+	db := b.db()
+	prefix := len(db.Realm())
 	ret := make(map[Key][]byte)
-	err := c.db.Iterate(func(key Key, value []byte) bool {
-		ret[Key(key)] = value
+	err := db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
+		ret[Key(key[prefix:])] = value
 		return true
 	})
 	if err != nil {
 		panic(asDBError(err))
 	}
-	c.mutations.Iterate(func(key Key, mut Mutation) bool {
+	b.mutations.Iterate(func(key Key, mut Mutation) bool {
 		v := mut.Value()
 		if v != nil {
 			ret[key] = v
@@ -109,12 +99,12 @@ func (c *dbtable) DangerouslyDumpToMap() map[Key][]byte {
 }
 
 // iterates over all key-value pairs in KVStore
-func (c *dbtable) DangerouslyDumpToString() string {
+func (b *bufferedKVStore) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStore:\n"
-	for k, v := range c.DangerouslyDumpToMap() {
+	for k, v := range b.DangerouslyDumpToMap() {
 		ret += fmt.Sprintf(
 			"           [%s] 0x%s: 0x%s (base58: %s)\n",
-			c.flag(k),
+			b.flag(k),
 			slice(hex.EncodeToString([]byte(k))),
 			slice(hex.EncodeToString(v)),
 			slice(base58.Encode(v)),
@@ -123,51 +113,30 @@ func (c *dbtable) DangerouslyDumpToString() string {
 	return ret
 }
 
-func (c *dbtable) flag(k Key) string {
-	mut := c.mutations.Get(k)
+func (b *bufferedKVStore) flag(k Key) string {
+	mut := b.mutations.Get(k)
 	if mut != nil {
 		return "+"
 	}
 	return " "
 }
 
-func (c *dbtable) Set(key Key, value []byte) {
-	c.mutations.Add(NewMutationSet(key, value))
+func (b *bufferedKVStore) Set(key Key, value []byte) {
+	b.mutations.Add(NewMutationSet(key, value))
 }
 
-func (c *dbtable) Del(key Key) {
-	c.mutations.Add(NewMutationDel(key))
+func (b *bufferedKVStore) Del(key Key) {
+	b.mutations.Add(NewMutationDel(key))
 }
 
-func (c *dbtable) Get(key Key) ([]byte, error) {
-	mut := c.mutations.Get(key)
+func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
+	mut := b.mutations.Get(key)
 	if mut != nil {
 		return mut.Value(), nil
 	}
-	b, err := c.db.Get(key)
-	return b, asDBError(err)
-}
-
-type subrealm struct {
-	db     func() kvstore.KVStore
-	prefix kvstore.KeyPrefix
-}
-
-func (s *subrealm) Get(key Key) ([]byte, error) {
-	v, err := s.db().Get(append(s.prefix, []byte(key)...))
+	v, err := b.db().Get(kvstore.Key(key))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
-	return v, err
-}
-
-func (s *subrealm) Iterate(f func(Key, []byte) bool) error {
-	db := s.db()
-	err := db.Iterate(s.prefix, func(key kvstore.Key, value kvstore.Value) bool {
-		return f(Key(key[len(db.Realm())+len(s.prefix):]), value)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return v, asDBError(err)
 }
