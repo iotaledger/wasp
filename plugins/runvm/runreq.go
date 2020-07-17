@@ -2,6 +2,7 @@ package runvm
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -96,6 +97,10 @@ func runTheRequest(ctx *vm.VMContext) {
 		defer func() {
 			if r := recover(); r != nil {
 				ctx.Log.Errorf("Recovered from panic in SC: %v", r)
+				if _, ok := r.(kv.DBError); ok {
+					// There was an error accessing the DB
+					// TODO invalidate the whole batch?
+				}
 				sandbox.Rollback()
 			}
 		}()
