@@ -3,7 +3,6 @@ package kv
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +17,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	b := NewBufferedKVStore(func() kvstore.KVStore { return realm })
+	b := NewBufferedKVStore(realm)
 
 	v, err = b.Get(Key([]byte("cd")))
 	assert.NoError(t, err)

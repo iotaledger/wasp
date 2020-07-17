@@ -44,11 +44,11 @@ func asDBError(e error) error {
 }
 
 type bufferedKVStore struct {
-	db        func() kvstore.KVStore
+	db        kvstore.KVStore
 	mutations MutationMap
 }
 
-func NewBufferedKVStore(db func() kvstore.KVStore) BufferedKVStore {
+func NewBufferedKVStore(db kvstore.KVStore) BufferedKVStore {
 	return &bufferedKVStore{
 		db:        db,
 		mutations: NewMutationMap(),
@@ -76,10 +76,9 @@ func (b *bufferedKVStore) ClearMutations() {
 
 // iterates over all key-value pairs in KVStore
 func (b *bufferedKVStore) DangerouslyDumpToMap() map[Key][]byte {
-	db := b.db()
-	prefix := len(db.Realm())
+	prefix := len(b.db.Realm())
 	ret := make(map[Key][]byte)
-	err := db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
+	err := b.db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
 		ret[Key(key[prefix:])] = value
 		return true
 	})
@@ -134,7 +133,7 @@ func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
 	if mut != nil {
 		return mut.Value(), nil
 	}
-	v, err := b.db().Get(kvstore.Key(key))
+	v, err := b.db.Get(kvstore.Key(key))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}

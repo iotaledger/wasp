@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/database"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -15,13 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func memPartition(addr *address.Address) kvstore.KVStore {
-	return mapdb.NewMapDB()
-}
-
 func TestVariableStateBasic(t *testing.T) {
 	addr := address.Random()
-	vs1 := newVirtualState(&addr, memPartition)
+	vs1 := NewVirtualState(mapdb.NewMapDB(), &addr)
 	h1 := vs1.Hash()
 	assert.Equal(t, h1 == *hashing.NilHash, true)
 	assert.Equal(t, vs1.StateIndex(), uint32(0))
@@ -89,8 +84,9 @@ func TestApply(t *testing.T) {
 	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 
 	addr := address.Random()
-	vs1 := newVirtualState(&addr, memPartition)
-	vs2 := newVirtualState(&addr, memPartition)
+	db := mapdb.NewMapDB()
+	vs1 := NewVirtualState(db, &addr)
+	vs2 := NewVirtualState(db, &addr)
 
 	err = vs1.ApplyBatch(batch1)
 	assert.NoError(t, err)
@@ -110,8 +106,9 @@ func TestApply2(t *testing.T) {
 	su3 := NewStateUpdate(&reqid3)
 
 	addr := address.Random()
-	vs1 := newVirtualState(&addr, memPartition)
-	vs2 := newVirtualState(&addr, memPartition)
+	db := mapdb.NewMapDB()
+	vs1 := NewVirtualState(db, &addr)
+	vs2 := NewVirtualState(db, &addr)
 
 	batch23, err := NewBatch([]StateUpdate{su2, su3})
 	assert.NoError(t, err)
@@ -144,8 +141,9 @@ func TestApply3(t *testing.T) {
 	su2 := NewStateUpdate(&reqid2)
 
 	addr := address.Random()
-	vs1 := newVirtualState(&addr, memPartition)
-	vs2 := newVirtualState(&addr, memPartition)
+	db := mapdb.NewMapDB()
+	vs1 := NewVirtualState(db, &addr)
+	vs2 := NewVirtualState(db, &addr)
 
 	vs1.ApplyStateUpdate(su1)
 	vs1.ApplyStateUpdate(su2)
@@ -163,7 +161,7 @@ func TestCommit(t *testing.T) {
 	tmpdb, _ := database.NewMemDB()
 	db := tmpdb.NewStore()
 
-	getPartition := func(*address.Address) kvstore.KVStore { return db.WithRealm([]byte("2")) }
+	partition := db.WithRealm([]byte("2"))
 
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
 	reqid1 := sctransaction.NewRequestId(txid1, 5)
@@ -175,14 +173,14 @@ func TestCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	addr := address.Random()
-	vs1 := newVirtualState(&addr, getPartition)
+	vs1 := NewVirtualState(partition, &addr)
 	err = vs1.ApplyBatch(batch1)
 	assert.NoError(t, err)
 
 	v, _ := vs1.Variables().Get(kv.Key([]byte("x")))
 	assert.Equal(t, []byte{1}, v)
 
-	v, _ = getPartition(&addr).Get(dbkeyStateVariable(kv.Key([]byte("x"))))
+	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	assert.Nil(t, v)
 
 	err = vs1.CommitToDb(batch1)
@@ -191,10 +189,10 @@ func TestCommit(t *testing.T) {
 	v, _ = vs1.Variables().Get(kv.Key([]byte("x")))
 	assert.Equal(t, []byte{1}, v)
 
-	v, _ = getPartition(&addr).Get(dbkeyStateVariable(kv.Key([]byte("x"))))
+	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	assert.Equal(t, []byte{1}, v)
 
-	vs1_2, batch1_2, _, err := loadSolidState(&addr, getPartition)
+	vs1_2, batch1_2, _, err := loadSolidState(partition, &addr)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch1_2))
@@ -213,19 +211,19 @@ func TestCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	addr = address.Random()
-	vs2 := newVirtualState(&addr, getPartition)
+	vs2 := NewVirtualState(partition, &addr)
 	err = vs2.ApplyBatch(batch2)
 	assert.NoError(t, err)
 
 	v, _ = vs2.Variables().Get(kv.Key([]byte("x")))
 	assert.Nil(t, v)
 
-	v, _ = getPartition(&addr).Get(dbkeyStateVariable(kv.Key([]byte("x"))))
+	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	assert.Equal(t, []byte{1}, v)
 
 	err = vs2.CommitToDb(batch2)
 	assert.NoError(t, err)
 
-	v, _ = getPartition(&addr).Get(dbkeyStateVariable(kv.Key([]byte("x"))))
+	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	assert.Nil(t, v)
 }

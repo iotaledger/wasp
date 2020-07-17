@@ -15,44 +15,48 @@ import (
 )
 
 type virtualState struct {
-	scAddress    address.Address
-	getPartition func(*address.Address) kvstore.KVStore // for unit testing
-	stateIndex   uint32
-	timestamp    int64
-	empty        bool
-	stateHash    hashing.HashValue
-	variables    kv.BufferedKVStore
+	scAddress  address.Address
+	db         kvstore.KVStore
+	stateIndex uint32
+	timestamp  int64
+	empty      bool
+	stateHash  hashing.HashValue
+	variables  kv.BufferedKVStore
 }
 
-func newVirtualState(scAddress *address.Address, getPartition func(*address.Address) kvstore.KVStore) *virtualState {
+func NewVirtualState(db kvstore.KVStore, scAddress *address.Address) *virtualState {
 	return &virtualState{
-		scAddress:    *scAddress,
-		getPartition: getPartition,
-		variables: kv.NewBufferedKVStore(func() kvstore.KVStore {
-			p := getPartition(scAddress)
-			return p.WithRealm(append(p.Realm(), []byte{database.ObjectTypeStateVariable}...))
-		}),
-		empty: true,
+		scAddress: *scAddress,
+		db:        db,
+		variables: kv.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
+		empty:     true,
 	}
 }
 
-func getSCPartition(addr *address.Address) kvstore.KVStore {
-	return database.GetPartition(addr)
+func NewEmptyVirtualState(scAddress *address.Address) *virtualState {
+	return NewVirtualState(getSCPartition(scAddress), scAddress)
 }
 
-func NewEmptyVirtualState(addr *address.Address) VirtualState {
-	return newVirtualState(addr, getSCPartition)
+func getSCPartition(scAddress *address.Address) kvstore.KVStore {
+	return database.GetPartition(scAddress)
+}
+
+func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
+	if db == nil {
+		return nil
+	}
+	return db.WithRealm(append(db.Realm(), realm...))
 }
 
 func (vs *virtualState) Clone() VirtualState {
 	return &virtualState{
-		scAddress:    vs.scAddress,
-		getPartition: vs.getPartition,
-		stateIndex:   vs.stateIndex,
-		timestamp:    vs.timestamp,
-		empty:        vs.empty,
-		stateHash:    vs.stateHash,
-		variables:    vs.variables.Clone(),
+		scAddress:  vs.scAddress,
+		db:         vs.db,
+		stateIndex: vs.stateIndex,
+		timestamp:  vs.timestamp,
+		empty:      vs.empty,
+		stateHash:  vs.stateHash,
+		variables:  vs.variables.Clone(),
 	}
 }
 
@@ -189,8 +193,7 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 		return true
 	})
 
-	db := vs.getPartition(&vs.scAddress)
-	err = util.DbSetMulti(db, keys, values)
+	err = util.DbSetMulti(vs.db, keys, values)
 	if err != nil {
 		return err
 	}
@@ -198,13 +201,11 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	return nil
 }
 
-func LoadSolidState(addr *address.Address) (VirtualState, Batch, bool, error) {
-	return loadSolidState(addr, getSCPartition)
+func LoadSolidState(scAddress *address.Address) (VirtualState, Batch, bool, error) {
+	return loadSolidState(getSCPartition(scAddress), scAddress)
 }
 
-func loadSolidState(scAddress *address.Address, getPartition func(*address.Address) kvstore.KVStore) (VirtualState, Batch, bool, error) {
-	db := getPartition(scAddress)
-
+func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualState, Batch, bool, error) {
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
@@ -220,7 +221,7 @@ func loadSolidState(scAddress *address.Address, getPartition func(*address.Addre
 		return nil, nil, false, err
 	}
 
-	vs := newVirtualState(scAddress, getPartition)
+	vs := NewVirtualState(db, scAddress)
 	if err = vs.Read(bytes.NewReader(values[0])); err != nil {
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
@@ -244,37 +245,39 @@ func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
 }
 
 func MarkRequestProcessedFailure(addr *address.Address, reqid *sctransaction.RequestId) error {
-	has, err := getSCPartition(addr).Has(dbkeyRequest(reqid))
+	db := getSCPartition(addr)
+	dbkey := dbkeyRequest(reqid)
+	has, err := db.Has(dbkey)
 	if err != nil {
 		return err
 	}
-	dbkey := dbkeyRequest(reqid)
 	if !has {
-		return getSCPartition(addr).Set(dbkey, []byte{1})
+		return db.Set(dbkey, []byte{1})
 	}
-	value, err := getSCPartition(addr).Get(dbkey)
+	value, err := db.Get(dbkey)
 	if err != nil {
 		return err
 	}
 	if len(value) != 1 {
 		return fmt.Errorf("inconistency: len(value) != 1")
 	}
-	return getSCPartition(addr).Set(dbkey, []byte{value[0] + 1})
+	return db.Set(dbkey, []byte{value[0] + 1})
 }
 
 const maxRetriesForRequest = byte(5)
 
 // IsRequestCompleted returns true if it was completed successfully or number of retries reached maximum
 func IsRequestCompleted(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
+	db := getSCPartition(addr)
 	dbkey := dbkeyRequest(reqid)
-	has, err := getSCPartition(addr).Has(dbkey)
+	has, err := db.Has(dbkey)
 	if err != nil {
 		return false, err
 	}
 	if !has {
 		return false, nil
 	}
-	val, err := getSCPartition(addr).Get(dbkey)
+	val, err := db.Get(dbkey)
 	if err != nil {
 		return false, err
 	}

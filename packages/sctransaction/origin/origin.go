@@ -24,7 +24,7 @@ type NewOriginTransactionParams struct {
 func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transaction, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
 
-	originState := state.NewEmptyVirtualState(&par.Address)
+	originState := state.NewVirtualState(nil, &par.Address)
 	if err := originState.ApplyBatch(state.MustNewOriginBatch(nil)); err != nil {
 		return nil, err
 	}
