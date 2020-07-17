@@ -41,7 +41,10 @@ func (vctx *sandbox) IsOriginState() bool {
 	return vctx.VirtualState.StateIndex() == 0
 }
 
-// clear all updates, restore same context as in the beginning of the VM call
+func (vctx *sandbox) Panic(v interface{}) {
+	panic(v)
+}
+
 func (vctx *sandbox) Rollback() {
 	vctx.TxBuilder = vctx.saveTxBuilder
 	vctx.StateUpdate.Clear()
@@ -73,8 +76,8 @@ func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) AccessState() kv.Codec {
-	return vctx.stateWrapper.Codec()
+func (vctx *sandbox) AccessState() kv.MustCodec {
+	return vctx.stateWrapper.MustCodec()
 }
 
 func (vctx *sandbox) AccessOwnAccount() vmtypes.AccountAccess {

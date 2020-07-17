@@ -77,18 +77,12 @@ func FetchStatus(addresses []string) (*Status, error) {
 		return nil, err
 	}
 
-	codec := vars.Codec()
-	status.CurrentBetsAmount = codec.MustGetArray(fairroulette.StateVarBets).Len()
-	status.LockedBetsAmount = codec.MustGetArray(fairroulette.StateVarLockedBets).Len()
-	status.LastWinningColor, _, err = codec.GetInt64(fairroulette.StateVarLastWinningColor)
-	if err != nil {
-		return nil, err
-	}
-	status.PlayPeriodSeconds, _, err = codec.GetInt64(fairroulette.VarPlayPeriodSec)
-	if err != nil {
-		return nil, err
-	}
-	nextPlayTimestamp, _, err := codec.GetInt64(fairroulette.VarNextPlayTimestamp)
+	codec := vars.MustCodec()
+	status.CurrentBetsAmount = codec.GetArray(fairroulette.StateVarBets).Len()
+	status.LockedBetsAmount = codec.GetArray(fairroulette.StateVarLockedBets).Len()
+	status.LastWinningColor, _ = codec.GetInt64(fairroulette.StateVarLastWinningColor)
+	status.PlayPeriodSeconds, _ = codec.GetInt64(fairroulette.VarPlayPeriodSec)
+	nextPlayTimestamp, _ := codec.GetInt64(fairroulette.VarNextPlayTimestamp)
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp)
 	if err != nil {
 		return nil, err

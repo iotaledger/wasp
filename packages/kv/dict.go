@@ -13,6 +13,10 @@ type Dictionary struct {
 	cachedsize uint32
 }
 
+type MustDictionary struct {
+	dict Dictionary
+}
+
 const (
 	dictSizeKeyCode = byte(0)
 	dictElemKeyCode = byte(1)
@@ -29,6 +33,10 @@ func newDictionary(kv KVStore, name string) (*Dictionary, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+func newMustDictionary(dict *Dictionary) *MustDictionary {
+	return &MustDictionary{*dict}
 }
 
 func (l *Dictionary) getSizeKey() Key {
@@ -63,6 +71,14 @@ func (d *Dictionary) GetAt(key []byte) ([]byte, error) {
 	return ret, nil
 }
 
+func (d *MustDictionary) GetAt(key []byte) []byte {
+	ret, err := d.dict.GetAt(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func (d *Dictionary) SetAt(key []byte, value []byte) error {
 	if d.Len() == 0 {
 		d.setSize(1)
@@ -77,6 +93,10 @@ func (d *Dictionary) SetAt(key []byte, value []byte) error {
 	}
 	d.kv.Set(d.getElemKey(key), value)
 	return nil
+}
+
+func (d *MustDictionary) SetAt(key []byte, value []byte) {
+	d.dict.SetAt(key, value)
 }
 
 func (d *Dictionary) DelAt(key []byte) error {

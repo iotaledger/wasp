@@ -14,6 +14,10 @@ type Array struct {
 	cachedLen uint16
 }
 
+type MustArray struct {
+	array Array
+}
+
 func newArray(kv KVStore, name string) (*Array, error) {
 	ret := &Array{
 		kv:   kv,
@@ -25,6 +29,10 @@ func newArray(kv KVStore, name string) (*Array, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+func newMustArray(array *Array) *MustArray {
+	return &MustArray{*array}
 }
 
 const (
@@ -82,6 +90,10 @@ func (l *Array) Len() uint16 {
 	return l.cachedLen
 }
 
+func (a *MustArray) Len() uint16 {
+	return a.array.Len()
+}
+
 func (l *Array) len() (uint16, error) {
 	v, err := l.kv.Get(l.getSizeKey())
 	if err != nil {
@@ -104,11 +116,19 @@ func (l *Array) Push(value []byte) {
 	l.setSize(size + 1)
 }
 
-func (l *Array) Append(arr *Array) {
-	for i := uint16(0); i < arr.Len(); i++ {
-		v, _ := arr.GetAt(i)
+func (a *MustArray) Push(value []byte) {
+	a.array.Push(value)
+}
+
+func (l *Array) Extend(other *Array) {
+	for i := uint16(0); i < other.Len(); i++ {
+		v, _ := other.GetAt(i)
 		l.Push(v)
 	}
+}
+
+func (a *MustArray) Extend(other *MustArray) {
+	a.array.Extend(&other.array)
 }
 
 // TODO implement with DelPrefix
@@ -117,6 +137,10 @@ func (l *Array) Erase() {
 		l.kv.Del(l.getElemKey(i))
 	}
 	l.setSize(0)
+}
+
+func (a *MustArray) Erase() {
+	a.array.Erase()
 }
 
 func (l *Array) GetAt(idx uint16) ([]byte, error) {
@@ -130,8 +154,8 @@ func (l *Array) GetAt(idx uint16) ([]byte, error) {
 	return ret, nil
 }
 
-func (l *Array) MustGetAt(idx uint16) []byte {
-	ret, err := l.GetAt(idx)
+func (a *MustArray) GetAt(idx uint16) []byte {
+	ret, err := a.array.GetAt(idx)
 	if err != nil {
 		panic(err)
 	}
@@ -144,4 +168,8 @@ func (l *Array) SetAt(idx uint16, value []byte) bool {
 	}
 	l.kv.Set(l.getElemKey(idx), value)
 	return true
+}
+
+func (a *MustArray) SetAt(idx uint16, value []byte) bool {
+	return a.array.SetAt(idx, value)
 }

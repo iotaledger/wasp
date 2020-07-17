@@ -30,6 +30,7 @@ type Map interface {
 	Mutations() MutationSequence
 
 	Codec() Codec
+	MustCodec() MustCodec
 }
 
 type kvmap map[Key][]byte
@@ -89,6 +90,10 @@ func slice(s string) string {
 
 func (m kvmap) Codec() Codec {
 	return NewCodec(m)
+}
+
+func (m kvmap) MustCodec() MustCodec {
+	return NewMustCodec(m)
 }
 
 func (m kvmap) Mutations() MutationSequence {

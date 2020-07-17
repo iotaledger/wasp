@@ -26,6 +26,23 @@ type BufferedKVStore interface {
 	DangerouslyDumpToString() string
 }
 
+// Any failed access to the DB will return an instance of DBError
+type DBError struct{ error }
+
+func (d DBError) Error() string {
+	return d.error.Error()
+}
+
+func asDBError(e error) error {
+	if e == nil {
+		return nil
+	}
+	if d, ok := e.(DBError); ok {
+		return d
+	}
+	return DBError{e}
+}
+
 type DB interface {
 	Get(key Key) ([]byte, error)
 	Iterate(func(key Key, value []byte) bool) error
@@ -77,7 +94,7 @@ func (c *dbtable) DangerouslyDumpToMap() map[Key][]byte {
 		return true
 	})
 	if err != nil {
-		panic(err)
+		panic(asDBError(err))
 	}
 	c.mutations.Iterate(func(key Key, mut Mutation) bool {
 		v := mut.Value()
@@ -128,7 +145,7 @@ func (c *dbtable) Get(key Key) ([]byte, error) {
 		return mut.Value(), nil
 	}
 	b, err := c.db.Get(key)
-	return b, err
+	return b, asDBError(err)
 }
 
 type subrealm struct {
@@ -146,7 +163,11 @@ func (s *subrealm) Get(key Key) ([]byte, error) {
 
 func (s *subrealm) Iterate(f func(Key, []byte) bool) error {
 	db := s.db()
-	return db.Iterate(s.prefix, func(key kvstore.Key, value kvstore.Value) bool {
+	err := db.Iterate(s.prefix, func(key kvstore.Key, value kvstore.Value) bool {
 		return f(Key(key[len(db.Realm())+len(s.prefix):]), value)
 	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
