@@ -22,6 +22,36 @@ func (s *stateWrapper) Has(name kv.Key) (bool, error) {
 	return s.virtualState.Variables().Has(name)
 }
 
+func (s *stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, f)
+	if done {
+		return nil
+	}
+	return s.virtualState.Variables().Iterate(prefix, func(key kv.Key, value []byte) bool {
+		_, ok := seen[key]
+		if ok {
+			return true
+		}
+		return f(key, value)
+	})
+}
+
+func (s *stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, func(key kv.Key, value []byte) bool {
+		return f(key)
+	})
+	if done {
+		return nil
+	}
+	return s.virtualState.Variables().IterateKeys(prefix, func(key kv.Key) bool {
+		_, ok := seen[key]
+		if ok {
+			return true
+		}
+		return f(key)
+	})
+}
+
 func (s *stateWrapper) Get(name kv.Key) ([]byte, error) {
 	mut := s.stateUpdate.Mutations().Latest(name)
 	if mut != nil {

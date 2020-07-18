@@ -38,8 +38,9 @@ type MutationSequence interface {
 	Iterate(func(mut Mutation) bool)
 	// Iterate over the latest mutation recorded for each key
 	IterateLatest(func(key Key, mut Mutation) bool)
+	// Iterate over the latest value recorded for each non-deleted key
+	IterateValues(prefix Key, f func(key Key, value []byte) bool) (map[Key]bool, bool)
 
-	//
 	Latest(key Key) Mutation
 
 	Add(mut Mutation)
@@ -127,6 +128,21 @@ func (ms *mutationSequence) IterateLatest(f func(Key, Mutation) bool) {
 			break
 		}
 	}
+}
+
+func (ms *mutationSequence) IterateValues(prefix Key, f func(key Key, value []byte) bool) (map[Key]bool, bool) {
+	seen := make(map[Key]bool)
+	for key, mut := range ms.latestByKey {
+		if !key.HasPrefix(prefix) {
+			continue
+		}
+		seen[key] = true
+		v := (*mut).Value()
+		if v != nil && !f(key, v) {
+			return seen, true
+		}
+	}
+	return seen, false
 }
 
 func (ms *mutationSequence) Len() int {

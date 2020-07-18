@@ -5,6 +5,15 @@ package kv
 // not necessarily have to be a valid UTF-8 string.
 type Key string
 
+const EmptyPrefix = Key("")
+
+func (k Key) HasPrefix(prefix Key) bool {
+	if len(prefix) > len(k) {
+		return false
+	}
+	return k[:len(prefix)] == prefix
+}
+
 // KVStore represents a key-value store where both keys and values are
 // arbitrary byte slices.
 type KVStore interface {
@@ -13,6 +22,8 @@ type KVStore interface {
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
 	Has(key Key) (bool, error)
+	Iterate(prefix Key, f func(key Key, value []byte) bool) error
+	IterateKeys(prefix Key, f func(key Key) bool) error
 
 	// TODO add DelPrefix(prefix []byte)
 	// deletes all keys with the prefix. Currently we don't have a possibility to iterate over keys

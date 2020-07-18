@@ -3,9 +3,10 @@ package kv
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/mr-tron/base58"
 	"io"
 	"sort"
+
+	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -143,6 +144,30 @@ func (m kvmap) Del(key Key) {
 func (m kvmap) Has(key Key) (bool, error) {
 	_, ok := m[key]
 	return ok, nil
+}
+
+func (m kvmap) Iterate(prefix Key, f func(key Key, value []byte) bool) error {
+	for k, v := range m {
+		if !k.HasPrefix(prefix) {
+			continue
+		}
+		if !f(k, v) {
+			break
+		}
+	}
+	return nil
+}
+
+func (m kvmap) IterateKeys(prefix Key, f func(key Key) bool) error {
+	for k, _ := range m {
+		if !k.HasPrefix(prefix) {
+			continue
+		}
+		if !f(k) {
+			break
+		}
+	}
+	return nil
 }
 
 func (m kvmap) Get(key Key) ([]byte, error) {

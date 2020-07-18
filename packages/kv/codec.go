@@ -103,6 +103,14 @@ func (c codec) Has(key Key) (bool, error) {
 	return c.kv.Has(key)
 }
 
+func (c codec) Iterate(prefix Key, f func(key Key, value []byte) bool) error {
+	return c.kv.Iterate(prefix, f)
+}
+
+func (c codec) IterateKeys(prefix Key, f func(key Key) bool) error {
+	return c.kv.IterateKeys(prefix, f)
+}
+
 func (c mustcodec) Has(key Key) bool {
 	ret, err := c.codec.Has(key)
 	if err != nil {

@@ -140,3 +140,35 @@ func (b *bufferedKVStore) Has(key Key) (bool, error) {
 	v, err := b.db.Has(kvstore.Key(key))
 	return v, asDBError(err)
 }
+
+func (b *bufferedKVStore) Iterate(prefix Key, f func(key Key, value []byte) bool) error {
+	seen, done := b.mutations.IterateValues(prefix, f)
+	if done {
+		return nil
+	}
+	return b.db.Iterate([]byte(prefix), func(key kvstore.Key, value kvstore.Value) bool {
+		k := Key(key)
+		_, ok := seen[k]
+		if ok {
+			return true
+		}
+		return f(k, value)
+	})
+}
+
+func (b *bufferedKVStore) IterateKeys(prefix Key, f func(key Key) bool) error {
+	seen, done := b.mutations.IterateValues(prefix, func(key Key, value []byte) bool {
+		return f(key)
+	})
+	if done {
+		return nil
+	}
+	return b.db.IterateKeys([]byte(prefix), func(key kvstore.Key) bool {
+		k := Key(key)
+		_, ok := seen[k]
+		if ok {
+			return true
+		}
+		return f(k)
+	})
+}
