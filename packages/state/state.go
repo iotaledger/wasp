@@ -185,7 +185,7 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	}
 
 	// store uncommitted mutations
-	vs.variables.Mutations().Iterate(func(k kv.Key, mut kv.Mutation) bool {
+	vs.variables.Mutations().IterateLatest(func(k kv.Key, mut kv.Mutation) bool {
 		keys = append(keys, dbkeyStateVariable(k))
 
 		// if mutation is MutationDel, mut.Value() = nil and the key is deleted

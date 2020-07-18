@@ -9,19 +9,19 @@ import (
 )
 
 // BufferedKVStore represents a KVStore backed by a database. Writes are cached in-memory as
-// a MutationMap; reads are delegated to the backing database when not cached.
+// a MutationSequence; reads are delegated to the backing database when not cached.
 type BufferedKVStore interface {
 	KVStore
 
 	// the uncommitted mutations
-	Mutations() MutationMap
+	Mutations() MutationSequence
 	ClearMutations()
 	Clone() BufferedKVStore
 
 	Codec() Codec
 
 	// only for testing!
-	DangerouslyDumpToMap() map[Key][]byte
+	DangerouslyDumpToMap() Map
 	// only for testing!
 	DangerouslyDumpToString() string
 }
@@ -45,13 +45,13 @@ func asDBError(e error) error {
 
 type bufferedKVStore struct {
 	db        kvstore.KVStore
-	mutations MutationMap
+	mutations MutationSequence
 }
 
 func NewBufferedKVStore(db kvstore.KVStore) BufferedKVStore {
 	return &bufferedKVStore{
 		db:        db,
-		mutations: NewMutationMap(),
+		mutations: NewMutationSequence(),
 	}
 }
 
@@ -66,41 +66,33 @@ func (b *bufferedKVStore) Codec() Codec {
 	return NewCodec(b)
 }
 
-func (b *bufferedKVStore) Mutations() MutationMap {
+func (b *bufferedKVStore) Mutations() MutationSequence {
 	return b.mutations
 }
 
 func (b *bufferedKVStore) ClearMutations() {
-	b.mutations = NewMutationMap()
+	b.mutations = NewMutationSequence()
 }
 
 // iterates over all key-value pairs in KVStore
-func (b *bufferedKVStore) DangerouslyDumpToMap() map[Key][]byte {
+func (b *bufferedKVStore) DangerouslyDumpToMap() Map {
 	prefix := len(b.db.Realm())
-	ret := make(map[Key][]byte)
+	ret := NewMap()
 	err := b.db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
-		ret[Key(key[prefix:])] = value
+		ret.Set(Key(key[prefix:]), value)
 		return true
 	})
 	if err != nil {
 		panic(asDBError(err))
 	}
-	b.mutations.Iterate(func(key Key, mut Mutation) bool {
-		v := mut.Value()
-		if v != nil {
-			ret[key] = v
-		} else {
-			delete(ret, key)
-		}
-		return true
-	})
+	b.mutations.ApplyTo(ret)
 	return ret
 }
 
 // iterates over all key-value pairs in KVStore
 func (b *bufferedKVStore) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStore:\n"
-	for k, v := range b.DangerouslyDumpToMap() {
+	for k, v := range b.DangerouslyDumpToMap().ToGoMap() {
 		ret += fmt.Sprintf(
 			"           [%s] 0x%s: 0x%s (base58: %s)\n",
 			b.flag(k),
@@ -113,7 +105,7 @@ func (b *bufferedKVStore) DangerouslyDumpToString() string {
 }
 
 func (b *bufferedKVStore) flag(k Key) string {
-	mut := b.mutations.Get(k)
+	mut := b.mutations.Latest(k)
 	if mut != nil {
 		return "+"
 	}
@@ -129,7 +121,7 @@ func (b *bufferedKVStore) Del(key Key) {
 }
 
 func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
-	mut := b.mutations.Get(key)
+	mut := b.mutations.Latest(key)
 	if mut != nil {
 		return mut.Value(), nil
 	}
@@ -141,7 +133,7 @@ func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
 }
 
 func (b *bufferedKVStore) Has(key Key) (bool, error) {
-	mut := b.mutations.Get(key)
+	mut := b.mutations.Latest(key)
 	if mut != nil {
 		return mut.Value() != nil, nil
 	}

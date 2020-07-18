@@ -30,22 +30,21 @@ type MutationSequence interface {
 
 	String() string
 
-	ForEach(func(mut Mutation))
-	At(i int) *Mutation
+	Clone() MutationSequence
+
 	Len() int
 
+	// Iterate over all mutations in order, even ones affecting the same key repeatedly
+	Iterate(func(mut Mutation) bool)
+	// Iterate over the latest mutation recorded for each key
+	IterateLatest(func(key Key, mut Mutation) bool)
+
+	//
+	Latest(key Key) Mutation
+
 	Add(mut Mutation)
-	AddAll(ms MutationSequence)
 
 	ApplyTo(kv KVStore)
-}
-
-// MutationMap stores the latest mutation applied to each key
-type MutationMap interface {
-	Get(key Key) Mutation
-	Add(mut Mutation)
-	Clone() MutationMap
-	Iterate(func(Key, Mutation) bool)
 }
 
 const (
@@ -54,11 +53,15 @@ const (
 )
 
 type mutationSequence struct {
-	muts []Mutation
+	muts        []Mutation
+	latestByKey map[Key]*Mutation
 }
 
 func NewMutationSequence() MutationSequence {
-	return &mutationSequence{muts: make([]Mutation, 0)}
+	return &mutationSequence{
+		muts:        make([]Mutation, 0),
+		latestByKey: make(map[Key]*Mutation),
+	}
 }
 
 func (ms *mutationSequence) String() string {
@@ -110,9 +113,19 @@ func (ms *mutationSequence) Read(r io.Reader) error {
 	return nil
 }
 
-func (ms *mutationSequence) ForEach(f func(mut Mutation)) {
+func (ms *mutationSequence) Iterate(f func(mut Mutation) bool) {
 	for _, mut := range ms.muts {
-		f(mut)
+		if !f(mut) {
+			break
+		}
+	}
+}
+
+func (ms *mutationSequence) IterateLatest(f func(Key, Mutation) bool) {
+	for key, mut := range ms.latestByKey {
+		if !f(key, *mut) {
+			break
+		}
 	}
 }
 
@@ -120,18 +133,9 @@ func (ms *mutationSequence) Len() int {
 	return len(ms.muts)
 }
 
-func (ms *mutationSequence) At(i int) *Mutation {
-	return &ms.muts[i]
-}
-
 func (ms *mutationSequence) Add(mut Mutation) {
 	ms.muts = append(ms.muts, mut)
-}
-
-func (ms *mutationSequence) AddAll(other MutationSequence) {
-	other.ForEach(func(mut Mutation) {
-		ms.Add(mut)
-	})
+	ms.latestByKey[mut.Key()] = &mut
 }
 
 func (ms *mutationSequence) ApplyTo(kv KVStore) {
@@ -140,35 +144,20 @@ func (ms *mutationSequence) ApplyTo(kv KVStore) {
 	}
 }
 
-type mutationMap map[Key]Mutation
-
-func NewMutationMap() MutationMap {
-	return make(mutationMap)
-}
-
-func (m mutationMap) Get(key Key) Mutation {
-	v, _ := m[key]
-	return v
-}
-
-func (m mutationMap) Add(mut Mutation) {
-	m[mut.Key()] = mut
-}
-
-func (m mutationMap) Iterate(f func(Key, Mutation) bool) {
-	for k, v := range m {
-		if !f(k, v) {
-			break
-		}
+func (ms *mutationSequence) Latest(key Key) Mutation {
+	mut, ok := ms.latestByKey[key]
+	if !ok {
+		return nil
 	}
+	return *mut
 }
 
-func (m mutationMap) Clone() MutationMap {
-	clone := make(mutationMap)
-	for k, v := range m {
-		clone[k] = v
+func (ms *mutationSequence) Clone() MutationSequence {
+	mapClone := make(map[Key]*Mutation)
+	for k, v := range ms.latestByKey {
+		mapClone[k] = v
 	}
-	return clone
+	return &mutationSequence{muts: ms.muts[:], latestByKey: mapClone}
 }
 
 type mutationSet struct {
