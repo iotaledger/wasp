@@ -30,6 +30,7 @@ type MustCodec interface {
 // RCodec is an interface that offers easy conversions between []byte and other types when
 // manipulating a read-only KVStore
 type RCodec interface {
+	Has(key Key) (bool, error)
 	Get(key Key) ([]byte, error)
 	GetString(key Key) (string, bool, error)
 	GetInt64(key Key) (int64, bool, error)
@@ -39,6 +40,7 @@ type RCodec interface {
 
 // MustrCodec is like a RCodec that automatically panics on error
 type MustRCodec interface {
+	Has(key Key) bool
 	Get(key Key) []byte
 	GetString(key Key) (string, bool)
 	GetInt64(key Key) (int64, bool)
@@ -95,6 +97,18 @@ func (c mustcodec) GetDictionary(key Key) *MustDictionary {
 		panic(err)
 	}
 	return newMustDictionary(d)
+}
+
+func (c codec) Has(key Key) (bool, error) {
+	return c.kv.Has(key)
+}
+
+func (c mustcodec) Has(key Key) bool {
+	ret, err := c.codec.Has(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (c codec) Get(key Key) ([]byte, error) {

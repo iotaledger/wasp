@@ -112,9 +112,7 @@ func (d *Dictionary) DelAt(key []byte) error {
 }
 
 func (d *Dictionary) HasAt(key []byte) (bool, error) {
-	// TODO implement with Has
-	v, err := d.kv.Get(d.getElemKey(key))
-	return v != nil, err
+	return d.kv.Has(d.getElemKey(key))
 }
 
 func (d *Dictionary) Len() uint32 {

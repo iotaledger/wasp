@@ -140,6 +140,11 @@ func (m kvmap) Del(key Key) {
 	delete(m, key)
 }
 
+func (m kvmap) Has(key Key) (bool, error) {
+	_, ok := m[key]
+	return ok, nil
+}
+
 func (m kvmap) Get(key Key) ([]byte, error) {
 	v, _ := m[key]
 	return v, nil

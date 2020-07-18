@@ -139,3 +139,12 @@ func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
 	}
 	return v, asDBError(err)
 }
+
+func (b *bufferedKVStore) Has(key Key) (bool, error) {
+	mut := b.mutations.Get(key)
+	if mut != nil {
+		return mut.Value() != nil, nil
+	}
+	v, err := b.db.Has(kvstore.Key(key))
+	return v, asDBError(err)
+}

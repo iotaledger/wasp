@@ -12,9 +12,8 @@ type KVStore interface {
 	Del(key Key)
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
+	Has(key Key) (bool, error)
 
-	// TODO add Has(key Key) (bool, error).
-	// It would check existence of the key without fetching the value. Much faster with DB
 	// TODO add DelPrefix(prefix []byte)
 	// deletes all keys with the prefix. Currently we don't have a possibility to iterate over keys
 	// and maybe we do not need one in the sandbox. However we need a possibility to efficiently clear arrays,
