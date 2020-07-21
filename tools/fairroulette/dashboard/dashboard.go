@@ -91,25 +91,30 @@ var renderer = &Template{
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>FairRoulette dashboard</title>
+	<title>FairRoulette dashboard</title>
+
+	<link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
   </head>
 
   <body>
-  	<h1>FairRoulette</h1>
-	<div>SC address: <code>{{.SCAddress}}</code></div>
-	<div>Status fetched at: <code>{{.Now}}</code></div>
+	<header>
+		<h1>FairRoulette</h1>
+	</header>
+	<p>SC address: <code>{{.SCAddress}}</code></p>
+	<p>Status fetched at: <code>{{.Now}}</code></p>
 	<div>
 		<h2>Next play</h2>
-		<div>Next play in: {{.Status.NextPlayIn}}</div>
-		<div>Play period: {{.Status.PlayPeriodSeconds}}s</div>
+		<p>Next play in: <code>{{.Status.NextPlayIn}}</code></p>
+		<p>Play period: <code>{{.Status.PlayPeriodSeconds}}s</code></p>
 		<div>
-			<div>Bets: {{.Status.CurrentBetsAmount}}</div>
+			<p>Bets: <code>{{.Status.CurrentBetsAmount}}</code></p>
 			{{if lt (len .Status.CurrentBets) .Status.CurrentBetsAmount}}
-				<div>(Showing first {{(len .Status.CurrentBets)}})</div>
+				<p>(Showing first {{(len .Status.CurrentBets)}})</p>
 			{{end}}
 			<ul>
 			{{range .Status.CurrentBets}}
-				<li>Player <code>{{.Player}}</code> bets {{.Sum}} IOTAs on color {{.Color}}</li>
+				<li>Player <code>{{.Player}}</code> bets <code>{{.Sum}} IOTAs</code> on <code>color {{.Color}}</code></li>
 			{{end}}
 			</ul>
 		</div>
@@ -117,34 +122,42 @@ var renderer = &Template{
 
 	<div>
 		<h2>Stats</h2>
-		<div>Last winning color: {{.Status.LastWinningColor}}</div>
-		<div>Color stats:<ul>
-			{{range $c, $w := .Status.WinsPerColor}}
-				<li>Color {{$c}} won {{$w}} times so far</li>
-			{{end}}
-		</ul></div>
-		<div>Player stats:<ul>
-			{{range $p, $stats := .Status.PlayerStats}}
-				<li>Player <code>{{$p}}</code>: {{$stats}}</li>
-			{{end}}
+		<p>Last winning color: <code>{{.Status.LastWinningColor}}</code></p>
+		<div>
+			<p>Color stats:</p>
+			<ul>
+				{{range $c, $w := .Status.WinsPerColor}}
+					<li><b>Color {{$c}}</b> won <code>{{$w}} times</code> so far</li>
+				{{end}}
+			</ul>
+		</div>
+		<div>
 			<form onsubmit="addAddress(document.getElementById('address').value); return false">
-				<div>Show player stats for address: <input type="text" maxlength="45" id="address"></input></div>
-				<input type="submit" value="Submit">
+				<fieldset>
+					<legend>Player stats:</legend>
+					<ul>
+						{{range $p, $stats := .Status.PlayerStats}}
+							<li>Player <code>{{$p}}</code>: Bets: <code>{{$stats.Bets}}</code> - Wins: <code>{{$stats.Wins}}</code></li>
+						{{end}}
+					</ul>
+					Show address <input type="text" maxlength="45" id="address"></input>
+					<input type="submit" value="+">
+				</fieldset>
 			</form>
-		</ul></div>
+		</div>
 	</div>
-
+	<hr/>
 	<div>
 		<h2>CLI usage</h2>
-		<h2>Configuration</h2>
-		<div><code>fairroulette set goshimmer.api {{.Host}}:8080</code></div>
-		<div><code>fairroulette set wasp.api {{.Host}}:9090</code></div>
-		<div><code>fairroulette set address {{.SCAddress}}</code></div>
-		<div>Initialize a wallet: <code>fairroulette wallet init</code></div>
-		<div>Get some funds: <code>fairroulette wallet transfer 1 10000</code></div>
-		<h2>Betting</h2>
-		<div>Make a bet: <code>fairroulette bet 1 100</code></div>
-		<div>Then refresh this page to see the results.</div>
+		<h3>Configuration</h3>
+		<p><code>fairroulette set goshimmer.api {{.Host}}:8080</code></p>
+		<p><code>fairroulette set wasp.api {{.Host}}:9090</code></p>
+		<p><code>fairroulette set address {{.SCAddress}}</code></p>
+		<p>Initialize a wallet: <code>fairroulette wallet init</code></p>
+		<p>Get some funds: <code>fairroulette wallet transfer 1 10000</code></p>
+		<h3>Betting</h3>
+		<p>Make a bet: <code>fairroulette bet 1 100</code></p>
+		<p>Then refresh this page to see the results.</p>
 	</div>
 	<script>
 		function addAddress(address) {

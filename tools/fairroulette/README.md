@@ -65,7 +65,7 @@ Index 0
 10. Configure the SC address in `fairroulette.json` (obtained in step 7):
 
 ```
-fairroulette set-address mUbfBM...
+fairroulette set address mUbfBM...
 ```
 
 11. Make a bet: `fairroulette bet 2 100`
