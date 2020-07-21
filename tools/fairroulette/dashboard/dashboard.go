@@ -134,9 +134,8 @@ var renderer = &Template{
 			</ul>
 		</div>
 	</div>
-	<hr/>
-	<div>
-		<h2>CLI usage</h2>
+	<details>
+		<summary>CLI usage</summary>
 		<h3>Configuration</h3>
 		<p><code>fairroulette set goshimmer.api {{.Host}}:8080</code></p>
 		<p><code>fairroulette set wasp.api {{.Host}}:9090</code></p>
@@ -148,7 +147,7 @@ var renderer = &Template{
 		<p>Make a bet: <code>fairroulette bet <i>color</i> <i>amount</i></code>
 		(e.g.: <code>fairroulette bet 1 100</code>)</p>
 		<p>Then refresh this page to see the results.</p>
-	</div>
+	</details>
   </body>
 </html>
 `)),
