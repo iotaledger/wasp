@@ -21,12 +21,12 @@ func check(err error) {
 }
 
 var commands = map[string]func([]string){
-	"wallet":      wallet.Cmd,
-	"admin":       admin.AdminCmd,
-	"set-address": client.SetSCAddressCmd,
-	"status":      client.StatusCmd,
-	"bet":         client.BetCmd,
-	"dashboard":   dashboard.Cmd,
+	"wallet":    wallet.Cmd,
+	"admin":     admin.AdminCmd,
+	"set":       client.SetCmd,
+	"status":    client.StatusCmd,
+	"bet":       client.BetCmd,
+	"dashboard": dashboard.Cmd,
 }
 
 func usage(flags *pflag.FlagSet) {

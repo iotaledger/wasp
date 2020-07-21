@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/tools/fairroulette/client"
+	"github.com/iotaledger/wasp/tools/fairroulette/config"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -47,9 +50,15 @@ func Cmd(args []string) {
 		if err != nil {
 			return err
 		}
+		host, _, err := net.SplitHostPort(c.Request().Host)
+		if err != nil {
+			return err
+		}
 		return c.Render(http.StatusOK, "index", &IndexTemplateParams{
-			Now:    time.Now().UTC(),
-			Status: status,
+			Host:      host,
+			SCAddress: config.GetSCAddress(),
+			Now:       time.Now().UTC(),
+			Status:    status,
 		})
 	})
 
@@ -58,6 +67,8 @@ func Cmd(args []string) {
 }
 
 type IndexTemplateParams struct {
+	Host       string
+	SCAddress  address.Address
 	Now        time.Time
 	NextPlayIn string
 	Status     *client.Status
@@ -85,7 +96,8 @@ var renderer = &Template{
 
   <body>
   	<h1>FairRoulette</h1>
-	<div>Status fetched at: {{.Now}}</div>
+	<div>SC address: <code>{{.SCAddress}}</code></div>
+	<div>Status fetched at: <code>{{.Now}}</code></div>
 	<div>
 		<h2>Next play</h2>
 		<div>Next play in: {{.Status.NextPlayIn}}</div>
@@ -122,6 +134,18 @@ var renderer = &Template{
 		</ul></div>
 	</div>
 
+	<div>
+		<h2>CLI usage</h2>
+		<h2>Configuration</h2>
+		<div><code>fairroulette set goshimmer.api {{.Host}}:8080</code></div>
+		<div><code>fairroulette set wasp.api {{.Host}}:9090</code></div>
+		<div><code>fairroulette set address {{.SCAddress}}</code></div>
+		<div>Initialize a wallet: <code>fairroulette wallet init</code></div>
+		<div>Get some funds: <code>fairroulette wallet transfer 1 10000</code></div>
+		<h2>Betting</h2>
+		<div>Make a bet: <code>fairroulette bet 1 100</code></div>
+		<div>Then refresh this page to see the results.</div>
+	</div>
 	<script>
 		function addAddress(address) {
 			const url = new URL(document.location);

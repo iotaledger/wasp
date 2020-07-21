@@ -24,14 +24,13 @@ import (
 const scDescription = "FairRoulette smart contract"
 const scProgramHash = fairroulette.ProgramHash
 
-var quorum int
+var quorumFlag int
+var committeeFlag []int
 
 func HookFlags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("wallet init", pflag.ExitOnError)
-	flags.IntVarP(&quorum, "quorum", "t", 3, "quorum")
-	flags.IntSliceP("committee", "n", []int{0, 1, 2, 3}, "committee")
-
-	viper.BindPFlag("fairroulette.committee", flags.Lookup("committee"))
+	flags.IntVarP(&quorumFlag, "quorum", "t", 3, "quorum")
+	flags.IntSliceVarP(&committeeFlag, "committee", "n", nil, "committee")
 	return flags
 }
 
@@ -86,7 +85,7 @@ func genDKSets() *address.Address {
 	scAddress, err := waspapi.GenerateNewDistributedKeySet(
 		config.CommitteeApi(committee()),
 		uint16(len(committee())),
-		uint16(quorum),
+		uint16(quorumFlag),
 	)
 	check(err)
 	return scAddress
@@ -139,7 +138,14 @@ func ownerAddress() address.Address {
 }
 
 func committee() []int {
-	return viper.GetIntSlice("fairroulette.committee")
+	if len(committeeFlag) > 0 {
+		return committeeFlag
+	}
+	r := viper.GetIntSlice("fairroulette.committee")
+	if len(r) > 0 {
+		return r
+	}
+	return []int{0, 1, 2, 3}
 }
 
 func setPeriod(seconds int) {
