@@ -155,8 +155,10 @@ var renderer = &Template{
 		<p><code>fairroulette set address {{.SCAddress}}</code></p>
 		<p>Initialize a wallet: <code>fairroulette wallet init</code></p>
 		<p>Get some funds: <code>fairroulette wallet transfer 1 10000</code></p>
+
 		<h3>Betting</h3>
-		<p>Make a bet: <code>fairroulette bet 1 100</code></p>
+		<p>Make a bet: <code>fairroulette bet <i>color</i> <i>amount</i></code>
+		(e.g.: <code>fairroulette bet 1 100</code>)</p>
 		<p>Then refresh this page to see the results.</p>
 	</div>
 	<script>
