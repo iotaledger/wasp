@@ -146,8 +146,9 @@ func (b *bufferedKVStore) Iterate(prefix Key, f func(key Key, value []byte) bool
 	if done {
 		return nil
 	}
+	realm := len(b.db.Realm())
 	return b.db.Iterate([]byte(prefix), func(key kvstore.Key, value kvstore.Value) bool {
-		k := Key(key)
+		k := Key(key[realm:])
 		_, ok := seen[k]
 		if ok {
 			return true
@@ -163,8 +164,9 @@ func (b *bufferedKVStore) IterateKeys(prefix Key, f func(key Key) bool) error {
 	if done {
 		return nil
 	}
+	realm := len(b.db.Realm())
 	return b.db.IterateKeys([]byte(prefix), func(key kvstore.Key) bool {
-		k := Key(key)
+		k := Key(key[realm:])
 		_, ok := seen[k]
 		if ok {
 			return true

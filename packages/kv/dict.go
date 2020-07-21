@@ -47,11 +47,11 @@ func (l *Dictionary) getSizeKey() Key {
 }
 
 func (l *Dictionary) getElemKey(key []byte) Key {
-	return DictElemKey(Key(l.name), key)
-}
-
-func DictElemKey(dictKey Key, elemKey []byte) Key {
-	return Key(append([]byte(dictKey), elemKey...))
+	var buf bytes.Buffer
+	buf.Write([]byte(l.name))
+	buf.WriteByte(dictElemKeyCode)
+	buf.Write(key)
+	return Key(buf.Bytes())
 }
 
 func (l *Dictionary) setSize(size uint32) {
@@ -137,3 +137,11 @@ func (d *Dictionary) Erase() {
 	// TODO needs DelPrefix method in KVStore
 	panic("implement me")
 }
+
+func (d *Dictionary) Iterate(f func(elemKey []byte, value []byte) bool) error {
+	prefix := d.getElemKey([]byte{})
+	return d.kv.Iterate(prefix, func(key Key, value []byte) bool {
+		return f([]byte(key[len(prefix):]), value)
+	})
+}
+

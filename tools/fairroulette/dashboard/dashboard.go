@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -41,12 +40,7 @@ func Cmd(args []string) {
 	e.Renderer = renderer
 
 	e.GET("/", func(c echo.Context) error {
-		var players []string
-		if len(c.QueryParam("players")) > 0 {
-			players = strings.Split(c.QueryParam("players"), ",")
-		}
-
-		status, err := client.FetchStatus(players)
+		status, err := client.FetchStatus()
 		if err != nil {
 			return err
 		}
@@ -132,18 +126,12 @@ var renderer = &Template{
 			</ul>
 		</div>
 		<div>
-			<form onsubmit="addAddress(document.getElementById('address').value); return false">
-				<fieldset>
-					<legend>Player stats:</legend>
-					<ul>
-						{{range $p, $stats := .Status.PlayerStats}}
-							<li>Player <code>{{$p}}</code>: Bets: <code>{{$stats.Bets}}</code> - Wins: <code>{{$stats.Wins}}</code></li>
-						{{end}}
-					</ul>
-					Show address <input type="text" maxlength="45" id="address"></input>
-					<input type="submit" value="+">
-				</fieldset>
-			</form>
+			<p>Player stats:</p>
+			<ul>
+				{{range $p, $stats := .Status.PlayerStats}}
+					<li>Player <code>{{$p}}</code>: Bets: <code>{{$stats.Bets}}</code> - Wins: <code>{{$stats.Wins}}</code></li>
+				{{end}}
+			</ul>
 		</div>
 	</div>
 	<hr/>
@@ -161,14 +149,6 @@ var renderer = &Template{
 		(e.g.: <code>fairroulette bet 1 100</code>)</p>
 		<p>Then refresh this page to see the results.</p>
 	</div>
-	<script>
-		function addAddress(address) {
-			const url = new URL(document.location);
-			const players = (url.searchParams.get('players') || '').split(',').filter(s => s.length > 0);
-			players.push(address)
-			document.location.href = document.location.href.split('?')[0] + '?players=' + players.join(',');
-		}
-	</script>
   </body>
 </html>
 `)),

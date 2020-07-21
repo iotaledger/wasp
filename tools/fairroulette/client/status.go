@@ -4,18 +4,10 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
 )
 
 func StatusCmd(args []string) {
-	var addresses []string
-	if len(args) == 0 {
-		addresses = []string{wallet.Load().Address().String()}
-	} else {
-		addresses = args
-	}
-
-	status, err := FetchStatus(addresses)
+	status, err := FetchStatus()
 	check(err)
 
 	fmt.Printf("FairRoulette Smart Contract status:\n")

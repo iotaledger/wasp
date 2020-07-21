@@ -159,15 +159,20 @@ func (c codec) SetString(key Key, value string) {
 	c.kv.Set(key, []byte(value))
 }
 
+func DecodeInt64(b []byte) (int64, error) {
+	if len(b) != 8 {
+		return 0, fmt.Errorf("variable %v is not an int64", b)
+	}
+	return int64(util.Uint64From8Bytes(b)), nil
+}
+
 func (c codec) GetInt64(key Key) (int64, bool, error) {
 	b, err := c.kv.Get(key)
 	if err != nil || b == nil {
 		return 0, false, err
 	}
-	if len(b) != 8 {
-		return 0, false, fmt.Errorf("variable %s: %v is not an int64", key, b)
-	}
-	return int64(util.Uint64From8Bytes(b)), true, nil
+	n, err := DecodeInt64(b)
+	return n, err == nil, err
 }
 
 func (c mustcodec) GetInt64(key Key) (int64, bool) {
