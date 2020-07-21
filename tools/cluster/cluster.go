@@ -50,16 +50,15 @@ type SmartContractInitData struct {
 }
 
 type WaspNodeConfig struct {
-	NetAddress  string `json:"net_address"`
-	ApiPort     int    `json:"api_port"`
-	PeeringPort int    `json:"peering_port"`
-	NanomsgPort int    `json:"nanomsg_port"`
+	ApiPort     int `json:"api_port"`
+	PeeringPort int `json:"peering_port"`
+	NanomsgPort int `json:"nanomsg_port"`
 }
 
 type ClusterConfig struct {
 	Nodes     []WaspNodeConfig `json:"nodes"`
 	Goshimmer struct {
-		BindAddress string `json:"bind_address"`
+		ApiPort int `json:"api_port"`
 	} `json:"goshimmer"`
 	SmartContracts []SmartContractInitData `json:"smart_contracts"`
 }
@@ -88,16 +87,20 @@ func (sc *SmartContractFinalConfig) AllNodes() []int {
 	return r
 }
 
+func (c *ClusterConfig) GoshimmerApiHost() string {
+	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.ApiPort)
+}
+
 func (w *WaspNodeConfig) ApiHost() string {
-	return fmt.Sprintf("%s:%d", w.NetAddress, w.ApiPort)
+	return fmt.Sprintf("127.0.0.1:%d", w.ApiPort)
 }
 
 func (w *WaspNodeConfig) PeeringHost() string {
-	return fmt.Sprintf("%s:%d", w.NetAddress, w.PeeringPort)
+	return fmt.Sprintf("127.0.0.1:%d", w.PeeringPort)
 }
 
 func (w *WaspNodeConfig) NanomsgHost() string {
-	return fmt.Sprintf("%s:%d", w.NetAddress, w.NanomsgPort)
+	return fmt.Sprintf("127.0.0.1:%d", w.NanomsgPort)
 }
 
 func readConfig(configPath string) (*ClusterConfig, error) {
@@ -386,8 +389,7 @@ func (cluster *Cluster) importKeys() error {
 	for _, scKeys := range cluster.SmartContractConfig {
 		fmt.Printf("[cluster] Importing DKShares for address %s...\n", scKeys.Address)
 		for nodeIndex, dks := range scKeys.DKShares {
-			url := fmt.Sprintf("%s:%d", cluster.Config.Nodes[nodeIndex].NetAddress, cluster.Config.Nodes[nodeIndex].ApiPort)
-			err := waspapi.ImportDKShare(url, dks)
+			err := waspapi.ImportDKShare(cluster.Config.Nodes[nodeIndex].ApiHost(), dks)
 			if err != nil {
 				return err
 			}
@@ -399,20 +401,22 @@ func (cluster *Cluster) importKeys() error {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
-	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", cluster.Config.Goshimmer.BindAddress)
-	err := nodeapi.Shutdown(cluster.Config.Goshimmer.BindAddress)
+	url := cluster.Config.GoshimmerApiHost()
+	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
+	err := nodeapi.Shutdown(url)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	for _, node := range cluster.Config.Nodes {
-		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
+		url := node.ApiHost()
 		fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", url)
 		err := waspapi.Shutdown(url)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
+
 	cluster.Wait()
 }
 
@@ -429,7 +433,7 @@ func (cluster *Cluster) Wait() {
 func (cluster *Cluster) ApiHosts() []string {
 	hosts := make([]string, 0)
 	for _, node := range cluster.Config.Nodes {
-		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
+		url := node.ApiHost()
 		hosts = append(hosts, url)
 	}
 	return hosts
@@ -576,7 +580,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 }
 
 func (cluster *Cluster) VerifySCAddressBalances(addr address.Address, expect map[balance.Color]int64) bool {
-	host := cluster.Config.Goshimmer.BindAddress
+	host := cluster.Config.GoshimmerApiHost()
 	allOuts, err := nodeapi.GetAccountOutputs(host, &addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
@@ -631,13 +635,13 @@ func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) 
 }
 
 func (cluster *Cluster) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
-	err := nodeapi.PostTransaction(cluster.Config.Goshimmer.BindAddress, tx)
+	err := nodeapi.PostTransaction(cluster.Config.GoshimmerApiHost(), tx)
 	if err != nil {
 		return err
 	}
 	txid := tx.ID()
 	for {
-		conf, err := nodeapi.IsConfirmed(cluster.Config.Goshimmer.BindAddress, &txid)
+		conf, err := nodeapi.IsConfirmed(cluster.Config.GoshimmerApiHost(), &txid)
 		if err != nil {
 			return err
 		}

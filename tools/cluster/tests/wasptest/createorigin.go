@@ -13,7 +13,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 
 	var bindAddress string
 	if goshimmerDirectly {
-		bindAddress = clu.Config.Goshimmer.BindAddress
+		bindAddress = clu.Config.GoshimmerApiHost()
 	} else {
 		bindAddress = clu.ApiHosts()[0]
 	}

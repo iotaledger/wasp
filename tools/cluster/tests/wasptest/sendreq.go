@@ -31,7 +31,7 @@ func SendRequestsNTimes(clu *cluster.Cluster, senderIndexUtxodb int, n int, reqs
 }
 
 func SendRequests(clu *cluster.Cluster, senderIndexUtxodb int, reqs []*waspapi.RequestBlockJson) error {
-	tx, err := createRequestTx(clu.Config.Goshimmer.BindAddress, senderIndexUtxodb, reqs)
+	tx, err := createRequestTx(clu.Config.GoshimmerApiHost(), senderIndexUtxodb, reqs)
 	if err != nil {
 		return err
 	}
