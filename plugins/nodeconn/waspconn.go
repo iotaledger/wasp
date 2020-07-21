@@ -4,17 +4,19 @@ package nodeconn
 
 import (
 	"fmt"
+	"io"
+	"net"
+	"strings"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"io"
-	"net"
-	"strings"
-	"time"
 )
 
 const (
@@ -48,7 +50,7 @@ func nodeConnect() {
 	}
 
 	bconnMutex.Lock()
-	bconn = buffconn.NewBufferedConnection(conn)
+	bconn = buffconn.NewBufferedConnection(conn, payload.MaxMessageSize)
 	bconnMutex.Unlock()
 
 	log.Debugf("established connection with node at %s", addr)
@@ -100,7 +102,7 @@ func retryNodeConnect() {
 }
 
 func SendDataToNode(data []byte) error {
-	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
+	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
 
 	bconnMutex.RLock()
 	defer bconnMutex.RUnlock()

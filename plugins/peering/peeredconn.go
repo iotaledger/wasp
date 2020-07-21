@@ -1,10 +1,12 @@
 package peering
 
 import (
+	"net"
+
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
-	"net"
 )
 
 // extension of BufferedConnection from hive.go
@@ -20,7 +22,7 @@ type peeredConnection struct {
 // creates new peered connection and attach event handlers for received data and closing
 func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 	bconn := &peeredConnection{
-		BufferedConnection: buffconn.NewBufferedConnection(conn),
+		BufferedConnection: buffconn.NewBufferedConnection(conn, payload.MaxMessageSize),
 		peer:               peer,
 	}
 	bconn.Events.ReceiveMessage.Attach(events.NewClosure(func(data []byte) {
@@ -47,7 +49,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		return
 	}
 	if msg.MsgType == MsgTypeMsgChunk {
-		finalMsg, err := chopper.IncomingChunk(msg.MsgData, buffconn.MaxMessageSize-chunkMessageOverhead)
+		finalMsg, err := chopper.IncomingChunk(msg.MsgData, payload.MaxMessageSize-chunkMessageOverhead)
 		if err != nil {
 			log.Errorf("decodeMessage: %v", err)
 			return

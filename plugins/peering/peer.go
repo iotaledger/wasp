@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
 	"github.com/iotaledger/hive.go/backoff"
-	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"go.uber.org/atomic"
 	"net"
 	"sync"
@@ -159,7 +159,7 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 
 	peer.lastHeartbeatSent = ts
 
-	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-chunkMessageOverhead)
+	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
 	peer.RLock()
 	defer peer.RUnlock()
@@ -191,7 +191,7 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 	}
 	// timestamped here, once
 	data, ts := encodeMessage(msg)
-	choppedData, chopped := chopper.ChopData(data, buffconn.MaxMessageSize-chunkMessageOverhead)
+	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
 	ret := uint16(0)
 	for _, peer := range peers {
