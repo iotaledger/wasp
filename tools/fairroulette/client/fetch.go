@@ -48,10 +48,10 @@ func FetchStatus() (*Status, error) {
 	query.AddArray(fairroulette.StateVarBets, 0, 100)
 	query.AddArray(fairroulette.StateVarLockedBets, 0, 100)
 	query.AddInt64(fairroulette.StateVarLastWinningColor)
-	query.AddInt64(fairroulette.VarPlayPeriodSec)
-	query.AddInt64(fairroulette.VarNextPlayTimestamp)
-	query.AddDictionary(fairroulette.VarPlayerStats, 100)
-	query.AddArray(fairroulette.VarWinsPerColor, 0, fairroulette.NumColors)
+	query.AddInt64(fairroulette.ReqVarPlayPeriodSec)
+	query.AddInt64(fairroulette.StateVarNextPlayTimestamp)
+	query.AddDictionary(fairroulette.StateVarPlayerStats, 100)
+	query.AddArray(fairroulette.StateArrayWinsPerColor, 0, fairroulette.NumColors)
 
 	results, err := waspapi.QuerySCState(config.WaspApi(), query)
 	if err != nil {
@@ -61,20 +61,20 @@ func FetchStatus() (*Status, error) {
 	status := &Status{}
 
 	status.LastWinningColor = results[fairroulette.StateVarLastWinningColor].MustInt64()
-	status.PlayPeriodSeconds = results[fairroulette.VarPlayPeriodSec].MustInt64()
+	status.PlayPeriodSeconds = results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
 
-	nextPlayTimestamp := results[fairroulette.VarNextPlayTimestamp].MustInt64()
+	nextPlayTimestamp := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp)
 	if err != nil {
 		return nil, err
 	}
 
-	status.PlayerStats, err = decodePlayerStats(results[fairroulette.VarPlayerStats].MustDictionaryResult())
+	status.PlayerStats, err = decodePlayerStats(results[fairroulette.StateVarPlayerStats].MustDictionaryResult())
 	if err != nil {
 		return nil, err
 	}
 
-	status.WinsPerColor, err = decodeWinsPerColor(results[fairroulette.VarWinsPerColor].MustArrayResult())
+	status.WinsPerColor, err = decodeWinsPerColor(results[fairroulette.StateArrayWinsPerColor].MustArrayResult())
 	if err != nil {
 		return nil, err
 	}

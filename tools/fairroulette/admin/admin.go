@@ -153,7 +153,7 @@ func setPeriod(seconds int) {
 		Address:     config.GetSCAddress().String(),
 		RequestCode: fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
-			fairroulette.VarPlayPeriodSec: int64(seconds),
+			fairroulette.ReqVarPlayPeriodSec: int64(seconds),
 		},
 	})
 }

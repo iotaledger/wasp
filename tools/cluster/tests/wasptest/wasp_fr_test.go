@@ -160,7 +160,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 			Address:     sc.Address,
 			RequestCode: fairroulette.RequestSetPlayPeriod,
 			Vars: map[string]interface{}{
-				fairroulette.VarPlayPeriodSec: 10,
+				fairroulette.ReqVarPlayPeriodSec: 10,
 			},
 		},
 	}

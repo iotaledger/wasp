@@ -58,30 +58,34 @@ var entryPoints = fairRouletteProcessor{
 const (
 	ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 
-	// request argument to specify color of the bet. It always is taken modulo 5, so there are 5 possible colors
-	ReqVarColor = "color"
-
-	// state array to store all current bets
-	StateVarBets = "bets"
-	// state array to store locked bets
-	StateVarLockedBets = "lockedBest"
-	// state variable to store last winning color. Just for information
-	StateVarLastWinningColor = "lastWinningColor"
-	// 32 bytes of entropy taken from the hash of the transaction which locked current bets
-	StateVarEntropyFromLocking = "entropyFromLocking"
-	// set play period in seconds
-	VarPlayPeriodSec = "playPeriod"
-	// estimated timestamp for next play (nanoseconds)
-	VarNextPlayTimestamp = "nextPlayTimestamp"
-	// array color => amount of wins so far
-	VarWinsPerColor = "winsPerColor"
-	// dictionary address => PlayerStats
-	VarPlayerStats = "playerStats"
-
+	/// General constants
 	// number of colors
 	NumColors = 5
 	// automatically lock and play 2 min after first current bet is confirmed
 	DefaultPlaySecondsAfterFirstBet = 120
+
+	/// State variables
+	// state array to store all current bets
+	StateVarBets = "bets"
+	// state array to store locked bets
+	StateVarLockedBets = "lockedBets"
+	// state variable to store last winning color. Just for information
+	StateVarLastWinningColor = "lastWinningColor"
+	// 32 bytes of entropy taken from the hash of the transaction which locked current bets
+	StateVarEntropyFromLocking = "entropyFromLocking"
+	// estimated timestamp for next play (nanoseconds)
+	StateVarNextPlayTimestamp = "nextPlayTimestamp"
+	// array color => amount of wins so far
+	StateArrayWinsPerColor = "winsPerColor"
+	// dictionary address => PlayerStats
+	StateVarPlayerStats = "playerStats"
+
+	/// Request variables (arguments)
+	// request argument to specify color of the bet. It always is taken modulo NumColors,
+	// so there are NumColors possible colors
+	ReqVarColor = "color"
+	// specify play period in seconds
+	ReqVarPlayPeriodSec = "playPeriod"
 )
 
 type BetInfo struct {
@@ -180,13 +184,13 @@ func placeBet(ctx vmtypes.Sandbox) {
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
 	// it will be time-locked by default for the next 2 minutes, the it will be processed by smart contract
 	if firstBet {
-		period, ok := state.GetInt64(VarPlayPeriodSec)
+		period, ok := state.GetInt64(ReqVarPlayPeriodSec)
 		if !ok || period < 10 {
 			period = DefaultPlaySecondsAfterFirstBet
 		}
 
 		nextPlayTimestamp := (time.Duration(ctx.GetTimestamp())*time.Nanosecond + time.Duration(period)*time.Second).Nanoseconds()
-		state.SetInt64(VarNextPlayTimestamp, nextPlayTimestamp)
+		state.SetInt64(StateVarNextPlayTimestamp, nextPlayTimestamp)
 
 		ctx.Publishf("SendRequestToSelfWithDelay period = %d", period)
 
@@ -200,13 +204,13 @@ func placeBet(ctx vmtypes.Sandbox) {
 func setPlayPeriod(ctx vmtypes.Sandbox) {
 	ctx.Publish("setPlayPeriod")
 
-	period, ok, err := ctx.AccessRequest().Args().GetInt64(VarPlayPeriodSec)
+	period, ok, err := ctx.AccessRequest().Args().GetInt64(ReqVarPlayPeriodSec)
 	if err != nil || !ok || period < 10 {
 		// incorrect request arguments
 		// minimum is 10 seconds
 		return
 	}
-	ctx.AccessState().SetInt64(VarPlayPeriodSec, period)
+	ctx.AccessState().SetInt64(ReqVarPlayPeriodSec, period)
 
 	ctx.Publishf("setPlayPeriod = %d", period)
 }
@@ -264,7 +268,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	}
 
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
-	// calculating it modulo 5.
+	// calculating it modulo NumColors.
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
@@ -333,7 +337,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 }
 
 func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
-	winsPerColorArray := ctx.AccessState().GetArray(VarWinsPerColor)
+	winsPerColorArray := ctx.AccessState().GetArray(StateArrayWinsPerColor)
 
 	// first time? Initialize counters
 	if winsPerColorArray.Len() == 0 {
@@ -490,7 +494,7 @@ func (ps *PlayerStats) String() string {
 }
 
 func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *PlayerStats)) error {
-	statsDict := ctx.AccessState().GetDictionary(VarPlayerStats)
+	statsDict := ctx.AccessState().GetDictionary(StateVarPlayerStats)
 	b := statsDict.GetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)
 	if err != nil {
