@@ -92,6 +92,9 @@ var renderer = &Template{
   </head>
 
   <body>
+  	<style>
+		details {background: #EEF9FF}
+	</style>
 	<header>
 		<h1>FairRoulette</h1>
 	</header>
@@ -134,20 +137,30 @@ var renderer = &Template{
 			</ul>
 		</div>
 	</div>
-	<details>
-		<summary>CLI usage</summary>
-		<h3>Configuration</h3>
-		<p><code>fairroulette set goshimmer.api {{.Host}}:8080</code></p>
-		<p><code>fairroulette set wasp.api {{.Host}}:9090</code></p>
-		<p><code>fairroulette set address {{.SCAddress}}</code></p>
-		<p>Initialize a wallet: <code>fairroulette wallet init</code></p>
-		<p>Get some funds: <code>fairroulette wallet transfer 1 10000</code></p>
-
-		<h3>Betting</h3>
-		<p>Make a bet: <code>fairroulette bet <i>color</i> <i>amount</i></code>
-		(e.g.: <code>fairroulette bet 1 100</code>)</p>
-		<p>Then refresh this page to see the results.</p>
-	</details>
+	<div>
+		<h2>CLI usage</h2>
+		<details>
+			<summary>1. Install</summary>
+<pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
+$ cd wasp
+$ go install ./tools/fairroulette
+</pre>
+		</details>
+		<details>
+			<summary>2. Configure</summary>
+<pre>$ fairroulette set goshimmer.api {{.Host}}:8080
+$ fairroulette set wasp.api {{.Host}}:9090
+$ fairroulette set address {{.SCAddress}}</pre>
+			<p>Initialize a wallet: <code>fairroulette wallet init</code></p>
+			<p>Get some funds: <code>fairroulette wallet transfer 1 10000</code></p>
+		</details>
+		<details>
+			<summary>3. Place bets</summary>
+			<p><code>fairroulette bet <i>color</i> <i>amount</i></code>
+			(e.g.: <code>fairroulette bet 1 100</code>)</p>
+			<p>Then refresh this page to see the results.</p>
+		</details>
+	</div>
   </body>
 </html>
 `)),

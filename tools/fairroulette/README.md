@@ -74,15 +74,8 @@ fairroulette set address mUbfBM...
 
 `100` is the amount of IOTAs to bet.
 
-12. Query the SC state:
+12. Query the SC state: `fairroulette status`
 
-```
-$ fairroulette status
-FairRoulette Smart Contract status:
-bets: 1
-locked bets: 0
-last winning color: 0
-play period (s): 0
-```
+Also try `fairroulette dashboard`!
 
 13. Change the play period (as admin): `fairroulette admin set-period 10 -c owner.json`
