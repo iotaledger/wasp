@@ -1,0 +1,1 @@
+C:\Users\evaldas\Documents\proj\Go\src\github.com\iotaledger\wasp-develop\tools\examples\wasmtime\sandbox\rust-wasm\target\wasm32-unknown-unknown\release\rust_wasm_call_sandbox.wasm: C:\Users\evaldas\Documents\proj\Go\src\github.com\iotaledger\wasp-develop\tools\examples\wasmtime\sandbox\rust-wasm\src\lib.rs

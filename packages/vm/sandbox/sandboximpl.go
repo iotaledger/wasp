@@ -15,9 +15,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
-// TODO implement proper error handling in sandbox
-// 1. wrap Must.. methods from Codec and expose pure methods in the Sandbox
-// 2. probably replace panics in Must.. methods in the Codec with invalidation of the whole virtual state
+// TODO implement mocked sandbox for testing
 
 type sandbox struct {
 	*vm.VMContext
