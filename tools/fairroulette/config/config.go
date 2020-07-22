@@ -15,6 +15,7 @@ var Verbose bool
 const (
 	hostKindApi     = "api"
 	hostKindPeering = "peering"
+	hostKindNanomsg = "nanomsg"
 )
 
 func HookFlags() *pflag.FlagSet {
@@ -45,6 +46,14 @@ func WaspApi() string {
 	return committeeHost(hostKindApi, 0)
 }
 
+func WaspNanomsg() string {
+	r := viper.GetString("wasp." + hostKindApi)
+	if r != "" {
+		return r
+	}
+	return committeeHost(hostKindNanomsg, 0)
+}
+
 func CommitteeApi(indices []int) []string {
 	return committee(hostKindApi, indices)
 }
@@ -72,6 +81,8 @@ func committeeHost(kind string, i int) string {
 
 func defaultWaspPort(kind string, i int) int {
 	switch kind {
+	case hostKindNanomsg:
+		return 5550 + i
 	case hostKindPeering:
 		return 4000 + i
 	case hostKindApi:
