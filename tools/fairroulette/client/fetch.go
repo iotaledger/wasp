@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
@@ -15,6 +17,8 @@ import (
 const BetsSliceLength = 10
 
 type Status struct {
+	SCBalance int64
+
 	CurrentBetsAmount uint16
 	CurrentBets       []*fairroulette.BetInfo
 
@@ -44,6 +48,14 @@ func (s *Status) NextPlayIn() string {
 }
 
 func FetchStatus() (*Status, error) {
+	status := &Status{}
+
+	balance, err := fetchSCBalance()
+	if err != nil {
+		return nil, err
+	}
+	status.SCBalance = balance
+
 	address := config.GetSCAddress()
 
 	query := stateapi.NewQueryRequest(&address)
@@ -59,8 +71,6 @@ func FetchStatus() (*Status, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	status := &Status{}
 
 	status.LastWinningColor = results[fairroulette.StateVarLastWinningColor].MustInt64()
 
@@ -97,7 +107,16 @@ func FetchStatus() (*Status, error) {
 	return status, nil
 }
 
-func decodeInt64() {}
+func fetchSCBalance() (int64, error) {
+	scAddress := config.GetSCAddress()
+	outs, err := nodeapi.GetAccountOutputs(config.GoshimmerApi(), &scAddress)
+	if err != nil {
+		return 0, err
+	}
+	byColor, _ := util.OutputBalancesByColor(outs)
+	b, _ := byColor[balance.ColorIOTA]
+	return b, nil
+}
 
 func decodeBets(result *stateapi.ArrayResult) (uint16, []*fairroulette.BetInfo, error) {
 	size := result.Len

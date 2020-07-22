@@ -51,7 +51,7 @@ var renderer = &Template{
 		<h1>FairRoulette</h1>
 	</header>
 	<p>SC address: <code>{{.SCAddress}}</code></p>
-	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
+	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
 	<div>
 		<h2>Next play</h2>
 		<p>Next play: <code id="nextPlayIn"></code></p>
@@ -89,6 +89,8 @@ var renderer = &Template{
 			</ul>
 		</div>
 	</div>
+	<hr/>
+	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
 	<div>
 		<h2>CLI usage</h2>
 		<details>
