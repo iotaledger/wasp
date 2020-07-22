@@ -24,6 +24,8 @@ type Status struct {
 	LastWinningColor int64
 
 	PlayPeriodSeconds int64
+
+	FetchedAt         time.Time
 	NextPlayTimestamp time.Time
 
 	PlayerStats map[address.Address]*fairroulette.PlayerStats
@@ -32,7 +34,7 @@ type Status struct {
 }
 
 func (s *Status) NextPlayIn() string {
-	diff := s.NextPlayTimestamp.Sub(time.Now())
+	diff := s.NextPlayTimestamp.Sub(s.FetchedAt)
 	// round to the second
 	diff -= diff % time.Second
 	if diff < 0 {
@@ -61,13 +63,16 @@ func FetchStatus() (*Status, error) {
 	status := &Status{}
 
 	status.LastWinningColor = results[fairroulette.StateVarLastWinningColor].MustInt64()
+
 	status.PlayPeriodSeconds = results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
+	if status.PlayPeriodSeconds == 0 {
+		status.PlayPeriodSeconds = fairroulette.DefaultPlaySecondsAfterFirstBet
+	}
+
+	status.FetchedAt = time.Now().UTC()
 
 	nextPlayTimestamp := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
-	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp)
-	if err != nil {
-		return nil, err
-	}
+	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
 
 	status.PlayerStats, err = decodePlayerStats(results[fairroulette.StateVarPlayerStats].MustDictionaryResult())
 	if err != nil {

@@ -49,10 +49,10 @@ func Cmd(args []string) {
 			return err
 		}
 		return c.Render(http.StatusOK, "index", &IndexTemplateParams{
-			Host:      host,
-			SCAddress: config.GetSCAddress(),
-			Now:       time.Now().UTC(),
-			Status:    status,
+			Host:        host,
+			SCAddress:   config.GetSCAddress(),
+			Status:      status,
+			MarshalTime: marshalTime,
 		})
 	})
 
@@ -60,12 +60,15 @@ func Cmd(args []string) {
 	e.Logger.Fatal(e.Start(listenAddr))
 }
 
+func marshalTime(t time.Time) string {
+	return t.Format(time.RFC3339)
+}
+
 type IndexTemplateParams struct {
-	Host       string
-	SCAddress  address.Address
-	Now        time.Time
-	NextPlayIn string
-	Status     *client.Status
+	Host        string
+	SCAddress   address.Address
+	Status      *client.Status
+	MarshalTime func(time.Time) string
 }
 
 type Template struct {
@@ -99,10 +102,10 @@ var renderer = &Template{
 		<h1>FairRoulette</h1>
 	</header>
 	<p>SC address: <code>{{.SCAddress}}</code></p>
-	<p>Status fetched at: <code>{{.Now}}</code></p>
+	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
 	<div>
 		<h2>Next play</h2>
-		<p>Next play in: <code>{{.Status.NextPlayIn}}</code></p>
+		<p>Next play: <code id="nextPlayIn"></code></p>
 		<p>Play period: <code>{{.Status.PlayPeriodSeconds}}s</code></p>
 		<div>
 			<p>Bets: <code>{{.Status.CurrentBetsAmount}}</code></p>
@@ -161,6 +164,25 @@ $ fairroulette set address {{.SCAddress}}</pre>
 			<p>Then refresh this page to see the results.</p>
 		</details>
 	</div>
+	<script>
+		const nextPlayAt = new Date({{call .MarshalTime .Status.NextPlayTimestamp}});
+
+		const nextPlayIn = document.getElementById("nextPlayIn");
+
+		function update() {
+			const diff = nextPlayAt - new Date();
+			if (diff > 0) {
+				var date = new Date(0);
+				date.setSeconds(diff / 1000);
+				nextPlayIn.innerText = date.toISOString().substr(11, 8);
+			} else {
+				nextPlayIn.innerText = "not scheduled";
+			}
+		}
+
+		update()
+		setInterval(update, 1000);
+	</script>
   </body>
 </html>
 `)),
