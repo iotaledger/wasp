@@ -7,6 +7,7 @@ require (
 	github.com/iotaledger/goshimmer v0.2.1-0.20200722075240-db6e6d1fbba9
 	github.com/iotaledger/hive.go v0.0.0-20200720084404-e6c3b4717f40
 	github.com/labstack/echo v3.3.10+incompatible
+	github.com/labstack/gommon v0.3.0
 	github.com/magiconair/properties v1.8.1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/perlin-network/life v0.0.0-20191203030451-05c0e0f7eaea
