@@ -11,10 +11,13 @@ import (
 )
 
 type MockedSandbox struct {
+	kv kv.KVStore
 }
 
 func NewMockedSandbox() vmtypes.Sandbox {
-	return &MockedSandbox{}
+	return &MockedSandbox{
+		kv: kv.NewMap(),
+	}
 }
 
 func (m *MockedSandbox) IsOriginState() bool {
@@ -46,7 +49,7 @@ func (m *MockedSandbox) AccessRequest() vmtypes.RequestAccess {
 }
 
 func (m *MockedSandbox) AccessState() kv.MustCodec {
-	panic("implement me")
+	return kv.NewMustCodec(m.kv)
 }
 
 func (m *MockedSandbox) AccessOwnAccount() vmtypes.AccountAccess {
@@ -66,11 +69,11 @@ func (m *MockedSandbox) SendRequestToSelfWithDelay(reqCode sctransaction.Request
 }
 
 func (m *MockedSandbox) Publish(msg string) {
-	fmt.Printf("MockedSandbox.Publish: %s", msg)
+	fmt.Printf("MockedSandbox.Publish: %s\n", msg)
 }
 
 func (m *MockedSandbox) Publishf(format string, args ...interface{}) {
-	fmt.Printf("MockedSandbox.Publish: "+format, args)
+	fmt.Printf("MockedSandbox.Publish: "+format+"\n", args...)
 }
 
 func (m *MockedSandbox) GetWaspLog() *logger.Logger {
