@@ -4,7 +4,6 @@
 - [x] `fairroulette dashboard`: Auto-refresh
 - [x] `fairroulette dashboard`: Display SC address balance
 - [x] deploy FairRoulette PoC
-- [ ] 1s delay in demo
 - [ ] Release binaries
 - [ ] Integration tests: end test when a specific message is published (instead
       of waiting for an arbitrary amount of seconds).
