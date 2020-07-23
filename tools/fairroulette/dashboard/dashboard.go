@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/iotaledger/wasp/packages/subscribe"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/fairroulette/client"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/labstack/gommon/log"
 	"golang.org/x/net/websocket"
 )
 
@@ -21,6 +22,8 @@ func check(err error) {
 		panic(err)
 	}
 }
+
+var clients sync.Map
 
 func Cmd(args []string) {
 	listenAddr := ":10000"
@@ -33,17 +36,61 @@ func Cmd(args []string) {
 	}
 
 	e := echo.New()
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+	}))
 	e.Use(middleware.Recover())
-	e.Debug = true
 	e.HideBanner = true
 	e.Renderer = renderer
+
+	if l, ok := e.Logger.(*log.Logger); ok {
+		l.SetHeader("${time_rfc3339} ${level}")
+	}
+	e.Logger.SetLevel(log.INFO)
 
 	e.GET("/", index)
 	e.GET("/ws", ws)
 
-	fmt.Printf("Serving dashboard on %s\n", listenAddr)
+	done := startNanomsgForwarder(e.Logger)
+	defer func() { done <- true }()
+
 	e.Logger.Fatal(e.Start(listenAddr))
+}
+
+func startNanomsgForwarder(logger echo.Logger) chan bool {
+	done := make(chan bool)
+	incomingStateMessages := make(chan []string)
+	err := subscribe.Subscribe(config.WaspNanomsg(), incomingStateMessages, done, false, "state")
+	check(err)
+	logger.Infof("[Nanomsg] connected")
+
+	scAddress := config.GetSCAddress().String()
+
+	go func() {
+		for {
+			select {
+			case msg := <-incomingStateMessages:
+				addr := msg[1]
+				if addr != scAddress {
+					continue
+				}
+				{
+					msg := strings.Join(msg, " ")
+					logger.Infof("[Nanomsg] got message %s", msg)
+					clients.Range(func(key interface{}, client interface{}) bool {
+						if client, ok := client.(chan string); ok {
+							client <- msg
+						}
+						return true
+					})
+				}
+			case <-done:
+				logger.Infof("[Nanomsg] closing connection...")
+				break
+			}
+		}
+	}()
+	return done
 }
 
 func index(c echo.Context) error {
@@ -65,25 +112,19 @@ func index(c echo.Context) error {
 func ws(c echo.Context) error {
 	websocket.Handler(func(ws *websocket.Conn) {
 		defer ws.Close()
-		messages := make(chan []string)
-		done := make(chan bool)
-		defer func() { done <- true }()
-		err := subscribe.Subscribe(config.WaspNanomsg(), messages, done, false, "vmmsg")
-		if err != nil {
-			c.Logger().Error(err)
-			return
-		}
+
+		c.Logger().Infof("[WebSocket] opened for %s", c.Request().RemoteAddr)
+		defer c.Logger().Infof("[WebSocket] closed for %s", c.Request().RemoteAddr)
+
+		client := make(chan string)
+		clients.Store(client, client)
+		defer clients.Delete(client)
+
 		for {
-			select {
-			case msg := <-messages:
-				progHash := msg[1]
-				if progHash != fairroulette.ProgramHash {
-					continue
-				}
-				_, err := ws.Write([]byte(strings.Join(msg[2:], " ")))
-				if err != nil {
-					break
-				}
+			msg := <-client
+			_, err := ws.Write([]byte(msg))
+			if err != nil {
+				break
 			}
 		}
 	}).ServeHTTP(c.Response(), c.Request())
