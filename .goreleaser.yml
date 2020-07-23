@@ -3,7 +3,6 @@
 before:
   hooks:
     - go mod download
-    - cp tools/fairroulette/README.md README-fairroulette.md
 
 builds:
   - id: wasp
@@ -58,7 +57,7 @@ archives:
         format: zip
     wrap_in_directory: true
     files:
-      - README-fairroulette.md
+      - tools/fairroulette/README.md
       - LICENSE
 
 changelog:
