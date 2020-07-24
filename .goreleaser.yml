@@ -1,0 +1,71 @@
+# Documentation: http://goreleaser.com
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: wasp
+    main: ./main.go
+    binary: wasp
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+
+  - id: fairroulette
+    main: ./tools/fairroulette/main.go
+    binary: fairroulette
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+
+archives:
+  - id: wasp
+    builds:
+      - wasp
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - readme.md
+      - config.json
+      - LICENSE
+
+  - id: fairroulette
+    name_template: "fairroulette_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    builds:
+      - fairroulette
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - tools/fairroulette/README.md
+      - LICENSE
+
+changelog:
+  skip: true
+
+release:
+  prerelease: auto
+  name_template: "{{.ProjectName}}-{{.Version}}"
+  github:
+    owner: iotaledger
+    name: wasp

@@ -95,6 +95,10 @@ var renderer = &Template{
 		<h2>CLI usage</h2>
 		<details>
 			<summary>1. Install</summary>
+			<p>Grab the latest <code>fairroulette</code> binary from the
+			<a href="https://github.com/iotaledger/wasp/releases">Releases</a> page.</p>
+			<p>-- OR --</p>
+			<p>Build from source:</p>
 <pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
 $ cd wasp
 $ go install ./tools/fairroulette
