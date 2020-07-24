@@ -8,12 +8,6 @@ import (
 
 func getSandboxFunctions(sb vmtypes.Sandbox, store *wasmtime.Store, memory *[]byte) []*wasmtime.Extern {
 	return []*wasmtime.Extern{
-		// Publish
-		wasmtime.WrapFunc(store, func(ptr int32, len int32) {
-			str := string((*memory)[ptr : ptr+len])
-			sb.Publish(str)
-		}).AsExtern(),
-
 		// GetInt64
 		//wasmtime.WrapFunc(store, func (ptr int32, len int32) (int64, int32){
 		//	name := string((*memory)[ptr:ptr+len])
@@ -31,6 +25,12 @@ func getSandboxFunctions(sb vmtypes.Sandbox, store *wasmtime.Store, memory *[]by
 		wasmtime.WrapFunc(store, func(ptr int32, len int32, val int64) {
 			name := string((*memory)[ptr : ptr+len])
 			sb.AccessState().SetInt64(kv.Key(name), val)
+		}).AsExtern(),
+
+		// Publish
+		wasmtime.WrapFunc(store, func(ptr int32, len int32) {
+			str := string((*memory)[ptr : ptr+len])
+			sb.Publish(str)
 		}).AsExtern(),
 	}
 }

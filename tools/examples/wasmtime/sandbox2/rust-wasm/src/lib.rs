@@ -15,7 +15,7 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn entry_point1() -> i32 {
-    let message = "Value has been incremented".as_bytes();
+    let message = "Value has been set".as_bytes();
     let var_name = "counter".as_bytes();
 
     unsafe {
@@ -27,6 +27,8 @@ pub extern "C" fn entry_point1() -> i32 {
         // };
         SBSetInt64(var_name.as_ptr(), var_name.len(), 1);
         SBPublish(message.as_ptr(), message.len());
+        // wrong
+        //SBPublish(buf, len);
     }
     return 0;
 }

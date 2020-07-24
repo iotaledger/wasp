@@ -27,19 +27,21 @@ func main() {
 	instance, err := wasmtime.NewInstance(store, module, getSandboxFunctions(sbox, store, &memory))
 	check(err)
 
-	memory = instance.GetExport("memory").Memory().UnsafeData()
+	mem := instance.GetExport("memory").Memory()
+	mem.DataSize()
+	memory = mem.UnsafeData()
 	if err := callExport(instance, "entry_point1"); err != nil {
 		fmt.Printf("error occured: %v\n", err)
 	}
 }
 
-func callExport(instance *wasmtime.Instance, name string) error {
+func callExport(instance *wasmtime.Instance, name string, args ...interface{}) error {
 	var exp *wasmtime.Extern
 	if exp = instance.GetExport(name); exp == nil {
 		return fmt.Errorf("can't find export '%s'\n", name)
 	}
 	run := exp.Func()
-	_, err := run.Call()
+	_, err := run.Call(args...)
 	return err
 }
 
