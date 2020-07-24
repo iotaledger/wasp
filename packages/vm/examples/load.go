@@ -1,10 +1,10 @@
 package examples
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
-	"github.com/iotaledger/wasp/packages/vm/examples/sc5"
 	"github.com/iotaledger/wasp/packages/vm/examples/sc6"
 	"github.com/iotaledger/wasp/packages/vm/examples/sc7"
 	"github.com/iotaledger/wasp/packages/vm/examples/sc8"
@@ -31,8 +31,8 @@ func LoadProcessor(progHashStr string) (vmtypes.Processor, bool) {
 	case wasmpoc.ProgramHash:
 		return wasmpoc.GetProcessor(), true
 
-	case sc5.ProgramHash:
-		return sc5.GetProcessor(), true
+	case fairauction.ProgramHash:
+		return fairauction.GetProcessor(), true
 
 	case sc6.ProgramHash:
 		return sc6.GetProcessor(), true

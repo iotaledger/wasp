@@ -53,7 +53,7 @@ type RequestAccess interface {
 	Code() sctransaction.RequestCode
 	IsAuthorisedByAddress(addr *address.Address) bool
 	Senders() []address.Address
-	Args() kv.RCodec
+	Args() kv.RCodec // TODO must return MustCodec
 }
 
 // access to token operations (txbuilder)

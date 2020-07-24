@@ -96,7 +96,7 @@ func (d *Dictionary) SetAt(key []byte, value []byte) error {
 }
 
 func (d *MustDictionary) SetAt(key []byte, value []byte) {
-	d.dict.SetAt(key, value)
+	_ = d.dict.SetAt(key, value)
 }
 
 func (d *Dictionary) DelAt(key []byte) error {
@@ -109,6 +109,10 @@ func (d *Dictionary) DelAt(key []byte) error {
 	}
 	d.kv.Del(d.getElemKey(key))
 	return nil
+}
+
+func (d *MustDictionary) DelAt(key []byte) {
+	_ = d.dict.DelAt(key)
 }
 
 func (d *Dictionary) HasAt(key []byte) (bool, error) {
@@ -144,4 +148,3 @@ func (d *Dictionary) Iterate(f func(elemKey []byte, value []byte) bool) error {
 		return f([]byte(key[len(prefix):]), value)
 	})
 }
-

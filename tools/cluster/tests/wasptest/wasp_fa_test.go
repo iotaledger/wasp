@@ -2,17 +2,17 @@ package wasptest
 
 import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"testing"
 	"time"
 )
 
-const scNum5 = 5
+const scNumFairAuction = 5
 
 // sending 5 NOP requests with 1 sec sleep between each
-func TestSC5Requests5Sec1(t *testing.T) {
+func TestFairAuction5Requests5Sec1(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSC5Requests5Sec1")
+	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           wasps.NumSmartContracts(),
@@ -29,7 +29,7 @@ func TestSC5Requests5Sec1(t *testing.T) {
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
-	sc := &wasps.SmartContractConfig[scNum5]
+	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -39,7 +39,7 @@ func TestSC5Requests5Sec1(t *testing.T) {
 
 	reqs := []*waspapi.RequestBlockJson{
 		{Address: sc.Address,
-			RequestCode: wasmpoc.RequestNOP,
+			RequestCode: fairauction.RequestInitSC,
 		},
 	}
 	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 5, reqs, 1*time.Second)

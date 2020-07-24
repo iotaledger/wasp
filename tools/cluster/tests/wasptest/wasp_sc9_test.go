@@ -12,7 +12,7 @@ const scNum9 = 9
 // sending 5 NOP requests with 1 sec sleep between each
 func TestSC9Requests5Sec1(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSC5Requests5Sec1")
+	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           wasps.NumSmartContracts(),

@@ -11,8 +11,8 @@ type builtinProcessor map[sctransaction.RequestCode]builtinEntryPoint
 type builtinEntryPoint func(ctx vmtypes.Sandbox)
 
 var Processor = builtinProcessor{
-	vmconst.RequestCodeInit:             initRequest,
 	vmconst.RequestCodeNOP:              nopRequest,
+	vmconst.RequestCodeInit:             initRequest,
 	vmconst.RequestCodeSetMinimumReward: setMinimumReward,
 	vmconst.RequestCodeSetDescription:   setDescription,
 }
