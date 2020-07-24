@@ -21,7 +21,7 @@ pub extern "C" fn entry_point1() -> i32 {
     unsafe {
         // let val = SBGetInt64(var_name.as_ptr(), var_name.len());
         // let val = if val.1==0 {
-        //     val.0
+        //       val.0
         // } else{
         //     0
         // };
