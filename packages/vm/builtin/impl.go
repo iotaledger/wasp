@@ -38,7 +38,7 @@ func stub(ctx vmtypes.Sandbox, text string) {
 	ctx.GetWaspLog().Debugw("run builtInProcessor",
 		"text", text,
 		"request code", ctx.AccessRequest().Code(),
-		"addr", ctx.GetOwnAddress().String(),
+		"addr", ctx.GetSCAddress().String(),
 		"ts", ctx.GetTimestamp(),
 		"req", reqId.String(),
 	)

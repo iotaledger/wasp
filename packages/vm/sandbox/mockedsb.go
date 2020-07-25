@@ -24,7 +24,11 @@ func (m *MockedSandbox) IsOriginState() bool {
 	panic("implement me")
 }
 
-func (m *MockedSandbox) GetOwnAddress() *address.Address {
+func (m *MockedSandbox) GetSCAddress() *address.Address {
+	panic("implement me")
+}
+
+func (m *MockedSandbox) GetOwnerAddress() *address.Address {
 	panic("implement me")
 }
 

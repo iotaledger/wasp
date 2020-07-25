@@ -48,8 +48,12 @@ func (vctx *sandbox) Rollback() {
 	vctx.StateUpdate.Clear()
 }
 
-func (vctx *sandbox) GetOwnAddress() *address.Address {
+func (vctx *sandbox) GetSCAddress() *address.Address {
 	return &vctx.Address
+}
+
+func (vctx *sandbox) GetOwnerAddress() *address.Address {
+	return &vctx.OwnerAddress
 }
 
 func (vctx *sandbox) GetTimestamp() int64 {

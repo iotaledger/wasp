@@ -28,3 +28,11 @@ func (vctx *sandbox) MoveTokensFromRequest(targetAddr *address.Address, col *bal
 func (vctx *sandbox) EraseColorFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool {
 	return vctx.TxBuilder.EraseColorFromTransaction(*targetAddr, *col, amount, vctx.RequestRef.Tx.ID()) == nil
 }
+
+func (vctx *sandbox) HarvestFeesFromRequest(amount int64) bool {
+	available := vctx.TxBuilder.GetInputBalanceFromTransaction(balance.ColorIOTA, vctx.RequestRef.Tx.ID())
+	if available < amount {
+		amount = available
+	}
+	return vctx.TxBuilder.MoveToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount) == nil
+}

@@ -14,7 +14,8 @@ import (
 type Sandbox interface {
 	// general function
 	IsOriginState() bool
-	GetOwnAddress() *address.Address
+	GetSCAddress() *address.Address
+	GetOwnerAddress() *address.Address
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 
@@ -67,6 +68,8 @@ type AccountAccess interface {
 	AvailableBalanceFromRequest(col *balance.Color) int64
 	MoveTokensFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
 	EraseColorFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
+	// send iotas to the smart contract owner
+	HarvestFeesFromRequest(amount int64) bool
 }
 
 type NewRequestParams struct {
