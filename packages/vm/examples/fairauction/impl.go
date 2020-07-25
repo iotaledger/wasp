@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io"
 )
 
 type fairAuctionProcessor map[sctransaction.RequestCode]fairAuctionEntryPoint
@@ -65,7 +64,16 @@ const (
 	VarReqSetFee                      = "fee"
 
 	// state vars
-	VarStateAuctions = "auctions"
+	VarStateAuctions   = "auctions"
+	VarStateFeeAuction = "feeAuction"
+	VarStateFeeBid     = "feeBid"
+)
+
+const (
+	MinAuctionDurationMinutes     = 1
+	FeeAuctionDefault             = 1000000
+	FeeBidDefault                 = 10000
+	AuctionDurationDefaultMinutes = 60
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -86,42 +94,94 @@ func (ep fairAuctionEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 }
 
 type AuctionInfo struct {
-	Color       balance.Color
-	NumTokens   int64
-	MinimumBid  int64
+	// color of the tokens for sale. Max one auction per color at each time is allowed
+	// all tokens are being sold as one lot
+	Color balance.Color
+	// number of tokens for sale
+	NumTokens int64
+	// minimum bid
+	MinimumBid int64
+	// any text, like "Owner of the token have a right to call me for a date"
 	Description string
-	WhenPlaced  int64
-	Duration    int64
-	Owner       address.Address
-	Bids        []*BidInfo
+	// tumestamp when auction started
+	WhenStarted int64
+	// duration of the auctions in minutes. Should be no less than MinAuctionDurationMinutes
+	DurationMinutes int64
+	// address which issued StartAuction transaction
+	Owner address.Address
+	// list of bids
+	Bids []*BidInfo
 }
 
 type BidInfo struct {
-	Total  int64
+	// total sum of the bid = total amount of iotas available in the request - 1 - SC reward - ServiceFeeBid
+	Total int64
+	// address which sent the bid
 	Bidder address.Address
+	// timestamp
+	WhenPlaced int64
 }
 
 func initSC(ctx vmtypes.Sandbox) {
 }
 
+// startAuction processes the StartAuction request
 func startAuction(ctx vmtypes.Sandbox) {
-	ctx.Publish("startAuction")
+	ctx.Publish("startAuction begin")
+
+	// find out who starts the action
+	sender := takeSender(ctx)
+	if sender == nil {
+		// wrong transaction, hardReject (nothing is processed and nothing is refunded)
+		return
+	}
+	// get currently set service fee values
+	feeAuction, _ := getFeeValues(ctx)
 
 	// validate request arguments
 	reqArgs := ctx.AccessRequest().Args()
+
+	// determine color of the token
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil || !ok {
 		// incorrect request arguments
+		gentlyRejectRequest(ctx, sender, feeAuction)
 		return
 	}
-	col := (balance.Color)(*colh)
-	if col == balance.ColorIOTA || col == balance.ColorNew {
+	colorForSale := (balance.Color)(*colh)
+	if colorForSale == balance.ColorIOTA || colorForSale == balance.ColorNew {
 		// reserved color not allowed
+		gentlyRejectRequest(ctx, sender, feeAuction)
 		return
 	}
-	duration, ok, err := reqArgs.GetInt64(VarReqStartAuctionDurationMinutes)
-	if err != nil || !ok {
+
+	// determine amount of colored tokens sent for sale
+	tokensForSale := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&colorForSale)
+	if tokensForSale == 0 {
+		// no tokens transferred
+		gentlyRejectRequest(ctx, sender, feeAuction)
 		return
+	}
+
+	// check if enough iotas for the auction fee
+	if ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA) < feeAuction {
+		// not enough fees
+		// return tokens for sale and reject transaction
+		ctx.AccessOwnAccount().MoveTokensFromRequest(sender, &colorForSale, tokensForSale)
+		return
+	}
+
+	// determine duration of the auction. Take default if no set in request and ensure minimum
+	duration, ok, err := reqArgs.GetInt64(VarReqStartAuctionDurationMinutes)
+	if err != nil {
+		// fatal error
+		return
+	}
+	if !ok {
+		duration = AuctionDurationDefaultMinutes
+	}
+	if duration < MinAuctionDurationMinutes {
+		duration = MinAuctionDurationMinutes
 	}
 	description, ok, err := reqArgs.GetString(VarReqStartAuctionDescription)
 	if err != nil {
@@ -131,45 +191,41 @@ func startAuction(ctx vmtypes.Sandbox) {
 		description = "N/A"
 	}
 
-	// take input addresses of the request transaction. Must be exactly 1 otherwise.
-	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	senders := ctx.AccessRequest().Senders()
-	if len(senders) != 1 {
-		return
-	}
-	sender := senders[0]
-
-	numTokens := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&col)
-	if numTokens == 0 {
-		// no tokens to sale. Ignore
-		return
-	}
+	// find out if auction for this color already exist in the dictionary
 	auctDict := ctx.AccessState().GetDictionary(VarStateAuctions)
-	if b := auctDict.GetAt(col.Bytes()); b != nil {
-		// already exists. Ignore sale auction
-		// TODO return colored tokens
+	if b := auctDict.GetAt(colorForSale.Bytes()); b != nil {
+		// auction already exists. Ignore sale auction. Return tokens for sale
+		ctx.AccessOwnAccount().MoveTokensFromRequest(sender, &colorForSale, tokensForSale)
+		gentlyRejectRequest(ctx, sender, feeAuction)
+
 		return
 	}
+	// create record for the new auction in the dictionary
 	aiData := util.MustBytes(&AuctionInfo{
-		Color:       col,
-		NumTokens:   numTokens,
-		Description: description,
-		WhenPlaced:  ctx.GetTimestamp(),
-		Owner:       sender,
+		Color:           colorForSale,
+		NumTokens:       tokensForSale,
+		Description:     description,
+		WhenStarted:     ctx.GetTimestamp(),
+		DurationMinutes: duration,
+		Owner:           *sender,
 	})
-	auctDict.SetAt(col.Bytes(), aiData)
+	auctDict.SetAt(colorForSale.Bytes(), aiData)
 
+	// prepare and send timelocked for the duration FinalizeAuction request to itself
 	args := kv.NewMap()
-	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&col))
-
-	// send timelocked request to run an auction
+	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
-	ctx.Publish("startAuction")
+	ctx.Publish("startAuction end")
 }
 
+// removeAuction processes remove auction request
 func removeAuction(ctx vmtypes.Sandbox) {
+	ctx.Publish("removeAuction begin")
+
 	reqArgs := ctx.AccessRequest().Args()
+
+	// determine color of the auction
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil || !ok {
 		// incorrect request arguments
@@ -180,20 +236,121 @@ func removeAuction(ctx vmtypes.Sandbox) {
 		// reserved color not allowed
 		return
 	}
+
+	// find the record for the auction by color
 	auctDict := ctx.AccessState().GetDictionary(VarStateAuctions)
-	if b := auctDict.GetAt(col.Bytes()); b != nil {
+	data := auctDict.GetAt(col.Bytes())
+	if data == nil {
+		// nothing to remove
+		return
+	}
+	// decode the record
+	ai := &AuctionInfo{}
+	if err := ai.Read(bytes.NewReader(data)); err != nil {
+		// internal error
+		return
+	}
+	if !ctx.AccessRequest().IsAuthorisedByAddress(&ai.Owner) {
+		// not authorised
+		return
+	}
+	// return bid amounts to bidders
+	account := ctx.AccessOwnAccount()
+	for _, bi := range ai.Bids {
+		account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+	}
+	// return tokens for sale to the auction owner
+	account.MoveTokens(&ai.Owner, &ai.Color, ai.NumTokens)
+	// delete auction record
+	auctDict.DelAt(col.Bytes())
+
+	ctx.Publish("removeAuction success")
+}
+
+// finalizeAuction selects the winner and sends him tokens.
+// return bid amounts to other bidders
+func finalizeAuction(ctx vmtypes.Sandbox) {
+	ctx.Publish("finalizeAuction begin")
+
+	accessReq := ctx.AccessRequest()
+	if !accessReq.IsAuthorisedByAddress(ctx.GetOwnAddress()) {
+		// finalizeAuction request can be sent only by the smart contract to itself
+		return
+	}
+	reqArgs := accessReq.Args()
+
+	// determine color of the auction to finalize
+	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
+	if err != nil || !ok {
+		// incorrect request arguments
+		return
+	}
+	col := (balance.Color)(*colh)
+	if col == balance.ColorIOTA || col == balance.ColorNew {
+		// reserved color not allowed
+		return
+	}
+
+	// find the record for the auction by color
+	auctDict := ctx.AccessState().GetDictionary(VarStateAuctions)
+	data := auctDict.GetAt(col.Bytes())
+	if data == nil {
+		// auction with this color does not exist, probably removed
+		return
+	}
+
+	account := ctx.AccessOwnAccount()
+	// decode the Action record
+	ai := &AuctionInfo{}
+	if err := ai.Read(bytes.NewReader(data)); err != nil {
+		// internal error
+		return
+	}
+	if len(ai.Bids) == 0 {
+		// no bids
+		// return tokens to owner
+		account.MoveTokens(&ai.Owner, &ai.Color, ai.NumTokens)
+		// delete auction record
 		auctDict.DelAt(col.Bytes())
 		return
 	}
-	ctx.Publish("removeAuction")
-}
+	// find the winning amount
+	winningBid := int64(0)
+	for _, bi := range ai.Bids {
+		if bi.Total > winningBid {
+			winningBid = bi.Total
+		}
+	}
+	var winner *BidInfo
+	var winnerIndex int
+	for i, bi := range ai.Bids {
+		if bi.Total == winningBid {
+			// taking the first among equals
+			winner = bi
+			winnerIndex = i
+			break
+		}
+	}
+	if winner == nil {
+		// inconsistency
+		return
+	}
+	// send bid sum to the owner of the auction
+	account.MoveTokens(&ai.Owner, &balance.ColorIOTA, winningBid)
+	// send tokens to the winner
+	account.MoveTokens(&winner.Bidder, &ai.Color, ai.NumTokens)
+	// return bids to losing bidders
 
-func finalizeAuction(ctx vmtypes.Sandbox) {
-	ctx.Publish("finalizeAuction")
+	for i, bi := range ai.Bids {
+		if i != winnerIndex {
+			account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+		}
+	}
 
-	// TODO select thw winner. If two bids are equal, select the one with smaller timestamp
-	// send colored tokens to the winner
-	// return bids to others (but not the fee)
+	// delete auction record
+	auctDict.DelAt(col.Bytes())
+
+	ctx.Publish("finalizeAuction success")
 }
 
 func setServiceFeeAuction(ctx vmtypes.Sandbox) {
@@ -257,94 +414,32 @@ func placeBid(ctx vmtypes.Sandbox) {
 	auctDict.SetAt(col[:], data)
 }
 
-// ser/de ActionInfo
-
-func (ai *AuctionInfo) Write(w io.Writer) error {
-	if _, err := w.Write(ai.Color[:]); err != nil {
-		return err
+func takeSender(ctx vmtypes.Sandbox) *address.Address {
+	// take input addresses of the request transaction. Must be exactly 1 otherwise.
+	// Theoretically the transaction may have several addresses in inputs, then it is ignored
+	senders := ctx.AccessRequest().Senders()
+	if len(senders) != 1 {
+		// wrong transaction, hardReject (nothing is processed and nothing is refunded)
+		return nil
 	}
-	if err := util.WriteInt64(w, ai.NumTokens); err != nil {
-		return err
-	}
-	if err := util.WriteInt64(w, ai.MinimumBid); err != nil {
-		return err
-	}
-	if err := util.WriteString16(w, ai.Description); err != nil {
-		return err
-	}
-	if err := util.WriteInt64(w, ai.WhenPlaced); err != nil {
-		return err
-	}
-	if err := util.WriteInt64(w, ai.Duration); err != nil {
-		return err
-	}
-	if _, err := w.Write(ai.Owner[:]); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(ai.Bids))); err != nil {
-		return err
-	}
-	for _, bi := range ai.Bids {
-		if err := bi.Write(w); err != nil {
-			return err
-		}
-	}
-	return nil
+	sender := senders[0]
+	return &sender
 }
 
-func (ai *AuctionInfo) Read(r io.Reader) error {
-	var err error
-	if err = util.ReadColor(r, &ai.Color); err != nil {
-		return err
-	}
-	if err = util.ReadInt64(r, &ai.NumTokens); err != nil {
-		return err
-	}
-	if err = util.ReadInt64(r, &ai.MinimumBid); err != nil {
-		return err
-	}
-	if ai.Description, err = util.ReadString16(r); err != nil {
-		return err
-	}
-	if err = util.ReadInt64(r, &ai.WhenPlaced); err != nil {
-		return err
-	}
-	if err = util.ReadInt64(r, &ai.Duration); err != nil {
-		return err
-	}
-	if err = util.ReadAddress(r, &ai.Owner); err != nil {
-		return err
-	}
-	var size uint16
-	if err := util.ReadUint16(r, &size); err != nil {
-		return err
-	}
-	ai.Bids = make([]*BidInfo, size)
-	for i := range ai.Bids {
-		ai.Bids[i] = &BidInfo{}
-		if err := ai.Bids[i].Read(r); err != nil {
-			return err
-		}
-	}
-	return nil
+// gentlyRejectRequest returns all tokens to the sender minus sunkFee
+func gentlyRejectRequest(ctx vmtypes.Sandbox, sender *address.Address, sunkFee int64) {
+
 }
 
-func (bi *BidInfo) Write(w io.Writer) error {
-	if err := util.WriteInt64(w, bi.Total); err != nil {
-		return err
+func getFeeValues(ctx vmtypes.Sandbox) (int64, int64) {
+	stateAccess := ctx.AccessState()
+	feeAuction, ok := stateAccess.GetInt64(VarStateFeeAuction)
+	if !ok {
+		feeAuction = FeeAuctionDefault
 	}
-	if _, err := w.Write(bi.Bidder[:]); err != nil {
-		return err
+	feeBid, ok := stateAccess.GetInt64(VarStateFeeBid)
+	if !ok {
+		feeAuction = FeeBidDefault
 	}
-	return nil
-}
-
-func (bi *BidInfo) Read(r io.Reader) error {
-	if err := util.ReadInt64(r, &bi.Total); err != nil {
-		return err
-	}
-	if err := util.ReadAddress(r, &bi.Bidder); err != nil {
-		return err
-	}
-	return nil
+	return feeAuction, feeBid
 }
