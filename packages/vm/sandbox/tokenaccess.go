@@ -17,6 +17,14 @@ func (vctx *sandbox) EraseColor(targetAddr *address.Address, col *balance.Color,
 	return vctx.TxBuilder.EraseColor(*targetAddr, *col, amount) == nil
 }
 
+func (vctx *sandbox) HarvestFees(amount int64) bool {
+	available := vctx.TxBuilder.GetInputBalance(balance.ColorIOTA)
+	if available < amount {
+		amount = available
+	}
+	return vctx.TxBuilder.MoveToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount) == nil
+}
+
 func (vctx *sandbox) AvailableBalanceFromRequest(col *balance.Color) int64 {
 	return vctx.TxBuilder.GetInputBalanceFromTransaction(*col, vctx.RequestRef.Tx.ID())
 }
@@ -30,9 +38,10 @@ func (vctx *sandbox) EraseColorFromRequest(targetAddr *address.Address, col *bal
 }
 
 func (vctx *sandbox) HarvestFeesFromRequest(amount int64) bool {
-	available := vctx.TxBuilder.GetInputBalanceFromTransaction(balance.ColorIOTA, vctx.RequestRef.Tx.ID())
+	txid := vctx.RequestRef.Tx.ID()
+	available := vctx.TxBuilder.GetInputBalanceFromTransaction(balance.ColorIOTA, txid)
 	if available < amount {
 		amount = available
 	}
-	return vctx.TxBuilder.MoveToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount) == nil
+	return vctx.TxBuilder.MoveToAddressFromTransaction(vctx.OwnerAddress, balance.ColorIOTA, amount, txid) == nil
 }

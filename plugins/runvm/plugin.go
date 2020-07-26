@@ -2,6 +2,7 @@ package runvm
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
@@ -90,13 +91,10 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		return
 	}
 
-	// erase all request tokens
-	for _, reqRef := range ctx.Requests {
-		if err := txb.EraseColor(ctx.Address, (balance.Color)(reqRef.Tx.ID()), 1); err != nil {
-			ctx.Log.Debugf("handleRequestTokens: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
-			ctx.OnFinish(err)
-			return
-		}
+	// erase all request tokens to reward or smart contract address
+	if err := handleRequestTokens(ctx, txb); err != nil {
+		ctx.OnFinish(err)
+		return
 	}
 
 	vmctx := &vm.VMContext{
@@ -182,4 +180,22 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	)
 	// call back
 	ctx.OnFinish(nil)
+}
+
+func handleRequestTokens(ctx *vm.VMTask, txb *txbuilder.Builder) error {
+	var targetAddress address.Address
+
+	// if node rewards are enabled, send request tokens to it. Otherwise send them to SC address
+	if ctx.RewardAddress[0] != 0 && ctx.MinimumReward > 0 {
+		targetAddress = ctx.RewardAddress
+	} else {
+		targetAddress = ctx.Address
+	}
+	for _, reqRef := range ctx.Requests {
+		if err := txb.EraseColor(targetAddress, (balance.Color)(reqRef.Tx.ID()), 1); err != nil {
+			ctx.Log.Debugf("handleRequestTokens: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
+			return err
+		}
+	}
+	return nil
 }

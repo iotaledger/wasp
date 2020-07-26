@@ -3,7 +3,6 @@ package runvm
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
@@ -129,16 +128,21 @@ func handleRewards(ctx *vm.VMContext) bool {
 		return true
 	}
 
-	totalIotaOutput := sctransaction.OutputValueOfColor(ctx.RequestRef.Tx, ctx.Address, balance.ColorIOTA)
 	var err error
 
+	reqTxId := ctx.RequestRef.Tx.ID()
+	// determining how many iotas have been left in the request transaction
+	availableIotas := ctx.TxBuilder.GetInputBalanceFromTransaction(balance.ColorIOTA, reqTxId)
+
 	var proceed bool
-	if totalIotaOutput >= ctx.MinimumReward {
-		err = ctx.TxBuilder.MoveToAddress(ctx.RewardAddress, balance.ColorIOTA, ctx.MinimumReward)
+	// taking into account 1 request token which will be recolored back to iota
+	// and will remain in the smart contract address
+	if availableIotas+1 >= ctx.MinimumReward {
+		err = ctx.TxBuilder.MoveToAddressFromTransaction(ctx.RewardAddress, balance.ColorIOTA, ctx.MinimumReward, reqTxId)
 		proceed = true
 	} else {
-		// if reward is not enough, the state update will be empty, i.e. NOP (but the fee will be taken)
-		err = ctx.TxBuilder.MoveToAddress(ctx.RewardAddress, balance.ColorIOTA, totalIotaOutput)
+		// if reward is not enough, the state update will be empty, i.e. NOP (the fee will be taken)
+		err = ctx.TxBuilder.MoveToAddressFromTransaction(ctx.RewardAddress, balance.ColorIOTA, availableIotas, reqTxId)
 		proceed = false
 	}
 	if err != nil {

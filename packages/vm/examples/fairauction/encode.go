@@ -24,7 +24,13 @@ func (ai *AuctionInfo) Write(w io.Writer) error {
 	if err := util.WriteInt64(w, ai.DurationMinutes); err != nil {
 		return err
 	}
-	if _, err := w.Write(ai.Owner[:]); err != nil {
+	if _, err := w.Write(ai.AuctionOwner[:]); err != nil {
+		return err
+	}
+	if err := util.WriteInt64(w, ai.TotalDeposit); err != nil {
+		return err
+	}
+	if err := util.WriteInt64(w, ai.OwnerMargin); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(len(ai.Bids))); err != nil {
@@ -58,7 +64,13 @@ func (ai *AuctionInfo) Read(r io.Reader) error {
 	if err = util.ReadInt64(r, &ai.DurationMinutes); err != nil {
 		return err
 	}
-	if err = util.ReadAddress(r, &ai.Owner); err != nil {
+	if err = util.ReadAddress(r, &ai.AuctionOwner); err != nil {
+		return err
+	}
+	if err = util.ReadInt64(r, &ai.TotalDeposit); err != nil {
+		return err
+	}
+	if err = util.ReadInt64(r, &ai.OwnerMargin); err != nil {
 		return err
 	}
 	var size uint16
