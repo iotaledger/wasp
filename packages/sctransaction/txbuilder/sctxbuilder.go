@@ -56,7 +56,47 @@ func (txb *Builder) Clone() *Builder {
 	return ret
 }
 
-func (txb *Builder) AddOriginStateBlock(stateHash *hashing.HashValue, scAddress *address.Address) error {
+// CreateStateBlock assumes txb contain balances of the smart contract with 'color'.
+// It adds state block and moves smart contract token to the same address.
+// State block will have 0 state index, 0 timestamp, nil stateHash
+// The function is used by VM wrapper to create new state transaction
+func (txb *Builder) CreateStateBlock(color balance.Color) error {
+	if txb.stateBlock != nil {
+		return errors.New("can't set state block twice")
+	}
+	if color == balance.ColorNew {
+		return errors.New("can't use 'ColorNew'")
+	}
+
+	if txb.GetInputBalance(color) == 0 {
+		return fmt.Errorf("non existent smart contract token with color %s", color.String())
+	}
+	foundAddress := false
+	var scAddress address.Address
+	txb.ForEachInputBalance(func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool {
+		if util.BalanceOfColor(bals, color) > 0 {
+			scAddress = oid.Address()
+			foundAddress = true
+			return false
+		}
+		return true
+	})
+	if !foundAddress {
+		return errorWrongScToken
+	}
+	if err := txb.MoveToAddress(scAddress, color, 1); err != nil {
+		return err
+	}
+	txb.stateBlock = sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
+		Color: color,
+	})
+	return nil
+}
+
+// CreateOriginStateBlock initalizes origin state transaction of the smart contract
+// with address scAddress in the builder. It mints smart contract token, sets origin state hash
+// It sets state index and timestamp to 0
+func (txb *Builder) CreateOriginStateBlock(stateHash *hashing.HashValue, scAddress *address.Address) error {
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
@@ -72,46 +112,11 @@ func (txb *Builder) AddOriginStateBlock(stateHash *hashing.HashValue, scAddress 
 	return nil
 }
 
-// CreateStateBlock creates state block and transfers smart contract token.
-// state block will have 0 state index, 0 timestamp, nil stateHash
-func (txb *Builder) CreateStateBlock(color balance.Color) error {
-	return txb.AddStateBlock(sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
-		Color: color,
-	}))
-}
-
 func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashValue, timestamp int64) error {
 	if txb.stateBlock == nil {
 		return fmt.Errorf("state block not set")
 	}
 	txb.stateBlock.WithStateParams(stateIndex, stateHash, timestamp)
-	return nil
-}
-
-func (txb *Builder) AddStateBlock(stateBlock *sctransaction.StateBlock) error {
-	if stateBlock.Color() == balance.ColorNew {
-		return errors.New("can't use 'ColorNew'")
-	}
-	if txb.GetInputBalance(stateBlock.Color()) == 0 {
-		return fmt.Errorf("non existent smart contract token with color %s", stateBlock.Color().String())
-	}
-	foundAddress := false
-	var scAddress address.Address
-	txb.ForEachInputBalance(func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool {
-		if util.BalanceOfColor(bals, stateBlock.Color()) > 0 {
-			scAddress = oid.Address()
-			foundAddress = true
-			return false
-		}
-		return true
-	})
-	if !foundAddress {
-		return errorWrongScToken
-	}
-	if err := txb.MoveToAddress(scAddress, stateBlock.Color(), 1); err != nil {
-		return err
-	}
-	txb.stateBlock = stateBlock
 	return nil
 }
 

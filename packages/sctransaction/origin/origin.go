@@ -29,7 +29,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 		return nil, err
 	}
 	stateHash := originState.Hash()
-	if err := txb.AddOriginStateBlock(&stateHash, &par.Address); err != nil {
+	if err := txb.CreateOriginStateBlock(&stateHash, &par.Address); err != nil {
 		return nil, err
 	}
 

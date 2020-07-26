@@ -167,7 +167,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		// no tokens transferred
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
 
-		ctx.Publish("startAuction: exit 3")
+		ctx.Publish("startAuction exit 3: no tokens for sale")
 		return
 	}
 

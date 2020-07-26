@@ -579,7 +579,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 	return pass
 }
 
-func (cluster *Cluster) VerifySCAddressBalances(addr address.Address, expect map[balance.Color]int64) bool {
+func (cluster *Cluster) VerifyAddressBalances(addr address.Address, expect map[balance.Color]int64) bool {
 	host := cluster.Config.GoshimmerApiHost()
 	allOuts, err := nodeapi.GetAccountOutputs(host, &addr)
 	if err != nil {

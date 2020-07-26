@@ -62,7 +62,7 @@ func TestSend1Bet(t *testing.T) {
 	scAddr, err := address.FromBase58(sc.Address)
 	assert.NoError(t, err)
 
-	if !wasps.VerifySCAddressBalances(scAddr, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 10001,
 		scColor:           1,
 	}) {
@@ -122,7 +122,7 @@ func TestSend5Bets(t *testing.T) {
 	scAddr, err := address.FromBase58(sc.Address)
 	assert.NoError(t, err)
 
-	if !wasps.VerifySCAddressBalances(scAddr, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 50005,
 		scColor:           1,
 	}) {
@@ -195,14 +195,14 @@ func TestSendBetsAndPlay(t *testing.T) {
 	assert.NoError(t, err)
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 
-	if !wasps.VerifySCAddressBalances(scAddr, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 7,
 		scColor:           1,
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifySCAddressBalances(ownerAddr, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 1000000000 - 8,
 	}) {
 		t.Fail()
