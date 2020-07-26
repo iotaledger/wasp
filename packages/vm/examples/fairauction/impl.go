@@ -375,7 +375,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) {
 		margin = OwnerMarginMax
 	}
 	ctx.AccessState().SetInt64(VarStateOwnerMarginPromille, margin)
-	ctx.Publish("setOwnerMargin: success")
+	ctx.Publishf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
 }
 
 // placeBid is a request to place a bid in the auction for the particular color

@@ -10,7 +10,7 @@ import (
 const scNumFairAuction = 5
 
 // sending 5 NOP requests with 1 sec sleep between each
-func TestFairAuction5Requests5Sec1(t *testing.T) {
+func TestFairAuctionSetOwnerMargin(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
@@ -18,8 +18,8 @@ func TestFairAuction5Requests5Sec1(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          6,
-		"request_out":         7,
+		"request_in":          2,
+		"request_out":         3,
 		"state":               -1, // must be 6 or 7
 		"vmmsg":               -1,
 	})
@@ -39,10 +39,13 @@ func TestFairAuction5Requests5Sec1(t *testing.T) {
 
 	reqs := []*waspapi.RequestBlockJson{
 		{Address: sc.Address,
-			RequestCode: fairauction.RequestInitSC,
+			RequestCode: fairauction.RequestSetOwnerMargin,
+			Vars: map[string]interface{}{
+				fairauction.VarReqOwnerMargin: 100,
+			},
 		},
 	}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 5, reqs, 1*time.Second)
+	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
