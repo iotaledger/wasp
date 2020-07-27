@@ -50,7 +50,7 @@ const (
 const (
 	MinAuctionDurationMinutes     = 1
 	AuctionDurationDefaultMinutes = 60
-	OwnerMarginDefault            = 30  // 3%
+	OwnerMarginDefault            = 50  // 5%
 	OwnerMarginMin                = 5   // minimum 0.5%
 	OwnerMarginMax                = 100 // max 10%
 )
@@ -245,6 +245,9 @@ func startAuction(ctx vmtypes.Sandbox) {
 	})
 	auctions.SetAt(colorForSale.Bytes(), aiData)
 
+	ctx.Publishf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d",
+		colorForSale.String(), tokensForSale, minimumBid, ownerMargin)
+
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	args := kv.NewMap()
 	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
@@ -303,19 +306,6 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	account := ctx.AccessOwnAccount()
 	ownerFee := (ai.MinimumBid * ai.OwnerMargin) / 1000
 
-	if len(ai.Bids) == 0 {
-		// no bids
-		// return tokens to owner
-		account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens)
-		//
-		ctx.AccessOwnAccount().HarvestFees(ownerFee)
-
-		// delete auction record
-		auctDict.DelAt(col.Bytes())
-
-		ctx.Publish("finalizeAuction: exit 5: no bids")
-		return
-	}
 	// find the winning amount and determine respective ownerFee
 	winningAmount := int64(0)
 	for _, bi := range ai.Bids {
@@ -340,23 +330,38 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	for i, bi := range ai.Bids {
-		if i == winnerIndex && winner != nil {
-			// send bid and return deposit sum less fees to the owner of the auction
-			account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
-			// send tokens to the winner
-			account.MoveTokens(&winner.Bidder, &ai.Color, ai.NumTokens)
-		} else {
-			// return staked sum to the non-winner
+	ctx.Publishf("finalizeAuction: harvesting SC owner fee = %d", ownerFee)
+	ctx.AccessOwnAccount().HarvestFees(ownerFee)
+
+	if winner != nil {
+		// send sold tokens to the winner
+		account.MoveTokens(&ai.Bids[winnerIndex].Bidder, &ai.Color, ai.NumTokens)
+		// send winning amount and return deposit sum less fees to the owner of the auction
+		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
+
+		for i, bi := range ai.Bids {
+			if i != winnerIndex {
+				// return staked sum to the non-winner
+				account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+			}
+		}
+		ctx.Publishf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
+	} else {
+		// return unsold tokens to auction owner
+		account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens)
+		// return deposit less fees
+		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee)
+		// return bids to bidders
+		for _, bi := range ai.Bids {
 			account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
 		}
+		ctx.Publishf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids))
 	}
-	ctx.AccessOwnAccount().HarvestFees(ownerFee)
 
 	// delete auction record
 	auctDict.DelAt(col.Bytes())
 
-	ctx.Publish("finalizeAuction: success")
+	ctx.Publishf("finalizeAuction: success")
 }
 
 // setOwnerMargin is a request to set the service fee to place a bid
@@ -381,7 +386,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) {
 
 // placeBid is a request to place a bid in the auction for the particular color
 // The request transaction must contain at least:
-// - 1 request token + VarStateFeeBid + 1 Bid amount/rise amount
+// - 1 request token + Bid amount/rise amount
 // In case it is not the first bid by this bidder, respective iotas are treated as
 // a rise of the bid and is added to the total
 // Arguments:
@@ -497,10 +502,13 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 func getOwnerMarginPromille(ctx vmtypes.Sandbox) int64 {
 	ownerMargin, ok := ctx.AccessState().GetInt64(VarStateOwnerMarginPromille)
 	if !ok {
-		ownerMargin = OwnerMarginMin
+		ownerMargin = OwnerMarginDefault
 	} else {
 		if ownerMargin > OwnerMarginMax {
 			ownerMargin = OwnerMarginMax
+		}
+		if ownerMargin < OwnerMarginMin {
+			ownerMargin = OwnerMarginMin
 		}
 	}
 	return ownerMargin
