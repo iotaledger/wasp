@@ -8,14 +8,13 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
 const scNumFairAuction = 5
 
-func TestFairAuctionSetOwnerMargin(t *testing.T) {
+func TestFASetOwnerMargin(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
@@ -42,16 +41,17 @@ func TestFairAuctionSetOwnerMargin(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
+	scAddr, err := address.FromBase58(sc.Address)
+	check(err, t)
+
 	// send request SetOwnerMargin
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
-			RequestCode: fairauction.RequestSetOwnerMargin,
-			Vars: map[string]interface{}{
-				fairauction.VarReqOwnerMargin: 100,
-			},
+	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddr,
+		RequestCode: fairauction.RequestSetOwnerMargin,
+		Vars: map[string]interface{}{
+			fairauction.VarReqOwnerMargin: 100,
 		},
-	}
-	err = SendRequests(wasps, sc.OwnerIndexUtxodb, reqs)
+	})
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -61,7 +61,7 @@ func TestFairAuctionSetOwnerMargin(t *testing.T) {
 	}
 }
 
-func TestFairAuction1Color(t *testing.T) {
+func TestFA1Color0Bids(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
@@ -69,9 +69,9 @@ func TestFairAuction1Color(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          -1,
-		"request_out":         -1,
-		"state":               -1, // must be 6 or 7
+		"request_in":          3,
+		"request_out":         4,
+		"state":               -1,
 		"vmmsg":               -1,
 	})
 	check(err, t)
@@ -93,7 +93,7 @@ func TestFairAuction1Color(t *testing.T) {
 	// create 1 colored token
 	color1, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
 	check(err, t)
-	// owner margin = 3%
+
 	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 1000000000 - 3,
@@ -103,18 +103,23 @@ func TestFairAuction1Color(t *testing.T) {
 		return
 	}
 
-	// create auction
-	req := &waspapi.RequestBlockJson{
-		Address:     sc.Address,
+	scAddr, err := address.FromBase58(sc.Address)
+	check(err, t)
+
+	// send request StartAuction
+	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
-		AmountIotas: 3 + 1, // TODO add colored token
 		Vars: map[string]interface{}{
-			fairauction.VarReqAuctionColor:                string(color1.Bytes()),
+			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
 			fairauction.VarReqStartAuctionDurationMinutes: 1,
 		},
-	}
-	err = SendRequests(wasps, sc.OwnerIndexUtxodb, []*waspapi.RequestBlockJson{req})
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 5, // 5% from 100
+			*color1:           1, // token for sale
+		},
+	})
 	check(err, t)
 
 	wasps.CollectMessages(70 * time.Second)
@@ -122,18 +127,121 @@ func TestFairAuction1Color(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	scAddr, err := address.FromBase58(sc.Address)
-	assert.NoError(t, err)
 
 	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 7,
+		// +1 SC token
 	}) {
 		t.Fail()
 	}
 
 	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 7,
+		balance.ColorIOTA: 1000000000 - 8 - 1,
 		*color1:           1,
+	}) {
+		t.Fail()
+	}
+}
+
+func TestFA2Color0Bids(t *testing.T) {
+	// setup
+	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           wasps.NumSmartContracts(),
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          5,
+		"request_out":         6,
+		"state":               -1,
+		"vmmsg":               -1,
+	})
+	check(err, t)
+
+	err = PutBootupRecords(wasps)
+	check(err, t)
+
+	// number 5 is "Wasm VM PoC program" in cluster.json
+	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	err = Activate1SC(wasps, sc)
+	check(err, t)
+
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
+
+	time.Sleep(1 * time.Second)
+
+	// create 1 colored token
+	color1, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
+	check(err, t)
+	color2, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
+	check(err, t)
+
+	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 4, // 2 to SC, 2 to new color
+		*color1:           1,
+		*color2:           1,
+	}) {
+		t.Fail()
+		return
+	}
+
+	scAddr, err := address.FromBase58(sc.Address)
+	check(err, t)
+
+	// send request StartAuction for color1
+	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddr,
+		RequestCode: fairauction.RequestStartAuction,
+		Vars: map[string]interface{}{
+			fairauction.VarReqAuctionColor:                color1,
+			fairauction.VarReqStartAuctionMinimumBid:      100,
+			fairauction.VarReqStartAuctionDurationMinutes: 1,
+		},
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 5, // 5% from 100
+			*color1:           1, // token for sale
+		},
+	})
+	check(err, t)
+
+	time.Sleep(2 * time.Second)
+
+	// send request StartAuction for color2
+	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddr,
+		RequestCode: fairauction.RequestStartAuction,
+		Vars: map[string]interface{}{
+			fairauction.VarReqAuctionColor:                color2,
+			fairauction.VarReqStartAuctionMinimumBid:      100,
+			fairauction.VarReqStartAuctionDurationMinutes: 1,
+		},
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 5, // 5% from 100
+			*color2:           1, // token for sale
+		},
+	})
+	check(err, t)
+
+	wasps.CollectMessages(70 * time.Second)
+
+	if !wasps.Report() {
+		t.Fail()
+	}
+
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 13,
+		// +1 SC token
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 14 - 2,
+		*color1:           1,
+		*color2:           1,
 	}) {
 		t.Fail()
 	}

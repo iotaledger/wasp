@@ -9,9 +9,10 @@
       of waiting for an arbitrary amount of seconds).
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
-- [ ] implement mocked empty Sandbox for VM unit testing 
+- [ ] implement framework with mocked Sandbox for smart contract unit testing 
 - [ ] `Oracle Data Bulletin Board` description
 - [ ] `FairRoulette` with fees/rewards
+- [ ] test access nodes
 - [ ] test several contracts
 - [ ] test random confirmation delays
 - [ ] test big committees (~100 nodes)

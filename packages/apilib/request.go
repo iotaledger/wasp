@@ -8,12 +8,92 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"strconv"
 )
 
+type CreateSimpleRequestParams struct {
+	SCAddress   *address.Address
+	RequestCode sctransaction.RequestCode
+	Timelock    uint32
+	Transfer    map[balance.Color]int64 // does not include request token
+	Vars        map[string]interface{}  ` `
+}
+
+func CreateSimpleRequest(node string, sigScheme signaturescheme.SignatureScheme, par CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
+	senderAddr := sigScheme.Address()
+	allOuts, err := nodeapi.GetAccountOutputs(node, &senderAddr)
+	if err != nil {
+		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
+	}
+
+	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	if err != nil {
+		return nil, err
+	}
+
+	reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
+
+	args := convertArgs(par.Vars)
+	if args == nil {
+		return nil, errors.New("wrong arguments")
+	}
+	reqBlk.SetArgs(args)
+
+	err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := txb.Build(false)
+	if err != nil {
+		return nil, err
+	}
+	tx.Sign(sigScheme)
+	return tx, nil
+}
+
+func convertArgs(vars map[string]interface{}) kv.Map {
+	args := kv.NewMap()
+	codec := args.Codec()
+	for k, v := range vars {
+		key := kv.Key(k)
+		switch vt := v.(type) {
+		case int:
+			codec.SetInt64(key, int64(vt))
+		case byte:
+			codec.SetInt64(key, int64(vt))
+		case int16:
+			codec.SetInt64(key, int64(vt))
+		case int32:
+			codec.SetInt64(key, int64(vt))
+		case int64:
+			codec.SetInt64(key, vt)
+		case uint16:
+			codec.SetInt64(key, int64(vt))
+		case uint32:
+			codec.SetInt64(key, int64(vt))
+		case uint64:
+			codec.SetInt64(key, int64(vt))
+		case string:
+			codec.SetString(key, vt)
+		case []byte:
+			codec.Set(key, vt)
+		case *hashing.HashValue:
+			args.Codec().SetHashValue(key, vt)
+		case *address.Address:
+			args.Codec().Set(key, vt.Bytes())
+		case *balance.Color:
+			args.Codec().Set(key, vt.Bytes())
+		default:
+			return nil
+		}
+	}
+	return args
+}
+
+// Deprecated
 type RequestBlockJson struct {
 	Address     string                    `json:"address"`
 	RequestCode sctransaction.RequestCode `json:"request_code"`
@@ -22,6 +102,7 @@ type RequestBlockJson struct {
 	Vars        map[string]interface{}    `json:"vars"`
 }
 
+// Deprecated
 func CreateRequestTransaction(node string, senderSigScheme signaturescheme.SignatureScheme, reqsJson []*RequestBlockJson) (*sctransaction.Transaction, error) {
 	var err error
 	if len(reqsJson) == 0 {
@@ -78,32 +159,9 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 		return ret, nil
 	}
 
-	args := kv.NewMap()
-	for k, v := range reqBlkJson.Vars {
-		switch vt := v.(type) {
-		case int:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case byte:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case int16:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case int32:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case int64:
-			args.Codec().SetInt64(kv.Key(k), vt)
-		case uint16:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case uint32:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case uint64:
-			args.Codec().SetInt64(kv.Key(k), int64(vt))
-		case string:
-			if n, err := strconv.Atoi(vt); err == nil {
-				args.Codec().SetInt64(kv.Key(k), int64(n))
-			} else {
-				args.Codec().SetString(kv.Key(k), vt)
-			}
-		}
+	args := convertArgs(reqBlkJson.Vars)
+	if args == nil {
+		return nil, errors.New("wrong arguments")
 	}
 	ret.SetArgs(args)
 

@@ -30,6 +30,29 @@ func SendRequestsNTimes(clu *cluster.Cluster, senderIndexUtxodb int, n int, reqs
 	return nil
 }
 
+func SendSimpleRequest(clu *cluster.Cluster, senderIndexUtxodb int, reqParams waspapi.CreateSimpleRequestParams) error {
+	tx, err := createSimpleRequestTx(clu.Config.GoshimmerApiHost(), senderIndexUtxodb, &reqParams)
+	if err != nil {
+		return err
+	}
+
+	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
+	//fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
+
+	err = clu.PostAndWaitForConfirmation(tx.Transaction)
+	if err != nil {
+		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
+		return err
+	}
+	//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
+	return nil
+}
+
+func createSimpleRequestTx(node string, senderIndexUtxodb int, reqParams *waspapi.CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
+	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(senderIndexUtxodb))
+	return waspapi.CreateSimpleRequest(node, sigScheme, *reqParams)
+}
+
 func SendRequests(clu *cluster.Cluster, senderIndexUtxodb int, reqs []*waspapi.RequestBlockJson) error {
 	tx, err := createRequestTx(clu.Config.GoshimmerApiHost(), senderIndexUtxodb, reqs)
 	if err != nil {

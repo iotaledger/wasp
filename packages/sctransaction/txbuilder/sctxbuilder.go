@@ -120,9 +120,21 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashVal
 	return nil
 }
 
+// AddRequestBlock adds new request block to the builder. It automatically handles request token
 func (txb *Builder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
+	return txb.AddRequestBlockWithTransfer(reqBlk, nil, nil)
+}
+
+// AddRequestBlockWithTransfer adds request block with the request token and adds respective
+// outputs for the colored transfers
+func (txb *Builder) AddRequestBlockWithTransfer(reqBlk *sctransaction.RequestBlock, targetAddr *address.Address, bals map[balance.Color]int64) error {
 	if err := txb.MintColor(reqBlk.Address(), balance.ColorIOTA, 1); err != nil {
 		return err
+	}
+	for col, b := range bals {
+		if err := txb.MoveToAddress(*targetAddr, col, b); err != nil {
+			return err
+		}
 	}
 	txb.requestBlocks = append(txb.requestBlocks, reqBlk)
 	return nil

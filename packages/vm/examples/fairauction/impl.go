@@ -296,6 +296,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	ai := &AuctionInfo{}
 	if err := ai.Read(bytes.NewReader(data)); err != nil {
 		// internal error. Refund completely?
+		ctx.Publish("finalizeAuction: exit 4")
 		return
 	}
 
@@ -312,7 +313,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		// delete auction record
 		auctDict.DelAt(col.Bytes())
 
-		ctx.Publish("finalizeAuction: exit 4")
+		ctx.Publish("finalizeAuction: exit 5: no bids")
 		return
 	}
 	// find the winning amount and determine respective ownerFee
