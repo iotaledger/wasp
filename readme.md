@@ -44,7 +44,7 @@ The test `TestSend10Requests0Sec` goes through the following steps:
 Committees of Wasp nodes can generate distributed keys itself but for the purpose of testing and determinism 
 we import pre-generated keys as well as other SC data from file `keys.json`.
 - creates bootup records for all test smart contracts in all 4 Wasp nodes
-- creates **origin transaction** for one of testing smart contracts and sends it to the Value Tangle (Goshimeer)
+- creates **origin transaction** for one of testing smart contracts and sends it to the Value Tangle (Goshimmer)
 - activates the testing smart contract on the committee of Wasp nodes. 
 - at this point smart contract is active and ready to accept requests. The testing smart contract 
 runs empty program. It does not update the state variables, however state transitions occur: 
