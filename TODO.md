@@ -32,9 +32,8 @@ Future
 
 # Roadmap
 - `FairRoulette` and `FairAuction` on Goshimmer testnet
-- Wasm VM and Rust environment for Wasm smart contracts 
-- `FairRoulette` on Rust->Wasm
-- `Oracle Data Bulletin Board` PoC
+- Wasm VM and Rust environment for Wasm smart contracts. Programming tools. 
+- `FairRoulette`, `FairAuction` and `Oracle Data Bulletin Board` PoC on Rust->Wasm
 - Node dashboard, smart contract dashboard, visualisation
 - Admin tools and APIs 
 - CLI wallet (universal and template)
