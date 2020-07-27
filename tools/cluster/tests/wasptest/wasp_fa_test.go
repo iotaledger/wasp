@@ -3,6 +3,7 @@ package wasptest
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
@@ -245,7 +246,11 @@ func TestFA2Color0Bids(t *testing.T) {
 	}
 }
 
-const bidderUtxodbIndex = 7
+const (
+	auctionOwnerUtxodbIndex = 7
+	bidderUtxodbIndex1      = 8
+	bidderUtxodbIndex2      = 9
+)
 
 func TestFA1Color1NonWinningBid(t *testing.T) {
 	// setup
@@ -277,24 +282,40 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
+	color1, err := mintNewColoredTokens(wasps, auctionOwnerUtxodbIndex, 1)
 	check(err, t)
 
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	scOwnerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
 	scAddr, err := address.FromBase58(sc.Address)
-	bidderAddr := utxodb.GetAddress(bidderUtxodbIndex)
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 3,
+	scColort, err := valuetransaction.IDFromBase58(sc.Color)
+	check(err, t)
+	scColor := (balance.Color)(scColort)
+
+	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
+	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
+
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
+		scColor:           1,
+		balance.ColorIOTA: 1,
+	}) {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 2,
+	}) {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
-		return
 	}
 
-	// send request StartAuction
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	// send request StartAuction. Selling 1 token of color1
+	err = SendSimpleRequest(wasps, auctionOwnerUtxodbIndex, waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -309,8 +330,8 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	})
 	check(err, t)
 
-	// send 1 non wining bid PlaceBid
-	err = SendSimpleRequest(wasps, bidderUtxodbIndex, waspapi.CreateSimpleRequestParams{
+	// send 1 non wining bid PlaceBid on color1, sum 42
+	err = SendSimpleRequest(wasps, bidderUtxodbIndex1, waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestPlaceBid,
 		Vars: map[string]interface{}{
@@ -327,24 +348,155 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-
+	// check SC address
 	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
 		balance.ColorIOTA: 3,
-		// +1 SC token
+		scColor:           1,
 	}) {
 		t.Fail()
 	}
+	// check SC owner address
+	if !wasps.VerifyAddressBalances(scOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 2 + 5,
+	}) {
+		t.Fail()
+	}
+	// check bidder1 address
+	if !wasps.VerifyAddressBalances(bidder1Addr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1 - 42 + 42,
+	}) {
+		t.Fail()
+	}
+	// check auction owner address
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1 - 1 - 5,
+		*color1:           1,
+	}) {
+		t.Fail()
+	}
+}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 3 - 1, // all fees return to auction owner == smart contract owner
+func TestFA1Color5WinningBids(t *testing.T) {
+	// setup
+	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           wasps.NumSmartContracts(),
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          8,
+		"request_out":         9,
+		"state":               -1,
+		"vmmsg":               -1,
+	})
+	check(err, t)
+
+	err = PutBootupRecords(wasps)
+	check(err, t)
+
+	// number 5 is "Wasm VM PoC program" in cluster.json
+	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	err = Activate1SC(wasps, sc)
+	check(err, t)
+
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
+
+	time.Sleep(1 * time.Second)
+
+	// create 1 colored token
+	color1, err := mintNewColoredTokens(wasps, auctionOwnerUtxodbIndex, 1)
+	check(err, t)
+
+	scOwnerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	scAddr, err := address.FromBase58(sc.Address)
+	check(err, t)
+
+	scColort, err := valuetransaction.IDFromBase58(sc.Color)
+	check(err, t)
+	scColor := (balance.Color)(scColort)
+
+	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
+	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
+
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
+		scColor:           1,
+		balance.ColorIOTA: 1,
+	}) {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 2,
+	}) {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(bidderAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1,
-		//*color1:           0,
+	// send request StartAuction. Selling 1 token of color1
+	err = SendSimpleRequest(wasps, auctionOwnerUtxodbIndex, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddr,
+		RequestCode: fairauction.RequestStartAuction,
+		Vars: map[string]interface{}{
+			fairauction.VarReqAuctionColor:                color1,
+			fairauction.VarReqStartAuctionMinimumBid:      100,
+			fairauction.VarReqStartAuctionDurationMinutes: 1,
+		},
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 5, // 5% from 100
+			*color1:           1, // token for sale
+		},
+	})
+	check(err, t)
+
+	for i := 0; i < 5; i++ {
+		// send 1 non wining bid PlaceBid on color1, sum 42
+		err = SendSimpleRequest(wasps, bidderUtxodbIndex1, waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddr,
+			RequestCode: fairauction.RequestPlaceBid,
+			Vars: map[string]interface{}{
+				fairauction.VarReqAuctionColor: color1,
+			},
+			Transfer: map[balance.Color]int64{
+				balance.ColorIOTA: 25,
+			},
+		})
+		check(err, t)
+	}
+
+	wasps.CollectMessages(70 * time.Second)
+
+	if !wasps.Report() {
+		t.Fail()
+	}
+	// check SC address
+	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 7,
+		scColor:           1,
+	}) {
+		t.Fail()
+	}
+	// check SC owner address
+	if !wasps.VerifyAddressBalances(scOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 2 + 6,
+	}) {
+		t.Fail()
+	}
+	// check bidder1 address
+	if !wasps.VerifyAddressBalances(bidder1Addr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 5 - 5*25,
+		*color1:           1,
+	}) {
+		t.Fail()
+	}
+	// check auction owner address
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1 - 1 - 5 + 125 - 1,
 	}) {
 		t.Fail()
 	}
