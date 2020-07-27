@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"sort"
 )
 
 type fairAuctionProcessor map[sctransaction.RequestCode]fairAuctionEntryPoint
@@ -113,7 +114,7 @@ type BidInfo struct {
 	// address which sent the bid
 	Bidder address.Address
 	// timestamp
-	WhenPlaced int64
+	When int64
 }
 
 func initSC(ctx vmtypes.Sandbox) {
@@ -256,134 +257,6 @@ func startAuction(ctx vmtypes.Sandbox) {
 	ctx.Publish("startAuction: success")
 }
 
-// finalizeAuction selects the winner and sends tokens to him.
-// returns bid amounts to other bidders.
-// The request is time locked for the period of the action
-// Arguments:
-// - VarReqAuctionColor: color of the auction
-func finalizeAuction(ctx vmtypes.Sandbox) {
-	ctx.Publish("finalizeAuction begin")
-
-	accessReq := ctx.AccessRequest()
-	if !accessReq.IsAuthorisedByAddress(ctx.GetSCAddress()) {
-		// finalizeAuction request can only be sent by the smart contract to itself
-		return
-	}
-	reqArgs := accessReq.Args()
-
-	// determine color of the auction to finalize
-	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
-	if err != nil || !ok {
-		// incorrect request arguments
-		// internal error. Refund completely?
-		ctx.Publish("finalizeAuction: exit 1")
-		return
-	}
-	col := (balance.Color)(*colh)
-	if col == balance.ColorIOTA || col == balance.ColorNew {
-		// inconsistency
-		ctx.Publish("finalizeAuction: exit 2")
-		return
-	}
-
-	// find the record of the auction by color
-	auctDict := ctx.AccessState().GetDictionary(VarStateAuctions)
-	data := auctDict.GetAt(col.Bytes())
-	if data == nil {
-		// auction with this color does not exist. Inconsistency
-		ctx.Publish("finalizeAuction: exit 3")
-		return
-	}
-
-	// decode the Action record
-	ai := &AuctionInfo{}
-	if err := ai.Read(bytes.NewReader(data)); err != nil {
-		// internal error. Refund completely?
-		ctx.Publish("finalizeAuction: exit 4")
-		return
-	}
-
-	account := ctx.AccessOwnAccount()
-	ownerFee := (ai.MinimumBid * ai.OwnerMargin) / 1000
-
-	// find the winning amount and determine respective ownerFee
-	winningAmount := int64(0)
-	for _, bi := range ai.Bids {
-		if bi.Total > winningAmount {
-			winningAmount = bi.Total
-		}
-	}
-
-	var winner *BidInfo
-	var winnerIndex int
-
-	if winningAmount >= ai.MinimumBid {
-		ownerFee = (winningAmount * ai.OwnerMargin) / 1000
-
-		for i, bi := range ai.Bids {
-			if bi.Total == winningAmount {
-				// taking the first among equals
-				winner = bi
-				winnerIndex = i
-				break
-			}
-		}
-	}
-
-	ctx.Publishf("finalizeAuction: harvesting SC owner fee = %d", ownerFee)
-	ctx.AccessOwnAccount().HarvestFees(ownerFee)
-
-	if winner != nil {
-		// send sold tokens to the winner
-		account.MoveTokens(&ai.Bids[winnerIndex].Bidder, &ai.Color, ai.NumTokens)
-		// send winning amount and return deposit sum less fees to the owner of the auction
-		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
-
-		for i, bi := range ai.Bids {
-			if i != winnerIndex {
-				// return staked sum to the non-winner
-				account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
-			}
-		}
-		ctx.Publishf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
-	} else {
-		// return unsold tokens to auction owner
-		account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens)
-		// return deposit less fees
-		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee)
-		// return bids to bidders
-		for _, bi := range ai.Bids {
-			account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
-		}
-		ctx.Publishf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids))
-	}
-
-	// delete auction record
-	auctDict.DelAt(col.Bytes())
-
-	ctx.Publishf("finalizeAuction: success")
-}
-
-// setOwnerMargin is a request to set the service fee to place a bid
-// It is protected, i.e. must be sent by the owner of the smart contract
-// Arguments:
-// - VarReqOwnerMargin: the margin value in promilles
-func setOwnerMargin(ctx vmtypes.Sandbox) {
-	ctx.Publish("setOwnerMargin: begin")
-	margin, ok, err := ctx.AccessRequest().Args().GetInt64(VarReqOwnerMargin)
-	if err != nil || !ok {
-		ctx.Publish("setOwnerMargin: exit 1")
-		return
-	}
-	if margin < OwnerMarginMin {
-		margin = OwnerMarginMin
-	} else if margin > OwnerMarginMax {
-		margin = OwnerMarginMax
-	}
-	ctx.AccessState().SetInt64(VarStateOwnerMarginPromille, margin)
-	ctx.Publishf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
-}
-
 // placeBid is a request to place a bid in the auction for the particular color
 // The request transaction must contain at least:
 // - 1 request token + Bid amount/rise amount
@@ -459,18 +332,141 @@ func placeBid(ctx vmtypes.Sandbox) {
 	if bi == nil {
 		// first bid by the sender
 		ai.Bids = append(ai.Bids, &BidInfo{
-			Total:      bidAmount,
-			Bidder:     *sender,
-			WhenPlaced: ctx.GetTimestamp(),
+			Total:  bidAmount,
+			Bidder: *sender,
+			When:   ctx.GetTimestamp(),
 		})
 	} else {
 		// bid is treated as a rise
 		bi.Total += bidAmount
+		bi.When = ctx.GetTimestamp()
 	}
 	data = util.MustBytes(ai)
 	auctions.SetAt(col.Bytes(), data)
 
 	ctx.Publish("placeBid: success")
+}
+
+// finalizeAuction selects the winner and sends tokens to him.
+// returns bid amounts to other bidders.
+// The request is time locked for the period of the action
+// Arguments:
+// - VarReqAuctionColor: color of the auction
+func finalizeAuction(ctx vmtypes.Sandbox) {
+	ctx.Publish("finalizeAuction begin")
+
+	accessReq := ctx.AccessRequest()
+	if !accessReq.IsAuthorisedByAddress(ctx.GetSCAddress()) {
+		// finalizeAuction request can only be sent by the smart contract to itself
+		return
+	}
+	reqArgs := accessReq.Args()
+
+	// determine color of the auction to finalize
+	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
+	if err != nil || !ok {
+		// incorrect request arguments
+		// internal error. Refund completely?
+		ctx.Publish("finalizeAuction: exit 1")
+		return
+	}
+	col := (balance.Color)(*colh)
+	if col == balance.ColorIOTA || col == balance.ColorNew {
+		// inconsistency
+		ctx.Publish("finalizeAuction: exit 2")
+		return
+	}
+
+	// find the record of the auction by color
+	auctDict := ctx.AccessState().GetDictionary(VarStateAuctions)
+	data := auctDict.GetAt(col.Bytes())
+	if data == nil {
+		// auction with this color does not exist. Inconsistency
+		ctx.Publish("finalizeAuction: exit 3")
+		return
+	}
+
+	// decode the Action record
+	ai := &AuctionInfo{}
+	if err := ai.Read(bytes.NewReader(data)); err != nil {
+		// internal error. Refund completely?
+		ctx.Publish("finalizeAuction: exit 4")
+		return
+	}
+
+	account := ctx.AccessOwnAccount()
+
+	// find the winning amount and determine respective ownerFee
+	winningAmount := int64(0)
+	for _, bi := range ai.Bids {
+		if bi.Total > winningAmount {
+			winningAmount = bi.Total
+		}
+	}
+
+	var winner *BidInfo
+	var winnerIndex int
+
+	// SC owner takes OwnerMargin (promilles) fee from either minimum bid or from winning sum
+	ownerFee := (ai.MinimumBid * ai.OwnerMargin) / 1000
+
+	// find the winner (if any). Take first if equal sums
+	// minimum bid is always positive, at least 1 iota per colored token
+	if winningAmount >= ai.MinimumBid {
+		// there's winner. Select it.
+		// Fee is re-calculated according to the winning sum
+		ownerFee = (winningAmount * ai.OwnerMargin) / 1000
+
+		winners := make([]*BidInfo, 0)
+		for _, bi := range ai.Bids {
+			if bi.Total == winningAmount {
+				winners = append(winners, bi)
+			}
+		}
+		sort.Slice(winners, func(i, j int) bool {
+			return winners[i].When < winners[j].When
+		})
+		winner = winners[0]
+		for i, bi := range ai.Bids {
+			if bi == winner {
+				winnerIndex = i
+				break
+			}
+		}
+	}
+
+	ctx.Publishf("finalizeAuction: harvesting SC owner fee = %d", ownerFee)
+	ctx.AccessOwnAccount().HarvestFees(ownerFee)
+
+	if winner != nil {
+		// send sold tokens to the winner
+		account.MoveTokens(&ai.Bids[winnerIndex].Bidder, &ai.Color, ai.NumTokens)
+		// send winning amount and return deposit sum less fees to the owner of the auction
+		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
+
+		for i, bi := range ai.Bids {
+			if i != winnerIndex {
+				// return staked sum to the non-winner
+				account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+			}
+		}
+		ctx.Publishf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
+	} else {
+		// return unsold tokens to auction owner
+		account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens)
+		// return deposit less fees
+		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee)
+		// return bids to bidders
+		for _, bi := range ai.Bids {
+			account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+		}
+		ctx.Publishf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids))
+	}
+
+	// delete auction record
+	auctDict.DelAt(col.Bytes())
+
+	ctx.Publishf("finalizeAuction: success")
 }
 
 func takeSender(ctx vmtypes.Sandbox) *address.Address {
@@ -483,6 +479,26 @@ func takeSender(ctx vmtypes.Sandbox) *address.Address {
 	}
 	sender := senders[0]
 	return &sender
+}
+
+// setOwnerMargin is a request to set the service fee to place a bid
+// It is protected, i.e. must be sent by the owner of the smart contract
+// Arguments:
+// - VarReqOwnerMargin: the margin value in promilles
+func setOwnerMargin(ctx vmtypes.Sandbox) {
+	ctx.Publish("setOwnerMargin: begin")
+	margin, ok, err := ctx.AccessRequest().Args().GetInt64(VarReqOwnerMargin)
+	if err != nil || !ok {
+		ctx.Publish("setOwnerMargin: exit 1")
+		return
+	}
+	if margin < OwnerMarginMin {
+		margin = OwnerMarginMin
+	} else if margin > OwnerMarginMax {
+		margin = OwnerMarginMax
+	}
+	ctx.AccessState().SetInt64(VarStateOwnerMarginPromille, margin)
+	ctx.Publishf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
 }
 
 // refundFromRequest returns all iotas tokens to the sender minus sunkFee

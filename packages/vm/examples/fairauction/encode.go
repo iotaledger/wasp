@@ -94,7 +94,7 @@ func (bi *BidInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.Bidder[:]); err != nil {
 		return err
 	}
-	if err := util.WriteInt64(w, bi.WhenPlaced); err != nil {
+	if err := util.WriteInt64(w, bi.When); err != nil {
 		return err
 	}
 	return nil
@@ -107,7 +107,7 @@ func (bi *BidInfo) Read(r io.Reader) error {
 	if err := util.ReadAddress(r, &bi.Bidder); err != nil {
 		return err
 	}
-	if err := util.ReadInt64(r, &bi.WhenPlaced); err != nil {
+	if err := util.ReadInt64(r, &bi.When); err != nil {
 		return err
 	}
 	return nil
