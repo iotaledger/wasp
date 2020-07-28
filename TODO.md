@@ -1,20 +1,30 @@
 # TODO
 
+Done
 - [x] `fairroulette dashboard`: Add install instructions
 - [x] `fairroulette dashboard`: Auto-refresh
 - [x] `fairroulette dashboard`: Display SC address balance
 - [x] deploy `FairRoulette` PoC
 - [x] Release binaries
+- [X] implement `FairAuction` smart contract with tests
+
+Pending
 - [ ] Integration tests: end test when a specific message is published (instead
       of waiting for an arbitrary amount of seconds).
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
-- [X] implement `FairAuction` smart contract with tests
 - [ ] adjust WaspConn etc APIs to real Goshimmer APIs.
 - [ ] extend goshimmer cli-wallet with `FairAuction` and `FairRoulette`
 - [ ] deploy Wasp in Pollen testnet
 - [ ] `Oracle Data Bulletin Board` description
+
+To discuss
+- [ ] smart contract state access from outside. The current approach is to provide universal node API to query state. 
+The alternative would be to expose access functions (view in Solidity) from the smart contract code itself.
+- [ ] Merkle proofs of smart contract state elements  
+- [ ] Standard subscription mechanisms for events: (a) VM events (NanoMsg, ZMQ, MQTT) 
+and (b) smart contract events (signalled by request to subscriber smart contract) 
 
 Functional testing
 - [ ] test access node function
