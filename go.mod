@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.19.0
-	github.com/iotaledger/goshimmer v0.2.1-0.20200722075240-db6e6d1fbba9
+	github.com/iotaledger/goshimmer v0.2.2-0.20200728070402-e5b2e3f03d54
 	github.com/iotaledger/hive.go v0.0.0-20200720084404-e6c3b4717f40
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
