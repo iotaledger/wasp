@@ -23,7 +23,7 @@ func TestSend1ReqIncSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -37,7 +37,7 @@ func TestSend1ReqIncSimple(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestInc,
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -67,7 +67,7 @@ func TestSend5ReqInc1SecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -81,7 +81,7 @@ func TestSend5ReqInc1SecSimple(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestInc,
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 5, reqs, 1*time.Second)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 5, reqs, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -111,7 +111,7 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -125,7 +125,7 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestInc,
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 10, reqs, 0*time.Second)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 10, reqs, 0*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -155,7 +155,7 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -169,7 +169,7 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestInc,
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 60, reqs, 500*time.Millisecond)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 60, reqs, 500*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
@@ -199,7 +199,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -213,7 +213,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestInc,
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 60, reqs, 0*time.Millisecond)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 60, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)

@@ -25,7 +25,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -42,7 +42,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 			RequestCode: wasmpoc.RequestNOP,
 		},
 	}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 5, reqs, 1*time.Second)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 5, reqs, 1*time.Second)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)

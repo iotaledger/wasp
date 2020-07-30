@@ -3,7 +3,6 @@ package wasptest
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
@@ -28,7 +27,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -44,7 +43,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 	check(err, t)
 
 	// send request SetOwnerMargin
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestSetOwnerMargin,
 		Vars: map[string]interface{}{
@@ -75,7 +74,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -90,10 +89,10 @@ func TestFA1Color0Bids(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
+	color1, err := mintNewColoredTokens(wasps, sc.OwnerSigScheme(), 1)
 	check(err, t)
 
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	ownerAddr := sc.OwnerAddress()
 	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-3+1, map[balance.Color]int64{
 		balance.ColorIOTA: 1000000000 - 3,
 		*color1:           1,
@@ -106,7 +105,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	check(err, t)
 
 	// send request StartAuction
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -157,7 +156,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -172,12 +171,12 @@ func TestFA2Color0Bids(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
+	color1, err := mintNewColoredTokens(wasps, sc.OwnerSigScheme(), 1)
 	check(err, t)
-	color2, err := mintNewColoredTokens(wasps, sc.OwnerIndexUtxodb, 1)
+	color2, err := mintNewColoredTokens(wasps, sc.OwnerSigScheme(), 1)
 	check(err, t)
 
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	ownerAddr := sc.OwnerAddress()
 	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-4+1+1, map[balance.Color]int64{
 		balance.ColorIOTA: 1000000000 - 4, // 2 to SC, 2 to new color
 		*color1:           1,
@@ -191,7 +190,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	check(err, t)
 
 	// send request StartAuction for color1
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -209,7 +208,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// send request StartAuction for color2
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -247,6 +246,8 @@ func TestFA2Color0Bids(t *testing.T) {
 }
 
 const (
+	// TODO: adapt for testing in "real" goshimmer:
+	// use hardcoded (or random) seed values and request funds
 	auctionOwnerUtxodbIndex = 7
 	bidderUtxodbIndex1      = 8
 	bidderUtxodbIndex2      = 9
@@ -267,7 +268,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -281,20 +282,21 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
+	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
+	auctionOwnerSigScheme := utxodb.GetSigScheme(auctionOwnerAddr)
+
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, auctionOwnerUtxodbIndex, 1)
+	color1, err := mintNewColoredTokens(wasps, auctionOwnerSigScheme, 1)
 	check(err, t)
 
-	scOwnerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	scOwnerAddr := sc.OwnerAddress()
 	scAddr, err := address.FromBase58(sc.Address)
 	check(err, t)
 
-	scColort, err := valuetransaction.IDFromBase58(sc.Color)
-	check(err, t)
-	scColor := (balance.Color)(scColort)
+	scColor := *scColors[sc.Address]
 
-	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
 	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
+	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+1, map[balance.Color]int64{
 		scColor:           1,
@@ -315,7 +317,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	}
 
 	// send request StartAuction. Selling 1 token of color1
-	err = SendSimpleRequest(wasps, auctionOwnerUtxodbIndex, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, auctionOwnerSigScheme, waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -331,7 +333,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	check(err, t)
 
 	// send 1 non wining bid PlaceBid on color1, sum 42
-	err = SendSimpleRequest(wasps, bidderUtxodbIndex1, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, bidder1SigScheme, waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestPlaceBid,
 		Vars: map[string]interface{}{
@@ -391,7 +393,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -405,20 +407,21 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
+	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
+	auctionOwnerSigScheme := utxodb.GetSigScheme(auctionOwnerAddr)
+
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, auctionOwnerUtxodbIndex, 1)
+	color1, err := mintNewColoredTokens(wasps, auctionOwnerSigScheme, 1)
 	check(err, t)
 
-	scOwnerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	scOwnerAddr := sc.OwnerAddress()
 	scAddr, err := address.FromBase58(sc.Address)
 	check(err, t)
 
-	scColort, err := valuetransaction.IDFromBase58(sc.Color)
-	check(err, t)
-	scColor := (balance.Color)(scColort)
+	scColor := *scColors[sc.Address]
 
-	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
 	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
+	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+1, map[balance.Color]int64{
 		scColor:           1,
@@ -439,7 +442,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	}
 
 	// send request StartAuction. Selling 1 token of color1
-	err = SendSimpleRequest(wasps, auctionOwnerUtxodbIndex, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, auctionOwnerSigScheme, waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -455,7 +458,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	check(err, t)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, bidderUtxodbIndex1, waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, bidder1SigScheme, waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddr,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
@@ -516,7 +519,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -530,21 +533,23 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
+	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
+	auctionOwnerSigScheme := utxodb.GetSigScheme(auctionOwnerAddr)
+
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, auctionOwnerUtxodbIndex, 1)
+	color1, err := mintNewColoredTokens(wasps, auctionOwnerSigScheme, 1)
 	check(err, t)
 
-	scOwnerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	scOwnerAddr := sc.OwnerAddress()
 	scAddr, err := address.FromBase58(sc.Address)
 	check(err, t)
 
-	scColort, err := valuetransaction.IDFromBase58(sc.Color)
-	check(err, t)
-	scColor := (balance.Color)(scColort)
+	scColor := *scColors[sc.Address]
 
-	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
 	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
+	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
 	bidder2Addr := utxodb.GetAddress(bidderUtxodbIndex2)
+	bidder2SigScheme := utxodb.GetSigScheme(bidder2Addr)
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+1, map[balance.Color]int64{
 		scColor:           1,
@@ -565,7 +570,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	}
 
 	// send request StartAuction. Selling 1 token of color1
-	err = SendSimpleRequest(wasps, auctionOwnerUtxodbIndex, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, auctionOwnerSigScheme, waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddr,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -581,7 +586,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	check(err, t)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, bidderUtxodbIndex1, waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, bidder1SigScheme, waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddr,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
@@ -593,7 +598,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 		})
 		check(err, t)
 
-		err = SendSimpleRequest(wasps, bidderUtxodbIndex2, waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, bidder2SigScheme, waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddr,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{

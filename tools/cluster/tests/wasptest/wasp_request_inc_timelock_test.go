@@ -23,7 +23,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -38,7 +38,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 		RequestCode: inccounter.RequestInc,
 		Timelock:    util.UnixAfterSec(3),
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(20 * time.Second)
@@ -67,7 +67,7 @@ func TestSend1ReqIncRepeatTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -81,7 +81,7 @@ func TestSend1ReqIncRepeatTimelock(t *testing.T) {
 		Address:     sc.Address,
 		RequestCode: inccounter.RequestIncAndRepeatOnceAfter5s,
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -112,7 +112,7 @@ func TestChainIncTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[2]
@@ -129,7 +129,7 @@ func TestChainIncTimelock(t *testing.T) {
 			inccounter.ArgNumRepeats: chainOfRequestsLength,
 		},
 	}}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
+	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	wasps.CollectMessages(30 * time.Second)

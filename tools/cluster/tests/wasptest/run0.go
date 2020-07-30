@@ -2,39 +2,57 @@ package wasptest
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func PutBootupRecords(clu *cluster.Cluster) error {
+func PutBootupRecords(clu *cluster.Cluster) (map[string]*balance.Color, error) {
 	fmt.Printf("------------------------- Test 0: bootup records  \n")
 
+	requested := make(map[address.Address]bool)
+
+	colors := make(map[string]*balance.Color)
 	for _, sc := range clu.SmartContractConfig {
 		fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
 
-		if err := putScData(&sc, clu); err != nil {
-			fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
-
-			return fmt.Errorf("failed to create bootup records")
+		ownerAddr := sc.OwnerAddress()
+		_, ok := requested[ownerAddr]
+		if !ok {
+			err := testutil.RequestFunds(clu.Config.GoshimmerApiHost(), ownerAddr)
+			if err != nil {
+				fmt.Printf("[cluster] Could not request funds: %v\n", err)
+				return nil, fmt.Errorf("Could not request funds")
+			}
+			requested[ownerAddr] = true
 		}
+
+		color, err := putScData(&sc, clu)
+		if err != nil {
+			fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
+			return nil, fmt.Errorf("failed to create bootup records")
+		}
+		colors[sc.Address] = color
 	}
-	return nil
+	return colors, nil
 }
 
-func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error {
+func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) (*balance.Color, error) {
 	addr, err := address.FromBase58(sc.Address)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	color, err := util.ColorFromString(sc.Color)
+	origTx, err := cluster.CreateOrigin(clu.Config.GoshimmerApiHost(), sc)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	color := balance.Color(origTx.ID())
 
 	committeePeerNodes := clu.WaspHosts(sc.CommitteeNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
@@ -46,7 +64,7 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 		err = waspapi.PutSCData(host, registry.BootupData{
 			Address:        addr,
 			Color:          color,
-			OwnerAddress:   utxodb.GetAddress(sc.OwnerIndexUtxodb),
+			OwnerAddress:   sc.OwnerAddress(),
 			CommitteeNodes: committeePeerNodes,
 			AccessNodes:    accessPeerNodes,
 		})
@@ -56,7 +74,7 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error
 		}
 	}
 	if failed {
-		return fmt.Errorf("failed to send bootup data to some commitee nodes")
+		return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
 	}
-	return nil
+	return &color, nil
 }

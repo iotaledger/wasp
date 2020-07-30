@@ -20,7 +20,7 @@ func TestPutBootupRecords(t *testing.T) {
 	check(err, t)
 
 	// exercise
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	wasps.CollectMessages(10 * time.Second)
@@ -44,7 +44,7 @@ func TestActivate1SC(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// exercise
@@ -71,7 +71,7 @@ func TestActivateAllSC(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// exercise
@@ -98,7 +98,7 @@ func TestCreateOrigin(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
 	check(err, t)

@@ -6,9 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,7 +17,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
+	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/subscribe"
@@ -32,14 +34,13 @@ import (
 )
 
 type SmartContractFinalConfig struct {
-	Address          string   `json:"address"`
-	Color            string   `json:"color"`
-	Description      string   `json:"description"`
-	ProgramHash      string   `json:"program_hash"`
-	CommitteeNodes   []int    `json:"committee_nodes"`
-	AccessNodes      []int    `json:"access_nodes,omitempty"`
-	OwnerIndexUtxodb int      `json:"owner_index_utxodb"`
-	DKShares         []string `json:"dkshares"` // [node index]
+	Address        string   `json:"address"`
+	Description    string   `json:"description"`
+	ProgramHash    string   `json:"program_hash"`
+	CommitteeNodes []int    `json:"committee_nodes"`
+	AccessNodes    []int    `json:"access_nodes,omitempty"`
+	OwnerSeed      []byte   `json:"owner_seed"`
+	DKShares       []string `json:"dkshares"` // [node index]
 }
 
 type SmartContractInitData struct {
@@ -85,6 +86,14 @@ func (sc *SmartContractFinalConfig) AllNodes() []int {
 	r = append(r, sc.CommitteeNodes...)
 	r = append(r, sc.AccessNodes...)
 	return r
+}
+
+func (sc *SmartContractFinalConfig) OwnerAddress() address.Address {
+	return seed.NewSeed(sc.OwnerSeed).Address(0).Address
+}
+
+func (sc *SmartContractFinalConfig) OwnerSigScheme() signaturescheme.SignatureScheme {
+	return signaturescheme.ED25519(*seed.NewSeed(sc.OwnerSeed).KeyPair(0))
 }
 
 func (c *ClusterConfig) GoshimmerApiHost() string {
@@ -532,7 +541,7 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)
 
-		ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+		ownerAddr := sc.OwnerAddress()
 
 		scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
 		if err != nil {

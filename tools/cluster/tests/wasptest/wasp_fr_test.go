@@ -3,8 +3,6 @@ package wasptest
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +24,7 @@ func TestSend1Bet(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[3]
@@ -38,9 +36,9 @@ func TestSend1Bet(t *testing.T) {
 	scAddress, err := address.FromBase58(sc.Address)
 	check(err, t)
 
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	ownerAddr := sc.OwnerAddress()
 
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddress,
 		RequestCode: fairroulette.RequestPlaceBet,
 		Vars: map[string]interface{}{
@@ -58,9 +56,7 @@ func TestSend1Bet(t *testing.T) {
 		t.Fail()
 	}
 
-	tmp, err := valuetransaction.IDFromBase58(sc.Color)
-	assert.NoError(t, err)
-	scColor := (balance.Color)(tmp)
+	scColor := *scColors[sc.Address]
 
 	scAddr, err := address.FromBase58(sc.Address)
 	assert.NoError(t, err)
@@ -95,7 +91,7 @@ func TestSend5Bets(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[3]
@@ -107,11 +103,11 @@ func TestSend5Bets(t *testing.T) {
 
 	scAddress, err := address.FromBase58(sc.Address)
 	check(err, t)
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	ownerAddr := sc.OwnerAddress()
 	check(err, t)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
@@ -129,9 +125,8 @@ func TestSend5Bets(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	tmp, err := valuetransaction.IDFromBase58(sc.Color)
-	assert.NoError(t, err)
-	scColor := (balance.Color)(tmp)
+
+	scColor := *scColors[sc.Address]
 
 	if !wasps.VerifyAddressBalances(scAddress, 5001, map[balance.Color]int64{
 		balance.ColorIOTA: 4999, // one request sent to itself
@@ -160,7 +155,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	})
 	check(err, t)
 
-	err = PutBootupRecords(wasps)
+	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[3]
@@ -172,11 +167,11 @@ func TestSendBetsAndPlay(t *testing.T) {
 
 	scAddress, err := address.FromBase58(sc.Address)
 	check(err, t)
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	ownerAddr := sc.OwnerAddress()
 	check(err, t)
 
 	// SetPlayPeriod must be processed first
-	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddress,
 		RequestCode: fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
@@ -188,7 +183,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
@@ -206,9 +201,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	tmp, err := valuetransaction.IDFromBase58(sc.Color)
-	assert.NoError(t, err)
-	scColor := (balance.Color)(tmp)
+	scColor := *scColors[sc.Address]
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
 		scColor: 1,
 	}) {
