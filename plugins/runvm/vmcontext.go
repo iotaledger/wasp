@@ -1,6 +1,7 @@
 package runvm
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -14,8 +15,8 @@ import (
 func createVMContext(ctx *vm.VMTask, txb *txbuilder.Builder) (*vm.VMContext, error) {
 	// create state block and move smart contract token
 	if err := txb.CreateStateBlock(ctx.Color); err != nil {
-		ctx.Log.Debugf("createVMContext: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
-		return nil, err
+		ctx.Log.Errorf("createVMContext: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
+		return nil, fmt.Errorf("createVMContext: %v", err)
 	}
 
 	// handle request tokens.
@@ -32,9 +33,9 @@ func createVMContext(ctx *vm.VMTask, txb *txbuilder.Builder) (*vm.VMContext, err
 			targetAddress = *reqRef.Tx.Sender()
 		}
 		reqTxId := reqRef.Tx.ID()
-		if err := txb.EraseColorFromTransaction(targetAddress, (balance.Color)(reqTxId), 1, reqTxId); err != nil {
-			ctx.Log.Errorf("handleRequestTokens: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
-			return nil, err
+		if err := txb.EraseColor(targetAddress, (balance.Color)(reqTxId), 1); err != nil {
+			ctx.Log.Errorf("createVMContext: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
+			return nil, fmt.Errorf("createVMContext: %v", err)
 		}
 		ctx.Log.Infof("$$$$$$$ erased 1 request token color %s to addr %s. Remains %d",
 			reqTxId.String(), targetAddress.String(), txb.GetInputBalanceFromTransaction((balance.Color)(reqTxId), reqTxId))
