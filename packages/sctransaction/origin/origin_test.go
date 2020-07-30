@@ -1,13 +1,15 @@
-package apilib
+package origin
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const (
@@ -21,9 +23,12 @@ func TestReadWrite(t *testing.T) {
 	scAddr, err := address.FromBase58(scAddrStr)
 	assert.NoError(t, err)
 
-	tx, err := CreateOriginUtxodb(CreateOriginParams{
+	ownerAddress := utxodb.GetAddress(1)
+	tx, err := NewOriginTransaction(NewOriginTransactionParams{
 		Address:              scAddr,
-		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(1)),
+		OwnerSignatureScheme: utxodb.GetSigScheme(ownerAddress),
+		AllInputs:            utxodb.GetAddressOutputs(ownerAddress),
+		InputColor:           balance.ColorIOTA,
 		ProgramHash:          *hashing.HashStrings(dscr),
 	})
 	assert.NoError(t, err)

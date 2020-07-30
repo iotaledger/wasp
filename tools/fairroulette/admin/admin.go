@@ -10,9 +10,9 @@ import (
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
 	"github.com/iotaledger/wasp/tools/fairroulette/util"
@@ -105,13 +105,15 @@ func putScData(scAddress *address.Address, color *balance.Color) {
 }
 
 func createOriginTx(scAddress *address.Address) *sctransaction.Transaction {
-	origTx, err := waspapi.CreateOrigin(config.GoshimmerApi(), waspapi.CreateOriginParams{
+	ownerAddress := wallet.Load().Address()
+	allOuts, err := nodeapi.GetAccountOutputs(config.GoshimmerApi(), &ownerAddress)
+	check(err)
+	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              *scAddress,
 		OwnerSignatureScheme: wallet.Load().SignatureScheme(),
+		AllInputs:            allOuts,
+		InputColor:           balance.ColorIOTA,
 		ProgramHash:          progHash(),
-		Variables: kv.FromGoMap(map[kv.Key][]byte{
-			"description": []byte(scDescription),
-		}),
 	})
 	check(err)
 	return origTx

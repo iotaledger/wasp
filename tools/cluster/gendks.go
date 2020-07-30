@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
@@ -87,18 +89,14 @@ func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transa
 		return nil, err
 	}
 	// creating origin transaction just to determine color
-	origTx, err := waspapi.CreateOriginUtxodb(waspapi.CreateOriginParams{
+	ownerAddress := utxodb.GetAddress(scdata.OwnerIndexUtxodb)
+	return origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              addr,
-		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
+		OwnerSignatureScheme: utxodb.GetSigScheme(ownerAddress),
+		AllInputs:            utxodb.GetAddressOutputs(ownerAddress),
+		InputColor:           balance.ColorIOTA,
 		ProgramHash:          progHash,
-		Variables: kv.FromGoMap(map[kv.Key][]byte{
-			"description": []byte(scdata.Description),
-		}),
 	})
-	if err != nil {
-		return nil, err
-	}
-	return origTx, nil
 }
 
 func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
@@ -111,13 +109,17 @@ func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction
 		return nil, err
 	}
 	// creating origin transaction just to determine color
-	origTx, err := waspapi.CreateOrigin(host, waspapi.CreateOriginParams{
+	ownerAddress := utxodb.GetAddress(scdata.OwnerIndexUtxodb)
+	allOuts, err := nodeapi.GetAccountOutputs(host, &ownerAddress)
+	if err != nil {
+		return nil, err
+	}
+	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              addr,
-		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
+		OwnerSignatureScheme: utxodb.GetSigScheme(ownerAddress),
+		AllInputs:            allOuts,
+		InputColor:           balance.ColorIOTA,
 		ProgramHash:          progHash,
-		Variables: kv.FromGoMap(map[kv.Key][]byte{
-			"description": []byte(scdata.Description),
-		}),
 	})
 	if err != nil {
 		return nil, err
