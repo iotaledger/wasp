@@ -28,7 +28,7 @@ var quorumFlag int
 var committeeFlag []int
 
 func HookFlags() *pflag.FlagSet {
-	flags := pflag.NewFlagSet("wallet init", pflag.ExitOnError)
+	flags := pflag.NewFlagSet("admin", pflag.ExitOnError)
 	flags.IntVarP(&quorumFlag, "quorum", "t", 3, "quorum")
 	flags.IntSliceVarP(&committeeFlag, "committee", "n", nil, "committee")
 	return flags
