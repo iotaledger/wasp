@@ -18,7 +18,7 @@ type CreateSimpleRequestParams struct {
 	SCAddress   *address.Address
 	RequestCode sctransaction.RequestCode
 	Timelock    uint32
-	Transfer    map[balance.Color]int64 // does not include request token
+	Transfer    map[balance.Color]int64 // should not not include request token. It is added automatically
 	Vars        map[string]interface{}  ` `
 }
 
@@ -46,11 +46,18 @@ func CreateSimpleRequest(node string, sigScheme signaturescheme.SignatureScheme,
 	if err != nil {
 		return nil, err
 	}
+
 	tx, err := txb.Build(false)
+
+	dump := txb.Dump()
+
 	if err != nil {
 		return nil, err
 	}
 	tx.Sign(sigScheme)
+
+	fmt.Printf("$$$$ dumping builder for %s\n%s\n", tx.ID().String(), dump)
+
 	return tx, nil
 }
 

@@ -101,8 +101,8 @@ func SendSimpleRequest(clu *cluster.Cluster, senderIndexUtxodb int, reqParams wa
 		return err
 	}
 
-	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
-	//fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
+	fmt.Printf("[cluster] created request tx: %s\n", tx.String())
+	fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
 
 	err = clu.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {

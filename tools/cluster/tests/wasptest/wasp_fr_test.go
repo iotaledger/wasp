@@ -35,18 +35,21 @@ func TestSend1Bet(t *testing.T) {
 
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
+	scAddress, err := address.FromBase58(sc.Address)
+	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{
-			Address:     sc.Address,
-			RequestCode: fairroulette.RequestPlaceBet,
-			AmountIotas: 10001,
-			Vars: map[string]interface{}{
-				fairroulette.ReqVarColor: 3,
-			},
+	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+
+	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: fairroulette.RequestPlaceBet,
+		Vars: map[string]interface{}{
+			fairroulette.ReqVarColor: 3,
 		},
-	}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Second)
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 1001,
+		},
+	})
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
@@ -62,12 +65,20 @@ func TestSend1Bet(t *testing.T) {
 	scAddr, err := address.FromBase58(sc.Address)
 	assert.NoError(t, err)
 
-	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 10001,
+	if !wasps.VerifyAddressBalances(scAddr, 1002, map[balance.Color]int64{
+		balance.ColorIOTA: 1000,
 		scColor:           1,
+		// +1 more pending timelocked request
 	}) {
 		t.Fail()
 	}
+
+	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-1-1000-1, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1 - 1000 - 1,
+	}) {
+		t.Fail()
+	}
+
 }
 
 func TestSend5Bets(t *testing.T) {
@@ -94,19 +105,22 @@ func TestSend5Bets(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := MakeRequests(5, func(i int) *waspapi.RequestBlockJson {
-		return &waspapi.RequestBlockJson{
-			Address:     sc.Address,
+	scAddress, err := address.FromBase58(sc.Address)
+	check(err, t)
+	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	check(err, t)
+
+	for i := 0; i < 5; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
-			AmountIotas: 10001,
 			Vars: map[string]interface{}{
 				fairroulette.ReqVarColor: i,
 			},
-		}
-	})
-	for _, req := range reqs {
-		err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1,
-			[]*waspapi.RequestBlockJson{req}, 0*time.Second)
+			Transfer: map[balance.Color]int64{
+				balance.ColorIOTA: 1000,
+			},
+		})
 	}
 	check(err, t)
 
@@ -119,12 +133,14 @@ func TestSend5Bets(t *testing.T) {
 	assert.NoError(t, err)
 	scColor := (balance.Color)(tmp)
 
-	scAddr, err := address.FromBase58(sc.Address)
-	assert.NoError(t, err)
-
-	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 50005,
+	if !wasps.VerifyAddressBalances(scAddress, 5001, map[balance.Color]int64{
+		balance.ColorIOTA: 4999, // one request sent to itself
 		scColor:           1,
+	}) {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-1-5000, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1 - 5000,
 	}) {
 		t.Fail()
 	}
@@ -154,31 +170,34 @@ func TestSendBetsAndPlay(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
+	scAddress, err := address.FromBase58(sc.Address)
+	check(err, t)
+	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	check(err, t)
+
 	// SetPlayPeriod must be processed first
-	reqs := []*waspapi.RequestBlockJson{
-		{
-			Address:     sc.Address,
-			RequestCode: fairroulette.RequestSetPlayPeriod,
-			Vars: map[string]interface{}{
-				fairroulette.ReqVarPlayPeriodSec: 10,
-			},
+	err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: fairroulette.RequestSetPlayPeriod,
+		Vars: map[string]interface{}{
+			fairroulette.ReqVarPlayPeriodSec: 10,
 		},
-	}
-	err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Second)
+	})
+	check(err, t)
+
 	time.Sleep(1 * time.Second)
 
-	reqs = MakeRequests(5, func(i int) *waspapi.RequestBlockJson {
-		return &waspapi.RequestBlockJson{
-			Address:     sc.Address,
+	for i := 0; i < 5; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerIndexUtxodb, waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
-			AmountIotas: 10001,
 			Vars: map[string]interface{}{
 				fairroulette.ReqVarColor: i,
 			},
-		}
-	})
-	for _, req := range reqs {
-		err = SendRequestsNTimes(wasps, sc.OwnerIndexUtxodb, 1, []*waspapi.RequestBlockJson{req}, 0*time.Second)
+			Transfer: map[balance.Color]int64{
+				balance.ColorIOTA: 1000,
+			},
+		})
 	}
 	check(err, t)
 
@@ -190,20 +209,14 @@ func TestSendBetsAndPlay(t *testing.T) {
 	tmp, err := valuetransaction.IDFromBase58(sc.Color)
 	assert.NoError(t, err)
 	scColor := (balance.Color)(tmp)
-
-	scAddr, err := address.FromBase58(sc.Address)
-	assert.NoError(t, err)
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
-
-	if !wasps.VerifyAddressBalances(scAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 7,
-		scColor:           1,
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		scColor: 1,
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 8,
+	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-1, map[balance.Color]int64{
+		balance.ColorIOTA: 1000000000 - 1,
 	}) {
 		t.Fail()
 	}

@@ -373,10 +373,22 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 		}
 		vtxb.inputBalancesByOutput = finp
 	}
+
+	tokensConsumed := make(map[balance.Color]int64)
+	for i := range vtxb.inputBalancesByOutput {
+		for _, bal := range vtxb.inputBalancesByOutput[i].consumed {
+			s, _ := tokensConsumed[bal.Color]
+			tokensConsumed[bal.Color] = s + bal.Value
+		}
+	}
+
+	tokensTransferred := make(map[balance.Color]int64)
 	for i := range vtxb.inputBalancesByOutput {
 		for _, bal := range vtxb.inputBalancesByOutput[i].reminder {
 			if bal.Value > 0 {
 				vtxb.addToOutputs(vtxb.inputBalancesByOutput[i].outputId.Address(), bal.Color, bal.Value)
+				s, _ := tokensTransferred[bal.Color]
+				tokensTransferred[bal.Color] = s + bal.Value
 				bal.Value = 0
 			}
 		}
@@ -401,14 +413,30 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 			return bytes.Compare(outmap[addr][i].Color[:], outmap[addr][j].Color[:]) < 0
 		})
 	}
+	//if !equalColoredBalances(tokensConsumed, tokensTransferred){
+	//	panic("!equalColoredBalances(tokensConsumed, tokensTransferred")
+	//}
 	return valuetransaction.New(
 		valuetransaction.NewInputs(inps...),
 		valuetransaction.NewOutputs(outmap),
 	)
 }
 
+func equalColoredBalances(cb1, cb2 map[balance.Color]int64) bool {
+	if len(cb1) != len(cb2) {
+		return false
+	}
+	for col, b := range cb1 {
+		s, _ := cb2[col]
+		if s != b {
+			return false
+		}
+	}
+	return true
+}
+
 func (vtxb *Builder) Dump() string {
-	ret := ""
+	ret := "inputs:\n"
 	// reminder
 	for i := range vtxb.inputBalancesByOutput {
 		ret += vtxb.inputBalancesByOutput[i].outputId.Address().String() + " - " +
@@ -417,6 +445,12 @@ func (vtxb *Builder) Dump() string {
 			ret += fmt.Sprintf("      %d %s\n", bal.Value, bal.Color.String())
 		}
 	}
-	// TODO the rest
+	ret += "outputs:\n"
+	for addr, balmap := range vtxb.outputBalances {
+		ret += fmt.Sprintf("        %s\n", addr.String())
+		for c, b := range balmap {
+			ret += fmt.Sprintf("                         %s: %d\n", c.String(), b)
+		}
+	}
 	return ret
 }

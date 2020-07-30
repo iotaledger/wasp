@@ -53,6 +53,19 @@ func NewFromBytes(data []byte) (*Transaction, error) {
 // parses dataPayload. Error is returned only if pre-parsing succeeded and parsing failed
 // usually this can happen only due to targeted attack or
 func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, error) {
+	// only value transaction with one input address can be parsed as smart contract transactions
+	// because we always need to deterministically identify the sender
+	countSenders := 0
+	vtx.Inputs().ForEachAddress(func(_ address.Address) bool {
+		countSenders++
+		return true
+	})
+
+	if countSenders != 1 {
+		return nil, fmt.Errorf("transaction must have exactly one input. Can't be parsed as smart contract transaction. txid = %s",
+			vtx.ID().String())
+	}
+
 	rdr := bytes.NewReader(vtx.GetDataPayload())
 	ret := &Transaction{Transaction: vtx}
 	if err := ret.ReadDataPayload(rdr); err != nil {
@@ -76,8 +89,15 @@ func (tx *Transaction) Requests() []*RequestBlock {
 	return tx.requestBlocks
 }
 
-func (tx *Transaction) MustRequest(index uint16) *RequestBlock {
-	return tx.requestBlocks[index]
+// Sender returns first input address. It is the unique address, because
+// ParseValueTransaction doesn't allow other options
+func (tx *Transaction) Sender() *address.Address {
+	var ret address.Address
+	tx.Inputs().ForEachAddress(func(currentAddress address.Address) bool {
+		ret = currentAddress
+		return false
+	})
+	return &ret
 }
 
 func (tx *Transaction) OutputBalancesByAddress(addr *address.Address) ([]*balance.Balance, bool) {

@@ -579,7 +579,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 	return pass
 }
 
-func (cluster *Cluster) VerifyAddressBalances(addr address.Address, expect map[balance.Color]int64) bool {
+func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64) bool {
 	host := cluster.Config.GoshimmerApiHost()
 	allOuts, err := nodeapi.GetAccountOutputs(host, &addr)
 	if err != nil {
@@ -588,11 +588,22 @@ func (cluster *Cluster) VerifyAddressBalances(addr address.Address, expect map[b
 	}
 	byColor, total := util.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
+
+	totalExpectedStr := "(-)"
+	if totalExpected >= 0 {
+		if totalExpected == total {
+			totalExpectedStr = fmt.Sprintf("(%d) OK", totalExpected)
+		} else {
+			totalExpectedStr = fmt.Sprintf("(%d) FAIL", totalExpected)
+			assertionOk = false
+		}
+	}
+	fmt.Printf("[cluster] Balances of the address %s\n      Total tokens: %d %s\n%s\n",
+		addr.String(), total, totalExpectedStr, dumpStr)
+
 	if !assertionOk {
 		fmt.Printf("[cluster] assertion on balances failed\n")
 	}
-
-	fmt.Printf("[cluster] Balances of the address %s\n      Total tokens: %d\n%s\n", addr.String(), total, dumpStr)
 	return assertionOk
 }
 
