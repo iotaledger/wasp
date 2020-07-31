@@ -196,7 +196,11 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 		// send the timelocked Lock request to self. Timelock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
-		ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period))
+		if ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period)) {
+			ctx.Publishf("play deadline is set after %d seconds", period)
+		} else {
+			ctx.Publishf("failed to set play deadline")
+		}
 	}
 }
 
@@ -315,14 +319,14 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		// However, it is healthy to compress number of outputs in the address
 		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetSCAddress(), &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
-			ctx.Publishf("$$$$$$$$$$ something wrong 1")
+			ctx.Publishf("$$$$$$$$$$ something went wrong 1")
 			ctx.Panic("MoveTokens failed")
 		}
 	}
 
 	// distribute total staked amount to players
 	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
-		ctx.Publishf("$$$$$$$$$$ something wrong 2")
+		ctx.Publishf("$$$$$$$$$$ something went wrong 2")
 		ctx.Panic("distributeLockedAmount failed")
 	}
 
@@ -396,7 +400,13 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	}
 	// distribute iotas
 	for i := range finalWinners {
+
+		available := ctx.AccessOwnAccount().AvailableBalance(&balance.ColorIOTA)
+		ctx.Publishf("sending reward iotas %d to the winner %s. Available iotas: %d",
+			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available)
+
 		if !ctx.AccessOwnAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
+
 			return false
 		}
 	}

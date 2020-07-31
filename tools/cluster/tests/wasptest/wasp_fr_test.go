@@ -5,10 +5,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/stretchr/testify/assert"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"testing"
 	"time"
 )
+
+const iotasFromTheFaucet = 1337
 
 func TestSend1Bet(t *testing.T) {
 	// setup
@@ -37,6 +39,11 @@ func TestSend1Bet(t *testing.T) {
 	check(err, t)
 
 	ownerAddr := sc.OwnerAddress()
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	}) {
+		t.Fail()
+	}
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddress,
@@ -45,7 +52,7 @@ func TestSend1Bet(t *testing.T) {
 			fairroulette.ReqVarColor: 3,
 		},
 		Transfer: map[balance.Color]int64{
-			balance.ColorIOTA: 1001,
+			balance.ColorIOTA: 100,
 		},
 	})
 	check(err, t)
@@ -58,19 +65,18 @@ func TestSend1Bet(t *testing.T) {
 
 	scColor := *scColors[sc.Address]
 
-	scAddr, err := address.FromBase58(sc.Address)
-	assert.NoError(t, err)
+	scAddr := sc.SCAddress()
 
-	if !wasps.VerifyAddressBalances(scAddr, 1002, map[balance.Color]int64{
-		balance.ColorIOTA: 1000,
+	if !wasps.VerifyAddressBalances(scAddr, 101, map[balance.Color]int64{
+		balance.ColorIOTA: 99,
 		scColor:           1,
-		// +1 more pending timelocked request
+		// +1 more pending in self sent timelocked request
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-1-1000-1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1 - 1000 - 1,
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-1-100, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 1 - 100,
 	}) {
 		t.Fail()
 	}
@@ -91,7 +97,7 @@ func TestSend5Bets(t *testing.T) {
 	})
 	check(err, t)
 
-	scColors, err := PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[3]
@@ -106,6 +112,12 @@ func TestSend5Bets(t *testing.T) {
 	ownerAddr := sc.OwnerAddress()
 	check(err, t)
 
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	}) {
+		t.Fail()
+	}
+
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddress,
@@ -114,7 +126,7 @@ func TestSend5Bets(t *testing.T) {
 				fairroulette.ReqVarColor: i,
 			},
 			Transfer: map[balance.Color]int64{
-				balance.ColorIOTA: 1000,
+				balance.ColorIOTA: 100,
 			},
 		})
 	}
@@ -126,16 +138,16 @@ func TestSend5Bets(t *testing.T) {
 		t.Fail()
 	}
 
-	scColor := *scColors[sc.Address]
+	scColor := sc.GetColor()
 
-	if !wasps.VerifyAddressBalances(scAddress, 5001, map[balance.Color]int64{
-		balance.ColorIOTA: 4999, // one request sent to itself
+	if !wasps.VerifyAddressBalances(scAddress, 501, map[balance.Color]int64{
+		balance.ColorIOTA: 499, // one request sent to itself
 		scColor:           1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-1-5000, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1 - 5000,
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-1-500, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 1 - 500,
 	}) {
 		t.Fail()
 	}
@@ -149,13 +161,13 @@ func TestSendBetsAndPlay(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          9,
-		"request_out":         10,
+		"request_in":          10,
+		"request_out":         11,
 		"state":               -1,
 	})
 	check(err, t)
 
-	scColors, err := PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	sc := &wasps.SmartContractConfig[3]
@@ -170,6 +182,21 @@ func TestSendBetsAndPlay(t *testing.T) {
 	ownerAddr := sc.OwnerAddress()
 	check(err, t)
 
+	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: vmconst.RequestCodeNOP,
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 1,
+		},
+	})
+	time.Sleep(1 * time.Second)
+
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	}) {
+		t.Fail()
+	}
 	// SetPlayPeriod must be processed first
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddress,
@@ -190,7 +217,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 				fairroulette.ReqVarColor: i,
 			},
 			Transfer: map[balance.Color]int64{
-				balance.ColorIOTA: 1000,
+				balance.ColorIOTA: 100,
 			},
 		})
 	}
@@ -201,15 +228,16 @@ func TestSendBetsAndPlay(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	scColor := *scColors[sc.Address]
-	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
-		scColor: 1,
+	scColor := sc.GetColor()
+	if !wasps.VerifyAddressBalances(scAddress, 2, map[balance.Color]int64{
+		scColor:           1,
+		balance.ColorIOTA: 1,
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1,
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 2,
 	}) {
 		t.Fail()
 	}

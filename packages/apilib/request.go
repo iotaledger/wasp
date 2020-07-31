@@ -49,14 +49,14 @@ func CreateSimpleRequest(node string, sigScheme signaturescheme.SignatureScheme,
 
 	tx, err := txb.Build(false)
 
-	dump := txb.Dump()
+	//dump := txb.Dump()
 
 	if err != nil {
 		return nil, err
 	}
 	tx.Sign(sigScheme)
 
-	fmt.Printf("$$$$ dumping builder for %s\n%s\n", tx.ID().String(), dump)
+	//fmt.Printf("$$$$ dumping builder for %s\n%s\n", tx.ID().String(), dump)
 
 	return tx, nil
 }

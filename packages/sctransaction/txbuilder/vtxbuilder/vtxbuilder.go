@@ -409,19 +409,6 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 	)
 }
 
-func equalColoredBalances(cb1, cb2 map[balance.Color]int64) bool {
-	if len(cb1) != len(cb2) {
-		return false
-	}
-	for col, b := range cb1 {
-		s, _ := cb2[col]
-		if s != b {
-			return false
-		}
-	}
-	return true
-}
-
 func (vtxb *Builder) Dump() string {
 	ret := "inputs:\n"
 	// remain

@@ -37,7 +37,7 @@ func createVMContext(ctx *vm.VMTask, txb *txbuilder.Builder) (*vm.VMContext, err
 			ctx.Log.Errorf("createVMContext: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
 			return nil, fmt.Errorf("createVMContext: %v", err)
 		}
-		ctx.Log.Infof("$$$$$$$ erased 1 request token color %s to addr %s. Remains %d",
+		ctx.Log.Debugf("$$$$$$$ erased 1 request token color %s to addr %s. Remains %d",
 			reqTxId.String(), targetAddress.String(), txb.GetInputBalanceFromTransaction((balance.Color)(reqTxId), reqTxId))
 	}
 

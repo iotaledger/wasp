@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"testing"
 	"time"
 )
@@ -67,8 +68,8 @@ func TestFA1Color0Bids(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          3,
-		"request_out":         4,
+		"request_in":          4,
+		"request_out":         5,
 		"state":               -1,
 		"vmmsg":               -1,
 	})
@@ -92,21 +93,30 @@ func TestFA1Color0Bids(t *testing.T) {
 	color1, err := mintNewColoredTokens(wasps, sc.OwnerSigScheme(), 1)
 	check(err, t)
 
+	scAddress := sc.SCAddress()
 	ownerAddr := sc.OwnerAddress()
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-3+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 3,
+
+	// send 1i to the SC address. It is needed to send the request to self to start new auction ("operating capital")
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: vmconst.RequestCodeNOP,
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 1,
+		},
+	})
+	time.Sleep(1 * time.Second)
+
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-3+1, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 3,
 		*color1:           1,
 	}) {
 		t.Fail()
 		return
 	}
 
-	scAddr, err := address.FromBase58(sc.Address)
-	check(err, t)
-
 	// send request StartAuction
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
-		SCAddress:   &scAddr,
+		SCAddress:   &scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -126,15 +136,17 @@ func TestFA1Color0Bids(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(scAddr, 8, map[balance.Color]int64{
-		balance.ColorIOTA: 7,
-		// +1 SC token
+	scColor := sc.GetColor()
+
+	if !wasps.VerifyAddressBalances(scAddress, 2, map[balance.Color]int64{
+		balance.ColorIOTA: 1,
+		scColor:           1,
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-8-1+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 8 - 1,
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2-1+1, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 2 - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
@@ -149,8 +161,8 @@ func TestFA2Color0Bids(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          5,
-		"request_out":         6,
+		"request_in":          6,
+		"request_out":         7,
 		"state":               -1,
 		"vmmsg":               -1,
 	})
@@ -173,12 +185,27 @@ func TestFA2Color0Bids(t *testing.T) {
 	// create 1 colored token
 	color1, err := mintNewColoredTokens(wasps, sc.OwnerSigScheme(), 1)
 	check(err, t)
+	time.Sleep(1 * time.Second)
+
 	color2, err := mintNewColoredTokens(wasps, sc.OwnerSigScheme(), 1)
 	check(err, t)
+	time.Sleep(1 * time.Second)
+
+	scAddress := sc.SCAddress()
+
+	// send 2i to the SC address. It is needed to send the request to self to start 2 new auctions ("operating capital")
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: vmconst.RequestCodeNOP,
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 2,
+		},
+	})
+	time.Sleep(1 * time.Second)
 
 	ownerAddr := sc.OwnerAddress()
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-4+1+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 4, // 2 to SC, 2 to new color
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-5+2, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 5, // 1 to origin, 2 to new color, 2 for operating capital of SC
 		*color1:           1,
 		*color2:           1,
 	}) {
@@ -186,12 +213,9 @@ func TestFA2Color0Bids(t *testing.T) {
 		return
 	}
 
-	scAddr, err := address.FromBase58(sc.Address)
-	check(err, t)
-
 	// send request StartAuction for color1
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
-		SCAddress:   &scAddr,
+		SCAddress:   &scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -204,12 +228,11 @@ func TestFA2Color0Bids(t *testing.T) {
 		},
 	})
 	check(err, t)
-
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	// send request StartAuction for color2
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
-		SCAddress:   &scAddr,
+		SCAddress:   &scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color2,
@@ -229,15 +252,15 @@ func TestFA2Color0Bids(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(scAddr, 13+1, map[balance.Color]int64{
-		balance.ColorIOTA: 13,
-		// +1 SC token
+	if !wasps.VerifyAddressBalances(scAddress, 3, map[balance.Color]int64{
+		balance.ColorIOTA: 2,
+		sc.GetColor():     1,
 	}) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, 1000000000-14-2+1+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 14 - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-3, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 5,
 		*color1:           1,
 		*color2:           1,
 	}) {
@@ -271,7 +294,6 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	scColors, err := PutBootupRecords(wasps)
 	check(err, t)
 
-	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
 	err = Activate1SC(wasps, sc)

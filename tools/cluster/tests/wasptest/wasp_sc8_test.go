@@ -1,8 +1,11 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/examples/sc8"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"testing"
 	"time"
 )
@@ -37,17 +40,41 @@ func TestSC8Requests5Sec1(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
-			RequestCode: wasmpoc.RequestNOP,
-		},
+	scAddress := sc.SCAddress()
+	ownerAddress := sc.OwnerAddress()
+
+	for i := 0; i < 5; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: vmconst.RequestCodeNOP,
+		})
+		check(err, t)
+		time.Sleep(1 * time.Second)
 	}
-	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 5, reqs, 1*time.Second)
-	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifyAddressBalances(ownerAddress, iotasFromTheFaucet-1, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  []byte(sc8.ProgramHash),
+	}) {
 		t.Fail()
 	}
 }
