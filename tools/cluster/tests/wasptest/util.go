@@ -24,7 +24,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 
 	//fmt.Printf("++++++++++ create origin bind address: %s\n", bindAddress)
 
-	tx, err := cluster.CreateOrigin(bindAddress, sc)
+	tx, err := sc.CreateOrigin(bindAddress)
 	if err != nil {
 		return err
 	}
@@ -43,12 +43,6 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	}
 	//fmt.Printf("[cluster] posted node origin tx to Goshimmer: addr: %s, txid: %s\n", sc.Address, tx.ID().String())
 
-	//outs, err := nodeapi.GetAccountOutputs(clu.Config.Goshimmer.BindAddress, &ownerAddr)
-	//if err != nil{
-	//	fmt.Printf("nodeapi.GetAccountOutputs after post origin %s: %v\n", ownerAddr.String(), err)
-	//} else {
-	//	fmt.Printf("nodeapi.GetAccountOutputs after post origin %s: \n%+v\n", ownerAddr.String(), outs)
-	//}
 	return nil
 }
 

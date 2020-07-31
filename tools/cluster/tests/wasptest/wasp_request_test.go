@@ -1,7 +1,9 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/kv"
 	"testing"
 	"time"
 
@@ -32,17 +34,30 @@ func TestSend1Request(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
-			RequestCode: vmconst.RequestCodeNOP,
-		},
-	}
-	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 1, reqs, 0*time.Second)
+	scAddress := sc.SCAddress()
+
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: vmconst.RequestCodeNOP,
+	})
 	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -71,17 +86,33 @@ func TestSend5Requests1Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 5; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
-		},
+		})
+		check(err, t)
+		time.Sleep(1 * time.Second)
 	}
-	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 5, reqs, 1*time.Second)
-	check(err, t)
 
 	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -111,17 +142,32 @@ func TestSend10Requests0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
-			RequestCode: vmconst.RequestCodeNOP,
-		},
-	}
-	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 10, reqs, 0*time.Second)
-	check(err, t)
+	scAddress := sc.SCAddress()
 
-	wasps.CollectMessages(20 * time.Second)
+	for i := 0; i < 10; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: vmconst.RequestCodeNOP,
+		})
+		check(err, t)
+	}
+
+	wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -136,7 +182,7 @@ func TestSend60Requests500msec(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          61,
 		"request_out":         62,
-		"state":               60,
+		"state":               -1,
 	})
 	check(err, t)
 
@@ -150,17 +196,33 @@ func TestSend60Requests500msec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 60; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
-		},
+		})
+		check(err, t)
+		time.Sleep(500 * time.Millisecond)
 	}
-	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 60, reqs, 500*time.Millisecond)
-	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -189,17 +251,32 @@ func TestSend60Requests0Sec(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	reqs := []*waspapi.RequestBlockJson{
-		{Address: sc.Address,
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 60; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
-		},
+		})
+		check(err, t)
 	}
-	err = SendRequestsNTimes(wasps, sc.OwnerSigScheme(), 60, reqs, 0*time.Millisecond)
-	check(err, t)
 
 	wasps.CollectMessages(40 * time.Second)
 
 	if !wasps.Report() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }

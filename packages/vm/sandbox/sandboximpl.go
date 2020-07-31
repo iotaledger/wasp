@@ -129,7 +129,7 @@ func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCod
 }
 
 func (vctx *sandbox) Publish(msg string) {
-	vctx.Log.Infof("VMMSG: %s %s", vctx.ProgramHash.String(), msg)
+	vctx.Log.Infof("VMMSG: %s '%s'", vctx.ProgramHash.String(), msg)
 	publisher.Publish("vmmsg", vctx.ProgramHash.String(), msg)
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"io"
 	"io/ioutil"
 	"os"
@@ -41,6 +42,8 @@ type SmartContractFinalConfig struct {
 	AccessNodes    []int    `json:"access_nodes,omitempty"`
 	OwnerSeed      []byte   `json:"owner_seed"`
 	DKShares       []string `json:"dkshares"` // [node index]
+	//
+	originTx *sctransaction.Transaction // cached after CreateOrigin call
 }
 
 type SmartContractInitData struct {
@@ -86,6 +89,14 @@ func (sc *SmartContractFinalConfig) AllNodes() []int {
 	r = append(r, sc.CommitteeNodes...)
 	r = append(r, sc.AccessNodes...)
 	return r
+}
+
+func (sc *SmartContractFinalConfig) SCAddress() address.Address {
+	ret, err := address.FromBase58(sc.Address)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (sc *SmartContractFinalConfig) OwnerAddress() address.Address {

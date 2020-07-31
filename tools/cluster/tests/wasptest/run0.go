@@ -47,7 +47,7 @@ func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) (*bal
 		return nil, err
 	}
 
-	origTx, err := cluster.CreateOrigin(clu.Config.GoshimmerApiHost(), sc)
+	origTx, err := sc.CreateOrigin(clu.Config.GoshimmerApiHost())
 	if err != nil {
 		return nil, err
 	}

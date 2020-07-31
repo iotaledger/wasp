@@ -67,7 +67,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 	return ioutil.WriteFile(keysFile, buf, 0644)
 }
 
-func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
+func (scdata *SmartContractFinalConfig) CreateOrigin(host string) (*sctransaction.Transaction, error) {
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
 		return nil, err
@@ -93,5 +93,21 @@ func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction
 	}
 	fmt.Printf("[cluster] created origin data: addr : %s descr: %s program hash: %s\n",
 		addr.String(), scdata.Description, scdata.ProgramHash)
+	scdata.originTx = origTx
 	return origTx, nil
+}
+
+func (scdata *SmartContractFinalConfig) GetColor() balance.Color {
+	if scdata.originTx == nil {
+		panic("origin trabsaction hasn't been created yet")
+	}
+	return (balance.Color)(scdata.originTx.ID())
+}
+
+func (scdata *SmartContractFinalConfig) GetProgramHash() *hashing.HashValue {
+	h, err := hashing.HashValueFromBase58(scdata.ProgramHash)
+	if err != nil {
+		panic(err)
+	}
+	return &h
 }

@@ -16,6 +16,7 @@ const (
 	RequestIncAndRepeatMany        = sctransaction.RequestCode(uint16(3))
 
 	ArgNumRepeats = "numrepeats"
+	VarNumRepeats = "numrepeats"
 )
 
 var entryPoints = incCounterProcessor{
@@ -57,12 +58,15 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64("counter")
 
-	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
+	ctx.Publish(fmt.Sprintf("increasing counter value: %d", val))
 	state.SetInt64("counter", val+1)
 	if val == 0 {
-		ctx.GetWaspLog().Info("SendRequestToSelfWithDelay 5 sec")
 
-		ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatOnceAfter5s, nil, 5)
+		if ctx.SendRequestToSelfWithDelay(RequestInc, nil, 5) {
+			ctx.Publish("SendRequestToSelfWithDelay RequestInc 5 sec")
+		} else {
+			ctx.Publish("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
+		}
 	}
 }
 
@@ -78,7 +82,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 		ctx.Panic(err)
 	}
 	if !ok {
-		numRepeats, ok = state.GetInt64(ArgNumRepeats)
+		numRepeats, ok = state.GetInt64(VarNumRepeats)
 		if err != nil {
 			ctx.Panic(err)
 		}
@@ -88,9 +92,13 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	ctx.GetWaspLog().Infof("chain of %d requests ahead", numRepeats)
+	ctx.Publishf("chain of %d requests ahead", numRepeats)
 
-	state.SetInt64(ArgNumRepeats, numRepeats-1)
+	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatMany, nil, 3)
+	if ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatMany, nil, 3) {
+		ctx.Publishf("SendRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+	} else {
+		ctx.Publishf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+	}
 }
