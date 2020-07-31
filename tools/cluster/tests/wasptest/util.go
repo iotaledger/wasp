@@ -2,12 +2,12 @@ package wasptest
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 const goshimmerDirectly = true
@@ -31,14 +31,10 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 
 	fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
 
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
+	ownerAddr := sc.OwnerAddress()
 	sh := tx.MustState().StateHash()
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
-
-	if tx.ID().String() != sc.Color {
-		return fmt.Errorf("mismatch: origin tx id %s should be equal to SC color %s", tx.ID().String(), sc.Color)
-	}
 
 	// in real situation we have to wait for confirmation
 	err = clu.PostAndWaitForConfirmation(tx.Transaction)
@@ -56,10 +52,8 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	return nil
 }
 
-func mintNewColoredTokens(wasps *cluster.Cluster, ownerIdx int, amount int64) (*balance.Color, error) {
-	ownerAddr := utxodb.GetAddress(ownerIdx)
-	ownerSigScheme := utxodb.GetSigScheme(ownerAddr)
-	tx, err := waspapi.NewColoredTokensTransaction(wasps.Config.GoshimmerApiHost(), ownerSigScheme, amount)
+func mintNewColoredTokens(wasps *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, amount int64) (*balance.Color, error) {
+	tx, err := waspapi.NewColoredTokensTransaction(wasps.Config.GoshimmerApiHost(), sigScheme, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -82,11 +76,11 @@ func MakeRequests(n int, constr func(int) *waspapi.RequestBlockJson) []*waspapi.
 	return ret
 }
 
-func SendRequestsNTimes(clu *cluster.Cluster, senderIndexUtxodb int, n int, reqs []*waspapi.RequestBlockJson, wait time.Duration) error {
+func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []*waspapi.RequestBlockJson, wait time.Duration) error {
 	for i := 0; i < n; i++ {
 		// in real situation one must wait until the previous request is confirmed
 		// (because of access to the same owner address)
-		err := SendRequests(clu, senderIndexUtxodb, reqs)
+		err := SendRequests(clu, sigScheme, reqs)
 		if err != nil {
 			return err
 		}
@@ -95,8 +89,8 @@ func SendRequestsNTimes(clu *cluster.Cluster, senderIndexUtxodb int, n int, reqs
 	return nil
 }
 
-func SendSimpleRequest(clu *cluster.Cluster, senderIndexUtxodb int, reqParams waspapi.CreateSimpleRequestParams) error {
-	tx, err := createSimpleRequestTx(clu.Config.GoshimmerApiHost(), senderIndexUtxodb, &reqParams)
+func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams waspapi.CreateSimpleRequestParams) error {
+	tx, err := waspapi.CreateSimpleRequest(clu.Config.GoshimmerApiHost(), sigScheme, reqParams)
 	if err != nil {
 		return err
 	}
@@ -113,13 +107,8 @@ func SendSimpleRequest(clu *cluster.Cluster, senderIndexUtxodb int, reqParams wa
 	return nil
 }
 
-func createSimpleRequestTx(node string, senderIndexUtxodb int, reqParams *waspapi.CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
-	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(senderIndexUtxodb))
-	return waspapi.CreateSimpleRequest(node, sigScheme, *reqParams)
-}
-
-func SendRequests(clu *cluster.Cluster, senderIndexUtxodb int, reqs []*waspapi.RequestBlockJson) error {
-	tx, err := createRequestTx(clu.Config.GoshimmerApiHost(), senderIndexUtxodb, reqs)
+func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqs []*waspapi.RequestBlockJson) error {
+	tx, err := waspapi.CreateRequestTransaction(clu.Config.GoshimmerApiHost(), sigScheme, reqs)
 	if err != nil {
 		return err
 	}
@@ -134,9 +123,4 @@ func SendRequests(clu *cluster.Cluster, senderIndexUtxodb int, reqs []*waspapi.R
 	}
 	//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
 	return nil
-}
-
-func createRequestTx(node string, senderIndexUtxodb int, reqs []*waspapi.RequestBlockJson) (*sctransaction.Transaction, error) {
-	sigScheme := utxodb.GetSigScheme(utxodb.GetAddress(senderIndexUtxodb))
-	return waspapi.CreateRequestTransaction(node, sigScheme, reqs)
 }

@@ -13,16 +13,15 @@
 //
 //   wallet balance [-i index]
 //
-// Transfer `amount` IOTA from the given utxodb addres index to the wallet address at index n:
+// Use Faucet to transfer some funds into the wallet address at index n:
 //
-//   wallet transfer [-i index] utxodb-index amount
+//   wallet request-funds [-i index]
 //
 package wallet
 
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/spf13/pflag"
 )
@@ -50,18 +49,8 @@ func Cmd(args []string) {
 	case "balance":
 		dumpBalance()
 
-	case "transfer":
-		if len(args) != 3 {
-			fmt.Printf("Usage: %s wallet transfer <utxodb-index> <amount>\n", os.Args[0])
-			os.Exit(1)
-		}
-
-		utxodbIndex, err := strconv.Atoi(args[1])
-		check(err)
-		amount, err := strconv.Atoi(args[2])
-		check(err)
-
-		transfer(utxodbIndex, amount)
+	case "request-funds":
+		requestFunds()
 
 	default:
 		usage()
@@ -76,6 +65,6 @@ func check(err error) {
 }
 
 func usage() {
-	fmt.Printf("Usage: %s wallet [init|address|balance|transfer]\n", os.Args[0])
+	fmt.Printf("Usage: %s wallet [init|address|balance|request-funds]\n", os.Args[0])
 	os.Exit(1)
 }

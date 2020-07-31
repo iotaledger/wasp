@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
@@ -26,7 +28,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 
 	keys := make([]SmartContractFinalConfig, 0)
 
-	for i, sc := range cluster.Config.SmartContracts {
+	for _, sc := range cluster.Config.SmartContracts {
 		committee := cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost)
 		addr, err := waspapi.GenerateNewDistributedKeySet(
 			committee,
@@ -49,15 +51,12 @@ func (cluster *Cluster) GenerateDKSets() error {
 		}
 
 		scdata := SmartContractFinalConfig{
-			Address:          addr.String(),
-			Description:      sc.Description,
-			ProgramHash:      hashing.HashStrings(sc.Description).String(),
-			CommitteeNodes:   sc.CommitteeNodes,
-			OwnerIndexUtxodb: i + 1, // owner index from utxodb
-			DKShares:         dkShares,
-		}
-		if err = calcColorUtxodb(&scdata); err != nil {
-			return err
+			Address:        addr.String(),
+			Description:    sc.Description,
+			ProgramHash:    hashing.HashStrings(sc.Description).String(),
+			CommitteeNodes: sc.CommitteeNodes,
+			OwnerSeed:      seed.NewSeed().Bytes(),
+			DKShares:       dkShares,
 		}
 		keys = append(keys, scdata)
 	}
@@ -66,39 +65,6 @@ func (cluster *Cluster) GenerateDKSets() error {
 		return err
 	}
 	return ioutil.WriteFile(keysFile, buf, 0644)
-}
-
-func calcColorUtxodb(scdata *SmartContractFinalConfig) error {
-	origTx, err := CreateOriginUtxodb(scdata)
-	if err != nil {
-		return err
-	}
-	scdata.Color = origTx.ID().String()
-	return nil
-}
-
-func CreateOriginUtxodb(scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
-	addr, err := address.FromBase58(scdata.Address)
-	if err != nil {
-		return nil, err
-	}
-	progHash, err := hashing.HashValueFromBase58(scdata.ProgramHash)
-	if err != nil {
-		return nil, err
-	}
-	// creating origin transaction just to determine color
-	origTx, err := waspapi.CreateOriginUtxodb(waspapi.CreateOriginParams{
-		Address:              addr,
-		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
-		ProgramHash:          progHash,
-		Variables: kv.FromGoMap(map[kv.Key][]byte{
-			"description": []byte(scdata.Description),
-		}),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return origTx, nil
 }
 
 func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction.Transaction, error) {
@@ -110,14 +76,17 @@ func CreateOrigin(host string, scdata *SmartContractFinalConfig) (*sctransaction
 	if err != nil {
 		return nil, err
 	}
-	// creating origin transaction just to determine color
-	origTx, err := waspapi.CreateOrigin(host, waspapi.CreateOriginParams{
+	ownerAddress := scdata.OwnerAddress()
+	allOuts, err := nodeapi.GetAccountOutputs(host, &ownerAddress)
+	if err != nil {
+		return nil, err
+	}
+	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              addr,
-		OwnerSignatureScheme: utxodb.GetSigScheme(utxodb.GetAddress(scdata.OwnerIndexUtxodb)),
+		OwnerSignatureScheme: scdata.OwnerSigScheme(),
+		AllInputs:            allOuts,
+		InputColor:           balance.ColorIOTA,
 		ProgramHash:          progHash,
-		Variables: kv.FromGoMap(map[kv.Key][]byte{
-			"description": []byte(scdata.Description),
-		}),
 	})
 	if err != nil {
 		return nil, err

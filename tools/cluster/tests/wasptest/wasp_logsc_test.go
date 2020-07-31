@@ -22,9 +22,10 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 	err := clu.ListenToMessages(expectations)
 	check(err, t)
 
-	sc := &clu.SmartContractConfig[1]
-	err = putScData(sc, clu)
+	_, err = PutBootupRecords(clu)
 	check(err, t)
+
+	sc := &clu.SmartContractConfig[0]
 
 	err = Activate1SC(clu, sc)
 	check(err, t)
@@ -53,7 +54,7 @@ func TestLogsc1(t *testing.T) {
 			"message": "message 0",
 		},
 	}}
-	err := SendRequestsNTimes(clu, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
+	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	clu.CollectMessages(30 * time.Second)
@@ -90,7 +91,7 @@ func TestLogsc5(t *testing.T) {
 			},
 		}
 	})
-	err := SendRequestsNTimes(clu, sc.OwnerIndexUtxodb, 1, reqs, 0*time.Millisecond)
+	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
 	check(err, t)
 
 	clu.CollectMessages(20 * time.Second)

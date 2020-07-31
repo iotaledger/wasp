@@ -2,7 +2,12 @@
 
 Steps:
 
-1. Install `goshimmer` command: `go install` in the Goshimmer directory
+1. Start a Goshimmer network from the Goshimmer directory:
+
+```
+cd <goshimmer>/tools/docker-network
+./run.sh 2
+```
 
 2. Install the `wasp`, `fairroulette` and `waspt` commands:
 
@@ -26,11 +31,7 @@ fairroulette -c owner.json wallet init
 
 This will create the file `owner.json` with the admin user's wallet.
 
-5. Transfer some funds to the owner address: `fairroulette -c owner.json wallet transfer 1 10000`.
-
-`1` is the `utxodb` address index used as source for the funds.
-
-`10000` is the amount of IOTAs to transfer.
+5. Transfer some funds to the owner address: `fairroulette -c owner.json wallet request-funds`.
 
 6. Initialize the FairRoulette smart contract:
 
@@ -50,7 +51,7 @@ fairroulette wallet init
 
 This creates `fairroulette.json` (can be changed with `-c`).
 
-8. Transfer some funds to your wallet: `fairroulette wallet transfer 1 10000`.
+8. Transfer some funds to your wallet: `fairroulette wallet request-funds`.
 
 9. Query your balance:
 

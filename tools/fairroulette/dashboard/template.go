@@ -110,7 +110,7 @@ $ go install ./tools/fairroulette
 $ fairroulette set wasp.api {{.Host}}:9090
 $ fairroulette set address {{.SCAddress}}</pre>
 			<p>Initialize a wallet: <code>fairroulette wallet init</code></p>
-			<p>Get some funds: <code>fairroulette wallet transfer 1 10000</code></p>
+			<p>Get some funds: <code>fairroulette wallet request-funds</code></p>
 		</details>
 		<details>
 			<summary>3. Place bets</summary>

@@ -19,7 +19,7 @@ const (
 )
 
 func HookFlags() *pflag.FlagSet {
-	flags := pflag.NewFlagSet("wallet", pflag.ExitOnError)
+	flags := pflag.NewFlagSet("config", pflag.ExitOnError)
 	flags.StringVarP(&configPath, "config", "c", "fairroulette.json", "path to fairroulette.json")
 	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
 	return flags

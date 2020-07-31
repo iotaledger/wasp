@@ -1,4 +1,4 @@
-package wallet
+package testutil
 
 import (
 	"fmt"
@@ -8,21 +8,26 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
 )
 
-func transfer(utxodbIndex int, amount int) {
-	walletAddress := Load().Address()
-	check(nodeapi.PostTransaction(
-		config.GoshimmerApi(),
-		makeTransferTx(walletAddress, utxodbIndex, int64(amount)),
-	))
+func RequestFunds(goshimmerHost string, targetAddress address.Address) error {
+	// TODO: allow using "real" goshimmer API to request funds
+	tx, err := makeUtxodbTransferTx(goshimmerHost, targetAddress)
+	if err != nil {
+		return err
+	}
+
+	return nodeapi.PostTransaction(goshimmerHost, tx)
 }
 
-func makeTransferTx(target address.Address, utxodbIndex int, amount int64) *transaction.Transaction {
-	source := utxodb.GetAddress(utxodbIndex)
-	sourceOutputs, err := nodeapi.GetAccountOutputs(config.GoshimmerApi(), &source)
-	check(err)
+func makeUtxodbTransferTx(goshimmerHost string, target address.Address) (*transaction.Transaction, error) {
+	source := utxodb.GetAddress(1)
+	sourceOutputs, err := nodeapi.GetAccountOutputs(goshimmerHost, &source)
+	if err != nil {
+		return nil, err
+	}
+
+	amount := int64(1337) // same as Faucet
 
 	oids := make([]transaction.OutputID, 0)
 	sum := int64(0)
@@ -43,7 +48,7 @@ func makeTransferTx(target address.Address, utxodbIndex int, amount int64) *tran
 	}
 
 	if sum < amount {
-		panic(fmt.Errorf("not enough input balance"))
+		return nil, fmt.Errorf("not enough input balance")
 	}
 
 	inputs := transaction.NewInputs(oids...)
@@ -57,5 +62,5 @@ func makeTransferTx(target address.Address, utxodbIndex int, amount int64) *tran
 
 	tx := transaction.New(inputs, outputs)
 	tx.Sign(utxodb.GetSigScheme(source))
-	return tx
+	return tx, nil
 }
