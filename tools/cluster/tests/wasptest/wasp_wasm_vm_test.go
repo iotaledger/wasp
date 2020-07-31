@@ -44,7 +44,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
 			SCAddress:   &scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			RequestCode: wasmpoc.RequestNOP,
 		})
 		check(err, t)
 		time.Sleep(1 * time.Second)
