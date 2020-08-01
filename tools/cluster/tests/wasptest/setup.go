@@ -16,6 +16,11 @@ func check(err error, t *testing.T) {
 	}
 }
 
+const (
+	iotasFromTheFaucet = 1337
+	iotasFromUtxodb    = 1000000000
+)
+
 func setup(t *testing.T, configPath string, testName string) *cluster.Cluster {
 
 	_, filename, _, _ := runtime.Caller(0)

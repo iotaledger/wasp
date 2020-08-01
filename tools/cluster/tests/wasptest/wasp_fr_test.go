@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const iotasFromTheFaucet = 1337
-
 func TestSend1Bet(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend1Bet")

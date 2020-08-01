@@ -453,12 +453,24 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		ctx.Publishf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
 	} else {
 		// return unsold tokens to auction owner
-		account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens)
+		if account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens) {
+			ctx.Publishf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens)
+		}
+
 		// return deposit less fees
-		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee)
+		if account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
+			ctx.Publishf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee)
+		}
+
 		// return bids to bidders
+		// FIXME: SC don't have iotas to send requests back
 		for _, bi := range ai.Bids {
-			account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+			if account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total) {
+				ctx.Publishf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String())
+			} else {
+				avail := ctx.AccessOwnAccount().AvailableBalance(&balance.ColorIOTA)
+				ctx.Publishf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail)
+			}
 		}
 		ctx.Publishf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids))
 	}
