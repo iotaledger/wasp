@@ -17,12 +17,21 @@ func (vctx *sandbox) EraseColor(targetAddr *address.Address, col *balance.Color,
 	return vctx.TxBuilder.EraseColor(*targetAddr, *col, amount) == nil
 }
 
-func (vctx *sandbox) HarvestFees(amount int64) bool {
+func (vctx *sandbox) HarvestFees(amount int64) int64 {
+	if amount == 0 {
+		return 0
+	}
 	available := vctx.TxBuilder.GetInputBalance(balance.ColorIOTA)
+	if available == 0 {
+		return 0
+	}
 	if available < amount {
 		amount = available
 	}
-	return vctx.TxBuilder.MoveToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount) == nil
+	if err := vctx.TxBuilder.MoveToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount); err != nil {
+		return 0
+	}
+	return amount
 }
 
 func (vctx *sandbox) AvailableBalanceFromRequest(col *balance.Color) int64 {

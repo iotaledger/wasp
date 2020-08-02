@@ -69,7 +69,7 @@ type AccountAccess interface {
 	MoveTokensFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
 	EraseColorFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
 	// send iotas to the smart contract owner
-	HarvestFees(amount int64) bool
+	HarvestFees(amount int64) int64
 	HarvestFeesFromRequest(amount int64) bool
 }
 

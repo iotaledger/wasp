@@ -161,8 +161,8 @@ func TestFA2Color0Bids(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          6,
-		"request_out":         7,
+		"request_in":          5,
+		"request_out":         6,
 		"state":               -1,
 		"vmmsg":               -1,
 	})
@@ -192,26 +192,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	scAddress := sc.SCAddress()
-
-	// send 2i to the SC address. It is needed to send the request to self to start 2 new auctions ("operating capital")
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
-		SCAddress:   &scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
-		Transfer: map[balance.Color]int64{
-			balance.ColorIOTA: 2,
-		},
-	})
-	time.Sleep(1 * time.Second)
-
-	ownerAddr := sc.OwnerAddress()
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-5+2, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 5, // 1 to origin, 2 to new color, 2 for operating capital of SC
-		*color1:           1,
-		*color2:           1,
-	}) {
-		t.Fail()
-		return
-	}
+	auctionOwnerAddr := sc.OwnerAddress()
 
 	// send request StartAuction for color1
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
@@ -221,6 +202,7 @@ func TestFA2Color0Bids(t *testing.T) {
 			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
 			fairauction.VarReqStartAuctionDurationMinutes: 1,
+			fairauction.VarReqStartAuctionDescription:     "Auction for color1",
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 5, // 5% from 100
@@ -238,6 +220,7 @@ func TestFA2Color0Bids(t *testing.T) {
 			fairauction.VarReqAuctionColor:                color2,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
 			fairauction.VarReqStartAuctionDurationMinutes: 1,
+			fairauction.VarReqStartAuctionDescription:     "Auction for color2",
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 5, // 5% from 100
@@ -259,8 +242,8 @@ func TestFA2Color0Bids(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-3, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 5,
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, iotasFromTheFaucet-5+2, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 3 - 2, // one for SC, 2 for auctions, 2 for operating capital
 		*color1:           1,
 		*color2:           1,
 	}) {
@@ -380,13 +363,14 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
-		scColor: 1, // sc token
+	if !wasps.VerifyAddressBalances(scAddress, 2, map[balance.Color]int64{
+		scColor:           1, // sc token
+		balance.ColorIOTA: 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scOwnerAddr, iotasFromTheFaucet-1+5, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1 + 5,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, iotasFromTheFaucet-1+5-1, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 1 + 5 - 1,
 	}) {
 		t.Fail()
 	}
@@ -397,6 +381,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	}
 }
 
+// FIXME: not passing
 func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
@@ -412,7 +397,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	})
 	check(err, t)
 
-	scColors, err := PutBootupRecords(wasps)
+	_, err = PutBootupRecords(wasps)
 	check(err, t)
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -434,27 +419,25 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := sc.OwnerAddress()
-	scAddr, err := address.FromBase58(sc.Address)
+	scAddress := sc.SCAddress()
+	scColor := sc.GetColor()
 	check(err, t)
-
-	scColor := *scColors[sc.Address]
 
 	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
 	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
 
-	if !wasps.VerifyAddressBalances(scAddr, 1+1, map[balance.Color]int64{
-		scColor:           1,
-		balance.ColorIOTA: 1,
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		scColor: 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scOwnerAddr, 1000000000-2, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 2,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, iotasFromTheFaucet-1, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromTheFaucet - 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, 1000000000-1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1,
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, iotasFromUtxodb, map[balance.Color]int64{
+		balance.ColorIOTA: iotasFromUtxodb - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
@@ -462,7 +445,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwnerSigScheme, waspapi.CreateSimpleRequestParams{
-		SCAddress:   &scAddr,
+		SCAddress:   &scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -478,7 +461,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, bidder1SigScheme, waspapi.CreateSimpleRequestParams{
-			SCAddress:   &scAddr,
+			SCAddress:   &scAddress,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,
@@ -496,7 +479,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 		t.Fail()
 	}
 	// check SC address
-	if !wasps.VerifyAddressBalances(scAddr, 7+1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddress, 7+1, map[balance.Color]int64{
 		balance.ColorIOTA: 7,
 		scColor:           1,
 	}) {
