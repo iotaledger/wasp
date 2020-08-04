@@ -20,14 +20,19 @@ const (
 var nodeLocations = []string{"127.0.0.1:4000", "127.0.0.1:4001", "127.0.0.1:4002", "127.0.0.1:4003"}
 
 func TestReadWrite(t *testing.T) {
+	u := utxodb.New()
+
 	scAddr, err := address.FromBase58(scAddrStr)
 	assert.NoError(t, err)
 
-	ownerAddress := utxodb.GetAddress(1)
+	sigScheme := utxodb.NewSigScheme("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr", 0)
+
+	u.RequestFunds(sigScheme.Address())
+
 	tx, err := NewOriginTransaction(NewOriginTransactionParams{
 		Address:              scAddr,
-		OwnerSignatureScheme: utxodb.GetSigScheme(ownerAddress),
-		AllInputs:            utxodb.GetAddressOutputs(ownerAddress),
+		OwnerSignatureScheme: sigScheme,
+		AllInputs:            u.GetAddressOutputs(sigScheme.Address()),
 		InputColor:           balance.ColorIOTA,
 		ProgramHash:          *hashing.HashStrings(dscr),
 	})
