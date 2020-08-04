@@ -1,13 +1,15 @@
 package wasptest
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/sc9"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"testing"
-	"time"
 )
 
 const scNum9 = 9
@@ -65,8 +67,8 @@ func TestSC9Requests5Sec1(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddress, iotasFromTheFaucet-1, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1,
+	if !wasps.VerifyAddressBalances(ownerAddress, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}) {
 		t.Fail()
 	}

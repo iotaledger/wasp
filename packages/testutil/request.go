@@ -10,6 +10,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 )
 
+const RequestFundsAmount = 1337 // same as Faucet
+
 func RequestFunds(goshimmerHost string, targetAddress address.Address) error {
 	// TODO: allow using "real" goshimmer API to request funds
 	tx, err := makeUtxodbTransferTx(goshimmerHost, targetAddress)
@@ -27,8 +29,6 @@ func makeUtxodbTransferTx(goshimmerHost string, target address.Address) (*transa
 		return nil, err
 	}
 
-	amount := int64(1337) // same as Faucet
-
 	oids := make([]transaction.OutputID, 0)
 	sum := int64(0)
 	for oid, bals := range sourceOutputs {
@@ -42,21 +42,21 @@ func makeUtxodbTransferTx(goshimmerHost string, target address.Address) (*transa
 		if containsIotas {
 			oids = append(oids, oid)
 		}
-		if sum >= amount {
+		if sum >= RequestFundsAmount {
 			break
 		}
 	}
 
-	if sum < amount {
+	if sum < RequestFundsAmount {
 		return nil, fmt.Errorf("not enough input balance")
 	}
 
 	inputs := transaction.NewInputs(oids...)
 
 	out := make(map[address.Address][]*balance.Balance)
-	out[target] = []*balance.Balance{balance.New(balance.ColorIOTA, amount)}
-	if sum > amount {
-		out[source] = []*balance.Balance{balance.New(balance.ColorIOTA, sum-amount)}
+	out[target] = []*balance.Balance{balance.New(balance.ColorIOTA, RequestFundsAmount)}
+	if sum > RequestFundsAmount {
+		out[source] = []*balance.Balance{balance.New(balance.ColorIOTA, sum-RequestFundsAmount)}
 	}
 	outputs := transaction.NewOutputs(out)
 

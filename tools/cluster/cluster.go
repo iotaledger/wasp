@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,6 +16,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/testutil"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -682,4 +684,8 @@ func (cluster *Cluster) PostAndWaitForConfirmation(tx *transaction.Transaction) 
 		time.Sleep(1 * time.Second)
 	}
 	return nil
+}
+
+func (cluster *Cluster) RequestFunds(address address.Address) error {
+	return testutil.RequestFunds(cluster.Config.GoshimmerApiHost(), address)
 }

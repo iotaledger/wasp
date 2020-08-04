@@ -1,13 +1,15 @@
 package wasptest
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"testing"
-	"time"
 )
 
 func TestSend1Bet(t *testing.T) {
@@ -37,8 +39,8 @@ func TestSend1Bet(t *testing.T) {
 	check(err, t)
 
 	ownerAddr := sc.OwnerAddress()
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 	}) {
 		t.Fail()
 	}
@@ -73,8 +75,8 @@ func TestSend1Bet(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-1-100, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1 - 100,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1-100, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 100,
 	}) {
 		t.Fail()
 	}
@@ -110,8 +112,8 @@ func TestSend5Bets(t *testing.T) {
 	ownerAddr := sc.OwnerAddress()
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 	}) {
 		t.Fail()
 	}
@@ -144,8 +146,8 @@ func TestSend5Bets(t *testing.T) {
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-1-500, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1 - 500,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1-500, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 500,
 	}) {
 		t.Fail()
 	}
@@ -190,8 +192,8 @@ func TestSendBetsAndPlay(t *testing.T) {
 	})
 	time.Sleep(1 * time.Second)
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 	}) {
 		t.Fail()
 	}
@@ -234,8 +236,8 @@ func TestSendBetsAndPlay(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 	}) {
 		t.Fail()
 	}

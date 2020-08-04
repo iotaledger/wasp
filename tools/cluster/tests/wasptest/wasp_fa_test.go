@@ -1,14 +1,15 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 const scNumFairAuction = 5
@@ -106,8 +107,8 @@ func TestFA1Color0Bids(t *testing.T) {
 	})
 	time.Sleep(1 * time.Second)
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-3+1, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 3,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-3+1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 3,
 		*color1:           1,
 	}) {
 		t.Fail()
@@ -145,8 +146,8 @@ func TestFA1Color0Bids(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, iotasFromTheFaucet-2-1+1, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 2 - 1,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2-1+1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2 - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
@@ -242,8 +243,8 @@ func TestFA2Color0Bids(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, iotasFromTheFaucet-5+2, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 3 - 2, // one for SC, 2 for auctions, 2 for operating capital
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-5+2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 3 - 2, // one for SC, 2 for auctions, 2 for operating capital
 		*color1:           1,
 		*color2:           1,
 	}) {
@@ -251,12 +252,11 @@ func TestFA2Color0Bids(t *testing.T) {
 	}
 }
 
-const (
-	// TODO: adapt for testing in "real" goshimmer:
-	// use hardcoded (or random) seed values and request funds
-	auctionOwnerUtxodbIndex = 7
-	bidderUtxodbIndex1      = 8
-	bidderUtxodbIndex2      = 9
+var (
+	wallet       = testutil.NewWallet("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
+	auctionOwner = wallet.WithIndex(0)
+	bidder1      = wallet.WithIndex(1)
+	bidder2      = wallet.WithIndex(2)
 )
 
 func TestFA1Color1NonWinningBid(t *testing.T) {
@@ -287,21 +287,23 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
-	auctionOwnerSigScheme := utxodb.GetSigScheme(auctionOwnerAddr)
+	err = wasps.RequestFunds(auctionOwner.Address())
+	check(err, t)
+
+	err = wasps.RequestFunds(bidder1.Address())
+	check(err, t)
+
 	scOwnerAddr := sc.OwnerAddress()
 	scAddress := sc.SCAddress()
 	scColor := sc.GetColor()
-	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
-	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
 
 	// create 1 colored token
-	color1, err := mintNewColoredTokens(wasps, auctionOwnerSigScheme, 1)
+	color1, err := mintNewColoredTokens(wasps, auctionOwner.SigScheme(), 1)
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, iotasFromUtxodb, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
 		*color1:           1,
-		balance.ColorIOTA: iotasFromUtxodb - 1,
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}) {
 		t.Fail()
 	}
@@ -310,19 +312,19 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scOwnerAddr, iotasFromTheFaucet-1, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(bidder1Addr, iotasFromUtxodb, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromUtxodb,
+	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}) {
 		t.Fail()
 	}
 
 	// send request StartAuction. Selling 1 token of color1
-	err = SendSimpleRequest(wasps, auctionOwnerSigScheme, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
@@ -340,7 +342,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// send 1 non wining bid PlaceBid on color1, sum 42
-	err = SendSimpleRequest(wasps, bidder1SigScheme, waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParams{
 		SCAddress:   &scAddress,
 		RequestCode: fairauction.RequestPlaceBid,
 		Vars: map[string]interface{}{
@@ -357,9 +359,9 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, iotasFromUtxodb-5, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount-5, map[balance.Color]int64{
 		*color1:           1,
-		balance.ColorIOTA: iotasFromUtxodb - 1 - 5,
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 5,
 	}) {
 		t.Fail()
 	}
@@ -369,13 +371,13 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scOwnerAddr, iotasFromTheFaucet-1+5-1, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1 + 5 - 1,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1+5-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 + 5 - 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(bidder1Addr, iotasFromUtxodb, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromUtxodb,
+	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}) {
 		t.Fail()
 	}
@@ -411,8 +413,10 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
-	auctionOwnerSigScheme := utxodb.GetSigScheme(auctionOwnerAddr)
+	auctionOwnerAddr := auctionOwner.Address()
+	auctionOwnerSigScheme := auctionOwner.SigScheme()
+	err = wasps.RequestFunds(auctionOwnerAddr)
+	check(err, t)
 
 	// create 1 colored token
 	color1, err := mintNewColoredTokens(wasps, auctionOwnerSigScheme, 1)
@@ -423,21 +427,23 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	scColor := sc.GetColor()
 	check(err, t)
 
-	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
-	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
+	bidder1Addr := bidder1.Address()
+	bidder1SigScheme := bidder1.SigScheme()
+	err = wasps.RequestFunds(bidder1Addr)
+	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
 		scColor: 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scOwnerAddr, iotasFromTheFaucet-1, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromTheFaucet - 1,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, iotasFromUtxodb, map[balance.Color]int64{
-		balance.ColorIOTA: iotasFromUtxodb - 1,
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
@@ -535,8 +541,10 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	auctionOwnerAddr := utxodb.GetAddress(auctionOwnerUtxodbIndex)
-	auctionOwnerSigScheme := utxodb.GetSigScheme(auctionOwnerAddr)
+	auctionOwnerAddr := auctionOwner.Address()
+	auctionOwnerSigScheme := auctionOwner.SigScheme()
+	err = wasps.RequestFunds(auctionOwnerAddr)
+	check(err, t)
 
 	// create 1 colored token
 	color1, err := mintNewColoredTokens(wasps, auctionOwnerSigScheme, 1)
@@ -548,10 +556,15 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	scColor := *scColors[sc.Address]
 
-	bidder1Addr := utxodb.GetAddress(bidderUtxodbIndex1)
-	bidder1SigScheme := utxodb.GetSigScheme(bidder1Addr)
-	bidder2Addr := utxodb.GetAddress(bidderUtxodbIndex2)
-	bidder2SigScheme := utxodb.GetSigScheme(bidder2Addr)
+	bidder1Addr := bidder1.Address()
+	bidder1SigScheme := bidder1.SigScheme()
+	err = wasps.RequestFunds(bidder1Addr)
+	check(err, t)
+
+	bidder2Addr := bidder2.Address()
+	bidder2SigScheme := bidder2.SigScheme()
+	err = wasps.RequestFunds(bidder2Addr)
+	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+1, map[balance.Color]int64{
 		scColor:           1,
