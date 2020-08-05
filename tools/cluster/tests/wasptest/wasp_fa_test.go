@@ -492,21 +492,21 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 		t.Fail()
 	}
 	// check SC owner address
-	if !wasps.VerifyAddressBalances(scOwnerAddr, 1000000000-2+6, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 2 + 6,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-2+6, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2 + 6,
 	}) {
 		t.Fail()
 	}
 	// check bidder1 address
-	if !wasps.VerifyAddressBalances(bidder1Addr, 1000000000-5-5*25+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 5 - 5*25,
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount-5-5*25+1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 5 - 5*25,
 		*color1:           1,
 	}) {
 		t.Fail()
 	}
 	// check auction owner address
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, 1000000000-1-1-5+125-1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1 - 1 - 5 + 125 - 1,
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-1-1-5+125-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 1 - 5 + 125 - 1,
 	}) {
 		t.Fail()
 	}
@@ -572,13 +572,13 @@ func TestFA1Color2Bidders(t *testing.T) {
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(scOwnerAddr, 1000000000-2, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 2,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 	}) {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, 1000000000-1+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1,
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-1+1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 		*color1:           1,
 	}) {
 		t.Fail()
@@ -640,27 +640,27 @@ func TestFA1Color2Bidders(t *testing.T) {
 		t.Fail()
 	}
 	// check SC owner address
-	if !wasps.VerifyAddressBalances(scOwnerAddr, 1000000000-2+6, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 2 + 6,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-2+6, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2 + 6,
 	}) {
 		t.Fail()
 	}
 	// check bidder1 address (winner)
-	if !wasps.VerifyAddressBalances(bidder1Addr, 1000000000-5-5*25+1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 5 - 5*25,
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount-5-5*25+1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 5 - 5*25,
 		*color1:           1,
 	}) {
 		t.Fail()
 	}
 	// check bidder2 address (loser)
-	if !wasps.VerifyAddressBalances(bidder2Addr, 1000000000-5-5*25+5*25, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 5 - 5*25 + 5*25,
+	if !wasps.VerifyAddressBalances(bidder2Addr, testutil.RequestFundsAmount-5-5*25+5*25, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 5 - 5*25 + 5*25,
 	}) {
 		t.Fail()
 	}
 	// check auction owner address
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, 1000000000-1-1-5+125-1, map[balance.Color]int64{
-		balance.ColorIOTA: 1000000000 - 1 - 1 - 5 + 125 - 1,
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-1-1-5+125-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 1 - 5 + 125 - 1,
 	}) {
 		t.Fail()
 	}
