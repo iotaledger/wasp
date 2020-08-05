@@ -6,7 +6,6 @@ import (
 )
 
 func requestFunds() {
-	// FIXME!! bug in config.GoshimmerApi? This crashes in runtime
 	gosh := client.NewGoShimmerAPI(config.GoshimmerApi())
 	_, err := gosh.SendFaucetRequest(Load().Address().String())
 	check(err)

@@ -30,8 +30,7 @@ const (
 	NanomsgPublisherPort = "nanomsg.port"
 )
 
-func init() {
-
+func InitFlags() {
 	flag.String(LoggerLevel, "info", "log level")
 	flag.Bool(LoggerDisableCaller, false, "disable caller info in log")
 	flag.Bool(LoggerDisableStacktrace, false, "disable stack trace in log")

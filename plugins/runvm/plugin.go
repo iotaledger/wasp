@@ -21,12 +21,14 @@ import (
 const PluginName = "RunVM"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 
-	vmDaemon = daemon.New()
+	vmDaemon *daemon.OrderedDaemon
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
@@ -34,6 +36,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
+	vmDaemon = daemon.New()
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		// globally initialize VM
 		go vmDaemon.Run()

@@ -15,21 +15,15 @@ import (
 const PluginName = "CLI"
 
 var (
-	// Plugin is the plugin instance of the CLI plugin.
-	Plugin  = node.NewPlugin(PluginName, node.Enabled)
-	version = flag.BoolP("version", "v", false, "Prints the Wasp version")
+	printVersion bool
 )
 
-func init() {
-	for name, plugin := range node.GetPlugins() {
-		onAddPlugin(name, plugin.Status)
-	}
+func Init() *node.Plugin {
+	flag.BoolVarP(&printVersion, "version", "v", false, "Prints the Wasp version")
 
-	node.Events.AddPlugin.Attach(events.NewClosure(onAddPlugin))
-
-	flag.Usage = printUsage
-
+	Plugin := node.NewPlugin(PluginName, node.Enabled)
 	Plugin.Events.Init.Attach(events.NewClosure(onInit))
+	return Plugin
 }
 
 func onAddPlugin(name string, status int) {
@@ -37,7 +31,14 @@ func onAddPlugin(name string, status int) {
 }
 
 func onInit(*node.Plugin) {
-	if *version {
+	for name, plugin := range node.GetPlugins() {
+		onAddPlugin(name, plugin.Status)
+	}
+	node.Events.AddPlugin.Attach(events.NewClosure(onAddPlugin))
+
+	flag.Usage = printUsage
+
+	if printVersion {
 		fmt.Println(banner.AppName + " " + banner.AppVersion)
 		os.Exit(0)
 	}

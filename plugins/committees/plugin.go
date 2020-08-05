@@ -14,8 +14,7 @@ import (
 const PluginName = "Committees"
 
 var (
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 
 	committeesByAddress = make(map[address.Address]committee.Committee)
 	committeesMutex     = &sync.RWMutex{}
@@ -23,8 +22,9 @@ var (
 	initialLoadWG sync.WaitGroup
 )
 
-func init() {
+func Init() *node.Plugin {
 	initialLoadWG.Add(1)
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {

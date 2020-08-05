@@ -15,11 +15,14 @@ import (
 const PluginName = "Publisher"
 
 var (
-	Plugin   = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log      *logger.Logger
 	socket   mangos.Socket
 	messages = make(chan []byte)
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)

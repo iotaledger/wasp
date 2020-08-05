@@ -15,10 +15,12 @@ import (
 const PluginName = "TestingNodePing"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Disabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)

@@ -14,12 +14,14 @@ import (
 const PluginName = "TestingRoundTrip"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 )
 
 const scAddress = "exZup69X1XwRNHiWWjoYy75aPNgC22YKkPV7sUJSBYA9"
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Disabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)

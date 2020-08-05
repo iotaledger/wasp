@@ -19,14 +19,16 @@ import (
 const PluginName = "Database"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 
 	db        database.DB
 	store     kvstore.KVStore
 	storeOnce sync.Once
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	// assure that the store is initialized

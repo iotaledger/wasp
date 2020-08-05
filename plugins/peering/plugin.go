@@ -12,11 +12,13 @@ import (
 const PluginName = "Peering"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin      = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log         *logger.Logger
 	initialized atomic.Bool
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)

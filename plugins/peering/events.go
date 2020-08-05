@@ -5,13 +5,9 @@ import (
 	"github.com/iotaledger/hive.go/events"
 )
 
-var EventPeerMessageReceived *events.Event
-
-func init() {
-	EventPeerMessageReceived = events.NewEvent(func(handler interface{}, params ...interface{}) {
-		handler.(func(_ *PeerMessage))(params[0].(*PeerMessage))
-	})
-}
+var EventPeerMessageReceived = events.NewEvent(func(handler interface{}, params ...interface{}) {
+	handler.(func(_ *PeerMessage))(params[0].(*PeerMessage))
+})
 
 type PeerMessage struct {
 	Address     address.Address

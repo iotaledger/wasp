@@ -9,11 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 )
 
-var EventMessageReceived *events.Event
-
-func init() {
-	EventMessageReceived = events.NewEvent(param1Caller)
-}
+var EventMessageReceived = events.NewEvent(param1Caller)
 
 func param1Caller(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])

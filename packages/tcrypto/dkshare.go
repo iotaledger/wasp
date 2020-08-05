@@ -170,11 +170,7 @@ func (ks *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
 	return bdn.Verify(ks.Suite, ks.PubKeyMaster, data, signature)
 }
 
-var suiteLoc *bn256.Suite
-
-func init() {
-	suiteLoc = bn256.NewSuite()
-}
+var suiteLoc = bn256.NewSuite()
 
 func VerifyWithPublicKey(data, signature, pubKeyBin []byte) error {
 	pubKey := suiteLoc.G2().Point()

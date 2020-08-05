@@ -3,12 +3,13 @@ package webapi
 import (
 	"context"
 	"errors"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/plugins/webapi/admapi"
-	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/plugins/webapi/admapi"
+	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
@@ -20,8 +21,6 @@ import (
 const PluginName = "WebAPI"
 
 var (
-	// Plugin is the plugin instance of the web API plugin.
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	// Server is the web API server.
 	Server = echo.New()
 
@@ -30,8 +29,10 @@ var (
 	initWG sync.WaitGroup
 )
 
-func init() {
+func Init() *node.Plugin {
+	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
 	initWG.Add(1)
+	return Plugin
 }
 
 func WaitUntilIsUp() {

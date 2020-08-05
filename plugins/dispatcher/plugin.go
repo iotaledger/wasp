@@ -18,9 +18,12 @@ import (
 const PluginName = "Dispatcher"
 
 var (
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
