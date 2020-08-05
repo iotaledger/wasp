@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
-	"github.com/iotaledger/wasp/plugins/webapi/redirect"
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 
 	"github.com/labstack/echo"
@@ -32,9 +31,6 @@ func addEndpoints() {
 	Server.GET("/adm/dumpscstate/:scaddress", admapi.HandlerDumpSCState)
 	Server.POST("/adm/putprogrammetadata", admapi.HandlerPutProgramMetaData)
 	Server.POST("/adm/getprogrammetadata", admapi.HandlerGetProgramMetadata)
-	// redirect to goshimmer
-	Server.GET("/utxodb/outputs/:address", redirect.HandleRedirectGetAddressOutputs)
-	Server.POST("/utxodb/tx", redirect.HandleRedirectPostTransaction)
 
 	log.Infof("added web api endpoints")
 }

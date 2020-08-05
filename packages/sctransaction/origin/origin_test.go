@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
@@ -25,14 +26,14 @@ func TestReadWrite(t *testing.T) {
 	scAddr, err := address.FromBase58(scAddrStr)
 	assert.NoError(t, err)
 
-	sigScheme := utxodb.NewSigScheme("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr", 0)
+	ownerSigScheme := signaturescheme.RandBLS()
 
-	u.RequestFunds(sigScheme.Address())
+	u.RequestFunds(ownerSigScheme.Address())
 
 	tx, err := NewOriginTransaction(NewOriginTransactionParams{
 		Address:              scAddr,
-		OwnerSignatureScheme: sigScheme,
-		AllInputs:            u.GetAddressOutputs(sigScheme.Address()),
+		OwnerSignatureScheme: ownerSigScheme,
+		AllInputs:            u.GetAddressOutputs(ownerSigScheme.Address()),
 		InputColor:           balance.ColorIOTA,
 		ProgramHash:          *hashing.HashStrings(dscr),
 	})
