@@ -287,10 +287,10 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	err = wasps.RequestFunds(auctionOwner.Address())
+	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
 	check(err, t)
 
-	err = wasps.RequestFunds(bidder1.Address())
+	err = wasps.NodeClient.RequestFunds(bidder1.Address())
 	check(err, t)
 
 	scOwnerAddr := sc.OwnerAddress()
@@ -415,7 +415,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 	auctionOwnerSigScheme := auctionOwner.SigScheme()
-	err = wasps.RequestFunds(auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -429,7 +429,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	bidder1Addr := bidder1.Address()
 	bidder1SigScheme := bidder1.SigScheme()
-	err = wasps.RequestFunds(bidder1Addr)
+	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
@@ -543,7 +543,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 	auctionOwnerSigScheme := auctionOwner.SigScheme()
-	err = wasps.RequestFunds(auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -558,12 +558,12 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	bidder1Addr := bidder1.Address()
 	bidder1SigScheme := bidder1.SigScheme()
-	err = wasps.RequestFunds(bidder1Addr)
+	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	bidder2Addr := bidder2.Address()
 	bidder2SigScheme := bidder2.SigScheme()
-	err = wasps.RequestFunds(bidder2Addr)
+	err = wasps.NodeClient.RequestFunds(bidder2Addr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+1, map[balance.Color]int64{

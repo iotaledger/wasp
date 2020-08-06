@@ -3,13 +3,14 @@ package apilib
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 )
@@ -22,9 +23,9 @@ type CreateSimpleRequestParams struct {
 	Vars        map[string]interface{}  ` `
 }
 
-func CreateSimpleRequest(node string, sigScheme signaturescheme.SignatureScheme, par CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
+func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, par CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
 	senderAddr := sigScheme.Address()
-	allOuts, err := nodeapi.GetAccountOutputs(node, &senderAddr)
+	allOuts, err := client.GetAccountOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
@@ -110,13 +111,13 @@ type RequestBlockJson struct {
 }
 
 // Deprecated
-func CreateRequestTransaction(node string, senderSigScheme signaturescheme.SignatureScheme, reqsJson []*RequestBlockJson) (*sctransaction.Transaction, error) {
+func CreateRequestTransaction(client nodeclient.NodeClient, senderSigScheme signaturescheme.SignatureScheme, reqsJson []*RequestBlockJson) (*sctransaction.Transaction, error) {
 	var err error
 	if len(reqsJson) == 0 {
 		return nil, errors.New("CreateRequestTransaction: must be at least 1 request block")
 	}
 	senderAddr := senderSigScheme.Address()
-	allOuts, err := nodeapi.GetAccountOutputs(node, &senderAddr)
+	allOuts, err := client.GetAccountOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}

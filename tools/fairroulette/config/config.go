@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -36,6 +37,10 @@ func GoshimmerApi() string {
 		return r
 	}
 	return "127.0.0.1:8080"
+}
+
+func GoshimmerClient() nodeclient.NodeClient {
+	return nodeclient.New(GoshimmerApi())
 }
 
 func WaspApi() string {

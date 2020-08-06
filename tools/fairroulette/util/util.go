@@ -12,7 +12,7 @@ import (
 
 func PostTransaction(req *waspapi.RequestBlockJson) {
 	tx, err := waspapi.CreateRequestTransaction(
-		config.GoshimmerApi(),
+		config.GoshimmerClient(),
 		wallet.Load().SignatureScheme(),
 		[]*waspapi.RequestBlockJson{req},
 	)

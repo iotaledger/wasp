@@ -8,8 +8,8 @@ import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 
@@ -67,7 +67,7 @@ func (cluster *Cluster) GenerateDKSets() error {
 	return ioutil.WriteFile(keysFile, buf, 0644)
 }
 
-func (scdata *SmartContractFinalConfig) CreateOrigin(host string) (*sctransaction.Transaction, error) {
+func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClient) (*sctransaction.Transaction, error) {
 	addr, err := address.FromBase58(scdata.Address)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(host string) (*sctransactio
 		return nil, err
 	}
 	ownerAddress := scdata.OwnerAddress()
-	allOuts, err := nodeapi.GetAccountOutputs(host, &ownerAddress)
+	allOuts, err := client.GetAccountOutputs(&ownerAddress)
 	if err != nil {
 		return nil, err
 	}

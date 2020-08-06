@@ -10,21 +10,10 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-const goshimmerDirectly = true
-
 func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	//fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
-	var bindAddress string
-	if goshimmerDirectly {
-		bindAddress = clu.Config.GoshimmerApiHost()
-	} else {
-		bindAddress = clu.ApiHosts()[0]
-	}
-
-	//fmt.Printf("++++++++++ create origin bind address: %s\n", bindAddress)
-
-	tx, err := sc.CreateOrigin(bindAddress)
+	tx, err := sc.CreateOrigin(clu.NodeClient)
 	if err != nil {
 		return err
 	}
@@ -36,22 +25,20 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
 
-	// in real situation we have to wait for confirmation
-	err = clu.PostAndWaitForConfirmation(tx.Transaction)
+	err = clu.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("[cluster] posted node origin tx to Goshimmer: addr: %s, txid: %s\n", sc.Address, tx.ID().String())
 
 	return nil
 }
 
 func mintNewColoredTokens(wasps *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, amount int64) (*balance.Color, error) {
-	tx, err := waspapi.NewColoredTokensTransaction(wasps.Config.GoshimmerApiHost(), sigScheme, amount)
+	tx, err := waspapi.NewColoredTokensTransaction(wasps.NodeClient, sigScheme, amount)
 	if err != nil {
 		return nil, err
 	}
-	err = wasps.PostAndWaitForConfirmation(tx)
+	err = wasps.NodeClient.PostAndWaitForConfirmation(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +71,7 @@ func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.Signatur
 }
 
 func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams waspapi.CreateSimpleRequestParams) error {
-	tx, err := waspapi.CreateSimpleRequest(clu.Config.GoshimmerApiHost(), sigScheme, reqParams)
+	tx, err := waspapi.CreateSimpleRequest(clu.NodeClient, sigScheme, reqParams)
 	if err != nil {
 		return err
 	}
@@ -92,7 +79,7 @@ func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.Signature
 	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
 	//fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
 
-	err = clu.PostAndWaitForConfirmation(tx.Transaction)
+	err = clu.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
 		return err
@@ -102,7 +89,7 @@ func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.Signature
 }
 
 func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqs []*waspapi.RequestBlockJson) error {
-	tx, err := waspapi.CreateRequestTransaction(clu.Config.GoshimmerApiHost(), sigScheme, reqs)
+	tx, err := waspapi.CreateRequestTransaction(clu.NodeClient, sigScheme, reqs)
 	if err != nil {
 		return err
 	}
@@ -110,7 +97,7 @@ func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureSchem
 	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
 	//fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
 
-	err = clu.PostAndWaitForConfirmation(tx.Transaction)
+	err = clu.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
 		return err

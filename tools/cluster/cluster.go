@@ -17,6 +17,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -64,7 +64,8 @@ type WaspNodeConfig struct {
 type ClusterConfig struct {
 	Nodes     []WaspNodeConfig `json:"nodes"`
 	Goshimmer struct {
-		ApiPort int `json:"api_port"`
+		ApiPort  int  `json:"api_port"`
+		Provided bool `json:"provided"`
 	} `json:"goshimmer"`
 	SmartContracts []SmartContractInitData `json:"smart_contracts"`
 }
@@ -75,6 +76,7 @@ type Cluster struct {
 	ConfigPath          string // where the cluster configuration is stored - read only
 	DataPath            string // where the cluster's volatile data lives
 	Started             bool
+	NodeClient          nodeclient.NodeClient
 	cmds                []*exec.Cmd
 	// reading publisher's output
 	messagesCh   chan *subscribe.HostMessage
@@ -109,7 +111,7 @@ func (sc *SmartContractFinalConfig) OwnerSigScheme() signaturescheme.SignatureSc
 	return signaturescheme.ED25519(*seed.NewSeed(sc.OwnerSeed).KeyPair(0))
 }
 
-func (c *ClusterConfig) GoshimmerApiHost() string {
+func (c *ClusterConfig) goshimmerApiHost() string {
 	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.ApiPort)
 }
 
@@ -136,6 +138,10 @@ func readConfig(configPath string) (*ClusterConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	x := os.Getenv("GOSHIMMER_PROVIDED")
+	if x != "" {
+		config.Goshimmer.Provided = true
+	}
 	return config, nil
 }
 
@@ -152,10 +158,19 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var nodeClient nodeclient.NodeClient
+	if config.Goshimmer.Provided {
+		nodeClient = nodeclient.New(config.goshimmerApiHost())
+	} else {
+		nodeClient = testutil.NewNodeClient(config.goshimmerApiHost())
+	}
+
 	return &Cluster{
 		Config:     config,
 		ConfigPath: configPath,
 		DataPath:   dataPath,
+		NodeClient: nodeClient,
 		cmds:       make([]*exec.Cmd, 0),
 	}, nil
 }
@@ -230,13 +245,15 @@ func (cluster *Cluster) Init(resetDataPath bool, name string) error {
 		}
 	}
 
-	err = cluster.initDataPath(
-		cluster.GoshimmerDataPath(),
-		cluster.GoshimmerConfigTemplatePath(),
-		cluster.Config.Goshimmer,
-	)
-	if err != nil {
-		return err
+	if !cluster.Config.Goshimmer.Provided {
+		err = cluster.initDataPath(
+			cluster.GoshimmerDataPath(),
+			cluster.GoshimmerConfigTemplatePath(),
+			cluster.Config.Goshimmer,
+		)
+		if err != nil {
+			return err
+		}
 	}
 	for i, waspParams := range cluster.Config.Nodes {
 		err = cluster.initDataPath(
@@ -310,20 +327,22 @@ func (cluster *Cluster) start() error {
 
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
-	err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
-	if err != nil {
-		return err
-	}
+	if !cluster.Config.Goshimmer.Provided {
+		err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
+		if err != nil {
+			return err
+		}
 
-	select {
-	case <-initOk:
-	case <-time.After(10 * time.Second):
-		return fmt.Errorf("Timeout starting goshimmer node\n")
+		select {
+		case <-initOk:
+		case <-time.After(10 * time.Second):
+			return fmt.Errorf("Timeout starting goshimmer node\n")
+		}
+		fmt.Printf("[cluster] started goshimmer node\n")
 	}
-	fmt.Printf("[cluster] started goshimmer node\n")
 
 	for i, _ := range cluster.Config.Nodes {
-		err = cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
+		err := cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
 		if err != nil {
 			return err
 		}
@@ -423,11 +442,13 @@ func (cluster *Cluster) importKeys() error {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
-	url := cluster.Config.GoshimmerApiHost()
-	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
-	err := nodeapi.Shutdown(url)
-	if err != nil {
-		fmt.Println(err)
+	if !cluster.Config.Goshimmer.Provided {
+		url := cluster.Config.goshimmerApiHost()
+		fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
+		err := nodeapi.Shutdown(url)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	for _, node := range cluster.Config.Nodes {
@@ -602,8 +623,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 }
 
 func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64) bool {
-	host := cluster.Config.GoshimmerApiHost()
-	allOuts, err := nodeapi.GetAccountOutputs(host, &addr)
+	allOuts, err := cluster.NodeClient.GetAccountOutputs(&addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
 		return false
@@ -665,27 +685,4 @@ func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) 
 		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
 	}
 	return ret, assertionOk
-}
-
-func (cluster *Cluster) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
-	err := nodeapi.PostTransaction(cluster.Config.GoshimmerApiHost(), tx)
-	if err != nil {
-		return err
-	}
-	txid := tx.ID()
-	for {
-		conf, err := nodeapi.IsConfirmed(cluster.Config.GoshimmerApiHost(), &txid)
-		if err != nil {
-			return err
-		}
-		if conf {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-	return nil
-}
-
-func (cluster *Cluster) RequestFunds(address address.Address) error {
-	return testutil.RequestFunds(cluster.Config.GoshimmerApiHost(), address)
 }

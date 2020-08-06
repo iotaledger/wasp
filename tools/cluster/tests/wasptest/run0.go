@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -23,31 +22,31 @@ func PutBootupRecords(clu *cluster.Cluster) (map[string]*balance.Color, error) {
 		ownerAddr := sc.OwnerAddress()
 		_, ok := requested[ownerAddr]
 		if !ok {
-			err := testutil.RequestFunds(clu.Config.GoshimmerApiHost(), ownerAddr)
+			err := clu.NodeClient.RequestFunds(ownerAddr)
 			if err != nil {
 				fmt.Printf("[cluster] Could not request funds: %v\n", err)
-				return nil, fmt.Errorf("Could not request funds")
+				return nil, fmt.Errorf("Could not request funds: %v", err)
 			}
 			requested[ownerAddr] = true
 		}
 
-		color, err := putScData(&sc, clu)
+		color, err := putScData(clu, &sc)
 		if err != nil {
 			fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
-			return nil, fmt.Errorf("failed to create bootup records")
+			return nil, fmt.Errorf("failed to create bootup records: %v", err)
 		}
 		colors[sc.Address] = color
 	}
 	return colors, nil
 }
 
-func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) (*balance.Color, error) {
+func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
 	addr, err := address.FromBase58(sc.Address)
 	if err != nil {
 		return nil, err
 	}
 
-	origTx, err := sc.CreateOrigin(clu.Config.GoshimmerApiHost())
+	origTx, err := sc.CreateOrigin(clu.NodeClient)
 	if err != nil {
 		return nil, err
 	}

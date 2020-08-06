@@ -22,7 +22,6 @@ const (
 	VMDefaultVmType = "vm.defaultvm"
 
 	NodeAddress = "nodeconn.address"
-	NodeAPIBind = "nodeconn.webapi"
 
 	PeeringMyNetId = "peering.netid"
 	PeeringPort    = "peering.port"
@@ -47,7 +46,6 @@ func InitFlags() {
 	flag.String(VMDefaultVmType, "dummmy", "default VM type")
 
 	flag.String(NodeAddress, "127.0.0.1:5000", "node host address")
-	flag.String(NodeAPIBind, "127.0.0.1:8080", "webapi bind address")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetId, "127.0.0.1:4000", "node host address as it is recognized by other peers")
