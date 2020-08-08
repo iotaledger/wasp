@@ -457,8 +457,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	feeTaken := ctx.AccessOwnAccount().HarvestFees(ownerFee)
-	ctx.Publishf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token)", feeTaken)
+	feeTaken := ctx.AccessOwnAccount().HarvestFees(ownerFee - 1)
+	ctx.Publishf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken)
 
 	if winner != nil {
 		// send sold tokens to the winner

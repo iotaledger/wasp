@@ -10,9 +10,8 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
+// Puts bootup records into the nodes. Also requests funds from the nodeClient for owners.
 func PutBootupRecords(clu *cluster.Cluster) (map[string]*balance.Color, error) {
-	fmt.Printf("------------------------- Test 0: bootup records  \n")
-
 	requested := make(map[address.Address]bool)
 
 	colors := make(map[string]*balance.Color)
