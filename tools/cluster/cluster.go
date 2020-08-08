@@ -622,7 +622,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 	return pass
 }
 
-func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64) bool {
+func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {
 	allOuts, err := cluster.NodeClient.GetAccountOutputs(&addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
@@ -640,8 +640,12 @@ func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpecte
 			assertionOk = false
 		}
 	}
-	fmt.Printf("[cluster] Balances of the address %s\n      Total tokens: %d %s\n%s\n",
-		addr.String(), total, totalExpectedStr, dumpStr)
+	cmt := ""
+	if len(comment) > 0 {
+		cmt = " (" + comment[0] + ")"
+	}
+	fmt.Printf("[cluster] Balances of the address %s%s\n      Total tokens: %d %s\n%s\n",
+		addr.String(), cmt, total, totalExpectedStr, dumpStr)
 
 	if !assertionOk {
 		fmt.Printf("[cluster] assertion on balances failed\n")

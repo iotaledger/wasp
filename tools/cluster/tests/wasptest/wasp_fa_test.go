@@ -9,7 +9,6 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 const scNumFairAuction = 5
@@ -69,8 +68,8 @@ func TestFA1Color0Bids(t *testing.T) {
 		"bootuprec":           wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          4,
-		"request_out":         5,
+		"request_in":          3,
+		"request_out":         4,
 		"state":               -1,
 		"vmmsg":               -1,
 	})
@@ -97,20 +96,10 @@ func TestFA1Color0Bids(t *testing.T) {
 	scAddress := sc.SCAddress()
 	ownerAddr := sc.OwnerAddress()
 
-	// send 1i to the SC address. It is needed to send the request to self to start new auction ("operating capital")
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
-		SCAddress:   &scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
-		Transfer: map[balance.Color]int64{
-			balance.ColorIOTA: 1,
-		},
-	})
-	time.Sleep(1 * time.Second)
-
-	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-3+1, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 3,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 		*color1:           1,
-	}) {
+	}, "owner address in the beginning") {
 		t.Fail()
 		return
 	}
@@ -140,16 +129,17 @@ func TestFA1Color0Bids(t *testing.T) {
 	scColor := sc.GetColor()
 
 	if !wasps.VerifyAddressBalances(scAddress, 2, map[balance.Color]int64{
-		balance.ColorIOTA: 1,
+		balance.ColorIOTA: 1, // remains 1 from request token
 		scColor:           1,
-	}) {
+	}, "SC address") {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2-1+1, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 2 - 1,
+	// as owner of SC and of the auction are the same, almost all fee is returned to it (less 1i in the SC)
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-3+1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 3,
 		*color1:           1,
-	}) {
+	}, "Owner address") {
 		t.Fail()
 	}
 }

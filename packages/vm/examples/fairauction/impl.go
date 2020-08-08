@@ -141,6 +141,13 @@ func startAuction(ctx vmtypes.Sandbox) {
 	account := ctx.AccessOwnAccount()
 
 	totalDeposit := account.AvailableBalanceFromRequest(&balance.ColorIOTA)
+	if totalDeposit < 1 {
+		// it is expected at least 1 iota in deposit
+		refundFromRequest(ctx, &balance.ColorIOTA, 1)
+
+		ctx.Publish("startAuction: exit 0: must be at least 1i in deposit")
+		return
+	}
 
 	ownerMargin := getOwnerMarginPromille(ctx)
 
@@ -195,7 +202,11 @@ func startAuction(ctx vmtypes.Sandbox) {
 	if totalDeposit < expectedDeposit {
 		// not enough fees
 		// return half of expected deposit and all tokens for sale (if any)
-		refundFromRequest(ctx, &balance.ColorIOTA, expectedDeposit/2)
+		harvest := expectedDeposit / 2
+		if harvest < 1 {
+			harvest = 1
+		}
+		refundFromRequest(ctx, &balance.ColorIOTA, harvest)
 		refundFromRequest(ctx, &colorForSale, 0)
 
 		ctx.Publish("startAuction: exit 5")
@@ -412,16 +423,21 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	var winner *BidInfo
 	var winnerIndex int
 
-	// SC owner takes OwnerMargin (promilles) fee from either minimum bid or from winning sum
-	// minus 1 iota which is left for "operating capital" (sebding requests to itself
-	ownerFee := (ai.MinimumBid*ai.OwnerMargin)/1000 - 1 // always >= 0
+	// SC owner takes OwnerMargin (promille) fee from either minimum bid or from winning sum but not less than 1i
+	ownerFee := (ai.MinimumBid * ai.OwnerMargin) / 1000
+	if ownerFee < 1 {
+		ownerFee = 1
+	}
 
 	// find the winner (if any). Take first if equal sums
 	// minimum bid is always positive, at least 1 iota per colored token
 	if winningAmount >= ai.MinimumBid {
 		// there's winner. Select it.
 		// Fee is re-calculated according to the winning sum
-		ownerFee = (winningAmount*ai.OwnerMargin)/1000 - 1 // always >= 0
+		ownerFee = (winningAmount * ai.OwnerMargin) / 1000
+		if ownerFee < 1 {
+			ownerFee = 1
+		}
 
 		winners := make([]*BidInfo, 0)
 		for _, bi := range ai.Bids {
@@ -442,7 +458,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	}
 
 	feeTaken := ctx.AccessOwnAccount().HarvestFees(ownerFee)
-	ctx.Publishf("finalizeAuction: harvesting SC owner fee: %d", feeTaken)
+	ctx.Publishf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token)", feeTaken)
 
 	if winner != nil {
 		// send sold tokens to the winner
@@ -464,8 +480,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		}
 
 		// return deposit less fees less 1 iota
-		if account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-(ownerFee+1)) {
-			ctx.Publishf("returned deposit less fees: %d", ai.TotalDeposit-(ownerFee+1))
+		if account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
+			ctx.Publishf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee)
 		}
 
 		// return bids to bidders
