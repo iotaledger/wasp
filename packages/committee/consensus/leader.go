@@ -26,6 +26,7 @@ func (op *operator) resetLeader(seedBytes []byte) {
 	op.leaderStatus = nil
 	op.moveToFirstAliveLeader()
 	op.leaderRotationDeadlineSet = false
+	op.stateTxEvidenced = false
 }
 
 // select leader first in the permutation which is alive
@@ -47,6 +48,7 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 func (op *operator) setLeaderRotationDeadline(period time.Duration) {
 	if len(op.requestCandidateList()) == 0 {
 		op.leaderRotationDeadlineSet = false
+		op.stateTxEvidenced = false
 		return
 	}
 	op.leaderRotationDeadlineSet = true

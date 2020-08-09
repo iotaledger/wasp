@@ -37,6 +37,7 @@ type operator struct {
 
 	peerPermutation           *util.Permutation16
 	leaderRotationDeadlineSet bool
+	stateTxEvidenced          bool
 	leaderRotationDeadline    time.Time
 
 	leaderStatus        *leaderStatus

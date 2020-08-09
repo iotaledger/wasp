@@ -128,21 +128,19 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
 func (sm *stateManager) EventStateTransactionMsg(msg *committee.StateTransactionMsg) {
-	stateBlock, ok := msg.Transaction.State()
-	if !ok {
-		// should not happen: must have state block
-		return
-	}
 	if !msg.Confirmed {
-		// transaction is not confirmed, notify consensus operator it was seen
-		sm.log.Errorw("EventStateTransactionMsg: received not confirmed state",
+		sm.log.Debugw("EventStateTransactionMsg: received not confirmed state tx",
 			"txid", msg.Transaction.ID().String(),
 			"tx essence", hashing.HashData(msg.Transaction.EssenceBytes()).String(),
 		)
-		go sm.committee.ReceiveMessage(&committee.StateTransactionEvidenced{
-			TxId:      msg.Transaction.ID(),
-			StateHash: stateBlock.StateHash(),
-		})
+		// will send evidence message if transaction is about pending state
+		sm.evidencePendingStateTransaction(msg.Transaction)
+		return
+	}
+
+	stateBlock, ok := msg.Transaction.State()
+	if !ok {
+		// should not happen: must have state block
 		return
 	}
 

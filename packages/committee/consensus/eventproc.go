@@ -251,11 +251,16 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 }
 
 // EventStateTransactionEvidenced is triggered when state manager receives state transaction not confirmed yet
+// It postpones leader rotation deadline
 func (op *operator) EventStateTransactionEvidenced(msg *committee.StateTransactionEvidenced) {
 	op.log.Debugw("EventStateTransactionEvidenced",
 		"txid", msg.TxId.String(),
 		"state hash", msg.StateHash.String(),
 	)
+	if !op.stateTxEvidenced {
+		op.stateTxEvidenced = true
+		op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+	}
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
