@@ -44,10 +44,11 @@ type Operator interface {
 	EventBalancesMsg(BalancesMsg)
 	EventRequestMsg(RequestMsg)
 	EventNotifyReqMsg(*NotifyReqMsg)
-	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
 	EventResultCalculated(*vm.VMTask)
 	EventSignedHashMsg(*SignedHashMsg)
+	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
+	EventStateTransactionEvidenced(msg *StateTransactionEvidenced)
 	EventTimerMsg(TimerTick)
 }
 

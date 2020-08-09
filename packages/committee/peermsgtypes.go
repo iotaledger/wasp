@@ -135,6 +135,14 @@ type PendingBatchMsg struct {
 	Batch state.Batch
 }
 
+// message sent to notify VM processor is ready. It is a successful finish of asynchronous loading of the processor
 type ProcessorIsReady struct {
 	ProgramHash string // base58
+}
+
+// message is sent to the consensus manager after it receives state transaction
+// which is valid but not confirmed yet.
+type StateTransactionEvidenced struct {
+	TxId      valuetransaction.ID
+	StateHash hashing.HashValue
 }

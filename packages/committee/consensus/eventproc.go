@@ -125,31 +125,6 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.takeAction()
 }
 
-// EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to other peers
-// immediately after posting finalized transaction to the tangle.
-// The message is used to postpone leader rotation deadline for at least confirmation period
-func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalResultPostedMsg) {
-	op.log.Infow("EventNotifyFinalResultPostedMsg",
-		"sender", msg.SenderIndex,
-		"stateIdx", msg.StateIndex,
-	)
-	resTx, ok := op.sentResultsToLeader[msg.SenderIndex]
-	if !ok {
-		// this is controversial: shall we postpone leader deadline for unseen transaction?
-		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.", committee.ConfirmationWaitingPeriod)
-		op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
-		return
-	}
-	essence := resTx.EssenceBytes()
-	if !msg.Signature.IsValid(essence) {
-		op.log.Errorf("received invalid final signature from peer #%d. State index: %d, essence hash: %s",
-			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
-		return
-	}
-	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more", committee.ConfirmationWaitingPeriod)
-	op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
-}
-
 func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
 
@@ -246,6 +221,39 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		sigShare:    msg.SigShare,
 	}
 	op.takeAction()
+}
+
+// EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to other peers
+// immediately after posting finalized transaction to the tangle.
+// The message is used to postpone leader rotation deadline for at least confirmation period
+func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalResultPostedMsg) {
+	op.log.Debugw("EventNotifyFinalResultPostedMsg",
+		"sender", msg.SenderIndex,
+		"stateIdx", msg.StateIndex,
+	)
+	resTx, ok := op.sentResultsToLeader[msg.SenderIndex]
+	if !ok {
+		// this is controversial: shall we postpone leader deadline for unseen transaction?
+		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.", committee.ConfirmationWaitingPeriod)
+		op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
+		return
+	}
+	essence := resTx.EssenceBytes()
+	if !msg.Signature.IsValid(essence) {
+		op.log.Errorf("received invalid final signature from peer #%d. State index: %d, essence hash: %s",
+			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
+		return
+	}
+	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more", committee.ConfirmationWaitingPeriod)
+	op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
+}
+
+// EventStateTransactionEvidenced is triggered when state manager receives state transaction not confirmed yet
+func (op *operator) EventStateTransactionEvidenced(msg *committee.StateTransactionEvidenced) {
+	op.log.Debugw("EventStateTransactionEvidenced",
+		"txid", msg.TxId.String(),
+		"state hash", msg.StateHash.String(),
+	)
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {

@@ -119,28 +119,30 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
 
 	sm.syncedBatch = nil
-	go func() {
-		sm.committee.ReceiveMessage(committee.PendingBatchMsg{
-			Batch: batch,
-		})
-	}()
+	go sm.committee.ReceiveMessage(committee.PendingBatchMsg{
+		Batch: batch,
+	})
 	sm.takeAction()
 }
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
 func (sm *stateManager) EventStateTransactionMsg(msg *committee.StateTransactionMsg) {
+	stateBlock, ok := msg.Transaction.State()
+	if !ok {
+		// should not happen: must have state block
+		return
+	}
 	if !msg.Confirmed {
-		// TODO temporary
+		// transaction is not confirmed, notify consensus operator it was seen
 		sm.log.Errorw("EventStateTransactionMsg: received not confirmed state",
 			"txid", msg.Transaction.ID().String(),
 			"tx essence", hashing.HashData(msg.Transaction.EssenceBytes()).String(),
 		)
-		// TODO evidence that transaction exist but not yet confirmed
-		return
-	}
-	stateBlock, ok := msg.Transaction.State()
-	if !ok {
+		go sm.committee.ReceiveMessage(&committee.StateTransactionEvidenced{
+			TxId:      msg.Transaction.ID(),
+			StateHash: stateBlock.StateHash(),
+		})
 		return
 	}
 
