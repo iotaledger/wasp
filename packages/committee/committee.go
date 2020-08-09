@@ -9,6 +9,7 @@ import (
 )
 
 type Committee interface {
+	Params() *Parameters
 	Address() *address.Address
 	OwnerAddress() *address.Address
 	Color() *balance.Color
@@ -52,8 +53,8 @@ type Operator interface {
 	EventTimerMsg(TimerTick)
 }
 
-var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger) Committee
+var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, params *Parameters) Committee
 
-func New(bootupData *registry.BootupData, log *logger.Logger) Committee {
-	return ConstructorNew(bootupData, log)
+func New(bootupData *registry.BootupData, log *logger.Logger, params *Parameters) Committee {
+	return ConstructorNew(bootupData, log, params)
 }

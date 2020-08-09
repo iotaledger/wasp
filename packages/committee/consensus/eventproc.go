@@ -40,7 +40,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
-	op.setLeaderRotationDeadline(committee.LeaderRotationPeriod)
+	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 
 	// check is processor is ready for the current state. If no, initiate load of the processor
 	op.processorReady = false
@@ -70,7 +70,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
 	op.balances = reqMsg.Balances
-	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(op.committee.Params().RequestBalancesPeriod)
 
 	op.takeAction()
 }
@@ -107,7 +107,7 @@ func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
 
 	op.sendRequestNotificationsToLeader([]*request{req})
 	if !op.leaderRotationDeadlineSet {
-		op.setLeaderRotationDeadline(committee.LeaderRotationPeriod)
+		op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 	}
 
 	op.takeAction()
@@ -234,8 +234,9 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	resTx, ok := op.sentResultsToLeader[msg.SenderIndex]
 	if !ok {
 		// this is controversial: shall we postpone leader deadline for unseen transaction?
-		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.", committee.ConfirmationWaitingPeriod)
-		op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
+		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.",
+			op.committee.Params().ConfirmationWaitingPeriod)
+		op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
 		return
 	}
 	essence := resTx.EssenceBytes()
@@ -244,8 +245,9 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
 		return
 	}
-	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more", committee.ConfirmationWaitingPeriod)
-	op.setLeaderRotationDeadline(committee.ConfirmationWaitingPeriod)
+	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more",
+		op.committee.Params().ConfirmationWaitingPeriod)
+	op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
 }
 
 // EventStateTransactionEvidenced is triggered when state manager receives state transaction not confirmed yet

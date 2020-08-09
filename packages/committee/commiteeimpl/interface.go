@@ -15,8 +15,6 @@ func init() {
 	committee.ConstructorNew = newCommitteeObj
 }
 
-// implements Committee interface
-
 func (c *committeeObj) IsOpenQueue() bool {
 	if c.isOpenQueue.Load() {
 		return true
@@ -25,6 +23,12 @@ func (c *committeeObj) IsOpenQueue() bool {
 	defer c.mutexIsReady.Unlock()
 
 	return c.checkReady()
+}
+
+// implements Committee interface
+
+func (c *committeeObj) Params() *committee.Parameters {
+	return c.params
 }
 
 func (c *committeeObj) SetReadyStateManager() {
@@ -61,7 +65,7 @@ func (c *committeeObj) startTimer() {
 	go func() {
 		tick := 0
 		for c.isOpenQueue.Load() {
-			time.Sleep(committee.TimerTickPeriod)
+			time.Sleep(c.params.TimerTickPeriod)
 			c.ReceiveMessage(committee.TimerTick(tick))
 			tick++
 		}
@@ -111,7 +115,7 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {
 		case c.chMsg <- msg:
-		case <-time.After(committee.ReceiveMsgChannelTimeout):
+		case <-time.After(c.params.ReceiveMsgChannelTimeout):
 			c.log.Warnf("timeout on ReceiveMessage type '%T'. Will be repeated", msg)
 			go c.ReceiveMessage(msg)
 		}

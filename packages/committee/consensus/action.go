@@ -236,5 +236,5 @@ func (op *operator) requestOutputsIfNeeded() {
 	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
 		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
 	}
-	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(op.committee.Params().RequestBalancesPeriod)
 }

@@ -22,6 +22,7 @@ type committeeObj struct {
 	dismissed           atomic.Bool
 	dismissOnce         sync.Once
 	//
+	params       *committee.Parameters
 	address      address.Address
 	ownerAddress address.Address
 	color        balance.Color
@@ -34,7 +35,7 @@ type committeeObj struct {
 	log          *logger.Logger
 }
 
-func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) committee.Committee {
+func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params *committee.Parameters) committee.Committee {
 	log.Debugw("creating committee", "addr", bootupData.Address.String())
 
 	addr := bootupData.Address
@@ -77,6 +78,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 
 	ret := &committeeObj{
 		chMsg:        make(chan interface{}, 100),
+		params:       params,
 		address:      bootupData.Address,
 		ownerAddress: bootupData.OwnerAddress,
 		color:        bootupData.Color,

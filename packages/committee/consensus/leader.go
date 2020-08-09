@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"github.com/iotaledger/wasp/packages/committee"
 	"time"
 )
 
@@ -18,7 +17,7 @@ func (op *operator) iAmCurrentLeader() bool {
 func (op *operator) moveToNextLeader() uint16 {
 	op.peerPermutation.Next()
 	ret := op.moveToFirstAliveLeader()
-	op.setLeaderRotationDeadline(committee.LeaderRotationPeriod)
+	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 	return ret
 }
 
