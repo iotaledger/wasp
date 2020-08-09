@@ -657,6 +657,8 @@ func TestFA1Color2Bidders(t *testing.T) {
 	err = wasps.NodeClient.RequestFunds(bidder2.Address())
 	check(err, t)
 
+	time.Sleep(2 * time.Second)
+
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
 		sc.GetColor(): 1,
 	}, "sc address begin") {
