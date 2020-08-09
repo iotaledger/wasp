@@ -3,7 +3,7 @@ module github.com/iotaledger/wasp
 go 1.13
 
 require (
-	github.com/iotaledger/goshimmer v0.2.2-0.20200806180846-6385334ef1a2
+	github.com/iotaledger/goshimmer v0.2.2-0.20200809055541-75726904a1ec
 	github.com/iotaledger/hive.go v0.0.0-20200729082801-6d42d7d03fe3
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0

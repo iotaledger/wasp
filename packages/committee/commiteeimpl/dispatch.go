@@ -35,7 +35,7 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 			c.operator.EventProcessorReady(msgt)
 		}
 
-	case committee.StateTransactionMsg:
+	case *committee.StateTransactionMsg:
 		// receive state transaction message
 		c.stateMgr.EventStateTransactionMsg(msgt)
 

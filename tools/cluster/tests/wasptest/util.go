@@ -30,6 +30,9 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 		return err
 	}
 
+	// wait for init request to be processed
+	time.Sleep(2 * time.Second)
+
 	return nil
 }
 

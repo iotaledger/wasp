@@ -94,7 +94,7 @@ func processNodeMsg(msg interface{}) {
 			// not a SC transaction. Ignore
 			return
 		}
-		dispatchState(tx)
+		dispatchState(tx, msgt.Confirmed)
 
 	case *waspconn.WaspFromNodeAddressOutputsMsg:
 		dispatchBalances(msgt.Address, msgt.Balances)

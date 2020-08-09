@@ -125,6 +125,9 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.takeAction()
 }
 
+// EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to other peers
+// immediately after posting finalized transaction to the tangle.
+// The message is used to postpone leader rotation deadline for at least confirmation period
 func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalResultPostedMsg) {
 	op.log.Infow("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,

@@ -33,7 +33,7 @@ type StateManager interface {
 	EventGetBatchMsg(msg *GetBatchMsg)
 	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateTransactionMsg(msg StateTransactionMsg)
+	EventStateTransactionMsg(msg *StateTransactionMsg)
 	EventPendingBatchMsg(msg PendingBatchMsg)
 	EventTimerMsg(msg TimerTick)
 }

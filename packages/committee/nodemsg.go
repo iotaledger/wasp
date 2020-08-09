@@ -6,10 +6,9 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-//node messages represented as internal committee messages
-
 type StateTransactionMsg struct {
 	*sctransaction.Transaction
+	Confirmed bool
 }
 
 type BalancesMsg struct {

@@ -1,4 +1,3 @@
-// this package defines main entry how value transactions are entering the qnode
 package dispatcher
 
 import (
@@ -6,17 +5,19 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/committees"
 )
 
-func dispatchState(tx *sctransaction.Transaction) {
+func dispatchState(tx *sctransaction.Transaction, confirmed bool) {
 	cmt := getCommitteeByState(tx)
 	if cmt == nil {
 		return
 	}
 	log.Debugw("dispatchState",
 		"txid", tx.ID().String(),
+		"confirmed", confirmed,
 		"addr", cmt.Address().String(),
 	)
 	_, err := tx.ValidateBlocks(cmt.Address())
@@ -25,8 +26,9 @@ func dispatchState(tx *sctransaction.Transaction) {
 		return
 	}
 
-	cmt.ReceiveMessage(committee.StateTransactionMsg{
+	cmt.ReceiveMessage(&committee.StateTransactionMsg{
 		Transaction: tx,
+		Confirmed:   confirmed,
 	})
 }
 
@@ -63,6 +65,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	if cmtState := getCommitteeByState(tx); cmtState != nil && *cmtState.Address() == addr {
 		stateTxMsg = committee.StateTransactionMsg{
 			Transaction: tx,
+			Confirmed:   true, // because here we have only confirmed balances
 		}
 	}
 
@@ -81,11 +84,12 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	}
 
 	if stateTxMsg.Transaction != nil {
-		cmt.ReceiveMessage(stateTxMsg)
+		cmt.ReceiveMessage(&stateTxMsg)
 
 		sh := stateTxMsg.Transaction.MustState().StateHash()
 		log.Debugw("state tx dispatched",
 			"txid", stateTxMsg.Transaction.ID().String(),
+			"tx essence hash", hashing.HashData(stateTxMsg.Transaction.EssenceBytes()).String(),
 			"state index", stateTxMsg.Transaction.MustState().StateIndex(),
 			"state hash", sh.String(),
 		)
