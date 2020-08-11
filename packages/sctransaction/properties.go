@@ -2,6 +2,7 @@ package sctransaction
 
 import (
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/util"
@@ -133,22 +134,33 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	}
 
 	if prop.isOrigin {
-		wrong := false
+		errWrongTokens := errors.New("wrong minted tokens and/or requests in the origin transaction")
 		if len(numReqByAddr) != 1 {
-			wrong = true
-		} else {
-			if _, ok := numReqByAddr[prop.stateAddress]; !ok {
-				wrong = true
-			}
+			// must be exactly one target address for requests
+			return errWrongTokens
 		}
-		if wrong {
-			return errors.New("in the origin transaction all requests must have target only newly created smart contract")
+		if _, ok := numReqByAddr[prop.stateAddress]; !ok {
+			// that one address must be address of the originated smart contract
+			return errWrongTokens
 		}
+		numMinted, _ := prop.numMintedTokensByAddr[prop.stateAddress]
+		if numMinted != int64(len(tx.Requests())+1) {
+			// number of minted must be one more that number of requests
+			return errWrongTokens
+		}
+		return nil
 	}
+	// not origin transaction
+
+	// IMPORTANT: number of minted tokens to an address of some smart contract must be exactly equal to
+	// the number of requests to that smart contract.
+	// Total number of minted tokens can be larger that the total number of requests, however the
+	// rest of minted tokens must be in outputs different from any of the target smart contract address
 	for targetAddr, numReq := range numReqByAddr {
 		numMinted, _ := prop.numMintedTokensByAddr[targetAddr]
-		if numMinted < numReq {
-			return errors.New("")
+		if numMinted != numReq {
+			return fmt.Errorf("number of minted tokens to the SC address %s is not equal to the number of requests to that SC. Txid = %s",
+				targetAddr.String(), tx.ID().String())
 		}
 	}
 	return nil

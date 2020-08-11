@@ -43,7 +43,8 @@ func (op *operator) selectRequestsToProcess() []*request {
 	}
 	before := idsShortStr(takeIds(ret))
 
-	ret = op.filterNotCompletePackages(ret)
+	// not clear is it needed
+	//ret = op.filterNotCompletePackages(ret)
 
 	after := idsShortStr(takeIds(ret))
 
