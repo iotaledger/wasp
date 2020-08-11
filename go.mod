@@ -4,8 +4,8 @@ go 1.13
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.19.0
-	github.com/iotaledger/goshimmer v0.2.2-0.20200809055541-75726904a1ec
-	github.com/iotaledger/hive.go v0.0.0-20200729082801-6d42d7d03fe3
+	github.com/iotaledger/goshimmer v0.2.3-0.20200811190717-9c048397cbce
+	github.com/iotaledger/hive.go v0.0.0-20200810103552-94bbf59c54fa
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
 	github.com/magiconair/properties v1.8.1
