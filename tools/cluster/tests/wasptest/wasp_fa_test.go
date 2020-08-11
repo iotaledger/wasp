@@ -14,13 +14,6 @@ import (
 
 const scNumFairAuction = 5
 
-var (
-	wallet       = testutil.NewWallet("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
-	auctionOwner = wallet.WithIndex(0)
-	bidder1      = wallet.WithIndex(1)
-	bidder2      = wallet.WithIndex(2)
-)
-
 func TestFASetOwnerMargin(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
