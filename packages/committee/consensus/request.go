@@ -66,21 +66,6 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool
 	return ret, msgFirstTime
 }
 
-func (op *operator) requestCandidateList() []*request {
-	ret := make([]*request, 0, len(op.requests))
-	nowis := time.Now()
-	for _, req := range op.requests {
-		if req.reqTx == nil {
-			continue
-		}
-		if req.isTimelocked(nowis) {
-			continue
-		}
-		ret = append(ret, req)
-	}
-	return ret
-}
-
 func (req *request) requestCode() sctransaction.RequestCode {
 	return req.reqTx.Requests()[req.reqId.Index()].RequestCode()
 }

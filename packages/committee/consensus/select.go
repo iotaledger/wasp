@@ -7,14 +7,15 @@ import (
 	"time"
 )
 
-// selectRequestsToProcess select requests to process in the batch by counting votes of notification messages
-// first it selects candidates with >= quorum 'seen' votes and sorts by num votes
-// then it selects maximum number of requests which has been seen by at least quorum of common peers
-// the requests are sorted by arrival time
+// selectRequestsToProcess select requests to process in the batch.
+// 1. it filters out candidates which was seen less than quorum times.
+// 2. the requests which are not ready yet to process in the current context are filtered out
+// 3. selects maximum possible set of those which were seen by same quorum of peers
 // only requests in "full batches" are selected, it means request is in the selection together with ALL other requests
 // from the same request transaction, or it is not selected
 func (op *operator) selectRequestsToProcess() []*request {
-	candidates := op.requestMessagesSeenQuorumTimes()
+	candidates := op.requestCandidateList()
+	candidates = op.filterRequestsNotSeenQuorumTimes(candidates)
 	if len(candidates) == 0 {
 		return nil
 	}
@@ -40,6 +41,7 @@ func (op *operator) selectRequestsToProcess() []*request {
 		return nil
 	}
 	before := idsShortStr(takeIds(ret))
+
 	ret = op.filterNotCompletePackages(ret)
 
 	after := idsShortStr(takeIds(ret))
@@ -55,17 +57,30 @@ func (op *operator) selectRequestsToProcess() []*request {
 	return ret
 }
 
+// all requests from the backlog which has known messages and are not timelocked
+func (op *operator) requestCandidateList() []*request {
+	ret := make([]*request, 0, len(op.requests))
+	nowis := time.Now()
+	for _, req := range op.requests {
+		if req.reqTx == nil {
+			continue
+		}
+		if req.isTimelocked(nowis) {
+			continue
+		}
+		ret = append(ret, req)
+	}
+	return ret
+}
+
 type requestWithVotes struct {
 	*request
 	seenTimes uint16
 }
 
-func (op *operator) requestMessagesSeenQuorumTimes() []*request {
+func (op *operator) filterRequestsNotSeenQuorumTimes(candidates []*request) []*request {
 	ret1 := make([]*requestWithVotes, 0)
-	for _, req := range op.requests {
-		if req.reqTx == nil {
-			continue
-		}
+	for _, req := range candidates {
 		votes := numTrue(req.notifications)
 		if votes >= op.quorum() {
 			ret1 = append(ret1, &requestWithVotes{
@@ -77,9 +92,9 @@ func (op *operator) requestMessagesSeenQuorumTimes() []*request {
 	sort.Slice(ret1, func(i, j int) bool {
 		return ret1[i].seenTimes > ret1[j].seenTimes
 	})
-	ret := make([]*request, len(ret1))
-	for i, req := range ret1 {
-		ret[i] = req.request
+	ret := candidates[:0] // same underlying array
+	for _, req := range ret1 {
+		ret = append(ret, req.request)
 	}
 	return ret
 }
@@ -87,12 +102,16 @@ func (op *operator) requestMessagesSeenQuorumTimes() []*request {
 // filterNotReadyYet checks all ids and returns list of corresponding request records
 // return empty list if not all requests in the list can be processed by the node atm
 // note, that filter out criteria are temporary, so the same request may be ready next time
+// 'not ready yet' requests are:
+//  - which has not received message with request transaction yet (the ID is known from peer only)
+//  - the user defined request while processor is not ready yet
+//  - the request is timelocked yet
 func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 	ret := reqs[:0] // same underlying array, different slice
 
 	for _, req := range reqs {
 		if req.reqTx == nil {
-			op.log.Debugf("request %s not known to the node: can't be processed", req.reqId.Short())
+			op.log.Debugf("request %s not yet known to the node: can't be processed", req.reqId.Short())
 			continue
 		}
 		if req.requestCode().IsUserDefined() && !op.processorReady {
