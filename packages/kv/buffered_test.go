@@ -32,6 +32,23 @@ func TestBufferedKVStore(t *testing.T) {
 		m,
 	)
 
+	n := 0
+	b.Iterate(EmptyPrefix, func(key Key, value []byte) bool {
+		assert.Equal(t, Key([]byte("cd")), key)
+		assert.Equal(t, []byte("v1"), value)
+		n++
+		return true
+	})
+	assert.Equal(t, 1, n)
+
+	n = 0
+	b.IterateKeys(EmptyPrefix, func(key Key) bool {
+		assert.Equal(t, Key([]byte("cd")), key)
+		n++
+		return true
+	})
+	assert.Equal(t, 1, n)
+
 	b.Set(Key([]byte("cd")), []byte("v2"))
 
 	// not committed to DB

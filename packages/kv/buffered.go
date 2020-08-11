@@ -76,10 +76,9 @@ func (b *bufferedKVStore) ClearMutations() {
 
 // iterates over all key-value pairs in KVStore
 func (b *bufferedKVStore) DangerouslyDumpToMap() Map {
-	prefix := len(b.db.Realm())
 	ret := NewMap()
 	err := b.db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
-		ret.Set(Key(key[prefix:]), value)
+		ret.Set(Key(key), value)
 		return true
 	})
 	if err != nil {
@@ -146,9 +145,8 @@ func (b *bufferedKVStore) Iterate(prefix Key, f func(key Key, value []byte) bool
 	if done {
 		return nil
 	}
-	realm := len(b.db.Realm())
 	return b.db.Iterate([]byte(prefix), func(key kvstore.Key, value kvstore.Value) bool {
-		k := Key(key[realm:])
+		k := Key(key)
 		_, ok := seen[k]
 		if ok {
 			return true
@@ -164,9 +162,8 @@ func (b *bufferedKVStore) IterateKeys(prefix Key, f func(key Key) bool) error {
 	if done {
 		return nil
 	}
-	realm := len(b.db.Realm())
 	return b.db.IterateKeys([]byte(prefix), func(key kvstore.Key) bool {
-		k := Key(key[realm:])
+		k := Key(key)
 		_, ok := seen[k]
 		if ok {
 			return true
