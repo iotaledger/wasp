@@ -25,10 +25,11 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -80,10 +81,11 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -133,10 +135,11 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -199,10 +202,11 @@ func TestChainIncTimelock(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 

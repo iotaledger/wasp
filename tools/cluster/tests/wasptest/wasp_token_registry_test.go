@@ -30,11 +30,11 @@ func TestTRRequests5Sec1(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scTokenRegistryNum]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -48,7 +48,9 @@ func TestTRRequests5Sec1(t *testing.T) {
 	scAddress := sc.SCAddress()
 	scColor := sc.GetColor()
 
-	err = wasps.NodeClient.RequestFunds(minter1.Address())
+	minter1Addr := minter1.Address()
+
+	err = wasps.NodeClient.RequestFunds(&minter1Addr)
 	check(err, t)
 
 	// create 1 colored token
@@ -57,7 +59,7 @@ func TestTRRequests5Sec1(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	if !wasps.VerifyAddressBalances(minter1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(minter1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		*color1:           42,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 42,
 	}, "minter1 in the beginning") {
@@ -99,7 +101,7 @@ func TestTRRequests5Sec1(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(minter1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(minter1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		*color1:           42,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 42,
 	}, "minter1 in the end") {

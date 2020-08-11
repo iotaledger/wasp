@@ -7,7 +7,7 @@ import (
 )
 
 type NodeClient interface {
-	RequestFunds(targetAddress address.Address) error
+	RequestFunds(targetAddress *address.Address) error
 	GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error)
 	PostAndWaitForConfirmation(tx *transaction.Transaction) error
 }

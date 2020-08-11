@@ -60,15 +60,12 @@ func MakeRequests(n int, constr func(int) *waspapi.RequestBlockJson) []*waspapi.
 	return ret
 }
 
-func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []*waspapi.RequestBlockJson, wait time.Duration) error {
+func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []*waspapi.RequestBlockJson) error {
 	for i := 0; i < n; i++ {
-		// in real situation one must wait until the previous request is confirmed
-		// (because of access to the same owner address)
 		err := SendRequests(clu, sigScheme, reqs)
 		if err != nil {
 			return err
 		}
-		time.Sleep(wait)
 	}
 	return nil
 }
@@ -78,17 +75,7 @@ func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.Signature
 	if err != nil {
 		return err
 	}
-
-	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
-	//fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
-
-	err = clu.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
-	if err != nil {
-		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
-		return err
-	}
-	//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
-	return nil
+	return clu.PostTransaction(tx)
 }
 
 func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqs []*waspapi.RequestBlockJson) error {
@@ -96,15 +83,5 @@ func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureSchem
 	if err != nil {
 		return err
 	}
-
-	//fmt.Printf("[cluster] created request tx: %s\n", tx.String())
-	//fmt.Printf("[cluster] posting tx: %s\n", tx.Transaction.String())
-
-	err = clu.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
-	if err != nil {
-		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
-		return err
-	}
-	//fmt.Printf("[cluster] posted request txid %s\n", tx.ID().String())
-	return nil
+	return clu.PostTransaction(tx)
 }

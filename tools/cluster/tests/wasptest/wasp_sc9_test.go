@@ -30,11 +30,11 @@ func TestSC9Requests5Sec1(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNum9]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)

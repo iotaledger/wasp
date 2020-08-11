@@ -11,32 +11,28 @@ import (
 )
 
 // Puts bootup records into the nodes. Also requests funds from the nodeClient for owners.
-func PutBootupRecords(clu *cluster.Cluster) (map[string]*balance.Color, error) {
+func PutBootupRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
 	requested := make(map[address.Address]bool)
 
-	colors := make(map[string]*balance.Color)
-	for _, sc := range clu.SmartContractConfig {
-		fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
+	fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
 
-		ownerAddr := sc.OwnerAddress()
-		_, ok := requested[ownerAddr]
-		if !ok {
-			err := clu.NodeClient.RequestFunds(ownerAddr)
-			if err != nil {
-				fmt.Printf("[cluster] Could not request funds: %v\n", err)
-				return nil, fmt.Errorf("Could not request funds: %v", err)
-			}
-			requested[ownerAddr] = true
-		}
-
-		color, err := putScData(clu, &sc)
+	ownerAddr := sc.OwnerAddress()
+	_, ok := requested[ownerAddr]
+	if !ok {
+		err := clu.NodeClient.RequestFunds(&ownerAddr)
 		if err != nil {
-			fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
-			return nil, fmt.Errorf("failed to create bootup records: %v", err)
+			fmt.Printf("[cluster] Could not request funds: %v\n", err)
+			return nil, fmt.Errorf("Could not request funds: %v", err)
 		}
-		colors[sc.Address] = color
+		requested[ownerAddr] = true
 	}
-	return colors, nil
+
+	color, err := putScData(clu, sc)
+	if err != nil {
+		fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
+		return nil, fmt.Errorf("failed to create bootup records: %v", err)
+	}
+	return color, nil
 }
 
 func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {

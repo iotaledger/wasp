@@ -19,15 +19,41 @@ type nodeclient struct {
 	goshimmerClient *client.GoShimmerAPI
 }
 
-func (api *nodeclient) RequestFunds(targetAddress address.Address) error {
-	_, err := api.goshimmerClient.SendFaucetRequest(targetAddress.String())
-	return err
+func (api *nodeclient) RequestFunds(targetAddress *address.Address) error {
+	initialBalance, err := api.balanceIOTA(targetAddress)
+	if err != nil {
+		return fmt.Errorf("balanceIOTA: %s", err)
+	}
+	_, err = api.goshimmerClient.SendFaucetRequest(targetAddress.String())
+	if err != nil {
+		return fmt.Errorf("SendFaucetRequest: %s", err)
+	}
+	for attempts := 10; attempts > 0; attempts-- {
+		time.Sleep(1 * time.Second)
+		balance, err := api.balanceIOTA(targetAddress)
+		if err != nil {
+			return fmt.Errorf("balanceIOTA: %s", err)
+		}
+		if balance > initialBalance {
+			return nil
+		}
+	}
+	return fmt.Errorf("Faucet request seems to have failed")
+}
+
+func (api *nodeclient) balanceIOTA(targetAddress *address.Address) (int64, error) {
+	outs, err := api.GetAccountOutputs(targetAddress)
+	if err != nil {
+		return 0, fmt.Errorf("GetAccountOutputs: %s", err)
+	}
+	bals, _ := util.OutputBalancesByColor(outs)
+	return bals[balance.ColorIOTA], nil
 }
 
 func (api *nodeclient) GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {
 	r, err := api.goshimmerClient.GetUnspentOutputs([]string{address.String()})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetUnspentOutputs: %s", err)
 	}
 	if r.Error != "" {
 		return nil, fmt.Errorf("%s", r.Error)
@@ -37,13 +63,13 @@ func (api *nodeclient) GetAccountOutputs(address *address.Address) (map[transact
 		for _, outid := range out.OutputIDs {
 			id, err := transaction.OutputIDFromBase58(outid.ID)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("OutputIDFromBase58: %s", err)
 			}
 			balances := make([]*balance.Balance, 0)
 			for _, b := range outid.Balances {
 				color, err := util.ColorFromString(b.Color)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("ColorFromString: %s", err)
 				}
 				balances = append(balances, &balance.Balance{Value: b.Value, Color: color})
 			}

@@ -8,7 +8,6 @@ import (
 )
 
 func TestPutBootupRecords(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestPutBootupRecords")
 
 	err := wasps.ListenToMessages(map[string]int{
@@ -21,8 +20,9 @@ func TestPutBootupRecords(t *testing.T) {
 	})
 	check(err, t)
 
-	// exercise
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
 	wasps.CollectMessages(10 * time.Second)
@@ -46,11 +46,13 @@ func TestActivate1SC(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
 	// exercise
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
 	wasps.CollectMessages(5 * time.Second)
@@ -73,7 +75,9 @@ func TestActivateAllSC(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
 	// exercise
@@ -100,10 +104,11 @@ func TestCreateOrigin(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[0]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 

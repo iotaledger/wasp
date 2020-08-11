@@ -16,6 +16,10 @@ func RandomColor() (ret balance.Color) {
 }
 
 func ColorFromString(cs string) (ret balance.Color, err error) {
+	if cs == "IOTA" {
+		ret = balance.ColorIOTA
+		return
+	}
 	var bin []byte
 	bin, err = base58.Decode(cs)
 	if err != nil {

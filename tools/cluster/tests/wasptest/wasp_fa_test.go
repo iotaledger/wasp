@@ -29,10 +29,10 @@ func TestFASetOwnerMargin(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -44,7 +44,9 @@ func TestFASetOwnerMargin(t *testing.T) {
 	scAddr := sc.SCAddress()
 	scColor := sc.GetColor()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
+	auctionOwnerAddr := auctionOwner.Address()
+
+	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -61,7 +63,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "auction owner address in the beginning") {
 		t.Fail()
@@ -98,7 +100,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "auction address in the end") {
 		t.Fail()
@@ -128,11 +130,11 @@ func TestFA1Color0Bids(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -146,7 +148,9 @@ func TestFA1Color0Bids(t *testing.T) {
 	scAddress := sc.SCAddress()
 	scColor := sc.GetColor()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
+	auctionOwnerAddr := auctionOwner.Address()
+
+	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -167,7 +171,7 @@ func TestFA1Color0Bids(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 		*color1:           1,
 	}, "auction owner address in the beginning") {
@@ -207,7 +211,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	}, "SC address in the end") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount-5, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-5, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 5,
 		*color1:           1,
 	}, "auction owner address in the end") {
@@ -231,11 +235,11 @@ func TestFA2Color0Bids(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -249,7 +253,9 @@ func TestFA2Color0Bids(t *testing.T) {
 	scAddress := sc.SCAddress()
 	scColor := sc.GetColor()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
+	auctionOwnerAddr := auctionOwner.Address()
+
+	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
 	check(err, t)
 
 	// create 2 colored tokens
@@ -274,7 +280,7 @@ func TestFA2Color0Bids(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
 		*color1:           1,
 		*color2:           1,
@@ -335,7 +341,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	}, "SC address in the end") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount-5-5, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-5-5, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 2 - 5 - 5,
 		*color1:           1,
 		*color2:           1,
@@ -360,10 +366,10 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -373,10 +379,14 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
+	auctionOwnerAddr := auctionOwner.Address()
+
+	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(bidder1.Address())
+	bidder1Addr := bidder1.Address()
+
+	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
 	check(err, t)
 
 	scOwnerAddr := sc.OwnerAddress()
@@ -389,7 +399,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		*color1:           1,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "auction owner in the beginning") {
@@ -408,7 +418,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder1 in the beginning") {
 		t.Fail()
@@ -450,7 +460,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount-5, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-5, map[balance.Color]int64{
 		*color1:           1,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 5,
 	}, "auction owner in the end") {
@@ -467,7 +477,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	}, "owner address in the end") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder1 address in the end") {
 		t.Fail()
@@ -489,10 +499,10 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -502,7 +512,9 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
+	auctionOwnerAddr := auctionOwner.Address()
+
+	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -514,7 +526,9 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	scColor := sc.GetColor()
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(bidder1.Address())
+	bidder1Addr := bidder1.Address()
+
+	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -531,14 +545,14 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 		*color1:           1,
 	}, "auction owner address begin") {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder1 address begin") {
 		t.Fail()
@@ -594,14 +608,14 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 		t.Fail()
 	}
 	// check bidder1 address
-	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount-5*25+1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount-5*25+1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 5*25,
 		*color1:           1,
 	}, "bidder1 address end") {
 		t.Fail()
 	}
 	// check auction owner address
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount-1-6+125, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-1-6+125, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 6 + 125,
 	}, "auction owner address end") {
 		t.Fail()
@@ -624,11 +638,11 @@ func TestFA1Color2Bidders(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
-	check(err, t)
-
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
 
 	err = Activate1SC(wasps, sc)
 	check(err, t)
@@ -638,7 +652,9 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	time.Sleep(3 * time.Second)
 
-	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
+	auctionOwnerAddr := auctionOwner.Address()
+
+	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -648,10 +664,14 @@ func TestFA1Color2Bidders(t *testing.T) {
 	scOwnerAddr := sc.OwnerAddress()
 	scAddress := sc.SCAddress()
 
-	err = wasps.NodeClient.RequestFunds(bidder1.Address())
+	bidder1Addr := bidder1.Address()
+
+	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(bidder2.Address())
+	bidder2Addr := bidder2.Address()
+
+	err = wasps.NodeClient.RequestFunds(&bidder2Addr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -668,20 +688,20 @@ func TestFA1Color2Bidders(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 		*color1:           1,
 	}, "auction owner address begin") {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder1 address begin") {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(bidder2.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder2Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder2 address begin") {
 		t.Fail()
@@ -747,17 +767,17 @@ func TestFA1Color2Bidders(t *testing.T) {
 	}, "owner address end") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(auctionOwner.Address(), testutil.RequestFundsAmount-1+125-6, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-1+125-6, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 + 125 - 6,
 	}, "auction owner address end") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder1 address begin") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(bidder2.Address(), testutil.RequestFundsAmount-125+1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(bidder2Addr, testutil.RequestFundsAmount-125+1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 125,
 		*color1:           1,
 	}, "bidder2 address begin") {

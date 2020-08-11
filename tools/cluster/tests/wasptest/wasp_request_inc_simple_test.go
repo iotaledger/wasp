@@ -25,10 +25,11 @@ func TestSend1ReqIncSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -78,10 +79,11 @@ func TestSend5ReqInc1SecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -135,10 +137,11 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -191,10 +194,11 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -247,10 +251,11 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[2]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[2]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 

@@ -22,10 +22,10 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 	err := clu.ListenToMessages(expectations)
 	check(err, t)
 
-	_, err = PutBootupRecords(clu)
-	check(err, t)
-
 	sc := &clu.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(clu, sc)
+	check(err, t)
 
 	err = Activate1SC(clu, sc)
 	check(err, t)
@@ -54,7 +54,7 @@ func TestLogsc1(t *testing.T) {
 			"message": "message 0",
 		},
 	}}
-	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
+	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
 	clu.CollectMessages(30 * time.Second)
@@ -78,7 +78,7 @@ func TestLogsc5(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          6,
 		"request_out":         7,
-		"state":               3,
+		"state":               -1,
 		"logsc-addlog":        -1, // sometime Vm is not run
 	})
 
@@ -91,17 +91,16 @@ func TestLogsc5(t *testing.T) {
 			},
 		}
 	})
-	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs, 0*time.Millisecond)
+	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.CollectMessages(20 * time.Second)
+	clu.CollectMessages(60 * time.Second)
 
 	if !clu.Report() {
 		t.Fail()
 	}
 
 	clu.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
-		assert.EqualValues(t, 2, stateIndex)
 		{
 			state := state.ToGoMap()
 			assert.EqualValues(t, 8, len(state)) // 5 log items + log length + program_hash + owner address

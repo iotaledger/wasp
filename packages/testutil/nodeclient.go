@@ -21,8 +21,8 @@ func NewNodeClient(host string) nodeclient.NodeClient {
 	return &utxodbclient{host}
 }
 
-func (api *utxodbclient) RequestFunds(targetAddress address.Address) error {
-	return nodeapi.RequestFunds(api.goshimmerHost, &targetAddress)
+func (api *utxodbclient) RequestFunds(targetAddress *address.Address) error {
+	return nodeapi.RequestFunds(api.goshimmerHost, targetAddress)
 }
 
 func (api *utxodbclient) GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {

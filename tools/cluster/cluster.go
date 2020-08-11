@@ -571,6 +571,17 @@ func (cluster *Cluster) Report() bool {
 	return pass
 }
 
+func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
+	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
+	err := cluster.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
+	if err != nil {
+		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
+		return err
+	}
+	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
+	return nil
+}
+
 func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
 	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)

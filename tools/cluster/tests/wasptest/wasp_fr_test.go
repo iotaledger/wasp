@@ -26,10 +26,11 @@ func TestSend1Bet(t *testing.T) {
 	})
 	check(err, t)
 
-	scColors, err := PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[3]
+
+	scColor, err := PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[3]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -64,13 +65,11 @@ func TestSend1Bet(t *testing.T) {
 		t.Fail()
 	}
 
-	scColor := *scColors[sc.Address]
-
 	scAddr := sc.SCAddress()
 
 	if !wasps.VerifyAddressBalances(scAddr, 101, map[balance.Color]int64{
 		balance.ColorIOTA: 99,
-		scColor:           1,
+		*scColor:          1,
 		// +1 more pending in self sent timelocked request
 	}) {
 		t.Fail()
@@ -98,10 +97,11 @@ func TestSend5Bets(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[3]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[3]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
@@ -169,10 +169,11 @@ func TestSendBetsAndPlay(t *testing.T) {
 	})
 	check(err, t)
 
-	_, err = PutBootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[3]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[3]
 	err = Activate1SC(wasps, sc)
 	check(err, t)
 
