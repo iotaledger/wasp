@@ -143,6 +143,11 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Build: %v", err))
 		return
 	}
+	// check semantic just in case
+	if _, err := ctx.ResultTransaction.Properties(); err != nil {
+		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Properties: %v", err))
+		return
+	}
 
 	// deprecate
 	// check of all provided inputs were properly consumed

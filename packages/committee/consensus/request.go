@@ -43,7 +43,7 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 }
 
 // request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg committee.RequestMsg) (*request, bool) {
+func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool) {
 	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
 	ret, ok := op.requests[reqId]
 	msgFirstTime := !ok || ret.reqTx == nil
@@ -229,7 +229,7 @@ func (op *operator) filterNotCompletePackages(reqs []*request) []*request {
 		txid := req.reqTx.ID()
 		if _, ok := reqstats[txid]; !ok {
 			reqstats[txid] = &txReqNums{
-				totalNumOfRequestsInTx: len(req.reqTx.RequestsToAddress(op.committee.Address())),
+				totalNumOfRequestsInTx: req.reqTx.NumRequestsToAddress(op.committee.Address()),
 				numOfRequestsInTheList: 0,
 			}
 		}

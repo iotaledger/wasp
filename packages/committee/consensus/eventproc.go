@@ -76,14 +76,14 @@ func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 }
 
 // EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
+func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	op.log.Debugw("EventRequestMsg",
 		"reqid", reqMsg.RequestId().Short(),
 		"backlog req", len(op.requests),
 		"backlog notif", len(op.notificationsBacklog),
 	)
 
-	if err := op.validateRequestBlock(&reqMsg); err != nil {
+	if err := op.validateRequestBlock(reqMsg); err != nil {
 		op.log.Warnw("request block validation failed.Ignored",
 			"reqs", reqMsg.RequestId().Short(),
 			"err", err,

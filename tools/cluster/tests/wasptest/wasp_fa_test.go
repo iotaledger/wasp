@@ -250,7 +250,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	ownerAddr := sc.OwnerAddress()
 	scAddress := sc.SCAddress()
@@ -401,21 +401,25 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "auction owner in the beginning") {
 		t.Fail()
+		return
 	}
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
 		scColor: 1, // sc token
 	}, "SC address in the beginning") {
 		t.Fail()
+		return
 	}
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "owner in the beginning") {
 		t.Fail()
+		return
 	}
 	if !wasps.VerifyAddressBalances(bidder1.Address(), testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "bidder1 in the beginning") {
 		t.Fail()
+		return
 	}
 
 	// send request StartAuction. Selling 1 token of color1
@@ -639,7 +643,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	err = wasps.NodeClient.RequestFunds(auctionOwner.Address())
 	check(err, t)

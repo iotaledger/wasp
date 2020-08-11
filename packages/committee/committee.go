@@ -43,7 +43,7 @@ type Operator interface {
 	EventProcessorReady(ProcessorIsReady)
 	EventStateTransitionMsg(*StateTransitionMsg)
 	EventBalancesMsg(BalancesMsg)
-	EventRequestMsg(RequestMsg)
+	EventRequestMsg(*RequestMsg)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
 	EventResultCalculated(*vm.VMTask)

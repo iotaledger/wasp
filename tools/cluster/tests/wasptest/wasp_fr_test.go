@@ -39,10 +39,11 @@ func TestSend1Bet(t *testing.T) {
 	check(err, t)
 
 	ownerAddr := sc.OwnerAddress()
-	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}) {
 		t.Fail()
+		return
 	}
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
@@ -112,10 +113,11 @@ func TestSend5Bets(t *testing.T) {
 	ownerAddr := sc.OwnerAddress()
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}) {
 		t.Fail()
+		return
 	}
 
 	for i := 0; i < 5; i++ {

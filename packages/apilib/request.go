@@ -57,6 +57,10 @@ func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme
 	}
 	tx.Sign(sigScheme)
 
+	// check semantic just in case
+	if _, err := tx.Properties(); err != nil {
+		return nil, err
+	}
 	//fmt.Printf("$$$$ dumping builder for %s\n%s\n", tx.ID().String(), dump)
 
 	return tx, nil
@@ -147,6 +151,11 @@ func CreateRequestTransaction(client nodeclient.NodeClient, senderSigScheme sign
 		return nil, err
 	}
 	tx.Sign(senderSigScheme)
+
+	// check semantic just in case
+	if _, err := tx.Properties(); err != nil {
+		return nil, err
+	}
 
 	MustNotNullInputs(tx.Transaction)
 
