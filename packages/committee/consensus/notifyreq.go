@@ -102,3 +102,9 @@ func (op *operator) adjustNotifications() {
 	}
 	op.notificationsBacklog = newBacklog
 }
+
+func setAllFalse(bs []bool) {
+	for i := range bs {
+		bs[i] = false
+	}
+}

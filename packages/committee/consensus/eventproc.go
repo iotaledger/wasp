@@ -83,13 +83,6 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 		"backlog notif", len(op.notificationsBacklog),
 	)
 
-	if err := op.validateRequestBlock(reqMsg); err != nil {
-		op.log.Warnw("request block validation failed.Ignored",
-			"reqs", reqMsg.RequestId().Short(),
-			"err", err,
-		)
-		return
-	}
 	req, newRequest := op.requestFromMsg(reqMsg)
 
 	if newRequest {
