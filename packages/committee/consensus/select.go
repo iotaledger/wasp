@@ -1,3 +1,4 @@
+// the file contains functions responsible for the request batch selection logic
 package consensus
 
 import (
@@ -68,6 +69,9 @@ func (op *operator) requestCandidateList() []*request {
 		if req.isTimelocked(nowis) {
 			continue
 		}
+		if req.timelock() > 0 {
+			req.log.Debugf("timelocked until %d: pass. nowis %d", req.timelock(), nowis.Unix())
+		}
 		ret = append(ret, req)
 	}
 	return ret
@@ -79,6 +83,9 @@ type requestWithVotes struct {
 }
 
 func (op *operator) filterRequestsNotSeenQuorumTimes(candidates []*request) []*request {
+	if len(candidates) == 0 {
+		return nil
+	}
 	ret1 := make([]*requestWithVotes, 0)
 	for _, req := range candidates {
 		votes := numTrue(req.notifications)
@@ -107,6 +114,9 @@ func (op *operator) filterRequestsNotSeenQuorumTimes(candidates []*request) []*r
 //  - the user defined request while processor is not ready yet
 //  - the request is timelocked yet
 func (op *operator) filterNotReadyYet(reqs []*request) []*request {
+	if len(reqs) == 0 {
+		return nil
+	}
 	ret := reqs[:0] // same underlying array, different slice
 
 	for _, req := range reqs {
@@ -134,7 +144,7 @@ type txReqNums struct {
 	numOfRequestsInTheList int
 }
 
-// ensure that ether ALL user-defined requests to this smart contract are in the batch or none
+// ensure that ether all except timelocked user-defined requests to this smart contract are in the batch or none
 func (op *operator) filterNotCompletePackages(reqs []*request) []*request {
 	if len(reqs) == 0 {
 		return nil
