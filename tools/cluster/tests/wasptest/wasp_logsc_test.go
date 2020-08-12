@@ -56,9 +56,7 @@ func TestLogsc1(t *testing.T) {
 	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.WaitUntilExpectationsMet()
-
-	if !clu.Report() {
+	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
@@ -93,9 +91,7 @@ func TestLogsc5(t *testing.T) {
 	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.WaitUntilExpectationsMet()
-
-	if !clu.Report() {
+	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 

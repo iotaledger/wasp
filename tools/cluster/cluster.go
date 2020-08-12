@@ -541,23 +541,20 @@ func (cluster *Cluster) CollectMessages(duration time.Duration) {
 	}
 }
 
-func (cluster *Cluster) WaitUntilExpectationsMet() {
+func (cluster *Cluster) WaitUntilExpectationsMet() bool {
 	fmt.Printf("[cluster] collecting publisher's messages\n")
 
 	for {
 		select {
 		case msg := <-cluster.messagesCh:
-			fmt.Printf("[cluster] message received: %v\n", msg)
 			cluster.countMessage(msg)
-
-			pass, r := cluster.report()
-			fmt.Printf("[cluster] report: %v %s\n", pass, r)
+			pass, _ := cluster.report()
 			if pass {
-				return
+				return true
 			}
 
 		case <-time.After(30 * time.Second):
-			return
+			return cluster.Report()
 		}
 	}
 }
