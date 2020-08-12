@@ -545,7 +545,11 @@ func (cluster *Cluster) WaitUntilExpectationsMet() bool {
 	fmt.Printf("[cluster] collecting publisher's messages\n")
 
 	for {
-		pass, _ := cluster.report()
+		fail, pass, report := cluster.report()
+		if fail {
+			fmt.Printf("\n[cluster] Message expectations failed for '%s':\n%s\n", cluster.testName, report)
+			return false
+		}
 		if pass {
 			return true
 		}
@@ -564,12 +568,13 @@ func (cluster *Cluster) countMessage(msg *subscribe.HostMessage) {
 }
 
 func (cluster *Cluster) Report() bool {
-	pass, report := cluster.report()
+	_, pass, report := cluster.report()
 	fmt.Printf("\n[cluster] Message statistics for '%s':\n%s\n", cluster.testName, report)
 	return pass
 }
 
-func (cluster *Cluster) report() (bool, string) {
+func (cluster *Cluster) report() (bool, bool, string) {
+	fail := false
 	pass := true
 	report := ""
 	for host, counters := range cluster.counters {
@@ -586,12 +591,16 @@ func (cluster *Cluster) report() (bool, string) {
 				} else {
 					f = "fail"
 					pass = false
+					if res > exp {
+						// got more messages than expected, no need to keep running
+						fail = true
+					}
 				}
 			}
 			report += fmt.Sprintf("          %s: %d (%s) %s\n", t, res, e, f)
 		}
 	}
-	return pass, report
+	return fail, pass, report
 }
 
 func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
