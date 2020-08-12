@@ -7,14 +7,14 @@ Done
 - [x] deploy `FairRoulette` PoC
 - [x] Release binaries
 - [X] implement `FairAuction` smart contract with tests
+- [x] Integration tests: end test when a specific message is published (instead
+      of waiting for an arbitrary amount of seconds).
+- [x] adjust WaspConn etc APIs to real Goshimmer APIs.
 
 Pending
-- [ ] Integration tests: end test when a specific message is published (instead
-      of waiting for an arbitrary amount of seconds).
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
-- [ ] adjust WaspConn etc APIs to real Goshimmer APIs.
 - [ ] extend goshimmer cli-wallet with `FairAuction` and `FairRoulette`
 - [ ] deploy Wasp in Pollen testnet
 - [ ] `Oracle Data Bulletin Board` description
