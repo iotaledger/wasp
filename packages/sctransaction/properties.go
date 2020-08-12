@@ -22,6 +22,8 @@ type Properties struct {
 	// number of newly minted tokens
 	numMintedTokensByAddr map[address.Address]int64
 	numMintedTokens       int64
+	// number of requests
+	numRequests int
 }
 
 func (tx *Transaction) calcProperties() (*Properties, error) {
@@ -127,6 +129,8 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	if len(tx.Requests()) == 0 {
 		return nil
 	}
+	prop.numRequests = len(tx.Requests())
+
 	numReqByAddr := make(map[address.Address]int64)
 	for _, reqBlk := range tx.Requests() {
 		n, _ := numReqByAddr[reqBlk.Address()]
@@ -190,4 +194,12 @@ func (prop *Properties) MustStateColor() *balance.Color {
 		panic("MustStateColor: must be a state transaction")
 	}
 	return &prop.stateColor
+}
+
+// NumFreeMintedTokens return total minted tokens minus number of requests
+func (prop *Properties) NumFreeMintedTokens() int64 {
+	if prop.isOrigin {
+		return 0
+	}
+	return prop.numMintedTokens - int64(prop.numRequests)
 }

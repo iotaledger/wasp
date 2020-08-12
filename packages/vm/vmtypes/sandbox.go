@@ -50,11 +50,17 @@ type Sandbox interface {
 
 // access to request parameters (arguments)
 type RequestAccess interface {
+	//request id
 	ID() sctransaction.RequestId
+	// request code
 	Code() sctransaction.RequestCode
-	// checks if at least ne input is from a particular address (signed)
+	// sender address (exactly 1)
 	Sender() address.Address
+	// arguments
 	Args() kv.RCodec // TODO must return MustCodec
+	// number of free minted tokens in the request transaction
+	// it is equal to total minted tokens minus number of requests
+	NumFreeMintedTokens() int64
 }
 
 // access to token operations (txbuilder)

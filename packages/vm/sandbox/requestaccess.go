@@ -27,3 +27,8 @@ func (r *requestWrapper) Args() kv.RCodec {
 func (r *requestWrapper) Sender() address.Address {
 	return *r.ref.Tx.MustProperties().Sender()
 }
+
+//MintedBalances return total minted tokens minus number of
+func (r *requestWrapper) NumFreeMintedTokens() int64 {
+	return r.ref.Tx.MustProperties().NumFreeMintedTokens()
+}
