@@ -545,14 +545,14 @@ func (cluster *Cluster) WaitUntilExpectationsMet() bool {
 	fmt.Printf("[cluster] collecting publisher's messages\n")
 
 	for {
+		pass, _ := cluster.report()
+		if pass {
+			return true
+		}
+
 		select {
 		case msg := <-cluster.messagesCh:
 			cluster.countMessage(msg)
-			pass, _ := cluster.report()
-			if pass {
-				return true
-			}
-
 		case <-time.After(30 * time.Second):
 			return cluster.Report()
 		}
