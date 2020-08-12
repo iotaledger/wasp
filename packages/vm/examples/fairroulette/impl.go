@@ -139,15 +139,11 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 	// take input addresses of the request transaction. Must be exactly 1 otherwise.
 	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	senders := ctx.AccessRequest().Senders()
-	if len(senders) != 1 {
-		return
-	}
-	sender := senders[0]
+	sender := ctx.AccessRequest().Sender()
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
-	sum := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+	sum := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		ctx.Publish("placeBet: sum == 0: nothing to bet")
@@ -224,7 +220,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) {
 func lockBets(ctx vmtypes.Sandbox) {
 	ctx.Publish("lockBets")
 
-	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetSCAddress()) {
+	if ctx.AccessRequest().Sender() != *ctx.GetSCAddress() {
 		// ignore if request is not from itself
 		return
 	}
@@ -249,7 +245,7 @@ func lockBets(ctx vmtypes.Sandbox) {
 func playAndDistribute(ctx vmtypes.Sandbox) {
 	ctx.Publish("playAndDistribute")
 
-	if !ctx.AccessRequest().IsAuthorisedByAddress(ctx.GetSCAddress()) {
+	if ctx.AccessRequest().Sender() != *ctx.GetSCAddress() {
 		// ignore if request is not from itself
 		return
 	}
@@ -317,7 +313,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		if !ctx.AccessOwnAccount().MoveTokens(ctx.GetSCAddress(), &balance.ColorIOTA, totalLockedAmount) {
+		if !ctx.AccessSCAccount().MoveTokens(ctx.GetSCAddress(), &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Publishf("$$$$$$$$$$ something went wrong 1")
 			ctx.Panic("MoveTokens failed")
@@ -401,11 +397,11 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	// distribute iotas
 	for i := range finalWinners {
 
-		available := ctx.AccessOwnAccount().AvailableBalance(&balance.ColorIOTA)
+		available := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
 		ctx.Publishf("sending reward iotas %d to the winner %s. Available iotas: %d",
 			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available)
 
-		if !ctx.AccessOwnAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
+		if !ctx.AccessSCAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
 
 			return false
 		}

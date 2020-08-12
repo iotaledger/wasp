@@ -31,8 +31,8 @@ type Sandbox interface {
 	AccessRequest() RequestAccess
 	// base level of virtual state access
 	AccessState() kv.MustCodec
-	// AccessOwnAccount
-	AccessOwnAccount() AccountAccess
+	// AccessSCAccount
+	AccessSCAccount() AccountAccess
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
@@ -52,8 +52,8 @@ type Sandbox interface {
 type RequestAccess interface {
 	ID() sctransaction.RequestId
 	Code() sctransaction.RequestCode
-	IsAuthorisedByAddress(addr *address.Address) bool
-	Senders() []address.Address
+	// checks if at least ne input is from a particular address (signed)
+	Sender() address.Address
 	Args() kv.RCodec // TODO must return MustCodec
 }
 

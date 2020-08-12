@@ -56,7 +56,7 @@ func (m *MockedSandbox) AccessState() kv.MustCodec {
 	return kv.NewMustCodec(m.kv)
 }
 
-func (m *MockedSandbox) AccessOwnAccount() vmtypes.AccountAccess {
+func (m *MockedSandbox) AccessSCAccount() vmtypes.AccountAccess {
 	panic("implement me")
 }
 

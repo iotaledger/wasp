@@ -12,7 +12,10 @@ import (
 const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 
 const (
-	RequestInitSC = sctransaction.RequestCode(uint16(0)) // NOP
+	RequestInitSC            = sctransaction.RequestCode(uint16(0)) // NOP
+	RequestMintSupply        = sctransaction.RequestCode(uint16(1))
+	RequestUpdateMetadata    = sctransaction.RequestCode(uint16(2))
+	RequestTransferOwnership = sctransaction.RequestCode(uint16(3))
 )
 
 type tokenRegistryProcessor map[sctransaction.RequestCode]tokenRegistryEntryPoint
@@ -21,7 +24,10 @@ type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox)
 
 // the processor is a map of entry points
 var entryPoints = tokenRegistryProcessor{
-	RequestInitSC: initSC,
+	RequestInitSC:            initSC,
+	RequestMintSupply:        mintSupply,
+	RequestUpdateMetadata:    updateMetadata,
+	RequestTransferOwnership: transferOwnership,
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -44,4 +50,16 @@ func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 
 func initSC(ctx vmtypes.Sandbox) {
 	ctx.Publishf("TokenRegistry: initSC")
+}
+
+func mintSupply(ctx vmtypes.Sandbox) {
+	ctx.Publishf("TokenRegistry: mintSupply")
+}
+
+func updateMetadata(ctx vmtypes.Sandbox) {
+	ctx.Publishf("TokenRegistry: updateMetadata")
+}
+
+func transferOwnership(ctx vmtypes.Sandbox) {
+	ctx.Publishf("TokenRegistry: transferOwnership")
 }

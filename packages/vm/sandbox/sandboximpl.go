@@ -82,7 +82,7 @@ func (vctx *sandbox) AccessState() kv.MustCodec {
 	return vctx.stateWrapper.MustCodec()
 }
 
-func (vctx *sandbox) AccessOwnAccount() vmtypes.AccountAccess {
+func (vctx *sandbox) AccessSCAccount() vmtypes.AccountAccess {
 	return vctx
 }
 

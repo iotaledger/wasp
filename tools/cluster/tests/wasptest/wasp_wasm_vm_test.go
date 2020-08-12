@@ -18,7 +18,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestWasmVMSend5Requests1Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1, // wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,

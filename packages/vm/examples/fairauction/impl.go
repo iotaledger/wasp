@@ -132,13 +132,9 @@ func startAuction(ctx vmtypes.Sandbox) {
 	ctx.Publish("startAuction begin")
 
 	// find out who starts the action
-	sender := takeSender(ctx)
-	if sender == nil {
-		// wrong transaction, hard reject (nothing is processed and nothing is refunded)
-		return
-	}
+	sender := ctx.AccessRequest().Sender()
 	reqArgs := ctx.AccessRequest().Args()
-	account := ctx.AccessOwnAccount()
+	account := ctx.AccessSCAccount()
 
 	totalDeposit := account.AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if totalDeposit < 1 {
@@ -256,7 +252,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		Description:     description,
 		WhenStarted:     ctx.GetTimestamp(),
 		DurationMinutes: duration,
-		AuctionOwner:    *sender,
+		AuctionOwner:    sender,
 		TotalDeposit:    totalDeposit,
 		OwnerMargin:     ownerMargin,
 	})
@@ -283,7 +279,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 func placeBid(ctx vmtypes.Sandbox) {
 	ctx.Publish("placeBid: begin")
 
-	bidAmount := ctx.AccessOwnAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+	bidAmount := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if bidAmount == 0 {
 		// no iotas sent
 		ctx.Publish("placeBid: exit 0")
@@ -331,16 +327,11 @@ func placeBid(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	sender := takeSender(ctx)
-	if sender == nil {
-		// bad transaction
-		ctx.Publish("placeBid: exit 7")
-		return
-	}
+	sender := ctx.AccessRequest().Sender()
 
 	var bi *BidInfo
 	for _, bitmp := range ai.Bids {
-		if bitmp.Bidder == *sender {
+		if bitmp.Bidder == sender {
 			bi = bitmp
 			break
 		}
@@ -349,7 +340,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 		// first bid by the sender
 		ai.Bids = append(ai.Bids, &BidInfo{
 			Total:  bidAmount,
-			Bidder: *sender,
+			Bidder: sender,
 			When:   ctx.GetTimestamp(),
 		})
 	} else {
@@ -372,7 +363,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	ctx.Publish("finalizeAuction begin")
 
 	accessReq := ctx.AccessRequest()
-	if !accessReq.IsAuthorisedByAddress(ctx.GetSCAddress()) {
+	if accessReq.Sender() != *ctx.GetSCAddress() {
 		// finalizeAuction request can only be sent by the smart contract to itself
 		return
 	}
@@ -410,7 +401,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	account := ctx.AccessOwnAccount()
+	account := ctx.AccessSCAccount()
 
 	// find the winning amount and determine respective ownerFee
 	winningAmount := int64(0)
@@ -457,7 +448,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		}
 	}
 
-	feeTaken := ctx.AccessOwnAccount().HarvestFees(ownerFee - 1)
+	feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
 	ctx.Publishf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken)
 
 	if winner != nil {
@@ -489,7 +480,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 			if account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total) {
 				ctx.Publishf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String())
 			} else {
-				avail := ctx.AccessOwnAccount().AvailableBalance(&balance.ColorIOTA)
+				avail := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
 				ctx.Publishf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail)
 			}
 		}
@@ -500,18 +491,6 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	auctDict.DelAt(col.Bytes())
 
 	ctx.Publishf("finalizeAuction: success. Auction: '%s'", ai.Description)
-}
-
-func takeSender(ctx vmtypes.Sandbox) *address.Address {
-	// take input addresses of the request transaction. Must be exactly 1 otherwise.
-	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	senders := ctx.AccessRequest().Senders()
-	if len(senders) != 1 {
-		// wrong transaction, hardReject (nothing is processed and nothing is refunded)
-		return nil
-	}
-	sender := senders[0]
-	return &sender
 }
 
 // setOwnerMargin is a request to set the service fee to place a bid
@@ -536,15 +515,12 @@ func setOwnerMargin(ctx vmtypes.Sandbox) {
 
 // refundFromRequest returns all iotas tokens to the sender minus sunkFee
 func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64) {
-	account := ctx.AccessOwnAccount()
-	ctx.AccessOwnAccount().HarvestFeesFromRequest(harvest)
+	account := ctx.AccessSCAccount()
+	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	available := account.AvailableBalanceFromRequest(color)
-	sender := takeSender(ctx)
-	if sender == nil {
-		return
-	}
-	ctx.AccessOwnAccount().HarvestFeesFromRequest(harvest)
-	account.MoveTokensFromRequest(sender, color, available)
+	sender := ctx.AccessRequest().Sender()
+	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
+	account.MoveTokensFromRequest(&sender, color, available)
 
 }
 
