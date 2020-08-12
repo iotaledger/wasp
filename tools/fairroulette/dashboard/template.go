@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/tools/fairroulette/client"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/labstack/echo"
 )
 
 type IndexTemplateParams struct {
 	Host      string
 	SCAddress address.Address
-	Status    *client.Status
+	Status    *fairroulette.Status
 }
 
 func (p IndexTemplateParams) FormatNextPlayTime() string {

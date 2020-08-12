@@ -4,10 +4,13 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
+	"github.com/iotaledger/wasp/tools/fairroulette/config"
 )
 
 func StatusCmd(args []string) {
-	status, err := FetchStatus()
+	scAddress := config.GetSCAddress()
+
+	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
 	check(err)
 
 	fmt.Printf("FairRoulette Smart Contract status:\n")

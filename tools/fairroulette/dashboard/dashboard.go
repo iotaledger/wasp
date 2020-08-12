@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/subscribe"
-	"github.com/iotaledger/wasp/tools/fairroulette/client"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -94,7 +94,8 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 }
 
 func index(c echo.Context) error {
-	status, err := client.FetchStatus()
+	scAddress := config.GetSCAddress()
+	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
 	if err != nil {
 		return err
 	}

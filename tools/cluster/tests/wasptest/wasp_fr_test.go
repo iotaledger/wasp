@@ -10,14 +10,14 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSend1Bet(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestSend1Bet")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -84,11 +84,10 @@ func TestSend1Bet(t *testing.T) {
 }
 
 func TestSend5Bets(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestSend5Bets")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          7,
@@ -156,11 +155,10 @@ func TestSend5Bets(t *testing.T) {
 }
 
 func TestSendBetsAndPlay(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestSendBetsAndPlay")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          10,
@@ -244,4 +242,101 @@ func TestSendBetsAndPlay(t *testing.T) {
 	}) {
 		t.Fail()
 	}
+}
+
+func TestFRStatus(t *testing.T) {
+	wasps := setup(t, "test_cluster", "TestFRStatus")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           1,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          10,
+		"request_out":         11,
+		"state":               -1,
+	})
+	check(err, t)
+
+	sc := &wasps.SmartContractConfig[3]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
+
+	err = Activate1SC(wasps, sc)
+	check(err, t)
+
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
+
+	scAddress, err := address.FromBase58(sc.Address)
+	check(err, t)
+	ownerAddr := sc.OwnerAddress()
+	check(err, t)
+
+	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: vmconst.RequestCodeNOP,
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 1,
+		},
+	})
+	time.Sleep(1 * time.Second)
+
+	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
+	}) {
+		t.Fail()
+	}
+	// SetPlayPeriod must be processed first
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: fairroulette.RequestSetPlayPeriod,
+		Vars: map[string]interface{}{
+			fairroulette.ReqVarPlayPeriodSec: 10,
+		},
+	})
+	check(err, t)
+
+	time.Sleep(1 * time.Second)
+
+	for i := 0; i < 5; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: fairroulette.RequestPlaceBet,
+			Vars: map[string]interface{}{
+				fairroulette.ReqVarColor: i,
+			},
+			Transfer: map[balance.Color]int64{
+				balance.ColorIOTA: 100,
+			},
+		})
+	}
+	check(err, t)
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+
+	status, err := fairroulette.FetchStatus(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress)
+	check(err, t)
+
+	assert.Equal(t, map[balance.Color]int64{
+		sc.GetColor():     1,
+		balance.ColorIOTA: 1,
+	}, status.SCBalance)
+	assert.EqualValues(t, 0, status.CurrentBetsAmount)
+	assert.EqualValues(t, 10, status.PlayPeriodSeconds)
+	assert.EqualValues(t, map[address.Address]*fairroulette.PlayerStats{
+		ownerAddr: &fairroulette.PlayerStats{
+			Bets: 5,
+			Wins: 1,
+		},
+	}, status.PlayerStats)
+
+	totalWins := 0
+	for _, wins := range status.WinsPerColor {
+		totalWins += int(wins)
+	}
+	assert.EqualValues(t, 1, totalWins)
 }
