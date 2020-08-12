@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -43,8 +42,8 @@ func TestLogsc1(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          2,
 		"request_out":         3,
-		"state":               3,
-		"logsc-addlog":        1,
+		"state":               -1,
+		"logsc-addlog":        -1,
 	})
 
 	reqs := []*waspapi.RequestBlockJson{{
@@ -57,7 +56,7 @@ func TestLogsc1(t *testing.T) {
 	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.CollectMessages(30 * time.Second)
+	clu.WaitUntilExpectationsMet()
 
 	if !clu.Report() {
 		t.Fail()
@@ -79,7 +78,7 @@ func TestLogsc5(t *testing.T) {
 		"request_in":          6,
 		"request_out":         7,
 		"state":               -1,
-		"logsc-addlog":        -1, // sometime Vm is not run
+		"logsc-addlog":        -1,
 	})
 
 	reqs := MakeRequests(5, func(i int) *waspapi.RequestBlockJson {
@@ -94,7 +93,7 @@ func TestLogsc5(t *testing.T) {
 	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.CollectMessages(60 * time.Second)
+	clu.WaitUntilExpectationsMet()
 
 	if !clu.Report() {
 		t.Fail()

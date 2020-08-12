@@ -84,7 +84,6 @@ type Cluster struct {
 	expectations map[string]int
 	topics       []string
 	counters     map[string]map[string]int
-	allMessages  []*subscribe.HostMessage
 	testName     string
 }
 
@@ -528,13 +527,11 @@ func (cluster *Cluster) ListenToMessages(expectations map[string]int) error {
 func (cluster *Cluster) CollectMessages(duration time.Duration) {
 	fmt.Printf("[cluster] collecting publisher's messages for %v\n", duration)
 
-	cluster.allMessages = make([]*subscribe.HostMessage, 0)
 	deadline := time.Now().Add(duration)
 	for {
 		select {
 		case msg := <-cluster.messagesCh:
-			cluster.allMessages = append(cluster.allMessages, msg)
-			cluster.counters[msg.Sender][msg.Message[0]] += 1
+			cluster.countMessage(msg)
 
 		case <-time.After(500 * time.Millisecond):
 		}
@@ -544,12 +541,42 @@ func (cluster *Cluster) CollectMessages(duration time.Duration) {
 	}
 }
 
-func (cluster *Cluster) Report() bool {
-	fmt.Printf("\n[cluster] Message statistics for '%s':\n", cluster.testName)
+func (cluster *Cluster) WaitUntilExpectationsMet() {
+	fmt.Printf("[cluster] collecting publisher's messages\n")
 
+	for {
+		select {
+		case msg := <-cluster.messagesCh:
+			fmt.Printf("[cluster] message received: %v\n", msg)
+			cluster.countMessage(msg)
+
+			pass, r := cluster.report()
+			fmt.Printf("[cluster] report: %v %s\n", pass, r)
+			if pass {
+				return
+			}
+
+		case <-time.After(30 * time.Second):
+			return
+		}
+	}
+}
+
+func (cluster *Cluster) countMessage(msg *subscribe.HostMessage) {
+	cluster.counters[msg.Sender][msg.Message[0]] += 1
+}
+
+func (cluster *Cluster) Report() bool {
+	pass, report := cluster.report()
+	fmt.Printf("\n[cluster] Message statistics for '%s':\n%s\n", cluster.testName, report)
+	return pass
+}
+
+func (cluster *Cluster) report() (bool, string) {
 	pass := true
+	report := ""
 	for host, counters := range cluster.counters {
-		fmt.Printf("\n[cluster] Node: %s\n", host)
+		report += fmt.Sprintf("Node: %s\n", host)
 		for _, t := range cluster.topics {
 			res, _ := counters[t]
 			exp, _ := cluster.expectations[t]
@@ -564,11 +591,10 @@ func (cluster *Cluster) Report() bool {
 					pass = false
 				}
 			}
-			fmt.Printf("          %s: %d (%s) %s\n", t, res, e, f)
+			report += fmt.Sprintf("          %s: %d (%s) %s\n", t, res, e, f)
 		}
 	}
-	fmt.Println()
-	return pass
+	return pass, report
 }
 
 func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
