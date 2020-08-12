@@ -15,7 +15,7 @@ func TestSend1Request(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Request")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -43,9 +43,7 @@ func TestSend1Request(t *testing.T) {
 	})
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
-
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
@@ -68,7 +66,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5Requests1Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -99,9 +97,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 		time.Sleep(1 * time.Second)
 	}
 
-	wasps.CollectMessages(15 * time.Second)
-
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
@@ -124,7 +120,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          11,
@@ -155,9 +151,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 		check(err, t)
 	}
 
-	wasps.CollectMessages(15 * time.Second)
-
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
@@ -180,7 +174,7 @@ func TestSend60Requests500msec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend60Requests")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
@@ -211,9 +205,7 @@ func TestSend60Requests500msec(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	wasps.CollectMessages(40 * time.Second)
-
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
@@ -236,7 +228,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
@@ -266,9 +258,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 		check(err, t)
 	}
 
-	wasps.CollectMessages(40 * time.Second)
-
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
