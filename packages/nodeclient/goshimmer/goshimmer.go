@@ -1,4 +1,4 @@
-package nodeclient
+package goshimmer
 
 import (
 	"fmt"
@@ -8,18 +8,19 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func New(goshimmerHost string) NodeClient {
-	return &nodeclient{client.NewGoShimmerAPI("http://" + goshimmerHost)}
+func NewGoshimmerClient(goshimmerHost string) nodeclient.NodeClient {
+	return &goshimmerClient{client.NewGoShimmerAPI("http://" + goshimmerHost)}
 }
 
-type nodeclient struct {
+type goshimmerClient struct {
 	goshimmerClient *client.GoShimmerAPI
 }
 
-func (api *nodeclient) RequestFunds(targetAddress *address.Address) error {
+func (api *goshimmerClient) RequestFunds(targetAddress *address.Address) error {
 	initialBalance, err := api.balanceIOTA(targetAddress)
 	if err != nil {
 		return fmt.Errorf("balanceIOTA: %s", err)
@@ -41,7 +42,7 @@ func (api *nodeclient) RequestFunds(targetAddress *address.Address) error {
 	return fmt.Errorf("Faucet request seems to have failed")
 }
 
-func (api *nodeclient) balanceIOTA(targetAddress *address.Address) (int64, error) {
+func (api *goshimmerClient) balanceIOTA(targetAddress *address.Address) (int64, error) {
 	outs, err := api.GetAccountOutputs(targetAddress)
 	if err != nil {
 		return 0, fmt.Errorf("GetAccountOutputs: %s", err)
@@ -50,7 +51,7 @@ func (api *nodeclient) balanceIOTA(targetAddress *address.Address) (int64, error
 	return bals[balance.ColorIOTA], nil
 }
 
-func (api *nodeclient) GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {
+func (api *goshimmerClient) GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {
 	r, err := api.goshimmerClient.GetUnspentOutputs([]string{address.String()})
 	if err != nil {
 		return nil, fmt.Errorf("GetUnspentOutputs: %s", err)
@@ -79,7 +80,7 @@ func (api *nodeclient) GetAccountOutputs(address *address.Address) (map[transact
 	return ret, nil
 }
 
-func (api *nodeclient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
+func (api *goshimmerClient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
 	txid, err := api.goshimmerClient.SendTransaction(tx.Bytes())
 	if err != nil {
 		return err

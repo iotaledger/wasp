@@ -17,7 +17,7 @@ type utxodbclient struct {
 	goshimmerHost string
 }
 
-func NewNodeClient(host string) nodeclient.NodeClient {
+func NewGoshimmerUtxodbClient(host string) nodeclient.NodeClient {
 	return &utxodbclient{host}
 }
 

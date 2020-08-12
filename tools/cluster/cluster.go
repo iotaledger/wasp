@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 
@@ -160,9 +161,9 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 
 	var nodeClient nodeclient.NodeClient
 	if config.Goshimmer.Provided {
-		nodeClient = nodeclient.New(config.goshimmerApiHost())
+		nodeClient = goshimmer.NewGoshimmerClient(config.goshimmerApiHost())
 	} else {
-		nodeClient = testutil.NewNodeClient(config.goshimmerApiHost())
+		nodeClient = testutil.NewGoshimmerUtxodbClient(config.goshimmerApiHost())
 	}
 
 	return &Cluster{

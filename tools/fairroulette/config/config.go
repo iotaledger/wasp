@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -40,7 +41,7 @@ func GoshimmerApi() string {
 }
 
 func GoshimmerClient() nodeclient.NodeClient {
-	return nodeclient.New(GoshimmerApi())
+	return goshimmer.NewGoshimmerClient(GoshimmerApi())
 }
 
 func WaspApi() string {
