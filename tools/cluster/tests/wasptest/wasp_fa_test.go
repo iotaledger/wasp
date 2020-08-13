@@ -117,7 +117,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 // creating auction which expires without bids
 func TestFA1Color0Bids(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
+	wasps := setup(t, "test_cluster", "TestFA1Color0Bids")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           1,
