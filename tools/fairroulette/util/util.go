@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
 	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
 )
 
-func PostTransaction(req *waspapi.RequestBlockJson) {
+func PostRequest(req *waspapi.RequestBlockJson) {
 	tx, err := waspapi.CreateRequestTransaction(
 		config.GoshimmerClient(),
 		wallet.Load().SignatureScheme(),
@@ -18,7 +17,7 @@ func PostTransaction(req *waspapi.RequestBlockJson) {
 	)
 	check(err)
 
-	check(nodeapi.PostTransaction(config.GoshimmerApi(), tx.Transaction))
+	check(config.GoshimmerClient().PostTransaction(tx.Transaction))
 }
 
 func check(err error) {

@@ -22,7 +22,7 @@ func BetCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	util.PostTransaction(&waspapi.RequestBlockJson{
+	util.PostRequest(&waspapi.RequestBlockJson{
 		Address:     config.GetSCAddress().String(),
 		RequestCode: fairroulette.RequestPlaceBet,
 		AmountIotas: int64(amount),
