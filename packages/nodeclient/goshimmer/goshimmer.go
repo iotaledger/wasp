@@ -80,6 +80,11 @@ func (api *goshimmerClient) GetAccountOutputs(address *address.Address) (map[tra
 	return ret, nil
 }
 
+func (api *goshimmerClient) PostTransaction(tx *transaction.Transaction) error {
+	_, err := api.goshimmerClient.SendTransaction(tx.Bytes())
+	return err
+}
+
 func (api *goshimmerClient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
 	txid, err := api.goshimmerClient.SendTransaction(tx.Bytes())
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 type NodeClient interface {
 	RequestFunds(targetAddress *address.Address) error
 	GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error)
+	PostTransaction(tx *transaction.Transaction) error
 	PostAndWaitForConfirmation(tx *transaction.Transaction) error
 }
 

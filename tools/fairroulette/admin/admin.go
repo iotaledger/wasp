@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -106,7 +105,7 @@ func putScData(scAddress *address.Address, color *balance.Color) {
 
 func createOriginTx(scAddress *address.Address) *sctransaction.Transaction {
 	ownerAddress := wallet.Load().Address()
-	allOuts, err := nodeapi.GetAccountOutputs(config.GoshimmerApi(), &ownerAddress)
+	allOuts, err := config.GoshimmerClient().GetAccountOutputs(&ownerAddress)
 	check(err)
 	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		Address:              *scAddress,
@@ -132,7 +131,7 @@ func activateSC(scAddress *address.Address) {
 }
 
 func postOriginTx(origTx *sctransaction.Transaction) {
-	check(nodeapi.PostTransaction(config.GoshimmerApi(), origTx.Transaction))
+	check(config.GoshimmerClient().PostTransaction(origTx.Transaction))
 }
 
 func ownerAddress() address.Address {
@@ -151,7 +150,7 @@ func committee() []int {
 }
 
 func setPeriod(seconds int) {
-	util.PostTransaction(&waspapi.RequestBlockJson{
+	util.PostRequest(&waspapi.RequestBlockJson{
 		Address:     config.GetSCAddress().String(),
 		RequestCode: fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{

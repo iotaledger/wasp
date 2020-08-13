@@ -29,6 +29,10 @@ func (api *utxodbclient) GetAccountOutputs(address *address.Address) (map[transa
 	return nodeapi.GetAccountOutputs(api.goshimmerHost, address)
 }
 
+func (api *utxodbclient) PostTransaction(tx *transaction.Transaction) error {
+	return nodeapi.PostTransaction(api.goshimmerHost, tx)
+}
+
 func (api *utxodbclient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
 	err := nodeapi.PostTransaction(api.goshimmerHost, tx)
 	if err != nil {

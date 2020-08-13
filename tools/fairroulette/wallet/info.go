@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/fairroulette/config"
 )
@@ -23,7 +22,7 @@ func dumpBalance() {
 	wallet := Load()
 	address := wallet.Address()
 
-	outs, err := nodeapi.GetAccountOutputs(config.GoshimmerApi(), &address)
+	outs, err := config.GoshimmerClient().GetAccountOutputs(&address)
 	check(err)
 
 	fmt.Printf("Address index %d\n", addressIndex)
