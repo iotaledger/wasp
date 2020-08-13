@@ -2,54 +2,49 @@ package dashboard
 
 import (
 	"html/template"
-	"io"
+	"net/http"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/labstack/echo"
 )
 
-type IndexTemplateParams struct {
-	Host      string
+func handleFR(c echo.Context) error {
+	scAddress := config.GetFRAddress()
+	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
+	if err != nil {
+		return err
+	}
+	return c.Render(http.StatusOK, "fairroulette", &FRTemplateParams{
+		BaseTemplateParams: baseParams(c, "fairroulette"),
+		SCAddress:          scAddress,
+		Status:             status,
+	})
+}
+
+type FRTemplateParams struct {
+	BaseTemplateParams
 	SCAddress address.Address
 	Status    *fairroulette.Status
 }
 
-func (p IndexTemplateParams) FormatNextPlayTime() string {
+func (p FRTemplateParams) FormatNextPlayTime() string {
 	return p.Status.NextPlayTimestamp.Format(time.RFC3339)
 }
 
-type Template struct {
-	templates *template.Template
+func initFRTemplate() *template.Template {
+	t := template.Must(template.New("").Parse(tplBase))
+	t = template.Must(t.Parse(tplWs))
+	t = template.Must(t.Parse(tplFairRoulette))
+	return t
 }
 
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
+const tplFairRoulette = `
+{{define "title"}}FairRoulette{{end}}
 
-var renderer = &Template{
-	templates: template.Must(template.New("index").Parse(`
-<!doctype html>
-<html lang="en">
-  <head>
-  	<meta charset="utf-8" />
-	<meta http-equiv="x-ua-compatible" content="ie=edge" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-
-	<title>FairRoulette dashboard</title>
-
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/inter.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
-  </head>
-
-  <body>
-  	<style>
-		details {background: #EEF9FF}
-	</style>
-	<header>
-		<h1>FairRoulette</h1>
-	</header>
+{{define "body"}}
 	<p>SC address: <code>{{.SCAddress}}</code></p>
 	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
 	<div>
@@ -99,16 +94,16 @@ var renderer = &Template{
 			<a href="https://github.com/iotaledger/wasp/releases">Releases</a> page.</p>
 			<p>-- OR --</p>
 			<p>Build from source:</p>
-<pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
-$ cd wasp
-$ go install ./tools/wallet
-</pre>
+	<pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
+	$ cd wasp
+	$ go install ./tools/wallet
+	</pre>
 		</details>
 		<details>
 			<summary>2. Configure</summary>
-<pre>$ wasp-client set goshimmer.api {{.Host}}:8080
-$ wasp-client set wasp.api {{.Host}}:9090
-$ wasp-client fr set address {{.SCAddress}}</pre>
+	<pre>$ wasp-client set goshimmer.api {{.Host}}:8080
+	$ wasp-client set wasp.api {{.Host}}:9090
+	$ wasp-client fr set address {{.SCAddress}}</pre>
 			<p>Initialize a wallet: <code>wasp-client wallet init</code></p>
 			<p>Get some funds: <code>wasp-client wallet request-funds</code></p>
 		</details>
@@ -140,27 +135,6 @@ $ wasp-client fr set address {{.SCAddress}}</pre>
 		setInterval(update, 1000);
 	</script>
 
-	<script>
-		const url = 'ws://' +  location.host + '/ws';
-		console.log('opening WebSocket to ' + url);
-		const ws = new WebSocket(url);
-
-		ws.addEventListener('error', function (event) {
-			console.error('WebSocket error!', event);
-		});
-
-		const connectedAt = new Date();
-		ws.addEventListener('message', function (event) {
-			console.log('Message from server: ', event.data);
-			ws.close();
-			if (new Date() - connectedAt > 5000) {
-				location.reload();
-			} else {
-				setTimeout(() => location.reload(), 5000);
-			}
-		});
-	</script>
-  </body>
-</html>
-`)),
-}
+	{{template "ws" .}}
+{{end}}
+`

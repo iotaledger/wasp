@@ -2,14 +2,13 @@ package dashboard
 
 import (
 	"fmt"
-	"net"
-	"net/http"
+	"html/template"
+	"io"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/subscribe"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -41,14 +40,16 @@ func Cmd(args []string) {
 	}))
 	e.Use(middleware.Recover())
 	e.HideBanner = true
-	e.Renderer = renderer
+	e.Renderer = initRenderer()
 
 	if l, ok := e.Logger.(*log.Logger); ok {
 		l.SetHeader("${time_rfc3339} ${level}")
 	}
 	e.Logger.SetLevel(log.INFO)
 
-	e.GET("/", index)
+	e.GET("/", handleIndex)
+	e.GET("/fairroulette", handleFR)
+	e.GET("/fairauction", handleFA)
 	e.GET("/ws", ws)
 
 	done := startNanomsgForwarder(e.Logger)
@@ -93,21 +94,18 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	return done
 }
 
-func index(c echo.Context) error {
-	scAddress := config.GetFRAddress()
-	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
-	if err != nil {
-		return err
+type Renderer map[string]*template.Template
+
+func (t Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t[name].ExecuteTemplate(w, "base", data)
+}
+
+func initRenderer() Renderer {
+	return Renderer{
+		"index":        initIndexTemplate(),
+		"fairroulette": initFRTemplate(),
+		"fairauction":  initFATemplate(),
 	}
-	host, _, err := net.SplitHostPort(c.Request().Host)
-	if err != nil {
-		return err
-	}
-	return c.Render(http.StatusOK, "index", &IndexTemplateParams{
-		Host:      host,
-		SCAddress: scAddress,
-		Status:    status,
-	})
 }
 
 func ws(c echo.Context) error {
