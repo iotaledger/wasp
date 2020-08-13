@@ -84,7 +84,7 @@ func TestTRMint1Token(t *testing.T) {
 	})
 	check(err, t)
 
-	wasps.CollectMessages(10 * time.Second)
+	wasps.CollectMessages(30 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()

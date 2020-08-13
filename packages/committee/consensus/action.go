@@ -206,6 +206,8 @@ func (op *operator) checkQuorum() bool {
 	})
 
 	op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
+	op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+
 	return true
 }
 

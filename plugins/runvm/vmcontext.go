@@ -33,6 +33,7 @@ func createVMContext(ctx *vm.VMTask, txb *txbuilder.Builder) (*vm.VMContext, err
 			targetAddress = *reqRef.Tx.Sender()
 		}
 		reqTxId := reqRef.Tx.ID()
+		// one request token is uncolored back to iotas for each request
 		if err := txb.EraseColor(targetAddress, (balance.Color)(reqTxId), 1); err != nil {
 			ctx.Log.Errorf("createVMContext: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
 			return nil, fmt.Errorf("createVMContext: %v", err)

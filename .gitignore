@@ -1,5 +1,4 @@
 wasp.log
 waspdb/
 cluster-data/
-*.bat
 dist/
