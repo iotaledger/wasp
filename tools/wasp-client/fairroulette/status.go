@@ -1,14 +1,14 @@
-package client
+package fairroulette
 
 import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
 )
 
-func StatusCmd(args []string) {
-	scAddress := config.GetSCAddress()
+func statusCmd(args []string) {
+	scAddress := config.GetFRAddress()
 
 	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
 	check(err)

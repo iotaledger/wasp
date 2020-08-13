@@ -5,11 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/iotaledger/wasp/tools/fairroulette/admin"
-	"github.com/iotaledger/wasp/tools/fairroulette/client"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
-	"github.com/iotaledger/wasp/tools/fairroulette/dashboard"
-	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/dashboard"
+	"github.com/iotaledger/wasp/tools/wasp-client/fairroulette"
+	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 	"github.com/spf13/pflag"
 )
 
@@ -22,10 +21,8 @@ func check(err error) {
 
 var commands = map[string]func([]string){
 	"wallet":    wallet.Cmd,
-	"admin":     admin.AdminCmd,
-	"set":       client.SetCmd,
-	"status":    client.StatusCmd,
-	"bet":       client.BetCmd,
+	"set":       config.SetCmd,
+	"fr":        fairroulette.Cmd,
 	"dashboard": dashboard.Cmd,
 }
 
@@ -44,7 +41,7 @@ func main() {
 	flags := pflag.NewFlagSet("global flags", pflag.ExitOnError)
 	flags.AddFlagSet(config.HookFlags())
 	flags.AddFlagSet(wallet.HookFlags())
-	flags.AddFlagSet(admin.HookFlags())
+	flags.AddFlagSet(fairroulette.HookFlags())
 	flags.Parse(os.Args[1:])
 
 	config.Read()

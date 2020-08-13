@@ -22,9 +22,17 @@ const (
 
 func HookFlags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("config", pflag.ExitOnError)
-	flags.StringVarP(&configPath, "config", "c", "fairroulette.json", "path to fairroulette.json")
+	flags.StringVarP(&configPath, "config", "c", "wasp-client.json", "path to wasp-client.json")
 	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
 	return flags
+}
+
+func SetCmd(args []string) {
+	if len(args) != 2 {
+		fmt.Printf("Usage: %s set <key> <value>\n", os.Args[0])
+		os.Exit(1)
+	}
+	Set(args[0], args[1])
 }
 
 func Read() {
@@ -102,14 +110,22 @@ func Set(key string, value interface{}) {
 	viper.WriteConfig()
 }
 
-func SetSCAddress(address string) {
-	Set("address", address)
+func SetFRAddress(address string) {
+	setSCAddress("fr", address)
 }
 
-func GetSCAddress() address.Address {
-	b58 := viper.GetString("address")
+func setSCAddress(scName string, address string) {
+	Set(scName+".address", address)
+}
+
+func GetFRAddress() address.Address {
+	return getSCAddress("fr")
+}
+
+func getSCAddress(scName string) address.Address {
+	b58 := viper.GetString(scName + ".address")
 	if len(b58) == 0 {
-		check(fmt.Errorf("call `set-address` or `admin init` first"))
+		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin init` first"))
 	}
 	address, err := address.FromBase58(b58)
 	check(err)

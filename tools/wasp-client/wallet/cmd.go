@@ -1,22 +1,3 @@
-// wallet is a CLI tool for Goshimmer's cryptocurrency wallet, allowing to store the seed in a
-// json file, and later generate private and public keys.
-//
-// Create a new wallet (creates wallet.json):
-//
-//   wallet init
-//
-// Show private key + public key + account address for index 0 (index optional, default 0):
-//
-//   wallet address -i 0
-//
-// Query Goshimmer for account balance:
-//
-//   wallet balance [-i index]
-//
-// Use Faucet to transfer some funds into the wallet address at index n:
-//
-//   wallet request-funds [-i index]
-//
 package wallet
 
 import (

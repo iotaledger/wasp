@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
@@ -64,7 +64,7 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	check(err)
 	logger.Infof("[Nanomsg] connected")
 
-	scAddress := config.GetSCAddress().String()
+	scAddress := config.GetFRAddress().String()
 
 	go func() {
 		for {
@@ -94,7 +94,7 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 }
 
 func index(c echo.Context) error {
-	scAddress := config.GetSCAddress()
+	scAddress := config.GetFRAddress()
 	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func index(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, "index", &IndexTemplateParams{
 		Host:      host,
-		SCAddress: config.GetSCAddress(),
+		SCAddress: scAddress,
 		Status:    status,
 	})
 }

@@ -5,8 +5,8 @@ import (
 	"os"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
-	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 )
 
 func PostRequest(req *waspapi.RequestBlockJson) {

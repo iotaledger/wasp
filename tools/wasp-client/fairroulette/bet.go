@@ -1,4 +1,4 @@
-package client
+package fairroulette
 
 import (
 	"fmt"
@@ -7,13 +7,13 @@ import (
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
-	"github.com/iotaledger/wasp/tools/fairroulette/util"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/util"
 )
 
-func BetCmd(args []string) {
+func betCmd(args []string) {
 	if len(args) != 2 {
-		fmt.Printf("Usage: %s bet <color> <amount>\n", os.Args[0])
+		fmt.Printf("Usage: %s fr bet <color> <amount>\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -23,7 +23,7 @@ func BetCmd(args []string) {
 	check(err)
 
 	util.PostRequest(&waspapi.RequestBlockJson{
-		Address:     config.GetSCAddress().String(),
+		Address:     config.GetFRAddress().String(),
 		RequestCode: fairroulette.RequestPlaceBet,
 		AmountIotas: int64(amount),
 		Vars: map[string]interface{}{

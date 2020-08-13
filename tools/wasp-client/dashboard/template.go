@@ -95,27 +95,27 @@ var renderer = &Template{
 		<h2>CLI usage</h2>
 		<details>
 			<summary>1. Install</summary>
-			<p>Grab the latest <code>fairroulette</code> binary from the
+			<p>Grab the latest <code>wasp-client</code> binary from the
 			<a href="https://github.com/iotaledger/wasp/releases">Releases</a> page.</p>
 			<p>-- OR --</p>
 			<p>Build from source:</p>
 <pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
 $ cd wasp
-$ go install ./tools/fairroulette
+$ go install ./tools/wallet
 </pre>
 		</details>
 		<details>
 			<summary>2. Configure</summary>
-<pre>$ fairroulette set goshimmer.api {{.Host}}:8080
-$ fairroulette set wasp.api {{.Host}}:9090
-$ fairroulette set address {{.SCAddress}}</pre>
-			<p>Initialize a wallet: <code>fairroulette wallet init</code></p>
-			<p>Get some funds: <code>fairroulette wallet request-funds</code></p>
+<pre>$ wasp-client set goshimmer.api {{.Host}}:8080
+$ wasp-client set wasp.api {{.Host}}:9090
+$ wasp-client fr set address {{.SCAddress}}</pre>
+			<p>Initialize a wallet: <code>wasp-client wallet init</code></p>
+			<p>Get some funds: <code>wasp-client wallet request-funds</code></p>
 		</details>
 		<details>
 			<summary>3. Place bets</summary>
-			<p><code>fairroulette bet <i>color</i> <i>amount</i></code>
-			(e.g.: <code>fairroulette bet 1 100</code>)</p>
+			<p><code>wasp-client fr bet <i>color</i> <i>amount</i></code>
+			(e.g.: <code>wasp-client fr bet 1 100</code>)</p>
 			<p>Then refresh this page to see the results.</p>
 		</details>
 	</div>

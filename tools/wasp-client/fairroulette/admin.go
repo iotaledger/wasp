@@ -1,4 +1,4 @@
-package admin
+package fairroulette
 
 import (
 	"fmt"
@@ -13,9 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/fairroulette/config"
-	"github.com/iotaledger/wasp/tools/fairroulette/util"
-	"github.com/iotaledger/wasp/tools/fairroulette/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/util"
+	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -26,16 +26,15 @@ const scProgramHash = fairroulette.ProgramHash
 var quorumFlag int
 var committeeFlag []int
 
-func HookFlags() *pflag.FlagSet {
-	flags := pflag.NewFlagSet("admin", pflag.ExitOnError)
+func adminFlags(flags *pflag.FlagSet) *pflag.FlagSet {
 	flags.IntVarP(&quorumFlag, "quorum", "t", 3, "quorum")
 	flags.IntSliceVarP(&committeeFlag, "committee", "n", nil, "committee")
 	return flags
 }
 
-func AdminCmd(args []string) {
+func adminCmd(args []string) {
 	if len(args) < 1 {
-		usage()
+		adminUsage()
 	}
 
 	switch args[0] {
@@ -44,7 +43,7 @@ func AdminCmd(args []string) {
 
 	case "set-period":
 		if len(args) != 2 {
-			fmt.Printf("Usage: %s admin set-period <seconds>\n", os.Args[0])
+			fmt.Printf("Usage: %s fr admin set-period <seconds>\n", os.Args[0])
 			os.Exit(1)
 		}
 		s, err := strconv.Atoi(args[1])
@@ -52,19 +51,12 @@ func AdminCmd(args []string) {
 		setPeriod(s)
 
 	default:
-		usage()
+		adminUsage()
 	}
 }
 
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
-}
-
-func usage() {
-	fmt.Printf("Usage: %s admin [init|set-period <seconds>]\n", os.Args[0])
+func adminUsage() {
+	fmt.Printf("Usage: %s fr admin [init|set-period <seconds>]\n", os.Args[0])
 	os.Exit(1)
 }
 
@@ -77,7 +69,7 @@ func initSC() {
 	postOriginTx(origTx)
 	fmt.Printf("Initialized %s\n", scDescription)
 	fmt.Printf("SC Address: %s\n", scAddress.String())
-	config.SetSCAddress(scAddress.String())
+	config.SetFRAddress(scAddress.String())
 }
 
 func genDKSets() *address.Address {
@@ -151,7 +143,7 @@ func committee() []int {
 
 func setPeriod(seconds int) {
 	util.PostRequest(&waspapi.RequestBlockJson{
-		Address:     config.GetSCAddress().String(),
+		Address:     config.GetFRAddress().String(),
 		RequestCode: fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
 			fairroulette.ReqVarPlayPeriodSec: int64(seconds),
