@@ -1,5 +1,5 @@
 // smart contract implements Token Registry. User can mint any number of new colored tokens to own address
-// and in the same transaction can register the whole supply of new tokens in the TokenRegistry.
+// and in the same transaction can register the whole Supply of new tokens in the TokenRegistry.
 // TokenRegistry contains metadata. It can be changed by the owner of the record
 // Initially the owner is the minter. Owner can transfer ownership of the metadata record to another address
 package tokenregistry
@@ -22,6 +22,7 @@ const (
 
 	// state vars
 	VarStateTheRegistry = "tr"
+	VarStateListColors  = "lc" // for testing only
 
 	// request vars
 	VarReqDescription         = "dscr"
@@ -82,13 +83,13 @@ func mintSupply(ctx vmtypes.Sandbox) {
 	registry := ctx.AccessState().GetDictionary(VarStateTheRegistry)
 	if registry.GetAt(colorOfTheSupply[:]) != nil {
 		// already exist
-		ctx.Publishf("TokenRegistry: supply of color %s already exist", colorOfTheSupply.String())
+		ctx.Publishf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
 		return
 	}
 	supply := reqAccess.NumFreeMintedTokens()
 	if supply <= 0 {
 		// no tokens were minted on top of request tokens
-		ctx.Publish("TokenRegistry: the free minted supply must be > 0")
+		ctx.Publish("TokenRegistry: the free minted Supply must be > 0")
 		return
 
 	}
@@ -120,7 +121,18 @@ func mintSupply(ctx vmtypes.Sandbox) {
 		return
 	}
 	registry.SetAt(colorOfTheSupply[:], data)
-	ctx.Publish("TokenRegistry: mintSupply: success")
+
+	stateAccess := ctx.AccessState()
+	lst, ok := stateAccess.GetString(VarStateListColors)
+	if !ok {
+		lst = colorOfTheSupply.String()
+	} else {
+		lst += ", " + colorOfTheSupply.String()
+	}
+	stateAccess.SetString(VarStateListColors, lst)
+
+	ctx.Publishf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
+		colorOfTheSupply.String(), rec.owner.String(), rec.description, string(rec.userDefined))
 }
 
 func updateMetadata(ctx vmtypes.Sandbox) {

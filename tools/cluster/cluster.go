@@ -615,6 +615,29 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 	return nil
 }
 
+func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, expectedValues map[kv.Key][]byte) bool {
+	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+		fmt.Printf("[cluster] Verifying state vars for node %s\n", host)
+		pass := true
+		for k, v := range expectedValues {
+			v1, err := state.Get(k)
+			if err != nil {
+				fmt.Printf("   %s: %v\n", string(k), err)
+				return false
+			}
+			if bytes.Equal(v, v1) {
+				fmt.Printf("   %s: OK. Expected '%s', actual '%s'\n",
+					string(k), string(v), string(v1))
+			} else {
+				fmt.Printf("   %s: FAIL. Expected '%s', actual '%s'\n",
+					string(k), string(v), string(v1))
+				pass = false
+			}
+		}
+		return pass
+	})
+}
+
 func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
 	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)

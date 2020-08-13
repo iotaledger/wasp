@@ -11,49 +11,54 @@ import (
 )
 
 type MintAndRegisterParams struct {
-	senderSigScheme signaturescheme.SignatureScheme // source sig scheme
-	supply          int64                           // number of tokens to mint
-	tokenTarget     address.Address                 // where to mint new supply
-	registryAddr    address.Address                 // smart contract address
-	description     string
-	userDefinedData []byte
+	SenderSigScheme signaturescheme.SignatureScheme // source sig scheme
+	Supply          int64                           // number of tokens to mint
+	MintTarget      address.Address                 // where to mint new Supply
+	RegistryAddr    address.Address                 // smart contract address
+	Description     string
+	UserDefinedData []byte
 }
 
-// MintAndRegister mints new supply of colored tokens to some address and sends request
+// MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
-func MintAndRegister(node nodeclient.NodeClient, params MintAndRegisterParams) error {
-	ownerAddr := params.senderSigScheme.Address()
+func MintAndRegister(node nodeclient.NodeClient, params MintAndRegisterParams) (*balance.Color, error) {
+	ownerAddr := params.SenderSigScheme.Address()
 	outs, err := node.GetAccountOutputs(&ownerAddr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	txb, err := txbuilder.NewFromOutputBalances(outs)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = txb.MintColor(params.tokenTarget, balance.ColorIOTA, params.supply)
+	err = txb.MintColor(params.MintTarget, balance.ColorIOTA, params.Supply)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	args := kv.NewMap()
 	codec := args.Codec()
-	codec.SetString(VarReqDescription, params.description)
-	codec.Set(VarReqUserDefinedMetadata, params.userDefinedData)
+	codec.SetString(VarReqDescription, params.Description)
+	if params.UserDefinedData != nil {
+		codec.Set(VarReqUserDefinedMetadata, params.UserDefinedData)
+	}
 
-	reqBlk := sctransaction.NewRequestBlock(params.registryAddr, RequestMintSupply)
+	reqBlk := sctransaction.NewRequestBlock(params.RegistryAddr, RequestMintSupply)
 	reqBlk.SetArgs(args)
 	err = txb.AddRequestBlock(reqBlk)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	tx, err := txb.Build(false)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	tx.Sign(params.SenderSigScheme)
+
 	// TODO wait optionally
 	err = node.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	col := (balance.Color)(tx.ID())
+	return &col, nil
 }
