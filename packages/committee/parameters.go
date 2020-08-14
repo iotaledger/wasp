@@ -7,7 +7,7 @@ const (
 	networkLatency = 2 * time.Second
 
 	// confirmation time assumption. Average time from posting a transaction to finality
-	confirmationTime = 8 * time.Second
+	confirmationTime = 10 * time.Second
 )
 
 // Params are time parameters for consensus ans state manager
