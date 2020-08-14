@@ -191,7 +191,8 @@ func (op *operator) checkQuorum() bool {
 		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
-	if err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction); err != nil {
+	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
+	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}

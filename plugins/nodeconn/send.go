@@ -46,9 +46,11 @@ func RequestTransactionFromNode(txid *valuetransaction.ID) error {
 	return nil
 }
 
-func PostTransactionToNode(tx *valuetransaction.Transaction) error {
+func PostTransactionToNode(tx *valuetransaction.Transaction, fromSc *address.Address, fromLeader uint16) error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeTransactionMsg{
-		Tx: tx,
+		Tx:        tx,
+		SCAddress: *fromSc,
+		Leader:    fromLeader,
 	})
 	if err != nil {
 		return err
