@@ -2,23 +2,19 @@ package multicall
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 )
-
-type Response struct {
-	Result interface{}
-	Err    error
-}
 
 var ErrTimeout = errors.New("timeout occurred")
 
 // MultiCall call functions is parallel goroutines with overall timeout.
 // returns array of results and error value
-func MultiCall(funs []func() (interface{}, error), timeout time.Duration) ([]Response, bool) {
-	results := make([]Response, len(funs))
+func MultiCall(funs []func() error, timeout time.Duration) (bool, []error) {
+	results := make([]error, len(funs))
 	for i := range results {
-		results[i].Err = ErrTimeout
+		results[i] = ErrTimeout
 	}
 	mutex := &sync.Mutex{}
 	counter := 0
@@ -29,13 +25,12 @@ func MultiCall(funs []func() (interface{}, error), timeout time.Duration) ([]Res
 
 	go func() {
 		for i, f := range funs {
-			go func(i int, f func() (interface{}, error)) {
-				res, err := f()
+			go func(i int, f func() error) {
+				err := f()
 				mutex.Lock()
 				defer mutex.Unlock()
 
-				results[i].Err = err
-				results[i].Result = res
+				results[i] = err
 
 				wg.Done()
 				counter++
@@ -52,25 +47,39 @@ func MultiCall(funs []func() (interface{}, error), timeout time.Duration) ([]Res
 	case <-time.After(timeout):
 		go func() {
 			// wait for all to finish and then cleanup
-			// if the function blocks, it will leak a goroutine and the channel
+			// if some function blocks it will leak the goroutine and the channel
 			wg.Wait()
 			close(chNormal)
 		}()
 	}
 
 	// in any case it returns a copy of the result array
-
-	ret := make([]Response, len(funs))
+	errs := make([]error, len(funs))
 
 	mutex.Lock()
-	copy(ret, results)
+	copy(errs, results)
 	mutex.Unlock()
 
 	success := true
-	for i := range ret {
-		if ret[i].Err != nil {
+	for i := range errs {
+		if errs[i] != nil {
 			success = false
 		}
 	}
-	return ret, success
+	return success, errs
+}
+
+func WrapErrors(errs []error) error {
+	ret := ""
+	numErrors := 0
+	for i, err := range errs {
+		if err != nil {
+			ret += fmt.Sprintf("#%d: %v\n", i, err)
+			numErrors++
+		}
+	}
+	if numErrors == 0 {
+		return nil
+	}
+	return errors.New(ret)
 }

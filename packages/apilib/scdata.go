@@ -107,23 +107,14 @@ func GetSCList(url string) ([]address.Address, error) {
 	return ret, nil
 }
 
-// MultiPutSCData calls PutSCData to hosts in parallel
-func MultiPutSCData(hosts []string, bd registry.BootupData) ([]error, bool) {
-	funs := make([]func() (interface{}, error), len(hosts))
+// PutSCDataMulti calls PutSCData to hosts in parallel
+func PutSCDataMulti(hosts []string, bd registry.BootupData) (bool, []error) {
+	funs := make([]func() error, len(hosts))
 	for i, h := range hosts {
 		h1 := h
-		funs[i] = func() (interface{}, error) {
-			err := PutSCData(h1, bd)
-			return nil, err
+		funs[i] = func() error {
+			return PutSCData(h1, bd)
 		}
 	}
-	resp, success := multicall.MultiCall(funs, 500*time.Millisecond)
-	if success {
-		return nil, true
-	}
-	ret := make([]error, len(hosts))
-	for i := range hosts {
-		ret[i] = resp[i].Err
-	}
-	return ret, false
+	return multicall.MultiCall(funs, 500*time.Millisecond)
 }

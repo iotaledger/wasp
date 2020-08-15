@@ -455,6 +455,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	})
 	check(err, t)
 
+	//wasps.WaitUntilExpectationsMet()  // no passing with this
 	wasps.CollectMessages(70 * time.Second)
 
 	if !wasps.Report() {

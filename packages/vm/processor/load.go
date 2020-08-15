@@ -51,9 +51,9 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 // loadProcessor creates processor instance
 // first tries to resolve known program hashes used for testing
 // then tries to create from the binary in the registry cache
-// finally tries to load binary code from the location in the metadata
+// finally tries to load binary code from the location specified in the metadata
 func loadProcessor(progHashStr string) (vmtypes.Processor, error) {
-	proc, ok := examples.LoadProcessor(progHashStr)
+	proc, ok := examples.GetProcessor(progHashStr)
 	if ok {
 		return proc, nil
 	}

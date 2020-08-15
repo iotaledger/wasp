@@ -30,7 +30,7 @@ func (cluster *Cluster) GenerateDKSetsToFile() error {
 
 	for _, sc := range cluster.Config.SmartContracts {
 		committee := cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost)
-		addr, err := waspapi.GenerateNewDistributedKeySet(
+		addr, err := waspapi.GenerateNewDistributedKeySetOld(
 			committee,
 			uint16(len(committee)),
 			uint16(sc.Quorum),

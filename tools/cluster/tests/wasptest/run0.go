@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util/multicall"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -52,7 +53,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 
-	errs, succ := waspapi.MultiPutSCData(allNodesApi, registry.BootupData{
+	succ, errs := waspapi.PutSCDataMulti(allNodesApi, registry.BootupData{
 		Address:        addr,
 		Color:          color,
 		OwnerAddress:   sc.OwnerAddress(),
@@ -60,9 +61,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 		AccessNodes:    accessPeerNodes,
 	})
 	if !succ {
-		for _, err := range errs {
-			fmt.Printf("[cluster] apilib.PutSCData returned: %v\n", err)
-		}
+		fmt.Printf("[cluster] apilib.PutSCData returned: %v\n", multicall.WrapErrors(errs))
 		return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
 	}
 	return &color, nil

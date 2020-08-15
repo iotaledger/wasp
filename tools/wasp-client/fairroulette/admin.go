@@ -73,7 +73,7 @@ func initSC() {
 }
 
 func genDKSets() *address.Address {
-	scAddress, err := waspapi.GenerateNewDistributedKeySet(
+	scAddress, err := waspapi.GenerateNewDistributedKeySetOld(
 		config.CommitteeApi(committee()),
 		uint16(len(committee())),
 		uint16(quorumFlag),

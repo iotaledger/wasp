@@ -39,7 +39,7 @@ func main() {
 	params.Addresses = make([]string, 0, params.NumKeys)
 	numSuccess := 0
 	for i := 0; i < int(params.NumKeys); i++ {
-		addr, err := apilib.GenerateNewDistributedKeySet(params.Hosts, params.N, params.T)
+		addr, err := apilib.GenerateNewDistributedKeySetOld(params.Hosts, params.N, params.T)
 		if err == nil {
 			params.Addresses = append(params.Addresses, addr.String())
 			numSuccess++

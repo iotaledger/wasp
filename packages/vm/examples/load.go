@@ -1,6 +1,7 @@
 package examples
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -14,7 +15,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-func LoadProcessor(progHashStr string) (vmtypes.Processor, bool) {
+func init() {
+	vm.IsBuiltinProgramHash = func(progHash string) bool {
+		_, ok := GetProcessor(progHash)
+		return ok
+	}
+}
+
+func GetProcessor(progHashStr string) (vmtypes.Processor, bool) {
 	switch progHashStr {
 	case vmnil.ProgramHash:
 		return vmnil.GetProcessor(), true
