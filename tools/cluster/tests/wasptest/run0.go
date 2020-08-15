@@ -52,23 +52,38 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 
-	var failed bool
-	for _, host := range allNodesApi {
-
-		err = waspapi.PutSCData(host, registry.BootupData{
-			Address:        addr,
-			Color:          color,
-			OwnerAddress:   sc.OwnerAddress(),
-			CommitteeNodes: committeePeerNodes,
-			AccessNodes:    accessPeerNodes,
-		})
-		if err != nil {
-			fmt.Printf("[cluster] apilib.PutSCData returned for host %s: %v\n", host, err)
-			failed = true
+	errs, succ := waspapi.MultiPutSCData(allNodesApi, registry.BootupData{
+		Address:        addr,
+		Color:          color,
+		OwnerAddress:   sc.OwnerAddress(),
+		CommitteeNodes: committeePeerNodes,
+		AccessNodes:    accessPeerNodes,
+	})
+	if !succ {
+		for _, err := range errs {
+			fmt.Printf("[cluster] apilib.PutSCData returned: %v\n", err)
 		}
-	}
-	if failed {
 		return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
 	}
 	return &color, nil
+
+	//var failed bool
+	//for _, host := range allNodesApi {
+	//
+	//	err = waspapi.PutSCData(host, registry.BootupData{
+	//		Address:        addr,
+	//		Color:          color,
+	//		OwnerAddress:   sc.OwnerAddress(),
+	//		CommitteeNodes: committeePeerNodes,
+	//		AccessNodes:    accessPeerNodes,
+	//	})
+	//	if err != nil {
+	//		fmt.Printf("[cluster] apilib.PutSCData returned for host %s: %v\n", host, err)
+	//		failed = true
+	//	}
+	//}
+	//if failed {
+	//	return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
+	//}
+	//return &color, nil
 }

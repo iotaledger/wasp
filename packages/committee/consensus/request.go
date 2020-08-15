@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/publisher"
 	"time"
 )
 
@@ -40,17 +41,28 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool
 	ret, ok := op.requests[reqId]
 	msgFirstTime := !ok || ret.reqTx == nil
 
+	publish := false
 	if ok {
 		if msgFirstTime {
 			ret.reqTx = reqMsg.Transaction
 			ret.whenMsgReceived = time.Now()
+			publish = true
 		}
 	} else {
 		ret = op.newRequest(reqId)
 		ret.whenMsgReceived = time.Now()
 		ret.reqTx = reqMsg.Transaction
 		op.requests[reqId] = ret
+		publish = true
 	}
+	if publish {
+		publisher.Publish("request_in",
+			op.committee.Address().String(),
+			reqMsg.Transaction.ID().String(),
+			fmt.Sprintf("%d", reqMsg.Index),
+		)
+	}
+
 	ret.notifications[op.peerIndex()] = true
 
 	nowis := time.Now()

@@ -16,7 +16,7 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
 
-func (cluster *Cluster) GenerateDKSets() error {
+func (cluster *Cluster) GenerateDKSetsToFile() error {
 	keysFile := cluster.ConfigKeysPath()
 	exists, err := fileExists(keysFile)
 	if err != nil {

@@ -60,7 +60,7 @@ func main() {
 		fmt.Printf("-----------------------------------------------------------------\n")
 		fmt.Printf("           Generate DKSets\n")
 		fmt.Printf("-----------------------------------------------------------------\n")
-		err = wasps.GenerateDKSets()
+		err = wasps.GenerateDKSetsToFile()
 		check(err)
 		wasps.Stop()
 

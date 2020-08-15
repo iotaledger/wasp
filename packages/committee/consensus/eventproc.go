@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
 
@@ -83,15 +82,7 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 		"backlog notif", len(op.notificationsBacklog),
 	)
 
-	req, newRequest := op.requestFromMsg(reqMsg)
-
-	if newRequest {
-		publisher.Publish("request_in",
-			op.committee.Address().String(),
-			reqMsg.Transaction.ID().String(),
-			fmt.Sprintf("%d", reqMsg.Index),
-		)
-	}
+	req, _ := op.requestFromMsg(reqMsg)
 
 	if reqMsg.Timelock() != 0 {
 		req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",

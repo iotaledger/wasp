@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"net/http"
+	"time"
 )
 
 // PutSCData calls node to write BootupData record
@@ -103,4 +105,25 @@ func GetSCList(url string) ([]address.Address, error) {
 		}
 	}
 	return ret, nil
+}
+
+// MultiPutSCData calls PutSCData to hosts in parallel
+func MultiPutSCData(hosts []string, bd registry.BootupData) ([]error, bool) {
+	funs := make([]func() (interface{}, error), len(hosts))
+	for i, h := range hosts {
+		h1 := h
+		funs[i] = func() (interface{}, error) {
+			err := PutSCData(h1, bd)
+			return nil, err
+		}
+	}
+	resp, success := multicall.MultiCall(funs, 500*time.Millisecond)
+	if success {
+		return nil, true
+	}
+	ret := make([]error, len(hosts))
+	for i := range hosts {
+		ret[i] = resp[i].Err
+	}
+	return ret, false
 }
