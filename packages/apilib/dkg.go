@@ -104,12 +104,13 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 	priSharesMatrix := make([][]string, n)
 	for i, host := range hosts {
 		h := host
+		idx := i
 		funs[i] = func() error {
 			resp, err := callNewKey(h, dkgapi.NewDKSRequest{
 				TmpId: tmpId,
 				N:     n,
 				T:     t,
-				Index: uint16(i),
+				Index: uint16(idx),
 			})
 			if err != nil {
 				return err
@@ -117,7 +118,7 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 			if len(resp.PriShares) != int(n) {
 				return errors.New("inconsistency: len(resp.PriShares) != int(params.N)")
 			}
-			priSharesMatrix[i] = resp.PriShares
+			priSharesMatrix[idx] = resp.PriShares
 			return nil
 		}
 	}
@@ -135,16 +136,17 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 			priSharesCol[row] = priSharesMatrix[row][col]
 		}
 		h := host
+		c := col
 		funs[col] = func() error {
 			resp, err := callAggregate(h, dkgapi.AggregateDKSRequest{
 				TmpId:     tmpId,
-				Index:     uint16(col),
+				Index:     uint16(c),
 				PriShares: priSharesCol,
 			})
 			if err != nil {
 				return err
 			}
-			pubShares[col] = resp.PubShare
+			pubShares[c] = resp.PubShare
 			return nil
 		}
 	}

@@ -90,8 +90,9 @@ func CheckProgramMetadata(hosts []string, progHash *hashing.HashValue) error {
 	for i, host := range hosts {
 		var err error
 		h := host
+		idx := i
 		funs[i] = func() error {
-			mdata[i], _, err = GetProgramMetadata(h, progHash)
+			mdata[idx], _, err = GetProgramMetadata(h, progHash)
 			return err
 		}
 	}

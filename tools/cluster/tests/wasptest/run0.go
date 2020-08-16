@@ -73,7 +73,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	//		Address:        addr,
 	//		Color:          color,
 	//		OwnerAddress:   sc.OwnerAddress(),
-	//		CommitteeNodes: committeePeerNodes,
+	//		CommitteeApiHosts: committeePeerNodes,
 	//		AccessNodes:    accessPeerNodes,
 	//	})
 	//	if err != nil {

@@ -482,6 +482,15 @@ func (cluster *Cluster) ApiHosts() []string {
 	return hosts
 }
 
+func (cluster *Cluster) PeeringHosts() []string {
+	hosts := make([]string, 0)
+	for _, node := range cluster.Config.Nodes {
+		url := node.PeeringHost()
+		hosts = append(hosts, url)
+	}
+	return hosts
+}
+
 func (cluster *Cluster) AllWaspNodes() []int {
 	r := make([]int, 0)
 	for i := range cluster.Config.Nodes {
