@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// network latency assumption: time to gossip transaction to the whole network
-	networkLatency = 2 * time.Second
+	networkLatency = 1 * time.Second
 
 	// confirmation time assumption. Average time from posting a transaction to finality
 	confirmationTime = 10 * time.Second
@@ -50,9 +50,9 @@ type Parameters struct {
 var DefaultParameters = &Parameters{
 	TimerTickPeriod:                  100 * time.Millisecond,
 	ReceiveMsgChannelTimeout:         500 * time.Millisecond,
-	LeaderReactionToNotifications:    (networkLatency * 3) / 2,
+	LeaderReactionToNotifications:    networkLatency * 4,
 	LeaderReactionToCalculatedResult: 2 * time.Second,
-	ConfirmationWaitingPeriod:        confirmationTime + networkLatency,
+	ConfirmationWaitingPeriod:        (confirmationTime * 3) / 2,
 	RequestBalancesPeriod:            10 * time.Second,
 	PeriodBetweenSyncMessages:        1 * time.Second,
 	StateTransactionRequestTimeout:   10 * time.Second,

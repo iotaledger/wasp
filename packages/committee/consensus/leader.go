@@ -17,32 +17,37 @@ func (op *operator) iAmCurrentLeader() bool {
 func (op *operator) moveToNextLeader() uint16 {
 	op.peerPermutation.Next()
 	ret := op.moveToFirstAliveLeader()
-	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
+	//op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 	return ret
 }
 
 func (op *operator) resetLeader(seedBytes []byte) {
 	op.peerPermutation.Shuffle(seedBytes)
 	op.leaderStatus = nil
-	op.moveToFirstAliveLeader()
+	leader := op.moveToFirstAliveLeader()
 	op.leaderRotationDeadlineSet = false
 	op.stateTxEvidenced = false
+
+	op.log.Debugf("peerPermutation: %+v, first alive leader: %d", op.peerPermutation.GetArray(), leader)
 }
 
 // select leader first in the permutation which is alive
 // then sets deadline if itself is not the leader
 func (op *operator) moveToFirstAliveLeader() uint16 {
-	var ret uint16
+	if !op.committee.HasQuorum() {
+		// not enough alive nodes, just do nothing
+		return op.peerPermutation.Current()
+	}
 	// the loop will always stop because the current node is always alive
 	for {
 		if op.committee.IsAlivePeer(op.peerPermutation.Current()) {
-			ret = op.peerPermutation.Current()
 			break
 		}
 		op.log.Debugf("peer #%d is not alive", op.peerPermutation.Current())
 		op.peerPermutation.Next()
 	}
-	return ret
+	// should not come here
+	return op.peerPermutation.Current()
 }
 
 func (op *operator) setLeaderRotationDeadline(period time.Duration) {

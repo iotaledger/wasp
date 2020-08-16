@@ -195,3 +195,20 @@ func (c *committeeObj) NumPeers() uint16 {
 func (c *committeeObj) committeePeers() []*peering.Peer {
 	return c.peers[:c.size]
 }
+
+func (c *committeeObj) HasQuorum() bool {
+	count := uint16(0)
+	for _, peer := range c.committeePeers() {
+		if peer == nil {
+			count++
+		} else {
+			if alive, _ := peer.IsAlive(); alive {
+				count++
+			}
+		}
+		if count >= c.quorum {
+			return true
+		}
+	}
+	return false
+}

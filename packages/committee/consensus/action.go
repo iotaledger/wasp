@@ -11,6 +11,7 @@ import (
 )
 
 func (op *operator) takeAction() {
+	op.sendPostponedNotificationsIfAny()
 	op.requestOutputsIfNeeded()
 	if op.iAmCurrentLeader() {
 		op.startProcessingIfNeeded()
@@ -18,6 +19,14 @@ func (op *operator) takeAction() {
 	op.checkQuorum()
 	op.rotateLeaderIfNeeded()
 	op.sendNotificationsOnTimeUnlock()
+}
+
+// sendPostponedNotificationsIfAny send notifications if it were not send due to absence of quorum
+func (op *operator) sendPostponedNotificationsIfAny() {
+	if op.sendNotificationsPostponed {
+		//op.log.Debug("op.sendNotificationsPostponed = true")
+		op.sendRequestNotificationsToLeader(nil)
+	}
 }
 
 func (op *operator) sendNotificationsOnTimeUnlock() {

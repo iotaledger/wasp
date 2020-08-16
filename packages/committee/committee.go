@@ -22,6 +22,7 @@ type Committee interface {
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
 	InitTestRound()
+	HasQuorum() bool
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()

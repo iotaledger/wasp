@@ -39,7 +39,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	// notify about all request the new leader
 	op.sendRequestNotificationsToLeader(nil)
-	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
+	//op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 
 	// check is processor is ready for the current state. If no, initiate load of the processor
 	op.processorReady = false
@@ -90,9 +90,9 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	}
 
 	op.sendRequestNotificationsToLeader([]*request{req})
-	if !op.leaderRotationDeadlineSet {
-		op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
-	}
+	//if !op.leaderRotationDeadlineSet {
+	//	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
+	//}
 
 	op.takeAction()
 }

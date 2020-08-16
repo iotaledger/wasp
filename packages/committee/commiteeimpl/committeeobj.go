@@ -28,6 +28,7 @@ type committeeObj struct {
 	color        balance.Color
 	peers        []*peering.Peer
 	size         uint16
+	quorum       uint16
 	ownIndex     uint16
 	chMsg        chan interface{}
 	stateMgr     committee.StateManager
@@ -88,6 +89,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 	if keyExists {
 		ret.ownIndex = dkshare.Index
 		ret.size = dkshare.N
+		ret.quorum = dkshare.T
 
 		for _, remoteLocation := range bootupData.CommitteeNodes {
 			ret.peers = append(ret.peers, peering.UsePeer(remoteLocation))

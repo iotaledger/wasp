@@ -33,6 +33,9 @@ type operator struct {
 	// notifications with future currentState indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
+	// notifications postponed due to no quorum
+	sendNotificationsPostponed bool
+
 	requests map[sctransaction.RequestId]*request
 
 	peerPermutation           *util.Permutation16

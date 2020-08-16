@@ -7,15 +7,26 @@ import (
 
 // notifies current leader about requests in the order of arrival
 func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
+	op.sendNotificationsPostponed = false
+
 	stateIndex, ok := op.stateIndex()
 	if !ok {
 		op.log.Debugf("sendRequestNotificationsToLeader: current currentState is undefined")
 		return
 	}
+	if !op.committee.HasQuorum() {
+		op.log.Debugf("sendRequestNotificationsToLeader: postponed due to no quorum")
+		op.sendNotificationsPostponed = true
+		return
+	}
+
 	currentLeaderPeerIndex, ok := op.currentLeader()
 	if !ok {
 		return
 	}
+
+	op.log.Debugf("sendRequestNotificationsToLeader: has quorum, leader = #%d", currentLeaderPeerIndex)
+
 	if op.iAmCurrentLeader() {
 		return
 	}
@@ -42,9 +53,11 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 		"currentState index", stateIndex,
 		"reqs", idsShortStr(reqIds),
 	)
-
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
 		op.log.Infof("sending notifications to %d: %v", currentLeaderPeerIndex, err)
+	}
+	if !op.leaderRotationDeadlineSet {
+		op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 	}
 }
 
