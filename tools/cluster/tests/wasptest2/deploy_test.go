@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestDeploySC(t *testing.T) {
@@ -40,8 +39,6 @@ func TestDeploySC(t *testing.T) {
 		t.Fail()
 		return
 	}
-
-	time.Sleep(2 * time.Second)
 
 	t.Logf("peering hosts: %+v", wasps.PeeringHosts())
 	scAddr, scColor, err := apilib.CreateAndDeploySC(apilib.CreateAndDeploySCParams{
