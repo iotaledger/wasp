@@ -16,21 +16,10 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/util"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 const scDescription = "FairRoulette smart contract"
 const scProgramHash = fairroulette.ProgramHash
-
-var quorumFlag int
-var committeeFlag []int
-
-func adminFlags(flags *pflag.FlagSet) *pflag.FlagSet {
-	flags.IntVarP(&quorumFlag, "quorum", "t", 3, "quorum")
-	flags.IntSliceVarP(&committeeFlag, "committee", "n", nil, "committee")
-	return flags
-}
 
 func adminCmd(args []string) {
 	if len(args) < 1 {
@@ -43,7 +32,7 @@ func adminCmd(args []string) {
 
 	case "set-period":
 		if len(args) != 2 {
-			fmt.Printf("Usage: %s fr admin set-period <seconds>\n", os.Args[0])
+			scConfig.PrintUsage("admin set-period <seconds>")
 			os.Exit(1)
 		}
 		s, err := strconv.Atoi(args[1])
@@ -74,9 +63,9 @@ func initSC() {
 
 func genDKSets() *address.Address {
 	scAddress, err := waspapi.GenerateNewDistributedKeySetOld(
-		config.CommitteeApi(committee()),
-		uint16(len(committee())),
-		uint16(quorumFlag),
+		config.CommitteeApi(scConfig.Committee()),
+		uint16(len(scConfig.Committee())),
+		uint16(scConfig.Quorum()),
 	)
 	check(err)
 	return scAddress
@@ -87,10 +76,10 @@ func putScData(scAddress *address.Address, color *balance.Color) {
 		Address:        *scAddress,
 		Color:          *color,
 		OwnerAddress:   ownerAddress(),
-		CommitteeNodes: config.CommitteePeering(committee()),
+		CommitteeNodes: config.CommitteePeering(scConfig.Committee()),
 		AccessNodes:    []string{},
 	}
-	for _, host := range config.CommitteeApi(committee()) {
+	for _, host := range config.CommitteeApi(scConfig.Committee()) {
 		check(waspapi.PutSCData(host, bootupData))
 	}
 }
@@ -117,7 +106,7 @@ func progHash() hashing.HashValue {
 }
 
 func activateSC(scAddress *address.Address) {
-	for _, host := range config.CommitteeApi(committee()) {
+	for _, host := range config.CommitteeApi(scConfig.Committee()) {
 		check(waspapi.ActivateSC(host, scAddress.String()))
 	}
 }
@@ -128,17 +117,6 @@ func postOriginTx(origTx *sctransaction.Transaction) {
 
 func ownerAddress() address.Address {
 	return wallet.Load().Address()
-}
-
-func committee() []int {
-	if len(committeeFlag) > 0 {
-		return committeeFlag
-	}
-	r := viper.GetIntSlice("fairroulette.committee")
-	if len(r) > 0 {
-		return r
-	}
-	return []int{0, 1, 2, 3}
 }
 
 func setPeriod(seconds int) {

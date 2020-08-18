@@ -13,7 +13,7 @@ import (
 
 func betCmd(args []string) {
 	if len(args) != 2 {
-		fmt.Printf("Usage: %s fr bet <color> <amount>\n", os.Args[0])
+		scConfig.PrintUsage("bet <color> <amount>")
 		os.Exit(1)
 	}
 

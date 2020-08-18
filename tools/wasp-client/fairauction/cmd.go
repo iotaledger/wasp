@@ -1,4 +1,4 @@
-package fairroulette
+package fairauction
 
 import (
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
@@ -8,15 +8,13 @@ import (
 var scConfig *config.SCConfig
 
 func HookFlags() *pflag.FlagSet {
-	scConfig = config.NewSC("fairroulette", "fr")
+	scConfig = config.NewSC("fairauction", "fa")
 	return scConfig.Flags
 }
 
 var commands = map[string]func([]string){
 	"set":    scConfig.HandleSetCmd,
-	"admin":  adminCmd,
 	"status": statusCmd,
-	"bet":    betCmd,
 }
 
 func Cmd(args []string) {
