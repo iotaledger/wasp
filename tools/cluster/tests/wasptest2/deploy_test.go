@@ -4,9 +4,11 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	_ "github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/mr-tron/base58"
 	"math/rand"
 	"os"
@@ -81,5 +83,15 @@ func TestDeploySC(t *testing.T) {
 	}, "sc in the end") {
 		t.Fail()
 		return
+	}
+
+	ph, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
+	check(err, t)
+
+	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
+		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
+		vmconst.VarNameProgramHash:  ph[:],
+	}) {
+		t.Fail()
 	}
 }

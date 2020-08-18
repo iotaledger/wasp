@@ -729,6 +729,43 @@ func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpecte
 	return assertionOk
 }
 
+func verifySCStateVariables2(host string, addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
+	actual, err := waspapi.DumpSCState(host, addr.String())
+	if err != nil {
+		panic(err)
+	}
+	if !actual.Exists {
+		fmt.Printf("              state does not exist: FAIL\n")
+		return false
+	}
+	pass := true
+	fmt.Printf("          state index #%d\n", actual.Index)
+	for k, vexp := range expectedValues {
+		vact, ok := actual.Variables[k]
+		if !ok {
+			vact = []byte("N/A")
+		}
+		vres := "FAIL"
+		if bytes.Equal(interface2bytes(vexp), vact) {
+			vres = "OK"
+		} else {
+			pass = false
+		}
+		// todo pretty output
+		fmt.Printf("      '%s': %v (%v) -- %s\n", k, vact, vexp, vres)
+	}
+	return pass
+}
+
+func (cluster *Cluster) VerifySCStateVariables2(addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
+	fmt.Printf("verifying state variables for address %s\n", addr.String())
+	pass := true
+	for _, host := range cluster.ApiHosts() {
+		pass = pass && verifySCStateVariables2(host, addr, expectedValues)
+	}
+	return pass
+}
+
 func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) {
 	assertionOk := true
 	lst := make([]balance.Color, 0, len(expect))
@@ -765,4 +802,33 @@ func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) 
 		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
 	}
 	return ret, assertionOk
+}
+
+func interface2bytes(v interface{}) []byte {
+	var ret []byte
+	switch vt := v.(type) {
+	case int:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case int16:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case int32:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case int64:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint16:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint32:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint64:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case []byte:
+		ret = vt
+	case string:
+		ret = []byte(vt)
+	default:
+		panic("unexpected type")
+	}
+	return ret
 }
