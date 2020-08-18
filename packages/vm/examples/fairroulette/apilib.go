@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
@@ -166,17 +167,15 @@ func decodePlayerStats(result *stateapi.DictResult) (map[address.Address]*Player
 	return playerStats, nil
 }
 
-func (frc *FairRouletteClient) Bet(color int, amount int) error {
+func (frc *FairRouletteClient) postRequest(code sctransaction.RequestCode, amountIotas int64, vars map[string]interface{}) error {
 	tx, err := waspapi.CreateRequestTransaction(
 		frc.nodeClient,
 		frc.sigScheme,
 		[]*waspapi.RequestBlockJson{{
 			Address:     frc.scAddress.String(),
-			RequestCode: RequestPlaceBet,
-			AmountIotas: int64(amount),
-			Vars: map[string]interface{}{
-				ReqVarColor: int64(color),
-			},
+			RequestCode: code,
+			AmountIotas: amountIotas,
+			Vars:        vars,
 		}},
 	)
 	if err != nil {
@@ -185,20 +184,14 @@ func (frc *FairRouletteClient) Bet(color int, amount int) error {
 	return frc.nodeClient.PostTransaction(tx.Transaction)
 }
 
+func (frc *FairRouletteClient) Bet(color int, amount int) error {
+	return frc.postRequest(RequestPlaceBet, int64(amount), map[string]interface{}{
+		ReqVarColor: int64(color),
+	})
+}
+
 func (frc *FairRouletteClient) SetPeriod(seconds int) error {
-	tx, err := waspapi.CreateRequestTransaction(
-		frc.nodeClient,
-		frc.sigScheme,
-		[]*waspapi.RequestBlockJson{{
-			Address:     frc.scAddress.String(),
-			RequestCode: RequestSetPlayPeriod,
-			Vars: map[string]interface{}{
-				ReqVarPlayPeriodSec: int64(seconds),
-			},
-		}},
-	)
-	if err != nil {
-		return err
-	}
-	return frc.nodeClient.PostTransaction(tx.Transaction)
+	return frc.postRequest(RequestSetPlayPeriod, 0, map[string]interface{}{
+		ReqVarPlayPeriodSec: int64(seconds),
+	})
 }
