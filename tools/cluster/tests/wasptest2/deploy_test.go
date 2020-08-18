@@ -7,11 +7,20 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	_ "github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
+	"github.com/mr-tron/base58"
+	"math/rand"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestDeploySC(t *testing.T) {
+	var seed [32]byte
+	rand.Read(seed[:])
+	seed58 := base58.Encode(seed[:])
+	wallet1 := testutil.NewWallet(seed58)
+	scOwner = wallet1.WithIndex(0)
+
 	// setup
 	wasps := setup(t, "test_cluster2", "TestDeploySC")
 
@@ -52,9 +61,10 @@ func TestDeploySC(t *testing.T) {
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
+
 	check(err, t)
-	//wasps.CollectMessages(20 * time.Second)
-	wasps.WaitUntilExpectationsMet()
+	wasps.CollectMessages(20 * time.Second)
+	//wasps.WaitUntilExpectationsMet()
 	if !wasps.Report() {
 		t.Fail()
 	}

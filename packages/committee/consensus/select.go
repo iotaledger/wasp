@@ -2,7 +2,7 @@
 package consensus
 
 import (
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/util"
 	"sort"
 	"time"
@@ -16,12 +16,24 @@ import (
 // from the same request transaction, or it is not selected
 func (op *operator) selectRequestsToProcess() []*request {
 	candidates := op.requestCandidateList()
-	candidates = op.filterRequestsNotSeenQuorumTimes(candidates)
 	if len(candidates) == 0 {
 		return nil
 	}
-	candidates = op.filterNotReadyYet(candidates)
+	before := takeIds(candidates)
+	candidates = op.filterOutRequestsWithoutTokens(candidates)
+	after := takeIds(candidates)
+	if len(before) != len(after) {
+		op.log.Warnf("should not happen: some requests don't have request tokens: all candidates: %+v, filtered candidates: %+v",
+			idsShortStr(before), idsShortStr(after))
+		op.log.Warnf("\nbalances dumped: %s\n", util.BalancesToString(op.balances))
+	}
 	if len(candidates) == 0 {
+		return nil
+	}
+	if candidates = op.filterRequestsNotSeenQuorumTimes(candidates); len(candidates) == 0 {
+		return nil
+	}
+	if candidates = op.filterNotReadyYet(candidates); len(candidates) == 0 {
 		return nil
 	}
 
@@ -38,28 +50,30 @@ func (op *operator) selectRequestsToProcess() []*request {
 		}
 		ret = append(ret, candidates[i])
 	}
-	if ret == nil {
+	if len(ret) == 0 {
 		return nil
 	}
-	before := idsShortStr(takeIds(ret))
-
-	// not clear is it needed
-	//ret = op.filterNotCompletePackages(ret)
-
-	after := idsShortStr(takeIds(ret))
-
-	if len(after) != len(before) {
-		op.log.Debugf("filterNotCompletePackages: %+v --> %+v\nbalances: %s",
-			before, after, util.BalancesToString(op.balances))
-	}
-
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].whenMsgReceived.Before(ret[j].whenMsgReceived)
-	})
 	return ret
+	//before := idsShortStr(takeIds(ret))
+	//
+	//// not clear is it needed
+	////ret = op.filterNotCompletePackages(ret)
+	//
+	//after := idsShortStr(takeIds(ret))
+	//
+	//if len(after) != len(before) {
+	//	op.log.Debugf("filterNotCompletePackages: %+v --> %+v\nbalances: %s",
+	//		before, after, util.BalancesToString(op.balances))
+	//}
+
+	// doesn't make much sense to sort
+	//sort.Slice(ret, func(i, j int) bool {
+	//	return ret[i].whenMsgReceived.Before(ret[j].whenMsgReceived)
+	//})
 }
 
 // all requests from the backlog which has known messages and are not timelocked
+// sort by arrival time
 func (op *operator) requestCandidateList() []*request {
 	ret := make([]*request, 0, len(op.requests))
 	nowis := time.Now()
@@ -70,11 +84,11 @@ func (op *operator) requestCandidateList() []*request {
 		if req.isTimelocked(nowis) {
 			continue
 		}
-		if req.timelock() > 0 {
-			req.log.Debugf("timelocked until %d: pass. nowis %d", req.timelock(), nowis.Unix())
-		}
 		ret = append(ret, req)
 	}
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].whenMsgReceived.Before(ret[j].whenMsgReceived)
+	})
 	return ret
 }
 
@@ -140,44 +154,21 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 	return ret
 }
 
-type txReqNums struct {
-	totalNumOfRequestsInTx int
-	numOfRequestsInTheList int
-}
-
-// ensure that ether all except timelocked user-defined requests to this smart contract are in the batch or none
-func (op *operator) filterNotCompletePackages(reqs []*request) []*request {
-	if len(reqs) == 0 {
-		return nil
-	}
+// filterOutRequestsWithoutTokens leaves only those first requests
+// which has corresponding request tokens.
+func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 	if op.balances == nil {
 		return nil
 	}
-	// count number of user-defined requests by request transaction
-	reqstats := make(map[valuetransaction.ID]*txReqNums)
+	byColor, _ := util.BalancesByColor(op.balances)
+	ret := reqs[:0]
 	for _, req := range reqs {
-		if !req.requestCode().IsUserDefined() {
+		col := (balance.Color)(*req.reqId.TransactionId())
+		v, _ := byColor[col]
+		if v <= 0 {
 			continue
 		}
-		txid := req.reqTx.ID()
-		if _, ok := reqstats[txid]; !ok {
-			reqstats[txid] = &txReqNums{
-				totalNumOfRequestsInTx: req.reqTx.NumRequestsToAddress(op.committee.Address()),
-				numOfRequestsInTheList: 0,
-			}
-		}
-		reqstats[txid].numOfRequestsInTheList += 1
-	}
-	if len(reqstats) == 0 {
-		// no user defined-requests
-		return reqs
-	}
-	ret := reqs[:0] // same underlying array, different slice
-	for _, req := range reqs {
-		st := reqstats[req.reqTx.ID()]
-		if st.numOfRequestsInTheList != st.totalNumOfRequestsInTx {
-			continue
-		}
+		byColor[col] = v - 1
 		ret = append(ret, req)
 	}
 	return ret

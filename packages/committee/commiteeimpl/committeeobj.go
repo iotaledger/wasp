@@ -12,15 +12,18 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
 	"sync"
+	"time"
 )
 
 type committeeObj struct {
-	isReadyStateManager bool
-	isReadyConsensus    bool
-	mutexIsReady        sync.Mutex
-	isOpenQueue         atomic.Bool
-	dismissed           atomic.Bool
-	dismissOnce         sync.Once
+	isReadyStateManager     bool
+	isReadyConsensus        bool
+	isInitConnectPeriodOver bool
+	mutexIsReady            sync.Mutex
+	isOpenQueue             atomic.Bool
+	dismissed               atomic.Bool
+	dismissOnce             sync.Once
+	onActivation            func()
 	//
 	params       *committee.Parameters
 	address      address.Address
@@ -36,7 +39,7 @@ type committeeObj struct {
 	log          *logger.Logger
 }
 
-func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params *committee.Parameters) committee.Committee {
+func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params *committee.Parameters, onActivation func()) committee.Committee {
 	log.Debugw("creating committee", "addr", bootupData.Address.String())
 
 	addr := bootupData.Address
@@ -84,6 +87,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 		ownerAddress: bootupData.OwnerAddress,
 		color:        bootupData.Color,
 		peers:        make([]*peering.Peer, 0),
+		onActivation: onActivation,
 		log:          log.Named(util.Short(bootupData.Address.String())),
 	}
 	if keyExists {
@@ -111,7 +115,13 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 			ret.dispatchMessage(msg)
 		}
 	}()
+	go func() {
+		ret.log.Infof("wait for %s before activating the committee", ret.params.InitConnectPeriod)
+		time.Sleep(ret.params.InitConnectPeriod)
+		ret.log.Infof("initial connection period is over. Connected peers: %d", ret.numConnectedPeers())
 
+		ret.SetInitConnectPeriodOver()
+	}()
 	return ret
 }
 

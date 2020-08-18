@@ -11,51 +11,27 @@ import (
 )
 
 func (op *operator) takeAction() {
-	op.sendPostponedNotificationsIfAny()
+	op.unlockInTime()
+	op.sendRequestNotificationsToLeaderIfNeeded()
 	op.requestOutputsIfNeeded()
 	if op.iAmCurrentLeader() {
 		op.startProcessingIfNeeded()
 	}
 	op.checkQuorum()
 	op.rotateLeaderIfNeeded()
-	op.sendNotificationsOnTimeUnlock()
 }
 
-// sendPostponedNotificationsIfAny send notifications if it were not send due to absence of quorum
-func (op *operator) sendPostponedNotificationsIfAny() {
-	if op.sendNotificationsPostponed {
-		//op.log.Debug("op.sendNotificationsPostponed = true")
-		op.sendRequestNotificationsToLeader(nil)
-	}
-}
-
-func (op *operator) sendNotificationsOnTimeUnlock() {
-	numlocked := 0
+// unlockInTime detects just time-unlocked and schedules notifications to be sent
+func (op *operator) unlockInTime() {
+	candidates := op.requestCandidateList()
 	nowis := time.Now()
-	reqs := make([]*request, 0)
-	for _, req := range op.requests {
-		if req.reqTx == nil {
-			continue
+	for _, req := range candidates {
+		if req.timelocked && !req.isTimelocked(nowis) {
+			req.timelocked = false
+			op.sendNotificationsScheduled = true
+			req.log.Infof("unlocked request @ nowis = %d (was locked until %d)", nowis.Unix(), req.timelock())
 		}
-		if req.isTimelocked(nowis) {
-			numlocked++
-			continue
-		}
-		if !req.expectTimeUnlockEvent {
-			continue
-		}
-		// request was just unlocked -> notifications to be sent to the leader
-		reqs = append(reqs, req)
-		req.expectTimeUnlockEvent = false
 	}
-
-	if len(reqs) == 0 {
-		return
-	}
-	for _, req := range reqs {
-		req.log.Infof("unlocked time lock at %d", util.TimeNowUnix())
-	}
-	op.sendRequestNotificationsToLeader(reqs)
 }
 
 func (op *operator) rotateLeaderIfNeeded() {
@@ -74,7 +50,7 @@ func (op *operator) rotateLeaderIfNeeded() {
 	prevlead, _ := op.currentLeader()
 	leader := op.moveToNextLeader()
 	op.log.Infof("LEADER ROTATED #%d --> #%d", prevlead, leader)
-	op.sendRequestNotificationsToLeader(nil)
+	op.sendNotificationsScheduled = true
 }
 
 func (op *operator) startProcessingIfNeeded() {

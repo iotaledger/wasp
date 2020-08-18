@@ -28,11 +28,6 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		op.log.Debugf("runCalculationsAsync: variable currentState is not known")
 		return
 	}
-	numReqs := len(par.requests)
-	if len(op.filterNotReadyYet(par.requests)) != numReqs {
-		op.log.Errorf("runCalculationsAsync: inconsistency: some requests not ready yet")
-		return
-	}
 	var progHash hashing.HashValue
 	if ph, ok := op.getProgramHash(); ok {
 		// may not be needed if ready requests are only built-in

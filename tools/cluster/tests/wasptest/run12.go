@@ -3,14 +3,17 @@ package wasptest
 import (
 	"fmt"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"time"
 )
 
 func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	if err := activate(sc, clu); err != nil {
 		return fmt.Errorf("activate %s: %v\n", sc.Address, err)
 	}
-
+	fmt.Printf("[cluster] wait for %v to connect the committee\n", committee.InitConnectPeriod)
+	time.Sleep(committee.InitConnectPeriod)
 	return nil
 }
 

@@ -42,11 +42,10 @@ func run(_ *node.Plugin) {
 
 		addrs := make([]address.Address, 0, len(lst))
 		for _, scdata := range lst {
-			if cmt := ActivateCommittee(scdata, false); cmt != nil {
+			if cmt := ActivateCommittee(scdata); cmt != nil {
 				addrs = append(addrs, scdata.Address)
 			}
 		}
-		nodeconn.Subscribe(addrs)
 		initialLoadWG.Done()
 
 		<-shutdownSignal
@@ -72,7 +71,7 @@ func WaitInitialLoad() {
 	initialLoadWG.Wait()
 }
 
-func ActivateCommittee(bootupData *registry.BootupData, subscribe bool) committee.Committee {
+func ActivateCommittee(bootupData *registry.BootupData) committee.Committee {
 	committeesMutex.Lock()
 	defer committeesMutex.Unlock()
 
@@ -81,13 +80,12 @@ func ActivateCommittee(bootupData *registry.BootupData, subscribe bool) committe
 		log.Warnf("committee already active: %s", bootupData.Address)
 		return nil
 	}
-	c := committee.New(bootupData, log, committee.DefaultParameters)
+	c := committee.New(bootupData, log, committee.DefaultParameters, func() {
+		nodeconn.Subscribe(bootupData.Address)
+	})
 	if c != nil {
 		committeesByAddress[bootupData.Address] = c
-		if subscribe {
-			nodeconn.Subscribe([]address.Address{bootupData.Address})
-		}
-		log.Infof("activated committee for addr %s", bootupData.Address.String())
+		log.Infof("created committee proxy object for addr %s", bootupData.Address.String())
 	}
 	return c
 }

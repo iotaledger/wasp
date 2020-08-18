@@ -54,8 +54,8 @@ type Operator interface {
 	EventTimerMsg(TimerTick)
 }
 
-var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, params *Parameters) Committee
+var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee
 
-func New(bootupData *registry.BootupData, log *logger.Logger, params *Parameters) Committee {
-	return ConstructorNew(bootupData, log, params)
+func New(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee {
+	return ConstructorNew(bootupData, log, params, onActivation)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -13,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"io"
 	"io/ioutil"
+	"time"
 )
 
 type CreateAndDeploySCParams struct {
@@ -134,6 +136,9 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 	} else {
 		_, _ = fmt.Fprint(textout, "activating smart contract on Wasp nodes.. OK.\n")
 	}
+
+	_, _ = fmt.Fprintf(textout, par.Prefix+"waiting for %v for nodes to connect..\n", committee.InitConnectPeriod)
+	time.Sleep(committee.InitConnectPeriod)
 
 	color := (balance.Color)(originTx.ID())
 	_, _ = fmt.Fprint(textout, par.Prefix)

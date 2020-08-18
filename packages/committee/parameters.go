@@ -8,6 +8,9 @@ const (
 
 	// confirmation time assumption. Average time from posting a transaction to finality
 	confirmationTime = 10 * time.Second
+
+	// relaxation period after committee startup
+	InitConnectPeriod = 5 * time.Second
 )
 
 // Params are time parameters for consensus ans state manager
@@ -21,6 +24,7 @@ type Parameters struct {
 	// each committee have input channel. If channel is congested, sending to it timeouts and message is lost
 	ReceiveMsgChannelTimeout time.Duration
 
+	InitConnectPeriod time.Duration
 	// -- consensus operator
 	// expected leader reaction after posting notifications. It it the time enough to collect quorum
 	// of notifications from peers
@@ -50,7 +54,8 @@ type Parameters struct {
 var DefaultParameters = &Parameters{
 	TimerTickPeriod:                  100 * time.Millisecond,
 	ReceiveMsgChannelTimeout:         500 * time.Millisecond,
-	LeaderReactionToNotifications:    networkLatency * 4,
+	InitConnectPeriod:                InitConnectPeriod,
+	LeaderReactionToNotifications:    confirmationTime,
 	LeaderReactionToCalculatedResult: 2 * time.Second,
 	ConfirmationWaitingPeriod:        (confirmationTime * 3) / 2,
 	RequestBalancesPeriod:            10 * time.Second,

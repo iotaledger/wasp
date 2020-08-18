@@ -67,7 +67,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 
 func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatTimelock")
+	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatFailTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           1,
@@ -119,7 +119,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 
 func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatTimelock")
+	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatSuccessTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           1,

@@ -567,7 +567,7 @@ func (cluster *Cluster) WaitUntilExpectationsMet() bool {
 		select {
 		case msg := <-cluster.messagesCh:
 			cluster.countMessage(msg)
-		case <-time.After(30 * time.Second):
+		case <-time.After(90 * time.Second):
 			return cluster.Report()
 		}
 	}

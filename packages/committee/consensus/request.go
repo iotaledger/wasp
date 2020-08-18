@@ -65,12 +65,9 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool
 
 	ret.notifications[op.peerIndex()] = true
 
-	nowis := time.Now()
-	if msgFirstTime && ret.isTimelocked(nowis) {
-		ret.expectTimeUnlockEvent = true
-	}
 	tl := ""
-	if ret.isTimelocked(nowis) {
+	if msgFirstTime && ret.isTimelocked(time.Now()) {
+		ret.timelocked = true
 		tl = fmt.Sprintf(". Time locked until %d (nowis = %d)", ret.timelock(), util.TimeNowUnix())
 	}
 	ret.log.Infof("NEW REQUEST from msg%s", tl)

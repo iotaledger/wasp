@@ -16,10 +16,10 @@ const scNumFairAuction = 5
 
 func TestFASetOwnerMargin(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
+	wasps := setup(t, "test_cluster", "TestFASetOwnerMargin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          -1,
@@ -80,7 +80,8 @@ func TestFASetOwnerMargin(t *testing.T) {
 	})
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
+	wasps.WaitUntilExpectationsMet()
+	//wasps.CollectMessages(15 * time.Second)
 
 	if !wasps.Report() {
 		t.Fail()
@@ -195,11 +196,13 @@ func TestFA1Color0Bids(t *testing.T) {
 	})
 	check(err, t)
 
-	wasps.CollectMessages(90 * time.Second)
+	wasps.WaitUntilExpectationsMet()
 
-	if !wasps.Report() {
-		t.Fail()
-	}
+	//wasps.CollectMessages(90 * time.Second)
+	//if !wasps.Report() {
+	//	t.Fail()
+	//}
+
 	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1+4, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 + 4, // sc origin, service fee - 1
 	}, "owner address in the end") {
@@ -225,7 +228,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          5,
@@ -324,11 +327,11 @@ func TestFA2Color0Bids(t *testing.T) {
 	})
 	check(err, t)
 
-	wasps.CollectMessages(70 * time.Second)
-
-	if !wasps.Report() {
-		t.Fail()
-	}
+	wasps.WaitUntilExpectationsMet()
+	//wasps.CollectMessages(70 * time.Second)
+	//if !wasps.Report() {
+	//	t.Fail()
+	//}
 
 	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1+4+4, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 + 4 + 4, // sc origin, service fee x 2
@@ -455,12 +458,12 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	})
 	check(err, t)
 
-	//wasps.WaitUntilExpectationsMet()  // no passing with this
-	wasps.CollectMessages(70 * time.Second)
+	wasps.WaitUntilExpectationsMet()
+	//wasps.CollectMessages(70 * time.Second)
+	//if !wasps.Report() {
+	//	t.Fail()
+	//}
 
-	if !wasps.Report() {
-		t.Fail()
-	}
 	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount-5, map[balance.Color]int64{
 		*color1:           1,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 5,
@@ -591,7 +594,6 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	}
 
 	wasps.CollectMessages(70 * time.Second)
-
 	if !wasps.Report() {
 		t.Fail()
 	}
@@ -626,10 +628,10 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 // two bidders
 func TestFA1Color2Bidders(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
+	wasps := setup(t, "test_cluster", "TestFA1Color2Bidders")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          13,

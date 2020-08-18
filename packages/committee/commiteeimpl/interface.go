@@ -49,16 +49,25 @@ func (c *committeeObj) SetReadyConsensus() {
 	c.checkReady()
 }
 
+func (c *committeeObj) SetInitConnectPeriodOver() {
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	c.isInitConnectPeriodOver = true
+	c.log.Debugf("Init connect period is over")
+	c.checkReady()
+}
+
 func (c *committeeObj) checkReady() bool {
-	if c.isReadyConsensus && c.isReadyStateManager {
+	if c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver {
 		c.isOpenQueue.Store(true)
 		c.startTimer()
+		c.onActivation()
 
-		c.log.Debugf("committee now is fully initialized")
-
+		c.log.Infof("committee now is fully initialized")
 		publisher.Publish("active_committee", c.address.String())
 	}
-	return c.isReadyConsensus && c.isReadyStateManager
+	return c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver
 }
 
 func (c *committeeObj) startTimer() {
@@ -211,4 +220,18 @@ func (c *committeeObj) HasQuorum() bool {
 		}
 	}
 	return false
+}
+
+func (c *committeeObj) numConnectedPeers() uint16 {
+	count := uint16(0)
+	for _, peer := range c.committeePeers() {
+		if peer == nil {
+			count++
+		} else {
+			if alive, _ := peer.IsAlive(); alive {
+				count++
+			}
+		}
+	}
+	return count
 }

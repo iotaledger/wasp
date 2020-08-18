@@ -5,18 +5,21 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// notifies current leader about requests in the order of arrival
-func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
-	op.sendNotificationsPostponed = false
+// sendRequestNotificationsToLeaderIfNeeded sends current leader the backlog of requests
+func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
+	if !op.sendNotificationsScheduled {
+		return
+	}
+	op.sendNotificationsScheduled = false
 
 	stateIndex, ok := op.stateIndex()
 	if !ok {
-		op.log.Debugf("sendRequestNotificationsToLeader: current currentState is undefined")
+		op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded: current state is undefined")
 		return
 	}
 	if !op.committee.HasQuorum() {
-		op.log.Debugf("sendRequestNotificationsToLeader: postponed due to no quorum")
-		op.sendNotificationsPostponed = true
+		op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded: postponed due to no quorum")
+		op.sendNotificationsScheduled = true
 		return
 	}
 
@@ -25,21 +28,18 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 		return
 	}
 
-	op.log.Debugf("sendRequestNotificationsToLeader: has quorum, leader = #%d", currentLeaderPeerIndex)
-
 	if op.iAmCurrentLeader() {
 		return
 	}
-	if reqs == nil {
-		reqs = op.requestCandidateList()
-	} else {
-		reqs = filterTimelocked(reqs)
-	}
-	reqIds := takeIds(reqs)
-	if len(reqIds) == 0 {
+	op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded #%d", currentLeaderPeerIndex)
+
+	// get not time-locked requests with the message known
+	reqs := op.requestCandidateList()
+	if len(reqs) == 0 {
 		// nothing to notify about
 		return
 	}
+	reqIds := takeIds(reqs)
 	msgData := util.MustBytes(&committee.NotifyReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: stateIndex,
@@ -48,7 +48,7 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	})
 
 	// send until first success, but no more than number of nodes in the committee
-	op.log.Infow("sendRequestNotificationsToLeader",
+	op.log.Infow("sendRequestNotificationsToLeaderIfNeeded",
 		"leader", currentLeaderPeerIndex,
 		"currentState index", stateIndex,
 		"reqs", idsShortStr(reqIds),
@@ -56,9 +56,7 @@ func (op *operator) sendRequestNotificationsToLeader(reqs []*request) {
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
 		op.log.Infof("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
-	if !op.leaderRotationDeadlineSet {
-		op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
-	}
+	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 }
 
 func (op *operator) storeNotificationIfNeeded(msg *committee.NotifyReqMsg) {

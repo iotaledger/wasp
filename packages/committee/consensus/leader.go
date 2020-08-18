@@ -24,7 +24,8 @@ func (op *operator) moveToNextLeader() uint16 {
 func (op *operator) resetLeader(seedBytes []byte) {
 	op.peerPermutation.Shuffle(seedBytes)
 	op.leaderStatus = nil
-	leader := op.moveToFirstAliveLeader()
+	leader := op.peerPermutation.Current()
+	leader = op.moveToFirstAliveLeader()
 	op.leaderRotationDeadlineSet = false
 	op.stateTxEvidenced = false
 
@@ -56,6 +57,10 @@ func (op *operator) setLeaderRotationDeadline(period time.Duration) {
 		op.stateTxEvidenced = false
 
 		op.log.Info("delete leader rotation deadline")
+		return
+	}
+	if op.leaderRotationDeadlineSet && op.leaderRotationDeadline.After(time.Now().Add(period)) {
+		// only move deadline further, not back
 		return
 	}
 	op.leaderRotationDeadlineSet = true

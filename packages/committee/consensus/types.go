@@ -33,8 +33,8 @@ type operator struct {
 	// notifications with future currentState indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
-	// notifications postponed due to no quorum
-	sendNotificationsPostponed bool
+	// notifications must be sent in the new cycle
+	sendNotificationsScheduled bool
 
 	requests map[sctransaction.RequestId]*request
 
@@ -75,8 +75,8 @@ type request struct {
 	whenMsgReceived time.Time
 	// notification vector for the current currentState
 	notifications []bool
-	// send notification when unlocked
-	expectTimeUnlockEvent bool
+	// initially time locked
+	timelocked bool
 
 	log *logger.Logger
 }

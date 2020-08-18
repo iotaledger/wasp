@@ -37,9 +37,10 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 		op.log.Errorf("deleteCompletedRequests: %v", err)
 		return
 	}
-	// notify about all request the new leader
-	op.sendRequestNotificationsToLeader(nil)
-	//op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
+	// send backlog to the new leader
+	op.sendNotificationsScheduled = true
+
+	op.takeAction()
 
 	// check is processor is ready for the current state. If no, initiate load of the processor
 	op.processorReady = false
@@ -62,8 +63,6 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 			}
 		})
 	}
-
-	op.takeAction()
 }
 
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
@@ -89,11 +88,7 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 			reqMsg.RequestBlock().String(reqMsg.RequestId()), time.Now().Unix())
 	}
 
-	op.sendRequestNotificationsToLeader([]*request{req})
-	//if !op.leaderRotationDeadlineSet {
-	//	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
-	//}
-
+	op.sendNotificationsScheduled = true
 	op.takeAction()
 }
 
