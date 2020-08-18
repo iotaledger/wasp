@@ -751,7 +751,7 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 		} else {
 			pass = false
 		}
-		// todo pretty output
+		// TODO pretty output
 		fmt.Printf("      '%s': %v (%v) -- %s\n", k, vact, vexp, vres)
 	}
 	return pass
