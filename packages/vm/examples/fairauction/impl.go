@@ -145,7 +145,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	ownerMargin := getOwnerMarginPromille(ctx)
+	ownerMargin := getOwnerMarginPromille(ctx.AccessState().GetInt64(VarStateOwnerMarginPromille))
 
 	// determine color of the token for sale
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
@@ -524,8 +524,7 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 
 }
 
-func getOwnerMarginPromille(ctx vmtypes.Sandbox) int64 {
-	ownerMargin, ok := ctx.AccessState().GetInt64(VarStateOwnerMarginPromille)
+func getOwnerMarginPromille(ownerMargin int64, ok bool) int64 {
 	if !ok {
 		ownerMargin = OwnerMarginDefault
 	} else {

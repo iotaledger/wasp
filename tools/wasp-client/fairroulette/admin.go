@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
-	"github.com/iotaledger/wasp/tools/wasp-client/util"
+	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 )
 
@@ -37,7 +37,7 @@ func adminCmd(args []string) {
 		}
 		s, err := strconv.Atoi(args[1])
 		check(err)
-		setPeriod(s)
+		check(scclients.GetFRClient().SetPeriod(s))
 
 	default:
 		adminUsage()
@@ -117,14 +117,4 @@ func postOriginTx(origTx *sctransaction.Transaction) {
 
 func ownerAddress() address.Address {
 	return wallet.Load().Address()
-}
-
-func setPeriod(seconds int) {
-	util.PostRequest(&waspapi.RequestBlockJson{
-		Address:     config.GetFRAddress().String(),
-		RequestCode: fairroulette.RequestSetPlayPeriod,
-		Vars: map[string]interface{}{
-			fairroulette.ReqVarPlayPeriodSec: int64(seconds),
-		},
-	})
 }

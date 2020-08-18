@@ -14,6 +14,8 @@ Done
 Pending
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
+- [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
+      change until released).
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
 - [ ] extend goshimmer cli-wallet with `FairAuction` and `FairRoulette`
 - [ ] deploy Wasp in Pollen testnet

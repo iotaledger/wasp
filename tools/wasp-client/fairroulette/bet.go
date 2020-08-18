@@ -5,10 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/wasp-client/config"
-	"github.com/iotaledger/wasp/tools/wasp-client/util"
+	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
 )
 
 func betCmd(args []string) {
@@ -22,14 +19,7 @@ func betCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	util.PostRequest(&waspapi.RequestBlockJson{
-		Address:     config.GetFRAddress().String(),
-		RequestCode: fairroulette.RequestPlaceBet,
-		AmountIotas: int64(amount),
-		Vars: map[string]interface{}{
-			fairroulette.ReqVarColor: int64(color),
-		},
-	})
+	check(scclients.GetFRClient().Bet(color, amount))
 }
 
 func check(err error) {

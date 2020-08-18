@@ -16,10 +16,10 @@ import (
 type ValueType string
 
 const (
-	ValueTypeScalar = ValueType("scalar")
-	ValueTypeInt64  = ValueType("int64")
-	ValueTypeArray  = ValueType("array")
-	ValueTypeDict   = ValueType("dict")
+	ValueTypeBytes = ValueType("bytes")
+	ValueTypeInt64 = ValueType("int64")
+	ValueTypeArray = ValueType("array")
+	ValueTypeDict  = ValueType("dict")
 )
 
 type KeyQuery struct {
@@ -76,10 +76,10 @@ func NewQueryRequest(address *address.Address) *QueryRequest {
 	return &QueryRequest{Address: address.String()}
 }
 
-func (q *QueryRequest) AddScalar(key kv.Key) {
+func (q *QueryRequest) AddBytes(key kv.Key) {
 	q.Query = append(q.Query, &KeyQuery{
 		Key:    []byte(key),
-		Type:   ValueTypeScalar,
+		Type:   ValueTypeBytes,
 		Params: nil,
 	})
 }
@@ -112,13 +112,31 @@ func (q *QueryRequest) AddDictionary(key kv.Key, limit uint32) {
 	})
 }
 
-func (r *QueryResult) MustScalar() []byte {
+func (r *QueryResult) Exists() bool {
+	return r.Value != nil
+}
+
+func (r *QueryResult) Bytes() ([]byte, bool) {
+	if !r.Exists() {
+		return nil, false
+	}
+	return r.MustBytes(), true
+}
+
+func (r *QueryResult) MustBytes() []byte {
 	var b []byte
 	err := json.Unmarshal(r.Value, &b)
 	if err != nil {
 		panic(err)
 	}
 	return b
+}
+
+func (r *QueryResult) Int64() (int64, bool) {
+	if !r.Exists() {
+		return 0, false
+	}
+	return r.MustInt64(), true
 }
 
 func (r *QueryResult) MustInt64() int64 {
@@ -197,7 +215,7 @@ func HandlerQueryState(c echo.Context) error {
 func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 	key := kv.Key(q.Key)
 	switch q.Type {
-	case ValueTypeScalar:
+	case ValueTypeBytes:
 		value, err := vars.Get(key)
 		if err != nil {
 			return nil, err
@@ -207,11 +225,11 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 	case ValueTypeInt64:
 		value, err := vars.Get(key)
 		if err != nil || value == nil {
-			return value, err
+			return nil, err
 		}
 		n, err := kv.DecodeInt64(value)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		return Int64Result{Value: n}, nil
 

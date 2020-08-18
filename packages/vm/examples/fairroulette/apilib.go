@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/nodeclient"
@@ -12,8 +13,20 @@ import (
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
+type FairRouletteClient struct {
+	nodeClient nodeclient.NodeClient
+	waspHost   string
+	scAddress  *address.Address
+	sigScheme  signaturescheme.SignatureScheme
+}
+
+func NewClient(nodeClient nodeclient.NodeClient, waspHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *FairRouletteClient {
+	return &FairRouletteClient{nodeClient, waspHost, scAddress, sigScheme}
+}
+
 type Status struct {
 	SCBalance map[balance.Color]int64
+	FetchedAt time.Time
 
 	CurrentBetsAmount uint16
 	CurrentBets       []*BetInfo
@@ -25,7 +38,6 @@ type Status struct {
 
 	PlayPeriodSeconds int64
 
-	FetchedAt         time.Time
 	NextPlayTimestamp time.Time
 
 	PlayerStats map[address.Address]*PlayerStats
@@ -43,16 +55,18 @@ func (s *Status) NextPlayIn() string {
 	return diff.String()
 }
 
-func FetchStatus(nodeclient nodeclient.NodeClient, waspHost string, scAddress *address.Address) (*Status, error) {
-	status := &Status{}
+func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
+	status := &Status{
+		FetchedAt: time.Now().UTC(),
+	}
 
-	balance, err := fetchSCBalance(nodeclient, scAddress)
+	balance, err := frc.fetchSCBalance()
 	if err != nil {
 		return nil, err
 	}
 	status.SCBalance = balance
 
-	query := stateapi.NewQueryRequest(scAddress)
+	query := stateapi.NewQueryRequest(frc.scAddress)
 	query.AddArray(StateVarBets, 0, 100)
 	query.AddArray(StateVarLockedBets, 0, 100)
 	query.AddInt64(StateVarLastWinningColor)
@@ -61,7 +75,7 @@ func FetchStatus(nodeclient nodeclient.NodeClient, waspHost string, scAddress *a
 	query.AddDictionary(StateVarPlayerStats, 100)
 	query.AddArray(StateArrayWinsPerColor, 0, NumColors)
 
-	results, err := waspapi.QuerySCState(waspHost, query)
+	results, err := waspapi.QuerySCState(frc.waspHost, query)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +86,6 @@ func FetchStatus(nodeclient nodeclient.NodeClient, waspHost string, scAddress *a
 	if status.PlayPeriodSeconds == 0 {
 		status.PlayPeriodSeconds = DefaultPlaySecondsAfterFirstBet
 	}
-
-	status.FetchedAt = time.Now().UTC()
 
 	nextPlayTimestamp := results[StateVarNextPlayTimestamp].MustInt64()
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
@@ -101,8 +113,8 @@ func FetchStatus(nodeclient nodeclient.NodeClient, waspHost string, scAddress *a
 	return status, nil
 }
 
-func fetchSCBalance(nodeclient nodeclient.NodeClient, scAddress *address.Address) (map[balance.Color]int64, error) {
-	outs, err := nodeclient.GetAccountOutputs(scAddress)
+func (frc *FairRouletteClient) fetchSCBalance() (map[balance.Color]int64, error) {
+	outs, err := frc.nodeClient.GetAccountOutputs(frc.scAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -152,4 +164,41 @@ func decodePlayerStats(result *stateapi.DictResult) (map[address.Address]*Player
 		playerStats[addr] = ps
 	}
 	return playerStats, nil
+}
+
+func (frc *FairRouletteClient) Bet(color int, amount int) error {
+	tx, err := waspapi.CreateRequestTransaction(
+		frc.nodeClient,
+		frc.sigScheme,
+		[]*waspapi.RequestBlockJson{{
+			Address:     frc.scAddress.String(),
+			RequestCode: RequestPlaceBet,
+			AmountIotas: int64(amount),
+			Vars: map[string]interface{}{
+				ReqVarColor: int64(color),
+			},
+		}},
+	)
+	if err != nil {
+		return err
+	}
+	return frc.nodeClient.PostTransaction(tx.Transaction)
+}
+
+func (frc *FairRouletteClient) SetPeriod(seconds int) error {
+	tx, err := waspapi.CreateRequestTransaction(
+		frc.nodeClient,
+		frc.sigScheme,
+		[]*waspapi.RequestBlockJson{{
+			Address:     frc.scAddress.String(),
+			RequestCode: RequestSetPlayPeriod,
+			Vars: map[string]interface{}{
+				ReqVarPlayPeriodSec: int64(seconds),
+			},
+		}},
+	)
+	if err != nil {
+		return err
+	}
+	return frc.nodeClient.PostTransaction(tx.Transaction)
 }

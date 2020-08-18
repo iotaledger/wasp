@@ -318,7 +318,7 @@ func TestFRStatus(t *testing.T) {
 		t.Fail()
 	}
 
-	status, err := fairroulette.FetchStatus(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress)
+	status, err := fairroulette.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, nil).FetchStatus()
 	check(err, t)
 
 	assert.Equal(t, map[balance.Color]int64{

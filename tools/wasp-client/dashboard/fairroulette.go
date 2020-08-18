@@ -8,12 +8,13 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
 	"github.com/labstack/echo"
 )
 
 func handleFR(c echo.Context) error {
 	scAddress := config.GetFRAddress()
-	status, err := fairroulette.FetchStatus(config.GoshimmerClient(), config.WaspApi(), &scAddress)
+	status, err := scclients.GetFRClient().FetchStatus()
 	if err != nil {
 		return err
 	}
