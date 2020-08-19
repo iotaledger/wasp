@@ -1,6 +1,11 @@
 package fairauction
 
-import "github.com/iotaledger/wasp/tools/wasp-client/config/fa"
+import (
+	"fmt"
+	"os"
+
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
+)
 
 var commands = map[string]func([]string){
 	"set":    fa.Config.HandleSetCmd,
@@ -9,4 +14,11 @@ var commands = map[string]func([]string){
 
 func Cmd(args []string) {
 	fa.Config.HandleCmd(args, commands)
+}
+
+func check(err error) {
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
 }
