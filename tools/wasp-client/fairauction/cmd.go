@@ -9,6 +9,7 @@ import (
 
 var commands = map[string]func([]string){
 	"set":    fa.Config.HandleSetCmd,
+	"admin":  adminCmd,
 	"status": statusCmd,
 }
 

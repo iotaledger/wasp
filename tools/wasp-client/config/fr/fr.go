@@ -8,8 +8,10 @@ import (
 )
 
 var Config = &config.SCConfig{
-	ShortName: "fr",
-	Flags:     pflag.NewFlagSet("fairroulette", pflag.ExitOnError),
+	ShortName:   "fr",
+	Description: "FairRoulette smart contract",
+	ProgramHash: fairroulette.ProgramHash,
+	Flags:       pflag.NewFlagSet("fairroulette", pflag.ExitOnError),
 }
 
 func Client() *fairroulette.FairRouletteClient {

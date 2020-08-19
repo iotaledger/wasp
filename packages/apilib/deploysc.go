@@ -128,6 +128,10 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 	// TODO not finished with access nodes
 
 	err = ActivateSCMulti(par.CommitteeApiHosts, scAddr.String())
+	if err != nil {
+		fmt.Fprintf(textout, "activate SC.. FAILED: %v\n", err)
+		return nil, nil, err
+	}
 
 	fmt.Fprint(textout, par.Prefix)
 	if !succ {
