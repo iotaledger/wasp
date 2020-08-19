@@ -30,6 +30,12 @@ func Cmd(args []string) {
 	case "balance":
 		dumpBalance()
 
+	case "mint":
+		mintCmd()
+
+	case "transfer":
+		transferCmd()
+
 	case "request-funds":
 		requestFunds()
 

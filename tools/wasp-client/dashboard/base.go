@@ -92,3 +92,27 @@ const tplWs = `
 	</script>
 {{end}}
 `
+
+const tplInstallConfig = `
+{{define "install-config"}}
+	<details>
+		<summary>1. Install</summary>
+		<p>Grab the latest <code>wasp-client</code> binary from the
+		<a href="https://github.com/iotaledger/wasp/releases">Releases</a> page.</p>
+		<p>-- OR --</p>
+		<p>Build from source:</p>
+<pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
+$ cd wasp
+$ go install ./tools/wallet
+</pre>
+	</details>
+	<details>
+		<summary>2. Configure</summary>
+<pre>$ wasp-client set goshimmer.api {{.Host}}:8080
+$ wasp-client set wasp.api {{.Host}}:9090
+$ wasp-client fr set address {{.SCAddress}}</pre>
+		<p>Initialize a wallet: <code>wasp-client wallet init</code></p>
+		<p>Get some funds: <code>wasp-client wallet request-funds</code></p>
+	</details>
+{{end}}
+`

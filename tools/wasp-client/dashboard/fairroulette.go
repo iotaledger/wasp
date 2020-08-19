@@ -37,6 +37,7 @@ func (p FRTemplateParams) FormatNextPlayTime() string {
 func initFRTemplate() *template.Template {
 	t := template.Must(template.New("").Parse(tplBase))
 	t = template.Must(t.Parse(tplWs))
+	t = template.Must(t.Parse(tplInstallConfig))
 	t = template.Must(t.Parse(tplFairRoulette))
 	return t
 }
@@ -88,25 +89,7 @@ const tplFairRoulette = `
 	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
 	<div>
 		<h2>CLI usage</h2>
-		<details>
-			<summary>1. Install</summary>
-			<p>Grab the latest <code>wasp-client</code> binary from the
-			<a href="https://github.com/iotaledger/wasp/releases">Releases</a> page.</p>
-			<p>-- OR --</p>
-			<p>Build from source:</p>
-	<pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
-	$ cd wasp
-	$ go install ./tools/wallet
-	</pre>
-		</details>
-		<details>
-			<summary>2. Configure</summary>
-	<pre>$ wasp-client set goshimmer.api {{.Host}}:8080
-	$ wasp-client set wasp.api {{.Host}}:9090
-	$ wasp-client fr set address {{.SCAddress}}</pre>
-			<p>Initialize a wallet: <code>wasp-client wallet init</code></p>
-			<p>Get some funds: <code>wasp-client wallet request-funds</code></p>
-		</details>
+		{{template "install-config" .}}
 		<details>
 			<summary>3. Place bets</summary>
 			<p><code>wasp-client fr bet <i>color</i> <i>amount</i></code>
