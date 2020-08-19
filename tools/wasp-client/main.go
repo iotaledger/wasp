@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/iotaledger/wasp/tools/wasp-client/dashboard"
 	"github.com/iotaledger/wasp/tools/wasp-client/fairauction"
 	"github.com/iotaledger/wasp/tools/wasp-client/fairroulette"
@@ -30,7 +32,7 @@ var commands = map[string]func([]string){
 
 func usage(flags *pflag.FlagSet) {
 	cmdNames := make([]string, 0)
-	for k, _ := range commands {
+	for k := range commands {
 		cmdNames = append(cmdNames, k)
 	}
 
@@ -43,9 +45,9 @@ func main() {
 	flags := pflag.NewFlagSet("global flags", pflag.ExitOnError)
 	flags.AddFlagSet(config.HookFlags())
 	flags.AddFlagSet(wallet.HookFlags())
-	flags.AddFlagSet(fairroulette.HookFlags())
-	flags.AddFlagSet(fairauction.HookFlags())
-	flags.Parse(os.Args[1:])
+	flags.AddFlagSet(fr.Config.HookFlags())
+	flags.AddFlagSet(fa.Config.HookFlags())
+	check(flags.Parse(os.Args[1:]))
 
 	config.Read()
 

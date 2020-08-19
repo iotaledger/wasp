@@ -37,7 +37,7 @@ func SetCmd(args []string) {
 
 func Read() {
 	viper.SetConfigFile(configPath)
-	viper.ReadInConfig()
+	check(viper.ReadInConfig())
 }
 
 func GoshimmerApi() string {
@@ -107,29 +107,21 @@ func defaultWaspPort(kind string, i int) int {
 
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
-	viper.WriteConfig()
+	check(viper.WriteConfig())
 }
 
-func SetFRAddress(address string) {
-	setSCAddress("fr", address)
-}
-
-func setSCAddress(scName string, address string) {
+func SetSCAddress(scName string, address string) {
 	Set(scName+".address", address)
 }
 
-func GetFRAddress() address.Address {
-	return getSCAddress("fr")
-}
-
-func getSCAddress(scName string) address.Address {
+func GetSCAddress(scName string) *address.Address {
 	b58 := viper.GetString(scName + ".address")
 	if len(b58) == 0 {
 		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin init` first"))
 	}
 	address, err := address.FromBase58(b58)
 	check(err)
-	return address
+	return &address
 }
 
 func check(err error) {

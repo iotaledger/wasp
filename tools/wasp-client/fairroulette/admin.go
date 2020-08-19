@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
-	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 )
 
@@ -32,12 +32,12 @@ func adminCmd(args []string) {
 
 	case "set-period":
 		if len(args) != 2 {
-			scConfig.PrintUsage("admin set-period <seconds>")
+			fr.Config.PrintUsage("admin set-period <seconds>")
 			os.Exit(1)
 		}
 		s, err := strconv.Atoi(args[1])
 		check(err)
-		check(scclients.GetFRClient().SetPeriod(s))
+		check(fr.Client().SetPeriod(s))
 
 	default:
 		adminUsage()
@@ -58,14 +58,14 @@ func initSC() {
 	postOriginTx(origTx)
 	fmt.Printf("Initialized %s\n", scDescription)
 	fmt.Printf("SC Address: %s\n", scAddress.String())
-	config.SetFRAddress(scAddress.String())
+	fr.Config.SetAddress(scAddress.String())
 }
 
 func genDKSets() *address.Address {
 	scAddress, err := waspapi.GenerateNewDistributedKeySetOld(
-		config.CommitteeApi(scConfig.Committee()),
-		uint16(len(scConfig.Committee())),
-		uint16(scConfig.Quorum()),
+		config.CommitteeApi(fr.Config.Committee()),
+		uint16(len(fr.Config.Committee())),
+		uint16(fr.Config.Quorum()),
 	)
 	check(err)
 	return scAddress
@@ -76,10 +76,10 @@ func putScData(scAddress *address.Address, color *balance.Color) {
 		Address:        *scAddress,
 		Color:          *color,
 		OwnerAddress:   ownerAddress(),
-		CommitteeNodes: config.CommitteePeering(scConfig.Committee()),
+		CommitteeNodes: config.CommitteePeering(fr.Config.Committee()),
 		AccessNodes:    []string{},
 	}
-	for _, host := range config.CommitteeApi(scConfig.Committee()) {
+	for _, host := range config.CommitteeApi(fr.Config.Committee()) {
 		check(waspapi.PutSCData(host, bootupData))
 	}
 }
@@ -106,7 +106,7 @@ func progHash() hashing.HashValue {
 }
 
 func activateSC(scAddress *address.Address) {
-	for _, host := range config.CommitteeApi(scConfig.Committee()) {
+	for _, host := range config.CommitteeApi(fr.Config.Committee()) {
 		check(waspapi.ActivateSC(host, scAddress.String()))
 	}
 }

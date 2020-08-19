@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 )
 
 func statusCmd(args []string) {
-	status, err := scclients.GetFRClient().FetchStatus()
+	status, err := fr.Client().FetchStatus()
 	check(err)
 
 	fmt.Printf("FairRoulette Smart Contract status:\n")

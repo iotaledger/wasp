@@ -1,17 +1,22 @@
-package scclients
+package fr
 
 import (
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
+	"github.com/spf13/pflag"
 )
 
-func GetFRClient() *fairroulette.FairRouletteClient {
-	scAddress := config.GetFRAddress()
+var Config = &config.SCConfig{
+	ShortName: "fr",
+	Flags:     pflag.NewFlagSet("fairroulette", pflag.ExitOnError),
+}
+
+func Client() *fairroulette.FairRouletteClient {
 	return fairroulette.NewClient(
 		config.GoshimmerClient(),
 		config.WaspApi(),
-		&scAddress,
+		Config.Address(),
 		wallet.Load().SignatureScheme(),
 	)
 }

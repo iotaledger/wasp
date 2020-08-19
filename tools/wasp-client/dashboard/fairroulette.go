@@ -7,20 +7,19 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/wasp-client/config"
-	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/labstack/echo"
 )
 
 func handleFR(c echo.Context) error {
-	scAddress := config.GetFRAddress()
-	status, err := scclients.GetFRClient().FetchStatus()
+	scAddress := fr.Config.Address()
+	status, err := fr.Client().FetchStatus()
 	if err != nil {
 		return err
 	}
 	return c.Render(http.StatusOK, "fairroulette", &FRTemplateParams{
 		BaseTemplateParams: baseParams(c, "fairroulette"),
-		SCAddress:          scAddress,
+		SCAddress:          *scAddress,
 		Status:             status,
 	})
 }

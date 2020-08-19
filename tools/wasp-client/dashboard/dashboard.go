@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
@@ -65,7 +66,7 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	check(err)
 	logger.Infof("[Nanomsg] connected")
 
-	scAddress := config.GetFRAddress().String()
+	scAddress := fr.Config.Address().String()
 
 	go func() {
 		for {

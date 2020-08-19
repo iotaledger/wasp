@@ -5,12 +5,12 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/wasp/tools/wasp-client/scclients"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 )
 
 func betCmd(args []string) {
 	if len(args) != 2 {
-		scConfig.PrintUsage("bet <color> <amount>")
+		fr.Config.PrintUsage("bet <color> <amount>")
 		os.Exit(1)
 	}
 
@@ -19,7 +19,7 @@ func betCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	check(scclients.GetFRClient().Bet(color, amount))
+	check(fr.Client().Bet(color, amount))
 }
 
 func check(err error) {
