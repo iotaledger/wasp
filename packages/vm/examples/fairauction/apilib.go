@@ -98,16 +98,40 @@ func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transf
 
 func (fc *FairAuctionClient) SetOwnerMargin(margin int64) error {
 	return fc.postRequest(
-		RequestStartAuction,
+		RequestSetOwnerMargin,
 		nil,
 		map[string]interface{}{VarReqOwnerMargin: margin},
 	)
 }
 
-func (fc *FairAuctionClient) StartAuction(color *balance.Color, description string, minimumBid int64, durationMinutes int64, transfer map[balance.Color]int64) error {
+func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
+	query := stateapi.NewQueryRequest(fc.scAddress)
+	query.AddInt64(VarStateOwnerMarginPromille)
+	results, err := waspapi.QuerySCState(fc.waspHost, query)
+	if err != nil {
+		return 0, err
+	}
+	ownerMargin := getOwnerMarginPromille(results[VarStateOwnerMarginPromille].Int64())
+	return getExpectedDeposit(minimumBid, ownerMargin), nil
+}
+
+func (fc *FairAuctionClient) StartAuction(
+	description string,
+	color *balance.Color,
+	tokensForSale int64,
+	minimumBid int64,
+	durationMinutes int64,
+) error {
+	fee, err := fc.GetFeeAmount(minimumBid)
+	if err != nil {
+		return err
+	}
 	return fc.postRequest(
 		RequestStartAuction,
-		transfer,
+		map[balance.Color]int64{
+			balance.ColorIOTA: fee,
+			*color:            tokensForSale,
+		},
 		map[string]interface{}{
 			VarReqAuctionColor:                color,
 			VarReqStartAuctionDescription:     description,
@@ -119,7 +143,7 @@ func (fc *FairAuctionClient) StartAuction(color *balance.Color, description stri
 
 func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) error {
 	return fc.postRequest(
-		RequestStartAuction,
+		RequestPlaceBid,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
 		map[string]interface{}{VarReqAuctionColor: color},
 	)

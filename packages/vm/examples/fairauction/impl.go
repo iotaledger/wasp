@@ -188,12 +188,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	}
 
 	// check if enough iotas for service fees to create the auction
-	// minimum deposit is owner margin from minimum bid
-	// ensure that at least 1 iota is taken. It is needed for "operating capital"
-	expectedDeposit := (minimumBid * ownerMargin) / 1000
-	if expectedDeposit < 1 {
-		expectedDeposit = 1
-	}
+	expectedDeposit := getExpectedDeposit(minimumBid, ownerMargin)
 
 	if totalDeposit < expectedDeposit {
 		// not enough fees
@@ -267,6 +262,16 @@ func startAuction(ctx vmtypes.Sandbox) {
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
 	ctx.Publishf("startAuction: success. Auction: '%s'", description)
+}
+
+func getExpectedDeposit(minimumBid int64, ownerMargin int64) int64 {
+	// minimum deposit is owner margin from minimum bid
+	expectedDeposit := (minimumBid * ownerMargin) / 1000
+	// ensure that at least 1 iota is taken. It is needed for "operating capital"
+	if expectedDeposit < 1 {
+		return 1
+	}
+	return expectedDeposit
 }
 
 // placeBid is a request to place a bid in the auction for the particular color

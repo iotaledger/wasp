@@ -8,9 +8,11 @@ import (
 )
 
 var commands = map[string]func([]string){
-	"set":    fa.Config.HandleSetCmd,
-	"admin":  adminCmd,
-	"status": statusCmd,
+	"set":           fa.Config.HandleSetCmd,
+	"admin":         adminCmd,
+	"status":        statusCmd,
+	"start-auction": startAuctionCmd,
+	"place-bid":     placeBidCmd,
 }
 
 func Cmd(args []string) {
