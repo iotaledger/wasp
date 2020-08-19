@@ -2,6 +2,7 @@ package fa
 
 import (
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 	"github.com/spf13/pflag"
@@ -14,8 +15,8 @@ var Config = &config.SCConfig{
 	Flags:       pflag.NewFlagSet("fairauction", pflag.ExitOnError),
 }
 
-func Client() *fairauction.FairAuctionClient {
-	return fairauction.NewClient(
+func Client() *faclient.FairAuctionClient {
+	return faclient.NewClient(
 		config.GoshimmerClient(),
 		config.WaspApi(),
 		Config.Address(),

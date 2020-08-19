@@ -9,6 +9,7 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette/frclient"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/stretchr/testify/assert"
 )
@@ -318,7 +319,7 @@ func TestFRStatus(t *testing.T) {
 		t.Fail()
 	}
 
-	status, err := fairroulette.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, nil).FetchStatus()
+	status, err := frclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, nil).FetchStatus()
 	check(err, t)
 
 	assert.Equal(t, map[balance.Color]int64{

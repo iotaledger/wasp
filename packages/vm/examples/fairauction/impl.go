@@ -145,7 +145,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	ownerMargin := getOwnerMarginPromille(ctx.AccessState().GetInt64(VarStateOwnerMarginPromille))
+	ownerMargin := GetOwnerMarginPromille(ctx.AccessState().GetInt64(VarStateOwnerMarginPromille))
 
 	// determine color of the token for sale
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
@@ -188,7 +188,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	}
 
 	// check if enough iotas for service fees to create the auction
-	expectedDeposit := getExpectedDeposit(minimumBid, ownerMargin)
+	expectedDeposit := GetExpectedDeposit(minimumBid, ownerMargin)
 
 	if totalDeposit < expectedDeposit {
 		// not enough fees
@@ -262,16 +262,6 @@ func startAuction(ctx vmtypes.Sandbox) {
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
 	ctx.Publishf("startAuction: success. Auction: '%s'", description)
-}
-
-func getExpectedDeposit(minimumBid int64, ownerMargin int64) int64 {
-	// minimum deposit is owner margin from minimum bid
-	expectedDeposit := (minimumBid * ownerMargin) / 1000
-	// ensure that at least 1 iota is taken. It is needed for "operating capital"
-	if expectedDeposit < 1 {
-		return 1
-	}
-	return expectedDeposit
 }
 
 // placeBid is a request to place a bid in the auction for the particular color
@@ -527,18 +517,4 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	account.MoveTokensFromRequest(&sender, color, available)
 
-}
-
-func getOwnerMarginPromille(ownerMargin int64, ok bool) int64 {
-	if !ok {
-		ownerMargin = OwnerMarginDefault
-	} else {
-		if ownerMargin > OwnerMarginMax {
-			ownerMargin = OwnerMarginMax
-		}
-		if ownerMargin < OwnerMarginMin {
-			ownerMargin = OwnerMarginMin
-		}
-	}
-	return ownerMargin
 }

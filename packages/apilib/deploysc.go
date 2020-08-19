@@ -2,6 +2,10 @@ package apilib
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -11,10 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/util/multicall"
-	"github.com/iotaledger/wasp/packages/vm"
-	"io"
-	"io/ioutil"
-	"time"
+	"github.com/iotaledger/wasp/packages/vm/builtins"
 )
 
 type CreateAndDeploySCParams struct {
@@ -48,7 +49,7 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 	fmt.Fprintf(textout, "checking program hash %s.. \n", par.ProgramHash.String())
 
 	fmt.Fprint(textout, par.Prefix)
-	if ok := vm.IsBuiltinProgramHash(par.ProgramHash.String()); !ok {
+	if !builtins.IsBuiltinProgramHash(par.ProgramHash.String()) {
 		fmt.Fprint(textout, "program hash is user-defined.. \n")
 		// it is not a builtin smart contract. Check for metadata
 		// must exist and be consistent
@@ -61,6 +62,7 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 	} else {
 		fmt.Fprintf(textout, "builtin program %s. OK\n", par.ProgramHash.String())
 	}
+
 	// generate distributed key set on committee nodes
 	scAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)
 

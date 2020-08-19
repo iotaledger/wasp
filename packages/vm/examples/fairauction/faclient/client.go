@@ -1,4 +1,4 @@
-package fairauction
+package faclient
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
@@ -31,7 +32,7 @@ type Status struct {
 
 	OwnerMarginPromille int64
 	AuctionsLen         uint32
-	Auctions            map[balance.Color]*AuctionInfo
+	Auctions            map[balance.Color]*fairauction.AuctionInfo
 }
 
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
@@ -46,21 +47,21 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	status.SCBalance = scBalance
 
 	query := stateapi.NewQueryRequest(fc.scAddress)
-	query.AddInt64(VarStateOwnerMarginPromille)
-	query.AddDictionary(VarStateAuctions, 100)
+	query.AddInt64(fairauction.VarStateOwnerMarginPromille)
+	query.AddDictionary(fairauction.VarStateAuctions, 100)
 
 	results, err := waspapi.QuerySCState(fc.waspHost, query)
 	if err != nil {
 		return nil, err
 	}
 
-	status.OwnerMarginPromille = getOwnerMarginPromille(results[VarStateOwnerMarginPromille].Int64())
+	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(results[fairauction.VarStateOwnerMarginPromille].Int64())
 
-	auctions := results[VarStateAuctions].MustDictionaryResult()
+	auctions := results[fairauction.VarStateAuctions].MustDictionaryResult()
 	status.AuctionsLen = auctions.Len
-	status.Auctions = make(map[balance.Color]*AuctionInfo)
+	status.Auctions = make(map[balance.Color]*fairauction.AuctionInfo)
 	for _, entry := range auctions.Entries {
-		ai := &AuctionInfo{}
+		ai := &fairauction.AuctionInfo{}
 		if err := ai.Read(bytes.NewReader(entry.Value)); err != nil {
 			return nil, err
 		}
@@ -98,21 +99,21 @@ func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transf
 
 func (fc *FairAuctionClient) SetOwnerMargin(margin int64) error {
 	return fc.postRequest(
-		RequestSetOwnerMargin,
+		fairauction.RequestSetOwnerMargin,
 		nil,
-		map[string]interface{}{VarReqOwnerMargin: margin},
+		map[string]interface{}{fairauction.VarReqOwnerMargin: margin},
 	)
 }
 
 func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	query := stateapi.NewQueryRequest(fc.scAddress)
-	query.AddInt64(VarStateOwnerMarginPromille)
+	query.AddInt64(fairauction.VarStateOwnerMarginPromille)
 	results, err := waspapi.QuerySCState(fc.waspHost, query)
 	if err != nil {
 		return 0, err
 	}
-	ownerMargin := getOwnerMarginPromille(results[VarStateOwnerMarginPromille].Int64())
-	return getExpectedDeposit(minimumBid, ownerMargin), nil
+	ownerMargin := fairauction.GetOwnerMarginPromille(results[fairauction.VarStateOwnerMarginPromille].Int64())
+	return fairauction.GetExpectedDeposit(minimumBid, ownerMargin), nil
 }
 
 func (fc *FairAuctionClient) StartAuction(
@@ -127,24 +128,24 @@ func (fc *FairAuctionClient) StartAuction(
 		return err
 	}
 	return fc.postRequest(
-		RequestStartAuction,
+		fairauction.RequestStartAuction,
 		map[balance.Color]int64{
 			balance.ColorIOTA: fee,
 			*color:            tokensForSale,
 		},
 		map[string]interface{}{
-			VarReqAuctionColor:                color,
-			VarReqStartAuctionDescription:     description,
-			VarReqStartAuctionMinimumBid:      minimumBid,
-			VarReqStartAuctionDurationMinutes: durationMinutes,
+			fairauction.VarReqAuctionColor:                color,
+			fairauction.VarReqStartAuctionDescription:     description,
+			fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
+			fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
 		},
 	)
 }
 
 func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) error {
 	return fc.postRequest(
-		RequestPlaceBid,
+		fairauction.RequestPlaceBid,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-		map[string]interface{}{VarReqAuctionColor: color},
+		map[string]interface{}{fairauction.VarReqAuctionColor: color},
 	)
 }

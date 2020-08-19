@@ -1,7 +1,6 @@
 package examples
 
 import (
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -15,44 +14,20 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-func init() {
-	vm.IsBuiltinProgramHash = func(progHash string) bool {
-		_, ok := GetProcessor(progHash)
-		return ok
-	}
+var allProcessors = map[string]func() vmtypes.Processor{
+	vmnil.ProgramHash:         vmnil.GetProcessor,
+	logsc.ProgramHash:         logsc.GetProcessor,
+	inccounter.ProgramHash:    inccounter.GetProcessor,
+	fairroulette.ProgramHash:  fairroulette.GetProcessor,
+	wasmpoc.ProgramHash:       wasmpoc.GetProcessor,
+	fairauction.ProgramHash:   fairauction.GetProcessor,
+	tokenregistry.ProgramHash: tokenregistry.GetProcessor,
+	sc7.ProgramHash:           sc7.GetProcessor,
+	sc8.ProgramHash:           sc8.GetProcessor,
+	sc9.ProgramHash:           sc9.GetProcessor,
 }
 
 func GetProcessor(progHashStr string) (vmtypes.Processor, bool) {
-	switch progHashStr {
-	case vmnil.ProgramHash:
-		return vmnil.GetProcessor(), true
-
-	case logsc.ProgramHash:
-		return logsc.GetProcessor(), true
-
-	case inccounter.ProgramHash:
-		return inccounter.GetProcessor(), true
-
-	case fairroulette.ProgramHash:
-		return fairroulette.GetProcessor(), true
-
-	case wasmpoc.ProgramHash:
-		return wasmpoc.GetProcessor(), true
-
-	case fairauction.ProgramHash:
-		return fairauction.GetProcessor(), true
-
-	case tokenregistry.ProgramHash:
-		return tokenregistry.GetProcessor(), true
-
-	case sc7.ProgramHash:
-		return sc7.GetProcessor(), true
-
-	case sc8.ProgramHash:
-		return sc8.GetProcessor(), true
-
-	case sc9.ProgramHash:
-		return sc9.GetProcessor(), true
-	}
-	return nil, false
+	getProcessor, ok := allProcessors[progHashStr]
+	return getProcessor(), ok
 }

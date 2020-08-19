@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette/frclient"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/labstack/echo"
 )
@@ -27,7 +27,7 @@ func handleFR(c echo.Context) error {
 type FRTemplateParams struct {
 	BaseTemplateParams
 	SCAddress address.Address
-	Status    *fairroulette.Status
+	Status    *frclient.Status
 }
 
 func (p FRTemplateParams) FormatNextPlayTime() string {
