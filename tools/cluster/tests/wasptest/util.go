@@ -75,6 +75,7 @@ func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.Signature
 	if err != nil {
 		return err
 	}
+	fmt.Printf("[cluster] posting request tx %s\n", tx.ID().String())
 	return clu.PostTransaction(tx)
 }
 

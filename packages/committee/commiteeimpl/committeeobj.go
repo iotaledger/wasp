@@ -118,7 +118,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 	go func() {
 		ret.log.Infof("wait for %s before activating the committee", ret.params.InitConnectPeriod)
 		time.Sleep(ret.params.InitConnectPeriod)
-		ret.log.Infof("initial connection period is over. Connected peers: %d", ret.numConnectedPeers())
+		ret.log.Infof("initial connection period is over. Connected peers: %+v", ret.ConnectedPeers())
 
 		ret.SetInitConnectPeriodOver()
 	}()

@@ -188,8 +188,7 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	if peerIndex == c.ownIndex {
 		return true
 	}
-	ret, _ := c.peers[peerIndex].IsAlive()
-	return ret
+	return c.peers[peerIndex].IsAlive()
 }
 
 func (c *committeeObj) OwnPeerIndex() uint16 {
@@ -211,7 +210,7 @@ func (c *committeeObj) HasQuorum() bool {
 		if peer == nil {
 			count++
 		} else {
-			if alive, _ := peer.IsAlive(); alive {
+			if peer.IsAlive() {
 				count++
 			}
 		}
@@ -222,16 +221,16 @@ func (c *committeeObj) HasQuorum() bool {
 	return false
 }
 
-func (c *committeeObj) numConnectedPeers() uint16 {
-	count := uint16(0)
-	for _, peer := range c.committeePeers() {
+func (c *committeeObj) ConnectedPeers() []uint16 {
+	ret := make([]uint16, 0)
+	for i, peer := range c.committeePeers() {
 		if peer == nil {
-			count++
+			ret = append(ret, uint16(i))
 		} else {
-			if alive, _ := peer.IsAlive(); alive {
-				count++
+			if peer.IsAlive() {
+				ret = append(ret, uint16(i))
 			}
 		}
 	}
-	return count
+	return ret
 }

@@ -33,6 +33,10 @@ func sendSubscriptionsIfNeeded() {
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
+	if len(subscriptions) == 0 {
+		return
+	}
+
 	addrs := make([]address.Address, 0, len(subscriptions))
 	for a := range subscriptions {
 		addrs = append(addrs, a)

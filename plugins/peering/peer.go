@@ -29,10 +29,10 @@ type Peer struct {
 	startOnce *sync.Once
 	numUsers  int
 	// heartbeats and latencies
-	lastHeartbeatReceived int64
-	lastHeartbeatSent     int64
-	latencyRingBuf        [numHeartbeatsToKeep]int64
-	hbRingBufIdx          int
+	//lastHeartbeatReceived int64
+	//lastHeartbeatSent     int64
+	//latencyRingBuf        [numHeartbeatsToKeep]int64
+	//hbRingBufIdx          int
 }
 
 // retry net.Dial once, on fail after 0.5s
@@ -59,6 +59,13 @@ func peeringId(remoteLocation string) string {
 
 func (peer *Peer) PeeringId() string {
 	return peeringId(peer.remoteLocation)
+}
+
+// return true if is alive and average latencyRingBuf in nanosec
+func (peer *Peer) IsAlive() bool {
+	peer.RLock()
+	defer peer.RUnlock()
+	return peer.peerconn != nil && peer.handshakeOk
 }
 
 func (peer *Peer) connStatus() (bool, bool) {
@@ -130,12 +137,6 @@ func (peer *Peer) runOutbound() {
 	err := peer.peerconn.Read()
 	log.Debugw("stopped reading outbound. Closing", "remote", peer.remoteLocation, "err", err)
 	peer.closeConn()
-	//if ; err != nil {
-	//	log.Warnw("")
-	//	if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
-	//		log.Warnw("Permanent error", "err", err)
-	//	}
-	//}
 }
 
 // sends handshake message. It contains myLocation
@@ -150,14 +151,12 @@ func (peer *Peer) sendHandshake() error {
 }
 
 func (peer *Peer) SendMsg(msg *PeerMessage) error {
-	//log.Debugw("SendMsg", "id", peer.PeeringId(), "msgType", msg.MsgType)
-
 	if msg.MsgType < FirstCommitteeMsgCode {
 		return errors.New("reserved message code")
 	}
-	data, ts := encodeMessage(msg)
+	data, _ := encodeMessage(msg)
 
-	peer.lastHeartbeatSent = ts
+	//peer.lastHeartbeatSent = ts
 
 	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
@@ -200,7 +199,7 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 		}
 		peer.RLock()
 		if !chopped {
-			peer.lastHeartbeatSent = ts
+			//peer.lastHeartbeatSent = ts
 			if err := peer.sendData(data); err == nil {
 				ret++
 			}
@@ -222,6 +221,5 @@ func (peer *Peer) sendData(data []byte) error {
 	if num != len(data) {
 		return fmt.Errorf("not all bytes were written. err = %v", err)
 	}
-	go peer.scheduleNexHeartbeat()
 	return nil
 }

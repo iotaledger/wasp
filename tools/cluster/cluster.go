@@ -739,7 +739,7 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 		return false
 	}
 	pass := true
-	fmt.Printf("          state index #%d\n", actual.Index)
+	fmt.Printf("    host %s, state index #%d\n", host, actual.Index)
 	for k, vexp := range expectedValues {
 		vact, ok := actual.Variables[k]
 		if !ok {
@@ -752,7 +752,7 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 			pass = false
 		}
 		// TODO pretty output
-		fmt.Printf("      '%s': %v (%v) -- %s\n", k, vact, vexp, vres)
+		fmt.Printf("      '%s': %s (%v) -- %s\n", k, string(vact), vexp, vres)
 	}
 	return pass
 }

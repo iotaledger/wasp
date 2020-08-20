@@ -49,7 +49,8 @@ func (op *operator) rotateLeaderIfNeeded() {
 	}
 	prevlead, _ := op.currentLeader()
 	leader := op.moveToNextLeader()
-	op.log.Infof("LEADER ROTATED #%d --> #%d", prevlead, leader)
+	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
+		prevlead, leader, op.iAmCurrentLeader())
 	op.sendNotificationsScheduled = true
 }
 

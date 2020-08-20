@@ -18,7 +18,8 @@ func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
 		return
 	}
 	if !op.committee.HasQuorum() {
-		op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded: postponed due to no quorum")
+		op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded: postponed due to no quorum. Connected peers: %+v",
+			op.committee.ConnectedPeers())
 		op.sendNotificationsScheduled = true
 		return
 	}
@@ -29,6 +30,8 @@ func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
 	}
 
 	if op.iAmCurrentLeader() {
+		// to be in line with other nodes.
+		op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
 		return
 	}
 	op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded #%d", currentLeaderPeerIndex)

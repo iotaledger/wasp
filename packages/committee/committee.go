@@ -23,6 +23,7 @@ type Committee interface {
 	ReceiveMessage(msg interface{})
 	InitTestRound()
 	HasQuorum() bool
+	ConnectedPeers() []uint16
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()

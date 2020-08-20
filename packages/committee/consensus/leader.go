@@ -29,7 +29,7 @@ func (op *operator) resetLeader(seedBytes []byte) {
 	op.leaderRotationDeadlineSet = false
 	op.stateTxEvidenced = false
 
-	op.log.Debugf("peerPermutation: %+v, first alive leader: %d", op.peerPermutation.GetArray(), leader)
+	op.log.Debugf("peerPermutation: %+v, leader: %d", op.peerPermutation.GetArray(), leader)
 }
 
 // select leader first in the permutation which is alive

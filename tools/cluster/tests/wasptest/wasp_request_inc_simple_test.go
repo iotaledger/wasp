@@ -62,9 +62,9 @@ func TestSend1ReqIncSimple(t *testing.T) {
 	}
 }
 
-func TestSend5ReqInc1SecSimple(t *testing.T) {
+func TestSend5ReqInc0SecSimple(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestSend5ReqInc1SecSimple")
+	wasps := setup(t, "test_cluster", "TestSend5ReqInc0SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           1,
@@ -72,7 +72,7 @@ func TestSend5ReqInc1SecSimple(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          6,
 		"request_out":         7,
-		"state":               7,
+		"state":               -1,
 		"vmmsg":               -1,
 	})
 	check(err, t)
@@ -97,7 +97,6 @@ func TestSend5ReqInc1SecSimple(t *testing.T) {
 			RequestCode: inccounter.RequestInc,
 		})
 		check(err, t)
-		time.Sleep(1 * time.Second)
 	}
 
 	if !wasps.WaitUntilExpectationsMet() {

@@ -62,12 +62,6 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		// it is peered but maybe not handshaked yet (can only be outbound)
 		if bconn.peer.handshakeOk {
 			// it is handshake-ed
-			bconn.peer.receiveHeartbeat(msg.Timestamp)
-			if msg.MsgType == MsgTypeHeartbeat {
-				// heartbeat msg. No need for further processing
-				return
-			}
-			// trigger event to be processed
 			EventPeerMessageReceived.Trigger(msg)
 		} else {
 			// expected handshake msg
@@ -102,10 +96,6 @@ func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
 	} else {
 		log.Infof("CONNECTED WITH PEER %s (outbound)", id)
 		bconn.peer.handshakeOk = true
-
-		bconn.peer.initHeartbeats()
-		bconn.peer.receiveHeartbeat(msg.Timestamp)
-		go bconn.peer.scheduleNexHeartbeat()
 	}
 }
 
@@ -134,11 +124,7 @@ func (bconn *peeredConnection) processHandShakeInbound(msg *PeerMessage) {
 
 	log.Infof("CONNECTED WITH PEER %s (inbound)", peeringId)
 
-	if err := peer.sendHandshake(); err == nil {
-		bconn.peer.initHeartbeats()
-		bconn.peer.receiveHeartbeat(msg.Timestamp)
-		go bconn.peer.scheduleNexHeartbeat()
-	} else {
+	if err := peer.sendHandshake(); err != nil {
 		log.Error("error while responding to handshake: %v. Closing connection", err)
 		_ = bconn.Close()
 	}
