@@ -3,6 +3,7 @@ package dashboard
 import (
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
@@ -29,7 +30,12 @@ type FATemplateParams struct {
 }
 
 func initFATemplate() *template.Template {
-	t := template.Must(template.New("").Parse(tplBase))
+	t := template.New("").Funcs(template.FuncMap{
+		"formatTimestamp": func(ts int64) string {
+			return time.Unix(0, ts).UTC().Format(time.RFC3339)
+		},
+	})
+	t = template.Must(t.Parse(tplBase))
 	t = template.Must(t.Parse(tplWs))
 	t = template.Must(t.Parse(tplInstallConfig))
 	t = template.Must(t.Parse(tplFairAuction))
@@ -43,6 +49,36 @@ const tplFairAuction = `
 	<p>SC address: <code>{{.SC.Address}}</code></p>
 	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
 
+	<div>
+		<h2>Auctions</h2>
+		<div>
+			<ul>
+			{{range $color, $auction := .Status.Auctions}}
+				<li><div>
+					<p>Color: <code>{{$color}}</code></p>
+					<p>Owner: <code>{{$auction.AuctionOwner}}</code></p>
+					<p>Description: <code>{{$auction.Description}}</code></p>
+					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
+					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
+					<p>Deposit: <code>{{$auction.TotalDeposit}}</code></p>
+					<p>Tokens for sale: <code>{{$auction.NumTokens}}</code></p>
+					<p>Minimum bid: <code>{{$auction.MinimumBid}} IOTAs</code></p>
+					<p>Owner margin: <code>{{$auction.OwnerMargin}} promilles</code></p>
+					<p>Bids:
+						<ul>
+						{{range $i, $bid := $auction.Bids}}
+							<li><div>
+								<p>Bidder: <code>{{$bid.Bidder}}</code></p>
+								<p>Amount: <code>{{$bid.Total}} IOTAs</code></p>
+							</div></li>
+						{{end}}
+						</ul>
+					</p>
+				</div></li>
+			{{end}}
+			</ul>
+		</div>
+	</div>
 	<hr/>
 	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
 	<div>
