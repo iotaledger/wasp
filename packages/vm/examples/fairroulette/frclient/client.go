@@ -82,14 +82,25 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 		return nil, err
 	}
 
-	status.LastWinningColor = results[fairroulette.StateVarLastWinningColor].MustInt64()
+	lastWinningColor, _, err := results[fairroulette.StateVarLastWinningColor].MustInt64()
+	if err != nil {
+		return nil, err
+	}
+	status.LastWinningColor = lastWinningColor
 
-	status.PlayPeriodSeconds = results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
+	playPeriodSeconds, _, err := results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
+	if err != nil {
+		return nil, err
+	}
+	status.PlayPeriodSeconds = playPeriodSeconds
 	if status.PlayPeriodSeconds == 0 {
 		status.PlayPeriodSeconds = fairroulette.DefaultPlaySecondsAfterFirstBet
 	}
 
-	nextPlayTimestamp := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
+	nextPlayTimestamp, _, err := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
+	if err != nil {
+		return nil, err
+	}
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
 
 	status.PlayerStats, err = decodePlayerStats(results[fairroulette.StateVarPlayerStats].MustDictionaryResult())

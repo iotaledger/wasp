@@ -3,6 +3,8 @@ package fairauction
 
 import (
 	"bytes"
+	"sort"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"sort"
 )
 
 type fairAuctionProcessor map[sctransaction.RequestCode]fairAuctionEntryPoint

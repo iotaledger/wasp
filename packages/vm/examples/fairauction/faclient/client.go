@@ -55,7 +55,11 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 		return nil, err
 	}
 
-	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(results[fairauction.VarStateOwnerMarginPromille].Int64())
+	ownerMargin, ok, err := results[fairauction.VarStateOwnerMarginPromille].MustInt64()
+	if err != nil {
+		return nil, err
+	}
+	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok)
 
 	auctions := results[fairauction.VarStateAuctions].MustDictionaryResult()
 	status.AuctionsLen = auctions.Len
@@ -112,8 +116,13 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	ownerMargin := fairauction.GetOwnerMarginPromille(results[fairauction.VarStateOwnerMarginPromille].Int64())
-	return fairauction.GetExpectedDeposit(minimumBid, ownerMargin), nil
+	ownerMarginState, ok, err := results[fairauction.VarStateOwnerMarginPromille].MustInt64()
+	if err != nil {
+		return 0, err
+	}
+	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok)
+	fee := fairauction.GetExpectedDeposit(minimumBid, ownerMargin)
+	return fee, nil
 }
 
 func (fc *FairAuctionClient) StartAuction(

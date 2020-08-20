@@ -2,14 +2,13 @@ package fairauction
 
 func GetOwnerMarginPromille(ownerMargin int64, ok bool) int64 {
 	if !ok {
-		ownerMargin = OwnerMarginDefault
-	} else {
-		if ownerMargin > OwnerMarginMax {
-			ownerMargin = OwnerMarginMax
-		}
-		if ownerMargin < OwnerMarginMin {
-			ownerMargin = OwnerMarginMin
-		}
+		return OwnerMarginDefault
+	}
+	if ownerMargin > OwnerMarginMax {
+		return OwnerMarginMax
+	}
+	if ownerMargin < OwnerMarginMin {
+		return OwnerMarginMin
 	}
 	return ownerMargin
 }

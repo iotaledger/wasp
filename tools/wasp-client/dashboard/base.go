@@ -110,7 +110,7 @@ $ go install ./tools/wallet
 		<summary>2. Configure</summary>
 <pre>$ wasp-client set goshimmer.api {{.Host}}:8080
 $ wasp-client set wasp.api {{.Host}}:9090
-$ wasp-client fr set address {{.SCAddress}}</pre>
+$ wasp-client {{.SCShortName}} set address {{.SC.Address}}</pre>
 		<p>Initialize a wallet: <code>wasp-client wallet init</code></p>
 		<p>Get some funds: <code>wasp-client wallet request-funds</code></p>
 	</details>

@@ -23,7 +23,10 @@ func betCmd(args []string) {
 
 	util.WithTransaction(func() (*transaction.Transaction, error) {
 		tx, err := fr.Client().Bet(color, amount)
-		return tx.Transaction, err
+		if err != nil {
+			return nil, err
+		}
+		return tx.Transaction, nil
 	})
 }
 

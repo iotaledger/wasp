@@ -4,29 +4,28 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
 	"github.com/labstack/echo"
 )
 
 func handleFA(c echo.Context) error {
-	scAddress := fa.Config.Address()
 	status, err := fa.Client().FetchStatus()
 	if err != nil {
 		return err
 	}
 	return c.Render(http.StatusOK, "fairauction", &FATemplateParams{
 		BaseTemplateParams: baseParams(c, "fairauction"),
-		SCAddress:          *scAddress,
+		SC:                 fa.Config,
 		Status:             status,
 	})
 }
 
 type FATemplateParams struct {
 	BaseTemplateParams
-	SCAddress address.Address
-	Status    *faclient.Status
+	SC     *config.SCConfig
+	Status *faclient.Status
 }
 
 func initFATemplate() *template.Template {
@@ -41,7 +40,7 @@ const tplFairAuction = `
 {{define "title"}}FairAuction{{end}}
 
 {{define "body"}}
-	<p>SC address: <code>{{.SCAddress}}</code></p>
+	<p>SC address: <code>{{.SC.Address}}</code></p>
 	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
 
 	<hr/>

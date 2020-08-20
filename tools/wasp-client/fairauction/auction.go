@@ -38,7 +38,10 @@ func startAuctionCmd(args []string) {
 			int64(minimumBid),
 			int64(durationMinutes),
 		)
-		return tx.Transaction, err
+		if err != nil {
+			return nil, err
+		}
+		return tx.Transaction, nil
 	})
 }
 
@@ -56,13 +59,16 @@ func placeBidCmd(args []string) {
 		os.Exit(1)
 	}
 
-	color := decodeColor(args[1])
+	color := decodeColor(args[0])
 
-	amount, err := strconv.Atoi(args[2])
+	amount, err := strconv.Atoi(args[1])
 	check(err)
 
 	util.WithTransaction(func() (*transaction.Transaction, error) {
 		tx, err := fa.Client().PlaceBid(color, int64(amount))
-		return tx.Transaction, err
+		if err != nil {
+			return nil, err
+		}
+		return tx.Transaction, nil
 	})
 }

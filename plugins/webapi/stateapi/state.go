@@ -112,43 +112,25 @@ func (q *QueryRequest) AddDictionary(key kv.Key, limit uint32) {
 	})
 }
 
-func (r *QueryResult) Exists() bool {
-	return r.Value != nil
-}
-
-func (r *QueryResult) Bytes() ([]byte, bool) {
-	if !r.Exists() {
-		return nil, false
-	}
-	return r.MustBytes(), true
-}
-
-func (r *QueryResult) MustBytes() []byte {
+func (r *QueryResult) MustBytes() ([]byte, bool, error) {
 	var b []byte
 	err := json.Unmarshal(r.Value, &b)
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
-	return b
+	return b, b != nil, nil
 }
 
-func (r *QueryResult) Int64() (int64, bool) {
-	if !r.Exists() {
-		return 0, false
-	}
-	return r.MustInt64(), true
-}
-
-func (r *QueryResult) MustInt64() int64 {
+func (r *QueryResult) MustInt64() (int64, bool, error) {
 	var ir *Int64Result
 	err := json.Unmarshal(r.Value, &ir)
 	if err != nil {
-		panic(err)
+		return 0, false, err
 	}
 	if ir == nil {
-		return 0
+		return 0, false, nil
 	}
-	return ir.Value
+	return ir.Value, true, nil
 }
 
 func (r *QueryResult) MustArrayResult() *ArrayResult {

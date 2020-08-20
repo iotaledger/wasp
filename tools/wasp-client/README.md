@@ -92,3 +92,53 @@ wasp-client fr set address mUbfBM...
 Also try `wasp-client dashboard`!
 
 10. Change the play period (as admin): `wasp-client fr admin set-period 10 -c owner.json`
+
+## FairAuction (a.k.a "fa") Smart Contract
+
+Steps:
+
+1. Initialize wallets for the owner and client account, as needed (see the
+   relevant steps in FairRoulette section.
+
+2. Initialize the FairAuction smart contract:
+
+```
+$ wasp-client -c owner.json fa admin init
+Initialized FairAuction smart contract
+SC Address: mUbfBM...
+```
+
+Copy the generated SC address. (It is also saved in `owner.json`)
+
+3. Configure the SC address in `wasp-client.json` (obtained in step 2):
+
+```
+wasp-client fa set address mUbfBM...
+```
+
+4. Mint some tokens:
+
+```
+$ wasp-client wallet mint 10
+Minted 10 tokens of color y72kGq...
+```
+
+Copy the color ID.
+
+5. Start an auction for those tokens:
+
+```
+$ wasp-client fa start-auction "My first auction" y72kGq... 10 100 1
+```
+
+Arguments are:  `start-auction <description> <color> <amount> <minumum-bid> <duraion-in-minutes>`
+
+6. Place a bid for an auction:
+
+```
+$ wasp-client fa place-bid y72kGq... 110
+```
+
+7. Query the SC state: `wasp-client fa status`
+
+Also try `wasp-client dashboard`!

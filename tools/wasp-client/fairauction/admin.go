@@ -29,7 +29,10 @@ func adminCmd(args []string) {
 		check(err)
 		util.WithTransaction(func() (*transaction.Transaction, error) {
 			tx, err := fa.Client().SetOwnerMargin(int64(p))
-			return tx.Transaction, err
+			if err != nil {
+				return nil, err
+			}
+			return tx.Transaction, nil
 		})
 
 	default:

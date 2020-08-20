@@ -30,7 +30,10 @@ func adminCmd(args []string) {
 
 		util.WithTransaction(func() (*transaction.Transaction, error) {
 			tx, err := fr.Client().SetPeriod(s)
-			return tx.Transaction, err
+			if err != nil {
+				return nil, err
+			}
+			return tx.Transaction, nil
 		})
 
 	default:

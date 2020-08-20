@@ -5,29 +5,28 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette/frclient"
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/labstack/echo"
 )
 
 func handleFR(c echo.Context) error {
-	scAddress := fr.Config.Address()
 	status, err := fr.Client().FetchStatus()
 	if err != nil {
 		return err
 	}
 	return c.Render(http.StatusOK, "fairroulette", &FRTemplateParams{
 		BaseTemplateParams: baseParams(c, "fairroulette"),
-		SCAddress:          *scAddress,
+		SC:                 fr.Config,
 		Status:             status,
 	})
 }
 
 type FRTemplateParams struct {
 	BaseTemplateParams
-	SCAddress address.Address
-	Status    *frclient.Status
+	SC     *config.SCConfig
+	Status *frclient.Status
 }
 
 func (p FRTemplateParams) FormatNextPlayTime() string {
@@ -46,7 +45,7 @@ const tplFairRoulette = `
 {{define "title"}}FairRoulette{{end}}
 
 {{define "body"}}
-	<p>SC address: <code>{{.SCAddress}}</code></p>
+	<p>SC address: <code>{{.SC.Address}}</code></p>
 	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
 	<div>
 		<h2>Next play</h2>
