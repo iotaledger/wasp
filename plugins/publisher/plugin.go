@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
 	_ "go.nanomsg.org/mangos/v3/transport/all"
@@ -15,18 +15,21 @@ import (
 const PluginName = "Publisher"
 
 var (
-	Plugin   = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log      *logger.Logger
 	socket   mangos.Socket
 	messages = make(chan []byte)
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 }
 
 func run(_ *node.Plugin) {
-	port := config.Node.GetInt(CfgNanomsgPublisherPort)
+	port := parameters.GetInt(parameters.NanomsgPublisherPort)
 	if err := openSocket(port); err != nil {
 		log.Errorf("failed to initialize publisher: %v", err)
 	} else {

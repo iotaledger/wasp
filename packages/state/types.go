@@ -1,12 +1,13 @@
 package state
 
 import (
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/variables"
-	"io"
 )
 
 // represents an interface to the mutable state of the smart contract
@@ -15,7 +16,7 @@ type VirtualState interface {
 	// index 0 means origin state
 	StateIndex() uint32
 	ApplyStateIndex(uint32)
-	// check if state contains record with owner address
+	// check if state contains record with the given owner address
 	InitiatedBy(*address.Address) bool
 	// timestamp
 	Timestamp() int64
@@ -24,13 +25,14 @@ type VirtualState interface {
 	// applies batch of state updates, state index and timestamp
 	ApplyBatch(Batch) error
 	// commit means saving virtual state to sc db, making it persistent (solid)
-	CommitToDb(address address.Address, batch Batch) error
+	CommitToDb(batch Batch) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
 	Hash() hashing.HashValue
 	// the storage of variable/value pairs
-	Variables() variables.Variables
-	String() string
+	Variables() kv.BufferedKVStore
+	Clone() VirtualState
+	DangerouslyConvertToString() string
 }
 
 // AccessState update represents update to the variable state
@@ -45,7 +47,7 @@ type StateUpdate interface {
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
 	String() string
-	Mutations() variables.MutationSequence
+	Mutations() kv.MutationSequence
 	Clear()
 	Write(io.Writer) error
 	Read(io.Reader) error

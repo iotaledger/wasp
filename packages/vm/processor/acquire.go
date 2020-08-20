@@ -3,7 +3,6 @@ package processor
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"time"
 )
 
 // CheckProcessor checks if processor instance is available.
@@ -16,10 +15,9 @@ func CheckProcessor(programHash string) bool {
 	return ok
 }
 
-const processorAcquireTimeout = 2 * time.Second
-
 // Acquire takes one processor from worker pool for this program hash
-// In case one processor in the pool it just attempts to lock it for the call
+// In case only one processor is in the pool it just attempts to lock it for the call
+// TODO implement pool of worker-processors
 func Acquire(programHash string) (vmtypes.Processor, error) {
 	processorsMutex.RLock()
 
@@ -28,7 +26,7 @@ func Acquire(programHash string) (vmtypes.Processor, error) {
 		defer processorsMutex.RUnlock()
 		return nil, fmt.Errorf("no such processor: %v", programHash)
 	}
-	processorsMutex.Unlock()
+	processorsMutex.RUnlock()
 
 	if !ret.timedLock.Acquire(processorAcquireTimeout) {
 		return nil, fmt.Errorf("timeout: wasn't able to acquire processor for %v", processorAcquireTimeout)
@@ -45,7 +43,7 @@ func Release(programHash string) {
 		processorsMutex.RUnlock()
 		return
 	}
-	processorsMutex.Unlock()
+	processorsMutex.RUnlock()
 
 	ret.timedLock.Release()
 }

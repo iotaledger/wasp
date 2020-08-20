@@ -2,7 +2,7 @@ package peering
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"io"
 	"net"
@@ -41,7 +41,7 @@ func connectOutboundLoop() {
 
 // loop which maintains inbound peers connected (when possible)
 func connectInboundLoop() {
-	listenOn := fmt.Sprintf(":%d", config.Node.GetInt(CfgPeeringPort))
+	listenOn := fmt.Sprintf(":%d", parameters.GetInt(parameters.PeeringPort))
 	listener, err := net.Listen("tcp", listenOn)
 	if err != nil {
 		log.Errorf("tcp listen on %s failed: %v. Shutting down...", listenOn, err)

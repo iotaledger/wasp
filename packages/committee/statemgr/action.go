@@ -5,6 +5,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -62,7 +63,7 @@ func (sm *stateManager) checkStateApproval() bool {
 				return false
 			}
 		}
-		if err := pending.nextState.CommitToDb(*sm.committee.Address(), pending.batch); err != nil {
+		if err := pending.nextState.CommitToDb(pending.batch); err != nil {
 			sm.log.Errorw("failed to save state at index #%d", pending.nextState.StateIndex())
 			return false
 		}
@@ -70,19 +71,19 @@ func (sm *stateManager) checkStateApproval() bool {
 		if sm.solidState != nil {
 			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s, batch size: %d",
 				pending.nextState.StateIndex(), sm.nextStateTransaction.ID().String(), pending.batch.Size())
-			sm.log.Debugf("STATE TRANSITION. AccessState hash: %s, batch essence: %s",
+			sm.log.Debugf("STATE TRANSITION. State hash: %s, batch essence: %s",
 				varStateHash.String(), pending.batch.EssenceHash().String())
 		} else {
 			sm.log.Infof("ORIGIN STATE SAVED. Origin transaction: %s",
 				sm.nextStateTransaction.ID().String())
-			sm.log.Debugf("ORIGIN STATE SAVED. AccessState hash: %s, state txid: %s, batch essence: %s",
+			sm.log.Debugf("ORIGIN STATE SAVED. State hash: %s, state txid: %s, batch essence: %s",
 				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.batch.EssenceHash().String())
 		}
 
 	} else {
 		// initial load
 
-		sm.log.Infof("INITIAL STATE #%d LOADED. AccessState hash: %s, state txid: %s",
+		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",
 			sm.solidState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
 	}
 	sm.solidStateValid = true
@@ -127,8 +128,6 @@ func (sm *stateManager) checkStateApproval() bool {
 	return true
 }
 
-const periodBetweenSyncMessages = 1 * time.Second
-
 func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	if sm.isSynchronized() || sm.solidState == nil {
 		// state is synced, no need for more info
@@ -155,7 +154,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		if err := sm.committee.SendMsg(sm.permutation.Next(), committee.MsgGetBatch, data); err == nil {
 			break
 		}
-		sm.syncMessageDeadline = time.Now().Add(periodBetweenSyncMessages)
+		sm.syncMessageDeadline = time.Now().Add(sm.committee.Params().PeriodBetweenSyncMessages)
 	}
 }
 
@@ -224,7 +223,8 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 			}
 		}
 	}
-	stateToApprove := state.NewVirtualState(sm.solidState) // clone
+
+	stateToApprove := sm.createStateToApprove()
 
 	if sm.solidStateValid || sm.solidState == nil {
 		// we need to approve the solidState.
@@ -237,6 +237,7 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 			return false
 		}
 	}
+
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
 	pb, ok := sm.pendingBatches[vh]
@@ -260,7 +261,12 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 	return true
 }
 
-const stateTransactionRequestTimeout = 10 * time.Second
+func (sm *stateManager) createStateToApprove() state.VirtualState {
+	if sm.solidState == nil {
+		return state.NewEmptyVirtualState(sm.committee.Address())
+	}
+	return sm.solidState.Clone()
+}
 
 // for committed batches request approving transaction if deadline has passed
 func (sm *stateManager) requestStateTransactionIfNeeded() {
@@ -278,5 +284,24 @@ func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
 	txid := pb.batch.StateTransactionId()
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
 	_ = nodeconn.RequestTransactionFromNode(&txid)
-	pb.stateTransactionRequestDeadline = time.Now().Add(stateTransactionRequestTimeout)
+	pb.stateTransactionRequestDeadline = time.Now().Add(sm.committee.Params().StateTransactionRequestTimeout)
+}
+
+// send evidence message of unconfirmed state transaction with hash of the pernding state
+func (sm *stateManager) evidencePendingStateTransaction(tx *sctransaction.Transaction) {
+	stateBlock, ok := tx.State()
+	if !ok {
+		// should not happen: must have state block
+		return
+	}
+	stateHash := stateBlock.StateHash()
+	for sh, _ := range sm.pendingBatches {
+		if sh == stateHash {
+			go sm.committee.ReceiveMessage(&committee.StateTransactionEvidenced{
+				TxId:      tx.Transaction.ID(),
+				StateHash: stateBlock.StateHash(),
+			})
+			return
+		}
+	}
 }

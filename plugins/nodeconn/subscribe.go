@@ -2,19 +2,17 @@ package nodeconn
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 )
 
-func Subscribe(addrs []address.Address) {
+func Subscribe(addr address.Address) {
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
-	for _, a := range addrs {
-		if _, ok := subscriptions[a]; !ok {
-			subscriptionsSent = false
-		}
-		subscriptions[a] = struct{}{}
+	if _, ok := subscriptions[addr]; !ok {
+		subscriptionsSent = false
 	}
+	subscriptions[addr] = struct{}{}
 }
 
 func Unsubscribe(addr address.Address) {
@@ -34,6 +32,10 @@ func sendSubscriptionsIfNeeded() {
 	bconnMutex.RUnlock()
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
+
+	if len(subscriptions) == 0 {
+		return
+	}
 
 	addrs := make([]address.Address, 0, len(subscriptions))
 	for a := range subscriptions {

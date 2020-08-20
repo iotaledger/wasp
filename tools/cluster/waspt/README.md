@@ -38,3 +38,9 @@ automatically import keys from `keys.json`.
 ## Start the cluster
 
 	waspt start
+
+Alternatively, if there is already a Goshimmer network running:
+
+```
+GOSHIMMER_PROVIDED=1 waspt start
+```

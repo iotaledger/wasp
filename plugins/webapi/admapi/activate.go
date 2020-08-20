@@ -34,7 +34,7 @@ func HandlerActivateSC(c echo.Context) error {
 
 	log.Debugw("calling committees.ActivateCommittee", "addr", bd.Address.String())
 
-	committees.ActivateCommittee(bd, true)
+	committees.ActivateCommittee(bd)
 
 	return c.JSON(http.StatusOK, &misc.SimpleResponse{})
 }

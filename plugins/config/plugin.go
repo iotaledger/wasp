@@ -15,30 +15,20 @@ import (
 const PluginName = "Config"
 
 var (
-	// Plugin is the plugin instance of the config plugin.
-	Plugin = node.NewPlugin(PluginName, node.Enabled)
-
-	// flags
-	configName          = flag.StringP("config", "c", "config", "Filename of the config file without the file extension")
-	configDirPath       = flag.StringP("config-dir", "d", ".", "Path to the directory containing the config file")
-	skipConfigAvailable = flag.Bool("skip-config", false, "Skip config file availability check")
+	Plugin *node.Plugin
 
 	// Node is viper
 	Node *viper.Viper
 )
 
-// Init triggers the Init event.
-func Init() {
-	Plugin.Events.Init.Trigger(Plugin)
-}
-
-func init() {
+func Init() *node.Plugin {
+	Plugin = node.NewPlugin(PluginName, node.Enabled)
 	// set the default logger config
 	Node = viper.New()
 
 	Plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
-		if err := fetch(false); err != nil {
-			if !*skipConfigAvailable {
+		if skipConfigAvailable, err := fetch(false); err != nil {
+			if !skipConfigAvailable {
 				// we wanted a config file but it was not present
 				// global logger instance is not initialized at this stage...
 				fmt.Println(err.Error())
@@ -49,17 +39,25 @@ func init() {
 			panic(err)
 		}
 	}))
+
+	return Plugin
 }
 
 // fetch fetches config values from a dir defined via CLI flag --config-dir (or the current working dir if not set).
 //
 // It automatically reads in a single config file starting with "config" (can be changed via the --config CLI flag)
 // and ending with: .json, .toml, .yaml or .yml (in this sequence).
-func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) error {
+func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) (bool, error) {
+	// flags
+	configName := flag.StringP("config", "c", "config", "Filename of the config file without the file extension")
+	configDirPath := flag.StringP("config-dir", "d", ".", "Path to the directory containing the config file")
+	skipConfigAvailable := flag.Bool("skip-config", false, "Skip config file availability check")
+
 	flag.Parse()
+
 	err := parameter.LoadConfigFile(Node, *configDirPath, *configName, true, *skipConfigAvailable)
 	if err != nil {
-		return err
+		return *skipConfigAvailable, err
 	}
 
 	if printConfig {
@@ -73,5 +71,5 @@ func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) error {
 		node.EnabledPlugins[node.GetPluginIdentifier(pluginName)] = true
 	}
 
-	return nil
+	return *skipConfigAvailable, nil
 }

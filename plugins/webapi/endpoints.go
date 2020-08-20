@@ -1,15 +1,19 @@
 package webapi
 
 import (
+	"net/http"
+
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
-	"net/http"
+	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 
 	"github.com/labstack/echo"
 )
 
 func addEndpoints() {
 	Server.GET("/", IndexRequest)
+	// sc api
+	Server.POST("/sc/state/query", stateapi.HandlerQueryState)
 	// dkgapi
 	Server.POST("/adm/newdks", dkgapi.HandlerNewDks)
 	Server.POST("/adm/aggregatedks", dkgapi.HandlerAggregateDks)
@@ -25,6 +29,7 @@ func addEndpoints() {
 	Server.GET("/adm/shutdown", admapi.HandlerShutdown)
 	Server.POST("/adm/activatesc", admapi.HandlerActivateSC)
 	Server.GET("/adm/dumpscstate/:scaddress", admapi.HandlerDumpSCState)
+
 	Server.POST("/adm/putprogrammetadata", admapi.HandlerPutProgramMetaData)
 	Server.POST("/adm/getprogrammetadata", admapi.HandlerGetProgramMetadata)
 

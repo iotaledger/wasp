@@ -15,8 +15,6 @@ func init() {
 	committee.ConstructorNew = newCommitteeObj
 }
 
-// implements Committee interface
-
 func (c *committeeObj) IsOpenQueue() bool {
 	if c.isOpenQueue.Load() {
 		return true
@@ -25,6 +23,12 @@ func (c *committeeObj) IsOpenQueue() bool {
 	defer c.mutexIsReady.Unlock()
 
 	return c.checkReady()
+}
+
+// implements Committee interface
+
+func (c *committeeObj) Params() *committee.Parameters {
+	return c.params
 }
 
 func (c *committeeObj) SetReadyStateManager() {
@@ -45,23 +49,32 @@ func (c *committeeObj) SetReadyConsensus() {
 	c.checkReady()
 }
 
+func (c *committeeObj) SetInitConnectPeriodOver() {
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	c.isInitConnectPeriodOver = true
+	c.log.Debugf("Init connect period is over")
+	c.checkReady()
+}
+
 func (c *committeeObj) checkReady() bool {
-	if c.isReadyConsensus && c.isReadyStateManager {
+	if c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver {
 		c.isOpenQueue.Store(true)
 		c.startTimer()
+		c.onActivation()
 
-		c.log.Debugf("committee now is fully initialized")
-
+		c.log.Infof("committee now is fully initialized")
 		publisher.Publish("active_committee", c.address.String())
 	}
-	return c.isReadyConsensus && c.isReadyStateManager
+	return c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver
 }
 
 func (c *committeeObj) startTimer() {
 	go func() {
 		tick := 0
 		for c.isOpenQueue.Load() {
-			time.Sleep(timerTickPeriod)
+			time.Sleep(c.params.TimerTickPeriod)
 			c.ReceiveMessage(committee.TimerTick(tick))
 			tick++
 		}
@@ -111,7 +124,7 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {
 		case c.chMsg <- msg:
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(c.params.ReceiveMsgChannelTimeout):
 			c.log.Warnf("timeout on ReceiveMessage type '%T'. Will be repeated", msg)
 			go c.ReceiveMessage(msg)
 		}
@@ -175,8 +188,7 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	if peerIndex == c.ownIndex {
 		return true
 	}
-	ret, _ := c.peers[peerIndex].IsAlive()
-	return ret
+	return c.peers[peerIndex].IsAlive()
 }
 
 func (c *committeeObj) OwnPeerIndex() uint16 {
@@ -190,4 +202,35 @@ func (c *committeeObj) NumPeers() uint16 {
 // first N peers are committee peers, the rest are access peers in any
 func (c *committeeObj) committeePeers() []*peering.Peer {
 	return c.peers[:c.size]
+}
+
+func (c *committeeObj) HasQuorum() bool {
+	count := uint16(0)
+	for _, peer := range c.committeePeers() {
+		if peer == nil {
+			count++
+		} else {
+			if peer.IsAlive() {
+				count++
+			}
+		}
+		if count >= c.quorum {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *committeeObj) ConnectedPeers() []uint16 {
+	ret := make([]uint16, 0)
+	for i, peer := range c.committeePeers() {
+		if peer == nil {
+			ret = append(ret, uint16(i))
+		} else {
+			if peer.IsAlive() {
+				ret = append(ret, uint16(i))
+			}
+		}
+	}
+	return ret
 }

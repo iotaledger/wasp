@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"net/http"
+	"time"
 )
 
 func ActivateSC(host, addr string) error {
@@ -34,4 +36,16 @@ func ActivateSC(host, addr string) error {
 		return errors.New(aresp.Error)
 	}
 	return nil
+}
+
+func ActivateSCMulti(hosts []string, addr string) error {
+	funs := make([]func() error, len(hosts))
+	for i, host := range hosts {
+		h := host
+		funs[i] = func() error {
+			return ActivateSC(h, addr)
+		}
+	}
+	_, errs := multicall.MultiCall(funs, 1*time.Second)
+	return multicall.WrapErrors(errs)
 }

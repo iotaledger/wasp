@@ -170,11 +170,7 @@ func (ks *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
 	return bdn.Verify(ks.Suite, ks.PubKeyMaster, data, signature)
 }
 
-var suiteLoc *bn256.Suite
-
-func init() {
-	suiteLoc = bn256.NewSuite()
-}
+var suiteLoc = bn256.NewSuite()
 
 func VerifyWithPublicKey(data, signature, pubKeyBin []byte) error {
 	pubKey := suiteLoc.G2().Point()
@@ -205,19 +201,10 @@ func (ks *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signat
 	if err != nil {
 		return nil, err
 	}
-	finalSignature := newBLSSignature(pubKeyBin, recoveredSignature)
+	finalSignature := signaturescheme.NewBLSSignature(pubKeyBin, recoveredSignature)
 
 	if finalSignature.Address() != *ks.Address {
 		panic("finalSignature.Address() != op.dkshare.Address")
 	}
 	return finalSignature, nil
-}
-
-// TODO export this function in "signaturescheme" package
-func newBLSSignature(pubKey, signature []byte) *signaturescheme.BLSSignature {
-	var ret signaturescheme.BLSSignature
-	ret[0] = address.VersionBLS
-	copy(ret[1:signaturescheme.BLSPublicKeySize+1], pubKey)
-	copy(ret[1+signaturescheme.BLSPublicKeySize:], signature)
-	return &ret
 }

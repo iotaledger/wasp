@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 	"time"
 )
@@ -15,15 +15,17 @@ import (
 const PluginName = "NodeConn"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 
 	bconn             *buffconn.BufferedConnection
 	bconnMutex        = &sync.RWMutex{}
 	subscriptions     = make(map[address.Address]struct{})
 	subscriptionsSent bool
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
@@ -48,7 +50,7 @@ func run(_ *node.Plugin) {
 			}
 		}()
 
-	}, shutdown.PriorityNodeConnection)
+	}, parameters.PriorityNodeConnection)
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
 	}

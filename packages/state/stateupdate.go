@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/variables"
 )
 
 type stateUpdate struct {
 	batchIndex uint16
 	requestId  sctransaction.RequestId
 	timestamp  int64
-	mutations  variables.MutationSequence
+	mutations  kv.MutationSequence
 }
 
 func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
@@ -23,7 +23,7 @@ func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
 	}
 	return &stateUpdate{
 		requestId: req,
-		mutations: variables.NewMutationSequence(),
+		mutations: kv.NewMutationSequence(),
 	}
 }
 
@@ -35,7 +35,7 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 // StateUpdate
 
 func (su *stateUpdate) Clear() {
-	su.mutations = variables.NewMutationSequence()
+	su.mutations = kv.NewMutationSequence()
 }
 
 func (su *stateUpdate) String() string {
@@ -56,7 +56,7 @@ func (su *stateUpdate) RequestId() *sctransaction.RequestId {
 	return &su.requestId
 }
 
-func (su *stateUpdate) Mutations() variables.MutationSequence {
+func (su *stateUpdate) Mutations() kv.MutationSequence {
 	return su.mutations
 }
 

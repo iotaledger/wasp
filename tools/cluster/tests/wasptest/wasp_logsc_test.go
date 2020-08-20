@@ -2,14 +2,18 @@ package wasptest
 
 import (
 	"fmt"
+	"strings"
 	"testing"
-	"time"
 
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/logsc"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/stretchr/testify/assert"
 )
+
+// FIXME move log tests to the same keys.json file with other tests
 
 func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.SmartContractFinalConfig) {
 	clu := setup(t, "logsc_cluster", "TestLogsc")
@@ -18,7 +22,8 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 	check(err, t)
 
 	sc := &clu.SmartContractConfig[0]
-	err = putScData(sc, clu)
+
+	_, err = PutBootupRecord(clu, sc)
 	check(err, t)
 
 	err = Activate1SC(clu, sc)
@@ -37,20 +42,25 @@ func TestLogsc1(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          2,
 		"request_out":         3,
-		"state":               3,
-		"logsc-addlog":        1,
+		"state":               -1,
+		"logsc-addlog":        -1,
 	})
 
-	err := SendRequests(clu, sc, makeLogRequests(sc, 1))
+	reqs := []*waspapi.RequestBlockJson{{
+		Address:     sc.Address,
+		RequestCode: logsc.RequestCodeAddLog,
+		Vars: map[string]interface{}{
+			"message": "message 0",
+		},
+	}}
+	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.CollectMessages(30 * time.Second)
-
-	if !clu.Report() {
+	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[string][]byte{
+	if !clu.VerifySCState(sc, 2, map[kv.Key][]byte{
 		"log":   util.Uint64To8Bytes(uint64(1)),
 		"log:0": []byte("message 0"),
 	}) {
@@ -65,40 +75,41 @@ func TestLogsc5(t *testing.T) {
 		"dismissed_committee": 0,
 		"request_in":          6,
 		"request_out":         7,
-		"state":               3,
-		"logsc-addlog":        5,
+		"state":               -1,
+		"logsc-addlog":        -1,
 	})
 
-	err := SendRequests(clu, sc, makeLogRequests(sc, 5))
+	reqs := MakeRequests(5, func(i int) *waspapi.RequestBlockJson {
+		return &waspapi.RequestBlockJson{
+			Address:     sc.Address,
+			RequestCode: logsc.RequestCodeAddLog,
+			Vars: map[string]interface{}{
+				"message": fmt.Sprintf("message %d", i),
+			},
+		}
+	})
+	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
 	check(err, t)
 
-	clu.CollectMessages(30 * time.Second)
-
-	if !clu.Report() {
+	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
-	if !clu.VerifySCState(sc, 2, map[string][]byte{
-		"log":   util.Uint64To8Bytes(uint64(5)),
-		"log:0": []byte("message 0"),
-		"log:1": []byte("message 1"),
-		"log:2": []byte("message 2"),
-		"log:3": []byte("message 3"),
-		"log:4": []byte("message 4"),
-	}) {
-		t.Fail()
-	}
-}
-
-func makeLogRequests(sc *cluster.SmartContractFinalConfig, n int) []*waspapi.RequestBlockJson {
-	reqs := make([]*waspapi.RequestBlockJson, 0)
-	for i := 0; i < n; i++ {
-		reqs = append(reqs, &waspapi.RequestBlockJson{
-			Address:     sc.Address,
-			RequestCode: uint16(logsc.RequestCodeAddLog),
-			Vars:        map[string]string{"message": fmt.Sprintf("message %d", i)},
-		})
-	}
-
-	return reqs
+	clu.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+		{
+			state := state.ToGoMap()
+			assert.EqualValues(t, 8, len(state)) // 5 log items + log length + program_hash + owner address
+			assert.Equal(t, util.Uint64To8Bytes(uint64(5)), state["log"])
+			foundValues := make(map[string]bool)
+			for i := 0; i < 5; i++ {
+				key := kv.Key(fmt.Sprintf("log:%d", i))
+				value := string(state[key])
+				assert.NotNil(t, state[key])
+				foundValues[value] = true
+				assert.True(t, strings.HasPrefix(value, "message "))
+			}
+			assert.EqualValues(t, 5, len(foundValues))
+		}
+		return true
+	})
 }

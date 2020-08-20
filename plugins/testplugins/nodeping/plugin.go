@@ -2,7 +2,7 @@
 package nodeping
 
 import (
-	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -15,10 +15,12 @@ import (
 const PluginName = "TestingNodePing"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Disabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
@@ -64,10 +66,3 @@ func run(_ *node.Plugin) {
 		log.Debug("started Node Ping plugin")
 	}
 }
-
-//orig1, _ := testplugins.CreateOriginData(testplugins.SC1, nil)
-//orig2, _ := testplugins.CreateOriginData(testplugins.SC2, nil)
-//orig3, _ := testplugins.CreateOriginData(testplugins.SC3, nil)
-//log.Infof("origin transaction SC1 ID = %s", orig1.ID().String())
-//log.Infof("origin transaction SC2 ID = %s", orig2.ID().String())
-//log.Infof("origin transaction SC3 ID = %s", orig3.ID().String())

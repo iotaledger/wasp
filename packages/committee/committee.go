@@ -9,6 +9,7 @@ import (
 )
 
 type Committee interface {
+	Params() *Parameters
 	Address() *address.Address
 	OwnerAddress() *address.Address
 	Color() *balance.Color
@@ -21,6 +22,8 @@ type Committee interface {
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
 	InitTestRound()
+	HasQuorum() bool
+	ConnectedPeers() []uint16
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
@@ -33,25 +36,27 @@ type StateManager interface {
 	EventGetBatchMsg(msg *GetBatchMsg)
 	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateTransactionMsg(msg StateTransactionMsg)
+	EventStateTransactionMsg(msg *StateTransactionMsg)
 	EventPendingBatchMsg(msg PendingBatchMsg)
 	EventTimerMsg(msg TimerTick)
 }
 
 type Operator interface {
-	EventProcessorReady(msg ProcessorIsReady)
-	EventStateTransitionMsg(msg *StateTransitionMsg)
-	EventBalancesMsg(reqMsg BalancesMsg)
-	EventRequestMsg(reqMsg RequestMsg)
-	EventNotifyReqMsg(msg *NotifyReqMsg)
-	EventStartProcessingBatchMsg(msg *StartProcessingBatchMsg)
-	EventResultCalculated(result *vm.VMTask)
-	EventSignedHashMsg(msg *SignedHashMsg)
-	EventTimerMsg(msg TimerTick)
+	EventProcessorReady(ProcessorIsReady)
+	EventStateTransitionMsg(*StateTransitionMsg)
+	EventBalancesMsg(BalancesMsg)
+	EventRequestMsg(*RequestMsg)
+	EventNotifyReqMsg(*NotifyReqMsg)
+	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
+	EventResultCalculated(*vm.VMTask)
+	EventSignedHashMsg(*SignedHashMsg)
+	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
+	EventStateTransactionEvidenced(msg *StateTransactionEvidenced)
+	EventTimerMsg(TimerTick)
 }
 
-var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger) Committee
+var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee
 
-func New(bootupData *registry.BootupData, log *logger.Logger) Committee {
-	return ConstructorNew(bootupData, log)
+func New(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee {
+	return ConstructorNew(bootupData, log, params, onActivation)
 }

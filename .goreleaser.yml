@@ -1,0 +1,71 @@
+# Documentation: http://goreleaser.com
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: wasp
+    main: ./main.go
+    binary: wasp
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+
+  - id: wasp-client
+    main: ./tools/wasp-client/main.go
+    binary: wasp-client
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+
+archives:
+  - id: wasp
+    builds:
+      - wasp
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - readme.md
+      - config.json
+      - LICENSE
+
+  - id: wasp-client
+    name_template: "wasp-client_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    builds:
+      - wasp-client
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - tools/wasp-client/README.md
+      - LICENSE
+
+changelog:
+  skip: true
+
+release:
+  prerelease: auto
+  name_template: "{{.ProjectName}}-{{.Version}}"
+  github:
+    owner: iotaledger
+    name: wasp

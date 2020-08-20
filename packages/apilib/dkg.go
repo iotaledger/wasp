@@ -2,7 +2,11 @@ package apilib
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/multicall"
 	"math/rand"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -10,7 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func GenerateNewDistributedKeySet(nodes []string, n, t uint16) (*address.Address, error) {
+// GenerateNewDistributedKeySetOld calls nodes one after the other to produce distributed key set
+func GenerateNewDistributedKeySetOld(nodes []string, n, t uint16) (*address.Address, error) {
 	if len(nodes) != int(n) {
 		return nil, errors.New("wrong params")
 	}
@@ -74,6 +79,107 @@ func GenerateNewDistributedKeySet(nodes []string, n, t uint16) (*address.Address
 			return nil, errors.New("key commit returned non-BLS address")
 		}
 		addrRet = addr
+	}
+	return addrRet, nil
+}
+
+// GenerateNewDistributedKeySet calls nodes in parallel to produce distributed key set
+func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address, error) {
+	if len(hosts) != int(n) {
+		return nil, errors.New("wrong params")
+	}
+	if err := tcrypto.ValidateDKSParams(t, n, 0); err != nil {
+		return nil, err
+	}
+
+	if util.ContainsDuplicates(hosts) {
+		return nil, fmt.Errorf("duplicate hosts")
+	}
+	// temporary numeric id during DKG
+	// generate new key shares
+	// results in the matrix
+	tmpId := rand.Int()
+
+	funs := make([]func() error, len(hosts))
+	priSharesMatrix := make([][]string, n)
+	for i, host := range hosts {
+		h := host
+		idx := i
+		funs[i] = func() error {
+			resp, err := callNewKey(h, dkgapi.NewDKSRequest{
+				TmpId: tmpId,
+				N:     n,
+				T:     t,
+				Index: uint16(idx),
+			})
+			if err != nil {
+				return err
+			}
+			if len(resp.PriShares) != int(n) {
+				return errors.New("inconsistency: len(resp.PriShares) != int(params.N)")
+			}
+			priSharesMatrix[idx] = resp.PriShares
+			return nil
+		}
+	}
+	succ, errs := multicall.MultiCall(funs, 2*time.Second)
+	if !succ {
+		return nil, multicall.WrapErrors(errs)
+	}
+
+	// aggregate private shares
+	pubShares := make([]string, n)
+
+	for col, host := range hosts {
+		priSharesCol := make([]string, n)
+		for row := range hosts {
+			priSharesCol[row] = priSharesMatrix[row][col]
+		}
+		h := host
+		c := col
+		funs[col] = func() error {
+			resp, err := callAggregate(h, dkgapi.AggregateDKSRequest{
+				TmpId:     tmpId,
+				Index:     uint16(c),
+				PriShares: priSharesCol,
+			})
+			if err != nil {
+				return err
+			}
+			pubShares[c] = resp.PubShare
+			return nil
+		}
+	}
+	succ, errs = multicall.MultiCall(funs, 2*time.Second)
+	if !succ {
+		return nil, multicall.WrapErrors(errs)
+	}
+
+	// commit keys
+	var addrRet *address.Address
+	for i, host := range hosts {
+		h := host
+		funs[i] = func() error {
+			addr, err := callCommit(h, dkgapi.CommitDKSRequest{
+				TmpId:     tmpId,
+				PubShares: pubShares,
+			})
+			if err != nil {
+				return err
+			}
+			if addrRet != nil && *addrRet != *addr {
+				return errors.New("key commit returned different addresses from different nodes")
+			}
+			if addr.Version() != address.VersionBLS {
+				return errors.New("key commit returned non-BLS address")
+			}
+			addrRet = addr
+			return nil
+		}
+	}
+	succ, errs = multicall.MultiCall(funs, 2*time.Second)
+	if !succ {
+		return nil, multicall.WrapErrors(errs)
 	}
 	return addrRet, nil
 }

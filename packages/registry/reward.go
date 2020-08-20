@@ -11,7 +11,7 @@ const (
 	CfgRewardAddress = "reward.address"
 )
 
-func init() {
+func InitFlags() {
 	flag.String(CfgRewardAddress, "", "reward address for this Wasp node. Empty (default) means no rewards are collected")
 }
 

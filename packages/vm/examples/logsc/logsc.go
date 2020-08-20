@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
@@ -19,12 +20,12 @@ type logscEntryPoint func(ctx vmtypes.Sandbox)
 
 type logscProcessor map[sctransaction.RequestCode]logscEntryPoint
 
-var Processor = logscProcessor{
+var entryPoints = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
 }
 
-func New() vmtypes.Processor {
-	return Processor
+func GetProcessor() vmtypes.Processor {
+	return entryPoints
 }
 
 func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
@@ -40,27 +41,20 @@ func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return v
 }
 
-const logArrayKey = "log"
+const logArrayKey = kv.Key("log")
 
 func handleAddLogRequest(ctx vmtypes.Sandbox) {
-	msg, ok := ctx.AccessRequest().GetString("message")
+	msg, ok, _ := ctx.AccessRequest().Args().GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")
 		return
 	}
 
-	length, ok, err := ctx.AccessState().GetInt64(logArrayKey)
-	if err != nil {
-		fmt.Printf("[logsc] %v", err)
-		return
-	}
-	if !ok {
-		length = 0
-	}
-
+	// TODO: implement using tlog
+	length, _ := ctx.AccessState().GetInt64(logArrayKey)
 	length += 1
 	ctx.AccessState().SetInt64(logArrayKey, length)
-	ctx.AccessState().SetString(fmt.Sprintf("%s:%d", logArrayKey, length-1), msg)
+	ctx.AccessState().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

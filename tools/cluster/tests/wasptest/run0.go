@@ -2,61 +2,87 @@ package wasptest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util/multicall"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func Put3BootupRecords(clu *cluster.Cluster) error {
-	fmt.Printf("------------------------- Test 0: bootup records  \n")
+// Puts bootup records into the nodes. Also requests funds from the nodeClient for owners.
+func PutBootupRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
+	requested := make(map[address.Address]bool)
 
-	for _, sc := range clu.SmartContractConfig {
-		fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
+	fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
 
-		if err := putScData(&sc, clu); err != nil {
-			fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
-
-			return fmt.Errorf("failed to create bootup records")
+	ownerAddr := sc.OwnerAddress()
+	_, ok := requested[ownerAddr]
+	if !ok {
+		err := clu.NodeClient.RequestFunds(&ownerAddr)
+		if err != nil {
+			fmt.Printf("[cluster] Could not request funds: %v\n", err)
+			return nil, fmt.Errorf("Could not request funds: %v", err)
 		}
+		requested[ownerAddr] = true
 	}
-	return nil
+
+	color, err := putScData(clu, sc)
+	if err != nil {
+		fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
+		return nil, fmt.Errorf("failed to create bootup records: %v", err)
+	}
+	return color, nil
 }
 
-func putScData(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error {
+func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
 	addr, err := address.FromBase58(sc.Address)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	color, err := util.ColorFromString(sc.Color)
+	origTx, err := sc.CreateOrigin(clu.NodeClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	color := balance.Color(origTx.ID())
 
 	committeePeerNodes := clu.WaspHosts(sc.CommitteeNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 
-	var failed bool
-	for _, host := range allNodesApi {
+	succ, errs := waspapi.PutSCDataMulti(allNodesApi, registry.BootupData{
+		Address:        addr,
+		Color:          color,
+		OwnerAddress:   sc.OwnerAddress(),
+		CommitteeNodes: committeePeerNodes,
+		AccessNodes:    accessPeerNodes,
+	})
+	if !succ {
+		fmt.Printf("[cluster] apilib.PutSCData returned: %v\n", multicall.WrapErrors(errs))
+		return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
+	}
+	return &color, nil
 
-		err = waspapi.PutSCData(host, registry.BootupData{
-			Address:        addr,
-			Color:          color,
-			OwnerAddress:   utxodb.GetAddress(sc.OwnerIndexUtxodb),
-			CommitteeNodes: committeePeerNodes,
-			AccessNodes:    accessPeerNodes,
-		})
-		if err != nil {
-			fmt.Printf("[cluster] apilib.PutSCData returned for host %s: %v\n", host, err)
-			failed = true
-		}
-	}
-	if failed {
-		return fmt.Errorf("failed to send bootup data to some commitee nodes")
-	}
-	return nil
+	//var failed bool
+	//for _, host := range allNodesApi {
+	//
+	//	err = waspapi.PutSCData(host, registry.BootupData{
+	//		Address:        addr,
+	//		Color:          color,
+	//		OwnerAddress:   sc.OwnerAddress(),
+	//		CommitteeApiHosts: committeePeerNodes,
+	//		AccessNodes:    accessPeerNodes,
+	//	})
+	//	if err != nil {
+	//		fmt.Printf("[cluster] apilib.PutSCData returned for host %s: %v\n", host, err)
+	//		failed = true
+	//	}
+	//}
+	//if failed {
+	//	return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
+	//}
+	//return &color, nil
 }

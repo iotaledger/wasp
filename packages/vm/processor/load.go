@@ -3,11 +3,11 @@ package processor
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/sema"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/plugins/config"
 	"io/ioutil"
 	"net/url"
 	"path"
@@ -51,9 +51,9 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 // loadProcessor creates processor instance
 // first tries to resolve known program hashes used for testing
 // then tries to create from the binary in the registry cache
-// finally tries to load binary code from the location in the metadata
+// finally tries to load binary code from the location specified in the metadata
 func loadProcessor(progHashStr string) (vmtypes.Processor, error) {
-	proc, ok := examples.LoadProcessor(progHashStr)
+	proc, ok := examples.GetProcessor(progHashStr)
 	if ok {
 		return proc, nil
 	}
@@ -92,7 +92,7 @@ func loadBinaryCode(location string, progHash *hashing.HashValue) ([]byte, error
 	var data []byte
 	switch urlStruct.Scheme {
 	case "file":
-		file := path.Join(config.Node.GetString(vmtypes.CfgVMBinaryDir), urlStruct.Host)
+		file := path.Join(parameters.GetString(parameters.VMBinaryDir), urlStruct.Host)
 		if data, err = ioutil.ReadFile(file); err != nil {
 			return nil, err
 		}

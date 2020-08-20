@@ -3,6 +3,7 @@ package consensus
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
@@ -27,11 +28,6 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		op.log.Debugf("runCalculationsAsync: variable currentState is not known")
 		return
 	}
-	numReqs := len(par.requests)
-	if len(op.filterNotReadyYet(par.requests)) != numReqs {
-		op.log.Errorf("runCalculationsAsync: inconsistency: some requests not ready yet")
-		return
-	}
 	var progHash hashing.HashValue
 	if ph, ok := op.getProgramHash(); ok {
 		// may not be needed if ready requests are only built-in
@@ -52,7 +48,11 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		VirtualState:    op.currentState,
 		Log:             op.log,
 	}
-	ctx.OnFinish = func() {
+	ctx.OnFinish = func(err error) {
+		if err != nil {
+			op.log.Errorf("VM task failed: %v", err)
+			return
+		}
 		op.committee.ReceiveMessage(ctx)
 	}
 	if err := runvm.RunComputationsAsync(ctx); err != nil {
@@ -75,7 +75,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
-	batchHash := vm.BatchHash(reqids, result.Timestamp)
+	batchHash := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)
 
 	op.log.Debugw("sendResultToTheLeader",
 		"leader", result.LeaderPeerIndex,
@@ -97,6 +97,8 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	if err := op.committee.SendMsg(result.LeaderPeerIndex, committee.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
 	}
+	// remember all sent transactions for this state index
+	op.sentResultsToLeader[result.LeaderPeerIndex] = result.ResultTransaction
 }
 
 func (op *operator) saveOwnResult(result *vm.VMTask) {
@@ -111,7 +113,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		reqids[i] = *result.Requests[i].RequestId()
 	}
 
-	bh := vm.BatchHash(reqids, result.Timestamp)
+	bh := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)
 	if bh != op.leaderStatus.batchHash {
 		panic("bh != op.leaderStatus.batchHash")
 	}
@@ -134,15 +136,15 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	}
 }
 
-func (op *operator) aggregateSigShares(sigShares [][]byte) error {
+func (op *operator) aggregateSigShares(sigShares [][]byte) (signaturescheme.Signature, error) {
 	resTx := op.leaderStatus.resultTx
 
 	finalSignature, err := op.dkshare.RecoverFullSignature(sigShares, resTx.EssenceBytes())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := resTx.PutSignature(finalSignature); err != nil {
-		return fmt.Errorf("something wrong while aggregating final signature: %v", err)
+		return nil, fmt.Errorf("something wrong while aggregating final signature: %v", err)
 	}
-	return nil
+	return finalSignature, nil
 }

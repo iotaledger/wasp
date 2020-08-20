@@ -2,6 +2,7 @@ package committee
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -12,13 +13,14 @@ import (
 )
 
 const (
-	MsgNotifyRequests         = 0 + peering.FirstCommitteeMsgCode
-	MsgStartProcessingRequest = 1 + peering.FirstCommitteeMsgCode
-	MsgSignedHash             = 2 + peering.FirstCommitteeMsgCode
-	MsgGetBatch               = 3 + peering.FirstCommitteeMsgCode
-	MsgStateUpdate            = 4 + peering.FirstCommitteeMsgCode
-	MsgBatchHeader            = 5 + peering.FirstCommitteeMsgCode
-	MsgTestTrace              = 6 + peering.FirstCommitteeMsgCode
+	MsgNotifyRequests          = 0 + peering.FirstCommitteeMsgCode
+	MsgNotifyFinalResultPosted = 1 + peering.FirstCommitteeMsgCode
+	MsgStartProcessingRequest  = 2 + peering.FirstCommitteeMsgCode
+	MsgSignedHash              = 3 + peering.FirstCommitteeMsgCode
+	MsgGetBatch                = 4 + peering.FirstCommitteeMsgCode
+	MsgStateUpdate             = 5 + peering.FirstCommitteeMsgCode
+	MsgBatchHeader             = 6 + peering.FirstCommitteeMsgCode
+	MsgTestTrace               = 7 + peering.FirstCommitteeMsgCode
 )
 
 type TimerTick int
@@ -38,6 +40,15 @@ type NotifyReqMsg struct {
 	PeerMsgHeader
 	// list of request ids ordered by the time of arrival
 	RequestIds []sctransaction.RequestId
+}
+
+// message is sent by the leader to all peers immediately after the final transaction is posted
+// to the tangle. Main purpose of the message is to prevent unnecessary leader rotation
+// in long confirmation times
+// Final signature is sent to prevent possibility for a leader node to lie (is it necessary)
+type NotifyFinalResultPostedMsg struct {
+	PeerMsgHeader
+	Signature signaturescheme.Signature
 }
 
 // message is sent by the leader to other peers to initiate request processing
@@ -124,6 +135,14 @@ type PendingBatchMsg struct {
 	Batch state.Batch
 }
 
+// message sent to notify VM processor is ready. It is a successful finish of asynchronous loading of the processor
 type ProcessorIsReady struct {
 	ProgramHash string // base58
+}
+
+// message is sent to the consensus manager after it receives state transaction
+// which is valid but not confirmed yet.
+type StateTransactionEvidenced struct {
+	TxId      valuetransaction.ID
+	StateHash hashing.HashValue
 }

@@ -70,13 +70,10 @@ func (sb *StateBlock) StateHash() hashing.HashValue {
 	return sb.stateHash
 }
 
-func (sb *StateBlock) WithTimestamp(ts int64) *StateBlock {
-	sb.timestamp = ts
-	return sb
-}
-
-func (sb *StateBlock) WithVariableStateHash(h *hashing.HashValue) *StateBlock {
+func (sb *StateBlock) WithStateParams(stateIndex uint32, h *hashing.HashValue, ts int64) *StateBlock {
+	sb.stateIndex = stateIndex
 	sb.stateHash = *h
+	sb.timestamp = ts
 	return sb
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 )
 
@@ -16,17 +16,23 @@ const (
 	ObjectTypeDBSchemaVersion byte = iota
 	ObjectTypeBootupData
 	ObjectTypeDistributedKeyData
-	ObjectTypeVariableState
+	ObjectTypeSolidState
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
 	ObjectTypeSolidStateIndex
+	ObjectTypeStateVariable
 	ObjectTypeProgramMetadata
 	ObjectTypeProgramCode
 )
 
+type Partition struct {
+	kvstore.KVStore
+	mut *sync.RWMutex
+}
+
 var (
 	// to be able to work with MapsDB
-	partitions      = make(map[address.Address]kvstore.KVStore)
+	partitions      = make(map[address.Address]*Partition)
 	partitionsMutex sync.RWMutex
 )
 
@@ -44,7 +50,7 @@ func storeRealm(realm kvstore.Realm) kvstore.KVStore {
 // Partition returns store prefixed with the smart contract address
 // Wasp ledger is partitioned by smart contract addresses
 // cached to be able to work with MapsDB TODO
-func GetPartition(addr *address.Address) kvstore.KVStore {
+func GetPartition(addr *address.Address) *Partition {
 	partitionsMutex.RLock()
 	ret, ok := partitions[*addr]
 	if ok {
@@ -56,13 +62,32 @@ func GetPartition(addr *address.Address) kvstore.KVStore {
 	partitionsMutex.Lock()
 	defer partitionsMutex.Unlock()
 
-	partitions[*addr] = storeRealm(addr[:])
+	partitions[*addr] = &Partition{
+		KVStore: storeRealm(addr[:]),
+		mut:     &sync.RWMutex{},
+	}
 	return partitions[*addr]
 }
 
 func GetRegistryPartition() kvstore.KVStore {
 	var niladdr address.Address
 	return GetPartition(&niladdr)
+}
+
+func (part *Partition) RLock() {
+	part.mut.RLock()
+}
+
+func (part *Partition) RUnlock() {
+	part.mut.RUnlock()
+}
+
+func (part *Partition) Lock() {
+	part.mut.Lock()
+}
+
+func (part *Partition) Unlock() {
+	part.mut.Unlock()
 }
 
 // MakeKey makes key within the partition. It consists to one byte for object type
@@ -80,11 +105,11 @@ func createStore() {
 	log = logger.NewLogger(PluginName)
 
 	var err error
-	if config.Node.GetBool(CfgDatabaseInMemory) {
+	if parameters.GetBool(parameters.DatabaseInMemory) {
 		log.Infof("IN MEMORY DATABASE")
 		db, err = database.NewMemDB()
 	} else {
-		dbDir := config.Node.GetString(CfgDatabaseDir)
+		dbDir := parameters.GetString(parameters.DatabaseDir)
 		db, err = database.NewDB(dbDir)
 	}
 	if err != nil {
@@ -92,9 +117,4 @@ func createStore() {
 	}
 
 	store = db.NewStore()
-}
-
-func KeyExistInPartition(addr *address.Address, objType byte, keyBytes ...[]byte) (bool, error) {
-	exist, err := GetPartition(addr).Has(MakeKey(objType, keyBytes...))
-	return exist, err
 }

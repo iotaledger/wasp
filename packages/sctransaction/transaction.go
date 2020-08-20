@@ -19,6 +19,7 @@ type Transaction struct {
 	*valuetransaction.Transaction
 	stateBlock    *StateBlock
 	requestBlocks []*RequestBlock
+	properties    *Properties // cached properties. If nil, transaction is semantically validated and properties are calculated
 }
 
 // creates new sc transaction. It is immutable, i.e. tx hash is stable
@@ -38,27 +39,38 @@ func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateBlock, r
 	return ret, nil
 }
 
-func NewFromBytes(data []byte) (*Transaction, error) {
-	vtx, _, err := valuetransaction.FromBytes(data)
-	if err != nil {
-		return nil, err
-	}
-	tx, err := ParseValueTransaction(vtx)
-	if err != nil {
-		return nil, err
-	}
-	return tx, nil
-}
-
 // parses dataPayload. Error is returned only if pre-parsing succeeded and parsing failed
 // usually this can happen only due to targeted attack or
 func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, error) {
+	// parse data payload as smart contract metadata
 	rdr := bytes.NewReader(vtx.GetDataPayload())
 	ret := &Transaction{Transaction: vtx}
-	if err := ret.ReadDataPayload(rdr); err != nil {
+	if err := ret.readDataPayload(rdr); err != nil {
+		return nil, err
+	}
+	// semantic validation
+	if _, err := ret.Properties(); err != nil {
 		return nil, err
 	}
 	return ret, nil
+}
+
+// return valid properties if sc transaction is semantically correct
+func (tx *Transaction) Properties() (*Properties, error) {
+	if tx.properties != nil {
+		return tx.properties, nil
+	}
+	var err error
+	tx.properties, err = tx.calcProperties()
+	return tx.properties, err
+}
+
+func (tx *Transaction) MustProperties() *Properties {
+	ret, err := tx.Properties()
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (tx *Transaction) State() (*StateBlock, bool) {
@@ -76,8 +88,15 @@ func (tx *Transaction) Requests() []*RequestBlock {
 	return tx.requestBlocks
 }
 
-func (tx *Transaction) MustRequest(index uint16) *RequestBlock {
-	return tx.requestBlocks[index]
+// Sender returns first input address. It is the unique address, because
+// ParseValueTransaction doesn't allow other options
+func (tx *Transaction) Sender() *address.Address {
+	var ret address.Address
+	tx.Inputs().ForEachAddress(func(currentAddress address.Address) bool {
+		ret = currentAddress
+		return false
+	})
+	return &ret
 }
 
 func (tx *Transaction) OutputBalancesByAddress(addr *address.Address) ([]*balance.Balance, bool) {
@@ -122,7 +141,8 @@ func (tx *Transaction) writeDataPayload(w io.Writer) error {
 	return nil
 }
 
-func (tx *Transaction) ReadDataPayload(r io.Reader) error {
+// readDataPayload parses data stream of data payload to value transaction as smart contract meta data
+func (tx *Transaction) readDataPayload(r io.Reader) error {
 	var hasState bool
 	var numRequests byte
 	if b, err := util.ReadByte(r); err != nil {
@@ -154,12 +174,12 @@ func (tx *Transaction) String() string {
 	stateBlock, ok := tx.State()
 	if ok {
 		vh := stateBlock.StateHash()
-		ret += fmt.Sprintf("AccessState: color: %s statehash: %s, ts: %d\n",
+		ret += fmt.Sprintf("State: color: %s statehash: %s, ts: %d\n",
 			stateBlock.Color().String(),
 			vh.String(), stateBlock.Timestamp(),
 		)
 	} else {
-		ret += "AccessState: none\n"
+		ret += "State: none\n"
 	}
 	for i, reqBlk := range tx.Requests() {
 		addr := reqBlk.Address()
@@ -169,61 +189,12 @@ func (tx *Transaction) String() string {
 	return ret
 }
 
-var errorWrongTokens = errors.New("rong number of request tokens")
-
-// StateAddress returns address of the smart contract the state block is targeted to
-func (tx *Transaction) StateAddress() (address.Address, bool, error) {
-	stateBlock, ok := tx.State()
-	if !ok {
-		return address.Address{}, false, nil
-	}
-
-	var ret address.Address
-	var totalTokens int64
-	if stateBlock.Color() != balance.ColorNew {
-		tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-			for _, bal := range bals {
-				if bal.Color == stateBlock.Color() {
-					ret = addr
-					totalTokens += bal.Value
-				}
-			}
-			return true
-		})
-		if totalTokens != 1 {
-			return address.Address{}, false, errorWrongTokens
-		}
-		return ret, true, nil
-	}
-	// origin case
-	newByAddress := make(map[address.Address]int64)
-	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		s := util.BalanceOfColor(bals, balance.ColorNew)
-		if s != 0 {
-			newByAddress[addr] = s
-		}
-		return true
-	})
+func (tx *Transaction) NumRequestsToAddress(addr *address.Address) int {
+	ret := 0
 	for _, reqBlock := range tx.Requests() {
-		s, ok := newByAddress[reqBlock.Address()]
-		if !ok {
-			return address.Address{}, false, errorWrongTokens
+		if reqBlock.Address() == *addr {
+			ret++
 		}
-		newByAddress[reqBlock.Address()] = s - 1
 	}
-	// must be left only one token with 1 and the rest with 0
-	sum := int64(0)
-	for addr, s := range newByAddress {
-		if s == 1 {
-			ret = addr
-		}
-		if s != 0 && s != 1 {
-			return address.Address{}, false, errorWrongTokens
-		}
-		sum += s
-	}
-	if sum != 1 {
-		return address.Address{}, false, errorWrongTokens
-	}
-	return ret, true, nil
+	return ret
 }

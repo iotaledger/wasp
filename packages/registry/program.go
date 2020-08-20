@@ -32,6 +32,7 @@ func dbkeyProgramCode(progHash *hashing.HashValue) []byte {
 	return database.MakeKey(database.ObjectTypeProgramCode, progHash[:])
 }
 
+// TODO save program code in the smart contract state
 func GetProgramCode(progHash *hashing.HashValue) ([]byte, bool, error) {
 	db := database.GetRegistryPartition()
 	data, err := db.Get(dbkeyProgramCode(progHash))

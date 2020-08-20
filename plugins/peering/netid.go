@@ -2,7 +2,7 @@ package peering
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"net"
 	"strconv"
 )
@@ -17,7 +17,7 @@ func checkMyNetworkID() error {
 	if err != nil {
 		return err
 	}
-	if port != config.Node.GetInt(CfgPeeringPort) {
+	if port != parameters.GetInt(parameters.PeeringPort) {
 		return fmt.Errorf("wrong own network port in %s", MyNetworkId())
 	}
 	myIPs, err := myIPs()

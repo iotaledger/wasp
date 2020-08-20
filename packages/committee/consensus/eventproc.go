@@ -1,13 +1,14 @@
 package consensus
 
 import (
-	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"time"
 )
 
 func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
@@ -36,9 +37,10 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 		op.log.Errorf("deleteCompletedRequests: %v", err)
 		return
 	}
-	// notify about all request the new leader
-	op.sendRequestNotificationsToLeader(nil)
-	op.setLeaderRotationDeadline()
+	// send backlog to the new leader
+	op.sendNotificationsScheduled = true
+
+	op.takeAction()
 
 	// check is processor is ready for the current state. If no, initiate load of the processor
 	op.processorReady = false
@@ -57,52 +59,36 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 				})
 				publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
 			} else {
-				op.log.Warn("failed to load processor")
+				op.log.Warnf("failed to load processor: %v", err)
 			}
 		})
 	}
-
-	op.takeAction()
 }
 
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
 	op.balances = reqMsg.Balances
-	op.requestBalancesDeadline = time.Now().Add(requestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(op.committee.Params().RequestBalancesPeriod)
 
 	op.takeAction()
 }
 
 // EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(reqMsg committee.RequestMsg) {
+func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	op.log.Debugw("EventRequestMsg",
 		"reqid", reqMsg.RequestId().Short(),
 		"backlog req", len(op.requests),
 		"backlog notif", len(op.notificationsBacklog),
 	)
 
-	if err := op.validateRequestBlock(&reqMsg); err != nil {
-		op.log.Warnw("request block validation failed.Ignored",
-			"reqs", reqMsg.RequestId().Short(),
-			"err", err,
-		)
-		return
-	}
-	req, newRequest := op.requestFromMsg(reqMsg)
+	req, _ := op.requestFromMsg(reqMsg)
 
-	if newRequest {
-		publisher.Publish("request_in",
-			op.committee.Address().String(),
-			reqMsg.Transaction.ID().String(),
-			fmt.Sprintf("%d", reqMsg.Index),
-		)
+	if reqMsg.Timelock() != 0 {
+		req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
+			reqMsg.RequestBlock().String(reqMsg.RequestId()), time.Now().Unix())
 	}
 
-	op.sendRequestNotificationsToLeader([]*request{req})
-	if !op.leaderRotationDeadlineSet {
-		op.setLeaderRotationDeadline()
-	}
-
+	op.sendNotificationsScheduled = true
 	op.takeAction()
 }
 
@@ -119,7 +105,8 @@ func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 }
 
 func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
-	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp)
+	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
+
 	op.log.Debugw("EventStartProcessingBatchMsg",
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,
@@ -213,6 +200,46 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		sigShare:    msg.SigShare,
 	}
 	op.takeAction()
+}
+
+// EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to other peers
+// immediately after posting finalized transaction to the tangle.
+// The message is used to postpone leader rotation deadline for at least confirmation period
+func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalResultPostedMsg) {
+	op.log.Debugw("EventNotifyFinalResultPostedMsg",
+		"sender", msg.SenderIndex,
+		"stateIdx", msg.StateIndex,
+	)
+	resTx, ok := op.sentResultsToLeader[msg.SenderIndex]
+	if !ok {
+		// this is controversial: shall we postpone leader deadline for unseen transaction?
+		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.",
+			op.committee.Params().ConfirmationWaitingPeriod)
+		op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+		return
+	}
+	essence := resTx.EssenceBytes()
+	if !msg.Signature.IsValid(essence) {
+		op.log.Errorf("received invalid final signature from peer #%d. State index: %d, essence hash: %s",
+			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
+		return
+	}
+	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more",
+		op.committee.Params().ConfirmationWaitingPeriod)
+	op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+}
+
+// EventStateTransactionEvidenced is triggered when state manager receives state transaction not confirmed yet
+// It postpones leader rotation deadline
+func (op *operator) EventStateTransactionEvidenced(msg *committee.StateTransactionEvidenced) {
+	op.log.Debugw("EventStateTransactionEvidenced",
+		"txid", msg.TxId.String(),
+		"state hash", msg.StateHash.String(),
+	)
+	if !op.stateTxEvidenced {
+		op.stateTxEvidenced = true
+		op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+	}
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {

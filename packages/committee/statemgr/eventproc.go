@@ -2,6 +2,7 @@ package statemgr
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -118,18 +119,28 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
 
 	sm.syncedBatch = nil
-	go func() {
-		sm.committee.ReceiveMessage(committee.PendingBatchMsg{
-			Batch: batch,
-		})
-	}()
+	go sm.committee.ReceiveMessage(committee.PendingBatchMsg{
+		Batch: batch,
+	})
 	sm.takeAction()
 }
 
-// triggered whenever new state transaction arrives
-func (sm *stateManager) EventStateTransactionMsg(msg committee.StateTransactionMsg) {
+// EventStateTransactionMsg triggered whenever new state transaction arrives
+// the state transaction may be confirmed or not
+func (sm *stateManager) EventStateTransactionMsg(msg *committee.StateTransactionMsg) {
+	if !msg.Confirmed {
+		sm.log.Debugw("EventStateTransactionMsg: received not confirmed state tx",
+			"txid", msg.Transaction.ID().String(),
+			"tx essence", hashing.HashData(msg.Transaction.EssenceBytes()).String(),
+		)
+		// will send evidence message if transaction is about pending state
+		sm.evidencePendingStateTransaction(msg.Transaction)
+		return
+	}
+
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
+		// should not happen: must have state block
 		return
 	}
 
@@ -171,7 +182,7 @@ func (sm *stateManager) EventPendingBatchMsg(msg committee.PendingBatchMsg) {
 		"state index", msg.Batch.StateIndex(),
 		"size", msg.Batch.Size(),
 		"txid", msg.Batch.StateTransactionId().String(),
-		"essence", msg.Batch.EssenceHash().String(),
+		"batch essence", msg.Batch.EssenceHash().String(),
 		"ts", msg.Batch.Timestamp(),
 	)
 

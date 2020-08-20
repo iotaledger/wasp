@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"time"
 )
 
 type operator struct {
@@ -32,14 +33,18 @@ type operator struct {
 	// notifications with future currentState indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
+	// notifications must be sent in the new cycle
+	sendNotificationsScheduled bool
+
 	requests map[sctransaction.RequestId]*request
 
 	peerPermutation           *util.Permutation16
 	leaderRotationDeadlineSet bool
+	stateTxEvidenced          bool
 	leaderRotationDeadline    time.Time
-	// states of requests being processed: as leader and as subordinate
 
-	leaderStatus *leaderStatus
+	leaderStatus        *leaderStatus
+	sentResultsToLeader map[uint16]*sctransaction.Transaction
 
 	log *logger.Logger
 }
@@ -60,27 +65,18 @@ type signedResult struct {
 	sigShare    tbdn.SigShare
 }
 
-type computationRequest struct {
-	ts              time.Time
-	leaderPeerIndex uint16
-	req             *request
-	processed       bool
-}
-
 // keeps stateTx of the request
 type request struct {
-
 	// id of the hash of request tx id and request block index
 	reqId sctransaction.RequestId
-
 	// from request message. nil if request message wasn't received yet
 	reqTx *sctransaction.Transaction
-
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
-
 	// notification vector for the current currentState
 	notifications []bool
+	// initially time locked
+	timelocked bool
 
 	log *logger.Logger
 }
@@ -89,11 +85,12 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 	defer committee.SetReadyConsensus()
 
 	return &operator{
-		committee:       committee,
-		dkshare:         dkshare,
-		requests:        make(map[sctransaction.RequestId]*request),
-		peerPermutation: util.NewPermutation16(committee.Size(), nil),
-		log:             log.Named("c"),
+		committee:           committee,
+		dkshare:             dkshare,
+		requests:            make(map[sctransaction.RequestId]*request),
+		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
+		sentResultsToLeader: make(map[uint16]*sctransaction.Transaction),
+		log:                 log.Named("c"),
 	}
 }
 
@@ -128,11 +125,11 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.currentState == nil {
 		return nil, false
 	}
-	h, ok, err := op.currentState.Variables().GetHashValue(vmconst.VarNameProgramHash)
+	h, ok, err := op.currentState.Variables().Codec().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || err != nil {
 		return nil, false
 	}
-	return &h, true
+	return h, true
 }
 
 func (op *operator) getRewardAddress() address.Address {
@@ -143,7 +140,10 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok := op.currentState.Variables().MustGetInt64(vmconst.VarNameMinimumReward)
+	vt, ok, err := op.currentState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
+	if err != nil {
+		panic(err)
+	}
 	if !ok {
 		return 0
 	}

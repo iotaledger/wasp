@@ -1,32 +1,27 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/variables"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/plugins/publisher"
 )
+
+// TODO implement mocked sandbox for testing
 
 type sandbox struct {
 	*vm.VMContext
 	saveTxBuilder  *txbuilder.Builder // for rollback
 	requestWrapper *requestWrapper
 	stateWrapper   *stateWrapper
-}
-type requestWrapper struct {
-	ref *sctransaction.RequestRef
-}
-
-type stateWrapper struct {
-	virtualState state.VirtualState
-	stateUpdate  state.StateUpdate
 }
 
 func NewSandbox(vctx *vm.VMContext) vmtypes.Sandbox {
@@ -44,26 +39,37 @@ func (vctx *sandbox) IsOriginState() bool {
 	return vctx.VirtualState.StateIndex() == 0
 }
 
-// clear all updates, restore same context as in the beginning of the VM call
+func (vctx *sandbox) Panic(v interface{}) {
+	panic(v)
+}
+
 func (vctx *sandbox) Rollback() {
 	vctx.TxBuilder = vctx.saveTxBuilder
 	vctx.StateUpdate.Clear()
 }
 
-func (vctx *sandbox) GetAddress() address.Address {
-	return vctx.Address
+func (vctx *sandbox) GetSCAddress() *address.Address {
+	return &vctx.Address
+}
+
+func (vctx *sandbox) GetOwnerAddress() *address.Address {
+	return &vctx.OwnerAddress
 }
 
 func (vctx *sandbox) GetTimestamp() int64 {
 	return vctx.Timestamp
 }
 
-func (vctx *sandbox) Entropy() hashing.HashValue {
+func (vctx *sandbox) GetEntropy() hashing.HashValue {
 	return vctx.VMContext.Entropy
 }
 
-func (vctx *sandbox) GetLog() *logger.Logger {
+func (vctx *sandbox) GetWaspLog() *logger.Logger {
 	return vctx.Log
+}
+
+func (vctx *sandbox) DumpAccount() string {
+	return vctx.TxBuilder.Dump()
 }
 
 // request arguments
@@ -72,11 +78,11 @@ func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) AccessState() vmtypes.StateAccess {
-	return vctx.stateWrapper
+func (vctx *sandbox) AccessState() kv.MustCodec {
+	return vctx.stateWrapper.MustCodec()
 }
 
-func (vctx *sandbox) AccessAccount() vmtypes.AccountAccess {
+func (vctx *sandbox) AccessSCAccount() vmtypes.AccountAccess {
 	return vctx
 }
 
@@ -92,7 +98,8 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 		}
 	}
 	reqBlock := sctransaction.NewRequestBlock(*par.TargetAddress, par.RequestCode)
-	reqBlock.Args().SetAll(par.Args)
+	reqBlock.WithTimelock(par.Timelock)
+	reqBlock.SetArgs(par.Args)
 
 	if err := vctx.TxBuilder.AddRequestBlock(reqBlock); err != nil {
 		return false
@@ -100,11 +107,33 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	return true
 }
 
-func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args variables.Variables) bool {
+func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,
 		Args:          args,
 		IncludeReward: 0,
 	})
+}
+
+func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, delaySec uint32) bool {
+	timelock := util.NanoSecToUnixSec(vctx.Timestamp) + delaySec
+
+	return vctx.SendRequest(vmtypes.NewRequestParams{
+		TargetAddress: &vctx.Address,
+		RequestCode:   reqCode,
+		Args:          args,
+		Timelock:      timelock,
+		IncludeReward: 0,
+	})
+}
+
+func (vctx *sandbox) Publish(msg string) {
+	vctx.Log.Infof("VMMSG: %s '%s'", vctx.ProgramHash.String(), msg)
+	publisher.Publish("vmmsg", vctx.ProgramHash.String(), msg)
+}
+
+func (vctx *sandbox) Publishf(format string, args ...interface{}) {
+	vctx.Log.Infof("VMMSG: "+format, args...)
+	publisher.Publish("vmmsg", vctx.ProgramHash.String(), fmt.Sprintf(format, args...))
 }

@@ -1,0 +1,14 @@
+[package]
+name = "rust-wasm-call-sandbox"
+version = "0.1.0"
+authors = ["lunfardo314 <evaldas.drasutis@iota.org>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"
+panic = 'abort'
+debug = false
+lto = true

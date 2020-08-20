@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/banner"
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/committees"
@@ -19,30 +21,33 @@ import (
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
-var PLUGINS = node.Plugins(
-	banner.Plugin,
-	config.Plugin,
-	logger.Plugin,
-	gracefulshutdown.Plugin,
-	webapi.Plugin,
-	cli.Plugin,
-	database.Plugin,
-	peering.Plugin,
-	nodeconn.Plugin,
-	dispatcher.Plugin,
-	committees.Plugin,
-	runvm.Plugin,
-	publisher.Plugin,
-)
-
-var TestPLUGINS = node.Plugins(
-	roundtrip.Plugin,
-	nodeping.Plugin,
-)
-
 func main() {
+	registry.InitFlags()
+	parameters.InitFlags()
+
+	plugins := node.Plugins(
+		banner.Init(),
+		config.Init(),
+		logger.Init(),
+		gracefulshutdown.Init(),
+		webapi.Init(),
+		cli.Init(),
+		database.Init(),
+		peering.Init(),
+		nodeconn.Init(),
+		dispatcher.Init(),
+		committees.Init(),
+		runvm.Init(),
+		publisher.Init(),
+	)
+
+	testPlugins := node.Plugins(
+		roundtrip.Init(),
+		nodeping.Init(),
+	)
+
 	node.Run(
-		PLUGINS,
-		TestPLUGINS,
+		plugins,
+		testPlugins,
 	)
 }

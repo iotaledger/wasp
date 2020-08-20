@@ -1,18 +1,15 @@
 package nodeconn
 
 import (
-	"github.com/iotaledger/goshimmer/packages/waspconn"
-	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
+	"github.com/iotaledger/hive.go/events"
 )
 
-var EventMessageReceived *events.Event
-
-func init() {
-	EventMessageReceived = events.NewEvent(param1Caller)
-}
+var EventMessageReceived = events.NewEvent(param1Caller)
 
 func param1Caller(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])
@@ -29,7 +26,7 @@ func msgDataToEvent(data []byte) {
 
 	switch msgt := msg.(type) {
 	case *waspconn.WaspMsgChunk:
-		finalData, err := chopper.IncomingChunk(msgt.Data, buffconn.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
+		finalData, err := chopper.IncomingChunk(msgt.Data, payload.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
 		if err != nil {
 			log.Errorf("receiving message chunk: %v", err)
 			return

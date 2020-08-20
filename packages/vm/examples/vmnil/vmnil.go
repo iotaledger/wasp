@@ -12,7 +12,7 @@ const ProgramHash = "67F3YgmwXT23PuRwVzDYNLhyXxwQz8WubwmYoWK2hUmE"
 type nilProcessor struct {
 }
 
-func New() vmtypes.Processor {
+func GetProcessor() vmtypes.Processor {
 	return nilProcessor{}
 }
 
@@ -23,9 +23,9 @@ func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.Ent
 // does nothing, i.e. resulting state update is empty
 func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
 	reqId := ctx.AccessRequest().ID()
-	ctx.GetLog().Debugw("run nilProcessor",
+	ctx.GetWaspLog().Debugw("run nilProcessor",
 		"request code", ctx.AccessRequest().Code(),
-		"addr", ctx.GetAddress().String(),
+		"addr", ctx.GetSCAddress().String(),
 		"ts", ctx.GetTimestamp(),
 		"req", reqId.String(),
 	)

@@ -1,10 +1,12 @@
 package peering
 
 import (
-	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
+	"net"
+
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
-	"net"
 )
 
 // extension of BufferedConnection from hive.go
@@ -20,7 +22,7 @@ type peeredConnection struct {
 // creates new peered connection and attach event handlers for received data and closing
 func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 	bconn := &peeredConnection{
-		BufferedConnection: buffconn.NewBufferedConnection(conn),
+		BufferedConnection: buffconn.NewBufferedConnection(conn, payload.MaxMessageSize),
 		peer:               peer,
 	}
 	bconn.Events.ReceiveMessage.Attach(events.NewClosure(func(data []byte) {
@@ -47,7 +49,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		return
 	}
 	if msg.MsgType == MsgTypeMsgChunk {
-		finalMsg, err := chopper.IncomingChunk(msg.MsgData, buffconn.MaxMessageSize-ChunkMessageOverhead)
+		finalMsg, err := chopper.IncomingChunk(msg.MsgData, payload.MaxMessageSize-chunkMessageOverhead)
 		if err != nil {
 			log.Errorf("decodeMessage: %v", err)
 			return
@@ -60,12 +62,6 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		// it is peered but maybe not handshaked yet (can only be outbound)
 		if bconn.peer.handshakeOk {
 			// it is handshake-ed
-			bconn.peer.receiveHeartbeat(msg.Timestamp)
-			if msg.MsgType == MsgTypeHeartbeat {
-				// heartbeat msg. No need for further processing
-				return
-			}
-			// trigger event to be processed
 			EventPeerMessageReceived.Trigger(msg)
 		} else {
 			// expected handshake msg
@@ -100,10 +96,6 @@ func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
 	} else {
 		log.Infof("CONNECTED WITH PEER %s (outbound)", id)
 		bconn.peer.handshakeOk = true
-
-		bconn.peer.initHeartbeats()
-		bconn.peer.receiveHeartbeat(msg.Timestamp)
-		go bconn.peer.scheduleNexHeartbeat()
 	}
 }
 
@@ -132,11 +124,7 @@ func (bconn *peeredConnection) processHandShakeInbound(msg *PeerMessage) {
 
 	log.Infof("CONNECTED WITH PEER %s (inbound)", peeringId)
 
-	if err := peer.sendHandshake(); err == nil {
-		bconn.peer.initHeartbeats()
-		bconn.peer.receiveHeartbeat(msg.Timestamp)
-		go bconn.peer.scheduleNexHeartbeat()
-	} else {
+	if err := peer.sendHandshake(); err != nil {
 		log.Error("error while responding to handshake: %v. Closing connection", err)
 		_ = bconn.Close()
 	}

@@ -11,12 +11,27 @@ import (
 )
 
 func (op *operator) takeAction() {
+	op.unlockInTime()
+	op.sendRequestNotificationsToLeaderIfNeeded()
 	op.requestOutputsIfNeeded()
 	if op.iAmCurrentLeader() {
 		op.startProcessingIfNeeded()
 	}
 	op.checkQuorum()
 	op.rotateLeaderIfNeeded()
+}
+
+// unlockInTime detects just time-unlocked and schedules notifications to be sent
+func (op *operator) unlockInTime() {
+	candidates := op.requestCandidateList()
+	nowis := time.Now()
+	for _, req := range candidates {
+		if req.timelocked && !req.isTimelocked(nowis) {
+			req.timelocked = false
+			op.sendNotificationsScheduled = true
+			req.log.Infof("unlocked request @ nowis = %d (was locked until %d)", nowis.Unix(), req.timelock())
+		}
+	}
 }
 
 func (op *operator) rotateLeaderIfNeeded() {
@@ -34,8 +49,9 @@ func (op *operator) rotateLeaderIfNeeded() {
 	}
 	prevlead, _ := op.currentLeader()
 	leader := op.moveToNextLeader()
-	op.log.Infof("LEADER ROTATED #%d --> #%d", prevlead, leader)
-	op.sendRequestNotificationsToLeader(nil)
+	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
+		prevlead, leader, op.iAmCurrentLeader())
+	op.sendNotificationsScheduled = true
 }
 
 func (op *operator) startProcessingIfNeeded() {
@@ -82,7 +98,7 @@ func (op *operator) startProcessingIfNeeded() {
 		return
 	}
 
-	batchHash := vm.BatchHash(reqIds, ts)
+	batchHash := vm.BatchHash(reqIds, ts, op.peerIndex())
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
 		batchHash:     batchHash,
@@ -122,7 +138,8 @@ func (op *operator) checkQuorum() bool {
 			continue
 		}
 		if op.leaderStatus.signedResults[i].essenceHash != mainHash {
-			op.log.Warnf("wrong EssenceHash from peer #%d", i)
+			op.log.Warnf("wrong EssenceHash from peer #%d: %s",
+				i, op.leaderStatus.signedResults[i].essenceHash.String())
 			op.leaderStatus.signedResults[i] = nil // ignoring
 			continue
 		}
@@ -143,7 +160,7 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	// quorum detected
-	err := op.aggregateSigShares(sigShares)
+	finalSignature, err := op.aggregateSigShares(sigShares)
 	if err != nil {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
@@ -160,16 +177,33 @@ func (op *operator) checkQuorum() bool {
 		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
-	if err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction); err != nil {
+	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
+	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}
+
+	// notify peers about finalization
+	msgData := util.MustBytes(&committee.NotifyFinalResultPostedMsg{
+		PeerMsgHeader: committee.PeerMsgHeader{
+			// timestamp is set by SendMsgToCommitteePeers
+			StateIndex: op.stateTx.MustState().StateIndex(),
+		},
+		Signature: finalSignature,
+	})
+
+	op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
+	op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+
 	return true
 }
 
 // sets new currentState transaction and initializes respective variables
 func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
+	if len(op.sentResultsToLeader) > 0 {
+		op.sentResultsToLeader = make(map[uint16]*sctransaction.Transaction) //clear the map
+	}
 	op.currentState = variableState
 	op.synchronized = synchronized
 
@@ -181,8 +215,6 @@ func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableStat
 	op.adjustNotifications()
 }
 
-const requestBalancesPeriod = 10 * time.Second
-
 func (op *operator) requestOutputsIfNeeded() {
 	if !op.synchronized {
 		return
@@ -193,5 +225,5 @@ func (op *operator) requestOutputsIfNeeded() {
 	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
 		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
 	}
-	op.requestBalancesDeadline = time.Now().Add(requestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(op.committee.Params().RequestBalancesPeriod)
 }

@@ -14,7 +14,7 @@ import (
 
 type inputBalances struct {
 	outputId valuetransaction.OutputID
-	reminder []*balance.Balance
+	remain   []*balance.Balance
 	consumed []*balance.Balance
 }
 
@@ -37,7 +37,7 @@ func newVTBuilder(orig *Builder) *Builder {
 	}
 	for i := range ret.inputBalancesByOutput {
 		ret.inputBalancesByOutput[i].outputId = orig.inputBalancesByOutput[i].outputId
-		ret.inputBalancesByOutput[i].reminder = util.CloneBalances(orig.inputBalancesByOutput[i].reminder)
+		ret.inputBalancesByOutput[i].remain = util.CloneBalances(orig.inputBalancesByOutput[i].remain)
 		ret.inputBalancesByOutput[i].consumed = util.CloneBalances(orig.inputBalancesByOutput[i].consumed)
 	}
 	for addr, bals := range orig.outputBalances {
@@ -64,15 +64,17 @@ func NewFromAddressBalances(addr *address.Address, addressBalances map[valuetran
 		}
 		inb := inputBalances{
 			outputId: valuetransaction.NewOutputID(*addr, txid),
-			reminder: util.CloneBalances(bals),
+			remain:   util.CloneBalances(bals),
 			consumed: make([]*balance.Balance, 0, len(bals)),
 		}
-		inb.reminder, err = compressAndSortBalances(inb.reminder)
+		inb.remain, err = compressAndSortBalances(inb.remain)
 		if err != nil {
 			return nil, err
 		}
 		ret.inputBalancesByOutput = append(ret.inputBalancesByOutput, inb)
 	}
+	ret.sortInputBalancesById() // for determinism
+	ret.SetConsumerPrioritySmallerBalances()
 	return ret, nil
 }
 
@@ -85,15 +87,17 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 		}
 		inb := inputBalances{
 			outputId: oid,
-			reminder: util.CloneBalances(bals),
+			remain:   util.CloneBalances(bals),
 			consumed: make([]*balance.Balance, 0, len(bals)),
 		}
-		inb.reminder, err = compressAndSortBalances(inb.reminder)
+		inb.remain, err = compressAndSortBalances(inb.remain)
 		if err != nil {
 			return nil, err
 		}
 		ret.inputBalancesByOutput = append(ret.inputBalancesByOutput, inb)
 	}
+	ret.sortInputBalancesById() // for determinism
+	ret.SetConsumerPrioritySmallerBalances()
 	return ret, nil
 }
 
@@ -130,16 +134,22 @@ func (vtxb *Builder) Clone() *Builder {
 // ForEachInputBalance iterates through reminders
 func (vtxb *Builder) ForEachInputBalance(consumer func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool) {
 	for i := range vtxb.inputBalancesByOutput {
-		if !consumer(&vtxb.inputBalancesByOutput[i].outputId, vtxb.inputBalancesByOutput[i].reminder) {
+		if !consumer(&vtxb.inputBalancesByOutput[i].outputId, vtxb.inputBalancesByOutput[i].remain) {
 			return
 		}
 	}
 }
 
+func (vtxb *Builder) sortInputBalancesById() {
+	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
+		return bytes.Compare(vtxb.inputBalancesByOutput[i].outputId[:], vtxb.inputBalancesByOutput[j].outputId[:]) < 0
+	})
+}
+
 func (vtxb *Builder) SetConsumerPrioritySmallerBalances() {
 	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
-		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].reminder)
-		sj := util.BalancesSumTotal(vtxb.inputBalancesByOutput[j].reminder)
+		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].remain)
+		sj := util.BalancesSumTotal(vtxb.inputBalancesByOutput[j].remain)
 		if si == sj {
 			return i < j
 		}
@@ -152,8 +162,8 @@ func (vtxb *Builder) SetConsumerPriorityLargerBalances() {
 		panic("using finalized transaction builder")
 	}
 	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
-		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].reminder)
-		sj := util.BalancesSumTotal(vtxb.inputBalancesByOutput[j].reminder)
+		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].remain)
+		sj := util.BalancesSumTotal(vtxb.inputBalancesByOutput[j].remain)
 		if si == sj {
 			return i < j
 		}
@@ -168,33 +178,48 @@ func (vtxb *Builder) GetInputBalance(col balance.Color) int64 {
 	}
 	ret := int64(0)
 	for _, inp := range vtxb.inputBalancesByOutput {
-		ret += util.BalanceOfColor(inp.reminder, col)
+		ret += util.BalanceOfColor(inp.remain, col)
 	}
 	return ret
 }
 
-// Returns unconsumed total
-func subtractAmount(bals []*balance.Balance, col balance.Color, amount int64) int64 {
+// GetInputBalanceFromTransaction calculates what is available in inputs from outputs
+// of the given transaction
+func (vtxb *Builder) GetInputBalanceFromTransaction(col balance.Color, txid valuetransaction.ID) int64 {
+	if vtxb.finalized {
+		panic("can't use finalized transaction builder")
+	}
+	ret := int64(0)
+	for _, inp := range vtxb.inputBalancesByOutput {
+		if inp.outputId.TransactionID() != txid {
+			continue
+		}
+		ret += util.BalanceOfColor(inp.remain, col)
+	}
+	return ret
+}
+
+// Returns consumed and unconsumed total
+func subtractAmount(bals []*balance.Balance, col balance.Color, amount int64) (int64, int64) {
 	if amount == 0 {
-		return 0
+		return 0, 0
 	}
 	for _, bal := range bals {
 		if bal.Color == col {
 			if bal.Value >= amount {
 				bal.Value -= amount
-				return 0
+				return amount, 0
 			}
-			ret := amount - bal.Value
 			bal.Value = 0
-			return ret
+			return bal.Value, amount - bal.Value
 		}
 	}
-	return amount
+	return 0, amount
 }
 
 func addAmount(bals []*balance.Balance, col balance.Color, amount int64) []*balance.Balance {
 	if amount == 0 {
-		panic("addAmount: amount == 0")
+		return bals
 	}
 	for _, bal := range bals {
 		if bal.Color == col {
@@ -206,19 +231,42 @@ func addAmount(bals []*balance.Balance, col balance.Color, amount int64) []*bala
 }
 
 // don't do any validation, may panic
-func (vtxb *Builder) moveAmount(targetAddr address.Address, origColor, targetColor balance.Color, amount int64) {
-	saveAmount := amount
-	if amount == 0 {
+func (vtxb *Builder) moveAmount(targetAddr address.Address, origColor, targetColor balance.Color, amountToConsume int64) {
+	saveAmount := amountToConsume
+	if amountToConsume == 0 {
 		return
 	}
+	var consumedAmount int64
 	for i := range vtxb.inputBalancesByOutput {
-		amount = subtractAmount(vtxb.inputBalancesByOutput[i].reminder, origColor, amount)
-		if amount == 0 {
-			vtxb.inputBalancesByOutput[i].consumed = addAmount(vtxb.inputBalancesByOutput[i].consumed, origColor, saveAmount)
+		consumedAmount, amountToConsume = subtractAmount(vtxb.inputBalancesByOutput[i].remain, origColor, amountToConsume)
+		vtxb.inputBalancesByOutput[i].consumed = addAmount(vtxb.inputBalancesByOutput[i].consumed, origColor, consumedAmount)
+		if amountToConsume == 0 {
 			break
 		}
 	}
-	if amount > 0 {
+	if amountToConsume > 0 {
+		panic(errorNotEnoughBalance)
+	}
+	vtxb.addToOutputs(targetAddr, targetColor, saveAmount)
+}
+
+func (vtxb *Builder) moveAmountFromTransaction(targetAddr address.Address, origColor, targetColor balance.Color, amountToConsume int64, txid valuetransaction.ID) {
+	saveAmount := amountToConsume
+	if amountToConsume == 0 {
+		return
+	}
+	for i := range vtxb.inputBalancesByOutput {
+		if vtxb.inputBalancesByOutput[i].outputId.TransactionID() != txid {
+			continue
+		}
+		var consumedAmount int64
+		consumedAmount, amountToConsume = subtractAmount(vtxb.inputBalancesByOutput[i].remain, origColor, amountToConsume)
+		vtxb.inputBalancesByOutput[i].consumed = addAmount(vtxb.inputBalancesByOutput[i].consumed, origColor, consumedAmount)
+		if amountToConsume == 0 {
+			break
+		}
+	}
+	if amountToConsume > 0 {
 		panic(errorNotEnoughBalance)
 	}
 	vtxb.addToOutputs(targetAddr, targetColor, saveAmount)
@@ -234,7 +282,7 @@ func (vtxb *Builder) addToOutputs(targetAddr address.Address, col balance.Color,
 	cmap[col] = b + amount
 }
 
-// move token without changing color
+// MoveToAddress move token without changing color
 func (vtxb *Builder) MoveToAddress(targetAddr address.Address, col balance.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
@@ -252,21 +300,57 @@ func (vtxb *Builder) EraseColor(targetAddr address.Address, col balance.Color, a
 	}
 	actualBalance := vtxb.GetInputBalance(col)
 	if actualBalance < amount {
-		return fmt.Errorf("not enough balance: need %d, found %d, color %s",
+		return fmt.Errorf("EraseColor: not enough balance: need %d, found %d, color %s",
 			amount, actualBalance, col.String())
 	}
 	vtxb.moveAmount(targetAddr, col, balance.ColorIOTA, amount)
 	return nil
 }
 
-func (vtxb *Builder) MintColor(targetAddr address.Address, col balance.Color, amount int64) error {
+// MintColor creates output of NewColor tokens out of inputs with specified color
+func (vtxb *Builder) MintColor(targetAddr address.Address, sourceColor balance.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}
-	if vtxb.GetInputBalance(col) < amount {
+	if vtxb.GetInputBalance(sourceColor) < amount {
 		return errorNotEnoughBalance
 	}
-	vtxb.moveAmount(targetAddr, col, balance.ColorNew, amount)
+	vtxb.moveAmount(targetAddr, sourceColor, balance.ColorNew, amount)
+	return nil
+}
+
+func (vtxb *Builder) MoveToAddressFromTransaction(targetAddr address.Address, col balance.Color, amount int64, txid valuetransaction.ID) error {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	if vtxb.GetInputBalanceFromTransaction(col, txid) < amount {
+		return errorNotEnoughBalance
+	}
+	vtxb.moveAmountFromTransaction(targetAddr, col, col, amount, txid)
+	return nil
+}
+
+func (vtxb *Builder) EraseColorFromTransaction(targetAddr address.Address, col balance.Color, amount int64, txid valuetransaction.ID) error {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	actualBalance := vtxb.GetInputBalanceFromTransaction(col, txid)
+	if actualBalance < amount {
+		return fmt.Errorf("EraseColorFromTransaction: not enough balance: need %d, found %d, color %s txid %s",
+			amount, actualBalance, col.String(), txid.String())
+	}
+	vtxb.moveAmountFromTransaction(targetAddr, col, balance.ColorIOTA, amount, txid)
+	return nil
+}
+
+func (vtxb *Builder) MintColorFromTransaction(targetAddr address.Address, col balance.Color, amount int64, txid valuetransaction.ID) error {
+	if vtxb.finalized {
+		panic("using finalized transaction builder")
+	}
+	if vtxb.GetInputBalanceFromTransaction(col, txid) < amount {
+		return errorNotEnoughBalance
+	}
+	vtxb.moveAmountFromTransaction(targetAddr, col, balance.ColorNew, amount, txid)
 	return nil
 }
 
@@ -290,11 +374,12 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 		}
 		vtxb.inputBalancesByOutput = finp
 	}
+
 	for i := range vtxb.inputBalancesByOutput {
-		for _, bal := range vtxb.inputBalancesByOutput[i].reminder {
+		for _, bal := range vtxb.inputBalancesByOutput[i].remain {
 			if bal.Value > 0 {
 				vtxb.addToOutputs(vtxb.inputBalancesByOutput[i].outputId.Address(), bal.Color, bal.Value)
-				bal.Value = 0
+				//bal.Value = 0
 			}
 		}
 	}
@@ -325,15 +410,24 @@ func (vtxb *Builder) Build(useAllInputs bool) *valuetransaction.Transaction {
 }
 
 func (vtxb *Builder) Dump() string {
-	ret := ""
-	// reminder
+	ret := "inputs:\n"
+	// remain
 	for i := range vtxb.inputBalancesByOutput {
-		ret += vtxb.inputBalancesByOutput[i].outputId.Address().String() + "-" +
+		ret += vtxb.inputBalancesByOutput[i].outputId.Address().String() + " - " +
 			vtxb.inputBalancesByOutput[i].outputId.TransactionID().String() + "\n"
-		for _, bal := range vtxb.inputBalancesByOutput[i].reminder {
-			ret += fmt.Sprintf("      %s: %d\n", bal.Color.String(), bal.Value)
+		for _, bal := range vtxb.inputBalancesByOutput[i].remain {
+			ret += fmt.Sprintf("      remain %d %s\n", bal.Value, bal.Color.String())
+		}
+		for _, bal := range vtxb.inputBalancesByOutput[i].consumed {
+			ret += fmt.Sprintf("      consumed %d %s\n", bal.Value, bal.Color.String())
 		}
 	}
-	// TODO the rest
+	ret += "outputs:\n"
+	for addr, balmap := range vtxb.outputBalances {
+		ret += fmt.Sprintf("        %s\n", addr.String())
+		for c, b := range balmap {
+			ret += fmt.Sprintf("                         %s: %d\n", c.String(), b)
+		}
+	}
 	return ret
 }

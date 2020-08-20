@@ -15,23 +15,23 @@ import (
 	"time"
 )
 
-const (
-	timerTickPeriod = 100 * time.Millisecond
-)
-
 type committeeObj struct {
-	isReadyStateManager bool
-	isReadyConsensus    bool
-	mutexIsReady        sync.Mutex
-	isOpenQueue         atomic.Bool
-	dismissed           atomic.Bool
-	dismissOnce         sync.Once
+	isReadyStateManager     bool
+	isReadyConsensus        bool
+	isInitConnectPeriodOver bool
+	mutexIsReady            sync.Mutex
+	isOpenQueue             atomic.Bool
+	dismissed               atomic.Bool
+	dismissOnce             sync.Once
+	onActivation            func()
 	//
+	params       *committee.Parameters
 	address      address.Address
 	ownerAddress address.Address
 	color        balance.Color
 	peers        []*peering.Peer
 	size         uint16
+	quorum       uint16
 	ownIndex     uint16
 	chMsg        chan interface{}
 	stateMgr     committee.StateManager
@@ -39,7 +39,7 @@ type committeeObj struct {
 	log          *logger.Logger
 }
 
-func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) committee.Committee {
+func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params *committee.Parameters, onActivation func()) committee.Committee {
 	log.Debugw("creating committee", "addr", bootupData.Address.String())
 
 	addr := bootupData.Address
@@ -82,15 +82,18 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 
 	ret := &committeeObj{
 		chMsg:        make(chan interface{}, 100),
+		params:       params,
 		address:      bootupData.Address,
 		ownerAddress: bootupData.OwnerAddress,
 		color:        bootupData.Color,
 		peers:        make([]*peering.Peer, 0),
+		onActivation: onActivation,
 		log:          log.Named(util.Short(bootupData.Address.String())),
 	}
 	if keyExists {
 		ret.ownIndex = dkshare.Index
 		ret.size = dkshare.N
+		ret.quorum = dkshare.T
 
 		for _, remoteLocation := range bootupData.CommitteeNodes {
 			ret.peers = append(ret.peers, peering.UsePeer(remoteLocation))
@@ -112,7 +115,13 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger) commit
 			ret.dispatchMessage(msg)
 		}
 	}()
+	go func() {
+		ret.log.Infof("wait for %s before activating the committee", ret.params.InitConnectPeriod)
+		time.Sleep(ret.params.InitConnectPeriod)
+		ret.log.Infof("initial connection period is over. Connected peers: %+v", ret.ConnectedPeers())
 
+		ret.SetInitConnectPeriodOver()
+	}()
 	return ret
 }
 

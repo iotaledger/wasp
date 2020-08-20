@@ -1,14 +1,14 @@
 package dispatcher
 
 import (
-	"github.com/iotaledger/goshimmer/packages/waspconn"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/committee/commiteeimpl" // activate init
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -18,9 +18,12 @@ import (
 const PluginName = "Dispatcher"
 
 var (
-	Plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	log    *logger.Logger
+	log *logger.Logger
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
@@ -74,7 +77,7 @@ func run(_ *node.Plugin) {
 
 		log.Infof("dispatcher started")
 
-	}, shutdown.PriorityDispatcher)
+	}, parameters.PriorityDispatcher)
 
 	if err != nil {
 		log.Errorf("failed to start worker for %s: %v", PluginName, err)
@@ -91,7 +94,7 @@ func processNodeMsg(msg interface{}) {
 			// not a SC transaction. Ignore
 			return
 		}
-		dispatchState(tx)
+		dispatchState(tx, msgt.Confirmed)
 
 	case *waspconn.WaspFromNodeAddressOutputsMsg:
 		dispatchBalances(msgt.Address, msgt.Balances)

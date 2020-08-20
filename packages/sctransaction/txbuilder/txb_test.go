@@ -3,7 +3,7 @@ package txbuilder
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -14,38 +14,32 @@ import (
 
 const scAddressStr = "pHoaPehxf811Kg2nCHmkcXc7vjDMnBnBXnksTYXyhzXa"
 
-var (
-	scSigSheme = signaturescheme.RandBLS()
-	scAddress  = scSigSheme.Address()
-)
-
-func initUtxodb() {
-	utxodb.Init()
-	scSigSheme = signaturescheme.RandBLS()
-	scAddress = scSigSheme.Address()
-}
-
 func TestBasic(t *testing.T) {
-	initUtxodb()
+	u := utxodb.New()
+	ownerSigSheme := signaturescheme.RandBLS()
+	ownerAddress := ownerSigSheme.Address()
+	scSigSheme := signaturescheme.RandBLS()
+	scAddress := scSigSheme.Address()
+	u.RequestFunds(ownerAddress)
 
-	outs := utxodb.GetAddressOutputs(utxodb.GetAddress(1))
+	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.AddOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateBlock(sh, &scAddress)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
 	assert.NoError(t, err)
 
-	tx.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	tx.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
-	err = utxodb.AddTransaction(tx.Transaction)
+	err = u.AddTransaction(tx.Transaction)
 	assert.NoError(t, err)
 
-	outs = utxodb.GetAddressOutputs(scAddress)
+	outs = u.GetAddressOutputs(scAddress)
 	sum := int64(0)
 	for _, bals := range outs {
 		sum += util.BalanceOfColor(bals, (balance.Color)(tx.ID()))
@@ -54,14 +48,19 @@ func TestBasic(t *testing.T) {
 }
 
 func TestWithRequest(t *testing.T) {
-	initUtxodb()
+	u := utxodb.New()
+	ownerSigSheme := signaturescheme.RandBLS()
+	ownerAddress := ownerSigSheme.Address()
+	scSigSheme := signaturescheme.RandBLS()
+	scAddress := scSigSheme.Address()
+	u.RequestFunds(ownerAddress)
 
-	outs := utxodb.GetAddressOutputs(utxodb.GetAddress(1))
+	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.AddOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateBlock(sh, &scAddress)
 	assert.NoError(t, err)
 
 	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
@@ -70,13 +69,13 @@ func TestWithRequest(t *testing.T) {
 	tx, err := txb.Build(false)
 	assert.NoError(t, err)
 
-	tx.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	tx.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
-	err = utxodb.AddTransaction(tx.Transaction)
+	err = u.AddTransaction(tx.Transaction)
 	assert.NoError(t, err)
 
-	outs = utxodb.GetAddressOutputs(scAddress)
+	outs = u.GetAddressOutputs(scAddress)
 	sum := int64(0)
 	for _, bals := range outs {
 		sum += util.BalanceOfColor(bals, (balance.Color)(tx.ID()))
@@ -85,14 +84,19 @@ func TestWithRequest(t *testing.T) {
 }
 
 func TestNextState(t *testing.T) {
-	initUtxodb()
+	u := utxodb.New()
+	ownerSigSheme := signaturescheme.RandBLS()
+	ownerAddress := ownerSigSheme.Address()
+	scSigSheme := signaturescheme.RandBLS()
+	scAddress := scSigSheme.Address()
+	u.RequestFunds(ownerAddress)
 
-	outs := utxodb.GetAddressOutputs(utxodb.GetAddress(1))
+	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.AddOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateBlock(sh, &scAddress)
 	assert.NoError(t, err)
 
 	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
@@ -104,16 +108,16 @@ func TestNextState(t *testing.T) {
 	tx, err := txb.Build(false)
 	assert.NoError(t, err)
 
-	tx.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	tx.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
-	err = utxodb.AddTransaction(tx.Transaction)
+	err = u.AddTransaction(tx.Transaction)
 	assert.NoError(t, err)
 
 	scColor := (balance.Color)(tx.ID())
 	reqColor := (balance.Color)(tx.ID())
 
-	outs = utxodb.GetAddressOutputs(scAddress)
+	outs = u.GetAddressOutputs(scAddress)
 	sumScCol := int64(0)
 	sumIota := int64(0)
 	for _, bals := range outs {
@@ -133,10 +137,10 @@ func TestNextState(t *testing.T) {
 	vtx.Sign(scSigSheme)
 	assert.True(t, vtx.SignaturesValid())
 
-	err = utxodb.AddTransaction(vtx)
+	err = u.AddTransaction(vtx)
 	assert.NoError(t, err)
 
-	outs = utxodb.GetAddressOutputs(scAddress)
+	outs = u.GetAddressOutputs(scAddress)
 	sumScCol = int64(0)
 	sumIota = int64(0)
 	for _, bals := range outs {
@@ -160,10 +164,10 @@ func TestNextState(t *testing.T) {
 
 	reqColor = (balance.Color)(tx.ID())
 
-	err = utxodb.AddTransaction(tx.Transaction)
+	err = u.AddTransaction(tx.Transaction)
 	assert.NoError(t, err)
 
-	outs = utxodb.GetAddressOutputs(scAddress)
+	outs = u.GetAddressOutputs(scAddress)
 	sumScCol = int64(0)
 	sumIota = int64(0)
 	sumReq := int64(0)
@@ -178,14 +182,19 @@ func TestNextState(t *testing.T) {
 }
 
 func TestClone(t *testing.T) {
-	initUtxodb()
+	u := utxodb.New()
+	ownerSigSheme := signaturescheme.RandBLS()
+	ownerAddress := ownerSigSheme.Address()
+	scSigSheme := signaturescheme.RandBLS()
+	scAddress := scSigSheme.Address()
+	u.RequestFunds(ownerAddress)
 
-	outs := utxodb.GetAddressOutputs(utxodb.GetAddress(1))
+	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.AddOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateBlock(sh, &scAddress)
 	assert.NoError(t, err)
 
 	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
@@ -196,27 +205,32 @@ func TestClone(t *testing.T) {
 	tx, err := txb.Build(false)
 	assert.NoError(t, err)
 
-	tx.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	tx.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
 	txClone, err := txbClone.Build(false)
 	assert.NoError(t, err)
 
-	txClone.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	txClone.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
 	assert.EqualValues(t, tx.ID(), txClone.ID())
 }
 
 func TestDeterminism(t *testing.T) {
-	initUtxodb()
+	u := utxodb.New()
+	ownerSigSheme := signaturescheme.RandBLS()
+	ownerAddress := ownerSigSheme.Address()
+	scSigSheme := signaturescheme.RandBLS()
+	scAddress := scSigSheme.Address()
+	u.RequestFunds(ownerAddress)
 
-	outs := utxodb.GetAddressOutputs(utxodb.GetAddress(1))
+	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.AddOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateBlock(sh, &scAddress)
 	assert.NoError(t, err)
 
 	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 50)
@@ -241,13 +255,13 @@ func TestDeterminism(t *testing.T) {
 	tx, err := txb.Build(false)
 	assert.NoError(t, err)
 
-	tx.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	tx.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
 	txClone, err := txbClone.Build(false)
 	assert.NoError(t, err)
 
-	txClone.Sign(utxodb.GetSigScheme(utxodb.GetAddress(1)))
+	txClone.Sign(ownerSigSheme)
 	assert.True(t, tx.SignaturesValid())
 
 	assert.EqualValues(t, tx.ID(), txClone.ID())

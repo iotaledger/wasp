@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"go.uber.org/atomic"
 )
 
@@ -12,11 +12,13 @@ import (
 const PluginName = "Peering"
 
 var (
-	// Plugin is the plugin instance of the database plugin.
-	Plugin      = node.NewPlugin(PluginName, node.Enabled, configure, run)
 	log         *logger.Logger
 	initialized atomic.Bool
 )
+
+func Init() *node.Plugin {
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
@@ -42,7 +44,7 @@ func run(_ *node.Plugin) {
 		log.Info("Closing all connections with peers...")
 		closeAll()
 		log.Info("Closing all connections with peers... done")
-	}, shutdown.PriorityPeering); err != nil {
+	}, parameters.PriorityPeering); err != nil {
 		panic(err)
 	}
 }

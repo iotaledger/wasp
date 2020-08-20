@@ -1,16 +1,16 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"testing"
-	"time"
 )
 
 func TestPutBootupRecords(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestPutBootupRecords")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    0,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -19,23 +19,21 @@ func TestPutBootupRecords(t *testing.T) {
 	})
 	check(err, t)
 
-	// exercise
-	err = Put3BootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(10 * time.Second)
-
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 }
 
 func TestActivate1SC(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestActivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -44,26 +42,26 @@ func TestActivate1SC(t *testing.T) {
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	// exercise
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(5 * time.Second)
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 }
 
-func TestActivate3SC(t *testing.T) {
+func TestActivateAllSC(t *testing.T) {
 	// setup
-	wasps := setup(t, "test_cluster", "TestActivate3SC")
+	wasps := setup(t, "test_cluster", "TestActivateAllSC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
-		"active_committee":    3,
+		"bootuprec":           wasps.NumSmartContracts(),
+		"active_committee":    wasps.NumSmartContracts(),
 		"dismissed_committee": 0,
 		"request_in":          0,
 		"request_out":         0,
@@ -71,15 +69,16 @@ func TestActivate3SC(t *testing.T) {
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
-	check(err, t)
+	for _, sc := range wasps.SmartContractConfig {
+		_, err = PutBootupRecord(wasps, &sc)
+		check(err, t)
+	}
 
 	// exercise
-	err = Activate3SC(wasps)
+	err = ActivateAllSC(wasps)
 	check(err, t)
 
-	wasps.CollectMessages(5 * time.Second)
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 }
@@ -89,7 +88,7 @@ func TestCreateOrigin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestCreateOrigin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
@@ -98,17 +97,24 @@ func TestCreateOrigin(t *testing.T) {
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
+
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
 	// exercise
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(10 * time.Second)
-	if !wasps.Report() {
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+	if !wasps.VerifySCState(sc, 1, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+	}) {
 		t.Fail()
 	}
 }

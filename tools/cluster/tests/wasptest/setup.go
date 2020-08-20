@@ -1,12 +1,21 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/assert"
 	"path"
 	"runtime"
 	"testing"
+)
+
+var (
+	wallet       = testutil.NewWallet("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
+	auctionOwner = wallet.WithIndex(0)
+	bidder1      = wallet.WithIndex(1)
+	bidder2      = wallet.WithIndex(2)
+	minter1      = wallet.WithIndex(3)
+	minter2      = wallet.WithIndex(4)
 )
 
 func check(err error, t *testing.T) {
@@ -33,8 +42,4 @@ func setup(t *testing.T, configPath string, testName string) *cluster.Cluster {
 	t.Cleanup(wasps.Stop)
 
 	return wasps
-}
-
-func count(msgs []*subscribe.HostMessage) {
-
 }

@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,26 +17,36 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
+	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/testutil"
+
+	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/variables"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 
-	nodeapi "github.com/iotaledger/wasp/packages/apilib"
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
 
 type SmartContractFinalConfig struct {
-	Address          string   `json:"address"`
-	Color            string   `json:"color"`
-	Description      string   `json:"description"`
-	ProgramHash      string   `json:"program_hash"`
-	CommitteeNodes   []int    `json:"committee_nodes"`
-	AccessNodes      []int    `json:"access_nodes,omitempty"`
-	OwnerIndexUtxodb int      `json:"owner_index_utxodb"`
-	DKShares         []string `json:"dkshares"` // [node index]
+	Address        string   `json:"address"`
+	Description    string   `json:"description"`
+	ProgramHash    string   `json:"program_hash"`
+	CommitteeNodes []int    `json:"committee_nodes"`
+	AccessNodes    []int    `json:"access_nodes,omitempty"`
+	OwnerSeed      []byte   `json:"owner_seed"`
+	DKShares       []string `json:"dkshares"` // [node index]
+	//
+	originTx *sctransaction.Transaction // cached after CreateOrigin call
 }
 
 type SmartContractInitData struct {
@@ -46,16 +57,16 @@ type SmartContractInitData struct {
 }
 
 type WaspNodeConfig struct {
-	NetAddress  string `json:"net_address"`
-	ApiPort     int    `json:"api_port"`
-	PeeringPort int    `json:"peering_port"`
-	NanomsgPort int    `json:"nanomsg_port"`
+	ApiPort     int `json:"api_port"`
+	PeeringPort int `json:"peering_port"`
+	NanomsgPort int `json:"nanomsg_port"`
 }
 
 type ClusterConfig struct {
 	Nodes     []WaspNodeConfig `json:"nodes"`
 	Goshimmer struct {
-		BindAddress string `json:"bind_address"`
+		ApiPort  int  `json:"api_port"`
+		Provided bool `json:"provided"`
 	} `json:"goshimmer"`
 	SmartContracts []SmartContractInitData `json:"smart_contracts"`
 }
@@ -66,6 +77,7 @@ type Cluster struct {
 	ConfigPath          string // where the cluster configuration is stored - read only
 	DataPath            string // where the cluster's volatile data lives
 	Started             bool
+	NodeClient          nodeclient.NodeClient
 	cmds                []*exec.Cmd
 	// reading publisher's output
 	messagesCh   chan *subscribe.HostMessage
@@ -73,7 +85,6 @@ type Cluster struct {
 	expectations map[string]int
 	topics       []string
 	counters     map[string]map[string]int
-	allMessages  []*subscribe.HostMessage
 	testName     string
 }
 
@@ -84,16 +95,36 @@ func (sc *SmartContractFinalConfig) AllNodes() []int {
 	return r
 }
 
+func (sc *SmartContractFinalConfig) SCAddress() address.Address {
+	ret, err := address.FromBase58(sc.Address)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func (sc *SmartContractFinalConfig) OwnerAddress() address.Address {
+	return seed.NewSeed(sc.OwnerSeed).Address(0).Address
+}
+
+func (sc *SmartContractFinalConfig) OwnerSigScheme() signaturescheme.SignatureScheme {
+	return signaturescheme.ED25519(*seed.NewSeed(sc.OwnerSeed).KeyPair(0))
+}
+
+func (c *ClusterConfig) goshimmerApiHost() string {
+	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.ApiPort)
+}
+
 func (w *WaspNodeConfig) ApiHost() string {
-	return fmt.Sprintf("%s:%d", w.NetAddress, w.ApiPort)
+	return fmt.Sprintf("127.0.0.1:%d", w.ApiPort)
 }
 
 func (w *WaspNodeConfig) PeeringHost() string {
-	return fmt.Sprintf("%s:%d", w.NetAddress, w.PeeringPort)
+	return fmt.Sprintf("127.0.0.1:%d", w.PeeringPort)
 }
 
 func (w *WaspNodeConfig) NanomsgHost() string {
-	return fmt.Sprintf("%s:%d", w.NetAddress, w.NanomsgPort)
+	return fmt.Sprintf("127.0.0.1:%d", w.NanomsgPort)
 }
 
 func readConfig(configPath string) (*ClusterConfig, error) {
@@ -106,6 +137,10 @@ func readConfig(configPath string) (*ClusterConfig, error) {
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err
+	}
+	x := os.Getenv("GOSHIMMER_PROVIDED")
+	if x != "" {
+		config.Goshimmer.Provided = true
 	}
 	return config, nil
 }
@@ -123,12 +158,25 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var nodeClient nodeclient.NodeClient
+	if config.Goshimmer.Provided {
+		nodeClient = goshimmer.NewGoshimmerClient(config.goshimmerApiHost())
+	} else {
+		nodeClient = testutil.NewGoshimmerUtxodbClient(config.goshimmerApiHost())
+	}
+
 	return &Cluster{
 		Config:     config,
 		ConfigPath: configPath,
 		DataPath:   dataPath,
+		NodeClient: nodeClient,
 		cmds:       make([]*exec.Cmd, 0),
 	}, nil
+}
+
+func (cluster *Cluster) NumSmartContracts() int {
+	return len(cluster.Config.SmartContracts)
 }
 
 func (cluster *Cluster) readKeysConfig() ([]SmartContractFinalConfig, error) {
@@ -197,13 +245,15 @@ func (cluster *Cluster) Init(resetDataPath bool, name string) error {
 		}
 	}
 
-	err = cluster.initDataPath(
-		cluster.GoshimmerDataPath(),
-		cluster.GoshimmerConfigTemplatePath(),
-		cluster.Config.Goshimmer,
-	)
-	if err != nil {
-		return err
+	if !cluster.Config.Goshimmer.Provided {
+		err = cluster.initDataPath(
+			cluster.GoshimmerDataPath(),
+			cluster.GoshimmerConfigTemplatePath(),
+			cluster.Config.Goshimmer,
+		)
+		if err != nil {
+			return err
+		}
 	}
 	for i, waspParams := range cluster.Config.Nodes {
 		err = cluster.initDataPath(
@@ -277,20 +327,22 @@ func (cluster *Cluster) start() error {
 
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
-	err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
-	if err != nil {
-		return err
-	}
+	if !cluster.Config.Goshimmer.Provided {
+		err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
+		if err != nil {
+			return err
+		}
 
-	select {
-	case <-initOk:
-	case <-time.After(10 * time.Second):
-		return fmt.Errorf("Timeout starting goshimmer node\n")
+		select {
+		case <-initOk:
+		case <-time.After(10 * time.Second):
+			return fmt.Errorf("Timeout starting goshimmer node\n")
+		}
+		fmt.Printf("[cluster] started goshimmer node\n")
 	}
-	fmt.Printf("[cluster] started goshimmer node\n")
 
 	for i, _ := range cluster.Config.Nodes {
-		err = cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
+		err := cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
 		if err != nil {
 			return err
 		}
@@ -378,8 +430,7 @@ func (cluster *Cluster) importKeys() error {
 	for _, scKeys := range cluster.SmartContractConfig {
 		fmt.Printf("[cluster] Importing DKShares for address %s...\n", scKeys.Address)
 		for nodeIndex, dks := range scKeys.DKShares {
-			url := fmt.Sprintf("%s:%d", cluster.Config.Nodes[nodeIndex].NetAddress, cluster.Config.Nodes[nodeIndex].ApiPort)
-			err := waspapi.ImportDKShare(url, dks)
+			err := waspapi.ImportDKShare(cluster.Config.Nodes[nodeIndex].ApiHost(), dks)
 			if err != nil {
 				return err
 			}
@@ -391,20 +442,24 @@ func (cluster *Cluster) importKeys() error {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
-	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", cluster.Config.Goshimmer.BindAddress)
-	err := nodeapi.Shutdown(cluster.Config.Goshimmer.BindAddress)
-	if err != nil {
-		fmt.Println(err)
+	if !cluster.Config.Goshimmer.Provided {
+		url := cluster.Config.goshimmerApiHost()
+		fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
+		err := nodeapi.Shutdown(url)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	for _, node := range cluster.Config.Nodes {
-		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
+		url := node.ApiHost()
 		fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", url)
 		err := waspapi.Shutdown(url)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
+
 	cluster.Wait()
 }
 
@@ -421,7 +476,16 @@ func (cluster *Cluster) Wait() {
 func (cluster *Cluster) ApiHosts() []string {
 	hosts := make([]string, 0)
 	for _, node := range cluster.Config.Nodes {
-		url := fmt.Sprintf("%s:%d", node.NetAddress, node.ApiPort)
+		url := node.ApiHost()
+		hosts = append(hosts, url)
+	}
+	return hosts
+}
+
+func (cluster *Cluster) PeeringHosts() []string {
+	hosts := make([]string, 0)
+	for _, node := range cluster.Config.Nodes {
+		url := node.PeeringHost()
 		hosts = append(hosts, url)
 	}
 	return hosts
@@ -473,13 +537,11 @@ func (cluster *Cluster) ListenToMessages(expectations map[string]int) error {
 func (cluster *Cluster) CollectMessages(duration time.Duration) {
 	fmt.Printf("[cluster] collecting publisher's messages for %v\n", duration)
 
-	cluster.allMessages = make([]*subscribe.HostMessage, 0)
 	deadline := time.Now().Add(duration)
 	for {
 		select {
 		case msg := <-cluster.messagesCh:
-			cluster.allMessages = append(cluster.allMessages, msg)
-			cluster.counters[msg.Sender][msg.Message[0]] += 1
+			cluster.countMessage(msg)
 
 		case <-time.After(500 * time.Millisecond):
 		}
@@ -489,12 +551,44 @@ func (cluster *Cluster) CollectMessages(duration time.Duration) {
 	}
 }
 
-func (cluster *Cluster) Report() bool {
-	fmt.Printf("\n[cluster] Message statistics for '%s':\n", cluster.testName)
+func (cluster *Cluster) WaitUntilExpectationsMet() bool {
+	fmt.Printf("[cluster] collecting publisher's messages\n")
 
+	for {
+		fail, pass, report := cluster.report()
+		if fail {
+			fmt.Printf("\n[cluster] Message expectations failed for '%s':\n%s\n", cluster.testName, report)
+			return false
+		}
+		if pass {
+			return true
+		}
+
+		select {
+		case msg := <-cluster.messagesCh:
+			cluster.countMessage(msg)
+		case <-time.After(90 * time.Second):
+			return cluster.Report()
+		}
+	}
+}
+
+func (cluster *Cluster) countMessage(msg *subscribe.HostMessage) {
+	cluster.counters[msg.Sender][msg.Message[0]] += 1
+}
+
+func (cluster *Cluster) Report() bool {
+	_, pass, report := cluster.report()
+	fmt.Printf("\n[cluster] Message statistics for '%s':\n%s\n", cluster.testName, report)
+	return pass
+}
+
+func (cluster *Cluster) report() (bool, bool, string) {
+	fail := false
 	pass := true
+	report := ""
 	for host, counters := range cluster.counters {
-		fmt.Printf("\n[cluster] Node: %s\n", host)
+		report += fmt.Sprintf("Node: %s\n", host)
 		for _, t := range cluster.topics {
 			res, _ := counters[t]
 			exp, _ := cluster.expectations[t]
@@ -507,31 +601,89 @@ func (cluster *Cluster) Report() bool {
 				} else {
 					f = "fail"
 					pass = false
+					if res > exp {
+						// got more messages than expected, no need to keep running
+						fail = true
+					}
 				}
 			}
-			fmt.Printf("          %s: %d (%s) %s\n", t, res, e, f)
+			report += fmt.Sprintf("          %s: %d (%s) %s\n", t, res, e, f)
 		}
 	}
-	fmt.Println()
-	return pass
+	return fail, pass, report
 }
 
-func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedVariables map[string][]byte) bool {
-	ownerAddr := utxodb.GetAddress(sc.OwnerIndexUtxodb)
-
-	scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
+func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
+	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
+	err := cluster.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
-		panic("could not convert SC program hash")
+		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
+		return err
 	}
+	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
+	return nil
+}
 
+func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, expectedValues map[kv.Key][]byte) bool {
+	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+		fmt.Printf("[cluster] Verifying state vars for node %s\n", host)
+		pass := true
+		for k, v := range expectedValues {
+			v1, err := state.Get(k)
+			if err != nil {
+				fmt.Printf("   %s: %v\n", string(k), err)
+				return false
+			}
+			if bytes.Equal(v, v1) {
+				fmt.Printf("   %s: OK. Expected '%s', actual '%s'\n",
+					string(k), string(v), string(v1))
+			} else {
+				fmt.Printf("   %s: FAIL. Expected '%s', actual '%s'\n",
+					string(k), string(v), string(v1))
+				pass = false
+			}
+		}
+		return pass
+	})
+}
+
+func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
+	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+		fmt.Printf("[cluster] State verification for node %s\n", host)
+
+		ownerAddr := sc.OwnerAddress()
+
+		scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
+		if err != nil {
+			panic("could not convert SC program hash")
+		}
+
+		expectedState := kv.FromGoMap(expectedState)
+		expectedState.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddr)
+		expectedState.Codec().SetHashValue(vmconst.VarNameProgramHash, &scProgHash)
+
+		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
+		fmt.Printf("      Actual: index %d\n%s\n", stateIndex, state)
+
+		if expectedIndex > 0 && stateIndex != expectedIndex {
+			fmt.Printf("   FAIL: index mismatch\n")
+			return false
+		}
+
+		if util.GetHashValue(expectedState) != util.GetHashValue(state) {
+			fmt.Printf("   FAIL: variables mismatch\n")
+			return false
+		}
+		return true
+	})
+}
+
+func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host string, stateIndex uint32, state kv.Map) bool) bool {
 	pass := true
 	for _, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
-		fmt.Printf("[cluster] AccessState verification for node %s\n", host)
 		actual, err := waspapi.DumpSCState(host, sc.Address)
 		if err != nil {
-			pass = false
-			fmt.Printf("   FAIL: %s\n", err)
-			continue
+			panic(err)
 		}
 		if !actual.Exists {
 			pass = false
@@ -539,26 +691,144 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 			continue
 		}
 
-		vexp := variables.FromMap(expectedVariables)
-		vexp.SetAddress(vmconst.VarNameOwnerAddress, ownerAddr)
-		vexp.SetHashValue(vmconst.VarNameProgramHash, scProgHash)
-
-		vact := variables.FromMap(actual.Variables)
-
-		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, vexp)
-		fmt.Printf("      Actual: index %d\n%s\n", actual.Index, vact)
-
-		if actual.Index != expectedIndex {
+		if !f(host, actual.Index, kv.FromGoMap(actual.Variables)) {
 			pass = false
-			fmt.Printf("   FAIL: index mismatch\n")
-			continue
-		}
-
-		if util.GetHashValue(vexp) != util.GetHashValue(vact) {
-			pass = false
-			fmt.Printf("   FAIL: variables mismatch\n")
-			continue
 		}
 	}
 	return pass
+}
+
+func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {
+	allOuts, err := cluster.NodeClient.GetAccountOutputs(&addr)
+	if err != nil {
+		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
+		return false
+	}
+	byColor, total := util.OutputBalancesByColor(allOuts)
+	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
+
+	totalExpectedStr := "(-)"
+	if totalExpected >= 0 {
+		if totalExpected == total {
+			totalExpectedStr = fmt.Sprintf("(%d) OK", totalExpected)
+		} else {
+			totalExpectedStr = fmt.Sprintf("(%d) FAIL", totalExpected)
+			assertionOk = false
+		}
+	}
+	cmt := ""
+	if len(comment) > 0 {
+		cmt = " (" + comment[0] + ")"
+	}
+	fmt.Printf("[cluster] Balances of the address %s%s\n      Total tokens: %d %s\n%s\n",
+		addr.String(), cmt, total, totalExpectedStr, dumpStr)
+
+	if !assertionOk {
+		fmt.Printf("[cluster] assertion on balances failed\n")
+	}
+	return assertionOk
+}
+
+func verifySCStateVariables2(host string, addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
+	actual, err := waspapi.DumpSCState(host, addr.String())
+	if err != nil {
+		panic(err)
+	}
+	if !actual.Exists {
+		fmt.Printf("              state does not exist: FAIL\n")
+		return false
+	}
+	pass := true
+	fmt.Printf("    host %s, state index #%d\n", host, actual.Index)
+	for k, vexp := range expectedValues {
+		vact, ok := actual.Variables[k]
+		if !ok {
+			vact = []byte("N/A")
+		}
+		vres := "FAIL"
+		if bytes.Equal(interface2bytes(vexp), vact) {
+			vres = "OK"
+		} else {
+			pass = false
+		}
+		// TODO pretty output
+		fmt.Printf("      '%s': %s (%v) -- %s\n", k, string(vact), vexp, vres)
+	}
+	return pass
+}
+
+func (cluster *Cluster) VerifySCStateVariables2(addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
+	fmt.Printf("verifying state variables for address %s\n", addr.String())
+	pass := true
+	for _, host := range cluster.ApiHosts() {
+		pass = pass && verifySCStateVariables2(host, addr, expectedValues)
+	}
+	return pass
+}
+
+func dumpBalancesByColor(actual, expect map[balance.Color]int64) (string, bool) {
+	assertionOk := true
+	lst := make([]balance.Color, 0, len(expect))
+	for col := range expect {
+		lst = append(lst, col)
+	}
+	sort.Slice(lst, func(i, j int) bool {
+		return bytes.Compare(lst[i][:], lst[j][:]) < 0
+	})
+	ret := ""
+	for _, col := range lst {
+		act, _ := actual[col]
+		isOk := "OK"
+		if act != expect[col] {
+			assertionOk = false
+			isOk = "FAIL"
+		}
+		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
+	}
+	lst = lst[:0]
+	for col := range actual {
+		if _, ok := expect[col]; !ok {
+			lst = append(lst, col)
+		}
+	}
+	if len(lst) == 0 {
+		return ret, assertionOk
+	}
+	sort.Slice(lst, func(i, j int) bool {
+		return bytes.Compare(lst[i][:], lst[j][:]) < 0
+	})
+	ret += "      Unexpected colors in actual outputs:\n"
+	for _, col := range lst {
+		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
+	}
+	return ret, assertionOk
+}
+
+func interface2bytes(v interface{}) []byte {
+	var ret []byte
+	switch vt := v.(type) {
+	case int:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case int16:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case int32:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case int64:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint16:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint32:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case uint64:
+		ret = util.Uint64To8Bytes(uint64(vt))
+	case []byte:
+		ret = vt
+	case string:
+		ret = []byte(vt)
+	default:
+		panic("unexpected type")
+	}
+	return ret
 }

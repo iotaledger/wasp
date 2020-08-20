@@ -19,7 +19,7 @@ import (
 // MsgData variable bytes to the end
 //  -- otherwise panic wrong MsgType
 
-const ChunkMessageOverhead = 8 + 1
+const chunkMessageOverhead = 8 + 1
 
 // always puts timestamp into first 8 bytes and 1 byte msg type
 func encodeMessage(msg *PeerMessage) ([]byte, int64) {
@@ -29,10 +29,12 @@ func encodeMessage(msg *PeerMessage) ([]byte, int64) {
 	_ = util.WriteUint64(&buf, uint64(ts))
 	switch {
 	case msg == nil:
-		buf.WriteByte(MsgTypeHeartbeat)
+		panic("MsgTypeReserved")
+		//buf.WriteByte(MsgTypeReserved)
 
-	case msg.MsgType == MsgTypeHeartbeat:
-		buf.WriteByte(MsgTypeHeartbeat)
+	case msg.MsgType == MsgTypeReserved:
+		panic("MsgTypeReserved")
+		//buf.WriteByte(MsgTypeReserved)
 
 	case msg.MsgType == MsgTypeHandshake:
 		buf.WriteByte(MsgTypeHandshake)
@@ -72,8 +74,9 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 		return nil, err
 	}
 	switch {
-	case ret.MsgType == MsgTypeHeartbeat:
-		return ret, nil
+	case ret.MsgType == MsgTypeReserved:
+		panic("MsgTypeReserved")
+		//return ret, nil
 
 	case ret.MsgType == MsgTypeHandshake:
 		ret.MsgData = rdr.Bytes()

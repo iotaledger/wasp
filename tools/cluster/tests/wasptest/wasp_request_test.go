@@ -1,6 +1,9 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/kv"
 	"testing"
 	"time"
 
@@ -12,29 +15,48 @@ func TestSend1Request(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Request")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
 		"request_out":         3,
-		"state":               2,
+		"state":               -1,
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
-	check(err, t)
+	sc := &wasps.SmartContractConfig[0]
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 1, vmconst.RequestCodeNOP, nil, 0)
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
 
-	if !wasps.Report() {
+	scAddress := sc.SCAddress()
+
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		SCAddress:   &scAddress,
+		RequestCode: vmconst.RequestCodeNOP,
+	})
+	check(err, t)
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -44,29 +66,51 @@ func TestSend5Requests1Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5Requests1Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
 		"request_out":         7,
-		"state":               7,
+		"state":               -1,
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
-	check(err, t)
+	sc := &wasps.SmartContractConfig[0]
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 5, vmconst.RequestCodeNOP, nil, 1*time.Second)
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(15 * time.Second)
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
 
-	if !wasps.Report() {
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 5; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: vmconst.RequestCodeNOP,
+		})
+		check(err, t)
+		time.Sleep(1 * time.Second)
+	}
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -76,7 +120,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          11,
@@ -86,20 +130,41 @@ func TestSend10Requests0Sec(t *testing.T) {
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
-	check(err, t)
+	sc := &wasps.SmartContractConfig[0]
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 10, vmconst.RequestCodeNOP, nil, 0*time.Second)
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(20 * time.Second)
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
 
-	if !wasps.Report() {
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 10; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: vmconst.RequestCodeNOP,
+		})
+		check(err, t)
+	}
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -109,29 +174,51 @@ func TestSend60Requests500msec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend60Requests")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
 		"request_out":         62,
-		"state":               60,
+		"state":               -1,
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
-	check(err, t)
+	sc := &wasps.SmartContractConfig[0]
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 500*time.Millisecond)
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(40 * time.Second)
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
 
-	if !wasps.Report() {
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 60; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: vmconst.RequestCodeNOP,
+		})
+		check(err, t)
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
@@ -141,7 +228,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"bootuprec":           1,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
@@ -150,20 +237,41 @@ func TestSend60Requests0Sec(t *testing.T) {
 	})
 	check(err, t)
 
-	err = Put3BootupRecords(wasps)
-	check(err, t)
-	err = Activate1SC(wasps, &wasps.SmartContractConfig[0])
-	check(err, t)
+	sc := &wasps.SmartContractConfig[0]
 
-	err = CreateOrigin1SC(wasps, &wasps.SmartContractConfig[0])
+	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
 
-	err = SendRequestNTimes(wasps, &wasps.SmartContractConfig[0], 60, vmconst.RequestCodeNOP, nil, 0*time.Millisecond)
+	err = Activate1SC(wasps, sc)
 	check(err, t)
 
-	wasps.CollectMessages(40 * time.Minute)
+	err = CreateOrigin1SC(wasps, sc)
+	check(err, t)
 
-	if !wasps.Report() {
+	scAddress := sc.SCAddress()
+
+	for i := 0; i < 60; i++ {
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+			SCAddress:   &scAddress,
+			RequestCode: vmconst.RequestCodeNOP,
+		})
+		check(err, t)
+	}
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
+		balance.ColorIOTA: 0,
+		sc.GetColor():     1,
+	}) {
+		t.Fail()
+	}
+
+	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
+		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+	}) {
 		t.Fail()
 	}
 }
