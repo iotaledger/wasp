@@ -6,5 +6,6 @@ import (
 
 func requestFunds() {
 	address := Load().Address()
+	// automatically waits for confirmation:
 	check(config.GoshimmerClient().RequestFunds(&address))
 }

@@ -168,7 +168,7 @@ func decodePlayerStats(result *stateapi.DictResult) (map[address.Address]*fairro
 	return playerStats, nil
 }
 
-func (frc *FairRouletteClient) postRequest(code sctransaction.RequestCode, amountIotas int64, vars map[string]interface{}) error {
+func (frc *FairRouletteClient) postRequest(code sctransaction.RequestCode, amountIotas int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
 	tx, err := waspapi.CreateRequestTransaction(
 		frc.nodeClient,
 		frc.sigScheme,
@@ -180,18 +180,18 @@ func (frc *FairRouletteClient) postRequest(code sctransaction.RequestCode, amoun
 		}},
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return frc.nodeClient.PostTransaction(tx.Transaction)
+	return tx, frc.nodeClient.PostTransaction(tx.Transaction)
 }
 
-func (frc *FairRouletteClient) Bet(color int, amount int) error {
+func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transaction, error) {
 	return frc.postRequest(fairroulette.RequestPlaceBet, int64(amount), map[string]interface{}{
 		fairroulette.ReqVarColor: int64(color),
 	})
 }
 
-func (frc *FairRouletteClient) SetPeriod(seconds int) error {
+func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transaction, error) {
 	return frc.postRequest(fairroulette.RequestSetPlayPeriod, 0, map[string]interface{}{
 		fairroulette.ReqVarPlayPeriodSec: int64(seconds),
 	})

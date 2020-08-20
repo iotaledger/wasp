@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder/vtxbuilder"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/util"
 	"github.com/mr-tron/base58"
 )
 
@@ -40,7 +41,7 @@ func sendFundsCmd(args []string) {
 	tx := vtxb.Build(false)
 	tx.Sign(wallet.SignatureScheme())
 
-	check(config.GoshimmerClient().PostTransaction(tx))
+	util.PostTransaction(tx)
 }
 
 func decodeColor(s string) *balance.Color {

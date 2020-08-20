@@ -13,6 +13,7 @@ import (
 
 var configPath string
 var Verbose bool
+var WaitForConfirmation bool
 
 const (
 	hostKindApi     = "api"
@@ -24,6 +25,7 @@ func HookFlags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("config", pflag.ExitOnError)
 	flags.StringVarP(&configPath, "config", "c", "wasp-client.json", "path to wasp-client.json")
 	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
+	flags.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
 	return flags
 }
 

@@ -80,7 +80,7 @@ func (fc *FairAuctionClient) fetchSCBalance() (map[balance.Color]int64, error) {
 	return ret, nil
 }
 
-func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) error {
+func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
 	tx, err := waspapi.CreateSimpleRequest(
 		frc.nodeClient,
 		frc.sigScheme,
@@ -92,12 +92,12 @@ func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transf
 		},
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return frc.nodeClient.PostTransaction(tx.Transaction)
+	return tx, frc.nodeClient.PostTransaction(tx.Transaction)
 }
 
-func (fc *FairAuctionClient) SetOwnerMargin(margin int64) error {
+func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transaction, error) {
 	return fc.postRequest(
 		fairauction.RequestSetOwnerMargin,
 		nil,
@@ -122,10 +122,10 @@ func (fc *FairAuctionClient) StartAuction(
 	tokensForSale int64,
 	minimumBid int64,
 	durationMinutes int64,
-) error {
+) (*sctransaction.Transaction, error) {
 	fee, err := fc.GetFeeAmount(minimumBid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return fc.postRequest(
 		fairauction.RequestStartAuction,
@@ -142,7 +142,7 @@ func (fc *FairAuctionClient) StartAuction(
 	)
 }
 
-func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) error {
+func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction.Transaction, error) {
 	return fc.postRequest(
 		fairauction.RequestPlaceBid,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},

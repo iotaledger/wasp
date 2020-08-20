@@ -38,7 +38,10 @@ func (api *utxodbclient) PostAndWaitForConfirmation(tx *transaction.Transaction)
 	if err != nil {
 		return err
 	}
-	txid := tx.ID()
+	return api.WaitForConfirmation(tx.ID())
+}
+
+func (api *utxodbclient) WaitForConfirmation(txid transaction.ID) error {
 	for {
 		conf, err := nodeapi.IsConfirmed(api.goshimmerHost, &txid)
 		if err != nil {

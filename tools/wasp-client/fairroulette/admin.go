@@ -5,7 +5,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
+	"github.com/iotaledger/wasp/tools/wasp-client/util"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 )
 
@@ -25,7 +27,11 @@ func adminCmd(args []string) {
 		}
 		s, err := strconv.Atoi(args[1])
 		check(err)
-		check(fr.Client().SetPeriod(s))
+
+		util.WithTransaction(func() (*transaction.Transaction, error) {
+			tx, err := fr.Client().SetPeriod(s)
+			return tx.Transaction, err
+		})
 
 	default:
 		adminUsage()

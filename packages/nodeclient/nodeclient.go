@@ -11,5 +11,5 @@ type NodeClient interface {
 	GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error)
 	PostTransaction(tx *transaction.Transaction) error
 	PostAndWaitForConfirmation(tx *transaction.Transaction) error
+	WaitForConfirmation(txid transaction.ID) error
 }
-

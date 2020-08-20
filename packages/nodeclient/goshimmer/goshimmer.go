@@ -86,13 +86,17 @@ func (api *goshimmerClient) PostTransaction(tx *transaction.Transaction) error {
 }
 
 func (api *goshimmerClient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
-	txid, err := api.goshimmerClient.SendTransaction(tx.Bytes())
+	_, err := api.goshimmerClient.SendTransaction(tx.Bytes())
 	if err != nil {
 		return err
 	}
+	return api.WaitForConfirmation(tx.ID())
+}
+
+func (api *goshimmerClient) WaitForConfirmation(txid transaction.ID) error {
 	for {
 		time.Sleep(1 * time.Second)
-		tx, err := api.goshimmerClient.GetTransactionByID(txid)
+		tx, err := api.goshimmerClient.GetTransactionByID(txid.String())
 		if err != nil {
 			return err
 		}

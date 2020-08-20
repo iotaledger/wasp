@@ -5,7 +5,9 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
+	"github.com/iotaledger/wasp/tools/wasp-client/util"
 	"github.com/mr-tron/base58"
 )
 
@@ -28,13 +30,16 @@ func startAuctionCmd(args []string) {
 	durationMinutes, err := strconv.Atoi(args[4])
 	check(err)
 
-	check(fa.Client().StartAuction(
-		description,
-		color,
-		int64(amount),
-		int64(minimumBid),
-		int64(durationMinutes),
-	))
+	util.WithTransaction(func() (*transaction.Transaction, error) {
+		tx, err := fa.Client().StartAuction(
+			description,
+			color,
+			int64(amount),
+			int64(minimumBid),
+			int64(durationMinutes),
+		)
+		return tx.Transaction, err
+	})
 }
 
 func decodeColor(s string) *balance.Color {
@@ -56,5 +61,8 @@ func placeBidCmd(args []string) {
 	amount, err := strconv.Atoi(args[2])
 	check(err)
 
-	check(fa.Client().PlaceBid(color, int64(amount)))
+	util.WithTransaction(func() (*transaction.Transaction, error) {
+		tx, err := fa.Client().PlaceBid(color, int64(amount))
+		return tx.Transaction, err
+	})
 }

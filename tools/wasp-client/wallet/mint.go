@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/util"
 )
 
 func mintCmd(args []string) {
@@ -23,7 +24,7 @@ func mintCmd(args []string) {
 	tx, err := apilib.NewColoredTokensTransaction(config.GoshimmerClient(), wallet.SignatureScheme(), int64(amount))
 	check(err)
 
-	check(config.GoshimmerClient().PostTransaction(tx))
+	util.PostTransaction(tx)
 
 	fmt.Printf("Minted %d tokens of color %s\n", amount, tx.ID())
 }
