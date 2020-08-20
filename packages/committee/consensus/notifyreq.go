@@ -53,7 +53,7 @@ func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
 	// send until first success, but no more than number of nodes in the committee
 	op.log.Infow("sendRequestNotificationsToLeaderIfNeeded",
 		"leader", currentLeaderPeerIndex,
-		"currentState index", stateIndex,
+		"currentSCState index", stateIndex,
 		"reqs", idsShortStr(reqIds),
 	)
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
@@ -65,13 +65,13 @@ func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
 func (op *operator) storeNotificationIfNeeded(msg *committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if stateDefined && msg.StateIndex < stateIndex {
-		// don't save from earlier. The current currentState saved only for tracking
+		// don't save from earlier. The current currentSCState saved only for tracking
 		return
 	}
 	op.notificationsBacklog = append(op.notificationsBacklog, msg)
 }
 
-// stores information about notification in the current currentState
+// stores information about notification in the current currentSCState
 func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
@@ -92,7 +92,7 @@ func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
 	}
 }
 
-// adjust all notification information to the current currentState index
+// adjust all notification information to the current currentSCState index
 func (op *operator) adjustNotifications() {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
@@ -103,7 +103,7 @@ func (op *operator) adjustNotifications() {
 		setAllFalse(req.notifications)
 		req.notifications[op.peerIndex()] = req.reqTx != nil
 	}
-	// put markers of the current currentState
+	// put markers of the current currentSCState
 	op.markRequestsNotified(op.notificationsBacklog)
 
 	// clean notification backlog from messages from current and and past states

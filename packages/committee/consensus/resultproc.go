@@ -24,8 +24,8 @@ type runCalculationsParams struct {
 
 // runs the VM for requests and posts result to committee's queue
 func (op *operator) runCalculationsAsync(par runCalculationsParams) {
-	if op.currentState == nil {
-		op.log.Debugf("runCalculationsAsync: variable currentState is not known")
+	if op.currentSCState == nil {
+		op.log.Debugf("runCalculationsAsync: variable currentSCState is not known")
 		return
 	}
 	var progHash hashing.HashValue
@@ -45,7 +45,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		MinimumReward:   op.getMinimumReward(),
 		Requests:        takeRefs(par.requests),
 		Timestamp:       par.timestamp,
-		VirtualState:    op.currentState,
+		VirtualState:    op.currentSCState,
 		Log:             op.log,
 	}
 	ctx.OnFinish = func(err error) {

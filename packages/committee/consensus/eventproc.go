@@ -22,14 +22,14 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 	}
 }
 
-// EventStateTransitionMsg is triggered by new currentState transition message sent by currentState manager
+// EventStateTransitionMsg is triggered by new currentSCState transition message sent by currentSCState manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
-	vh := op.currentState.Hash()
+	vh := op.currentSCState.Hash()
 	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader())
-	op.log.Debugf("STATE FOR CONSENSUS #%d, currentState txid: %s, currentState hash: %s",
+	op.log.Debugf("STATE FOR CONSENSUS #%d, currentSCState txid: %s, currentSCState hash: %s",
 		op.mustStateIndex(), op.stateTx.ID().String(), vh.String())
 
 	// remove all processed requests from the local backlog
@@ -153,7 +153,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 		"stateIndex", op.mustStateIndex(),
 	)
 
-	// inform currentState manager about new result batch
+	// inform currentSCState manager about new result batch
 	go func() {
 		op.committee.ReceiveMessage(committee.PendingBatchMsg{
 			Batch: ctx.ResultBatch,
@@ -251,7 +251,7 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 		}
 		op.log.Infow("timer tick",
 			"#", msg,
-			"currentState index", si,
+			"currentSCState index", si,
 			"req backlog", len(op.requests),
 			"selection", len(op.selectRequestsToProcess()),
 			"notif backlog", len(op.notificationsBacklog),
