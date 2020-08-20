@@ -31,10 +31,10 @@ func Cmd(args []string) {
 		dumpBalance()
 
 	case "mint":
-		mintCmd()
+		mintCmd(args[1:])
 
-	case "transfer":
-		transferCmd()
+	case "send-funds":
+		sendFundsCmd(args[1:])
 
 	case "request-funds":
 		requestFunds()
