@@ -16,6 +16,8 @@ wasp-client-owner wallet init
 wasp-client-owner wallet request-funds
 wasp-client-owner fr admin init
 wasp-client-owner fr admin set-period 10
+scaddress=$(cat owner.json | jq .fr.address -r)
+wasp-client-owner wallet send-funds $scaddress IOTA 100 # operating capital
 
 echo "Waiting for set-period request to be executed..."
 while true; do
@@ -26,7 +28,7 @@ done
 
 wasp-client wallet init
 wasp-client wallet request-funds
-wasp-client fr set address $(cat owner.json | jq .fr.address -r)
+wasp-client fr set address $scaddress
 
 wasp-client fr bet 2 100
 

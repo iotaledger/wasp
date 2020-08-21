@@ -15,10 +15,12 @@ function wasp-client-owner() {
 wasp-client-owner wallet init
 wasp-client-owner wallet request-funds
 wasp-client-owner fa admin init
+scaddress=$(cat owner.json | jq .fr.address -r)
+wasp-client-owner wallet send-funds $scaddress IOTA 100 # operating capital
 
 wasp-client wallet init
 wasp-client wallet request-funds
-wasp-client fa set address $(cat owner.json | jq .fa.address -r)
+wasp-client fa set address $scaddress
 
 r=$(wasp-client wallet mint 10)
 echo "$r"

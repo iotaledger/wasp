@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder/vtxbuilder"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
-	"github.com/iotaledger/wasp/tools/wasp-client/util"
-	"github.com/mr-tron/base58"
+	clientutil "github.com/iotaledger/wasp/tools/wasp-client/util"
 )
 
 func sendFundsCmd(args []string) {
@@ -22,12 +22,12 @@ func sendFundsCmd(args []string) {
 	wallet := Load()
 	sourceAddress := wallet.Address()
 
-	targetAddress, err := address.FromBase58(args[1])
+	targetAddress, err := address.FromBase58(args[0])
 	check(err)
 
-	color := decodeColor(args[2])
+	color := decodeColor(args[1])
 
-	amount, err := strconv.Atoi(args[3])
+	amount, err := strconv.Atoi(args[2])
 	check(err)
 
 	bals, err := config.GoshimmerClient().GetAccountOutputs(&sourceAddress)
@@ -41,13 +41,11 @@ func sendFundsCmd(args []string) {
 	tx := vtxb.Build(false)
 	tx.Sign(wallet.SignatureScheme())
 
-	util.PostTransaction(tx)
+	clientutil.PostTransaction(tx)
 }
 
 func decodeColor(s string) *balance.Color {
-	b, err := base58.Decode(s)
-	check(err)
-	color, _, err := balance.ColorFromBytes(b)
+	color, err := util.ColorFromString(s)
 	check(err)
 	return &color
 }

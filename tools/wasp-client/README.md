@@ -45,12 +45,14 @@ This will create the file `owner.json` with the admin user's wallet.
 
 2. Transfer some funds to the owner address: `wasp-client -c owner.json wallet request-funds`.
 
-3. Initialize the FairRoulette smart contract:
+3. Initialize the FairRoulette smart contract, and transfer some operating
+   capital to it:
 
 ```
 $ wasp-client -c owner.json fr admin init
 Initialized FairRoulette smart contract
 SC Address: mUbfBM...
+$ wasp-client-owner wallet send-funds mUbfBM... IOTA 100
 ```
 
 Copy the generated SC address. (It is also saved in `owner.json`)
@@ -100,12 +102,14 @@ Steps:
 1. Initialize wallets for the owner and client account, as needed (see the
    relevant steps in FairRoulette section.
 
-2. Initialize the FairAuction smart contract:
+2. Initialize the FairAuction smart contract, and transfer some operating
+   capital to it:
 
 ```
 $ wasp-client -c owner.json fa admin init
 Initialized FairAuction smart contract
 SC Address: mUbfBM...
+$ wasp-client-owner wallet send-funds mUbfBM... IOTA 100
 ```
 
 Copy the generated SC address. (It is also saved in `owner.json`)
