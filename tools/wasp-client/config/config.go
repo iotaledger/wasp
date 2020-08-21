@@ -42,7 +42,7 @@ func SetCmd(args []string) {
 
 func Read() {
 	viper.SetConfigFile(configPath)
-	check(viper.ReadInConfig())
+	_ = viper.ReadInConfig()
 }
 
 func GoshimmerApi() string {
