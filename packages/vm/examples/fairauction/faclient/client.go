@@ -2,6 +2,7 @@ package faclient
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -113,12 +114,16 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	query := stateapi.NewQueryRequest(fc.scAddress)
 	query.AddInt64(fairauction.VarStateOwnerMarginPromille)
 	results, err := waspapi.QuerySCState(fc.waspHost, query)
-	if err != nil {
-		return 0, err
-	}
-	ownerMarginState, ok, err := results[fairauction.VarStateOwnerMarginPromille].MustInt64()
-	if err != nil {
-		return 0, err
+	var ownerMarginState int64
+	var ok bool
+	if err != waspapi.ErrStateNotFound {
+		if err != nil {
+			return 0, err
+		}
+		ownerMarginState, ok, err = results[fairauction.VarStateOwnerMarginPromille].MustInt64()
+		if err != nil {
+			return 0, err
+		}
 	}
 	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok)
 	fee := fairauction.GetExpectedDeposit(minimumBid, ownerMargin)
@@ -134,7 +139,7 @@ func (fc *FairAuctionClient) StartAuction(
 ) (*sctransaction.Transaction, error) {
 	fee, err := fc.GetFeeAmount(minimumBid)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetFeeAmount failed: %v", err)
 	}
 	return fc.postRequest(
 		fairauction.RequestStartAuction,

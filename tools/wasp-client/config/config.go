@@ -15,7 +15,7 @@ import (
 var configPath string
 var Verbose bool
 var WaitForConfirmation bool
-var utxodb bool
+var Utxodb bool
 
 const (
 	hostKindApi     = "api"
@@ -28,7 +28,7 @@ func HookFlags() *pflag.FlagSet {
 	flags.StringVarP(&configPath, "config", "c", "wasp-client.json", "path to wasp-client.json")
 	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
 	flags.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
-	flags.BoolVarP(&utxodb, "utxodb", "u", false, "use utxodb")
+	flags.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
 	return flags
 }
 
@@ -54,7 +54,7 @@ func GoshimmerApi() string {
 }
 
 func GoshimmerClient() nodeclient.NodeClient {
-	if utxodb {
+	if Utxodb {
 		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
 	}
 	return goshimmer.NewGoshimmerClient(GoshimmerApi())
@@ -122,14 +122,22 @@ func SetSCAddress(scName string, address string) {
 	Set(scName+".address", address)
 }
 
-func GetSCAddress(scName string) *address.Address {
+func TrySCAddress(scName string) *address.Address {
 	b58 := viper.GetString(scName + ".address")
 	if len(b58) == 0 {
-		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin init` first"))
+		return nil
 	}
 	address, err := address.FromBase58(b58)
 	check(err)
 	return &address
+}
+
+func GetSCAddress(scName string) *address.Address {
+	address := TrySCAddress(scName)
+	if address == nil {
+		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin init` first"))
+	}
+	return address
 }
 
 func check(err error) {

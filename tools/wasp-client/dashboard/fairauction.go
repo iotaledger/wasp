@@ -3,7 +3,6 @@ package dashboard
 import (
 	"html/template"
 	"net/http"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
@@ -30,16 +29,7 @@ type FATemplateParams struct {
 }
 
 func initFATemplate() *template.Template {
-	t := template.New("").Funcs(template.FuncMap{
-		"formatTimestamp": func(ts int64) string {
-			return time.Unix(0, ts).UTC().Format(time.RFC3339)
-		},
-	})
-	t = template.Must(t.Parse(tplBase))
-	t = template.Must(t.Parse(tplWs))
-	t = template.Must(t.Parse(tplInstallConfig))
-	t = template.Must(t.Parse(tplFairAuction))
-	return t
+	return makeTemplate(tplWs, tplInstallConfig, tplFairAuction)
 }
 
 const tplFairAuction = `
@@ -55,13 +45,13 @@ const tplFairAuction = `
 			<ul>
 			{{range $color, $auction := .Status.Auctions}}
 				<li><div>
-					<p>Color: <code>{{$color}}</code></p>
+					<p>Color for sale: <code>{{$color}}</code></p>
+					<p>Tokens for sale: <code>{{$auction.NumTokens}}</code></p>
 					<p>Owner: <code>{{$auction.AuctionOwner}}</code></p>
 					<p>Description: <code>{{$auction.Description}}</code></p>
 					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
 					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
 					<p>Deposit: <code>{{$auction.TotalDeposit}}</code></p>
-					<p>Tokens for sale: <code>{{$auction.NumTokens}}</code></p>
 					<p>Minimum bid: <code>{{$auction.MinimumBid}} IOTAs</code></p>
 					<p>Owner margin: <code>{{$auction.OwnerMargin}} promilles</code></p>
 					<p>Bids:
@@ -86,18 +76,18 @@ const tplFairAuction = `
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Mint a new color</summary>
-			<p><code>wasp-client wallet mint <i>amount-tokens</i></code>
-			(e.g.: <code>wasp-client wallet mint 1</code>)</p>
+			<p><code>{{waspClientCmd}} wallet mint <i>amount-tokens</i></code>
+			<br/>(e.g.: <code>{{waspClientCmd}} wallet mint 1</code>)</p>
 		</details>
 		<details>
 			<summary>4. Start an auction</summary>
-			<p><code>wasp-client fa start-auction <i>description</i> <i>color</i> <i>amount-tokens</i> <i>minimum-bid</i> <i>duration</i></code>
-			(e.g.: <code>wasp-client fa start-auction gHw2r... 1 100 10</code>)</p>
+			<p><code>{{waspClientCmd}} fa start-auction <i>description</i> <i>color</i> <i>amount-tokens</i> <i>minimum-bid</i> <i>duration</i></code>
+			<br/>(e.g.: <code>{{waspClientCmd}} fa start-auction "My awesome token" gHw2r... 1 100 10</code>)</p>
 		</details>
 		<details>
 			<summary>5. Place a bid</summary>
-			<p><code>wasp-client fa place-bid <i>color</i> <i>amount-iotas</i></code>
-			(e.g.: <code>wasp-client fa place-bid gHw2r... 110</code>)</p>
+			<p><code>{{waspClientCmd}} fa place-bid <i>color</i> <i>amount-iotas</i></code>
+			<br/>(e.g.: <code>{{waspClientCmd}} fa place-bid gHw2r... 110</code>)</p>
 		</details>
 	</div>
 	{{template "ws" .}}

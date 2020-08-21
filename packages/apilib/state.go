@@ -32,6 +32,8 @@ func DumpSCState(host string, scAddress string) (*admapi.DumpSCStateResponse, er
 	return &result, nil
 }
 
+var ErrStateNotFound = errors.New("State not found")
+
 func QuerySCState(host string, query *stateapi.QueryRequest) (map[kv.Key]*stateapi.QueryResult, error) {
 	url := fmt.Sprintf("http://%s/sc/state/query", host)
 	data, err := json.Marshal(query)
@@ -47,6 +49,9 @@ func QuerySCState(host string, query *stateapi.QueryRequest) (map[kv.Key]*statea
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrStateNotFound
+	}
 	if resp.StatusCode != http.StatusOK || queryResponse.Error != "" {
 		return nil, fmt.Errorf("sc/state/query returned code %d: %s", resp.StatusCode, queryResponse.Error)
 	}
@@ -56,22 +61,4 @@ func QuerySCState(host string, query *stateapi.QueryRequest) (map[kv.Key]*statea
 		results[kv.Key(r.Key)] = r
 	}
 	return results, nil
-}
-
-func toBytes(keys []kv.Key) [][]byte {
-	ret := make([][]byte, 0)
-	for _, v := range keys {
-		ret = append(ret, []byte(v))
-	}
-	return ret
-}
-
-func toMap(values []stateapi.KeyValuePair) kv.Map {
-	m := kv.NewMap()
-	for _, entry := range values {
-		if len(entry.Value) > 0 {
-			m.Set(kv.Key(entry.Key), entry.Value)
-		}
-	}
-	return m
 }

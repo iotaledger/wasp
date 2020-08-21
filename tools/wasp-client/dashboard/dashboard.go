@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -59,6 +60,13 @@ func Cmd(args []string) {
 	e.Logger.Fatal(e.Start(listenAddr))
 }
 
+func addSCAddress(scAddresses map[string]bool, sc *config.SCConfig) {
+	scAddress := sc.TryAddress()
+	if scAddress != nil {
+		scAddresses[scAddress.String()] = true
+	}
+}
+
 func startNanomsgForwarder(logger echo.Logger) chan bool {
 	done := make(chan bool)
 	incomingStateMessages := make(chan []string)
@@ -66,14 +74,16 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	check(err)
 	logger.Infof("[Nanomsg] connected")
 
-	scAddress := fr.Config.Address().String()
+	scAddresses := make(map[string]bool)
+	addSCAddress(scAddresses, fr.Config)
+	addSCAddress(scAddresses, fa.Config)
 
 	go func() {
 		for {
 			select {
 			case msg := <-incomingStateMessages:
-				addr := msg[1]
-				if addr != scAddress {
+				_, ok := scAddresses[msg[1]]
+				if !ok {
 					continue
 				}
 				{

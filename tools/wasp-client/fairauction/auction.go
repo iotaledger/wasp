@@ -1,6 +1,7 @@
 package fairauction
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func startAuctionCmd(args []string) {
-	if len(args) < 0 {
+	if len(args) != 5 {
 		fa.Config.PrintUsage("start-auction <description> <color> <amount> <minumum-bid> <duraion>")
 		os.Exit(1)
 	}
@@ -39,7 +40,7 @@ func startAuctionCmd(args []string) {
 			int64(durationMinutes),
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("StartAuction failed: %v", err)
 		}
 		return tx.Transaction, nil
 	})
@@ -54,7 +55,7 @@ func decodeColor(s string) *balance.Color {
 }
 
 func placeBidCmd(args []string) {
-	if len(args) < 2 {
+	if len(args) != 2 {
 		fa.Config.PrintUsage("place-bid <color> <amount>")
 		os.Exit(1)
 	}

@@ -1,8 +1,12 @@
 package dashboard
 
 import (
+	"html/template"
 	"net"
+	"os"
+	"time"
 
+	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/labstack/echo"
 )
 
@@ -29,6 +33,29 @@ type NavPage struct {
 	Title  string
 	Active bool
 	Href   string
+}
+
+func makeTemplate(parts ...string) *template.Template {
+	t := template.New("").Funcs(template.FuncMap{
+		"formatTimestamp": func(ts interface{}) string {
+			t, ok := ts.(time.Time)
+			if !ok {
+				t = time.Unix(0, ts.(int64)).UTC()
+			}
+			return t.Format(time.RFC3339)
+		},
+		"waspClientCmd": func() string {
+			if config.Utxodb {
+				return os.Args[0] + " -u"
+			}
+			return os.Args[0]
+		},
+	})
+	t = template.Must(t.Parse(tplBase))
+	for _, part := range parts {
+		t = template.Must(t.Parse(part))
+	}
+	return t
 }
 
 const tplBase = `
@@ -108,11 +135,11 @@ $ go install ./tools/wallet
 	</details>
 	<details>
 		<summary>2. Configure</summary>
-<pre>$ wasp-client set goshimmer.api {{.Host}}:8080
-$ wasp-client set wasp.api {{.Host}}:9090
-$ wasp-client {{.SC.ShortName}} set address {{.SC.Address}}</pre>
-		<p>Initialize a wallet: <code>wasp-client wallet init</code></p>
-		<p>Get some funds: <code>wasp-client wallet request-funds</code></p>
+<pre>$ {{waspClientCmd}} set goshimmer.api {{.Host}}:8080
+$ {{waspClientCmd}} set wasp.api {{.Host}}:9090
+$ {{waspClientCmd}} {{.SC.ShortName}} set address {{.SC.Address}}</pre>
+		<p>Initialize a wallet: <code>{{waspClientCmd}} wallet init</code></p>
+		<p>Get some funds: <code>{{waspClientCmd}} wallet request-funds</code></p>
 	</details>
 {{end}}
 `

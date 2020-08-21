@@ -3,7 +3,6 @@ package dashboard
 import (
 	"html/template"
 	"net/http"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette/frclient"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
@@ -29,16 +28,8 @@ type FRTemplateParams struct {
 	Status *frclient.Status
 }
 
-func (p FRTemplateParams) FormatNextPlayTime() string {
-	return p.Status.NextPlayTimestamp.Format(time.RFC3339)
-}
-
 func initFRTemplate() *template.Template {
-	t := template.Must(template.New("").Parse(tplBase))
-	t = template.Must(t.Parse(tplWs))
-	t = template.Must(t.Parse(tplInstallConfig))
-	t = template.Must(t.Parse(tplFairRoulette))
-	return t
+	return makeTemplate(tplWs, tplInstallConfig, tplFairRoulette)
 }
 
 const tplFairRoulette = `
@@ -91,14 +82,14 @@ const tplFairRoulette = `
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Place bets</summary>
-			<p><code>wasp-client fr bet <i>color</i> <i>amount</i></code>
-			(e.g.: <code>wasp-client fr bet 1 100</code>)</p>
+			<p><code>{{waspClientCmd}} fr bet <i>color</i> <i>amount</i></code>
+			<br/>(e.g.: <code>{{waspClientCmd}} fr bet 1 100</code>)</p>
 			<p>Then refresh this page to see the results.</p>
 		</details>
 	</div>
 
 	<script>
-		const nextPlayAt = new Date({{.FormatNextPlayTime}});
+		const nextPlayAt = new Date({{formatTimestamp .Status.NextPlayTimestamp}});
 
 		const nextPlayIn = document.getElementById("nextPlayIn");
 

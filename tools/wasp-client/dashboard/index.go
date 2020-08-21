@@ -18,9 +18,7 @@ type IndexTemplateParams struct {
 }
 
 func initIndexTemplate() *template.Template {
-	t := template.Must(template.New("").Parse(tplBase))
-	t = template.Must(t.Parse(tplIndex))
-	return t
+	return makeTemplate(tplIndex)
 }
 
 const tplIndex = `

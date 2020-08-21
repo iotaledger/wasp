@@ -85,6 +85,10 @@ func (c *SCConfig) Address() *address.Address {
 	return GetSCAddress(c.ShortName)
 }
 
+func (c *SCConfig) TryAddress() *address.Address {
+	return TrySCAddress(c.ShortName)
+}
+
 func (c *SCConfig) InitSC(sigScheme signaturescheme.SignatureScheme) error {
 	scAddress, _, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
 		Node:                  GoshimmerClient(),
