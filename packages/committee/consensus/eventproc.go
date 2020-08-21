@@ -24,13 +24,12 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 
 // EventStateTransitionMsg is triggered by new currentSCState transition message sent by currentSCState manager
 func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
-	op.setNewState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
+	op.setNewSCState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.currentSCState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v",
-		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader())
-	op.log.Debugf("STATE FOR CONSENSUS #%d, currentSCState txid: %s, currentSCState hash: %s",
-		op.mustStateIndex(), op.stateTx.ID().String(), vh.String())
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, consensusStage hash: %s",
+		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
+		op.stateTx.ID().String(), vh.String())
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
@@ -38,15 +37,18 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 		return
 	}
 	// send backlog to the new leader
-	op.sendNotificationsScheduled = true
-
+	if msg.Synchronized {
+		op.setConsensusStage(consensusStageLeaderStarting)
+	} else {
+		op.setConsensusStage(consensusStageNoSync)
+	}
 	op.takeAction()
 
-	// check is processor is ready for the current state. If no, initiate load of the processor
+	// check is processor is ready for the current consensusStage. If no, initiate load of the processor
 	op.processorReady = false
 	progHash, ok := op.getProgramHash()
 	if !ok {
-		op.log.Warnf("program hash is undefined. Committee isn't able to load and run VM")
+		op.log.Warnf("program hash is undefined. Only builtin requests can be processed")
 		return
 	}
 	progHashStr := progHash.String()
@@ -80,7 +82,7 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 		"backlog req", len(op.requests),
 		"backlog notif", len(op.notificationsBacklog),
 	)
-
+	// place request into the backlog list
 	req, _ := op.requestFromMsg(reqMsg)
 
 	if reqMsg.Timelock() != 0 {
@@ -88,22 +90,23 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 			reqMsg.RequestBlock().String(reqMsg.RequestId()), time.Now().Unix())
 	}
 
-	op.sendNotificationsScheduled = true
 	op.takeAction()
 }
 
+// EventNotifyReqMsg request notification received from the peer
 func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
 		"reqIds", idsShortStr(msg.RequestIds),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
-	op.storeNotificationIfNeeded(msg)
+	op.storeNotification(msg)
 	op.markRequestsNotified([]*committee.NotifyReqMsg{msg})
 
 	op.takeAction()
 }
 
+// EventStartProcessingBatchMsg leader sent command to start processing the batch
 func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
 
@@ -115,19 +118,20 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 	)
 	stateIndex, ok := op.stateIndex()
 	if !ok || msg.StateIndex != stateIndex {
-		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context")
+		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
-
 	numOrig := len(msg.RequestIds)
 	reqs := op.takeFromIds(msg.RequestIds)
 	if len(reqs) != numOrig {
-		op.log.Debugf("node can't process the batch: some requests are already processed")
+		op.log.Warnf("node can't process the batch: some requests are already processed")
 		return
 	}
+
 	reqs = op.filterNotReadyYet(reqs)
 	if len(reqs) != numOrig {
-		op.log.Debugf("node is not ready to process the batch")
+		// do not start processing batch if some of it's requests are not ready yet
+		op.log.Warn("node is not ready to process the batch")
 		return
 	}
 	// start async calculation
@@ -138,8 +142,12 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		rewardAddress:   msg.RewardAddress,
 		leaderPeerIndex: msg.SenderIndex,
 	})
+	op.setConsensusStage(consensusStageCalculationsStarted)
+	op.takeAction()
 }
 
+// EventResultCalculated VM goroutine finished run and posted this message
+// the action is to send the result to the leader
 func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	op.log.Debugf("eventResultCalculated")
 
@@ -153,7 +161,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 		"stateIndex", op.mustStateIndex(),
 	)
 
-	// inform currentSCState manager about new result batch
+	// inform state manager about new result batch
 	go func() {
 		op.committee.ReceiveMessage(committee.PendingBatchMsg{
 			Batch: ctx.ResultBatch,
@@ -166,10 +174,10 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	} else {
 		op.sendResultToTheLeader(ctx)
 	}
-
 	op.takeAction()
 }
 
+// EventSignedHashMsg result received from another peer
 func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	op.log.Debugw("EventSignedHashMsg",
 		"sender", msg.SenderIndex,
@@ -177,6 +185,10 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		"essence hash", msg.EssenceHash.String(),
 		"ts", msg.OrigTimestamp,
 	)
+	if !oneOf(op.consensusStage, []int{consensusStageCalculationsStarted, consensusStageCalculationsFinished}) {
+		op.log.Errorf("EventSignedHashMsg: op.consensusStage != consensusStageCalculationsStarted. Unexpected")
+		return
+	}
 	if op.leaderStatus == nil {
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
 		// shouldn't be
@@ -184,6 +196,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 	}
 	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
 		// out of context
+		op.log.Debugf("EventSignedHashMsg: out of context")
 		return
 	}
 	if msg.BatchHash != op.leaderStatus.batchHash {
@@ -191,7 +204,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		return
 	}
 	if op.leaderStatus.signedResults[msg.SenderIndex] != nil {
-		// repeating
+		// repeating message from peer
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil")
 		return
 	}
@@ -210,15 +223,12 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
-	resTx, ok := op.sentResultsToLeader[msg.SenderIndex]
-	if !ok {
-		// this is controversial: shall we postpone leader deadline for unseen transaction?
-		op.log.Debugf("postpone rotation deadline for unseen transaction for %v more.",
-			op.committee.Params().ConfirmationWaitingPeriod)
-		op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+	if op.sentResultToLeader == nil {
+		// result wasn't sent. Nothing to reconcile
+		op.setConsensusStage(consensusStageResultFinalized)
 		return
 	}
-	essence := resTx.EssenceBytes()
+	essence := op.sentResultToLeader.EssenceBytes()
 	if !msg.Signature.IsValid(essence) {
 		op.log.Errorf("received invalid final signature from peer #%d. State index: %d, essence hash: %s",
 			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
@@ -226,20 +236,16 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	}
 	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more",
 		op.committee.Params().ConfirmationWaitingPeriod)
-	op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+	op.setConsensusStage(consensusStageResultFinalized)
 }
 
-// EventStateTransactionEvidenced is triggered when state manager receives state transaction not confirmed yet
+// EventStateTransactionEvidenced is triggered when consensusStage manager receives consensusStage transaction not confirmed yet
 // It postpones leader rotation deadline
 func (op *operator) EventStateTransactionEvidenced(msg *committee.StateTransactionEvidenced) {
 	op.log.Debugw("EventStateTransactionEvidenced",
 		"txid", msg.TxId.String(),
-		"state hash", msg.StateHash.String(),
+		"consensusStage hash", msg.StateHash.String(),
 	)
-	if !op.stateTxEvidenced {
-		op.stateTxEvidenced = true
-		op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
-	}
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {

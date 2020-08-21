@@ -96,9 +96,12 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 
 	if err := op.committee.SendMsg(result.LeaderPeerIndex, committee.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
+		return
 	}
-	// remember all sent transactions for this state index
-	op.sentResultsToLeader[result.LeaderPeerIndex] = result.ResultTransaction
+	op.sentResultToLeader = result.ResultTransaction
+	op.sentResultToLeaderIndex = result.LeaderPeerIndex
+
+	op.setConsensusStage(consensusStageCalculationsFinished)
 }
 
 func (op *operator) saveOwnResult(result *vm.VMTask) {
@@ -134,6 +137,8 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		essenceHash: *essenceHash,
 		sigShare:    sigShare,
 	}
+
+	op.setConsensusStage(consensusStageCalculationsFinished)
 }
 
 func (op *operator) aggregateSigShares(sigShares [][]byte) (signaturescheme.Signature, error) {

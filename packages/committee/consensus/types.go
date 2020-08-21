@@ -25,11 +25,11 @@ type operator struct {
 	currentSCState state.VirtualState
 	stateTx        *sctransaction.Transaction
 	balances       map[valuetransaction.ID][]*balance.Balance
-	synchronized   bool
 
-	// consensus state
-	state        int
-	whenSetState time.Time
+	// consensus stage
+	consensusStage            int
+	consensusStageDeadlineSet bool
+	consensusStageDeadline    time.Time
 	//
 	requestBalancesDeadline time.Time
 	processorReady          bool
@@ -37,18 +37,13 @@ type operator struct {
 	// notifications with future currentSCState indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
-	// notifications must be sent in the new cycle
-	sendNotificationsScheduled bool
-
 	requests map[sctransaction.RequestId]*request
 
-	peerPermutation           *util.Permutation16
-	leaderRotationDeadlineSet bool
-	stateTxEvidenced          bool
-	leaderRotationDeadline    time.Time
+	peerPermutation *util.Permutation16
 
-	leaderStatus        *leaderStatus
-	sentResultsToLeader map[uint16]*sctransaction.Transaction
+	leaderStatus            *leaderStatus
+	sentResultToLeaderIndex uint16
+	sentResultToLeader      *sctransaction.Transaction
 
 	log *logger.Logger
 }
@@ -79,8 +74,6 @@ type request struct {
 	whenMsgReceived time.Time
 	// notification vector for the current currentSCState
 	notifications []bool
-	// initially time locked
-	timelocked bool
 
 	log *logger.Logger
 }
@@ -89,14 +82,13 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 	defer committee.SetReadyConsensus()
 
 	ret := &operator{
-		committee:           committee,
-		dkshare:             dkshare,
-		requests:            make(map[sctransaction.RequestId]*request),
-		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
-		sentResultsToLeader: make(map[uint16]*sctransaction.Transaction),
-		log:                 log.Named("c"),
+		committee:       committee,
+		dkshare:         dkshare,
+		requests:        make(map[sctransaction.RequestId]*request),
+		peerPermutation: util.NewPermutation16(committee.Size(), nil),
+		log:             log.Named("c"),
 	}
-	ret.setNextState(stateInit)
+	ret.setConsensusStage(consensusStageNoSync)
 	return ret
 }
 

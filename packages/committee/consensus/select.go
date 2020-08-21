@@ -54,22 +54,6 @@ func (op *operator) selectRequestsToProcess() []*request {
 		return nil
 	}
 	return ret
-	//before := idsShortStr(takeIds(ret))
-	//
-	//// not clear is it needed
-	////ret = op.filterNotCompletePackages(ret)
-	//
-	//after := idsShortStr(takeIds(ret))
-	//
-	//if len(after) != len(before) {
-	//	op.log.Debugf("filterNotCompletePackages: %+v --> %+v\nbalances: %s",
-	//		before, after, util.BalancesToString(op.balances))
-	//}
-
-	// doesn't make much sense to sort
-	//sort.Slice(ret, func(i, j int) bool {
-	//	return ret[i].whenMsgReceived.Before(ret[j].whenMsgReceived)
-	//})
 }
 
 // all requests from the backlog which has known messages and are not timelocked
