@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ARGS="$*"
+
 function wasp-client() {
-    echo "wasp-client -w $@"
-    command wasp-client -w "$@"
+    echo "wasp-client -w $ARGS $@"
+    command wasp-client -w $ARGS "$@"
 }
 
 function wasp-client-owner() {

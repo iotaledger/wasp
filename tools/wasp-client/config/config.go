@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -14,6 +15,7 @@ import (
 var configPath string
 var Verbose bool
 var WaitForConfirmation bool
+var utxodb bool
 
 const (
 	hostKindApi     = "api"
@@ -26,6 +28,7 @@ func HookFlags() *pflag.FlagSet {
 	flags.StringVarP(&configPath, "config", "c", "wasp-client.json", "path to wasp-client.json")
 	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
 	flags.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
+	flags.BoolVarP(&utxodb, "utxodb", "u", false, "use utxodb")
 	return flags
 }
 
@@ -51,6 +54,9 @@ func GoshimmerApi() string {
 }
 
 func GoshimmerClient() nodeclient.NodeClient {
+	if utxodb {
+		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
+	}
 	return goshimmer.NewGoshimmerClient(GoshimmerApi())
 }
 
