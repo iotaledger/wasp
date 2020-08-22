@@ -38,7 +38,11 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	// send backlog to the new leader
 	if msg.Synchronized {
-		op.setConsensusStage(consensusStageLeaderStarting)
+		if op.iAmCurrentLeader() {
+			op.setConsensusStage(consensusStageLeaderStarting)
+		} else {
+			op.setConsensusStage(consensusStageSubStarting)
+		}
 	} else {
 		op.setConsensusStage(consensusStageNoSync)
 	}
@@ -142,7 +146,7 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		rewardAddress:   msg.RewardAddress,
 		leaderPeerIndex: msg.SenderIndex,
 	})
-	op.setConsensusStage(consensusStageCalculationsStarted)
+	op.setConsensusStage(consensusStageSubCalculationsStarted)
 	op.takeAction()
 }
 
@@ -185,10 +189,6 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 		"essence hash", msg.EssenceHash.String(),
 		"ts", msg.OrigTimestamp,
 	)
-	if !oneOf(op.consensusStage, []int{consensusStageCalculationsStarted, consensusStageCalculationsFinished}) {
-		op.log.Errorf("EventSignedHashMsg: op.consensusStage != consensusStageCalculationsStarted. Unexpected")
-		return
-	}
 	if op.leaderStatus == nil {
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
 		// shouldn't be
@@ -225,7 +225,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	)
 	if op.sentResultToLeader == nil {
 		// result wasn't sent. Nothing to reconcile
-		op.setConsensusStage(consensusStageResultFinalized)
+		op.setConsensusStage(consensusStageSubResultFinalized)
 		return
 	}
 	essence := op.sentResultToLeader.EssenceBytes()
@@ -236,7 +236,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	}
 	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more",
 		op.committee.Params().ConfirmationWaitingPeriod)
-	op.setConsensusStage(consensusStageResultFinalized)
+	op.setConsensusStage(consensusStageSubResultFinalized)
 }
 
 // EventStateTransactionEvidenced is triggered when consensusStage manager receives consensusStage transaction not confirmed yet

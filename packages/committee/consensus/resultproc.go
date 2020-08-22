@@ -101,7 +101,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	op.sentResultToLeader = result.ResultTransaction
 	op.sentResultToLeaderIndex = result.LeaderPeerIndex
 
-	op.setConsensusStage(consensusStageCalculationsFinished)
+	op.setConsensusStage(consensusStageSubCalculationsFinished)
 }
 
 func (op *operator) saveOwnResult(result *vm.VMTask) {
@@ -138,7 +138,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		sigShare:    sigShare,
 	}
 
-	op.setConsensusStage(consensusStageCalculationsFinished)
+	op.setConsensusStage(consensusStageLeaderCalculationsFinished)
 }
 
 func (op *operator) aggregateSigShares(sigShares [][]byte) (signaturescheme.Signature, error) {

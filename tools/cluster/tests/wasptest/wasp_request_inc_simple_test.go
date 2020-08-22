@@ -102,6 +102,8 @@ func TestSend5ReqInc0SecSimple(t *testing.T) {
 	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
+	wasps.Report()
+
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
 		balance.ColorIOTA: 0,
 		sc.GetColor():     1,

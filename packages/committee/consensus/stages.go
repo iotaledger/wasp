@@ -3,54 +3,112 @@ package consensus
 import "time"
 
 const (
-	// in the beginning
 	consensusStageNoSync = iota
-	// leader is just starting its activity, probably after rotation
-	// no notifications has been sent yet
+	// leader stages
 	consensusStageLeaderStarting
-	// calculations on VM started on leader or on subordinate
-	consensusStageCalculationsStarted
-	// calculations on VM finished on leader or on subordinate
-	consensusStageCalculationsFinished
-	// finalized result has been sent to the tangle and peers. For leader only
-	consensusStageResultFinalized
-	// notifications has been sent to the leader. For non-leader only
-	consensusStageNotificationsSent
+	consensusStageLeaderCalculationsStarted
+	consensusStageLeaderCalculationsFinished
+	consensusStageLeaderResultFinalized
+	// subordinate stages
+	consensusStageSubStarting
+	consensusStageSubNotificationsSent
+	consensusStageSubCalculationsStarted
+	consensusStageSubCalculationsFinished
+	consensusStageSubResultFinalized
 )
 
 type stateParams struct {
-	name           string
-	leaderState    bool
-	nonLeaderState bool
-	timeoutSet     bool
-	timeout        time.Duration
-	nextStages     []int
+	name          string
+	isLeaderState bool
+	timeoutSet    bool
+	timeout       time.Duration
+	nextStages    []int
 }
 
 var stages = map[int]*stateParams{
 	consensusStageNoSync: {"NoSync",
-		true, true, false, 0,
-		[]int{consensusStageLeaderStarting},
+		false, false, 0,
+		[]int{
+			consensusStageNoSync,
+			consensusStageLeaderStarting,
+			consensusStageSubStarting,
+		},
 	},
+	// leader stages
 	consensusStageLeaderStarting: {"LeaderStarting",
-		true, true, false, 0,
-		[]int{consensusStageCalculationsStarted, consensusStageNotificationsSent},
+		true, false, 0,
+		[]int{
+			consensusStageNoSync,
+			consensusStageLeaderStarting,
+			consensusStageLeaderCalculationsStarted,
+		},
 	},
-	consensusStageCalculationsStarted: {"CalculationsStarted",
-		true, true, true, 15 * time.Second,
-		[]int{consensusStageCalculationsFinished},
+	consensusStageLeaderCalculationsStarted: {"LeaderCalculationsStarted",
+		true, true, 15 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageLeaderStarting,
+			consensusStageLeaderCalculationsFinished,
+		},
 	},
-	consensusStageCalculationsFinished: {"CalculationsFinished",
-		true, true, true, 5 * time.Second,
-		[]int{consensusStageResultFinalized},
+	consensusStageLeaderCalculationsFinished: {"LeaderCalculationsFinished",
+		true, true, 5 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageLeaderStarting,
+			consensusStageLeaderResultFinalized,
+		},
 	},
-	consensusStageResultFinalized: {"ResultFinalized",
-		true, true, true, 20 * time.Second,
-		[]int{},
+	consensusStageLeaderResultFinalized: {"LeaderResultFinalized",
+		true, true, 20 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageLeaderStarting,
+		},
 	},
-	consensusStageNotificationsSent: {"NotificationsSent",
-		false, true, true, 15 * time.Second,
-		[]int{consensusStageCalculationsStarted, consensusStageResultFinalized},
+	// subordinate stages
+	consensusStageSubStarting: {"SubStarting",
+		false, false, 0,
+		[]int{
+			consensusStageNoSync,
+			consensusStageSubStarting,
+			consensusStageSubNotificationsSent,
+			consensusStageSubCalculationsStarted,
+			consensusStageSubResultFinalized,
+		},
+	},
+	consensusStageSubNotificationsSent: {"SubNotificationsSent",
+		false, true, 15 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageSubStarting,
+			consensusStageSubCalculationsStarted,
+			consensusStageSubResultFinalized,
+		},
+	},
+	consensusStageSubCalculationsStarted: {"SubCalculationsStarted",
+		false, true, 15 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageSubStarting,
+			consensusStageSubCalculationsFinished,
+			consensusStageSubResultFinalized,
+		},
+	},
+	consensusStageSubCalculationsFinished: {"SubCalculationsFinished",
+		false, true, 5 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageSubStarting,
+			consensusStageSubResultFinalized,
+		},
+	},
+	consensusStageSubResultFinalized: {"SubResultFinalized",
+		false, true, 20 * time.Second,
+		[]int{
+			consensusStageNoSync,
+			consensusStageSubStarting,
+		},
 	},
 }
 
@@ -59,32 +117,20 @@ func (op *operator) setConsensusStage(nextStage int) {
 	if !ok {
 		op.log.Panicf("incorrect consensusStage 1")
 	}
+	leader, _ := op.currentLeader()
 	nextStageParams, ok := stages[nextStage]
 	if !ok {
-		op.log.Panicf("incorrect consensusStage 2")
+		op.log.Panicf("incorrect consensusStage 2: nextStage: %s, leader: %d, iAmTheCurrentLeader: %v",
+			nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
 
-	if op.iAmCurrentLeader() {
-		if !nextStageParams.leaderState {
-			op.log.Panicf("incorrect consensusStage 3")
-		}
-	} else {
-		if !nextStageParams.nonLeaderState {
-			op.log.Panicf("incorrect consensusStage 4")
-		}
+	if nextStage != consensusStageNoSync && nextStageParams.isLeaderState && !op.iAmCurrentLeader() {
+		op.log.Panicf("incorrect consensusStage 3: nextStage: %s, leader: %d, iAmTheCurrentLeader: %v",
+			nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
-	if !oneOf(nextStage, []int{consensusStageLeaderStarting, op.consensusStage}) {
-		found := false
-		for _, stg := range currentStageParams.nextStages {
-			if stg == nextStage {
-				found = true
-				break
-			}
-		}
-		if !found {
-			op.log.Panicf("wrong next consensusStage: %s -> %s",
-				stages[op.consensusStage].name, nextStageParams.name)
-		}
+	if !oneOf(nextStage, currentStageParams.nextStages...) {
+		op.log.Panicf("wrong next consensusStage: %s -> %s, leader: %d, iAmTheLeader: %v",
+			stages[op.consensusStage].name, nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
 	saveStage := op.consensusStage
 	op.consensusStage = nextStage
@@ -92,8 +138,8 @@ func (op *operator) setConsensusStage(nextStage int) {
 	if op.consensusStageDeadlineSet {
 		op.consensusStageDeadline = time.Now().Add(nextStageParams.timeout)
 	}
-	op.log.Infof("consensus stage: %s -> %s, timeout in %v",
-		stages[saveStage].name, nextStageParams.name, nextStageParams.timeout)
+	op.log.Infof("consensus stage: %s -> %s, timeout in %v, leader: %d, iAmTheLeader: %v",
+		stages[saveStage].name, nextStageParams.name, nextStageParams.timeout, leader, op.iAmCurrentLeader())
 }
 
 func (op *operator) consensusStageDeadlineExpired() bool {
@@ -103,7 +149,7 @@ func (op *operator) consensusStageDeadlineExpired() bool {
 	return time.Now().After(op.consensusStageDeadline)
 }
 
-func oneOf(elem int, set []int) bool {
+func oneOf(elem int, set ...int) bool {
 	for _, e := range set {
 		if e == elem {
 			return true

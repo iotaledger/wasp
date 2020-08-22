@@ -33,14 +33,18 @@ func (op *operator) rotateLeader() {
 	// starting from scratch with the new leader
 	op.leaderStatus = nil
 	op.sentResultToLeader = nil
-	op.setConsensusStage(consensusStageLeaderStarting)
+	if op.iAmCurrentLeader() {
+		op.setConsensusStage(consensusStageLeaderStarting)
+	} else {
+		op.setConsensusStage(consensusStageSubStarting)
+	}
 
 	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
 		prevlead, leader, op.iAmCurrentLeader())
 }
 
 func (op *operator) startCalculations() {
-	if op.consensusStage != consensusStageLeaderStarting || !op.iAmCurrentLeader() {
+	if op.consensusStage != consensusStageLeaderStarting {
 		// only for leader in the beginning of the starting stage
 		return
 	}
@@ -102,15 +106,12 @@ func (op *operator) startCalculations() {
 		timestamp:       ts,
 		rewardAddress:   rewardAddress,
 	})
-	op.setConsensusStage(consensusStageCalculationsStarted)
+	op.setConsensusStage(consensusStageLeaderCalculationsStarted)
 }
 
 func (op *operator) checkQuorum() bool {
-	if !op.iAmCurrentLeader() {
-		return false
-	}
-	if op.consensusStage != consensusStageCalculationsFinished {
-		// checking quorum only if own calculations has been finished
+	if op.consensusStage != consensusStageLeaderCalculationsFinished {
+		// checking quorum only if leader calculations has been finished
 		return false
 	}
 	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
@@ -181,7 +182,7 @@ func (op *operator) checkQuorum() bool {
 	})
 
 	op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
-	op.setConsensusStage(consensusStageResultFinalized)
+	op.setConsensusStage(consensusStageLeaderResultFinalized)
 	return true
 }
 

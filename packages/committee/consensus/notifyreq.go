@@ -8,9 +8,13 @@ import (
 // sendRequestNotificationsToLeader sends current leader the backlog of requests
 // it is only possible in the `consensusStageLeaderStarting` stage for non-leader
 func (op *operator) sendRequestNotificationsToLeader() {
-	if op.consensusStage != consensusStageLeaderStarting || op.iAmCurrentLeader() {
-		// only sending notification in the stage immediately after
-		// the leader change and only once
+	if len(op.requests) == 0 {
+		return
+	}
+	if op.iAmCurrentLeader() {
+		return
+	}
+	if op.consensusStage != consensusStageSubStarting {
 		return
 	}
 	if !op.committee.HasQuorum() {
@@ -18,12 +22,13 @@ func (op *operator) sendRequestNotificationsToLeader() {
 			op.committee.ConnectedPeers())
 		return
 	}
-
 	currentLeaderPeerIndex, _ := op.currentLeader()
-	op.log.Debugf("sendRequestNotificationsToLeader: sending notifications to #%d", currentLeaderPeerIndex)
+	reqs := op.requestCandidateList()
+
+	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates: %d",
+		currentLeaderPeerIndex, len(op.requests), len(reqs))
 
 	// get not time-locked requests with the message known
-	reqs := op.requestCandidateList()
 	if len(reqs) == 0 {
 		// nothing to notify about
 		return
@@ -45,7 +50,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
 		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
-	op.setConsensusStage(consensusStageNotificationsSent)
+	op.setConsensusStage(consensusStageSubNotificationsSent)
 }
 
 func (op *operator) storeNotification(msg *committee.NotifyReqMsg) {
