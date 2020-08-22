@@ -223,9 +223,15 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
+	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
+		return
+	}
+	if op.iAmCurrentLeader() {
+		// this message is intended to subordinates only
+		return
+	}
 	if op.sentResultToLeader == nil {
 		// result wasn't sent. Nothing to reconcile
-		op.setConsensusStage(consensusStageSubResultFinalized)
 		return
 	}
 	essence := op.sentResultToLeader.EssenceBytes()
