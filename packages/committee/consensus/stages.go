@@ -40,6 +40,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageLeaderStarting,
+			consensusStageSubStarting,
 			consensusStageLeaderCalculationsStarted,
 		},
 	},
@@ -48,6 +49,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageLeaderStarting,
+			consensusStageSubStarting,
 			consensusStageLeaderCalculationsFinished,
 		},
 	},
@@ -56,6 +58,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageLeaderStarting,
+			consensusStageSubStarting,
 			consensusStageLeaderResultFinalized,
 		},
 	},
@@ -64,6 +67,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageLeaderStarting,
+			consensusStageSubStarting,
 		},
 	},
 	// subordinate stages
@@ -72,6 +76,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageSubStarting,
+			consensusStageLeaderStarting,
 			consensusStageSubNotificationsSent,
 			consensusStageSubCalculationsStarted,
 			consensusStageSubResultFinalized,
@@ -82,6 +87,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageSubStarting,
+			consensusStageLeaderStarting,
 			consensusStageSubCalculationsStarted,
 			consensusStageSubResultFinalized,
 		},
@@ -91,6 +97,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageSubStarting,
+			consensusStageLeaderStarting,
 			consensusStageSubCalculationsFinished,
 			consensusStageSubResultFinalized,
 		},
@@ -100,6 +107,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageSubStarting,
+			consensusStageLeaderStarting,
 			consensusStageSubResultFinalized,
 		},
 	},
@@ -108,6 +116,7 @@ var stages = map[int]*stateParams{
 		[]int{
 			consensusStageNoSync,
 			consensusStageSubStarting,
+			consensusStageLeaderStarting,
 		},
 	},
 }

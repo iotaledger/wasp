@@ -162,7 +162,7 @@ func (op *operator) checkQuorum() bool {
 
 	sh := op.leaderStatus.resultTx.MustState().StateHash()
 	stateIndex := op.leaderStatus.resultTx.MustState().StateIndex()
-	op.log.Infof("FINALIZED RESULT. txid: %s, consensusStage index: #%d, consensusStage hash: %s, contributors: %+v",
+	op.log.Infof("FINALIZED RESULT. txid: %s, state index: #%d, state hash: %s, contributors: %+v",
 		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 

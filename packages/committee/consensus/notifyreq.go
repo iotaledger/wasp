@@ -44,7 +44,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	// send until first success, but no more than number of nodes in the committee
 	op.log.Infow("sendRequestNotificationsToLeader",
 		"leader", currentLeaderPeerIndex,
-		"currentSCState index", op.mustStateIndex(),
+		"state index", op.mustStateIndex(),
 		"reqs", idsShortStr(reqIds),
 	)
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {

@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestDeploySC(t *testing.T) {
@@ -64,11 +65,11 @@ func TestDeploySC(t *testing.T) {
 	})
 
 	check(err, t)
-	wasps.WaitUntilExpectationsMet()
-	//wasps.CollectMessages(40 * time.Second)
-	//if !wasps.Report() {
-	//	t.Fail()
-	//}
+	//wasps.WaitUntilExpectationsMet()
+	wasps.CollectMessages(15 * time.Second)
+	if !wasps.Report() {
+		t.Fail()
+	}
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,

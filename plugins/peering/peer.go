@@ -28,11 +28,6 @@ type Peer struct {
 
 	startOnce *sync.Once
 	numUsers  int
-	// heartbeats and latencies
-	//lastHeartbeatReceived int64
-	//lastHeartbeatSent     int64
-	//latencyRingBuf        [numHeartbeatsToKeep]int64
-	//hbRingBufIdx          int
 }
 
 // retry net.Dial once, on fail after 0.5s

@@ -62,6 +62,11 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 
 func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	op.log.Debugw("sendResultToTheLeader")
+	if op.consensusStage != consensusStageSubCalculationsStarted {
+		op.log.Debugf("calculation result on SUB dismissed because stage changed from '%s' to '%s'",
+			stages[consensusStageSubCalculationsStarted].name, stages[op.consensusStage].name)
+		return
+	}
 
 	sigShare, err := op.dkshare.SignShare(result.ResultTransaction.EssenceBytes())
 	if err != nil {
@@ -105,6 +110,11 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 }
 
 func (op *operator) saveOwnResult(result *vm.VMTask) {
+	if op.consensusStage != consensusStageLeaderCalculationsStarted {
+		op.log.Debugf("calculation result on LEADER dismissed because stage changed from '%s' to '%s'",
+			stages[consensusStageLeaderCalculationsStarted].name, stages[op.consensusStage].name)
+		return
+	}
 	sigShare, err := op.dkshare.SignShare(result.ResultTransaction.EssenceBytes())
 	if err != nil {
 		op.log.Errorf("error while signing transaction %v", err)
