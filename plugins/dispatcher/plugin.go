@@ -107,5 +107,8 @@ func processNodeMsg(msg interface{}) {
 			return
 		}
 		dispatchAddressUpdate(msgt.Address, msgt.Balances, tx)
+
+	case *waspconn.WaspFromNodeTransactionEventMsg:
+		log.Infof("TODO tx event. type: %d, txid: %s", msgt.EventType, msgt.TxId.String())
 	}
 }

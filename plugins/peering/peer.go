@@ -187,25 +187,24 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 	data, ts := encodeMessage(msg)
 	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
-	ret := uint16(0)
+	numSent := uint16(0)
 	for _, peer := range peers {
 		if peer == nil {
 			continue
 		}
 		peer.RLock()
 		if !chopped {
-			//peer.lastHeartbeatSent = ts
 			if err := peer.sendData(data); err == nil {
-				ret++
+				numSent++
 			}
 		} else {
 			if err := peer.sendChunks(choppedData); err == nil {
-				ret++
+				numSent++
 			}
 		}
 		peer.RUnlock()
 	}
-	return ret, ts
+	return numSent, ts
 }
 
 func (peer *Peer) sendData(data []byte) error {

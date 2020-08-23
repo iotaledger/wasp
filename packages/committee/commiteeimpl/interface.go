@@ -54,7 +54,7 @@ func (c *committeeObj) SetInitConnectPeriodOver() {
 	defer c.mutexIsReady.Unlock()
 
 	c.isInitConnectPeriodOver = true
-	c.log.Debugf("Init connect period is over")
+	c.log.Debugf("init connect period is over")
 	c.checkReady()
 }
 
@@ -63,7 +63,7 @@ func (c *committeeObj) SetQuorumOfConnectionsReached() {
 	defer c.mutexIsReady.Unlock()
 
 	c.isQuorumOfConnectionsReached = true
-	c.log.Debugf("Quorum of connections was reached")
+	c.log.Debugf("quorum of connections has been reached")
 	c.checkReady()
 }
 

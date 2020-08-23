@@ -128,7 +128,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 		for !ret.HasQuorum() && !ret.IsDismissed() {
 			time.Sleep(500 * time.Millisecond)
 		}
-		ret.log.Infof("following peers has been connected: %+v", ret.ConnectedPeers())
+		ret.log.Infof("connected peers: %+v", ret.ConnectedPeers())
 		ret.SetQuorumOfConnectionsReached()
 	}()
 	return ret

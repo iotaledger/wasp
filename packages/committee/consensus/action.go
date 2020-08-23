@@ -33,14 +33,16 @@ func (op *operator) rotateLeader() {
 	// starting from scratch with the new leader
 	op.leaderStatus = nil
 	op.sentResultToLeader = nil
+
+	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
+		prevlead, leader, op.iAmCurrentLeader())
+
 	if op.iAmCurrentLeader() {
 		op.setConsensusStage(consensusStageLeaderStarting)
 	} else {
 		op.setConsensusStage(consensusStageSubStarting)
 	}
 
-	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
-		prevlead, leader, op.iAmCurrentLeader())
 }
 
 func (op *operator) startCalculations() {
@@ -149,8 +151,7 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	// quorum detected
-	finalSignature, err := op.aggregateSigShares(sigShares)
-	if err != nil {
+	if err := op.aggregateSigShares(sigShares); err != nil {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
 	}
@@ -166,11 +167,12 @@ func (op *operator) checkQuorum() bool {
 		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
-	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
+	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}
+	op.log.Debugf("result transaction has been posted to node. txid: %s", op.leaderStatus.resultTx.ID().String())
 
 	// notify peers about finalization
 	msgData := util.MustBytes(&committee.NotifyFinalResultPostedMsg{
@@ -178,10 +180,12 @@ func (op *operator) checkQuorum() bool {
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
-		Signature: finalSignature,
+		TxId: op.leaderStatus.resultTx.ID(),
 	})
 
-	op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
+	numSent, _ := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
+	op.log.Debugf("%d peers has been notified about finalized result", numSent)
+
 	op.setConsensusStage(consensusStageLeaderResultFinalized)
 	return true
 }

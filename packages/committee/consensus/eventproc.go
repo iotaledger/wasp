@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/committee"
@@ -222,6 +221,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
+		"result txid", msg.TxId.String(),
 	)
 	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
 		return
@@ -230,18 +230,6 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		// this message is intended to subordinates only
 		return
 	}
-	if op.sentResultToLeader == nil {
-		// result wasn't sent. Nothing to reconcile
-		return
-	}
-	essence := op.sentResultToLeader.EssenceBytes()
-	if !msg.Signature.IsValid(essence) {
-		op.log.Errorf("received invalid final signature from peer #%d. State index: %d, essence hash: %s",
-			msg.SenderIndex, msg.StateIndex, hashing.HashData(essence).String())
-		return
-	}
-	op.log.Debugf("valid final signature received: postpone rotation deadline for %v more",
-		op.committee.Params().ConfirmationWaitingPeriod)
 	op.setConsensusStage(consensusStageSubResultFinalized)
 }
 
@@ -263,7 +251,7 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 		}
 		op.log.Infow("timer tick",
 			"#", msg,
-			"currentSCState index", si,
+			"state index", si,
 			"req backlog", len(op.requests),
 			"selection", len(op.selectRequestsToProcess()),
 			"notif backlog", len(op.notificationsBacklog),
