@@ -3,6 +3,7 @@ module github.com/iotaledger/wasp
 go 1.13
 
 require (
+	github.com/iotaledger/wart v0.0.30
 	github.com/bytecodealliance/wasmtime-go v0.19.0
 	github.com/iotaledger/goshimmer v0.2.3-0.20200820073421-efa426f3840b
 	github.com/iotaledger/hive.go v0.0.0-20200810103552-94bbf59c54fa

@@ -251,6 +251,8 @@ github.com/iotaledger/goshimmer v0.2.3-0.20200820073421-efa426f3840b/go.mod h1:Z
 github.com/iotaledger/hive.go v0.0.0-20200810103552-94bbf59c54fa h1:mvOuUWh/5OWtO9j3gHgtAuYhvFtTn9XljreNMuaTpsA=
 github.com/iotaledger/hive.go v0.0.0-20200810103552-94bbf59c54fa/go.mod h1:tLI+HS0amqY5YqClfFZDHlFM7eeIZjoU25Oj1u9jCzQ=
 github.com/iotaledger/iota.go v1.0.0-beta.15/go.mod h1:Rn6v5hLAn8YBaJlRu1ZQdPAgKlshJR1PTeLQaft2778=
+github.com/iotaledger/wart v0.0.30 h1:4G/nYxj/4H55Q5iBbfW5wLDfx37S0ri2vlXmwfD24mM=
+github.com/iotaledger/wart v0.0.30/go.mod h1:0SovOjb+gBgDwUYHW87lqUn2q+Cs9712RNsxJeY9XbI=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
