@@ -2,7 +2,6 @@ package statemgr
 
 import (
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -128,16 +127,6 @@ func (sm *stateManager) EventStateUpdateMsg(msg *committee.StateUpdateMsg) {
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
 func (sm *stateManager) EventStateTransactionMsg(msg *committee.StateTransactionMsg) {
-	if !msg.Confirmed {
-		sm.log.Debugw("EventStateTransactionMsg: received not confirmed state tx",
-			"txid", msg.Transaction.ID().String(),
-			"tx essence", hashing.HashData(msg.Transaction.EssenceBytes()).String(),
-		)
-		// will send evidence message if transaction is about pending state
-		sm.evidencePendingStateTransaction(msg.Transaction)
-		return
-	}
-
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
 		// should not happen: must have state block

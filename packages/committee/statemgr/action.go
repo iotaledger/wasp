@@ -5,7 +5,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -283,25 +282,6 @@ func (sm *stateManager) requestStateTransactionIfNeeded() {
 func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
 	txid := pb.batch.StateTransactionId()
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
-	_ = nodeconn.RequestTransactionFromNode(&txid)
+	_ = nodeconn.RequestConfirmedTransactionFromNode(&txid)
 	pb.stateTransactionRequestDeadline = time.Now().Add(sm.committee.Params().StateTransactionRequestTimeout)
-}
-
-// send evidence message of unconfirmed state transaction with hash of the pernding state
-func (sm *stateManager) evidencePendingStateTransaction(tx *sctransaction.Transaction) {
-	stateBlock, ok := tx.State()
-	if !ok {
-		// should not happen: must have state block
-		return
-	}
-	stateHash := stateBlock.StateHash()
-	for sh, _ := range sm.pendingBatches {
-		if sh == stateHash {
-			go sm.committee.ReceiveMessage(&committee.StateTransactionEvidenced{
-				TxId:      tx.Transaction.ID(),
-				StateHash: stateBlock.StateHash(),
-			})
-			return
-		}
-	}
 }

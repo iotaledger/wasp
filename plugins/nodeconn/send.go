@@ -33,8 +33,8 @@ func RequestOutputsFromNode(addr *address.Address) error {
 	return nil
 }
 
-func RequestTransactionFromNode(txid *valuetransaction.ID) error {
-	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetTransactionMsg{
+func RequestConfirmedTransactionFromNode(txid *valuetransaction.ID) error {
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetConfirmedTransactionMsg{
 		TxId: txid,
 	})
 	if err != nil {

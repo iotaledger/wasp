@@ -87,14 +87,14 @@ func run(_ *node.Plugin) {
 func processNodeMsg(msg interface{}) {
 	switch msgt := msg.(type) {
 
-	case *waspconn.WaspFromNodeTransactionMsg:
+	case *waspconn.WaspFromNodeConfirmedTransactionMsg:
 		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
 		if err != nil {
 			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
 			// not a SC transaction. Ignore
 			return
 		}
-		dispatchState(tx, msgt.Confirmed)
+		dispatchState(tx)
 
 	case *waspconn.WaspFromNodeAddressOutputsMsg:
 		dispatchBalances(msgt.Address, msgt.Balances)

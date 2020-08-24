@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/committees"
 )
 
-func dispatchState(tx *sctransaction.Transaction, confirmed bool) {
+func dispatchState(tx *sctransaction.Transaction) {
 	txProp := tx.MustProperties() // should be validate while parsing
 	if !txProp.IsState() {
 		// not state transaction
@@ -21,13 +21,11 @@ func dispatchState(tx *sctransaction.Transaction, confirmed bool) {
 	}
 	log.Debugw("dispatchState",
 		"txid", tx.ID().String(),
-		"confirmed", confirmed,
 		"addr", cmt.Address().String(),
 	)
 
 	cmt.ReceiveMessage(&committee.StateTransactionMsg{
 		Transaction: tx,
-		Confirmed:   confirmed,
 	})
 }
 
@@ -64,7 +62,6 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		// it is a state update to addr. Send it
 		cmt.ReceiveMessage(&committee.StateTransactionMsg{
 			Transaction: tx,
-			Confirmed:   true, // because here we have only confirmed balances
 		})
 	}
 

@@ -233,15 +233,6 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	op.setConsensusStage(consensusStageSubResultFinalized)
 }
 
-// EventStateTransactionEvidenced is triggered when consensusStage manager receives consensusStage transaction not confirmed yet
-// It postpones leader rotation deadline
-func (op *operator) EventStateTransactionEvidenced(msg *committee.StateTransactionEvidenced) {
-	op.log.Debugw("EventStateTransactionEvidenced",
-		"txid", msg.TxId.String(),
-		"consensusStage hash", msg.StateHash.String(),
-	)
-}
-
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 	if msg%40 == 0 {
 		stateIndex, ok := op.stateIndex()

@@ -8,7 +8,6 @@ import (
 
 type StateTransactionMsg struct {
 	*sctransaction.Transaction
-	Confirmed bool
 }
 
 type BalancesMsg struct {

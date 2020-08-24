@@ -51,7 +51,6 @@ type Operator interface {
 	EventResultCalculated(*vm.VMTask)
 	EventSignedHashMsg(*SignedHashMsg)
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
-	EventStateTransactionEvidenced(msg *StateTransactionEvidenced)
 	EventTimerMsg(TimerTick)
 }
 
