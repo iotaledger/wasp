@@ -75,3 +75,16 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		}
 	}
 }
+
+func dispatchTxInclusionLevel(level byte, txid *valuetransaction.ID, addrs []address.Address) {
+	for _, addr := range addrs {
+		cmt := committees.CommitteeByAddress(addr)
+		if cmt == nil {
+			continue
+		}
+		cmt.ReceiveMessage(&committee.TransactionInclusionLevelMsg{
+			TxId:  txid,
+			Level: level,
+		})
+	}
+}

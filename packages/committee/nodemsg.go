@@ -10,6 +10,11 @@ type StateTransactionMsg struct {
 	*sctransaction.Transaction
 }
 
+type TransactionInclusionLevelMsg struct {
+	TxId  *valuetransaction.ID
+	Level byte
+}
+
 type BalancesMsg struct {
 	Balances map[valuetransaction.ID][]*balance.Balance
 }

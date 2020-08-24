@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/committee"
@@ -221,7 +222,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
-		"result txid", msg.TxId.String(),
+		"txid", msg.TxId.String(),
 	)
 	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
 		return
@@ -231,6 +232,13 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		return
 	}
 	op.setConsensusStage(consensusStageSubResultFinalized)
+}
+
+func (op *operator) EventTransactionInclusionLevelMsg(msg *committee.TransactionInclusionLevelMsg) {
+	op.log.Debugw("EventTransactionInclusionLevelMsg",
+		"txid", msg.TxId.String(),
+		"level", waspconn.InclusionLevelText(msg.Level),
+	)
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
