@@ -16,6 +16,19 @@ func (op *operator) takeAction() {
 	op.startCalculations()
 	op.checkQuorum()
 	op.rotateLeader()
+	op.pullInclusionLevel()
+}
+
+func (op *operator) pullInclusionLevel() {
+	if op.postedResultTxid == nil {
+		return
+	}
+	if time.Now().After(op.nextPullInclusionLevel) {
+		if err := nodeconn.RequestInclusionLevelFromNode(op.postedResultTxid, op.committee.Address()); err != nil {
+			op.log.Errorf("RequestInclusionLevelFromNode: %v", err)
+		}
+		op.setNextPullInclusionStageDeadline()
+	}
 }
 
 // rotateLeader upon expired deadline
@@ -33,6 +46,7 @@ func (op *operator) rotateLeader() {
 	// starting from scratch with the new leader
 	op.leaderStatus = nil
 	op.sentResultToLeader = nil
+	op.postedResultTxid = nil
 
 	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
 		prevlead, leader, op.iAmCurrentLeader())
@@ -161,10 +175,11 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
+	txid := op.leaderStatus.resultTx.ID()
 	sh := op.leaderStatus.resultTx.MustState().StateHash()
 	stateIndex := op.leaderStatus.resultTx.MustState().StateIndex()
 	op.log.Infof("FINALIZED RESULT. txid: %s, state index: #%d, state hash: %s, contributors: %+v",
-		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
+		txid.String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
 	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
@@ -172,7 +187,7 @@ func (op *operator) checkQuorum() bool {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}
-	op.log.Debugf("result transaction has been posted to node. txid: %s", op.leaderStatus.resultTx.ID().String())
+	op.log.Debugf("result transaction has been posted to node. txid: %s", txid.String())
 
 	// notify peers about finalization
 	msgData := util.MustBytes(&committee.NotifyFinalResultPostedMsg{
@@ -180,13 +195,15 @@ func (op *operator) checkQuorum() bool {
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
-		TxId: op.leaderStatus.resultTx.ID(),
+		TxId: txid,
 	})
 
 	numSent, _ := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
 	op.log.Debugf("%d peers has been notified about finalized result", numSent)
 
 	op.setConsensusStage(consensusStageLeaderResultFinalized)
+	op.setFinalizedTransaction(&txid)
+
 	return true
 }
 
@@ -195,6 +212,7 @@ func (op *operator) setNewSCState(stateTx *sctransaction.Transaction, variableSt
 	op.stateTx = stateTx
 	op.currentSCState = variableState
 	op.sentResultToLeader = nil
+	op.postedResultTxid = nil
 
 	op.requestBalancesDeadline = time.Now()
 	op.queryOutputs()

@@ -109,11 +109,6 @@ func processNodeMsg(msg interface{}) {
 		dispatchAddressUpdate(msgt.Address, msgt.Balances, tx)
 
 	case *waspconn.WaspFromNodeTransactionInclusionLevelMsg:
-		log.Debugw("dispatch transaction inclusion level",
-			"level", waspconn.InclusionLevelText(msgt.Level),
-			"txid", msgt.TxId.String(),
-			"numAddrs", len(msgt.SubscribedAddresses),
-		)
 		dispatchTxInclusionLevel(msgt.Level, &msgt.TxId, msgt.SubscribedAddresses)
 	}
 }

@@ -24,7 +24,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 		return
 	}
 
-	sm.log.Debugf("EventGetBatchMsg: sending to %d batch %s", msg.SenderIndex, batch.String())
+	sm.log.Debugf("EventGetBatchMsg for state index #%d: sending to %d batch %s", msg.StateIndex, msg.SenderIndex, batch.String())
 
 	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, util.MustBytes(&committee.BatchHeaderMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
@@ -144,7 +144,8 @@ func (sm *stateManager) EventStateTransactionMsg(msg *committee.StateTransaction
 
 	if sm.solidStateValid {
 		if stateBlock.StateIndex() != sm.solidState.StateIndex()+1 {
-			sm.log.Debugf("only interested for the state transaction to verify latest state update")
+			sm.log.Debugf("skip state transaction: expected with state index #%d, got #%d, Txid: %s",
+				sm.solidState.StateIndex()+1, stateBlock.StateIndex(), msg.ID().String())
 			return
 		}
 	} else {

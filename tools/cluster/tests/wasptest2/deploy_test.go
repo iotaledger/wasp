@@ -68,7 +68,7 @@ func TestDeploySC(t *testing.T) {
 
 	check(err, t)
 	//wasps.WaitUntilExpectationsMet()
-	wasps.CollectMessages(15 * time.Second)
+	wasps.CollectMessages(20 * time.Second)
 	if !wasps.Report() {
 		t.Fail()
 	}

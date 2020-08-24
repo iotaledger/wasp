@@ -45,6 +45,9 @@ type operator struct {
 	sentResultToLeaderIndex uint16
 	sentResultToLeader      *sctransaction.Transaction
 
+	postedResultTxid       *valuetransaction.ID
+	nextPullInclusionLevel time.Time // if postedResultTxid != nil
+
 	log *logger.Logger
 }
 

@@ -46,6 +46,23 @@ func RequestConfirmedTransactionFromNode(txid *valuetransaction.ID) error {
 	return nil
 }
 
+func RequestInclusionLevelFromNode(txid *valuetransaction.ID, addr *address.Address) error {
+	log.Debugf("RequestInclusionLevelFromNode. txid %s", txid.String())
+
+	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetTxInclusionLevelMsg{
+		TxId:      *txid,
+		SCAddress: *addr,
+	})
+	if err != nil {
+		return err
+	}
+	if err := SendDataToNode(data); err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func PostTransactionToNode(tx *valuetransaction.Transaction, fromSc *address.Address, fromLeader uint16) error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeTransactionMsg{
 		Tx:        tx,

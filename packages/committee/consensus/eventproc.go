@@ -27,9 +27,9 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	op.setNewSCState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.currentSCState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, consensusStage hash: %s",
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		op.stateTx.ID().String(), vh.String())
+		op.stateTx.ID().String(), vh.String(), len(op.requests))
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
@@ -123,6 +123,11 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 	stateIndex, ok := op.stateIndex()
 	if !ok || msg.StateIndex != stateIndex {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
+		return
+	}
+	myLeader, _ := op.currentLeader()
+	if msg.SenderIndex != myLeader {
+		op.log.Debugf("EventStartProcessingBatchMsg: received from different leader. Won't start processing")
 		return
 	}
 	numOrig := len(msg.RequestIds)
@@ -232,6 +237,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		return
 	}
 	op.setConsensusStage(consensusStageSubResultFinalized)
+	op.setFinalizedTransaction(&msg.TxId)
 }
 
 func (op *operator) EventTransactionInclusionLevelMsg(msg *committee.TransactionInclusionLevelMsg) {
@@ -239,6 +245,7 @@ func (op *operator) EventTransactionInclusionLevelMsg(msg *committee.Transaction
 		"txid", msg.TxId.String(),
 		"level", waspconn.InclusionLevelText(msg.Level),
 	)
+	op.checkInclusionLevel(msg.TxId, msg.Level)
 }
 
 func (op *operator) EventTimerMsg(msg committee.TimerTick) {
@@ -248,10 +255,12 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 		if ok {
 			si = int32(stateIndex)
 		}
+		leader, _ := op.currentLeader()
 		op.log.Infow("timer tick",
 			"#", msg,
 			"state index", si,
 			"req backlog", len(op.requests),
+			"leader", leader,
 			"selection", len(op.selectRequestsToProcess()),
 			"notif backlog", len(op.notificationsBacklog),
 		)

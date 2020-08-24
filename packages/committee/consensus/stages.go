@@ -4,6 +4,7 @@ import "time"
 
 const (
 	consensusStageNoSync = iota
+	consensusStageResultTransactionBooked
 	// leader stages
 	consensusStageLeaderStarting
 	consensusStageLeaderCalculationsStarted
@@ -34,6 +35,14 @@ var stages = map[int]*stateParams{
 			consensusStageSubStarting,
 		},
 	},
+	consensusStageResultTransactionBooked: {"ResultTransactionBooked",
+		false, false, 1 * time.Minute,
+		[]int{
+			consensusStageNoSync,
+			consensusStageLeaderStarting,
+			consensusStageSubStarting,
+		},
+	},
 	// leader stages
 	consensusStageLeaderStarting: {"LeaderStarting",
 		true, false, 0,
@@ -54,7 +63,7 @@ var stages = map[int]*stateParams{
 		},
 	},
 	consensusStageLeaderCalculationsFinished: {"LeaderCalculationsFinished",
-		true, true, 5 * time.Second,
+		true, true, 10 * time.Second,
 		[]int{
 			consensusStageNoSync,
 			consensusStageLeaderStarting,
@@ -68,6 +77,7 @@ var stages = map[int]*stateParams{
 			consensusStageNoSync,
 			consensusStageLeaderStarting,
 			consensusStageSubStarting,
+			consensusStageResultTransactionBooked,
 		},
 	},
 	// subordinate stages
@@ -109,6 +119,7 @@ var stages = map[int]*stateParams{
 			consensusStageSubStarting,
 			consensusStageLeaderStarting,
 			consensusStageSubResultFinalized,
+			consensusStageResultTransactionBooked,
 		},
 	},
 	consensusStageSubResultFinalized: {"SubResultFinalized",
@@ -117,6 +128,7 @@ var stages = map[int]*stateParams{
 			consensusStageNoSync,
 			consensusStageSubStarting,
 			consensusStageLeaderStarting,
+			consensusStageResultTransactionBooked,
 		},
 	},
 }
@@ -156,6 +168,13 @@ func (op *operator) consensusStageDeadlineExpired() bool {
 		return false
 	}
 	return time.Now().After(op.consensusStageDeadline)
+}
+
+func (op *operator) setConsensusStageDeadlineExpired() {
+	if !op.consensusStageDeadlineSet {
+		return
+	}
+	op.consensusStageDeadline = time.Now()
 }
 
 func oneOf(elem int, set ...int) bool {

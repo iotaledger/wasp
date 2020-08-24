@@ -146,7 +146,6 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		essenceHash: *essenceHash,
 		sigShare:    sigShare,
 	}
-
 	op.setConsensusStage(consensusStageLeaderCalculationsFinished)
 }
 
