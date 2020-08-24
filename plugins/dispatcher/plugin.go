@@ -108,7 +108,7 @@ func processNodeMsg(msg interface{}) {
 		}
 		dispatchAddressUpdate(msgt.Address, msgt.Balances, tx)
 
-	case *waspconn.WaspFromNodeTransactionEventMsg:
-		log.Infof("TODO tx event. type: %d, txid: %s", msgt.EventType, msgt.TxId.String())
+	case *waspconn.WaspFromNodeTransactionInclusionLevelMsg:
+		log.Infof("TODO tx inclusion level. level: %d, txid: %s", msgt.Level, msgt.TxId.String())
 	}
 }

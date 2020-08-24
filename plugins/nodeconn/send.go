@@ -35,7 +35,7 @@ func RequestOutputsFromNode(addr *address.Address) error {
 
 func RequestConfirmedTransactionFromNode(txid *valuetransaction.ID) error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeGetConfirmedTransactionMsg{
-		TxId: txid,
+		TxId: *txid,
 	})
 	if err != nil {
 		return err
