@@ -95,6 +95,16 @@ const tplBase = `
 	</html>
 {{end}}`
 
+const tplSCInfo = `
+{{define "sc-info"}}
+	<p>SC address: <code>{{.SC.Address}}</code></p>
+	<p>Balance: <ul>
+	{{range $color, $amount := .Status.SCBalance}}
+		<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
+	{{end}}
+	</ul></p>
+{{end}}`
+
 const tplWs = `
 {{define "ws"}}
 	<script>

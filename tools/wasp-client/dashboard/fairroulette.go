@@ -29,15 +29,15 @@ type FRTemplateParams struct {
 }
 
 func initFRTemplate() *template.Template {
-	return makeTemplate(tplWs, tplInstallConfig, tplFairRoulette)
+	return makeTemplate(tplWs, tplSCInfo, tplInstallConfig, tplFairRoulette)
 }
 
 const tplFairRoulette = `
 {{define "title"}}FairRoulette{{end}}
 
 {{define "body"}}
-	<p>SC address: <code>{{.SC.Address}}</code></p>
-	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
+	{{template "sc-info" .}}
+
 	<div>
 		<h2>Next play</h2>
 		<p>Next play: <code id="nextPlayIn"></code></p>

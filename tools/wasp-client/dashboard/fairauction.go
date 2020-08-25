@@ -29,15 +29,14 @@ type FATemplateParams struct {
 }
 
 func initFATemplate() *template.Template {
-	return makeTemplate(tplWs, tplInstallConfig, tplFairAuction)
+	return makeTemplate(tplWs, tplSCInfo, tplInstallConfig, tplFairAuction)
 }
 
 const tplFairAuction = `
 {{define "title"}}FairAuction{{end}}
 
 {{define "body"}}
-	<p>SC address: <code>{{.SC.Address}}</code></p>
-	<p>Balance: <code>{{.Status.SCBalance}} IOTAs</code></p>
+	{{template "sc-info" .}}
 
 	<div>
 		<h2>Auctions</h2>
