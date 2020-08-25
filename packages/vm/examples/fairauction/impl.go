@@ -4,6 +4,7 @@ package fairauction
 import (
 	"bytes"
 	"sort"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -128,6 +129,10 @@ func (ai *AuctionInfo) WinningBid() *BidInfo {
 		}
 	}
 	return winner
+}
+
+func (ai *AuctionInfo) Due() int64 {
+	return ai.WhenStarted + ai.DurationMinutes*time.Minute.Nanoseconds()
 }
 
 type BidInfo struct {
