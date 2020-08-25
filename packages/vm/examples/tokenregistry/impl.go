@@ -41,14 +41,14 @@ var entryPoints = tokenRegistryProcessor{
 	RequestTransferOwnership: transferOwnership,
 }
 
-type tokenMetadata struct {
-	supply      int64
-	mintedBy    address.Address // originator
-	owner       address.Address // who can update metadata
-	created     int64           // when created record
-	updated     int64           // when last updated
-	description string          // any text
-	userDefined []byte          // any other data (marshalled json etc)
+type TokenMetadata struct {
+	Supply      int64
+	MintedBy    address.Address // originator
+	Owner       address.Address // who can update metadata
+	Created     int64           // when created record
+	Updated     int64           // when last updated
+	Description string          // any text
+	UserDefined []byte          // any other data (marshalled json etc)
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -106,14 +106,14 @@ func mintSupply(ctx vmtypes.Sandbox) {
 		ctx.Publish("TokenRegistry: inconsistency 2")
 		return
 	}
-	rec := &tokenMetadata{
-		supply:      supply,
-		mintedBy:    reqAccess.Sender(),
-		owner:       reqAccess.Sender(),
-		created:     ctx.GetTimestamp(),
-		updated:     ctx.GetTimestamp(),
-		description: description,
-		userDefined: uddata,
+	rec := &TokenMetadata{
+		Supply:      supply,
+		MintedBy:    reqAccess.Sender(),
+		Owner:       reqAccess.Sender(),
+		Created:     ctx.GetTimestamp(),
+		Updated:     ctx.GetTimestamp(),
+		Description: description,
+		UserDefined: uddata,
 	}
 	data, err := util.Bytes(rec)
 	if err != nil {
@@ -132,7 +132,7 @@ func mintSupply(ctx vmtypes.Sandbox) {
 	stateAccess.SetString(VarStateListColors, lst)
 
 	ctx.Publishf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
-		colorOfTheSupply.String(), rec.owner.String(), rec.description, string(rec.userDefined))
+		colorOfTheSupply.String(), rec.Owner.String(), rec.Description, string(rec.UserDefined))
 }
 
 func updateMetadata(ctx vmtypes.Sandbox) {

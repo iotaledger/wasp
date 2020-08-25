@@ -8,9 +8,11 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/tr"
 	"github.com/iotaledger/wasp/tools/wasp-client/dashboard"
 	"github.com/iotaledger/wasp/tools/wasp-client/fairauction"
 	"github.com/iotaledger/wasp/tools/wasp-client/fairroulette"
+	"github.com/iotaledger/wasp/tools/wasp-client/tokenregistry"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
 	"github.com/spf13/pflag"
 )
@@ -27,6 +29,7 @@ var commands = map[string]func([]string){
 	"set":       config.SetCmd,
 	"fr":        fairroulette.Cmd,
 	"fa":        fairauction.Cmd,
+	"tr":        tokenregistry.Cmd,
 	"dashboard": dashboard.Cmd,
 }
 
@@ -47,6 +50,7 @@ func main() {
 	flags.AddFlagSet(wallet.HookFlags())
 	flags.AddFlagSet(fr.Config.HookFlags())
 	flags.AddFlagSet(fa.Config.HookFlags())
+	flags.AddFlagSet(tr.Config.HookFlags())
 	check(flags.Parse(os.Args[1:]))
 
 	config.Read()
