@@ -19,11 +19,11 @@ const (
 )
 
 type stateParams struct {
-	name          string
-	isLeaderState bool
-	timeoutSet    bool
-	timeout       time.Duration
-	nextStages    []int
+	name               string
+	isLeaderState      bool
+	timeoutSet         bool
+	timeout            time.Duration
+	expectedNextStages []int
 }
 
 var stages = map[int]*stateParams{
@@ -149,8 +149,8 @@ func (op *operator) setConsensusStage(nextStage int) {
 		op.log.Panicf("incorrect consensusStage 3: nextStage: %s, leader: %d, iAmTheCurrentLeader: %v",
 			nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
-	if !oneOf(nextStage, currentStageParams.nextStages...) {
-		op.log.Panicf("wrong next consensusStage: %s -> %s, leader: %d, iAmTheLeader: %v",
+	if !oneOf(nextStage, currentStageParams.expectedNextStages...) {
+		op.log.Errorf("UNEXPECTED next consensusStage: %s -> %s, leader: %d, iAmTheLeader: %v",
 			stages[op.consensusStage].name, nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
 	saveStage := op.consensusStage

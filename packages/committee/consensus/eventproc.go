@@ -73,6 +73,11 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
+	if err := op.checkSCToken(reqMsg.Balances); err != nil {
+		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
+		return
+	}
+
 	op.balances = reqMsg.Balances
 	op.requestBalancesDeadline = time.Now().Add(op.committee.Params().RequestBalancesPeriod)
 
@@ -125,11 +130,11 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
-	myLeader, _ := op.currentLeader()
-	if msg.SenderIndex != myLeader {
-		op.log.Debugf("EventStartProcessingBatchMsg: received from different leader. Won't start processing")
-		return
-	}
+	//myLeader, _ := op.currentLeader()
+	//if msg.SenderIndex != myLeader {
+	//	op.log.Debugf("EventStartProcessingBatchMsg: received from different leader. Won't start processing")
+	//	return
+	//}
 	numOrig := len(msg.RequestIds)
 	reqs := op.takeFromIds(msg.RequestIds)
 	if len(reqs) != numOrig {

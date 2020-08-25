@@ -12,8 +12,8 @@ import (
 
 func (op *operator) takeAction() {
 	op.sendRequestNotificationsToLeader()
-	op.queryOutputs()
-	op.startCalculations()
+	//op.queryOutputs()
+	op.startCalculationsAsLeader()
 	op.checkQuorum()
 	op.rotateLeader()
 	op.pullInclusionLevel()
@@ -59,7 +59,7 @@ func (op *operator) rotateLeader() {
 
 }
 
-func (op *operator) startCalculations() {
+func (op *operator) startCalculationsAsLeader() {
 	if op.consensusStage != consensusStageLeaderStarting {
 		// only for leader in the beginning of the starting stage
 		return
@@ -215,7 +215,7 @@ func (op *operator) setNewSCState(stateTx *sctransaction.Transaction, variableSt
 	op.postedResultTxid = nil
 
 	op.requestBalancesDeadline = time.Now()
-	op.queryOutputs()
+	//op.queryOutputs()
 
 	op.resetLeader(stateTx.ID().Bytes())
 

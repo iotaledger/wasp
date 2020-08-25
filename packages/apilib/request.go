@@ -66,6 +66,48 @@ func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme
 	return tx, nil
 }
 
+func CreateSimpleRequestMulti(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, pars []CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
+	senderAddr := sigScheme.Address()
+	allOuts, err := client.GetAccountOutputs(&senderAddr)
+	if err != nil {
+		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
+	}
+
+	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, par := range pars {
+		reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
+
+		args := convertArgs(par.Vars)
+		if args == nil {
+			return nil, errors.New("wrong arguments")
+		}
+		reqBlk.SetArgs(args)
+
+		err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tx, err := txb.Build(false)
+
+	if err != nil {
+		return nil, err
+	}
+	tx.Sign(sigScheme)
+
+	// check semantic just in case
+	if _, err := tx.Properties(); err != nil {
+		return nil, err
+	}
+
+	return tx, nil
+}
+
 func convertArgs(vars map[string]interface{}) kv.Map {
 	args := kv.NewMap()
 	codec := args.Codec()

@@ -24,8 +24,9 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	}
 	currentLeaderPeerIndex, _ := op.currentLeader()
 	reqs := op.requestCandidateList()
+	reqs = op.filterOutRequestsWithoutTokens(reqs)
 
-	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates: %d",
+	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates (with tokens): %d",
 		currentLeaderPeerIndex, len(op.requests), len(reqs))
 
 	// get not time-locked requests with the message known

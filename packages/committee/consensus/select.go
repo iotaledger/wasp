@@ -2,7 +2,9 @@
 package consensus
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"sort"
 	"time"
@@ -23,9 +25,8 @@ func (op *operator) selectRequestsToProcess() []*request {
 	candidates = op.filterOutRequestsWithoutTokens(candidates)
 	after := takeIds(candidates)
 	if len(before) != len(after) {
-		op.log.Warnf("should not happen: some requests don't have request tokens: all candidates: %+v, filtered candidates: %+v",
-			idsShortStr(before), idsShortStr(after))
-		op.log.Warnf("\nbalances dumped: %s\n", util.BalancesToString(op.balances))
+		op.log.Warnf("filtered out requests without tokens: %+v -> %+v", idsShortStr(before), idsShortStr(after))
+		op.log.Debugf("\nbalances dumped: %s\n", util.BalancesToString(op.balances))
 	}
 	if len(candidates) == 0 {
 		return nil
@@ -156,6 +157,20 @@ func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 		ret = append(ret, req)
 	}
 	return ret
+}
+
+func (op *operator) checkSCToken(balances map[valuetransaction.ID][]*balance.Balance) error {
+	sum := int64(0)
+	color := *op.committee.Color()
+	for _, bals := range balances {
+		sum += util.BalanceOfColor(bals, color)
+	}
+	if stateIndex, ok := op.stateIndex(); ok && stateIndex > 0 {
+		if sum != 1 {
+			return fmt.Errorf("must be exactly 1 SC token of color %s. Found %d instead", color.String(), sum)
+		}
+	}
+	return nil
 }
 
 func filterTimelocked(reqs []*request) []*request {

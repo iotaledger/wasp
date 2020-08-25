@@ -79,6 +79,15 @@ func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.Signature
 	return clu.PostTransaction(tx)
 }
 
+func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.CreateSimpleRequestParams) error {
+	tx, err := waspapi.CreateSimpleRequestMulti(clu.NodeClient, sigScheme, reqParams)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("[cluster] posting tx with %d requests: %s\n", len(reqParams), tx.ID().String())
+	return clu.PostTransaction(tx)
+}
+
 func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqs []*waspapi.RequestBlockJson) error {
 	tx, err := waspapi.CreateRequestTransaction(clu.NodeClient, sigScheme, reqs)
 	if err != nil {
