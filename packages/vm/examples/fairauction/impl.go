@@ -109,6 +109,27 @@ type AuctionInfo struct {
 	Bids []*BidInfo
 }
 
+func (ai *AuctionInfo) SumOfBids() int64 {
+	sum := int64(0)
+	for _, bid := range ai.Bids {
+		sum += bid.Total
+	}
+	return sum
+}
+
+func (ai *AuctionInfo) WinningBid() *BidInfo {
+	var winner *BidInfo
+	for _, bi := range ai.Bids {
+		if bi.Total < ai.MinimumBid {
+			continue
+		}
+		if winner == nil || bi.WinsAgainst(winner) {
+			winner = bi
+		}
+	}
+	return winner
+}
+
 type BidInfo struct {
 	// total sum of the bid = total amount of iotas available in the request - 1 - SC reward - ServiceFeeBid
 	Total int64
@@ -116,6 +137,16 @@ type BidInfo struct {
 	Bidder address.Address
 	// timestamp
 	When int64
+}
+
+func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
+	if bi.Total < other.Total {
+		return false
+	}
+	if bi.Total > other.Total {
+		return true
+	}
+	return bi.When < other.When
 }
 
 func initSC(ctx vmtypes.Sandbox) {

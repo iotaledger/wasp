@@ -44,27 +44,25 @@ const tplFairAuction = `
 		<div>
 			<ul>
 			{{range $color, $auction := .Status.Auctions}}
-				<li><div>
-					<p>Color for sale: <code>{{$color}}</code></p>
-					<p>Tokens for sale: <code>{{$auction.NumTokens}}</code></p>
+				<details>
+					<summary>{{$auction.Description}}</summary>
+					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <code>{{$color}}</code></p>
 					<p>Owner: <code>{{$auction.AuctionOwner}}</code></p>
-					<p>Description: <code>{{$auction.Description}}</code></p>
 					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
 					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
 					<p>Deposit: <code>{{$auction.TotalDeposit}}</code></p>
 					<p>Minimum bid: <code>{{$auction.MinimumBid}} IOTAs</code></p>
 					<p>Owner margin: <code>{{$auction.OwnerMargin}} promilles</code></p>
-					<p>Bids:
-						<ul>
-						{{range $i, $bid := $auction.Bids}}
-							<li><div>
-								<p>Bidder: <code>{{$bid.Bidder}}</code></p>
-								<p>Amount: <code>{{$bid.Total}} IOTAs</code></p>
-							</div></li>
+					{{if gt (len $auction.Bids) 0}}
+						<p>This auction has <code>{{len $auction.Bids}}</code> bids totalling <code>{{$auction.SumOfBids}} IOTAs</code></p>
+						{{$winner := $auction.WinningBid}}
+						{{if ne $winner nil}}
+							<p>Current winning bid: <code>{{$winner.Total}} IOTAs</code> by <code>{{$winner.Bidder}}</code></p>
 						{{end}}
-						</ul>
-					</p>
-				</div></li>
+					{{else}}
+						<p>This auction has no bids yet.</p>
+					{{end}}
+				</details>
 			{{end}}
 			</ul>
 		</div>
