@@ -24,7 +24,10 @@ func check(err error) {
 	}
 }
 
-var clients sync.Map
+var clients = map[string]*sync.Map{
+	"fr": &sync.Map{},
+	"fa": &sync.Map{},
+}
 
 func Cmd(args []string) {
 	listenAddr := ":10000"
@@ -52,7 +55,8 @@ func Cmd(args []string) {
 	e.GET("/", handleIndex)
 	e.GET("/fairroulette", handleFR)
 	e.GET("/fairauction", handleFA)
-	e.GET("/ws", ws)
+	e.GET("/ws/fr", handleWebSocket(fr.Config))
+	e.GET("/ws/fa", handleWebSocket(fa.Config))
 
 	done := startNanomsgForwarder(e.Logger)
 	defer func() { done <- true }()
@@ -60,10 +64,10 @@ func Cmd(args []string) {
 	e.Logger.Fatal(e.Start(listenAddr))
 }
 
-func addSCAddress(scAddresses map[string]bool, sc *config.SCConfig) {
+func addSCIfAvailable(availableSCs map[string]*config.SCConfig, sc *config.SCConfig) {
 	scAddress := sc.TryAddress()
 	if scAddress != nil {
-		scAddresses[scAddress.String()] = true
+		availableSCs[scAddress.String()] = sc
 	}
 }
 
@@ -74,22 +78,23 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	check(err)
 	logger.Infof("[Nanomsg] connected")
 
-	scAddresses := make(map[string]bool)
-	addSCAddress(scAddresses, fr.Config)
-	addSCAddress(scAddresses, fa.Config)
+	availableSCs := make(map[string]*config.SCConfig)
+	addSCIfAvailable(availableSCs, fr.Config)
+	addSCIfAvailable(availableSCs, fa.Config)
 
 	go func() {
 		for {
 			select {
 			case msg := <-incomingStateMessages:
-				_, ok := scAddresses[msg[1]]
+				scAddress := msg[1]
+				sc, ok := availableSCs[scAddress]
 				if !ok {
 					continue
 				}
 				{
 					msg := strings.Join(msg, " ")
 					logger.Infof("[Nanomsg] got message %s", msg)
-					clients.Range(func(key interface{}, client interface{}) bool {
+					clients[sc.ShortName].Range(func(key interface{}, client interface{}) bool {
 						if client, ok := client.(chan string); ok {
 							client <- msg
 						}
@@ -119,24 +124,26 @@ func initRenderer() Renderer {
 	}
 }
 
-func ws(c echo.Context) error {
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
+func handleWebSocket(sc *config.SCConfig) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		websocket.Handler(func(ws *websocket.Conn) {
+			defer ws.Close()
 
-		c.Logger().Infof("[WebSocket] opened for %s", c.Request().RemoteAddr)
-		defer c.Logger().Infof("[WebSocket] closed for %s", c.Request().RemoteAddr)
+			c.Logger().Infof("[WebSocket] opened for %s", c.Request().RemoteAddr)
+			defer c.Logger().Infof("[WebSocket] closed for %s", c.Request().RemoteAddr)
 
-		client := make(chan string)
-		clients.Store(client, client)
-		defer clients.Delete(client)
+			client := make(chan string)
+			clients[sc.ShortName].Store(client, client)
+			defer clients[sc.ShortName].Delete(client)
 
-		for {
-			msg := <-client
-			_, err := ws.Write([]byte(msg))
-			if err != nil {
-				break
+			for {
+				msg := <-client
+				_, err := ws.Write([]byte(msg))
+				if err != nil {
+					break
+				}
 			}
-		}
-	}).ServeHTTP(c.Response(), c.Request())
-	return nil
+		}).ServeHTTP(c.Response(), c.Request())
+		return nil
+	}
 }

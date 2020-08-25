@@ -108,7 +108,7 @@ const tplSCInfo = `
 const tplWs = `
 {{define "ws"}}
 	<script>
-		const url = 'ws://' +  location.host + '/ws';
+		const url = 'ws://' +  location.host + '/ws/{{.SC.ShortName}}';
 		console.log('opening WebSocket to ' + url);
 		const ws = new WebSocket(url);
 
