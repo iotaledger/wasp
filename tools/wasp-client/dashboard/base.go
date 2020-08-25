@@ -67,7 +67,7 @@ const tplBase = `
 		<meta http-equiv="x-ua-compatible" content="ie=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-		<title>Wasp dashboard - {{template "title"}}</title>
+		<title>{{template "title"}} - Wasp Smart Contracts PoC</title>
 
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/inter.css">
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
@@ -78,12 +78,12 @@ const tplBase = `
 			details {background: #EEF9FF}
 		</style>
 		<header>
-			<h1>Wasp dashboard</h1>
+			<h1>Wasp Smart Contracts PoC</h1>
 			<nav>
 				{{range $i, $p := .NavPages}}
 					{{if $i}} | {{end}}
 					{{if $p.Active}}
-						{{$p.Title}}
+						<strong>{{$p.Title}}</strong>
 					{{else}}
 						<a href="{{$p.Href}}">{{$p.Title}}</a>
 					{{end}}

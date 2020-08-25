@@ -36,10 +36,11 @@ const tplFairRoulette = `
 {{define "title"}}FairRoulette{{end}}
 
 {{define "body"}}
+	<h2>FairRoulette</h2>
 	{{template "sc-info" .}}
 
 	<div>
-		<h2>Next play</h2>
+		<h3>Next play</h3>
 		<p>Next play: <code id="nextPlayIn"></code></p>
 		<p>Play period: <code>{{.Status.PlayPeriodSeconds}}s</code></p>
 		<div>
@@ -56,7 +57,7 @@ const tplFairRoulette = `
 	</div>
 
 	<div>
-		<h2>Stats</h2>
+		<h3>Stats</h3>
 		<p>Last winning color: <code>{{.Status.LastWinningColor}}</code></p>
 		<div>
 			<p>Color stats:</p>
@@ -78,7 +79,7 @@ const tplFairRoulette = `
 	<hr/>
 	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
 	<div>
-		<h2>CLI usage</h2>
+		<h3>CLI usage</h3>
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Place bets</summary>

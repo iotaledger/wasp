@@ -36,10 +36,11 @@ const tplFairAuction = `
 {{define "title"}}FairAuction{{end}}
 
 {{define "body"}}
+	<h2>FairAuction</h2>
 	{{template "sc-info" .}}
 
 	<div>
-		<h2>Auctions</h2>
+		<h3>Auctions</h3>
 		<div>
 			<ul>
 			{{range $color, $auction := .Status.Auctions}}
@@ -69,7 +70,7 @@ const tplFairAuction = `
 	<hr/>
 	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
 	<div>
-		<h2>CLI usage</h2>
+		<h3>CLI usage</h3>
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Mint a new color</summary>
