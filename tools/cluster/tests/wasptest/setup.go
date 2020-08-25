@@ -15,7 +15,6 @@ var (
 	bidder1      = wallet.WithIndex(1)
 	bidder2      = wallet.WithIndex(2)
 	minter1      = wallet.WithIndex(3)
-	minter2      = wallet.WithIndex(4)
 )
 
 func check(err error, t *testing.T) {

@@ -1,10 +1,12 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
+	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -75,12 +77,12 @@ func TestTRMint1Token(t *testing.T) {
 		return
 	}
 
-	mintedColor1, err := tokenregistry.MintAndRegister(wasps.NodeClient, tokenregistry.MintAndRegisterParams{
-		SenderSigScheme: minter1.SigScheme(),
-		Supply:          1,
-		MintTarget:      minter1Addr,
-		RegistryAddr:    scAddress,
-		Description:     "Non-fungible coin 1",
+	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, minter1.SigScheme())
+
+	mintedColor1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
+		Supply:      1,
+		MintTarget:  minter1Addr,
+		Description: "Non-fungible coin 1",
 	})
 	check(err, t)
 

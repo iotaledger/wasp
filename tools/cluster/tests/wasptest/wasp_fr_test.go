@@ -192,6 +192,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 			balance.ColorIOTA: 1,
 		},
 	})
+	check(err, t)
 	time.Sleep(1 * time.Second)
 
 	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
@@ -282,6 +283,7 @@ func TestFRStatus(t *testing.T) {
 			balance.ColorIOTA: 1,
 		},
 	})
+	check(err, t)
 	time.Sleep(1 * time.Second)
 
 	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{

@@ -231,6 +231,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 			balance.ColorIOTA: 5,
 		},
 	})
+	check(err, t)
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
@@ -440,6 +441,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 			balance.ColorIOTA: 1,
 		},
 	})
+	check(err, t)
 	time.Sleep(1 * time.Second)
 
 	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{

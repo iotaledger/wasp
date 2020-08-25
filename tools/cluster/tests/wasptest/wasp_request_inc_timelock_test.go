@@ -217,6 +217,7 @@ func TestChainIncTimelock(t *testing.T) {
 			balance.ColorIOTA: 5,
 		},
 	})
+	check(err, t)
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
