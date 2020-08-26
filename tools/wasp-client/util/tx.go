@@ -26,14 +26,15 @@ func WithTransaction(f func() (*transaction.Transaction, error)) {
 	}
 }
 
-func WithSCRequest(sc *config.SCConfig, f func() (*sctransaction.Transaction, error)) {
+func WithSCRequest(sc *config.SCConfig, f func() (*sctransaction.Transaction, error)) *sctransaction.Transaction {
 	if config.WaitForConfirmation {
-		_, err := waspapi.RunAndWaitForRequestProcessedMulti(config.CommitteeNanomsg(sc.Committee()), sc.Address(), 0, 20*time.Second, f)
+		tx, err := waspapi.RunAndWaitForRequestProcessedMulti(config.CommitteeNanomsg(sc.Committee()), sc.Address(), 0, 20*time.Second, f)
 		check(err)
-	} else {
-		_, err := f()
-		check(err)
+		return tx
 	}
+	tx, err := f()
+	check(err)
+	return tx
 }
 
 func check(err error) {
