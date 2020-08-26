@@ -200,7 +200,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		refundFromRequest(ctx, &balance.ColorIOTA, harvest)
 		refundFromRequest(ctx, &colorForSale, 0)
 
-		ctx.Publish("startAuction: exit 5")
+		ctx.Publishf("startAuction: not enough iotas for the fee. Expected %d, got %d", expectedDeposit, totalDeposit)
 		return
 	}
 

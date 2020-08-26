@@ -3,6 +3,10 @@ package apilib
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/subscribe"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -235,4 +239,18 @@ func MustNotNullInputs(tx *valuetransaction.Transaction) {
 		}
 		return true
 	})
+}
+
+func WaitForRequestProcessedMulti(hosts []string, scAddr *address.Address, txid *valuetransaction.ID, reqIndex uint16, timeout time.Duration) error {
+	var err error
+	pattern := []string{"request_out", scAddr.String(), txid.String(), strconv.Itoa(int(reqIndex))}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	subscribe.ListenForPatternMulti(hosts, pattern, func(ok bool) {
+		if !ok {
+			err = fmt.Errorf("request [%d]%s wasn't processed in %v", reqIndex, txid.String(), timeout)
+		}
+		wg.Done()
+	}, timeout)
+	return err
 }

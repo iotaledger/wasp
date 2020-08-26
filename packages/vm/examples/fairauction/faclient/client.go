@@ -2,6 +2,7 @@ package faclient
 
 import (
 	"bytes"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -80,7 +81,7 @@ func (fc *FairAuctionClient) fetchSCBalance() (map[balance.Color]int64, error) {
 	return ret, nil
 }
 
-func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) error {
+func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) (*valuetransaction.ID, error) {
 	tx, err := waspapi.CreateSimpleRequest(
 		frc.nodeClient,
 		frc.sigScheme,
@@ -92,12 +93,16 @@ func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transf
 		},
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return frc.nodeClient.PostTransaction(tx.Transaction)
+	if err = frc.nodeClient.PostTransaction(tx.Transaction); err != nil {
+		return nil, err
+	}
+	txid := tx.ID()
+	return &txid, nil
 }
 
-func (fc *FairAuctionClient) SetOwnerMargin(margin int64) error {
+func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*valuetransaction.ID, error) {
 	return fc.postRequest(
 		fairauction.RequestSetOwnerMargin,
 		nil,
@@ -122,10 +127,10 @@ func (fc *FairAuctionClient) StartAuction(
 	tokensForSale int64,
 	minimumBid int64,
 	durationMinutes int64,
-) error {
+) (*valuetransaction.ID, error) {
 	fee, err := fc.GetFeeAmount(minimumBid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return fc.postRequest(
 		fairauction.RequestStartAuction,
@@ -142,7 +147,7 @@ func (fc *FairAuctionClient) StartAuction(
 	)
 }
 
-func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) error {
+func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*valuetransaction.ID, error) {
 	return fc.postRequest(
 		fairauction.RequestPlaceBid,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},

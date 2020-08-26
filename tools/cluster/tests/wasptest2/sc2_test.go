@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/mr-tron/base58"
 	"os"
@@ -270,9 +271,13 @@ func TestPlus2SC(t *testing.T) {
 		return
 	}
 	//
-	//faclientOwner := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, auctionOwner.SigScheme())
-	//err = faclientOwner.StartAuction("selling my only token", mintedColor, 1, 100, 1)
-	//check(err, t)
+	faclientOwner := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, auctionOwner.SigScheme())
+	reqTxId, err := faclientOwner.StartAuction("selling my only token", mintedColor, 1, 100, 1)
+	checkSuccess(err, t, "StartAuction request created")
+
+	err = waspapi.WaitForRequestProcessedMulti(wasps.PublisherHosts(), scFAAddr, reqTxId, 0, 15*time.Second)
+	checkSuccess(err, t, "StartAuction request processed")
+
 	//
 	//time.Sleep(3 * time.Second)
 	//

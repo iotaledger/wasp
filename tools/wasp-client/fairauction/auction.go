@@ -27,14 +27,14 @@ func startAuctionCmd(args []string) {
 
 	durationMinutes, err := strconv.Atoi(args[4])
 	check(err)
-
-	check(fa.Client().StartAuction(
+	_, err = fa.Client().StartAuction(
 		description,
 		color,
 		int64(amount),
 		int64(minimumBid),
 		int64(durationMinutes),
-	))
+	)
+	check(err)
 }
 
 func decodeColor(s string) *balance.Color {
@@ -56,5 +56,6 @@ func placeBidCmd(args []string) {
 	amount, err := strconv.Atoi(args[2])
 	check(err)
 
-	check(fa.Client().PlaceBid(color, int64(amount)))
+	_, err = fa.Client().PlaceBid(color, int64(amount))
+	check(err)
 }

@@ -150,7 +150,7 @@ func (op *operator) setConsensusStage(nextStage int) {
 			nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
 	if !oneOf(nextStage, currentStageParams.expectedNextStages...) {
-		op.log.Errorf("UNEXPECTED next consensusStage: %s -> %s, leader: %d, iAmTheLeader: %v",
+		op.log.Warnf("UNEXPECTED next consensusStage: %s -> %s, leader: %d, iAmTheLeader: %v",
 			stages[op.consensusStage].name, nextStageParams.name, leader, op.iAmCurrentLeader())
 	}
 	saveStage := op.consensusStage
@@ -159,7 +159,7 @@ func (op *operator) setConsensusStage(nextStage int) {
 	if op.consensusStageDeadlineSet {
 		op.consensusStageDeadline = time.Now().Add(nextStageParams.timeout)
 	}
-	op.log.Infof("consensus stage: %s -> %s, timeout in %v, leader: %d, iAmTheLeader: %v",
+	op.log.Debugf("consensus stage: %s -> %s, timeout in %v, leader: %d, iAmTheLeader: %v",
 		stages[saveStage].name, nextStageParams.name, nextStageParams.timeout, leader, op.iAmCurrentLeader())
 }
 
