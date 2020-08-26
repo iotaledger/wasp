@@ -2,6 +2,10 @@ package wasptest2
 
 import (
 	"crypto/rand"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -9,10 +13,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
+	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/mr-tron/base58"
-	"os"
-	"testing"
-	"time"
 )
 
 func Test2SC(t *testing.T) {
@@ -85,18 +87,21 @@ func Test2SC(t *testing.T) {
 	err = waspapi.WaitSmartContractInitialized(wasps.PublisherHosts(), scFAAddr, scFAColor, 20*time.Second)
 	checkSuccess(err, t, "FairAuction initialized")
 
+	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scTRAddr, auctionOwner.SigScheme())
+
 	// minting 1 token with TokenRegistry
-	mintedColor, err := tokenregistry.MintAndRegister(wasps.NodeClient, tokenregistry.MintAndRegisterParams{
-		SenderSigScheme:   auctionOwner.SigScheme(),
-		Supply:            1,
-		MintTarget:        auctionOwnerAddr,
-		RegistryAddr:      *scTRAddr,
-		Description:       "Non-fungible coin 1. Very expensive",
-		WaitToBeProcessed: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+	tx, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
+		Supply:      1,
+		MintTarget:  auctionOwnerAddr,
+		Description: "Non-fungible coin 1. Very expensive",
 	})
+	checkSuccess(err, t, "token mint request sent")
+
+	txid := tx.ID()
+	err = waspapi.WaitForRequestProcessedMulti(wasps.PublisherHosts(), scTRAddr, &txid, 0, 20*time.Second)
 	checkSuccess(err, t, "token minted")
+
+	mintedColor := balance.Color(txid)
 
 	if !wasps.VerifyAddressBalances(*scFAAddr, 1, map[balance.Color]int64{
 		*scFAColor: 1, // sc token
@@ -118,7 +123,7 @@ func Test2SC(t *testing.T) {
 	}
 	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
-		*mintedColor:      1,
+		mintedColor:       1,
 	}, "Auction owner in the beginning") {
 		t.Fail()
 		return
@@ -220,18 +225,21 @@ func TestPlus2SC(t *testing.T) {
 	err = waspapi.WaitSmartContractInitialized(wasps.PublisherHosts(), scFAAddr, scFAColor, 20*time.Second)
 	checkSuccess(err, t, "FairAuction initialized")
 
+	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scTRAddr, auctionOwner.SigScheme())
+
 	// minting 1 token with TokenRegistry
-	mintedColor, err := tokenregistry.MintAndRegister(wasps.NodeClient, tokenregistry.MintAndRegisterParams{
-		SenderSigScheme:   auctionOwner.SigScheme(),
-		Supply:            1,
-		MintTarget:        auctionOwnerAddr,
-		RegistryAddr:      *scTRAddr,
-		Description:       "Non-fungible coin 1. Very expensive",
-		WaitToBeProcessed: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+	tx, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
+		Supply:      1,
+		MintTarget:  auctionOwnerAddr,
+		Description: "Non-fungible coin 1. Very expensive",
 	})
+	checkSuccess(err, t, "token mint request sent")
+
+	txid := tx.ID()
+	err = waspapi.WaitForRequestProcessedMulti(wasps.PublisherHosts(), scTRAddr, &txid, 0, 20*time.Second)
 	checkSuccess(err, t, "token minted")
+
+	mintedColor := balance.Color(txid)
 
 	if !wasps.VerifyAddressBalances(*scFAAddr, 1, map[balance.Color]int64{
 		*scFAColor: 1, // sc token
@@ -253,7 +261,7 @@ func TestPlus2SC(t *testing.T) {
 	}
 	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
-		*mintedColor:      1,
+		mintedColor:       1,
 	}, "Auction owner in the beginning") {
 		t.Fail()
 		return
@@ -272,10 +280,11 @@ func TestPlus2SC(t *testing.T) {
 	}
 	//
 	faclientOwner := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, auctionOwner.SigScheme())
-	reqTxId, err := faclientOwner.StartAuction("selling my only token", mintedColor, 1, 100, 1)
+	reqTx, err := faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction request created")
+	reqTxId := reqTx.ID()
 
-	err = waspapi.WaitForRequestProcessedMulti(wasps.PublisherHosts(), scFAAddr, reqTxId, 0, 15*time.Second)
+	err = waspapi.WaitForRequestProcessedMulti(wasps.PublisherHosts(), scFAAddr, &reqTxId, 0, 15*time.Second)
 	checkSuccess(err, t, "StartAuction request processed")
 
 	//

@@ -2,17 +2,19 @@ package wasptest2
 
 import (
 	"crypto/rand"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
+	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/mr-tron/base58"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestTRTest(t *testing.T) {
@@ -90,14 +92,16 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 
-	mintedColor1, err := tokenregistry.MintAndRegister(wasps.NodeClient, tokenregistry.MintAndRegisterParams{
-		SenderSigScheme: minter.SigScheme(),
-		Supply:          1,
-		MintTarget:      minterAddr,
-		RegistryAddr:    *scAddr,
-		Description:     "Non-fungible coin 1",
+	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scAddr, minter.SigScheme())
+
+	tx1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
+		Supply:      1,
+		MintTarget:  minterAddr,
+		Description: "Non-fungible coin 1",
 	})
 	check(err, t)
+
+	mintedColor1 := balance.Color(tx1.ID())
 
 	//wasps.CollectMessages(30 * time.Second)
 	wasps.WaitUntilExpectationsMet()
@@ -114,7 +118,7 @@ func TestTRTest(t *testing.T) {
 	}
 
 	if !wasps.VerifyAddressBalances(minterAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		*mintedColor1:     1,
+		mintedColor1:      1,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "minter1 in the end") {
 		t.Fail()
