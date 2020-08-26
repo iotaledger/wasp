@@ -97,12 +97,9 @@ func waitForPattern(host string, pattern []string, timeout time.Duration) (bool,
 	if err != nil {
 		return false, err
 	}
-	for {
-		err = socket.Dial("tcp://" + host)
-		if err != nil {
-			return false, fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
-		}
-		break
+	err = socket.Dial("tcp://" + host)
+	if err != nil {
+		return false, fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
 	}
 	err = socket.SetOption(mangos.OptionSubscribe, []byte(""))
 	if err != nil {
@@ -188,4 +185,40 @@ func ListenForPatternMulti(hosts []string, pattern []string, onFinish func(bool)
 	wg.Wait()
 
 	onFinish(counter == int32(len(hosts)))
+}
+
+func SubscribeRunAndWaitForPattern(hosts []string, topic string, timeout time.Duration, f func() ([]string, error)) error {
+	messages := make(chan *HostMessage)
+
+	done := make(chan bool)
+	defer func() { done <- true }()
+
+	err := SubscribeMulti(hosts, messages, done, topic)
+	if err != nil {
+		return err
+	}
+
+	pattern, err := f()
+	if err != nil {
+		return err
+	}
+
+	received := make(map[string]bool)
+	for {
+		select {
+		case m := <-messages:
+			_, ok := received[m.Sender]
+			if !ok {
+				if matches(m.Message, pattern) {
+					received[m.Sender] = true
+					if len(received) == len(hosts) {
+						return nil
+					}
+				}
+			}
+
+		case <-time.After(timeout):
+			return fmt.Errorf("timeout in SubscribeRunAndWaitForPattern")
+		}
+	}
 }

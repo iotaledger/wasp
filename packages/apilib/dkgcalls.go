@@ -121,6 +121,9 @@ func callImportDKShare(netLoc string, params dkgapi.ImportDKShareRequest) error 
 	}
 	url := fmt.Sprintf("http://%s/adm/importdkshare", netLoc)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
 	result := &dkgapi.ImportDKShareResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if resp.StatusCode != http.StatusOK {

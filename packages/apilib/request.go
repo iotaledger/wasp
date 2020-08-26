@@ -254,3 +254,22 @@ func WaitForRequestProcessedMulti(hosts []string, scAddr *address.Address, txid 
 	}, timeout)
 	return err
 }
+
+func RunAndWaitForRequestProcessedMulti(hosts []string, scAddr *address.Address, reqIndex uint16, timeout time.Duration, f func() (*sctransaction.Transaction, error)) (*sctransaction.Transaction, error) {
+	var tx *sctransaction.Transaction
+	err := subscribe.SubscribeRunAndWaitForPattern(hosts, "request_out", timeout, func() ([]string, error) {
+		var err error
+		tx, err = f()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create tx: %v", err)
+		}
+		return []string{"request_out", scAddr.String(), tx.ID().String(), strconv.Itoa(int(reqIndex))}, nil
+	})
+	if err != nil {
+		if tx != nil {
+			return nil, fmt.Errorf("request [%d]%s failed: %v", reqIndex, tx.ID(), err)
+		}
+		return nil, fmt.Errorf("request [%d] failed: %v", reqIndex, err)
+	}
+	return tx, nil
+}
