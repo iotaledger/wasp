@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+err_report() {
+    echo "Error on line $1" >&2
+}
+
+trap 'err_report $LINENO' ERR
+
 ARGS="$*"
 
 function wasp-client() {
-    echo "wasp-client -w $ARGS $@"
+    echo "wasp-client -w $ARGS $@" >&2
     command wasp-client -w $ARGS "$@"
 }
 
@@ -22,17 +28,10 @@ wasp-client wallet init
 wasp-client wallet request-funds
 wasp-client tr set address $scaddress
 
-r=$(wasp-client wallet mint 10)
+r=$(wasp-client tr mint "My first coin" 10)
 echo "$r"
 [[ "$r" =~ of[[:space:]]color[[:space:]](.+)$ ]]
 color=${BASH_REMATCH[1]}
 
-wasp-client tr mint "My first coin" 10
-
-echo "Waiting for mint request to be executed..."
-while true; do
-    r=$(wasp-client tr status | grep "Supply:") || true
-    [ "$r" ] && break
-    sleep 1
-done
-
+# verify
+wasp-client tr status | tee >(cat >&2) | grep -q "Supply:"

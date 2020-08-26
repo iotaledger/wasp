@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+err_report() {
+    echo "Error on line $1" >&2
+}
+
+trap 'err_report $LINENO' ERR
+
 ARGS="$*"
 
 function wasp-client() {
-    echo "wasp-client -w $ARGS $@"
+    echo "wasp-client -w $ARGS $@" >&2
     command wasp-client -w $ARGS "$@"
 }
 
@@ -19,12 +25,8 @@ wasp-client-owner fr admin set-period 10
 scaddress=$(cat owner.json | jq .fr.address -r)
 wasp-client-owner wallet send-funds $scaddress IOTA 100 # operating capital
 
-echo "Waiting for set-period request to be executed..."
-while true; do
-    r=$(wasp-client-owner fr status | grep "play period") || true
-    [[ "$r" =~ ": 10"$ ]] && break
-    sleep 1
-done
+# check that set-period request has been executed
+wasp-client-owner fr status | tee >(cat >&2) | grep -q 'play period.*: 10$'
 
 wasp-client wallet init
 wasp-client wallet request-funds
@@ -32,9 +34,5 @@ wasp-client fr set address $scaddress
 
 wasp-client fr bet 2 100
 
-echo "Waiting for bet request to be executed..."
-while true; do
-    r=$(wasp-client fr status | grep "bets for next play") || true
-    [[ "$r" =~ ": 1"$ ]] && break
-    sleep 1
-done
+# check that bet request has been executed
+wasp-client fr status | tee >(cat >&2) | grep -q 'bets for next play: 1$'

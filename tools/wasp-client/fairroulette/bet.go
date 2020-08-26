@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
 	"github.com/iotaledger/wasp/tools/wasp-client/util"
 )
@@ -21,12 +21,8 @@ func betCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	util.WithTransaction(func() (*transaction.Transaction, error) {
-		tx, err := fr.Client().Bet(color, amount)
-		if err != nil {
-			return nil, err
-		}
-		return tx.Transaction, nil
+	util.WithSCRequest(fr.Config, func() (*sctransaction.Transaction, error) {
+		return fr.Client().Bet(color, amount)
 	})
 }
 

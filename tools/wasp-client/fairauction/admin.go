@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
 	"github.com/iotaledger/wasp/tools/wasp-client/util"
 	"github.com/iotaledger/wasp/tools/wasp-client/wallet"
@@ -27,12 +27,8 @@ func adminCmd(args []string) {
 		}
 		p, err := strconv.Atoi(args[1])
 		check(err)
-		util.WithTransaction(func() (*transaction.Transaction, error) {
-			tx, err := fa.Client().SetOwnerMargin(int64(p))
-			if err != nil {
-				return nil, err
-			}
-			return tx.Transaction, nil
+		util.WithSCRequest(fa.Config, func() (*sctransaction.Transaction, error) {
+			return fa.Client().SetOwnerMargin(int64(p))
 		})
 
 	default:

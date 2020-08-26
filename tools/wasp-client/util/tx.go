@@ -3,8 +3,11 @@ package util
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 )
 
@@ -20,6 +23,16 @@ func WithTransaction(f func() (*transaction.Transaction, error)) {
 
 	if config.WaitForConfirmation {
 		check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
+	}
+}
+
+func WithSCRequest(sc *config.SCConfig, f func() (*sctransaction.Transaction, error)) {
+	if config.WaitForConfirmation {
+		_, err := waspapi.RunAndWaitForRequestProcessedMulti(config.CommitteeNanomsg(sc.Committee()), sc.Address(), 0, 20*time.Second, f)
+		check(err)
+	} else {
+		_, err := f()
+		check(err)
 	}
 }
 

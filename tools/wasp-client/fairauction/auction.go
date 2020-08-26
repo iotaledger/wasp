@@ -1,12 +1,11 @@
 package fairauction
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
 	"github.com/iotaledger/wasp/tools/wasp-client/util"
 	"github.com/mr-tron/base58"
@@ -31,18 +30,14 @@ func startAuctionCmd(args []string) {
 	durationMinutes, err := strconv.Atoi(args[4])
 	check(err)
 
-	util.WithTransaction(func() (*transaction.Transaction, error) {
-		tx, err := fa.Client().StartAuction(
+	util.WithSCRequest(fa.Config, func() (*sctransaction.Transaction, error) {
+		return fa.Client().StartAuction(
 			description,
 			color,
 			int64(amount),
 			int64(minimumBid),
 			int64(durationMinutes),
 		)
-		if err != nil {
-			return nil, fmt.Errorf("StartAuction failed: %v", err)
-		}
-		return tx.Transaction, nil
 	})
 }
 
@@ -65,11 +60,7 @@ func placeBidCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	util.WithTransaction(func() (*transaction.Transaction, error) {
-		tx, err := fa.Client().PlaceBid(color, int64(amount))
-		if err != nil {
-			return nil, err
-		}
-		return tx.Transaction, nil
+	util.WithSCRequest(fa.Config, func() (*sctransaction.Transaction, error) {
+		return fa.Client().PlaceBid(color, int64(amount))
 	})
 }

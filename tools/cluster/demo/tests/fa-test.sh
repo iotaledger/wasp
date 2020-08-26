@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+err_report() {
+    echo "Error on line $1" >&2
+}
+
+trap 'err_report $LINENO' ERR
+
 ARGS="$*"
 
 function wasp-client() {
-    echo "wasp-client -w $ARGS $@"
+    echo "wasp-client -w $ARGS $@" >&2
     command wasp-client -w $ARGS "$@"
 }
 
@@ -29,19 +35,10 @@ color=${BASH_REMATCH[1]}
 
 wasp-client fa start-auction "My first auction" "$color" 10 100 10
 
-echo "Waiting for start-auction request to be executed..."
-while true; do
-    r=$(wasp-client fa status | grep "color:") || true
-    [ "$r" ] && break
-    sleep 1
-done
+# check that start-auction request has been executed
+wasp-client fa status | tee >(cat >&2) | grep -q -- "- color: $color\$"
 
 wasp-client fa place-bid "$color" 110
 
-echo "Waiting for start-auction request to be executed..."
-while true; do
-    r=$(wasp-client fa status | grep "bidder:") || true
-    [ "$r" ] && break
-    sleep 1
-done
-
+# check that place-bid request has been executed
+wasp-client fa status | tee >(cat >&2) | grep -q "bidder:"

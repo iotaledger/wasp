@@ -84,6 +84,10 @@ func CommitteePeering(indices []int) []string {
 	return committee(hostKindPeering, indices)
 }
 
+func CommitteeNanomsg(indices []int) []string {
+	return committee(hostKindNanomsg, indices)
+}
+
 func committee(kind string, indices []int) []string {
 	hosts := make([]string, 0)
 	for _, i := range indices {
