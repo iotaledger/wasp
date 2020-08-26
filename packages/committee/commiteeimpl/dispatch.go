@@ -39,6 +39,11 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 		// receive state transaction message
 		c.stateMgr.EventStateTransactionMsg(msgt)
 
+	case *committee.TransactionInclusionLevelMsg:
+		if c.operator != nil {
+			c.operator.EventTransactionInclusionLevelMsg(msgt)
+		}
+
 	case *committee.RequestMsg:
 		// receive request message
 		if c.operator != nil {

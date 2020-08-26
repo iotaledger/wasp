@@ -5,39 +5,31 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// sendRequestNotificationsToLeaderIfNeeded sends current leader the backlog of requests
-func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
-	if !op.sendNotificationsScheduled {
+// sendRequestNotificationsToLeader sends current leader the backlog of requests
+// it is only possible in the `consensusStageLeaderStarting` stage for non-leader
+func (op *operator) sendRequestNotificationsToLeader() {
+	if len(op.requests) == 0 {
 		return
 	}
-	op.sendNotificationsScheduled = false
-
-	stateIndex, ok := op.stateIndex()
-	if !ok {
-		op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded: current state is undefined")
+	if op.iAmCurrentLeader() {
+		return
+	}
+	if op.consensusStage != consensusStageSubStarting {
 		return
 	}
 	if !op.committee.HasQuorum() {
-		op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded: postponed due to no quorum. Connected peers: %+v",
+		op.log.Debugf("sendRequestNotificationsToLeader: postponed due to no quorum. Connected peers: %+v",
 			op.committee.ConnectedPeers())
-		op.sendNotificationsScheduled = true
 		return
 	}
+	currentLeaderPeerIndex, _ := op.currentLeader()
+	reqs := op.requestCandidateList()
+	reqs = op.filterOutRequestsWithoutTokens(reqs)
 
-	currentLeaderPeerIndex, ok := op.currentLeader()
-	if !ok {
-		return
-	}
-
-	if op.iAmCurrentLeader() {
-		// to be in line with other nodes.
-		op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
-		return
-	}
-	op.log.Debugf("sendRequestNotificationsToLeaderIfNeeded #%d", currentLeaderPeerIndex)
+	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates (with tokens): %d",
+		currentLeaderPeerIndex, len(op.requests), len(reqs))
 
 	// get not time-locked requests with the message known
-	reqs := op.requestCandidateList()
 	if len(reqs) == 0 {
 		// nothing to notify about
 		return
@@ -45,33 +37,33 @@ func (op *operator) sendRequestNotificationsToLeaderIfNeeded() {
 	reqIds := takeIds(reqs)
 	msgData := util.MustBytes(&committee.NotifyReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			StateIndex: stateIndex,
+			StateIndex: op.mustStateIndex(),
 		},
 		RequestIds: reqIds,
 	})
 
 	// send until first success, but no more than number of nodes in the committee
-	op.log.Infow("sendRequestNotificationsToLeaderIfNeeded",
+	op.log.Infow("sendRequestNotificationsToLeader",
 		"leader", currentLeaderPeerIndex,
-		"currentState index", stateIndex,
+		"state index", op.mustStateIndex(),
 		"reqs", idsShortStr(reqIds),
 	)
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
-		op.log.Infof("sending notifications to %d: %v", currentLeaderPeerIndex, err)
+		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
-	op.setLeaderRotationDeadline(op.committee.Params().LeaderReactionToNotifications)
+	op.setConsensusStage(consensusStageSubNotificationsSent)
 }
 
-func (op *operator) storeNotificationIfNeeded(msg *committee.NotifyReqMsg) {
+func (op *operator) storeNotification(msg *committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if stateDefined && msg.StateIndex < stateIndex {
-		// don't save from earlier. The current currentState saved only for tracking
+		// don't save from earlier. The current currentSCState saved only for tracking
 		return
 	}
 	op.notificationsBacklog = append(op.notificationsBacklog, msg)
 }
 
-// stores information about notification in the current currentState
+// markRequestsNotified stores information about notification in the current currentSCState
 func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
@@ -92,7 +84,7 @@ func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
 	}
 }
 
-// adjust all notification information to the current currentState index
+// adjust all notification information to the current state index
 func (op *operator) adjustNotifications() {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
@@ -103,10 +95,10 @@ func (op *operator) adjustNotifications() {
 		setAllFalse(req.notifications)
 		req.notifications[op.peerIndex()] = req.reqTx != nil
 	}
-	// put markers of the current currentState
+	// put markers of the current state
 	op.markRequestsNotified(op.notificationsBacklog)
 
-	// clean notification backlog from messages from current and and past states
+	// clean notification backlog from messages from current and and past stages
 	newBacklog := op.notificationsBacklog[:0] // new slice, same underlying array!
 	for _, msg := range op.notificationsBacklog {
 		if msg.StateIndex < stateIndex {

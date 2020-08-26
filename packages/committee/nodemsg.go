@@ -8,7 +8,11 @@ import (
 
 type StateTransactionMsg struct {
 	*sctransaction.Transaction
-	Confirmed bool
+}
+
+type TransactionInclusionLevelMsg struct {
+	TxId  *valuetransaction.ID
+	Level byte
 }
 
 type BalancesMsg struct {

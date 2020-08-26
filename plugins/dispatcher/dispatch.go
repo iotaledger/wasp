@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/committees"
 )
 
-func dispatchState(tx *sctransaction.Transaction, confirmed bool) {
+func dispatchState(tx *sctransaction.Transaction) {
 	txProp := tx.MustProperties() // should be validate while parsing
 	if !txProp.IsState() {
 		// not state transaction
@@ -21,13 +21,11 @@ func dispatchState(tx *sctransaction.Transaction, confirmed bool) {
 	}
 	log.Debugw("dispatchState",
 		"txid", tx.ID().String(),
-		"confirmed", confirmed,
 		"addr", cmt.Address().String(),
 	)
 
 	cmt.ReceiveMessage(&committee.StateTransactionMsg{
 		Transaction: tx,
-		Confirmed:   confirmed,
 	})
 }
 
@@ -49,7 +47,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	}
 	if _, ok := balances[tx.ID()]; !ok {
 		// violation of the protocol
-		log.Errorf("transaction %s is not among provided outputs. Ignored", tx.ID().String())
+		log.Errorf("violation of the protocol: transaction %s is not among provided outputs. Ignored", tx.ID().String())
 		return
 	}
 	log.Debugf("received tx with balances: %s", tx.ID().String())
@@ -64,7 +62,6 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		// it is a state update to addr. Send it
 		cmt.ReceiveMessage(&committee.StateTransactionMsg{
 			Transaction: tx,
-			Confirmed:   true, // because here we have only confirmed balances
 		})
 	}
 
@@ -76,5 +73,18 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 				Index:       uint16(i),
 			})
 		}
+	}
+}
+
+func dispatchTxInclusionLevel(level byte, txid *valuetransaction.ID, addrs []address.Address) {
+	for _, addr := range addrs {
+		cmt := committees.CommitteeByAddress(addr)
+		if cmt == nil {
+			continue
+		}
+		cmt.ReceiveMessage(&committee.TransactionInclusionLevelMsg{
+			TxId:  txid,
+			Level: level,
+		})
 	}
 }

@@ -2,20 +2,20 @@ package apilib
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-	"time"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
+	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/packages/vm/builtins"
+	"io"
+	"io/ioutil"
+	"sync"
+	"time"
 )
 
 type CreateAndDeploySCParams struct {
@@ -29,6 +29,10 @@ type CreateAndDeploySCParams struct {
 	ProgramHash           hashing.HashValue
 	Textout               io.Writer
 	Prefix                string
+	// wait for init
+	WaitForInitialization   bool
+	CommitteePublisherHosts []string
+	Timeout                 time.Duration
 }
 
 // CreateAndDeploySC performs all actions needed to deploy smart contract
@@ -144,13 +148,38 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 		fmt.Fprint(textout, "activating smart contract on Wasp nodes.. OK.\n")
 	}
 
-	fmt.Fprintf(textout, par.Prefix+"waiting for %v for nodes to connect..\n", committee.InitConnectPeriod)
-	time.Sleep(committee.InitConnectPeriod)
+	//fmt.Fprintf(textout, par.Prefix+"waiting for %v for nodes to connect..\n", committee.InitConnectPeriod)
+	//time.Sleep(committee.InitConnectPeriod)
 
-	color := (balance.Color)(originTx.ID())
+	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "smart contract has been created and deployed succesfully. Address: %s, Color: %s, N = %d, T = %d\n",
-		scAddr.String(), color.String(), par.N, par.T)
+	fmt.Fprintf(textout, "smart contract has been created succesfully. Address: %s, Color: %s, N = %d, T = %d\n",
+		scAddr.String(), scColor.String(), par.N, par.T)
 
-	return scAddr, &color, nil
+	if !par.WaitForInitialization {
+		return scAddr, &scColor, nil
+	}
+	fmt.Fprint(textout, par.Prefix)
+	err = WaitSmartContractInitialized(par.CommitteePublisherHosts, scAddr, &scColor, par.Timeout)
+	if err != nil {
+		fmt.Fprintf(textout, "waiting for smart contract to run its initialization code.. FAIL: %v\n", err)
+		return nil, nil, err
+	}
+	fmt.Fprintf(textout, "waiting for smart contract run its initialization code.. SUCCESS\n")
+	return scAddr, &scColor, nil
+}
+
+// WaitSmartContractInitialized waits for the wasp hosts to publish init requests were settled successfully
+func WaitSmartContractInitialized(hosts []string, scAddr *address.Address, scColor *balance.Color, timeout time.Duration) error {
+	var err error
+	pattern := []string{"request_out", scAddr.String(), scColor.String(), "0"}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	subscribe.ListenForPatternMulti(hosts, pattern, func(ok bool) {
+		if !ok {
+			err = fmt.Errorf("smart contract wasn't deployed correctly in %v", timeout)
+		}
+		wg.Done()
+	}, timeout)
+	return err
 }

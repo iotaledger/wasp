@@ -99,7 +99,10 @@ func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transf
 	if err != nil {
 		return nil, err
 	}
-	return tx, frc.nodeClient.PostTransaction(tx.Transaction)
+	if err = frc.nodeClient.PostTransaction(tx.Transaction); err != nil {
+		return nil, err
+	}
+	return tx, nil
 }
 
 func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transaction, error) {

@@ -2,7 +2,6 @@ package committee
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -48,7 +47,7 @@ type NotifyReqMsg struct {
 // Final signature is sent to prevent possibility for a leader node to lie (is it necessary)
 type NotifyFinalResultPostedMsg struct {
 	PeerMsgHeader
-	Signature signaturescheme.Signature
+	TxId valuetransaction.ID
 }
 
 // message is sent by the leader to other peers to initiate request processing

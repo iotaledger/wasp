@@ -1,6 +1,7 @@
 package wasptest2
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,16 @@ func check(err error, t *testing.T) {
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
+	}
+}
+
+func checkSuccess(err error, t *testing.T, success string) {
+	t.Helper()
+	assert.NoError(t, err)
+	if err != nil {
+		t.FailNow()
+	} else {
+		fmt.Printf("[test] SUCCESS: %s\n", success)
 	}
 }
 

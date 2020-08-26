@@ -11,73 +11,76 @@ import (
 )
 
 func (op *operator) takeAction() {
-	op.unlockInTime()
-	op.sendRequestNotificationsToLeaderIfNeeded()
-	op.requestOutputsIfNeeded()
-	if op.iAmCurrentLeader() {
-		op.startProcessingIfNeeded()
-	}
+	op.sendRequestNotificationsToLeader()
+	//op.queryOutputs()
+	op.startCalculationsAsLeader()
 	op.checkQuorum()
-	op.rotateLeaderIfNeeded()
+	op.rotateLeader()
+	op.pullInclusionLevel()
 }
 
-// unlockInTime detects just time-unlocked and schedules notifications to be sent
-func (op *operator) unlockInTime() {
-	candidates := op.requestCandidateList()
-	nowis := time.Now()
-	for _, req := range candidates {
-		if req.timelocked && !req.isTimelocked(nowis) {
-			req.timelocked = false
-			op.sendNotificationsScheduled = true
-			req.log.Infof("unlocked request @ nowis = %d (was locked until %d)", nowis.Unix(), req.timelock())
+func (op *operator) pullInclusionLevel() {
+	if op.postedResultTxid == nil {
+		return
+	}
+	if time.Now().After(op.nextPullInclusionLevel) {
+		if err := nodeconn.RequestInclusionLevelFromNode(op.postedResultTxid, op.committee.Address()); err != nil {
+			op.log.Errorf("RequestInclusionLevelFromNode: %v", err)
 		}
+		op.setNextPullInclusionStageDeadline()
 	}
 }
 
-func (op *operator) rotateLeaderIfNeeded() {
-	if !op.synchronized {
+// rotateLeader upon expired deadline
+func (op *operator) rotateLeader() {
+	if !op.consensusStageDeadlineExpired() {
 		return
 	}
-	//if op.iAmCurrentLeader() {
-	//	return
-	//}
-	if !op.leaderRotationDeadlineSet {
-		return
-	}
-	if op.leaderRotationDeadline.After(time.Now()) {
+	if !op.committee.HasQuorum() {
+		op.log.Debugf("leader not rotated due to no quorum")
 		return
 	}
 	prevlead, _ := op.currentLeader()
 	leader := op.moveToNextLeader()
+
+	// starting from scratch with the new leader
+	op.leaderStatus = nil
+	op.sentResultToLeader = nil
+	op.postedResultTxid = nil
+
 	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
 		prevlead, leader, op.iAmCurrentLeader())
-	op.sendNotificationsScheduled = true
+
+	if op.iAmCurrentLeader() {
+		op.setConsensusStage(consensusStageLeaderStarting)
+	} else {
+		op.setConsensusStage(consensusStageSubStarting)
+	}
+
 }
 
-func (op *operator) startProcessingIfNeeded() {
-	if !op.synchronized {
+func (op *operator) startCalculationsAsLeader() {
+	if op.consensusStage != consensusStageLeaderStarting {
+		// only for leader in the beginning of the starting stage
 		return
 	}
-	if op.leaderStatus != nil {
-		// request already selected and calculations initialized
+	if !op.committee.HasQuorum() {
+		// no quorum, doesn't make sense to start
 		return
 	}
-
+	// select requests for the batch
 	reqs := op.selectRequestsToProcess()
 	if len(reqs) == 0 {
-		// can't select request to process
-		//op.log.Debugf("can't select request to process")
 		return
 	}
 	reqIds := takeIds(reqs)
 	reqIdsStr := idsShortStr(reqIds)
-	op.log.Debugw("requests selected to process",
-		"stateIdx", op.stateTx.MustState().StateIndex(),
-		"batch", reqIdsStr,
+	op.log.Debugf("requests selected to process. State: %d, Reqs: %+v",
+		op.stateTx.MustState().StateIndex(), reqIdsStr,
 	)
 	rewardAddress := op.getRewardAddress()
 
-	// send to subordinate the request to process the batch
+	// send to subordinated peers requests to process the batch
 	msgData := util.MustBytes(&committee.StartProcessingBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
@@ -94,7 +97,7 @@ func (op *operator) startProcessingIfNeeded() {
 
 	if numSucc < op.quorum()-1 {
 		// doesn't make sense to continue because less than quorum sends succeeded
-		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded.", numSucc)
+		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded. Not continuing", numSucc)
 		return
 	}
 
@@ -119,10 +122,12 @@ func (op *operator) startProcessingIfNeeded() {
 		timestamp:       ts,
 		rewardAddress:   rewardAddress,
 	})
+	op.setConsensusStage(consensusStageLeaderCalculationsStarted)
 }
 
 func (op *operator) checkQuorum() bool {
-	if !op.synchronized {
+	if op.consensusStage != consensusStageLeaderCalculationsFinished {
+		// checking quorum only if leader calculations has been finished
 		return false
 	}
 	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
@@ -160,8 +165,7 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	// quorum detected
-	finalSignature, err := op.aggregateSigShares(sigShares)
-	if err != nil {
+	if err := op.aggregateSigShares(sigShares); err != nil {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
 	}
@@ -171,17 +175,19 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 
+	txid := op.leaderStatus.resultTx.ID()
 	sh := op.leaderStatus.resultTx.MustState().StateHash()
 	stateIndex := op.leaderStatus.resultTx.MustState().StateIndex()
 	op.log.Infof("FINALIZED RESULT. txid: %s, state index: #%d, state hash: %s, contributors: %+v",
-		op.leaderStatus.resultTx.ID().String(), stateIndex, sh.String(), contributingPeers)
+		txid.String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
-	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
+	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
 	}
+	op.log.Debugf("result transaction has been posted to node. txid: %s", txid.String())
 
 	// notify peers about finalization
 	msgData := util.MustBytes(&committee.NotifyFinalResultPostedMsg{
@@ -189,34 +195,35 @@ func (op *operator) checkQuorum() bool {
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
-		Signature: finalSignature,
+		TxId: txid,
 	})
 
-	op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
-	op.setLeaderRotationDeadline(op.committee.Params().ConfirmationWaitingPeriod)
+	numSent, _ := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
+	op.log.Debugf("%d peers has been notified about finalized result", numSent)
+
+	op.setConsensusStage(consensusStageLeaderResultFinalized)
+	op.setFinalizedTransaction(&txid)
 
 	return true
 }
 
-// sets new currentState transaction and initializes respective variables
-func (op *operator) setNewState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
+// sets new currentSCState transaction and initializes respective variables
+func (op *operator) setNewSCState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
-	if len(op.sentResultsToLeader) > 0 {
-		op.sentResultsToLeader = make(map[uint16]*sctransaction.Transaction) //clear the map
-	}
-	op.currentState = variableState
-	op.synchronized = synchronized
+	op.currentSCState = variableState
+	op.sentResultToLeader = nil
+	op.postedResultTxid = nil
 
 	op.requestBalancesDeadline = time.Now()
-	op.requestOutputsIfNeeded()
+	//op.queryOutputs()
 
 	op.resetLeader(stateTx.ID().Bytes())
 
 	op.adjustNotifications()
 }
 
-func (op *operator) requestOutputsIfNeeded() {
-	if !op.synchronized {
+func (op *operator) queryOutputs() {
+	if op.consensusStage != consensusStageNoSync {
 		return
 	}
 	if op.balances != nil && op.requestBalancesDeadline.After(time.Now()) {

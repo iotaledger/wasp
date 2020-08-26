@@ -16,14 +16,15 @@ import (
 )
 
 type committeeObj struct {
-	isReadyStateManager     bool
-	isReadyConsensus        bool
-	isInitConnectPeriodOver bool
-	mutexIsReady            sync.Mutex
-	isOpenQueue             atomic.Bool
-	dismissed               atomic.Bool
-	dismissOnce             sync.Once
-	onActivation            func()
+	isReadyStateManager          bool
+	isReadyConsensus             bool
+	isInitConnectPeriodOver      bool
+	isQuorumOfConnectionsReached bool
+	mutexIsReady                 sync.Mutex
+	isOpenQueue                  atomic.Bool
+	dismissed                    atomic.Bool
+	dismissOnce                  sync.Once
+	onActivation                 func()
 	//
 	params       *committee.Parameters
 	address      address.Address
@@ -116,11 +117,19 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 		}
 	}()
 	go func() {
-		ret.log.Infof("wait for %s before activating the committee", ret.params.InitConnectPeriod)
+		ret.log.Infof("wait %s before activating the committee", ret.params.InitConnectPeriod)
 		time.Sleep(ret.params.InitConnectPeriod)
 		ret.log.Infof("initial connection period is over. Connected peers: %+v", ret.ConnectedPeers())
 
 		ret.SetInitConnectPeriodOver()
+	}()
+	go func() {
+		ret.log.Infof("wait for at least quorum of peers (%d) connected before activating the committee", ret.quorum)
+		for !ret.HasQuorum() && !ret.IsDismissed() {
+			time.Sleep(500 * time.Millisecond)
+		}
+		ret.log.Infof("connected peers: %+v", ret.ConnectedPeers())
+		ret.SetQuorumOfConnectionsReached()
 	}()
 	return ret
 }

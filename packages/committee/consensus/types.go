@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/iotaledger/wasp/packages/state"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
@@ -21,30 +21,32 @@ import (
 type operator struct {
 	committee committee.Committee
 	dkshare   *tcrypto.DKShare
-	//currentState
-	currentState state.VirtualState
-	stateTx      *sctransaction.Transaction
-	balances     map[valuetransaction.ID][]*balance.Balance
-	synchronized bool
+	//currentSCState
+	currentSCState state.VirtualState
+	stateTx        *sctransaction.Transaction
+	balances       map[valuetransaction.ID][]*balance.Balance
 
+	// consensus stage
+	consensusStage            int
+	consensusStageDeadlineSet bool
+	consensusStageDeadline    time.Time
+	//
 	requestBalancesDeadline time.Time
 	processorReady          bool
 
-	// notifications with future currentState indices
+	// notifications with future currentSCState indices
 	notificationsBacklog []*committee.NotifyReqMsg
-
-	// notifications must be sent in the new cycle
-	sendNotificationsScheduled bool
 
 	requests map[sctransaction.RequestId]*request
 
-	peerPermutation           *util.Permutation16
-	leaderRotationDeadlineSet bool
-	stateTxEvidenced          bool
-	leaderRotationDeadline    time.Time
+	peerPermutation *util.Permutation16
 
-	leaderStatus        *leaderStatus
-	sentResultsToLeader map[uint16]*sctransaction.Transaction
+	leaderStatus            *leaderStatus
+	sentResultToLeaderIndex uint16
+	sentResultToLeader      *sctransaction.Transaction
+
+	postedResultTxid       *valuetransaction.ID
+	nextPullInclusionLevel time.Time // if postedResultTxid != nil
 
 	log *logger.Logger
 }
@@ -73,10 +75,8 @@ type request struct {
 	reqTx *sctransaction.Transaction
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
-	// notification vector for the current currentState
+	// notification vector for the current currentSCState
 	notifications []bool
-	// initially time locked
-	timelocked bool
 
 	log *logger.Logger
 }
@@ -84,14 +84,15 @@ type request struct {
 func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
 	defer committee.SetReadyConsensus()
 
-	return &operator{
-		committee:           committee,
-		dkshare:             dkshare,
-		requests:            make(map[sctransaction.RequestId]*request),
-		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
-		sentResultsToLeader: make(map[uint16]*sctransaction.Transaction),
-		log:                 log.Named("c"),
+	ret := &operator{
+		committee:       committee,
+		dkshare:         dkshare,
+		requests:        make(map[sctransaction.RequestId]*request),
+		peerPermutation: util.NewPermutation16(committee.Size(), nil),
+		log:             log.Named("c"),
 	}
+	ret.setConsensusStage(consensusStageNoSync)
+	return ret
 }
 
 func (op *operator) peerIndex() uint16 {
@@ -107,10 +108,10 @@ func (op *operator) size() uint16 {
 }
 
 func (op *operator) stateIndex() (uint32, bool) {
-	if op.currentState == nil {
+	if op.currentSCState == nil {
 		return 0, false
 	}
-	return op.currentState.StateIndex(), true
+	return op.currentSCState.StateIndex(), true
 }
 
 func (op *operator) mustStateIndex() uint32 {
@@ -122,10 +123,10 @@ func (op *operator) mustStateIndex() uint32 {
 }
 
 func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
-	if op.currentState == nil {
+	if op.currentSCState == nil {
 		return nil, false
 	}
-	h, ok, err := op.currentState.Variables().Codec().GetHashValue(vmconst.VarNameProgramHash)
+	h, ok, err := op.currentSCState.Variables().Codec().GetHashValue(vmconst.VarNameProgramHash)
 	if !ok || err != nil {
 		return nil, false
 	}
@@ -140,7 +141,7 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok, err := op.currentState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
+	vt, ok, err := op.currentSCState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
 	if err != nil {
 		panic(err)
 	}

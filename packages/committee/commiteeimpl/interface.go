@@ -36,7 +36,7 @@ func (c *committeeObj) SetReadyStateManager() {
 	defer c.mutexIsReady.Unlock()
 
 	c.isReadyStateManager = true
-	c.log.Debugf("AccessState Manager is ready")
+	c.log.Debugf("State Manager object was created")
 	c.checkReady()
 }
 
@@ -45,7 +45,7 @@ func (c *committeeObj) SetReadyConsensus() {
 	defer c.mutexIsReady.Unlock()
 
 	c.isReadyConsensus = true
-	c.log.Debugf("Consensus is ready")
+	c.log.Debugf("Consensus object was created")
 	c.checkReady()
 }
 
@@ -54,12 +54,21 @@ func (c *committeeObj) SetInitConnectPeriodOver() {
 	defer c.mutexIsReady.Unlock()
 
 	c.isInitConnectPeriodOver = true
-	c.log.Debugf("Init connect period is over")
+	c.log.Debugf("init connect period is over")
+	c.checkReady()
+}
+
+func (c *committeeObj) SetQuorumOfConnectionsReached() {
+	c.mutexIsReady.Lock()
+	defer c.mutexIsReady.Unlock()
+
+	c.isQuorumOfConnectionsReached = true
+	c.log.Debugf("quorum of connections has been reached")
 	c.checkReady()
 }
 
 func (c *committeeObj) checkReady() bool {
-	if c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver {
+	if c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver && c.isQuorumOfConnectionsReached {
 		c.isOpenQueue.Store(true)
 		c.startTimer()
 		c.onActivation()
@@ -67,7 +76,7 @@ func (c *committeeObj) checkReady() bool {
 		c.log.Infof("committee now is fully initialized")
 		publisher.Publish("active_committee", c.address.String())
 	}
-	return c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver
+	return c.isReadyConsensus && c.isReadyStateManager && c.isInitConnectPeriodOver && c.isQuorumOfConnectionsReached
 }
 
 func (c *committeeObj) startTimer() {

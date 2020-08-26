@@ -3,6 +3,10 @@ package apilib
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/subscribe"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -62,6 +66,48 @@ func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme
 		return nil, err
 	}
 	//fmt.Printf("$$$$ dumping builder for %s\n%s\n", tx.ID().String(), dump)
+
+	return tx, nil
+}
+
+func CreateSimpleRequestMulti(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, pars []CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
+	senderAddr := sigScheme.Address()
+	allOuts, err := client.GetAccountOutputs(&senderAddr)
+	if err != nil {
+		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
+	}
+
+	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, par := range pars {
+		reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
+
+		args := convertArgs(par.Vars)
+		if args == nil {
+			return nil, errors.New("wrong arguments")
+		}
+		reqBlk.SetArgs(args)
+
+		err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tx, err := txb.Build(false)
+
+	if err != nil {
+		return nil, err
+	}
+	tx.Sign(sigScheme)
+
+	// check semantic just in case
+	if _, err := tx.Properties(); err != nil {
+		return nil, err
+	}
 
 	return tx, nil
 }
@@ -193,4 +239,18 @@ func MustNotNullInputs(tx *valuetransaction.Transaction) {
 		}
 		return true
 	})
+}
+
+func WaitForRequestProcessedMulti(hosts []string, scAddr *address.Address, txid *valuetransaction.ID, reqIndex uint16, timeout time.Duration) error {
+	var err error
+	pattern := []string{"request_out", scAddr.String(), txid.String(), strconv.Itoa(int(reqIndex))}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	subscribe.ListenForPatternMulti(hosts, pattern, func(ok bool) {
+		if !ok {
+			err = fmt.Errorf("request [%d]%s wasn't processed in %v", reqIndex, txid.String(), timeout)
+		}
+		wg.Done()
+	}, timeout)
+	return err
 }
