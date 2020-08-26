@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-client/config"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fa"
 	"github.com/iotaledger/wasp/tools/wasp-client/config/fr"
+	"github.com/iotaledger/wasp/tools/wasp-client/config/tr"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
@@ -27,6 +28,7 @@ func check(err error) {
 var clients = map[string]*sync.Map{
 	"fr": &sync.Map{},
 	"fa": &sync.Map{},
+	"tr": &sync.Map{},
 }
 
 func Cmd(args []string) {
@@ -55,8 +57,11 @@ func Cmd(args []string) {
 	e.GET("/", handleIndex)
 	e.GET("/fairroulette", handleFR)
 	e.GET("/fairauction", handleFA)
+	e.GET("/tokenregistry", handleTR)
+	e.GET("/tokenregistry/:color", handleTRQuery)
 	e.GET("/ws/fr", handleWebSocket(fr.Config))
 	e.GET("/ws/fa", handleWebSocket(fa.Config))
+	e.GET("/ws/tr", handleWebSocket(tr.Config))
 
 	done := startNanomsgForwarder(e.Logger)
 	defer func() { done <- true }()
@@ -81,6 +86,7 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	availableSCs := make(map[string]*config.SCConfig)
 	addSCIfAvailable(availableSCs, fr.Config)
 	addSCIfAvailable(availableSCs, fa.Config)
+	addSCIfAvailable(availableSCs, tr.Config)
 
 	go func() {
 		for {
@@ -118,9 +124,10 @@ func (t Renderer) Render(w io.Writer, name string, data interface{}, c echo.Cont
 
 func initRenderer() Renderer {
 	return Renderer{
-		"index":        initIndexTemplate(),
-		"fairroulette": initFRTemplate(),
-		"fairauction":  initFATemplate(),
+		"index":         initIndexTemplate(),
+		"fairroulette":  initFRTemplate(),
+		"fairauction":   initFATemplate(),
+		"tokenregistry": initTRTemplate(),
 	}
 }
 

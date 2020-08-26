@@ -170,13 +170,16 @@ func (r *QueryResult) MustDictionaryResult() *DictResult {
 	return &dr
 }
 
-func (r *QueryResult) MustDictionaryElementResult() *DictElementResult {
-	var dr DictElementResult
+func (r *QueryResult) MustDictionaryElementResult() []byte {
+	var dr *DictElementResult
 	err := json.Unmarshal(r.Value, &dr)
 	if err != nil {
 		panic(err)
 	}
-	return &dr
+	if dr == nil {
+		return nil
+	}
+	return dr.Value
 }
 
 func HandlerQueryState(c echo.Context) error {
@@ -303,6 +306,9 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 		v, err := dict.GetAt(params.Key)
 		if err != nil {
 			return nil, err
+		}
+		if v == nil {
+			return nil, nil
 		}
 		return DictElementResult{Value: v}, nil
 	}

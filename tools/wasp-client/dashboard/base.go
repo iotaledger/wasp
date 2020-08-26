@@ -25,6 +25,7 @@ func baseParams(c echo.Context, page string) BaseTemplateParams {
 		NavPages: []NavPage{
 			NavPage{Title: "FairRoulette", Active: page == "fairroulette", Href: "/fairroulette"},
 			NavPage{Title: "FairAuction", Active: page == "fairauction", Href: "/fairauction"},
+			NavPage{Title: "TokenRegistry", Active: page == "tokenregistry", Href: "/tokenregistry"},
 		},
 	}
 }

@@ -42,11 +42,10 @@ const tplFairAuction = `
 	<div>
 		<h3>Auctions</h3>
 		<div>
-			<ul>
 			{{range $color, $auction := .Status.Auctions}}
 				<details>
 					<summary>{{$auction.Description}}</summary>
-					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <code>{{$color}}</code></p>
+					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <a href="/tokenregistry/{{$color}}"><code>{{$color}}</code></a></p>
 					<p>Owner: <code>{{$auction.AuctionOwner}}</code></p>
 					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
 					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
@@ -64,8 +63,9 @@ const tplFairAuction = `
 						<p>This auction has no bids yet.</p>
 					{{end}}
 				</details>
+			{{else}}
+				There are no active auctions.
 			{{end}}
-			</ul>
 		</div>
 	</div>
 	<hr/>
@@ -75,8 +75,8 @@ const tplFairAuction = `
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Mint a new color</summary>
-			<p><code>{{waspClientCmd}} wallet mint <i>amount-tokens</i></code>
-			<br/>(e.g.: <code>{{waspClientCmd}} wallet mint 1</code>)</p>
+			<p><code>{{waspClientCmd}} tr mint <i>description</i> <i>amount-tokens</i></code>
+			<br/>(e.g.: <code>{{waspClientCmd}} tr mint "My first coin" 1</code>)</p>
 		</details>
 		<details>
 			<summary>4. Start an auction</summary>

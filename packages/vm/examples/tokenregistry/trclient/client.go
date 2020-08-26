@@ -153,7 +153,7 @@ func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.Toke
 	}
 
 	tm := &tokenregistry.TokenMetadata{}
-	if err := tm.Read(bytes.NewReader(value.Value)); err != nil {
+	if err := tm.Read(bytes.NewReader(value)); err != nil {
 		return nil, err
 	}
 
