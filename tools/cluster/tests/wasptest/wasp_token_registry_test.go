@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
-	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
+	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -79,11 +79,16 @@ func TestTRMint1Token(t *testing.T) {
 
 	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, minter1.SigScheme())
 
-	mintedColor1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
+	tx1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
 		Supply:      1,
 		MintTarget:  minter1Addr,
 		Description: "Non-fungible coin 1",
 	})
+	check(err, t)
+	mintedColor1 := balance.Color(tx1.ID())
+
+	tx1id := tx1.ID()
+	err = waspapi.WaitForRequestProcessedMulti(wasps.PublisherHosts(), &scAddress, &tx1id, 0, 15*time.Second)
 	check(err, t)
 
 	//wasps.CollectMessages(30 * time.Second)
@@ -101,7 +106,7 @@ func TestTRMint1Token(t *testing.T) {
 	}
 
 	if !wasps.VerifyAddressBalances(minter1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		*mintedColor1:     1,
+		mintedColor1:      1,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "minter1 in the end") {
 		t.Fail()

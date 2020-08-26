@@ -21,12 +21,12 @@ func mintCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	color, err := tr.Client().MintAndRegister(trclient.MintAndRegisterParams{
+	tx, err := tr.Client().MintAndRegister(trclient.MintAndRegisterParams{
 		Supply:      int64(amount),
 		MintTarget:  wallet.Load().Address(),
 		Description: description,
 	})
 	check(err)
 
-	fmt.Printf("Minted %d tokens of color %s\n", amount, color)
+	fmt.Printf("Minted %d tokens of color %s\n", amount, tx.ID())
 }

@@ -37,7 +37,7 @@ type MintAndRegisterParams struct {
 
 // MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
-func (trc *TokenRegistryClient) MintAndRegister(params MintAndRegisterParams) (*balance.Color, error) {
+func (trc *TokenRegistryClient) MintAndRegister(params MintAndRegisterParams) (*sctransaction.Transaction, error) {
 	ownerAddr := trc.sigScheme.Address()
 	outs, err := trc.nodeClient.GetAccountOutputs(&ownerAddr)
 	if err != nil {
@@ -75,8 +75,7 @@ func (trc *TokenRegistryClient) MintAndRegister(params MintAndRegisterParams) (*
 	if err != nil {
 		return nil, err
 	}
-	col := (balance.Color)(tx.ID())
-	return &col, nil
+	return tx, nil
 }
 
 type Status struct {
