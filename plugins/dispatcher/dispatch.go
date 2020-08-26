@@ -47,7 +47,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	}
 	if _, ok := balances[tx.ID()]; !ok {
 		// violation of the protocol
-		log.Errorf("transaction %s is not among provided outputs. Ignored", tx.ID().String())
+		log.Errorf("violation of the protocol: transaction %s is not among provided outputs. Ignored", tx.ID().String())
 		return
 	}
 	log.Debugf("received tx with balances: %s", tx.ID().String())

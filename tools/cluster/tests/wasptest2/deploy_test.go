@@ -53,20 +53,22 @@ func TestDeploySC(t *testing.T) {
 		return
 	}
 
-	t.Logf("peering hosts: %+v", wasps.PeeringHosts())
 	scAddr, scColor, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHash,
-		Textout:               os.Stdout,
-		Prefix:                "[deploy] ",
+		Node:                    wasps.NodeClient,
+		CommitteeApiHosts:       wasps.ApiHosts(),
+		CommitteePeeringHosts:   wasps.PeeringHosts(),
+		N:                       4,
+		T:                       3,
+		OwnerSigScheme:          scOwner.SigScheme(),
+		ProgramHash:             programHash,
+		Textout:                 os.Stdout,
+		Prefix:                  "[deploy] ",
+		WaitForInitialization:   true,
+		CommitteePublisherHosts: wasps.PublisherHosts(),
+		Timeout:                 20 * time.Second,
 	})
-
 	check(err, t)
+
 	wasps.WaitUntilExpectationsMet()
 	//wasps.CollectMessages(60 * time.Second)
 	//if !wasps.Report() {
