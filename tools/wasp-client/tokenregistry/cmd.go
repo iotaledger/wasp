@@ -11,6 +11,7 @@ var commands = map[string]func([]string){
 	"set":    tr.Config.HandleSetCmd,
 	"admin":  adminCmd,
 	"status": statusCmd,
+	"query":  queryCmd,
 	"mint":   mintCmd,
 }
 

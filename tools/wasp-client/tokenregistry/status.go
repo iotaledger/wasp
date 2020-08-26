@@ -13,7 +13,7 @@ func statusCmd(args []string) {
 
 	fmt.Printf("TokenRegistry Smart Contract status:\n")
 	for color, tm := range status.Registry {
-		fmt.Printf("  - %s:\n", color)
+		fmt.Printf("  - Color: %s\n", color)
 		fmt.Printf("    Supply: %d\n", tm.Supply)
 		fmt.Printf("    Minted by: %s\n", tm.MintedBy)
 		fmt.Printf("    Owner: %s\n", tm.Owner)

@@ -16,10 +16,11 @@ import (
 type ValueType string
 
 const (
-	ValueTypeBytes = ValueType("bytes")
-	ValueTypeInt64 = ValueType("int64")
-	ValueTypeArray = ValueType("array")
-	ValueTypeDict  = ValueType("dict")
+	ValueTypeBytes       = ValueType("bytes")
+	ValueTypeInt64       = ValueType("int64")
+	ValueTypeArray       = ValueType("array")
+	ValueTypeDict        = ValueType("dict")
+	ValueTypeDictElement = ValueType("dict-elem")
 )
 
 type KeyQuery struct {
@@ -30,6 +31,10 @@ type KeyQuery struct {
 
 type DictQueryParams struct {
 	Limit uint32
+}
+
+type DictElementQueryParams struct {
+	Key []byte
 }
 
 type ArrayQueryParams struct {
@@ -60,6 +65,10 @@ type Int64Result struct {
 type DictResult struct {
 	Len     uint32
 	Entries []KeyValuePair
+}
+
+type DictElementResult struct {
+	Value []byte
 }
 
 type ArrayResult struct {
@@ -112,6 +121,16 @@ func (q *QueryRequest) AddDictionary(key kv.Key, limit uint32) {
 	})
 }
 
+func (q *QueryRequest) AddDictionaryElement(dictKey kv.Key, elemKey []byte) {
+	p := &DictElementQueryParams{Key: elemKey}
+	params, _ := json.Marshal(p)
+	q.Query = append(q.Query, &KeyQuery{
+		Key:    []byte(dictKey),
+		Type:   ValueTypeDictElement,
+		Params: json.RawMessage(params),
+	})
+}
+
 func (r *QueryResult) MustBytes() ([]byte, bool, error) {
 	var b []byte
 	err := json.Unmarshal(r.Value, &b)
@@ -144,6 +163,15 @@ func (r *QueryResult) MustArrayResult() *ArrayResult {
 
 func (r *QueryResult) MustDictionaryResult() *DictResult {
 	var dr DictResult
+	err := json.Unmarshal(r.Value, &dr)
+	if err != nil {
+		panic(err)
+	}
+	return &dr
+}
+
+func (r *QueryResult) MustDictionaryElementResult() *DictElementResult {
+	var dr DictElementResult
 	err := json.Unmarshal(r.Value, &dr)
 	if err != nil {
 		panic(err)
@@ -259,6 +287,24 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 			return nil, err
 		}
 		return DictResult{Len: dict.Len(), Entries: entries}, nil
+
+	case ValueTypeDictElement:
+		var params DictElementQueryParams
+		err := json.Unmarshal(q.Params, &params)
+		if err != nil {
+			return nil, err
+		}
+
+		dict, err := vars.Codec().GetDictionary(key)
+		if err != nil {
+			return nil, err
+		}
+
+		v, err := dict.GetAt(params.Key)
+		if err != nil {
+			return nil, err
+		}
+		return DictElementResult{Value: v}, nil
 	}
 
 	return nil, fmt.Errorf("No handler for type %s", q.Type)

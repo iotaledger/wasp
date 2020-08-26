@@ -136,3 +136,26 @@ func decodeRegistry(result *stateapi.DictResult) (map[balance.Color]*tokenregist
 	}
 	return registry, nil
 }
+
+func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.TokenMetadata, error) {
+	query := stateapi.NewQueryRequest(trc.scAddress)
+	query.AddDictionaryElement(tokenregistry.VarStateTheRegistry, color.Bytes())
+
+	results, err := waspapi.QuerySCState(trc.waspHost, query)
+	if err != nil {
+		return nil, err
+	}
+
+	value := results[tokenregistry.VarStateTheRegistry].MustDictionaryElementResult()
+	if value == nil {
+		// not found
+		return nil, nil
+	}
+
+	tm := &tokenregistry.TokenMetadata{}
+	if err := tm.Read(bytes.NewReader(value.Value)); err != nil {
+		return nil, err
+	}
+
+	return tm, nil
+}

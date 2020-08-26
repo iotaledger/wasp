@@ -34,4 +34,4 @@ echo "$r"
 color=${BASH_REMATCH[1]}
 
 # verify
-wasp-client tr status | tee >(cat >&2) | grep -q 'Supply: 10$'
+wasp-client tr query "$color" | tee >(cat >&2) | grep -q 'Supply: 10$'

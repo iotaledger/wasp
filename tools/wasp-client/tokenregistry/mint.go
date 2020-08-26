@@ -14,7 +14,7 @@ import (
 
 func mintCmd(args []string) {
 	if len(args) != 2 {
-		fmt.Printf("Usage: %s tr mint <description> <amount>\n", os.Args[1])
+		fmt.Printf("Usage: %s tr mint <description> <amount>\n", os.Args[0])
 		os.Exit(1)
 	}
 
