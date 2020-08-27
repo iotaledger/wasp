@@ -75,8 +75,7 @@ const tplFairAuction = `
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Mint a new color</summary>
-			<p><code>{{waspClientCmd}} tr mint <i>description</i> <i>amount-tokens</i></code>
-			<br/>(e.g.: <code>{{waspClientCmd}} tr mint "My first coin" 1</code>)</p>
+			<p>See instructions in <a href="/tokenregistry">TokenRegistry</a>.</p>
 		</details>
 		<details>
 			<summary>4. Start an auction</summary>
