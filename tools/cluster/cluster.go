@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -60,13 +59,15 @@ type WaspNodeConfig struct {
 	ApiPort     int `json:"api_port"`
 	PeeringPort int `json:"peering_port"`
 	NanomsgPort int `json:"nanomsg_port"`
+	cmd         *exec.Cmd
 }
 
 type ClusterConfig struct {
-	Nodes     []WaspNodeConfig `json:"nodes"`
-	Goshimmer struct {
+	Nodes     []*WaspNodeConfig `json:"nodes"`
+	Goshimmer *struct {
 		ApiPort  int  `json:"api_port"`
 		Provided bool `json:"provided"`
+		cmd      *exec.Cmd
 	} `json:"goshimmer"`
 	SmartContracts []SmartContractInitData `json:"smart_contracts"`
 }
@@ -78,7 +79,6 @@ type Cluster struct {
 	DataPath            string // where the cluster's volatile data lives
 	Started             bool
 	NodeClient          nodeclient.NodeClient
-	cmds                []*exec.Cmd
 	// reading publisher's output
 	messagesCh   chan *subscribe.HostMessage
 	stopReading  chan bool
@@ -127,6 +127,10 @@ func (w *WaspNodeConfig) NanomsgHost() string {
 	return fmt.Sprintf("127.0.0.1:%d", w.NanomsgPort)
 }
 
+func (w *WaspNodeConfig) IsUp() bool {
+	return w.cmd != nil
+}
+
 func readConfig(configPath string) (*ClusterConfig, error) {
 	data, err := ioutil.ReadFile(path.Join(configPath, "cluster.json"))
 	if err != nil {
@@ -171,8 +175,11 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 		ConfigPath: configPath,
 		DataPath:   dataPath,
 		NodeClient: nodeClient,
-		cmds:       make([]*exec.Cmd, 0),
 	}, nil
+}
+
+func (cluster *Cluster) IsGoshimmerUp() bool {
+	return cluster.Config.Goshimmer.cmd != nil
 }
 
 func (cluster *Cluster) NumSmartContracts() int {
@@ -237,7 +244,7 @@ func (cluster *Cluster) Init(resetDataPath bool, name string) error {
 	}
 	if exists {
 		if !resetDataPath {
-			return errors.New(fmt.Sprintf("%s directory exists", cluster.DataPath))
+			return fmt.Errorf("%s directory exists", cluster.DataPath)
 		}
 		err = os.RemoveAll(cluster.DataPath)
 		if err != nil {
@@ -297,7 +304,7 @@ func (cluster *Cluster) Start() error {
 		return err
 	}
 	if !exists {
-		return errors.New(fmt.Sprintf("Data path %s does not exist", cluster.DataPath))
+		return fmt.Errorf("Data path %s does not exist", cluster.DataPath)
 	}
 
 	err = cluster.start()
@@ -328,10 +335,11 @@ func (cluster *Cluster) start() error {
 	initOk := make(chan bool, len(cluster.Config.Nodes))
 
 	if !cluster.Config.Goshimmer.Provided {
-		err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
+		cmd, err := cluster.startServer("goshimmer", cluster.GoshimmerDataPath(), "goshimmer", initOk, "WebAPI started")
 		if err != nil {
 			return err
 		}
+		cluster.Config.Goshimmer.cmd = cmd
 
 		select {
 		case <-initOk:
@@ -342,10 +350,11 @@ func (cluster *Cluster) start() error {
 	}
 
 	for i, _ := range cluster.Config.Nodes {
-		err := cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
+		cmd, err := cluster.startServer("wasp", cluster.WaspNodeDataPath(i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
 		if err != nil {
 			return err
 		}
+		cluster.Config.Nodes[i].cmd = cmd
 	}
 
 	for i := 0; i < len(cluster.Config.Nodes); i++ {
@@ -359,22 +368,21 @@ func (cluster *Cluster) start() error {
 	return nil
 }
 
-func (cluster *Cluster) startServer(command string, cwd string, name string, initOk chan<- bool, initOkMsg string) error {
+func (cluster *Cluster) startServer(command string, cwd string, name string, initOk chan<- bool, initOkMsg string) (*exec.Cmd, error) {
 	cmd := exec.Command(command)
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	cluster.cmds = append(cluster.cmds, cmd)
 
 	go scanLog(
 		stderrPipe,
@@ -386,7 +394,7 @@ func (cluster *Cluster) startServer(command string, cwd string, name string, ini
 		waitFor(initOkMsg, initOk),
 	)
 
-	return nil
+	return cmd, nil
 }
 
 func scanLog(reader io.Reader, hooks ...func(string)) {
@@ -423,6 +431,9 @@ func (cluster *Cluster) readKeysAndData() (bool, error) {
 
 	fmt.Printf("[cluster] loading keys and smart contract data from %s\n", cluster.ConfigKeysPath())
 	cluster.SmartContractConfig, err = cluster.readKeysConfig()
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
@@ -440,37 +451,74 @@ func (cluster *Cluster) importKeys() error {
 	return nil
 }
 
+func (cluster *Cluster) stopGoshimmer() {
+	if !cluster.IsGoshimmerUp() {
+		return
+	}
+	url := cluster.Config.goshimmerApiHost()
+	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
+	err := nodeapi.Shutdown(url)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (cluster *Cluster) stopNode(nodeIndex int) {
+	node := cluster.Config.Nodes[nodeIndex]
+	if !node.IsUp() {
+		return
+	}
+	url := node.ApiHost()
+	fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", url)
+	err := waspapi.Shutdown(url)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (cluster *Cluster) StopNode(nodeIndex int) {
+	cluster.stopNode(nodeIndex)
+	waitCmd(&cluster.Config.Nodes[nodeIndex].cmd)
+}
+
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (cluster *Cluster) Stop() {
-	if !cluster.Config.Goshimmer.Provided {
-		url := cluster.Config.goshimmerApiHost()
-		fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
-		err := nodeapi.Shutdown(url)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	for _, node := range cluster.Config.Nodes {
-		url := node.ApiHost()
-		fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", url)
-		err := waspapi.Shutdown(url)
-		if err != nil {
-			fmt.Println(err)
-		}
+	cluster.stopGoshimmer()
+	for i := range cluster.Config.Nodes {
+		cluster.stopNode(i)
 	}
 
 	cluster.Wait()
 }
 
-// Wait blocks until all nodes exit
 func (cluster *Cluster) Wait() {
-	for _, cmd := range cluster.cmds {
-		err := cmd.Wait()
-		if err != nil {
-			fmt.Println(err)
-		}
+	waitCmd(&cluster.Config.Goshimmer.cmd)
+	for _, node := range cluster.Config.Nodes {
+		waitCmd(&node.cmd)
 	}
+}
+
+func waitCmd(cmd **exec.Cmd) {
+	if *cmd == nil {
+		return
+	}
+	err := (*cmd).Wait()
+	*cmd = nil
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (cluster *Cluster) ActiveApiHosts() []string {
+	hosts := make([]string, 0)
+	for _, node := range cluster.Config.Nodes {
+		if !node.IsUp() {
+			continue
+		}
+		url := node.ApiHost()
+		hosts = append(hosts, url)
+	}
+	return hosts
 }
 
 func (cluster *Cluster) ApiHosts() []string {
@@ -514,7 +562,7 @@ func (cluster *Cluster) WaspHosts(nodeIndexes []int, getHost func(w *WaspNodeCon
 		if i < 0 || i > len(cluster.Config.Nodes)-1 {
 			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d", i))
 		}
-		hosts = append(hosts, getHost(&cluster.Config.Nodes[i]))
+		hosts = append(hosts, getHost(cluster.Config.Nodes[i]))
 	}
 	return hosts
 }
@@ -599,8 +647,8 @@ func (cluster *Cluster) report() (bool, bool, string) {
 	for host, counters := range cluster.counters {
 		report += fmt.Sprintf("Node: %s\n", host)
 		for _, t := range cluster.topics {
-			res, _ := counters[t]
-			exp, _ := cluster.expectations[t]
+			res := counters[t]
+			exp := cluster.expectations[t]
 			e := "-"
 			f := ""
 			if exp >= 0 {
@@ -689,7 +737,10 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 
 func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host string, stateIndex uint32, state kv.Map) bool) bool {
 	pass := true
-	for _, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
+	for i, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
+		if !cluster.Config.Nodes[i].IsUp() {
+			continue
+		}
 		actual, err := waspapi.DumpSCState(host, sc.Address)
 		if err != nil {
 			panic(err)

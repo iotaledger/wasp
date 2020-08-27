@@ -26,7 +26,8 @@ func main() {
 	globalFlags := flag.NewFlagSet("", flag.ExitOnError)
 	configPath := globalFlags.String("config", ".", "Config path")
 	dataPath := globalFlags.String("data", "cluster-data", "Data path")
-	globalFlags.Parse(os.Args[1:])
+	err := globalFlags.Parse(os.Args[1:])
+	check(err)
 
 	wasps, err := cluster.New(*configPath, *dataPath)
 	check(err)
@@ -40,7 +41,8 @@ func main() {
 	case "init":
 		initFlags := flag.NewFlagSet("init", flag.ExitOnError)
 		resetDataPath := initFlags.Bool("r", false, "Reset data path if it exists")
-		initFlags.Parse(globalFlags.Args()[1:])
+		err = initFlags.Parse(globalFlags.Args()[1:])
+		check(err)
 		err = wasps.Init(*resetDataPath, "init")
 		check(err)
 
