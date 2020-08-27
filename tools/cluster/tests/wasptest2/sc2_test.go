@@ -135,6 +135,7 @@ func Test2SC(t *testing.T) {
 	}
 }
 
+// scenario with 2 smart contracts
 func TestPlus2SC(t *testing.T) {
 	var seed [32]byte
 	rand.Read(seed[:])
