@@ -141,7 +141,7 @@ const tplInstallConfig = `
 		<p>Build from source:</p>
 <pre>$ git clone --branch develop https://github.com/iotaledger/wasp.git
 $ cd wasp
-$ go install ./tools/wallet
+$ go install ./tools/wwallet
 </pre>
 	</details>
 	<details>
