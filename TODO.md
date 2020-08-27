@@ -10,27 +10,14 @@ Done
 - [x] Integration tests: end test when a specific message is published (instead
       of waiting for an arbitrary amount of seconds).
 - [x] adjust WaspConn etc APIs to real Goshimmer APIs.
+- [x] Extend wwallet with `FairAuction` and `FairRoulette`
 
 Pending
-- [ ] wwallet
-- tests
--   [ ] kill 1 node
--   [ ] 10 nodes
--   [ ] connect wasps to different goshimmers
-- [ ] wasp dashboard / metrics
--     list of SC / bootup records metadata (no PKs)
--       how many active nodes
--     program metadata
--       describe the binary code (hash, description, location)
--       backlog size
--       requests / minute
--
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
       change until released).
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
-- [ ] extend goshimmer cli-wallet with `FairAuction` and `FairRoulette`
 - [ ] deploy Wasp in Pollen testnet
 - [ ] `Oracle Data Bulletin Board` description
 
