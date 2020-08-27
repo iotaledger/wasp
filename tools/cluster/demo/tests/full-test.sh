@@ -9,39 +9,39 @@ trap 'err_report $LINENO' ERR
 
 ARGS="$*"
 
-function wasp-client() {
-    echo "wasp-client -w $ARGS $@" >&2
-    command wasp-client -w $ARGS "$@"
+function wwallet() {
+    echo "wwallet -w $ARGS $@" >&2
+    command wwallet -w $ARGS "$@"
 }
 
-function wasp-client-owner() {
-    wasp-client -c owner.json "$@"
+function wwallet-owner() {
+    wwallet -c owner.json "$@"
 }
 
-wasp-client-owner wallet init
-wasp-client-owner wallet request-funds
+wwallet-owner wallet init
+wwallet-owner wallet request-funds
 
-wasp-client-owner fr admin init
+wwallet-owner fr admin init
 fraddress=$(cat owner.json | jq .fr.address -r)
-wasp-client-owner wallet send-funds $fraddress IOTA 100 # operating capital
+wwallet-owner wallet send-funds $fraddress IOTA 100 # operating capital
 
-wasp-client-owner fa admin init
+wwallet-owner fa admin init
 faaddress=$(cat owner.json | jq .fa.address -r)
-wasp-client-owner wallet send-funds $faaddress IOTA 100 # operating capital
+wwallet-owner wallet send-funds $faaddress IOTA 100 # operating capital
 
-wasp-client-owner tr admin init
+wwallet-owner tr admin init
 traddress=$(cat owner.json | jq .tr.address -r)
-wasp-client-owner wallet send-funds $traddress IOTA 100 # operating capital
+wwallet-owner wallet send-funds $traddress IOTA 100 # operating capital
 
-wasp-client wallet init
-wasp-client wallet request-funds
-wasp-client fr set address $fraddress
-wasp-client fa set address $faaddress
-wasp-client tr set address $traddress
+wwallet wallet init
+wwallet wallet request-funds
+wwallet fr set address $fraddress
+wwallet fa set address $faaddress
+wwallet tr set address $traddress
 
-r=$(wasp-client tr mint "My first coin" 10)
+r=$(wwallet tr mint "My first coin" 10)
 echo "$r"
 [[ "$r" =~ of[[:space:]]color[[:space:]](.+)$ ]]
 color=${BASH_REMATCH[1]}
 
-wasp-client fa start-auction "My first auction" "$color" 10 100 10
+wwallet fa start-auction "My first auction" "$color" 10 100 10

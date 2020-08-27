@@ -15,9 +15,9 @@ builds:
     goarch:
       - amd64
 
-  - id: wasp-client
-    main: ./tools/wasp-client/main.go
-    binary: wasp-client
+  - id: wwallet
+    main: ./tools/wwallet/main.go
+    binary: wwallet
     goos:
       - linux
       - windows
@@ -43,10 +43,10 @@ archives:
       - config.json
       - LICENSE
 
-  - id: wasp-client
-    name_template: "wasp-client_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: wwallet
+    name_template: "wwallet_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     builds:
-      - wasp-client
+      - wwallet
     replacements:
       darwin: Darwin
       linux: Linux
@@ -57,7 +57,7 @@ archives:
         format: zip
     wrap_in_directory: true
     files:
-      - tools/wasp-client/README.md
+      - tools/wwallet/README.md
       - LICENSE
 
 changelog:

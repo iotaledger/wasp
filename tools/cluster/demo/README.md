@@ -13,10 +13,10 @@ cd <goshimmer>/tools/docker-network-waspconn
 ./run.sh 2
 ```
 
-2. Install the `wasp`, `wasp-client` and `waspt` commands:
+2. Install the `wasp`, `wwallet` and `waspt` commands:
 
 ```
-go install . ./tools/wasp-client ./tools/cluster/waspt
+go install . ./tools/wwallet ./tools/cluster/waspt
 ```
 
 3. Start the Wasp cluster in a console:

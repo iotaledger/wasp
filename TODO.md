@@ -12,6 +12,19 @@ Done
 - [x] adjust WaspConn etc APIs to real Goshimmer APIs.
 
 Pending
+- [ ] wwallet
+- tests
+-   [ ] kill 1 node
+-   [ ] 10 nodes
+-   [ ] connect wasps to different goshimmers
+- [ ] wasp dashboard / metrics
+-     list of SC / bootup records metadata (no PKs)
+-       how many active nodes
+-     program metadata
+-       describe the binary code (hash, description, location)
+-       backlog size
+-       requests / minute
+-
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
