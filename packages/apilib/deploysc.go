@@ -1,6 +1,9 @@
 package apilib
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -12,13 +15,15 @@ import (
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/packages/vm/builtins"
+	"github.com/iotaledger/wasp/plugins/webapi/admapi"
+	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"io"
 	"io/ioutil"
-	"sync"
+	"net/http"
 	"time"
 )
 
-type CreateAndDeploySCParams struct {
+type CreateSCParams struct {
 	Node                  nodeclient.NodeClient
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
@@ -29,16 +34,83 @@ type CreateAndDeploySCParams struct {
 	ProgramHash           hashing.HashValue
 	Textout               io.Writer
 	Prefix                string
-	// wait for init
-	WaitForInitialization   bool
-	CommitteePublisherHosts []string
-	Timeout                 time.Duration
 }
 
-// CreateAndDeploySC performs all actions needed to deploy smart contract
-// noinspection ALL
-func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.Color, error) {
+type ActivateSCParams struct {
+	Addresses         []*address.Address
+	ApiHosts          []string
+	WaitForCompletion bool
+	PublisherHosts    []string
+	Timeout           time.Duration
+}
 
+func activateSC(host string, addr *address.Address) error {
+	addrStr := addr.String()
+	data, err := json.Marshal(&admapi.ActivateSCRequest{
+		Address: addrStr,
+	})
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprintf("http://%s/adm/activatesc", host)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("response status %d", resp.StatusCode)
+	}
+	var aresp misc.SimpleResponse
+	err = json.NewDecoder(resp.Body).Decode(&aresp)
+	if err != nil {
+		return err
+	}
+	if aresp.Error != "" {
+		return errors.New(aresp.Error)
+	}
+	return nil
+}
+
+func ActivateSCMulti(par ActivateSCParams) error {
+	funs := make([]func() error, 0)
+	for _, addr := range par.Addresses {
+		for _, host := range par.ApiHosts {
+			h := host
+			addr1 := addr
+			funs = append(funs, func() error {
+				return activateSC(h, addr1)
+			})
+		}
+	}
+	if !par.WaitForCompletion {
+		_, errs := multicall.MultiCall(funs, 1*time.Second)
+		return multicall.WrapErrors(errs)
+	}
+	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, "state")
+	if err != nil {
+		return err
+	}
+	defer subs.Close()
+	_, errs := multicall.MultiCall(funs, 1*time.Second)
+	err = multicall.WrapErrors(errs)
+	if err != nil {
+		return err
+	}
+	// SC is initialized when it reaches state index #1
+	patterns := make([][]string, len(par.Addresses))
+	for i := range patterns {
+		patterns[i] = []string{"state", par.Addresses[i].String(), "1"}
+	}
+	succ := subs.WaitForPatterns(patterns, par.Timeout)
+	if !succ {
+		return fmt.Errorf("didn't receive activation message in %v", par.Timeout)
+	}
+	return nil
+}
+
+// CreateSC performs all actions needed to deploy smart contract, except activation
+// noinspection ALL
+func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
@@ -78,7 +150,6 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", scAddr.String())
 	}
 
-	fmt.Fprint(textout, par.Prefix)
 	allOuts, err := par.Node.GetAccountOutputs(&ownerAddr)
 
 	fmt.Fprint(textout, par.Prefix)
@@ -133,53 +204,9 @@ func CreateAndDeploySC(par CreateAndDeploySCParams) (*address.Address, *balance.
 	}
 	// TODO not finished with access nodes
 
-	err = ActivateSCMulti(par.CommitteeApiHosts, scAddr.String())
-	if err != nil {
-		fmt.Fprintf(textout, "activate SC.. FAILED: %v\n", err)
-		return nil, nil, err
-	}
-
-	fmt.Fprint(textout, par.Prefix)
-	if !succ {
-		err = multicall.WrapErrors(errs)
-		fmt.Fprintf(textout, "activating smart contract on Wasp nodes.. FAILED: %v\n", err)
-		return nil, nil, err
-	} else {
-		fmt.Fprint(textout, "activating smart contract on Wasp nodes.. OK.\n")
-	}
-
-	//fmt.Fprintf(textout, par.Prefix+"waiting for %v for nodes to connect..\n", committee.InitConnectPeriod)
-	//time.Sleep(committee.InitConnectPeriod)
-
 	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "smart contract has been created succesfully. Address: %s, Color: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "smart contract has been created succesfully. Addresses: %s, Color: %s, N = %d, T = %d\n",
 		scAddr.String(), scColor.String(), par.N, par.T)
-
-	if !par.WaitForInitialization {
-		return scAddr, &scColor, nil
-	}
-	fmt.Fprint(textout, par.Prefix)
-	err = WaitSmartContractInitialized(par.CommitteePublisherHosts, scAddr, &scColor, par.Timeout)
-	if err != nil {
-		fmt.Fprintf(textout, "waiting for smart contract to run its initialization code.. FAIL: %v\n", err)
-		return nil, nil, err
-	}
-	fmt.Fprintf(textout, "waiting for smart contract run its initialization code.. SUCCESS\n")
-	return scAddr, &scColor, nil
-}
-
-// WaitSmartContractInitialized waits for the wasp hosts to publish init requests were settled successfully
-func WaitSmartContractInitialized(hosts []string, scAddr *address.Address, scColor *balance.Color, timeout time.Duration) error {
-	var err error
-	pattern := []string{"request_out", scAddr.String(), scColor.String(), "0"}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	subscribe.ListenForPatternMulti(hosts, pattern, func(ok bool) {
-		if !ok {
-			err = fmt.Errorf("smart contract wasn't deployed correctly in %v", timeout)
-		}
-		wg.Done()
-	}, timeout)
-	return err
+	return scAddr, &scColor, err
 }

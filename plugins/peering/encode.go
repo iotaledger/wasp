@@ -14,7 +14,7 @@ import (
 //  -- if MsgType == 1 (handshake)
 // MsgData (a string of peer network location) --> end of message
 //  -- if MsgType >= FirstCommitteeMsgCode
-// Address 32 bytes
+// Addresses 32 bytes
 // SenderIndex 2 bytes
 // MsgData variable bytes to the end
 //  -- otherwise panic wrong MsgType

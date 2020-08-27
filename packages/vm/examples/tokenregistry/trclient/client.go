@@ -2,6 +2,8 @@ package trclient
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/iotaledger/wasp/packages/subscribe"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -29,15 +31,18 @@ func NewClient(nodeClient nodeclient.NodeClient, waspHost string, scAddress *add
 }
 
 type MintAndRegisterParams struct {
-	Supply          int64           // number of tokens to mint
-	MintTarget      address.Address // where to mint new Supply
-	Description     string
-	UserDefinedData []byte
+	Supply            int64           // number of tokens to mint
+	MintTarget        address.Address // where to mint new Supply
+	Description       string
+	UserDefinedData   []byte
+	WaitForCompletion bool
+	PublisherHosts    []string
+	Timeout           time.Duration // must be enough for confirmation of the request transaction processing of it (>20s)
 }
 
 // MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
-func (trc *TokenRegistryClient) MintAndRegister(params MintAndRegisterParams) (*sctransaction.Transaction, error) {
+func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.Transaction, error) {
 	ownerAddr := trc.sigScheme.Address()
 	outs, err := trc.nodeClient.GetAccountOutputs(&ownerAddr)
 	if err != nil {
@@ -47,15 +52,15 @@ func (trc *TokenRegistryClient) MintAndRegister(params MintAndRegisterParams) (*
 	if err != nil {
 		return nil, err
 	}
-	err = txb.MintColor(params.MintTarget, balance.ColorIOTA, params.Supply)
+	err = txb.MintColor(par.MintTarget, balance.ColorIOTA, par.Supply)
 	if err != nil {
 		return nil, err
 	}
 	args := kv.NewMap()
 	codec := args.Codec()
-	codec.SetString(tokenregistry.VarReqDescription, params.Description)
-	if params.UserDefinedData != nil {
-		codec.Set(tokenregistry.VarReqUserDefinedMetadata, params.UserDefinedData)
+	codec.SetString(tokenregistry.VarReqDescription, par.Description)
+	if par.UserDefinedData != nil {
+		codec.Set(tokenregistry.VarReqUserDefinedMetadata, par.UserDefinedData)
 	}
 
 	reqBlk := sctransaction.NewRequestBlock(*trc.scAddress, tokenregistry.RequestMintSupply)
@@ -70,10 +75,25 @@ func (trc *TokenRegistryClient) MintAndRegister(params MintAndRegisterParams) (*
 	}
 	tx.Sign(trc.sigScheme)
 
-	// TODO wait optionally
+	var subs *subscribe.Subscription
+	if !par.WaitForCompletion {
+		err = trc.nodeClient.PostTransaction(tx.Transaction)
+		if err != nil {
+			return nil, err
+		}
+		return tx, nil
+	}
+	subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out")
+	if err != nil {
+		return nil, err
+	}
+	defer subs.Close()
 	err = trc.nodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return nil, err
+	}
+	if !subs.WaitForPattern([]string{"request_out", trc.scAddress.String(), tx.ID().String(), "0"}, par.Timeout) {
+		return nil, fmt.Errorf("didnt't get confirmation message in %v", par.Timeout)
 	}
 	return tx, nil
 }

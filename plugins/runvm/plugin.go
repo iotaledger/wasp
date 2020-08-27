@@ -151,7 +151,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 
 	// deprecate
 	// check of all provided inputs were properly consumed
-	//if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Address, ctx.Balances); err != nil {
+	//if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Addresses, ctx.Balances); err != nil {
 	//	ctx.Log.Errorf("RunVM.ValidateConsumptionOfInputs: wrong result transaction: %v", err)
 	//	return
 	//}

@@ -26,14 +26,14 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	reqs := op.requestCandidateList()
 	reqs = op.filterOutRequestsWithoutTokens(reqs)
 
-	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates (with tokens): %d",
-		currentLeaderPeerIndex, len(op.requests), len(reqs))
-
 	// get not time-locked requests with the message known
 	if len(reqs) == 0 {
 		// nothing to notify about
 		return
 	}
+	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates (with tokens): %d",
+		currentLeaderPeerIndex, len(op.requests), len(reqs))
+
 	reqIds := takeIds(reqs)
 	msgData := util.MustBytes(&committee.NotifyReqMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{

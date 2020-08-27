@@ -2,6 +2,7 @@ package wasptest2
 
 import (
 	"crypto/rand"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"os"
 	"testing"
 	"time"
@@ -28,17 +29,6 @@ func TestTRTest(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster2", "TestTRTest")
 
-	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"request_in":          2,
-		"request_out":         3,
-		"state":               -1, // must be 6 or 7
-		"vmmsg":               -1,
-	})
-	check(err, t)
-
 	programHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
@@ -63,21 +53,26 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 
-	scAddr, scColor, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
-		Node:                    wasps.NodeClient,
-		CommitteeApiHosts:       wasps.ApiHosts(),
-		CommitteePeeringHosts:   wasps.PeeringHosts(),
-		N:                       4,
-		T:                       3,
-		OwnerSigScheme:          scOwner.SigScheme(),
-		ProgramHash:             programHash,
-		Textout:                 os.Stdout,
-		Prefix:                  "[deploy " + tokenregistry.ProgramHash + "]",
-		WaitForInitialization:   true,
-		CommitteePublisherHosts: wasps.PublisherHosts(),
-		Timeout:                 20 * time.Second,
+	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
+		Node:                  wasps.NodeClient,
+		CommitteeApiHosts:     wasps.ApiHosts(),
+		CommitteePeeringHosts: wasps.PeeringHosts(),
+		N:                     4,
+		T:                     3,
+		OwnerSigScheme:        scOwner.SigScheme(),
+		ProgramHash:           programHash,
+		Textout:               os.Stdout,
+		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
 	check(err, t)
+	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
+		Addresses:         []*address.Address{scAddr},
+		ApiHosts:          wasps.ApiHosts(),
+		WaitForCompletion: true,
+		PublisherHosts:    wasps.PublisherHosts(),
+		Timeout:           20 * time.Second,
+	})
+	checkSuccess(err, t, "smart contract has been activated")
 
 	if !wasps.VerifyAddressBalances(*scAddr, 1, map[balance.Color]int64{
 		*scColor: 1, // sc token
@@ -95,20 +90,16 @@ func TestTRTest(t *testing.T) {
 	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scAddr, minter.SigScheme())
 
 	tx1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
-		Supply:      1,
-		MintTarget:  minterAddr,
-		Description: "Non-fungible coin 1",
+		Supply:            1,
+		MintTarget:        minterAddr,
+		Description:       "Non-fungible coin 1",
+		WaitForCompletion: true,
+		PublisherHosts:    wasps.PublisherHosts(),
+		Timeout:           30 * time.Second,
 	})
-	check(err, t)
+	checkSuccess(err, t, "token minted and registered successfully")
 
 	mintedColor1 := balance.Color(tx1.ID())
-
-	//wasps.CollectMessages(30 * time.Second)
-	wasps.WaitUntilExpectationsMet()
-
-	if !wasps.Report() {
-		t.Fail()
-	}
 
 	if !wasps.VerifyAddressBalances(*scAddr, 1, map[balance.Color]int64{
 		balance.ColorIOTA: 0,

@@ -90,7 +90,7 @@ func (c *SCConfig) TryAddress() *address.Address {
 }
 
 func (c *SCConfig) InitSC(sigScheme signaturescheme.SignatureScheme) error {
-	scAddress, _, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
+	scAddress, _, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  GoshimmerClient(),
 		CommitteeApiHosts:     CommitteeApi(c.Committee()),
 		CommitteePeeringHosts: CommitteePeering(c.Committee()),
@@ -104,7 +104,7 @@ func (c *SCConfig) InitSC(sigScheme signaturescheme.SignatureScheme) error {
 		return err
 	}
 	fmt.Printf("Initialized %s\n", c.Description)
-	fmt.Printf("SC Address: %s\n", scAddress)
+	fmt.Printf("SC Addresses: %s\n", scAddress)
 	c.SetAddress(scAddress.String())
 	return nil
 }

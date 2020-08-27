@@ -540,7 +540,7 @@ func (cluster *Cluster) ListenToMessages(expectations map[string]int) error {
 		}
 	}
 
-	return subscribe.SubscribeMulti(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, cluster.topics...)
+	return subscribe.SubscribeMultiOld(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, cluster.topics...)
 }
 
 func (cluster *Cluster) CollectMessages(duration time.Duration) {

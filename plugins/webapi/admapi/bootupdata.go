@@ -52,9 +52,9 @@ func HandlerPutSCData(c echo.Context) error {
 
 	log.Infof("Bootup record saved for addr: %s color: %s", rec.Address.String(), rec.Color.String())
 
-	//if bd, exists, err := registry.GetBootupData(&rec.Address); err != nil || !exists {
+	//if bd, exists, err := registry.GetBootupData(&rec.Addresses); err != nil || !exists {
 	//	log.Debugw("reading back",
-	//		"sc addr", req.Address,
+	//		"sc addr", req.Addresses,
 	//		"exists", exists,
 	//		"error", err)
 	//} else {

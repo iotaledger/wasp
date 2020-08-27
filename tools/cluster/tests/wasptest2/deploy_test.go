@@ -1,6 +1,7 @@
 package wasptest2
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -28,17 +29,6 @@ func TestDeploySC(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster2", "TestDeploySC")
 
-	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"request_in":          1,
-		"request_out":         2,
-		"state":               -1,
-		"vmmsg":               -1,
-	})
-	check(err, t)
-
 	programHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
@@ -53,27 +43,27 @@ func TestDeploySC(t *testing.T) {
 		return
 	}
 
-	scAddr, scColor, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
-		Node:                    wasps.NodeClient,
-		CommitteeApiHosts:       wasps.ApiHosts(),
-		CommitteePeeringHosts:   wasps.PeeringHosts(),
-		N:                       4,
-		T:                       3,
-		OwnerSigScheme:          scOwner.SigScheme(),
-		ProgramHash:             programHash,
-		Textout:                 os.Stdout,
-		Prefix:                  "[deploy] ",
-		WaitForInitialization:   true,
-		CommitteePublisherHosts: wasps.PublisherHosts(),
-		Timeout:                 20 * time.Second,
+	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
+		Node:                  wasps.NodeClient,
+		CommitteeApiHosts:     wasps.ApiHosts(),
+		CommitteePeeringHosts: wasps.PeeringHosts(),
+		N:                     4,
+		T:                     3,
+		OwnerSigScheme:        scOwner.SigScheme(),
+		ProgramHash:           programHash,
+		Textout:               os.Stdout,
+		Prefix:                "[deploy] ",
 	})
-	check(err, t)
+	checkSuccess(err, t, "smart contract has been created")
 
-	wasps.WaitUntilExpectationsMet()
-	//wasps.CollectMessages(60 * time.Second)
-	//if !wasps.Report() {
-	//	t.Fail()
-	//}
+	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
+		Addresses:         []*address.Address{scAddr},
+		ApiHosts:          wasps.ApiHosts(),
+		WaitForCompletion: true,
+		PublisherHosts:    wasps.PublisherHosts(),
+		Timeout:           20 * time.Second,
+	})
+	checkSuccess(err, t, "smart contract has been activated and initialized")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -138,7 +128,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	}
 
 	t.Logf("peering hosts: %+v", wasps.PeeringHosts())
-	scAddr, scColor, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
+	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
@@ -149,7 +139,16 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
-	check(err, t)
+	checkSuccess(err, t, "smart contract has been created")
+
+	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
+		Addresses:         []*address.Address{scAddr},
+		ApiHosts:          wasps.ApiHosts(),
+		WaitForCompletion: true,
+		PublisherHosts:    wasps.PublisherHosts(),
+		Timeout:           20 * time.Second,
+	})
+	checkSuccess(err, t, "smart contract has been activated and initialized")
 
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParams{
@@ -159,11 +158,11 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 		check(err, t)
 	}
 
-	//wasps.WaitUntilExpectationsMet()
-	wasps.CollectMessages(20 * time.Second)
-	if !wasps.Report() {
-		t.Fail()
-	}
+	wasps.WaitUntilExpectationsMet()
+	//wasps.CollectMessages(20 * time.Second)
+	//if !wasps.Report() {
+	//	t.Fail()
+	//}
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -225,7 +224,7 @@ func TestSend100ReqMulti(t *testing.T) {
 	}
 
 	t.Logf("peering hosts: %+v", wasps.PeeringHosts())
-	scAddr, scColor, err := waspapi.CreateAndDeploySC(waspapi.CreateAndDeploySCParams{
+	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
@@ -238,6 +237,15 @@ func TestSend100ReqMulti(t *testing.T) {
 	})
 	check(err, t)
 
+	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
+		Addresses:         []*address.Address{scAddr},
+		ApiHosts:          wasps.ApiHosts(),
+		WaitForCompletion: true,
+		PublisherHosts:    wasps.PublisherHosts(),
+		Timeout:           20 * time.Second,
+	})
+	checkSuccess(err, t, "smart contract has been activated and initialized")
+
 	pars := make([]waspapi.CreateSimpleRequestParams, numRequestsInTheBlock)
 	for i := 0; i < numRequestsInTheBlock; i++ {
 		pars[i] = waspapi.CreateSimpleRequestParams{
@@ -248,11 +256,11 @@ func TestSend100ReqMulti(t *testing.T) {
 	err = wasptest.SendSimpleRequestMulti(wasps, scOwner.SigScheme(), pars)
 	check(err, t)
 
-	//wasps.WaitUntilExpectationsMet()
-	wasps.CollectMessages(20 * time.Second)
-	if !wasps.Report() {
-		t.Fail()
-	}
+	wasps.WaitUntilExpectationsMet()
+	//wasps.CollectMessages(20 * time.Second)
+	//if !wasps.Report() {
+	//	t.Fail()
+	//}
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,

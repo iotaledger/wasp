@@ -70,7 +70,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	//for _, host := range allNodesApi {
 	//
 	//	err = waspapi.PutSCData(host, registry.BootupData{
-	//		Address:        addr,
+	//		Addresses:        addr,
 	//		Color:          color,
 	//		OwnerAddress:   sc.OwnerAddress(),
 	//		CommitteeApiHosts: committeePeerNodes,

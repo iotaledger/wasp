@@ -98,7 +98,7 @@ const tplBase = `
 
 const tplSCInfo = `
 {{define "sc-info"}}
-	<p>SC address: <code>{{.SC.Address}}</code></p>
+	<p>SC address: <code>{{.SC.Addresses}}</code></p>
 	<p>Balance: <ul>
 	{{range $color, $amount := .Status.SCBalance}}
 		<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
@@ -148,7 +148,7 @@ $ go install ./tools/wallet
 		<summary>2. Configure</summary>
 <pre>$ {{waspClientCmd}} set goshimmer.api {{.Host}}:8080
 $ {{waspClientCmd}} set wasp.api {{.Host}}:9090
-$ {{waspClientCmd}} {{.SC.ShortName}} set address {{.SC.Address}}</pre>
+$ {{waspClientCmd}} {{.SC.ShortName}} set address {{.SC.Addresses}}</pre>
 		<p>Initialize a wallet: <code>{{waspClientCmd}} wallet init</code></p>
 		<p>Get some funds: <code>{{waspClientCmd}} wallet request-funds</code></p>
 	</details>

@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -30,12 +31,12 @@ func ActivateAllSC(clu *cluster.Cluster) error {
 func activate(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error {
 	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 
-	return waspapi.ActivateSCMulti(allNodesApi, sc.Address)
-	//for _, host := range allNodesApi {
-	//	err := waspapi.ActivateSC(host, sc.Address)
-	//	if err != nil {
-	//		return fmt.Errorf("apilib.ActivateSC returned: %v\n", err)
-	//	}
-	//}
-	//return fmt.Errorf("apilib.ActivateSC failed\n")
+	addr, err := address.FromBase58(sc.Address)
+	if err != nil {
+		return err
+	}
+	return waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
+		Addresses: []*address.Address{&addr},
+		ApiHosts:  allNodesApi,
+	})
 }

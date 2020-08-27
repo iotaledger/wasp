@@ -140,7 +140,7 @@ func UnmarshalDKShare(data []byte, maskPrivate bool) (*DKShare, error) {
 	}
 	addrFromBin := address.FromBLSPubKey(binPK)
 	if !bytes.Equal(addrFromBin.Bytes(), ret.Address.Bytes()) {
-		return nil, errors.New("crosscheck II: !HashData(binPK).Equal(ret.Address)")
+		return nil, errors.New("crosscheck II: !HashData(binPK).Equal(ret.Addresses)")
 	}
 	return ret, nil
 }

@@ -269,7 +269,7 @@ func RunAndWaitForRequestProcessedMulti(hosts []string, scAddr *address.Address,
 		if tx != nil {
 			return nil, fmt.Errorf("request [%d]%s failed: %v", reqIndex, tx.ID(), err)
 		}
-		return nil, fmt.Errorf("request [%d] failed: %v", reqIndex, err)
+		return nil, err
 	}
 	return tx, nil
 }

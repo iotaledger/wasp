@@ -10,7 +10,7 @@ import (
 
 // The POST handler implements 'adm/getpubs' API
 // Parameters(see GetPubKeyInfoRequest struct):
-//     Address:   address of the DKShare
+//     Addresses:   address of the DKShare
 // API responds with public info of DKShare:
 
 func HandlerGetKeyPubInfo(c echo.Context) error {

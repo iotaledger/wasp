@@ -12,10 +12,10 @@ import (
 func dumpAddress() {
 	wallet := Load()
 	kp := wallet.KeyPair()
-	fmt.Printf("Address index %d\n", addressIndex)
+	fmt.Printf("Addresses index %d\n", addressIndex)
 	fmt.Printf("  Private key: %s\n", kp.PrivateKey)
 	fmt.Printf("  Public key:  %s\n", kp.PublicKey)
-	fmt.Printf("  Address:     %s\n", wallet.Address())
+	fmt.Printf("  Addresses:     %s\n", wallet.Address())
 }
 
 func dumpBalance() {
@@ -25,8 +25,8 @@ func dumpBalance() {
 	outs, err := config.GoshimmerClient().GetAccountOutputs(&address)
 	check(err)
 
-	fmt.Printf("Address index %d\n", addressIndex)
-	fmt.Printf("  Address: %s\n", address)
+	fmt.Printf("Addresses index %d\n", addressIndex)
+	fmt.Printf("  Addresses: %s\n", address)
 	fmt.Printf("  Balance:\n")
 	var total int64
 	if config.Verbose {

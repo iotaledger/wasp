@@ -58,15 +58,17 @@ func initSC(ctx vmtypes.Sandbox) {
 
 	progHash, ok, err := ctx.AccessRequest().Args().GetHashValue(vmconst.VarNameProgramHash)
 	if err != nil {
-		ctx.Publishf("initSC: Could not read request argument: %s", err.Error())
+		ctx.Publishf("init_sc error Could not read request argument: %s", err.Error())
 		return
 	}
 	if !ok {
-		ctx.Publishf("initSC: program hash not set; smart contract will be able to process only built-in requests.")
+		ctx.Publishf("init_sc error program hash not set; smart contract will be able to process only built-in requests.")
 		return
 	}
-	ctx.Publishf("initSC: Setting program hash to %s.", progHash.String())
 	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, progHash)
+	ctx.Publishf("init_sc info program hash set to %s.", progHash.String())
+
+	ctx.Publishf("init_sc success %s", ctx.GetSCAddress().String())
 }
 
 func setMinimumReward(ctx vmtypes.Sandbox) {

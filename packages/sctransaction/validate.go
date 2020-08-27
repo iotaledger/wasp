@@ -85,23 +85,23 @@ func (tx *Transaction) validateRequests(isOrigin bool) error {
 // - contains only inputs from the address
 // - contains all inputs
 // - correctness of colored balances
-//func (tx *Transaction) ValidateConsumptionOfInputs(addr *address.Address, inputBalances map[valuetransaction.ID][]*balance.Balance) error {
+//func (tx *Transaction) ValidateConsumptionOfInputs(addr *address.Addresses, inputBalances map[valuetransaction.ID][]*balance.Balance) error {
 //	if err := waspconn.ValidateBalances(inputBalances); err != nil {
 //		return err
 //	}
 //	var err error
 //	var first bool
-//	var addrTmp address.Address
+//	var addrTmp address.Addresses
 //	var totalInputs2 int64
 //
 //	inputBalancesByColor, totalInputs1 := util.BalancesByColor(inputBalances)
 //
 //	tx.Inputs().ForEach(func(outputId valuetransaction.OutputID) bool {
 //		if !first {
-//			addrTmp = outputId.Address()
+//			addrTmp = outputId.Addresses()
 //			first = true
 //		}
-//		if addrTmp != outputId.Address() {
+//		if addrTmp != outputId.Addresses() {
 //			err = errors.New("only 1 address is allowed in inputs")
 //			return false
 //		}
@@ -122,7 +122,7 @@ func (tx *Transaction) validateRequests(isOrigin bool) error {
 //	}
 //
 //	outputBalancesByColor := make(map[balance.Color]int64)
-//	tx.Outputs().ForEach(func(_ address.Address, bals []*balance.Balance) bool {
+//	tx.Outputs().ForEach(func(_ address.Addresses, bals []*balance.Balance) bool {
 //		for _, b := range bals {
 //			if s, ok := outputBalancesByColor[b.Color]; !ok {
 //				outputBalancesByColor[b.Color] = b.Value

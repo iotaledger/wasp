@@ -22,16 +22,17 @@ func TestTRMint1Token(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSC6Requests5Sec1")
 
-	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1, // wasps.NumSmartContracts(),
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"request_in":          2,
-		"request_out":         3,
-		"state":               -1, // must be 6 or 7
-		"vmmsg":               -1,
-	})
-	check(err, t)
+	//err := wasps.ListenToMessages(map[string]int{
+	//	"bootuprec":           1, // wasps.NumSmartContracts(),
+	//	"active_committee":    1,
+	//	"dismissed_committee": 0,
+	//	"request_in":          2,
+	//	"request_out":         3,
+	//	"state":               -1, // must be 6 or 7
+	//	"vmmsg":               -1,
+	//})
+	//check(err, t)
+	var err error
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scTokenRegistryNum]

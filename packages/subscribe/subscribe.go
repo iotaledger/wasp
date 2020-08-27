@@ -1,6 +1,7 @@
 package subscribe
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -68,7 +69,7 @@ type HostMessage struct {
 	Message []string
 }
 
-func SubscribeMulti(hosts []string, messages chan<- *HostMessage, done chan bool, topics ...string) error {
+func SubscribeMultiOld(hosts []string, messages chan<- *HostMessage, done chan bool, topics ...string) error {
 	for _, host := range hosts {
 		hostMessages := make(chan []string)
 		err := Subscribe(host, hostMessages, done, false, topics...)
@@ -89,7 +90,86 @@ func SubscribeMulti(hosts []string, messages chan<- *HostMessage, done chan bool
 	return nil
 }
 
-func waitForPattern(host string, pattern []string, timeout time.Duration) (bool, error) {
+type Subscription struct {
+	chHostMessages chan *HostMessage
+	chStopReading  chan bool
+	hosts          []string
+}
+
+const (
+	channelBufferSize  = 100
+	channelLockTimeout = 1 * time.Second
+)
+
+func SubscribeMulti(hosts []string, topics ...string) (*Subscription, error) {
+	ret := &Subscription{
+		chHostMessages: make(chan *HostMessage, channelBufferSize),
+		chStopReading:  make(chan bool),
+		hosts:          hosts,
+	}
+	for _, host := range hosts {
+		hostMessages := make(chan []string)
+		err := Subscribe(host, hostMessages, ret.chStopReading, false, topics...)
+		if err != nil {
+			return nil, err
+		}
+		go func(host string) {
+			for {
+				select {
+				case <-ret.chStopReading:
+					return
+				case msg := <-hostMessages:
+					ret.chHostMessages <- &HostMessage{host, msg}
+				case <-time.After(channelLockTimeout):
+					// loosing the host message if buffer of chHostMessages is full
+				}
+			}
+		}(host)
+	}
+	return ret, nil
+}
+
+func (subs *Subscription) WaitForPattern(pattern []string, timeout time.Duration) bool {
+	return subs.WaitForPatterns([][]string{pattern}, timeout)
+}
+
+// WaitForPatterns waits until subscription receives all patterns from all hosts
+func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Duration) bool {
+	received := make([]map[string]bool, len(patterns))
+	for i := range received {
+		received[i] = make(map[string]bool)
+	}
+	deadline := time.Now().Add(timeout)
+	sum := 0
+	for {
+		select {
+		case m := <-subs.chHostMessages:
+			for i := range patterns {
+				_, ok := received[i][m.Sender]
+				if !ok {
+					if matches(m.Message, patterns[i]) {
+						received[i][m.Sender] = true
+						sum++
+					}
+				}
+			}
+			if sum == len(patterns)*len(subs.hosts) {
+				return true
+			}
+
+		case <-time.After(100 * time.Millisecond):
+			if time.Now().After(deadline) {
+				return false
+			}
+		}
+	}
+}
+
+func (subs *Subscription) Close() {
+	close(subs.chStopReading)
+}
+
+func subscribeAndWaitForPattern(host string, pattern []string, timeout time.Duration) (bool, error) {
 	if len(pattern) == 0 {
 		return false, fmt.Errorf("wrong pattern")
 	}
@@ -171,7 +251,7 @@ func ListenForPatternMulti(hosts []string, pattern []string, onFinish func(bool)
 
 	for _, host := range hosts {
 		go func(host string) {
-			found, err := waitForPattern(host, pattern, timeout)
+			found, err := subscribeAndWaitForPattern(host, pattern, timeout)
 			if err != nil {
 				fmt.Fprintf(errout, "[ListenForPatternMulti]: %v\n", err)
 			} else {
@@ -187,13 +267,15 @@ func ListenForPatternMulti(hosts []string, pattern []string, onFinish func(bool)
 	onFinish(counter == int32(len(hosts)))
 }
 
+var ErrorWaitPatternTimeout = errors.New("timeout in SubscribeRunAndWaitForPattern")
+
 func SubscribeRunAndWaitForPattern(hosts []string, topic string, timeout time.Duration, f func() ([]string, error)) error {
 	messages := make(chan *HostMessage)
 
 	done := make(chan bool)
 	defer func() { done <- true }()
 
-	err := SubscribeMulti(hosts, messages, done, topic)
+	err := SubscribeMultiOld(hosts, messages, done, topic)
 	if err != nil {
 		return err
 	}
@@ -218,7 +300,7 @@ func SubscribeRunAndWaitForPattern(hosts []string, topic string, timeout time.Du
 			}
 
 		case <-time.After(timeout):
-			return fmt.Errorf("timeout in SubscribeRunAndWaitForPattern")
+			return ErrorWaitPatternTimeout
 		}
 	}
 }

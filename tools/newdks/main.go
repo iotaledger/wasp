@@ -43,7 +43,7 @@ func main() {
 		if err == nil {
 			params.Addresses = append(params.Addresses, addr.String())
 			numSuccess++
-			fmt.Printf("generated new key. Address: %s\n", addr.String())
+			fmt.Printf("generated new key. Addresses: %s\n", addr.String())
 		} else {
 			fmt.Printf("error: %v\n", err)
 		}
@@ -64,7 +64,7 @@ func main() {
 	//----- crosscheck
 	fmt.Printf("crosschecking. Reading public keys back\n")
 	for _, addr := range params.Addresses {
-		fmt.Printf("crosschecking. Address %s\n", addr)
+		fmt.Printf("crosschecking. Addresses %s\n", addr)
 		a, err := address.FromBase58(addr)
 		if err != nil {
 			fmt.Printf("%s --> %v\n", addr, err)

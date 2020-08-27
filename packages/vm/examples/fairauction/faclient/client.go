@@ -3,6 +3,7 @@ package faclient
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/subscribe"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -17,14 +18,22 @@ import (
 )
 
 type FairAuctionClient struct {
-	nodeClient nodeclient.NodeClient
-	waspHost   string
-	scAddress  *address.Address
-	sigScheme  signaturescheme.SignatureScheme
+	nodeClient         nodeclient.NodeClient
+	waspApiHost        string
+	scAddress          *address.Address
+	sigScheme          signaturescheme.SignatureScheme
+	waitForCompletion  bool // wait for completion of requests
+	waspPublisherHosts []string
+	timeout            time.Duration
 }
 
-func NewClient(nodeClient nodeclient.NodeClient, waspHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *FairAuctionClient {
-	return &FairAuctionClient{nodeClient, waspHost, scAddress, sigScheme}
+func NewClient(nodeClient nodeclient.NodeClient, waspApiHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *FairAuctionClient {
+	return &FairAuctionClient{
+		nodeClient:  nodeClient,
+		waspApiHost: waspApiHost,
+		scAddress:   scAddress,
+		sigScheme:   sigScheme,
+	}
 }
 
 type Status struct {
@@ -34,6 +43,12 @@ type Status struct {
 	OwnerMarginPromille int64
 	AuctionsLen         uint32
 	Auctions            map[balance.Color]*fairauction.AuctionInfo
+}
+
+func (fc *FairAuctionClient) SetWaitForRequestCompletionParams(publisherHosts []string, timeout time.Duration) {
+	fc.waitForCompletion = true
+	fc.waspPublisherHosts = publisherHosts
+	fc.timeout = timeout
 }
 
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
@@ -51,7 +66,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	query.AddInt64(fairauction.VarStateOwnerMarginPromille)
 	query.AddDictionary(fairauction.VarStateAuctions, 100)
 
-	results, err := waspapi.QuerySCState(fc.waspHost, query)
+	results, err := waspapi.QuerySCState(fc.waspApiHost, query)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +100,12 @@ func (fc *FairAuctionClient) fetchSCBalance() (map[balance.Color]int64, error) {
 	return ret, nil
 }
 
-func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
+func (fc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
 	tx, err := waspapi.CreateSimpleRequest(
-		frc.nodeClient,
-		frc.sigScheme,
+		fc.nodeClient,
+		fc.sigScheme,
 		waspapi.CreateSimpleRequestParams{
-			SCAddress:   frc.scAddress,
+			SCAddress:   fc.scAddress,
 			RequestCode: code,
 			Vars:        vars,
 			Transfer:    transfer,
@@ -99,8 +114,24 @@ func (frc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transf
 	if err != nil {
 		return nil, err
 	}
-	if err = frc.nodeClient.PostTransaction(tx.Transaction); err != nil {
+	if !fc.waitForCompletion {
+		if err = fc.nodeClient.PostTransaction(tx.Transaction); err != nil {
+			return nil, err
+		}
+		return tx, nil
+	}
+	subs, err := subscribe.SubscribeMulti(fc.waspPublisherHosts, "request_out")
+	if err != nil {
 		return nil, err
+	}
+	defer subs.Close()
+
+	if err = fc.nodeClient.PostAndWaitForConfirmation(tx.Transaction); err != nil {
+		return nil, err
+	}
+	succ := subs.WaitForPattern([]string{"request_out", fc.scAddress.String(), tx.ID().String(), "0"}, fc.timeout)
+	if !succ {
+		return nil, fmt.Errorf("didn't receive completion message in %v", fc.timeout)
 	}
 	return tx, nil
 }
@@ -116,7 +147,7 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	query := stateapi.NewQueryRequest(fc.scAddress)
 	query.AddInt64(fairauction.VarStateOwnerMarginPromille)
-	results, err := waspapi.QuerySCState(fc.waspHost, query)
+	results, err := waspapi.QuerySCState(fc.waspApiHost, query)
 	var ownerMarginState int64
 	var ok bool
 	if err != waspapi.ErrStateNotFound {
