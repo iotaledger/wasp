@@ -37,6 +37,7 @@ type MintAndRegisterParams struct {
 	UserDefinedData   []byte
 	WaitForCompletion bool
 	PublisherHosts    []string
+	PublisherQuorum   int
 	Timeout           time.Duration // must be enough for confirmation of the request transaction processing of it (>20s)
 }
 
@@ -83,7 +84,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 		}
 		return tx, nil
 	}
-	subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out")
+	subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out", par.PublisherQuorum)
 	if err != nil {
 		return nil, err
 	}
