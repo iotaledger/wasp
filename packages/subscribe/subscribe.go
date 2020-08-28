@@ -94,14 +94,21 @@ type Subscription struct {
 	chHostMessages chan *HostMessage
 	chStopReading  chan bool
 	hosts          []string
+	numSubscribed  int
 }
 
 const (
-	channelBufferSize  = 100
+	channelBufferSize  = 500
 	channelLockTimeout = 1 * time.Second
 )
 
-func SubscribeMulti(hosts []string, topics ...string) (*Subscription, error) {
+func SubscribeMulti(hosts []string, topics string, quorum ...int) (*Subscription, error) {
+	quorumNodes := len(hosts)
+	if len(quorum) > 0 {
+		if quorum[0] > 0 || quorum[0] < len(hosts) {
+			quorumNodes = quorum[0]
+		}
+	}
 	ret := &Subscription{
 		chHostMessages: make(chan *HostMessage, channelBufferSize),
 		chStopReading:  make(chan bool),
@@ -109,10 +116,11 @@ func SubscribeMulti(hosts []string, topics ...string) (*Subscription, error) {
 	}
 	for _, host := range hosts {
 		hostMessages := make(chan []string)
-		err := Subscribe(host, hostMessages, ret.chStopReading, false, topics...)
+		err := Subscribe(host, hostMessages, ret.chStopReading, false, []string{topics}...)
 		if err != nil {
-			return nil, err
+			continue
 		}
+		ret.numSubscribed++
 		go func(host string) {
 			for {
 				select {
@@ -126,21 +134,33 @@ func SubscribeMulti(hosts []string, topics ...string) (*Subscription, error) {
 			}
 		}(host)
 	}
+	if ret.numSubscribed < quorumNodes {
+		close(ret.chStopReading)
+		return nil, fmt.Errorf("SubscribeMulti: required %d nodes, connected only to %d", quorumNodes, ret.numSubscribed)
+	}
 	return ret, nil
 }
 
-func (subs *Subscription) WaitForPattern(pattern []string, timeout time.Duration) bool {
-	return subs.WaitForPatterns([][]string{pattern}, timeout)
+func (subs *Subscription) WaitForPattern(pattern []string, timeout time.Duration, quorum ...int) bool {
+	return subs.WaitForPatterns([][]string{pattern}, timeout, quorum...)
 }
 
-// WaitForPatterns waits until subscription receives all patterns from all hosts
-func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Duration) bool {
+// WaitForPatterns waits until subscription receives all patterns from quorum of hosts
+func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Duration, quorum ...int) bool {
+	quorumNodes := len(subs.hosts)
+	if len(quorum) > 0 {
+		if quorum[0] > 0 {
+			quorumNodes = quorum[0]
+		}
+		if quorumNodes > len(subs.hosts) {
+			quorumNodes = len(subs.hosts)
+		}
+	}
 	received := make([]map[string]bool, len(patterns))
 	for i := range received {
 		received[i] = make(map[string]bool)
 	}
 	deadline := time.Now().Add(timeout)
-	sum := 0
 	for {
 		select {
 		case m := <-subs.chHostMessages:
@@ -149,11 +169,10 @@ func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Dura
 				if !ok {
 					if matches(m.Message, patterns[i]) {
 						received[i][m.Sender] = true
-						sum++
 					}
 				}
 			}
-			if sum == len(patterns)*len(subs.hosts) {
+			if checkQuorum(received, quorumNodes) {
 				return true
 			}
 
@@ -163,6 +182,15 @@ func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Dura
 			}
 		}
 	}
+}
+
+func checkQuorum(m []map[string]bool, quorum int) bool {
+	for i := range m {
+		if len(m[i]) < quorum {
+			return false
+		}
+	}
+	return true
 }
 
 func (subs *Subscription) Close() {

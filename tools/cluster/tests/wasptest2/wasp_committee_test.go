@@ -80,8 +80,9 @@ func TestKillNode(t *testing.T) {
 			Post:                true,
 			WaitForConfirmation: true,
 			WaitForCompletion:   true,
-			PublisherHosts:      wasps.ActivePublisherHosts(),
-			Timeout:             20 * time.Second,
+			PublisherHosts:      wasps.PublisherHosts(),
+			PublisherQuorum:     3,
+			Timeout:             30 * time.Second,
 		})
 		checkSuccess(err, t, fmt.Sprintf("request #%d has been sent and completed", i))
 	}

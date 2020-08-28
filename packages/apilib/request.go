@@ -32,6 +32,7 @@ type CreateRequestTransactionParams struct {
 	WaitForConfirmation bool
 	WaitForCompletion   bool
 	PublisherHosts      []string
+	PublisherQuorum     int
 	Timeout             time.Duration
 }
 
@@ -90,7 +91,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	var subs *subscribe.Subscription
 	if par.WaitForCompletion {
 		// post and wait for completion
-		subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out")
+		subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out", par.PublisherQuorum)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +107,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		for i := range patterns {
 			patterns[i] = []string{"request_out", par.BlockParams[i].TargetSCAddress.String(), tx.ID().String(), strconv.Itoa(i)}
 		}
-		if !subs.WaitForPatterns(patterns, par.Timeout) {
+		if !subs.WaitForPatterns(patterns, par.Timeout, par.PublisherQuorum) {
 			return nil, fmt.Errorf("didn't receive completion message after %v", par.Timeout)
 		}
 	}
