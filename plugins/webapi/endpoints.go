@@ -14,6 +14,7 @@ func addEndpoints() {
 	Server.GET("/", IndexRequest)
 	// sc api
 	Server.POST("/sc/state/query", stateapi.HandlerQueryState)
+	Server.POST("/sc/state/request", stateapi.HandlerQueryRequestState)
 	// dkgapi
 	Server.POST("/adm/newdks", dkgapi.HandlerNewDks)
 	Server.POST("/adm/aggregatedks", dkgapi.HandlerAggregateDks)

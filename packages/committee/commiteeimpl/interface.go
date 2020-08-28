@@ -5,6 +5,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/publisher"
@@ -242,4 +244,23 @@ func (c *committeeObj) ConnectedPeers() []uint16 {
 		}
 	}
 	return ret
+}
+
+func (c *committeeObj) GetRequestProcessingStatus(reqId *sctransaction.RequestId) committee.RequestProcessingStatus {
+	if c.IsDismissed() {
+		return committee.RequestProcessingStatusUnknown
+	}
+	if c.isCommitteeNode.Load() {
+		if c.IsDismissed() {
+			return committee.RequestProcessingStatusUnknown
+		}
+		if c.operator.IsRequestInBacklog(reqId) {
+			return committee.RequestProcessingStatusBacklog
+		}
+	}
+	processed, err := state.IsRequestCompleted(c.Address(), reqId)
+	if err != nil || !processed {
+		return committee.RequestProcessingStatusUnknown
+	}
+	return committee.RequestProcessingStatusCompleted
 }

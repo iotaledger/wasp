@@ -3,6 +3,7 @@ package wasptest2
 import (
 	"crypto/rand"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"os"
 	"testing"
 	"time"
@@ -98,6 +99,12 @@ func TestTRTest(t *testing.T) {
 		Timeout:           30 * time.Second,
 	})
 	checkSuccess(err, t, "token minted and registered successfully")
+
+	proc, err := waspapi.IsRequestProcessed(wasps.Config.Nodes[0].ApiHost(), scAddr, sctransaction.NewRequestId(tx1.ID(), 0))
+	check(err, t)
+	if !proc {
+		t.Fail()
+	}
 
 	mintedColor1 := balance.Color(tx1.ID())
 

@@ -67,10 +67,6 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func WaitInitialLoad() {
-	initialLoadWG.Wait()
-}
-
 func ActivateCommittee(bootupData *registry.BootupData) committee.Committee {
 	committeesMutex.Lock()
 	defer committeesMutex.Unlock()

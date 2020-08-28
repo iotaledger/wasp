@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/state"
+	"sync"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -37,6 +38,7 @@ type operator struct {
 	// notifications with future currentSCState indices
 	notificationsBacklog []*committee.NotifyReqMsg
 
+	// backlog of requests with all information
 	requests map[sctransaction.RequestId]*request
 
 	peerPermutation *util.Permutation16
@@ -49,6 +51,10 @@ type operator struct {
 	nextPullInclusionLevel time.Time // if postedResultTxid != nil
 
 	log *logger.Logger
+
+	// data for concurrent access, from APIs mostly
+	concurrentAccessMutex sync.RWMutex
+	requestIdsProtected   map[sctransaction.RequestId]bool
 }
 
 type leaderStatus struct {
@@ -85,11 +91,12 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 	defer committee.SetReadyConsensus()
 
 	ret := &operator{
-		committee:       committee,
-		dkshare:         dkshare,
-		requests:        make(map[sctransaction.RequestId]*request),
-		peerPermutation: util.NewPermutation16(committee.Size(), nil),
-		log:             log.Named("c"),
+		committee:           committee,
+		dkshare:             dkshare,
+		requests:            make(map[sctransaction.RequestId]*request),
+		requestIdsProtected: make(map[sctransaction.RequestId]bool),
+		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
+		log:                 log.Named("c"),
 	}
 	ret.setConsensusStage(consensusStageNoSync)
 	return ret

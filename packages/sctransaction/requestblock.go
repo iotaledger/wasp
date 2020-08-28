@@ -1,8 +1,10 @@
 package sctransaction
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/mr-tron/base58"
 	"io"
 	"strconv"
 	"strings"
@@ -197,6 +199,22 @@ func (rid *RequestId) Read(r io.Reader) error {
 
 func (rid *RequestId) String() string {
 	return fmt.Sprintf("[%d]%s", rid.Index(), rid.TransactionId().String())
+}
+
+func (rid *RequestId) ToBase58() string {
+	return base58.Encode(rid.Bytes())
+}
+
+func RequestIdFromBase58(str58 string) (*RequestId, error) {
+	data, err := base58.Decode(str58)
+	if err != nil {
+		return nil, err
+	}
+	var ret RequestId
+	if err = ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return &ret, nil
 }
 
 func (rid *RequestId) Short() string {

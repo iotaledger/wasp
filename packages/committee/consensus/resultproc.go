@@ -130,7 +130,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		panic("bh != op.leaderStatus.batchHash")
 	}
 	if len(result.Requests) != int(result.ResultBatch.Size()) {
-		panic("len(result.Requests) != int(result.ResultBatch.Size())")
+		panic("len(result.RequestIds) != int(result.ResultBatch.Size())")
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())

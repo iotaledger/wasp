@@ -26,18 +26,19 @@ type committeeObj struct {
 	dismissOnce                  sync.Once
 	onActivation                 func()
 	//
-	params       *committee.Parameters
-	address      address.Address
-	ownerAddress address.Address
-	color        balance.Color
-	peers        []*peering.Peer
-	size         uint16
-	quorum       uint16
-	ownIndex     uint16
-	chMsg        chan interface{}
-	stateMgr     committee.StateManager
-	operator     committee.Operator
-	log          *logger.Logger
+	params          *committee.Parameters
+	address         address.Address
+	ownerAddress    address.Address
+	color           balance.Color
+	peers           []*peering.Peer
+	size            uint16
+	quorum          uint16
+	ownIndex        uint16
+	chMsg           chan interface{}
+	stateMgr        committee.StateManager
+	operator        committee.Operator
+	isCommitteeNode atomic.Bool
+	log             *logger.Logger
 }
 
 func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params *committee.Parameters, onActivation func()) committee.Committee {
@@ -110,6 +111,9 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 	ret.stateMgr = statemgr.New(ret, ret.log)
 	if keyExists {
 		ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
+		ret.isCommitteeNode.Store(true)
+	} else {
+		ret.isCommitteeNode.Store(false)
 	}
 	go func() {
 		for msg := range ret.chMsg {

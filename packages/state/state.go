@@ -178,7 +178,7 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	keys := [][]byte{varStateDbkey, batchDbKey, solidStateKey}
 	values := [][]byte{varStateData, batchData, solidStateValue}
 
-	// store successfully processed request IDs
+	// store processed request IDs
 	for _, rid := range b.RequestIds() {
 		keys = append(keys, dbkeyRequest(rid))
 		values = append(values, []byte{0})
@@ -244,45 +244,6 @@ func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func MarkRequestProcessedFailure(addr *address.Address, reqid *sctransaction.RequestId) error {
-	db := getSCPartition(addr)
-	dbkey := dbkeyRequest(reqid)
-	has, err := db.Has(dbkey)
-	if err != nil {
-		return err
-	}
-	if !has {
-		return db.Set(dbkey, []byte{1})
-	}
-	value, err := db.Get(dbkey)
-	if err != nil {
-		return err
-	}
-	if len(value) != 1 {
-		return fmt.Errorf("inconistency: len(value) != 1")
-	}
-	return db.Set(dbkey, []byte{value[0] + 1})
-}
-
-const maxRetriesForRequest = byte(5)
-
-// IsRequestCompleted returns true if it was completed successfully or number of retries reached maximum
 func IsRequestCompleted(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
-	db := getSCPartition(addr)
-	dbkey := dbkeyRequest(reqid)
-	has, err := db.Has(dbkey)
-	if err != nil {
-		return false, err
-	}
-	if !has {
-		return false, nil
-	}
-	val, err := db.Get(dbkey)
-	if err != nil {
-		return false, err
-	}
-	if len(val) != 1 {
-		return false, fmt.Errorf("inconistency: len(val) != 1")
-	}
-	return val[0] == 0 || val[0] >= maxRetriesForRequest, nil
+	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

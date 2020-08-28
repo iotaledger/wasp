@@ -53,6 +53,7 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool
 		ret.whenMsgReceived = time.Now()
 		ret.reqTx = reqMsg.Transaction
 		op.requests[reqId] = ret
+		op.addRequestIdConcurrent(&reqId)
 		publish = true
 	}
 	if publish {
@@ -110,6 +111,7 @@ func (op *operator) deleteCompletedRequests() error {
 	}
 	for _, rid := range toDelete {
 		delete(op.requests, *rid)
+		op.removeRequestIdConcurrent(rid)
 		op.log.Debugf("removed from backlog: processed request %s", rid.String())
 	}
 	return nil
@@ -152,4 +154,30 @@ func takeRefs(reqs []*request) []sctransaction.RequestRef {
 		}
 	}
 	return ret
+}
+
+func (op *operator) addRequestIdConcurrent(reqId *sctransaction.RequestId) {
+	op.concurrentAccessMutex.Lock()
+	defer op.concurrentAccessMutex.Unlock()
+
+	op.requestIdsProtected[*reqId] = true
+}
+
+func (op *operator) removeRequestIdConcurrent(reqId *sctransaction.RequestId) {
+	op.concurrentAccessMutex.Lock()
+	defer op.concurrentAccessMutex.Unlock()
+
+	delete(op.requestIdsProtected, *reqId)
+}
+
+func (op *operator) hasRequestIdConcurrent(reqId *sctransaction.RequestId) bool {
+	op.concurrentAccessMutex.RLock()
+	defer op.concurrentAccessMutex.RUnlock()
+
+	_, ok := op.requestIdsProtected[*reqId]
+	return ok
+}
+
+func (op *operator) IsRequestInBacklog(reqId *sctransaction.RequestId) bool {
+	return op.hasRequestIdConcurrent(reqId)
 }

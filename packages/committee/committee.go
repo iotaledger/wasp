@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -29,7 +30,16 @@ type Committee interface {
 	SetReadyConsensus()
 	Dismiss()
 	IsDismissed() bool
+	GetRequestProcessingStatus(*sctransaction.RequestId) RequestProcessingStatus
 }
+
+type RequestProcessingStatus int
+
+const (
+	RequestProcessingStatusUnknown = RequestProcessingStatus(iota)
+	RequestProcessingStatusBacklog
+	RequestProcessingStatusCompleted
+)
 
 type StateManager interface {
 	EvidenceStateIndex(idx uint32)
@@ -53,6 +63,8 @@ type Operator interface {
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
 	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)
 	EventTimerMsg(TimerTick)
+	//
+	IsRequestInBacklog(*sctransaction.RequestId) bool
 }
 
 var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee
