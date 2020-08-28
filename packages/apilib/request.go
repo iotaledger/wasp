@@ -3,33 +3,41 @@ package apilib
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/subscribe"
-	"strconv"
-	"sync"
-	"time"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/subscribe"
+	"strconv"
+	"time"
 )
 
-type CreateSimpleRequestParams struct {
-	SCAddress   *address.Address
-	RequestCode sctransaction.RequestCode
-	Timelock    uint32
-	Transfer    map[balance.Color]int64 // should not not include request token. It is added automatically
-	Vars        map[string]interface{}  ` `
+type RequestBlockParams struct {
+	TargetSCAddress *address.Address
+	RequestCode     sctransaction.RequestCode
+	Timelock        uint32
+	Transfer        map[balance.Color]int64 // should not not include request token. It is added automatically
+	Vars            map[string]interface{}  ` `
 }
 
-func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, par CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
-	senderAddr := sigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&senderAddr)
+type CreateRequestTransactionParams struct {
+	NodeClient          nodeclient.NodeClient
+	SenderSigScheme     signaturescheme.SignatureScheme
+	BlockParams         []RequestBlockParams
+	Post                bool
+	WaitForConfirmation bool
+	WaitForCompletion   bool
+	PublisherHosts      []string
+	Timeout             time.Duration
+}
+
+func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.Transaction, error) {
+	senderAddr := par.SenderSigScheme.Address()
+	allOuts, err := par.NodeClient.GetAccountOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
@@ -39,17 +47,20 @@ func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme
 		return nil, err
 	}
 
-	reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
+	for _, blockPar := range par.BlockParams {
+		reqBlk := sctransaction.NewRequestBlock(*blockPar.TargetSCAddress, blockPar.RequestCode).
+			WithTimelock(blockPar.Timelock)
 
-	args := convertArgs(par.Vars)
-	if args == nil {
-		return nil, errors.New("wrong arguments")
-	}
-	reqBlk.SetArgs(args)
+		args := convertArgs(blockPar.Vars)
+		if args == nil {
+			return nil, errors.New("wrong arguments")
+		}
+		reqBlk.SetArgs(args)
 
-	err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
-	if err != nil {
-		return nil, err
+		err = txb.AddRequestBlockWithTransfer(reqBlk, blockPar.TargetSCAddress, blockPar.Transfer)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tx, err := txb.Build(false)
@@ -59,54 +70,45 @@ func CreateSimpleRequest(client nodeclient.NodeClient, sigScheme signaturescheme
 	if err != nil {
 		return nil, err
 	}
-	tx.Sign(sigScheme)
+	tx.Sign(par.SenderSigScheme)
 
-	// check semantic just in case
+	// semantic check just in case
 	if _, err := tx.Properties(); err != nil {
 		return nil, err
 	}
 	//fmt.Printf("$$$$ dumping builder for %s\n%s\n", tx.ID().String(), dump)
 
-	return tx, nil
-}
-
-func CreateSimpleRequestMulti(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, pars []CreateSimpleRequestParams) (*sctransaction.Transaction, error) {
-	senderAddr := sigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&senderAddr)
-	if err != nil {
-		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
+	if !par.Post {
+		return tx, nil
 	}
-
-	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, par := range pars {
-		reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
-
-		args := convertArgs(par.Vars)
-		if args == nil {
-			return nil, errors.New("wrong arguments")
+	if !par.WaitForConfirmation {
+		if err = par.NodeClient.PostTransaction(tx.Transaction); err != nil {
+			return nil, err
 		}
-		reqBlk.SetArgs(args)
-
-		err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
+		return tx, nil
+	}
+	var subs *subscribe.Subscription
+	if par.WaitForCompletion {
+		// post and wait for completion
+		subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out")
 		if err != nil {
 			return nil, err
 		}
+		defer subs.Close()
 	}
 
-	tx, err := txb.Build(false)
-
+	err = par.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
-	tx.Sign(sigScheme)
-
-	// check semantic just in case
-	if _, err := tx.Properties(); err != nil {
-		return nil, err
+	if par.WaitForCompletion {
+		patterns := make([][]string, len(par.BlockParams))
+		for i := range patterns {
+			patterns[i] = []string{"request_out", par.BlockParams[i].TargetSCAddress.String(), tx.ID().String(), strconv.Itoa(i)}
+		}
+		if !subs.WaitForPatterns(patterns, par.Timeout) {
+			return nil, fmt.Errorf("didn't receive completion message after %v", par.Timeout)
+		}
 	}
 
 	return tx, nil
@@ -149,127 +151,4 @@ func convertArgs(vars map[string]interface{}) kv.Map {
 		}
 	}
 	return args
-}
-
-// Deprecated
-type RequestBlockJson struct {
-	Address     string                    `json:"address"`
-	RequestCode sctransaction.RequestCode `json:"request_code"`
-	Timelock    uint32                    `json:"timelock"`
-	AmountIotas int64                     `json:"amount_iotas"` // minimum 1 iota will be taken anyway
-	Vars        map[string]interface{}    `json:"vars"`
-}
-
-// Deprecated
-func CreateRequestTransaction(client nodeclient.NodeClient, senderSigScheme signaturescheme.SignatureScheme, reqsJson []*RequestBlockJson) (*sctransaction.Transaction, error) {
-	var err error
-	if len(reqsJson) == 0 {
-		return nil, errors.New("CreateRequestTransaction: must be at least 1 request block")
-	}
-	senderAddr := senderSigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&senderAddr)
-	if err != nil {
-		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
-	}
-
-	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, reqBlkJson := range reqsJson {
-		reqBlk, err := requestBlockFromJson(reqBlkJson)
-		if err != nil {
-			return nil, err
-		}
-		// add request block. It also move 1 iota as ColorNew for request token
-		if err = txb.AddRequestBlock(reqBlk); err != nil {
-			return nil, err
-		}
-		if reqBlkJson.AmountIotas > 1 {
-			if err = txb.MoveToAddress(reqBlk.Address(), balance.ColorIOTA, reqBlkJson.AmountIotas-1); err != nil {
-				return nil, err
-			}
-		}
-	}
-	tx, err := txb.Build(false)
-	if err != nil {
-		return nil, err
-	}
-	tx.Sign(senderSigScheme)
-
-	// check semantic just in case
-	if _, err := tx.Properties(); err != nil {
-		return nil, err
-	}
-
-	MustNotNullInputs(tx.Transaction)
-
-	return tx, nil
-}
-
-func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestBlock, error) {
-	var err error
-	addr, err := address.FromBase58(reqBlkJson.Address)
-	if err != nil {
-		return nil, err
-	}
-	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
-	ret.WithTimelock(reqBlkJson.Timelock)
-
-	if reqBlkJson.Vars == nil {
-		// no args
-		return ret, nil
-	}
-
-	args := convertArgs(reqBlkJson.Vars)
-	if args == nil {
-		return nil, errors.New("wrong arguments")
-	}
-	ret.SetArgs(args)
-
-	return ret, nil
-}
-
-func MustNotNullInputs(tx *valuetransaction.Transaction) {
-	var nilid valuetransaction.ID
-	tx.Inputs().ForEach(func(outputId valuetransaction.OutputID) bool {
-		if outputId.TransactionID() == nilid {
-			panic(fmt.Sprintf("nil input in txid %s", tx.ID().String()))
-		}
-		return true
-	})
-}
-
-func WaitForRequestProcessedMulti(hosts []string, scAddr *address.Address, txid *valuetransaction.ID, reqIndex uint16, timeout time.Duration) error {
-	var err error
-	pattern := []string{"request_out", scAddr.String(), txid.String(), strconv.Itoa(int(reqIndex))}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	subscribe.ListenForPatternMulti(hosts, pattern, func(ok bool) {
-		if !ok {
-			err = fmt.Errorf("request [%d]%s wasn't processed in %v", reqIndex, txid.String(), timeout)
-		}
-		wg.Done()
-	}, timeout)
-	return err
-}
-
-func RunAndWaitForRequestProcessedMulti(hosts []string, scAddr *address.Address, reqIndex uint16, timeout time.Duration, f func() (*sctransaction.Transaction, error)) (*sctransaction.Transaction, error) {
-	var tx *sctransaction.Transaction
-	err := subscribe.SubscribeRunAndWaitForPattern(hosts, "request_out", timeout, func() ([]string, error) {
-		var err error
-		tx, err = f()
-		if err != nil {
-			return nil, fmt.Errorf("failed to create tx: %v", err)
-		}
-		return []string{"request_out", scAddr.String(), tx.ID().String(), strconv.Itoa(int(reqIndex))}, nil
-	})
-	if err != nil {
-		if tx != nil {
-			return nil, fmt.Errorf("request [%d]%s failed: %v", reqIndex, tx.ID(), err)
-		}
-		return nil, err
-	}
-	return tx, nil
 }

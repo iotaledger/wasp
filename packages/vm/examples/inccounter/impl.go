@@ -17,6 +17,7 @@ const (
 
 	ArgNumRepeats = "numrepeats"
 	VarNumRepeats = "numrepeats"
+	VarCounter    = "counter"
 )
 
 var entryPoints = incCounterProcessor{
@@ -49,17 +50,17 @@ func (ep incEntryPoint) Run(ctx vmtypes.Sandbox) {
 
 func incCounter(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
-	val, _ := state.GetInt64("counter")
+	val, _ := state.GetInt64(VarCounter)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
-	state.SetInt64("counter", val+1)
+	state.SetInt64(VarCounter, val+1)
 }
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
-	val, _ := state.GetInt64("counter")
+	val, _ := state.GetInt64(VarCounter)
 
 	ctx.Publish(fmt.Sprintf("increasing counter value: %d", val))
-	state.SetInt64("counter", val+1)
+	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
 
 		if ctx.SendRequestToSelfWithDelay(RequestInc, nil, 5) {
@@ -73,8 +74,8 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 	state := ctx.AccessState()
 
-	val, _ := state.GetInt64("counter")
-	state.SetInt64("counter", val+1)
+	val, _ := state.GetInt64(VarCounter)
+	state.SetInt64(VarCounter, val+1)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
 
 	numRepeats, ok, err := ctx.AccessRequest().Args().GetInt64(ArgNumRepeats)

@@ -180,7 +180,7 @@ func decodePlayerStats(result *stateapi.DictResult) (map[address.Address]*fairro
 }
 
 func (frc *FairRouletteClient) postRequest(code sctransaction.RequestCode, amountIotas int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
-	tx, err := waspapi.CreateRequestTransaction(
+	tx, err := waspapi.CreateRequestTransactionOld(
 		frc.nodeClient,
 		frc.sigScheme,
 		[]*waspapi.RequestBlockJson{{

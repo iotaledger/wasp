@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
@@ -22,16 +20,6 @@ func TestTRMint1Token(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSC6Requests5Sec1")
 
-	//err := wasps.ListenToMessages(map[string]int{
-	//	"bootuprec":           1, // wasps.NumSmartContracts(),
-	//	"active_committee":    1,
-	//	"dismissed_committee": 0,
-	//	"request_in":          2,
-	//	"request_out":         3,
-	//	"state":               -1, // must be 6 or 7
-	//	"vmmsg":               -1,
-	//})
-	//check(err, t)
 	var err error
 
 	// number 5 is "Wasm VM PoC program" in cluster.json
@@ -51,16 +39,16 @@ func TestTRMint1Token(t *testing.T) {
 	scOwnerAddr := sc.OwnerAddress()
 	scAddress := sc.SCAddress()
 	scColor := sc.GetColor()
-	minter1Addr := minter1.Address()
+	minterAddr := minter1.Address()
 	progHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(&minter1Addr)
+	err = wasps.NodeClient.RequestFunds(&minterAddr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
 
-	if !wasps.VerifyAddressBalances(minter1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(minterAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "minter1 in the beginning") {
 		t.Fail()
@@ -81,22 +69,17 @@ func TestTRMint1Token(t *testing.T) {
 
 	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, minter1.SigScheme())
 
-	tx1, err := waspapi.RunAndWaitForRequestProcessedMulti(wasps.PublisherHosts(), &scAddress, 0, 15*time.Second, func() (*sctransaction.Transaction, error) {
-		return tc.MintAndRegister(trclient.MintAndRegisterParams{
-			Supply:      1,
-			MintTarget:  minter1Addr,
-			Description: "Non-fungible coin 1",
-		})
+	tx, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
+		Supply:            1,
+		MintTarget:        minterAddr,
+		Description:       "Non-fungible coin 1",
+		WaitForCompletion: true,
+		PublisherHosts:    wasps.PublisherHosts(),
+		Timeout:           20 * time.Second,
 	})
 	check(err, t)
-	mintedColor1 := balance.Color(tx1.ID())
 
-	//wasps.CollectMessages(30 * time.Second)
-	wasps.WaitUntilExpectationsMet()
-
-	if !wasps.Report() {
-		t.Fail()
-	}
+	mintedColor := balance.Color(tx.ID())
 
 	if !wasps.VerifyAddressBalances(scAddress, 1, map[balance.Color]int64{
 		balance.ColorIOTA: 0,
@@ -105,8 +88,8 @@ func TestTRMint1Token(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(minter1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		mintedColor1:      1,
+	if !wasps.VerifyAddressBalances(minterAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
+		mintedColor:       1,
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "minter1 in the end") {
 		t.Fail()
@@ -116,7 +99,7 @@ func TestTRMint1Token(t *testing.T) {
 	if !wasps.VerifySCStateVariables(sc, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress:      scOwnerAddr.Bytes(),
 		vmconst.VarNameProgramHash:       progHash.Bytes(),
-		tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
+		tokenregistry.VarStateListColors: []byte(mintedColor.String()),
 	}) {
 		t.Fail()
 	}

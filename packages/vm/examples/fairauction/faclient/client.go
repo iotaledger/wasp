@@ -101,10 +101,10 @@ func (fc *FairAuctionClient) fetchSCBalance() (map[balance.Color]int64, error) {
 }
 
 func (fc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
-	tx, err := waspapi.CreateSimpleRequest(
+	tx, err := waspapi.CreateSimpleRequestOld(
 		fc.nodeClient,
 		fc.sigScheme,
-		waspapi.CreateSimpleRequestParams{
+		waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   fc.scAddress,
 			RequestCode: code,
 			Vars:        vars,

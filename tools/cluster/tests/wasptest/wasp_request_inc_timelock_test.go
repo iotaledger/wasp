@@ -38,7 +38,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 
 	scAddress := sc.SCAddress()
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: inccounter.RequestInc,
 		Timelock:    util.UnixAfterSec(3),
@@ -92,7 +92,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 
 	scAddress := sc.SCAddress()
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: inccounter.RequestIncAndRepeatOnceAfter5s,
 	})
@@ -145,7 +145,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	// send 1i to the SC address. It is needed to send the request to self
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
@@ -155,7 +155,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	check(err, t)
 	time.Sleep(1 * time.Second)
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: inccounter.RequestIncAndRepeatOnceAfter5s,
 	})
@@ -210,7 +210,7 @@ func TestChainIncTimelock(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	// send 5i to the SC address. It is needed to send 5 requests to self at once
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
@@ -220,7 +220,7 @@ func TestChainIncTimelock(t *testing.T) {
 	check(err, t)
 	time.Sleep(1 * time.Second)
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: inccounter.RequestIncAndRepeatMany,
 		Vars: map[string]interface{}{

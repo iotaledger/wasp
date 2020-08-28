@@ -46,7 +46,7 @@ func TestSC7Requests5Sec1(t *testing.T) {
 	ownerAddress := sc.OwnerAddress()
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
 		})

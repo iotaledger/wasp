@@ -479,6 +479,7 @@ func (cluster *Cluster) stopNode(nodeIndex int) {
 func (cluster *Cluster) StopNode(nodeIndex int) {
 	cluster.stopNode(nodeIndex)
 	waitCmd(&cluster.Config.Nodes[nodeIndex].cmd)
+	fmt.Printf("[cluster] Node %s has been shut down\n", cluster.Config.Nodes[nodeIndex].ApiHost())
 }
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
@@ -542,6 +543,18 @@ func (cluster *Cluster) PeeringHosts() []string {
 func (cluster *Cluster) PublisherHosts() []string {
 	hosts := make([]string, 0)
 	for _, node := range cluster.Config.Nodes {
+		url := node.NanomsgHost()
+		hosts = append(hosts, url)
+	}
+	return hosts
+}
+
+func (cluster *Cluster) ActivePublisherHosts() []string {
+	hosts := make([]string, 0)
+	for _, node := range cluster.Config.Nodes {
+		if !node.IsUp() {
+			continue
+		}
 		url := node.NanomsgHost()
 		hosts = append(hosts, url)
 	}
@@ -820,7 +833,7 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 func (cluster *Cluster) VerifySCStateVariables2(addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
 	fmt.Printf("verifying state variables for address %s\n", addr.String())
 	pass := true
-	for _, host := range cluster.ApiHosts() {
+	for _, host := range cluster.ActiveApiHosts() {
 		pass = pass && verifySCStateVariables2(host, addr, expectedValues)
 	}
 	return pass

@@ -70,8 +70,8 @@ func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.Signatur
 	return nil
 }
 
-func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams waspapi.CreateSimpleRequestParams) error {
-	tx, err := waspapi.CreateSimpleRequest(clu.NodeClient, sigScheme, reqParams)
+func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams waspapi.CreateSimpleRequestParamsOld) error {
+	tx, err := waspapi.CreateSimpleRequestOld(clu.NodeClient, sigScheme, reqParams)
 	if err != nil {
 		return err
 	}
@@ -79,8 +79,8 @@ func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.Signature
 	return clu.PostTransaction(tx)
 }
 
-func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.CreateSimpleRequestParams) error {
-	tx, err := waspapi.CreateSimpleRequestMulti(clu.NodeClient, sigScheme, reqParams)
+func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.CreateSimpleRequestParamsOld) error {
+	tx, err := waspapi.CreateSimpleRequestMultiOld(clu.NodeClient, sigScheme, reqParams)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.Sign
 }
 
 func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqs []*waspapi.RequestBlockJson) error {
-	tx, err := waspapi.CreateRequestTransaction(clu.NodeClient, sigScheme, reqs)
+	tx, err := waspapi.CreateRequestTransactionOld(clu.NodeClient, sigScheme, reqs)
 	if err != nil {
 		return err
 	}

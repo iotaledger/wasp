@@ -151,7 +151,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
 	for i := 0; i < numRequests; i++ {
-		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParams{
+		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   scAddr,
 			RequestCode: inccounter.RequestInc,
 		})
@@ -246,9 +246,9 @@ func TestSend100ReqMulti(t *testing.T) {
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
-	pars := make([]waspapi.CreateSimpleRequestParams, numRequestsInTheBlock)
+	pars := make([]waspapi.CreateSimpleRequestParamsOld, numRequestsInTheBlock)
 	for i := 0; i < numRequestsInTheBlock; i++ {
-		pars[i] = waspapi.CreateSimpleRequestParams{
+		pars[i] = waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   scAddr,
 			RequestCode: inccounter.RequestInc,
 		}

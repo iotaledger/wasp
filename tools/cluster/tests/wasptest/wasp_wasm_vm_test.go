@@ -47,7 +47,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 	ownerAddress := sc.OwnerAddress()
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: wasmpoc.RequestNop,
 		})
@@ -109,7 +109,7 @@ func TestWasmSend1ReqIncSimple(t *testing.T) {
 
 	scAddress := sc.SCAddress()
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestInc,
 	})
@@ -161,7 +161,7 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	// send 1i to the SC address. It is needed to send the request to self
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestNop,
 		Transfer: map[balance.Color]int64{
@@ -171,7 +171,7 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	check(err, t)
 	time.Sleep(1 * time.Second)
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestIncRepeat1,
 	})
@@ -224,7 +224,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	// send 5i to the SC address. It is needed to send 5 requests to self at once
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestNop,
 		Transfer: map[balance.Color]int64{
@@ -234,7 +234,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	check(err, t)
 	time.Sleep(1 * time.Second)
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestIncRepeatMany,
 		Vars: map[string]interface{}{
@@ -297,7 +297,7 @@ func TestWasmSend1Bet(t *testing.T) {
 		return
 	}
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestPlaceBet,
 		Vars: map[string]interface{}{
@@ -370,7 +370,7 @@ func TestWasmSend5Bets(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: wasmpoc.RequestPlaceBet,
 			Vars: map[string]interface{}{
@@ -434,7 +434,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	check(err, t)
 
 	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestNop,
 		Transfer: map[balance.Color]int64{
@@ -450,7 +450,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 		t.Fail()
 	}
 	// SetPlayPeriod must be processed first
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: wasmpoc.RequestPlayPeriod,
 		Vars: map[string]interface{}{
@@ -462,7 +462,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: wasmpoc.RequestPlaceBet,
 			Vars: map[string]interface{}{

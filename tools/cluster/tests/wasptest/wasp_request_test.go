@@ -37,7 +37,7 @@ func TestSend1Request(t *testing.T) {
 
 	scAddress := sc.SCAddress()
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: vmconst.RequestCodeNOP,
 	})
@@ -89,7 +89,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
 		})
@@ -144,7 +144,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	for i := 0; i < 10; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
 		})
@@ -197,7 +197,7 @@ func TestSend60Requests500msec(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	for i := 0; i < 60; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
 		})
@@ -251,7 +251,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	for i := 0; i < 60; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: vmconst.RequestCodeNOP,
 		})

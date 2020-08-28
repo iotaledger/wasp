@@ -48,7 +48,7 @@ func TestSend1Bet(t *testing.T) {
 		return
 	}
 
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: fairroulette.RequestPlaceBet,
 		Vars: map[string]interface{}{
@@ -121,7 +121,7 @@ func TestSend5Bets(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
@@ -185,7 +185,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	check(err, t)
 
 	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
@@ -201,7 +201,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 		t.Fail()
 	}
 	// SetPlayPeriod must be processed first
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
@@ -213,7 +213,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
@@ -276,7 +276,7 @@ func TestFRStatus(t *testing.T) {
 	check(err, t)
 
 	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
@@ -292,7 +292,7 @@ func TestFRStatus(t *testing.T) {
 		t.Fail()
 	}
 	// SetPlayPeriod must be processed first
-	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   &scAddress,
 		RequestCode: fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
@@ -304,7 +304,7 @@ func TestFRStatus(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 5; i++ {
-		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParams{
+		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   &scAddress,
 			RequestCode: fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
