@@ -20,6 +20,10 @@ func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.Ent
 	return v, true
 }
 
+func (v nilProcessor) GetDescription() string {
+	return "Empty (nil) hard coded smart contract processor #8"
+}
+
 // does nothing, i.e. resulting state update is empty
 func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
 	reqId := ctx.AccessRequest().ID()

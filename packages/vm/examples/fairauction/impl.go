@@ -73,6 +73,10 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
+func (v fairAuctionProcessor) GetDescription() string {
+	return "FairAuction hard coded smart contract processor"
+}
+
 func (v fairAuctionProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok

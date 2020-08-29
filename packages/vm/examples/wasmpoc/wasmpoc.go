@@ -65,6 +65,10 @@ func (h *wasmVMPocProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmty
 	return h, true
 }
 
+func (v *wasmVMPocProcessor) GetDescription() string {
+	return "Wasm VM PoC smart contract processor"
+}
+
 func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.Publish(fmt.Sprintf("run wasmVMPocProcessor: reqCode = %s reqId = %s timestamp = %d",

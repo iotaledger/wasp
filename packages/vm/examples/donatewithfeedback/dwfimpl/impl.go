@@ -33,6 +33,10 @@ func (v dwfProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.Ent
 	return f, ok
 }
 
+func (v dwfProcessor) GetDescription() string {
+	return "DonateWithFeedback hard coded smart contract processor"
+}
+
 // does nothing, i.e. resulting state update is empty
 func (ep dwfEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
@@ -74,12 +78,27 @@ func donate(ctx vmtypes.Sandbox) {
 func harvest(ctx vmtypes.Sandbox) {
 	ctx.Publishf("DonateWithFeedback: harvest")
 
+	harvestSum, amountGiven, err := ctx.AccessRequest().Args().GetInt64(donatewithfeedback.VarReqHarvestSum)
 	bal := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
-	if bal > 0 {
-		ctx.AccessSCAccount().MoveTokens(ctx.GetOwnerAddress(), &balance.ColorIOTA, bal)
-		ctx.Publishf("DonateWithFeedback: harvest. Harvested %d iotas", bal)
+	if err != nil {
+		ctx.Publishf("DonateWithFeedback: harvest internal error %v", err)
+		// return everything TODO RefundAll function
+		sender := ctx.AccessRequest().Sender()
+		sent := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+		ctx.AccessSCAccount().MoveTokensFromRequest(&sender, &balance.ColorIOTA, sent)
 		return
 	}
-	ctx.Publishf("DonateWithFeedback: harvest. account is empty")
-	return
+	if !amountGiven {
+		harvestSum = bal
+	} else {
+		if harvestSum > bal {
+			harvestSum = bal
+		}
+	}
+	if harvestSum == 0 {
+		ctx.Publishf("DonateWithFeedback: harvest. nothing to harvest")
+		return
+	}
+	ctx.AccessSCAccount().MoveTokens(ctx.GetOwnerAddress(), &balance.ColorIOTA, harvestSum)
+	ctx.Publishf("DonateWithFeedback: harvest. Harvested %d iotas", harvestSum)
 }

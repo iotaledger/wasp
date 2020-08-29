@@ -40,6 +40,10 @@ func (proc incCounterProcessor) GetEntryPoint(rc sctransaction.RequestCode) (vmt
 	return f, true
 }
 
+func (v incCounterProcessor) GetDescription() string {
+	return "IncrementCounter hard coded smart contract processor"
+}
+
 func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }

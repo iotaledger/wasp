@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
-	"github.com/iotaledger/wasp/packages/vm/builtins"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"io"
@@ -126,19 +125,13 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 	fmt.Fprintf(textout, "checking program hash %s.. \n", par.ProgramHash.String())
 
 	fmt.Fprint(textout, par.Prefix)
-	if !builtins.IsBuiltinProgramHash(par.ProgramHash.String()) {
-		fmt.Fprint(textout, "program hash is user-defined.. \n")
-		// it is not a builtin smart contract. Check for metadata
-		// must exist and be consistent
-		if err := CheckProgramMetadata(par.CommitteeApiHosts, &par.ProgramHash); err != nil {
-			fmt.Fprintf(textout, "checking program metadata: FAILED: %v\n", err)
-			return nil, nil, err
-		} else {
-			fmt.Fprint(textout, "checking program metadata: OK\n ")
-		}
-	} else {
-		fmt.Fprintf(textout, "builtin program %s. OK\n", par.ProgramHash.String())
+	md, err := CheckProgramMetadata(par.CommitteeApiHosts, &par.ProgramHash)
+	if err != nil {
+		fmt.Fprintf(textout, "checking program metadata: FAILED: %v\n", err)
+		return nil, nil, err
 	}
+	fmt.Fprintf(textout, "checking program metadata: OK. location: '%s', VMType: '%s', description: '%s'\n",
+		md.Location, md.VMType, md.Description)
 
 	// generate distributed key set on committee nodes
 	scAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)

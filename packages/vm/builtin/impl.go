@@ -25,6 +25,10 @@ func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtype
 	return ep, ok
 }
 
+func (v *builtinProcessor) GetDescription() string {
+	return "Builtin processor"
+}
+
 func (ep builtinEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
 }

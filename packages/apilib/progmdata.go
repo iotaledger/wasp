@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/progmeta"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
@@ -42,77 +42,89 @@ func PutProgramMetadata(host string, md registry.ProgramMetadata) error {
 	return err
 }
 
-// GetProgramMetadata calls node to get ProgramMetadata record by program hash
-// return if exist program code in the registry
-func GetProgramMetadata(host string, progHash *hashing.HashValue) (*registry.ProgramMetadata, bool, error) {
+// GetProgramMetadata calls node to get ProgramMetadata by program hash
+func GetProgramMetadata(host string, progHash *hashing.HashValue) (*progmeta.ProgramMetadata, error) {
 	data, err := json.Marshal(&admapi.GetProgramMetadataRequest{
 		ProgramHash: progHash.String(),
 	})
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	url := fmt.Sprintf("http://%s/adm/getprogrammetadata", host)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, false, fmt.Errorf("response status %d", resp.StatusCode)
+		return nil, fmt.Errorf("response status %d", resp.StatusCode)
 	}
 	var dresp admapi.GetProgramMetadataResponse
 	err = json.NewDecoder(resp.Body).Decode(&dresp)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if dresp.Error != "" {
-		return nil, false, errors.New(dresp.Error)
+		return nil, errors.New(dresp.Error)
 	}
 	if !dresp.ExistsMetadata {
-		return nil, false, nil
+		return nil, nil
 	}
 	ph, err := hashing.HashValueFromBase58(dresp.ProgramHash)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	ret := &registry.ProgramMetadata{
-		ProgramHash: ph,
-		Location:    dresp.Location,
-		Description: dresp.Description,
-	}
-
-	return ret, dresp.ExistsCode, nil
+	return &progmeta.ProgramMetadata{
+		ProgramHash:   ph,
+		Location:      dresp.Location,
+		VMType:        dresp.VMType,
+		Description:   dresp.Description,
+		CodeAvailable: dresp.ExistsCode,
+	}, nil
 }
 
 // CheckProgramMetadata checks if metadata exists in hosts and is consistent
-func CheckProgramMetadata(hosts []string, progHash *hashing.HashValue) error {
+// return program meta data from the first host if all consistent, otherwise nil
+func CheckProgramMetadata(hosts []string, progHash *hashing.HashValue) (*progmeta.ProgramMetadata, error) {
 	funs := make([]func() error, len(hosts))
-	mdata := make([]*registry.ProgramMetadata, len(hosts))
+	mdata := make([]*progmeta.ProgramMetadata, len(hosts))
 	for i, host := range hosts {
 		var err error
 		h := host
 		idx := i
 		funs[i] = func() error {
-			mdata[idx], _, err = GetProgramMetadata(h, progHash)
+			mdata[idx], err = GetProgramMetadata(h, progHash)
 			return err
 		}
 	}
 	succ, errs := multicall.MultiCall(funs, 1*time.Second)
 	if !succ {
-		return multicall.WrapErrors(errs)
+		return nil, multicall.WrapErrors(errs)
 	}
 	errInconsistent := fmt.Errorf("non existent or inconsistent program metadata for program hash %s", progHash.String())
-	if mdata[0] == nil {
-		return errInconsistent
-	}
-	md0, _ := util.Bytes(mdata[0])
 	for _, md := range mdata {
-		if md == nil {
-			return errInconsistent
-		}
-		mdi, _ := util.Bytes(md)
-		if !bytes.Equal(mdi, md0) {
-			return errInconsistent
+		if !consistentProgramMetadata(mdata[0], md) {
+			return nil, errInconsistent
 		}
 	}
-	return nil
+	return mdata[0], nil
+}
+
+// consistentProgramMetadata does not check if code exists
+func consistentProgramMetadata(md1, md2 *progmeta.ProgramMetadata) bool {
+	if md1 == nil || md2 == nil {
+		return false
+	}
+	if md1.ProgramHash != md2.ProgramHash {
+		return false
+	}
+	if md1.VMType != md2.VMType {
+		return false
+	}
+	if md1.Description != md2.Description {
+		return false
+	}
+	if md1.Location != md2.Location {
+		return false
+	}
+	return true
 }

@@ -33,6 +33,10 @@ func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.E
 	return ep, ok
 }
 
+func (v logscProcessor) GetDescription() string {
+	return "LogSc hard coded smart contract processor"
+}
+
 func (ep logscEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
 }

@@ -13,6 +13,7 @@ type Processor interface {
 	// returns true if processor can process specific request code. Valid only for not reserved codes
 	// to return true for reserved codes is ignored
 	GetEntryPoint(code sctransaction.RequestCode) (EntryPoint, bool)
+	GetDescription() string
 }
 
 // EntryPoint is an abstract interface by which VM is run by passing the Sandbox interface to it

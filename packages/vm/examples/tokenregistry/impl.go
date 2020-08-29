@@ -60,6 +60,10 @@ func (v tokenRegistryProcessor) GetEntryPoint(code sctransaction.RequestCode) (v
 	return f, ok
 }
 
+func (v tokenRegistryProcessor) GetDescription() string {
+	return "TokenRegistry hard coded smart contract processor"
+}
+
 // does nothing, i.e. resulting state update is empty
 func (ep tokenRegistryEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)

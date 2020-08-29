@@ -109,6 +109,10 @@ func (f fairRouletteProcessor) GetEntryPoint(code sctransaction.RequestCode) (vm
 	return ep, ok
 }
 
+func (v fairRouletteProcessor) GetDescription() string {
+	return "FairRoulette hard coded smart contract processor"
+}
+
 // WithGasLimit: not implemented, has no effect
 func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f

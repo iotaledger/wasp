@@ -2,6 +2,7 @@ package admapi
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/progmeta"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
@@ -50,7 +51,7 @@ type GetProgramMetadataRequest struct {
 type GetProgramMetadataResponse struct {
 	ProgramMetadataJsonable
 	ExistsMetadata bool   `json:"exists_metadata"`
-	ExistsCode     bool   `json:"exists_metadata"`
+	ExistsCode     bool   `json:"exists_code"`
 	Error          string `json:"err"`
 }
 
@@ -62,20 +63,13 @@ func HandlerGetProgramMetadata(c echo.Context) error {
 			Error: err.Error(),
 		})
 	}
-	progHash, err := hashing.HashValueFromBase58(req.ProgramHash)
-	if err != nil {
-		return misc.OkJson(c, &GetBootupDataResponse{
-			Error: err.Error(),
-		})
-	}
-	md, exists, err := registry.GetProgramMetadata(&progHash)
+	md, err := progmeta.GetProgramMetadata(req.ProgramHash)
 	if err != nil {
 		return misc.OkJson(c, &GetProgramMetadataResponse{Error: err.Error()})
 	}
-	if !exists {
+	if md == nil {
 		return misc.OkJson(c, &GetProgramMetadataResponse{})
 	}
-	_, exists, _ = registry.GetProgramCode(&progHash)
 
 	return misc.OkJson(c, &GetProgramMetadataResponse{
 		ProgramMetadataJsonable: ProgramMetadataJsonable{
@@ -85,6 +79,6 @@ func HandlerGetProgramMetadata(c echo.Context) error {
 			Description: md.Description,
 		},
 		ExistsMetadata: true,
-		ExistsCode:     exists,
+		ExistsCode:     md.CodeAvailable,
 	})
 }

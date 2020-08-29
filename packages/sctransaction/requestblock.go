@@ -257,3 +257,7 @@ func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
 	})
 	return auth
 }
+
+func (ref *RequestRef) Sender() *address.Address {
+	return ref.Tx.MustProperties().Sender()
+}
