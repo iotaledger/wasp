@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,7 +54,7 @@ func TestTRTest(t *testing.T) {
 		t.Fail()
 		return
 	}
-
+	scDescription := "TokenRegistry PoC smart contract"
 	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
@@ -62,6 +63,7 @@ func TestTRTest(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
+		Description:           scDescription,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
@@ -123,16 +125,10 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
-		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
-	}) {
-		t.Fail()
-	}
-
-	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:      scOwnerAddr[:],
 		vmconst.VarNameProgramHash:       programHash[:],
 		tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
+		vmconst.VarNameDescription:       strings.TrimSpace(scDescription),
 	}) {
 		t.Fail()
 	}

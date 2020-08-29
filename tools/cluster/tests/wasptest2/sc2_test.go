@@ -66,6 +66,7 @@ func Test2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashTR,
+		Description:           "TokenRegistry, a PoC smart contract",
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
@@ -79,6 +80,7 @@ func Test2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashFA,
+		Description:           "FairAuction, a PoC smart contract",
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + fairauction.ProgramHash + "]",
 	})
@@ -209,6 +211,7 @@ func TestPlus2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashTR,
+		Description:           "TokenRegistry, a PoC smart contract",
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
@@ -222,6 +225,7 @@ func TestPlus2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashFA,
+		Description:           "FairAuction, a PoC smart contract",
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + fairauction.ProgramHash + "]",
 	})

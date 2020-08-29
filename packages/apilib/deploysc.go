@@ -32,6 +32,7 @@ type CreateSCParams struct {
 	T                     uint16
 	OwnerSigScheme        signaturescheme.SignatureScheme
 	ProgramHash           hashing.HashValue
+	Description           string
 	Textout               io.Writer
 	Prefix                string
 }
@@ -166,6 +167,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 		OwnerSignatureScheme: par.OwnerSigScheme,
 		AllInputs:            allOuts,
 		ProgramHash:          par.ProgramHash,
+		Description:          par.Description,
 		InputColor:           balance.ColorIOTA,
 	})
 

@@ -14,5 +14,6 @@ const (
 const (
 	VarNameOwnerAddress  = "$owneraddr$"
 	VarNameProgramHash   = "$proghash$"
+	VarNameDescription   = "$description$"
 	VarNameMinimumReward = "$minreward$"
 )

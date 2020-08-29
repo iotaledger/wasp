@@ -45,6 +45,7 @@ func initSC(ctx vmtypes.Sandbox) {
 		ctx.Publish("initSC: error: not in origin state.")
 		return
 	}
+	// set owner address
 	ownerAddress, ok, err := ctx.AccessRequest().Args().GetAddress(vmconst.VarNameOwnerAddress)
 	if err != nil {
 		ctx.Publishf("initSC: Could not read request argument: %s", err.Error())
@@ -56,17 +57,31 @@ func initSC(ctx vmtypes.Sandbox) {
 	}
 	ctx.AccessState().SetAddress(vmconst.VarNameOwnerAddress, ownerAddress)
 
+	// set program hash
 	progHash, ok, err := ctx.AccessRequest().Args().GetHashValue(vmconst.VarNameProgramHash)
 	if err != nil {
-		ctx.Publishf("init_sc error Could not read request argument: %s", err.Error())
+		ctx.Publishf("init_sc error Could not read program hash from the request: %s", err.Error())
 		return
 	}
 	if !ok {
-		ctx.Publishf("init_sc error program hash not set; smart contract will be able to process only built-in requests.")
+		ctx.Publishf("init_sc warn program hash not set; smart contract will be able to process only built-in requests.")
 		return
 	}
 	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, progHash)
 	ctx.Publishf("init_sc info program hash set to %s.", progHash.String())
+
+	// set description
+	dscr, ok, err := ctx.AccessRequest().Args().GetString(vmconst.VarNameDescription)
+	if err != nil {
+		ctx.Publishf("init_sc error Could not read description from the request: %s", err.Error())
+		return
+	}
+	if !ok {
+		ctx.Publishf("init_sc warn description not set")
+		return
+	}
+	ctx.AccessState().SetString(vmconst.VarNameDescription, dscr)
+	ctx.Publishf("init_sc info description set to '%s'", dscr)
 
 	ctx.Publishf("init_sc success %s", ctx.GetSCAddress().String())
 }

@@ -73,10 +73,12 @@ func (m kvmap) String() string {
 	ret := "         Map:\n"
 	for _, key := range m.sortedKeys() {
 		ret += fmt.Sprintf(
-			"           0x%s: 0x%s (base58: %s)\n",
+			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
 			slice(hex.EncodeToString([]byte(key))),
 			slice(hex.EncodeToString(m[key])),
 			slice(base58.Encode(m[key])),
+			string(key),
+			string(m[key]),
 		)
 	}
 	return ret

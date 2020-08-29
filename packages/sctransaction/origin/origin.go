@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
+	"strings"
 )
 
 type NewOriginTransactionParams struct {
@@ -18,6 +19,7 @@ type NewOriginTransactionParams struct {
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
 	ProgramHash          hashing.HashValue
+	Description          string
 	InputColor           balance.Color // default is ColorIOTA
 }
 
@@ -40,6 +42,11 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	if par.ProgramHash != *hashing.NilHash {
 		args.Codec().SetHashValue(vmconst.VarNameProgramHash, &par.ProgramHash)
 	}
+	s := strings.TrimSpace(par.Description)
+	if len(s) > 0 {
+		args.Codec().SetString(vmconst.VarNameDescription, s)
+	}
+
 	initRequest.SetArgs(args)
 
 	if err := txb.AddRequestBlock(initRequest); err != nil {

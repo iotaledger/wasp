@@ -15,6 +15,7 @@ import (
 	"github.com/mr-tron/base58"
 	"math/rand"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -42,7 +43,7 @@ func TestDeploySC(t *testing.T) {
 		t.Fail()
 		return
 	}
-
+	scDescription := "TokenRegistry, a PoC smart contract"
 	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
@@ -51,6 +52,7 @@ func TestDeploySC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
+		Description:           scDescription,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
@@ -85,6 +87,7 @@ func TestDeploySC(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
 	}) {
 		t.Fail()
 	}
