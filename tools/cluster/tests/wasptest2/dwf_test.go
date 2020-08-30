@@ -2,6 +2,7 @@ package wasptest2
 
 import (
 	"crypto/rand"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -91,7 +92,9 @@ func TestDeployDWF(t *testing.T) {
 	}
 }
 
-func TestDWFDonate1(t *testing.T) {
+const numDonations = 5
+
+func TestDWFDonateNTimes(t *testing.T) {
 	var seed [32]byte
 	rand.Read(seed[:])
 	seed58 := base58.Encode(seed[:])
@@ -151,15 +154,18 @@ func TestDWFDonate1(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
 	dwfClient := dwfclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scAddr, donor.SigScheme())
-	_, err = dwfClient.Donate(dwfclient.DonateParams{
-		Amount:            42,
-		Feedback:          "well done, I give you 42i",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		PublisherQuorum:   3,
-		Timeout:           30 * time.Second,
-	})
-	checkSuccess(err, t, "donated 42")
+	for i := 0; i < numDonations; i++ {
+		_, err = dwfClient.Donate(dwfclient.DonateParams{
+			Amount:            42,
+			Feedback:          fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i),
+			WaitForCompletion: true,
+			PublisherHosts:    wasps.PublisherHosts(),
+			PublisherQuorum:   3,
+			Timeout:           30 * time.Second,
+		})
+		time.Sleep(1 * time.Second)
+		checkSuccess(err, t, "donated 42")
+	}
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -167,15 +173,15 @@ func TestDWFDonate1(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1+42, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(*scAddr, 1+42*numDonations, map[balance.Color]int64{
 		*scColor:          1,
-		balance.ColorIOTA: 42,
+		balance.ColorIOTA: 42 * numDonations,
 	}, "sc in the end") {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount-42, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 42,
+	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount-42*numDonations, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 42*numDonations,
 	}, "donor in the end") {
 		t.Fail()
 	}

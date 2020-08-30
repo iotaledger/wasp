@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"strings"
+	"time"
 )
 
 const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
@@ -55,8 +56,9 @@ func donate(ctx vmtypes.Sandbox) {
 
 	sender := ctx.AccessRequest().Sender()
 	di := &donatewithfeedback.DonationInfo{
-		Amount: donated,
-		Sender: sender,
+		Amount:   donated,
+		Sender:   sender,
+		Feedback: feedback,
 	}
 	if err != nil {
 		di.Error = err.Error()
@@ -69,7 +71,14 @@ func donate(ctx vmtypes.Sandbox) {
 		ctx.AccessSCAccount().MoveTokensFromRequest(&sender, &balance.ColorIOTA, donated)
 		di.Amount = 0
 	}
-	ctx.AccessState().GetArray(donatewithfeedback.VarStateTheLog).Push(di.Bytes())
+	tlog := ctx.AccessState().GetTimestampedLog(donatewithfeedback.VarStateTheLog)
+	tlog.Append(ctx.GetTimestamp(), di.Bytes())
+
+	ctx.Publishf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
+		tlog.Len(),
+		time.Unix(0, tlog.Earliest()).Format("2006-01-02 15:04:05"),
+		time.Unix(0, tlog.Latest()).Format("2006-01-02 15:04:05"),
+	)
 	ctx.Publishf("DonateWithFeedback: donate. amount: %d, sender: %s, feedback: '%s', err: %s",
 		di.Amount, di.Sender.String(), di.Feedback, di.Error)
 }

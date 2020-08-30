@@ -15,7 +15,7 @@ type Codec interface {
 	WCodec
 	GetArray(Key) (*Array, error)
 	GetDictionary(Key) (*Dictionary, error)
-	// TODO GetTimedLog
+	GetTimestampedLog(Key) (*TimestampedLog, error)
 }
 
 // MustCodec is like a Codec that automatically panics on error
@@ -24,7 +24,7 @@ type MustCodec interface {
 	WCodec
 	GetArray(Key) *MustArray
 	GetDictionary(Key) *MustDictionary
-	// TODO GetTimedLog
+	GetTimestampedLog(Key) *MustTimestampedLog
 }
 
 // RCodec is an interface that offers easy conversions between []byte and other types when
@@ -97,6 +97,18 @@ func (c mustcodec) GetDictionary(key Key) *MustDictionary {
 		panic(err)
 	}
 	return newMustDictionary(d)
+}
+
+func (c codec) GetTimestampedLog(key Key) (*TimestampedLog, error) {
+	return newTimestampedLog(c, key)
+}
+
+func (c mustcodec) GetTimestampedLog(key Key) *MustTimestampedLog {
+	tlog, err := c.codec.GetTimestampedLog(key)
+	if err != nil {
+		panic(err)
+	}
+	return newMustTimestampedLog(tlog)
 }
 
 func (c codec) Has(key Key) (bool, error) {

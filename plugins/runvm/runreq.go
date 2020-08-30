@@ -33,7 +33,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 			// the result will be taking all iotas and no effect on state
 			// Maybe it is nice to return back all iotas exceeding minimum reward ??? TODO
 
-			vmctx.Log.Warnf("protected request %s (code %s) is not authorised by the owner %s. Sender: %s",
+			vmctx.Log.Warnf("protected request %s (code %s) is not authorised by the SC owner %s. Sender: %s",
 				vmctx.RequestRef.RequestId().String(), reqBlock.RequestCode(),
 				vmctx.OwnerAddress.String(), vmctx.RequestRef.Sender().String(),
 			)
