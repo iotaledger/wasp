@@ -71,8 +71,16 @@ func donate(ctx vmtypes.Sandbox) {
 		ctx.AccessSCAccount().MoveTokensFromRequest(&sender, &balance.ColorIOTA, donated)
 		di.Amount = 0
 	}
-	tlog := ctx.AccessState().GetTimestampedLog(donatewithfeedback.VarStateTheLog)
+	stateAccess := ctx.AccessState()
+	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
 	tlog.Append(ctx.GetTimestamp(), di.Bytes())
+
+	maxd, _ := stateAccess.GetInt64(donatewithfeedback.VarStateMaxDonation)
+	total, _ := stateAccess.GetInt64(donatewithfeedback.VarStateTotalDonations)
+	if di.Amount > maxd {
+		stateAccess.SetInt64(donatewithfeedback.VarStateMaxDonation, di.Amount)
+	}
+	stateAccess.SetInt64(donatewithfeedback.VarStateTotalDonations, total+di.Amount)
 
 	ctx.Publishf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
 		tlog.Len(),

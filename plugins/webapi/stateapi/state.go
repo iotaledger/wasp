@@ -16,17 +16,33 @@ import (
 type ValueType string
 
 const (
-	ValueTypeBytes       = ValueType("bytes")
-	ValueTypeInt64       = ValueType("int64")
-	ValueTypeArray       = ValueType("array")
-	ValueTypeDict        = ValueType("dict")
-	ValueTypeDictElement = ValueType("dict-elem")
+	ValueTypeBytes         = ValueType("bytes")
+	ValueTypeInt64         = ValueType("int64")
+	ValueTypeArray         = ValueType("array")
+	ValueTypeDict          = ValueType("dict")
+	ValueTypeDictElement   = ValueType("dict-elem")
+	ValueTypeTLogSlice     = ValueType("tlog_slice")
+	ValueTypeTLogSliceData = ValueType("tlog_slice_data")
 )
 
 type KeyQuery struct {
 	Key    []byte
 	Type   ValueType
 	Params json.RawMessage // one of DictQueryParams, ArrayQueryParams, ...
+}
+
+// TLogSliceQueryParams request slice of timestamped log. If FromTs or ToTs is 0,
+// it is considered 'earliest' and 'latest' respectively.
+// For 0,0 slice corresponds to the whole log
+type TLogSliceQueryParams struct {
+	FromTs int64
+	ToTs   int64
+}
+
+// TLogSliceDataQueryParams request data for the slice
+type TLogSliceDataQueryParams struct {
+	FromIndex uint32
+	ToIndex   uint32
 }
 
 type DictQueryParams struct {
@@ -73,6 +89,18 @@ type DictElementResult struct {
 
 type ArrayResult struct {
 	Len    uint16
+	Values [][]byte
+}
+
+type TLogSliceResult struct {
+	IsNotEmpty bool
+	FirstIndex uint32
+	LastIndex  uint32
+	Earliest   int64
+	Latest     int64
+}
+
+type TLogSliceDataResult struct {
 	Values [][]byte
 }
 
@@ -131,6 +159,32 @@ func (q *QueryRequest) AddDictionaryElement(dictKey kv.Key, elemKey []byte) {
 	})
 }
 
+func (q *QueryRequest) AddTLogSlice(key kv.Key, fromTs, toTs int64) {
+	p := TLogSliceQueryParams{
+		FromTs: fromTs,
+		ToTs:   toTs,
+	}
+	params, _ := json.Marshal(p)
+	q.Query = append(q.Query, &KeyQuery{
+		Key:    []byte(key),
+		Type:   ValueTypeTLogSlice,
+		Params: json.RawMessage(params),
+	})
+}
+
+func (q *QueryRequest) AddTLogSliceData(key kv.Key, fromIndex, toIndex uint32) {
+	p := TLogSliceDataQueryParams{
+		FromIndex: fromIndex,
+		ToIndex:   toIndex,
+	}
+	params, _ := json.Marshal(p)
+	q.Query = append(q.Query, &KeyQuery{
+		Key:    []byte(key),
+		Type:   ValueTypeTLogSliceData,
+		Params: json.RawMessage(params),
+	})
+}
+
 func (r *QueryResult) MustBytes() ([]byte, bool, error) {
 	var b []byte
 	err := json.Unmarshal(r.Value, &b)
@@ -180,6 +234,24 @@ func (r *QueryResult) MustDictionaryElementResult() []byte {
 		return nil
 	}
 	return dr.Value
+}
+
+func (r *QueryResult) MustTLogSliceResult() *TLogSliceResult {
+	var sr TLogSliceResult
+	err := json.Unmarshal(r.Value, &sr)
+	if err != nil {
+		panic(err) // TODO panicing on wrong external data?
+	}
+	return &sr
+}
+
+func (r *QueryResult) MustTLogSliceDataResult() *TLogSliceDataResult {
+	var sr TLogSliceDataResult
+	err := json.Unmarshal(r.Value, &sr)
+	if err != nil {
+		panic(err)
+	}
+	return &sr
 }
 
 func HandlerQueryState(c echo.Context) error {
@@ -311,6 +383,49 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 			return nil, nil
 		}
 		return DictElementResult{Value: v}, nil
+
+	case ValueTypeTLogSlice:
+		var params TLogSliceQueryParams
+		err := json.Unmarshal(q.Params, &params)
+		if err != nil {
+			return nil, err
+		}
+
+		tlog, err := vars.Codec().GetTimestampedLog(key)
+		if err != nil {
+			return nil, err
+		}
+
+		tsl, err := tlog.TakeTimeSlice(params.FromTs, params.ToTs)
+		if err != nil {
+			return nil, err
+		}
+		if tsl.IsEmpty() {
+			return TLogSliceResult{}, nil
+		}
+		ret := TLogSliceResult{
+			IsNotEmpty: true,
+			Earliest:   tsl.Earliest(),
+			Latest:     tsl.Latest(),
+		}
+		ret.FirstIndex, ret.LastIndex = tsl.FromToIndices()
+		return ret, nil
+
+	case ValueTypeTLogSliceData:
+		var params TLogSliceDataQueryParams
+		err := json.Unmarshal(q.Params, &params)
+		if err != nil {
+			return nil, err
+		}
+
+		tlog, err := vars.Codec().GetTimestampedLog(key)
+		if err != nil {
+			return nil, err
+		}
+
+		ret := TLogSliceDataResult{}
+		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex)
+		return ret, err
 	}
 
 	return nil, fmt.Errorf("No handler for type %s", q.Type)

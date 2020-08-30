@@ -23,8 +23,7 @@ type MustTimestampedLog struct {
 	tlog TimestampedLog
 }
 
-type LogRecord struct {
-	Index     uint32
+type TimestampedLogRecord struct {
 	Timestamp int64
 	Data      []byte
 }
@@ -187,7 +186,7 @@ func (l *TimestampedLog) earliest() (int64, error) {
 	return int64(util.Uint64From8Bytes(data[:8])), nil
 }
 
-func (l *TimestampedLog) getRecordAtIndex(idx uint32) (*LogRecord, error) {
+func (l *TimestampedLog) getRawRecordAtIndex(idx uint32) ([]byte, error) {
 	if idx >= l.cachedLen {
 		return nil, nil
 	}
@@ -195,14 +194,41 @@ func (l *TimestampedLog) getRecordAtIndex(idx uint32) (*LogRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(v) < 8 {
-		return nil, errors.New("TimestampedLog: corrupted data")
+	return v, nil
+}
+
+func (l *TimestampedLog) getRecordAtIndex(idx uint32) (*TimestampedLogRecord, error) {
+	v, err := l.getRawRecordAtIndex(idx)
+	if err != nil {
+		return nil, err
 	}
-	return &LogRecord{
-		Index:     idx,
-		Timestamp: int64(util.Uint64From8Bytes(v[:8])),
-		Data:      v[8:],
+	return ParseRawLogRecord(v)
+}
+
+func ParseRawLogRecord(raw []byte) (*TimestampedLogRecord, error) {
+	if len(raw) < 8 {
+		return nil, fmt.Errorf("ParseRawLogRecord: wrong bytes")
+	}
+	return &TimestampedLogRecord{
+		Timestamp: int64(util.Uint64From8Bytes(raw[:8])),
+		Data:      raw[8:],
 	}, nil
+}
+
+// LoadRecords returns all records in the slice
+func (l *TimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32) ([][]byte, error) {
+	if fromIdx > toIdx {
+		return nil, nil
+	}
+	ret := make([][]byte, 0, toIdx-fromIdx+1)
+	for i := fromIdx; i <= toIdx; i++ {
+		r, err := l.getRawRecordAtIndex(i)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, r)
+	}
+	return ret, nil
 }
 
 // TakeTimeSlice returns a slice structure, which contains existing indices
@@ -213,7 +239,16 @@ func (l *TimestampedLog) getRecordAtIndex(idx uint32) (*LogRecord, error) {
 // Returned slice may be empty
 func (l *TimestampedLog) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
 	if l.Len() == 0 {
+		// empty slice
 		return nil, nil
+	}
+	if fromTs == 0 {
+		// 0 means earliest
+		fromTs = l.Earliest()
+	}
+	if toTs == 0 {
+		// 0 means latest
+		toTs = l.Latest()
 	}
 	if fromTs > toTs {
 		return nil, nil
@@ -374,6 +409,10 @@ func (l *TimestampedLog) Erase() {
 	panic("implement me")
 }
 
+func (sl *TimeSlice) FromToIndices() (uint32, uint32) {
+	return sl.firstIdx, sl.lastIdx
+}
+
 // IsEmpty returns true if slice does not contains points
 func (sl *TimeSlice) IsEmpty() bool {
 	return sl == nil || sl.firstIdx > sl.lastIdx
@@ -404,17 +443,4 @@ func (sl *TimeSlice) Latest() int64 {
 		return 0
 	}
 	return sl.latest
-}
-
-// LoadSlice returns all records in the slice
-func (sl *TimeSlice) LoadSlice() ([]*LogRecord, error) {
-	ret := make([]*LogRecord, 0, sl.NumPoints())
-	for i := sl.firstIdx; i <= sl.lastIdx; i++ {
-		r, err := sl.tslog.getRecordAtIndex(i)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, r)
-	}
-	return ret, nil
 }

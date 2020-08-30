@@ -60,5 +60,11 @@ func QuerySCState(host string, query *stateapi.QueryRequest) (map[kv.Key]*statea
 	for _, r := range queryResponse.Results {
 		results[kv.Key(r.Key)] = r
 	}
+	// check if all query results arrived
+	for _, k := range query.Query {
+		if _, ok := results[kv.Key(k.Key)]; !ok {
+			return nil, fmt.Errorf("inconsistency: wrong response")
+		}
+	}
 	return results, nil
 }

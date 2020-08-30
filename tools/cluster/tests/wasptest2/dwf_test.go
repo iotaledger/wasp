@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfclient"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfimpl"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
@@ -167,6 +168,30 @@ func TestDWFDonateNTimes(t *testing.T) {
 		checkSuccess(err, t, "donated 42")
 	}
 
+	status, err := dwfClient.FetchStatus()
+	text := ""
+	if err == nil {
+		text = fmt.Sprintf("[test] Status fetched succesfully: num rec: %d, "+
+			"total donations: %d, max donation: %d, last donation: %v, num rec returned: %d\n",
+			status.NumRecords,
+			status.TotalDonations,
+			status.MaxDonation,
+			status.LastDonated,
+			len(status.LastRecords),
+		)
+		for i, di := range status.LastRecords {
+			text += fmt.Sprintf("           %d: ts: %s, amount: %d, fb: '%s', donor: %s, err:%v\n",
+				i,
+				di.When.Format("2006-01-02 15:04:05"),
+				di.Amount,
+				di.Feedback,
+				di.Sender.String(),
+				di.Error,
+			)
+		}
+	}
+	checkSuccess(err, t, text)
+
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "sc owner in the end") {
@@ -190,9 +215,11 @@ func TestDWFDonateNTimes(t *testing.T) {
 	check(err, t)
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
-		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
-		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
+		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
+		vmconst.VarNameProgramHash:                ph[:],
+		vmconst.VarNameDescription:                strings.TrimSpace(scDescription),
+		donatewithfeedback.VarStateMaxDonation:    42,
+		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
 	}) {
 		t.Fail()
 	}

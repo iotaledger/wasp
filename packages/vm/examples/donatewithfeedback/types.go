@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
+	"time"
 )
 
 const (
@@ -13,7 +14,9 @@ const (
 	RequestHarvest = sctransaction.RequestCode(uint16(2) | sctransaction.RequestCodeProtected)
 
 	// state vars
-	VarStateTheLog = "l"
+	VarStateTheLog         = "l"
+	VarStateMaxDonation    = "maxd"
+	VarStateTotalDonations = "total"
 
 	// request vars
 	VarReqFeedback   = "f"
@@ -21,6 +24,7 @@ const (
 )
 
 type DonationInfo struct {
+	When     time.Time // not marshaled, filled in from timestamp
 	Amount   int64
 	Sender   address.Address
 	Feedback string // max 16 bit length
