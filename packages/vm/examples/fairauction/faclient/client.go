@@ -45,7 +45,7 @@ type Status struct {
 	Auctions            map[balance.Color]*fairauction.AuctionInfo
 }
 
-func (fc *FairAuctionClient) SetWaitForRequestCompletionParams(publisherHosts []string, timeout time.Duration) {
+func (fc *FairAuctionClient) SetWaitRequestCompletionParams(publisherHosts []string, timeout time.Duration) {
 	fc.waitForCompletion = true
 	fc.waspPublisherHosts = publisherHosts
 	fc.timeout = timeout

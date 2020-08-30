@@ -294,7 +294,7 @@ func TestPlus2SC(t *testing.T) {
 	}
 	//
 	faclientOwner := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, auctionOwner.SigScheme())
-	faclientOwner.SetWaitForRequestCompletionParams(wasps.PublisherHosts(), 15*time.Second)
+	faclientOwner.SetWaitRequestCompletionParams(wasps.PublisherHosts(), 15*time.Second)
 
 	_, err = faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction created")
