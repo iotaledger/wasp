@@ -11,32 +11,27 @@ import (
 )
 
 type BaseTemplateParams struct {
-	Host     string
-	NavPages []NavPage
+	Host       string
+	NavPages   []NavPage
+	ActivePage string
 }
 
-func baseParams(c echo.Context, page string) BaseTemplateParams {
+var navPages = []NavPage{}
+
+func BaseParams(c echo.Context, page string) BaseTemplateParams {
 	host, _, err := net.SplitHostPort(c.Request().Host)
 	if err != nil {
 		panic(err)
 	}
-	return BaseTemplateParams{
-		Host: host,
-		NavPages: []NavPage{
-			NavPage{Title: "FairRoulette", Active: page == "fairroulette", Href: "/fairroulette"},
-			NavPage{Title: "FairAuction", Active: page == "fairauction", Href: "/fairauction"},
-			NavPage{Title: "TokenRegistry", Active: page == "tokenregistry", Href: "/tokenregistry"},
-		},
-	}
+	return BaseTemplateParams{Host: host, NavPages: navPages, ActivePage: page}
 }
 
 type NavPage struct {
-	Title  string
-	Active bool
-	Href   string
+	Title string
+	Href  string
 }
 
-func makeTemplate(parts ...string) *template.Template {
+func MakeTemplate(parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp": func(ts interface{}) string {
 			t, ok := ts.(time.Time)
@@ -81,9 +76,10 @@ const tplBase = `
 		<header>
 			<h1>Wasp Smart Contracts PoC</h1>
 			<nav>
+				{{$activePage := .ActivePage}}
 				{{range $i, $p := .NavPages}}
 					{{if $i}} | {{end}}
-					{{if $p.Active}}
+					{{if eq $activePage $p.Href}}
 						<strong>{{$p.Title}}</strong>
 					{{else}}
 						<a href="{{$p.Href}}">{{$p.Title}}</a>
@@ -96,9 +92,9 @@ const tplBase = `
 	</html>
 {{end}}`
 
-const tplSCInfo = `
+const TplSCInfo = `
 {{define "sc-info"}}
-	<p>SC address: <code>{{.SC.Addresses}}</code></p>
+	<p>SC address: <code>{{.SC.Address}}</code></p>
 	<p>Balance: <ul>
 	{{range $color, $amount := .Status.SCBalance}}
 		<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
@@ -106,7 +102,7 @@ const tplSCInfo = `
 	</ul></p>
 {{end}}`
 
-const tplWs = `
+const TplWs = `
 {{define "ws"}}
 	<script>
 		const url = 'ws://' +  location.host + '/ws/{{.SC.ShortName}}';
@@ -131,7 +127,7 @@ const tplWs = `
 {{end}}
 `
 
-const tplInstallConfig = `
+const TplInstallConfig = `
 {{define "install-config"}}
 	<details>
 		<summary>1. Install</summary>
@@ -148,7 +144,7 @@ $ go install ./tools/wwallet
 		<summary>2. Configure</summary>
 <pre>$ {{waspClientCmd}} set goshimmer.api {{.Host}}:8080
 $ {{waspClientCmd}} set wasp.api {{.Host}}:9090
-$ {{waspClientCmd}} {{.SC.ShortName}} set address {{.SC.Addresses}}</pre>
+$ {{waspClientCmd}} {{.SC.ShortName}} set address {{.SC.Address}}</pre>
 		<p>Initialize a wallet: <code>{{waspClientCmd}} wallet init</code></p>
 		<p>Get some funds: <code>{{waspClientCmd}} wallet request-funds</code></p>
 	</details>

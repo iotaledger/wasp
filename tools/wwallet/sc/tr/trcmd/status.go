@@ -1,4 +1,4 @@
-package tokenregistry
+package trcmd
 
 import (
 	"fmt"

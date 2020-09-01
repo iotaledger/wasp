@@ -1,14 +1,43 @@
-package dashboard
+package frdashboard
 
 import (
-	"html/template"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette/frclient"
+	"github.com/iotaledger/wasp/tools/wwallet/dashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
 	"github.com/labstack/echo"
 )
+
+type frdashboard struct{}
+
+func Dashboard() dashboard.SCDashboard {
+	return &frdashboard{}
+}
+
+func (d *frdashboard) Config() *sc.Config {
+	return fr.Config
+}
+
+const href = "/fairroulette"
+
+func (d *frdashboard) AddEndpoints(e *echo.Echo) {
+	e.GET(href, handleFR)
+}
+
+func (d *frdashboard) AddTemplates(r dashboard.Renderer) {
+	r["fairroulette"] = dashboard.MakeTemplate(
+		dashboard.TplWs,
+		dashboard.TplSCInfo,
+		dashboard.TplInstallConfig,
+		tplFairRoulette,
+	)
+}
+
+func (d *frdashboard) AddNavPages(p []dashboard.NavPage) []dashboard.NavPage {
+	return append(p, dashboard.NavPage{Title: "FairRoulette", Href: href})
+}
 
 func handleFR(c echo.Context) error {
 	status, err := fr.Client().FetchStatus()
@@ -16,20 +45,16 @@ func handleFR(c echo.Context) error {
 		return err
 	}
 	return c.Render(http.StatusOK, "fairroulette", &FRTemplateParams{
-		BaseTemplateParams: baseParams(c, "fairroulette"),
+		BaseTemplateParams: dashboard.BaseParams(c, href),
 		SC:                 fr.Config,
 		Status:             status,
 	})
 }
 
 type FRTemplateParams struct {
-	BaseTemplateParams
+	dashboard.BaseTemplateParams
 	SC     *sc.Config
 	Status *frclient.Status
-}
-
-func initFRTemplate() *template.Template {
-	return makeTemplate(tplWs, tplSCInfo, tplInstallConfig, tplFairRoulette)
 }
 
 const tplFairRoulette = `

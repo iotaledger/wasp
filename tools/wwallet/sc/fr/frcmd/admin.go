@@ -1,4 +1,4 @@
-package fairroulette
+package frcmd
 
 import (
 	"fmt"

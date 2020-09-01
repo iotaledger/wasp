@@ -9,7 +9,7 @@ import (
 
 func handleIndex(c echo.Context) error {
 	return c.Render(http.StatusOK, "index", &IndexTemplateParams{
-		baseParams(c, "index"),
+		BaseParams(c, "index"),
 	})
 }
 
@@ -18,7 +18,7 @@ type IndexTemplateParams struct {
 }
 
 func initIndexTemplate() *template.Template {
-	return makeTemplate(tplIndex)
+	return MakeTemplate(tplIndex)
 }
 
 const tplIndex = `

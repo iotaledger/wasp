@@ -1,0 +1,38 @@
+package dashboardcmd
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/iotaledger/wasp/tools/wwallet/dashboard"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/fadashboard"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr/frdashboard"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr/trdashboard"
+)
+
+func Cmd(args []string) {
+	listenAddr := ":10000"
+	if len(args) > 0 {
+		if len(args) != 1 {
+			fmt.Printf("Usage: %s dashboard [listen-address]\n", os.Args[0])
+			os.Exit(1)
+		}
+		listenAddr = args[0]
+	}
+
+	scs := make([]dashboard.SCDashboard, 0)
+	if fr.Config.TryAddress() != nil {
+		scs = append(scs, frdashboard.Dashboard())
+	}
+	if fa.Config.TryAddress() != nil {
+		scs = append(scs, fadashboard.Dashboard())
+	}
+	if tr.Config.TryAddress() != nil {
+		scs = append(scs, trdashboard.Dashboard())
+	}
+
+	dashboard.StartServer(listenAddr, scs)
+}

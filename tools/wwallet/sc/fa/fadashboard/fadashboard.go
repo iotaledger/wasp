@@ -1,14 +1,43 @@
-package dashboard
+package fadashboard
 
 import (
-	"html/template"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
+	"github.com/iotaledger/wasp/tools/wwallet/dashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
 	"github.com/labstack/echo"
 )
+
+type fadashboard struct{}
+
+func Dashboard() dashboard.SCDashboard {
+	return &fadashboard{}
+}
+
+func (d *fadashboard) Config() *sc.Config {
+	return fa.Config
+}
+
+const href = "/fairauction"
+
+func (d *fadashboard) AddEndpoints(e *echo.Echo) {
+	e.GET(href, handleFA)
+}
+
+func (d *fadashboard) AddTemplates(r dashboard.Renderer) {
+	r["fairauction"] = dashboard.MakeTemplate(
+		dashboard.TplWs,
+		dashboard.TplSCInfo,
+		dashboard.TplInstallConfig,
+		tplFairAuction,
+	)
+}
+
+func (d *fadashboard) AddNavPages(p []dashboard.NavPage) []dashboard.NavPage {
+	return append(p, dashboard.NavPage{Title: "FairAuction", Href: href})
+}
 
 func handleFA(c echo.Context) error {
 	status, err := fa.Client().FetchStatus()
@@ -16,20 +45,16 @@ func handleFA(c echo.Context) error {
 		return err
 	}
 	return c.Render(http.StatusOK, "fairauction", &FATemplateParams{
-		BaseTemplateParams: baseParams(c, "fairauction"),
+		BaseTemplateParams: dashboard.BaseParams(c, href),
 		SC:                 fa.Config,
 		Status:             status,
 	})
 }
 
 type FATemplateParams struct {
-	BaseTemplateParams
+	dashboard.BaseTemplateParams
 	SC     *sc.Config
 	Status *faclient.Status
-}
-
-func initFATemplate() *template.Template {
-	return makeTemplate(tplWs, tplSCInfo, tplInstallConfig, tplFairAuction)
 }
 
 const tplFairAuction = `

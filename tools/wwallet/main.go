@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/wwallet/config"
+	"github.com/iotaledger/wasp/tools/wwallet/dashboard/dashboardcmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
-	"github.com/iotaledger/wasp/tools/wwallet/dashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/facmd"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr/frcmd"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr/trcmd"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 	"github.com/spf13/pflag"
@@ -27,10 +27,10 @@ func check(err error) {
 var commands = map[string]func([]string){
 	"wallet":    wallet.Cmd,
 	"set":       config.SetCmd,
-	"fr":        fairroulette.Cmd,
-	"fa":        fairauction.Cmd,
-	"tr":        tokenregistry.Cmd,
-	"dashboard": dashboard.Cmd,
+	"fr":        frcmd.Cmd,
+	"fa":        facmd.Cmd,
+	"tr":        trcmd.Cmd,
+	"dashboard": dashboardcmd.Cmd,
 }
 
 func usage(flags *pflag.FlagSet) {

@@ -1,4 +1,4 @@
-package fairroulette
+package frcmd
 
 import (
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"

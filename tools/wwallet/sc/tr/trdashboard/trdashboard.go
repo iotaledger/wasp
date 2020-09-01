@@ -1,18 +1,48 @@
-package dashboard
+package trdashboard
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
+	"github.com/iotaledger/wasp/tools/wwallet/dashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 	"github.com/labstack/echo"
 )
+
+type trdashboard struct{}
+
+func Dashboard() dashboard.SCDashboard {
+	return &trdashboard{}
+}
+
+func (d *trdashboard) Config() *sc.Config {
+	return tr.Config
+}
+
+const href = "/tokenregistry"
+
+func (d *trdashboard) AddEndpoints(e *echo.Echo) {
+	e.GET(href, handleTR)
+	e.GET(href+"/:color", handleTRQuery)
+}
+
+func (d *trdashboard) AddTemplates(r dashboard.Renderer) {
+	r["tokenregistry"] = dashboard.MakeTemplate(
+		dashboard.TplWs,
+		dashboard.TplSCInfo,
+		dashboard.TplInstallConfig,
+		tplTokenRegistry,
+	)
+}
+
+func (d *trdashboard) AddNavPages(p []dashboard.NavPage) []dashboard.NavPage {
+	return append(p, dashboard.NavPage{Title: "TokenRegistry", Href: href})
+}
 
 func handleTR(c echo.Context) error {
 	status, err := tr.Client().FetchStatus()
@@ -20,7 +50,7 @@ func handleTR(c echo.Context) error {
 		return err
 	}
 	return c.Render(http.StatusOK, "tokenregistry", &TRTemplateParams{
-		BaseTemplateParams: baseParams(c, "tokenregistry"),
+		BaseTemplateParams: dashboard.BaseParams(c, href),
 		SC:                 tr.Config,
 		Status:             status,
 	})
@@ -37,7 +67,7 @@ func handleTRQuery(c echo.Context) error {
 		return fmt.Errorf("query error: %v", err)
 	}
 	return c.Render(http.StatusOK, "tokenregistry", &TRTemplateParams{
-		BaseTemplateParams: baseParams(c, "tokenregistry"),
+		BaseTemplateParams: dashboard.BaseParams(c, "tokenregistry"),
 		SC:                 tr.Config,
 		Color:              &color,
 		QueryResult:        tm,
@@ -45,15 +75,11 @@ func handleTRQuery(c echo.Context) error {
 }
 
 type TRTemplateParams struct {
-	BaseTemplateParams
+	dashboard.BaseTemplateParams
 	SC          *sc.Config
 	Status      *trclient.Status
 	Color       *balance.Color
 	QueryResult *tokenregistry.TokenMetadata
-}
-
-func initTRTemplate() *template.Template {
-	return makeTemplate(tplWs, tplSCInfo, tplInstallConfig, tplTokenRegistry)
 }
 
 const tplTokenRegistry = `

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -104,8 +105,18 @@ func (c *Config) InitSC(sigScheme signaturescheme.SignatureScheme) error {
 	if err != nil {
 		return err
 	}
+	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
+		Addresses:         []*address.Address{scAddress},
+		ApiHosts:          config.CommitteeApi(c.Committee()),
+		PublisherHosts:    config.CommitteeNanomsg(c.Committee()),
+		WaitForCompletion: config.WaitForConfirmation,
+		Timeout:           20 * time.Second,
+	})
+	if err != nil {
+		return err
+	}
 	fmt.Printf("Initialized %s\n", c.Description)
-	fmt.Printf("SC Addresses: %s\n", scAddress)
+	fmt.Printf("SC Address: %s\n", scAddress)
 	c.SetAddress(scAddress.String())
 	return nil
 }

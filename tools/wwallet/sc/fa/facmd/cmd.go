@@ -1,4 +1,4 @@
-package fairauction
+package facmd
 
 import (
 	"fmt"
