@@ -11,7 +11,7 @@ import (
 
 var Config = &sc.Config{
 	ShortName:   "fr",
-	Description: "FairRoulette smart contract",
+	Name:        "FairRoulette",
 	ProgramHash: fairroulette.ProgramHash,
 	Flags:       pflag.NewFlagSet("fairroulette", pflag.ExitOnError),
 }

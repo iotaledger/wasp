@@ -11,9 +11,9 @@ import (
 
 var Config = &sc.Config{
 	ShortName:   "fa",
-	Description: "FairAuction smart contract",
+	Name:        "FairAuction",
 	ProgramHash: fairauction.ProgramHash,
-	Flags:       pflag.NewFlagSet("fairauction", pflag.ExitOnError),
+	Flags:       pflag.NewFlagSet("FairAuction", pflag.ExitOnError),
 }
 
 func Client() *faclient.FairAuctionClient {

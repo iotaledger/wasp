@@ -9,5 +9,4 @@ type SCDashboard interface {
 	Config() *sc.Config
 	AddEndpoints(e *echo.Echo)
 	AddTemplates(r Renderer)
-	AddNavPages(p []NavPage) []NavPage
 }

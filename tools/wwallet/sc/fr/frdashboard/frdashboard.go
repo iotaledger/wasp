@@ -20,14 +20,12 @@ func (d *frdashboard) Config() *sc.Config {
 	return fr.Config
 }
 
-const href = "/fairroulette"
-
 func (d *frdashboard) AddEndpoints(e *echo.Echo) {
-	e.GET(href, handleFR)
+	e.GET(fr.Config.Href(), handleFR)
 }
 
 func (d *frdashboard) AddTemplates(r dashboard.Renderer) {
-	r["fairroulette"] = dashboard.MakeTemplate(
+	r[fr.Config.ShortName] = dashboard.MakeTemplate(
 		dashboard.TplWs,
 		dashboard.TplSCInfo,
 		dashboard.TplInstallConfig,
@@ -35,17 +33,13 @@ func (d *frdashboard) AddTemplates(r dashboard.Renderer) {
 	)
 }
 
-func (d *frdashboard) AddNavPages(p []dashboard.NavPage) []dashboard.NavPage {
-	return append(p, dashboard.NavPage{Title: "FairRoulette", Href: href})
-}
-
 func handleFR(c echo.Context) error {
 	status, err := fr.Client().FetchStatus()
 	if err != nil {
 		return err
 	}
-	return c.Render(http.StatusOK, "fairroulette", &FRTemplateParams{
-		BaseTemplateParams: dashboard.BaseParams(c, href),
+	return c.Render(http.StatusOK, fr.Config.ShortName, &FRTemplateParams{
+		BaseTemplateParams: dashboard.BaseParams(c, fr.Config.Href()),
 		SC:                 fr.Config,
 		Status:             status,
 	})
@@ -58,10 +52,10 @@ type FRTemplateParams struct {
 }
 
 const tplFairRoulette = `
-{{define "title"}}FairRoulette{{end}}
+{{define "title"}}{{.SC.Name}}{{end}}
 
 {{define "body"}}
-	<h2>FairRoulette</h2>
+	<h2>{{.SC.Name}}</h2>
 	{{template "sc-info" .}}
 
 	<div>

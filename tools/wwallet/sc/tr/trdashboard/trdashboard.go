@@ -24,15 +24,13 @@ func (d *trdashboard) Config() *sc.Config {
 	return tr.Config
 }
 
-const href = "/tokenregistry"
-
 func (d *trdashboard) AddEndpoints(e *echo.Echo) {
-	e.GET(href, handleTR)
-	e.GET(href+"/:color", handleTRQuery)
+	e.GET(tr.Config.Href(), handleTR)
+	e.GET(tr.Config.Href()+"/:color", handleTRQuery)
 }
 
 func (d *trdashboard) AddTemplates(r dashboard.Renderer) {
-	r["tokenregistry"] = dashboard.MakeTemplate(
+	r[tr.Config.ShortName] = dashboard.MakeTemplate(
 		dashboard.TplWs,
 		dashboard.TplSCInfo,
 		dashboard.TplInstallConfig,
@@ -40,17 +38,13 @@ func (d *trdashboard) AddTemplates(r dashboard.Renderer) {
 	)
 }
 
-func (d *trdashboard) AddNavPages(p []dashboard.NavPage) []dashboard.NavPage {
-	return append(p, dashboard.NavPage{Title: "TokenRegistry", Href: href})
-}
-
 func handleTR(c echo.Context) error {
 	status, err := tr.Client().FetchStatus()
 	if err != nil {
 		return err
 	}
-	return c.Render(http.StatusOK, "tokenregistry", &TRTemplateParams{
-		BaseTemplateParams: dashboard.BaseParams(c, href),
+	return c.Render(http.StatusOK, tr.Config.ShortName, &TRTemplateParams{
+		BaseTemplateParams: dashboard.BaseParams(c, tr.Config.Href()),
 		SC:                 tr.Config,
 		Status:             status,
 	})
@@ -66,8 +60,8 @@ func handleTRQuery(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("query error: %v", err)
 	}
-	return c.Render(http.StatusOK, "tokenregistry", &TRTemplateParams{
-		BaseTemplateParams: dashboard.BaseParams(c, "tokenregistry"),
+	return c.Render(http.StatusOK, tr.Config.ShortName, &TRTemplateParams{
+		BaseTemplateParams: dashboard.BaseParams(c, tr.Config.Href()),
 		SC:                 tr.Config,
 		Color:              &color,
 		QueryResult:        tm,
@@ -83,7 +77,7 @@ type TRTemplateParams struct {
 }
 
 const tplTokenRegistry = `
-{{define "title"}}TokenRegistry{{end}}
+{{define "title"}}{{.SC.Name}}{{end}}
 
 {{define "tmdetails"}}
 	<p>Supply: <code>{{.Supply}}</code></p>
@@ -95,7 +89,7 @@ const tplTokenRegistry = `
 {{end}}
 
 {{define "body"}}
-	<h2>TokenRegistry</h2>
+	<h2>{{.SC.Name}}</h2>
 
 	{{if .Status}}
 		{{template "sc-info" .}}

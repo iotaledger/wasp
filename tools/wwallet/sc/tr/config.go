@@ -11,7 +11,7 @@ import (
 
 var Config = &sc.Config{
 	ShortName:   "tr",
-	Description: "TokenRegistry smart contract",
+	Name:        "TokenRegistry",
 	ProgramHash: tokenregistry.ProgramHash,
 	Flags:       pflag.NewFlagSet("tokenregistry", pflag.ExitOnError),
 }

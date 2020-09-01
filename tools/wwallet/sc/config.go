@@ -17,11 +17,15 @@ import (
 
 type Config struct {
 	ShortName   string
-	Description string
+	Name        string
 	ProgramHash string
 	Flags       *pflag.FlagSet
 	quorum      int
 	committee   []int
+}
+
+func (c *Config) Href() string {
+	return "/" + c.ShortName
 }
 
 func (c *Config) HookFlags() *pflag.FlagSet {
@@ -115,7 +119,7 @@ func (c *Config) InitSC(sigScheme signaturescheme.SignatureScheme) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Initialized %s\n", c.Description)
+	fmt.Printf("Initialized %s smart contract\n", c.Name)
 	fmt.Printf("SC Address: %s\n", scAddress)
 	c.SetAddress(scAddress.String())
 	return nil

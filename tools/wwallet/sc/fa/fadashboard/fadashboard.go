@@ -20,14 +20,12 @@ func (d *fadashboard) Config() *sc.Config {
 	return fa.Config
 }
 
-const href = "/fairauction"
-
 func (d *fadashboard) AddEndpoints(e *echo.Echo) {
-	e.GET(href, handleFA)
+	e.GET(fa.Config.Href(), handleFA)
 }
 
 func (d *fadashboard) AddTemplates(r dashboard.Renderer) {
-	r["fairauction"] = dashboard.MakeTemplate(
+	r[fa.Config.ShortName] = dashboard.MakeTemplate(
 		dashboard.TplWs,
 		dashboard.TplSCInfo,
 		dashboard.TplInstallConfig,
@@ -35,17 +33,13 @@ func (d *fadashboard) AddTemplates(r dashboard.Renderer) {
 	)
 }
 
-func (d *fadashboard) AddNavPages(p []dashboard.NavPage) []dashboard.NavPage {
-	return append(p, dashboard.NavPage{Title: "FairAuction", Href: href})
-}
-
 func handleFA(c echo.Context) error {
 	status, err := fa.Client().FetchStatus()
 	if err != nil {
 		return err
 	}
-	return c.Render(http.StatusOK, "fairauction", &FATemplateParams{
-		BaseTemplateParams: dashboard.BaseParams(c, href),
+	return c.Render(http.StatusOK, fa.Config.ShortName, &FATemplateParams{
+		BaseTemplateParams: dashboard.BaseParams(c, fa.Config.Href()),
 		SC:                 fa.Config,
 		Status:             status,
 	})
@@ -58,10 +52,10 @@ type FATemplateParams struct {
 }
 
 const tplFairAuction = `
-{{define "title"}}FairAuction{{end}}
+{{define "title"}}{{.SC.Name}}{{end}}
 
 {{define "body"}}
-	<h2>FairAuction</h2>
+	<h2>{{.SC.Name}}</h2>
 	{{template "sc-info" .}}
 
 	<div>
@@ -70,7 +64,7 @@ const tplFairAuction = `
 			{{range $color, $auction := .Status.Auctions}}
 				<details>
 					<summary>{{$auction.Description}}</summary>
-					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <a href="/tokenregistry/{{$color}}"><code>{{$color}}</code></a></p>
+					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <a href="/tr/{{$color}}"><code>{{$color}}</code></a></p>
 					<p>Owner: <code>{{$auction.AuctionOwner}}</code></p>
 					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
 					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
@@ -100,7 +94,7 @@ const tplFairAuction = `
 		{{template "install-config" .}}
 		<details>
 			<summary>3. Mint a new color</summary>
-			<p>See instructions in <a href="/tokenregistry">TokenRegistry</a>.</p>
+			<p>See instructions in <a href="/tr">TokenRegistry</a>.</p>
 		</details>
 		<details>
 			<summary>4. Start an auction</summary>

@@ -7,6 +7,8 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/iotaledger/wasp/tools/wwallet/dashboard/dashboardcmd"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf/dwfcmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/facmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
@@ -30,6 +32,7 @@ var commands = map[string]func([]string){
 	"fr":        frcmd.Cmd,
 	"fa":        facmd.Cmd,
 	"tr":        trcmd.Cmd,
+	"dwf":       dwfcmd.Cmd,
 	"dashboard": dashboardcmd.Cmd,
 }
 
@@ -51,6 +54,7 @@ func main() {
 	flags.AddFlagSet(fr.Config.HookFlags())
 	flags.AddFlagSet(fa.Config.HookFlags())
 	flags.AddFlagSet(tr.Config.HookFlags())
+	flags.AddFlagSet(dwf.Config.HookFlags())
 	check(flags.Parse(os.Args[1:]))
 
 	config.Read()

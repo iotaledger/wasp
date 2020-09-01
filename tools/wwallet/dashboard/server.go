@@ -21,7 +21,7 @@ func StartServer(listenAddr string, scs []SCDashboard) {
 	e.Renderer = renderer
 	for _, d := range scs {
 		d.AddTemplates(renderer)
-		navPages = d.AddNavPages(navPages)
+		navPages = append(navPages, NavPage{Title: d.Config().Name, Href: d.Config().Href()})
 	}
 
 	if l, ok := e.Logger.(*log.Logger); ok {
