@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
-	"github.com/iotaledger/wasp/tools/wwallet/config/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 )

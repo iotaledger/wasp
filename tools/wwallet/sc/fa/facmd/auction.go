@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fa"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/mr-tron/base58"
 )

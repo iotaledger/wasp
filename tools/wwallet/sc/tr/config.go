@@ -4,11 +4,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 	"github.com/spf13/pflag"
 )
 
-var Config = &config.SCConfig{
+var Config = &sc.Config{
 	ShortName:   "tr",
 	Description: "TokenRegistry smart contract",
 	ProgramHash: tokenregistry.ProgramHash,

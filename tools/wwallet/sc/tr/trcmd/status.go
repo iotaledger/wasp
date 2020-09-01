@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/tools/wwallet/config/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 )
 
 func statusCmd(args []string) {

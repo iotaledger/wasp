@@ -160,6 +160,9 @@ func (client *DWFClient) fetchLogInfo(status *Status) error {
 		return err
 	}
 	status.LastRecords, err = decodeRecords(results[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -171,6 +174,9 @@ func decodeRecords(sliceData *stateapi.TLogSliceDataResult) ([]*donatewithfeedba
 			return nil, err
 		}
 		ret[i], err = donatewithfeedback.DonationInfoFromBytes(lr.Data)
+		if err != nil {
+			return nil, err
+		}
 		ret[i].When = time.Unix(0, lr.Timestamp)
 	}
 	return ret, nil

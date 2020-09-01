@@ -1,4 +1,4 @@
-package config
+package sc
 
 import (
 	"fmt"
@@ -9,11 +9,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
-type SCConfig struct {
+type Config struct {
 	ShortName   string
 	Description string
 	ProgramHash string
@@ -22,13 +23,13 @@ type SCConfig struct {
 	committee   []int
 }
 
-func (c *SCConfig) HookFlags() *pflag.FlagSet {
+func (c *Config) HookFlags() *pflag.FlagSet {
 	c.Flags.IntVar(&c.quorum, c.ShortName+".quorum", 3, "quorum")
 	c.Flags.IntSliceVar(&c.committee, c.ShortName+".committee", nil, "committee")
 	return c.Flags
 }
 
-func (c *SCConfig) Committee() []int {
+func (c *Config) Committee() []int {
 	if len(c.committee) > 0 {
 		return c.committee
 	}
@@ -39,23 +40,23 @@ func (c *SCConfig) Committee() []int {
 	return []int{0, 1, 2, 3}
 }
 
-func (c *SCConfig) Quorum() uint16 {
+func (c *Config) Quorum() uint16 {
 	return uint16(c.quorum)
 }
 
-func (c *SCConfig) PrintUsage(s string) {
+func (c *Config) PrintUsage(s string) {
 	fmt.Printf("Usage: %s %s %s\n", os.Args[0], c.ShortName, s)
 }
 
-func (c *SCConfig) HandleSetCmd(args []string) {
+func (c *Config) HandleSetCmd(args []string) {
 	if len(args) != 2 {
 		c.PrintUsage("set <key> <value>")
 		os.Exit(1)
 	}
-	Set(c.ShortName+"."+args[0], args[1])
+	config.Set(c.ShortName+"."+args[0], args[1])
 }
 
-func (c *SCConfig) usage(commands map[string]func([]string)) {
+func (c *Config) usage(commands map[string]func([]string)) {
 	cmdNames := make([]string, 0)
 	for k := range commands {
 		cmdNames = append(cmdNames, k)
@@ -66,7 +67,7 @@ func (c *SCConfig) usage(commands map[string]func([]string)) {
 	os.Exit(1)
 }
 
-func (c *SCConfig) HandleCmd(args []string, commands map[string]func([]string)) {
+func (c *Config) HandleCmd(args []string, commands map[string]func([]string)) {
 	if len(args) < 1 {
 		c.usage(commands)
 	}
@@ -77,23 +78,23 @@ func (c *SCConfig) HandleCmd(args []string, commands map[string]func([]string)) 
 	cmd(args[1:])
 }
 
-func (c *SCConfig) SetAddress(address string) {
-	SetSCAddress(c.ShortName, address)
+func (c *Config) SetAddress(address string) {
+	config.SetSCAddress(c.ShortName, address)
 }
 
-func (c *SCConfig) Address() *address.Address {
-	return GetSCAddress(c.ShortName)
+func (c *Config) Address() *address.Address {
+	return config.GetSCAddress(c.ShortName)
 }
 
-func (c *SCConfig) TryAddress() *address.Address {
-	return TrySCAddress(c.ShortName)
+func (c *Config) TryAddress() *address.Address {
+	return config.TrySCAddress(c.ShortName)
 }
 
-func (c *SCConfig) InitSC(sigScheme signaturescheme.SignatureScheme) error {
+func (c *Config) InitSC(sigScheme signaturescheme.SignatureScheme) error {
 	scAddress, _, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  GoshimmerClient(),
-		CommitteeApiHosts:     CommitteeApi(c.Committee()),
-		CommitteePeeringHosts: CommitteePeering(c.Committee()),
+		Node:                  config.GoshimmerClient(),
+		CommitteeApiHosts:     config.CommitteeApi(c.Committee()),
+		CommitteePeeringHosts: config.CommitteePeering(c.Committee()),
 		AccessNodes:           []string{},
 		N:                     uint16(len(c.Committee())),
 		T:                     c.Quorum(),
@@ -109,8 +110,10 @@ func (c *SCConfig) InitSC(sigScheme signaturescheme.SignatureScheme) error {
 	return nil
 }
 
-func (c *SCConfig) progHash() hashing.HashValue {
+func (c *Config) progHash() hashing.HashValue {
 	hash, err := hashing.HashValueFromBase58(c.ProgramHash)
-	check(err)
+	if err != nil {
+		panic(err)
+	}
 	return hash
 }

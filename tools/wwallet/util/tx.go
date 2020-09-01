@@ -9,6 +9,7 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
 )
 
 func PostTransaction(tx *transaction.Transaction) {
@@ -26,7 +27,7 @@ func WithTransaction(f func() (*transaction.Transaction, error)) {
 	}
 }
 
-func WithSCRequest(sc *config.SCConfig, f func() (*sctransaction.Transaction, error)) *sctransaction.Transaction {
+func WithSCRequest(sc *sc.Config, f func() (*sctransaction.Transaction, error)) *sctransaction.Transaction {
 	if config.WaitForConfirmation {
 		tx, err := waspapi.RunAndWaitForRequestProcessedMulti(config.CommitteeNanomsg(sc.Committee()), sc.Address(), 0, 20*time.Second, f)
 		check(err)

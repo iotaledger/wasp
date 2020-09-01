@@ -10,9 +10,10 @@ import (
 
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fa"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fr"
-	"github.com/iotaledger/wasp/tools/wwallet/config/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
@@ -69,7 +70,7 @@ func Cmd(args []string) {
 	e.Logger.Fatal(e.Start(listenAddr))
 }
 
-func addSCIfAvailable(availableSCs map[string]*config.SCConfig, sc *config.SCConfig) {
+func addSCIfAvailable(availableSCs map[string]*sc.Config, sc *sc.Config) {
 	scAddress := sc.TryAddress()
 	if scAddress != nil {
 		availableSCs[scAddress.String()] = sc
@@ -83,7 +84,7 @@ func startNanomsgForwarder(logger echo.Logger) chan bool {
 	check(err)
 	logger.Infof("[Nanomsg] connected")
 
-	availableSCs := make(map[string]*config.SCConfig)
+	availableSCs := make(map[string]*sc.Config)
 	addSCIfAvailable(availableSCs, fr.Config)
 	addSCIfAvailable(availableSCs, fa.Config)
 	addSCIfAvailable(availableSCs, tr.Config)
@@ -131,7 +132,7 @@ func initRenderer() Renderer {
 	}
 }
 
-func handleWebSocket(sc *config.SCConfig) func(c echo.Context) error {
+func handleWebSocket(sc *sc.Config) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		websocket.Handler(func(ws *websocket.Conn) {
 			defer ws.Close()

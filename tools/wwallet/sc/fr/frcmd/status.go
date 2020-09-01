@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
 )
 
 func statusCmd(args []string) {

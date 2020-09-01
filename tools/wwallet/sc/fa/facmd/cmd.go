@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/wasp/tools/wwallet/config/fa"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
 )
 
 var commands = map[string]func([]string){

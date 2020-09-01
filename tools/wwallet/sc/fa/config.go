@@ -4,11 +4,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 	"github.com/spf13/pflag"
 )
 
-var Config = &config.SCConfig{
+var Config = &sc.Config{
 	ShortName:   "fa",
 	Description: "FairAuction smart contract",
 	ProgramHash: fairauction.ProgramHash,

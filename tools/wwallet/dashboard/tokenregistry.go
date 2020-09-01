@@ -9,8 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
-	"github.com/iotaledger/wasp/tools/wwallet/config"
-	"github.com/iotaledger/wasp/tools/wwallet/config/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 	"github.com/labstack/echo"
 )
 
@@ -46,7 +46,7 @@ func handleTRQuery(c echo.Context) error {
 
 type TRTemplateParams struct {
 	BaseTemplateParams
-	SC          *config.SCConfig
+	SC          *sc.Config
 	Status      *trclient.Status
 	Color       *balance.Color
 	QueryResult *tokenregistry.TokenMetadata

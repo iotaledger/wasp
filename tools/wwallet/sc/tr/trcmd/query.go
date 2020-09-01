@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/tools/wwallet/config/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 )
 
 func queryCmd(args []string) {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 )

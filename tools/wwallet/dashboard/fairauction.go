@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
-	"github.com/iotaledger/wasp/tools/wwallet/config"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fa"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
 	"github.com/labstack/echo"
 )
 
@@ -24,7 +24,7 @@ func handleFA(c echo.Context) error {
 
 type FATemplateParams struct {
 	BaseTemplateParams
-	SC     *config.SCConfig
+	SC     *sc.Config
 	Status *faclient.Status
 }
 

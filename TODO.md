@@ -13,6 +13,8 @@ Done
 - [x] Extend wwallet with `FairAuction` and `FairRoulette`
 
 Pending
+- [ ] dwf dashboard
+- [ ] wwallet: deploy generic SC from proghash + committee
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not

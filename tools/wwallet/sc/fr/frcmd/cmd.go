@@ -1,7 +1,7 @@
 package fairroulette
 
 import (
-	"github.com/iotaledger/wasp/tools/wwallet/config/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
 )
 
 var commands = map[string]func([]string){

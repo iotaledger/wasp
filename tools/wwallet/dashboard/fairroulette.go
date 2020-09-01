@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette/frclient"
-	"github.com/iotaledger/wasp/tools/wwallet/config"
-	"github.com/iotaledger/wasp/tools/wwallet/config/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/sc"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
 	"github.com/labstack/echo"
 )
 
@@ -24,7 +24,7 @@ func handleFR(c echo.Context) error {
 
 type FRTemplateParams struct {
 	BaseTemplateParams
-	SC     *config.SCConfig
+	SC     *sc.Config
 	Status *frclient.Status
 }
 
