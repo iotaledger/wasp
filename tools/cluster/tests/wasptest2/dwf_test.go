@@ -225,7 +225,7 @@ func TestDWFDonateNTimes(t *testing.T) {
 	}
 }
 
-func TestDWFDonateHarvest(t *testing.T) {
+func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 	var seed [32]byte
 	rand.Read(seed[:])
 	seed58 := base58.Encode(seed[:])
@@ -280,7 +280,7 @@ func TestDWFDonateHarvest(t *testing.T) {
 		ApiHosts:          wasps.ApiHosts(),
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+		Timeout:           30 * time.Second,
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
@@ -315,7 +315,7 @@ func TestDWFDonateHarvest(t *testing.T) {
 	}
 
 	dwfOwnerClient := dwfclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scAddr, scOwner.SigScheme())
-	_, err = dwfOwnerClient.Harvest(dwfclient.HarvestParams{
+	_, err = dwfOwnerClient.Withdraw(dwfclient.WithdrawParams{
 		Amount:            40,
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),
@@ -355,7 +355,7 @@ func TestDWFDonateHarvest(t *testing.T) {
 	}
 }
 
-func TestDWFDonateHarvestNotAuthorised(t *testing.T) {
+func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 	var seed [32]byte
 	rand.Read(seed[:])
 	seed58 := base58.Encode(seed[:])
@@ -445,7 +445,7 @@ func TestDWFDonateHarvestNotAuthorised(t *testing.T) {
 	}
 
 	// donor want to take back. Not authorised
-	_, err = dwfDonorClient.Harvest(dwfclient.HarvestParams{
+	_, err = dwfDonorClient.Withdraw(dwfclient.WithdrawParams{
 		Amount:            40,
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),

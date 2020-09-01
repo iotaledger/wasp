@@ -58,7 +58,7 @@ func (client *DWFClient) Donate(par DonateParams) (*sctransaction.Transaction, e
 	})
 }
 
-type HarvestParams struct {
+type WithdrawParams struct {
 	Amount            int64
 	WaitForCompletion bool
 	PublisherHosts    []string
@@ -66,15 +66,15 @@ type HarvestParams struct {
 	Timeout           time.Duration
 }
 
-func (client *DWFClient) Harvest(par HarvestParams) (*sctransaction.Transaction, error) {
+func (client *DWFClient) Withdraw(par WithdrawParams) (*sctransaction.Transaction, error) {
 	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
 		NodeClient:      client.nodeClient,
 		SenderSigScheme: client.sigScheme,
 		BlockParams: []apilib.RequestBlockParams{{
 			TargetSCAddress: client.scAddress,
-			RequestCode:     donatewithfeedback.RequestHarvest,
+			RequestCode:     donatewithfeedback.RequestWithdraw,
 			Vars: map[string]interface{}{
-				donatewithfeedback.VarReqHarvestSum: par.Amount,
+				donatewithfeedback.VarReqWithdrawSum: par.Amount,
 			},
 		}},
 		Post:                true,

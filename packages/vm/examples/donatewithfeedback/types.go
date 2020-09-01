@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	RequestDonate  = sctransaction.RequestCode(uint16(1))
-	RequestHarvest = sctransaction.RequestCode(uint16(2) | sctransaction.RequestCodeProtected)
+	RequestDonate   = sctransaction.RequestCode(uint16(1))
+	RequestWithdraw = sctransaction.RequestCode(uint16(2) | sctransaction.RequestCodeProtected)
 
 	// state vars
 	VarStateTheLog         = "l"
@@ -19,8 +19,8 @@ const (
 	VarStateTotalDonations = "total"
 
 	// request vars
-	VarReqFeedback   = "f"
-	VarReqHarvestSum = "s"
+	VarReqFeedback    = "f"
+	VarReqWithdrawSum = "s"
 )
 
 type DonationInfo struct {

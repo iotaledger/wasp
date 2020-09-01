@@ -21,8 +21,8 @@ type dwfEntryPoint func(ctx vmtypes.Sandbox)
 
 // the processor is a map of entry points
 var entryPoints = dwfProcessor{
-	donatewithfeedback.RequestDonate:  donate,
-	donatewithfeedback.RequestHarvest: harvest,
+	donatewithfeedback.RequestDonate:   donate,
+	donatewithfeedback.RequestWithdraw: withdraw,
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -92,13 +92,13 @@ func donate(ctx vmtypes.Sandbox) {
 }
 
 // protected request. Owner can take iotas at any time
-func harvest(ctx vmtypes.Sandbox) {
-	ctx.Publishf("DonateWithFeedback: harvest")
+func withdraw(ctx vmtypes.Sandbox) {
+	ctx.Publishf("DonateWithFeedback: withdraw")
 
-	harvestSum, amountGiven, err := ctx.AccessRequest().Args().GetInt64(donatewithfeedback.VarReqHarvestSum)
+	withdrawSum, amountGiven, err := ctx.AccessRequest().Args().GetInt64(donatewithfeedback.VarReqWithdrawSum)
 	bal := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
 	if err != nil {
-		ctx.Publishf("DonateWithFeedback: harvest internal error %v", err)
+		ctx.Publishf("DonateWithFeedback: withdraw internal error %v", err)
 		// return everything TODO RefundAll function
 		sender := ctx.AccessRequest().Sender()
 		sent := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
@@ -106,16 +106,16 @@ func harvest(ctx vmtypes.Sandbox) {
 		return
 	}
 	if !amountGiven {
-		harvestSum = bal
+		withdrawSum = bal
 	} else {
-		if harvestSum > bal {
-			harvestSum = bal
+		if withdrawSum > bal {
+			withdrawSum = bal
 		}
 	}
-	if harvestSum == 0 {
-		ctx.Publishf("DonateWithFeedback: harvest. nothing to harvest")
+	if withdrawSum == 0 {
+		ctx.Publishf("DonateWithFeedback: withdraw. nothing to withdraw")
 		return
 	}
-	ctx.AccessSCAccount().MoveTokens(ctx.GetOwnerAddress(), &balance.ColorIOTA, harvestSum)
-	ctx.Publishf("DonateWithFeedback: harvest. Harvested %d iotas", harvestSum)
+	ctx.AccessSCAccount().MoveTokens(ctx.GetOwnerAddress(), &balance.ColorIOTA, withdrawSum)
+	ctx.Publishf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum)
 }
