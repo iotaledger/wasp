@@ -32,7 +32,7 @@ func StartServer(listenAddr string, scs []SCDashboard) {
 	e.GET("/", handleIndex)
 	for _, d := range scs {
 		d.AddEndpoints(e)
-		e.GET("/ws/"+d.Config().ShortName, handleWebSocket(d.Config()))
+		addWebSocketTab(e, d.Config())
 	}
 
 	availableSCs := make(map[string]*sc.Config)

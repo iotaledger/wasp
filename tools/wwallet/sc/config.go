@@ -91,8 +91,8 @@ func (c *Config) Address() *address.Address {
 	return config.GetSCAddress(c.ShortName)
 }
 
-func (c *Config) TryAddress() *address.Address {
-	return config.TrySCAddress(c.ShortName)
+func (c *Config) IsAvailable() bool {
+	return config.TrySCAddress(c.ShortName) != nil
 }
 
 func (c *Config) InitSC(sigScheme signaturescheme.SignatureScheme) error {

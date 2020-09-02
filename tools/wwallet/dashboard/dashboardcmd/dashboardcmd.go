@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/tools/wwallet/dashboard"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf/dwfdashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/fadashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
@@ -24,14 +26,17 @@ func Cmd(args []string) {
 	}
 
 	scs := make([]dashboard.SCDashboard, 0)
-	if fr.Config.TryAddress() != nil {
+	if fr.Config.IsAvailable() {
 		scs = append(scs, frdashboard.Dashboard())
 	}
-	if fa.Config.TryAddress() != nil {
+	if fa.Config.IsAvailable() {
 		scs = append(scs, fadashboard.Dashboard())
 	}
-	if tr.Config.TryAddress() != nil {
+	if tr.Config.IsAvailable() {
 		scs = append(scs, trdashboard.Dashboard())
+	}
+	if dwf.Config.IsAvailable() {
+		scs = append(scs, dwfdashboard.Dashboard())
 	}
 
 	dashboard.StartServer(listenAddr, scs)

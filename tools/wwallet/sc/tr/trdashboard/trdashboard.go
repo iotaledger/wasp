@@ -122,6 +122,7 @@ const tplTokenRegistry = `
 		{{end}}
 	{{end}}
 
+	<hr/>
 	<div>
 		<h3>CLI usage</h3>
 		{{template "install-config" .}}

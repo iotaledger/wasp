@@ -12,3 +12,5 @@ function wwallet() {
 	(PS4=; set -x; : wwallet -w $ARGS "$@")
     command wwallet -w $ARGS "$@"
 }
+
+rm -f wwallet.json owner.json

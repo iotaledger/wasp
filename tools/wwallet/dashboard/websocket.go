@@ -11,10 +11,11 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var clients = map[string]*sync.Map{
-	"fr": &sync.Map{},
-	"fa": &sync.Map{},
-	"tr": &sync.Map{},
+var wsClients = map[string]*sync.Map{}
+
+func addWebSocketTab(e *echo.Echo, sc *sc.Config) {
+	wsClients[sc.ShortName] = &sync.Map{}
+	e.GET("/ws/"+sc.ShortName, handleWebSocket(sc))
 }
 
 func startNanomsgForwarder(logger echo.Logger, availableSCs map[string]*sc.Config) chan bool {
@@ -36,7 +37,7 @@ func startNanomsgForwarder(logger echo.Logger, availableSCs map[string]*sc.Confi
 				{
 					msg := strings.Join(msg, " ")
 					logger.Infof("[Nanomsg] got message %s", msg)
-					clients[sc.ShortName].Range(func(key interface{}, client interface{}) bool {
+					wsClients[sc.ShortName].Range(func(key interface{}, client interface{}) bool {
 						if client, ok := client.(chan string); ok {
 							client <- msg
 						}
@@ -61,8 +62,8 @@ func handleWebSocket(sc *sc.Config) func(c echo.Context) error {
 			defer c.Logger().Infof("[WebSocket] closed for %s", c.Request().RemoteAddr)
 
 			client := make(chan string)
-			clients[sc.ShortName].Store(client, client)
-			defer clients[sc.ShortName].Delete(client)
+			wsClients[sc.ShortName].Store(client, client)
+			defer wsClients[sc.ShortName].Delete(client)
 
 			for {
 				msg := <-client
