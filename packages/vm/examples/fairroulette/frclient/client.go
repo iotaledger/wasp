@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -27,8 +26,7 @@ func NewClient(nodeClient nodeclient.NodeClient, waspHost string, scAddress *add
 }
 
 type Status struct {
-	SCBalance map[balance.Color]int64
-	FetchedAt time.Time
+	*waspapi.SCStatus
 
 	CurrentBetsAmount uint16
 	CurrentBets       []*fairroulette.BetInfo
@@ -58,49 +56,31 @@ func (s *Status) NextPlayIn() string {
 }
 
 func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
-	status := &Status{
-		FetchedAt: time.Now().UTC(),
-	}
-
-	balance, err := frc.fetchSCBalance()
-	if err != nil {
-		return nil, err
-	}
-	status.SCBalance = balance
-
-	query := stateapi.NewQueryRequest(frc.scAddress)
-	query.AddArray(fairroulette.StateVarBets, 0, 100)
-	query.AddArray(fairroulette.StateVarLockedBets, 0, 100)
-	query.AddInt64(fairroulette.StateVarLastWinningColor)
-	query.AddInt64(fairroulette.ReqVarPlayPeriodSec)
-	query.AddInt64(fairroulette.StateVarNextPlayTimestamp)
-	query.AddDictionary(fairroulette.StateVarPlayerStats, 100)
-	query.AddArray(fairroulette.StateArrayWinsPerColor, 0, fairroulette.NumColors)
-
-	results, err := waspapi.QuerySCState(frc.waspHost, query)
+	scStatus, results, err := waspapi.FetchSCStatus(frc.nodeClient, frc.waspHost, frc.scAddress, func(query *stateapi.QueryRequest) {
+		query.AddArray(fairroulette.StateVarBets, 0, 100)
+		query.AddArray(fairroulette.StateVarLockedBets, 0, 100)
+		query.AddScalar(fairroulette.StateVarLastWinningColor)
+		query.AddScalar(fairroulette.ReqVarPlayPeriodSec)
+		query.AddScalar(fairroulette.StateVarNextPlayTimestamp)
+		query.AddDictionary(fairroulette.StateVarPlayerStats, 100)
+		query.AddArray(fairroulette.StateArrayWinsPerColor, 0, fairroulette.NumColors)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	lastWinningColor, _, err := results[fairroulette.StateVarLastWinningColor].MustInt64()
-	if err != nil {
-		return nil, err
-	}
+	status := &Status{SCStatus: scStatus}
+
+	lastWinningColor, _ := results[fairroulette.StateVarLastWinningColor].MustInt64()
 	status.LastWinningColor = lastWinningColor
 
-	playPeriodSeconds, _, err := results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
-	if err != nil {
-		return nil, err
-	}
+	playPeriodSeconds, _ := results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
 	status.PlayPeriodSeconds = playPeriodSeconds
 	if status.PlayPeriodSeconds == 0 {
 		status.PlayPeriodSeconds = fairroulette.DefaultPlaySecondsAfterFirstBet
 	}
 
-	nextPlayTimestamp, _, err := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
-	if err != nil {
-		return nil, err
-	}
+	nextPlayTimestamp, _ := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
 
 	status.PlayerStats, err = decodePlayerStats(results[fairroulette.StateVarPlayerStats].MustDictionaryResult())
@@ -124,15 +104,6 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 	}
 
 	return status, nil
-}
-
-func (frc *FairRouletteClient) fetchSCBalance() (map[balance.Color]int64, error) {
-	outs, err := frc.nodeClient.GetAccountOutputs(frc.scAddress)
-	if err != nil {
-		return nil, err
-	}
-	ret, _ := util.OutputBalancesByColor(outs)
-	return ret, nil
 }
 
 func decodeBets(result *stateapi.ArrayResult) (uint16, []*fairroulette.BetInfo, error) {

@@ -40,22 +40,22 @@ func handleFR(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, fr.Config.ShortName, &FRTemplateParams{
 		BaseTemplateParams: dashboard.BaseParams(c, fr.Config.Href()),
-		SC:                 fr.Config,
+		Config:             fr.Config,
 		Status:             status,
 	})
 }
 
 type FRTemplateParams struct {
 	dashboard.BaseTemplateParams
-	SC     *sc.Config
+	Config *sc.Config
 	Status *frclient.Status
 }
 
 const tplFairRoulette = `
-{{define "title"}}{{.SC.Name}}{{end}}
+{{define "title"}}{{.Config.Name}}{{end}}
 
 {{define "body"}}
-	<h2>{{.SC.Name}}</h2>
+	<h2>{{.Config.Name}}</h1>
 	{{template "sc-info" .}}
 
 	<div>

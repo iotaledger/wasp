@@ -1,6 +1,8 @@
 package dwfclient
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -9,10 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
-	"time"
 )
 
 type DWFClient struct {
@@ -87,8 +87,7 @@ func (client *DWFClient) Withdraw(par WithdrawParams) (*sctransaction.Transactio
 }
 
 type Status struct {
-	SCBalance map[balance.Color]int64
-	FetchedAt time.Time
+	*waspapi.SCStatus
 
 	NumRecords     uint32
 	FirstDonated   time.Time
@@ -101,69 +100,44 @@ type Status struct {
 const maxRecordsToFetch = 50
 
 func (client *DWFClient) FetchStatus() (*Status, error) {
-	status := &Status{
-		FetchedAt: time.Now().UTC(),
-	}
-	var err error
-	if status.SCBalance, err = client.fetchSCBalance(); err != nil {
-		return nil, err
-	}
-	if err = client.fetchLogInfo(status); err != nil {
-		return nil, err
-	}
-	return status, nil
-}
-
-func (client *DWFClient) fetchSCBalance() (map[balance.Color]int64, error) {
-	outs, err := client.nodeClient.GetAccountOutputs(client.scAddress)
+	scStatus, results, err := waspapi.FetchSCStatus(client.nodeClient, client.waspApiHost, client.scAddress, func(query *stateapi.QueryRequest) {
+		query.AddScalar(donatewithfeedback.VarStateMaxDonation)
+		query.AddScalar(donatewithfeedback.VarStateTotalDonations)
+		query.AddTLogSlice(donatewithfeedback.VarStateTheLog, 0, 0)
+	})
 	if err != nil {
 		return nil, err
 	}
-	ret, _ := util.OutputBalancesByColor(outs)
-	return ret, nil
-}
 
-func (client *DWFClient) fetchLogInfo(status *Status) error {
-	query := stateapi.NewQueryRequest(client.scAddress)
-	query.AddInt64(donatewithfeedback.VarStateMaxDonation)
-	query.AddInt64(donatewithfeedback.VarStateTotalDonations)
-	query.AddTLogSlice(donatewithfeedback.VarStateTheLog, 0, 0)
+	status := &Status{SCStatus: scStatus}
 
-	results, err := waspapi.QuerySCState(client.waspApiHost, query)
-	if err != nil {
-		return err
-	}
-	status.MaxDonation, _, err = results[donatewithfeedback.VarStateMaxDonation].MustInt64()
-	if err != nil {
-		return err
-	}
-	status.TotalDonations, _, err = results[donatewithfeedback.VarStateTotalDonations].MustInt64()
-	if err != nil {
-		return err
-	}
+	status.MaxDonation, _ = results[donatewithfeedback.VarStateMaxDonation].MustInt64()
+	status.TotalDonations, _ = results[donatewithfeedback.VarStateTotalDonations].MustInt64()
 	logSlice := results[donatewithfeedback.VarStateTheLog].MustTLogSliceResult()
 	if !logSlice.IsNotEmpty {
 		// no records
-		return nil
+		return status, nil
 	}
 	status.NumRecords = logSlice.LastIndex - logSlice.FirstIndex + 1
 	status.FirstDonated = time.Unix(0, logSlice.Earliest)
 	status.LastDonated = time.Unix(0, logSlice.Latest)
+
 	fromIdx := uint32(0)
 	if status.NumRecords > maxRecordsToFetch {
 		fromIdx = logSlice.LastIndex - maxRecordsToFetch + 1
 	}
-	query = stateapi.NewQueryRequest(client.scAddress)
+
+	query := stateapi.NewQueryRequest(client.scAddress)
 	query.AddTLogSliceData(donatewithfeedback.VarStateTheLog, fromIdx, logSlice.LastIndex)
 	results, err = waspapi.QuerySCState(client.waspApiHost, query)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	status.LastRecords, err = decodeRecords(results[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return status, nil
 }
 
 func decodeRecords(sliceData *stateapi.TLogSliceDataResult) ([]*donatewithfeedback.DonationInfo, error) {

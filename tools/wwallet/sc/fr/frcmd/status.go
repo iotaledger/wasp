@@ -5,13 +5,14 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
+	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
 
 func statusCmd(args []string) {
 	status, err := fr.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("%s smart contract status:\n", fr.Config.Name)
+	util.DumpSCStatus(fr.Config, status.SCStatus)
 	fmt.Printf("  play period (s): %d\n", status.PlayPeriodSeconds)
 	fmt.Printf("  next play in: %s\n", status.NextPlayIn())
 	fmt.Printf("  bets for next play: %d\n", status.CurrentBetsAmount)

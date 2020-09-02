@@ -40,22 +40,22 @@ func handleDwf(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, dwf.Config.ShortName, &DwfTemplateParams{
 		BaseTemplateParams: dashboard.BaseParams(c, dwf.Config.Href()),
-		SC:                 dwf.Config,
+		Config:             dwf.Config,
 		Status:             status,
 	})
 }
 
 type DwfTemplateParams struct {
 	dashboard.BaseTemplateParams
-	SC     *sc.Config
+	Config *sc.Config
 	Status *dwfclient.Status
 }
 
 const tplDwf = `
-{{define "title"}}{{.SC.Name}}{{end}}
+{{define "title"}}{{.Config.Name}}{{end}}
 
 {{define "body"}}
-	<h2>{{.SC.Name}}</h2>
+	<h2>{{.Config.Name}}</h2>
 
 	{{template "sc-info" .}}
 
@@ -63,7 +63,7 @@ const tplDwf = `
 		<h3>Donations</h3>
 		<p>Amount of donations: <code>{{.Status.NumRecords}}</code></p>
 		<p>Total received: <code>{{.Status.TotalDonations}} IOTAs</code></p>
-		<p>Greatest donation so far: <code>{{.Status.MaxDonation}} IOTAs</code></p>
+		<p>Largest donation so far: <code>{{.Status.MaxDonation}} IOTAs</code></p>
 		<div>
 			<h4>Log</h4>
 			{{range $i, $di := .Status.LastRecords}}
@@ -88,7 +88,7 @@ const tplDwf = `
 			<summary>3. Donate</summary>
 			<p><code>{{waspClientCmd}} dwf donate <i>amount-iotas</i> <i>feedback</i></code>
 			<br/>(e.g.: <code>{{waspClientCmd}} dwf donate 100 "Nice app :)"</code>)</p>
-			<summary>3. Withdraw (if you are owner of SC)</summary>
+			<summary>3. Withdraw (if you are owner of Config)</summary>
 			<p><code>{{waspClientCmd}} dwf withdraw <i>amount-iotas</i></code>
 			<br/>(e.g.: <code>{{waspClientCmd}} dwf withdraw 100</code>)</p>
 		</details>

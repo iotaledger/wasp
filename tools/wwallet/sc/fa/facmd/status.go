@@ -7,23 +7,16 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
+	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
 
 func statusCmd(args []string) {
 	status, err := fa.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("%s smart contract status:\n", fa.Config.Name)
-	dumpBalance(status.SCBalance)
+	util.DumpSCStatus(fa.Config, status.SCStatus)
 	fmt.Printf("  Owner margin: %d promilles\n", status.OwnerMarginPromille)
 	dumpAuctions(status.Auctions)
-}
-
-func dumpBalance(bal map[balance.Color]int64) {
-	fmt.Printf("  SC balance:\n")
-	for color, amount := range bal {
-		fmt.Printf("    %s: %d\n", color, amount)
-	}
 }
 
 func dumpAuctions(auctions map[balance.Color]*fairauction.AuctionInfo) {

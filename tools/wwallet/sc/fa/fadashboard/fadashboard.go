@@ -40,22 +40,22 @@ func handleFA(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, fa.Config.ShortName, &FATemplateParams{
 		BaseTemplateParams: dashboard.BaseParams(c, fa.Config.Href()),
-		SC:                 fa.Config,
+		Config:             fa.Config,
 		Status:             status,
 	})
 }
 
 type FATemplateParams struct {
 	dashboard.BaseTemplateParams
-	SC     *sc.Config
+	Config *sc.Config
 	Status *faclient.Status
 }
 
 const tplFairAuction = `
-{{define "title"}}{{.SC.Name}}{{end}}
+{{define "title"}}{{.Config.Name}}{{end}}
 
 {{define "body"}}
-	<h2>{{.SC.Name}}</h2>
+	<h2>{{.Config.Name}}</h1>
 	{{template "sc-info" .}}
 
 	<div>

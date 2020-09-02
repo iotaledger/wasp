@@ -5,13 +5,15 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
+	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
 
 func statusCmd(args []string) {
 	status, err := tr.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("%s smart contract status:\n", tr.Config.Name)
+	util.DumpSCStatus(tr.Config, status.SCStatus)
+	fmt.Printf("  Registry:\n")
 	for color, tm := range status.Registry {
 		fmt.Printf("  - Color: %s\n", color)
 		fmt.Printf("    Supply: %d\n", tm.Supply)

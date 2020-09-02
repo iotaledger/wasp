@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
@@ -16,8 +17,7 @@ import (
 type ValueType string
 
 const (
-	ValueTypeBytes         = ValueType("bytes")
-	ValueTypeInt64         = ValueType("int64")
+	ValueTypeScalar        = ValueType("scalar")
 	ValueTypeArray         = ValueType("array")
 	ValueTypeDict          = ValueType("dict")
 	ValueTypeDictElement   = ValueType("dict-elem")
@@ -66,16 +66,12 @@ type QueryRequest struct {
 type QueryResult struct {
 	Key   []byte
 	Type  ValueType
-	Value json.RawMessage // one of DictResult, ArrayResult, ...
+	Value json.RawMessage // one of []byte, DictResult, ArrayResult, ...
 }
 
 type KeyValuePair struct {
 	Key   []byte
 	Value []byte
-}
-
-type Int64Result struct {
-	Value int64
 }
 
 type DictResult struct {
@@ -113,18 +109,10 @@ func NewQueryRequest(address *address.Address) *QueryRequest {
 	return &QueryRequest{Address: address.String()}
 }
 
-func (q *QueryRequest) AddBytes(key kv.Key) {
+func (q *QueryRequest) AddScalar(key kv.Key) {
 	q.Query = append(q.Query, &KeyQuery{
 		Key:    []byte(key),
-		Type:   ValueTypeBytes,
-		Params: nil,
-	})
-}
-
-func (q *QueryRequest) AddInt64(key kv.Key) {
-	q.Query = append(q.Query, &KeyQuery{
-		Key:    []byte(key),
-		Type:   ValueTypeInt64,
+		Type:   ValueTypeScalar,
 		Params: nil,
 	})
 }
@@ -185,25 +173,57 @@ func (q *QueryRequest) AddTLogSliceData(key kv.Key, fromIndex, toIndex uint32) {
 	})
 }
 
-func (r *QueryResult) MustBytes() ([]byte, bool, error) {
+func (r *QueryResult) MustBytes() []byte {
 	var b []byte
 	err := json.Unmarshal(r.Value, &b)
 	if err != nil {
-		return nil, false, err
+		panic(err)
 	}
-	return b, b != nil, nil
+	return b
 }
 
-func (r *QueryResult) MustInt64() (int64, bool, error) {
-	var ir *Int64Result
-	err := json.Unmarshal(r.Value, &ir)
+func (r *QueryResult) MustInt64() (int64, bool) {
+	b := r.MustBytes()
+	if b == nil {
+		return 0, false
+	}
+	n, err := kv.DecodeInt64(b)
 	if err != nil {
-		return 0, false, err
+		panic(err)
 	}
-	if ir == nil {
-		return 0, false, nil
+	return n, true
+}
+
+func (r *QueryResult) MustString() (string, bool) {
+	b := r.MustBytes()
+	if b == nil {
+		return "", false
 	}
-	return ir.Value, true, nil
+	return string(b), true
+}
+
+func (r *QueryResult) MustAddress() *address.Address {
+	b := r.MustBytes()
+	if b == nil {
+		return nil
+	}
+	addr, _, err := address.FromBytes(b)
+	if err != nil {
+		panic(err)
+	}
+	return &addr
+}
+
+func (r *QueryResult) MustHashValue() *hashing.HashValue {
+	b := r.MustBytes()
+	if b == nil {
+		return nil
+	}
+	h, err := hashing.HashValueFromBytes(b)
+	if err != nil {
+		panic(err)
+	}
+	return &h
 }
 
 func (r *QueryResult) MustArrayResult() *ArrayResult {
@@ -300,23 +320,12 @@ func HandlerQueryState(c echo.Context) error {
 func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 	key := kv.Key(q.Key)
 	switch q.Type {
-	case ValueTypeBytes:
+	case ValueTypeScalar:
 		value, err := vars.Get(key)
 		if err != nil {
 			return nil, err
 		}
 		return value, nil
-
-	case ValueTypeInt64:
-		value, err := vars.Get(key)
-		if err != nil || value == nil {
-			return nil, err
-		}
-		n, err := kv.DecodeInt64(value)
-		if err != nil {
-			return nil, err
-		}
-		return Int64Result{Value: n}, nil
 
 	case ValueTypeArray:
 		var params ArrayQueryParams

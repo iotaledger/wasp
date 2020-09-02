@@ -327,7 +327,7 @@ func TestFRStatus(t *testing.T) {
 	assert.Equal(t, map[balance.Color]int64{
 		sc.GetColor():     1,
 		balance.ColorIOTA: 1,
-	}, status.SCBalance)
+	}, status.Balance)
 	assert.EqualValues(t, 0, status.CurrentBetsAmount)
 	assert.EqualValues(t, 10, status.PlayPeriodSeconds)
 	assert.EqualValues(t, map[address.Address]*fairroulette.PlayerStats{

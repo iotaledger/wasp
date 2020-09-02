@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf"
+	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
 
 func statusCmd(args []string) {
 	status, err := dwf.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("%s smart contract status:\n", dwf.Config.Name)
+	util.DumpSCStatus(dwf.Config, status.SCStatus)
 	fmt.Printf("  amount of records: %d\n", status.NumRecords)
 	fmt.Printf("  max donation: %d IOTAs\n", status.MaxDonation)
 	fmt.Printf("  total donations: %d IOTAs\n", status.TotalDonations)

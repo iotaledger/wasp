@@ -3,8 +3,9 @@ package trclient
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/subscribe"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
@@ -100,30 +100,20 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 }
 
 type Status struct {
-	SCBalance map[balance.Color]int64
-	FetchedAt time.Time
+	*waspapi.SCStatus
 
 	Registry map[balance.Color]*tokenregistry.TokenMetadata
 }
 
 func (trc *TokenRegistryClient) FetchStatus() (*Status, error) {
-	status := &Status{
-		FetchedAt: time.Now().UTC(),
-	}
-
-	balance, err := trc.fetchSCBalance()
+	scStatus, results, err := waspapi.FetchSCStatus(trc.nodeClient, trc.waspHost, trc.scAddress, func(query *stateapi.QueryRequest) {
+		query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
+	})
 	if err != nil {
 		return nil, err
 	}
-	status.SCBalance = balance
 
-	query := stateapi.NewQueryRequest(trc.scAddress)
-	query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
-
-	results, err := waspapi.QuerySCState(trc.waspHost, query)
-	if err != nil {
-		return nil, err
-	}
+	status := &Status{SCStatus: scStatus}
 
 	status.Registry, err = decodeRegistry(results[tokenregistry.VarStateTheRegistry].MustDictionaryResult())
 	if err != nil {
@@ -131,15 +121,6 @@ func (trc *TokenRegistryClient) FetchStatus() (*Status, error) {
 	}
 
 	return status, nil
-}
-
-func (trc *TokenRegistryClient) fetchSCBalance() (map[balance.Color]int64, error) {
-	outs, err := trc.nodeClient.GetAccountOutputs(trc.scAddress)
-	if err != nil {
-		return nil, err
-	}
-	ret, _ := util.OutputBalancesByColor(outs)
-	return ret, nil
 }
 
 func decodeRegistry(result *stateapi.DictResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {

@@ -11,11 +11,11 @@ Done
       of waiting for an arbitrary amount of seconds).
 - [x] adjust WaspConn etc APIs to real Goshimmer APIs.
 - [x] Extend wwallet with `FairAuction` and `FairRoulette`
+- [x] dwf dashboard
+- [x] dashboard: display SC hash/description/address/owner-address
 
 Pending
-- [ ] dwf dashboard
 - [ ] wwallet: deploy generic SC from proghash + committee
-- [ ] dashboard: display SC hash/description/address/owner-address
 - [ ] `wwallet wallet init` -> `wwallet init`
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)

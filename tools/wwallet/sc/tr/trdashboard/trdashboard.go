@@ -45,7 +45,7 @@ func handleTR(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, tr.Config.ShortName, &TRTemplateParams{
 		BaseTemplateParams: dashboard.BaseParams(c, tr.Config.Href()),
-		SC:                 tr.Config,
+		Config:             tr.Config,
 		Status:             status,
 	})
 }
@@ -62,7 +62,7 @@ func handleTRQuery(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, tr.Config.ShortName, &TRTemplateParams{
 		BaseTemplateParams: dashboard.BaseParams(c, tr.Config.Href()),
-		SC:                 tr.Config,
+		Config:             tr.Config,
 		Color:              &color,
 		QueryResult:        tm,
 	})
@@ -70,14 +70,14 @@ func handleTRQuery(c echo.Context) error {
 
 type TRTemplateParams struct {
 	dashboard.BaseTemplateParams
-	SC          *sc.Config
+	Config      *sc.Config
 	Status      *trclient.Status
 	Color       *balance.Color
 	QueryResult *tokenregistry.TokenMetadata
 }
 
 const tplTokenRegistry = `
-{{define "title"}}{{.SC.Name}}{{end}}
+{{define "title"}}{{.Config.Name}}{{end}}
 
 {{define "tmdetails"}}
 	<p>Supply: <code>{{.Supply}}</code></p>
@@ -89,7 +89,7 @@ const tplTokenRegistry = `
 {{end}}
 
 {{define "body"}}
-	<h2>{{.SC.Name}}</h2>
+	<h2>{{.Config.Name}}</h1>
 
 	{{if .Status}}
 		{{template "sc-info" .}}

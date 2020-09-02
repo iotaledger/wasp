@@ -94,18 +94,25 @@ const tplBase = `
 
 const TplSCInfo = `
 {{define "sc-info"}}
-	<p>SC address: <code>{{.SC.Address}}</code></p>
-	<p>Balance: <ul>
-	{{range $color, $amount := .Status.SCBalance}}
-		<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
-	{{end}}
-	</ul></p>
+	<details>
+		<summary>SC details</summary>
+		<p>ProgramHash: <code>{{.Status.ProgramHash}}</code></p>
+		<p>Description: <code>{{.Status.Description}}</code></p>
+		<p>Owner address: <code>{{.Status.OwnerAddress}}</code></p>
+		<p>SC address: <code>{{.Status.SCAddress}}</code></p>
+		<p>Minimum reward: <code>{{.Status.MinimumReward}}</code></p>
+		<p>Balance: <ul>
+		{{range $color, $amount := .Status.Balance}}
+			<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
+		{{end}}
+		</ul></p>
+	</details>
 {{end}}`
 
 const TplWs = `
 {{define "ws"}}
 	<script>
-		const url = 'ws://' +  location.host + '/ws/{{.SC.ShortName}}';
+		const url = 'ws://' +  location.host + '/ws/{{.Config.ShortName}}';
 		console.log('opening WebSocket to ' + url);
 		const ws = new WebSocket(url);
 
@@ -144,7 +151,7 @@ $ go install ./tools/wwallet
 		<summary>2. Configure</summary>
 <pre>$ {{waspClientCmd}} set goshimmer.api {{.Host}}:8080
 $ {{waspClientCmd}} set wasp.api {{.Host}}:9090
-$ {{waspClientCmd}} {{.SC.ShortName}} set address {{.SC.Address}}</pre>
+$ {{waspClientCmd}} {{.Config.ShortName}} set address {{.Config.Address}}</pre>
 		<p>Initialize a wallet: <code>{{waspClientCmd}} wallet init</code></p>
 		<p>Get some funds: <code>{{waspClientCmd}} wallet request-funds</code></p>
 	</details>
