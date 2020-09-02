@@ -11,7 +11,7 @@ func statusCmd(args []string) {
 	status, err := tr.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("TokenRegistry Smart Contract status:\n")
+	fmt.Printf("%s smart contract status:\n", tr.Config.Name)
 	for color, tm := range status.Registry {
 		fmt.Printf("  - Color: %s\n", color)
 		fmt.Printf("    Supply: %d\n", tm.Supply)

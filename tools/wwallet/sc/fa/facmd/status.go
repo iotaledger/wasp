@@ -13,7 +13,7 @@ func statusCmd(args []string) {
 	status, err := fa.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("FairAuction Smart Contract status:\n")
+	fmt.Printf("%s smart contract status:\n", fa.Config.Name)
 	dumpBalance(status.SCBalance)
 	fmt.Printf("  Owner margin: %d promilles\n", status.OwnerMarginPromille)
 	dumpAuctions(status.Auctions)

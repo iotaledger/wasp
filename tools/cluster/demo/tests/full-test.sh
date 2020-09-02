@@ -1,37 +1,22 @@
 #!/usr/bin/env bash
-set -euo pipefail
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+. "$DIR/common.sh"
 
-err_report() {
-    echo "Error on line $1" >&2
-}
+wwallet -c owner.json wallet init
+wwallet -c owner.json wallet request-funds
 
-trap 'err_report $LINENO' ERR
-
-ARGS="$*"
-
-function wwallet() {
-    echo "wwallet -w $ARGS $@" >&2
-    command wwallet -w $ARGS "$@"
-}
-
-function wwallet-owner() {
-    wwallet -c owner.json "$@"
-}
-
-wwallet-owner wallet init
-wwallet-owner wallet request-funds
-
-wwallet-owner fr admin init
+wwallet -c owner.json fr admin init
 fraddress=$(cat owner.json | jq .fr.address -r)
-wwallet-owner wallet send-funds $fraddress IOTA 100 # operating capital
+wwallet -c owner.json wallet send-funds $fraddress IOTA 100 # operating capital
 
-wwallet-owner fa admin init
+wwallet -c owner.json fa admin init
 faaddress=$(cat owner.json | jq .fa.address -r)
-wwallet-owner wallet send-funds $faaddress IOTA 100 # operating capital
+wwallet -c owner.json wallet send-funds $faaddress IOTA 100 # operating capital
 
-wwallet-owner tr admin init
+wwallet -c owner.json tr admin init
 traddress=$(cat owner.json | jq .tr.address -r)
-wwallet-owner wallet send-funds $traddress IOTA 100 # operating capital
+wwallet -c owner.json wallet send-funds $traddress IOTA 100 # operating capital
 
 wwallet wallet init
 wwallet wallet request-funds

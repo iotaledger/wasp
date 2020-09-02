@@ -8,8 +8,11 @@ import (
 )
 
 var commands = map[string]func([]string){
-	"set":   dwf.Config.HandleSetCmd,
-	"admin": adminCmd,
+	"set":      dwf.Config.HandleSetCmd,
+	"admin":    adminCmd,
+	"donate":   donateCmd,
+	"withdraw": withdrawCmd,
+	"status":   statusCmd,
 }
 
 func Cmd(args []string) {

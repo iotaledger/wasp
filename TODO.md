@@ -16,6 +16,7 @@ Pending
 - [ ] dwf dashboard
 - [ ] wwallet: deploy generic SC from proghash + committee
 - [ ] dashboard: display SC hash/description/address/owner-address
+- [ ] `wwallet wallet init` -> `wwallet init`
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not

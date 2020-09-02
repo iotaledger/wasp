@@ -11,7 +11,7 @@ func statusCmd(args []string) {
 	status, err := fr.Client().FetchStatus()
 	check(err)
 
-	fmt.Printf("FairRoulette Smart Contract status:\n")
+	fmt.Printf("%s smart contract status:\n", fr.Config.Name)
 	fmt.Printf("  play period (s): %d\n", status.PlayPeriodSeconds)
 	fmt.Printf("  next play in: %s\n", status.NextPlayIn())
 	fmt.Printf("  bets for next play: %d\n", status.CurrentBetsAmount)
