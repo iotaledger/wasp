@@ -22,7 +22,7 @@ Pending
       change until released).
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
 - [ ] deploy Wasp in Pollen testnet
-- [ ] `Oracle Data Bulletin Board` description
+- [ ] `Oracle Data Bulletin Board` description. Postponed
 
 To discuss
 - [ ] smart contract state access from outside. The current approach is to provide universal node API to query state. 
@@ -46,9 +46,9 @@ Future
 - [ ] MQTT publisher
 
 # Roadmap
-- `FairRoulette` and `FairAuction` on Goshimmer testnet
+- `DonateWithFeedback`, `TokenRegistry`, `FairAuction`, `FairRoulette`,  on Pollen testnet
 - Wasm VM and Rust environment for Wasm smart contracts. Programming tools. 
-- `FairRoulette`, `FairAuction` and `Oracle Data Bulletin Board` PoC on Rust->Wasm
+- PoC smart contracts on Rust->Wasm
 - Node dashboard, smart contract dashboard, visualisation
 - Admin tools and APIs 
 - CLI wallet (universal and template)
