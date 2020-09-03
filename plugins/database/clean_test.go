@@ -1,14 +1,22 @@
 package database
 
 import (
+	"io/ioutil"
+	"os"
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestDbClean(t *testing.T) {
-	tmpdb, err := database.NewDB("tmp")
+	dir, err := ioutil.TempDir("", "tmp")
+	assert.NoError(t, err)
+
+	defer os.RemoveAll(dir)
+
+	tmpdb, err := database.NewDB(dir)
 	assert.NoError(t, err)
 
 	storeTmp := tmpdb.NewStore().WithRealm([]byte("realm"))
