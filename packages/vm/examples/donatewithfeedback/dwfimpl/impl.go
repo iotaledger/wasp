@@ -117,8 +117,9 @@ func withdraw(ctx vmtypes.Sandbox) {
 	bal := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
 	withdrawSum, amountGiven, err := ctx.AccessRequest().Args().GetInt64(donatewithfeedback.VarReqWithdrawSum)
 	if err != nil {
-		// should not happen
-		ctx.Publishf("DonateWithFeedback: withdraw internal error %v", err)
+		// the error from GetInt64 means binary data sent as a value of the variable
+		// cannot be interpreted as int64
+		ctx.Publishf("DonateWithFeedback: withdraw wrong argument %v", err)
 		// return everything TODO RefundAll function ?
 		sender := ctx.AccessRequest().Sender()
 		sent := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)

@@ -29,7 +29,7 @@ const (
 	// request arguments
 	// variable containing feedback text
 	VarReqFeedback = "f"
-	// sum to withdrwaw with the 'withdraw' request
+	// sum to withdraw with the 'withdraw' request
 	VarReqWithdrawSum = "s"
 )
 

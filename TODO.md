@@ -26,6 +26,7 @@ Pending
 - [ ] `Oracle Data Bulletin Board` description. Postponed
 
 To discuss
+- [ ] refactor 'request code' from uint16 value to string
 - [ ] smart contract state access from outside. The current approach is to provide universal node API to query state. 
 The alternative would be to expose access functions (view in Solidity) from the smart contract code itself.
 - [ ] Merkle proofs of smart contract state elements  
