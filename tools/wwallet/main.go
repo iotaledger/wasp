@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf/dwfcmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/facmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr/frcmd"
+	"github.com/iotaledger/wasp/tools/wwallet/sc/sccmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr/trcmd"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 	"github.com/spf13/pflag"
@@ -44,6 +45,7 @@ func main() {
 	trcmd.InitCommands(commands, flags)
 	dwfcmd.InitCommands(commands, flags)
 	dashboardcmd.InitCommands(commands, flags)
+	sccmd.InitCommands(commands, flags)
 	check(flags.Parse(os.Args[1:]))
 
 	config.Read()

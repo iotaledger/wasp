@@ -17,8 +17,8 @@ func adminCmd(args []string) {
 	}
 
 	switch args[0] {
-	case "init":
-		check(fa.Config.InitSC(wallet.Load().SignatureScheme()))
+	case "deploy":
+		check(fa.Config.Deploy(wallet.Load().SignatureScheme()))
 
 	case "set-owner-margin":
 		if len(args) != 2 {
@@ -37,6 +37,6 @@ func adminCmd(args []string) {
 }
 
 func adminUsage() {
-	fmt.Printf("Usage: %s fr admin [init|set-owner-margin <promilles>]\n", os.Args[0])
+	fmt.Printf("Usage: %s fr admin [deploy|set-owner-margin <promilles>]\n", os.Args[0])
 	os.Exit(1)
 }

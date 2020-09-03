@@ -14,9 +14,9 @@ Done
 - [x] dwf dashboard
 - [x] dashboard: display SC hash/description/address/owner-address
 - [x] `wwallet wallet init` -> `wwallet init`
+- [x] wwallet: deploy generic SC from proghash + committee
 
 Pending
-- [ ] wwallet: deploy generic SC from proghash + committee
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)

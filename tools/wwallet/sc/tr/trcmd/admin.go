@@ -14,8 +14,8 @@ func adminCmd(args []string) {
 	}
 
 	switch args[0] {
-	case "init":
-		check(tr.Config.InitSC(wallet.Load().SignatureScheme()))
+	case "deploy":
+		check(tr.Config.Deploy(wallet.Load().SignatureScheme()))
 
 	default:
 		adminUsage()
@@ -23,6 +23,6 @@ func adminCmd(args []string) {
 }
 
 func adminUsage() {
-	fmt.Printf("Usage: %s tr admin [init]\n", os.Args[0])
+	fmt.Printf("Usage: %s tr admin [deploy]\n", os.Args[0])
 	os.Exit(1)
 }

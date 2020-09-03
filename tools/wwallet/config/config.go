@@ -47,8 +47,12 @@ func Read() {
 	_ = viper.ReadInConfig()
 }
 
+func GoshimmerApiConfigVar() string {
+	return "goshimmer." + hostKindApi
+}
+
 func GoshimmerApi() string {
-	r := viper.GetString("goshimmer." + hostKindApi)
+	r := viper.GetString(GoshimmerApiConfigVar())
 	if r != "" {
 		return r
 	}
@@ -71,7 +75,7 @@ func WaspApi() string {
 }
 
 func WaspNanomsg() string {
-	r := viper.GetString("wasp." + hostKindApi)
+	r := viper.GetString("wasp." + hostKindNanomsg)
 	if r != "" {
 		return r
 	}
@@ -98,8 +102,24 @@ func committee(kind string, indices []int) []string {
 	return hosts
 }
 
+func committeeConfigVar(kind string, i int) string {
+	return fmt.Sprintf("wasp.%d.%s", i, kind)
+}
+
+func CommitteeApiConfigVar(i int) string {
+	return committeeConfigVar(hostKindApi, i)
+}
+
+func CommitteePeeringConfigVar(i int) string {
+	return committeeConfigVar(hostKindPeering, i)
+}
+
+func CommitteeNanomsgConfigVar(i int) string {
+	return committeeConfigVar(hostKindNanomsg, i)
+}
+
 func committeeHost(kind string, i int) string {
-	r := viper.GetString(fmt.Sprintf("wasp.%d.%s", i, kind))
+	r := viper.GetString(committeeConfigVar(kind, i))
 	if r != "" {
 		return r
 	}
@@ -141,7 +161,7 @@ func TrySCAddress(scName string) *address.Address {
 func GetSCAddress(scName string) *address.Address {
 	address := TrySCAddress(scName)
 	if address == nil {
-		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin init` first"))
+		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin deploy` first"))
 	}
 	return address
 }

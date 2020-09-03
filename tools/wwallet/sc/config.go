@@ -34,6 +34,8 @@ func (c *Config) HookFlags() *pflag.FlagSet {
 	return c.Flags
 }
 
+var DefaultCommittee = []int{0, 1, 2, 3}
+
 func (c *Config) Committee() []int {
 	if len(c.committee) > 0 {
 		return c.committee
@@ -42,7 +44,7 @@ func (c *Config) Committee() []int {
 	if len(r) > 0 {
 		return r
 	}
-	return []int{0, 1, 2, 3}
+	return DefaultCommittee
 }
 
 func (c *Config) Quorum() uint16 {
@@ -95,38 +97,60 @@ func (c *Config) IsAvailable() bool {
 	return config.TrySCAddress(c.ShortName) != nil
 }
 
-func (c *Config) InitSC(sigScheme signaturescheme.SignatureScheme) error {
+func (c *Config) Deploy(sigScheme signaturescheme.SignatureScheme) error {
+	scAddress, err := Deploy(&DeployParams{
+		Quorum:      c.Quorum(),
+		Committee:   c.Committee(),
+		Description: c.Name,
+		ProgramHash: c.ProgramHash,
+		SigScheme:   sigScheme,
+	})
+	if err == nil {
+		c.SetAddress(scAddress.String())
+	}
+	return err
+}
+
+type DeployParams struct {
+	Quorum      uint16
+	Committee   []int
+	Description string
+	ProgramHash string
+	SigScheme   signaturescheme.SignatureScheme
+}
+
+func Deploy(params *DeployParams) (*address.Address, error) {
 	scAddress, _, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  config.GoshimmerClient(),
-		CommitteeApiHosts:     config.CommitteeApi(c.Committee()),
-		CommitteePeeringHosts: config.CommitteePeering(c.Committee()),
+		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
+		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
 		AccessNodes:           []string{},
-		N:                     uint16(len(c.Committee())),
-		T:                     c.Quorum(),
-		OwnerSigScheme:        sigScheme,
-		ProgramHash:           c.progHash(),
+		N:                     uint16(len(params.Committee)),
+		T:                     uint16(params.Quorum),
+		OwnerSigScheme:        params.SigScheme,
+		ProgramHash:           params.progHash(),
+		Description:           params.Description,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
 		Addresses:         []*address.Address{scAddress},
-		ApiHosts:          config.CommitteeApi(c.Committee()),
-		PublisherHosts:    config.CommitteeNanomsg(c.Committee()),
+		ApiHosts:          config.CommitteeApi(params.Committee),
+		PublisherHosts:    config.CommitteeNanomsg(params.Committee),
 		WaitForCompletion: config.WaitForConfirmation,
 		Timeout:           20 * time.Second,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Printf("Initialized %s smart contract\n", c.Name)
+	fmt.Printf("Initialized %s smart contract\n", params.Description)
 	fmt.Printf("SC Address: %s\n", scAddress)
-	c.SetAddress(scAddress.String())
-	return nil
+	return scAddress, nil
 }
 
-func (c *Config) progHash() hashing.HashValue {
-	hash, err := hashing.HashValueFromBase58(c.ProgramHash)
+func (p *DeployParams) progHash() hashing.HashValue {
+	hash, err := hashing.HashValueFromBase58(p.ProgramHash)
 	if err != nil {
 		panic(err)
 	}

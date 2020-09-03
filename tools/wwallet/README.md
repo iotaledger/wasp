@@ -49,7 +49,7 @@ This will create the file `owner.json` with the admin user's wallet.
    capital to it:
 
 ```
-$ wwallet -c owner.json fr admin init
+$ wwallet -c owner.json fr admin deploy
 Initialized FairRoulette smart contract
 SC Address: mUbfBM...
 $ wwallet -c owner.json send-funds mUbfBM... IOTA 100
@@ -106,7 +106,7 @@ Steps:
    capital to it:
 
 ```
-$ wwallet -c owner.json fa admin init
+$ wwallet -c owner.json fa admin deploy
 Initialized FairAuction smart contract
 SC Address: mUbfBM...
 $ wwallet -c owner.json send-funds mUbfBM... IOTA 100
