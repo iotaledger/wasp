@@ -13,9 +13,14 @@ import (
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr/frdashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr/trdashboard"
+	"github.com/spf13/pflag"
 )
 
-func Cmd(args []string) {
+func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
+	commands["dashboard"] = cmd
+}
+
+func cmd(args []string) {
 	listenAddr := ":10000"
 	if len(args) > 0 {
 		if len(args) != 1 {

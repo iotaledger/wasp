@@ -152,8 +152,8 @@ $ go install ./tools/wwallet
 <pre>$ {{waspClientCmd}} set goshimmer.api {{.Host}}:8080
 $ {{waspClientCmd}} set wasp.api {{.Host}}:9090
 $ {{waspClientCmd}} {{.Config.ShortName}} set address {{.Config.Address}}</pre>
-		<p>Initialize a wallet: <code>{{waspClientCmd}} wallet init</code></p>
-		<p>Get some funds: <code>{{waspClientCmd}} wallet request-funds</code></p>
+		<p>Initialize a wallet: <code>{{waspClientCmd}} init</code></p>
+		<p>Get some funds: <code>{{waspClientCmd}} request-funds</code></p>
 	</details>
 {{end}}
 `

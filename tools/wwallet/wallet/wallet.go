@@ -19,16 +19,16 @@ type Wallet struct {
 	seed *seed.Seed
 }
 
-func Init() error {
+func initCmd(args []string) {
 	seed := seed.NewSeed().Bytes()
 	viper.Set("wallet.seed", base58.Encode(seed))
-	return viper.WriteConfig()
+	check(viper.WriteConfig())
 }
 
 func Load() *Wallet {
 	seedb58 := viper.GetString("wallet.seed")
 	if len(seedb58) == 0 {
-		check(fmt.Errorf("call `wallet init` first"))
+		check(fmt.Errorf("call `init` first"))
 	}
 	seedBytes, err := base58.Decode(seedb58)
 	check(err)

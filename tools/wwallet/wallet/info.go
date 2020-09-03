@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 )
 
-func dumpAddress() {
+func addressCmd(args []string) {
 	wallet := Load()
 	kp := wallet.KeyPair()
 	fmt.Printf("Address index %d\n", addressIndex)
@@ -18,7 +18,7 @@ func dumpAddress() {
 	fmt.Printf("  Address:     %s\n", wallet.Address())
 }
 
-func dumpBalance() {
+func balanceCmd(args []string) {
 	wallet := Load()
 	address := wallet.Address()
 

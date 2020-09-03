@@ -10,25 +10,25 @@ Wasp Client is a CLI tool for interacting with Goshimmer and Wasp, allowing to:
 * Create a new wallet (creates `wwallet.json` which stores the seed):
 
 ```
-wwallet wallet init
+wwallet init
 ```
 
 * Show private key + public key + account address for index 0 (index optional, default 0):
 
 ```
-wwallet wallet address -i 0
+wwallet address -i 0
 ```
 
 * Query Goshimmer for account balance:
 
 ```
-wwallet wallet balance [-i index]
+wwallet balance [-i index]
 ```
 
 * Use Testnet Faucet to transfer some funds into the wallet address at index n:
 
 ```
-wwallet wallet request-funds [-i index]
+wwallet request-funds [-i index]
 ```
 
 ## FairRoulette (a.k.a "fr") Smart Contract
@@ -38,12 +38,12 @@ Steps:
 1. Create a new wallet for the owner account:
 
 ```
-wwallet -c owner.json wallet init
+wwallet -c owner.json init
 ```
 
 This will create the file `owner.json` with the admin user's wallet.
 
-2. Transfer some funds to the owner address: `wwallet -c owner.json wallet request-funds`.
+2. Transfer some funds to the owner address: `wwallet -c owner.json request-funds`.
 
 3. Initialize the FairRoulette smart contract, and transfer some operating
    capital to it:
@@ -52,7 +52,7 @@ This will create the file `owner.json` with the admin user's wallet.
 $ wwallet -c owner.json fr admin init
 Initialized FairRoulette smart contract
 SC Address: mUbfBM...
-$ wwallet-owner wallet send-funds mUbfBM... IOTA 100
+$ wwallet -c owner.json send-funds mUbfBM... IOTA 100
 ```
 
 Copy the generated SC address. (It is also saved in `owner.json`)
@@ -60,17 +60,17 @@ Copy the generated SC address. (It is also saved in `owner.json`)
 4. Initialize a wallet for the client account:
 
 ```
-wwallet wallet init
+wwallet init
 ```
 
 This creates `wwallet.json` (can be changed with `-c`).
 
-5. Transfer some funds to your wallet: `wwallet wallet request-funds`.
+5. Transfer some funds to your wallet: `wwallet request-funds`.
 
 6. Query your balance:
 
 ```
-$ wwallet wallet balance
+$ wwallet balance
 Index 0
   Address: WKos8N...
   Balances:
@@ -109,7 +109,7 @@ Steps:
 $ wwallet -c owner.json fa admin init
 Initialized FairAuction smart contract
 SC Address: mUbfBM...
-$ wwallet-owner wallet send-funds mUbfBM... IOTA 100
+$ wwallet -c owner.json send-funds mUbfBM... IOTA 100
 ```
 
 Copy the generated SC address. (It is also saved in `owner.json`)
@@ -123,7 +123,7 @@ wwallet fa set address mUbfBM...
 4. Mint some tokens:
 
 ```
-$ wwallet wallet mint 10
+$ wwallet mint 10
 Minted 10 tokens of color y72kGq...
 ```
 

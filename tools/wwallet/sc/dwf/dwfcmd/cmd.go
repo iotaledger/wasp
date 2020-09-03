@@ -5,9 +5,15 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf"
+	"github.com/spf13/pflag"
 )
 
-var commands = map[string]func([]string){
+func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
+	commands["dwf"] = cmd
+	flags.AddFlagSet(dwf.Config.HookFlags())
+}
+
+var subcmds = map[string]func([]string){
 	"set":      dwf.Config.HandleSetCmd,
 	"admin":    adminCmd,
 	"donate":   donateCmd,
@@ -15,8 +21,8 @@ var commands = map[string]func([]string){
 	"status":   statusCmd,
 }
 
-func Cmd(args []string) {
-	dwf.Config.HandleCmd(args, commands)
+func cmd(args []string) {
+	dwf.Config.HandleCmd(args, subcmds)
 }
 
 func check(err error) {

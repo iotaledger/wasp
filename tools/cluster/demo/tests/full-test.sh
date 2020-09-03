@@ -3,27 +3,27 @@ DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/common.sh"
 
-wwallet -c owner.json wallet init
-wwallet -c owner.json wallet request-funds
+wwallet -c owner.json init
+wwallet -c owner.json request-funds
 
 wwallet -c owner.json fr admin init
 fraddress=$(cat owner.json | jq .fr.address -r)
-wwallet -c owner.json wallet send-funds $fraddress IOTA 100 # operating capital
+wwallet -c owner.json send-funds $fraddress IOTA 100 # operating capital
 
 wwallet -c owner.json fa admin init
 faaddress=$(cat owner.json | jq .fa.address -r)
-wwallet -c owner.json wallet send-funds $faaddress IOTA 100 # operating capital
+wwallet -c owner.json send-funds $faaddress IOTA 100 # operating capital
 
 wwallet -c owner.json tr admin init
 traddress=$(cat owner.json | jq .tr.address -r)
-wwallet -c owner.json wallet send-funds $traddress IOTA 100 # operating capital
+wwallet -c owner.json send-funds $traddress IOTA 100 # operating capital
 
 wwallet -c owner.json dwf admin init
 dwfaddress=$(cat owner.json | jq .dwf.address -r)
-wwallet -c owner.json wallet send-funds $dwfaddress IOTA 100 # operating capital
+wwallet -c owner.json send-funds $dwfaddress IOTA 100 # operating capital
 
-wwallet wallet init
-wwallet wallet request-funds
+wwallet init
+wwallet request-funds
 wwallet fr set address $fraddress
 wwallet fa set address $faaddress
 wwallet tr set address $traddress

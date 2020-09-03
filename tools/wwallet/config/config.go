@@ -23,16 +23,18 @@ const (
 	hostKindNanomsg = "nanomsg"
 )
 
-func HookFlags() *pflag.FlagSet {
-	flags := pflag.NewFlagSet("config", pflag.ExitOnError)
-	flags.StringVarP(&configPath, "config", "c", "wwallet.json", "path to wwallet.json")
-	flags.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
-	flags.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
-	flags.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
-	return flags
+func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
+	commands["set"] = setCmd
+
+	fs := pflag.NewFlagSet("config", pflag.ExitOnError)
+	fs.StringVarP(&configPath, "config", "c", "wwallet.json", "path to wwallet.json")
+	fs.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
+	fs.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
+	fs.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
+	flags.AddFlagSet(fs)
 }
 
-func SetCmd(args []string) {
+func setCmd(args []string) {
 	if len(args) != 2 {
 		fmt.Printf("Usage: %s set <key> <value>\n", os.Args[0])
 		os.Exit(1)

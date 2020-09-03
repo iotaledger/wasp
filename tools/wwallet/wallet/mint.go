@@ -12,7 +12,7 @@ import (
 
 func mintCmd(args []string) {
 	if len(args) < 1 {
-		fmt.Printf("Usage: %s wallet mint <amount>\n", os.Args[0])
+		fmt.Printf("Usage: %s mint <amount>\n", os.Args[0])
 		os.Exit(1)
 	}
 

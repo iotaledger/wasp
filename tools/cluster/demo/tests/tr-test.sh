@@ -3,14 +3,14 @@ DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/common.sh"
 
-wwallet -c owner.json wallet init
-wwallet -c owner.json wallet request-funds
+wwallet -c owner.json init
+wwallet -c owner.json request-funds
 wwallet -c owner.json tr admin init
 scaddress=$(cat owner.json | jq .tr.address -r)
-wwallet -c owner.json wallet send-funds $scaddress IOTA 100 # operating capital
+wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
 
-wwallet wallet init
-wwallet wallet request-funds
+wwallet init
+wwallet request-funds
 wwallet tr set address $scaddress
 
 r=$(wwallet tr mint "My first coin" 10)

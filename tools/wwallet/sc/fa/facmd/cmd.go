@@ -5,9 +5,15 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
+	"github.com/spf13/pflag"
 )
 
-var commands = map[string]func([]string){
+func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
+	commands["fa"] = cmd
+	flags.AddFlagSet(fa.Config.HookFlags())
+}
+
+var subcmds = map[string]func([]string){
 	"set":           fa.Config.HandleSetCmd,
 	"admin":         adminCmd,
 	"status":        statusCmd,
@@ -15,8 +21,8 @@ var commands = map[string]func([]string){
 	"place-bid":     placeBidCmd,
 }
 
-func Cmd(args []string) {
-	fa.Config.HandleCmd(args, commands)
+func cmd(args []string) {
+	fa.Config.HandleCmd(args, subcmds)
 }
 
 func check(err error) {

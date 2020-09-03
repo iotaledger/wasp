@@ -15,7 +15,7 @@ import (
 
 func sendFundsCmd(args []string) {
 	if len(args) < 3 {
-		fmt.Printf("Usage: %s wallet send-funds <target-address> <color> <amount>\n", os.Args[0])
+		fmt.Printf("Usage: %s send-funds <target-address> <color> <amount>\n", os.Args[0])
 		os.Exit(1)
 	}
 
