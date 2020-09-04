@@ -1,4 +1,5 @@
-// hard coded implementation of the FairAuction smart contract: the NFT aution (non-fungible tokens)
+// hard coded implementation of the FairAuction smart contract
+// The auction dApp is automatically run by committee, a distributed market for colored tokens
 package fairauction
 
 import (
@@ -14,6 +15,11 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
+
+// program has is an id of the program
+const ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
+
+// implement Processor and EntryPoint interfaces
 
 type fairAuctionProcessor map[sctransaction.RequestCode]fairAuctionEntryPoint
 
@@ -36,7 +42,7 @@ var entryPoints = fairAuctionProcessor{
 	RequestPlaceBid:        placeBid,
 }
 
-const ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
+// string constants for request arguments and state variable names
 const (
 	// request vars
 	VarReqAuctionColor                = "color"
@@ -51,14 +57,17 @@ const (
 )
 
 const (
-	MinAuctionDurationMinutes     = 1
+	// minimum duration of auction
+	MinAuctionDurationMinutes = 1
+	// default duration of the auction
 	AuctionDurationDefaultMinutes = 60
-	OwnerMarginDefault            = 50  // 5%
-	OwnerMarginMin                = 5   // minimum 0.5%
-	OwnerMarginMax                = 100 // max 10%
+	// Owner of the smart contract takes %% from the winning bid. The default, min, max
+	OwnerMarginDefault = 50  // 5%
+	OwnerMarginMin     = 5   // minimum 0.5%
+	OwnerMarginMax     = 100 // max 10%
 )
 
-// validating constants
+// validating constants at node boot
 func init() {
 	if OwnerMarginMax > 1000 ||
 		OwnerMarginMin < 0 ||
@@ -69,12 +78,13 @@ func init() {
 	}
 }
 
+// statical link point to the Wasp node
 func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
 func (v fairAuctionProcessor) GetDescription() string {
-	return "FairAuction hard coded smart contract processor"
+	return "FairAuction hard coded smart contract program"
 }
 
 func (v fairAuctionProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
@@ -90,28 +100,41 @@ func (ep fairAuctionEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }
 
+// AuctionInfo describes active auction
 type AuctionInfo struct {
-	// color of the tokens for sale. Max one auction per color at each time is allowed
+	// color of the tokens for sale. Max one auction per color at same time is allowed
 	// all tokens are being sold as one lot
 	Color balance.Color
 	// number of tokens for sale
 	NumTokens int64
-	// minimum bid
+	// minimum bid. Set by the auction initiator
 	MinimumBid int64
-	// any text, like "AuctionOwner of the token have a right to call me for a date"
+	// any text, like "AuctionOwner of the token have a right to call me for a date". Set by auction initiator
 	Description string
 	// timestamp when auction started
 	WhenStarted int64
-	// duration of the auctions in minutes. Should be no less than MinAuctionDurationMinutes
+	// duration of the auctions in minutes. Should be >= MinAuctionDurationMinutes
 	DurationMinutes int64
 	// address which issued StartAuction transaction
 	AuctionOwner address.Address
-	// total deposit by the auction owner
+	// total deposit by the auction owner. Iotas sent by the auction owner together with the tokens for sale in the same
+	// transaction.
 	TotalDeposit int64
-	// AuctionOwner's margin in promilles, frozen at the moment of creation of smart contract
+	// AuctionOwner's margin in promilles, taken at the moment of creation of smart contract
 	OwnerMargin int64
-	// list of bids
+	// list of bids to the auction
 	Bids []*BidInfo
+}
+
+// BidInfo represents one bid to the auction
+type BidInfo struct {
+	// total sum of the bid = total amount of iotas available in the request - 1 - SC reward - ServiceFeeBid
+	// the total is a cumulative sum of all bids from the same bidder
+	Total int64
+	// originator of the bid
+	Bidder address.Address
+	// timestamp Unix nano
+	When int64
 }
 
 func (ai *AuctionInfo) SumOfBids() int64 {
@@ -139,15 +162,6 @@ func (ai *AuctionInfo) Due() int64 {
 	return ai.WhenStarted + ai.DurationMinutes*time.Minute.Nanoseconds()
 }
 
-type BidInfo struct {
-	// total sum of the bid = total amount of iotas available in the request - 1 - SC reward - ServiceFeeBid
-	Total int64
-	// address which sent the bid
-	Bidder address.Address
-	// timestamp
-	When int64
-}
-
 func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 	if bi.Total < other.Total {
 		return false
@@ -158,7 +172,9 @@ func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 	return bi.When < other.When
 }
 
+// NOP
 func initSC(ctx vmtypes.Sandbox) {
+	ctx.Publish("initSC")
 }
 
 // startAuction processes the StartAuction request
@@ -169,29 +185,34 @@ func initSC(ctx vmtypes.Sandbox) {
 // - VarReqStartAuctionDurationMinutes: duration of auction
 // Request transaction must contain at least number of iotas >= of current owner margin from the minimum bid
 // (not including node reward with request token)
+// Tokens for sale must be included into the request transaction
 func startAuction(ctx vmtypes.Sandbox) {
 	ctx.Publish("startAuction begin")
 
-	// find out who starts the action
 	sender := ctx.AccessRequest().Sender()
 	reqArgs := ctx.AccessRequest().Args()
 	account := ctx.AccessSCAccount()
 
+	// check how many iotas the request contains
 	totalDeposit := account.AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if totalDeposit < 1 {
 		// it is expected at least 1 iota in deposit
+		// this 1 iota is needed as a "operating capital for the time locked request to itself"
+		// refund iotas
 		refundFromRequest(ctx, &balance.ColorIOTA, 1)
 
 		ctx.Publish("startAuction: exit 0: must be at least 1i in deposit")
 		return
 	}
 
+	// take current setting of the smart contract owner margin
 	ownerMargin := GetOwnerMarginPromille(ctx.AccessState().GetInt64(VarStateOwnerMarginPromille))
 
 	// determine color of the token for sale
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil || !ok {
-		// incorrect request arguments
+		// incorrect request arguments, colore for sale is not determined
+		// refund half of the deposit in iotas
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
 
 		ctx.Publish("startAuction: exit 1")
@@ -199,26 +220,28 @@ func startAuction(ctx vmtypes.Sandbox) {
 	}
 	colorForSale := (balance.Color)(*colh)
 	if colorForSale == balance.ColorIOTA || colorForSale == balance.ColorNew {
-		// reserved color not allowed
+		// reserved color code are not allowed
+		// refund half
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
 
 		ctx.Publish("startAuction: exit 2")
 		return
 	}
 
-	// determine amount of colored tokens for sale
+	// determine amount of colored tokens for sale. They must be in the outputs of the request transaction
 	tokensForSale := account.AvailableBalanceFromRequest(&colorForSale)
 	if tokensForSale == 0 {
-		// no tokens transferred
+		// no tokens transferred. Refund half of deposit
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
 
 		ctx.Publish("startAuction exit 3: no tokens for sale")
 		return
 	}
 
+	// determine minimum bid
 	minimumBid, _, err := reqArgs.GetInt64(VarReqStartAuctionMinimumBid)
 	if err != nil {
-		// wrong argument. Hard reject
+		// wrong argument. Hard reject, no refund
 
 		ctx.Publish("startAuction: exit 4")
 		return
@@ -258,7 +281,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		duration = MinAuctionDurationMinutes
 	}
 
-	// read description text
+	// read description text from the request
 	description, ok, err := reqArgs.GetString(VarReqStartAuctionDescription)
 	if err != nil {
 		return
@@ -298,6 +321,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		colorForSale.String(), tokensForSale, minimumBid, ownerMargin)
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
+	// the FinalizeAuction request will be time locked for the duration and then auction will be run
 	args := kv.NewMap()
 	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
@@ -307,14 +331,16 @@ func startAuction(ctx vmtypes.Sandbox) {
 
 // placeBid is a request to place a bid in the auction for the particular color
 // The request transaction must contain at least:
-// - 1 request token + Bid amount/rise amount
+// - 1 request token + Bid/rise amount
 // In case it is not the first bid by this bidder, respective iotas are treated as
-// a rise of the bid and is added to the total
+// a rise of the bid and are added to the total
 // Arguments:
 // - VarReqAuctionColor: color of the tokens for sale
 func placeBid(ctx vmtypes.Sandbox) {
 	ctx.Publish("placeBid: begin")
 
+	// all iotas in the request transaction are considered a bid/rise sum
+	// it also means several bids can't be placed in the same transaction <-- TODO generic solution for it
 	bidAmount := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if bidAmount == 0 {
 		// no iotas sent
@@ -322,9 +348,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	// check if enough iotas
 	reqArgs := ctx.AccessRequest().Args()
-
 	// determine color of the bid
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil {
@@ -333,7 +357,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 		return
 	}
 	if !ok {
-		// incorrect arguments
+		// missing argument
 		ctx.Publish("placeBid: exit 2")
 		refundFromRequest(ctx, &balance.ColorIOTA, 0)
 		return
@@ -347,7 +371,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	// find record for the auction
+	// find the auction
 	auctions := ctx.AccessState().GetDictionary(VarStateAuctions)
 	data := auctions.GetAt(col.Bytes())
 	if data == nil {
@@ -356,15 +380,17 @@ func placeBid(ctx vmtypes.Sandbox) {
 		ctx.Publish("placeBid: exit 4")
 		return
 	}
+	// unmarshal auction data
 	ai := &AuctionInfo{}
 	if err := ai.Read(bytes.NewReader(data)); err != nil {
 		// internal error
 		ctx.Publish("placeBid: exit 6")
 		return
 	}
-
+	// determine the sender of the bid
 	sender := ctx.AccessRequest().Sender()
 
+	// find bids of this bidder in the auction
 	var bi *BidInfo
 	for _, bitmp := range ai.Bids {
 		if bitmp.Bidder == sender {
@@ -373,17 +399,18 @@ func placeBid(ctx vmtypes.Sandbox) {
 		}
 	}
 	if bi == nil {
-		// first bid by the sender
+		// first bid by the bidder. Create new bid record
 		ai.Bids = append(ai.Bids, &BidInfo{
 			Total:  bidAmount,
 			Bidder: sender,
 			When:   ctx.GetTimestamp(),
 		})
 	} else {
-		// bid is treated as a rise
+		// bidder has bid already. Treated it as a rise
 		bi.Total += bidAmount
 		bi.When = ctx.GetTimestamp()
 	}
+	// marshal the whole auction info and save it into the state (the dictionary of auctions)
 	data = util.MustBytes(ai)
 	auctions.SetAt(col.Bytes(), data)
 
@@ -392,7 +419,8 @@ func placeBid(ctx vmtypes.Sandbox) {
 
 // finalizeAuction selects the winner and sends tokens to him.
 // returns bid amounts to other bidders.
-// The request is time locked for the period of the action
+// The request is time locked for the period of the auction. It won't be executed if sent
+// not by the smart contract instance itself
 // Arguments:
 // - VarReqAuctionColor: color of the auction
 func finalizeAuction(ctx vmtypes.Sandbox) {
@@ -400,7 +428,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 
 	accessReq := ctx.AccessRequest()
 	if accessReq.Sender() != *ctx.GetSCAddress() {
-		// finalizeAuction request can only be sent by the smart contract to itself
+		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return
 	}
 	reqArgs := accessReq.Args()
@@ -408,7 +436,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	// determine color of the auction to finalize
 	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil || !ok {
-		// incorrect request arguments
+		// wrong request arguments
 		// internal error. Refund completely?
 		ctx.Publish("finalizeAuction: exit 1")
 		return
@@ -484,6 +512,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		}
 	}
 
+	// take fee for the smart contract owner
 	feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
 	ctx.Publishf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken)
 
@@ -549,7 +578,8 @@ func setOwnerMargin(ctx vmtypes.Sandbox) {
 	ctx.Publishf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
 }
 
-// refundFromRequest returns all iotas tokens to the sender minus sunkFee
+// TODO implement universal 'refund' function to be used in rollback situations
+// refundFromRequest returns all tokens of the given color to the sender minus sunkFee
 func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64) {
 	account := ctx.AccessSCAccount()
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
@@ -557,5 +587,4 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 	sender := ctx.AccessRequest().Sender()
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	account.MoveTokensFromRequest(&sender, color, available)
-
 }

@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+// serde of FairAction binary data
+
 func (ai *AuctionInfo) Write(w io.Writer) error {
 	if _, err := w.Write(ai.Color[:]); err != nil {
 		return err

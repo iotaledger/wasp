@@ -2,7 +2,10 @@ package consensus
 
 import "time"
 
-// the file contains consensus stage tracking related setting and timeouts
+// consensus goes through stages on the leader and on the subordinate side
+// Whenever stage changes, it set the timeout. If stage doesn't change for the timeout period,
+// leader is rotated.
+// The file contains consensus stage tracking related settings and leader rotation timeouts
 
 const (
 	consensusStageNoSync = iota

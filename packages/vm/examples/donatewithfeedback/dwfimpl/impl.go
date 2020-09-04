@@ -110,6 +110,7 @@ func donate(ctx vmtypes.Sandbox) {
 // protected request. Only owner can withdraw iotas from smart contract at any time
 // this function will only be called if the request transaction contains signature from the
 // smart contract owner. It is checked before calling the VM
+// TODO implement withdrawal of other than IOTA colored tokens
 func withdraw(ctx vmtypes.Sandbox) {
 	ctx.Publishf("DonateWithFeedback: withdraw")
 

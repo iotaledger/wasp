@@ -31,16 +31,21 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
+// implement Processor and EntryPoint interfaces
 type fairRouletteProcessor map[sctransaction.RequestCode]fairRouletteEntryPoint
 
 type fairRouletteEntryPoint func(ctx vmtypes.Sandbox)
 
+// ID of the smart contract program
+const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
+
+// constants for request codes
 const (
-	// request to place the bet. Public
+	// request to place the bet
 	RequestPlaceBet = sctransaction.RequestCode(uint16(1))
-	// request to lock the bets. Rejected if sent not from the smart contract itself
+	// request to lock the bets
 	RequestLockBets = sctransaction.RequestCode(uint16(2))
-	// request to play and distribute. Rejected if sent not from the smart contract itself
+	// request to play and distribute
 	RequestPlayAndDistribute = sctransaction.RequestCode(uint16(3))
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
@@ -55,9 +60,8 @@ var entryPoints = fairRouletteProcessor{
 	RequestSetPlayPeriod:     setPlayPeriod,
 }
 
+// string constants for names of state and request argument variables
 const (
-	ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
-
 	/// General constants
 	// number of colors
 	NumColors = 5
@@ -88,6 +92,7 @@ const (
 	ReqVarPlayPeriodSec = "playPeriod"
 )
 
+// BetInfo contains data of the bet
 type BetInfo struct {
 	Player address.Address
 	reqId  sctransaction.RequestId
@@ -95,11 +100,13 @@ type BetInfo struct {
 	Color  byte
 }
 
+// Smart contract keep historical stats for players. For fun
 type PlayerStats struct {
 	Bets uint32
 	Wins uint32
 }
 
+// coonnection of the SC program with the Wasp node
 func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
@@ -126,13 +133,13 @@ func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
 func placeBet(ctx vmtypes.Sandbox) {
 	ctx.Publish("placeBet")
 
-	//ctx.GetWaspLog().Infof("$$$$$$$$$$ dump:\n%s\n", ctx.DumpAccount())
-
 	state := ctx.AccessState()
 
 	// if there are some bets locked, save the entropy derived immediately from it.
 	// it is not predictable at the moment of locking and this saving makes it not playable later
 	// entropy saved this way is derived (hashed) from the locking transaction hash
+	// we do this trick to be able to deterministically check if smart contract is really fair.
+	// The played color is a deterministic function of the hash of transaction which locked the bets
 	if state.GetArray(StateVarLockedBets).Len() > 0 {
 		_, ok := state.GetHashValue(StateVarEntropyFromLocking)
 		if !ok {
