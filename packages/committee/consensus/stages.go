@@ -2,6 +2,8 @@ package consensus
 
 import "time"
 
+// the file contains consensus stage tracking related setting and timeouts
+
 const (
 	consensusStageNoSync = iota
 	consensusStageResultTransactionBooked
