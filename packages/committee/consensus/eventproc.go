@@ -79,7 +79,7 @@ func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	}
 
 	op.balances = reqMsg.Balances
-	op.requestBalancesDeadline = time.Now().Add(op.committee.Params().RequestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
 
 	op.takeAction()
 }

@@ -10,7 +10,6 @@ import (
 )
 
 type Committee interface {
-	Params() *Parameters
 	Address() *address.Address
 	OwnerAddress() *address.Address
 	Color() *balance.Color
@@ -67,8 +66,8 @@ type Operator interface {
 	IsRequestInBacklog(*sctransaction.RequestId) bool
 }
 
-var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee
+var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Committee
 
-func New(bootupData *registry.BootupData, log *logger.Logger, params *Parameters, onActivation func()) Committee {
-	return ConstructorNew(bootupData, log, params, onActivation)
+func New(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Committee {
+	return ConstructorNew(bootupData, log, onActivation)
 }

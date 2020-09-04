@@ -27,12 +27,6 @@ func (c *committeeObj) IsOpenQueue() bool {
 	return c.checkReady()
 }
 
-// implements Committee interface
-
-func (c *committeeObj) Params() *committee.Parameters {
-	return c.params
-}
-
 func (c *committeeObj) SetReadyStateManager() {
 	c.mutexIsReady.Lock()
 	defer c.mutexIsReady.Unlock()
@@ -85,7 +79,7 @@ func (c *committeeObj) startTimer() {
 	go func() {
 		tick := 0
 		for c.isOpenQueue.Load() {
-			time.Sleep(c.params.TimerTickPeriod)
+			time.Sleep(committee.TimerTickPeriod)
 			c.ReceiveMessage(committee.TimerTick(tick))
 			tick++
 		}
@@ -135,7 +129,7 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {
 		case c.chMsg <- msg:
-		case <-time.After(c.params.ReceiveMsgChannelTimeout):
+		case <-time.After(committee.ReceiveMsgChannelTimeout):
 			c.log.Warnf("timeout on ReceiveMessage type '%T'. Will be repeated", msg)
 			go c.ReceiveMessage(msg)
 		}

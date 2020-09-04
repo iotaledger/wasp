@@ -26,7 +26,6 @@ type committeeObj struct {
 	dismissOnce                  sync.Once
 	onActivation                 func()
 	//
-	params          *committee.Parameters
 	address         address.Address
 	ownerAddress    address.Address
 	color           balance.Color
@@ -41,7 +40,7 @@ type committeeObj struct {
 	log             *logger.Logger
 }
 
-func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params *committee.Parameters, onActivation func()) committee.Committee {
+func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) committee.Committee {
 	log.Debugw("creating committee", "addr", bootupData.Address.String())
 
 	addr := bootupData.Address
@@ -84,7 +83,6 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 
 	ret := &committeeObj{
 		chMsg:        make(chan interface{}, 100),
-		params:       params,
 		address:      bootupData.Address,
 		ownerAddress: bootupData.OwnerAddress,
 		color:        bootupData.Color,
@@ -121,8 +119,8 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, params
 		}
 	}()
 	go func() {
-		ret.log.Infof("wait %s before activating the committee", ret.params.InitConnectPeriod)
-		time.Sleep(ret.params.InitConnectPeriod)
+		ret.log.Infof("wait %s before activating the committee", committee.InitConnectPeriod)
+		time.Sleep(committee.InitConnectPeriod)
 		ret.log.Infof("initial connection period is over. Connected peers: %+v", ret.ConnectedPeers())
 
 		ret.SetInitConnectPeriodOver()

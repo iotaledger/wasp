@@ -153,7 +153,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		if err := sm.committee.SendMsg(sm.permutation.Next(), committee.MsgGetBatch, data); err == nil {
 			break
 		}
-		sm.syncMessageDeadline = time.Now().Add(sm.committee.Params().PeriodBetweenSyncMessages)
+		sm.syncMessageDeadline = time.Now().Add(committee.PeriodBetweenSyncMessages)
 	}
 }
 
@@ -283,5 +283,5 @@ func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
 	txid := pb.batch.StateTransactionId()
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
 	_ = nodeconn.RequestConfirmedTransactionFromNode(&txid)
-	pb.stateTransactionRequestDeadline = time.Now().Add(sm.committee.Params().StateTransactionRequestTimeout)
+	pb.stateTransactionRequestDeadline = time.Now().Add(committee.StateTransactionRequestTimeout)
 }

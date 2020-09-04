@@ -76,7 +76,7 @@ func ActivateCommittee(bootupData *registry.BootupData) committee.Committee {
 		log.Warnf("committee already active: %s", bootupData.Address)
 		return nil
 	}
-	c := committee.New(bootupData, log, committee.DefaultParameters, func() {
+	c := committee.New(bootupData, log, func() {
 		nodeconn.Subscribe(bootupData.Address)
 	})
 	if c != nil {
