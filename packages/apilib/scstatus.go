@@ -42,7 +42,7 @@ func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress 
 	}
 
 	description, _ := results[vmconst.VarNameDescription].MustString()
-	minReward, _ := results[vmconst.VarNameDescription].MustInt64()
+	minReward, _ := results[vmconst.VarNameMinimumReward].MustInt64()
 
 	return &SCStatus{
 		ProgramHash:   results[vmconst.VarNameProgramHash].MustHashValue(),

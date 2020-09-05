@@ -216,17 +216,29 @@ func ParseRawLogRecord(raw []byte) (*TimestampedLogRecord, error) {
 }
 
 // LoadRecords returns all records in the slice
-func (l *TimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32) ([][]byte, error) {
+func (l *TimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32, descending bool) ([][]byte, error) {
 	if fromIdx > toIdx {
 		return nil, nil
 	}
 	ret := make([][]byte, 0, toIdx-fromIdx+1)
-	for i := fromIdx; i <= toIdx; i++ {
-		r, err := l.getRawRecordAtIndex(i)
-		if err != nil {
-			return nil, err
+	fromIdxInt := int(fromIdx)
+	toIdxInt := int(toIdx)
+	if !descending {
+		for i := fromIdxInt; i <= toIdxInt; i++ {
+			r, err := l.getRawRecordAtIndex(uint32(i))
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, r)
 		}
-		ret = append(ret, r)
+	} else {
+		for i := toIdxInt; i >= fromIdxInt; i-- {
+			r, err := l.getRawRecordAtIndex(uint32(i))
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, r)
+		}
 	}
 	return ret, nil
 }

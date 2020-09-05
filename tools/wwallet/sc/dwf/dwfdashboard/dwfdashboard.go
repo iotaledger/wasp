@@ -61,12 +61,12 @@ const tplDwf = `
 
 	<div>
 		<h3>Donations</h3>
-		<p>Amount of donations: <code>{{.Status.NumRecords}}</code></p>
+		<p>Number of donations: <code>{{.Status.NumRecords}}</code></p>
 		<p>Total received: <code>{{.Status.TotalDonations}} IOTAs</code></p>
 		<p>Largest donation so far: <code>{{.Status.MaxDonation}} IOTAs</code></p>
 		<div>
-			<h4>Log</h4>
-			{{range $i, $di := .Status.LastRecords}}
+			<h4>Log (descending)</h4>
+			{{range $i, $di := .Status.LastRecordsDesc}}
 				<details>
 					<summary>{{$di.Feedback}}</summary>
 					<p>Sender: <code>{{$di.Sender}}</code></p>

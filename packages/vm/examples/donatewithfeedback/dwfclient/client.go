@@ -89,15 +89,15 @@ func (client *DWFClient) Withdraw(par WithdrawParams) (*sctransaction.Transactio
 type Status struct {
 	*waspapi.SCStatus
 
-	NumRecords     uint32
-	FirstDonated   time.Time
-	LastDonated    time.Time
-	MaxDonation    int64
-	TotalDonations int64
-	LastRecords    []*donatewithfeedback.DonationInfo
+	NumRecords      uint32
+	FirstDonated    time.Time
+	LastDonated     time.Time
+	MaxDonation     int64
+	TotalDonations  int64
+	LastRecordsDesc []*donatewithfeedback.DonationInfo
 }
 
-const maxRecordsToFetch = 50
+const maxRecordsToFetch = 15
 
 func (client *DWFClient) FetchStatus() (*Status, error) {
 	scStatus, results, err := waspapi.FetchSCStatus(client.nodeClient, client.waspApiHost, client.scAddress, func(query *stateapi.QueryRequest) {
@@ -128,12 +128,12 @@ func (client *DWFClient) FetchStatus() (*Status, error) {
 	}
 
 	query := stateapi.NewQueryRequest(client.scAddress)
-	query.AddTLogSliceData(donatewithfeedback.VarStateTheLog, fromIdx, logSlice.LastIndex)
+	query.AddTLogSliceData(donatewithfeedback.VarStateTheLog, fromIdx, logSlice.LastIndex, true)
 	results, err = waspapi.QuerySCState(client.waspApiHost, query)
 	if err != nil {
 		return nil, err
 	}
-	status.LastRecords, err = decodeRecords(results[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
+	status.LastRecordsDesc, err = decodeRecords(results[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
 	if err != nil {
 		return nil, err
 	}

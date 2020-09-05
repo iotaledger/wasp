@@ -63,7 +63,7 @@ const tplBase = `
 		<meta http-equiv="x-ua-compatible" content="ie=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-		<title>{{template "title"}} - Wasp Smart Contracts PoC</title>
+		<title>{{template "title"}} - IOTA Smart Contracts PoC</title>
 
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/inter.css">
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
@@ -74,7 +74,7 @@ const tplBase = `
 			details {background: #EEF9FF}
 		</style>
 		<header>
-			<h1>Wasp Smart Contracts PoC</h1>
+			<h1>IOTA Smart Contracts PoC</h1>
 			<nav>
 				{{$activePage := .ActivePage}}
 				{{range $i, $p := .NavPages}}
@@ -95,12 +95,12 @@ const tplBase = `
 const TplSCInfo = `
 {{define "sc-info"}}
 	<details>
-		<summary>SC details</summary>
-		<p>ProgramHash: <code>{{.Status.ProgramHash}}</code></p>
-		<p>Description: <code>{{.Status.Description}}</code></p>
+		<summary>Smart contract details</summary>
+		<p>Program hash: <code>{{.Status.ProgramHash}}</code></p>
+		<p>Description of the instance: <code>{{.Status.Description}}</code></p>
 		<p>Owner address: <code>{{.Status.OwnerAddress}}</code></p>
 		<p>SC address: <code>{{.Status.SCAddress}}</code></p>
-		<p>Minimum reward: <code>{{.Status.MinimumReward}}</code></p>
+		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
 		<p>Balance: <ul>
 		{{range $color, $amount := .Status.Balance}}
 			<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>

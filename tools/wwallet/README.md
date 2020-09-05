@@ -135,7 +135,7 @@ Copy the color ID.
 $ wwallet fa start-auction "My first auction" y72kGq... 10 100 1
 ```
 
-Arguments are:  `start-auction <description> <color> <amount> <minumum-bid> <duraion-in-minutes>`
+Arguments are:  `start-auction <description> <color> <amount> <minimum-bid> <duration-in-minutes>`
 
 6. Place a bid for an auction:
 

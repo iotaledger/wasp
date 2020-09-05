@@ -1,6 +1,7 @@
 package kv
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -173,7 +174,7 @@ func (c codec) SetString(key Key, value string) {
 
 func DecodeInt64(b []byte) (int64, error) {
 	if len(b) != 8 {
-		return 0, fmt.Errorf("variable %v is not an int64", b)
+		return 0, fmt.Errorf("value %s is not an int64", hex.EncodeToString(b))
 	}
 	return int64(util.Uint64From8Bytes(b)), nil
 }

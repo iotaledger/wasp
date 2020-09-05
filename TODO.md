@@ -22,19 +22,23 @@ Pending
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
       change until released).
-- [ ] implement framework with mocked Sandbox for smart contract unit testing 
 - [ ] deploy Wasp in Pollen testnet
-- [ ] `Oracle Data Bulletin Board` description. Postponed
 
-To discuss
+
+To discuss/RFC
 - [ ] refactor 'request code' from uint16 value to string
 - [ ] smart contract state access from outside. The current approach is to provide universal node API to query state. 
-The alternative would be to expose access functions (view in Solidity) from the smart contract code itself.
+The alternatives would be to expose access functions (like view in Solidity) from the smart contract code itself. 
+Another approach can be expose data schema + generic access   
 - [ ] Merkle proofs of smart contract state elements  
 - [ ] Standard subscription mechanisms for events: (a) VM events (NanoMsg, ZMQ, MQTT) 
-and (b) smart contract events (signalled by request to subscriber smart contract) 
+and (b) smart contract events (signalled by request to subscriber smart contract)
+- [ ] balance sheet metaphor in the smart contract state. Ownership concept of BS "liability+equity" items  
+- [ ] implement framework with mocked Sandbox for smart contract unit testing 
+- [ ] Wasp node dashboard
 
 Functional testing
+- [ ] test fault-tolerance
 - [ ] test access node function
 - [ ] test several concurrent/interacting contracts
 - [ ] test random confirmation delays (probably not needed if running on Pollen)
@@ -42,6 +46,8 @@ Functional testing
 - [ ] test overlapping committees
 
 Future
+- [ ] rewrite DKG
+- [ ] `Oracle Data Bulletin Board` description. Postponed
 - [ ] enable and test 1 node committees
 - [ ] test quorum == 1  
 - [ ] optimize logging

@@ -2,13 +2,13 @@ package dwfcmd
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"os"
 	"strconv"
+	"time"
 
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfclient"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf"
-	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
 
 func donateCmd(args []string) {
@@ -22,10 +22,19 @@ func donateCmd(args []string) {
 
 	feedback := args[1]
 
-	util.WithSCRequest(dwf.Config, func() (*sctransaction.Transaction, error) {
-		return dwf.Client().Donate(dwfclient.DonateParams{
-			Amount:   int64(amount),
-			Feedback: feedback,
-		})
+	//util.WithSCRequest(dwf.Config, func() (*sctransaction.Transaction, error) {
+	//	return dwf.Client().Donate(dwfclient.DonateParams{
+	//		Amount:   int64(amount),
+	//		Feedback: feedback,
+	//	})
+	//})
+	_, err = dwf.Client().Donate(dwfclient.DonateParams{
+		Amount:            int64(amount),
+		Feedback:          feedback,
+		WaitForCompletion: true,
+		PublisherHosts:    config.CommitteeNanomsg(dwf.Config.Committee()),
+		PublisherQuorum:   2,
+		Timeout:           30 * time.Second,
 	})
+
 }

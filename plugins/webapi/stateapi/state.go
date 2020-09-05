@@ -41,8 +41,9 @@ type TLogSliceQueryParams struct {
 
 // TLogSliceDataQueryParams request data for the slice
 type TLogSliceDataQueryParams struct {
-	FromIndex uint32
-	ToIndex   uint32
+	FromIndex  uint32
+	ToIndex    uint32
+	Descending bool
 }
 
 type DictQueryParams struct {
@@ -160,10 +161,11 @@ func (q *QueryRequest) AddTLogSlice(key kv.Key, fromTs, toTs int64) {
 	})
 }
 
-func (q *QueryRequest) AddTLogSliceData(key kv.Key, fromIndex, toIndex uint32) {
+func (q *QueryRequest) AddTLogSliceData(key kv.Key, fromIndex, toIndex uint32, descending bool) {
 	p := TLogSliceDataQueryParams{
-		FromIndex: fromIndex,
-		ToIndex:   toIndex,
+		FromIndex:  fromIndex,
+		ToIndex:    toIndex,
+		Descending: descending,
 	}
 	params, _ := json.Marshal(p)
 	q.Query = append(q.Query, &KeyQuery{
@@ -433,7 +435,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 		}
 
 		ret := TLogSliceDataResult{}
-		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex)
+		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex, params.Descending)
 		return ret, err
 	}
 

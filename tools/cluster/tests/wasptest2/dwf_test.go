@@ -177,9 +177,9 @@ func TestDWFDonateNTimes(t *testing.T) {
 			status.TotalDonations,
 			status.MaxDonation,
 			status.LastDonated,
-			len(status.LastRecords),
+			len(status.LastRecordsDesc),
 		)
-		for i, di := range status.LastRecords {
+		for i, di := range status.LastRecordsDesc {
 			text += fmt.Sprintf("           %d: ts: %s, amount: %d, fb: '%s', donor: %s, err:%v\n",
 				i,
 				di.When.Format("2006-01-02 15:04:05"),

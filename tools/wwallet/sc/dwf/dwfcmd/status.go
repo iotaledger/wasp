@@ -16,8 +16,8 @@ func statusCmd(args []string) {
 	fmt.Printf("  amount of records: %d\n", status.NumRecords)
 	fmt.Printf("  max donation: %d IOTAs\n", status.MaxDonation)
 	fmt.Printf("  total donations: %d IOTAs\n", status.TotalDonations)
-	fmt.Printf("  latest %d donations:\n", len(status.LastRecords))
-	for _, di := range status.LastRecords {
+	fmt.Printf("  latest %d donations:\n", len(status.LastRecordsDesc))
+	for _, di := range status.LastRecordsDesc {
 		fmt.Printf("  - When: %s\n", di.When.Format(time.RFC3339))
 		fmt.Printf("    Amount: %d IOTAs\n", di.Amount)
 		fmt.Printf("    Sender: %s\n", di.Sender)

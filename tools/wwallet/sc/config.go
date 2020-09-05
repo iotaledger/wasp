@@ -130,6 +130,8 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		OwnerSigScheme:        params.SigScheme,
 		ProgramHash:           params.progHash(),
 		Description:           params.Description,
+		Textout:               os.Stdout,
+		Prefix:                "[deploy] ",
 	})
 	if err != nil {
 		return nil, err
@@ -139,7 +141,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		ApiHosts:          config.CommitteeApi(params.Committee),
 		PublisherHosts:    config.CommitteeNanomsg(params.Committee),
 		WaitForCompletion: config.WaitForConfirmation,
-		Timeout:           20 * time.Second,
+		Timeout:           30 * time.Second,
 	})
 	if err != nil {
 		return nil, err
