@@ -201,7 +201,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 
 	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "smart contract has been created succesfully. Addresses: %s, Color: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "smart contract has been created succesfully. Address: %s, Color: %s, N = %d, T = %d\n",
 		scAddr.String(), scColor.String(), par.N, par.T)
 	return scAddr, &scColor, err
 }

@@ -1,6 +1,8 @@
 package apilib
 
 import (
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -14,6 +16,12 @@ import (
 )
 
 type SCStatus struct {
+	StateIndex uint32
+	Timestamp  time.Time
+	StateHash  *hashing.HashValue
+	StateTxId  *valuetransaction.ID
+	Requests   []*sctransaction.RequestId
+
 	ProgramHash   *hashing.HashValue
 	Description   string
 	OwnerAddress  *address.Address
@@ -30,29 +38,36 @@ func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress 
 	}
 
 	query := stateapi.NewQueryRequest(scAddress)
+	query.AddGeneralData()
 	query.AddScalar(vmconst.VarNameOwnerAddress)
 	query.AddScalar(vmconst.VarNameProgramHash)
 	query.AddScalar(vmconst.VarNameDescription)
 	query.AddScalar(vmconst.VarNameMinimumReward)
 	addCustomQueries(query)
 
-	results, err := QuerySCState(waspHost, query)
+	res, err := QuerySCState(waspHost, query)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	description, _ := results[vmconst.VarNameDescription].MustString()
-	minReward, _ := results[vmconst.VarNameMinimumReward].MustInt64()
+	description, _ := res.Queries[vmconst.VarNameDescription].MustString()
+	minReward, _ := res.Queries[vmconst.VarNameMinimumReward].MustInt64()
 
 	return &SCStatus{
-		ProgramHash:   results[vmconst.VarNameProgramHash].MustHashValue(),
+		StateIndex: res.StateIndex,
+		Timestamp:  res.Timestamp.UTC(),
+		StateHash:  res.StateHash,
+		StateTxId:  res.StateTxId,
+		Requests:   res.Requests,
+
+		ProgramHash:   res.Queries[vmconst.VarNameProgramHash].MustHashValue(),
 		Description:   description,
-		OwnerAddress:  results[vmconst.VarNameOwnerAddress].MustAddress(),
+		OwnerAddress:  res.Queries[vmconst.VarNameOwnerAddress].MustAddress(),
 		MinimumReward: minReward,
 		SCAddress:     scAddress,
 		Balance:       balance,
 		FetchedAt:     time.Now().UTC(),
-	}, results, nil
+	}, res.Queries, nil
 }
 
 func fetchSCBalance(nodeClient nodeclient.NodeClient, scAddress *address.Address) (map[balance.Color]int64, error) {

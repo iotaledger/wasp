@@ -143,12 +143,12 @@ func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.Toke
 	query := stateapi.NewQueryRequest(trc.scAddress)
 	query.AddDictionaryElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 
-	results, err := waspapi.QuerySCState(trc.waspHost, query)
+	res, err := waspapi.QuerySCState(trc.waspHost, query)
 	if err != nil {
 		return nil, err
 	}
 
-	value := results[tokenregistry.VarStateTheRegistry].MustDictionaryElementResult()
+	value := res.Queries[tokenregistry.VarStateTheRegistry].MustDictionaryElementResult()
 	if value == nil {
 		// not found
 		return nil, nil

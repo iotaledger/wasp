@@ -125,14 +125,14 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	query := stateapi.NewQueryRequest(fc.scAddress)
 	query.AddScalar(fairauction.VarStateOwnerMarginPromille)
-	results, err := waspapi.QuerySCState(fc.waspApiHost, query)
+	res, err := waspapi.QuerySCState(fc.waspApiHost, query)
 	var ownerMarginState int64
 	var ok bool
 	if err != waspapi.ErrStateNotFound {
 		if err != nil {
 			return 0, err
 		}
-		ownerMarginState, ok = results[fairauction.VarStateOwnerMarginPromille].MustInt64()
+		ownerMarginState, ok = res.Queries[fairauction.VarStateOwnerMarginPromille].MustInt64()
 	}
 	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok)
 	fee := fairauction.GetExpectedDeposit(minimumBid, ownerMargin)

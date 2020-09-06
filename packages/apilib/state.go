@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"net/http"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
@@ -34,7 +38,17 @@ func DumpSCState(host string, scAddress string) (*admapi.DumpSCStateResponse, er
 
 var ErrStateNotFound = errors.New("State not found")
 
-func QuerySCState(host string, query *stateapi.QueryRequest) (map[kv.Key]*stateapi.QueryResult, error) {
+type QuerySCStateResult struct {
+	Queries map[kv.Key]*stateapi.QueryResult
+	// returned only when QueryGeneralData = true
+	StateIndex uint32
+	Timestamp  time.Time
+	StateHash  *hashing.HashValue
+	StateTxId  *valuetransaction.ID
+	Requests   []*sctransaction.RequestId
+}
+
+func QuerySCState(host string, query *stateapi.QueryRequest) (*QuerySCStateResult, error) {
 	url := fmt.Sprintf("http://%s/sc/state/query", host)
 	data, err := json.Marshal(query)
 	if err != nil {
@@ -66,5 +80,33 @@ func QuerySCState(host string, query *stateapi.QueryRequest) (map[kv.Key]*statea
 			return nil, fmt.Errorf("inconsistency: wrong response")
 		}
 	}
-	return results, nil
+	ret := &QuerySCStateResult{
+		Queries: results,
+	}
+	if !query.QueryGeneralData {
+		// only returning queries, no general tx data
+		return ret, nil
+	}
+	// general data
+	stateHash, err := hashing.HashValueFromBase58(queryResponse.StateHash)
+	if err != nil {
+		return nil, err
+	}
+	stateTxId, err := valuetransaction.IDFromBase58(queryResponse.StateTxId)
+	if err != nil {
+		return nil, err
+	}
+	reqIds := make([]*sctransaction.RequestId, len(queryResponse.Requests))
+	for i := range reqIds {
+		reqIds[i], err = sctransaction.RequestIdFromBase58(queryResponse.Requests[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	ret.StateIndex = queryResponse.StateIndex
+	ret.Timestamp = time.Unix(0, queryResponse.Timestamp)
+	ret.StateHash = &stateHash
+	ret.StateTxId = &stateTxId
+	ret.Requests = reqIds
+	return ret, nil
 }

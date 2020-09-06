@@ -96,11 +96,29 @@ const TplSCInfo = `
 {{define "sc-info"}}
 	<details>
 		<summary>Smart contract details</summary>
+		<p>SC address: <code>{{.Status.SCAddress}}</code></p>
 		<p>Program hash: <code>{{.Status.ProgramHash}}</code></p>
 		<p>Description of the instance: <code>{{.Status.Description}}</code></p>
 		<p>Owner address: <code>{{.Status.OwnerAddress}}</code></p>
-		<p>SC address: <code>{{.Status.SCAddress}}</code></p>
 		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
+	</details>
+	<details>
+		<summary>State details</summary>
+		<p>
+          <ul>
+		    <li>Index: <code>{{.Status.StateIndex}}</code></li>
+		    <li>Timestamp: <code>{{.Status.Timestamp}}</code></li>
+		    <li>Anchor transaction: <code>{{.Status.StateTxId}}</code></li>
+		    <li>State hash: <code>{{.Status.StateHash}}</code></li>
+			<li>Requests in the batch:</li>
+		    <ul>
+	            {{range $_, $reqid := .Status.Requests}}
+			       <li><code>{{$reqid}}</code></li>
+		        {{end}}
+		    </ul>
+		  </ul>
+		</p>
+
 		<p>Balance: <ul>
 		{{range $color, $amount := .Status.Balance}}
 			<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>

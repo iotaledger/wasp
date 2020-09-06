@@ -60,8 +60,9 @@ type ArrayQueryParams struct {
 }
 
 type QueryRequest struct {
-	Address string
-	Query   []*KeyQuery
+	Address          string
+	QueryGeneralData bool
+	Query            []*KeyQuery
 }
 
 type QueryResult struct {
@@ -102,12 +103,23 @@ type TLogSliceDataResult struct {
 }
 
 type QueryResponse struct {
+	// general info
+	StateIndex uint32
+	Timestamp  int64
+	StateHash  string
+	StateTxId  string
+	Requests   []string
+	// queried variables
 	Results []*QueryResult
 	Error   string
 }
 
 func NewQueryRequest(address *address.Address) *QueryRequest {
 	return &QueryRequest{Address: address.String()}
+}
+
+func (q *QueryRequest) AddGeneralData() {
+	q.QueryGeneralData = true
 }
 
 func (q *QueryRequest) AddScalar(key kv.Key) {
@@ -287,7 +299,7 @@ func HandlerQueryState(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &QueryResponse{Error: err.Error()})
 	}
 	// TODO serialize access to solid state
-	state, _, exist, err := state.LoadSolidState(&addr)
+	state, batch, exist, err := state.LoadSolidState(&addr)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, &QueryResponse{Error: err.Error()})
 	}
@@ -296,8 +308,17 @@ func HandlerQueryState(c echo.Context) error {
 			Error: fmt.Sprintf("State not found with address %s", addr),
 		})
 	}
+	sh := state.Hash()
 	ret := &QueryResponse{
-		Results: make([]*QueryResult, 0),
+		StateIndex: state.StateIndex(),
+		Timestamp:  state.Timestamp(),
+		StateHash:  sh.String(),
+		StateTxId:  batch.StateTransactionId().String(),
+		Requests:   make([]string, len(batch.RequestIds())),
+		Results:    make([]*QueryResult, 0),
+	}
+	for i := range ret.Requests {
+		ret.Requests[i] = batch.RequestIds()[i].ToBase58()
 	}
 	vars := state.Variables()
 	for _, q := range req.Query {

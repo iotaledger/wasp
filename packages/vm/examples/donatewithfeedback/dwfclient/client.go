@@ -129,11 +129,11 @@ func (client *DWFClient) FetchStatus() (*Status, error) {
 
 	query := stateapi.NewQueryRequest(client.scAddress)
 	query.AddTLogSliceData(donatewithfeedback.VarStateTheLog, fromIdx, logSlice.LastIndex, true)
-	results, err = waspapi.QuerySCState(client.waspApiHost, query)
+	res, err := waspapi.QuerySCState(client.waspApiHost, query)
 	if err != nil {
 		return nil, err
 	}
-	status.LastRecordsDesc, err = decodeRecords(results[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
+	status.LastRecordsDesc, err = decodeRecords(res.Queries[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
 	if err != nil {
 		return nil, err
 	}
