@@ -13,7 +13,7 @@ import (
 
 func startAuctionCmd(args []string) {
 	if len(args) != 5 {
-		fa.Config.PrintUsage("start-auction <description> <color> <amount> <minumum-bid> <duraion>")
+		fa.Config.PrintUsage("start-auction <description> <color> <amount> <minumum-bid> <duration>")
 		os.Exit(1)
 	}
 
