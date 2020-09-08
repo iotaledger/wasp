@@ -21,8 +21,8 @@ type Config struct {
 	Name             string
 	ProgramHash      string
 	Flags            *pflag.FlagSet
-	quorum           int
-	committee        []int
+	committeeDefault []int
+	quorumDefault    int
 	bootupDataLoaded bool
 	BootupData       registry.BootupData
 }
@@ -32,16 +32,20 @@ func (c *Config) Href() string {
 }
 
 func (c *Config) HookFlags() *pflag.FlagSet {
-	c.Flags.IntVar(&c.quorum, c.ShortName+".quorum", 3, "quorum")
-	c.Flags.IntSliceVar(&c.committee, c.ShortName+".committee", nil, "committee")
+	c.Flags.IntVar(&c.quorumDefault, c.ShortName+".quorum", 0, "quorum (default 1,2,3,4)")
+	c.Flags.IntSliceVar(&c.committeeDefault, c.ShortName+".committee", nil, "committee (default 3)")
 	return c.Flags
 }
 
 var DefaultCommittee = []int{0, 1, 2, 3}
 
+func (c *Config) SetCommittee(indexes []int) {
+	config.Set(c.ShortName+".committee", indexes)
+}
+
 func (c *Config) Committee() []int {
-	if len(c.committee) > 0 {
-		return c.committee
+	if len(c.committeeDefault) > 0 {
+		return c.committeeDefault
 	}
 	r := viper.GetIntSlice(c.ShortName + ".committee")
 	if len(r) > 0 {
@@ -50,8 +54,19 @@ func (c *Config) Committee() []int {
 	return DefaultCommittee
 }
 
+func (c *Config) SetQuorum(n uint16) {
+	config.Set(c.ShortName+".quorum", int(n))
+}
+
 func (c *Config) Quorum() uint16 {
-	return uint16(c.quorum)
+	if c.quorumDefault != 0 {
+		return uint16(c.quorumDefault)
+	}
+	q := viper.GetInt(c.ShortName + ".quorum")
+	if q != 0 {
+		return uint16(q)
+	}
+	return uint16(3)
 }
 
 func (c *Config) PrintUsage(s string) {
@@ -110,6 +125,8 @@ func (c *Config) Deploy(sigScheme signaturescheme.SignatureScheme) error {
 	})
 	if err == nil {
 		c.SetAddress(scAddress.String())
+		c.SetCommittee(c.Committee())
+		c.SetQuorum(c.Quorum())
 	}
 	return err
 }
