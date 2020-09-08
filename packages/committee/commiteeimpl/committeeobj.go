@@ -49,7 +49,8 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		util.IntersectsLists(bootupData.CommitteeNodes, bootupData.AccessNodes) ||
 		util.ContainsInList(peering.MyNetworkId(), bootupData.AccessNodes) {
 
-		log.Errorf("can't create committee object for %s: bootup data contains duplicate node addresses", addr.String())
+		log.Errorf("can't create committee object for %s: bootup data contains duplicate node addresses. Committee nodes: %+v",
+			addr.String(), bootupData.CommitteeNodes)
 		return nil
 	}
 	dkshare, keyExists, err := registry.GetDKShare(&bootupData.Address)
@@ -95,8 +96,16 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		ret.size = dkshare.N
 		ret.quorum = dkshare.T
 
+		numNil := 0
 		for _, remoteLocation := range bootupData.CommitteeNodes {
-			ret.peers = append(ret.peers, peering.UsePeer(remoteLocation))
+			peer := peering.UsePeer(remoteLocation)
+			if peer == nil {
+				numNil++
+			}
+			ret.peers = append(ret.peers, peer)
+		}
+		if numNil != 1 {
+			ret.log.Panicf("numNil != 1. committeePeers: %+v. myId: %s", bootupData.CommitteeNodes, peering.MyNetworkId())
 		}
 	}
 	for _, remoteLocation := range bootupData.AccessNodes {

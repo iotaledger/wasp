@@ -193,6 +193,9 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	if peerIndex == c.ownIndex {
 		return true
 	}
+	if c.peers[peerIndex] == nil {
+		c.log.Panicf("c.peers[peerIndex] == nil. peerIndex: %d, ownIndex: %d", peerIndex, c.ownIndex)
+	}
 	return c.peers[peerIndex].IsAlive()
 }
 

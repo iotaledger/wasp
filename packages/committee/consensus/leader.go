@@ -19,8 +19,7 @@ func (op *operator) moveToNextLeader() uint16 {
 func (op *operator) resetLeader(seedBytes []byte) {
 	op.peerPermutation.Shuffle(seedBytes)
 	op.leaderStatus = nil
-	leader := op.peerPermutation.Current()
-	leader = op.moveToFirstAliveLeader()
+	leader := op.moveToFirstAliveLeader()
 
 	op.log.Debugf("peerPermutation: %+v, leader: %d", op.peerPermutation.GetArray(), leader)
 }
@@ -40,6 +39,5 @@ func (op *operator) moveToFirstAliveLeader() uint16 {
 		op.log.Debugf("peer #%d is not alive", op.peerPermutation.Current())
 		op.peerPermutation.Next()
 	}
-	// should not come here
 	return op.peerPermutation.Current()
 }
