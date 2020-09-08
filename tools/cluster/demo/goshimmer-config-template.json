@@ -91,6 +91,10 @@
     "originPublicKey": "9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd"
   },
   "waspconn": {
-    "port": 5000
+    "port": 5000,
+    "utxodbenabled": true,
+    "utxodbconfirmseconds": 0,
+    "utxodbconfirmrandomize": false,
+    "utxodbconfirmfirst": true
   }
 }
