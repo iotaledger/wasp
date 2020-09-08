@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
@@ -72,8 +73,15 @@ func GetSCData(host string, addr *address.Address) (*registry.BootupData, bool, 
 	}
 	ret := &registry.BootupData{
 		CommitteeNodes: dresp.CommitteeNodes,
+		AccessNodes:    dresp.AccessNodes,
 	}
 	if ret.Address, err = address.FromBase58(dresp.Address); err != nil {
+		return nil, false, err
+	}
+	if ret.OwnerAddress, err = address.FromBase58(dresp.OwnerAddress); err != nil {
+		return nil, false, err
+	}
+	if ret.Color, err = util.ColorFromString(dresp.Color); err != nil {
 		return nil, false, err
 	}
 

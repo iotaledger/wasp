@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
+	"github.com/mr-tron/base58"
 )
 
 type BootupDataJsonable struct {
@@ -98,6 +99,8 @@ func HandlerGetSCData(c echo.Context) error {
 	return misc.OkJson(c, &GetBootupDataResponse{
 		BootupDataJsonable: BootupDataJsonable{
 			Address:        bd.Address.String(),
+			OwnerAddress:   bd.OwnerAddress.String(),
+			Color:          base58.Encode(bd.Color.Bytes()),
 			CommitteeNodes: bd.CommitteeNodes,
 			AccessNodes:    bd.AccessNodes,
 		},

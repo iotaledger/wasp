@@ -2,6 +2,7 @@ package sc
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/registry"
 	"os"
 	"strings"
 	"time"
@@ -16,12 +17,14 @@ import (
 )
 
 type Config struct {
-	ShortName   string
-	Name        string
-	ProgramHash string
-	Flags       *pflag.FlagSet
-	quorum      int
-	committee   []int
+	ShortName        string
+	Name             string
+	ProgramHash      string
+	Flags            *pflag.FlagSet
+	quorum           int
+	committee        []int
+	bootupDataLoaded bool
+	BootupData       registry.BootupData
 }
 
 func (c *Config) Href() string {
@@ -157,4 +160,19 @@ func (p *DeployParams) progHash() hashing.HashValue {
 		panic(err)
 	}
 	return hash
+}
+
+func LoadBootupData(cfg *Config) {
+	if cfg.bootupDataLoaded {
+		return
+	}
+	d, exists, err := waspapi.GetSCData(config.WaspApi(), cfg.Address())
+	if err != nil || !exists {
+		//fmt.Printf("++++++++++ GetSCData host = %s, addr = %s exists = %v err = %v\n",
+		//	config.WaspApi(), cfg.Address(), exists, err)
+		return
+	}
+	cfg.BootupData = *d
+	cfg.bootupDataLoaded = true
+	fmt.Printf("++++++++++ GetSCData %+v\n", cfg.BootupData)
 }

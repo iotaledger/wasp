@@ -101,30 +101,39 @@ const TplSCInfo = `
 		<p>Description of the instance: <code>{{.Status.Description}}</code></p>
 		<p>Owner address: <code>{{.Status.OwnerAddress}}</code></p>
 		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
-	</details>
-	<details>
-		<summary>State details</summary>
-		<p>
-          <ul>
-		    <li>Index: <code>{{.Status.StateIndex}}</code></li>
-		    <li>Timestamp: <code>{{.Status.Timestamp}}</code></li>
-		    <li>Anchor transaction: <code>{{.Status.StateTxId}}</code></li>
-		    <li>State hash: <code>{{.Status.StateHash}}</code></li>
-			<li>Requests in the batch:</li>
-		    <ul>
-	            {{range $_, $reqid := .Status.Requests}}
-			       <li><code>{{$reqid}}</code></li>
-		        {{end}}
-		    </ul>
-		  </ul>
+		<p>Color: <code>{{.Config.BootupData.Color}}</code></p>
+		<p>Committee nodes:
+			<ul>
+				{{range $_, $node := .Config.BootupData.CommitteeNodes}}
+				   <li><code>{{$node}}</code></li>
+				{{end}}
+			</ul>
 		</p>
-
-		<p>Balance: <ul>
-		{{range $color, $amount := .Status.Balance}}
-			<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
-		{{end}}
-		</ul></p>
 	</details>
+	<h4>State details</h4>
+    <p>
+	  <ul>
+		<li>Index: <code>{{.Status.StateIndex}}</code></li>
+		<li>Timestamp: <code>{{.Status.Timestamp}}</code></li>
+		<li>Anchor transaction: <code>{{.Status.StateTxId}}</code></li>
+		<li>State hash: <code>{{.Status.StateHash}}</code></li>
+		<li>Batched requests:</li>
+		<ul>
+			{{range $_, $reqid := .Status.Requests}}
+			   <li><code>{{$reqid}}</code></li>
+			{{end}}
+		</ul>
+	  </ul>
+	</p>
+
+	<h4>Balance:</h4>
+	<p> 
+		<ul>
+			{{range $color, $amount := .Status.Balance}}
+				<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>
+			{{end}}
+		</ul>
+	</p>
 {{end}}`
 
 const TplWs = `
