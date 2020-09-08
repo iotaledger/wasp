@@ -105,7 +105,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 			ret.peers = append(ret.peers, peer)
 		}
 		if numNil != 1 {
-			ret.log.Panicf("numNil != 1. committeePeers: %+v. myId: %s", bootupData.CommitteeNodes, peering.MyNetworkId())
+			ret.log.Panicf("assertion failed: numNil != 1. committeePeers: %+v. myId: %s", bootupData.CommitteeNodes, peering.MyNetworkId())
 		}
 	}
 	for _, remoteLocation := range bootupData.AccessNodes {
