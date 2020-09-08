@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/tools/wwallet/config"
@@ -18,12 +19,20 @@ type BaseTemplateParams struct {
 
 var navPages = []NavPage{}
 
-func BaseParams(c echo.Context, page string) BaseTemplateParams {
-	host, _, err := net.SplitHostPort(c.Request().Host)
+func host(c echo.Context) string {
+	host := c.Request().Host
+	if !strings.Contains(host, ":") {
+		return host
+	}
+	host, _, err := net.SplitHostPort(host)
 	if err != nil {
 		panic(err)
 	}
-	return BaseTemplateParams{Host: host, NavPages: navPages, ActivePage: page}
+	return host
+}
+
+func BaseParams(c echo.Context, page string) BaseTemplateParams {
+	return BaseTemplateParams{Host: host(c), NavPages: navPages, ActivePage: page}
 }
 
 type NavPage struct {
