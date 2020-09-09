@@ -29,6 +29,9 @@ func checkMyNetworkID() error {
 		return err
 	}
 	for _, ip := range ips {
+		if isPrivateIP(ip) {
+			return nil
+		}
 		for _, myIp := range myIPs {
 			if ip.String() == myIp {
 				return nil
@@ -49,9 +52,9 @@ func myIPs() ([]string, error) {
 		if iface.Flags&net.FlagUp == 0 {
 			continue // interface down
 		}
-		//if iface.Flags&net.FlagLoopback != 0 {
-		//	continue // loopback interface
-		//}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue // loopback interface
+		}
 		addrs, err := iface.Addrs()
 		if err != nil {
 			return nil, err
@@ -67,9 +70,9 @@ func myIPs() ([]string, error) {
 			if ip == nil {
 				continue
 			}
-			//if ip.IsLoopback() {
-			//	continue
-			//}
+			if isPrivateIP(ip) {
+				continue
+			}
 			ip = ip.To4()
 			if ip == nil {
 				continue // not an ipv4 address
@@ -78,4 +81,38 @@ func myIPs() ([]string, error) {
 		}
 	}
 	return ret, nil
+}
+
+var privateIPBlocks []*net.IPNet
+
+func init() {
+	for _, cidr := range []string{
+		"127.0.0.0/8",    // IPv4 loopback
+		"10.0.0.0/8",     // RFC1918
+		"172.16.0.0/12",  // RFC1918
+		"192.168.0.0/16", // RFC1918
+		"169.254.0.0/16", // RFC3927 link-local
+		"::1/128",        // IPv6 loopback
+		"fe80::/10",      // IPv6 link-local
+		"fc00::/7",       // IPv6 unique local addr
+	} {
+		_, block, err := net.ParseCIDR(cidr)
+		if err != nil {
+			panic(fmt.Errorf("parse error on %q: %v", cidr, err))
+		}
+		privateIPBlocks = append(privateIPBlocks, block)
+	}
+}
+
+func isPrivateIP(ip net.IP) bool {
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
