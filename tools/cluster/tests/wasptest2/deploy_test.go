@@ -65,7 +65,7 @@ func TestDeploySC(t *testing.T) {
 		ApiHosts:          wasps.ApiHosts(),
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+		Timeout:           30 * time.Second,
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 

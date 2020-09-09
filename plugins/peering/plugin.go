@@ -23,10 +23,11 @@ func Init() *node.Plugin {
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 	if err := checkMyNetworkID(); err != nil {
-		log.Errorf("can't continue: %v", err)
+		// can't continue because netid parameter is not correct
+		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
 		return
 	}
-	log.Infof("my network Id = %s", MyNetworkId())
+	log.Infof("my netid = %s", MyNetworkId())
 	initialized.Store(true)
 }
 

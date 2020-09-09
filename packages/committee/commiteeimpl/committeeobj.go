@@ -104,8 +104,10 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 			}
 			ret.peers = append(ret.peers, peer)
 		}
-		if numNil != 1 {
-			ret.log.Panicf("assertion failed: numNil != 1. committeePeers: %+v. myId: %s", bootupData.CommitteeNodes, peering.MyNetworkId())
+		if numNil != 1 || ret.peers[dkshare.Index] != nil {
+			// at this point must be exactly 1 element in ret.peers == to nil,
+			// the one with the index in the committee
+			ret.log.Panicf("failed to initialize peers of the committee. committeePeers: %+v. myId: %s", bootupData.CommitteeNodes, peering.MyNetworkId())
 		}
 	}
 	for _, remoteLocation := range bootupData.AccessNodes {
@@ -150,6 +152,5 @@ func iAmInTheCommittee(committeeNodes []string, n, index uint16) bool {
 	if len(committeeNodes) != int(n) {
 		return false
 	}
-	// check for duplicates
 	return committeeNodes[index] == peering.MyNetworkId()
 }

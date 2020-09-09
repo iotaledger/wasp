@@ -14,17 +14,18 @@ func MyNetworkId() string {
 // connection added to the pool is picked by loops which will try to establish connection
 func UsePeer(remoteLocation string) *Peer {
 	if !initialized.Load() {
-		return nil
+		log.Panic("UsePeer: plugin not initialized")
 	}
 	if remoteLocation == MyNetworkId() {
+		// nil for itself
 		return nil
 	}
 	peersMutex.Lock()
 	defer peersMutex.Unlock()
 
-	if qconn, ok := peers[peeringId(remoteLocation)]; ok {
-		qconn.numUsers++
-		return qconn
+	if peer, ok := peers[peeringId(remoteLocation)]; ok {
+		peer.numUsers++
+		return peer
 	}
 	ret := &Peer{
 		RWMutex:        &sync.RWMutex{},
@@ -40,7 +41,7 @@ func UsePeer(remoteLocation string) *Peer {
 // decreases counter
 func StopUsingPeer(peerId string) {
 	if !initialized.Load() {
-		return
+		log.Panic("StopUsingPeer: plugin not initialized")
 	}
 	peersMutex.Lock()
 	defer peersMutex.Unlock()
