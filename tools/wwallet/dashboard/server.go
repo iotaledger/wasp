@@ -31,6 +31,7 @@ func StartServer(listenAddr string, scs []SCDashboard) {
 	e.Logger.SetLevel(log.INFO)
 
 	e.GET("/", handleIndex)
+	e.GET("/wwallet.json", handleWwalletJson)
 	for _, d := range scs {
 		d.AddEndpoints(e)
 		addWebSocketTab(e, d.Config())

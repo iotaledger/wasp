@@ -1,14 +1,12 @@
 package dashboard
 
 import (
-	"encoding/json"
 	"html/template"
 	"os"
 	"time"
 
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/labstack/echo"
-	"github.com/spf13/viper"
 )
 
 type BaseTemplateParams struct {
@@ -20,16 +18,6 @@ var navPages = []NavPage{}
 
 func BaseParams(c echo.Context, page string) BaseTemplateParams {
 	return BaseTemplateParams{NavPages: navPages, ActivePage: page}
-}
-
-func (bp BaseTemplateParams) WwalletJson() string {
-	settings := viper.AllSettings()
-	delete(settings, "wallet")
-	s, err := json.MarshalIndent(settings, "", "  ")
-	if err != nil {
-		return ""
-	}
-	return string(s)
 }
 
 type NavPage struct {
@@ -182,8 +170,9 @@ $ go install ./tools/wwallet
 	</details>
 	<details>
 		<summary>2. Configure wwallet</summary>
-		<p>Create a file named <code>wwallet.json</code> with the following content:</p>
-		<pre>{{.WwalletJson}}</pre>
+		<p>Download <a href="/wwallet.json"><code>wwallet.json</code></a>. Make
+		sure you always run the <code>wwallet</code> command in the same folder
+		as <code>wwallet.json</code>.</p>
 		<p>Create an address + private/public keys for your wallet:</p>
 		<pre>{{waspClientCmd}} init</pre>
 		<p>Get some funds:</p>
