@@ -13,7 +13,7 @@ The repository represents code which can only be used in testing configurations,
 
 ### Run Goshimmer with WaspConn
 
-To run a Wasp node you need a Goshimmer instance with the `WaspConn` plugin in it. 
+To run a Wasp node you need a Goshimmer instance with the [WaspConn](https://github.com/iotaledger/goshimmer/tree/wasp/dapps/waspconn) plugin in it. 
 This version of Goshimmer is located in the
  [_wasp_ branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp) 
 
