@@ -15,9 +15,9 @@ The repository represents code which can only be used in testing configurations,
 
 To run a Wasp node you need a Goshimmer instance with the `WaspConn` plugin in it. 
 This version of Goshimmer is located in the
- [_wasp_ branch of Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp) 
+ [_wasp_ branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp) 
 
-So first you have to clone and compile the `wasp` branch of Goshimmer version 
+First you have to clone and compile the Goshimmer version from the `wasp` branch. 
 
 `git clone -b wasp https://github.com/iotaledger/goshimmer.git goshimmer-wasp`
 `cd goshimmer-wasp`    
@@ -41,7 +41,7 @@ To change this setting include the following section in the Goshimmer's `config.
 ### Run Wasp node
 
 Note that you need multiple Wasp nodes to form committees for smart contracts. 
-Many Wasp nodes can be connected to one Goshimmer instance
+Many Wasp nodes can be connected to one Goshimmer instance.
     
 Clone `develop` repository of the Wasp:
     
