@@ -2,115 +2,114 @@
 # Wasp: a node for IOTA Smart Contracts
 
 
-The _IOTA Smart Contract Protocol_ (ISCP) is a layer 2 protocol on top of the core Value Tangle
-protocol, run by Goshimmer nodes. _Wasp_ connects to Goshimmer node to have access to the Value Tangle.   
+The _IOTA Smart Contract Protocol_ (ISCP in short) is a layer 2 protocol on top of the core Value Tangle
+protocol run by Goshimmer nodes. 
 
-The repository represents code which can only be used in testing configurations.
-Until the first release, the software is not ready to run as a real node.
- 
-To run tests, do the following:
+_Wasp_ node implements ISCP. To run smart contract you will need a network of _Wasp_ nodes.
+Each _Wasp_ connects to _Goshimmer_ node to have access to the Value Tangle, 
+the layer which implements the ledger of tokens.   
 
-- clone `wasp` branch of Goshimmer and compile Goshimmer:
+The repository represents code which can only be used in testing configurations, it is not ready for the commercial use.
 
-`git clone -b wasp https://github.com/iotaledger/goshimmer.git goshimmer`
+### Run Goshimmer with WaspConn
 
-`cd goshimmer`    
+To run a Wasp node you need a Goshimmer instance with the `WaspConn` plugin in it. 
+This version of Goshimmer is located in the
+ [_wasp_ branch of Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp) 
 
+So first you have to clone and compile the `wasp` branch of Goshimmer version 
+
+`git clone -b wasp https://github.com/iotaledger/goshimmer.git goshimmer-wasp`
+`cd goshimmer-wasp`    
 `go install`    
+
+The Goshimmer instance in the Pollen network must be configured and started according to the 
+[Goshimmer instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-(Joining-the-pollen-testnet)).  
+
+The only difference between standard Goshimmer (the `develop` branch) and the `wasp` branch is `WaspConn` plugin.
+It allows any number of Wasp nodes to connect to the Goshimmer instance running it.
+
+By default, WaspConn plugin will be listening for Wasp connections on the port `5000`. 
+To change this setting include the following section in the Goshimmer's `config.json` file:
+
+```
+  "waspconn": {
+    "port": 12345
+  }
+```
+   
+### Run Wasp node
+
+Note that you need multiple Wasp nodes to form committees for smart contracts. 
+Many Wasp nodes can be connected to one Goshimmer instance
     
-- clone `develop` repository of the Wasp:
+Clone `develop` repository of the Wasp:
     
 `git clone -b develop https://github.com/iotaledger/wasp.git wasp`
-
 `cd wasp`
-
 `go install`
 
-- run tests using standard Go testing infrastructure. 
-All tests are configured to run on in-memory database and are using mocked Value Tangle on Goshimmer.
+`cd directory-with-config-file`
+`wasp`
 
-For example, the purpose of the integration test `TestSend10Requests0Sec` is to test how nodes synchronisation 
-and requests processing in difficult conditions and at hight TPS. 
-The testing program does not wait for nodes to finish bootup nor to sync, so requests may reach the Wasp nodes
-in any unprepared situation, messages may be lost, nodes may be left behind by the majority of other nodes (go out of sync).
-All 10 requests are sent without any delays, essentially all at once. 
-In real situation Tangle would have to confirm each request transaction before it will reach the Wasp. 
-So, sending all requests at once creates "high TPS" situation.
+The `config.json` must be present in the directory where you run a Wasp node. 
+Most of the setting are self-explanatory in the following example below or are the same as in the Goshimmer configuration.
+Other are explained below.
 
-The test `TestSend10Requests0Sec` goes through the following steps:
-
-- starts 1 Goshimmer node and 4 Wasp nodes in the background
-- imports distributed private BLS keys of several testing smart contracts to all 4 Wasp nodes.  
-Committees of Wasp nodes can generate distributed keys itself but for the purpose of testing and determinism 
-we import pre-generated keys as well as other SC data from file `keys.json`.
-- creates bootup records for all test smart contracts in all 4 Wasp nodes
-- creates **origin transaction** for one of testing smart contracts and sends it to the Value Tangle (Goshimmer)
-- activates the testing smart contract on the committee of Wasp nodes. 
-- at this point smart contract is active and ready to accept requests. The testing smart contract 
-runs empty program. It does not update the state variables, however state transitions occur: 
-colored smart contract token is moved, request tokens are created and destroyed. 
-Each state has own timestamp, hash and token balance.
-- sends 10 smart contract requests to the active testing smart contract. 
-Each request is wrapped in separate value transaction and is sent to Goshimmer. To send requests to 
-smart contract Wasp node is not needed.
-- All 4 Wasp nodes in the committee process all 10 requests and posts resulting transaction(s)
-to the Value Tangle (Goshimmer). Depending on how it goes, all 10 requests may be processed in 1 **batch**. 
-In this case 1 state transaction will be sent to Goshimmer. 
-Sometimes may happen that 10 requests will be split into several batches. In this case 
-the test will result in several state transitions and several state transactions will be sent to Goshimmer. 
- 
-To run the test:  
-
-`cd ./tools/cluster/tests/wasptest`
-
-`go test -run TestSend10Requests0Sec` 
-
-## Wasp Publisher messages
-
-Wasp publishes important events via Nanomsg message stream (just like ZMQ is used in IRI. Possibly  in the future ZMQ and MQTT publishers will be supported too).
-
-Anyone can subscribe to the Nanomsg output stream of the node. In Golang you can use `packages/subscribe` package provided in Wasp for this.
-The publisher's output port can be configured in ```config.json``` like this:
+An example of the `config.json` file for a Wasp instance:
 ```
+{
+  "database": {
+    "inMemory": false,
+    "directory": "waspdb"
+  },
+  "logger": {
+    "level": "debug",
+    "disableCaller": false,
+    "disableStacktrace": true,
+    "encoding": "console",
+    "outputPaths": [
+      "stdout",
+      "wasp.log"
+    ],
+    "disableEvents": true
+  },
+  "webapi": {
+    "auth": {
+      "password": "wasp",
+      "privateKey": "",
+      "username": "wasp"
+    },
+    "bindAddress": "127.0.0.1:9090"
+  },
+  "peering":{
+    "port": 4000,
+    "netid": "wasphost:4000"
+  },
+  "nodeconn": {
+    "address": "goshimmer-host:5000"
+  },
   "nanomsg":{
     "port": 5550
-  } 
-```
+  }
+}
+``` 
 
-Search for  "```publisher.Publish```" in the repo for exact places in the code where messages are published. 
+#### Peering settings
+Wasp nodes connects to other Wasp peers to form committees. There's exactly one TCP connection between two Wasp nodes 
+participating in the same committee(s). The node is using `peering.port` setting to specify the port for peering.
 
-Currently supported messages and formats (space separated list of strings):
+`peering.netid` must have form `host:port` where the `port` is equal to the setting of `peering.port`.
+The `host` in the `peering.netid` must resolve to the machine where the node is running. 
+The `netid` is used as an id of the node in the committee setting when deploying the smart contract: only `netid` 
+can be used in the list of commitee nodes, not any equivalent for of the network location.
 
-|Message|Format|
-|:--- |:--- |
-|SC bootup record has been saved in the registry | ```bootuprec <SC address> <SC color>``` |
-|SC committee has been activated|```active_committee <SC address>```|
-|SC committee dismissed|```dismissed_commitee <SC address>```|
-|A new SC request reached the node|```request_in <SC address> <request tx ID> <request block index>```|
-|SC request has been processed (i.e. corresponding state update was confirmed)|```request_out <SC address> <request tx ID> <request block index> <state index> <seq number in the batch> <batch size>```|
-|State transition (new state has been committed to DB)| ```state <SC address> <state index> <batch size> <state tx ID> <state hash> <timestamp>```|
-|VM (processor) initialized succesfully|```vmready <SC address> <program hash>```|
+#### Goshimmer connection settings
 
-## Pluggable VM abstraction
-_(for experimenting. Not secure in general)_
+`nodeconn.address` specifies the Goshimmer instance and port (exposed by the `WaspConn` plugin), where Wasp node connects. 
 
-Wasp implements VM abstraction to make it possible to use any VM or even language interpreter available on the market 
-as smart contract VM processor. At least theoretically. Requirements for the VM processor:
+#### Publisher port
 
-- shoudn't be able to access anything on the host but the sandbox. Otherwise, security breach.
-
-- must be deterministic. Otherwise, smart contract committee won't come to consensus on result.
-
-To plug your VM into the Wasp code, follow the following steps:
-
-- implement `vmtypes.Processor` and `vmtypes.EntryPoint` interfaces for your VM. The VM will be accessing 
-runtime environment via `vmtypes.Sandbox` interface.
-
-- implement your VM binary loader (constructor) and register it with `vmtype.RegisterVMType` function in your init code. 
-
-Smart contract loader will be reading program metadata from the registry (see `registry.ProgramMetadata`). 
-It will locate program binary (for example `.wasm` file) as specified in the `Location` of the metadata, load it from there 
-and will use constructor function to create a VM processor instance from the loaded binary. 
-Currently, `Location` is expected to be `file://<file>` and Wasp will be looking for the binary file `<file>` in the `./wasm` directory.
-
- 
+`nanomsg.port` specifies port for the Nanomsg even publisher. Wasp node publish important events happening 
+in smart contracts, such as state transitions, incoming and processed requests and similar.  
+Any Nanomsg client can subscribe to those messages.  
