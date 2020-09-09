@@ -1,38 +1,35 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"html/template"
-	"net"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/labstack/echo"
+	"github.com/spf13/viper"
 )
 
 type BaseTemplateParams struct {
-	Host       string
 	NavPages   []NavPage
 	ActivePage string
 }
 
 var navPages = []NavPage{}
 
-func host(c echo.Context) string {
-	host := c.Request().Host
-	if !strings.Contains(host, ":") {
-		return host
-	}
-	host, _, err := net.SplitHostPort(host)
-	if err != nil {
-		panic(err)
-	}
-	return host
+func BaseParams(c echo.Context, page string) BaseTemplateParams {
+	return BaseTemplateParams{NavPages: navPages, ActivePage: page}
 }
 
-func BaseParams(c echo.Context, page string) BaseTemplateParams {
-	return BaseTemplateParams{Host: host(c), NavPages: navPages, ActivePage: page}
+func (bp BaseTemplateParams) WwalletJson() string {
+	settings := viper.AllSettings()
+	delete(settings, "wallet")
+	s, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return ""
+	}
+	return string(s)
 }
 
 type NavPage struct {
@@ -173,7 +170,7 @@ const TplWs = `
 const TplInstallConfig = `
 {{define "install-config"}}
 	<details>
-		<summary>1. Install</summary>
+		<summary>1. Install wwallet</summary>
 		<p>Grab the latest <code>wwallet</code> binary from the
 		<a href="https://github.com/iotaledger/wasp/releases">Releases</a> page.</p>
 		<p>-- OR --</p>
@@ -184,12 +181,13 @@ $ go install ./tools/wwallet
 </pre>
 	</details>
 	<details>
-		<summary>2. Configure</summary>
-<pre>$ {{waspClientCmd}} set goshimmer.api {{.Host}}:8080
-$ {{waspClientCmd}} set wasp.api {{.Host}}:9090
-$ {{waspClientCmd}} {{.Config.ShortName}} set address {{.Config.Address}}</pre>
-		<p>Initialize a wallet: <code>{{waspClientCmd}} init</code></p>
-		<p>Get some funds: <code>{{waspClientCmd}} request-funds</code></p>
+		<summary>2. Configure wwallet</summary>
+		<p>Create a file named <code>wwallet.json</code> with the following content:</p>
+		<pre>{{.WwalletJson}}</pre>
+		<p>Create an address + private/public keys for your wallet:</p>
+		<pre>{{waspClientCmd}} init</pre>
+		<p>Get some funds:</p>
+		<pre>{{waspClientCmd}} request-funds</pre>
 	</details>
 {{end}}
 `
