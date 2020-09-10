@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -152,6 +153,26 @@ func InputsToStringByAddress(inputs *valuetransaction.Inputs) string {
 		ret += a + ":\n"
 		for _, t := range m {
 			ret += "    " + t + "\n"
+		}
+	}
+	return ret
+}
+
+func AddressesToStrings(addrs []address.Address) []string {
+	return addressesToStrings(addrs, false)
+}
+
+func AddressesToStringsShort(addrs []address.Address) []string {
+	return addressesToStrings(addrs, true)
+}
+
+func addressesToStrings(addrs []address.Address, short bool) []string {
+	ret := make([]string, len(addrs))
+	for i := range ret {
+		if short {
+			ret[i] = addrs[i].String()[:6] + ".."
+		} else {
+			ret[i] = addrs[i].String()
 		}
 	}
 	return ret

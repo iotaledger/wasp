@@ -3,6 +3,7 @@ package nodeconn
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func Subscribe(addr address.Address) {
@@ -42,22 +43,22 @@ func sendSubscriptionsIfNeeded() {
 		addrs = append(addrs, a)
 	}
 	subscriptionsSent = true
-
 	go func() {
+		astr := util.AddressesToStringsShort(addrs)
 		data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeSubscribeMsg{
 			Addresses: addrs,
 		})
 		if err != nil {
-			log.Errorf("sending subscriptions: %v", err)
+			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, astr)
 			return
 		}
 		if err := SendDataToNode(data); err != nil {
-			log.Errorf("sending subscriptions: %v", err)
+			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, astr)
 			bconnMutex.Lock()
 			defer bconnMutex.Unlock()
 			subscriptionsSent = false
 		} else {
-			log.Infof("sent subscriptions to node for %d addresses", len(addrs))
+			log.Infof("sent subscriptions to node for addresses %+v", astr)
 		}
 	}()
 }
