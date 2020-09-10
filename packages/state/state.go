@@ -100,12 +100,12 @@ func (vs *virtualState) Timestamp() int64 {
 func (vs *virtualState) ApplyBatch(batch Batch) error {
 	if !vs.empty {
 		if batch.StateIndex() != vs.stateIndex+1 {
-			return fmt.Errorf("batch state index #%d can't be applied to the state #%d",
+			return fmt.Errorf("ApplyBatch: batch state index #%d can't be applied to the state #%d",
 				batch.StateIndex(), vs.stateIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
-			return fmt.Errorf("batch state index #%d can't be applied to the empty state", batch.StateIndex())
+			return fmt.Errorf("ApplyBatch: batch state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
 	batch.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
@@ -155,6 +155,8 @@ func (vs *virtualState) Read(r io.Reader) error {
 	if _, err := r.Read(vs.stateHash[:]); err != nil {
 		return err
 	}
+	// after reading something, the state is not empty
+	vs.empty = false
 	return nil
 }
 

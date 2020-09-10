@@ -35,7 +35,8 @@ func configure(ctx *node.Plugin) {
 `, AppVersion)
 	fmt.Println()
 
-	ctx.Node.Logger.Infof("Wasp version %s ...", AppVersion)
+	// TODO embed build time see https://stackoverflow.com/questions/53031035/generate-build-timestamp-in-go/53045029
+	ctx.Node.Logger.Infof("------------------------ Starting Wasp version %s ---------------------------", AppVersion)
 	ctx.Node.Logger.Info("Loading plugins ...")
 }
 

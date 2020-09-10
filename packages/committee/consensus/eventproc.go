@@ -36,7 +36,6 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 		op.log.Errorf("deleteCompletedRequests: %v", err)
 		return
 	}
-	// send backlog to the new leader
 	if msg.Synchronized {
 		if op.iAmCurrentLeader() {
 			op.setConsensusStage(consensusStageLeaderStarting)

@@ -27,7 +27,7 @@ func configure(_ *node.Plugin) {
 		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
 		return
 	}
-	log.Infof("my netid = %s", MyNetworkId())
+	log.Infof("--------------------------------- netid is %s -----------------------------------", MyNetworkId())
 	initialized.Store(true)
 }
 
