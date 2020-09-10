@@ -90,8 +90,8 @@ func nodeConnect() {
 }
 
 func IsConnected() bool {
-	bconnMutex.RLock()
-	defer bconnMutex.RUnlock()
+	bconnMutex.Lock()
+	defer bconnMutex.Unlock()
 	return bconn != nil
 }
 
@@ -104,8 +104,8 @@ func retryNodeConnect() {
 func SendDataToNode(data []byte) error {
 	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
 
-	bconnMutex.RLock()
-	defer bconnMutex.RUnlock()
+	bconnMutex.Lock()
+	defer bconnMutex.Unlock()
 
 	if bconn == nil {
 		return fmt.Errorf("SendDataToNode: not connected to node")

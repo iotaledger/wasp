@@ -23,18 +23,17 @@ func Unsubscribe(addr address.Address) {
 	delete(subscriptions, addr)
 }
 
-func sendSubscriptionsIfNeeded() {
-	bconnMutex.RLock()
-	if subscriptionsSent || bconn == nil {
-		bconnMutex.RUnlock()
-		return
-	}
-	// switch to write lock
-	bconnMutex.RUnlock()
+func sendSubscriptions(forceSend bool) {
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
+	if bconn == nil {
+		return
+	}
 	if len(subscriptions) == 0 {
+		return
+	}
+	if subscriptionsSent && !forceSend {
 		return
 	}
 

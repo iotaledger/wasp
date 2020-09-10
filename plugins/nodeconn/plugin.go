@@ -18,7 +18,7 @@ var (
 	log *logger.Logger
 
 	bconn             *buffconn.BufferedConnection
-	bconnMutex        = &sync.RWMutex{}
+	bconnMutex        = &sync.Mutex{}
 	subscriptions     = make(map[address.Address]struct{})
 	subscriptionsSent bool
 )
@@ -35,6 +35,7 @@ func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		go nodeConnect()
 		go keepSendingSubscriptionIfNeeded(shutdownSignal)
+		go keepSendingSubscriptionForced(shutdownSignal)
 
 		<-shutdownSignal
 
@@ -56,14 +57,27 @@ func run(_ *node.Plugin) {
 	}
 }
 
+// checking if need to be sent every second
 func keepSendingSubscriptionIfNeeded(shutdownSignal <-chan struct{}) {
 	for {
 		select {
 		case <-shutdownSignal:
 			return
-
 		case <-time.After(1 * time.Second):
-			sendSubscriptionsIfNeeded()
+			sendSubscriptions(false)
+		}
+	}
+}
+
+// will be sending subscriptions every minute to pull backlog
+// needed in case node is not synced
+func keepSendingSubscriptionForced(shutdownSignal <-chan struct{}) {
+	for {
+		select {
+		case <-shutdownSignal:
+			return
+		case <-time.After(1 * time.Minute):
+			sendSubscriptions(true)
 		}
 	}
 }
