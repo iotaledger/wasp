@@ -191,5 +191,4 @@ func LoadBootupData(cfg *Config) {
 	}
 	cfg.BootupData = *d
 	cfg.bootupDataLoaded = true
-	fmt.Printf("++++++++++ GetSCData %+v\n", cfg.BootupData)
 }
