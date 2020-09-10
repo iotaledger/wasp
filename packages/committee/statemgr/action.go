@@ -80,9 +80,9 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 
 	} else {
-		// initial load
+		// !sm.solidStateValid && sm.solidState != nil --> initial load
 
-		sm.log.Infof("INITIAL STATE #%d LOADED. State hash: %s, state txid: %s",
+		sm.log.Infof("INITIAL STATE #%d LOADED FROM DB. State hash: %s, state txid: %s",
 			sm.solidState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
 	}
 	sm.solidStateValid = true
