@@ -347,6 +347,8 @@ github.com/iotaledger/goshimmer v0.2.4-0.20200908141357-08e4051af15b h1:ZktlNcB+
 github.com/iotaledger/goshimmer v0.2.4-0.20200908141357-08e4051af15b/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
 github.com/iotaledger/goshimmer v0.2.4-0.20200911042952-e9b23f03a60d h1:lE65H0XfGsBg++H3lUal9BwAOj9V7/z2erBUBf2zVKw=
 github.com/iotaledger/goshimmer v0.2.4-0.20200911042952-e9b23f03a60d/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
+github.com/iotaledger/goshimmer v0.2.4-0.20200911051105-81fcd1152235 h1:SrO6jze6jpJZqwejwbjB+pUNwTVQ7YA2T9MsfDTbYQo=
+github.com/iotaledger/goshimmer v0.2.4-0.20200911051105-81fcd1152235/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
 github.com/iotaledger/hive.go v0.0.0-20200824153656-adfc839cc240 h1:hJFzN7xQhRAut2IQwZVQxVNYztElmlz6OdgPA+IEXXI=
 github.com/iotaledger/hive.go v0.0.0-20200824153656-adfc839cc240/go.mod h1:tLI+HS0amqY5YqClfFZDHlFM7eeIZjoU25Oj1u9jCzQ=
 github.com/iotaledger/iota.go v1.0.0-beta.15/go.mod h1:Rn6v5hLAn8YBaJlRu1ZQdPAgKlshJR1PTeLQaft2778=

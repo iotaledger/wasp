@@ -91,7 +91,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 		return
 	}
 
-	sandbox := sandbox.NewSandbox(vmctx)
+	sndbox := sandbox.NewSandbox(vmctx)
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -100,10 +100,10 @@ func runTheRequest(vmctx *vm.VMContext) {
 					// There was an error accessing the DB
 					// TODO invalidate the whole batch?
 				}
-				sandbox.Rollback()
+				sndbox.Rollback()
 			}
 		}()
-		entryPoint.Run(sandbox)
+		entryPoint.Run(sndbox)
 	}()
 
 	defer vmctx.Log.Debugw("runTheRequest OUT USER DEFINED",
