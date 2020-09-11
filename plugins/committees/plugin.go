@@ -77,7 +77,7 @@ func ActivateCommittee(bootupData *registry.BootupData) committee.Committee {
 		return nil
 	}
 	c := committee.New(bootupData, log, func() {
-		nodeconn.Subscribe(bootupData.Address)
+		nodeconn.Subscribe(bootupData.Address, bootupData.Color)
 	})
 	if c != nil {
 		committeesByAddress[bootupData.Address] = c

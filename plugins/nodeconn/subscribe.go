@@ -2,18 +2,18 @@ package nodeconn
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
-func Subscribe(addr address.Address) {
+func Subscribe(addr address.Address, color balance.Color) {
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
 	if _, ok := subscriptions[addr]; !ok {
 		subscriptionsSent = false
 	}
-	subscriptions[addr] = struct{}{}
+	subscriptions[addr] = color
 }
 
 func Unsubscribe(addr address.Address) {
@@ -37,27 +37,31 @@ func sendSubscriptions(forceSend bool) {
 		return
 	}
 
-	addrs := make([]address.Address, 0, len(subscriptions))
-	for a := range subscriptions {
-		addrs = append(addrs, a)
+	addrsWithColors := make([]waspconn.AddressColor, 0, len(subscriptions))
+	addrs := make([]string, 0)
+	for a, c := range subscriptions {
+		addrsWithColors = append(addrsWithColors, waspconn.AddressColor{
+			Address: a,
+			Color:   c,
+		})
+		addrs = append(addrs, a.String()[:6]+"..")
 	}
 	subscriptionsSent = true
 	go func() {
-		astr := util.AddressesToStringsShort(addrs)
 		data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeSubscribeMsg{
-			Addresses: addrs,
+			AddressesWithColors: addrsWithColors,
 		})
 		if err != nil {
-			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, astr)
+			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, addrs)
 			return
 		}
 		if err := SendDataToNode(data); err != nil {
-			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, astr)
+			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, addrs)
 			bconnMutex.Lock()
 			defer bconnMutex.Unlock()
 			subscriptionsSent = false
 		} else {
-			log.Infof("sent subscriptions to node for addresses %+v", astr)
+			log.Infof("sent subscriptions to node for addresses %+v", addrs)
 		}
 	}()
 }

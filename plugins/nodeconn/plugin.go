@@ -2,6 +2,7 @@ package nodeconn
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
@@ -19,7 +20,7 @@ var (
 
 	bconn             *buffconn.BufferedConnection
 	bconnMutex        = &sync.Mutex{}
-	subscriptions     = make(map[address.Address]struct{})
+	subscriptions     = make(map[address.Address]balance.Color)
 	subscriptionsSent bool
 )
 

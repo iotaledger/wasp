@@ -92,7 +92,10 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 	)
 	// place request into the backlog list
 	req, _ := op.requestFromMsg(reqMsg)
-
+	if req == nil {
+		op.log.Warn("received already processed request id = %s", reqMsg.RequestId().Short())
+		return
+	}
 	if reqMsg.Timelock() != 0 {
 		req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
 			reqMsg.RequestBlock().String(reqMsg.RequestId()), time.Now().Unix())

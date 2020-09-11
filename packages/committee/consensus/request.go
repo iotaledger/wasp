@@ -37,8 +37,11 @@ func (op *operator) requestFromId(reqId sctransaction.RequestId) (*request, bool
 
 // request record retrieved (or created) by request message
 func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool) {
-	reqId := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
-	ret, ok := op.requests[reqId]
+	reqId := reqMsg.RequestId()
+	if op.isRequestProcessed(reqId) {
+		return nil, false
+	}
+	ret, ok := op.requests[*reqId]
 	msgFirstTime := !ok || ret.reqTx == nil
 
 	publish := false
@@ -49,11 +52,11 @@ func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool
 			publish = true
 		}
 	} else {
-		ret = op.newRequest(reqId)
+		ret = op.newRequest(*reqId)
 		ret.whenMsgReceived = time.Now()
 		ret.reqTx = reqMsg.Transaction
-		op.requests[reqId] = ret
-		op.addRequestIdConcurrent(&reqId)
+		op.requests[*reqId] = ret
+		op.addRequestIdConcurrent(reqId)
 		publish = true
 	}
 	if publish {
