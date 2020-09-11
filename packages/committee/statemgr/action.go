@@ -139,16 +139,9 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		return
 	}
 	// it is time to ask for the next state update to next peer in the permutation
-	stateIndex := uint32(0)
-	if sm.solidState != nil {
-		stateIndex = sm.solidState.StateIndex() + 1
-		if stateIndex > sm.largestEvidencedStateIndex {
-			stateIndex = sm.largestEvidencedStateIndex
-		}
-	}
 	data := util.MustBytes(&committee.GetBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
-			StateIndex: stateIndex,
+			StateIndex: sm.solidState.StateIndex() + 1,
 		},
 	})
 	// send messages until first without error
@@ -213,13 +206,13 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 		if sm.solidState == nil {
 			// origin state
 			if batch.StateIndex() != 0 {
-				sm.log.Errorf("expected batch index 0 got %d", batch.StateIndex())
+				sm.log.Errorf("addPendingBatch: expected batch index 0 got %d", batch.StateIndex())
 				return false
 			}
 		} else {
 			// not origin state, the loaded state must be approved by the transaction
 			if batch.StateIndex() != sm.solidState.StateIndex() {
-				sm.log.Errorf("expected batch index %d got %d",
+				sm.log.Errorf("addPendingBatch: expected batch index %d got %d",
 					sm.solidState.StateIndex(), batch.StateIndex())
 				return false
 			}

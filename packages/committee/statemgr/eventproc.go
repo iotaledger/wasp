@@ -15,16 +15,11 @@ func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 	addr := sm.committee.Address()
 	batch, err := state.LoadBatch(addr, msg.StateIndex)
 	if err != nil || batch == nil {
-		//sm.log.Debugw("EventGetBatchMsg: can't find batch",
-		//	"sender index", msg.SenderIndex,
-		//	"state index", msg.StateIndex,
-		//	"addr", addr.String(),
-		//)
 		// can't load batch, can't respond
 		return
 	}
 
-	sm.log.Debugf("EventGetBatchMsg for state index #%d: sending to %d batch %s", msg.StateIndex, msg.SenderIndex, batch.String())
+	sm.log.Debugf("EventGetBatchMsg for state index #%d --> peer %d", msg.StateIndex, msg.SenderIndex)
 
 	err = sm.committee.SendMsg(msg.SenderIndex, committee.MsgBatchHeader, util.MustBytes(&committee.BatchHeaderMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{

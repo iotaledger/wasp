@@ -89,17 +89,18 @@ func (sm *stateManager) initLoadState() {
 
 	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.committee.Address())
 	if err != nil {
-		sm.log.Error(err)
+		sm.log.Errorf("initLoadState: %v", err)
 		sm.committee.Dismiss()
 		return
 	}
 
 	if stateExists {
 		sm.addPendingBatch(batch)
+		sm.largestEvidencedStateIndex = sm.solidState.StateIndex()
 
 		h := sm.solidState.Hash()
 		txh := batch.StateTransactionId()
-		sm.log.Debugw("solid state state has been loaded",
+		sm.log.Debugw("solid state has been loaded",
 			"state index", sm.solidState.StateIndex(),
 			"state hash", h.String(),
 			"approving tx", txh.String(),
