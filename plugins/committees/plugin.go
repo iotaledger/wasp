@@ -38,13 +38,14 @@ func run(_ *node.Plugin) {
 			log.Error("failed to load bootup records from registry: %v", err)
 			return
 		}
-		log.Debugf("loaded %d bootup record(s) from registry", len(lst))
+		astr := make([]string, len(lst))
+		for i := range astr {
+			astr[i] = lst[i].Address.String()[:10] + ".."
+		}
+		log.Debugf("loaded %d bootup record(s) from registry: %+v", len(lst), astr)
 
-		addrs := make([]address.Address, 0, len(lst))
 		for _, scdata := range lst {
-			if cmt := ActivateCommittee(scdata); cmt != nil {
-				addrs = append(addrs, scdata.Address)
-			}
+			ActivateCommittee(scdata)
 		}
 		initialLoadWG.Done()
 
@@ -81,7 +82,9 @@ func ActivateCommittee(bootupData *registry.BootupData) committee.Committee {
 	})
 	if c != nil {
 		committeesByAddress[bootupData.Address] = c
-		log.Infof("created committee proxy object for addr %s", bootupData.Address.String())
+		log.Infof("activated smart contract:\n%s", bootupData.String())
+	} else {
+		log.Infof("failed to activate smart contract:\n%s", bootupData.String())
 	}
 	return c
 }

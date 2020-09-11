@@ -95,6 +95,12 @@ func Test2SC(t *testing.T) {
 	})
 	checkSuccess(err, t, "2 smart contracts activated and initialized")
 
+	//succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
+	//assert.True(t, succ)
+	//
+	//succ = waspapi.CheckSC(wasps.ApiHosts(), scFAAddr)
+	//assert.True(t, succ)
+
 	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scTRAddr, auctionOwner.SigScheme())
 
 	// minting 1 token with TokenRegistry

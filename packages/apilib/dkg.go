@@ -184,18 +184,6 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 	return addrRet, nil
 }
 
-// retrieves public info about key with specific address
-func GetPublicKeyInfo(nodes []string, address *address.Address) []*dkgapi.GetPubKeyInfoResponse {
-	params := dkgapi.GetPubKeyInfoRequest{
-		Address: address.String(),
-	}
-	ret := make([]*dkgapi.GetPubKeyInfoResponse, len(nodes))
-	for i, host := range nodes {
-		ret[i] = callGetPubKeyInfo(host, params)
-	}
-	return ret
-}
-
 func ExportDKShare(node string, address *address.Address) (string, error) {
 	return callExportDKShare(node, dkgapi.ExportDKShareRequest{
 		Address: address.String(),

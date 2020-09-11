@@ -95,6 +95,7 @@ func (sm *stateManager) initLoadState() {
 	}
 
 	if stateExists {
+		// state loaded, will be waiting for it to be confirmed from the tangle
 		sm.addPendingBatch(batch)
 		sm.largestEvidencedStateIndex = sm.solidState.StateIndex()
 
@@ -106,7 +107,8 @@ func (sm *stateManager) initLoadState() {
 			"approving tx", txh.String(),
 		)
 	} else {
-		// pre-origin state
+		// pre-origin state. Origin batch is emty batch.
+		// Will be waiting for the origin transaction to arrive
 		sm.addPendingBatch(state.MustNewOriginBatch(sm.committee.Color()))
 
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")

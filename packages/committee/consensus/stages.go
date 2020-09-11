@@ -118,7 +118,7 @@ var stages = map[int]*stateParams{
 		},
 	},
 	consensusStageSubCalculationsFinished: {"SubCalculationsFinished",
-		false, true, 5 * time.Second,
+		false, true, 15 * time.Second,
 		[]int{
 			consensusStageNoSync,
 			consensusStageSubStarting,

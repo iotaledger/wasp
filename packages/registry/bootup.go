@@ -124,3 +124,12 @@ func (bd *BootupData) Read(r io.Reader) error {
 	}
 	return nil
 }
+
+func (bd *BootupData) String() string {
+	ret := "      Address: " + bd.Address.String() + "\n"
+	ret += "      Color: " + bd.Color.String() + "\n"
+	ret += "      Owner address: " + bd.OwnerAddress.String() + "\n"
+	ret += fmt.Sprintf("      Committee nodes: %+v\n", bd.CommitteeNodes)
+	ret += fmt.Sprintf("      Access nodes: %+v\n", bd.AccessNodes)
+	return ret
+}

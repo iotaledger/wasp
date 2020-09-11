@@ -70,7 +70,7 @@ func main() {
 			fmt.Printf("%s --> %v\n", addr, err)
 			continue
 		}
-		resps := apilib.GetPublicKeyInfo(params.Hosts, &a)
+		resps := apilib.GetPublicKeyInfoMulti(params.Hosts, &a)
 		for i, r := range resps {
 			if r == nil || r.Address != addr || r.N != params.N || r.T != params.T || int(r.Index) != i {
 				fmt.Printf("%s --> returned none or wrong values\n", params.Hosts[i])
