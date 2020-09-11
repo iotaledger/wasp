@@ -88,7 +88,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	// create VM context, including state block, move smart contract token and request tokens
 	vmctx, err := createVMContext(ctx, txb)
 	if err != nil {
-		ctx.OnFinish(err)
+		ctx.OnFinish(fmt.Errorf("createVMContext: %v", err))
 		return
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
