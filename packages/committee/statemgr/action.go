@@ -142,6 +142,9 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	stateIndex := uint32(0)
 	if sm.solidState != nil {
 		stateIndex = sm.solidState.StateIndex() + 1
+		if stateIndex > sm.largestEvidencedStateIndex {
+			stateIndex = sm.largestEvidencedStateIndex
+		}
 	}
 	data := util.MustBytes(&committee.GetBatchMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
