@@ -62,6 +62,9 @@ func (api *goshimmerClient) GetAccountOutputs(address *address.Address) (map[tra
 	ret := make(map[transaction.OutputID][]*balance.Balance)
 	for _, out := range r.UnspentOutputs {
 		for _, outid := range out.OutputIDs {
+			if !outid.InclusionState.Confirmed {
+				continue
+			}
 			id, err := transaction.OutputIDFromBase58(outid.ID)
 			if err != nil {
 				return nil, fmt.Errorf("OutputIDFromBase58: %s", err)
