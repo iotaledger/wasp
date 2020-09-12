@@ -60,9 +60,8 @@ func ValidateDKSParams(t, n, index uint16) error {
 	if t < 1 || t > n || index < 0 || index >= n {
 		return errors.New("wrong N, T or Index parameters")
 	}
-	// probably not necessary
-	if t < (2*n)/3+1 {
-		return errors.New(fmt.Sprintf("value T must be at least floor(2*N/3)+1"))
+	if t < 2 {
+		return errors.New(fmt.Sprintf("value T must be at least 2"))
 	}
 	return nil
 }

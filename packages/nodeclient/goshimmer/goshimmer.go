@@ -13,6 +13,7 @@ import (
 )
 
 func NewGoshimmerClient(goshimmerHost string) nodeclient.NodeClient {
+	fmt.Printf("using Goshimmer host %s\n", goshimmerHost)
 	return &goshimmerClient{client.NewGoShimmerAPI("http://" + goshimmerHost)}
 }
 
