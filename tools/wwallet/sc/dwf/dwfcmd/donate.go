@@ -28,7 +28,7 @@ func donateCmd(args []string) {
 	//		Feedback: feedback,
 	//	})
 	//})
-	_, err = dwf.Client().Donate(dwfclient.DonateParams{
+	tx, err := dwf.Client().Donate(dwfclient.DonateParams{
 		Amount:            int64(amount),
 		Feedback:          feedback,
 		WaitForCompletion: true,
@@ -36,5 +36,9 @@ func donateCmd(args []string) {
 		PublisherQuorum:   2,
 		Timeout:           30 * time.Second,
 	})
-
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+	fmt.Printf("success. Request transaction id: %s\n", tx.ID().String())
 }
