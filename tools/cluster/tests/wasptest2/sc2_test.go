@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"time"
@@ -95,11 +96,11 @@ func Test2SC(t *testing.T) {
 	})
 	checkSuccess(err, t, "2 smart contracts activated and initialized")
 
-	//succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
-	//assert.True(t, succ)
-	//
-	//succ = waspapi.CheckSC(wasps.ApiHosts(), scFAAddr)
-	//assert.True(t, succ)
+	succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
+	assert.True(t, succ)
+
+	succ = waspapi.CheckSC(wasps.ApiHosts(), scFAAddr)
+	assert.True(t, succ)
 
 	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scTRAddr, auctionOwner.SigScheme())
 

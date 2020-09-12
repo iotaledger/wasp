@@ -10,11 +10,13 @@ import (
 	"os"
 )
 
+const prefix = "[checkSC] "
+
 // CheckSC checks and reports deployment data of SC in the given list of node
 // it loads bootuo data from the first node in the list and uses CommitteeNodes from that
 // bootup data to check the whole committee
 //goland:noinspection ALL
-func CheckSC(wasps []string, scAddr *address.Address, textout ...io.Writer) bool {
+func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {
@@ -26,88 +28,106 @@ func CheckSC(wasps []string, scAddr *address.Address, textout ...io.Writer) bool
 			out = ioutil.Discard
 		}
 	}
-	var bdInit *registry.BootupData
-	var initHost string
-	var exists bool
+	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", scAddr.String())
 	var err error
-	// TODO wrong --> rewrite with api hosts
-	for _, host := range wasps {
-		bdInit, exists, err = GetSCData(host, scAddr)
-		if err != nil {
-			fmt.Fprintf(out, "GetSCData: %v\n", err)
-			ret = false
-			continue
-		}
-		if !exists {
-			fmt.Fprintf(out, "GetSCData: bootup record for address %s does not exist in %s\n", scAddr.String(), host)
-			ret = false
-			continue
-		}
-		initHost = host
-		break
-	}
-	if bdInit == nil {
-		err := fmt.Errorf("failed to load initial bootup record for address %s from %+v", scAddr.String(), wasps)
-		fmt.Fprintf(out, "%v\n", err)
-		return false
-	}
-	fmt.Fprintf(out, "loaded example bootup record from node %s. Will be loading bootup data from commitee nodes:\n%s", initHost, bdInit.String())
-	bdRecords := make([]*registry.BootupData, len(bdInit.CommitteeNodes))
-	for i := range bdRecords {
-		host := bdInit.CommitteeNodes[i]
+	var exists, missing bool
+	fmt.Fprintf(out, prefix+"loading bootup record from hosts %+v\n", apiHosts)
+	var first *registry.BootupData
+	var firstHost string
+
+	bdRecords := make([]*registry.BootupData, len(apiHosts))
+	for i, host := range apiHosts {
 		bdRecords[i], exists, err = GetSCData(host, scAddr)
 		if err != nil {
-			fmt.Fprintf(out, "%2d: %s -> %v\n", i, host, err)
+			fmt.Fprintf(out, prefix+"%2d: %s -> %v\n", i, host, err)
 			ret = false
+			missing = true
 			continue
 		}
 		if !exists {
-			fmt.Fprintf(out, "%2d: %s -> bootup data for %s does not exist\n", i, host, scAddr.String())
+			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data for %s does not exist\n", i, host, scAddr.String())
 			ret = false
+			missing = true
 			continue
 		}
 		if bdRecords[i].Address != *scAddr {
-			fmt.Fprintf(out, "%2d: %s -> internal error: wrong address in the bootup record. Expected %s, got %s\n",
-				i, err, scAddr.String(), bdRecords[i].Address.String())
+			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the bootup record. Expected %s, got %s\n",
+				i, host, scAddr.String(), bdRecords[i].Address.String())
+			ret = false
+			missing = true
+			continue
+		}
+		if first == nil {
+			first = bdRecords[i]
+			firstHost = host
+		}
+	}
+	if missing {
+		if first == nil {
+			fmt.Fprintf(out, prefix+"failed to load bootup data. Exit\n")
+			return false
+		} else {
+			fmt.Fprintf(out, prefix+"some bootup records failed to load\n")
+		}
+	} else {
+		fmt.Fprintf(out, prefix+"bootup records has been loaded from %d nodes\n", len(apiHosts))
+	}
+	if first != nil {
+		fmt.Fprintf(out, prefix+"example bootup record was loaded from %s:\n%s\n", firstHost, first.String())
+	}
+	for i, bd := range bdRecords {
+		host := apiHosts[i]
+		if bd == nil {
+			fmt.Fprintf(out, prefix+"%2d: %s -> N/A\n", i, host)
 			ret = false
 			continue
 		}
-		if consistentBootupRecords(bdInit, bdRecords[i]) {
-			fmt.Fprintf(out, "%2d: %s -> bootup data record is OK. Access nodes: %+v\n", i, host, bdRecords[i].AccessNodes)
+		if bd.Address != *scAddr {
+			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the bootupo data record\n",
+				i, host, bd.Address.String())
+			ret = false
+			continue
+		}
+		if consistentBootupRecords(first, bdRecords[i]) {
+			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data OK\n", i, host)
 		} else {
-			fmt.Fprintf(out, "%2d: %s -> bootup data records is WRONG. Expected to be equal to the example, got:\n%s",
+			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data is WRONG. Expected equal to example, got %s\n",
 				i, host, bdRecords[i].String())
 			ret = false
 		}
 	}
-	fmt.Fprintf(out, "checking distributed keys..\n")
-	pkinfo := GetPublicKeyInfo(initHost, scAddr)
-	if pkinfo.Err != "" {
-		fmt.Fprintf(out, "failed to load public key info for %s from %s\n", scAddr.String(), initHost)
-		return false
-	}
-	fmt.Fprintf(out, "loaded example public key info for %s from %s\n%s",
-		scAddr.String(), initHost, publicKeyInfoToString(pkinfo))
 
-	resps := GetPublicKeyInfoMulti(bdInit.CommitteeNodes, scAddr)
+	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
+
+	resps := GetPublicKeyInfoMulti(apiHosts, scAddr)
+	var keyExample *dkgapi.GetPubKeyInfoResponse
 	for i := range resps {
-		host := bdInit.CommitteeNodes[i]
-		if resps[i].Err != "" {
-			fmt.Fprintf(out, "%2d: %s -> %s\n", i, host, resps[i].Err)
+		if resps[i].Err == "" {
+			keyExample = resps[i]
+			fmt.Fprintf(out, prefix+"public key info example was taken from %s:\n%s\n", apiHosts[i], publicKeyInfoToString(keyExample))
+			break
+		}
+	}
+	for i, resp := range resps {
+		host := apiHosts[i]
+		if resp.Err != "" {
+			fmt.Fprintf(out, prefix+"%2d: %s -> %s\n", i, host, resp.Err)
 			ret = false
 			continue
 		}
-		if !consistentPublicKeyInfo(pkinfo, resps[i]) {
-			fmt.Fprintf(out, "%2d: %s -> wrong key info. Expected consistent with example, got \n%s\n",
+		if !consistentPublicKeyInfo(keyExample, resps[i]) {
+			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key info. Expected consistent with example, got \n%s\n",
 				i, host, resps[i])
 			ret = false
 			continue
 		}
 		if i != int(resps[i].Index) {
-			fmt.Fprintf(out, "%2d: %s -> wrong key index. Expected %d, got %d\n", i, host, i, resps[i].Index)
+			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key index. Expected %d, got %d\n", i, host, i, resps[i].Index)
 			ret = false
 			continue
 		}
+		fmt.Fprintf(out, prefix+"%2d: %s -> key is OK\n", i, host)
+
 	}
 	return ret
 }
