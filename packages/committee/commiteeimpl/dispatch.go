@@ -80,6 +80,17 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 
 	switch msg.MsgType {
 
+	case committee.MsgPingPong:
+		msgt := &committee.PingPongMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+
+		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EventPingPongMsg(msgt)
+
 	case committee.MsgNotifyRequests:
 		msgt := &committee.NotifyReqMsg{}
 		if err := msgt.Read(rdr); err != nil {

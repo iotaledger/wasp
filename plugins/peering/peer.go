@@ -151,8 +151,6 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 	}
 	data, _ := encodeMessage(msg)
 
-	//peer.lastHeartbeatSent = ts
-
 	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
 	peer.RLock()
@@ -177,8 +175,9 @@ func (peer *Peer) sendChunks(chopped [][]byte) error {
 	return nil
 }
 
-// sends same msg to all peers in the slice which are not nil
+// SendMsgToPeers sends same msg to all peers in the slice which are not nil
 // with the same timestamp
+// return number of successfully sent messages and timestamp
 func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 	if msg.MsgType < FirstCommitteeMsgCode {
 		return 0, 0

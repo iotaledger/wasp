@@ -14,11 +14,35 @@ import (
 )
 
 func (sm *stateManager) takeAction() {
+	sm.sendPingsIfNeeded()
 	if sm.checkStateApproval() {
 		return
 	}
 	sm.requestStateTransactionIfNeeded()
 	sm.requestStateUpdateFromPeerIfNeeded()
+}
+
+// sendPingsIfNeeded sends pings to the committee peers to gather evidence about the largest
+// state index. It doesn't send it if evidence is already here.
+// To force sending pings all 'false' must be set in sm.pingPong
+func (sm *stateManager) sendPingsIfNeeded() {
+	if sm.numPongsHasQuorum() {
+		// no need for pinging, all state information is gathered already
+		return
+	}
+	if !sm.committee.HasQuorum() {
+		// doesn't make sense the pinging, alive nodes does not make quorum
+		return
+	}
+	if !sm.solidStateValid {
+		// own solid state has not been validated yet
+		return
+	}
+	if sm.deadlineForPongQuorum.After(time.Now()) {
+		// not time yet
+		return
+	}
+	sm.sendPingsToCommitteePeers()
 }
 
 // checks the state of the state manager. If one of pending state update batches is confirmed
@@ -128,12 +152,11 @@ func (sm *stateManager) checkStateApproval() bool {
 }
 
 func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
-	if sm.isSynchronized() || sm.solidState == nil {
-		// state is synced, no need for more info
-		// or it is in the pre-origin state, the 0 batch is deterministically known
+	if !sm.solidStateValid || sm.isSynchronized() {
+		// no need for more info when state is synced or solid state still needs validation by the anchor tx
 		return
 	}
-	// not synced
+	// state is valid but not synced
 	if !sm.syncMessageDeadline.Before(time.Now()) {
 		// not time yet for the next message
 		return
@@ -180,7 +203,7 @@ func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
 
 func (sm *stateManager) isSynchronized() bool {
 	if sm.solidState == nil {
-		return sm.largestEvidencedStateIndex == 0
+		return false // sm.largestEvidencedStateIndex == 0
 	}
 	return sm.largestEvidencedStateIndex == sm.solidState.StateIndex()
 }
@@ -280,4 +303,53 @@ func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
 	_ = nodeconn.RequestConfirmedTransactionFromNode(&txid)
 	pb.stateTransactionRequestDeadline = time.Now().Add(committee.StateTransactionRequestTimeout)
+}
+
+func (sm *stateManager) numPongs() uint16 {
+	ret := uint16(0)
+	for _, f := range sm.pingPong {
+		if f {
+			ret++
+		}
+	}
+	return ret
+}
+
+func (sm *stateManager) numPongsHasQuorum() bool {
+	return sm.numPongs() >= sm.committee.Quorum()
+}
+
+func (sm *stateManager) pingPongReceived(senderIndex uint16) {
+	sm.pingPong[senderIndex] = true
+}
+
+func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
+	sm.committee.SendMsg(targetPeerIndex, committee.MsgPingPong, util.MustBytes(&committee.PingPongMsg{
+		PeerMsgHeader: committee.PeerMsgHeader{
+			StateIndex: sm.solidState.StateIndex(),
+		},
+		RSVP: false,
+	}))
+}
+
+func (sm *stateManager) sendPingsToCommitteePeers() {
+	sm.log.Debugf("pinging peers")
+
+	data := util.MustBytes(&committee.PingPongMsg{
+		PeerMsgHeader: committee.PeerMsgHeader{
+			StateIndex: sm.solidState.StateIndex(),
+		},
+		RSVP: true,
+	})
+	numSent := 0
+	for i, pinged := range sm.pingPong {
+		if pinged {
+			continue
+		}
+		if err := sm.committee.SendMsg(uint16(i), committee.MsgPingPong, data); err == nil {
+			numSent++
+		}
+	}
+	sm.log.Debugf("sent pings to %d committee peers", numSent)
+	sm.deadlineForPongQuorum = time.Now().Add(committee.RepeatPingAfter)
 }

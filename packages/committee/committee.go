@@ -14,6 +14,7 @@ type Committee interface {
 	OwnerAddress() *address.Address
 	Color() *balance.Color
 	Size() uint16
+	Quorum() uint16
 	OwnPeerIndex() uint16
 	NumPeers() uint16
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
@@ -42,6 +43,7 @@ const (
 
 type StateManager interface {
 	EvidenceStateIndex(idx uint32)
+	EventPingPongMsg(msg *PingPongMsg)
 	EventGetBatchMsg(msg *GetBatchMsg)
 	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)

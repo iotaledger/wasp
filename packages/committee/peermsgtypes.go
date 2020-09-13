@@ -12,14 +12,15 @@ import (
 )
 
 const (
-	MsgNotifyRequests          = 0 + peering.FirstCommitteeMsgCode
-	MsgNotifyFinalResultPosted = 1 + peering.FirstCommitteeMsgCode
-	MsgStartProcessingRequest  = 2 + peering.FirstCommitteeMsgCode
-	MsgSignedHash              = 3 + peering.FirstCommitteeMsgCode
-	MsgGetBatch                = 4 + peering.FirstCommitteeMsgCode
-	MsgStateUpdate             = 5 + peering.FirstCommitteeMsgCode
-	MsgBatchHeader             = 6 + peering.FirstCommitteeMsgCode
-	MsgTestTrace               = 7 + peering.FirstCommitteeMsgCode
+	MsgPingPong                = 0 + peering.FirstCommitteeMsgCode
+	MsgNotifyRequests          = 1 + peering.FirstCommitteeMsgCode
+	MsgNotifyFinalResultPosted = 2 + peering.FirstCommitteeMsgCode
+	MsgStartProcessingRequest  = 3 + peering.FirstCommitteeMsgCode
+	MsgSignedHash              = 4 + peering.FirstCommitteeMsgCode
+	MsgGetBatch                = 5 + peering.FirstCommitteeMsgCode
+	MsgStateUpdate             = 6 + peering.FirstCommitteeMsgCode
+	MsgBatchHeader             = 7 + peering.FirstCommitteeMsgCode
+	MsgTestTrace               = 8 + peering.FirstCommitteeMsgCode
 )
 
 type TimerTick int
@@ -30,6 +31,12 @@ type PeerMsgHeader struct {
 	SenderIndex uint16
 	// state index in the context of which the message is sent
 	StateIndex uint32
+}
+
+// Ping is sent to receive Pong
+type PingPongMsg struct {
+	PeerMsgHeader
+	RSVP bool
 }
 
 // message is sent to the leader of the state processing

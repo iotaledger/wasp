@@ -30,7 +30,7 @@ func Test2SC(t *testing.T) {
 	auctionOwner := wallet.WithIndex(2)
 
 	// setup
-	wasps := setup(t, "test_cluster2", "TestFA")
+	wasps := setup(t, "test_cluster2", "Test2SC")
 
 	programHashTR, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)

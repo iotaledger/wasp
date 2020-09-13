@@ -23,6 +23,9 @@ const (
 	// peer after some time
 	PeriodBetweenSyncMessages = 1 * time.Second
 
+	// if pongs do not make a quorum, pings are repeated to all peer nodes
+	RepeatPingAfter = 5 * time.Second
+
 	// State Manager is requesting transaction to confirm a pending batch from the goshimmer node.
 	// Request is repeated if necessary.
 	StateTransactionRequestTimeout = 10 * time.Second

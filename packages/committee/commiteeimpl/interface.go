@@ -125,6 +125,10 @@ func (c *committeeObj) Size() uint16 {
 	return c.size
 }
 
+func (c *committeeObj) Quorum() uint16 {
+	return c.quorum
+}
+
 func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {

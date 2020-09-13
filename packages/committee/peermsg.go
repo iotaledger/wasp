@@ -9,6 +9,20 @@ import (
 	"io"
 )
 
+func (msg *PingPongMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
+		return err
+	}
+	return util.WriteBoolByte(w, msg.RSVP)
+}
+
+func (msg *PingPongMsg) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &msg.StateIndex); err != nil {
+		return err
+	}
+	return util.ReadBoolByte(r, &msg.RSVP)
+}
+
 func (msg *NotifyReqMsg) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, msg.StateIndex); err != nil {
 		return err

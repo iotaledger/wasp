@@ -21,6 +21,10 @@ type stateManager struct {
 	// after that it is always true
 	solidStateValid bool
 
+	// flag pingPong[idx] if ping-pong message wes received from the peer idx
+	pingPong              []bool
+	deadlineForPongQuorum time.Time
+
 	// pending batches of state updates are candidates to confirmation by the state transaction
 	// which leads to the state transition
 	// the map key is hash of the variable state which is a result of applying the
@@ -69,11 +73,12 @@ type pendingBatch struct {
 	stateTransactionRequestDeadline time.Time
 }
 
-func New(committee committee.Committee, log *logger.Logger) committee.StateManager {
+func New(c committee.Committee, log *logger.Logger) committee.StateManager {
 	ret := &stateManager{
-		committee:      committee,
+		committee:      c,
+		pingPong:       make([]bool, c.Size()),
 		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
-		permutation:    util.NewPermutation16(committee.NumPeers(), nil),
+		permutation:    util.NewPermutation16(c.NumPeers(), nil),
 		log:            log.Named("s"),
 	}
 	go ret.initLoadState()

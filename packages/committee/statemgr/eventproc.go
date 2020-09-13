@@ -6,7 +6,22 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// respond to sync request 'GetStateUpdate'
+// EventPingPongMsg reacts to the PinPong message
+func (sm *stateManager) EventPingPongMsg(msg *committee.PingPongMsg) {
+	sm.pingPongReceived(msg.SenderIndex)
+	if msg.RSVP && sm.solidStateValid {
+		// only respond if current solid state is validated
+		sm.respondPongToPeer(msg.SenderIndex)
+	}
+	sm.log.Debugw("EventPingPongMsg",
+		"sender", msg.SenderIndex,
+		"state", msg.StateIndex,
+		"rsvp", msg.RSVP,
+		"numPongs", sm.numPongs(),
+	)
+}
+
+// EventGetBatchMsg is a request for a batch while syncing
 func (sm *stateManager) EventGetBatchMsg(msg *committee.GetBatchMsg) {
 	sm.log.Debugw("EventGetBatchMsg",
 		"sender index", msg.SenderIndex,
