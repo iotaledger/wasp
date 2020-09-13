@@ -6,8 +6,8 @@ const (
 	// confirmation time assumption. Average time from posting a transaction to finality
 	ConfirmationTime = 10 * time.Second
 
-	// relaxation period after committee activation
-	InitConnectPeriod = 5 * time.Second
+	// additional period after committee quorum of connections is reached
+	AdditionalConnectPeriod = 3 * time.Second
 
 	// time tick for consensus and state manager objects
 	TimerTickPeriod = 100 * time.Millisecond

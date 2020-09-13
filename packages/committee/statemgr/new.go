@@ -31,13 +31,19 @@ type stateManager struct {
 	// batch of state updates to the solid variable state
 	pendingBatches map[hashing.HashValue]*pendingBatch
 
+	// last variable state stored in the database
+	// it may be nil at bootstrap when origin variable state is calculated
+	solidState state.VirtualState
+
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
 	nextStateTransaction *sctransaction.Transaction
 
-	// last variable state stored in the database
-	// it may be nil at bootstrap when origin variable state is calculated
-	solidState state.VirtualState
+	// state transaction which approves current state
+	approvingTransaction *sctransaction.Transaction
+
+	// was state transition message of the current state sent to the consensus operator
+	consensusNotifiedOnStateTransition bool
 
 	// largest state index evidenced by other messages. If this index is more than 1 step ahead
 	// of the solid variable state, it means the state of the smart contract in the current node

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	MsgPingPong                = 0 + peering.FirstCommitteeMsgCode
+	MsgStateIndexPingPong      = 0 + peering.FirstCommitteeMsgCode
 	MsgNotifyRequests          = 1 + peering.FirstCommitteeMsgCode
 	MsgNotifyFinalResultPosted = 2 + peering.FirstCommitteeMsgCode
 	MsgStartProcessingRequest  = 3 + peering.FirstCommitteeMsgCode
@@ -34,7 +34,7 @@ type PeerMsgHeader struct {
 }
 
 // Ping is sent to receive Pong
-type PingPongMsg struct {
+type StateIndexPingPongMsg struct {
 	PeerMsgHeader
 	RSVP bool
 }

@@ -15,11 +15,30 @@ import (
 
 func (sm *stateManager) takeAction() {
 	sm.sendPingsIfNeeded()
+	sm.notifyConsensusOnStateTransitionIfNeeded()
 	if sm.checkStateApproval() {
 		return
 	}
 	sm.requestStateTransactionIfNeeded()
 	sm.requestStateUpdateFromPeerIfNeeded()
+}
+
+func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
+	if sm.consensusNotifiedOnStateTransition {
+		return
+	}
+	if !sm.numPongsHasQuorum() {
+		return
+	}
+
+	sm.consensusNotifiedOnStateTransition = true
+	go func() {
+		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
+			VariableState:    sm.solidState,
+			StateTransaction: sm.approvingTransaction,
+			Synchronized:     sm.isSynchronized(),
+		})
+	}()
 }
 
 // sendPingsIfNeeded sends pings to the committee peers to gather evidence about the largest
@@ -112,20 +131,21 @@ func (sm *stateManager) checkStateApproval() bool {
 	sm.solidStateValid = true
 	sm.solidState = pending.nextState
 
-	saveTx := sm.nextStateTransaction
+	sm.approvingTransaction = sm.nextStateTransaction
 
 	// update state manager variables to the new state
 	sm.nextStateTransaction = nil
 	sm.pendingBatches = make(map[hashing.HashValue]*pendingBatch) // clear pending batches
 	sm.permutation.Shuffle(varStateHash.Bytes())
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
+	sm.consensusNotifiedOnStateTransition = false
 
 	// publish state transition
 	publisher.Publish("state",
 		sm.committee.Address().String(),
 		strconv.Itoa(int(sm.solidState.StateIndex())),
 		strconv.Itoa(int(pending.batch.Size())),
-		saveTx.ID().String(),
+		sm.approvingTransaction.ID().String(),
 		varStateHash.String(),
 		fmt.Sprintf("%d", pending.batch.Timestamp()),
 	)
@@ -140,14 +160,6 @@ func (sm *stateManager) checkStateApproval() bool {
 			strconv.Itoa(int(pending.batch.Size())),
 		)
 	}
-
-	go func() {
-		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
-			VariableState:    sm.solidState,
-			StateTransaction: saveTx,
-			Synchronized:     sm.isSynchronized(),
-		})
-	}()
 	return true
 }
 
@@ -316,7 +328,7 @@ func (sm *stateManager) numPongs() uint16 {
 }
 
 func (sm *stateManager) numPongsHasQuorum() bool {
-	return sm.numPongs() >= sm.committee.Quorum()
+	return sm.numPongs() >= sm.committee.Quorum()-1
 }
 
 func (sm *stateManager) pingPongReceived(senderIndex uint16) {
@@ -324,7 +336,7 @@ func (sm *stateManager) pingPongReceived(senderIndex uint16) {
 }
 
 func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
-	sm.committee.SendMsg(targetPeerIndex, committee.MsgPingPong, util.MustBytes(&committee.PingPongMsg{
+	sm.committee.SendMsg(targetPeerIndex, committee.MsgStateIndexPingPong, util.MustBytes(&committee.StateIndexPingPongMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: sm.solidState.StateIndex(),
 		},
@@ -335,7 +347,7 @@ func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
 func (sm *stateManager) sendPingsToCommitteePeers() {
 	sm.log.Debugf("pinging peers")
 
-	data := util.MustBytes(&committee.PingPongMsg{
+	data := util.MustBytes(&committee.StateIndexPingPongMsg{
 		PeerMsgHeader: committee.PeerMsgHeader{
 			StateIndex: sm.solidState.StateIndex(),
 		},
@@ -346,7 +358,7 @@ func (sm *stateManager) sendPingsToCommitteePeers() {
 		if pinged {
 			continue
 		}
-		if err := sm.committee.SendMsg(uint16(i), committee.MsgPingPong, data); err == nil {
+		if err := sm.committee.SendMsg(uint16(i), committee.MsgStateIndexPingPong, data); err == nil {
 			numSent++
 		}
 	}

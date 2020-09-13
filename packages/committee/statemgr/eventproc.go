@@ -7,18 +7,24 @@ import (
 )
 
 // EventPingPongMsg reacts to the PinPong message
-func (sm *stateManager) EventPingPongMsg(msg *committee.PingPongMsg) {
+func (sm *stateManager) EventStateIndexPingPongMsg(msg *committee.StateIndexPingPongMsg) {
+	before := sm.numPongsHasQuorum()
 	sm.pingPongReceived(msg.SenderIndex)
+	after := sm.numPongsHasQuorum()
+
 	if msg.RSVP && sm.solidStateValid {
 		// only respond if current solid state is validated
 		sm.respondPongToPeer(msg.SenderIndex)
 	}
-	sm.log.Debugw("EventPingPongMsg",
-		"sender", msg.SenderIndex,
-		"state", msg.StateIndex,
-		"rsvp", msg.RSVP,
-		"numPongs", sm.numPongs(),
-	)
+	if !before && after {
+		sm.log.Infof("collected %d evidences of state indices of peers", sm.numPongs())
+	}
+	//sm.log.Debugw("EventStateIndexPingPongMsg",
+	//	"sender", msg.SenderIndex,
+	//	"state", msg.StateIndex,
+	//	"rsvp", msg.RSVP,
+	//	"numPongs", sm.numPongs(),
+	//)
 }
 
 // EventGetBatchMsg is a request for a batch while syncing

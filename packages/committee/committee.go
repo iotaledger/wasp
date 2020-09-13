@@ -43,7 +43,7 @@ const (
 
 type StateManager interface {
 	EvidenceStateIndex(idx uint32)
-	EventPingPongMsg(msg *PingPongMsg)
+	EventStateIndexPingPongMsg(msg *StateIndexPingPongMsg)
 	EventGetBatchMsg(msg *GetBatchMsg)
 	EventBatchHeaderMsg(msg *BatchHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
