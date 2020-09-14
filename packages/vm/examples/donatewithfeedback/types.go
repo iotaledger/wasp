@@ -74,6 +74,7 @@ func (di *DonationInfo) Read(r io.Reader) error {
 	if err := util.ReadInt64(r, &di.Seq); err != nil {
 		return err
 	}
+	di.Id = new(sctransaction.RequestId)
 	if err := sctransaction.ReadRequestId(r, di.Id); err != nil {
 		return err
 	}
