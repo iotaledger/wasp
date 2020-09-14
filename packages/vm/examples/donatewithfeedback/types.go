@@ -21,7 +21,7 @@ const (
 	// state vars
 	// name of the feedback message log
 	VarStateTheLog = "l"
-	// largest donatio so far
+	// largest donation so far
 	VarStateMaxDonation = "maxd"
 	// total donation so far
 	VarStateTotalDonations = "total"
@@ -37,7 +37,7 @@ const (
 // it is marshalled to the deterministic binary form and saves as one entry in the state
 type DonationInfo struct {
 	Seq      int64
-	Id       sctransaction.RequestId
+	Id       *sctransaction.RequestId
 	When     time.Time // not marshaled, filled in from timestamp
 	Amount   int64
 	Sender   address.Address
@@ -74,7 +74,7 @@ func (di *DonationInfo) Read(r io.Reader) error {
 	if err := util.ReadInt64(r, &di.Seq); err != nil {
 		return err
 	}
-	if err := sctransaction.ReadRequestId(r, &di.Id); err != nil {
+	if err := sctransaction.ReadRequestId(r, di.Id); err != nil {
 		return err
 	}
 	if err = util.ReadInt64(r, &di.Amount); err != nil {
