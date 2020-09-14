@@ -66,6 +66,7 @@ func donate(ctx vmtypes.Sandbox) {
 	// create donation info record
 	sender := ctx.AccessRequest().Sender()
 	di := &donatewithfeedback.DonationInfo{
+		Id:       ctx.AccessRequest().ID(),
 		Amount:   donated,
 		Sender:   sender,
 		Feedback: feedback,

@@ -103,6 +103,9 @@ const (
 )
 
 func SubscribeMulti(hosts []string, topics string, quorum ...int) (*Subscription, error) {
+	if len(hosts) == 0 {
+		return nil, fmt.Errorf("SubscribeMulti: no nanomsg hosts provided")
+	}
 	quorumNodes := len(hosts)
 	if len(quorum) > 0 {
 		if quorum[0] > 0 || quorum[0] < len(hosts) {
@@ -136,7 +139,7 @@ func SubscribeMulti(hosts []string, topics string, quorum ...int) (*Subscription
 	}
 	if ret.numSubscribed < quorumNodes {
 		close(ret.chStopReading)
-		return nil, fmt.Errorf("SubscribeMulti: required %d nodes, connected only to %d", quorumNodes, ret.numSubscribed)
+		return nil, fmt.Errorf("SubscribeMulti: required %d nanomsg hosts, connected only to %d", quorumNodes, ret.numSubscribed)
 	}
 	return ret, nil
 }

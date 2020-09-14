@@ -65,13 +65,14 @@ const tplDwf = `
 		<p>Total received: <code>{{.Status.TotalDonations}} IOTAs</code></p>
 		<p>Largest donation so far: <code>{{.Status.MaxDonation}} IOTAs</code></p>
 		<div>
-			<h4>Log (descending)</h4>
+			<h4>Log (latest first)</h4>
 			{{range $i, $di := .Status.LastRecordsDesc}}
 				<details>
 					<summary>{{$di.Feedback}}</summary>
 					<p>Sender: <code>{{$di.Sender}}</code></p>
 					<p>Amount: <code>{{$di.Amount}} IOTAs</code></p>
 					<p>When: <code>{{formatTimestamp $di.When}}</code></p>
+		            <p>Request Id: <code>{{$di.Id}}</code></p>
 				</details>
 			{{end}}
 		</div>
