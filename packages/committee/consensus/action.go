@@ -52,11 +52,10 @@ func (op *operator) rotateLeader() {
 		prevlead, leader, op.iAmCurrentLeader())
 
 	if op.iAmCurrentLeader() {
-		op.setConsensusStage(consensusStageLeaderStarting)
+		op.setNextConsensusStage(consensusStageLeaderStarting)
 	} else {
-		op.setConsensusStage(consensusStageSubStarting)
+		op.setNextConsensusStage(consensusStageSubStarting)
 	}
-
 }
 
 func (op *operator) startCalculationsAsLeader() {
@@ -122,7 +121,7 @@ func (op *operator) startCalculationsAsLeader() {
 		timestamp:       ts,
 		rewardAddress:   rewardAddress,
 	})
-	op.setConsensusStage(consensusStageLeaderCalculationsStarted)
+	op.setNextConsensusStage(consensusStageLeaderCalculationsStarted)
 }
 
 func (op *operator) checkQuorum() bool {
@@ -201,7 +200,7 @@ func (op *operator) checkQuorum() bool {
 	numSent, _ := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
 	op.log.Debugf("%d peers has been notified about finalized result", numSent)
 
-	op.setConsensusStage(consensusStageLeaderResultFinalized)
+	op.setNextConsensusStage(consensusStageLeaderResultFinalized)
 	op.setFinalizedTransaction(&txid)
 
 	return true

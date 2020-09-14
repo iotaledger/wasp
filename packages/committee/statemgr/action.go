@@ -24,6 +24,9 @@ func (sm *stateManager) takeAction() {
 }
 
 func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
+	if !sm.solidStateValid {
+		return
+	}
 	if sm.consensusNotifiedOnStateTransition {
 		return
 	}

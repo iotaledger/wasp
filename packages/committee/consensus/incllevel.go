@@ -30,12 +30,15 @@ func (op *operator) checkInclusionLevel(txid *valuetransaction.ID, level byte) {
 	switch level {
 	case waspconn.TransactionInclusionLevelBooked:
 		if op.consensusStage != consensusStageResultTransactionBooked {
-			op.setConsensusStage(consensusStageResultTransactionBooked)
+			op.setNextConsensusStage(consensusStageResultTransactionBooked)
 		} else {
 			op.setNextPullInclusionStageDeadline()
 		}
 	case waspconn.TransactionInclusionLevelRejected:
-		op.setConsensusStageDeadlineExpired()
+		// cannot move to the next leader because funds are locked forever
+		// TODO not clear what to do. Need proper specs from Goshimmer
+		op.log.Warnf("!!!!!!! received 'rejected' for transaction %s. Not clear what to do. Need proper specs from Goshimmer",
+			op.postedResultTxid.String())
 	}
 }
 

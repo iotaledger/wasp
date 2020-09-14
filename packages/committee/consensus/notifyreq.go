@@ -51,7 +51,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
 		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
-	op.setConsensusStage(consensusStageSubNotificationsSent)
+	op.setNextConsensusStage(consensusStageSubNotificationsSent)
 }
 
 func (op *operator) storeNotification(msg *committee.NotifyReqMsg) {

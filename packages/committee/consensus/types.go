@@ -28,9 +28,8 @@ type operator struct {
 	balances       map[valuetransaction.ID][]*balance.Balance
 
 	// consensus stage
-	consensusStage            int
-	consensusStageDeadlineSet bool
-	consensusStageDeadline    time.Time
+	consensusStage         int
+	consensusStageDeadline time.Time
 	//
 	requestBalancesDeadline time.Time
 	processorReady          bool
@@ -98,7 +97,7 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
 		log:                 log.Named("c"),
 	}
-	ret.setConsensusStage(consensusStageNoSync)
+	ret.setNextConsensusStage(consensusStageNoSync)
 	return ret
 }
 

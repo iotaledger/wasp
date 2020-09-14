@@ -38,12 +38,12 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 	if msg.Synchronized {
 		if op.iAmCurrentLeader() {
-			op.setConsensusStage(consensusStageLeaderStarting)
+			op.setNextConsensusStage(consensusStageLeaderStarting)
 		} else {
-			op.setConsensusStage(consensusStageSubStarting)
+			op.setNextConsensusStage(consensusStageSubStarting)
 		}
 	} else {
-		op.setConsensusStage(consensusStageNoSync)
+		op.setNextConsensusStage(consensusStageNoSync)
 	}
 	op.takeAction()
 
@@ -158,7 +158,7 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		rewardAddress:   msg.RewardAddress,
 		leaderPeerIndex: msg.SenderIndex,
 	})
-	op.setConsensusStage(consensusStageSubCalculationsStarted)
+	op.setNextConsensusStage(consensusStageSubCalculationsStarted)
 	op.takeAction()
 }
 
@@ -243,7 +243,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 		// this message is intended to subordinates only
 		return
 	}
-	op.setConsensusStage(consensusStageSubResultFinalized)
+	op.setNextConsensusStage(consensusStageSubResultFinalized)
 	op.setFinalizedTransaction(&msg.TxId)
 }
 
