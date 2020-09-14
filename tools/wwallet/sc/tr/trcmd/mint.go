@@ -2,13 +2,13 @@ package trcmd
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"os"
 	"strconv"
+	"time"
 
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
-	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 )
 
@@ -23,13 +23,23 @@ func mintCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	tx := util.WithSCRequest(tr.Config, func() (*sctransaction.Transaction, error) {
-		return tr.Client().MintAndRegister(trclient.MintAndRegisterParams{
-			Supply:      int64(amount),
-			MintTarget:  wallet.Load().Address(),
-			Description: description,
-		})
+	client := tr.Client()
+	tx, err := client.MintAndRegister(trclient.MintAndRegisterParams{
+		Supply:            int64(amount),
+		MintTarget:        wallet.Load().Address(),
+		Description:       description,
+		WaitForCompletion: true,
+		PublisherHosts:    config.CommitteeNanomsg(tr.Config.Committee()),
+		PublisherQuorum:   3,
+		Timeout:           1 * time.Minute,
 	})
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
 
-	fmt.Printf("Minted %d tokens of color %s\n", amount, tx.ID())
+	fmt.Printf("Minted %d tokens of color %s into address %s.\n"+
+		"Metadata of the supply: '%s'\n"+
+		"Metadata was sent to TokenRegistry SC at %s\n",
+		amount, tx.ID().String(), client.OwnerAddress().String(), description, tr.Config.Address().String())
 }

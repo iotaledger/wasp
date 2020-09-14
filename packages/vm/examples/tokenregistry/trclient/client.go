@@ -41,6 +41,10 @@ type MintAndRegisterParams struct {
 	Timeout           time.Duration // must be enough for confirmation of the request transaction processing of it (>20s)
 }
 
+func (trc *TokenRegistryClient) OwnerAddress() address.Address {
+	return trc.sigScheme.Address()
+}
+
 // MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
 func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.Transaction, error) {

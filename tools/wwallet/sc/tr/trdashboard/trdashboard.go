@@ -85,7 +85,7 @@ const tplTokenRegistry = `
 	<p>Owner: <code>{{.Owner}}</code></p>
 	<p>Created: <code>{{formatTimestamp .Created}}</code></p>
 	<p>Updated: <code>{{formatTimestamp .Updated}}</code></p>
-	<p>UserDefined: <code>{{.UserDefined}}</code></p>
+	<p>Other metadata: <code>{{.UserDefined}}</code></p>
 {{end}}
 
 {{define "body"}}
