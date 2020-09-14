@@ -62,10 +62,14 @@ func donate(ctx vmtypes.Sandbox) {
 	// take feedback text contained in the request
 	feedback, ok, err := ctx.AccessRequest().Args().GetString(donatewithfeedback.VarReqFeedback)
 
+	stateAccess := ctx.AccessState()
+	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
+
 	// determine sender of the request
 	// create donation info record
 	sender := ctx.AccessRequest().Sender()
 	di := &donatewithfeedback.DonationInfo{
+		Seq:      int64(tlog.Len()),
 		Id:       ctx.AccessRequest().ID(),
 		Amount:   donated,
 		Sender:   sender,
@@ -86,8 +90,6 @@ func donate(ctx vmtypes.Sandbox) {
 		di.Amount = 0
 	}
 	// store donation info record in the state (append to the timestamped log)
-	stateAccess := ctx.AccessState()
-	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
 	tlog.Append(ctx.GetTimestamp(), di.Bytes())
 
 	// save total and maximum donations

@@ -36,6 +36,7 @@ const (
 // DonationInfo is a structure which contains one donation
 // it is marshalled to the deterministic binary form and saves as one entry in the state
 type DonationInfo struct {
+	Seq      int64
 	Id       sctransaction.RequestId
 	When     time.Time // not marshaled, filled in from timestamp
 	Amount   int64
@@ -47,6 +48,9 @@ type DonationInfo struct {
 // serde of the DonationInfo
 
 func (di *DonationInfo) Write(w io.Writer) error {
+	if err := util.WriteInt64(w, di.Seq); err != nil {
+		return err
+	}
 	if _, err := w.Write(di.Id[:]); err != nil {
 		return err
 	}
@@ -67,6 +71,9 @@ func (di *DonationInfo) Write(w io.Writer) error {
 
 func (di *DonationInfo) Read(r io.Reader) error {
 	var err error
+	if err := util.ReadInt64(r, &di.Seq); err != nil {
+		return err
+	}
 	if err := sctransaction.ReadRequestId(r, &di.Id); err != nil {
 		return err
 	}
