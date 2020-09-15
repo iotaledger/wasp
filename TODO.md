@@ -19,7 +19,6 @@ Done
 - [x] deactivate/activate smart contract in the node
 
 Pending
-- [ ] check non-UTC timestamps in dashboard
 - [ ] wasp node dashboard: show structure of committee, which SCs are running, etc
 - [ ] wwallet: Allow more than one instance of same SC
 - [ ] dwf: allow withdrawing colored tokens

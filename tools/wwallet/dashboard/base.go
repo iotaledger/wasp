@@ -30,9 +30,9 @@ func MakeTemplate(parts ...string) *template.Template {
 		"formatTimestamp": func(ts interface{}) string {
 			t, ok := ts.(time.Time)
 			if !ok {
-				t = time.Unix(0, ts.(int64)).UTC()
+				t = time.Unix(0, ts.(int64))
 			}
-			return t.Format(time.RFC3339)
+			return t.UTC().Format(time.RFC3339)
 		},
 		"waspClientCmd": func() string {
 			if config.Utxodb {
