@@ -11,7 +11,7 @@ const defaultGoshimmer = "waspdev02.iota.cafe:8080"
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("usage: printtx <txid>\n")
+		fmt.Printf("usage: printtx <txid> [<goshimmer host>]\n")
 		os.Exit(1)
 	}
 	_, err := valuetransaction.IDFromBase58(os.Args[1])
