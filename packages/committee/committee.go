@@ -18,7 +18,7 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	NumPeers() uint16
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, int64)
+	SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16
 	SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error)
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})

@@ -136,10 +136,10 @@ func (peer *Peer) runOutbound() {
 
 // sends handshake message. It contains myLocation
 func (peer *Peer) sendHandshake() error {
-	data, _ := encodeMessage(&PeerMessage{
+	data := encodeMessage(&PeerMessage{
 		MsgType: MsgTypeHandshake,
 		MsgData: []byte(peer.PeeringId()),
-	})
+	}, time.Now().UnixNano())
 	_, err := peer.peerconn.Write(data)
 	log.Debugf("sendHandshake '%s' --> '%s', id = %s", MyNetworkId(), peer.remoteLocation, peer.PeeringId())
 	return err
@@ -149,7 +149,7 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 	if msg.MsgType < FirstCommitteeMsgCode {
 		return errors.New("reserved message code")
 	}
-	data, _ := encodeMessage(msg)
+	data := encodeMessage(msg, time.Now().UnixNano())
 
 	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
@@ -163,11 +163,12 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 }
 
 func (peer *Peer) sendChunks(chopped [][]byte) error {
+	ts := time.Now().UnixNano()
 	for _, piece := range chopped {
-		d, _ := encodeMessage(&PeerMessage{
+		d := encodeMessage(&PeerMessage{
 			MsgType: MsgTypeMsgChunk,
 			MsgData: piece,
-		})
+		}, ts)
 		if err := peer.sendData(d); err != nil {
 			return err
 		}
@@ -178,12 +179,12 @@ func (peer *Peer) sendChunks(chopped [][]byte) error {
 // SendMsgToPeers sends same msg to all peers in the slice which are not nil
 // with the same timestamp
 // return number of successfully sent messages and timestamp
-func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
+func SendMsgToPeers(msg *PeerMessage, ts int64, peers ...*Peer) uint16 {
 	if msg.MsgType < FirstCommitteeMsgCode {
-		return 0, 0
+		return 0
 	}
 	// timestamped here, once
-	data, ts := encodeMessage(msg)
+	data := encodeMessage(msg, ts)
 	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
 	numSent := uint16(0)
@@ -203,7 +204,7 @@ func SendMsgToPeers(msg *PeerMessage, peers ...*Peer) (uint16, int64) {
 		}
 		peer.RUnlock()
 	}
-	return numSent, ts
+	return numSent
 }
 
 func (peer *Peer) sendData(data []byte) error {

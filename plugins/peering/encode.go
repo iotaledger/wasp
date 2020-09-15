@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // structure of the encoded PeerMessage:
@@ -22,10 +21,9 @@ import (
 const chunkMessageOverhead = 8 + 1
 
 // always puts timestamp into first 8 bytes and 1 byte msg type
-func encodeMessage(msg *PeerMessage) ([]byte, int64) {
+func encodeMessage(msg *PeerMessage, ts int64) []byte {
 	var buf bytes.Buffer
 	// puts timestamp first
-	ts := time.Now().UnixNano()
 	_ = util.WriteUint64(&buf, uint64(ts))
 	switch {
 	case msg == nil:
@@ -53,7 +51,7 @@ func encodeMessage(msg *PeerMessage) ([]byte, int64) {
 	default:
 		log.Panicf("wrong msg type %d", msg.MsgType)
 	}
-	return buf.Bytes(), ts
+	return buf.Bytes()
 }
 
 func decodeMessage(data []byte) (*PeerMessage, error) {

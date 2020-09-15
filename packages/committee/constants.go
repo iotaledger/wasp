@@ -29,4 +29,7 @@ const (
 	// State Manager is requesting transaction to confirm a pending batch from the goshimmer node.
 	// Request is repeated if necessary.
 	StateTransactionRequestTimeout = 10 * time.Second
+
+	// maximum time difference allowed between leader and local clocks for consensus
+	MaxClockDifferenceAllowed = 3 * time.Second
 )

@@ -132,11 +132,6 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
-	//myLeader, _ := op.currentLeader()
-	//if msg.SenderIndex != myLeader {
-	//	op.log.Debugf("EventStartProcessingBatchMsg: received from different leader. Won't start processing")
-	//	return
-	//}
 	numOrig := len(msg.RequestIds)
 	reqs := op.takeFromIds(msg.RequestIds)
 	if len(reqs) != numOrig {
@@ -150,6 +145,18 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		op.log.Warn("node is not ready to process the batch")
 		return
 	}
+	// check timestamp
+	localts := time.Now().UnixNano()
+	diff := localts - msg.Timestamp
+	if diff < 0 {
+		diff = -diff
+	}
+	if diff > committee.MaxClockDifferenceAllowed.Nanoseconds() {
+		op.log.Warn("reject consensus on timestamp: clock difference is too big. Leader ts: %d, local ts: %d, diff: %d",
+			msg.Timestamp, localts, diff)
+		return
+	}
+
 	// start async calculation
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,

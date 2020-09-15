@@ -158,14 +158,14 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	return peer.SendMsg(msg)
 }
 
-func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte) (uint16, int64) {
+func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
 		Address:     c.address,
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	return peering.SendMsgToPeers(msg, c.committeePeers()...)
+	return peering.SendMsgToPeers(msg, ts, c.committeePeers()...)
 }
 
 // sends message to the peer seq[seqIndex]. If receives error, seqIndex = (seqIndex+1) % size and repeats

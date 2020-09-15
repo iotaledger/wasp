@@ -74,9 +74,8 @@ func (op *operator) startCalculationsAsLeader() {
 	}
 	reqIds := takeIds(reqs)
 	reqIdsStr := idsShortStr(reqIds)
-	op.log.Debugf("requests selected to process. State: %d, Reqs: %+v",
-		op.stateTx.MustState().StateIndex(), reqIdsStr,
-	)
+
+	op.log.Debugf("requests selected to process. Current state: %d, Reqs: %+v", op.mustStateIndex(), reqIdsStr)
 	rewardAddress := op.getRewardAddress()
 
 	// send to subordinated peers requests to process the batch
@@ -90,7 +89,17 @@ func (op *operator) startCalculationsAsLeader() {
 		RequestIds:    reqIds,
 	})
 
-	numSucc, ts := op.committee.SendMsgToCommitteePeers(committee.MsgStartProcessingRequest, msgData)
+	// determine timestamp. Must be max(local clock, prev timestamp+1)
+	ts := time.Now().UnixNano()
+	prevTs := op.stateTx.MustState().Timestamp()
+	if ts <= prevTs {
+		op.log.Warnf("local clock is not ahead the timestamp of the previous state. prevTs: %d, currentTs: %d, diff: %d ns",
+			prevTs, ts, prevTs-ts)
+		ts = prevTs + 1
+		op.log.Info("timestamp was adjusted to %d", ts)
+	}
+
+	numSucc := op.committee.SendMsgToCommitteePeers(committee.MsgStartProcessingRequest, msgData, ts)
 
 	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
@@ -197,7 +206,7 @@ func (op *operator) checkQuorum() bool {
 		TxId: txid,
 	})
 
-	numSent, _ := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData)
+	numSent := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
 	op.log.Debugf("%d peers has been notified about finalized result", numSent)
 
 	op.setNextConsensusStage(consensusStageLeaderResultFinalized)
