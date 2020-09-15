@@ -23,7 +23,6 @@ func main() {
 	if len(os.Args) >= 3 {
 		node = os.Args[2]
 	}
-	fmt.Printf("using GoShimmer %s\n", node)
 	gclient := goshimmer.NewGoshimmerClient(node)
 	gclient.PrintTransactionById(os.Args[1])
 }
