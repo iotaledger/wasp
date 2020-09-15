@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"io"
 )
 
 type NodeClient interface {
@@ -12,4 +13,5 @@ type NodeClient interface {
 	PostTransaction(tx *transaction.Transaction) error
 	PostAndWaitForConfirmation(tx *transaction.Transaction) error
 	WaitForConfirmation(txid transaction.ID) error
+	PrintTransactionById(txidBase58 string, outText ...io.Writer)
 }
