@@ -18,6 +18,9 @@ func init() {
 }
 
 func (c *committeeObj) IsOpenQueue() bool {
+	if c.IsDismissed() {
+		return false
+	}
 	if c.isOpenQueue.Load() {
 		return true
 	}
@@ -28,6 +31,9 @@ func (c *committeeObj) IsOpenQueue() bool {
 }
 
 func (c *committeeObj) SetReadyStateManager() {
+	if c.IsDismissed() {
+		return
+	}
 	c.mutexIsReady.Lock()
 	defer c.mutexIsReady.Unlock()
 
@@ -37,6 +43,9 @@ func (c *committeeObj) SetReadyStateManager() {
 }
 
 func (c *committeeObj) SetReadyConsensus() {
+	if c.IsDismissed() {
+		return
+	}
 	c.mutexIsReady.Lock()
 	defer c.mutexIsReady.Unlock()
 
@@ -46,6 +55,9 @@ func (c *committeeObj) SetReadyConsensus() {
 }
 
 func (c *committeeObj) SetConnectPeriodOver() {
+	if c.IsDismissed() {
+		return
+	}
 	c.mutexIsReady.Lock()
 	defer c.mutexIsReady.Unlock()
 
@@ -55,6 +67,9 @@ func (c *committeeObj) SetConnectPeriodOver() {
 }
 
 func (c *committeeObj) SetQuorumOfConnectionsReached() {
+	if c.IsDismissed() {
+		return
+	}
 	c.mutexIsReady.Lock()
 	defer c.mutexIsReady.Unlock()
 
@@ -63,8 +78,18 @@ func (c *committeeObj) SetQuorumOfConnectionsReached() {
 	c.checkReady()
 }
 
+func (c *committeeObj) isReady() bool {
+	return c.isReadyConsensus &&
+		c.isReadyStateManager &&
+		c.isConnectPeriodOver &&
+		c.isQuorumOfConnectionsReached
+}
+
 func (c *committeeObj) checkReady() bool {
-	if c.isReadyConsensus && c.isReadyStateManager && c.isConnectPeriodOver && c.isQuorumOfConnectionsReached {
+	if c.IsDismissed() {
+		panic("dismissed")
+	}
+	if c.isReady() {
 		c.isOpenQueue.Store(true)
 		c.startTimer()
 		c.onActivation()
@@ -72,7 +97,7 @@ func (c *committeeObj) checkReady() bool {
 		c.log.Infof("committee now is fully initialized")
 		publisher.Publish("active_committee", c.address.String())
 	}
-	return c.isReadyConsensus && c.isReadyStateManager && c.isConnectPeriodOver && c.isQuorumOfConnectionsReached
+	return c.isReady()
 }
 
 func (c *committeeObj) startTimer() {
@@ -133,9 +158,12 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {
 		case c.chMsg <- msg:
-		case <-time.After(committee.ReceiveMsgChannelTimeout):
-			c.log.Warnf("timeout on ReceiveMessage type '%T'. Will be repeated", msg)
-			go c.ReceiveMessage(msg)
+		default:
+			c.log.Warnf("ReceiveMessage with type '%T' failed. Retrying after %s", msg, committee.ReceiveMsgChannelRetryDelay)
+			go func() {
+				time.Sleep(committee.ReceiveMsgChannelRetryDelay)
+				c.ReceiveMessage(msg)
+			}()
 		}
 	}
 }

@@ -37,7 +37,7 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 
 func TestLogsc1(t *testing.T) {
 	clu, sc := startLogSC(t, map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -70,7 +70,7 @@ func TestLogsc1(t *testing.T) {
 
 func TestLogsc5(t *testing.T) {
 	clu, sc := startLogSC(t, map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,

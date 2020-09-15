@@ -2,6 +2,8 @@ package publisher
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -17,7 +19,7 @@ const PluginName = "Publisher"
 var (
 	log      *logger.Logger
 	socket   mangos.Socket
-	messages = make(chan []byte)
+	messages = make(chan []byte, 100)
 )
 
 func Init() *node.Plugin {
@@ -81,5 +83,9 @@ func Publish(msgType string, parts ...string) {
 	for _, s := range parts {
 		msg = msg + " " + s
 	}
-	messages <- []byte(msg)
+	select {
+	case messages <- []byte(msg):
+	case <-time.After(1 * time.Second):
+		log.Warnf("Failed to publish message: [%s]", msg)
+	}
 }

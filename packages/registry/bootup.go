@@ -21,13 +21,14 @@ type BootupData struct {
 	Color          balance.Color   // origin tx hash
 	CommitteeNodes []string        // "host_addr:port"
 	AccessNodes    []string        // "host_addr:port"
+	Active         bool
 }
 
 func dbkeyBootupData(addr *address.Address) []byte {
 	return database.MakeKey(database.ObjectTypeBootupData, addr[:])
 }
 
-func SaveBootupData(bd *BootupData, overwrite bool) error {
+func SaveBootupData(bd *BootupData) error {
 	var niladdr address.Address
 	if bd.Address == niladdr {
 		return fmt.Errorf("can be empty address")
@@ -35,39 +36,67 @@ func SaveBootupData(bd *BootupData, overwrite bool) error {
 	if bd.Color == balance.ColorNew || bd.Color == balance.ColorIOTA {
 		return fmt.Errorf("can't be IOTA or New color")
 	}
-
-	if overwrite {
-		exist, err := database.GetRegistryPartition().Has(dbkeyBootupData(&bd.Address))
-		if err != nil {
-			return err
-		}
-		if exist {
-			return fmt.Errorf("smart contract with address %s already exist in the registry", bd.Address.String())
-		}
-	}
 	var buf bytes.Buffer
 	if err := bd.Write(&buf); err != nil {
 		return err
 	}
-
-	defer publisher.Publish("bootuprec", bd.Address.String(), bd.Color.String())
-
-	return database.GetRegistryPartition().Set(dbkeyBootupData(&bd.Address), buf.Bytes())
+	if err := database.GetRegistryPartition().Set(dbkeyBootupData(&bd.Address), buf.Bytes()); err != nil {
+		return err
+	}
+	publisher.Publish("bootuprec", bd.Address.String(), bd.Color.String())
+	return nil
 }
 
-func GetBootupData(addr *address.Address) (*BootupData, bool, error) {
+func GetBootupData(addr *address.Address) (*BootupData, error) {
 	data, err := database.GetRegistryPartition().Get(dbkeyBootupData(addr))
 	if err == kvstore.ErrKeyNotFound {
-		return nil, false, nil
+		return nil, nil
 	}
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	ret := new(BootupData)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	return ret, true, nil
+	return ret, nil
+}
+
+func UpdateBootupData(addr *address.Address, f func(*BootupData) bool) (*BootupData, error) {
+	bd, err := GetBootupData(addr)
+	if err != nil {
+		return nil, err
+	}
+	if bd == nil {
+		return nil, fmt.Errorf("No bootup data found for address %s", addr)
+	}
+	if f(bd) {
+		err = SaveBootupData(bd)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return bd, nil
+}
+
+func ActivateBootupData(addr *address.Address) (*BootupData, error) {
+	return UpdateBootupData(addr, func(bd *BootupData) bool {
+		if bd.Active {
+			return false
+		}
+		bd.Active = true
+		return true
+	})
+}
+
+func DeactivateBootupData(addr *address.Address) (*BootupData, error) {
+	return UpdateBootupData(addr, func(bd *BootupData) bool {
+		if !bd.Active {
+			return false
+		}
+		bd.Active = false
+		return true
+	})
 }
 
 func GetBootupRecords() ([]*BootupData, error) {
@@ -102,6 +131,9 @@ func (bd *BootupData) Write(w io.Writer) error {
 	if err := util.WriteStrings16(w, bd.AccessNodes); err != nil {
 		return err
 	}
+	if err := util.WriteBoolByte(w, bd.Active); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -120,6 +152,9 @@ func (bd *BootupData) Read(r io.Reader) error {
 		return err
 	}
 	if bd.AccessNodes, err = util.ReadStrings16(r); err != nil {
+		return err
+	}
+	if err = util.ReadBoolByte(r, &bd.Active); err != nil {
 		return err
 	}
 	return nil

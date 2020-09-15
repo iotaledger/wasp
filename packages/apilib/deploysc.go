@@ -1,10 +1,13 @@
 package apilib
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -14,12 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
-	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"time"
 )
 
 type CreateSCParams struct {
@@ -44,29 +42,36 @@ type ActivateSCParams struct {
 	Timeout           time.Duration
 }
 
-func activateSC(host string, addr *address.Address) error {
+type DeactivateSCParams struct {
+	Addresses         []*address.Address
+	ApiHosts          []string
+	WaitForCompletion bool
+	PublisherHosts    []string
+	Timeout           time.Duration
+}
+
+func DeactivateSC(host string, addr *address.Address) error {
+	return postScRequest(host, addr, "deactivate")
+}
+
+func ActivateSC(host string, addr *address.Address) error {
+	return postScRequest(host, addr, "activate")
+}
+
+func postScRequest(host string, addr *address.Address, request string) error {
 	addrStr := addr.String()
-	data, err := json.Marshal(&admapi.ActivateSCRequest{
-		Address: addrStr,
-	})
+	url := fmt.Sprintf("http://%s/adm/sc/%s/%s", host, addrStr, request)
+	resp, err := http.Post(url, "application/json", nil)
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf("http://%s/adm/activatesc", host)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	var respbody misc.SimpleResponse
+	err = json.NewDecoder(resp.Body).Decode(&respbody)
 	if err != nil {
-		return err
+		return fmt.Errorf("response status %d: %v", resp.StatusCode, err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("response status %d", resp.StatusCode)
-	}
-	var aresp misc.SimpleResponse
-	err = json.NewDecoder(resp.Body).Decode(&aresp)
-	if err != nil {
-		return err
-	}
-	if aresp.Error != "" {
-		return errors.New(aresp.Error)
+	if resp.StatusCode != http.StatusOK || respbody.Error != "" {
+		return fmt.Errorf("response status %d: %s", resp.StatusCode, respbody.Error)
 	}
 	return nil
 }
@@ -78,7 +83,7 @@ func ActivateSCMulti(par ActivateSCParams) error {
 			h := host
 			addr1 := addr
 			funs = append(funs, func() error {
-				return activateSC(h, addr1)
+				return ActivateSC(h, addr1)
 			})
 		}
 	}
@@ -104,6 +109,42 @@ func ActivateSCMulti(par ActivateSCParams) error {
 	succ := subs.WaitForPatterns(patterns, par.Timeout)
 	if !succ {
 		return fmt.Errorf("didn't receive activation message in %v", par.Timeout)
+	}
+	return nil
+}
+
+func DeactivateSCMulti(par DeactivateSCParams) error {
+	funs := make([]func() error, 0)
+	for _, addr := range par.Addresses {
+		for _, host := range par.ApiHosts {
+			h := host
+			addr1 := addr
+			funs = append(funs, func() error {
+				return DeactivateSC(h, addr1)
+			})
+		}
+	}
+	if !par.WaitForCompletion {
+		_, errs := multicall.MultiCall(funs, 1*time.Second)
+		return multicall.WrapErrors(errs)
+	}
+	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, "dismissed_committee")
+	if err != nil {
+		return err
+	}
+	defer subs.Close()
+	_, errs := multicall.MultiCall(funs, 1*time.Second)
+	err = multicall.WrapErrors(errs)
+	if err != nil {
+		return err
+	}
+	patterns := make([][]string, len(par.Addresses))
+	for i := range patterns {
+		patterns[i] = []string{"dismissed_committee", par.Addresses[i].String(), "1"}
+	}
+	succ := subs.WaitForPatterns(patterns, par.Timeout)
+	if !succ {
+		return fmt.Errorf("didn't receive deactivation message in %v", par.Timeout)
 	}
 	return nil
 }

@@ -15,7 +15,7 @@ func TestSend1Request(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Request")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -66,7 +66,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5Requests1Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -120,7 +120,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          11,
@@ -174,7 +174,7 @@ func TestSend60Requests500msec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend60Requests")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
@@ -228,7 +228,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,

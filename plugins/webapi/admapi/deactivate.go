@@ -9,20 +9,19 @@ import (
 	"net/http"
 )
 
-func HandlerActivateSC(c echo.Context) error {
+func HandlerDeactivateSC(c echo.Context) error {
 	scAddress, err := address.FromBase58(c.Param("scaddress"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: err.Error()})
 	}
 
-	bd, err := registry.ActivateBootupData(&scAddress)
+	bd, err := registry.DeactivateBootupData(&scAddress)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: err.Error()})
 	}
 
-	log.Debugw("calling committees.ActivateCommittee", "addr", bd.Address.String())
-
-	if err := committees.ActivateCommittee(bd); err != nil {
+	err = committees.DeactivateCommittee(bd)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, &misc.SimpleResponse{Error: err.Error()})
 	}
 

@@ -15,15 +15,19 @@ Done
 - [x] dashboard: display SC hash/description/address/owner-address
 - [x] `wwallet wallet init` -> `wwallet init`
 - [x] wwallet: deploy generic SC from proghash + committee
+- [x] deploy Wasp in Pollen testnet
+- [x] deactivate/activate smart contract in the node
 
 Pending
+- [ ] check non-UTC timestamps in dashboard
+- [ ] wasp node dashboard: show structure of committee, which SCs are running, etc
+- [ ] wwallet: Allow more than one instance of same SC
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
       change until released).
-- [ ] deploy Wasp in Pollen testnet
-
+- [ ] Add authentication to web api calls
 
 To discuss/RFC
 - [ ] refactor 'request code' from uint16 value to string
@@ -35,7 +39,6 @@ Another approach can be expose data schema + generic access
 and (b) smart contract events (signalled by request to subscriber smart contract)
 - [ ] balance sheet metaphor in the smart contract state. Ownership concept of BS "liability+equity" items  
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
-- [ ] Wasp node dashboard
 
 Functional testing
 - [ ] test fault-tolerance

@@ -12,9 +12,8 @@ const (
 	// time tick for consensus and state manager objects
 	TimerTickPeriod = 100 * time.Millisecond
 
-	// timeout for congested input channel for the consensus and state manager objects.channel.
-	// After the timeout message is lost
-	ReceiveMsgChannelTimeout = 500 * time.Millisecond
+	// retry delay for congested input channel for the consensus and state manager objects.channel.
+	ReceiveMsgChannelRetryDelay = 500 * time.Millisecond
 
 	RequestBalancesPeriod = 10 * time.Second
 

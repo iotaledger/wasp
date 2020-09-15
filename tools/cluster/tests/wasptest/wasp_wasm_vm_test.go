@@ -21,7 +21,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestWasmVMSend5Requests1Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1, // wasps.NumSmartContracts(),
+		"bootuprec":           2, // wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -87,7 +87,7 @@ func TestWasmSend1ReqIncSimple(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestWasmSend1ReqIncSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -138,7 +138,7 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -201,7 +201,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          chainOfRequestsLength + 3,
@@ -267,7 +267,7 @@ func TestWasmSend1Bet(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestWasmSend1Bet")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -337,7 +337,7 @@ func TestWasmSend5Bets(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestWasmSend5Bets")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          7,
@@ -408,7 +408,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestWasmSendBetsAndPlay")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          10,

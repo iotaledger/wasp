@@ -18,7 +18,7 @@ func TestSend1Bet(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Bet")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -88,7 +88,7 @@ func TestSend5Bets(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5Bets")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          7,
@@ -159,7 +159,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSendBetsAndPlay")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          10,
@@ -250,7 +250,7 @@ func TestFRStatus(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFRStatus")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          10,

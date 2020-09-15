@@ -16,7 +16,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -70,7 +70,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatFailTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -122,7 +122,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatSuccessTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -187,7 +187,7 @@ func TestChainIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          chainOfRequestsLength + 3,

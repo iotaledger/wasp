@@ -1,9 +1,11 @@
 package wasptest
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"testing"
 )
 
 func TestPutBootupRecords(t *testing.T) {
@@ -33,7 +35,7 @@ func TestActivate1SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -60,7 +62,7 @@ func TestActivateAllSC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivateAllSC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts(),
+		"bootuprec":           wasps.NumSmartContracts() * 2,
 		"active_committee":    wasps.NumSmartContracts(),
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -88,7 +90,7 @@ func TestCreateOrigin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestCreateOrigin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
@@ -115,6 +117,37 @@ func TestCreateOrigin(t *testing.T) {
 	if !wasps.VerifySCState(sc, 1, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
 	}) {
+		t.Fail()
+	}
+}
+
+func TestDeactivate1SC(t *testing.T) {
+	wasps := setup(t, "test_cluster", "TestDeactivate1SC")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           3,
+		"active_committee":    1,
+		"dismissed_committee": 1,
+		"request_in":          0,
+		"request_out":         0,
+		"state":               0,
+	})
+	check(err, t)
+
+	sc := &wasps.SmartContractConfig[0]
+
+	_, err = PutBootupRecord(wasps, sc)
+	check(err, t)
+
+	err = Activate1SC(wasps, sc)
+	check(err, t)
+
+	time.Sleep(5 * time.Second)
+
+	err = Deactivate1SC(wasps, sc)
+	check(err, t)
+
+	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 }

@@ -17,7 +17,7 @@ import (
 )
 
 func DumpSCState(host string, scAddress string) (*admapi.DumpSCStateResponse, error) {
-	url := fmt.Sprintf("http://%s/adm/dumpscstate/%s", host, scAddress)
+	url := fmt.Sprintf("http://%s/adm/sc/%s/dumpstate", host, scAddress)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

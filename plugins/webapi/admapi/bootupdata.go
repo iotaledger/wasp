@@ -1,6 +1,8 @@
 package admapi
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
@@ -15,9 +17,9 @@ type BootupDataJsonable struct {
 	Color          string   `json:"color"`
 	CommitteeNodes []string `json:"committee_nodes"`
 	AccessNodes    []string `json:"access_nodes"`
+	Active         bool     `json:"active"`
 }
 
-//----------------------------------------------------------
 func HandlerPutSCData(c echo.Context) error {
 	var req BootupDataJsonable
 	var err error
@@ -44,23 +46,21 @@ func HandlerPutSCData(c echo.Context) error {
 
 	rec.CommitteeNodes = req.CommitteeNodes
 	rec.AccessNodes = req.AccessNodes
+	rec.Active = req.Active
 
-	// TODO it is always overwritten!
-
-	if err = registry.SaveBootupData(&rec, true); err != nil {
+	bd, err := registry.GetBootupData(&rec.Address)
+	if err != nil {
+		return misc.OkJsonErr(c, err)
+	}
+	if bd != nil {
+		return misc.OkJsonErr(c, fmt.Errorf("Bootup data already exists"))
+	}
+	if err = registry.SaveBootupData(&rec); err != nil {
 		return misc.OkJsonErr(c, err)
 	}
 
 	log.Infof("Bootup record saved for addr: %s color: %s", rec.Address.String(), rec.Color.String())
 
-	//if bd, exists, err := registry.GetBootupData(&rec.Addresses); err != nil || !exists {
-	//	log.Debugw("reading back",
-	//		"sc addr", req.Addresses,
-	//		"exists", exists,
-	//		"error", err)
-	//} else {
-	//	log.Debugf("reading back: %+v", *bd)
-	//}
 	return misc.OkJsonErr(c, nil)
 }
 
@@ -89,11 +89,11 @@ func HandlerGetSCData(c echo.Context) error {
 		})
 	}
 
-	bd, exists, err := registry.GetBootupData(&addr)
+	bd, err := registry.GetBootupData(&addr)
 	if err != nil {
 		return misc.OkJson(c, &GetBootupDataResponse{Error: err.Error()})
 	}
-	if !exists {
+	if bd == nil {
 		return misc.OkJson(c, &GetBootupDataResponse{Exists: false})
 	}
 	return misc.OkJson(c, &GetBootupDataResponse{
@@ -103,8 +103,9 @@ func HandlerGetSCData(c echo.Context) error {
 			Color:          base58.Encode(bd.Color.Bytes()),
 			CommitteeNodes: bd.CommitteeNodes,
 			AccessNodes:    bd.AccessNodes,
+			Active:         bd.Active,
 		},
-		Exists: exists,
+		Exists: true,
 	})
 }
 

@@ -23,6 +23,7 @@ func PutSCData(host string, bd registry.BootupData) error {
 		Color:          bd.Color.String(),
 		CommitteeNodes: bd.CommitteeNodes,
 		AccessNodes:    bd.AccessNodes,
+		Active:         bd.Active,
 	})
 	if err != nil {
 		return err
@@ -74,6 +75,7 @@ func GetSCData(host string, addr *address.Address) (*registry.BootupData, bool, 
 	ret := &registry.BootupData{
 		CommitteeNodes: dresp.CommitteeNodes,
 		AccessNodes:    dresp.AccessNodes,
+		Active:         dresp.Active,
 	}
 	if ret.Address, err = address.FromBase58(dresp.Address); err != nil {
 		return nil, false, err
