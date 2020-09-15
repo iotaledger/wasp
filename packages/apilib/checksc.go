@@ -116,7 +116,7 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			continue
 		}
 		if !consistentPublicKeyInfo(keyExample, resps[i]) {
-			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key info. Expected consistent with example, got \n%s\n",
+			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key info. Expected consistent with example, got \n%v\n",
 				i, host, resps[i])
 			ret = false
 			continue
