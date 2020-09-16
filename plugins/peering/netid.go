@@ -2,9 +2,11 @@ package peering
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"net"
 	"strconv"
+
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // check if network location from the committee list represents current node
@@ -29,7 +31,7 @@ func checkMyNetworkID() error {
 		return err
 	}
 	for _, ip := range ips {
-		if isPrivateIP(ip) {
+		if util.IsPrivateIP(ip) {
 			return nil
 		}
 		for _, myIp := range myIPs {
@@ -70,7 +72,7 @@ func myIPs() ([]string, error) {
 			if ip == nil {
 				continue
 			}
-			if isPrivateIP(ip) {
+			if util.IsPrivateIP(ip) {
 				continue
 			}
 			ip = ip.To4()
@@ -81,38 +83,4 @@ func myIPs() ([]string, error) {
 		}
 	}
 	return ret, nil
-}
-
-var privateIPBlocks []*net.IPNet
-
-func init() {
-	for _, cidr := range []string{
-		"127.0.0.0/8",    // IPv4 loopback
-		"10.0.0.0/8",     // RFC1918
-		"172.16.0.0/12",  // RFC1918
-		"192.168.0.0/16", // RFC1918
-		"169.254.0.0/16", // RFC3927 link-local
-		"::1/128",        // IPv6 loopback
-		"fe80::/10",      // IPv6 link-local
-		"fc00::/7",       // IPv6 unique local addr
-	} {
-		_, block, err := net.ParseCIDR(cidr)
-		if err != nil {
-			panic(fmt.Errorf("parse error on %q: %v", cidr, err))
-		}
-		privateIPBlocks = append(privateIPBlocks, block)
-	}
-}
-
-func isPrivateIP(ip net.IP) bool {
-	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
-		return true
-	}
-
-	for _, block := range privateIPBlocks {
-		if block.Contains(ip) {
-			return true
-		}
-	}
-	return false
 }
