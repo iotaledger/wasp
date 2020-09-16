@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // check if network location from the committee list represents current node
@@ -31,7 +30,7 @@ func checkMyNetworkID() error {
 		return err
 	}
 	for _, ip := range ips {
-		if util.IsPrivateIP(ip) {
+		if ip.IsLoopback() {
 			return nil
 		}
 		for _, myIp := range myIPs {
@@ -72,7 +71,7 @@ func myIPs() ([]string, error) {
 			if ip == nil {
 				continue
 			}
-			if util.IsPrivateIP(ip) {
+			if ip.IsLoopback() {
 				continue
 			}
 			ip = ip.To4()

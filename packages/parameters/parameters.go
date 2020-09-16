@@ -16,7 +16,8 @@ const (
 	DatabaseDir      = "database.directory"
 	DatabaseInMemory = "database.inMemory"
 
-	WebAPIBindAddress = "webapi.bindAddress"
+	WebAPIBindAddress    = "webapi.bindAddress"
+	WebAPIAdminWhitelist = "webapi.adminWhitelist"
 
 	VMBinaryDir     = "vm.binaries"
 	VMDefaultVmType = "vm.defaultvm"
@@ -41,6 +42,7 @@ func InitFlags() {
 	flag.Bool(DatabaseInMemory, false, "whether the database is only kept in memory and not persisted")
 
 	flag.String(WebAPIBindAddress, "127.0.0.1:8080", "the bind address for the web API")
+	flag.StringSlice(WebAPIAdminWhitelist, []string{}, "IP whitelist for /adm wndpoints")
 
 	flag.String(VMBinaryDir, "wasm", "path where Wasm binaries are located (using file:// schema")
 	flag.String(VMDefaultVmType, "dummmy", "default VM type")
@@ -59,6 +61,10 @@ func GetBool(name string) bool {
 
 func GetString(name string) string {
 	return config.Node.GetString(name)
+}
+
+func GetStringSlice(name string) []string {
+	return config.Node.GetStringSlice(name)
 }
 
 func GetInt(name string) int {

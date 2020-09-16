@@ -3,6 +3,7 @@ package webapi
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -46,7 +47,16 @@ func configure(*node.Plugin) {
 
 	Server.HideBanner = true
 	Server.HidePort = true
-	addEndpoints()
+
+	addEndpoints(adminWhitelist())
+}
+
+func adminWhitelist() []net.IP {
+	r := make([]net.IP, 0)
+	for _, ip := range parameters.GetStringSlice(parameters.WebAPIAdminWhitelist) {
+		r = append(r, net.ParseIP(ip))
+	}
+	return r
 }
 
 func run(_ *node.Plugin) {
