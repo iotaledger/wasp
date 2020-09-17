@@ -4,18 +4,24 @@ import (
 	"html/template"
 
 	"github.com/iotaledger/wasp/packages/dashboard"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo"
 )
 
 type BaseTemplateParams struct {
-	NavPages   []NavPage
-	ActivePage string
+	NavPages    []NavPage
+	ActivePage  string
+	MyNetworkId string
 }
 
 var navPages = []NavPage{}
 
 func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
-	return BaseTemplateParams{NavPages: navPages, ActivePage: activePage}
+	return BaseTemplateParams{
+		NavPages:    navPages,
+		ActivePage:  activePage,
+		MyNetworkId: peering.MyNetworkId(),
+	}
 }
 
 type NavPage interface {
@@ -70,6 +76,7 @@ const tplBase = `
 				{{end}}
 			</nav>
 		</header>
+		<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
 		{{template "body" .}}
 	</body>
 	</html>

@@ -43,6 +43,7 @@ func configure(*node.Plugin) {
 	}
 
 	addNavPage(initPeering())
+	addNavPage(initCommittees())
 }
 
 func run(_ *node.Plugin) {

@@ -41,18 +41,17 @@ const tplPeering = `
 {{define "title"}}Peering{{end}}
 
 {{define "body"}}
-	<p>Node network ID: <code>{{.Status.MyNetworkId}}</code></p>
 	<h2>Peers</h2>
-	<ul>
+	<div>
 	{{range $_, $peer := .Status.Peers}}
-		<li>
-			<p>Remote location: <code>{{$peer.RemoteLocation}}</code></p>
+		<details>
+			<summary><code>{{$peer.RemoteLocation}}</code></summary>
 			<p>Is inbound?: <code>{{$peer.IsInbound}}</code></p>
 			<p>Is alive?: <code>{{$peer.IsAlive}}</code></p>
-		</li>
+		</details>
 	{{else}}
 		<p>(empty list)</p>
 	{{end}}
-	</ul>
+	</div>
 {{end}}
 `
