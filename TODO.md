@@ -17,9 +17,9 @@ Done
 - [x] wwallet: deploy generic SC from proghash + committee
 - [x] deploy Wasp in Pollen testnet
 - [x] deactivate/activate smart contract in the node
+- [x] wasp node dashboard: show structure of committee, which SCs are running, etc
 
 Pending
-- [ ] wasp node dashboard: show structure of committee, which SCs are running, etc
 - [ ] wwallet: Allow more than one instance of same SC
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
