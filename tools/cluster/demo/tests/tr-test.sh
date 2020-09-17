@@ -15,7 +15,7 @@ wwallet tr set address $scaddress
 
 r=$(wwallet tr mint "My first coin" 10)
 echo "$r"
-[[ "$r" =~ of[[:space:]]color[[:space:]](.+)$ ]]
+[[ "$r" =~ of[[:space:]]color[[:space:]]([[:alnum:]]+) ]]
 color=${BASH_REMATCH[1]}
 
 # verify

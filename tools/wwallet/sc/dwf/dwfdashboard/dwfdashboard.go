@@ -78,7 +78,7 @@ const tplDwf = `
 		</div>
 	</div>
 	<hr/>
-	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
+	<p>Status fetched at: <code>{{formatTimestamp .Status.FetchedAt}}</code></p>
 
 	{{template "ws" .}}
 

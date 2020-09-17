@@ -16,6 +16,17 @@ var (
 	peersMutex = &sync.RWMutex{}
 )
 
+func iteratePeers(f func(p *Peer)) {
+	peersMutex.Lock()
+	defer peersMutex.Unlock()
+
+	for _, peer := range peers {
+		if !peer.isDismissed.Load() {
+			f(peer)
+		}
+	}
+}
+
 func closeAll() {
 	peersMutex.Lock()
 	defer peersMutex.Unlock()

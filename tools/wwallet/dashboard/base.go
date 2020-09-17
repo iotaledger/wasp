@@ -3,8 +3,8 @@ package dashboard
 import (
 	"html/template"
 	"os"
-	"time"
 
+	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/labstack/echo"
 )
@@ -27,13 +27,7 @@ type NavPage struct {
 
 func MakeTemplate(parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
-		"formatTimestamp": func(ts interface{}) string {
-			t, ok := ts.(time.Time)
-			if !ok {
-				t = time.Unix(0, ts.(int64))
-			}
-			return t.UTC().Format(time.RFC3339)
-		},
+		"formatTimestamp": dashboard.FormatTimestamp,
 		"waspClientCmd": func() string {
 			if config.Utxodb {
 				return os.Args[0] + " -u"

@@ -56,10 +56,11 @@ type SmartContractInitData struct {
 }
 
 type WaspNodeConfig struct {
-	ApiPort     int `json:"api_port"`
-	PeeringPort int `json:"peering_port"`
-	NanomsgPort int `json:"nanomsg_port"`
-	cmd         *exec.Cmd
+	ApiPort       int `json:"api_port"`
+	PeeringPort   int `json:"peering_port"`
+	NanomsgPort   int `json:"nanomsg_port"`
+	DashboardPort int `json:"dashboard_port"`
+	cmd           *exec.Cmd
 }
 
 type ClusterConfig struct {

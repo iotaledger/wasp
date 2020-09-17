@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dispatcher"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
@@ -39,6 +40,7 @@ func main() {
 		committees.Init(),
 		runvm.Init(),
 		publisher.Init(),
+		dashboard.Init(),
 	)
 
 	testPlugins := node.Plugins(

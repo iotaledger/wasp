@@ -96,7 +96,7 @@ const tplFairRoulette = `
 		</div>
 	</div>
 	<hr/>
-	<p>Status fetched at: <code>{{.Status.FetchedAt}}</code></p>
+	<p>Status fetched at: <code>{{formatTimestamp .Status.FetchedAt}}</code></p>
 	<div>
 		<h3>CLI usage</h3>
 		{{template "install-config" .}}

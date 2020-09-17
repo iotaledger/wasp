@@ -30,6 +30,9 @@
     },
     "bindAddress": "0.0.0.0:{{.ApiPort}}"
   },
+  "dashboard": {
+    "bindAddress": "0.0.0.0:{{.DashboardPort}}"
+  },
   "peering":{
     "port": {{.PeeringPort}},
     "netid": "127.0.0.1:{{.PeeringPort}}"

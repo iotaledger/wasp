@@ -19,6 +19,8 @@ const (
 	WebAPIBindAddress    = "webapi.bindAddress"
 	WebAPIAdminWhitelist = "webapi.adminWhitelist"
 
+	DashboardBindAddress = "dashboard.bindAddress"
+
 	VMBinaryDir     = "vm.binaries"
 	VMDefaultVmType = "vm.defaultvm"
 
@@ -43,6 +45,8 @@ func InitFlags() {
 
 	flag.String(WebAPIBindAddress, "127.0.0.1:8080", "the bind address for the web API")
 	flag.StringSlice(WebAPIAdminWhitelist, []string{}, "IP whitelist for /adm wndpoints")
+
+	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
 
 	flag.String(VMBinaryDir, "wasm", "path where Wasm binaries are located (using file:// schema")
 	flag.String(VMDefaultVmType, "dummmy", "default VM type")

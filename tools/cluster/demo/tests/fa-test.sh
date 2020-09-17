@@ -15,7 +15,7 @@ wwallet fa set address $scaddress
 
 r=$(wwallet mint 10)
 echo "$r"
-[[ "$r" =~ of[[:space:]]color[[:space:]](.+)$ ]]
+[[ "$r" =~ of[[:space:]]color[[:space:]]([[:alnum:]]+)$ ]]
 color=${BASH_REMATCH[1]}
 
 wwallet fa start-auction "My first auction" "$color" 10 100 10
