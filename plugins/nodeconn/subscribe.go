@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func Subscribe(addr address.Address, color balance.Color) {
@@ -52,16 +53,19 @@ func sendSubscriptions(forceSend bool) {
 			AddressesWithColors: addrsWithColors,
 		})
 		if err != nil {
-			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, addrs)
+			log.Errorf("sending subscriptions to %s: %v. Addrs: %+v",
+				parameters.GetString(parameters.NodeAddress), err, addrs)
 			return
 		}
 		if err := SendDataToNode(data); err != nil {
-			log.Errorf("sending subscriptions: %v. Addrs: %+v", err, addrs)
+			log.Errorf("sending subscriptions to %s: %v. Addrs: %+v",
+				parameters.GetString(parameters.NodeAddress), err, addrs)
 			bconnMutex.Lock()
 			defer bconnMutex.Unlock()
 			subscriptionsSent = false
 		} else {
-			log.Infof("sent subscriptions to node for addresses %+v", addrs)
+			log.Infof("sent subscriptions to node %s for addresses %+v",
+				parameters.GetString(parameters.NodeAddress), addrs)
 		}
 	}()
 }
