@@ -132,6 +132,15 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
+	if op.iAmCurrentLeader() {
+		op.log.Warnw("EventStartProcessingBatchMsg: ignored",
+			"sender", msg.SenderIndex,
+			"state index", stateIndex,
+			"iAmTheLeader", true,
+			"reqIds", idsShortStr(msg.RequestIds),
+		)
+		return
+	}
 	numOrig := len(msg.RequestIds)
 	reqs := op.takeFromIds(msg.RequestIds)
 	if len(reqs) != numOrig {
