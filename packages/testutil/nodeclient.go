@@ -1,7 +1,6 @@
 package testutil
 
 import (
-	"io"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -26,7 +25,7 @@ func (api *utxodbclient) RequestFunds(targetAddress *address.Address) error {
 	return nodeapi.RequestFunds(api.goshimmerHost, targetAddress)
 }
 
-func (api *utxodbclient) GetAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {
+func (api *utxodbclient) GetConfirmedAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {
 	return nodeapi.GetAccountOutputs(api.goshimmerHost, address)
 }
 
@@ -54,8 +53,4 @@ func (api *utxodbclient) WaitForConfirmation(txid transaction.ID) error {
 		time.Sleep(1 * time.Second)
 	}
 	return nil
-}
-
-func (api *utxodbclient) PrintTransactionById(txidBase58 string, outText ...io.Writer) {
-	panic("implement me")
 }

@@ -71,7 +71,7 @@ func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress 
 }
 
 func fetchSCBalance(nodeClient nodeclient.NodeClient, scAddress *address.Address) (map[balance.Color]int64, error) {
-	outs, err := nodeClient.GetAccountOutputs(scAddress)
+	outs, err := nodeClient.GetConfirmedAccountOutputs(scAddress)
 	if err != nil {
 		return nil, err
 	}

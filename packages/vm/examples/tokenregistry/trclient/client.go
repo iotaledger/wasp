@@ -49,7 +49,7 @@ func (trc *TokenRegistryClient) OwnerAddress() address.Address {
 // to register it in the TokenRegistry smart contract
 func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.Transaction, error) {
 	ownerAddr := trc.sigScheme.Address()
-	outs, err := trc.nodeClient.GetAccountOutputs(&ownerAddr)
+	outs, err := trc.nodeClient.GetConfirmedAccountOutputs(&ownerAddr)
 	if err != nil {
 		return nil, err
 	}

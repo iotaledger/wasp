@@ -773,9 +773,9 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 }
 
 func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {
-	allOuts, err := cluster.NodeClient.GetAccountOutputs(&addr)
+	allOuts, err := cluster.NodeClient.GetConfirmedAccountOutputs(&addr)
 	if err != nil {
-		fmt.Printf("[cluster] GetAccountOutputs error: %v\n", err)
+		fmt.Printf("[cluster] GetConfirmedAccountOutputs error: %v\n", err)
 		return false
 	}
 	byColor, total := util.OutputBalancesByColor(allOuts)

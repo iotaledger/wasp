@@ -30,7 +30,7 @@ func sendFundsCmd(args []string) {
 	amount, err := strconv.Atoi(args[2])
 	check(err)
 
-	bals, err := config.GoshimmerClient().GetAccountOutputs(&sourceAddress)
+	bals, err := config.GoshimmerClient().GetConfirmedAccountOutputs(&sourceAddress)
 	check(err)
 
 	vtxb, err := vtxbuilder.NewFromOutputBalances(bals)

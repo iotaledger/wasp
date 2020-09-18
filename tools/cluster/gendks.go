@@ -77,7 +77,7 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClien
 		return nil, err
 	}
 	ownerAddress := scdata.OwnerAddress()
-	allOuts, err := client.GetAccountOutputs(&ownerAddress)
+	allOuts, err := client.GetConfirmedAccountOutputs(&ownerAddress)
 	if err != nil {
 		return nil, err
 	}

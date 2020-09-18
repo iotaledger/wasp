@@ -15,7 +15,7 @@ import (
 // It returns a value transaction with empty data payload (not sc transaction)
 func NewColoredTokensTransaction(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, amount int64) (*valuetransaction.Transaction, error) {
 	addr := sigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&addr)
+	allOuts, err := client.GetConfirmedAccountOutputs(&addr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}

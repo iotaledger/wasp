@@ -29,7 +29,7 @@ type CreateSimpleRequestParamsOld struct {
 
 func CreateSimpleRequestOld(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, par CreateSimpleRequestParamsOld) (*sctransaction.Transaction, error) {
 	senderAddr := sigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&senderAddr)
+	allOuts, err := client.GetConfirmedAccountOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
@@ -72,7 +72,7 @@ func CreateSimpleRequestOld(client nodeclient.NodeClient, sigScheme signaturesch
 
 func CreateSimpleRequestMultiOld(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, pars []CreateSimpleRequestParamsOld) (*sctransaction.Transaction, error) {
 	senderAddr := sigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&senderAddr)
+	allOuts, err := client.GetConfirmedAccountOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
@@ -167,7 +167,7 @@ func CreateRequestTransactionOld(client nodeclient.NodeClient, senderSigScheme s
 		return nil, errors.New("CreateRequestTransactionOld: must be at least 1 request block")
 	}
 	senderAddr := senderSigScheme.Address()
-	allOuts, err := client.GetAccountOutputs(&senderAddr)
+	allOuts, err := client.GetConfirmedAccountOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}

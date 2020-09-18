@@ -185,7 +185,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", scAddr.String())
 	}
 
-	allOuts, err := par.Node.GetAccountOutputs(&ownerAddr)
+	allOuts, err := par.Node.GetConfirmedAccountOutputs(&ownerAddr)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
