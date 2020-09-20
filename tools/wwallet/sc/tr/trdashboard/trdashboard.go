@@ -82,10 +82,10 @@ const tplTokenRegistry = `
 {{define "tmdetails"}}
 	<p>Supply: <code>{{.Supply}}</code></p>
 	<p>Minted by: <code>{{.MintedBy}}</code></p>
-	<p>Owner: <code>{{.Owner}}</code></p>
-	<p>Created: <code>{{formatTimestamp .Created}}</code></p>
-	<p>Updated: <code>{{formatTimestamp .Updated}}</code></p>
-	<p>Other metadata: <code>{{.UserDefined}}</code></p>
+	<p>Minted when: <code>{{formatTimestamp .Created}}</code></p>
+	<p>Metadata owner: <code>{{.Owner}}</code></p>
+	<p>Additional metadata: <code>{{.UserDefined}}</code></p>
+	<p>Metadata updated when: <code>{{formatTimestamp .Updated}}</code></p>
 {{end}}
 
 {{define "body"}}
