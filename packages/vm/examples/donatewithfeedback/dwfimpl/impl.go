@@ -1,4 +1,4 @@
-// hard coded smart contract code implements DonateWithFeedback smart cintract.
+// hard coded smart contract code implements DonateWithFeedback
 package dwfimpl
 
 import (
@@ -51,8 +51,8 @@ func (ep dwfEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }
 
-// donate implements request 'donate'. It takes feedback text from the request and adds it into the
-// log of feedback messages
+// donate implements request 'donate'. It takes feedback text from the request
+// and adds it into the log of feedback messages
 func donate(ctx vmtypes.Sandbox) {
 	ctx.Publishf("DonateWithFeedback: donate")
 

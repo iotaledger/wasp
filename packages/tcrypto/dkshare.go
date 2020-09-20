@@ -57,11 +57,14 @@ type DKShare struct {
 }
 
 func ValidateDKSParams(t, n, index uint16) error {
-	if t < 1 || t > n || index < 0 || index >= n {
-		return errors.New("wrong N, T or Index parameters")
+	if n < 2 || t < 1 || t > n || index < 0 || index >= n {
+		return fmt.Errorf("wrong DKG parameters: N = %d, T = %d, Index = %d", n, t, index)
 	}
-	if t < 2 {
-		return errors.New(fmt.Sprintf("value T must be at least 2"))
+	if t < n/2+1 {
+		// quorum t must be larger than half size in order to avoid more than one valid quorum
+		// in committee.
+		// For the DKG itself it is enough to have t >= 2
+		return fmt.Errorf("wrong DKG parameters: for N = %d value T must be at least %d", n, n/2+1)
 	}
 	return nil
 }
