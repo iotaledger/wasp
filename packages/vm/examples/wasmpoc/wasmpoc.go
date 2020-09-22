@@ -77,7 +77,7 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	// in the future we will need to change things so
 	// that we locate the code by hash and entrypoint
 	// by name instead of request code number
-	err := h.LoadWasm("D:\\Work\\Go\\src\\github.com\\iotaledger\\wasp\\tools\\cluster\\tests\\wasptest\\fairroulette_rust.wasm")
+	err := h.LoadWasm("D:\\Work\\Go\\src\\github.com\\iotaledger\\wasp\\tools\\cluster\\tests\\wasptest\\fairroulette_go.wasm")
 	if err != nil {
 		ctx.Publish("error loading wasm: " + err.Error())
 		return

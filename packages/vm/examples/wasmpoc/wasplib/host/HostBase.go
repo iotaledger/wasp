@@ -98,7 +98,7 @@ func (h *HostBase) initWasmTime() error {
 
 func (h *HostBase) LoadWasm(wasmFile string) error {
 	var err error
-	h.module, err = wasmtime.NewModuleFromFile(h.store.Engine, "fairroulette_rust.wasm")
+	h.module, err = wasmtime.NewModuleFromFile(h.store.Engine, wasmFile)
 	if err != nil {
 		return err
 	}
