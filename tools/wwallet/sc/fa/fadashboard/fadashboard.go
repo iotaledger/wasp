@@ -75,7 +75,7 @@ const tplFairAuction = `
 					{{if gt (len $auction.Bids) 0}}
 						<p>This auction has <code>{{len $auction.Bids}}</code> bids totalling <code>{{$auction.SumOfBids}} IOTAs</code></p>
 						{{$winner := $auction.WinningBid}}
-						{{if ne $winner nil}}
+						{{if $winner}}
 							<p>Current winning bid: <code>{{$winner.Total}} IOTAs</code> by <code>{{$winner.Bidder}}</code></p>
 						{{end}}
 					{{else}}
