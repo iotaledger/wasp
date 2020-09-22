@@ -31,6 +31,9 @@ func configure(*node.Plugin) {
 
 	Server.HideBanner = true
 	Server.HidePort = true
+	Server.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+	}))
 	Server.Use(middleware.Recover())
 
 	renderer := Renderer{}
