@@ -1,20 +1,20 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wart/host/interfaces"
-	"github.com/iotaledger/wart/host/interfaces/objtype"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type StateMap struct {
-	vm     *wasmVMPocProcessor
-	items  *kv.MustDictionary
-	types  map[int32]int32
+	MapObject
+	items *kv.MustDictionary
+	types map[int32]int32
 }
 
-func NewStateMap(h *wasmVMPocProcessor, items  *kv.MustDictionary) *StateMap {
-	return &StateMap{vm: h, items: items, types: make(map[int32]int32)}
+func NewStateMap(h *wasmVMPocProcessor, items *kv.MustDictionary) interfaces.HostObject {
+	return &StateMap{MapObject: MapObject{vm: h, name: "StateMap"}, items: items, types: make(map[int32]int32)}
 }
 
 func (m *StateMap) GetInt(keyId int32) int64 {
@@ -27,12 +27,12 @@ func (m *StateMap) GetInt(keyId int32) int64 {
 }
 
 func (m *StateMap) GetLength() int32 {
-	m.vm.SetError("Invalid length")
+	m.error("GetLength: Invalid length")
 	return 0
 }
 
 func (m *StateMap) GetObjectId(keyId int32, typeId int32) int32 {
-	m.vm.SetError("Invalid access")
+	m.error("GetObjectId: Invalid access")
 	return 0
 }
 
@@ -46,7 +46,7 @@ func (m *StateMap) GetString(keyId int32) string {
 
 func (m *StateMap) SetInt(keyId int32, value int64) {
 	if keyId == interfaces.KeyLength {
-		m.vm.SetError("Invalid clear")
+		m.error("SetInt: Invalid clear")
 		return
 	}
 	if !m.valid(keyId, objtype.OBJTYPE_INT) {
@@ -71,7 +71,7 @@ func (m *StateMap) valid(keyId int32, typeId int32) bool {
 		return true
 	}
 	if fieldType != typeId {
-		m.vm.SetError("Invalid access")
+		m.error("valid: Invalid access")
 		return false
 	}
 	return true

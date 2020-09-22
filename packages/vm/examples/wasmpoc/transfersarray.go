@@ -1,23 +1,25 @@
 package wasmpoc
 
-import "github.com/iotaledger/wart/host/interfaces"
+import (
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+)
 
 type TransfersArray struct {
-	vm        *wasmVMPocProcessor
+	ArrayObject
 	transfers []int32
 }
 
-func NewTransfersArray(h *wasmVMPocProcessor) *TransfersArray {
-	return &TransfersArray{vm: h}
+func NewTransfersArray(h *wasmVMPocProcessor) interfaces.HostObject {
+	return &TransfersArray{ArrayObject: ArrayObject{vm: h, name: "Transfers"}}
 }
 
 func (a *TransfersArray) GetInt(keyId int32) int64 {
 	switch keyId {
 	case interfaces.KeyLength:
-		return int64(len(a.transfers))
+		return int64(a.GetLength())
 	}
-	a.vm.SetError("Invalid access")
-	return 0
+	return a.GetInt(keyId)
 }
 
 func (a *TransfersArray) GetLength() int32 {
@@ -25,22 +27,7 @@ func (a *TransfersArray) GetLength() int32 {
 }
 
 func (a *TransfersArray) GetObjectId(keyId int32, typeId int32) int32 {
-	length := a.GetLength()
-	if keyId < 0 || keyId > length {
-		a.vm.SetError("Invalid index")
-		return 0
-	}
-	if keyId < length {
-		return a.transfers[keyId]
-	}
-	objId := a.vm.AddObject(NewTransferObject(a.vm))
-	a.transfers = append(a.transfers, objId)
-	return objId
-}
-
-func (a *TransfersArray) GetString(keyId int32) string {
-	a.vm.SetError("Invalid access")
-	return ""
+	return a.checkedObjectId(&a.transfers, keyId, NewTransferMap, typeId, objtype.OBJTYPE_MAP)
 }
 
 func (a *TransfersArray) SetInt(keyId int32, value int64) {
@@ -52,11 +39,11 @@ func (a *TransfersArray) SetInt(keyId int32, value int64) {
 		}
 		//TODO move to pool for reuse of transfers
 		a.transfers = nil
-		return
+	default:
+		a.error("SetInt: Invalid access")
 	}
-	a.vm.SetError("Invalid access")
 }
 
 func (a *TransfersArray) SetString(keyId int32, value string) {
-	a.vm.SetError("Invalid access")
+	a.error("SetString: Invalid access")
 }

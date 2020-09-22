@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balanceobject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/configobject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/paramsobject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestobject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestsarray.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootobject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statemap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/stateobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/stateobject.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transferobject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="2502" y="222" width="574" height="534" key="find.popup" timestamp="1600732867460">
+      <screen x="1920" y="0" width="1739" height="978" />
+    </state>
+    <state x="2502" y="222" width="574" height="534" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@1920.0.1739.978" timestamp="1600732867460" />
+  </component>
+</project>

@@ -4,12 +4,10 @@ package wasmpoc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wart/host"
-	"github.com/iotaledger/wart/host/interfaces/level"
-	"github.com/iotaledger/wart/host/interfaces/objtype"
-	"github.com/iotaledger/wart/wasm/consts/desc"
-	"github.com/iotaledger/wart/wasm/executors"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/level"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -37,10 +35,6 @@ var entrypoints = map[sctransaction.RequestCode]string{
 	RequestPayWinners:    "payWinners",
 	RequestPlayPeriod:    "playPeriod",
 	RequestTokenMint:     "tokenMint",
-}
-
-func init() {
-	host.CreateRustAdapter()
 }
 
 type wasmVMPocProcessor struct {
@@ -75,35 +69,24 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
 	//TODO check what caching optimizations we can do to prevent
-	// rebuilding entire admin from scratch on every request
-	NewRootObject(h, ctx)
+	// rebuilding entire object admin and Wasm from scratch on every request
+	h.ctx = ctx
+	h.Init(h, NewRootObject(h), &keyMap)
 
 	//TODO for now load Wasm code from hardcoded location
 	// in the future we will need to change things so
 	// that we locate the code by hash and entrypoint
 	// by name instead of request code number
-	runner := executors.NewWasmRunner(h)
-	err := runner.Load("D:\\Work\\Go\\src\\github.com\\iotaledger\\wasp\\tools\\cluster\\tests\\wasptest\\wasmtest_bg.wasm")
+	err := h.LoadWasm("D:\\Work\\Go\\src\\github.com\\iotaledger\\wasp\\tools\\cluster\\tests\\wasptest\\fairroulette_rust.wasm")
 	if err != nil {
 		ctx.Publish("error loading wasm: " + err.Error())
 		return
 	}
 
-	module := runner.Module()
-	for _, export := range module.Exports {
-		if export.ImportName == h.entrypoint {
-			if export.ExternalType != desc.FUNC {
-				ctx.Publish("error running wasm: wrong export type")
-				return
-			}
-			function := module.Functions[export.Index]
-			err = runner.RunFunction(function)
-			if err != nil {
-				ctx.Publish("error running wasm: " + err.Error())
-				return
-			}
-			break
-		}
+	err = h.RunWasmFunction(h.entrypoint)
+	if err != nil {
+		ctx.Publish("error running wasm: " + err.Error())
+		return
 	}
 
 	if h.HasError() {
@@ -115,16 +98,16 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	transfers := h.GetObject(transfersId).(*TransfersArray)
 	for i := int32(0); i < transfers.GetLength(); i++ {
 		transferId := h.GetObjectId(transfersId, i, objtype.OBJTYPE_MAP)
-		transfer := h.GetObject(transferId).(*TransferObject)
+		transfer := h.GetObject(transferId).(*TransferMap)
 		transfer.Send(h)
 	}
 
-	ctx.Publish("Processing requests...")
-	requestsId := h.GetObjectId(1, KeyRequests, objtype.OBJTYPE_MAP_ARRAY)
-	requests := h.GetObject(requestsId).(*RequestsArray)
-	for i := int32(0); i < requests.GetLength(); i++ {
-		requestId := h.GetObjectId(requestsId, i, objtype.OBJTYPE_MAP)
-		request := h.GetObject(requestId).(*RequestObject)
+	ctx.Publish("Processing events...")
+	eventsId := h.GetObjectId(1, KeyEvents, objtype.OBJTYPE_MAP_ARRAY)
+	events := h.GetObject(eventsId).(*EventsArray)
+	for i := int32(0); i < events.GetLength(); i++ {
+		requestId := h.GetObjectId(eventsId, i, objtype.OBJTYPE_MAP)
+		request := h.GetObject(requestId).(*EventMap)
 		request.Send(h)
 	}
 }

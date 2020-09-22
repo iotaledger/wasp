@@ -1,26 +1,26 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wart/host/interfaces"
-	"github.com/iotaledger/wart/host/interfaces/objtype"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type StateArray struct {
-	vm     *wasmVMPocProcessor
+	ArrayObject
 	items  *kv.MustArray
 	typeId int32
 }
 
-func NewStateArray(h *wasmVMPocProcessor, items  *kv.MustArray, typeId int32) *StateArray {
-	return &StateArray{vm: h, items: items, typeId: typeId}
+func NewStateArray(h *wasmVMPocProcessor, items *kv.MustArray, typeId int32) interfaces.HostObject {
+	return &StateArray{ArrayObject: ArrayObject{vm: h, name: "StateArray"}, items: items, typeId: typeId}
 }
 
 func (a *StateArray) GetInt(keyId int32) int64 {
 	switch keyId {
 	case interfaces.KeyLength:
-		return int64(a.items.Len())
+		return int64(a.GetLength())
 	}
 
 	if !a.valid(keyId, objtype.OBJTYPE_INT) {
@@ -35,7 +35,7 @@ func (a *StateArray) GetLength() int32 {
 }
 
 func (a *StateArray) GetObjectId(keyId int32, typeId int32) int32 {
-	a.vm.SetError("Invalid access")
+	a.error("GetObjectId: Invalid access")
 	return 0
 }
 
@@ -66,24 +66,24 @@ func (a *StateArray) SetString(keyId int32, value string) {
 
 func (a *StateArray) valid(keyId int32, typeId int32) bool {
 	if a.typeId != typeId {
-		a.vm.SetError("Invalid access")
+		a.error("valid: Invalid access")
 		return false
 	}
-	max := int32(a.items.Len())
+	max := a.GetLength()
 	if keyId == max {
 		switch typeId {
 		case objtype.OBJTYPE_INT:
-			a.items.Push(util.Uint64To8Bytes(uint64(0)))
+			a.items.Push(util.Uint64To8Bytes(0))
 		case objtype.OBJTYPE_STRING:
 			a.items.Push([]byte(""))
 		default:
-			a.vm.SetError("Invalid type id")
+			a.error("valid: Invalid type id")
 			return false
 		}
 		return true
 	}
 	if keyId < 0 || keyId >= max {
-		a.vm.SetError("Invalid index")
+		a.error("valid: Invalid index")
 		return false
 	}
 	return true

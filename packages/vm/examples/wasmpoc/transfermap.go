@@ -4,47 +4,39 @@ import (
 	"encoding/hex"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wart/host/interfaces"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
 )
 
-type TransferObject struct {
-	vm        *wasmVMPocProcessor
-	address   string
-	amount    int64
-	color     string
+type TransferMap struct {
+	MapObject
+	address string
+	amount  int64
+	color   string
 }
 
-func NewTransferObject(h *wasmVMPocProcessor) *TransferObject {
-	return &TransferObject{vm: h}
+func NewTransferMap(h *wasmVMPocProcessor) interfaces.HostObject {
+	return &TransferMap{MapObject: MapObject{vm: h, name: "Transfer"}}
 }
 
-func (o *TransferObject) GetInt(keyId int32) int64 {
+func (o *TransferMap) GetInt(keyId int32) int64 {
 	switch keyId {
-	case KeyXferAmount:
+	case KeyAmount:
 		return o.amount
-	default:
-		o.vm.SetError("Invalid key")
 	}
-	return 0
+	return o.MapObject.GetInt(keyId)
 }
 
-func (o *TransferObject) GetObjectId(keyId int32, typeId int32) int32 {
-	panic("implement Transfer.GetObjectId")
-}
-
-func (o *TransferObject) GetString(keyId int32) string {
+func (o *TransferMap) GetString(keyId int32) string {
 	switch keyId {
-	case KeyXferAddress:
+	case KeyAddress:
 		return o.address
-	case KeyXferColor:
+	case KeyColor:
 		return o.color
-	default:
-		o.vm.SetError("Invalid key")
 	}
-	return ""
+	return o.MapObject.GetString(keyId)
 }
 
-func (o *TransferObject) Send(ctx interfaces.HostInterface) {
+func (o *TransferMap) Send(ctx interfaces.HostInterface) {
 	o.vm.Logf("XFER SEND a%d a'%16s' c'%16s'", o.amount, o.address, o.color)
 	addr, err := address.FromBase58(o.address)
 	if err != nil {
@@ -53,7 +45,7 @@ func (o *TransferObject) Send(ctx interfaces.HostInterface) {
 
 	// when no color specified default is ColorIOTA
 	bytes := balance.ColorIOTA[:]
-	if o.color != "" {
+	if o.color != "" && o.color != "iota" {
 		bytes, err = hex.DecodeString(o.color)
 		if err != nil {
 			o.vm.ctx.Panic("MoveTokens failed 2")
@@ -70,8 +62,7 @@ func (o *TransferObject) Send(ctx interfaces.HostInterface) {
 	}
 }
 
-func (o *TransferObject) SetInt(keyId int32, value int64) {
-	o.vm.Logf("Transfer.SetInt k%d v%d", keyId, value)
+func (o *TransferMap) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case interfaces.KeyLength:
 		// clear transfer, tracker will still know about it
@@ -79,21 +70,20 @@ func (o *TransferObject) SetInt(keyId int32, value int64) {
 		o.address = ""
 		o.color = ""
 		o.amount = 0
-	case KeyXferAmount:
+	case KeyAmount:
 		o.amount = value
 	default:
-		o.vm.SetError("Invalid key")
+		o.MapObject.SetInt(keyId, value)
 	}
 }
 
-func (o *TransferObject) SetString(keyId int32, value string) {
-	o.vm.Logf("Transfer.SetString k%d v'%s'", keyId, value)
+func (o *TransferMap) SetString(keyId int32, value string) {
 	switch keyId {
-	case KeyXferAddress:
+	case KeyAddress:
 		o.address = value
-	case KeyXferColor:
+	case KeyColor:
 		o.color = value
 	default:
-		o.vm.SetError("Invalid key")
+		o.MapObject.SetString(keyId, value)
 	}
 }

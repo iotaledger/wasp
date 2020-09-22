@@ -1,18 +1,19 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wart/host/interfaces/objtype"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
 type StateObject struct {
-	vm     *wasmVMPocProcessor
+	MapObject
 	fields map[int32]int32
 	types  map[int32]int32
 }
 
-func NewStateObject(h *wasmVMPocProcessor) *StateObject {
-	return &StateObject{vm: h, fields: make(map[int32]int32), types: make(map[int32]int32)}
+func NewStateObject(h *wasmVMPocProcessor) interfaces.HostObject {
+	return &StateObject{MapObject: MapObject{vm: h, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
 }
 
 func (o *StateObject) GetInt(keyId int32) int64 {
