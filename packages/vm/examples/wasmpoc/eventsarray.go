@@ -19,7 +19,7 @@ func (a *EventsArray) GetInt(keyId int32) int64 {
 	case interfaces.KeyLength:
 		return int64(a.GetLength())
 	}
-	return a.GetInt(keyId)
+	return a.ArrayObject.GetInt(keyId)
 }
 
 func (a *EventsArray) GetLength() int32 {

@@ -15,14 +15,16 @@ const (
 	KeyColor       = KeyCode - 1
 	KeyColors      = KeyColor - 1
 	KeyContract    = KeyColors - 1
-	KeyDelay       = KeyContract - 1
+	KeyData        = KeyContract - 1
+	KeyDelay       = KeyData - 1
 	KeyDescription = KeyDelay - 1
 	KeyEvents      = KeyDescription - 1
 	KeyFunction    = KeyEvents - 1
 	KeyHash        = KeyFunction - 1
 	KeyId          = KeyHash - 1
 	KeyIota        = KeyId - 1
-	KeyName        = KeyIota - 1
+	KeyLogs        = KeyIota - 1
+	KeyName        = KeyLogs - 1
 	KeyOwner       = KeyName - 1
 	KeyParams      = KeyOwner - 1
 	KeyRandom      = KeyParams - 1
@@ -50,6 +52,7 @@ var keyMap = map[string]int32{
 	"color":       KeyColor,
 	"colors":      KeyColors,
 	"contract":    KeyContract,
+	"data":        KeyData,
 	"delay":       KeyDelay,
 	"description": KeyDescription,
 	"events":      KeyEvents,
@@ -57,6 +60,7 @@ var keyMap = map[string]int32{
 	"hash":        KeyHash,
 	"id":          KeyId,
 	"iota":        KeyIota,
+	"logs":        KeyLogs,
 	"name":        KeyName,
 	"owner":       KeyOwner,
 	"params":      KeyParams,
@@ -72,6 +76,7 @@ type RootObject struct {
 	MapObject
 	accountId   int32
 	contractId  int32
+	logsId      int32
 	requestId   int32
 	stateId     int32
 	transfersId int32
@@ -103,6 +108,8 @@ func (o *RootObject) GetObjectId(keyId int32, typeId int32) int32 {
 		return o.checkedObjectId(&o.accountId, NewAccountMap, typeId, objtype.OBJTYPE_MAP)
 	case KeyContract:
 		return o.checkedObjectId(&o.contractId, NewContractMap, typeId, objtype.OBJTYPE_MAP)
+	case KeyLogs:
+		return o.checkedObjectId(&o.contractId, NewLogsMap, typeId, objtype.OBJTYPE_MAP)
 	case KeyRequest:
 		return o.checkedObjectId(&o.requestId, NewRequestMap, typeId, objtype.OBJTYPE_MAP)
 	case KeyState:

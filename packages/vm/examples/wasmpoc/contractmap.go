@@ -15,7 +15,8 @@ func (o *ContractMap) GetString(keyId int32) string {
 	case KeyAddress:
 		return o.vm.ctx.GetSCAddress().String()
 	case KeyColor: //TODO
-	case KeyDescription: //TODO
+	case KeyDescription:
+		return o.vm.GetDescription()
 	case KeyId: //TODO
 	case KeyName: //TODO
 	case KeyOwner:

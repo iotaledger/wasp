@@ -21,7 +21,7 @@ func (a *ColorsArray) GetInt(keyId int32) int64 {
 	case interfaces.KeyLength:
 		return int64(a.GetLength())
 	}
-	return a.GetInt(keyId)
+	return a.ArrayObject.GetInt(keyId)
 }
 
 func (a *ColorsArray) GetLength() int32 {
@@ -33,7 +33,7 @@ func (a *ColorsArray) GetString(keyId int32) string {
 	if keyId >= 0 && keyId < a.GetLength() {
 		return a.colors[keyId]
 	}
-	return a.GetString(keyId)
+	return a.ArrayObject.GetString(keyId)
 }
 
 func (a *ColorsArray) loadColors() {

@@ -34,11 +34,6 @@ func (a *StateArray) GetLength() int32 {
 	return int32(a.items.Len())
 }
 
-func (a *StateArray) GetObjectId(keyId int32, typeId int32) int32 {
-	a.error("GetObjectId: Invalid access")
-	return 0
-}
-
 func (a *StateArray) GetString(keyId int32) string {
 	if !a.valid(keyId, objtype.OBJTYPE_STRING) {
 		return ""
