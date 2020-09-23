@@ -18,8 +18,8 @@ func (op *operator) sendRequestNotificationsToLeader() {
 		return
 	}
 	if !op.committee.HasQuorum() {
-		op.log.Debugf("sendRequestNotificationsToLeader: postponed due to no quorum. Connected peers: %+v",
-			op.committee.ConnectedPeers())
+		op.log.Debugf("sendRequestNotificationsToLeader: postponed due to no quorum. Peer status: %s",
+			op.committee.PeerStatus())
 		return
 	}
 	currentLeaderPeerIndex, _ := op.currentLeader()
