@@ -28,6 +28,9 @@ type NavPage struct {
 func MakeTemplate(parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp": dashboard.FormatTimestamp,
+		"exploreAddressUrl": dashboard.ExploreAddressUrl(
+			dashboard.ExploreAddressUrlFromGoshimmerUri(config.GoshimmerApi()),
+		),
 		"waspClientCmd": func() string {
 			if config.Utxodb {
 				return os.Args[0] + " -u"
@@ -36,6 +39,7 @@ func MakeTemplate(parts ...string) *template.Template {
 		},
 	})
 	t = template.Must(t.Parse(tplBase))
+	t = template.Must(t.Parse(dashboard.TplExploreAddress))
 	for _, part := range parts {
 		t = template.Must(t.Parse(part))
 	}
@@ -84,10 +88,10 @@ const TplSCInfo = `
 {{define "sc-info"}}
 	<details>
 		<summary>Smart contract details</summary>
-		<p>SC address: <code>{{.Status.SCAddress}}</code></p>
+		<p>SC address: {{template "address" .Status.SCAddress}}</p>
 		<p>Program hash: <code>{{.Status.ProgramHash}}</code></p>
 		<p>Description of the instance: <code>{{.Status.Description}}</code></p>
-		<p>Owner address: <code>{{.Status.OwnerAddress}}</code></p>
+		<p>Owner address: {{template "address" .Status.OwnerAddress}}</p>
 		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
 		<p>Color: <code>{{.Config.BootupData.Color}}</code></p>
 		<p>Committee nodes:
@@ -115,7 +119,7 @@ const TplSCInfo = `
 	</p>
 
 	<h4>Balance:</h4>
-	<p> 
+	<p>
 		<ul>
 			{{range $color, $amount := .Status.Balance}}
 				<li><code>{{$color}}</code>: <code>{{$amount}} </code></li>

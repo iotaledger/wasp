@@ -69,7 +69,7 @@ const tplFairRoulette = `
 			{{end}}
 			<ul>
 			{{range .Status.CurrentBets}}
-				<li>Player <code>{{.Player}}</code> bets <code>{{.Sum}} IOTAs</code> on <code>color {{.Color}}</code></li>
+				<li>Player {{template "address" .Player}} bets <code>{{.Sum}} IOTAs</code> on <code>color {{.Color}}</code></li>
 			{{end}}
 			</ul>
 		</div>
@@ -90,7 +90,7 @@ const tplFairRoulette = `
 			<p>Player stats:</p>
 			<ul>
 				{{range $p, $stats := .Status.PlayerStats}}
-					<li>Player <code>{{$p}}</code>: Bets: <code>{{$stats.Bets}}</code> - Wins: <code>{{$stats.Wins}}</code></li>
+					<li>Player {{template "address" $p}}: Bets: <code>{{$stats.Bets}}</code> - Wins: <code>{{$stats.Wins}}</code></li>
 				{{end}}
 			</ul>
 		</div>

@@ -45,8 +45,8 @@ const tplCommittees = `
 	<div>
 	{{range $_, $c := .Status.Committees}}
 		<details>
-			<summary><code>{{$c.Address}}</code></summary>
-			<p>Owner address:  <code>{{$c.OwnerAddress}}</code></p>
+			<summary>{{template "address" $c.Address}}</summary>
+			<p>Owner address:  {{template "address" $c.OwnerAddress}}</p>
 			<p>Color:          <code>{{$c.Color}}</code></p>
 			<p>Size:           <code>{{$c.Size}}</code></p>
 			<p>Quorum:         <code>{{$c.Quorum}}</code></p>
