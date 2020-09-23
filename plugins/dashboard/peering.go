@@ -13,7 +13,7 @@ func initPeering() NavPage {
 	return &peeringNavPage{}
 }
 
-const peeringRoute = "/"
+const peeringRoute = "/peering"
 const peeringTplName = "peering"
 
 func (n *peeringNavPage) Title() string { return "Peering" }
