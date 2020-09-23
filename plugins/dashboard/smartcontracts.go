@@ -51,6 +51,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 
 		result := &ScTemplateParams{
 			BaseTemplateParams: BaseParams(c, scListRoute),
+			Address:            &addr,
 		}
 
 		br, err := registry.GetBootupData(&addr)
@@ -122,6 +123,7 @@ const tplScList = `
 
 type ScTemplateParams struct {
 	BaseTemplateParams
+	Address       *address.Address
 	BootupRecord  *registry.BootupData
 	State         state.VirtualState
 	Batch         state.Batch
@@ -143,7 +145,7 @@ const tplSc = `
 			{{template "bootup" .BootupRecord}}
 		</div>
 	{{else}}
-		<p>No bootup record for address <code>{{.BootupRecord.Address}}</code></p>
+		<p>No bootup record for address <code>{{.Address}}</code></p>
 	{{end}}
 	<hr/>
 	{{if .State}}
