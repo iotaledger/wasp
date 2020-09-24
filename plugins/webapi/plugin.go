@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 
@@ -47,6 +48,8 @@ func configure(*node.Plugin) {
 
 	Server.HideBanner = true
 	Server.HidePort = true
+
+	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.WebAPIAuth))
 
 	addEndpoints(adminWhitelist())
 }

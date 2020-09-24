@@ -75,12 +75,15 @@ An example of the `config.json` file for a Wasp instance:
     "disableEvents": true
   },
   "webapi": {
-    "auth": {
-      "password": "wasp",
-      "privateKey": "",
-      "username": "wasp"
-    },
     "bindAddress": "127.0.0.1:9090"
+  },
+  "dashboard": {
+  	"auth": {
+	  "scheme": "basic",
+	  "username": "wasp",
+	  "password": "wasp"
+	},
+    "bindAddress": "127.0.0.1:7000"
   },
   "peering":{
     "port": 4000,

@@ -9,7 +9,9 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -35,6 +37,8 @@ func configure(*node.Plugin) {
 		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
 	}))
 	Server.Use(middleware.Recover())
+	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.DashboardAuth))
+	dashboard.UseHTMLErrorHandler(Server)
 
 	renderer := Renderer{}
 	Server.Renderer = renderer
