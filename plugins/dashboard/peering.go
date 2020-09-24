@@ -46,16 +46,18 @@ const tplPeering = `
 		<thead>
 			<tr>
 				<th>Location</th>
-				<th>Inbound?</th>
-				<th>Alive?</th>
+				<th>Type</th>
+				<th>Status</th>
+				<th>#Users</th>
 			</tr>
 		</thead>
 		<tbody>
 		{{range $_, $peer := .Status.Peers}}
 			<tr>
 				<td><code>{{$peer.RemoteLocation}}</code></td>
-				<td><code>{{$peer.IsInbound}}</code></td>
-				<td><code>{{$peer.IsAlive}}</code></td>
+				<td>{{if $peer.IsInbound}}inbound{{else}}outbound{{end}}</td>
+				<td>{{if $peer.IsAlive}}up{{else}}down{{end}}</td>
+				<td>{{$peer.NumUsers}}</td>
 			</tr>
 		{{end}}
 		</tbody>
