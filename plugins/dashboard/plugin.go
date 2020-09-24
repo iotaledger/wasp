@@ -47,7 +47,6 @@ func configure(*node.Plugin) {
 
 	addNavPage(initConfig())
 	addNavPage(initPeering())
-	addNavPage(initCommittees())
 	addNavPage(initSc())
 }
 

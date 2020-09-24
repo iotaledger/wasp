@@ -37,7 +37,7 @@ type Committee interface {
 
 type PeerStatus struct {
 	Index     int
-	NodeId    string
+	PeeringID string
 	IsSelf    bool
 	Connected bool
 }

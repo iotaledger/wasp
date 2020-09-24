@@ -269,10 +269,10 @@ func (c *committeeObj) PeerStatus() []*committee.PeerStatus {
 			IsSelf: peer == nil,
 		}
 		if status.IsSelf {
-			status.NodeId = peering.MyNetworkId()
+			status.PeeringID = peering.MyNetworkId()
 			status.Connected = true
 		} else {
-			status.NodeId = peer.PeeringId()
+			status.PeeringID = peer.PeeringId()
 			status.Connected = peer.IsAlive()
 		}
 		ret = append(ret, status)
