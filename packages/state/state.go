@@ -126,8 +126,8 @@ func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	vs.empty = false
 }
 
-func (vs *virtualState) Hash() hashing.HashValue {
-	return vs.stateHash
+func (vs *virtualState) Hash() *hashing.HashValue {
+	return &vs.stateHash
 }
 
 func (vs *virtualState) Write(w io.Writer) error {

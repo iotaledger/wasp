@@ -261,16 +261,21 @@ func (c *committeeObj) HasQuorum() bool {
 	return false
 }
 
-func (c *committeeObj) ConnectedPeers() []uint16 {
-	ret := make([]uint16, 0)
+func (c *committeeObj) PeerStatus() []*committee.PeerStatus {
+	ret := make([]*committee.PeerStatus, 0)
 	for i, peer := range c.committeePeers() {
-		if peer == nil {
-			ret = append(ret, uint16(i))
-		} else {
-			if peer.IsAlive() {
-				ret = append(ret, uint16(i))
-			}
+		status := &committee.PeerStatus{
+			Index:  i,
+			IsSelf: peer == nil,
 		}
+		if status.IsSelf {
+			status.NodeId = peering.MyNetworkId()
+			status.Connected = true
+		} else {
+			status.NodeId = peer.PeeringId()
+			status.Connected = peer.IsAlive()
+		}
+		ret = append(ret, status)
 	}
 	return ret
 }

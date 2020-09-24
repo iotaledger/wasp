@@ -73,3 +73,11 @@ func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) (bool, error) {
 
 	return *skipConfigAvailable, nil
 }
+
+func Dump() map[string]interface{} {
+	r := make(map[string]interface{})
+	for _, k := range Node.AllKeys() {
+		r[k] = Node.Get(k)
+	}
+	return r
+}

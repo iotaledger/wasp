@@ -45,6 +45,7 @@ func configure(*node.Plugin) {
 		navPage.AddEndpoints(Server)
 	}
 
+	addNavPage(initIndex())
 	addNavPage(initPeering())
 	addNavPage(initCommittees())
 	addNavPage(initSc())

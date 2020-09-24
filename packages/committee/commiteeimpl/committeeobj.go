@@ -134,13 +134,13 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		for !ret.HasQuorum() && !ret.IsDismissed() {
 			time.Sleep(500 * time.Millisecond)
 		}
-		ret.log.Infof("connected peers: %+v", ret.ConnectedPeers())
+		ret.log.Infof("peer status: %s", ret.PeerStatus())
 		ret.SetQuorumOfConnectionsReached()
 
 		go func() {
 			ret.log.Infof("wait for %s more before activating the committee", committee.AdditionalConnectPeriod)
 			time.Sleep(committee.AdditionalConnectPeriod)
-			ret.log.Infof("connection period is over. Connected peers: %+v", ret.ConnectedPeers())
+			ret.log.Infof("connection period is over. Peer status: %s", ret.PeerStatus())
 
 			ret.SetConnectPeriodOver()
 		}()

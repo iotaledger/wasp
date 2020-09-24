@@ -51,6 +51,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 
 		result := &ScTemplateParams{
 			BaseTemplateParams: BaseParams(c, scListRoute),
+			Address:            &addr,
 		}
 
 		br, err := registry.GetBootupData(&addr)
@@ -93,7 +94,7 @@ type ScListTemplateParams struct {
 
 const tplBootupRecord = `
 {{define "bootup"}}
-<p>Owner address:   <code>{{.OwnerAddress}}</code></p>
+<p>Owner address:   {{template "address" .OwnerAddress}}</p>
 <p>Color:           <code>{{.Color}}</code></p>
 <p>Committee Nodes: <code>{{.CommitteeNodes}}</code></p>
 <p>Access Nodes:    <code>{{.AccessNodes}}</code></p>
@@ -109,7 +110,7 @@ const tplScList = `
 	<div>
 	{{range $_, $r := .BootupRecords}}
 		<details>
-			<summary><code>{{$r.Address}}</code></summary>
+			<summary>{{template "address" $r.Address}}</summary>
 			{{template "bootup" $r}}
 			<p><a href="/smart-contracts/{{$r.Address}}">Details</a></p>
 		</details>
@@ -122,6 +123,7 @@ const tplScList = `
 
 type ScTemplateParams struct {
 	BaseTemplateParams
+	Address       *address.Address
 	BootupRecord  *registry.BootupData
 	State         state.VirtualState
 	Batch         state.Batch
@@ -139,11 +141,11 @@ const tplSc = `
 	{{if .BootupRecord}}
 		<div>
 			<h3>Bootup record</h3>
-			<p>Address: <code>{{.BootupRecord.Address}}</code></p>
+			<p>Address: {{template "address" .BootupRecord.Address}}</p>
 			{{template "bootup" .BootupRecord}}
 		</div>
 	{{else}}
-		<p>No bootup record for address <code>{{.BootupRecord.Address}}</code></p>
+		<p>No bootup record for address {{template "address" .Address}}</p>
 	{{end}}
 	<hr/>
 	{{if .State}}

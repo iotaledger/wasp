@@ -4,6 +4,7 @@ import (
 	"html/template"
 
 	"github.com/iotaledger/wasp/packages/dashboard"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo"
 )
@@ -34,13 +35,23 @@ type NavPage interface {
 
 func MakeTemplate(parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
-		"formatTimestamp": dashboard.FormatTimestamp,
+		"formatTimestamp":   dashboard.FormatTimestamp,
+		"exploreAddressUrl": dashboard.ExploreAddressUrl(exploreAddressBaseUrl()),
 	})
 	t = template.Must(t.Parse(tplBase))
+	t = template.Must(t.Parse(dashboard.TplExploreAddress))
 	for _, part := range parts {
 		t = template.Must(t.Parse(part))
 	}
 	return t
+}
+
+func exploreAddressBaseUrl() string {
+	baseUrl := parameters.GetString(parameters.DashboardExploreAddressUrl)
+	if baseUrl != "" {
+		return baseUrl
+	}
+	return dashboard.ExploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
 }
 
 const tplBase = `

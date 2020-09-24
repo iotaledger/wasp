@@ -11,15 +11,15 @@ type Status struct {
 }
 
 type CommittteeStatus struct {
-	Address        *address.Address
-	OwnerAddress   *address.Address
-	Color          *balance.Color
-	Size           uint16
-	Quorum         uint16
-	OwnPeerIndex   uint16
-	NumPeers       uint16
-	HasQuorum      bool
-	ConnectedPeers []uint16
+	Address      *address.Address
+	OwnerAddress *address.Address
+	Color        *balance.Color
+	Size         uint16
+	Quorum       uint16
+	OwnPeerIndex uint16
+	NumPeers     uint16
+	HasQuorum    bool
+	PeerStatus   []*committee.PeerStatus
 }
 
 func GetStatus() *Status {
@@ -32,15 +32,15 @@ func getCommittees() []*CommittteeStatus {
 	r := make([]*CommittteeStatus, 0)
 	iterateCommittees(func(c committee.Committee) {
 		r = append(r, &CommittteeStatus{
-			Address:        c.Address(),
-			OwnerAddress:   c.OwnerAddress(),
-			Color:          c.Color(),
-			Size:           c.Size(),
-			Quorum:         c.Quorum(),
-			OwnPeerIndex:   c.OwnPeerIndex(),
-			NumPeers:       c.NumPeers(),
-			HasQuorum:      c.HasQuorum(),
-			ConnectedPeers: c.ConnectedPeers(),
+			Address:      c.Address(),
+			OwnerAddress: c.OwnerAddress(),
+			Color:        c.Color(),
+			Size:         c.Size(),
+			Quorum:       c.Quorum(),
+			OwnPeerIndex: c.OwnPeerIndex(),
+			NumPeers:     c.NumPeers(),
+			HasQuorum:    c.HasQuorum(),
+			PeerStatus:   c.PeerStatus(),
 		})
 	})
 	return r

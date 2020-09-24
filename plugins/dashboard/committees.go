@@ -45,15 +45,34 @@ const tplCommittees = `
 	<div>
 	{{range $_, $c := .Status.Committees}}
 		<details>
-			<summary><code>{{$c.Address}}</code></summary>
-			<p>Owner address:  <code>{{$c.OwnerAddress}}</code></p>
+			<summary>{{template "address" $c.Address}}</summary>
+			<p>Owner address:  {{template "address" $c.OwnerAddress}}</p>
 			<p>Color:          <code>{{$c.Color}}</code></p>
 			<p>Size:           <code>{{$c.Size}}</code></p>
 			<p>Quorum:         <code>{{$c.Quorum}}</code></p>
-			<p>OwnPeerIndex:   <code>{{$c.OwnPeerIndex}}</code></p>
 			<p>NumPeers:       <code>{{$c.NumPeers}}</code></p>
 			<p>HasQuorum:      <code>{{$c.HasQuorum}}</code></p>
-			<p>ConnectedPeers: <code>{{$c.ConnectedPeers}}</code></p>
+			<table>
+			<caption>Peer status</caption>
+			<thead>
+				<tr>
+					<th>Index</th>
+					<th>NodeId</th>
+					<th>IsSelf</th>
+					<th>Connected</th>
+				</tr>
+			</thead>
+			<tbody>
+			{{range $_, $s := $c.PeerStatus}}
+				<tr>
+					<td><code>{{$s.Index}}</code></td>
+					<td><code>{{$s.NodeId}}</code></td>
+					<td><code>{{$s.IsSelf}}</code></td>
+					<td><code>{{$s.Connected}}</code></td>
+				</tr>
+			{{end}}
+			</tbody>
+			</table>
 		</details>
 	{{else}}
 		<p>(empty list)</p>
