@@ -1,4 +1,5 @@
-// wrapper package for BLS threshold cryptography used in the Wasp plugin
+// wrapper package for BLS threshold cryptography used in the Wasp node
+// TODO DKG protocol must be rewritten because currently it is not 100% secure
 package tcrypto
 
 import (
@@ -13,9 +14,9 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bdn"
 )
 
-// Distributed key share for (T,N) threshold signatures based on BLS
-// DKShare structure represents partial share owned by the node to participate in the
-// commitee. The only 'priKey' part is secret, the rest is public
+// DKShare represents distributed key share for (T,N) threshold signatures based on BLS
+// Structure is a partial share owned by the node to participate in the
+// committee. The only 'priKey' part is secret, the rest is public
 type DKShare struct {
 	// interface for the BN256 bilinear pairing for the underlying BLS cryptography
 	Suite *bn256.Suite
@@ -30,7 +31,6 @@ type DKShare struct {
 	// all nodes in the committee have DKShare records with same address
 	// Addresses is blake2 hash of master public key prefixed with one byte of signature type
 	Address *address.Address
-
 	// partial public keys of all committee nodes for this DKS
 	// may be used to identify and authenticate individual committee node
 	PubKeys []kyber.Point // all public shares by peers
@@ -44,10 +44,9 @@ type DKShare struct {
 	// secret partial private key
 	// it is a sum of private shares, generated during DKG
 	// partial private key not known to anyone
-	// TODO however owner can reconstruct master secret from the information gathered during DKG
+	// TODO however owner can reconstruct master secret from the information gathered during the DKG
 	// make that optional during DKG
 	priKey kyber.Scalar
-
 	// temporary fields used during DKG process
 	// not used after
 	// TODO refactor during cleanup, remove tmp fields from the permanent structure
@@ -69,6 +68,7 @@ func ValidateDKSParams(t, n, index uint16) error {
 	return nil
 }
 
+// NewRndDKShare creates empty structure
 func NewRndDKShare(t, n, index uint16) (*DKShare, error) {
 	if err := ValidateDKSParams(t, n, index); err != nil {
 		return nil, err
@@ -91,6 +91,7 @@ func NewRndDKShare(t, n, index uint16) (*DKShare, error) {
 	return ret, nil
 }
 
+// AggregateDKS is a call in DKG process
 func (ks *DKShare) AggregateDKS(priShares []kyber.Scalar) error {
 	if ks.Aggregated {
 		return errors.New("already Aggregated")
@@ -110,6 +111,7 @@ func (ks *DKShare) AggregateDKS(priShares []kyber.Scalar) error {
 	return nil
 }
 
+// FinalizeDKS is a call in DKG process
 func (ks *DKShare) FinalizeDKS(pubKeys []kyber.Point) error {
 	if ks.Committed {
 		return errors.New("already Committed")
@@ -134,6 +136,8 @@ func (ks *DKShare) FinalizeDKS(pubKeys []kyber.Point) error {
 	return nil
 }
 
+// SignShare signs the data with the own key share.
+// returns SigShare, which contains signature and the index
 func (ks *DKShare) SignShare(data []byte) (tbdn.SigShare, error) {
 	priShare := share.PriShare{
 		I: int(ks.Index),
@@ -142,10 +146,10 @@ func (ks *DKShare) SignShare(data []byte) (tbdn.SigShare, error) {
 	return tbdn.Sign(ks.Suite, &priShare, data)
 }
 
-// for testing
+// VerifyOwnSigShare is only used for assertions
 func (ks *DKShare) VerifyOwnSigShare(data []byte, sigshare tbdn.SigShare) error {
 	if !ks.Committed {
-		return errors.New("key set is not Committed")
+		return errors.New("key set is not committed")
 	}
 	idx, err := sigshare.Index()
 	if err != nil || uint16(idx) != ks.Index {
@@ -154,9 +158,10 @@ func (ks *DKShare) VerifyOwnSigShare(data []byte, sigshare tbdn.SigShare) error 
 	return bdn.Verify(ks.Suite, ks.PubKeyOwn, data, sigshare[2:])
 }
 
+// VerifySigShare checks if partial signature (sigshare) of the data is valid
 func (ks *DKShare) VerifySigShare(data []byte, sigshare tbdn.SigShare) error {
 	if !ks.Committed {
-		return errors.New("key set is not Committed")
+		return errors.New("key set is not committed")
 	}
 	idx, err := sigshare.Index()
 	if err != nil || idx >= int(ks.N) || idx < 0 {
@@ -165,15 +170,17 @@ func (ks *DKShare) VerifySigShare(data []byte, sigshare tbdn.SigShare) error {
 	return bdn.Verify(ks.Suite, ks.PubKeys[idx], data, sigshare.Value())
 }
 
+// VerifyMasterSignature checks signature against master public key
 func (ks *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
 	if !ks.Committed {
-		return errors.New("key set is not Committed")
+		return errors.New("key set is not committed")
 	}
 	return bdn.Verify(ks.Suite, ks.PubKeyMaster, data, signature)
 }
 
 var suiteLoc = bn256.NewSuite()
 
+// VerifyWithPublicKey checks signature against arbitrary public key
 func VerifyWithPublicKey(data, signature, pubKeyBin []byte) error {
 	pubKey := suiteLoc.G2().Point()
 	err := pubKey.UnmarshalBinary(pubKeyBin)
@@ -183,6 +190,7 @@ func VerifyWithPublicKey(data, signature, pubKeyBin []byte) error {
 	return bdn.Verify(suiteLoc, pubKey, data, signature)
 }
 
+// RecoverPubPoly recovers public polynomial from the partial public keys
 func RecoverPubPoly(suite *bn256.Suite, pubKeys []kyber.Point, t, n uint16) (*share.PubPoly, error) {
 	pubShares := make([]*share.PubShare, len(pubKeys))
 	for i, v := range pubKeys {
@@ -194,6 +202,8 @@ func RecoverPubPoly(suite *bn256.Suite, pubKeys []kyber.Point, t, n uint16) (*sh
 	return share.RecoverPubPoly(suite.G2(), pubShares, int(t), int(n))
 }
 
+// RecoverFullSignature generates (recovers) master signature from partial sigshares.
+// returns signature as defined in the value Tangle
 func (ks *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signaturescheme.Signature, error) {
 	recoveredSignature, err := tbdn.Recover(ks.Suite, ks.PubPoly, data, sigShares, int(ks.T), int(ks.N))
 	if err != nil {
