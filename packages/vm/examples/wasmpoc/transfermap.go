@@ -36,7 +36,7 @@ func (o *TransferMap) GetString(keyId int32) string {
 	return o.MapObject.GetString(keyId)
 }
 
-func (o *TransferMap) Send(ctx interfaces.HostInterface) {
+func (o *TransferMap) Send() {
 	o.vm.Logf("XFER SEND a%d a'%16s' c'%16s'", o.amount, o.address, o.color)
 	addr, err := address.FromBase58(o.address)
 	if err != nil {

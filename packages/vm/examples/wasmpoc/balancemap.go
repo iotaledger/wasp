@@ -1,9 +1,9 @@
 package wasmpoc
 
 import (
-	"encoding/hex"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/mr-tron/base58/base58"
 )
 
 type BalanceMap struct {
@@ -28,11 +28,14 @@ func (o *BalanceMap) GetInt(keyId int32) int64 {
 	case "new":
 		color = balance.ColorNew
 	default:
-		if len(key) != 64 {
-			o.error("GetInt: Invalid color key")
-			return 0
+		if o.requestOnly {
+			request := o.vm.ctx.AccessRequest()
+			reqId := request.ID()
+			if key == reqId.TransactionId().String() {
+				return request.NumFreeMintedTokens()
+			}
 		}
-		bytes, err := hex.DecodeString(key)
+		bytes, err := base58.Decode(key)
 		if err != nil {
 			panic(err)
 		}

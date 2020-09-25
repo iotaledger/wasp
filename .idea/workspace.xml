@@ -3,12 +3,13 @@
   <component name="ChangeListManager">
     <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/contractmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/contractmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventsarray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_go.wasm" beforeDir="false" afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_go.wasm" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_rust.wasm" beforeDir="false" afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_rust.wasm" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +22,9 @@
   </component>
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="dfgqfkw1" />
   </component>
   <component name="ProjectId" id="1hqRZ7j39Shp7AOyirbHbA0CSAT" />
   <component name="ProjectLevelVcsManager">
@@ -36,7 +40,7 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/packages/vm/examples/wasmpoc" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../wasplib/go" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.path.for.package.tslint" value="project" />
@@ -57,10 +61,14 @@
     <integration-enabled>true</integration-enabled>
   </component>
   <component name="WindowStateProjectService">
-    <state x="623" y="222" width="554" height="534" key="find.popup" timestamp="1600777298568">
+    <state x="-1270" y="243" key="FileChooserDialogImpl" timestamp="1600976212583">
+      <screen x="-1920" y="0" width="1739" height="978" />
+    </state>
+    <state x="-1270" y="243" key="FileChooserDialogImpl/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1600976212583" />
+    <state x="623" y="222" width="554" height="534" key="find.popup" timestamp="1600835062293">
       <screen x="62" y="0" width="1677" height="978" />
     </state>
-    <state x="2502" y="222" width="574" height="534" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@1920.0.1739.978" timestamp="1600732867460" />
-    <state x="623" y="222" width="554" height="534" key="find.popup/62.0.1677.978@62.0.1677.978" timestamp="1600777298568" />
+    <state x="2502" y="222" width="574" height="534" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@1920.0.1739.978" timestamp="1600830409885" />
+    <state x="623" y="222" width="554" height="534" key="find.popup/62.0.1677.978@62.0.1677.978" timestamp="1600835062293" />
   </component>
 </project>

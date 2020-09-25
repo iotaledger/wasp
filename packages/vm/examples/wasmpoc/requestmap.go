@@ -42,6 +42,9 @@ func (o *RequestMap) GetString(keyId int32) string {
 		return o.vm.ctx.AccessRequest().Sender().String()
 	case KeyHash:
 		id := o.vm.ctx.AccessRequest().ID()
+		return id.TransactionId().String()
+	case KeyId:
+		id := o.vm.ctx.AccessRequest().ID()
 		return id.String()
 	}
 	return o.MapObject.GetString(keyId)

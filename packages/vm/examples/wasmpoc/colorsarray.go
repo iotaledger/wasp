@@ -40,5 +40,5 @@ func (a *ColorsArray) loadColors() {
 	if a.colors != nil {
 		return
 	}
-	//TODO determine valid colors for account or request and add them to colors array
+	//TODO determine valid colors for account or request and add them base58-encoded to colors array
 }

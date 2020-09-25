@@ -6,36 +6,13 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
 	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/level"
 	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-const (
-	ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
-
-	RequestNop           = sctransaction.RequestCode(uint16(1))
-	RequestInc           = sctransaction.RequestCode(uint16(2))
-	RequestIncRepeat1    = sctransaction.RequestCode(uint16(3))
-	RequestIncRepeatMany = sctransaction.RequestCode(uint16(4))
-	RequestPlaceBet      = sctransaction.RequestCode(uint16(5))
-	RequestLockBets      = sctransaction.RequestCode(uint16(6))
-	RequestPayWinners    = sctransaction.RequestCode(uint16(7))
-	RequestPlayPeriod    = sctransaction.RequestCode(uint16(8) | sctransaction.RequestCodeProtected)
-	RequestTokenMint     = sctransaction.RequestCode(uint16(9))
-)
-
-var entrypoints = map[sctransaction.RequestCode]string{
-	RequestNop:           "no_op",
-	RequestInc:           "increment",
-	RequestIncRepeat1:    "incrementRepeat1",
-	RequestIncRepeatMany: "incrementRepeatMany",
-	RequestPlaceBet:      "placeBet",
-	RequestLockBets:      "lockBets",
-	RequestPayWinners:    "payWinners",
-	RequestPlayPeriod:    "playPeriod",
-	RequestTokenMint:     "tokenMint",
-}
+const ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
 
 type wasmVMPocProcessor struct {
 	host.HostBase
@@ -47,15 +24,8 @@ func GetProcessor() vmtypes.Processor {
 	return &wasmVMPocProcessor{}
 }
 
-func (h *wasmVMPocProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
-	//TODO converts request code into Wasm code entry point name
-	// needs to be changed to use entry point name instead of code
-	// we don't want to burden the SC creator with extra work
-	entrypoint, ok := entrypoints[code]
-	if !ok {
-		return nil, false
-	}
-	h.entrypoint = entrypoint
+func (h *wasmVMPocProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+	// we don't use request code but fn name request parameter
 	return h, true
 }
 
@@ -83,13 +53,20 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	err = h.RunWasmFunction(h.entrypoint)
+	functionName, _, _ := ctx.AccessRequest().Args().GetString("fn")
+	if functionName == "" {
+		ctx.Publish("error starting wasm: Missing fn parameter")
+		return
+	}
+	ctx.Publish("Calling " + functionName)
+	err = h.RunWasmFunction(functionName)
 	if err != nil {
 		ctx.Publish("error running wasm: " + err.Error())
 		return
 	}
 
 	if h.HasError() {
+		ctx.Publish("error running wasm function: " + h.GetString(1, interfaces.KeyError))
 		return
 	}
 
@@ -99,7 +76,7 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	for i := int32(0); i < transfers.GetLength(); i++ {
 		transferId := h.GetObjectId(transfersId, i, objtype.OBJTYPE_MAP)
 		transfer := h.GetObject(transferId).(*TransferMap)
-		transfer.Send(h)
+		transfer.Send()
 	}
 
 	ctx.Publish("Processing events...")
@@ -108,7 +85,7 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	for i := int32(0); i < events.GetLength(); i++ {
 		requestId := h.GetObjectId(eventsId, i, objtype.OBJTYPE_MAP)
 		request := h.GetObject(requestId).(*EventMap)
-		request.Send(h)
+		request.Send()
 	}
 }
 

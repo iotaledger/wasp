@@ -1,10 +1,10 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 )
 
 type EventMap struct {
@@ -48,19 +48,22 @@ func (o *EventMap) GetString(keyId int32) string {
 	return o.MapObject.GetString(keyId)
 }
 
-func (o *EventMap) Send(ctx interfaces.HostInterface) {
+func (o *EventMap) Send() {
 	o.vm.Logf("REQ SEND c%d d%d a'%s'", o.code, o.delay, o.contract)
 	if o.contract == "" {
-		var params kv.Map = nil
+		var params kv.Map = kv.NewMap()
 		if o.paramsId != 0 {
 			params = o.vm.GetObject(o.paramsId).(*EventParamsMap).Params
 			params.ForEach(func(key kv.Key, value []byte) bool {
 				o.vm.Logf("  PARAM '%s'", key)
 				return true
 			})
-			if params.IsEmpty() {
-				params = nil
-			}
+		}
+		if o.function != "" {
+			params.Codec().SetString("fn", o.function)
+		}
+		if params.IsEmpty() {
+			params = nil
 		}
 		o.vm.ctx.SendRequestToSelfWithDelay(sctransaction.RequestCode(uint16(o.code)), params, uint32(o.delay))
 	}
