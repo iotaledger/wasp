@@ -63,6 +63,12 @@ func (peer *Peer) IsAlive() bool {
 	return peer.peerconn != nil && peer.handshakeOk
 }
 
+func (peer *Peer) NumUsers() int {
+	peer.RLock()
+	defer peer.RUnlock()
+	return peer.numUsers
+}
+
 func (peer *Peer) connStatus() (bool, bool) {
 	peer.RLock()
 	defer peer.RUnlock()

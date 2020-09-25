@@ -23,11 +23,6 @@
     "enablePlugins": []
   },
   "webapi": {
-    "auth": {
-      "password": "wasp",
-      "privateKey": "",
-      "username": "wasp"
-    },
     "bindAddress": "0.0.0.0:{{.ApiPort}}"
   },
   "dashboard": {

@@ -64,22 +64,15 @@ func loadProcessor(progHashStr string) (vmtypes.Processor, error) {
 	if err != nil {
 		return nil, err
 	}
+	if exist {
+		return vmtypes.FromBinaryCode(md.VMType, binaryCode)
+	}
+	binaryCode, err = loadBinaryCode(md.Location, &progHash)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load program's binary data from location %s, program hash = %s",
+			md.Location, progHashStr)
 	}
-	if exist {
-		return vmtypes.FromBinaryCode(md.VMType, binaryCode)
-	}
-
-	if exist {
-		binaryCode, err := loadBinaryCode(md.Location, &progHash)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load program's binary data from location %s, program hash = %s",
-				md.Location, progHashStr)
-		}
-		return vmtypes.FromBinaryCode(md.VMType, binaryCode)
-	}
-	return nil, fmt.Errorf("no metadata for program hash %s", progHashStr)
+	return vmtypes.FromBinaryCode(md.VMType, binaryCode)
 }
 
 // loads binary code of the VM, possibly from remote location

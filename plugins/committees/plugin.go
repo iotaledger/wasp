@@ -125,14 +125,3 @@ func CommitteeByAddress(addr address.Address) committee.Committee {
 	}
 	return ret
 }
-
-func iterateCommittees(f func(c committee.Committee)) {
-	committeesMutex.RLock()
-	defer committeesMutex.RUnlock()
-
-	for _, c := range committeesByAddress {
-		if !c.IsDismissed() {
-			f(c)
-		}
-	}
-}

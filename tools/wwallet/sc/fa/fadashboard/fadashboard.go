@@ -65,7 +65,7 @@ const tplFairAuction = `
 				<details>
 					<summary>{{$auction.Description}}</summary>
 					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <a href="/tr/{{$color}}"><code>{{$color}}</code></a></p>
-					<p>Owner: <code>{{$auction.AuctionOwner}}</code></p>
+					<p>Owner: {{template "address" $auction.AuctionOwner}}</p>
 					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
 					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
 					<p>Due: <code id="due-{{$color}}"></code></p>
@@ -75,8 +75,8 @@ const tplFairAuction = `
 					{{if gt (len $auction.Bids) 0}}
 						<p>This auction has <code>{{len $auction.Bids}}</code> bids totalling <code>{{$auction.SumOfBids}} IOTAs</code></p>
 						{{$winner := $auction.WinningBid}}
-						{{if ne $winner nil}}
-							<p>Current winning bid: <code>{{$winner.Total}} IOTAs</code> by <code>{{$winner.Bidder}}</code></p>
+						{{if $winner}}
+							<p>Current winning bid: <code>{{$winner.Total}} IOTAs</code> by {{template "address" $winner.Bidder}}</p>
 						{{end}}
 					{{else}}
 						<p>This auction has no bids yet.</p>

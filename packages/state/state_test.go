@@ -18,7 +18,7 @@ func TestVariableStateBasic(t *testing.T) {
 	addr := address.Random()
 	vs1 := NewVirtualState(mapdb.NewMapDB(), &addr)
 	h1 := vs1.Hash()
-	assert.Equal(t, h1 == *hashing.NilHash, true)
+	assert.EqualValues(t, *hashing.NilHash, *h1)
 	assert.Equal(t, vs1.StateIndex(), uint32(0))
 
 	vs2 := vs1.Clone()

@@ -1,6 +1,8 @@
 package committee
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
@@ -24,13 +26,24 @@ type Committee interface {
 	ReceiveMessage(msg interface{})
 	InitTestRound()
 	HasQuorum() bool
-	ConnectedPeers() []uint16
+	PeerStatus() []*PeerStatus
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
 	Dismiss()
 	IsDismissed() bool
 	GetRequestProcessingStatus(*sctransaction.RequestId) RequestProcessingStatus
+}
+
+type PeerStatus struct {
+	Index     int
+	PeeringID string
+	IsSelf    bool
+	Connected bool
+}
+
+func (p *PeerStatus) String() string {
+	return fmt.Sprintf("%+v", *p)
 }
 
 type RequestProcessingStatus int

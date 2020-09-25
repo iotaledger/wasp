@@ -72,10 +72,6 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 		return nil, err
 	}
 	switch {
-	case ret.MsgType == MsgTypeReserved:
-		panic("MsgTypeReserved")
-		//return ret, nil
-
 	case ret.MsgType == MsgTypeHandshake:
 		ret.MsgData = rdr.Bytes()
 		return ret, nil
@@ -96,6 +92,8 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 			return nil, err
 		}
 		return ret, nil
+
+	default:
+		return nil, fmt.Errorf("peering.decodeMessage.wrong message type: %d", ret.MsgType)
 	}
-	return nil, fmt.Errorf("wrong message type = %d", ret.MsgType)
 }

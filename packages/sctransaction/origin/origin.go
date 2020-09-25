@@ -25,13 +25,15 @@ type NewOriginTransactionParams struct {
 
 func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transaction, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
+	if err != nil {
+		return nil, err
+	}
 
 	originState := state.NewVirtualState(nil, &par.Address)
 	if err := originState.ApplyBatch(state.MustNewOriginBatch(nil)); err != nil {
 		return nil, err
 	}
-	stateHash := originState.Hash()
-	if err := txb.CreateOriginStateBlock(&stateHash, &par.Address); err != nil {
+	if err := txb.CreateOriginStateBlock(originState.Hash(), &par.Address); err != nil {
 		return nil, err
 	}
 

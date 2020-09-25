@@ -13,7 +13,7 @@ func initPeering() NavPage {
 	return &peeringNavPage{}
 }
 
-const peeringRoute = "/"
+const peeringRoute = "/peering"
 const peeringTplName = "peering"
 
 func (n *peeringNavPage) Title() string { return "Peering" }
@@ -42,16 +42,25 @@ const tplPeering = `
 
 {{define "body"}}
 	<h2>Peers</h2>
-	<div>
-	{{range $_, $peer := .Status.Peers}}
-		<details>
-			<summary><code>{{$peer.RemoteLocation}}</code></summary>
-			<p>Is inbound?: <code>{{$peer.IsInbound}}</code></p>
-			<p>Is alive?: <code>{{$peer.IsAlive}}</code></p>
-		</details>
-	{{else}}
-		<p>(empty list)</p>
-	{{end}}
-	</div>
+	<table>
+		<thead>
+			<tr>
+				<th>Location</th>
+				<th>Type</th>
+				<th>Status</th>
+				<th>#Users</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $_, $peer := .Status.Peers}}
+			<tr>
+				<td><code>{{$peer.RemoteLocation}}</code></td>
+				<td>{{if $peer.IsInbound}}inbound{{else}}outbound{{end}}</td>
+				<td>{{if $peer.IsAlive}}up{{else}}down{{end}}</td>
+				<td>{{$peer.NumUsers}}</td>
+			</tr>
+		{{end}}
+		</tbody>
+	</table>
 {{end}}
 `

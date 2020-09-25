@@ -9,6 +9,7 @@ type PeerStatus struct {
 	RemoteLocation string
 	IsInbound      bool
 	IsAlive        bool
+	NumUsers       int
 }
 
 func GetStatus() *Status {
@@ -25,6 +26,7 @@ func getPeerStatus() []*PeerStatus {
 			RemoteLocation: peer.remoteLocation,
 			IsInbound:      peer.isInbound(),
 			IsAlive:        peer.IsAlive(),
+			NumUsers:       peer.NumUsers(),
 		})
 	})
 	return r

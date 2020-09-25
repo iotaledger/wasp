@@ -44,14 +44,14 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 func (bconn *peeredConnection) receiveData(data []byte) {
 	msg, err := decodeMessage(data)
 	if err != nil {
-		log.Errorf("decodeMessage: %v", err)
+		log.Error(err)
 		bconn.peer.closeConn()
 		return
 	}
 	if msg.MsgType == MsgTypeMsgChunk {
 		finalMsg, err := chopper.IncomingChunk(msg.MsgData, payload.MaxMessageSize-chunkMessageOverhead)
 		if err != nil {
-			log.Errorf("decodeMessage: %v", err)
+			log.Errorf("receiveData: %v", err)
 			return
 		}
 		if finalMsg != nil {
@@ -66,7 +66,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		} else {
 			// expected handshake msg
 			if msg.MsgType != MsgTypeHandshake {
-				log.Errorf("unexpected message during handshake")
+				log.Errorf("receiveData: unexpected message during handshake")
 				return
 			}
 			// not handshaked => do handshake
@@ -75,7 +75,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 	} else {
 		// expected handshake msg
 		if msg.MsgType != MsgTypeHandshake {
-			log.Errorf("unexpected message during handshake")
+			log.Errorf("receiveData: unexpected message during handshake")
 			return
 		}
 		// not peered yet can be only inbound

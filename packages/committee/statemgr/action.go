@@ -273,13 +273,13 @@ func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
 
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
-	pb, ok := sm.pendingBatches[vh]
+	pb, ok := sm.pendingBatches[*vh]
 	if !ok || pb.batch.StateTransactionId() == niltxid {
 		pb = &pendingBatch{
 			batch:     batch,
 			nextState: stateToApprove,
 		}
-		sm.pendingBatches[vh] = pb
+		sm.pendingBatches[*vh] = pb
 	}
 
 	sm.log.Debugw("added new pending batch",

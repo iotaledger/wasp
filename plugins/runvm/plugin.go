@@ -132,7 +132,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	stateHash := vsClone.Hash()
 
 	// add state block
-	err = vmctx.TxBuilder.SetStateParams(ctx.VirtualState.StateIndex()+1, &stateHash, vsClone.Timestamp())
+	err = vmctx.TxBuilder.SetStateParams(ctx.VirtualState.StateIndex()+1, stateHash, vsClone.Timestamp())
 	if err != nil {
 		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.SetStateParams: %v", err))
 		return
