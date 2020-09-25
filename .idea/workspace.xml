@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_go.wasm" beforeDir="false" afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_go.wasm" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_rust.wasm" beforeDir="false" afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_rust.wasm" afterDir="false" />
-    </list>
+    <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="Change to fn param" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -57,10 +66,29 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Change to fn param" />
+    <option name="LAST_COMMIT_MESSAGE" value="Change to fn param" />
+  </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
   </component>
   <component name="WindowStateProjectService">
+    <state x="-1429" y="57" key="CommitChangelistDialog2" timestamp="1601067728089">
+      <screen x="-1920" y="0" width="1739" height="978" />
+    </state>
+    <state x="-1429" y="57" key="CommitChangelistDialog2/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601067728089" />
     <state x="-1270" y="243" key="FileChooserDialogImpl" timestamp="1600976212583">
       <screen x="-1920" y="0" width="1739" height="978" />
     </state>
