@@ -38,6 +38,8 @@ Another approach can be expose data schema + generic access
 and (b) smart contract events (signalled by request to subscriber smart contract)
 - [ ] balance sheet metaphor in the smart contract state. Ownership concept of BS "liability+equity" items  
 - [ ] implement framework with mocked Sandbox for smart contract unit testing 
+- [ ] "stealth" mode for request data. Option 1: encryption of it to committee members with symetric key encrypted
+for each committee member with its public key. Option 2: move request data off-tangle and keep only hash of it on-tangle 
 
 Functional testing
 - [ ] test fault-tolerance
