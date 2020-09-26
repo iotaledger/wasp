@@ -1,8 +1,8 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type TransfersArray struct {
@@ -34,7 +34,7 @@ func (a *TransfersArray) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case interfaces.KeyLength:
 		// tell objects to clear themselves
-		for i := len(a.transfers) - 1; i >= 0; i-- {
+		for i := a.GetLength() - 1; i >= 0; i-- {
 			a.vm.SetInt(a.transfers[i], keyId, 0)
 		}
 		//TODO move to pool for reuse of transfers

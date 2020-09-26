@@ -4,12 +4,12 @@ package wasmpoc
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasplib/host"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/level"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/level"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 const ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
@@ -47,7 +47,7 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	// in the future we will need to change things so
 	// that we locate the code by hash and entrypoint
 	// by name instead of request code number
-	err := h.LoadWasm("D:\\Work\\Go\\src\\github.com\\iotaledger\\wasp\\tools\\cluster\\tests\\wasptest\\fairroulette_go.wasm")
+	err := h.LoadWasm("D:\\Work\\Go\\src\\github.com\\iotaledger\\wasplib\\wasm\\increment_go.wasm")
 	if err != nil {
 		ctx.Publish("error loading wasm: " + err.Error())
 		return

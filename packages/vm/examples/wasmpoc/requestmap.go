@@ -1,8 +1,8 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type RequestMap struct {

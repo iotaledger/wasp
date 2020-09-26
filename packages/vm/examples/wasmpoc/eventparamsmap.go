@@ -1,7 +1,7 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -12,6 +12,11 @@ type EventParamsMap struct {
 
 func NewEventParamsMap(h *wasmVMPocProcessor) interfaces.HostObject {
 	return &EventParamsMap{MapObject: MapObject{vm: h, name: "EventParams"}, Params: kv.NewMap()}
+}
+
+func (o *EventParamsMap) GetBytes(keyId int32) []byte {
+	value, _ := o.Params.Get(kv.Key(o.vm.GetKey(keyId)))
+	return value
 }
 
 func (o *EventParamsMap) GetInt(keyId int32) int64 {
@@ -34,10 +39,14 @@ func (o *EventParamsMap) GetString(keyId int32) string {
 	return o.MapObject.GetString(keyId)
 }
 
+func (o *EventParamsMap) SetBytes(keyId int32, value []byte) {
+	o.Params.Set(kv.Key(o.vm.GetKey(keyId)), value)
+}
+
 func (o *EventParamsMap) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case interfaces.KeyLength:
-		// clear request, tracker will still know about it
+		// clear params, tracker will still know about object
 		// so maybe move it to an allocation pool for reuse
 		o.Params = kv.NewMap()
 	default:

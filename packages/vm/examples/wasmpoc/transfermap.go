@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type TransferMap struct {
@@ -18,24 +18,6 @@ func NewTransferMap(h *wasmVMPocProcessor) interfaces.HostObject {
 	return &TransferMap{MapObject: MapObject{vm: h, name: "Transfer"}}
 }
 
-func (o *TransferMap) GetInt(keyId int32) int64 {
-	switch keyId {
-	case KeyAmount:
-		return o.amount
-	}
-	return o.MapObject.GetInt(keyId)
-}
-
-func (o *TransferMap) GetString(keyId int32) string {
-	switch keyId {
-	case KeyAddress:
-		return o.address
-	case KeyColor:
-		return o.color
-	}
-	return o.MapObject.GetString(keyId)
-}
-
 func (o *TransferMap) Send() {
 	o.vm.Logf("XFER SEND a%d a'%16s' c'%16s'", o.amount, o.address, o.color)
 	addr, err := address.FromBase58(o.address)
@@ -45,7 +27,7 @@ func (o *TransferMap) Send() {
 
 	// when no color specified default is ColorIOTA
 	bytes := balance.ColorIOTA[:]
-	if o.color != "" && o.color != "iota" {
+	if o.color != "iota" {
 		bytes, err = hex.DecodeString(o.color)
 		if err != nil {
 			o.vm.ctx.Panic("MoveTokens failed 2")

@@ -1,8 +1,8 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -15,6 +15,14 @@ type StateMap struct {
 
 func NewStateMap(h *wasmVMPocProcessor, items *kv.MustDictionary) interfaces.HostObject {
 	return &StateMap{MapObject: MapObject{vm: h, name: "StateMap"}, items: items, types: make(map[int32]int32)}
+}
+
+func (m *StateMap) GetBytes(keyId int32) []byte {
+	if !m.valid(keyId, objtype.OBJTYPE_BYTES) {
+		return []byte(nil)
+	}
+	key := []byte(m.vm.GetKey(keyId))
+	return m.items.GetAt(key)
 }
 
 func (m *StateMap) GetInt(keyId int32) int64 {
@@ -42,6 +50,14 @@ func (m *StateMap) GetString(keyId int32) string {
 	}
 	key := []byte(m.vm.GetKey(keyId))
 	return string(m.items.GetAt(key))
+}
+
+func (m *StateMap) SetBytes(keyId int32, value []byte) {
+	if !m.valid(keyId, objtype.OBJTYPE_BYTES) {
+		return
+	}
+	key := []byte(m.vm.GetKey(keyId))
+	m.items.SetAt(key, value)
 }
 
 func (m *StateMap) SetInt(keyId int32, value int64) {

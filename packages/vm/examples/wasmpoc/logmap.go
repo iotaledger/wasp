@@ -2,7 +2,7 @@ package wasmpoc
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type LogMap struct {
@@ -23,6 +23,15 @@ func (a *LogMap) GetInt(keyId int32) int64 {
 	return a.MapObject.GetInt(keyId)
 }
 
+func (a *LogMap) SetBytes(keyId int32, value []byte) {
+	switch keyId {
+	case KeyData:
+		a.lines.Append(a.timestamp, value)
+		return
+	}
+	a.error("SetBytes: Invalid key")
+}
+
 func (a *LogMap) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyTimestamp:
@@ -30,13 +39,4 @@ func (a *LogMap) SetInt(keyId int32, value int64) {
 		return
 	}
 	a.error("SetInt: Invalid key")
-}
-
-func (a *LogMap) SetString(keyId int32, value string) {
-	switch keyId {
-	case KeyData:
-		a.lines.Append(a.timestamp, []byte(value))
-		return
-	}
-	a.error("SetString: Invalid key")
 }

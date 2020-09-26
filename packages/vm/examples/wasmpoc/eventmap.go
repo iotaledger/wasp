@@ -3,8 +3,8 @@ package wasmpoc
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type EventMap struct {
@@ -20,16 +20,6 @@ func NewEventMap(h *wasmVMPocProcessor) interfaces.HostObject {
 	return &EventMap{MapObject: MapObject{vm: h, name: "Event"}}
 }
 
-func (o *EventMap) GetInt(keyId int32) int64 {
-	switch keyId {
-	//case interfaces.KeyCode:
-	//	return o.code
-	//case interfaces.KeyDelay:
-	//	return o.delay
-	}
-	return o.MapObject.GetInt(keyId)
-}
-
 func (o *EventMap) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyParams:
@@ -38,20 +28,10 @@ func (o *EventMap) GetObjectId(keyId int32, typeId int32) int32 {
 	return o.MapObject.GetObjectId(keyId, typeId)
 }
 
-func (o *EventMap) GetString(keyId int32) string {
-	switch keyId {
-	//case interfaces.KeyContract:
-	//	return o.contract
-	//case interfaces.KeyFunction:
-	//	return o.function
-	}
-	return o.MapObject.GetString(keyId)
-}
-
 func (o *EventMap) Send() {
 	o.vm.Logf("REQ SEND c%d d%d a'%s'", o.code, o.delay, o.contract)
 	if o.contract == "" {
-		var params kv.Map = kv.NewMap()
+		params := kv.NewMap()
 		if o.paramsId != 0 {
 			params = o.vm.GetObject(o.paramsId).(*EventParamsMap).Params
 			params.ForEach(func(key kv.Key, value []byte) bool {
@@ -72,7 +52,7 @@ func (o *EventMap) Send() {
 func (o *EventMap) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case interfaces.KeyLength:
-		// clear request, tracker will still know about it
+		// clear request, tracker will still know about object
 		// so maybe move it to an allocation pool for reuse
 		o.contract = ""
 		o.function = ""

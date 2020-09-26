@@ -19,7 +19,56 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="Change to fn param" />
+    <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="gitignore .idea/">
+      <change afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasm_fairroulette_test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasm_increment_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/accountmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/accountmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/arrayobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/arrayobject.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/contractmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/contractmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventparamsmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventparamsmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventsarray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logsmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logsmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/mapobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/mapobject.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestparamsmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestparamsmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootmap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statemap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/stateobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/stateobject.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfermap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfermap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/utilitymap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/utilitymap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/HostBase.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/HostImpl.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/Tracker.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/hostArray.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/hostMap.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/HostInterface.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/HostObject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/level/level.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype/objtype.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/nullObject.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_go.wasm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_rust.wasm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/utils.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/context.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/host.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/immutable.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/keys.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/mod.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/mutable.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasp_wasm_vm_test.go" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,22 +98,31 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../wasplib/go" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasm" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.path.for.package.tslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
+    <property name="settings.editor.selected.configurable" value="reference.settingsdialog.textmate.bundles" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="D:\Work\Go\src\github.com\iotaledger\wasp\packages\vm\examples\wasmpoc" />
+      <recent name="D:\Work\Go\src\github.com\iotaledger\wasp\tools\cluster\tests\wasptest\wasm" />
       <recent name="D:\Work\Go\src\github.com\iotaledger\wasp\tools\cluster\tests\wasptest" />
+      <recent name="D:\Work\Go\src\github.com\iotaledger\wasp\packages\vm\examples\wasmpoc" />
     </key>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.log" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
@@ -76,6 +134,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Change to fn param" />
@@ -85,6 +144,10 @@
     <integration-enabled>true</integration-enabled>
   </component>
   <component name="WindowStateProjectService">
+    <state x="-1340" y="259" key="#Log_Highlighting_(ideolog)" timestamp="1601080379873">
+      <screen x="-1920" y="0" width="1739" height="978" />
+    </state>
+    <state x="-1340" y="259" key="#Log_Highlighting_(ideolog)/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601080379873" />
     <state x="-1429" y="57" key="CommitChangelistDialog2" timestamp="1601067728089">
       <screen x="-1920" y="0" width="1739" height="978" />
     </state>
@@ -93,10 +156,19 @@
       <screen x="-1920" y="0" width="1739" height="978" />
     </state>
     <state x="-1270" y="243" key="FileChooserDialogImpl/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1600976212583" />
-    <state x="623" y="222" width="554" height="534" key="find.popup" timestamp="1600835062293">
-      <screen x="62" y="0" width="1677" height="978" />
+    <state x="-1534" y="161" key="SettingsEditor" timestamp="1601080670087">
+      <screen x="-1920" y="0" width="1739" height="978" />
     </state>
+    <state x="-1534" y="161" key="SettingsEditor/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601080670087" />
+    <state x="-1338" y="222" width="575" height="616" key="find.popup" timestamp="1601077888849">
+      <screen x="-1920" y="0" width="1739" height="978" />
+    </state>
+    <state x="-1338" y="222" width="575" height="616" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601077888849" />
     <state x="2502" y="222" width="574" height="534" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@1920.0.1739.978" timestamp="1600830409885" />
     <state x="623" y="222" width="554" height="534" key="find.popup/62.0.1677.978@62.0.1677.978" timestamp="1600835062293" />
+    <state x="-1388" y="209" width="672" height="678" key="search.everywhere.popup" timestamp="1601078033895">
+      <screen x="-1920" y="0" width="1739" height="978" />
+    </state>
+    <state x="-1388" y="209" width="672" height="678" key="search.everywhere.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601078033895" />
   </component>
 </project>

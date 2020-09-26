@@ -1,8 +1,8 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -14,6 +14,14 @@ type StateObject struct {
 
 func NewStateObject(h *wasmVMPocProcessor) interfaces.HostObject {
 	return &StateObject{MapObject: MapObject{vm: h, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
+}
+
+func (o *StateObject) GetBytes(keyId int32) []byte {
+	if !o.valid(keyId, objtype.OBJTYPE_BYTES) {
+		return []byte(nil)
+	}
+	key := kv.Key(o.vm.GetKey(keyId))
+	return o.vm.ctx.AccessState().Get(key)
 }
 
 func (o *StateObject) GetInt(keyId int32) int64 {
@@ -35,6 +43,9 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
 	switch typeId {
+	case objtype.OBJTYPE_BYTES_ARRAY:
+		a := o.vm.ctx.AccessState().GetArray(key)
+		objId = o.vm.AddObject(NewStateArray(o.vm, a, objtype.OBJTYPE_BYTES))
 	case objtype.OBJTYPE_INT_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
 		objId = o.vm.AddObject(NewStateArray(o.vm, a, objtype.OBJTYPE_INT))
@@ -59,6 +70,14 @@ func (o *StateObject) GetString(keyId int32) string {
 	key := kv.Key(o.vm.GetKey(keyId))
 	value, _ := o.vm.ctx.AccessState().GetString(key)
 	return value
+}
+
+func (o *StateObject) SetBytes(keyId int32, value []byte) {
+	if !o.valid(keyId, objtype.OBJTYPE_BYTES) {
+		return
+	}
+	key := kv.Key(o.vm.GetKey(keyId))
+	o.vm.ctx.AccessState().Set(key, value)
 }
 
 func (o *StateObject) SetInt(keyId int32, value int64) {

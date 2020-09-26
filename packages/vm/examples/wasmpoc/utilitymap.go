@@ -2,7 +2,7 @@ package wasmpoc
 
 import (
 	"encoding/binary"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type UtilityMap struct {

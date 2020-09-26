@@ -2,7 +2,7 @@ package wasmpoc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type ArrayObject struct {
@@ -32,6 +32,11 @@ func (a *ArrayObject) error(format string, args ...interface{}) {
 	a.vm.SetError(a.name + "." + fmt.Sprintf(format, args...))
 }
 
+func (a *ArrayObject) GetBytes(keyId int32) []byte {
+	a.error("GetBytes: Invalid key")
+	return []byte(nil)
+}
+
 func (a *ArrayObject) GetInt(keyId int32) int64 {
 	a.error("GetInt: Invalid access")
 	return 0
@@ -45,6 +50,10 @@ func (a *ArrayObject) GetObjectId(keyId int32, typeId int32) int32 {
 func (a *ArrayObject) GetString(keyId int32) string {
 	a.error("GetString: Invalid access")
 	return ""
+}
+
+func (a *ArrayObject) SetBytes(keyId int32, value []byte) {
+	a.error("SetBytes: Immutable")
 }
 
 func (a *ArrayObject) SetInt(keyId int32, value int64) {

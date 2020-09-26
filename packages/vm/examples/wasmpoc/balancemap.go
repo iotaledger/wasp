@@ -2,7 +2,7 @@ package wasmpoc
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces"
 	"github.com/mr-tron/base58/base58"
 )
 
@@ -25,6 +25,7 @@ func (o *BalanceMap) GetInt(keyId int32) int64 {
 	o.vm.Logf("Balance.GetInt: Key %d is '%s'", keyId, key)
 	switch key {
 	case "iota":
+		color = balance.ColorIOTA
 	case "new":
 		color = balance.ColorNew
 	default:

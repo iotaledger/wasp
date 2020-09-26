@@ -1,8 +1,8 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -15,6 +15,13 @@ type StateArray struct {
 
 func NewStateArray(h *wasmVMPocProcessor, items *kv.MustArray, typeId int32) interfaces.HostObject {
 	return &StateArray{ArrayObject: ArrayObject{vm: h, name: "StateArray"}, items: items, typeId: typeId}
+}
+
+func (a *StateArray) GetBytes(keyId int32) []byte {
+	if !a.valid(keyId, objtype.OBJTYPE_BYTES) {
+		return []byte(nil)
+	}
+	return a.items.GetAt(uint16(keyId))
 }
 
 func (a *StateArray) GetInt(keyId int32) int64 {
@@ -39,6 +46,13 @@ func (a *StateArray) GetString(keyId int32) string {
 		return ""
 	}
 	return string(a.items.GetAt(uint16(keyId)))
+}
+
+func (a *StateArray) SetBytes(keyId int32, value []byte) {
+	if !a.valid(keyId, objtype.OBJTYPE_BYTES) {
+		return
+	}
+	a.items.SetAt(uint16(keyId), value)
 }
 
 func (a *StateArray) SetInt(keyId int32, value int64) {

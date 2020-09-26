@@ -1,9 +1,8 @@
 package wasmpoc
 
 import (
-	"encoding/binary"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 const (
@@ -88,26 +87,14 @@ func NewRootObject(h *wasmVMPocProcessor) interfaces.HostObject {
 	return &RootObject{MapObject: MapObject{vm: h, name: "Root"}}
 }
 
-func (o *RootObject) GetInt(keyId int32) int64 {
-	switch keyId {
-	case KeyRandom:
-		//TODO using GetEntropy is painful, so we use tx hash instead
-		// we need to be able to get the signature of a specific tx to
-		// have deterministic entropy that cannot be interrupted
-		hash := o.vm.ctx.AccessRequest().ID()
-		return int64(binary.LittleEndian.Uint64(hash[10:18]))
-	case KeyTimestamp:
-		return o.vm.ctx.GetTimestamp()
-	}
-	return o.MapObject.GetInt(keyId)
-}
-
 func (o *RootObject) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyAccount:
 		return o.checkedObjectId(&o.accountId, NewAccountMap, typeId, objtype.OBJTYPE_MAP)
 	case KeyContract:
 		return o.checkedObjectId(&o.contractId, NewContractMap, typeId, objtype.OBJTYPE_MAP)
+	case KeyEvents:
+		return o.checkedObjectId(&o.eventsId, NewEventsArray, typeId, objtype.OBJTYPE_MAP_ARRAY)
 	case KeyLogs:
 		return o.checkedObjectId(&o.contractId, NewLogsMap, typeId, objtype.OBJTYPE_MAP)
 	case KeyRequest:
@@ -116,8 +103,6 @@ func (o *RootObject) GetObjectId(keyId int32, typeId int32) int32 {
 		return o.checkedObjectId(&o.stateId, NewStateObject, typeId, objtype.OBJTYPE_MAP)
 	case KeyTransfers:
 		return o.checkedObjectId(&o.transfersId, NewTransfersArray, typeId, objtype.OBJTYPE_MAP_ARRAY)
-	case KeyEvents:
-		return o.checkedObjectId(&o.eventsId, NewEventsArray, typeId, objtype.OBJTYPE_MAP_ARRAY)
 	case KeyUtility:
 		return o.checkedObjectId(&o.utilityId, NewUtilityMap, typeId, objtype.OBJTYPE_MAP)
 	}

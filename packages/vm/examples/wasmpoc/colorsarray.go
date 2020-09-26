@@ -1,6 +1,6 @@
 package wasmpoc
 
-import "github.com/iotaledger/wasp/packages/vm/examples/wasmpoc/wasplib/host/interfaces"
+import "github.com/iotaledger/wasplib/host/interfaces"
 
 type ColorsArray struct {
 	ArrayObject
