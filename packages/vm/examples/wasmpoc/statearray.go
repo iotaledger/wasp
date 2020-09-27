@@ -81,6 +81,8 @@ func (a *StateArray) valid(keyId int32, typeId int32) bool {
 	max := a.GetLength()
 	if keyId == max {
 		switch typeId {
+		case objtype.OBJTYPE_BYTES:
+			a.items.Push([]byte(nil))
 		case objtype.OBJTYPE_INT:
 			a.items.Push(util.Uint64To8Bytes(0))
 		case objtype.OBJTYPE_STRING:

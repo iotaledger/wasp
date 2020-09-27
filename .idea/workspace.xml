@@ -20,54 +20,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1de227b2-e5fe-4604-b536-4e7eb9c74c02" name="Default Changelist" comment="gitignore .idea/">
-      <change afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasm_fairroulette_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasm_increment_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/accountmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/accountmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/arrayobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/arrayobject.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/balancemap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/colorsarray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/contractmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/contractmap.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventparamsmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventparamsmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventsarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/eventsarray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logsmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/logsmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/mapobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/mapobject.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestparamsmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/requestparamsmap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootmap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/rootmap.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statearray.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statemap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/statemap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/stateobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/stateobject.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfermap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfermap.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/transfersarray.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/utilitymap.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/utilitymap.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" beforeDir="false" afterPath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasmpoc.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/HostBase.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/HostImpl.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/Tracker.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/hostArray.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/hostMap.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/HostInterface.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/HostObject.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/level/level.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/interfaces/objtype/objtype.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/vm/examples/wasmpoc/wasplib/host/nullObject.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_go.wasm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/fairroulette_rust.wasm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/lib.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/utils.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/context.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/host.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/immutable.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/keys.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/mod.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasmtest/src/wasp/mutable.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/cluster/tests/wasptest/wasp_wasm_vm_test.go" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -160,11 +118,12 @@
       <screen x="-1920" y="0" width="1739" height="978" />
     </state>
     <state x="-1534" y="161" key="SettingsEditor/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601080670087" />
-    <state x="-1338" y="222" width="575" height="616" key="find.popup" timestamp="1601077888849">
+    <state x="-1338" y="222" width="575" height="616" key="find.popup" timestamp="1601173571917">
       <screen x="-1920" y="0" width="1739" height="978" />
     </state>
-    <state x="-1338" y="222" width="575" height="616" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601077888849" />
+    <state x="-1338" y="222" width="575" height="616" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@-1920.0.1739.978" timestamp="1601173571917" />
     <state x="2502" y="222" width="574" height="534" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@1920.0.1739.978" timestamp="1600830409885" />
+    <state x="623" y="222" width="687" height="616" key="find.popup/62.0.1677.978/1920.0.1739.978/-1920.0.1739.978@62.0.1677.978" timestamp="1601150708393" />
     <state x="623" y="222" width="554" height="534" key="find.popup/62.0.1677.978@62.0.1677.978" timestamp="1600835062293" />
     <state x="-1388" y="209" width="672" height="678" key="search.everywhere.popup" timestamp="1601078033895">
       <screen x="-1920" y="0" width="1739" height="978" />

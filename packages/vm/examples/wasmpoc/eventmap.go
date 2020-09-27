@@ -29,7 +29,7 @@ func (o *EventMap) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *EventMap) Send() {
-	o.vm.Logf("REQ SEND c%d d%d a'%s'", o.code, o.delay, o.contract)
+	o.vm.Logf("EVENT f'%s' c%d d%d a'%s'", o.function, o.code, o.delay, o.contract)
 	if o.contract == "" {
 		params := kv.NewMap()
 		if o.paramsId != 0 {

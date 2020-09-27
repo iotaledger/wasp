@@ -19,7 +19,7 @@ func NewTransferMap(h *wasmVMPocProcessor) interfaces.HostObject {
 }
 
 func (o *TransferMap) Send() {
-	o.vm.Logf("XFER SEND a%d a'%16s' c'%16s'", o.amount, o.address, o.color)
+	o.vm.Logf("TRANSFER a%d c'%16s' a'%16s'", o.amount, o.color, o.address)
 	addr, err := address.FromBase58(o.address)
 	if err != nil {
 		o.vm.ctx.Panic("MoveTokens failed 1")
