@@ -23,7 +23,7 @@ type peeredConnection struct {
 func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 	bconn := &peeredConnection{
 		BufferedConnection: buffconn.NewBufferedConnection(conn, payload.MaxMessageSize),
-		peer:               peer,
+		peer:               peer, // may be nil
 	}
 	bconn.Events.ReceiveMessage.Attach(events.NewClosure(func(data []byte) {
 		bconn.receiveData(data)
@@ -44,14 +44,17 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 func (bconn *peeredConnection) receiveData(data []byte) {
 	msg, err := decodeMessage(data)
 	if err != nil {
-		log.Error(err)
-		bconn.peer.closeConn()
+		log.Errorf("peeredConnection.receiveData: %v", err)
+		if bconn.peer != nil {
+			// may not be peered yet
+			bconn.peer.closeConn()
+		}
 		return
 	}
 	if msg.MsgType == MsgTypeMsgChunk {
 		finalMsg, err := chopper.IncomingChunk(msg.MsgData, payload.MaxMessageSize-chunkMessageOverhead)
 		if err != nil {
-			log.Errorf("receiveData: %v", err)
+			log.Errorf("peeredConnection.receiveData: %v", err)
 			return
 		}
 		if finalMsg != nil {
@@ -66,16 +69,17 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		} else {
 			// expected handshake msg
 			if msg.MsgType != MsgTypeHandshake {
-				log.Errorf("receiveData: unexpected message during handshake")
+				log.Errorf("peeredConnection.receiveData: unexpected message during handshake")
 				return
 			}
 			// not handshaked => do handshake
 			bconn.processHandShakeOutbound(msg)
 		}
 	} else {
+		// can only be inbound
 		// expected handshake msg
 		if msg.MsgType != MsgTypeHandshake {
-			log.Errorf("receiveData: unexpected message during handshake")
+			log.Errorf("peeredConnection.receiveData: unexpected message during handshake")
 			return
 		}
 		// not peered yet can be only inbound
@@ -92,7 +96,10 @@ func (bconn *peeredConnection) processHandShakeOutbound(msg *PeerMessage) {
 	if id != bconn.peer.PeeringId() {
 		log.Error("closeConn the peer connection: wrong handshake message from outbound peer: expected %s got '%s'",
 			bconn.peer.PeeringId(), id)
-		bconn.peer.closeConn()
+		if bconn.peer != nil {
+			// may ne be peered yet
+			bconn.peer.closeConn()
+		}
 	} else {
 		log.Infof("CONNECTED WITH PEER %s (outbound)", id)
 		bconn.peer.handshakeOk = true
