@@ -34,8 +34,8 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 			bconn.peer.peerconn = nil
 			bconn.peer.handshakeOk = false
 			bconn.peer.Unlock()
-			log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
 		}
+		log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
 	}))
 	return bconn
 }
@@ -44,11 +44,9 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 func (bconn *peeredConnection) receiveData(data []byte) {
 	msg, err := decodeMessage(data)
 	if err != nil {
-		log.Errorf("peeredConnection.receiveData: %v", err)
-		if bconn.peer != nil {
-			// may not be peered yet
-			bconn.peer.closeConn()
-		}
+		// gross violation of the protocol
+		log.Errorf("!!!!! peeredConnection.receiveData.decodeMessage: %v", err)
+		bconn.Close()
 		return
 	}
 	if msg.MsgType == MsgTypeMsgChunk {
