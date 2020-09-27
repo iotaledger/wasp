@@ -9,7 +9,6 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -76,7 +75,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  []byte(wasmpoc.ProgramHash),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -128,8 +127,9 @@ func TestWasmSend1ReqIncSimple(t *testing.T) {
 	}
 
 	if !wasps.VerifySCState(sc, 2, map[kv.Key][]byte{
-		"counter":                   util.Uint64To8Bytes(uint64(1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		"counter":                   util.Uint64To8Bytes(uint64(1)),
 	}) {
 		t.Fail()
 	}
@@ -194,9 +194,9 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	}
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
-		"counter":                   util.Uint64To8Bytes(uint64(2)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
 		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		"counter":                   util.Uint64To8Bytes(uint64(2)),
 	}) {
 		t.Fail()
 	}
@@ -248,7 +248,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
 			"fn":         "incrementRepeatMany",
-			"numrepeats": numRepeats,
+			"numRepeats": numRepeats,
 		},
 	})
 	check(err, t)
@@ -264,10 +264,10 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	}
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
-		"counter":                   util.Uint64To8Bytes(uint64(numRepeats + 1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
 		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
-		"numrepeats":                util.Uint64To8Bytes(0),
+		"counter":                   util.Uint64To8Bytes(uint64(numRepeats + 1)),
+		"numRepeats":                util.Uint64To8Bytes(0),
 	}) {
 		t.Fail()
 	}

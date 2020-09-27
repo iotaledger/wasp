@@ -1,9 +1,9 @@
 package wasmpoc
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasplib/host/interfaces"
 	"github.com/iotaledger/wasplib/host/interfaces/objtype"
-	"github.com/iotaledger/wasp/packages/kv"
 )
 
 type StateObject struct {

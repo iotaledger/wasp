@@ -1,10 +1,10 @@
 package wasmpoc
 
 import (
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasplib/host/interfaces"
+	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type StateMap struct {

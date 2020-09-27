@@ -4,9 +4,9 @@ package wasmpoc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasplib/host"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasplib/host"
 	"github.com/iotaledger/wasplib/host/interfaces"
 	"github.com/iotaledger/wasplib/host/interfaces/level"
 	"github.com/iotaledger/wasplib/host/interfaces/objtype"

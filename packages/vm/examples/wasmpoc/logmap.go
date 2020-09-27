@@ -7,11 +7,11 @@ import (
 
 type LogMap struct {
 	MapObject
-	lines *kv.MustTimestampedLog
+	lines     *kv.MustTimestampedLog
 	timestamp int64
 }
 
-func NewLogMap(h *wasmVMPocProcessor, a *kv.MustTimestampedLog ) interfaces.HostObject {
+func NewLogMap(h *wasmVMPocProcessor, a *kv.MustTimestampedLog) interfaces.HostObject {
 	return &LogMap{MapObject: MapObject{vm: h, name: "LogMap"}, lines: a}
 }
 
