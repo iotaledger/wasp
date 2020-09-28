@@ -1,0 +1,71 @@
+# Documentation: http://goreleaser.com
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: wasp
+    main: ./main.go
+    binary: wasp
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+
+  - id: wwallet
+    main: ./tools/wwallet/main.go
+    binary: wwallet
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+
+archives:
+  - id: wasp
+    builds:
+      - wasp
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - readme.md
+      - config.json
+      - LICENSE
+
+  - id: wwallet
+    name_template: "wwallet_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    builds:
+      - wwallet
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - tools/wwallet/README.md
+      - LICENSE
+
+changelog:
+  skip: true
+
+release:
+  prerelease: auto
+  name_template: "{{.ProjectName}}-{{.Version}}"
+  github:
+    owner: iotaledger
+    name: wasp

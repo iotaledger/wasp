@@ -1,0 +1,15 @@
+{
+  "hosts": [
+    "127.0.0.1:8080",
+    "127.0.0.1:8081",
+    "127.0.0.1:8082",
+    "127.0.0.1:8083"
+  ],
+  "request_data": {
+    "address": "ow3yz89bV4ytKEkDQNeUxaqwmaq9euDpt2PY4bAc8ZHb",
+    "color": "93SFFkzdYopchUfee2HWGK769dwgxJmg8TFfXY74ygji",
+    "owner_address": "fgCteXu7feArmkR1ArmYsXAWSU3Y7iNA1pmrzxSWwFNV",
+    "description": "test sc for wasp 1",
+    "program_hash": "9UPqKqEHMX5xBF1DkLqYqosQWLkTorkPx3aqdBxuC84H"
+  }
+}

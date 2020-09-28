@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {"api_port": 9090, "peering_port": 4000, "nanomsg_port": 5550, "dashboard_port": 7000},
+    {"api_port": 9091, "peering_port": 4001, "nanomsg_port": 5551, "dashboard_port": 7001},
+    {"api_port": 9092, "peering_port": 4002, "nanomsg_port": 5552, "dashboard_port": 7002},
+    {"api_port": 9093, "peering_port": 4003, "nanomsg_port": 5553, "dashboard_port": 7004}
+  ],
+  "goshimmer": {
+    "api_port": 8080
+  },
+  "smart_contracts": [
+  ]
+}
