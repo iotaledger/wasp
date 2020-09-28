@@ -3,14 +3,11 @@ module github.com/iotaledger/wasp
 go 1.13
 
 require (
-	github.com/bytecodealliance/wasmtime-go v0.19.0
 	github.com/iotaledger/goshimmer v0.2.4-0.20200912082255-f9271bb65bc2
 	github.com/iotaledger/hive.go v0.0.0-20200824153656-adfc839cc240
-	github.com/iotaledger/wart v0.0.30
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
 	github.com/mr-tron/base58 v1.2.0
-	github.com/perlin-network/life v0.0.0-20191203030451-05c0e0f7eaea
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0
 	github.com/spf13/pflag v1.0.5
