@@ -11,7 +11,7 @@ const PluginName = "Banner"
 
 const (
 	// AppVersion version number
-	AppVersion = "v0.0.0"
+	AppVersion = "v0.0.1"
 
 	// AppName app code name
 	AppName = "Wasp"
