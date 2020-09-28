@@ -343,14 +343,6 @@ github.com/huin/goupnp v1.0.0/go.mod h1:n9v9KO1tAxYH82qOn+UTIFQDmx5n1Zxd/ClZDMX7
 github.com/huin/goutil v0.0.0-20170803182201-1ca381bf3150/go.mod h1:PpLOETDnJ0o3iZrZfqZzyLl6l7F3c6L1oWn7OICBi6o=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
-github.com/iotaledger/goshimmer v0.2.4-0.20200908141357-08e4051af15b h1:ZktlNcB+RR+qpfYpvlyfI9QYmSU2YxYRZ3Zvx6VXjVo=
-github.com/iotaledger/goshimmer v0.2.4-0.20200908141357-08e4051af15b/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
-github.com/iotaledger/goshimmer v0.2.4-0.20200911042952-e9b23f03a60d h1:lE65H0XfGsBg++H3lUal9BwAOj9V7/z2erBUBf2zVKw=
-github.com/iotaledger/goshimmer v0.2.4-0.20200911042952-e9b23f03a60d/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
-github.com/iotaledger/goshimmer v0.2.4-0.20200911051105-81fcd1152235 h1:SrO6jze6jpJZqwejwbjB+pUNwTVQ7YA2T9MsfDTbYQo=
-github.com/iotaledger/goshimmer v0.2.4-0.20200911051105-81fcd1152235/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
-github.com/iotaledger/goshimmer v0.2.4-0.20200911092450-01319d360ba2 h1:9wLDmzFByKURLSTDmw/jyEFCuptwGbeuTqg6QANE8p4=
-github.com/iotaledger/goshimmer v0.2.4-0.20200911092450-01319d360ba2/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
 github.com/iotaledger/goshimmer v0.2.4-0.20200912082255-f9271bb65bc2 h1:11PcAM4XnYRCJxdHn9gJMXYJIcs4H0NQY5HshLY0abI=
 github.com/iotaledger/goshimmer v0.2.4-0.20200912082255-f9271bb65bc2/go.mod h1:KmHdUEF6hQaSxG1Faq/h0gjfDkncty2OZzORj7bIOEU=
 github.com/iotaledger/hive.go v0.0.0-20200824153656-adfc839cc240 h1:hJFzN7xQhRAut2IQwZVQxVNYztElmlz6OdgPA+IEXXI=

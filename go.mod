@@ -9,7 +9,6 @@ require (
 	github.com/iotaledger/wart v0.0.30
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
-	github.com/magiconair/properties v1.8.1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/perlin-network/life v0.0.0-20191203030451-05c0e0f7eaea
 	github.com/pkg/errors v0.9.1
