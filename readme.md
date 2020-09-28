@@ -1,17 +1,38 @@
 ![Wasp logo](WASP_logo_dark.png)
-# Wasp: a node for IOTA Smart Contracts
+# Welcome to the Wasp repository! 
 
+_Wasp_ is a [node software](https://github.com/iotaledger/wasp) developed by [IOTA Foundation](http://iota.org) 
+to run the _IOTA Smart Contract Protocol_ (_ISC_, _ISCP_ in short) on top of the _IOTA Tangle_. 
+Please find here a [high level introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936) 
+into ISC. 
 
-The _IOTA Smart Contract Protocol_ (ISCP in short) is a protocol on top of the core Value Tangle
-protocol run by GoShimmer nodes. 
+A _smart contract_ is a distributed software agent which keeps its state in the immutable ledger. 
+The state is an append-only structure which evolves with each _request_ to the smart contract. 
 
-_Wasp_ node implements ISCP. To run smart contract you will need a network of _Wasp_ nodes.
-Each _Wasp_ connects to _Goshimmer_ node to have access to the Value Tangle, 
-the layer which implements the ledger of tokens.   
+State of the smart contract, including tokens deposited into it and the attached arbitrary data, 
+is anchored in the _Value Tangle_, the [UTXO ledger](articles/intro/utxo.md). 
+So, the IOTA ledger ensures state is immutable. 
+ 
+Each SC is run by the distributed and leaderless _committee_ of Wasp nodes. 
+The main purpose of the _committee_ is to ensure consistent transition from the previous state to the next, 
+according to the attached program. The program itself is immutably stored with the smart contract too. 
 
-The repository represents code which can only be used in testing configurations, 
-it is not ready for the commercial use.
+So, IOTA smart contracts are run by the network of Wasp nodes, all connected to the Tangle.
 
-For detailed instruction how to run a Wasp node please use [this wiki article](https://github.com/iotaledger/wasp/wiki).
+The articles below explains how to run a Wasp node on the Pollen network, also 
+concepts and architecture of ISCP and Wasp. 
+We describe it using several PoC smart contracts as an example.
 
-Wiki also contains introduction to the concepts of _IOTA Smart Contracts_.
+_Disclaimer. Wasp node and articles is a work in progress, and most likely will always be. 
+The software presented in this repo is not ready for use in commercial settings or whenever processing 
+of critical data is involved._  
+
+## PoC smart contracts
+- [Main concepts with _DonateWithFeedback_](articles/intro/dwf.md)
+- [Deployment of the smart contract](articles/intro/deploy.md)
+- [Handling tagged tokens with _TokenRegistry_ and _FairAuction_ smart contracts](articles/intro/tr-fa.md)
+- [Short intoduction to UTXO ledger and digital assets](articles/intro/utxo.md)
+
+## Instructions, docs
+- [How to run a Wasp node](articles/docs/runwasp.md)
+- [Wasp Pubisher](articles/docs/publisher.md)
