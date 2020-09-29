@@ -29,6 +29,8 @@ Pending
 - [ ] Add authentication to web api calls
 
 To discuss/RFC
+- [ ] identity system for nodes
+- [ ] secure access to API, to SC admin functions 
 - [ ] refactor 'request code' from uint16 value to string
 - [ ] smart contract state access from outside. The current approach is to provide universal node API to query state. 
 The alternatives would be to expose access functions (like view in Solidity) from the smart contract code itself. 

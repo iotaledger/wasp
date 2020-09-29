@@ -74,6 +74,7 @@ func connectInboundLoop() {
 		}
 		log.Debugf("accepted connection from %s", conn.RemoteAddr().String())
 
+		// peer is not known yet
 		bconn := newPeeredConnection(conn, nil)
 		go func() {
 			log.Debugf("starting reading inbound %s", conn.RemoteAddr().String())
