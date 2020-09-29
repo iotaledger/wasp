@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/sc9"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
+	"github.com/iotaledger/wasp/packages/vm/examples/wasmpoc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -19,7 +20,7 @@ var allProcessors = map[string]func() vmtypes.Processor{
 	logsc.ProgramHash:        logsc.GetProcessor,
 	inccounter.ProgramHash:   inccounter.GetProcessor,
 	fairroulette.ProgramHash: fairroulette.GetProcessor,
-	//wasmpoc.ProgramHash:       wasmpoc.GetProcessor,
+	wasmpoc.ProgramHash:       wasmpoc.GetProcessor,
 	fairauction.ProgramHash:   fairauction.GetProcessor,
 	tokenregistry.ProgramHash: tokenregistry.GetProcessor,
 	sc7.ProgramHash:           sc7.GetProcessor,
