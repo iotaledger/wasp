@@ -17,8 +17,7 @@ const WasmFolder = "D:/Work/Go/src/github.com/iotaledger/wasplib/wasm/"
 
 type wasmVMPocProcessor struct {
 	host.HostBase
-	ctx        vmtypes.Sandbox
-	entrypoint string
+	ctx vmtypes.Sandbox
 }
 
 func GetProcessor() vmtypes.Processor {
@@ -26,7 +25,7 @@ func GetProcessor() vmtypes.Processor {
 }
 
 func (h *wasmVMPocProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
-	// we don't use request code but fn name request parameter
+	// we don't use request code but fn name request parameter instead
 	return h, true
 }
 

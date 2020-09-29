@@ -26,8 +26,6 @@ func (o *BalanceMap) GetInt(keyId int32) int64 {
 	switch key {
 	case "iota":
 		color = balance.ColorIOTA
-	case "new":
-		color = balance.ColorNew
 	default:
 		if o.requestOnly {
 			request := o.vm.ctx.AccessRequest()

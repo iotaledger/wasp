@@ -108,23 +108,3 @@ func (o *RootObject) GetObjectId(keyId int32, typeId int32) int32 {
 	}
 	return o.MapObject.GetObjectId(keyId, typeId)
 }
-
-func (o *RootObject) GetString(keyId int32) string {
-	switch keyId {
-	}
-	return o.MapObject.GetString(keyId)
-}
-
-func (o *RootObject) SetInt(keyId int32, value int64) {
-	switch keyId {
-	default:
-		o.error("SetInt: Invalid key")
-	}
-}
-
-func (o *RootObject) SetString(keyId int32, value string) {
-	switch keyId {
-	default:
-		o.error("SetString: Invalid key")
-	}
-}
