@@ -1,12 +1,7 @@
-package wasmpoc
-
-import (
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
-)
+package wasmhost
 
 const (
-	KeyAccount     = interfaces.KeyUserDefined
+	KeyAccount     = KeyUserDefined
 	KeyAddress     = KeyAccount - 1
 	KeyAmount      = KeyAddress - 1
 	KeyBalance     = KeyAmount - 1
@@ -36,11 +31,12 @@ const (
 
 var keyMap = map[string]int32{
 	// predefined keys
-	"error":     interfaces.KeyError,
-	"length":    interfaces.KeyLength,
-	"log":       interfaces.KeyLog,
-	"trace":     interfaces.KeyTrace,
-	"traceHost": interfaces.KeyTraceHost,
+	"error":     KeyError,
+	"length":    KeyLength,
+	"log":       KeyLog,
+	"trace":     KeyTrace,
+	"traceHost": KeyTraceHost,
+	"warning":   KeyWarning,
 
 	// user-defined keys
 	"account":     KeyAccount,
@@ -83,28 +79,28 @@ type RootObject struct {
 	utilityId   int32
 }
 
-func NewRootObject(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &RootObject{MapObject: MapObject{vm: h, name: "Root"}}
+func NewRootObject(vm *wasmVMPocProcessor) HostObject {
+	return &RootObject{MapObject: MapObject{vm: vm, name: "Root"}}
 }
 
 func (o *RootObject) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyAccount:
-		return o.checkedObjectId(&o.accountId, NewAccountMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.accountId, NewAccountMap, typeId, OBJTYPE_MAP)
 	case KeyContract:
-		return o.checkedObjectId(&o.contractId, NewContractMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.contractId, NewContractMap, typeId, OBJTYPE_MAP)
 	case KeyEvents:
-		return o.checkedObjectId(&o.eventsId, NewEventsArray, typeId, objtype.OBJTYPE_MAP_ARRAY)
+		return o.checkedObjectId(&o.eventsId, NewEventsArray, typeId, OBJTYPE_MAP_ARRAY)
 	case KeyLogs:
-		return o.checkedObjectId(&o.contractId, NewLogsMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.contractId, NewLogsMap, typeId, OBJTYPE_MAP)
 	case KeyRequest:
-		return o.checkedObjectId(&o.requestId, NewRequestMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.requestId, NewRequestMap, typeId, OBJTYPE_MAP)
 	case KeyState:
-		return o.checkedObjectId(&o.stateId, NewStateObject, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.stateId, NewStateObject, typeId, OBJTYPE_MAP)
 	case KeyTransfers:
-		return o.checkedObjectId(&o.transfersId, NewTransfersArray, typeId, objtype.OBJTYPE_MAP_ARRAY)
+		return o.checkedObjectId(&o.transfersId, NewTransfersArray, typeId, OBJTYPE_MAP_ARRAY)
 	case KeyUtility:
-		return o.checkedObjectId(&o.utilityId, NewUtilityMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.utilityId, NewUtilityMap, typeId, OBJTYPE_MAP)
 	}
 	return o.MapObject.GetObjectId(keyId, typeId)
 }

@@ -1,10 +1,8 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type StateMap struct {
@@ -13,12 +11,12 @@ type StateMap struct {
 	types map[int32]int32
 }
 
-func NewStateMap(h *wasmVMPocProcessor, items *kv.MustDictionary) interfaces.HostObject {
-	return &StateMap{MapObject: MapObject{vm: h, name: "StateMap"}, items: items, types: make(map[int32]int32)}
+func NewStateMap(vm *wasmVMPocProcessor, items *kv.MustDictionary) HostObject {
+	return &StateMap{MapObject: MapObject{vm: vm, name: "StateMap"}, items: items, types: make(map[int32]int32)}
 }
 
 func (m *StateMap) GetBytes(keyId int32) []byte {
-	if !m.valid(keyId, objtype.OBJTYPE_BYTES) {
+	if !m.valid(keyId, OBJTYPE_BYTES) {
 		return []byte(nil)
 	}
 	key := []byte(m.vm.GetKey(keyId))
@@ -26,7 +24,7 @@ func (m *StateMap) GetBytes(keyId int32) []byte {
 }
 
 func (m *StateMap) GetInt(keyId int32) int64 {
-	if !m.valid(keyId, objtype.OBJTYPE_INT) {
+	if !m.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
 	key := []byte(m.vm.GetKey(keyId))
@@ -45,7 +43,7 @@ func (m *StateMap) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (m *StateMap) GetString(keyId int32) string {
-	if !m.valid(keyId, objtype.OBJTYPE_STRING) {
+	if !m.valid(keyId, OBJTYPE_STRING) {
 		return ""
 	}
 	key := []byte(m.vm.GetKey(keyId))
@@ -53,7 +51,7 @@ func (m *StateMap) GetString(keyId int32) string {
 }
 
 func (m *StateMap) SetBytes(keyId int32, value []byte) {
-	if !m.valid(keyId, objtype.OBJTYPE_BYTES) {
+	if !m.valid(keyId, OBJTYPE_BYTES) {
 		return
 	}
 	key := []byte(m.vm.GetKey(keyId))
@@ -61,11 +59,11 @@ func (m *StateMap) SetBytes(keyId int32, value []byte) {
 }
 
 func (m *StateMap) SetInt(keyId int32, value int64) {
-	if keyId == interfaces.KeyLength {
+	if keyId == KeyLength {
 		m.error("SetInt: Invalid clear")
 		return
 	}
-	if !m.valid(keyId, objtype.OBJTYPE_INT) {
+	if !m.valid(keyId, OBJTYPE_INT) {
 		return
 	}
 	key := []byte(m.vm.GetKey(keyId))
@@ -73,7 +71,7 @@ func (m *StateMap) SetInt(keyId int32, value int64) {
 }
 
 func (m *StateMap) SetString(keyId int32, value string) {
-	if !m.valid(keyId, objtype.OBJTYPE_STRING) {
+	if !m.valid(keyId, OBJTYPE_STRING) {
 		return
 	}
 	key := []byte(m.vm.GetKey(keyId))

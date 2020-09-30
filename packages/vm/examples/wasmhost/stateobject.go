@@ -1,9 +1,7 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type StateObject struct {
@@ -12,12 +10,12 @@ type StateObject struct {
 	types  map[int32]int32
 }
 
-func NewStateObject(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &StateObject{MapObject: MapObject{vm: h, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
+func NewStateObject(vm *wasmVMPocProcessor) HostObject {
+	return &StateObject{MapObject: MapObject{vm: vm, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
 }
 
 func (o *StateObject) GetBytes(keyId int32) []byte {
-	if !o.valid(keyId, objtype.OBJTYPE_BYTES) {
+	if !o.valid(keyId, OBJTYPE_BYTES) {
 		return []byte(nil)
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
@@ -25,7 +23,7 @@ func (o *StateObject) GetBytes(keyId int32) []byte {
 }
 
 func (o *StateObject) GetInt(keyId int32) int64 {
-	if !o.valid(keyId, objtype.OBJTYPE_INT) {
+	if !o.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
@@ -43,18 +41,18 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
 	switch typeId {
-	case objtype.OBJTYPE_BYTES_ARRAY:
+	case OBJTYPE_BYTES_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.AddObject(NewStateArray(o.vm, a, objtype.OBJTYPE_BYTES))
-	case objtype.OBJTYPE_INT_ARRAY:
+		objId = o.vm.AddObject(NewStateArray(o.vm, a, OBJTYPE_BYTES))
+	case OBJTYPE_INT_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.AddObject(NewStateArray(o.vm, a, objtype.OBJTYPE_INT))
-	case objtype.OBJTYPE_MAP:
+		objId = o.vm.AddObject(NewStateArray(o.vm, a, OBJTYPE_INT))
+	case OBJTYPE_MAP:
 		m := o.vm.ctx.AccessState().GetDictionary(key)
 		objId = o.vm.AddObject(NewStateMap(o.vm, m))
-	case objtype.OBJTYPE_STRING_ARRAY:
+	case OBJTYPE_STRING_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.AddObject(NewStateArray(o.vm, a, objtype.OBJTYPE_STRING))
+		objId = o.vm.AddObject(NewStateArray(o.vm, a, OBJTYPE_STRING))
 	default:
 		o.vm.SetError("Invalid type id")
 		return 0
@@ -64,7 +62,7 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *StateObject) GetString(keyId int32) string {
-	if !o.valid(keyId, objtype.OBJTYPE_STRING) {
+	if !o.valid(keyId, OBJTYPE_STRING) {
 		return ""
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
@@ -73,7 +71,7 @@ func (o *StateObject) GetString(keyId int32) string {
 }
 
 func (o *StateObject) SetBytes(keyId int32, value []byte) {
-	if !o.valid(keyId, objtype.OBJTYPE_BYTES) {
+	if !o.valid(keyId, OBJTYPE_BYTES) {
 		return
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
@@ -81,7 +79,7 @@ func (o *StateObject) SetBytes(keyId int32, value []byte) {
 }
 
 func (o *StateObject) SetInt(keyId int32, value int64) {
-	if !o.valid(keyId, objtype.OBJTYPE_INT) {
+	if !o.valid(keyId, OBJTYPE_INT) {
 		return
 	}
 	key := kv.Key(o.vm.GetKey(keyId))
@@ -89,7 +87,7 @@ func (o *StateObject) SetInt(keyId int32, value int64) {
 }
 
 func (o *StateObject) SetString(keyId int32, value string) {
-	if !o.valid(keyId, objtype.OBJTYPE_STRING) {
+	if !o.valid(keyId, OBJTYPE_STRING) {
 		return
 	}
 	key := kv.Key(o.vm.GetKey(keyId))

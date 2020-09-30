@@ -1,9 +1,4 @@
-package wasmpoc
-
-import (
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
-)
+package wasmhost
 
 type RequestMap struct {
 	MapObject
@@ -12,8 +7,8 @@ type RequestMap struct {
 	paramsId  int32
 }
 
-func NewRequestMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &RequestMap{MapObject: MapObject{vm: h, name: "Request"}}
+func NewRequestMap(vm *wasmVMPocProcessor) HostObject {
+	return &RequestMap{MapObject: MapObject{vm: vm, name: "Request"}}
 }
 
 func (o *RequestMap) GetInt(keyId int32) int64 {
@@ -27,11 +22,11 @@ func (o *RequestMap) GetInt(keyId int32) int64 {
 func (o *RequestMap) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyColors:
-		return o.checkedObjectId(&o.colorsId, NewColorsArrayRequest, typeId, objtype.OBJTYPE_INT_ARRAY)
+		return o.checkedObjectId(&o.colorsId, NewColorsArrayRequest, typeId, OBJTYPE_INT_ARRAY)
 	case KeyBalance:
-		return o.checkedObjectId(&o.balanceId, NewBalanceMapRequest, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.balanceId, NewBalanceMapRequest, typeId, OBJTYPE_MAP)
 	case KeyParams:
-		return o.checkedObjectId(&o.paramsId, NewParamsMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.paramsId, NewParamsMap, typeId, OBJTYPE_MAP)
 	}
 	return o.MapObject.GetObjectId(keyId, typeId)
 }

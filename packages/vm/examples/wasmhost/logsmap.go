@@ -1,9 +1,7 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type LogsMap struct {
@@ -11,12 +9,12 @@ type LogsMap struct {
 	logs map[int32]int32
 }
 
-func NewLogsMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &LogsMap{MapObject: MapObject{vm: h, name: "Logs"}, logs: make(map[int32]int32)}
+func NewLogsMap(vm *wasmVMPocProcessor) HostObject {
+	return &LogsMap{MapObject: MapObject{vm: vm, name: "Logs"}, logs: make(map[int32]int32)}
 }
 
 func (o *LogsMap) GetObjectId(keyId int32, typeId int32) int32 {
-	if typeId != objtype.OBJTYPE_MAP {
+	if typeId != OBJTYPE_MAP {
 		o.vm.SetError("Invalid type id")
 		return 0
 	}

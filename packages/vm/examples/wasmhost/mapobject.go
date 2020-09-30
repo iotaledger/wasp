@@ -1,8 +1,7 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type MapObject struct {
@@ -10,7 +9,7 @@ type MapObject struct {
 	name string
 }
 
-type ObjFactory func(vm *wasmVMPocProcessor) interfaces.HostObject
+type ObjFactory func(vm *wasmVMPocProcessor) HostObject
 
 func (o *MapObject) checkedObjectId(objId *int32, newObject ObjFactory, typeId int32, expectedTypeId int32) int32 {
 	if typeId != expectedTypeId {

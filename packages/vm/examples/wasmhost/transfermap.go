@@ -1,10 +1,9 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"encoding/hex"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type TransferMap struct {
@@ -14,8 +13,8 @@ type TransferMap struct {
 	color   string
 }
 
-func NewTransferMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &TransferMap{MapObject: MapObject{vm: h, name: "Transfer"}}
+func NewTransferMap(vm *wasmVMPocProcessor) HostObject {
+	return &TransferMap{MapObject: MapObject{vm: vm, name: "Transfer"}}
 }
 
 func (o *TransferMap) Send() {
@@ -46,7 +45,7 @@ func (o *TransferMap) Send() {
 
 func (o *TransferMap) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		// clear transfer, tracker will still know about it
 		// so maybe move it to an allocation pool for reuse
 		o.address = ""

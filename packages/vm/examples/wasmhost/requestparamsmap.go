@@ -1,16 +1,15 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type RequestParamsMap struct {
 	MapObject
 }
 
-func NewParamsMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &RequestParamsMap{MapObject: MapObject{vm: h, name: "Params"}}
+func NewParamsMap(vm *wasmVMPocProcessor) HostObject {
+	return &RequestParamsMap{MapObject: MapObject{vm: vm, name: "Params"}}
 }
 
 func (o *RequestParamsMap) GetInt(keyId int32) int64 {

@@ -1,13 +1,11 @@
-package wasmpoc
-
-import "github.com/iotaledger/wasplib/host/interfaces"
+package wasmhost
 
 type ContractMap struct {
 	MapObject
 }
 
-func NewContractMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &ContractMap{MapObject: MapObject{vm: h, name: "Contract"}}
+func NewContractMap(vm *wasmVMPocProcessor) HostObject {
+	return &ContractMap{MapObject: MapObject{vm: vm, name: "Contract"}}
 }
 
 func (o *ContractMap) GetString(keyId int32) string {

@@ -1,10 +1,9 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"encoding/binary"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type UtilityMap struct {
@@ -14,8 +13,8 @@ type UtilityMap struct {
 	nextRandom int
 }
 
-func NewUtilityMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &UtilityMap{MapObject: MapObject{vm: h, name: "Utility"}}
+func NewUtilityMap(vm *wasmVMPocProcessor) HostObject {
+	return &UtilityMap{MapObject: MapObject{vm: vm, name: "Utility"}}
 }
 
 func (o *UtilityMap) GetBytes(keyId int32) []byte {

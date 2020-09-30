@@ -1,22 +1,18 @@
 // nil processor takes any request and dos nothing, i.e. produces empty state update
 // it is useful for testing
-package wasmpoc
+package wasmhost
 
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasplib/host"
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/level"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 const ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
 const WasmFolder = "D:/Work/Go/src/github.com/iotaledger/wasplib/wasm/"
 
 type wasmVMPocProcessor struct {
-	host.HostBase
+	WasmHost
 	ctx vmtypes.Sandbox
 }
 
@@ -24,30 +20,30 @@ func GetProcessor() vmtypes.Processor {
 	return &wasmVMPocProcessor{}
 }
 
-func (h *wasmVMPocProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (vm *wasmVMPocProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
 	// we don't use request code but fn name request parameter instead
-	return h, true
+	return vm, true
 }
 
-func (v *wasmVMPocProcessor) GetDescription() string {
+func (vm *wasmVMPocProcessor) GetDescription() string {
 	return "Wasm VM PoC smart contract processor"
 }
 
-func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
+func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.Publish(fmt.Sprintf("run wasmVMPocProcessor: reqCode = %s reqId = %s timestamp = %d",
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
 	//TODO check what caching optimizations we can do to prevent
 	// rebuilding entire object admin and Wasm from scratch on every request
-	h.ctx = ctx
-	h.Init(h, NewRootObject(h), &keyMap)
+	vm.ctx = ctx
+	vm.Init(NewRootObject(vm), &keyMap, vm)
 
 	//TODO for now load Wasm code from hardcoded location
 	// in the future we will need to change things so
 	// that we locate the code by hash and entrypoint
 	// by name instead of request code number
-	err := h.LoadWasm(WasmFolder + "fairroulette_go.wasm")
+	err := vm.LoadWasm(WasmFolder + "fairroulette_go.wasm")
 	if err != nil {
 		ctx.Publish("error loading wasm: " + err.Error())
 		return
@@ -59,42 +55,51 @@ func (h *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 		return
 	}
 	ctx.Publish("Calling " + functionName)
-	err = h.RunWasmFunction(functionName)
+	err = vm.RunWasmFunction(functionName)
 	if err != nil {
 		ctx.Publish("error running wasm: " + err.Error())
 		return
 	}
 
-	if h.HasError() {
-		ctx.Publish("error running wasm function: " + h.GetString(1, interfaces.KeyError))
+	if vm.HasError() {
+		ctx.Publish("error running wasm function: " + vm.GetString(1, KeyError))
 		return
 	}
 
 	ctx.Publish("Processing transfers...")
-	transfersId := h.GetObjectId(1, KeyTransfers, objtype.OBJTYPE_MAP_ARRAY)
-	transfers := h.GetObject(transfersId).(*TransfersArray)
+	transfersId := vm.GetObjectId(1, KeyTransfers, OBJTYPE_MAP_ARRAY)
+	transfers := vm.GetObject(transfersId).(*TransfersArray)
 	for i := int32(0); i < transfers.GetLength(); i++ {
-		transferId := h.GetObjectId(transfersId, i, objtype.OBJTYPE_MAP)
-		transfer := h.GetObject(transferId).(*TransferMap)
+		transferId := vm.GetObjectId(transfersId, i, OBJTYPE_MAP)
+		transfer := vm.GetObject(transferId).(*TransferMap)
 		transfer.Send()
 	}
 
 	ctx.Publish("Processing events...")
-	eventsId := h.GetObjectId(1, KeyEvents, objtype.OBJTYPE_MAP_ARRAY)
-	events := h.GetObject(eventsId).(*EventsArray)
+	eventsId := vm.GetObjectId(1, KeyEvents, OBJTYPE_MAP_ARRAY)
+	events := vm.GetObject(eventsId).(*EventsArray)
 	for i := int32(0); i < events.GetLength(); i++ {
-		requestId := h.GetObjectId(eventsId, i, objtype.OBJTYPE_MAP)
-		request := h.GetObject(requestId).(*EventMap)
+		requestId := vm.GetObjectId(eventsId, i, OBJTYPE_MAP)
+		request := vm.GetObject(requestId).(*EventMap)
 		request.Send()
 	}
 }
 
-func (h *wasmVMPocProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
-	return h
+func (vm *wasmVMPocProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
+	return vm
 }
 
-func (h *wasmVMPocProcessor) Log(logLevel int, text string) {
-	if logLevel >= level.TRACE {
-		h.ctx.Publish(text)
+func (vm *wasmVMPocProcessor) Log(logLevel int32, text string) {
+	switch logLevel {
+	case KeyTraceHost:
+		//proc.ctx.Publish(text)
+	case KeyTrace:
+		vm.ctx.Publish(text)
+	case KeyLog:
+		vm.ctx.Publish(text)
+	case KeyWarning:
+		vm.ctx.Publish(text)
+	case KeyError:
+		vm.ctx.Publish(text)
 	}
 }

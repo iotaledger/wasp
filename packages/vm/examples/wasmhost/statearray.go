@@ -1,10 +1,8 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type StateArray struct {
@@ -13,12 +11,12 @@ type StateArray struct {
 	typeId int32
 }
 
-func NewStateArray(h *wasmVMPocProcessor, items *kv.MustArray, typeId int32) interfaces.HostObject {
-	return &StateArray{ArrayObject: ArrayObject{vm: h, name: "StateArray"}, items: items, typeId: typeId}
+func NewStateArray(vm *wasmVMPocProcessor, items *kv.MustArray, typeId int32) HostObject {
+	return &StateArray{ArrayObject: ArrayObject{vm: vm, name: "StateArray"}, items: items, typeId: typeId}
 }
 
 func (a *StateArray) GetBytes(keyId int32) []byte {
-	if !a.valid(keyId, objtype.OBJTYPE_BYTES) {
+	if !a.valid(keyId, OBJTYPE_BYTES) {
 		return []byte(nil)
 	}
 	return a.items.GetAt(uint16(keyId))
@@ -26,11 +24,11 @@ func (a *StateArray) GetBytes(keyId int32) []byte {
 
 func (a *StateArray) GetInt(keyId int32) int64 {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		return int64(a.GetLength())
 	}
 
-	if !a.valid(keyId, objtype.OBJTYPE_INT) {
+	if !a.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
 	value, _ := kv.DecodeInt64(a.items.GetAt(uint16(keyId)))
@@ -42,32 +40,32 @@ func (a *StateArray) GetLength() int32 {
 }
 
 func (a *StateArray) GetString(keyId int32) string {
-	if !a.valid(keyId, objtype.OBJTYPE_STRING) {
+	if !a.valid(keyId, OBJTYPE_STRING) {
 		return ""
 	}
 	return string(a.items.GetAt(uint16(keyId)))
 }
 
 func (a *StateArray) SetBytes(keyId int32, value []byte) {
-	if !a.valid(keyId, objtype.OBJTYPE_BYTES) {
+	if !a.valid(keyId, OBJTYPE_BYTES) {
 		return
 	}
 	a.items.SetAt(uint16(keyId), value)
 }
 
 func (a *StateArray) SetInt(keyId int32, value int64) {
-	if keyId == interfaces.KeyLength {
+	if keyId == KeyLength {
 		a.items.Erase()
 		return
 	}
-	if !a.valid(keyId, objtype.OBJTYPE_INT) {
+	if !a.valid(keyId, OBJTYPE_INT) {
 		return
 	}
 	a.items.SetAt(uint16(keyId), util.Uint64To8Bytes(uint64(value)))
 }
 
 func (a *StateArray) SetString(keyId int32, value string) {
-	if !a.valid(keyId, objtype.OBJTYPE_STRING) {
+	if !a.valid(keyId, OBJTYPE_STRING) {
 		return
 	}
 	a.items.SetAt(uint16(keyId), []byte(value))
@@ -81,11 +79,11 @@ func (a *StateArray) valid(keyId int32, typeId int32) bool {
 	max := a.GetLength()
 	if keyId == max {
 		switch typeId {
-		case objtype.OBJTYPE_BYTES:
+		case OBJTYPE_BYTES:
 			a.items.Push([]byte(nil))
-		case objtype.OBJTYPE_INT:
+		case OBJTYPE_INT:
 			a.items.Push(util.Uint64To8Bytes(0))
-		case objtype.OBJTYPE_STRING:
+		case OBJTYPE_STRING:
 			a.items.Push([]byte(""))
 		default:
 			a.error("valid: Invalid type id")

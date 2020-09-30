@@ -1,8 +1,7 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasplib/host/interfaces"
 	"github.com/mr-tron/base58/base58"
 )
 
@@ -11,12 +10,12 @@ type BalanceMap struct {
 	requestOnly bool
 }
 
-func NewBalanceMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &BalanceMap{MapObject: MapObject{vm: h, name: "Balance"}, requestOnly: false}
+func NewBalanceMap(vm *wasmVMPocProcessor) HostObject {
+	return &BalanceMap{MapObject: MapObject{vm: vm, name: "Balance"}, requestOnly: false}
 }
 
-func NewBalanceMapRequest(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &BalanceMap{MapObject: MapObject{vm: h, name: "Balance"}, requestOnly: true}
+func NewBalanceMapRequest(vm *wasmVMPocProcessor) HostObject {
+	return &BalanceMap{MapObject: MapObject{vm: vm, name: "Balance"}, requestOnly: true}
 }
 
 func (o *BalanceMap) GetInt(keyId int32) int64 {

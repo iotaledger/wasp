@@ -1,10 +1,8 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type EventMap struct {
@@ -16,14 +14,14 @@ type EventMap struct {
 	paramsId int32
 }
 
-func NewEventMap(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &EventMap{MapObject: MapObject{vm: h, name: "Event"}}
+func NewEventMap(vm *wasmVMPocProcessor) HostObject {
+	return &EventMap{MapObject: MapObject{vm: vm, name: "Event"}}
 }
 
 func (o *EventMap) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyParams:
-		return o.checkedObjectId(&o.paramsId, NewEventParamsMap, typeId, objtype.OBJTYPE_MAP)
+		return o.checkedObjectId(&o.paramsId, NewEventParamsMap, typeId, OBJTYPE_MAP)
 	}
 	return o.MapObject.GetObjectId(keyId, typeId)
 }
@@ -51,7 +49,7 @@ func (o *EventMap) Send() {
 
 func (o *EventMap) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		// clear request, tracker will still know about object
 		// so maybe move it to an allocation pool for reuse
 		o.contract = ""

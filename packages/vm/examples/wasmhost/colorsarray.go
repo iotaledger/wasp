@@ -1,6 +1,4 @@
-package wasmpoc
-
-import "github.com/iotaledger/wasplib/host/interfaces"
+package wasmhost
 
 type ColorsArray struct {
 	ArrayObject
@@ -8,17 +6,17 @@ type ColorsArray struct {
 	colors      []string
 }
 
-func NewColorsArray(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &ColorsArray{ArrayObject: ArrayObject{vm: h, name: "Colors"}, requestOnly: false}
+func NewColorsArray(vm *wasmVMPocProcessor) HostObject {
+	return &ColorsArray{ArrayObject: ArrayObject{vm: vm, name: "Colors"}, requestOnly: false}
 }
 
-func NewColorsArrayRequest(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &ColorsArray{ArrayObject: ArrayObject{vm: h, name: "Colors"}, requestOnly: true}
+func NewColorsArrayRequest(vm *wasmVMPocProcessor) HostObject {
+	return &ColorsArray{ArrayObject: ArrayObject{vm: vm, name: "Colors"}, requestOnly: true}
 }
 
 func (a *ColorsArray) GetInt(keyId int32) int64 {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		return int64(a.GetLength())
 	}
 	return a.ArrayObject.GetInt(keyId)

@@ -1,8 +1,7 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
 )
 
 type ArrayObject struct {
@@ -11,7 +10,7 @@ type ArrayObject struct {
 }
 
 func (a *ArrayObject) checkedObjectId(items *[]int32, index int32, newObject ObjFactory, typeId int32, expectedTypeId int32) int32 {
-	if typeId != objtype.OBJTYPE_MAP {
+	if typeId != OBJTYPE_MAP {
 		a.error("GetObjectId: Invalid type")
 		return 0
 	}

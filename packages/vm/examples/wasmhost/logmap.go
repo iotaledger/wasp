@@ -1,8 +1,7 @@
-package wasmpoc
+package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasplib/host/interfaces"
 )
 
 type LogMap struct {
@@ -11,13 +10,13 @@ type LogMap struct {
 	timestamp int64
 }
 
-func NewLogMap(h *wasmVMPocProcessor, a *kv.MustTimestampedLog) interfaces.HostObject {
-	return &LogMap{MapObject: MapObject{vm: h, name: "LogMap"}, lines: a}
+func NewLogMap(vm *wasmVMPocProcessor, a *kv.MustTimestampedLog) HostObject {
+	return &LogMap{MapObject: MapObject{vm: vm, name: "LogMap"}, lines: a}
 }
 
 func (a *LogMap) GetInt(keyId int32) int64 {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		return int64(a.lines.Len())
 	}
 	return a.MapObject.GetInt(keyId)

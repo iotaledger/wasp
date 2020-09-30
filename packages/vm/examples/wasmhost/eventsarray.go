@@ -1,22 +1,17 @@
-package wasmpoc
-
-import (
-	"github.com/iotaledger/wasplib/host/interfaces"
-	"github.com/iotaledger/wasplib/host/interfaces/objtype"
-)
+package wasmhost
 
 type EventsArray struct {
 	ArrayObject
 	events []int32
 }
 
-func NewEventsArray(h *wasmVMPocProcessor) interfaces.HostObject {
-	return &EventsArray{ArrayObject: ArrayObject{vm: h, name: "Events"}}
+func NewEventsArray(vm *wasmVMPocProcessor) HostObject {
+	return &EventsArray{ArrayObject: ArrayObject{vm: vm, name: "Events"}}
 }
 
 func (a *EventsArray) GetInt(keyId int32) int64 {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		return int64(a.GetLength())
 	}
 	return a.ArrayObject.GetInt(keyId)
@@ -27,12 +22,12 @@ func (a *EventsArray) GetLength() int32 {
 }
 
 func (a *EventsArray) GetObjectId(keyId int32, typeId int32) int32 {
-	return a.checkedObjectId(&a.events, keyId, NewEventMap, typeId, objtype.OBJTYPE_MAP)
+	return a.checkedObjectId(&a.events, keyId, NewEventMap, typeId, OBJTYPE_MAP)
 }
 
 func (a *EventsArray) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case interfaces.KeyLength:
+	case KeyLength:
 		for i := a.GetLength() - 1; i >= 0; i-- {
 			a.vm.SetInt(a.events[i], keyId, 0)
 		}
