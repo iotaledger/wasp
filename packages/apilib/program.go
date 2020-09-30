@@ -5,58 +5,57 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/progmeta"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
-	"net/http"
-	"time"
 )
 
-// PutProgramMetadata calls node to write ProgramMetadata record
-func PutProgramMetadata(host string, md registry.ProgramMetadata) error {
-	data, err := json.Marshal(&admapi.ProgramMetadataJsonable{
-		ProgramHash: md.ProgramHash.String(),
-		Location:    md.Location,
-		Description: md.Description,
+// PutProgramMetadata calls node to write program code and ProgramMetadata record
+func PutProgram(host string, vmType string, description string, code []byte) (*hashing.HashValue, error) {
+	data, err := json.Marshal(&admapi.PutProgramRequest{
+		ProgramMetadata: admapi.ProgramMetadata{
+			VMType:      vmType,
+			Description: description,
+		},
+		Code: code,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	url := fmt.Sprintf("http://%s/adm/putprogrammetadata", host)
+	url := fmt.Sprintf("http://%s/adm/program", host)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var result misc.SimpleResponse
+	var result admapi.PutProgramResponse
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if result.Error != "" {
-		err = errors.New(result.Error)
+		return nil, errors.New(result.Error)
 	}
-	return err
+	hash, err := hashing.HashValueFromBase58(result.ProgramHash)
+	if err != nil {
+		return nil, err
+	}
+	return &hash, nil
 }
 
 // GetProgramMetadata calls node to get ProgramMetadata by program hash
-func GetProgramMetadata(host string, progHash *hashing.HashValue) (*progmeta.ProgramMetadata, error) {
-	data, err := json.Marshal(&admapi.GetProgramMetadataRequest{
-		ProgramHash: progHash.String(),
-	})
+func GetProgramMetadata(host string, progHash *hashing.HashValue) (*registry.ProgramMetadata, error) {
+	url := fmt.Sprintf("http://%s/adm/program/%s", host, progHash.String())
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("http://%s/adm/getprogrammetadata", host)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("response status %d", resp.StatusCode)
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
 	}
 	var dresp admapi.GetProgramMetadataResponse
 	err = json.NewDecoder(resp.Body).Decode(&dresp)
@@ -66,27 +65,21 @@ func GetProgramMetadata(host string, progHash *hashing.HashValue) (*progmeta.Pro
 	if dresp.Error != "" {
 		return nil, errors.New(dresp.Error)
 	}
-	if !dresp.ExistsMetadata {
-		return nil, nil
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("response status %d", resp.StatusCode)
 	}
-	ph, err := hashing.HashValueFromBase58(dresp.ProgramHash)
-	if err != nil {
-		return nil, err
-	}
-	return &progmeta.ProgramMetadata{
-		ProgramHash:   ph,
-		Location:      dresp.Location,
-		VMType:        dresp.VMType,
-		Description:   dresp.Description,
-		CodeAvailable: dresp.ExistsCode,
+	return &registry.ProgramMetadata{
+		ProgramHash: *progHash,
+		VMType:      dresp.VMType,
+		Description: dresp.Description,
 	}, nil
 }
 
 // CheckProgramMetadata checks if metadata exists in hosts and is consistent
 // return program meta data from the first host if all consistent, otherwise nil
-func CheckProgramMetadata(hosts []string, progHash *hashing.HashValue) (*progmeta.ProgramMetadata, error) {
+func CheckProgramMetadata(hosts []string, progHash *hashing.HashValue) (*registry.ProgramMetadata, error) {
 	funs := make([]func() error, len(hosts))
-	mdata := make([]*progmeta.ProgramMetadata, len(hosts))
+	mdata := make([]*registry.ProgramMetadata, len(hosts))
 	for i, host := range hosts {
 		var err error
 		h := host
@@ -110,7 +103,7 @@ func CheckProgramMetadata(hosts []string, progHash *hashing.HashValue) (*progmet
 }
 
 // consistentProgramMetadata does not check if code exists
-func consistentProgramMetadata(md1, md2 *progmeta.ProgramMetadata) bool {
+func consistentProgramMetadata(md1, md2 *registry.ProgramMetadata) bool {
 	if md1 == nil || md2 == nil {
 		return false
 	}
@@ -121,9 +114,6 @@ func consistentProgramMetadata(md1, md2 *progmeta.ProgramMetadata) bool {
 		return false
 	}
 	if md1.Description != md2.Description {
-		return false
-	}
-	if md1.Location != md2.Location {
 		return false
 	}
 	return true

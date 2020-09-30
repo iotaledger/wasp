@@ -40,8 +40,8 @@ func addEndpoints(adminWhitelist []net.IP) {
 		adm.POST("/sc/:scaddress/deactivate", admapi.HandlerDeactivateSC)
 		adm.GET("/sc/:scaddress/dumpstate", admapi.HandlerDumpSCState)
 
-		adm.POST("/putprogrammetadata", admapi.HandlerPutProgramMetaData)
-		adm.POST("/getprogrammetadata", admapi.HandlerGetProgramMetadata)
+		adm.POST("/program", admapi.HandlerPutProgram)
+		adm.GET("/program/:hash", admapi.HandlerGetProgramMetadata)
 	}
 
 	log.Infof("added web api endpoints")
