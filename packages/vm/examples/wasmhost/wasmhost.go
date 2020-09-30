@@ -61,9 +61,9 @@ type WasmHost struct {
 	linker        *wasmtime.Linker
 	logger        LogInterface
 	memory        *wasmtime.Memory
+	memoryCopy    []byte
 	memoryDirty   bool
 	memoryNonZero int
-	memoryCopy    []byte
 	module        *wasmtime.Module
 	objIdToObj    []HostObject
 	store         *wasmtime.Store
@@ -83,54 +83,47 @@ func (host *WasmHost) Init(root HostObject, keyMap *map[string]int32, logger Log
 	for k, v := range *keyMap {
 		host.keyIdToKeyMap[-v] = k
 	}
-	host.AddObject(NewNullObject(host))
-	host.AddObject(root)
-	host.initWasmTime()
+	host.TrackObject(NewNullObject(host))
+	host.TrackObject(root)
+	host.initWasm()
 }
 
-func (host *WasmHost) initWasmTime() error {
+func (host *WasmHost) initWasm() error {
 	var externals = map[string]interface{}{
 		"wasplib.hostGetBytes": func(objId int32, keyId int32, stringRef int32, size int32) int32 {
 			if objId >= 0 {
-				value := host.GetBytes(objId, keyId)
-				return host.wasmSetBytes(stringRef, size, value)
+				return host.wasmSetBytes(stringRef, size, host.GetBytes(objId, keyId))
 			}
-			value := []byte(host.GetString(-objId, keyId))
-			return host.wasmSetBytes(stringRef, size, value)
+			return host.wasmSetBytes(stringRef, size, []byte(host.GetString(-objId, keyId)))
 		},
 		"wasplib.hostGetInt": func(objId int32, keyId int32) int64 {
 			return host.GetInt(objId, keyId)
 		},
 		"wasplib.hostGetIntRef": func(objId int32, keyId int32, intRef int32) {
-			value := host.GetInt(objId, keyId)
-			host.wasmSetInt(intRef, value)
+			host.wasmSetInt(intRef, host.GetInt(objId, keyId))
 		},
 		"wasplib.hostGetKeyId": func(keyRef int32, size int32) int32 {
-			key := host.wasmGetBytes(keyRef, size)
-			return host.GetKeyId(string(key))
+			return host.GetKeyId(string(host.wasmGetBytes(keyRef, size)))
 		},
 		"wasplib.hostGetObjectId": func(objId int32, keyId int32, typeId int32) int32 {
 			return host.GetObjectId(objId, keyId, typeId)
 		},
 		"wasplib.hostSetBytes": func(objId int32, keyId int32, stringRef int32, size int32) {
 			if objId >= 0 {
-				value := host.wasmGetBytes(stringRef, size)
-				host.SetBytes(objId, keyId, value)
+				host.SetBytes(objId, keyId, host.wasmGetBytes(stringRef, size))
 				return
 			}
-			value := string(host.wasmGetBytes(stringRef, size))
-			host.SetString(-objId, keyId, value)
+			host.SetString(-objId, keyId, string(host.wasmGetBytes(stringRef, size)))
 		},
 		"wasplib.hostSetInt": func(objId int32, keyId int32, value int64) {
 			host.SetInt(objId, keyId, value)
 		},
 		"wasplib.hostSetIntRef": func(objId int32, keyId int32, intRef int32) {
-			value := host.wasmGetInt(intRef)
-			host.SetInt(objId, keyId, value)
+			host.SetInt(objId, keyId, host.wasmGetInt(intRef))
 		},
 		//TODO: go implementation uses this one to write panic message
 		"wasi_unstable.fd_write": func(fd int32, iovs int32, size int32, written int32) int32 {
-			return host.FdWrite(fd, iovs, size, written)
+			return host.fdWrite(fd, iovs, size, written)
 		},
 	}
 
@@ -144,6 +137,120 @@ func (host *WasmHost) initWasmTime() error {
 		}
 	}
 	return nil
+}
+
+func (host *WasmHost) fdWrite(fd int32, iovs int32, size int32, written int32) int32 {
+	// very basic implementation that expects fd to be stdout and iovs to be only one element
+	ptr := host.memory.UnsafeData()
+	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
+	siz := binary.LittleEndian.Uint32(ptr[iovs+4 : iovs+8])
+	fmt.Print(string(ptr[txt : txt+siz]))
+	binary.LittleEndian.PutUint32(ptr[written:written+4], siz)
+	return int32(siz)
+}
+
+func (host *WasmHost) FindObject(objId int32) HostObject {
+	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
+		host.SetError("Invalid objId")
+		return NewNullObject(host)
+	}
+	return host.objIdToObj[objId]
+}
+
+func (host *WasmHost) GetBytes(objId int32, keyId int32) []byte {
+	if host.HasError() {
+		return []byte(nil)
+	}
+	value := host.FindObject(objId).GetBytes(keyId)
+	host.Trace("GetBytes o%d k%d = '%v'", objId, keyId, value)
+	return value
+}
+
+func (host *WasmHost) GetInt(objId int32, keyId int32) int64 {
+	if keyId == KeyError && objId == 1 {
+		if host.HasError() {
+			return 1
+		}
+		return 0
+	}
+	if host.HasError() {
+		return 0
+	}
+	value := host.FindObject(objId).GetInt(keyId)
+	host.Trace("GetInt o%d k%d = %d", objId, keyId, value)
+	return value
+}
+
+func (host *WasmHost) GetKey(keyId int32) string {
+	key := host.getKey(keyId)
+	host.Trace("GetKey k%d='%s'", keyId, key)
+	return key
+}
+
+func (host *WasmHost) getKey(keyId int32) string {
+	// find predefined key
+	if keyId < 0 {
+		return host.keyIdToKeyMap[-keyId]
+	}
+
+	// find user-defined key
+	if keyId < int32(len(host.keyIdToKey)) {
+		return host.keyIdToKey[keyId]
+	}
+
+	// unknown key
+	return ""
+}
+
+func (host *WasmHost) GetKeyId(key string) int32 {
+	keyId := host.getKeyId(key)
+	host.Trace("GetKeyId '%s'=k%d", key, keyId)
+	return keyId
+}
+
+func (host *WasmHost) getKeyId(key string) int32 {
+	// first check predefined key map
+	keyId, ok := (*host.keyMapToKeyId)[key]
+	if ok {
+		return keyId
+	}
+
+	// check additional user-defined keys
+	keyId, ok = host.keyToKeyId[key]
+	if ok {
+		return keyId
+	}
+
+	// unknown key, add it to user-defined key map
+	keyId = int32(len(host.keyIdToKey))
+	host.keyToKeyId[key] = keyId
+	host.keyIdToKey = append(host.keyIdToKey, key)
+	return keyId
+}
+
+func (host *WasmHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
+	if host.HasError() {
+		return 0
+	}
+	subId := host.FindObject(objId).GetObjectId(keyId, typeId)
+	host.Trace("GetObjectId o%d k%d t%d = o%d", objId, keyId, typeId, subId)
+	return subId
+}
+
+func (host *WasmHost) GetString(objId int32, keyId int32) string {
+	if keyId == KeyError && objId == 1 {
+		return host.error
+	}
+	if host.HasError() {
+		return ""
+	}
+	value := host.FindObject(objId).GetString(keyId)
+	host.Trace("GetString o%d k%d = '%s'", objId, keyId, value)
+	return value
+}
+
+func (host *WasmHost) HasError() bool {
+	return host.error != ""
 }
 
 func (host *WasmHost) LoadWasm(wasmFile string) error {
@@ -184,119 +291,6 @@ func (host *WasmHost) LoadWasm(wasmFile string) error {
 	return nil
 }
 
-func (host *WasmHost) AddObject(obj HostObject) int32 {
-	objId := int32(len(host.objIdToObj))
-	host.objIdToObj = append(host.objIdToObj, obj)
-	return objId
-}
-
-func (host *WasmHost) FdWrite(fd int32, iovs int32, size int32, written int32) int32 {
-	ptr := host.memory.UnsafeData()
-	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
-	siz := binary.LittleEndian.Uint32(ptr[iovs+4 : iovs+8])
-	fmt.Print(string(ptr[txt : txt+siz]))
-	binary.LittleEndian.PutUint32(ptr[written:written+4], siz)
-	return int32(siz)
-}
-
-func (host *WasmHost) GetBytes(objId int32, keyId int32) []byte {
-	if host.HasError() {
-		return []byte(nil)
-	}
-	value := host.GetObject(objId).GetBytes(keyId)
-	host.Logf("GetBytes o%d k%d = '%v'", objId, keyId, value)
-	return value
-}
-
-func (host *WasmHost) GetInt(objId int32, keyId int32) int64 {
-	if keyId == KeyError && objId == 1 {
-		if host.HasError() {
-			return 1
-		}
-		return 0
-	}
-	if host.HasError() {
-		return 0
-	}
-	value := host.GetObject(objId).GetInt(keyId)
-	host.Logf("GetInt o%d k%d = %d", objId, keyId, value)
-	return value
-}
-
-func (host *WasmHost) GetKey(keyId int32) string {
-	key := host.getKey(keyId)
-	host.Logf("GetKey k%d='%s'", keyId, key)
-	return key
-}
-
-func (host *WasmHost) getKey(keyId int32) string {
-	if keyId < 0 {
-		return host.keyIdToKeyMap[-keyId]
-	}
-	if keyId < int32(len(host.keyIdToKey)) {
-		return host.keyIdToKey[keyId]
-	}
-	return ""
-}
-
-func (host *WasmHost) GetKeyId(key string) int32 {
-	keyId := host.getKeyId(key)
-	host.Logf("GetKeyId '%s'=k%d", key, keyId)
-	return keyId
-}
-
-func (host *WasmHost) getKeyId(key string) int32 {
-	keyId, ok := (*host.keyMapToKeyId)[key]
-	if ok {
-		return keyId
-	}
-	keyId, ok = host.keyToKeyId[key]
-	if ok {
-		return keyId
-	}
-	keyId = int32(len(host.keyIdToKey))
-	host.keyToKeyId[key] = keyId
-	host.keyIdToKey = append(host.keyIdToKey, key)
-	return keyId
-}
-
-func (host *WasmHost) GetObject(objId int32) HostObject {
-	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
-		host.SetError("Invalid objId")
-		return NewNullObject(host)
-	}
-	return host.objIdToObj[objId]
-}
-
-func (host *WasmHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
-	if host.HasError() {
-		return 0
-	}
-	subId := host.GetObject(objId).GetObjectId(keyId, typeId)
-	host.Logf("GetObjectId o%d k%d t%d = o%d", objId, keyId, typeId, subId)
-	return subId
-}
-
-func (host *WasmHost) GetString(objId int32, keyId int32) string {
-	if keyId == KeyError && objId == 1 {
-		return host.error
-	}
-	if host.HasError() {
-		return ""
-	}
-	value := host.GetObject(objId).GetString(keyId)
-	host.Logf("GetString o%d k%d = '%s'", objId, keyId, value)
-	return value
-}
-
-func (host *WasmHost) HasError() bool {
-	return host.error != ""
-}
-
-func (host *WasmHost) Logf(format string, a ...interface{}) {
-	host.logger.Log(KeyTrace, fmt.Sprintf(format, a...))
-}
-
 func (host *WasmHost) RunWasmFunction(functionName string) error {
 	if host.memoryDirty {
 		// clear memory and restore initialized data range
@@ -315,12 +309,12 @@ func (host *WasmHost) SetBytes(objId int32, keyId int32, value []byte) {
 	if host.HasError() {
 		return
 	}
-	host.GetObject(objId).SetBytes(keyId, value)
-	host.Logf("SetBytes o%d k%d v='%v'", objId, keyId, value)
+	host.FindObject(objId).SetBytes(keyId, value)
+	host.Trace("SetBytes o%d k%d v='%v'", objId, keyId, value)
 }
 
 func (host *WasmHost) SetError(text string) {
-	host.Logf("SetError '%s'", text)
+	host.Trace("SetError '%s'", text)
 	if !host.HasError() {
 		host.error = text
 	}
@@ -330,8 +324,8 @@ func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {
 	if host.HasError() {
 		return
 	}
-	host.GetObject(objId).SetInt(keyId, value)
-	host.Logf("SetInt o%d k%d v=%d", objId, keyId, value)
+	host.FindObject(objId).SetInt(keyId, value)
+	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
 }
 
 func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
@@ -349,8 +343,18 @@ func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 	if host.HasError() {
 		return
 	}
-	host.GetObject(objId).SetString(keyId, value)
-	host.Logf("SetString o%d k%d v='%s'", objId, keyId, value)
+	host.FindObject(objId).SetString(keyId, value)
+	host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
+}
+
+func (host *WasmHost) Trace(format string, a ...interface{}) {
+	host.logger.Log(KeyTrace, fmt.Sprintf(format, a...))
+}
+
+func (host *WasmHost) TrackObject(obj HostObject) int32 {
+	objId := int32(len(host.objIdToObj))
+	host.objIdToObj = append(host.objIdToObj, obj)
+	return objId
 }
 
 func (host *WasmHost) wasmGetBytes(offset int32, size int32) []byte {

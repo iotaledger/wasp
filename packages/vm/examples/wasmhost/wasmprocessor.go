@@ -68,19 +68,19 @@ func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 
 	ctx.Publish("Processing transfers...")
 	transfersId := vm.GetObjectId(1, KeyTransfers, OBJTYPE_MAP_ARRAY)
-	transfers := vm.GetObject(transfersId).(*TransfersArray)
+	transfers := vm.FindObject(transfersId).(*TransfersArray)
 	for i := int32(0); i < transfers.GetLength(); i++ {
 		transferId := vm.GetObjectId(transfersId, i, OBJTYPE_MAP)
-		transfer := vm.GetObject(transferId).(*TransferMap)
+		transfer := vm.FindObject(transferId).(*TransferMap)
 		transfer.Send()
 	}
 
 	ctx.Publish("Processing events...")
 	eventsId := vm.GetObjectId(1, KeyEvents, OBJTYPE_MAP_ARRAY)
-	events := vm.GetObject(eventsId).(*EventsArray)
+	events := vm.FindObject(eventsId).(*EventsArray)
 	for i := int32(0); i < events.GetLength(); i++ {
 		requestId := vm.GetObjectId(eventsId, i, OBJTYPE_MAP)
-		request := vm.GetObject(requestId).(*EventMap)
+		request := vm.FindObject(requestId).(*EventMap)
 		request.Send()
 	}
 }

@@ -17,7 +17,7 @@ func (o *MapObject) checkedObjectId(objId *int32, newObject ObjFactory, typeId i
 		return 0
 	}
 	if *objId == 0 {
-		*objId = o.vm.AddObject(newObject(o.vm))
+		*objId = o.vm.TrackObject(newObject(o.vm))
 	}
 	return *objId
 }

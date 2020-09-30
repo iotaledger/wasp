@@ -22,7 +22,7 @@ func (o *LogsMap) GetObjectId(keyId int32, typeId int32) int32 {
 	if !ok {
 		key := kv.Key(o.vm.GetKey(keyId))
 		a := o.vm.ctx.AccessState().GetTimestampedLog(key)
-		o.logs[keyId] = o.vm.AddObject(NewLogMap(o.vm, a))
+		o.logs[keyId] = o.vm.TrackObject(NewLogMap(o.vm, a))
 	}
 	return objId
 }

@@ -43,16 +43,16 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 	switch typeId {
 	case OBJTYPE_BYTES_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.AddObject(NewStateArray(o.vm, a, OBJTYPE_BYTES))
+		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_BYTES))
 	case OBJTYPE_INT_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.AddObject(NewStateArray(o.vm, a, OBJTYPE_INT))
+		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_INT))
 	case OBJTYPE_MAP:
 		m := o.vm.ctx.AccessState().GetDictionary(key)
-		objId = o.vm.AddObject(NewStateMap(o.vm, m))
+		objId = o.vm.TrackObject(NewStateMap(o.vm, m))
 	case OBJTYPE_STRING_ARRAY:
 		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.AddObject(NewStateArray(o.vm, a, OBJTYPE_STRING))
+		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_STRING))
 	default:
 		o.vm.SetError("Invalid type id")
 		return 0

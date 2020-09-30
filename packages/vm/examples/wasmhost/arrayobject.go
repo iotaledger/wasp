@@ -22,7 +22,7 @@ func (a *ArrayObject) checkedObjectId(items *[]int32, index int32, newObject Obj
 	if index < length {
 		return (*items)[index]
 	}
-	objId := a.vm.AddObject(newObject(a.vm))
+	objId := a.vm.TrackObject(newObject(a.vm))
 	*items = append(*items, objId)
 	return objId
 }

@@ -27,13 +27,13 @@ func (o *EventMap) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *EventMap) Send() {
-	o.vm.Logf("EVENT f'%s' c%d d%d a'%s'", o.function, o.code, o.delay, o.contract)
+	o.vm.Trace("EVENT f'%s' c%d d%d a'%s'", o.function, o.code, o.delay, o.contract)
 	if o.contract == "" {
 		params := kv.NewMap()
 		if o.paramsId != 0 {
-			params = o.vm.GetObject(o.paramsId).(*EventParamsMap).Params
+			params = o.vm.FindObject(o.paramsId).(*EventParamsMap).Params
 			params.ForEach(func(key kv.Key, value []byte) bool {
-				o.vm.Logf("  PARAM '%s'", key)
+				o.vm.Trace("  PARAM '%s'", key)
 				return true
 			})
 		}

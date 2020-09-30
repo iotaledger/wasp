@@ -21,7 +21,6 @@ func NewBalanceMapRequest(vm *wasmVMPocProcessor) HostObject {
 func (o *BalanceMap) GetInt(keyId int32) int64 {
 	color := balance.ColorIOTA
 	key := o.vm.GetKey(keyId)
-	o.vm.Logf("Balance.GetInt: Key %d is '%s'", keyId, key)
 	switch key {
 	case "iota":
 		color = balance.ColorIOTA

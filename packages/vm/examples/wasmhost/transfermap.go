@@ -1,9 +1,9 @@
 package wasmhost
 
 import (
-	"encoding/hex"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/mr-tron/base58"
 )
 
 type TransferMap struct {
@@ -18,28 +18,24 @@ func NewTransferMap(vm *wasmVMPocProcessor) HostObject {
 }
 
 func (o *TransferMap) Send() {
-	o.vm.Logf("TRANSFER a%d c'%16s' a'%16s'", o.amount, o.color, o.address)
+	o.vm.Trace("TRANSFER a%d c'%16s' a'%16s'", o.amount, o.color, o.address)
 	addr, err := address.FromBase58(o.address)
 	if err != nil {
-		o.vm.ctx.Panic("MoveTokens failed 1")
+		o.vm.ctx.Panic("Invalid base58 address")
 	}
 
 	// when no color specified default is ColorIOTA
-	bytes := balance.ColorIOTA[:]
+	color := balance.ColorIOTA
 	if o.color != "iota" {
-		bytes, err = hex.DecodeString(o.color)
-		if err != nil {
-			o.vm.ctx.Panic("MoveTokens failed 2")
+		bytes, err := base58.Decode(o.color)
+		if err != nil || len(bytes) != balance.ColorLength {
+			o.vm.ctx.Panic("Invalid base58 color")
 		}
-	}
-	color, _, err := balance.ColorFromBytes(bytes)
-	if err != nil {
-		o.vm.ctx.Panic("MoveTokens failed 3")
+		copy(color[:], bytes)
 	}
 
 	if !o.vm.ctx.AccessSCAccount().MoveTokens(&addr, &color, o.amount) {
-		o.vm.Logf("$$$$$$$$$$ something went wrong")
-		o.vm.ctx.Panic("MoveTokens failed 4")
+		o.vm.ctx.Panic("Failed to move tokens")
 	}
 }
 
