@@ -5,12 +5,10 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf"
-	"github.com/spf13/pflag"
 )
 
-func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
+func InitCommands(commands map[string]func([]string)) {
 	commands["dwf"] = cmd
-	flags.AddFlagSet(dwf.Config.HookFlags())
 }
 
 var subcmds = map[string]func([]string){

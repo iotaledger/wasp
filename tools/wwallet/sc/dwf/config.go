@@ -6,14 +6,12 @@ import (
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
-	"github.com/spf13/pflag"
 )
 
 var Config = &sc.Config{
 	ShortName:   "dwf",
 	Name:        "DonateWithFeedback",
 	ProgramHash: dwfimpl.ProgramHash,
-	Flags:       pflag.NewFlagSet("DonateWithFeedback", pflag.ExitOnError),
 }
 
 func Client() *dwfclient.DWFClient {

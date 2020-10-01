@@ -6,14 +6,12 @@ import (
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
-	"github.com/spf13/pflag"
 )
 
 var Config = &sc.Config{
 	ShortName:   "tr",
 	Name:        "TokenRegistry",
 	ProgramHash: tokenregistry.ProgramHash,
-	Flags:       pflag.NewFlagSet("tokenregistry", pflag.ExitOnError),
 }
 
 func Client() *trclient.TokenRegistryClient {

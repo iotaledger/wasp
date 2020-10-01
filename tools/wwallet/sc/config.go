@@ -2,7 +2,6 @@ package sc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/registry"
 	"os"
 	"strings"
 	"time"
@@ -11,43 +10,41 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	ShortName        string
-	Name             string
-	ProgramHash      string
-	Flags            *pflag.FlagSet
-	committeeDefault []int
-	quorumDefault    int
-	bootupDataLoaded bool
-	BootupData       registry.BootupData
+	ShortName   string
+	Name        string
+	ProgramHash string
+
+	bootupData *registry.BootupData
+}
+
+func (c *Config) Alias() string {
+	if config.SCAlias != "" {
+		return config.SCAlias
+	}
+	if c.ShortName != "" {
+		return c.ShortName
+	}
+	panic("Which smart contract? (--sc=<alias> is required)")
 }
 
 func (c *Config) Href() string {
 	return "/" + c.ShortName
 }
 
-func (c *Config) HookFlags() *pflag.FlagSet {
-	c.Flags.IntVar(&c.quorumDefault, c.ShortName+".quorum", 0, "quorum (default 1,2,3,4)")
-	c.Flags.IntSliceVar(&c.committeeDefault, c.ShortName+".committee", nil, "committee (default 3)")
-	return c.Flags
-}
-
 var DefaultCommittee = []int{0, 1, 2, 3}
 
 func (c *Config) SetCommittee(indexes []int) {
-	config.Set(c.ShortName+".committee", indexes)
+	config.Set("sc."+c.Alias()+".committee", indexes)
 }
 
 func (c *Config) Committee() []int {
-	if len(c.committeeDefault) > 0 {
-		return c.committeeDefault
-	}
-	r := viper.GetIntSlice(c.ShortName + ".committee")
+	r := viper.GetIntSlice("sc." + c.Alias() + ".committee")
 	if len(r) > 0 {
 		return r
 	}
@@ -55,14 +52,11 @@ func (c *Config) Committee() []int {
 }
 
 func (c *Config) SetQuorum(n uint16) {
-	config.Set(c.ShortName+".quorum", int(n))
+	config.Set("sc."+c.Alias()+".quorum", int(n))
 }
 
 func (c *Config) Quorum() uint16 {
-	if c.quorumDefault != 0 {
-		return uint16(c.quorumDefault)
-	}
-	q := viper.GetInt(c.ShortName + ".quorum")
+	q := viper.GetInt("sc." + c.Alias() + ".quorum")
 	if q != 0 {
 		return uint16(q)
 	}
@@ -78,7 +72,7 @@ func (c *Config) HandleSetCmd(args []string) {
 		c.PrintUsage("set <key> <value>")
 		os.Exit(1)
 	}
-	config.Set(c.ShortName+"."+args[0], args[1])
+	config.Set("sc."+c.Alias()+"."+args[0], args[1])
 }
 
 func (c *Config) usage(commands map[string]func([]string)) {
@@ -88,7 +82,6 @@ func (c *Config) usage(commands map[string]func([]string)) {
 	}
 
 	c.PrintUsage(fmt.Sprintf("[options] [%s]", strings.Join(cmdNames, "|")))
-	c.Flags.PrintDefaults()
 	os.Exit(1)
 }
 
@@ -104,15 +97,15 @@ func (c *Config) HandleCmd(args []string, commands map[string]func([]string)) {
 }
 
 func (c *Config) SetAddress(address string) {
-	config.SetSCAddress(c.ShortName, address)
+	config.SetSCAddress(c.Alias(), address)
 }
 
 func (c *Config) Address() *address.Address {
-	return config.GetSCAddress(c.ShortName)
+	return config.GetSCAddress(c.Alias())
 }
 
 func (c *Config) IsAvailable() bool {
-	return config.TrySCAddress(c.ShortName) != nil
+	return config.TrySCAddress(c.Alias()) != nil
 }
 
 func (c *Config) Deploy(sigScheme signaturescheme.SignatureScheme) error {
@@ -168,6 +161,16 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 	}
 	fmt.Printf("Initialized %s smart contract\n", params.Description)
 	fmt.Printf("SC Address: %s\n", scAddress)
+
+	if config.SCAlias != "" {
+		c := Config{
+			ProgramHash: params.ProgramHash,
+		}
+		c.SetAddress(scAddress.String())
+		c.SetCommittee(params.Committee)
+		c.SetQuorum(params.Quorum)
+	}
+
 	return scAddress, nil
 }
 
@@ -179,16 +182,15 @@ func (p *DeployParams) progHash() hashing.HashValue {
 	return hash
 }
 
-func LoadBootupData(cfg *Config) {
-	if cfg.bootupDataLoaded {
-		return
+func (c *Config) BootupData() *registry.BootupData {
+	if c.bootupData != nil {
+		return c.bootupData
 	}
-	d, exists, err := waspapi.GetSCData(config.WaspApi(), cfg.Address())
+	d, exists, err := waspapi.GetSCData(config.WaspApi(), c.Address())
 	if err != nil || !exists {
-		//fmt.Printf("++++++++++ GetSCData host = %s, addr = %s exists = %v err = %v\n",
-		//	config.WaspApi(), cfg.Address(), exists, err)
-		return
+		panic(fmt.Sprintf("GetSCData host = %s, addr = %s exists = %v err = %v\n",
+			config.WaspApi(), c.Address(), exists, err))
 	}
-	cfg.BootupData = *d
-	cfg.bootupDataLoaded = true
+	c.bootupData = d
+	return c.bootupData
 }

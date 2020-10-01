@@ -2,12 +2,10 @@ package frcmd
 
 import (
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
-	"github.com/spf13/pflag"
 )
 
-func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
+func InitCommands(commands map[string]func([]string)) {
 	commands["fr"] = cmd
-	flags.AddFlagSet(fr.Config.HookFlags())
 }
 
 var subcmds = map[string]func([]string){

@@ -20,8 +20,7 @@ Done
 - [x] wasp node dashboard: show structure of committee, which SCs are running, etc
 
 Pending
-- [ ] wwallet: Allow more than one instance of same SC - separate binaries for
-      admin/client operations
+- [ ] wwallet: separate binaries for admin/client operations
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)

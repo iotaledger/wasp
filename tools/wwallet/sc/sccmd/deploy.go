@@ -40,6 +40,6 @@ func deployUsage() {
 		fmt.Printf("  %s set %s '%s'\n", os.Args[0], config.CommitteePeeringConfigVar(i), config.CommitteePeering(sc.DefaultCommittee)[i])
 		fmt.Printf("  %s set %s '%s'\n", os.Args[0], config.CommitteeNanomsgConfigVar(i), config.CommitteeNanomsg(sc.DefaultCommittee)[i])
 	}
-	fmt.Printf("  %s sc deploy '0,1,2,3' 3 'FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz' 'FairRoulette'\n", os.Args[0])
+	fmt.Printf("  %s --sc=fr sc deploy '0,1,2,3' 3 'FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz' 'FairRoulette'\n", os.Args[0])
 	os.Exit(1)
 }
