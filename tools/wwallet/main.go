@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/iotaledger/wasp/tools/wwallet/dashboard/dashboardcmd"
+	"github.com/iotaledger/wasp/tools/wwallet/program"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf/dwfcmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/facmd"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr/frcmd"
@@ -46,6 +47,7 @@ func main() {
 	dwfcmd.InitCommands(commands, flags)
 	dashboardcmd.InitCommands(commands, flags)
 	sccmd.InitCommands(commands, flags)
+	program.InitCommands(commands, flags)
 	check(flags.Parse(os.Args[1:]))
 
 	config.Read()
