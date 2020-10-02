@@ -54,7 +54,7 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 		a := o.vm.ctx.AccessState().GetArray(key)
 		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_STRING))
 	default:
-		o.vm.SetError("Invalid type id")
+		o.error("GetObjectId: Invalid type id")
 		return 0
 	}
 	o.fields[keyId] = objId
@@ -101,7 +101,7 @@ func (o *StateObject) valid(keyId int32, typeId int32) bool {
 		return true
 	}
 	if fieldType != typeId {
-		o.vm.SetError("Invalid access")
+		o.error("valid: Invalid access")
 		return false
 	}
 	return true

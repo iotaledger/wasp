@@ -47,6 +47,7 @@ func TestWasmSend1Bet(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
+			"wasm":  "fairroulette",
 			"fn":    "placeBet",
 			"color": 3,
 		},
@@ -120,6 +121,7 @@ func TestWasmSend5Bets(t *testing.T) {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: &scAddress,
 			Vars: map[string]interface{}{
+				"wasm":  "fairroulette",
 				"fn":    "placeBet",
 				"color": i + 1,
 			},
@@ -184,7 +186,8 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
-			"fn": "nothing",
+			"wasm": "fairroulette",
+			"fn":   "nothing",
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -202,6 +205,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
+			"wasm":       "fairroulette",
 			"fn":         "playPeriod",
 			"playPeriod": 10,
 		},
@@ -214,6 +218,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: &scAddress,
 			Vars: map[string]interface{}{
+				"wasm":  "fairroulette",
 				"fn":    "placeBet",
 				"color": i + 1,
 			},
@@ -229,10 +234,12 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	if !wasps.Report() {
 		t.Fail()
 	}
+
 	scColor := sc.GetColor()
+
 	if !wasps.VerifyAddressBalances(scAddress, 2, map[balance.Color]int64{
-		scColor:           1,
 		balance.ColorIOTA: 1,
+		scColor:           1,
 	}) {
 		t.Fail()
 	}

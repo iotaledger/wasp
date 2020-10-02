@@ -9,7 +9,6 @@ import (
 )
 
 const ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
-const WasmFolder = "D:/Work/Go/src/github.com/iotaledger/wasplib/wasm/"
 
 type wasmVMPocProcessor struct {
 	WasmHost
@@ -39,11 +38,17 @@ func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 	vm.ctx = ctx
 	vm.Init(NewRootObject(vm), &keyMap, vm)
 
-	//TODO for now load Wasm code from hardcoded location
+	//TODO for now load Wasm code from hardcoded parameter
 	// in the future we will need to change things so
-	// that we locate the code by hash and entrypoint
-	// by name instead of request code number
-	err := vm.LoadWasm(WasmFolder + "fairroulette_go.wasm")
+	// that we locate the code by hash
+	wasm, _, _ := ctx.AccessRequest().Args().GetString("wasm")
+	if wasm == "" {
+		ctx.Publish("no wasm name specified")
+		return
+	}
+	// when running tests cwd seems to be where the log files go: cluster-data/wasp*
+	// use "_bg.wasm" for Rust-based SCs and "_go.wasm" for Go-based SCs
+	err := vm.LoadWasm("../../" + wasm + "_go.wasm")
 	if err != nil {
 		ctx.Publish("error loading wasm: " + err.Error())
 		return
@@ -74,6 +79,7 @@ func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 		transfer := vm.FindObject(transferId).(*TransferMap)
 		transfer.Send()
 	}
+	transfers.transfers = nil
 
 	ctx.Publish("Processing events...")
 	eventsId := vm.GetObjectId(1, KeyEvents, OBJTYPE_MAP_ARRAY)
@@ -83,6 +89,7 @@ func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 		request := vm.FindObject(requestId).(*EventMap)
 		request.Send()
 	}
+	events.events = nil
 }
 
 func (vm *wasmVMPocProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

@@ -14,7 +14,6 @@ import (
 
 // sending 5 NOP requests with 1 sec sleep between each
 func TestWasmVMSend5Requests1Sec(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestWasmVMSend5Requests1Sec")
 
 	err := wasps.ListenToMessages(map[string]int{
@@ -47,6 +46,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: &scAddress,
 			Vars: map[string]interface{}{
+				"wasm":  "increment",
 				"fn": "nothing",
 			},
 		})
@@ -82,7 +82,6 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 }
 
 func TestWasmSend1ReqIncSimple(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestWasmSend1ReqIncSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
@@ -111,7 +110,8 @@ func TestWasmSend1ReqIncSimple(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
-			"fn": "increment",
+			"wasm": "increment",
+			"fn":   "increment",
 		},
 	})
 	check(err, t)
@@ -136,7 +136,6 @@ func TestWasmSend1ReqIncSimple(t *testing.T) {
 }
 
 func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
@@ -166,7 +165,8 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
-			"fn": "nothing",
+			"wasm": "increment",
+			"fn":   "nothing",
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -178,7 +178,8 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
-			"fn": "incrementRepeat1",
+			"wasm": "increment",
+			"fn":   "incrementRepeat1",
 		},
 	})
 	check(err, t)
@@ -205,7 +206,6 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 const numRepeats = 5
 
 func TestWasmChainIncTimelock(t *testing.T) {
-	// setup
 	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
@@ -235,7 +235,8 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
-			"fn": "nothing",
+			"wasm": "increment",
+			"fn":   "nothing",
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 5,
@@ -247,6 +248,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: &scAddress,
 		Vars: map[string]interface{}{
+			"wasm":       "increment",
 			"fn":         "incrementRepeatMany",
 			"numRepeats": numRepeats,
 		},

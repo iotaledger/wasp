@@ -15,7 +15,7 @@ func NewLogsMap(vm *wasmVMPocProcessor) HostObject {
 
 func (o *LogsMap) GetObjectId(keyId int32, typeId int32) int32 {
 	if typeId != OBJTYPE_MAP {
-		o.vm.SetError("Invalid type id")
+		o.error("GetObjectId: Invalid type id")
 		return 0
 	}
 	objId, ok := o.logs[keyId]

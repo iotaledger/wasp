@@ -39,6 +39,8 @@ func (o *EventMap) Send() {
 		}
 		if o.function != "" {
 			params.Codec().SetString("fn", o.function)
+			wasmPath, _, _ := o.vm.ctx.AccessRequest().Args().GetString("wasm")
+			params.Codec().SetString("wasm", wasmPath)
 		}
 		if params.IsEmpty() {
 			params = nil
