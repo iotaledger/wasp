@@ -4,6 +4,7 @@ package dwfimpl
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"strings"
@@ -51,6 +52,8 @@ func (ep dwfEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }
 
+const maxComment = 150
+
 // donate implements request 'donate'. It takes feedback text from the request
 // and adds it into the log of feedback messages
 func donate(ctx vmtypes.Sandbox) {
@@ -61,6 +64,7 @@ func donate(ctx vmtypes.Sandbox) {
 	donated := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	// take feedback text contained in the request
 	feedback, ok, err := ctx.AccessRequest().Args().GetString(donatewithfeedback.VarReqFeedback)
+	feedback = util.GentleCut(feedback, maxComment)
 
 	stateAccess := ctx.AccessState()
 	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)

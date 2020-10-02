@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dispatcher"
+	"github.com/iotaledger/wasp/plugins/examples"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -41,6 +42,7 @@ func main() {
 		runvm.Init(),
 		publisher.Init(),
 		dashboard.Init(),
+		examples.Init(),
 	)
 
 	testPlugins := node.Plugins(

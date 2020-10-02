@@ -6,7 +6,7 @@ if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 wwallet -c owner.json init
 wwallet -c owner.json request-funds
 wwallet -c owner.json dwf admin deploy
-scaddress=$(cat owner.json | jq .dwf.address -r)
+scaddress=$(cat owner.json | jq .sc.dwf.address -r)
 wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
 
 wwallet init

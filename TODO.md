@@ -20,7 +20,7 @@ Done
 - [x] wasp node dashboard: show structure of committee, which SCs are running, etc
 
 Pending
-- [ ] wwallet: Allow more than one instance of same SC
+- [ ] wwallet: separate binaries for admin/client operations
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
@@ -29,11 +29,17 @@ Pending
 - [ ] Add authentication to web api calls
 
 To discuss/RFC
+- [ ] optimize SC ledger database. Currently key/value is stored twice: in the virtual state and in the batch which
+last updated the value. For small virtual states it is OK. For big ones (data Oracle) it would be better
+to for virtual state keep reference to the last updating mutatation in the batch/state update 
+- [ ] identity system for nodes
+- [ ] secure access to API, to SC admin functions 
 - [ ] refactor 'request code' from uint16 value to string
 - [ ] smart contract state access from outside. The current approach is to provide universal node API to query state. 
 The alternatives would be to expose access functions (like view in Solidity) from the smart contract code itself. 
 Another approach can be expose data schema + generic access   
-- [ ] Merkle proofs of smart contract state elements  
+- [ ] Merkle proofs of smart contract state elements The idea is to have relatively short (logoarithmically) proof
+of some data element is in the virtual state. Currently proof is the whole batch chain, i.e. linear.  
 - [ ] Standard subscription mechanisms for events: (a) VM events (NanoMsg, ZMQ, MQTT) 
 and (b) smart contract events (signalled by request to subscriber smart contract)
 - [ ] balance sheet metaphor in the smart contract state. Ownership concept of BS "liability+equity" items  
@@ -44,14 +50,14 @@ for each committee member with its public key. Option 2: move request data off-t
 Functional testing
 - [ ] test fault-tolerance
 - [ ] test access node function
-- [ ] test several concurrent/interacting contracts
-- [ ] test random confirmation delays (probably not needed if running on Pollen)
+- [X] test several concurrent/interacting contracts
+- [X] test random confirmation delays (probably not needed if running on Pollen)
 - [ ] test big committees (~100 nodes)
-- [ ] test overlapping committees
+- [X] test overlapping committees
 
 Future
 - [ ] rewrite DKG
-- [ ] `Oracle Data Bulletin Board` description. Postponed
+- [ ] `Oracle Data Bulletin Board` specs. Postponed
 - [ ] enable and test 1 node committees
 - [ ] test quorum == 1  
 - [ ] optimize logging

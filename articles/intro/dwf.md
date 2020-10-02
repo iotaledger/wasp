@@ -20,10 +20,10 @@ In the future all smart contract programs will be run on wasm VM)_
 
 The common practice is to display the donation address on a web page for anyone wanting to send us a donation, 
 for example with their Trinity wallet. 
-What if we also want each donor to attach some feedback text to the donation? For example, 
+What if we also want each donor to attach some feedback/comment text to the donation? For example, 
 “Here I send you 2 MIOTA because I like your site”? 
-To support that possibility, we would need some kind of application or an extension of the existing IOTA wallet 
-with a database for feedback messages behind and so on (of course, there is more than one way to do that, including 
+To support that possibility, we would need some kind of application, or an extension of the existing IOTA wallet 
+with a database for comment messages behind and so on (of course, there is more than one way to do that, including 
 embedding the text right into the transaction).
 
 _DonateWithFeedback_ smart contract takes responsibility to handle both the donation 
@@ -53,7 +53,7 @@ The state of any smart contract consists of two parts:
 - The collection of _key-value pairs_ which can be interpreted as variables and their values. 
 It is an **off-tangle** part of the state. In general, it can contain any data of arbitrary size.
 In the _DonateWithFeedback_ smart contract the dashboard displays the generic data of the state in 
-a SC-specific and user-friendly format: 
+an SC-specific and user-friendly format: 
 the statistics of donations and list of feedback messages stored in the log. 
 
 (note that we use [Base58 encoding](https://en.bitcoinwiki.org/wiki/Base58) for binary data of fixed size, like 

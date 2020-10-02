@@ -1,84 +1,92 @@
 package admapi
 
 import (
+	"net/http"
+
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/progmeta"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
 
-type ProgramMetadataJsonable struct {
-	ProgramHash string `json:"program_hash"`
-	Location    string `json:"location"`
+type ProgramMetadata struct {
 	VMType      string `json:"vm_type"`
 	Description string `json:"description"`
 }
 
+type PutProgramRequest struct {
+	ProgramMetadata
+	Code []byte `json:"code"`
+}
+
+type PutProgramResponse struct {
+	ProgramHash string `json:"program_hash"`
+	Error       string `json:"err"`
+}
+
 //----------------------------------------------------------
-func HandlerPutProgramMetaData(c echo.Context) error {
-	var req ProgramMetadataJsonable
+func HandlerPutProgram(c echo.Context) error {
+	var req PutProgramRequest
 	var err error
 
 	if err := c.Bind(&req); err != nil {
-		return misc.OkJsonErr(c, err)
+		return c.JSONPretty(http.StatusBadRequest, &PutProgramResponse{Error: err.Error()}, " ")
 	}
 
-	rec := registry.ProgramMetadata{}
-
-	if rec.ProgramHash, err = hashing.HashValueFromBase58(req.ProgramHash); err != nil {
-		return misc.OkJsonErr(c, err)
+	if req.VMType == "" {
+		return c.JSONPretty(http.StatusBadRequest, &PutProgramResponse{Error: "vm_type is required"}, " ")
 	}
-	rec.Location = req.Location
-	rec.VMType = req.VMType
-	rec.Description = req.Description
+	if req.Description == "" {
+		return c.JSONPretty(http.StatusBadRequest, &PutProgramResponse{Error: "description is required"}, " ")
+	}
+	if req.Code == nil || len(req.Code) == 0 {
+		return c.JSONPretty(http.StatusBadRequest, &PutProgramResponse{Error: "code is required (base64-encoded binary data)"}, " ")
+	}
+
+	progHash, err := registry.SaveProgramCode(req.Code)
+	if err != nil {
+		return c.JSONPretty(http.StatusInternalServerError, &PutProgramResponse{Error: err.Error()}, " ")
+	}
+
+	md := &registry.ProgramMetadata{
+		ProgramHash: progHash,
+		VMType:      req.VMType,
+		Description: req.Description,
+	}
 
 	// TODO it is always overwritten!
-
-	if err = registry.SaveProgramMetadata(&rec); err != nil {
-		return misc.OkJsonErr(c, err)
+	if err = md.Save(); err != nil {
+		return c.JSONPretty(http.StatusInternalServerError, &PutProgramResponse{Error: err.Error()}, " ")
 	}
 
-	log.Infof("Program metadata record has been saved. Program hash: %s, description: %s, location: %s",
-		rec.ProgramHash.String(), rec.Description, rec.Location)
-	return misc.OkJsonErr(c, nil)
-}
-
-type GetProgramMetadataRequest struct {
-	ProgramHash string `json:"program_hash"`
+	log.Infof("Program metadata record has been saved. Program hash: %s, description: %s",
+		md.ProgramHash.String(), md.Description)
+	return misc.OkJson(c, &PutProgramResponse{ProgramHash: progHash.String()})
 }
 
 type GetProgramMetadataResponse struct {
-	ProgramMetadataJsonable
-	ExistsMetadata bool   `json:"exists_metadata"`
-	ExistsCode     bool   `json:"exists_code"`
-	Error          string `json:"err"`
+	ProgramMetadata
+	Error string `json:"err"`
 }
 
 func HandlerGetProgramMetadata(c echo.Context) error {
-	var req GetProgramMetadataRequest
-
-	if err := c.Bind(&req); err != nil {
-		return misc.OkJson(c, &GetProgramMetadataResponse{
-			Error: err.Error(),
-		})
-	}
-	md, err := progmeta.GetProgramMetadata(req.ProgramHash)
+	progHash, err := hashing.HashValueFromBase58(c.Param("hash"))
 	if err != nil {
-		return misc.OkJson(c, &GetProgramMetadataResponse{Error: err.Error()})
+		return c.JSONPretty(http.StatusBadRequest, &GetProgramMetadataResponse{Error: err.Error()}, " ")
+	}
+
+	md, err := registry.GetProgramMetadata(&progHash)
+	if err != nil {
+		return c.JSONPretty(http.StatusBadRequest, &GetProgramMetadataResponse{Error: err.Error()}, " ")
 	}
 	if md == nil {
-		return misc.OkJson(c, &GetProgramMetadataResponse{})
+		return c.JSONPretty(http.StatusNotFound, &GetProgramMetadataResponse{Error: "Not found"}, " ")
 	}
 
 	return misc.OkJson(c, &GetProgramMetadataResponse{
-		ProgramMetadataJsonable: ProgramMetadataJsonable{
-			ProgramHash: md.ProgramHash.String(),
-			Location:    md.Location,
+		ProgramMetadata: ProgramMetadata{
 			VMType:      md.VMType,
 			Description: md.Description,
 		},
-		ExistsMetadata: true,
-		ExistsCode:     md.CodeAvailable,
 	})
 }

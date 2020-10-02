@@ -65,6 +65,7 @@ const (
 	OwnerMarginDefault = 50  // 5%
 	OwnerMarginMin     = 5   // minimum 0.5%
 	OwnerMarginMax     = 100 // max 10%
+	MaxDescription     = 150
 )
 
 // validating constants at node boot
@@ -289,6 +290,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	if !ok {
 		description = "N/A"
 	}
+	description = util.GentleCut(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
 	auctions := ctx.AccessState().GetDictionary(VarStateAuctions)

@@ -99,7 +99,7 @@ const tplTokenRegistry = `
 			<div>
 				{{range $color, $tm := .Status.Registry}}
 					<details>
-						<summary>{{$tm.Description}}</summary>
+						<summary>{{trim $tm.Description}}</summary>
 						<p>Color: <code>{{$color}}</code></p>
 						{{template "tmdetails" $tm}}
 					</details>
@@ -114,7 +114,7 @@ const tplTokenRegistry = `
 
 	{{if .Color}}
 		{{if .QueryResult}}
-			<h3>{{.QueryResult.Description}}</h3>
+			<h3>{{trim .QueryResult.Description}}</h3>
 			<p>Color: <code>{{.Color}}</code></p>
 			{{template "tmdetails" .QueryResult}}
 		{{else}}

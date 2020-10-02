@@ -171,8 +171,8 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 		fmt.Fprintf(textout, "checking program metadata: FAILED: %v\n", err)
 		return nil, nil, err
 	}
-	fmt.Fprintf(textout, "checking program metadata: OK. location: '%s', VMType: '%s', description: '%s'\n",
-		md.Location, md.VMType, md.Description)
+	fmt.Fprintf(textout, "checking program metadata: OK. VMType: '%s', description: '%s'\n",
+		md.VMType, md.Description)
 
 	// generate distributed key set on committee nodes
 	scAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)
