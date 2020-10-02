@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+const maxLength = 150
+
+func Trim(s string) string {
+	if len(s) > maxLength {
+		return s[0:maxLength] + "..."
+	}
+	return s
+}
+
 func FormatTimestamp(ts interface{}) string {
 	t, ok := ts.(time.Time)
 	if !ok {
