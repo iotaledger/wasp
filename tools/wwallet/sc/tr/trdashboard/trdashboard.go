@@ -80,6 +80,7 @@ const tplTokenRegistry = `
 {{define "title"}}{{.Config.Name}}{{end}}
 
 {{define "tmdetails"}}
+	<p>Description: {{trim .Description}}</p>
 	<p>Supply: <code>{{.Supply}}</code></p>
 	<p>Minted by: {{template "address" .MintedBy}}</p>
 	<p>Minted when: <code>{{formatTimestamp .Created}}</code></p>
@@ -99,8 +100,7 @@ const tplTokenRegistry = `
 			<div>
 				{{range $color, $tm := .Status.Registry}}
 					<details>
-						<summary>{{trim $tm.Description}}</summary>
-						<p>Color: <code>{{$color}}</code></p>
+						<summary>{{$tm.Supply}} tokens of color {{$color}}</summary>
 						{{template "tmdetails" $tm}}
 					</details>
 				{{end}}
