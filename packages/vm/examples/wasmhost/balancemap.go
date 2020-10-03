@@ -10,11 +10,11 @@ type BalanceMap struct {
 	requestOnly bool
 }
 
-func NewBalanceMap(vm *wasmVMPocProcessor) HostObject {
+func NewBalanceMap(vm *wasmProcessor) HostObject {
 	return &BalanceMap{MapObject: MapObject{vm: vm, name: "Balance"}, requestOnly: false}
 }
 
-func NewBalanceMapRequest(vm *wasmVMPocProcessor) HostObject {
+func NewBalanceMapRequest(vm *wasmProcessor) HostObject {
 	return &BalanceMap{MapObject: MapObject{vm: vm, name: "Balance"}, requestOnly: true}
 }
 

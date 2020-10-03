@@ -6,18 +6,18 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-type UtilityMap struct {
+type ScUtility struct {
 	MapObject
 	hash       []byte
 	random     []byte
 	nextRandom int
 }
 
-func NewUtilityMap(vm *wasmVMPocProcessor) HostObject {
-	return &UtilityMap{MapObject: MapObject{vm: vm, name: "Utility"}}
+func NewScUtility(vm *wasmProcessor) HostObject {
+	return &ScUtility{MapObject: MapObject{vm: vm, name: "Utility"}}
 }
 
-func (o *UtilityMap) GetBytes(keyId int32) []byte {
+func (o *ScUtility) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case KeyHash:
 		return o.hash
@@ -25,7 +25,7 @@ func (o *UtilityMap) GetBytes(keyId int32) []byte {
 	return o.MapObject.GetBytes(keyId)
 }
 
-func (o *UtilityMap) GetInt(keyId int32) int64 {
+func (o *ScUtility) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyRandom:
 		//TODO using GetEntropy correctly is painful, so we use tx hash instead
@@ -46,7 +46,7 @@ func (o *UtilityMap) GetInt(keyId int32) int64 {
 	return o.MapObject.GetInt(keyId)
 }
 
-func (o *UtilityMap) SetBytes(keyId int32, value []byte) {
+func (o *ScUtility) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case KeyHash:
 		o.hash = hashing.HashData(value).Bytes()

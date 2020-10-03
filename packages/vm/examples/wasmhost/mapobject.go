@@ -5,11 +5,12 @@ import (
 )
 
 type MapObject struct {
-	vm   *wasmVMPocProcessor
-	name string
+	vm    *wasmProcessor
+	keyId int32
+	name  string
 }
 
-type ObjFactory func(vm *wasmVMPocProcessor) HostObject
+type ObjFactory func(vm *wasmProcessor) HostObject
 
 func (o *MapObject) checkedObjectId(objId *int32, newObject ObjFactory, typeId int32, expectedTypeId int32) int32 {
 	if typeId != expectedTypeId {
@@ -23,6 +24,10 @@ func (o *MapObject) checkedObjectId(objId *int32, newObject ObjFactory, typeId i
 }
 
 func (o *MapObject) error(format string, args ...interface{}) {
+	if o.keyId != 0 {
+		o.name = o.vm.GetKey(o.keyId)
+		o.keyId = 0
+	}
 	o.vm.SetError(o.name + "." + fmt.Sprintf(format, args...))
 }
 

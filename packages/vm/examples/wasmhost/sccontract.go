@@ -1,14 +1,14 @@
 package wasmhost
 
-type ContractMap struct {
+type ScContract struct {
 	MapObject
 }
 
-func NewContractMap(vm *wasmVMPocProcessor) HostObject {
-	return &ContractMap{MapObject: MapObject{vm: vm, name: "Contract"}}
+func NewScContract(vm *wasmProcessor) HostObject {
+	return &ScContract{MapObject: MapObject{vm: vm, name: "Contract"}}
 }
 
-func (o *ContractMap) GetString(keyId int32) string {
+func (o *ScContract) GetString(keyId int32) string {
 	switch keyId {
 	case KeyAddress:
 		return o.vm.ctx.GetSCAddress().String()

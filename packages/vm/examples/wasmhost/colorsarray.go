@@ -6,11 +6,11 @@ type ColorsArray struct {
 	colors      []string
 }
 
-func NewColorsArray(vm *wasmVMPocProcessor) HostObject {
+func NewColorsArray(vm *wasmProcessor) HostObject {
 	return &ColorsArray{ArrayObject: ArrayObject{vm: vm, name: "Colors"}, requestOnly: false}
 }
 
-func NewColorsArrayRequest(vm *wasmVMPocProcessor) HostObject {
+func NewColorsArrayRequest(vm *wasmProcessor) HostObject {
 	return &ColorsArray{ArrayObject: ArrayObject{vm: vm, name: "Colors"}, requestOnly: true}
 }
 

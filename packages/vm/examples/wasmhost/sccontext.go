@@ -67,7 +67,7 @@ var keyMap = map[string]int32{
 	"utility":     KeyUtility,
 }
 
-type RootObject struct {
+type ScContext struct {
 	MapObject
 	accountId   int32
 	contractId  int32
@@ -79,28 +79,28 @@ type RootObject struct {
 	utilityId   int32
 }
 
-func NewRootObject(vm *wasmVMPocProcessor) HostObject {
-	return &RootObject{MapObject: MapObject{vm: vm, name: "Root"}}
+func NewScContext(vm *wasmProcessor) HostObject {
+	return &ScContext{MapObject: MapObject{vm: vm, name: "Root"}}
 }
 
-func (o *RootObject) GetObjectId(keyId int32, typeId int32) int32 {
+func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyAccount:
-		return o.checkedObjectId(&o.accountId, NewAccountMap, typeId, OBJTYPE_MAP)
+		return o.checkedObjectId(&o.accountId, NewScAccount, typeId, OBJTYPE_MAP)
 	case KeyContract:
-		return o.checkedObjectId(&o.contractId, NewContractMap, typeId, OBJTYPE_MAP)
+		return o.checkedObjectId(&o.contractId, NewScContract, typeId, OBJTYPE_MAP)
 	case KeyEvents:
-		return o.checkedObjectId(&o.eventsId, NewEventsArray, typeId, OBJTYPE_MAP_ARRAY)
+		return o.checkedObjectId(&o.eventsId, NewScEvents, typeId, OBJTYPE_MAP_ARRAY)
 	case KeyLogs:
 		return o.checkedObjectId(&o.contractId, NewLogsMap, typeId, OBJTYPE_MAP)
 	case KeyRequest:
-		return o.checkedObjectId(&o.requestId, NewRequestMap, typeId, OBJTYPE_MAP)
+		return o.checkedObjectId(&o.requestId, NewScRequest, typeId, OBJTYPE_MAP)
 	case KeyState:
-		return o.checkedObjectId(&o.stateId, NewStateObject, typeId, OBJTYPE_MAP)
+		return o.checkedObjectId(&o.stateId, NewScState, typeId, OBJTYPE_MAP)
 	case KeyTransfers:
-		return o.checkedObjectId(&o.transfersId, NewTransfersArray, typeId, OBJTYPE_MAP_ARRAY)
+		return o.checkedObjectId(&o.transfersId, NewScTransfers, typeId, OBJTYPE_MAP_ARRAY)
 	case KeyUtility:
-		return o.checkedObjectId(&o.utilityId, NewUtilityMap, typeId, OBJTYPE_MAP)
+		return o.checkedObjectId(&o.utilityId, NewScUtility, typeId, OBJTYPE_MAP)
 	}
 	return o.MapObject.GetObjectId(keyId, typeId)
 }

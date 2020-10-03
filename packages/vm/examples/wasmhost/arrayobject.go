@@ -5,7 +5,7 @@ import (
 )
 
 type ArrayObject struct {
-	vm   *wasmVMPocProcessor
+	vm   *wasmProcessor
 	name string
 }
 
@@ -32,7 +32,7 @@ func (a *ArrayObject) error(format string, args ...interface{}) {
 }
 
 func (a *ArrayObject) GetBytes(keyId int32) []byte {
-	a.error("GetBytes: Invalid key")
+	a.error("GetBytes: Invalid access")
 	return []byte(nil)
 }
 

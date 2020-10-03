@@ -4,17 +4,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
-type StateObject struct {
+type ScState struct {
 	MapObject
 	fields map[int32]int32
 	types  map[int32]int32
 }
 
-func NewStateObject(vm *wasmVMPocProcessor) HostObject {
-	return &StateObject{MapObject: MapObject{vm: vm, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
+func NewScState(vm *wasmProcessor) HostObject {
+	return &ScState{MapObject: MapObject{vm: vm, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
 }
 
-func (o *StateObject) GetBytes(keyId int32) []byte {
+func (o *ScState) GetBytes(keyId int32) []byte {
 	if !o.valid(keyId, OBJTYPE_BYTES) {
 		return []byte(nil)
 	}
@@ -22,7 +22,7 @@ func (o *StateObject) GetBytes(keyId int32) []byte {
 	return o.vm.ctx.AccessState().Get(key)
 }
 
-func (o *StateObject) GetInt(keyId int32) int64 {
+func (o *ScState) GetInt(keyId int32) int64 {
 	if !o.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
@@ -31,7 +31,7 @@ func (o *StateObject) GetInt(keyId int32) int64 {
 	return value
 }
 
-func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
+func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	if !o.valid(keyId, typeId) {
 		return 0
 	}
@@ -39,20 +39,15 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 	if ok {
 		return objId
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
 	switch typeId {
 	case OBJTYPE_BYTES_ARRAY:
-		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_BYTES))
+		objId = o.vm.TrackObject(NewScStateArray(o.vm, keyId, OBJTYPE_BYTES))
 	case OBJTYPE_INT_ARRAY:
-		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_INT))
+		objId = o.vm.TrackObject(NewScStateArray(o.vm, keyId, OBJTYPE_INT))
 	case OBJTYPE_MAP:
-		m := o.vm.ctx.AccessState().GetDictionary(key)
-		objId = o.vm.TrackObject(NewStateMap(o.vm, m))
+		objId = o.vm.TrackObject(NewScStateMap(o.vm, keyId))
 	case OBJTYPE_STRING_ARRAY:
-		a := o.vm.ctx.AccessState().GetArray(key)
-		objId = o.vm.TrackObject(NewStateArray(o.vm, a, OBJTYPE_STRING))
+		objId = o.vm.TrackObject(NewScStateArray(o.vm, keyId, OBJTYPE_STRING))
 	default:
 		o.error("GetObjectId: Invalid type id")
 		return 0
@@ -61,7 +56,7 @@ func (o *StateObject) GetObjectId(keyId int32, typeId int32) int32 {
 	return objId
 }
 
-func (o *StateObject) GetString(keyId int32) string {
+func (o *ScState) GetString(keyId int32) string {
 	if !o.valid(keyId, OBJTYPE_STRING) {
 		return ""
 	}
@@ -70,7 +65,7 @@ func (o *StateObject) GetString(keyId int32) string {
 	return value
 }
 
-func (o *StateObject) SetBytes(keyId int32, value []byte) {
+func (o *ScState) SetBytes(keyId int32, value []byte) {
 	if !o.valid(keyId, OBJTYPE_BYTES) {
 		return
 	}
@@ -78,7 +73,7 @@ func (o *StateObject) SetBytes(keyId int32, value []byte) {
 	o.vm.ctx.AccessState().Set(key, value)
 }
 
-func (o *StateObject) SetInt(keyId int32, value int64) {
+func (o *ScState) SetInt(keyId int32, value int64) {
 	if !o.valid(keyId, OBJTYPE_INT) {
 		return
 	}
@@ -86,7 +81,7 @@ func (o *StateObject) SetInt(keyId int32, value int64) {
 	o.vm.ctx.AccessState().SetInt64(key, value)
 }
 
-func (o *StateObject) SetString(keyId int32, value string) {
+func (o *ScState) SetString(keyId int32, value string) {
 	if !o.valid(keyId, OBJTYPE_STRING) {
 		return
 	}
@@ -94,7 +89,7 @@ func (o *StateObject) SetString(keyId int32, value string) {
 	o.vm.ctx.AccessState().SetString(key, value)
 }
 
-func (o *StateObject) valid(keyId int32, typeId int32) bool {
+func (o *ScState) valid(keyId int32, typeId int32) bool {
 	fieldType, ok := o.types[keyId]
 	if !ok {
 		o.types[keyId] = typeId

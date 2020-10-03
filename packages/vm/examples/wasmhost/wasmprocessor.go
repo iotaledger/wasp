@@ -10,33 +10,33 @@ import (
 
 const ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
 
-type wasmVMPocProcessor struct {
+type wasmProcessor struct {
 	WasmHost
 	ctx vmtypes.Sandbox
 }
 
 func GetProcessor() vmtypes.Processor {
-	return &wasmVMPocProcessor{}
+	return &wasmProcessor{}
 }
 
-func (vm *wasmVMPocProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (vm *wasmProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
 	// we don't use request code but fn name request parameter instead
 	return vm, true
 }
 
-func (vm *wasmVMPocProcessor) GetDescription() string {
+func (vm *wasmProcessor) GetDescription() string {
 	return "Wasm VM PoC smart contract processor"
 }
 
-func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
+func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 	reqId := ctx.AccessRequest().ID()
-	ctx.Publish(fmt.Sprintf("run wasmVMPocProcessor: reqCode = %s reqId = %s timestamp = %d",
+	ctx.Publish(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
 	//TODO check what caching optimizations we can do to prevent
 	// rebuilding entire object admin and Wasm from scratch on every request
 	vm.ctx = ctx
-	vm.Init(NewRootObject(vm), &keyMap, vm)
+	vm.Init(NewScContext(vm), &keyMap, vm)
 
 	//TODO for now load Wasm code from hardcoded parameter
 	// in the future we will need to change things so
@@ -70,33 +70,13 @@ func (vm *wasmVMPocProcessor) Run(ctx vmtypes.Sandbox) {
 		ctx.Publish("error running wasm function: " + vm.GetString(1, KeyError))
 		return
 	}
-
-	ctx.Publish("Processing transfers...")
-	transfersId := vm.GetObjectId(1, KeyTransfers, OBJTYPE_MAP_ARRAY)
-	transfers := vm.FindObject(transfersId).(*TransfersArray)
-	for i := int32(0); i < transfers.GetLength(); i++ {
-		transferId := vm.GetObjectId(transfersId, i, OBJTYPE_MAP)
-		transfer := vm.FindObject(transferId).(*TransferMap)
-		transfer.Send()
-	}
-	transfers.transfers = nil
-
-	ctx.Publish("Processing events...")
-	eventsId := vm.GetObjectId(1, KeyEvents, OBJTYPE_MAP_ARRAY)
-	events := vm.FindObject(eventsId).(*EventsArray)
-	for i := int32(0); i < events.GetLength(); i++ {
-		requestId := vm.GetObjectId(eventsId, i, OBJTYPE_MAP)
-		request := vm.FindObject(requestId).(*EventMap)
-		request.Send()
-	}
-	events.events = nil
 }
 
-func (vm *wasmVMPocProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return vm
 }
 
-func (vm *wasmVMPocProcessor) Log(logLevel int32, text string) {
+func (vm *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
 		//proc.ctx.Publish(text)
