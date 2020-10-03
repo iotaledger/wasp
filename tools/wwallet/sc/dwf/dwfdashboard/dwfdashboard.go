@@ -73,6 +73,7 @@ const tplDwf = `
 					<p>Sender: {{template "address" $di.Sender}}</p>
 					<p>When: <code>{{formatTimestamp $di.When}}</code></p>
 		            <p>Request Id: <code>{{$di.Id}}</code></p>
+		            <p>Error: <code>{{$di.Error}}</code></p>
 				</details>
 			{{end}}
 		</div>

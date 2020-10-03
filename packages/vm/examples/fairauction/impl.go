@@ -290,7 +290,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	if !ok {
 		description = "N/A"
 	}
-	description = util.GentleCut(description, MaxDescription)
+	description = util.GentleTruncate(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
 	auctions := ctx.AccessState().GetDictionary(VarStateAuctions)

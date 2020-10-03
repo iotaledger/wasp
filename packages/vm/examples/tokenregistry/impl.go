@@ -118,7 +118,7 @@ func mintSupply(ctx vmtypes.Sandbox) {
 	if !ok {
 		description = "no dscr"
 	}
-	description = util.GentleCut(description, maxDescription)
+	description = util.GentleTruncate(description, maxDescription)
 
 	// get the additional arbitrary deta attached to the supply record
 	uddata, err := reqAccess.Args().Get(VarReqUserDefinedMetadata)

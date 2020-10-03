@@ -64,7 +64,7 @@ func donate(ctx vmtypes.Sandbox) {
 	donated := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	// take feedback text contained in the request
 	feedback, ok, err := ctx.AccessRequest().Args().GetString(donatewithfeedback.VarReqFeedback)
-	feedback = util.GentleCut(feedback, maxComment)
+	feedback = util.GentleTruncate(feedback, maxComment)
 
 	stateAccess := ctx.AccessState()
 	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)

@@ -63,7 +63,7 @@ const tplFairAuction = `
 		<div>
 			{{range $color, $auction := .Status.Auctions}}
 				<details>
-                    <summary>For sale <code>{{$auction.NumTokens}}</code> tokens of color <code>{{$color}}</code></summary>
+                    <summary>For sale <code>{{$auction.NumTokens}}</code> token(s) of color <code>{{$color}}</code></summary>
 					<p>Description: {{trim $auction.Description}}</p>
 					<p>Lookup into <i>TokenRegistry</i>: <a href="/tr/{{$color}}"><code>{{$color}}</code></a></p>
 					<p>Owner: {{template "address" $auction.AuctionOwner}}</p>
