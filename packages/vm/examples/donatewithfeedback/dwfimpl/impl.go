@@ -85,7 +85,7 @@ func donate(ctx vmtypes.Sandbox) {
 	} else {
 		if !ok || len(strings.TrimSpace(feedback)) == 0 || donated == 0 {
 			// empty feedback message is considered an error
-			di.Error = "error: empty feedback or donated amount = 0. The donated amount has been returned (if any)"
+			di.Error = "empty feedback or donated amount = 0. The donated amount has been returned (if any)"
 		}
 	}
 	if len(di.Error) != 0 && donated > 0 {
