@@ -100,7 +100,7 @@ const tplTokenRegistry = `
 			<div>
 				{{range $color, $tm := .Status.Registry}}
 					<details>
-						<summary>{{$tm.Supply}} tokens of color <code>{{$color}}</code></summary>
+						<summary>{{$tm.Supply}} token(s) of color <code>{{$color}}</code></summary>
 						{{template "tmdetails" $tm}}
 					</details>
 				{{end}}

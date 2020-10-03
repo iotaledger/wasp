@@ -68,7 +68,7 @@ const tplDwf = `
 			<h4>Log (latest first)</h4>
 			{{range $i, $di := .Status.LastRecordsDesc}}
 				<details>
-					<summary>{{$di.Seq}}: donation <code>{{$di.Amount}} IOTAs</code> from {{template "address" $di.Sender}}</summary>
+					<summary>{{$di.Seq}}: <code>{{$di.Amount}} IOTAs</code> from {{template "address" $di.Sender}}</summary>
 					<p>Comment: {{trim $di.Feedback}}</p>
 					<p>Sender: {{template "address" $di.Sender}}</p>
 					<p>When: <code>{{formatTimestamp $di.When}}</code></p>
