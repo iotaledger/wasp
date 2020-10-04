@@ -3,6 +3,7 @@ package trclient
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/subscribe"
@@ -106,10 +107,16 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 type Status struct {
 	*waspapi.SCStatus
 
-	Registry map[balance.Color]*tokenregistry.TokenMetadata
+	Registry                     map[balance.Color]*tokenregistry.TokenMetadata
+	RegistrySortedByMintTimeDesc []*TokenMetadataWithColor // may be nil
 }
 
-func (trc *TokenRegistryClient) FetchStatus() (*Status, error) {
+type TokenMetadataWithColor struct {
+	tokenregistry.TokenMetadata
+	Color balance.Color
+}
+
+func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error) {
 	scStatus, results, err := waspapi.FetchSCStatus(trc.nodeClient, trc.waspHost, trc.scAddress, func(query *stateapi.QueryRequest) {
 		query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
 	})
@@ -124,6 +131,20 @@ func (trc *TokenRegistryClient) FetchStatus() (*Status, error) {
 		return nil, err
 	}
 
+	if !sortByAgeDesc {
+		return status, nil
+	}
+	tslice := make([]*TokenMetadataWithColor, 0, len(status.Registry))
+	for col, ti := range status.Registry {
+		tslice = append(tslice, &TokenMetadataWithColor{
+			TokenMetadata: *ti,
+			Color:         col,
+		})
+	}
+	sort.Slice(tslice, func(i, j int) bool {
+		return tslice[i].Created > tslice[j].Created
+	})
+	status.RegistrySortedByMintTimeDesc = tslice
 	return status, nil
 }
 

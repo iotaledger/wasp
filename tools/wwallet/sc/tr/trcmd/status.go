@@ -9,13 +9,13 @@ import (
 )
 
 func statusCmd(args []string) {
-	status, err := tr.Client().FetchStatus()
+	status, err := tr.Client().FetchStatus(true)
 	check(err)
 
 	util.DumpSCStatus(tr.Config, status.SCStatus)
-	fmt.Printf("  Registry:\n")
-	for color, tm := range status.Registry {
-		fmt.Printf("  - Color: %s\n", color)
+	fmt.Printf("  Registry (latest first):\n")
+	for _, tm := range status.RegistrySortedByMintTimeDesc {
+		fmt.Printf("  - Color: %s\n", tm.Color)
 		fmt.Printf("    Supply: %d\n", tm.Supply)
 		fmt.Printf("    Minted by: %s\n", tm.MintedBy)
 		fmt.Printf("    Owner: %s\n", tm.Owner)

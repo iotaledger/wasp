@@ -39,7 +39,7 @@ func (d *trdashboard) AddTemplates(r dashboard.Renderer) {
 }
 
 func handleTR(c echo.Context) error {
-	status, err := tr.Client().FetchStatus()
+	status, err := tr.Client().FetchStatus(true)
 	if err != nil {
 		return err
 	}
@@ -98,9 +98,9 @@ const tplTokenRegistry = `
 		<div>
 			<h3>Registry</h3>
 			<div>
-				{{range $color, $tm := .Status.Registry}}
+				{{range $_, $tm := .Status.RegistrySortedByMintTimeDesc}}
 					<details>
-						<summary>{{$tm.Supply}} token(s) of color <code>{{$color}}</code></summary>
+						<summary>{{$tm.Supply}} token(s) of color <code>{{$tm.Color}}</code></summary>
 						{{template "tmdetails" $tm}}
 					</details>
 				{{end}}
