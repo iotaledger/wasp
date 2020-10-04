@@ -10,8 +10,10 @@ type ScState struct {
 	types  map[int32]int32
 }
 
-func NewScState(vm *wasmProcessor) HostObject {
-	return &ScState{MapObject: MapObject{vm: vm, name: "State"}, fields: make(map[int32]int32), types: make(map[int32]int32)}
+func (o *ScState) InitVM(vm *wasmProcessor, keyId int32) {
+	o.MapObject.InitVM(vm, keyId)
+	o.fields = make(map[int32]int32)
+	o.types = make(map[int32]int32)
 }
 
 func (o *ScState) GetBytes(keyId int32) []byte {

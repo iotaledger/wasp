@@ -4,10 +4,6 @@ type ScContract struct {
 	MapObject
 }
 
-func NewScContract(vm *wasmProcessor) HostObject {
-	return &ScContract{MapObject: MapObject{vm: vm, name: "Contract"}}
-}
-
 func (o *ScContract) GetString(keyId int32) string {
 	switch keyId {
 	case KeyAddress:

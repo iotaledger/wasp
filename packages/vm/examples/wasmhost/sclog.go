@@ -9,8 +9,9 @@ type LogsMap struct {
 	logs map[int32]int32
 }
 
-func NewLogsMap(vm *wasmProcessor) HostObject {
-	return &LogsMap{MapObject: MapObject{vm: vm, name: "Logs"}, logs: make(map[int32]int32)}
+func (o *LogsMap) InitVM(vm *wasmProcessor, keyId int32) {
+	o.MapObject.InitVM(vm, keyId)
+	o.logs= make(map[int32]int32)
 }
 
 func (o *LogsMap) GetObjectId(keyId int32, typeId int32) int32 {

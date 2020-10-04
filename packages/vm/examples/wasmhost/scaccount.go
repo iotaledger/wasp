@@ -6,16 +6,13 @@ type ScAccount struct {
 	colorsId  int32
 }
 
-func NewScAccount(vm *wasmProcessor) HostObject {
-	return &ScAccount{MapObject: MapObject{vm: vm, name: "Account"}}
-}
-
 func (o *ScAccount) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyColors:
 		return o.checkedObjectId(&o.colorsId, NewColorsArray, typeId, OBJTYPE_INT_ARRAY)
 	case KeyBalance:
 		return o.checkedObjectId(&o.balanceId, NewBalanceMap, typeId, OBJTYPE_MAP)
+	default:
+		return o.MapObject.GetObjectId(keyId, typeId)
 	}
-	return o.MapObject.GetObjectId(keyId, typeId)
 }

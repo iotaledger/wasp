@@ -69,38 +69,51 @@ var keyMap = map[string]int32{
 
 type ScContext struct {
 	MapObject
-	accountId   int32
-	contractId  int32
-	logsId      int32
-	requestId   int32
-	stateId     int32
-	transfersId int32
-	eventsId    int32
-	utilityId   int32
+	root map[int32]int32
 }
 
 func NewScContext(vm *wasmProcessor) HostObject {
-	return &ScContext{MapObject: MapObject{vm: vm, name: "Root"}}
+	return &ScContext{MapObject: MapObject{vm: vm, name: "Root"}, root: make(map[int32]int32)}
+}
+
+type initVM interface {
+	HostObject
+	InitVM(vm *wasmProcessor, keyId int32)
+}
+
+func (o *ScContext) checkModelObjectId(keyId int32, newObject initVM, typeId int32, expectedTypeId int32) int32 {
+	if typeId != expectedTypeId {
+		o.error("GetObjectId: Invalid type")
+		return 0
+	}
+	objId, ok := o.root[keyId]
+	if ok {
+		return objId
+	}
+	newObject.InitVM(o.vm, keyId)
+	objId = o.vm.TrackObject(newObject)
+	return objId
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	switch keyId {
 	case KeyAccount:
-		return o.checkedObjectId(&o.accountId, NewScAccount, typeId, OBJTYPE_MAP)
+		return o.checkModelObjectId(keyId, &ScAccount{}, typeId, OBJTYPE_MAP)
 	case KeyContract:
-		return o.checkedObjectId(&o.contractId, NewScContract, typeId, OBJTYPE_MAP)
+		return o.checkModelObjectId(keyId, &ScContract{}, typeId, OBJTYPE_MAP)
 	case KeyEvents:
-		return o.checkedObjectId(&o.eventsId, NewScEvents, typeId, OBJTYPE_MAP_ARRAY)
+		return o.checkModelObjectId(keyId, &ScEvents{}, typeId, OBJTYPE_MAP_ARRAY)
 	case KeyLogs:
-		return o.checkedObjectId(&o.contractId, NewLogsMap, typeId, OBJTYPE_MAP)
+		return o.checkModelObjectId(keyId, &LogsMap{}, typeId, OBJTYPE_MAP)
 	case KeyRequest:
-		return o.checkedObjectId(&o.requestId, NewScRequest, typeId, OBJTYPE_MAP)
+		return o.checkModelObjectId(keyId, &ScRequest{}, typeId, OBJTYPE_MAP)
 	case KeyState:
-		return o.checkedObjectId(&o.stateId, NewScState, typeId, OBJTYPE_MAP)
+		return o.checkModelObjectId(keyId, &ScState{}, typeId, OBJTYPE_MAP)
 	case KeyTransfers:
-		return o.checkedObjectId(&o.transfersId, NewScTransfers, typeId, OBJTYPE_MAP_ARRAY)
+		return o.checkModelObjectId(keyId, &ScTransfers{}, typeId, OBJTYPE_MAP_ARRAY)
 	case KeyUtility:
-		return o.checkedObjectId(&o.utilityId, NewScUtility, typeId, OBJTYPE_MAP)
+		return o.checkModelObjectId(keyId, &ScUtility{}, typeId, OBJTYPE_MAP)
+	default:
+		return o.MapObject.GetObjectId(keyId, typeId)
 	}
-	return o.MapObject.GetObjectId(keyId, typeId)
 }

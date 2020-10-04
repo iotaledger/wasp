@@ -7,11 +7,11 @@ type ColorsArray struct {
 }
 
 func NewColorsArray(vm *wasmProcessor) HostObject {
-	return &ColorsArray{ArrayObject: ArrayObject{vm: vm, name: "Colors"}, requestOnly: false}
+	return &ColorsArray{ArrayObject:ArrayObject{MapObject: MapObject{vm: vm, name: "Colors"}}, requestOnly: false}
 }
 
 func NewColorsArrayRequest(vm *wasmProcessor) HostObject {
-	return &ColorsArray{ArrayObject: ArrayObject{vm: vm, name: "Colors"}, requestOnly: true}
+	return &ColorsArray{ArrayObject: ArrayObject{MapObject: MapObject{vm: vm, name: "Colors"}}, requestOnly: true}
 }
 
 func (a *ColorsArray) GetInt(keyId int32) int64 {

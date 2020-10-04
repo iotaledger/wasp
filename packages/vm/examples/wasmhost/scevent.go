@@ -10,10 +10,6 @@ type ScEvents struct {
 	events []int32
 }
 
-func NewScEvents(vm *wasmProcessor) HostObject {
-	return &ScEvents{ArrayObject: ArrayObject{vm: vm, name: "Events"}}
-}
-
 func (a *ScEvents) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyLength:

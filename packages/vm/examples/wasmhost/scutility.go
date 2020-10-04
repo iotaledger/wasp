@@ -13,10 +13,6 @@ type ScUtility struct {
 	nextRandom int
 }
 
-func NewScUtility(vm *wasmProcessor) HostObject {
-	return &ScUtility{MapObject: MapObject{vm: vm, name: "Utility"}}
-}
-
 func (o *ScUtility) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case KeyHash:

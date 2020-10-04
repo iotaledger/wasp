@@ -31,6 +31,11 @@ func (o *MapObject) error(format string, args ...interface{}) {
 	o.vm.SetError(o.name + "." + fmt.Sprintf(format, args...))
 }
 
+func (o *MapObject) InitVM(vm *wasmProcessor, keyId int32) {
+	o.vm = vm
+	o.keyId = keyId
+}
+
 func (o *MapObject) GetBytes(keyId int32) []byte {
 	o.error("GetBytes: Invalid key")
 	return []byte(nil)

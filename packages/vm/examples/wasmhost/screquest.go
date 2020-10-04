@@ -9,10 +9,6 @@ type ScRequest struct {
 	paramsId  int32
 }
 
-func NewScRequest(vm *wasmProcessor) HostObject {
-	return &ScRequest{MapObject: MapObject{vm: vm, name: "Request"}}
-}
-
 func (o *ScRequest) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyTimestamp:

@@ -11,10 +11,6 @@ type ScTransfers struct {
 	transfers []int32
 }
 
-func NewScTransfers(vm *wasmProcessor) HostObject {
-	return &ScTransfers{ArrayObject: ArrayObject{vm: vm, name: "Transfers"}}
-}
-
 func (a *ScTransfers) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyLength:

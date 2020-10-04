@@ -5,8 +5,7 @@ import (
 )
 
 type ArrayObject struct {
-	vm   *wasmProcessor
-	name string
+	MapObject
 }
 
 func (a *ArrayObject) checkedObjectId(items *[]int32, index int32, newObject ObjFactory, typeId int32, expectedTypeId int32) int32 {
@@ -49,16 +48,4 @@ func (a *ArrayObject) GetObjectId(keyId int32, typeId int32) int32 {
 func (a *ArrayObject) GetString(keyId int32) string {
 	a.error("GetString: Invalid access")
 	return ""
-}
-
-func (a *ArrayObject) SetBytes(keyId int32, value []byte) {
-	a.error("SetBytes: Immutable")
-}
-
-func (a *ArrayObject) SetInt(keyId int32, value int64) {
-	a.error("SetInt: Immutable")
-}
-
-func (a *ArrayObject) SetString(keyId int32, value string) {
-	a.error("SetString: Immutable")
 }
