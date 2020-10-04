@@ -96,7 +96,7 @@ const tplTokenRegistry = `
 		{{template "sc-info" .}}
 
 		<div>
-			<h3>Registry</h3>
+			<h3>Registry (chronologically sorted)</h3>
 			<div>
 				{{range $_, $tm := .Status.RegistrySortedByMintTimeDesc}}
 					<details>
