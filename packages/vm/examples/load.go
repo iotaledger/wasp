@@ -11,8 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/sc9"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
-	"github.com/iotaledger/wasp/packages/vm/examples/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 var allProcessors = map[string]func() vmtypes.Processor{
