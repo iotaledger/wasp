@@ -14,7 +14,7 @@ type ScStateArray struct {
 func NewScStateArray(vm *wasmProcessor, keyId int32, typeId int32) HostObject {
 	key := vm.GetKey(keyId)
 	items := vm.ctx.AccessState().GetArray(kv.Key(key))
-	return &ScStateArray{ArrayObject: ArrayObject{MapObject: MapObject{vm: vm, name: "State." + key}}, items: items, typeId: typeId}
+	return &ScStateArray{ArrayObject: ArrayObject{ModelObject: ModelObject{vm: vm, name: "state.array." + key}}, items: items, typeId: typeId}
 }
 
 func (a *ScStateArray) GetBytes(keyId int32) []byte {

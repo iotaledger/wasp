@@ -5,64 +5,27 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-type ScEvents struct {
-	ArrayObject
-	events []int32
-}
-
-func (a *ScEvents) GetInt(keyId int32) int64 {
-	switch keyId {
-	case KeyLength:
-		return int64(len(a.events))
-	}
-	return a.ArrayObject.GetInt(keyId)
-}
-
-func (a *ScEvents) GetObjectId(keyId int32, typeId int32) int32 {
-	return a.checkedObjectId(&a.events, keyId, NewScEvent, typeId, OBJTYPE_MAP)
-}
-
-func (a *ScEvents) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		for i := len(a.events) - 1; i >= 0; i-- {
-			a.vm.SetInt(a.events[i], keyId, 0)
-		}
-		//todo move to pool for reuse of events?
-		a.events = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
-}
-
 type ScEvent struct {
 	MapObject
 	code     int64
 	contract string
 	delay    int64
 	function string
-	paramsId int32
-}
-
-func NewScEvent(vm *wasmProcessor) HostObject {
-	return &ScEvent{MapObject: MapObject{vm: vm, name: "Event"}}
 }
 
 func (o *ScEvent) GetObjectId(keyId int32, typeId int32) int32 {
-	switch keyId {
-	case KeyParams:
-		return o.checkedObjectId(&o.paramsId, NewScEventParams, typeId, OBJTYPE_MAP)
-	}
-	return o.MapObject.GetObjectId(keyId, typeId)
+	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
+		KeyParams: {OBJTYPE_MAP, func() WaspObject { return &ScEventParams{} }},
+	})
 }
 
 func (o *ScEvent) Send() {
 	o.vm.Trace("EVENT f'%s' c%d d%d a'%s'", o.function, o.code, o.delay, o.contract)
 	if o.contract == "" {
 		params := kv.NewMap()
-		if o.paramsId != 0 {
-			params = o.vm.FindObject(o.paramsId).(*ScEventParams).Params
+		paramsId, ok := o.objects[KeyParams]
+		if ok {
+			params = o.vm.FindObject(paramsId).(*ScEventParams).Params
 			params.ForEach(func(key kv.Key, value []byte) bool {
 				o.vm.Trace("  PARAM '%s'", key)
 				return true
@@ -110,13 +73,44 @@ func (o *ScEvent) SetString(keyId int32, value string) {
 	}
 }
 
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScEvents struct {
+	ArrayObject
+}
+
+func (a *ScEvents) GetObjectId(keyId int32, typeId int32) int32 {
+	return a.GetArrayObjectId(keyId, typeId, func() WaspObject {
+		event := &ScEvent{}
+		event.name = "event"
+		return event
+	})
+}
+
+func (a *ScEvents) SetInt(keyId int32, value int64) {
+	switch keyId {
+	case KeyLength:
+		for i := len(a.objects) - 1; i >= 0; i-- {
+			a.vm.SetInt(a.objects[i], keyId, 0)
+		}
+		//todo move to pool for reuse of events?
+		a.objects = nil
+		return
+	default:
+		a.ArrayObject.SetInt(keyId, value)
+	}
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type ScEventParams struct {
 	MapObject
 	Params kv.Map
 }
 
-func NewScEventParams(vm *wasmProcessor) HostObject {
-	return &ScEventParams{MapObject: MapObject{vm: vm, name: "EventParams"}, Params: kv.NewMap()}
+func (o *ScEventParams) InitVM(vm *wasmProcessor, keyId int32) {
+	o.MapObject.InitVM(vm, keyId)
+	o.Params = kv.NewMap()
 }
 
 func (o *ScEventParams) GetBytes(keyId int32) []byte {
@@ -151,6 +145,7 @@ func (o *ScEventParams) SetBytes(keyId int32, value []byte) {
 func (o *ScEventParams) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
+		//TODO clear kv map?
 		// clear params, tracker will still know about object
 		// so maybe move it to an allocation pool for reuse
 		o.Params = kv.NewMap()

@@ -1,20 +1,12 @@
 package wasmhost
 
-type ColorsArray struct {
+type ScColors struct {
 	ArrayObject
 	requestOnly bool
 	colors      []string
 }
 
-func NewColorsArray(vm *wasmProcessor) HostObject {
-	return &ColorsArray{ArrayObject:ArrayObject{MapObject: MapObject{vm: vm, name: "Colors"}}, requestOnly: false}
-}
-
-func NewColorsArrayRequest(vm *wasmProcessor) HostObject {
-	return &ColorsArray{ArrayObject: ArrayObject{MapObject: MapObject{vm: vm, name: "Colors"}}, requestOnly: true}
-}
-
-func (a *ColorsArray) GetInt(keyId int32) int64 {
+func (a *ScColors) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyLength:
 		return int64(a.GetLength())
@@ -22,19 +14,19 @@ func (a *ColorsArray) GetInt(keyId int32) int64 {
 	return a.ArrayObject.GetInt(keyId)
 }
 
-func (a *ColorsArray) GetLength() int32 {
+func (a *ScColors) GetLength() int32 {
 	a.loadColors()
 	return int32(len(a.colors))
 }
 
-func (a *ColorsArray) GetString(keyId int32) string {
+func (a *ScColors) GetString(keyId int32) string {
 	if keyId >= 0 && keyId < a.GetLength() {
 		return a.colors[keyId]
 	}
 	return a.ArrayObject.GetString(keyId)
 }
 
-func (a *ColorsArray) loadColors() {
+func (a *ScColors) loadColors() {
 	if a.colors != nil {
 		return
 	}

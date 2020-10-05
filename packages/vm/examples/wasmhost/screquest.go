@@ -4,9 +4,6 @@ import "github.com/iotaledger/wasp/packages/kv"
 
 type ScRequest struct {
 	MapObject
-	balanceId int32
-	colorsId  int32
-	paramsId  int32
 }
 
 func (o *ScRequest) GetInt(keyId int32) int64 {
@@ -18,15 +15,11 @@ func (o *ScRequest) GetInt(keyId int32) int64 {
 }
 
 func (o *ScRequest) GetObjectId(keyId int32, typeId int32) int32 {
-	switch keyId {
-	case KeyColors:
-		return o.checkedObjectId(&o.colorsId, NewColorsArrayRequest, typeId, OBJTYPE_INT_ARRAY)
-	case KeyBalance:
-		return o.checkedObjectId(&o.balanceId, NewBalanceMapRequest, typeId, OBJTYPE_MAP)
-	case KeyParams:
-		return o.checkedObjectId(&o.paramsId, NewScRequestParams, typeId, OBJTYPE_MAP)
-	}
-	return o.MapObject.GetObjectId(keyId, typeId)
+	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
+		KeyColors:  {OBJTYPE_INT_ARRAY, func() WaspObject { return &ScColors{requestOnly: true} }},
+		KeyBalance: {OBJTYPE_MAP, func() WaspObject { return &ScBalance{requestOnly: true} }},
+		KeyParams:  {OBJTYPE_MAP, func() WaspObject { return &ScRequestParams{} }},
+	})
 }
 
 func (o *ScRequest) GetString(keyId int32) string {
@@ -43,12 +36,10 @@ func (o *ScRequest) GetString(keyId int32) string {
 	return o.MapObject.GetString(keyId)
 }
 
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type ScRequestParams struct {
 	MapObject
-}
-
-func NewScRequestParams(vm *wasmProcessor) HostObject {
-	return &ScRequestParams{MapObject: MapObject{vm: vm, name: "Params"}}
 }
 
 func (o *ScRequestParams) GetInt(keyId int32) int64 {

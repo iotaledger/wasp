@@ -51,7 +51,7 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	case OBJTYPE_STRING_ARRAY:
 		objId = o.vm.TrackObject(NewScStateArray(o.vm, keyId, OBJTYPE_STRING))
 	default:
-		o.error("GetObjectId: Invalid type id")
+		o.error("GetObjectId: Invalid type")
 		return 0
 	}
 	o.fields[keyId] = objId

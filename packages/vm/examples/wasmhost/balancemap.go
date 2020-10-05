@@ -5,20 +5,12 @@ import (
 	"github.com/mr-tron/base58/base58"
 )
 
-type BalanceMap struct {
+type ScBalance struct {
 	MapObject
 	requestOnly bool
 }
 
-func NewBalanceMap(vm *wasmProcessor) HostObject {
-	return &BalanceMap{MapObject: MapObject{vm: vm, name: "Balance"}, requestOnly: false}
-}
-
-func NewBalanceMapRequest(vm *wasmProcessor) HostObject {
-	return &BalanceMap{MapObject: MapObject{vm: vm, name: "Balance"}, requestOnly: true}
-}
-
-func (o *BalanceMap) GetInt(keyId int32) int64 {
+func (o *ScBalance) GetInt(keyId int32) int64 {
 	color := balance.ColorIOTA
 	key := o.vm.GetKey(keyId)
 	switch key {

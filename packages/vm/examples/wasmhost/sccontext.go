@@ -69,51 +69,21 @@ var keyMap = map[string]int32{
 
 type ScContext struct {
 	MapObject
-	root map[int32]int32
 }
 
 func NewScContext(vm *wasmProcessor) HostObject {
-	return &ScContext{MapObject: MapObject{vm: vm, name: "Root"}, root: make(map[int32]int32)}
-}
-
-type initVM interface {
-	HostObject
-	InitVM(vm *wasmProcessor, keyId int32)
-}
-
-func (o *ScContext) checkModelObjectId(keyId int32, newObject initVM, typeId int32, expectedTypeId int32) int32 {
-	if typeId != expectedTypeId {
-		o.error("GetObjectId: Invalid type")
-		return 0
-	}
-	objId, ok := o.root[keyId]
-	if ok {
-		return objId
-	}
-	newObject.InitVM(o.vm, keyId)
-	objId = o.vm.TrackObject(newObject)
-	return objId
+	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root"}, objects: make(map[int32]int32)}}
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
-	switch keyId {
-	case KeyAccount:
-		return o.checkModelObjectId(keyId, &ScAccount{}, typeId, OBJTYPE_MAP)
-	case KeyContract:
-		return o.checkModelObjectId(keyId, &ScContract{}, typeId, OBJTYPE_MAP)
-	case KeyEvents:
-		return o.checkModelObjectId(keyId, &ScEvents{}, typeId, OBJTYPE_MAP_ARRAY)
-	case KeyLogs:
-		return o.checkModelObjectId(keyId, &LogsMap{}, typeId, OBJTYPE_MAP)
-	case KeyRequest:
-		return o.checkModelObjectId(keyId, &ScRequest{}, typeId, OBJTYPE_MAP)
-	case KeyState:
-		return o.checkModelObjectId(keyId, &ScState{}, typeId, OBJTYPE_MAP)
-	case KeyTransfers:
-		return o.checkModelObjectId(keyId, &ScTransfers{}, typeId, OBJTYPE_MAP_ARRAY)
-	case KeyUtility:
-		return o.checkModelObjectId(keyId, &ScUtility{}, typeId, OBJTYPE_MAP)
-	default:
-		return o.MapObject.GetObjectId(keyId, typeId)
-	}
+	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
+		KeyAccount:   {OBJTYPE_MAP, func() WaspObject { return &ScAccount{} }},
+		KeyContract:  {OBJTYPE_MAP, func() WaspObject { return &ScContract{} }},
+		KeyEvents:    {OBJTYPE_MAP_ARRAY, func() WaspObject { return &ScEvents{} }},
+		KeyLogs:      {OBJTYPE_MAP, func() WaspObject { return &ScLogs{} }},
+		KeyRequest:   {OBJTYPE_MAP, func() WaspObject { return &ScRequest{} }},
+		KeyState:     {OBJTYPE_MAP, func() WaspObject { return &ScState{} }},
+		KeyTransfers: {OBJTYPE_MAP_ARRAY, func() WaspObject { return &ScTransfers{} }},
+		KeyUtility:   {OBJTYPE_MAP, func() WaspObject { return &ScUtility{} }},
+	})
 }

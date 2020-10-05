@@ -14,7 +14,7 @@ type ScStateMap struct {
 func NewScStateMap(vm *wasmProcessor, keyId int32) HostObject {
 	key := vm.GetKey(keyId)
 	items := vm.ctx.AccessState().GetDictionary(kv.Key(key))
-	return &ScStateMap{MapObject: MapObject{vm: vm, name: "State." + key}, items: items, types: make(map[int32]int32)}
+	return &ScStateMap{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "atate.map." + key}}, items: items, types: make(map[int32]int32)}
 }
 
 func (m *ScStateMap) GetBytes(keyId int32) []byte {

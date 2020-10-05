@@ -69,7 +69,7 @@ type WasmHost struct {
 	store         *wasmtime.Store
 }
 
-func (host *WasmHost) Init(root HostObject, keyMap *map[string]int32, logger LogInterface) {
+func (host *WasmHost) Init(null HostObject, root HostObject, keyMap *map[string]int32, logger LogInterface) {
 	if keyMap == nil {
 		keyMap = &baseKeyMap
 	}
@@ -84,7 +84,7 @@ func (host *WasmHost) Init(root HostObject, keyMap *map[string]int32, logger Log
 	for k, v := range *keyMap {
 		host.keyIdToKeyMap[-v] = k
 	}
-	host.TrackObject(NewNullObject(host))
+	host.TrackObject(null)
 	host.TrackObject(root)
 	host.initWasm()
 }
@@ -153,7 +153,7 @@ func (host *WasmHost) fdWrite(fd int32, iovs int32, size int32, written int32) i
 func (host *WasmHost) FindObject(objId int32) HostObject {
 	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
 		host.SetError("Invalid objId")
-		return NewNullObject(host)
+		objId = 0
 	}
 	return host.objIdToObj[objId]
 }

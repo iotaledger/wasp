@@ -36,7 +36,7 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 	//TODO check what caching optimizations we can do to prevent
 	// rebuilding entire object admin and Wasm from scratch on every request
 	vm.ctx = ctx
-	vm.Init(NewScContext(vm), &keyMap, vm)
+	vm.Init(NewNullObject(vm), NewScContext(vm), &keyMap, vm)
 
 	//TODO for now load Wasm code from hardcoded parameter
 	// in the future we will need to change things so
