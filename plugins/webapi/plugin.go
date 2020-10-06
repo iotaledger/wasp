@@ -8,10 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
+	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
@@ -48,10 +50,25 @@ func configure(*node.Plugin) {
 
 	Server.HideBanner = true
 	Server.HidePort = true
+	Server.HTTPErrorHandler = customHTTPErrorHandler
 
 	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.WebAPIAuth))
 
 	addEndpoints(adminWhitelist())
+}
+
+func customHTTPErrorHandler(err error, c echo.Context) {
+	he, ok := err.(*httperrors.HTTPError)
+	if ok {
+		if !c.Response().Committed {
+			if c.Request().Method == http.MethodHead { // Issue #608
+				err = c.NoContent(he.Code)
+			} else {
+				err = c.JSON(he.Code, &client.ErrorResponse{Error: he.Error()})
+			}
+		}
+	}
+	Server.DefaultHTTPErrorHandler(err, c)
 }
 
 func adminWhitelist() []net.IP {

@@ -16,6 +16,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -185,6 +186,10 @@ func (cluster *Cluster) IsGoshimmerUp() bool {
 
 func (cluster *Cluster) NumSmartContracts() int {
 	return len(cluster.Config.SmartContracts)
+}
+
+func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
+	return client.NewWaspClient(cluster.Config.Nodes[nodeIndex].ApiHost())
 }
 
 func (cluster *Cluster) readKeysConfig() ([]SmartContractFinalConfig, error) {

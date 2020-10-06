@@ -2,17 +2,17 @@ package wasptest2
 
 import (
 	"crypto/rand"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
@@ -102,9 +102,10 @@ func TestTRTest(t *testing.T) {
 	})
 	checkSuccess(err, t, "token minted and registered successfully")
 
-	proc, err := waspapi.IsRequestProcessed(wasps.Config.Nodes[0].ApiHost(), scAddr, sctransaction.NewRequestId(tx1.ID(), 0))
+	reqId := sctransaction.NewRequestId(tx1.ID(), 0)
+	r, err := wasps.WaspClient(0).RequestStatus(scAddr, &reqId)
 	check(err, t)
-	if !proc {
+	if !r.IsProcessed {
 		t.Fail()
 	}
 

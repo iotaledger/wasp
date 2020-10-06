@@ -1,22 +1,25 @@
 package webapi
 
 import (
-	"bytes"
 	"net"
 	"strings"
 
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
+	"github.com/iotaledger/wasp/plugins/webapi/info"
+	"github.com/iotaledger/wasp/plugins/webapi/request"
 	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 	"github.com/labstack/echo"
 )
 
 func addEndpoints(adminWhitelist []net.IP) {
+	info.AddEndpoints(Server)
+	request.AddEndpoints(Server)
+
 	{
 		sc := Server.Group("/sc")
 
 		sc.POST("/state/query", stateapi.HandlerQueryState)
-		sc.POST("/state/request", stateapi.HandlerQueryRequestState)
 	}
 
 	{
@@ -55,7 +58,7 @@ func protected(whitelist []net.IP) echo.MiddlewareFunc {
 			return true
 		}
 		for _, whitelistedIP := range whitelist {
-			if bytes.Equal(ip, whitelistedIP) {
+			if ip.Equal(whitelistedIP) {
 				return true
 			}
 		}
