@@ -114,19 +114,19 @@ const tplFairAuction = `
 			const countdown = document.getElementById("due-" + color);
 
 			function update() {
-				const diff = (due - new Date())/1000;
+				var diff = (due - new Date())/1000;
 				console.log(due, diff);
 				if (diff > 0) {
                     var days = Math.floor(diff / 86400);
-	                delta -= days * 86400;
+	                diff -= days * 86400;
 
-                    var hours = Math.floor(delta / 3600) % 24;
-                    delta -= hours * 3600;
+                    var hours = Math.floor(diff / 3600) % 24;
+                    diff -= hours * 3600;
 
-                    var minutes = Math.floor(delta / 60) % 60;
-                    delta -= minutes * 60;
+                    var minutes = Math.floor(diff / 60) % 60;
+                    diff -= minutes * 60;
 
-                    var seconds = delta % 60;  
+                    var seconds = diff % 60;  
                    
                     var disp = "";
                     if (days != 0){
