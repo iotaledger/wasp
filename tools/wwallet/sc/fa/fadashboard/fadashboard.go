@@ -126,9 +126,9 @@ const tplFairAuction = `
                     var minutes = Math.floor(diff / 60) % 60;
                     diff -= minutes * 60;
 
-                    var seconds = diff % 60;  
+                    var seconds = Math.round(diff % 60);  
                    
-                    var disp = "";
+                    var disp = "in ";
                     if (days != 0){
                        disp += days.toString() + " days ";
                     }
