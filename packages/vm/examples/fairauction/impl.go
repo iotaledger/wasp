@@ -53,6 +53,7 @@ const (
 
 	// state vars
 	VarStateAuctions            = "auctions"
+	VarStateLog                 = "log"
 	VarStateOwnerMarginPromille = "ownerMargin" // owner margin in percents
 )
 
@@ -595,4 +596,10 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 	sender := ctx.AccessRequest().Sender()
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	account.MoveTokensFromRequest(&sender, color, available)
+}
+
+func logToSC(ctx vmtypes.Sandbox, msg string) {
+	stateAccess := ctx.AccessState()
+	tlog := stateAccess.GetTimestampedLog(VarStateLog)
+	tlog.Append(ctx.GetTimestamp(), []byte(msg))
 }

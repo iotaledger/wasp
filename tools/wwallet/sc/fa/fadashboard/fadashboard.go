@@ -119,7 +119,7 @@ const tplFairAuction = `
 				if (diff > 0) {
 					var date = new Date(0);
 					date.setSeconds(diff / 1000);
-					countdown.innerText = date.toISOString().substr(11, 8);
+					countdown.innerText = date.toISOString();
 				} else {
 					countdown.innerText = "";
 				}

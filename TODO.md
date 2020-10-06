@@ -29,7 +29,7 @@ Pending
 - [ ] Add authentication to web api calls
 
 To discuss/RFC
-- [ ] optimize SC ledger database. Currently key/value is stored twice: in the virtual state and in the batch which
+- [ ] optimize SC ledger database. Currently, key/value is stored twice: in the virtual state and in the batch which
 last updated the value. For small virtual states it is OK. For big ones (data Oracle) it would be better
 to for virtual state keep reference to the last updating mutatation in the batch/state update 
 - [ ] identity system for nodes
@@ -48,7 +48,7 @@ and (b) smart contract events (signalled by request to subscriber smart contract
 for each committee member with its public key. Option 2: move request data off-tangle and keep only hash of it on-tangle 
 
 Functional testing
-- [ ] test fault-tolerance
+- [X] test fault-tolerance
 - [ ] test access node function
 - [X] test several concurrent/interacting contracts
 - [X] test random confirmation delays (probably not needed if running on Pollen)
@@ -59,7 +59,7 @@ Future
 - [ ] rewrite DKG
 - [ ] `Oracle Data Bulletin Board` specs. Postponed
 - [ ] enable and test 1 node committees
-- [ ] test quorum == 1  
+- [ ] test (or implement) quorum == 1  
 - [ ] optimize logging
 - [ ] Prometheus metrics
 - [ ] MQTT publisher
