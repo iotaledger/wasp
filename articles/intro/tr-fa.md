@@ -23,8 +23,8 @@ The following command mints 3 tokens into the same address of the wallet.
 `wwallet fa mint "My first 3 coins" 3`
 
 With `fa` tag `wwallet` derives we are dealing with the `TokenRegistry`.
-The  command creates a transaction which contains wor things in it:
-- "minting" itself, assigning the new tag to 3 iotas asn sending them to the same address
+The  command creates a transaction which contains the following:
+- "minting" itself, assigning the new tag to 3 iotas and sending them to the same address
 - the `mint` request to the _TokenRegistry_.
 
 It is an atomic operation: either both token minting and sending the request is successful, or none of it.
