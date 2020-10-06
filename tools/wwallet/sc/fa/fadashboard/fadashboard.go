@@ -116,7 +116,7 @@ const tplFairAuction = `
 			function update() {
 				const diff = (due - new Date())/1000;
 				console.log(due, diff);
-				if (seconds > 0) {
+				if (diff > 0) {
                     var days = Math.floor(diff / 86400);
 	                delta -= days * 86400;
 
