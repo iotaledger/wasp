@@ -114,12 +114,35 @@ const tplFairAuction = `
 			const countdown = document.getElementById("due-" + color);
 
 			function update() {
-				const diff = due - new Date();
+				const diff = (due - new Date())/1000;
 				console.log(due, diff);
-				if (diff > 0) {
-					var date = new Date(0);
-					date.setSeconds(diff / 1000);
-					countdown.innerText = date.toISOString();
+				if (seconds > 0) {
+                    var days = Math.floor(diff / 86400);
+	                delta -= days * 86400;
+
+                    var hours = Math.floor(delta / 3600) % 24;
+                    delta -= hours * 3600;
+
+                    var minutes = Math.floor(delta / 60) % 60;
+                    delta -= minutes * 60;
+
+                    var seconds = delta % 60;  
+                   
+                    var disp = "";
+                    if (days != 0){
+                       disp += days.toString() + " days ";
+                    }
+                    if (hours != 0 || days != 0){
+                       disp += hours.toString() + " hours ";
+                    }
+                    disp += minutes.toString() + " minutes ";
+                    disp += seconds.toString() + " seconds";
+
+                    countdown.innerText = disp;
+					
+                	//var date = new Date(0);
+					//date.setSeconds(diff / 1000);
+					// countdown.innerText = date.toISOString();
 				} else {
 					countdown.innerText = "";
 				}
