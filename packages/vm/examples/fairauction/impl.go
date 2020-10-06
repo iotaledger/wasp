@@ -59,6 +59,8 @@ const (
 const (
 	// minimum duration of auction
 	MinAuctionDurationMinutes = 1
+	MaxAuctionDurationMinutes = 120 // max 2 hours
+
 	// default duration of the auction
 	AuctionDurationDefaultMinutes = 60
 	// Owner of the smart contract takes %% from the winning bid. The default, min, max
@@ -281,6 +283,9 @@ func startAuction(ctx vmtypes.Sandbox) {
 	if duration < MinAuctionDurationMinutes {
 		duration = MinAuctionDurationMinutes
 	}
+	if duration > MaxAuctionDurationMinutes {
+		duration = MaxAuctionDurationMinutes
+	}
 
 	// read description text from the request
 	description, ok, err := reqArgs.GetString(VarReqStartAuctionDescription)
@@ -319,8 +324,8 @@ func startAuction(ctx vmtypes.Sandbox) {
 	})
 	auctions.SetAt(colorForSale.Bytes(), aiData)
 
-	ctx.Publishf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d",
-		colorForSale.String(), tokensForSale, minimumBid, ownerMargin)
+	ctx.Publishf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d duration %d minutes",
+		colorForSale.String(), tokensForSale, minimumBid, ownerMargin, duration)
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
@@ -328,7 +333,8 @@ func startAuction(ctx vmtypes.Sandbox) {
 	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
-	ctx.Publishf("startAuction: success. Auction: '%s'", description)
+	ctx.Publishf("startAuction: success. Auction: '%s', color: %s, duration: %d",
+		description, colorForSale.String(), duration)
 }
 
 // placeBid is a request to place a bid in the auction for the particular color
