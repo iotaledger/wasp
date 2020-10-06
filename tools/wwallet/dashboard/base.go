@@ -28,6 +28,7 @@ type NavPage struct {
 func MakeTemplate(parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp": dashboard.FormatTimestamp,
+		"trim":            dashboard.Trim,
 		"exploreAddressUrl": dashboard.ExploreAddressUrl(
 			dashboard.ExploreAddressUrlFromGoshimmerUri(config.GoshimmerApi()),
 		),
@@ -90,7 +91,7 @@ const TplSCInfo = `
 		<summary>Smart contract details</summary>
 		<p>SC address: {{template "address" .Status.SCAddress}}</p>
 		<p>Program hash: <code>{{.Status.ProgramHash}}</code></p>
-		<p>Description of the instance: <code>{{.Status.Description}}</code></p>
+		<p>Description of the instance: <code>{{trim .Status.Description}}</code></p>
 		<p>Owner address: {{template "address" .Status.OwnerAddress}}</p>
 		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
 		<p>Color: <code>{{.Config.BootupData.Color}}</code></p>

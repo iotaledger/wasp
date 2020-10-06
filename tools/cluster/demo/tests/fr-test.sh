@@ -7,7 +7,7 @@ wwallet -c owner.json init
 wwallet -c owner.json request-funds
 wwallet -c owner.json fr admin deploy
 wwallet -c owner.json fr admin set-period 10
-scaddress=$(cat owner.json | jq .fr.address -r)
+scaddress=$(cat owner.json | jq .sc.fr.address -r)
 wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
 
 # check that set-period request has been executed

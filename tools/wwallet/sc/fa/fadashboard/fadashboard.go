@@ -63,8 +63,9 @@ const tplFairAuction = `
 		<div>
 			{{range $color, $auction := .Status.Auctions}}
 				<details>
-					<summary>{{$auction.Description}}</summary>
-					<p>For sale: <code>{{$auction.NumTokens}}</code> tokens of color <a href="/tr/{{$color}}"><code>{{$color}}</code></a></p>
+                    <summary>For sale <code>{{$auction.NumTokens}}</code> token(s) of color <code>{{$color}}</code></summary>
+					<p>Description: {{trim $auction.Description}}</p>
+					<p>Lookup into <i>TokenRegistry</i>: <a href="/tr/{{$color}}"><code>{{$color}}</code></a></p>
 					<p>Owner: {{template "address" $auction.AuctionOwner}}</p>
 					<p>Started at: <code>{{formatTimestamp $auction.WhenStarted}}</code></p>
 					<p>Duration: <code>{{$auction.DurationMinutes}} minutes</code></p>
@@ -113,12 +114,35 @@ const tplFairAuction = `
 			const countdown = document.getElementById("due-" + color);
 
 			function update() {
-				const diff = due - new Date();
+				var diff = (due - new Date())/1000;
 				console.log(due, diff);
 				if (diff > 0) {
-					var date = new Date(0);
-					date.setSeconds(diff / 1000);
-					countdown.innerText = date.toISOString().substr(11, 8);
+                    var days = Math.floor(diff / 86400);
+	                diff -= days * 86400;
+
+                    var hours = Math.floor(diff / 3600) % 24;
+                    diff -= hours * 3600;
+
+                    var minutes = Math.floor(diff / 60) % 60;
+                    diff -= minutes * 60;
+
+                    var seconds = Math.round(diff % 60);  
+                   
+                    var disp = "in ";
+                    if (days != 0){
+                       disp += days.toString() + " days ";
+                    }
+                    if (hours != 0 || days != 0){
+                       disp += hours.toString() + " hours ";
+                    }
+                    disp += minutes.toString() + " minutes ";
+                    disp += seconds.toString() + " seconds";
+
+                    countdown.innerText = disp;
+					
+                	//var date = new Date(0);
+					//date.setSeconds(diff / 1000);
+					// countdown.innerText = date.toISOString();
 				} else {
 					countdown.innerText = "";
 				}

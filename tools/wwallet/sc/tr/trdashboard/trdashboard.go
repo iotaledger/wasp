@@ -39,7 +39,7 @@ func (d *trdashboard) AddTemplates(r dashboard.Renderer) {
 }
 
 func handleTR(c echo.Context) error {
-	status, err := tr.Client().FetchStatus()
+	status, err := tr.Client().FetchStatus(true)
 	if err != nil {
 		return err
 	}
@@ -80,6 +80,7 @@ const tplTokenRegistry = `
 {{define "title"}}{{.Config.Name}}{{end}}
 
 {{define "tmdetails"}}
+	<p>Description: {{trim .Description}}</p>
 	<p>Supply: <code>{{.Supply}}</code></p>
 	<p>Minted by: {{template "address" .MintedBy}}</p>
 	<p>Minted when: <code>{{formatTimestamp .Created}}</code></p>
@@ -95,12 +96,11 @@ const tplTokenRegistry = `
 		{{template "sc-info" .}}
 
 		<div>
-			<h3>Registry</h3>
+			<h3>Registry (chronologically sorted)</h3>
 			<div>
-				{{range $color, $tm := .Status.Registry}}
+				{{range $_, $tm := .Status.RegistrySortedByMintTimeDesc}}
 					<details>
-						<summary>{{$tm.Description}}</summary>
-						<p>Color: <code>{{$color}}</code></p>
+						<summary>{{$tm.Supply}} token(s) of color <code>{{$tm.Color}}</code></summary>
 						{{template "tmdetails" $tm}}
 					</details>
 				{{end}}
@@ -114,7 +114,7 @@ const tplTokenRegistry = `
 
 	{{if .Color}}
 		{{if .QueryResult}}
-			<h3>{{.QueryResult.Description}}</h3>
+			<h3>{{trim .QueryResult.Description}}</h3>
 			<p>Color: <code>{{.Color}}</code></p>
 			{{template "tmdetails" .QueryResult}}
 		{{else}}

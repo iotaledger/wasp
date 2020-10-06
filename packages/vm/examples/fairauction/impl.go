@@ -53,18 +53,22 @@ const (
 
 	// state vars
 	VarStateAuctions            = "auctions"
+	VarStateLog                 = "log"
 	VarStateOwnerMarginPromille = "ownerMargin" // owner margin in percents
 )
 
 const (
 	// minimum duration of auction
 	MinAuctionDurationMinutes = 1
+	MaxAuctionDurationMinutes = 120 // max 2 hours
+
 	// default duration of the auction
 	AuctionDurationDefaultMinutes = 60
 	// Owner of the smart contract takes %% from the winning bid. The default, min, max
 	OwnerMarginDefault = 50  // 5%
 	OwnerMarginMin     = 5   // minimum 0.5%
 	OwnerMarginMax     = 100 // max 10%
+	MaxDescription     = 150
 )
 
 // validating constants at node boot
@@ -280,6 +284,9 @@ func startAuction(ctx vmtypes.Sandbox) {
 	if duration < MinAuctionDurationMinutes {
 		duration = MinAuctionDurationMinutes
 	}
+	if duration > MaxAuctionDurationMinutes {
+		duration = MaxAuctionDurationMinutes
+	}
 
 	// read description text from the request
 	description, ok, err := reqArgs.GetString(VarReqStartAuctionDescription)
@@ -289,6 +296,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	if !ok {
 		description = "N/A"
 	}
+	description = util.GentleTruncate(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
 	auctions := ctx.AccessState().GetDictionary(VarStateAuctions)
@@ -317,8 +325,8 @@ func startAuction(ctx vmtypes.Sandbox) {
 	})
 	auctions.SetAt(colorForSale.Bytes(), aiData)
 
-	ctx.Publishf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d",
-		colorForSale.String(), tokensForSale, minimumBid, ownerMargin)
+	ctx.Publishf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d duration %d minutes",
+		colorForSale.String(), tokensForSale, minimumBid, ownerMargin, duration)
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
@@ -326,7 +334,8 @@ func startAuction(ctx vmtypes.Sandbox) {
 	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
-	ctx.Publishf("startAuction: success. Auction: '%s'", description)
+	ctx.Publishf("startAuction: success. Auction: '%s', color: %s, duration: %d",
+		description, colorForSale.String(), duration)
 }
 
 // placeBid is a request to place a bid in the auction for the particular color
@@ -587,4 +596,10 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 	sender := ctx.AccessRequest().Sender()
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	account.MoveTokensFromRequest(&sender, color, available)
+}
+
+func logToSC(ctx vmtypes.Sandbox, msg string) {
+	stateAccess := ctx.AccessState()
+	tlog := stateAccess.GetTimestampedLog(VarStateLog)
+	tlog.Append(ctx.GetTimestamp(), []byte(msg))
 }

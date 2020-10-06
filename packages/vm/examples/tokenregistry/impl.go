@@ -84,6 +84,8 @@ func initSC(ctx vmtypes.Sandbox) {
 	ctx.Publishf("TokenRegistry: initSC")
 }
 
+const maxDescription = 150
+
 // mintSupply implements 'mint supply' request
 func mintSupply(ctx vmtypes.Sandbox) {
 	ctx.Publish("TokenRegistry: mintSupply")
@@ -116,6 +118,8 @@ func mintSupply(ctx vmtypes.Sandbox) {
 	if !ok {
 		description = "no dscr"
 	}
+	description = util.GentleTruncate(description, maxDescription)
+
 	// get the additional arbitrary deta attached to the supply record
 	uddata, err := reqAccess.Args().Get(VarReqUserDefinedMetadata)
 	if err != nil {

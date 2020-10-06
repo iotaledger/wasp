@@ -57,7 +57,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	progHashStr := progHash.String()
 	op.processorReady = processor.CheckProcessor(progHashStr)
 	if !op.processorReady {
-		processor.LoadProcessorAsync(progHashStr, func(err error) {
+		processor.LoadProcessorAsync(progHash, func(err error) {
 			if err == nil {
 				op.committee.ReceiveMessage(committee.ProcessorIsReady{
 					ProgramHash: progHashStr,

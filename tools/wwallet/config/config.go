@@ -16,6 +16,7 @@ var configPath string
 var Verbose bool
 var WaitForConfirmation bool
 var Utxodb bool
+var SCAlias string
 
 const (
 	hostKindApi     = "api"
@@ -31,6 +32,7 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 	fs.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
 	fs.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
 	fs.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
+	fs.StringVarP(&SCAlias, "sc", "s", "", "smart contract alias")
 	flags.AddFlagSet(fs)
 }
 
@@ -144,12 +146,12 @@ func Set(key string, value interface{}) {
 	check(viper.WriteConfig())
 }
 
-func SetSCAddress(scName string, address string) {
-	Set(scName+".address", address)
+func SetSCAddress(scAlias string, address string) {
+	Set("sc."+scAlias+".address", address)
 }
 
-func TrySCAddress(scName string) *address.Address {
-	b58 := viper.GetString(scName + ".address")
+func TrySCAddress(scAlias string) *address.Address {
+	b58 := viper.GetString("sc." + scAlias + ".address")
 	if len(b58) == 0 {
 		return nil
 	}
@@ -158,10 +160,11 @@ func TrySCAddress(scName string) *address.Address {
 	return &address
 }
 
-func GetSCAddress(scName string) *address.Address {
-	address := TrySCAddress(scName)
+func GetSCAddress(scAlias string) *address.Address {
+	address := TrySCAddress(scAlias)
 	if address == nil {
-		check(fmt.Errorf("call `set <sc>.address` or `<sc> admin deploy` first"))
+		check(fmt.Errorf("call `%s set sc.%s.address` or `%s --sc=%s sc admin deploy` first",
+			os.Args[0], scAlias, os.Args[0], scAlias))
 	}
 	return address
 }

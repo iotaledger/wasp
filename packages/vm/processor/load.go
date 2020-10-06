@@ -2,16 +2,12 @@ package processor
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/sema"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io/ioutil"
-	"net/url"
-	"path"
-	"sync"
 )
 
 type processorInstance struct {
@@ -22,14 +18,17 @@ type processorInstance struct {
 // TODO implement multiple workers/instances per program hash. Currently only one
 
 var (
-	processors      = make(map[string]processorInstance)
-	processorsMutex sync.RWMutex
+	processors        = make(map[string]processorInstance)
+	processorsMutex   sync.RWMutex
+	builtinProcessors = make(map[hashing.HashValue]func() vmtypes.Processor)
 )
 
-// LoadProcessorAsync creates and registers processor for program hash
-// asynchronously
-// possibly, locates Wasm program code in the file system, in IPFS etc
-func LoadProcessorAsync(programHash string, onFinish func(err error)) {
+func RegisterBuiltinProcessor(programHash *hashing.HashValue, proc func() vmtypes.Processor) {
+	builtinProcessors[*programHash] = proc
+}
+
+// LoadProcessorAsync creates and registers processor for program hash asynchronously
+func LoadProcessorAsync(programHash *hashing.HashValue, onFinish func(err error)) {
 	go func() {
 		proc, err := loadProcessor(programHash)
 		if err != nil {
@@ -38,7 +37,7 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 		}
 
 		processorsMutex.Lock()
-		processors[programHash] = processorInstance{
+		processors[programHash.String()] = processorInstance{
 			Processor: proc,
 			timedLock: sema.New(),
 		}
@@ -49,58 +48,28 @@ func LoadProcessorAsync(programHash string, onFinish func(err error)) {
 }
 
 // loadProcessor creates processor instance
-// first tries to resolve known program hashes used for testing
-// then tries to create from the binary in the registry cache
-// finally tries to load binary code from the location specified in the metadata
-func loadProcessor(progHashStr string) (vmtypes.Processor, error) {
-	proc, ok := examples.GetProcessor(progHashStr)
+func loadProcessor(progHash *hashing.HashValue) (vmtypes.Processor, error) {
+	proc, ok := builtinProcessors[*progHash]
 	if ok {
-		return proc, nil
+		return proc(), nil
 	}
-	progHash, err := hashing.HashValueFromBase58(progHashStr)
-	binaryCode, exist, err := registry.GetProgramCode(&progHash)
 
-	md, exist, err := registry.GetProgramMetadata(&progHash)
+	md, err := registry.GetProgramMetadata(progHash)
 	if err != nil {
 		return nil, err
 	}
-	if exist {
-		return vmtypes.FromBinaryCode(md.VMType, binaryCode)
+	if md == nil {
+		return nil, fmt.Errorf("Program metadata for hash %s not found", progHash.String())
 	}
-	binaryCode, err = loadBinaryCode(md.Location, &progHash)
+
+	if md.VMType == "builtin" {
+		return nil, fmt.Errorf("Processor for builtin program %s not registered", progHash.String())
+	}
+
+	binaryCode, err := registry.GetProgramCode(progHash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load program's binary data from location %s, program hash = %s",
-			md.Location, progHashStr)
+		return nil, err
 	}
+
 	return vmtypes.FromBinaryCode(md.VMType, binaryCode)
-}
-
-// loads binary code of the VM, possibly from remote location
-// caches it into the the registry
-func loadBinaryCode(location string, progHash *hashing.HashValue) ([]byte, error) {
-	urlStruct, err := url.Parse(location)
-	if err != nil {
-		return nil, err
-	}
-	var data []byte
-	switch urlStruct.Scheme {
-	case "file":
-		file := path.Join(parameters.GetString(parameters.VMBinaryDir), urlStruct.Host)
-		if data, err = ioutil.ReadFile(file); err != nil {
-			return nil, err
-		}
-
-	default:
-		return nil, fmt.Errorf("unknown Wasm binary location scheme '%s'", urlStruct.Scheme)
-	}
-
-	h := hashing.HashData(data)
-	if *h != *progHash {
-		return nil, fmt.Errorf("binary data or hash is not valid")
-	}
-	_, err = registry.SaveProgramCode(data)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
 }
