@@ -14,7 +14,6 @@ var Processor = builtinProcessor{
 	vmconst.RequestCodeNOP:              nopRequest,
 	vmconst.RequestCodeInit:             initSC,
 	vmconst.RequestCodeSetMinimumReward: setMinimumReward,
-	vmconst.RequestCodeSetDescription:   setDescription,
 }
 
 func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
@@ -94,12 +93,5 @@ func setMinimumReward(ctx vmtypes.Sandbox) {
 	ctx.Publish("setMinimumReward")
 	if v, ok, _ := ctx.AccessRequest().Args().GetInt64("value"); ok && v >= 0 {
 		ctx.AccessState().SetInt64(vmconst.VarNameMinimumReward, v)
-	}
-}
-
-func setDescription(ctx vmtypes.Sandbox) {
-	ctx.Publish("setDescription")
-	if v, ok, _ := ctx.AccessRequest().Args().GetString("value"); ok && v != "" {
-		ctx.AccessState().SetString("description", v)
 	}
 }

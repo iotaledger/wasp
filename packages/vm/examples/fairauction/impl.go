@@ -334,6 +334,9 @@ func startAuction(ctx vmtypes.Sandbox) {
 	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
+	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
+	//	tokensForSale, colorForSale.String(), minimumBid, duration))
+
 	ctx.Publishf("startAuction: success. Auction: '%s', color: %s, duration: %d",
 		description, colorForSale.String(), duration)
 }
@@ -414,10 +417,13 @@ func placeBid(ctx vmtypes.Sandbox) {
 			Bidder: sender,
 			When:   ctx.GetTimestamp(),
 		})
+		//logToSC(ctx, fmt.Sprintf("place bid. Auction color %s, total %di", col.String(), bidAmount))
 	} else {
 		// bidder has bid already. Treated it as a rise
 		bi.Total += bidAmount
 		bi.When = ctx.GetTimestamp()
+
+		//logToSC(ctx, fmt.Sprintf("rise bid. Auction color %s, total %di", col.String(), bi.Total))
 	}
 	// marshal the whole auction info and save it into the state (the dictionary of auctions)
 	data = util.MustBytes(ai)
@@ -537,6 +543,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 				account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
 			}
 		}
+		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. Winning bid: %di", col.String(), winner.Total))
+
 		ctx.Publishf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
 	} else {
 		// return unsold tokens to auction owner
@@ -558,6 +566,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 				ctx.Publishf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail)
 			}
 		}
+		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. No winner.", col.String()))
+
 		ctx.Publishf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids))
 	}
 
@@ -599,7 +609,5 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 }
 
 func logToSC(ctx vmtypes.Sandbox, msg string) {
-	stateAccess := ctx.AccessState()
-	tlog := stateAccess.GetTimestampedLog(VarStateLog)
-	tlog.Append(ctx.GetTimestamp(), []byte(msg))
+	ctx.AccessState().GetTimestampedLog(VarStateLog).Append(ctx.GetTimestamp(), []byte(msg))
 }
