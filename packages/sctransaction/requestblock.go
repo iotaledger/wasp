@@ -2,13 +2,15 @@ package sctransaction
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mr-tron/base58"
 	"io"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -219,6 +221,20 @@ func RequestIdFromBase58(str58 string) (*RequestId, error) {
 
 func (rid *RequestId) Short() string {
 	return rid.String()[:8] + ".."
+}
+
+func (rid RequestId) MarshalJSON() ([]byte, error) {
+	return json.Marshal(rid.ToBase58())
+}
+
+func (rid *RequestId) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	r, err := RequestIdFromBase58(s)
+	*rid = *r
+	return err
 }
 
 // request ref

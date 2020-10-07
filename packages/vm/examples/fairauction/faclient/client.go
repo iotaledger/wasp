@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/subscribe"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
-	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
 type FairAuctionClient struct {
@@ -51,7 +52,7 @@ func (fc *FairAuctionClient) SetWaitRequestCompletionParams(publisherHosts []str
 }
 
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(fc.nodeClient, fc.waspApiHost, fc.scAddress, func(query *stateapi.QueryRequest) {
+	scStatus, results, err := waspapi.FetchSCStatus(fc.nodeClient, fc.waspApiHost, fc.scAddress, func(query *statequery.Request) {
 		query.AddScalar(fairauction.VarStateOwnerMarginPromille)
 		query.AddDictionary(fairauction.VarStateAuctions, 100)
 	})
@@ -61,10 +62,10 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 
 	status := &Status{SCStatus: scStatus}
 
-	ownerMargin, ok := results[fairauction.VarStateOwnerMarginPromille].MustInt64()
+	ownerMargin, ok := results.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
 	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok)
 
-	auctions := results[fairauction.VarStateAuctions].MustDictionaryResult()
+	auctions := results.Get(fairauction.VarStateAuctions).MustDictionaryResult()
 	status.AuctionsLen = auctions.Len
 	status.Auctions = make(map[balance.Color]*fairauction.AuctionInfo)
 	for _, entry := range auctions.Entries {
@@ -123,16 +124,16 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 }
 
 func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
-	query := stateapi.NewQueryRequest(fc.scAddress)
+	query := statequery.NewRequest()
 	query.AddScalar(fairauction.VarStateOwnerMarginPromille)
-	res, err := waspapi.QuerySCState(fc.waspApiHost, query)
+	res, err := client.NewWaspClient(fc.waspApiHost).StateQuery(fc.scAddress, query)
 	var ownerMarginState int64
 	var ok bool
-	if err != waspapi.ErrStateNotFound {
+	if client.IsNotFound(err) {
 		if err != nil {
 			return 0, err
 		}
-		ownerMarginState, ok = res.Queries[fairauction.VarStateOwnerMarginPromille].MustInt64()
+		ownerMarginState, ok = res.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
 	}
 	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok)
 	fee := fairauction.GetExpectedDeposit(minimumBid, ownerMargin)

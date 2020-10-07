@@ -64,7 +64,7 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 			if c.Request().Method == http.MethodHead { // Issue #608
 				err = c.NoContent(he.Code)
 			} else {
-				err = c.JSON(he.Code, &client.ErrorResponse{Error: he.Error()})
+				err = c.JSON(he.Code, client.NewErrorResponse(he.Code, he.Error()))
 			}
 		}
 	}

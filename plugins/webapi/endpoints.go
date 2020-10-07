@@ -8,19 +8,14 @@ import (
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/iotaledger/wasp/plugins/webapi/info"
 	"github.com/iotaledger/wasp/plugins/webapi/request"
-	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
+	"github.com/iotaledger/wasp/plugins/webapi/state"
 	"github.com/labstack/echo"
 )
 
 func addEndpoints(adminWhitelist []net.IP) {
 	info.AddEndpoints(Server)
 	request.AddEndpoints(Server)
-
-	{
-		sc := Server.Group("/sc")
-
-		sc.POST("/state/query", stateapi.HandlerQueryState)
-	}
+	state.AddEndpoints(Server)
 
 	{
 		adm := Server.Group("/adm")

@@ -1,18 +1,39 @@
-// access to the solid state of the smart contract
-package stateapi
+package statequery
 
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
-	"github.com/labstack/echo"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 )
+
+type Request struct {
+	QueryGeneralData bool
+	KeyQueries       []*KeyQuery
+}
+
+type Results struct {
+	KeyQueryResults []*QueryResult
+	byKey           map[kv.Key]*QueryResult
+
+	// returned only when QueryGeneralData = true
+	StateIndex uint32
+	Timestamp  time.Time
+	StateHash  *hashing.HashValue
+	StateTxId  *jsonable.ValueTxID
+	Requests   []*sctransaction.RequestId
+}
+
+type KeyQuery struct {
+	Key    []byte
+	Type   ValueType
+	Params json.RawMessage // one of DictQueryParams, ArrayQueryParams, ...
+}
 
 type ValueType string
 
@@ -24,12 +45,6 @@ const (
 	ValueTypeTLogSlice     = ValueType("tlog_slice")
 	ValueTypeTLogSliceData = ValueType("tlog_slice_data")
 )
-
-type KeyQuery struct {
-	Key    []byte
-	Type   ValueType
-	Params json.RawMessage // one of DictQueryParams, ArrayQueryParams, ...
-}
 
 // TLogSliceQueryParams request slice of timestamped log. If FromTs or ToTs is 0,
 // it is considered 'earliest' and 'latest' respectively.
@@ -57,12 +72,6 @@ type DictElementQueryParams struct {
 type ArrayQueryParams struct {
 	From uint16
 	To   uint16
-}
-
-type QueryRequest struct {
-	Address          string
-	QueryGeneralData bool
-	Query            []*KeyQuery
 }
 
 type QueryResult struct {
@@ -102,85 +111,73 @@ type TLogSliceDataResult struct {
 	Values [][]byte
 }
 
-type QueryResponse struct {
-	// general info
-	StateIndex uint32
-	Timestamp  int64
-	StateHash  string
-	StateTxId  string
-	Requests   []string
-	// queried variables
-	Results []*QueryResult
-	Error   string
+func NewRequest() *Request {
+	return &Request{}
 }
 
-func NewQueryRequest(address *address.Address) *QueryRequest {
-	return &QueryRequest{Address: address.String()}
-}
-
-func (q *QueryRequest) AddGeneralData() {
+func (q *Request) AddGeneralData() {
 	q.QueryGeneralData = true
 }
 
-func (q *QueryRequest) AddScalar(key kv.Key) {
-	q.Query = append(q.Query, &KeyQuery{
+func (q *Request) AddScalar(key kv.Key) {
+	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(key),
 		Type:   ValueTypeScalar,
 		Params: nil,
 	})
 }
 
-func (q *QueryRequest) AddArray(key kv.Key, from uint16, to uint16) {
+func (q *Request) AddArray(key kv.Key, from uint16, to uint16) {
 	p := &ArrayQueryParams{From: from, To: to}
 	params, _ := json.Marshal(p)
-	q.Query = append(q.Query, &KeyQuery{
+	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(key),
 		Type:   ValueTypeArray,
 		Params: json.RawMessage(params),
 	})
 }
 
-func (q *QueryRequest) AddDictionary(key kv.Key, limit uint32) {
+func (q *Request) AddDictionary(key kv.Key, limit uint32) {
 	p := &DictQueryParams{Limit: limit}
 	params, _ := json.Marshal(p)
-	q.Query = append(q.Query, &KeyQuery{
+	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(key),
 		Type:   ValueTypeDict,
 		Params: json.RawMessage(params),
 	})
 }
 
-func (q *QueryRequest) AddDictionaryElement(dictKey kv.Key, elemKey []byte) {
+func (q *Request) AddDictionaryElement(dictKey kv.Key, elemKey []byte) {
 	p := &DictElementQueryParams{Key: elemKey}
 	params, _ := json.Marshal(p)
-	q.Query = append(q.Query, &KeyQuery{
+	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(dictKey),
 		Type:   ValueTypeDictElement,
 		Params: json.RawMessage(params),
 	})
 }
 
-func (q *QueryRequest) AddTLogSlice(key kv.Key, fromTs, toTs int64) {
+func (q *Request) AddTLogSlice(key kv.Key, fromTs, toTs int64) {
 	p := TLogSliceQueryParams{
 		FromTs: fromTs,
 		ToTs:   toTs,
 	}
 	params, _ := json.Marshal(p)
-	q.Query = append(q.Query, &KeyQuery{
+	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(key),
 		Type:   ValueTypeTLogSlice,
 		Params: json.RawMessage(params),
 	})
 }
 
-func (q *QueryRequest) AddTLogSliceData(key kv.Key, fromIndex, toIndex uint32, descending bool) {
+func (q *Request) AddTLogSliceData(key kv.Key, fromIndex, toIndex uint32, descending bool) {
 	p := TLogSliceDataQueryParams{
 		FromIndex:  fromIndex,
 		ToIndex:    toIndex,
 		Descending: descending,
 	}
 	params, _ := json.Marshal(p)
-	q.Query = append(q.Query, &KeyQuery{
+	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(key),
 		Type:   ValueTypeTLogSliceData,
 		Params: json.RawMessage(params),
@@ -288,59 +285,17 @@ func (r *QueryResult) MustTLogSliceDataResult() *TLogSliceDataResult {
 	return &sr
 }
 
-func HandlerQueryState(c echo.Context) error {
-	var req QueryRequest
-
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, &QueryResponse{Error: err.Error()})
-	}
-	addr, err := address.FromBase58(req.Address)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &QueryResponse{Error: err.Error()})
-	}
-	// TODO serialize access to solid state
-	state, batch, exist, err := state.LoadSolidState(&addr)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &QueryResponse{Error: err.Error()})
-	}
-	if !exist {
-		return c.JSON(http.StatusNotFound, &QueryResponse{
-			Error: fmt.Sprintf("State not found with address %s", addr),
-		})
-	}
-	sh := state.Hash()
-	ret := &QueryResponse{
-		StateIndex: state.StateIndex(),
-		Timestamp:  state.Timestamp(),
-		StateHash:  sh.String(),
-		StateTxId:  batch.StateTransactionId().String(),
-		Requests:   make([]string, len(batch.RequestIds())),
-		Results:    make([]*QueryResult, 0),
-	}
-	for i := range ret.Requests {
-		ret.Requests[i] = batch.RequestIds()[i].ToBase58()
-	}
-	vars := state.Variables()
-	for _, q := range req.Query {
-		value, err := processQuery(q, vars)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, &QueryResponse{Error: err.Error()})
+func (r *Results) Get(key kv.Key) *QueryResult {
+	if r.byKey == nil {
+		r.byKey = make(map[kv.Key]*QueryResult)
+		for _, qr := range r.KeyQueryResults {
+			r.byKey[kv.Key(qr.Key)] = qr
 		}
-		b, err := json.Marshal(value)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, &QueryResponse{Error: err.Error()})
-		}
-		ret.Results = append(ret.Results, &QueryResult{
-			Key:   q.Key,
-			Type:  q.Type,
-			Value: json.RawMessage(b),
-		})
 	}
-
-	return misc.OkJson(c, ret)
+	return r.byKey[key]
 }
 
-func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
+func (q *KeyQuery) Execute(vars kv.BufferedKVStore) (*QueryResult, error) {
 	key := kv.Key(q.Key)
 	switch q.Type {
 	case ValueTypeScalar:
@@ -348,7 +303,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		return value, nil
+		return q.makeResult(value)
 
 	case ValueTypeArray:
 		var params ArrayQueryParams
@@ -371,7 +326,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 			}
 			values = append(values, v)
 		}
-		return ArrayResult{Len: size, Values: values}, nil
+		return q.makeResult(ArrayResult{Len: size, Values: values})
 
 	case ValueTypeDict:
 		var params DictQueryParams
@@ -393,7 +348,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		return DictResult{Len: dict.Len(), Entries: entries}, nil
+		return q.makeResult(DictResult{Len: dict.Len(), Entries: entries})
 
 	case ValueTypeDictElement:
 		var params DictElementQueryParams
@@ -414,7 +369,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
-		return DictElementResult{Value: v}, nil
+		return q.makeResult(DictElementResult{Value: v})
 
 	case ValueTypeTLogSlice:
 		var params TLogSliceQueryParams
@@ -433,7 +388,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 			return nil, err
 		}
 		if tsl.IsEmpty() {
-			return TLogSliceResult{}, nil
+			return q.makeResult(TLogSliceResult{})
 		}
 		ret := TLogSliceResult{
 			IsNotEmpty: true,
@@ -441,7 +396,7 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 			Latest:     tsl.Latest(),
 		}
 		ret.FirstIndex, ret.LastIndex = tsl.FromToIndices()
-		return ret, nil
+		return q.makeResult(ret)
 
 	case ValueTypeTLogSliceData:
 		var params TLogSliceDataQueryParams
@@ -457,8 +412,23 @@ func processQuery(q *KeyQuery, vars kv.BufferedKVStore) (interface{}, error) {
 
 		ret := TLogSliceDataResult{}
 		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex, params.Descending)
-		return ret, err
+		if err != nil {
+			return nil, err
+		}
+		return q.makeResult(ret)
 	}
 
 	return nil, fmt.Errorf("No handler for type %s", q.Type)
+}
+
+func (q *KeyQuery) makeResult(value interface{}) (*QueryResult, error) {
+	b, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	return &QueryResult{
+		Key:   q.Key,
+		Type:  q.Type,
+		Value: json.RawMessage(b),
+	}, nil
 }

@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/subscribe"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -17,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
-	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
 type TokenRegistryClient struct {
@@ -117,7 +118,7 @@ type TokenMetadataWithColor struct {
 }
 
 func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(trc.nodeClient, trc.waspHost, trc.scAddress, func(query *stateapi.QueryRequest) {
+	scStatus, results, err := waspapi.FetchSCStatus(trc.nodeClient, trc.waspHost, trc.scAddress, func(query *statequery.Request) {
 		query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
 	})
 	if err != nil {
@@ -126,7 +127,7 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 
 	status := &Status{SCStatus: scStatus}
 
-	status.Registry, err = decodeRegistry(results[tokenregistry.VarStateTheRegistry].MustDictionaryResult())
+	status.Registry, err = decodeRegistry(results.Get(tokenregistry.VarStateTheRegistry).MustDictionaryResult())
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 	return status, nil
 }
 
-func decodeRegistry(result *stateapi.DictResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
+func decodeRegistry(result *statequery.DictResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
 	registry := make(map[balance.Color]*tokenregistry.TokenMetadata)
 	for _, e := range result.Entries {
 		color, _, err := balance.ColorFromBytes(e.Key)
@@ -165,15 +166,15 @@ func decodeRegistry(result *stateapi.DictResult) (map[balance.Color]*tokenregist
 }
 
 func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.TokenMetadata, error) {
-	query := stateapi.NewQueryRequest(trc.scAddress)
+	query := statequery.NewRequest()
 	query.AddDictionaryElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 
-	res, err := waspapi.QuerySCState(trc.waspHost, query)
+	res, err := client.NewWaspClient(trc.waspHost).StateQuery(trc.scAddress, query)
 	if err != nil {
 		return nil, err
 	}
 
-	value := res.Queries[tokenregistry.VarStateTheRegistry].MustDictionaryElementResult()
+	value := res.Get(tokenregistry.VarStateTheRegistry).MustDictionaryElementResult()
 	if value == nil {
 		// not found
 		return nil, nil

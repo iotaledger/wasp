@@ -6,13 +6,14 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/apilib"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
-	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
 type DWFClient struct {
@@ -99,8 +100,8 @@ type Status struct {
 
 const maxRecordsToFetch = 15
 
-func (client *DWFClient) FetchStatus() (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(client.nodeClient, client.waspApiHost, client.scAddress, func(query *stateapi.QueryRequest) {
+func (dc *DWFClient) FetchStatus() (*Status, error) {
+	scStatus, results, err := waspapi.FetchSCStatus(dc.nodeClient, dc.waspApiHost, dc.scAddress, func(query *statequery.Request) {
 		query.AddScalar(donatewithfeedback.VarStateMaxDonation)
 		query.AddScalar(donatewithfeedback.VarStateTotalDonations)
 		query.AddTLogSlice(donatewithfeedback.VarStateTheLog, 0, 0)
@@ -111,9 +112,9 @@ func (client *DWFClient) FetchStatus() (*Status, error) {
 
 	status := &Status{SCStatus: scStatus}
 
-	status.MaxDonation, _ = results[donatewithfeedback.VarStateMaxDonation].MustInt64()
-	status.TotalDonations, _ = results[donatewithfeedback.VarStateTotalDonations].MustInt64()
-	logSlice := results[donatewithfeedback.VarStateTheLog].MustTLogSliceResult()
+	status.MaxDonation, _ = results.Get(donatewithfeedback.VarStateMaxDonation).MustInt64()
+	status.TotalDonations, _ = results.Get(donatewithfeedback.VarStateTotalDonations).MustInt64()
+	logSlice := results.Get(donatewithfeedback.VarStateTheLog).MustTLogSliceResult()
 	if !logSlice.IsNotEmpty {
 		// no records
 		return status, nil
@@ -127,20 +128,20 @@ func (client *DWFClient) FetchStatus() (*Status, error) {
 		fromIdx = logSlice.LastIndex - maxRecordsToFetch + 1
 	}
 
-	query := stateapi.NewQueryRequest(client.scAddress)
+	query := statequery.NewRequest()
 	query.AddTLogSliceData(donatewithfeedback.VarStateTheLog, fromIdx, logSlice.LastIndex, true)
-	res, err := waspapi.QuerySCState(client.waspApiHost, query)
+	res, err := client.NewWaspClient(dc.waspApiHost).StateQuery(dc.scAddress, query)
 	if err != nil {
 		return nil, err
 	}
-	status.LastRecordsDesc, err = decodeRecords(res.Queries[donatewithfeedback.VarStateTheLog].MustTLogSliceDataResult())
+	status.LastRecordsDesc, err = decodeRecords(res.Get(donatewithfeedback.VarStateTheLog).MustTLogSliceDataResult())
 	if err != nil {
 		return nil, err
 	}
 	return status, nil
 }
 
-func decodeRecords(sliceData *stateapi.TLogSliceDataResult) ([]*donatewithfeedback.DonationInfo, error) {
+func decodeRecords(sliceData *statequery.TLogSliceDataResult) ([]*donatewithfeedback.DonationInfo, error) {
 	ret := make([]*donatewithfeedback.DonationInfo, len(sliceData.Values))
 	for i, data := range sliceData.Values {
 		lr, err := kv.ParseRawLogRecord(data)
