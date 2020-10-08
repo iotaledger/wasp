@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 )
 
-func DumpSCStatus(sc *sc.Config, status *apilib.SCStatus) {
+func DumpSCStatus(sc *sc.Config, status *scclient.SCStatus) {
 	fmt.Printf("%s smart contract status:\n", sc.Name)
 	fmt.Printf("  Program hash: %s\n", status.ProgramHash)
 	fmt.Printf("  Description: %s\n", status.Description)

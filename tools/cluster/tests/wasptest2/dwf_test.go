@@ -3,8 +3,14 @@ package wasptest2
 import (
 	"crypto/rand"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/scclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -14,10 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfimpl"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/mr-tron/base58"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestDeployDWF(t *testing.T) {
@@ -34,7 +36,7 @@ func TestDeployDWF(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -74,7 +76,7 @@ func TestDeployDWF(t *testing.T) {
 		return
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
 		*scColor: 1,
 	}, "sc in the end") {
 		t.Fail()
@@ -110,11 +112,11 @@ func TestDWFDonateNTimes(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	donorAddr := donor.Address()
-	err = wasps.NodeClient.RequestFunds(&donorAddr)
+	err = wasps.NodeClient.RequestFunds(donorAddr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -154,16 +156,16 @@ func TestDWFDonateNTimes(t *testing.T) {
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
-	dwfClient := dwfclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scAddr, donor.SigScheme())
+	dwfClient := dwfclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scAddr,
+		donor.SigScheme(),
+	))
+
 	for i := 0; i < numDonations; i++ {
-		_, err = dwfClient.Donate(dwfclient.DonateParams{
-			Amount:            42,
-			Feedback:          fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i),
-			WaitForCompletion: true,
-			PublisherHosts:    wasps.PublisherHosts(),
-			PublisherQuorum:   3,
-			Timeout:           30 * time.Second,
-		})
+		_, err = dwfClient.Donate(42, fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i))
+		check(err, t)
 		time.Sleep(1 * time.Second)
 		checkSuccess(err, t, "donated 42")
 	}
@@ -198,7 +200,7 @@ func TestDWFDonateNTimes(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1+42*numDonations, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1+42*numDonations, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 42 * numDonations,
 	}, "sc in the end") {
@@ -240,11 +242,11 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	donorAddr := donor.Address()
-	err = wasps.NodeClient.RequestFunds(&donorAddr)
+	err = wasps.NodeClient.RequestFunds(donorAddr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -284,15 +286,14 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
-	dwfDonorClient := dwfclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scAddr, donor.SigScheme())
-	_, err = dwfDonorClient.Donate(dwfclient.DonateParams{
-		Amount:            42,
-		Feedback:          "well done, I give you 42i",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		PublisherQuorum:   3,
-		Timeout:           30 * time.Second,
-	})
+	dwfDonorClient := dwfclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scAddr,
+		donor.SigScheme(),
+	))
+	_, err = dwfDonorClient.Donate(42, "well done, I give you 42i")
+	check(err, t)
 	checkSuccess(err, t, "donated 42")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
@@ -301,7 +302,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1+42, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1+42, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 42,
 	}, "sc in the end") {
@@ -314,14 +315,14 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	dwfOwnerClient := dwfclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scAddr, scOwner.SigScheme())
-	_, err = dwfOwnerClient.Withdraw(dwfclient.WithdrawParams{
-		Amount:            40,
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		PublisherQuorum:   3,
-		Timeout:           30 * time.Second,
-	})
+	dwfOwnerClient := dwfclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scAddr,
+		scOwner.SigScheme(),
+	))
+	_, err = dwfOwnerClient.Withdraw(40)
+	check(err, t)
 	checkSuccess(err, t, "harvested 40")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1+40, map[balance.Color]int64{
@@ -330,7 +331,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1+2, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1+2, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 2,
 	}, "sc in the end") {
@@ -370,11 +371,11 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	donorAddr := donor.Address()
-	err = wasps.NodeClient.RequestFunds(&donorAddr)
+	err = wasps.NodeClient.RequestFunds(donorAddr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -414,15 +415,14 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
-	dwfDonorClient := dwfclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scAddr, donor.SigScheme())
-	_, err = dwfDonorClient.Donate(dwfclient.DonateParams{
-		Amount:            42,
-		Feedback:          "well done, I give you 42i",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		PublisherQuorum:   3,
-		Timeout:           30 * time.Second,
-	})
+	dwfDonorClient := dwfclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scAddr,
+		donor.SigScheme(),
+	))
+	_, err = dwfDonorClient.Donate(42, "well done, I give you 42i")
+	check(err, t)
 	checkSuccess(err, t, "donated 42")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
@@ -431,7 +431,7 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1+42, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1+42, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 42,
 	}, "sc in the end") {
@@ -445,13 +445,8 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 	}
 
 	// donor want to take back. Not authorised
-	_, err = dwfDonorClient.Withdraw(dwfclient.WithdrawParams{
-		Amount:            40,
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		PublisherQuorum:   3,
-		Timeout:           30 * time.Second,
-	})
+	_, err = dwfDonorClient.Withdraw(40)
+	check(err, t)
 	checkSuccess(err, t, "sent harvest 40")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
@@ -460,7 +455,7 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1+42, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1+42, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 42,
 	}, "sc in the end") {

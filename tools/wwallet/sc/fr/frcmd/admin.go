@@ -5,9 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
-	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 )
 
@@ -28,9 +26,8 @@ func adminCmd(args []string) {
 		s, err := strconv.Atoi(args[1])
 		check(err)
 
-		util.WithSCRequest(fr.Config, func() (*sctransaction.Transaction, error) {
-			return fr.Client().SetPeriod(s)
-		})
+		_, err = fr.Client().SetPeriod(s)
+		check(err)
 
 	default:
 		adminUsage()

@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/scclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -35,11 +36,11 @@ func TestTRTest(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	minterAddr := minter.Address()
-	err = wasps.NodeClient.RequestFunds(&minterAddr)
+	err = wasps.NodeClient.RequestFunds(minterAddr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -77,7 +78,7 @@ func TestTRTest(t *testing.T) {
 	})
 	checkSuccess(err, t, "smart contract has been activated")
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
 		*scColor: 1, // sc token
 	}, "SC address in the beginning") {
 		t.Fail()
@@ -90,15 +91,12 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 
-	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scAddr, minter.SigScheme())
+	tc := trclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scAddr, minter.SigScheme()))
 
 	tx1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
-		Supply:            1,
-		MintTarget:        minterAddr,
-		Description:       "Non-fungible coin 1",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           30 * time.Second,
+		Supply:      1,
+		MintTarget:  *minterAddr,
+		Description: "Non-fungible coin 1",
 	})
 	checkSuccess(err, t, "token minted and registered successfully")
 
@@ -111,7 +109,7 @@ func TestTRTest(t *testing.T) {
 
 	mintedColor1 := balance.Color(tx1.ID())
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
 		balance.ColorIOTA: 0,
 		*scColor:          1,
 	}, "SC address in the end") {

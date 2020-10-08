@@ -2,111 +2,53 @@ package trclient
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
-	"time"
-
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/subscribe"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 )
 
 type TokenRegistryClient struct {
-	nodeClient nodeclient.NodeClient
-	waspHost   string
-	scAddress  *address.Address
-	sigScheme  signaturescheme.SignatureScheme
+	*scclient.SCClient
 }
 
-func NewClient(nodeClient nodeclient.NodeClient, waspHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *TokenRegistryClient {
-	return &TokenRegistryClient{nodeClient, waspHost, scAddress, sigScheme}
+func NewClient(scClient *scclient.SCClient) *TokenRegistryClient {
+	return &TokenRegistryClient{scClient}
 }
 
 type MintAndRegisterParams struct {
-	Supply            int64           // number of tokens to mint
-	MintTarget        address.Address // where to mint new Supply
-	Description       string
-	UserDefinedData   []byte
-	WaitForCompletion bool
-	PublisherHosts    []string
-	PublisherQuorum   int
-	Timeout           time.Duration // must be enough for confirmation of the request transaction processing of it (>20s)
+	Supply          int64           // number of tokens to mint
+	MintTarget      address.Address // where to mint new Supply
+	Description     string
+	UserDefinedData []byte
 }
 
 func (trc *TokenRegistryClient) OwnerAddress() address.Address {
-	return trc.sigScheme.Address()
+	return trc.SigScheme.Address()
 }
 
 // MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
 func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.Transaction, error) {
-	ownerAddr := trc.sigScheme.Address()
-	outs, err := trc.nodeClient.GetConfirmedAccountOutputs(&ownerAddr)
-	if err != nil {
-		return nil, err
-	}
-	txb, err := txbuilder.NewFromOutputBalances(outs)
-	if err != nil {
-		return nil, err
-	}
-	err = txb.MintColor(par.MintTarget, balance.ColorIOTA, par.Supply)
-	if err != nil {
-		return nil, err
-	}
-	args := kv.NewMap()
-	codec := args.Codec()
-	codec.SetString(tokenregistry.VarReqDescription, par.Description)
+	args := make(map[string]interface{})
+	args[tokenregistry.VarReqDescription] = par.Description
 	if par.UserDefinedData != nil {
-		codec.Set(tokenregistry.VarReqUserDefinedMetadata, par.UserDefinedData)
+		args[tokenregistry.VarReqUserDefinedMetadata] = par.UserDefinedData
 	}
-
-	reqBlk := sctransaction.NewRequestBlock(*trc.scAddress, tokenregistry.RequestMintSupply)
-	reqBlk.SetArgs(args)
-	err = txb.AddRequestBlock(reqBlk)
-	if err != nil {
-		return nil, err
-	}
-	tx, err := txb.Build(false)
-	if err != nil {
-		return nil, err
-	}
-	tx.Sign(trc.sigScheme)
-
-	var subs *subscribe.Subscription
-	if !par.WaitForCompletion {
-		err = trc.nodeClient.PostTransaction(tx.Transaction)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
-	}
-	subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out", par.PublisherQuorum)
-	if err != nil {
-		return nil, err
-	}
-	defer subs.Close()
-	err = trc.nodeClient.PostAndWaitForConfirmation(tx.Transaction)
-	if err != nil {
-		return nil, err
-	}
-	if !subs.WaitForPattern([]string{"request_out", trc.scAddress.String(), tx.ID().String(), "0"}, par.Timeout) {
-		return nil, fmt.Errorf("didnt't get confirmation message in %v", par.Timeout)
-	}
-	return tx, nil
+	return trc.PostRequest(
+		tokenregistry.RequestMintSupply,
+		map[address.Address]int64{par.MintTarget: par.Supply},
+		nil,
+		args,
+	)
 }
 
 type Status struct {
-	*waspapi.SCStatus
+	*scclient.SCStatus
 
 	Registry                     map[balance.Color]*tokenregistry.TokenMetadata
 	RegistrySortedByMintTimeDesc []*TokenMetadataWithColor // may be nil
@@ -118,7 +60,7 @@ type TokenMetadataWithColor struct {
 }
 
 func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(trc.nodeClient, trc.waspHost, trc.scAddress, func(query *statequery.Request) {
+	scStatus, results, err := trc.FetchSCStatus(func(query *statequery.Request) {
 		query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
 	})
 	if err != nil {
@@ -169,7 +111,7 @@ func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.Toke
 	query := statequery.NewRequest()
 	query.AddDictionaryElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 
-	res, err := client.NewWaspClient(trc.waspHost).StateQuery(trc.scAddress, query)
+	res, err := trc.StateQuery(query)
 	if err != nil {
 		return nil, err
 	}

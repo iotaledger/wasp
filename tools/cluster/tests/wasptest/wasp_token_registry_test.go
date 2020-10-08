@@ -43,7 +43,7 @@ func TestTRMint1Token(t *testing.T) {
 	progHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(&minterAddr)
+	err = wasps.NodeClient.RequestFunds(minterAddr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -67,15 +67,12 @@ func TestTRMint1Token(t *testing.T) {
 		return
 	}
 
-	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), &scAddress, minter1.SigScheme())
+	tc := trclient.NewClient(wasps.SCClient(sc, minter1.SigScheme()))
 
 	tx, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
-		Supply:            1,
-		MintTarget:        minterAddr,
-		Description:       "Non-fungible coin 1",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+		Supply:      1,
+		MintTarget:  *minterAddr,
+		Description: "Non-fungible coin 1",
 	})
 	check(err, t)
 

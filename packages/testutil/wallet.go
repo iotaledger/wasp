@@ -20,8 +20,9 @@ func NewWallet(b58walletSeed string) *Wallet {
 	return &Wallet{seed: seed.NewSeed(seedBytes), index: 0}
 }
 
-func (w *Wallet) Address() address.Address {
-	return w.seed.Address(w.index).Address
+func (w *Wallet) Address() *address.Address {
+	addr := w.seed.Address(w.index).Address
+	return &addr
 }
 
 func (w *Wallet) SigScheme() signaturescheme.SignatureScheme {

@@ -9,8 +9,9 @@ const (
 )
 
 type InfoResponse struct {
-	Version   string
-	NetworkId string
+	Version       string
+	NetworkId     string
+	PublisherPort int
 }
 
 // Info gets the info of the node.

@@ -5,9 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fr"
-	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
 
 func betCmd(args []string) {
@@ -21,9 +19,8 @@ func betCmd(args []string) {
 	amount, err := strconv.Atoi(args[1])
 	check(err)
 
-	util.WithSCRequest(fr.Config, func() (*sctransaction.Transaction, error) {
-		return fr.Client().Bet(color, amount)
-	})
+	_, err = fr.Client().Bet(color, amount)
+	check(err)
 }
 
 func check(err error) {

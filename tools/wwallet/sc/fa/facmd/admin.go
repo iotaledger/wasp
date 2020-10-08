@@ -5,9 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/fa"
-	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 )
 
@@ -27,9 +25,8 @@ func adminCmd(args []string) {
 		}
 		p, err := strconv.Atoi(args[1])
 		check(err)
-		util.WithSCRequest(fa.Config, func() (*sctransaction.Transaction, error) {
-			return fa.Client().SetOwnerMargin(int64(p))
-		})
+		_, err = fa.Client().SetOwnerMargin(int64(p))
+		check(err)
 
 	default:
 		adminUsage()

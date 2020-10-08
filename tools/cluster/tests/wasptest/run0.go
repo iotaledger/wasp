@@ -18,14 +18,14 @@ func PutBootupRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
 
 	ownerAddr := sc.OwnerAddress()
-	_, ok := requested[ownerAddr]
+	_, ok := requested[*ownerAddr]
 	if !ok {
-		err := clu.NodeClient.RequestFunds(&ownerAddr)
+		err := clu.NodeClient.RequestFunds(ownerAddr)
 		if err != nil {
 			fmt.Printf("[cluster] Could not request funds: %v\n", err)
 			return nil, fmt.Errorf("Could not request funds: %v", err)
 		}
-		requested[ownerAddr] = true
+		requested[*ownerAddr] = true
 	}
 
 	color, err := putScData(clu, sc)
@@ -56,7 +56,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	succ, errs := waspapi.PutSCDataMulti(allNodesApi, registry.BootupData{
 		Address:        addr,
 		Color:          color,
-		OwnerAddress:   sc.OwnerAddress(),
+		OwnerAddress:   *sc.OwnerAddress(),
 		CommitteeNodes: committeePeerNodes,
 		AccessNodes:    accessPeerNodes,
 	})

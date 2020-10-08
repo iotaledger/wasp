@@ -39,7 +39,7 @@ func TestSend1ReqIncSimple(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: inccounter.RequestInc,
 	})
 	check(err, t)
@@ -93,7 +93,7 @@ func TestSend5ReqInc0SecSimple(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: inccounter.RequestInc,
 		})
 		check(err, t)
@@ -149,7 +149,7 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: inccounter.RequestInc,
 		})
 		check(err, t)
@@ -204,7 +204,7 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: inccounter.RequestInc,
 		})
 		check(err, t)
@@ -259,7 +259,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: inccounter.RequestInc,
 		})
 		check(err, t)

@@ -3,7 +3,6 @@ package tr
 import (
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
-	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 )
@@ -15,10 +14,5 @@ var Config = &sc.Config{
 }
 
 func Client() *trclient.TokenRegistryClient {
-	return trclient.NewClient(
-		config.GoshimmerClient(),
-		config.WaspApi(),
-		Config.Address(),
-		wallet.Load().SignatureScheme(),
-	)
+	return trclient.NewClient(Config.MakeClient(wallet.Load().SignatureScheme()))
 }

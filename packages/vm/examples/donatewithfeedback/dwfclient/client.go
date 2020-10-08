@@ -3,92 +3,42 @@ package dwfclient
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/apilib"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 )
 
 type DWFClient struct {
-	nodeClient  nodeclient.NodeClient
-	waspApiHost string
-	scAddress   *address.Address
-	sigScheme   signaturescheme.SignatureScheme
+	*scclient.SCClient
 }
 
-func NewClient(nodeClient nodeclient.NodeClient, waspApiHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *DWFClient {
-	return &DWFClient{nodeClient, waspApiHost, scAddress, sigScheme}
+func NewClient(scClient *scclient.SCClient) *DWFClient {
+	return &DWFClient{scClient}
 }
 
-type DonateParams struct {
-	Amount            int64
-	Feedback          string
-	WaitForCompletion bool
-	PublisherHosts    []string
-	PublisherQuorum   int
-	Timeout           time.Duration
+func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Transaction, error) {
+	return dwf.PostRequest(
+		donatewithfeedback.RequestDonate,
+		nil,
+		map[balance.Color]int64{balance.ColorIOTA: amount},
+		map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback},
+	)
 }
 
-func (client *DWFClient) Donate(par DonateParams) (*sctransaction.Transaction, error) {
-	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
-		NodeClient:      client.nodeClient,
-		SenderSigScheme: client.sigScheme,
-		BlockParams: []apilib.RequestBlockParams{{
-			TargetSCAddress: client.scAddress,
-			RequestCode:     donatewithfeedback.RequestDonate,
-			Transfer: map[balance.Color]int64{
-				balance.ColorIOTA: par.Amount,
-			},
-			Vars: map[string]interface{}{
-				donatewithfeedback.VarReqFeedback: par.Feedback,
-			}},
-		},
-		Post:                true,
-		WaitForConfirmation: par.WaitForCompletion,
-		WaitForCompletion:   par.WaitForCompletion,
-		PublisherHosts:      par.PublisherHosts,
-		PublisherQuorum:     par.PublisherQuorum,
-		Timeout:             par.Timeout,
-	})
-}
-
-type WithdrawParams struct {
-	Amount            int64
-	WaitForCompletion bool
-	PublisherHosts    []string
-	PublisherQuorum   int
-	Timeout           time.Duration
-}
-
-func (client *DWFClient) Withdraw(par WithdrawParams) (*sctransaction.Transaction, error) {
-	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
-		NodeClient:      client.nodeClient,
-		SenderSigScheme: client.sigScheme,
-		BlockParams: []apilib.RequestBlockParams{{
-			TargetSCAddress: client.scAddress,
-			RequestCode:     donatewithfeedback.RequestWithdraw,
-			Vars: map[string]interface{}{
-				donatewithfeedback.VarReqWithdrawSum: par.Amount,
-			},
-		}},
-		Post:                true,
-		WaitForConfirmation: par.WaitForCompletion,
-		WaitForCompletion:   par.WaitForCompletion,
-		PublisherHosts:      par.PublisherHosts,
-		PublisherQuorum:     par.PublisherQuorum,
-		Timeout:             par.Timeout,
-	})
+func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error) {
+	return dwf.PostRequest(
+		donatewithfeedback.RequestWithdraw,
+		nil,
+		nil,
+		map[string]interface{}{donatewithfeedback.VarReqWithdrawSum: amount},
+	)
 }
 
 type Status struct {
-	*waspapi.SCStatus
+	*scclient.SCStatus
 
 	NumRecords      uint32
 	FirstDonated    time.Time
@@ -100,8 +50,8 @@ type Status struct {
 
 const maxRecordsToFetch = 15
 
-func (dc *DWFClient) FetchStatus() (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(dc.nodeClient, dc.waspApiHost, dc.scAddress, func(query *statequery.Request) {
+func (dwf *DWFClient) FetchStatus() (*Status, error) {
+	scStatus, results, err := dwf.FetchSCStatus(func(query *statequery.Request) {
 		query.AddScalar(donatewithfeedback.VarStateMaxDonation)
 		query.AddScalar(donatewithfeedback.VarStateTotalDonations)
 		query.AddTLogSlice(donatewithfeedback.VarStateTheLog, 0, 0)
@@ -130,7 +80,7 @@ func (dc *DWFClient) FetchStatus() (*Status, error) {
 
 	query := statequery.NewRequest()
 	query.AddTLogSliceData(donatewithfeedback.VarStateTheLog, fromIdx, logSlice.LastIndex, true)
-	res, err := client.NewWaspClient(dc.waspApiHost).StateQuery(dc.scAddress, query)
+	res, err := dwf.StateQuery(query)
 	if err != nil {
 		return nil, err
 	}

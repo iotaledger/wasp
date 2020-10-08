@@ -1,17 +1,14 @@
-package apilib
+package scclient
 
 import (
 	"time"
 
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
@@ -32,8 +29,8 @@ type SCStatus struct {
 	FetchedAt     time.Time
 }
 
-func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress *address.Address, addCustomQueries func(query *statequery.Request)) (*SCStatus, *statequery.Results, error) {
-	balance, err := fetchSCBalance(nodeClient, scAddress)
+func (sc *SCClient) FetchSCStatus(addCustomQueries func(query *statequery.Request)) (*SCStatus, *statequery.Results, error) {
+	balance, err := sc.FetchBalance()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -46,7 +43,7 @@ func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress 
 	query.AddScalar(vmconst.VarNameMinimumReward)
 	addCustomQueries(query)
 
-	res, err := client.NewWaspClient(waspHost).StateQuery(scAddress, query)
+	res, err := sc.WaspClient.StateQuery(sc.Address, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -65,14 +62,14 @@ func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress 
 		Description:   description,
 		OwnerAddress:  res.Get(vmconst.VarNameOwnerAddress).MustAddress(),
 		MinimumReward: minReward,
-		SCAddress:     scAddress,
+		SCAddress:     sc.Address,
 		Balance:       balance,
 		FetchedAt:     time.Now().UTC(),
 	}, res, nil
 }
 
-func fetchSCBalance(nodeClient nodeclient.NodeClient, scAddress *address.Address) (map[balance.Color]int64, error) {
-	outs, err := nodeClient.GetConfirmedAccountOutputs(scAddress)
+func (sc *SCClient) FetchBalance() (map[balance.Color]int64, error) {
+	outs, err := sc.NodeClient.GetConfirmedAccountOutputs(sc.Address)
 	if err != nil {
 		return nil, err
 	}

@@ -3,56 +3,34 @@ package faclient
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/subscribe"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 )
 
 type FairAuctionClient struct {
-	nodeClient         nodeclient.NodeClient
-	waspApiHost        string
-	scAddress          *address.Address
-	sigScheme          signaturescheme.SignatureScheme
-	waitForCompletion  bool // wait for completion of requests
-	waspPublisherHosts []string
-	timeout            time.Duration
+	*scclient.SCClient
 }
 
-func NewClient(nodeClient nodeclient.NodeClient, waspApiHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *FairAuctionClient {
-	return &FairAuctionClient{
-		nodeClient:  nodeClient,
-		waspApiHost: waspApiHost,
-		scAddress:   scAddress,
-		sigScheme:   sigScheme,
-	}
+func NewClient(scClient *scclient.SCClient) *FairAuctionClient {
+	return &FairAuctionClient{scClient}
 }
 
 type Status struct {
-	*waspapi.SCStatus
+	*scclient.SCStatus
 
 	OwnerMarginPromille int64
 	AuctionsLen         uint32
 	Auctions            map[balance.Color]*fairauction.AuctionInfo
 }
 
-func (fc *FairAuctionClient) SetWaitRequestCompletionParams(publisherHosts []string, timeout time.Duration) {
-	fc.waitForCompletion = true
-	fc.waspPublisherHosts = publisherHosts
-	fc.timeout = timeout
-}
-
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(fc.nodeClient, fc.waspApiHost, fc.scAddress, func(query *statequery.Request) {
+	scStatus, results, err := fc.FetchSCStatus(func(query *statequery.Request) {
 		query.AddScalar(fairauction.VarStateOwnerMarginPromille)
 		query.AddDictionary(fairauction.VarStateAuctions, 100)
 	})
@@ -79,45 +57,10 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	return status, nil
 }
 
-func (fc *FairAuctionClient) postRequest(code sctransaction.RequestCode, transfer map[balance.Color]int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
-	tx, err := waspapi.CreateSimpleRequestOld(
-		fc.nodeClient,
-		fc.sigScheme,
-		waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   fc.scAddress,
-			RequestCode: code,
-			Vars:        vars,
-			Transfer:    transfer,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	if !fc.waitForCompletion {
-		if err = fc.nodeClient.PostTransaction(tx.Transaction); err != nil {
-			return nil, err
-		}
-		return tx, nil
-	}
-	subs, err := subscribe.SubscribeMulti(fc.waspPublisherHosts, "request_out")
-	if err != nil {
-		return nil, err
-	}
-	defer subs.Close()
-
-	if err = fc.nodeClient.PostAndWaitForConfirmation(tx.Transaction); err != nil {
-		return nil, err
-	}
-	succ := subs.WaitForPattern([]string{"request_out", fc.scAddress.String(), tx.ID().String(), "0"}, fc.timeout)
-	if !succ {
-		return nil, fmt.Errorf("didn't receive completion message in %v", fc.timeout)
-	}
-	return tx, nil
-}
-
 func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transaction, error) {
-	return fc.postRequest(
+	return fc.PostRequest(
 		fairauction.RequestSetOwnerMargin,
+		nil,
 		nil,
 		map[string]interface{}{fairauction.VarReqOwnerMargin: margin},
 	)
@@ -126,7 +69,7 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	query := statequery.NewRequest()
 	query.AddScalar(fairauction.VarStateOwnerMarginPromille)
-	res, err := client.NewWaspClient(fc.waspApiHost).StateQuery(fc.scAddress, query)
+	res, err := fc.StateQuery(query)
 	var ownerMarginState int64
 	var ok bool
 	if client.IsNotFound(err) {
@@ -151,8 +94,9 @@ func (fc *FairAuctionClient) StartAuction(
 	if err != nil {
 		return nil, fmt.Errorf("GetFeeAmount failed: %v", err)
 	}
-	return fc.postRequest(
+	return fc.PostRequest(
 		fairauction.RequestStartAuction,
+		nil,
 		map[balance.Color]int64{
 			balance.ColorIOTA: fee,
 			*color:            tokensForSale,
@@ -167,8 +111,9 @@ func (fc *FairAuctionClient) StartAuction(
 }
 
 func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction.Transaction, error) {
-	return fc.postRequest(
+	return fc.PostRequest(
 		fairauction.RequestPlaceBid,
+		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
 		map[string]interface{}{fairauction.VarReqAuctionColor: color},
 	)

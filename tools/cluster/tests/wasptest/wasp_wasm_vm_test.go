@@ -48,7 +48,7 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: wasmpoc.RequestNop,
 		})
 		check(err, t)
@@ -110,7 +110,7 @@ func TestWasmSend1ReqIncSimple(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestInc,
 	})
 	check(err, t)
@@ -162,7 +162,7 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 
 	// send 1i to the SC address. It is needed to send the request to self
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestNop,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -172,7 +172,7 @@ func TestWasmSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestIncRepeat1,
 	})
 	check(err, t)
@@ -225,7 +225,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 
 	// send 5i to the SC address. It is needed to send 5 requests to self at once
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestNop,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 5,
@@ -235,7 +235,7 @@ func TestWasmChainIncTimelock(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestIncRepeatMany,
 		Vars: map[string]interface{}{
 			inccounter.ArgNumRepeats: chainOfRequestsLength,
@@ -357,10 +357,8 @@ func TestWasmSend5Bets(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	scAddress, err := address.FromBase58(sc.Address)
-	check(err, t)
+	scAddress := sc.SCAddress()
 	ownerAddr := sc.OwnerAddress()
-	check(err, t)
 
 	if !wasps.VerifyAddressBalances(ownerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -371,7 +369,7 @@ func TestWasmSend5Bets(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: wasmpoc.RequestPlaceBet,
 			Vars: map[string]interface{}{
 				"color": i + 1,
@@ -428,14 +426,12 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	err = CreateOrigin1SC(wasps, sc)
 	check(err, t)
 
-	scAddress, err := address.FromBase58(sc.Address)
-	check(err, t)
+	scAddress := sc.SCAddress()
 	ownerAddr := sc.OwnerAddress()
-	check(err, t)
 
 	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestNop,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -451,7 +447,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 	}
 	// SetPlayPeriod must be processed first
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: wasmpoc.RequestPlayPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
@@ -463,7 +459,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: wasmpoc.RequestPlaceBet,
 			Vars: map[string]interface{}{
 				"color": i + 1,
