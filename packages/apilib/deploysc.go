@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -166,7 +167,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 	fmt.Fprintf(textout, "checking program hash %s.. \n", par.ProgramHash.String())
 
 	fmt.Fprint(textout, par.Prefix)
-	md, err := CheckProgramMetadata(par.CommitteeApiHosts, &par.ProgramHash)
+	md, err := multiclient.New(par.CommitteeApiHosts).CheckProgramMetadata(&par.ProgramHash)
 	if err != nil {
 		fmt.Fprintf(textout, "checking program metadata: FAILED: %v\n", err)
 		return nil, nil, err

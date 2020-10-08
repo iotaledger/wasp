@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 )
 
@@ -21,7 +21,7 @@ func uploadCmd(args []string) {
 	nodes := parseIntList(args[3])
 
 	for _, host := range config.CommitteeApi(nodes) {
-		hash, err := apilib.PutProgram(host, vmtype, description, code)
+		hash, err := client.NewWaspClient(host).PutProgram(vmtype, description, code)
 		check(err)
 
 		fmt.Printf("Program uploaded to host %s. Program hash: %s\n", host, hash.String())

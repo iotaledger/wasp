@@ -12,8 +12,6 @@ import (
 	"testing"
 )
 
-const scAddressStr = "pHoaPehxf811Kg2nCHmkcXc7vjDMnBnBXnksTYXyhzXa"
-
 func TestBasic(t *testing.T) {
 	u := utxodb.New()
 	ownerSigSheme := signaturescheme.RandBLS()
