@@ -14,7 +14,7 @@ import (
 
 var configPath string
 var Verbose bool
-var WaitForConfirmation bool
+var WaitForCompletion bool
 var Utxodb bool
 var SCAlias string
 
@@ -30,7 +30,7 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 	fs := pflag.NewFlagSet("config", pflag.ExitOnError)
 	fs.StringVarP(&configPath, "config", "c", "wwallet.json", "path to wwallet.json")
 	fs.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
-	fs.BoolVarP(&WaitForConfirmation, "wait", "w", false, "wait for confirmation")
+	fs.BoolVarP(&WaitForCompletion, "wait", "w", false, "wait for confirmation")
 	fs.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
 	fs.StringVarP(&SCAlias, "sc", "s", "", "smart contract alias")
 	flags.AddFlagSet(fs)

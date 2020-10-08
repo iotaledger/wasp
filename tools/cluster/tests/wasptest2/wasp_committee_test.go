@@ -33,7 +33,7 @@ func TestKillNode(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -94,7 +94,7 @@ func TestKillNode(t *testing.T) {
 		return
 	}
 
-	if !wasps.VerifyAddressBalances(*scAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
 		*scColor: 1,
 	}, "sc in the end") {
 		t.Fail()

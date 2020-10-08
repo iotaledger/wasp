@@ -1,18 +1,16 @@
-package apilib
+package scclient
 
 import (
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
 type SCStatus struct {
@@ -31,13 +29,13 @@ type SCStatus struct {
 	FetchedAt     time.Time
 }
 
-func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress *address.Address, addCustomQueries func(query *stateapi.QueryRequest)) (*SCStatus, map[kv.Key]*stateapi.QueryResult, error) {
-	balance, err := fetchSCBalance(nodeClient, scAddress)
+func (sc *SCClient) FetchSCStatus(addCustomQueries func(query *statequery.Request)) (*SCStatus, *statequery.Results, error) {
+	balance, err := sc.FetchBalance()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	query := stateapi.NewQueryRequest(scAddress)
+	query := statequery.NewRequest()
 	query.AddGeneralData()
 	query.AddScalar(vmconst.VarNameOwnerAddress)
 	query.AddScalar(vmconst.VarNameProgramHash)
@@ -45,33 +43,33 @@ func FetchSCStatus(nodeClient nodeclient.NodeClient, waspHost string, scAddress 
 	query.AddScalar(vmconst.VarNameMinimumReward)
 	addCustomQueries(query)
 
-	res, err := QuerySCState(waspHost, query)
+	res, err := sc.WaspClient.StateQuery(sc.Address, query)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	description, _ := res.Queries[vmconst.VarNameDescription].MustString()
-	minReward, _ := res.Queries[vmconst.VarNameMinimumReward].MustInt64()
+	description, _ := res.Get(vmconst.VarNameDescription).MustString()
+	minReward, _ := res.Get(vmconst.VarNameMinimumReward).MustInt64()
 
 	return &SCStatus{
 		StateIndex: res.StateIndex,
 		Timestamp:  res.Timestamp.UTC(),
 		StateHash:  res.StateHash,
-		StateTxId:  res.StateTxId,
+		StateTxId:  res.StateTxId.ID(),
 		Requests:   res.Requests,
 
-		ProgramHash:   res.Queries[vmconst.VarNameProgramHash].MustHashValue(),
+		ProgramHash:   res.Get(vmconst.VarNameProgramHash).MustHashValue(),
 		Description:   description,
-		OwnerAddress:  res.Queries[vmconst.VarNameOwnerAddress].MustAddress(),
+		OwnerAddress:  res.Get(vmconst.VarNameOwnerAddress).MustAddress(),
 		MinimumReward: minReward,
-		SCAddress:     scAddress,
+		SCAddress:     sc.Address,
 		Balance:       balance,
 		FetchedAt:     time.Now().UTC(),
-	}, res.Queries, nil
+	}, res, nil
 }
 
-func fetchSCBalance(nodeClient nodeclient.NodeClient, scAddress *address.Address) (map[balance.Color]int64, error) {
-	outs, err := nodeClient.GetConfirmedAccountOutputs(scAddress)
+func (sc *SCClient) FetchBalance() (map[balance.Color]int64, error) {
+	outs, err := sc.NodeClient.GetConfirmedAccountOutputs(sc.Address)
 	if err != nil {
 		return nil, err
 	}

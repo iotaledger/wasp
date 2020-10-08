@@ -28,6 +28,7 @@ type CreateRequestTransactionParams struct {
 	NodeClient          nodeclient.NodeClient
 	SenderSigScheme     signaturescheme.SignatureScheme
 	BlockParams         []RequestBlockParams
+	Mint                map[address.Address]int64
 	Post                bool
 	WaitForConfirmation bool
 	WaitForCompletion   bool
@@ -46,6 +47,13 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
 	if err != nil {
 		return nil, err
+	}
+
+	for targetAddress, amount := range par.Mint {
+		err = txb.MintColor(targetAddress, balance.ColorIOTA, amount)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for _, blockPar := range par.BlockParams {

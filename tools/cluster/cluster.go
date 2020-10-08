@@ -16,6 +16,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -96,16 +98,17 @@ func (sc *SmartContractFinalConfig) AllNodes() []int {
 	return r
 }
 
-func (sc *SmartContractFinalConfig) SCAddress() address.Address {
+func (sc *SmartContractFinalConfig) SCAddress() *address.Address {
 	ret, err := address.FromBase58(sc.Address)
 	if err != nil {
 		panic(err)
 	}
-	return ret
+	return &ret
 }
 
-func (sc *SmartContractFinalConfig) OwnerAddress() address.Address {
-	return seed.NewSeed(sc.OwnerSeed).Address(0).Address
+func (sc *SmartContractFinalConfig) OwnerAddress() *address.Address {
+	addr := seed.NewSeed(sc.OwnerSeed).Address(0).Address
+	return &addr
 }
 
 func (sc *SmartContractFinalConfig) OwnerSigScheme() signaturescheme.SignatureScheme {
@@ -130,6 +133,10 @@ func (w *WaspNodeConfig) NanomsgHost() string {
 
 func (w *WaspNodeConfig) IsUp() bool {
 	return w.cmd != nil
+}
+
+func (w *WaspNodeConfig) Client() *client.WaspClient {
+	return client.NewWaspClient(w.ApiHost())
 }
 
 func readConfig(configPath string) (*ClusterConfig, error) {
@@ -185,6 +192,20 @@ func (cluster *Cluster) IsGoshimmerUp() bool {
 
 func (cluster *Cluster) NumSmartContracts() int {
 	return len(cluster.Config.SmartContracts)
+}
+
+func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
+	return cluster.Config.Nodes[nodeIndex].Client()
+}
+
+func (cluster *Cluster) SCClient(sc *SmartContractFinalConfig, sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
+	return scclient.New(
+		cluster.NodeClient,
+		cluster.WaspClient(sc.CommitteeNodes[0]),
+		sc.SCAddress(),
+		sigScheme,
+		30*time.Second,
+	)
 }
 
 func (cluster *Cluster) readKeysConfig() ([]SmartContractFinalConfig, error) {
@@ -722,15 +743,13 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)
 
-		ownerAddr := sc.OwnerAddress()
-
 		scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
 		if err != nil {
 			panic("could not convert SC program hash")
 		}
 
 		expectedState := kv.FromGoMap(expectedState)
-		expectedState.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddr)
+		expectedState.Codec().SetAddress(vmconst.VarNameOwnerAddress, sc.OwnerAddress())
 		expectedState.Codec().SetHashValue(vmconst.VarNameProgramHash, &scProgHash)
 
 		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
@@ -772,8 +791,8 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 	return pass
 }
 
-func (cluster *Cluster) VerifyAddressBalances(addr address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {
-	allOuts, err := cluster.NodeClient.GetConfirmedAccountOutputs(&addr)
+func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {
+	allOuts, err := cluster.NodeClient.GetConfirmedAccountOutputs(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedAccountOutputs error: %v\n", err)
 		return false

@@ -2,10 +2,8 @@ package trcmd
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/tools/wwallet/sc/tr"
@@ -25,13 +23,9 @@ func mintCmd(args []string) {
 
 	client := tr.Client()
 	tx, err := client.MintAndRegister(trclient.MintAndRegisterParams{
-		Supply:            int64(amount),
-		MintTarget:        wallet.Load().Address(),
-		Description:       description,
-		WaitForCompletion: true,
-		PublisherHosts:    config.CommitteeNanomsg(tr.Config.Committee()),
-		PublisherQuorum:   3,
-		Timeout:           1 * time.Minute,
+		Supply:      int64(amount),
+		MintTarget:  wallet.Load().Address(),
+		Description: description,
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)

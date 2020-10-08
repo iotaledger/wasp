@@ -5,28 +5,24 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/plugins/webapi/stateapi"
 )
 
 type FairRouletteClient struct {
-	nodeClient nodeclient.NodeClient
-	waspHost   string
-	scAddress  *address.Address
-	sigScheme  signaturescheme.SignatureScheme
+	*scclient.SCClient
 }
 
-func NewClient(nodeClient nodeclient.NodeClient, waspHost string, scAddress *address.Address, sigScheme signaturescheme.SignatureScheme) *FairRouletteClient {
-	return &FairRouletteClient{nodeClient, waspHost, scAddress, sigScheme}
+func NewClient(scClient *scclient.SCClient) *FairRouletteClient {
+	return &FairRouletteClient{scClient}
 }
 
 type Status struct {
-	*waspapi.SCStatus
+	*scclient.SCStatus
 
 	CurrentBetsAmount uint16
 	CurrentBets       []*fairroulette.BetInfo
@@ -56,7 +52,7 @@ func (s *Status) NextPlayIn() string {
 }
 
 func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
-	scStatus, results, err := waspapi.FetchSCStatus(frc.nodeClient, frc.waspHost, frc.scAddress, func(query *stateapi.QueryRequest) {
+	scStatus, results, err := frc.FetchSCStatus(func(query *statequery.Request) {
 		query.AddArray(fairroulette.StateVarBets, 0, 100)
 		query.AddArray(fairroulette.StateVarLockedBets, 0, 100)
 		query.AddScalar(fairroulette.StateVarLastWinningColor)
@@ -71,34 +67,34 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 
 	status := &Status{SCStatus: scStatus}
 
-	lastWinningColor, _ := results[fairroulette.StateVarLastWinningColor].MustInt64()
+	lastWinningColor, _ := results.Get(fairroulette.StateVarLastWinningColor).MustInt64()
 	status.LastWinningColor = lastWinningColor
 
-	playPeriodSeconds, _ := results[fairroulette.ReqVarPlayPeriodSec].MustInt64()
+	playPeriodSeconds, _ := results.Get(fairroulette.ReqVarPlayPeriodSec).MustInt64()
 	status.PlayPeriodSeconds = playPeriodSeconds
 	if status.PlayPeriodSeconds == 0 {
 		status.PlayPeriodSeconds = fairroulette.DefaultPlaySecondsAfterFirstBet
 	}
 
-	nextPlayTimestamp, _ := results[fairroulette.StateVarNextPlayTimestamp].MustInt64()
+	nextPlayTimestamp, _ := results.Get(fairroulette.StateVarNextPlayTimestamp).MustInt64()
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
 
-	status.PlayerStats, err = decodePlayerStats(results[fairroulette.StateVarPlayerStats].MustDictionaryResult())
+	status.PlayerStats, err = decodePlayerStats(results.Get(fairroulette.StateVarPlayerStats).MustDictionaryResult())
 	if err != nil {
 		return nil, err
 	}
 
-	status.WinsPerColor, err = decodeWinsPerColor(results[fairroulette.StateArrayWinsPerColor].MustArrayResult())
+	status.WinsPerColor, err = decodeWinsPerColor(results.Get(fairroulette.StateArrayWinsPerColor).MustArrayResult())
 	if err != nil {
 		return nil, err
 	}
 
-	status.CurrentBetsAmount, status.CurrentBets, err = decodeBets(results[fairroulette.StateVarBets].MustArrayResult())
+	status.CurrentBetsAmount, status.CurrentBets, err = decodeBets(results.Get(fairroulette.StateVarBets).MustArrayResult())
 	if err != nil {
 		return nil, err
 	}
 
-	status.LockedBetsAmount, status.LockedBets, err = decodeBets(results[fairroulette.StateVarLockedBets].MustArrayResult())
+	status.LockedBetsAmount, status.LockedBets, err = decodeBets(results.Get(fairroulette.StateVarLockedBets).MustArrayResult())
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +102,7 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 	return status, nil
 }
 
-func decodeBets(result *stateapi.ArrayResult) (uint16, []*fairroulette.BetInfo, error) {
+func decodeBets(result *statequery.ArrayResult) (uint16, []*fairroulette.BetInfo, error) {
 	size := result.Len
 	bets := make([]*fairroulette.BetInfo, 0)
 	for _, b := range result.Values {
@@ -119,7 +115,7 @@ func decodeBets(result *stateapi.ArrayResult) (uint16, []*fairroulette.BetInfo, 
 	return size, bets, nil
 }
 
-func decodeWinsPerColor(result *stateapi.ArrayResult) ([]uint32, error) {
+func decodeWinsPerColor(result *statequery.ArrayResult) ([]uint32, error) {
 	ret := make([]uint32, 0)
 	for _, b := range result.Values {
 		var n uint32
@@ -131,7 +127,7 @@ func decodeWinsPerColor(result *stateapi.ArrayResult) ([]uint32, error) {
 	return ret, nil
 }
 
-func decodePlayerStats(result *stateapi.DictResult) (map[address.Address]*fairroulette.PlayerStats, error) {
+func decodePlayerStats(result *statequery.DictResult) (map[address.Address]*fairroulette.PlayerStats, error) {
 	playerStats := make(map[address.Address]*fairroulette.PlayerStats)
 	for _, e := range result.Entries {
 		if len(e.Key) != address.Length {
@@ -150,31 +146,20 @@ func decodePlayerStats(result *stateapi.DictResult) (map[address.Address]*fairro
 	return playerStats, nil
 }
 
-func (frc *FairRouletteClient) postRequest(code sctransaction.RequestCode, amountIotas int64, vars map[string]interface{}) (*sctransaction.Transaction, error) {
-	tx, err := waspapi.CreateRequestTransactionOld(
-		frc.nodeClient,
-		frc.sigScheme,
-		[]*waspapi.RequestBlockJson{{
-			Address:     frc.scAddress.String(),
-			RequestCode: code,
-			AmountIotas: amountIotas,
-			Vars:        vars,
-		}},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return tx, frc.nodeClient.PostTransaction(tx.Transaction)
-}
-
 func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transaction, error) {
-	return frc.postRequest(fairroulette.RequestPlaceBet, int64(amount), map[string]interface{}{
-		fairroulette.ReqVarColor: int64(color),
-	})
+	return frc.PostRequest(
+		fairroulette.RequestPlaceBet,
+		nil,
+		map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
+		map[string]interface{}{fairroulette.ReqVarColor: int64(color)},
+	)
 }
 
 func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transaction, error) {
-	return frc.postRequest(fairroulette.RequestSetPlayPeriod, 0, map[string]interface{}{
-		fairroulette.ReqVarPlayPeriodSec: int64(seconds),
-	})
+	return frc.PostRequest(
+		fairroulette.RequestSetPlayPeriod,
+		nil,
+		nil,
+		map[string]interface{}{fairroulette.ReqVarPlayPeriodSec: int64(seconds)},
+	)
 }

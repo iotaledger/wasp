@@ -8,6 +8,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/scclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -21,6 +23,21 @@ type Config struct {
 	ProgramHash string
 
 	bootupData *registry.BootupData
+}
+
+func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
+	var timeout time.Duration
+	if config.WaitForCompletion {
+		timeout = 1 * time.Minute
+	}
+	client := scclient.New(
+		config.GoshimmerClient(),
+		client.NewWaspClient(config.WaspApi()),
+		c.Address(),
+		sigScheme,
+		timeout,
+	)
+	return client
 }
 
 func (c *Config) Alias() string {
@@ -153,7 +170,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		Addresses:         []*address.Address{scAddress},
 		ApiHosts:          config.CommitteeApi(params.Committee),
 		PublisherHosts:    config.CommitteeNanomsg(params.Committee),
-		WaitForCompletion: config.WaitForConfirmation,
+		WaitForCompletion: config.WaitForCompletion,
 		Timeout:           30 * time.Second,
 	})
 	if err != nil {

@@ -46,7 +46,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -72,7 +72,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 
 	// send request SetOwnerMargin
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddr,
+		SCAddress:   scAddr,
 		RequestCode: fairauction.RequestSetOwnerMargin,
 		Vars: map[string]interface{}{
 			fairauction.VarReqOwnerMargin: 100, // 10%
@@ -151,7 +151,7 @@ func TestFA1Color0Bids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -182,7 +182,7 @@ func TestFA1Color0Bids(t *testing.T) {
 
 	// send request StartAuction from the auction owner
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -258,7 +258,7 @@ func TestFA2Color0Bids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 2 colored tokens
@@ -294,7 +294,7 @@ func TestFA2Color0Bids(t *testing.T) {
 
 	// send request StartAuction for color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -312,7 +312,7 @@ func TestFA2Color0Bids(t *testing.T) {
 
 	// send request StartAuction for color2
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color2,
@@ -384,12 +384,12 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	bidder1Addr := bidder1.Address()
 
-	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
+	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	scOwnerAddr := sc.OwnerAddress()
@@ -430,7 +430,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -447,7 +447,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestPlaceBid,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor: color1,
@@ -518,7 +518,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -532,7 +532,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	bidder1Addr := bidder1.Address()
 
-	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
+	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -565,7 +565,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -581,7 +581,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,
@@ -657,7 +657,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -669,12 +669,12 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	bidder1Addr := bidder1.Address()
 
-	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
+	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	bidder2Addr := bidder2.Address()
 
-	err = wasps.NodeClient.RequestFunds(&bidder2Addr)
+	err = wasps.NodeClient.RequestFunds(bidder2Addr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -713,7 +713,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
+		SCAddress:   scAddress,
 		RequestCode: fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
@@ -730,7 +730,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,
@@ -742,7 +742,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 		check(err, t)
 
 		err = SendSimpleRequest(wasps, bidder2.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
+			SCAddress:   scAddress,
 			RequestCode: fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,

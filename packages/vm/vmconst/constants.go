@@ -8,7 +8,6 @@ const (
 	RequestCodeNOP              = sctransaction.RequestCode(uint16(0) | sctransaction.RequestCodeProtectedReserved)
 	RequestCodeInit             = sctransaction.RequestCode(uint16(1) | sctransaction.RequestCodeProtectedReserved)
 	RequestCodeSetMinimumReward = sctransaction.RequestCode(uint16(2) | sctransaction.RequestCodeProtectedReserved)
-	RequestCodeSetDescription   = sctransaction.RequestCode(uint16(3) | sctransaction.RequestCodeProtectedReserved)
 )
 
 const (

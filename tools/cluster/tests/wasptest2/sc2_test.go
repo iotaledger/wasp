@@ -3,12 +3,14 @@ package wasptest2
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/subscribe"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
@@ -39,11 +41,11 @@ func Test2SC(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	auctionOwnerAddr := auctionOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
@@ -102,28 +104,30 @@ func Test2SC(t *testing.T) {
 	succ = waspapi.CheckSC(wasps.ApiHosts(), scFAAddr)
 	assert.True(t, succ)
 
-	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scTRAddr, auctionOwner.SigScheme())
+	tc := trclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scTRAddr,
+		auctionOwner.SigScheme(),
+	))
 
 	// minting 1 token with TokenRegistry
 	tx, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
-		Supply:            1,
-		MintTarget:        auctionOwnerAddr,
-		Description:       "Non-fungible coin 1. Very expensive",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+		Supply:      1,
+		MintTarget:  *auctionOwnerAddr,
+		Description: "Non-fungible coin 1. Very expensive",
 	})
 	checkSuccess(err, t, "token minted")
 
 	mintedColor := balance.Color(tx.ID())
 
-	if !wasps.VerifyAddressBalances(*scFAAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scFAAddr, 1, map[balance.Color]int64{
 		*scFAColor: 1, // sc token
 	}, "SC FairAuction address in the beginning") {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(*scTRAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scTRAddr, 1, map[balance.Color]int64{
 		*scTRColor: 1, // sc token
 	}, "SC TokenRegistry address in the beginning") {
 		t.Fail()
@@ -165,19 +169,19 @@ func TestPlus2SC(t *testing.T) {
 	check(err, t)
 
 	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&scOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
 	auctionOwnerAddr := auctionOwner.Address()
-	err = wasps.NodeClient.RequestFunds(&auctionOwnerAddr)
+	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	bidder1Addr := bidder1.Address()
-	err = wasps.NodeClient.RequestFunds(&bidder1Addr)
+	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	bidder2Addr := bidder2.Address()
-	err = wasps.NodeClient.RequestFunds(&bidder2Addr)
+	err = wasps.NodeClient.RequestFunds(bidder2Addr)
 	check(err, t)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -247,28 +251,30 @@ func TestPlus2SC(t *testing.T) {
 	})
 	checkSuccess(err, t, "2 smart contracts have been activated and initialized")
 
-	tc := trclient.NewClient(wasps.NodeClient, wasps.Config.Nodes[0].ApiHost(), scTRAddr, auctionOwner.SigScheme())
+	tc := trclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scTRAddr,
+		auctionOwner.SigScheme(),
+	))
 
 	// minting 1 token with TokenRegistry
 	tx, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
-		Supply:            1,
-		MintTarget:        auctionOwnerAddr,
-		Description:       "Non-fungible coin 1. Very expensive",
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
+		Supply:      1,
+		MintTarget:  *auctionOwnerAddr,
+		Description: "Non-fungible coin 1. Very expensive",
 	})
 	checkSuccess(err, t, "token minted")
 
 	mintedColor := balance.Color(tx.ID())
 
-	if !wasps.VerifyAddressBalances(*scFAAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scFAAddr, 1, map[balance.Color]int64{
 		*scFAColor: 1, // sc token
 	}, "SC FairAuction address in the beginning") {
 		t.Fail()
 		return
 	}
-	if !wasps.VerifyAddressBalances(*scTRAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scTRAddr, 1, map[balance.Color]int64{
 		*scTRColor: 1, // sc token
 	}, "SC TokenRegistry address in the beginning") {
 		t.Fail()
@@ -299,15 +305,14 @@ func TestPlus2SC(t *testing.T) {
 		t.Fail()
 		return
 	}
-	//
-	faclientOwner := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, auctionOwner.SigScheme())
-	faclientOwner.SetWaitRequestCompletionParams(wasps.PublisherHosts(), 15*time.Second)
+
+	faclientOwner := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, auctionOwner.SigScheme()))
 
 	_, err = faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction created")
 
-	faclientBidder1 := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, bidder1.SigScheme())
-	faclientBidder2 := faclient.NewClient(wasps.NodeClient, wasps.ApiHosts()[0], scFAAddr, bidder2.SigScheme())
+	faclientBidder1 := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder1.SigScheme()))
+	faclientBidder2 := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder2.SigScheme()))
 
 	subs, err := subscribe.SubscribeMulti(wasps.PublisherHosts(), "request_out")
 	check(err, t)
@@ -330,13 +335,13 @@ func TestPlus2SC(t *testing.T) {
 	// wait for auction to finish
 	time.Sleep(90 * time.Second)
 
-	if !wasps.VerifyAddressBalances(*scFAAddr, 2, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scFAAddr, 2, map[balance.Color]int64{
 		*scFAColor:        1, // sc token
 		balance.ColorIOTA: 1, // 1 i for sending request to itself
 	}, "SC FairAuction address in the end") {
 		t.Fail()
 	}
-	if !wasps.VerifyAddressBalances(*scTRAddr, 1, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(scTRAddr, 1, map[balance.Color]int64{
 		*scTRColor: 1, // sc token
 	}, "SC TokenRegistry address in the end") {
 		t.Fail()
