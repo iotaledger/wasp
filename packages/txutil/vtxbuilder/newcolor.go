@@ -1,4 +1,4 @@
-package apilib
+package vtxbuilder
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/nodeclient"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder/vtxbuilder"
 )
 
 // NewColoredTokensTransaction mints specified amount of colored tokens
@@ -19,7 +18,7 @@ func NewColoredTokensTransaction(client nodeclient.NodeClient, sigScheme signatu
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}
-	txb, err := vtxbuilder.NewFromOutputBalances(allOuts)
+	txb, err := NewFromOutputBalances(allOuts)
 	if err != nil {
 		return nil, err
 	}

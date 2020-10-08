@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/plugins/publisher"
@@ -71,7 +71,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 }
 
 func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
-	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", util.BalancesToString(reqMsg.Balances))
+	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
 	if err := op.checkSCToken(reqMsg.Balances); err != nil {
 		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
 		return

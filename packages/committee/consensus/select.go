@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"sort"
 	"time"
 )
@@ -26,7 +26,7 @@ func (op *operator) selectRequestsToProcess() []*request {
 	after := takeIds(candidates)
 	if len(before) != len(after) {
 		op.log.Warnf("filtered out requests without tokens: %+v -> %+v", idsShortStr(before), idsShortStr(after))
-		op.log.Debugf("\nbalances dumped: %s\n", util.BalancesToString(op.balances))
+		op.log.Debugf("\nbalances dumped: %s\n", txutil.BalancesToString(op.balances))
 	}
 	if len(candidates) == 0 {
 		return nil
@@ -145,7 +145,7 @@ func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 	if op.balances == nil {
 		return nil
 	}
-	byColor, _ := util.BalancesByColor(op.balances)
+	byColor, _ := txutil.BalancesByColor(op.balances)
 	ret := reqs[:0]
 	for _, req := range reqs {
 		col := (balance.Color)(*req.reqId.TransactionId())
@@ -163,7 +163,7 @@ func (op *operator) checkSCToken(balances map[valuetransaction.ID][]*balance.Bal
 	sum := int64(0)
 	color := *op.committee.Color()
 	for _, bals := range balances {
-		sum += util.BalanceOfColor(bals, color)
+		sum += txutil.BalanceOfColor(bals, color)
 	}
 	if stateIndex, ok := op.stateIndex(); ok && stateIndex > 0 {
 		if sum != 1 {

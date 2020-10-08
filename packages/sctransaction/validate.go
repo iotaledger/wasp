@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 )
 
 // validates state block and requests and returns if it origin state (if not error)
@@ -33,7 +33,7 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 		// invalid state
 		return false, fmt.Errorf("invalid state block: SC state output not found")
 	}
-	outBalance := util.BalanceOfColor(balances, color)
+	outBalance := txutil.BalanceOfColor(balances, color)
 	expectedOutputBalance := int64(1)
 	if mayBeOrigin {
 		expectedOutputBalance += int64(len(tx.Requests()))
@@ -52,7 +52,7 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 func (tx *Transaction) validateRequests(isOrigin bool) error {
 	newByAddress := make(map[address.Address]int64)
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		s := util.BalanceOfColor(bals, balance.ColorNew)
+		s := txutil.BalanceOfColor(bals, balance.ColorNew)
 		if s != 0 {
 			newByAddress[addr] = s
 		}
@@ -94,7 +94,7 @@ func (tx *Transaction) validateRequests(isOrigin bool) error {
 //	var addrTmp address.Addresses
 //	var totalInputs2 int64
 //
-//	inputBalancesByColor, totalInputs1 := util.BalancesByColor(inputBalances)
+//	inputBalancesByColor, totalInputs1 := txutil.BalancesByColor(inputBalances)
 //
 //	tx.Inputs().ForEach(func(outputId valuetransaction.OutputID) bool {
 //		if !first {
@@ -110,7 +110,7 @@ func (tx *Transaction) validateRequests(isOrigin bool) error {
 //			err = errors.New("unexpected txid in inputs")
 //			return false
 //		}
-//		totalInputs2 += util.BalancesSumTotal(bals)
+//		totalInputs2 += txutil.BalancesSumTotal(bals)
 //		return true
 //	})
 //	if err != nil {

@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sort"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
-	"sort"
+	"github.com/iotaledger/wasp/packages/txutil"
 )
 
 type inputBalances struct {
@@ -37,8 +38,8 @@ func newVTBuilder(orig *Builder) *Builder {
 	}
 	for i := range ret.inputBalancesByOutput {
 		ret.inputBalancesByOutput[i].outputId = orig.inputBalancesByOutput[i].outputId
-		ret.inputBalancesByOutput[i].remain = util.CloneBalances(orig.inputBalancesByOutput[i].remain)
-		ret.inputBalancesByOutput[i].consumed = util.CloneBalances(orig.inputBalancesByOutput[i].consumed)
+		ret.inputBalancesByOutput[i].remain = txutil.CloneBalances(orig.inputBalancesByOutput[i].remain)
+		ret.inputBalancesByOutput[i].consumed = txutil.CloneBalances(orig.inputBalancesByOutput[i].consumed)
 	}
 	for addr, bals := range orig.outputBalances {
 		ret.outputBalances[addr] = make(map[balance.Color]int64)
@@ -64,7 +65,7 @@ func NewFromAddressBalances(addr *address.Address, addressBalances map[valuetran
 		}
 		inb := inputBalances{
 			outputId: valuetransaction.NewOutputID(*addr, txid),
-			remain:   util.CloneBalances(bals),
+			remain:   txutil.CloneBalances(bals),
 			consumed: make([]*balance.Balance, 0, len(bals)),
 		}
 		inb.remain, err = compressAndSortBalances(inb.remain)
@@ -87,7 +88,7 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 		}
 		inb := inputBalances{
 			outputId: oid,
-			remain:   util.CloneBalances(bals),
+			remain:   txutil.CloneBalances(bals),
 			consumed: make([]*balance.Balance, 0, len(bals)),
 		}
 		inb.remain, err = compressAndSortBalances(inb.remain)
@@ -148,8 +149,8 @@ func (vtxb *Builder) sortInputBalancesById() {
 
 func (vtxb *Builder) SetConsumerPrioritySmallerBalances() {
 	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
-		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].remain)
-		sj := util.BalancesSumTotal(vtxb.inputBalancesByOutput[j].remain)
+		si := txutil.BalancesSumTotal(vtxb.inputBalancesByOutput[i].remain)
+		sj := txutil.BalancesSumTotal(vtxb.inputBalancesByOutput[j].remain)
 		if si == sj {
 			return i < j
 		}
@@ -162,8 +163,8 @@ func (vtxb *Builder) SetConsumerPriorityLargerBalances() {
 		panic("using finalized transaction builder")
 	}
 	sort.Slice(vtxb.inputBalancesByOutput, func(i, j int) bool {
-		si := util.BalancesSumTotal(vtxb.inputBalancesByOutput[i].remain)
-		sj := util.BalancesSumTotal(vtxb.inputBalancesByOutput[j].remain)
+		si := txutil.BalancesSumTotal(vtxb.inputBalancesByOutput[i].remain)
+		sj := txutil.BalancesSumTotal(vtxb.inputBalancesByOutput[j].remain)
 		if si == sj {
 			return i < j
 		}
@@ -178,7 +179,7 @@ func (vtxb *Builder) GetInputBalance(col balance.Color) int64 {
 	}
 	ret := int64(0)
 	for _, inp := range vtxb.inputBalancesByOutput {
-		ret += util.BalanceOfColor(inp.remain, col)
+		ret += txutil.BalanceOfColor(inp.remain, col)
 	}
 	return ret
 }
@@ -194,7 +195,7 @@ func (vtxb *Builder) GetInputBalanceFromTransaction(col balance.Color, txid valu
 		if inp.outputId.TransactionID() != txid {
 			continue
 		}
-		ret += util.BalanceOfColor(inp.remain, col)
+		ret += txutil.BalanceOfColor(inp.remain, col)
 	}
 	return ret
 }

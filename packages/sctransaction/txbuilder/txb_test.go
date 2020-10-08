@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -42,7 +42,7 @@ func TestBasic(t *testing.T) {
 	outs = u.GetAddressOutputs(scAddress)
 	sum := int64(0)
 	for _, bals := range outs {
-		sum += util.BalanceOfColor(bals, (balance.Color)(tx.ID()))
+		sum += txutil.BalanceOfColor(bals, (balance.Color)(tx.ID()))
 	}
 	assert.Equal(t, int64(1), sum)
 }
@@ -78,7 +78,7 @@ func TestWithRequest(t *testing.T) {
 	outs = u.GetAddressOutputs(scAddress)
 	sum := int64(0)
 	for _, bals := range outs {
-		sum += util.BalanceOfColor(bals, (balance.Color)(tx.ID()))
+		sum += txutil.BalanceOfColor(bals, (balance.Color)(tx.ID()))
 	}
 	assert.Equal(t, int64(2), sum)
 }
@@ -121,8 +121,8 @@ func TestNextState(t *testing.T) {
 	sumScCol := int64(0)
 	sumIota := int64(0)
 	for _, bals := range outs {
-		sumScCol += util.BalanceOfColor(bals, scColor)
-		sumIota += util.BalanceOfColor(bals, balance.ColorIOTA)
+		sumScCol += txutil.BalanceOfColor(bals, scColor)
+		sumIota += txutil.BalanceOfColor(bals, balance.ColorIOTA)
 	}
 	assert.Equal(t, int64(2), sumScCol)
 	assert.Equal(t, int64(5), sumIota)
@@ -144,8 +144,8 @@ func TestNextState(t *testing.T) {
 	sumScCol = int64(0)
 	sumIota = int64(0)
 	for _, bals := range outs {
-		sumScCol += util.BalanceOfColor(bals, scColor)
-		sumIota += util.BalanceOfColor(bals, balance.ColorIOTA)
+		sumScCol += txutil.BalanceOfColor(bals, scColor)
+		sumIota += txutil.BalanceOfColor(bals, balance.ColorIOTA)
 	}
 	assert.Equal(t, int64(1), sumScCol)
 	assert.Equal(t, int64(6), sumIota)
@@ -172,9 +172,9 @@ func TestNextState(t *testing.T) {
 	sumIota = int64(0)
 	sumReq := int64(0)
 	for _, bals := range outs {
-		sumScCol += util.BalanceOfColor(bals, scColor)
-		sumIota += util.BalanceOfColor(bals, balance.ColorIOTA)
-		sumReq += util.BalanceOfColor(bals, reqColor)
+		sumScCol += txutil.BalanceOfColor(bals, scColor)
+		sumIota += txutil.BalanceOfColor(bals, balance.ColorIOTA)
+		sumReq += txutil.BalanceOfColor(bals, reqColor)
 	}
 	assert.Equal(t, int64(1), sumScCol)
 	assert.Equal(t, int64(5), sumIota)

@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -48,7 +49,7 @@ func (api *goshimmerClient) balanceIOTA(targetAddress *address.Address) (int64, 
 	if err != nil {
 		return 0, fmt.Errorf("GetConfirmedAccountOutputs: %s", err)
 	}
-	bals, _ := util.OutputBalancesByColor(outs)
+	bals, _ := txutil.OutputBalancesByColor(outs)
 	return bals[balance.ColorIOTA], nil
 }
 

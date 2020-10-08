@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/txutil"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -797,7 +798,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpect
 		fmt.Printf("[cluster] GetConfirmedAccountOutputs error: %v\n", err)
 		return false
 	}
-	byColor, total := util.OutputBalancesByColor(allOuts)
+	byColor, total := txutil.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
 
 	totalExpectedStr := "(-)"

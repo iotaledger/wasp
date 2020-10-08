@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 )
 
 // PluginName is the name of the RunVM plugin.
@@ -59,7 +59,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 
 	txb, err := txbuilder.NewFromAddressBalances(&ctx.Address, ctx.Balances)
 	if err != nil {
-		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, util.BalancesToString(ctx.Balances))
+		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
 		return err
 	}
 

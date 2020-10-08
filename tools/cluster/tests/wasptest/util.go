@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -37,7 +38,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 }
 
 func mintNewColoredTokens(wasps *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, amount int64) (*balance.Color, error) {
-	tx, err := waspapi.NewColoredTokensTransaction(wasps.NodeClient, sigScheme, amount)
+	tx, err := vtxbuilder.NewColoredTokensTransaction(wasps.NodeClient, sigScheme, amount)
 	if err != nil {
 		return nil, err
 	}

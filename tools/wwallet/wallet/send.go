@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder/vtxbuilder"
+	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	clientutil "github.com/iotaledger/wasp/tools/wwallet/util"
