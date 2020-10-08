@@ -8,24 +8,31 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-const ProgramHash = "BDREf2rz36AvboHYWfWXgEUG5K8iynLDZAZwKnPBmKM9"
-
 type wasmProcessor struct {
 	WasmHost
 	ctx vmtypes.Sandbox
 }
 
-func GetProcessor() vmtypes.Processor {
-	return &wasmProcessor{}
+func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
+	vm := &wasmProcessor{}
+	err := vm.Init(NewNullObject(vm), NewScContext(vm), &keyMap, vm)
+	if err != nil {
+		return nil, err
+	}
+	err = vm.LoadWasm(binaryCode)
+	if err != nil {
+		return nil, err
+	}
+	return vm, nil
 }
 
 func (vm *wasmProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
-	// we don't use request code but fn name request parameter instead
+	//TODO we don't use request code for now, but 'fn' request parameter instead
 	return vm, true
 }
 
 func (vm *wasmProcessor) GetDescription() string {
-	return "Wasm VM PoC smart contract processor"
+	return "Wasm VM smart contract processor"
 }
 
 func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
@@ -33,42 +40,24 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 	ctx.Publish(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
-	//TODO check what caching optimizations we can do to prevent
-	// rebuilding entire object admin and Wasm from scratch on every request
-	vm.ctx = ctx
-	vm.Init(NewNullObject(vm), NewScContext(vm), &keyMap, vm)
-
-	//TODO for now load Wasm code from hardcoded parameter
-	// in the future we will need to change things so
-	// that we locate the code by hash
-	wasm, _, _ := ctx.AccessRequest().Args().GetString("wasm")
-	if wasm == "" {
-		ctx.Publish("no wasm name specified")
-		return
-	}
-	// when running tests cwd seems to be where the log files go: cluster-data/wasp*
-	// use "_bg.wasm" for Rust-based SCs and "_go.wasm" for Go-based SCs
-	err := vm.LoadWasm("../../" + wasm + "_go.wasm")
-	if err != nil {
-		ctx.Publish("error loading wasm: " + err.Error())
-		return
-	}
-
 	functionName, _, _ := ctx.AccessRequest().Args().GetString("fn")
 	if functionName == "" {
 		ctx.Publish("error starting wasm: Missing fn parameter")
 		return
 	}
+
 	ctx.Publish("Calling " + functionName)
-	err = vm.RunWasmFunction(functionName)
+	vm.ctx = ctx
+	err := vm.RunWasmFunction(functionName)
 	if err != nil {
 		ctx.Publish("error running wasm: " + err.Error())
-		return
+		panic(err)
 	}
 
 	if vm.HasError() {
-		ctx.Publish("error running wasm function: " + vm.GetString(1, KeyError))
-		return
+		errorMsg := vm.GetString(1, KeyError)
+		ctx.Publish("error running wasm function: " + errorMsg)
+		panic(errorMsg)
 	}
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/vmnil"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 const PluginName = "Examples"
@@ -37,7 +36,7 @@ func configure(ctx *node.Plugin) {
 		{logsc.ProgramHash, logsc.GetProcessor, "logsc"},
 		{inccounter.ProgramHash, inccounter.GetProcessor, "inccounter"},
 		{fairroulette.ProgramHash, fairroulette.GetProcessor, "FairRoulette"},
-		{wasmhost.ProgramHash, wasmhost.GetProcessor, "wasmpoc"},
+		//{wasmhost.ProgramHash, wasmhost.GetProcessor, "wasmpoc"},
 		{fairauction.ProgramHash, fairauction.GetProcessor, "FairAuction"},
 		{tokenregistry.ProgramHash, tokenregistry.GetProcessor, "TokenRegistry"},
 		{sc7.ProgramHash, sc7.GetProcessor, "sc7"},
