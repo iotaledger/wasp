@@ -59,6 +59,11 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 		ctx.Publish("error running wasm function: " + errorMsg)
 		panic(errorMsg)
 	}
+
+	ctx.Publish("Processing events...")
+	eventsId := vm.GetObjectId(1, KeyEvents, OBJTYPE_MAP_ARRAY)
+	events := vm.FindObject(eventsId).(*ScEvents)
+	events.Send()
 }
 
 func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

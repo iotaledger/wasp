@@ -8,7 +8,7 @@ import (
 type VMConstructor func(binaryCode []byte) (Processor, error)
 
 var (
-	vmtypes        map[string]VMConstructor
+	vmtypes        = make(map[string]VMConstructor)
 	defaultVMType  string
 	vmfactoryMutex sync.Mutex
 )

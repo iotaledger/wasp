@@ -1,7 +1,11 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/wasmvm"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -11,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
+
+const wasmPath = "increment_bg.wasm"
 
 // sending 5 NOP requests with 1 sec sleep between each
 func TestWasmVMSend5Requests1Sec(t *testing.T) {
@@ -27,8 +33,23 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 	})
 	check(err, t)
 
-	// number 5 is "Wasm VM PoC program" in cluster.json
+	wasm, err := ioutil.ReadFile(wasmPath)
+	check(err, t)
+
+	var programHash *hashing.HashValue = nil
+	hosts := wasps.ApiHosts()
+	for _, host := range hosts {
+		hashValue, err := waspapi.PutProgram(host, wasmvm.PluginName, wasmPath, wasm)
+		check(err, t)
+		if programHash == nil {
+			programHash = hashValue
+			continue
+		}
+		assert.Equal(t, *programHash, *hashValue)
+	}
+
 	sc := &wasps.SmartContractConfig[4]
+	sc.ProgramHash = programHash.String()
 
 	_, err = PutBootupRecord(wasps, sc)
 	check(err, t)
@@ -46,8 +67,8 @@ func TestWasmVMSend5Requests1Sec(t *testing.T) {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: &scAddress,
 			Vars: map[string]interface{}{
-				"wasm":  "increment",
-				"fn": "nothing",
+				"wasm": "increment",
+				"fn":   "nothing",
 			},
 		})
 		check(err, t)

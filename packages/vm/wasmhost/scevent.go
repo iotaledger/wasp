@@ -33,8 +33,6 @@ func (o *ScEvent) Send() {
 		}
 		if o.function != "" {
 			params.Codec().SetString("fn", o.function)
-			wasmPath, _, _ := o.vm.ctx.AccessRequest().Args().GetString("wasm")
-			params.Codec().SetString("wasm", wasmPath)
 		}
 		if params.IsEmpty() {
 			params = nil
@@ -56,7 +54,6 @@ func (o *ScEvent) SetInt(keyId int32, value int64) {
 		o.code = value
 	case KeyDelay:
 		o.delay = value
-		o.Send()
 	default:
 		o.MapObject.SetInt(keyId, value)
 	}
@@ -79,6 +76,14 @@ type ScEvents struct {
 	ArrayObject
 }
 
+func (a *ScEvents) Clear() {
+	for i := len(a.objects) - 1; i >= 0; i-- {
+		a.vm.SetInt(a.objects[i], KeyLength, 0)
+	}
+	//TODO move to pool for reuse of events?
+	a.objects = nil
+}
+
 func (a *ScEvents) GetObjectId(keyId int32, typeId int32) int32 {
 	return a.GetArrayObjectId(keyId, typeId, func() WaspObject {
 		event := &ScEvent{}
@@ -87,14 +92,18 @@ func (a *ScEvents) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
+func (a *ScEvents) Send() {
+	for i := 0; i < len(a.objects); i++ {
+		request := a.vm.FindObject(a.objects[i]).(*ScEvent)
+		request.Send()
+	}
+	a.Clear()
+}
+
 func (a *ScEvents) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		for i := len(a.objects) - 1; i >= 0; i-- {
-			a.vm.SetInt(a.objects[i], keyId, 0)
-		}
-		//todo move to pool for reuse of events?
-		a.objects = nil
+		a.Clear()
 		return
 	default:
 		a.ArrayObject.SetInt(keyId, value)

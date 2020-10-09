@@ -13,8 +13,11 @@ func Init() *node.Plugin {
 }
 
 func configure(ctx *node.Plugin) {
+	ctx.Node.Logger.Info("Configure " + PluginName)
 	vmtypes.RegisterVMType(PluginName, wasmhost.GetProcessor)
+	ctx.Node.Logger.Info("Configure " + PluginName + " done")
 }
 
 func run(ctx *node.Plugin) {
+	ctx.Node.Logger.Info("Run " + PluginName)
 }
