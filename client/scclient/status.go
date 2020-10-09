@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -73,6 +73,6 @@ func (sc *SCClient) FetchBalance() (map[balance.Color]int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret, _ := util.OutputBalancesByColor(outs)
+	ret, _ := txutil.OutputBalancesByColor(outs)
 	return ret, nil
 }

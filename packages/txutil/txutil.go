@@ -1,14 +1,26 @@
-package util
+package txutil
 
 import (
 	"bytes"
 	"fmt"
+	"sort"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"sort"
+	"github.com/iotaledger/wasp/packages/util"
 )
+
+func TotalBalanceOfInputs(outs map[valuetransaction.OutputID][]*balance.Balance) int64 {
+	ret := int64(0)
+	for _, bals := range outs {
+		for _, b := range bals {
+			ret += b.Value
+		}
+	}
+	return ret
+}
 
 func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
 	if outs == nil {
@@ -130,7 +142,7 @@ func BalancesHash(outs map[valuetransaction.ID][]*balance.Balance) *hashing.Hash
 		buf.Write(txid[:])
 		for _, b := range outs[txid] {
 			buf.Write(b.Color.Bytes())
-			_ = WriteUint64(&buf, uint64(b.Value))
+			_ = util.WriteUint64(&buf, uint64(b.Value))
 		}
 	}
 	return hashing.HashData(buf.Bytes())

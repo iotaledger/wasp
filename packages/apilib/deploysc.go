@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -166,7 +167,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 	fmt.Fprintf(textout, "checking program hash %s.. \n", par.ProgramHash.String())
 
 	fmt.Fprint(textout, par.Prefix)
-	md, err := CheckProgramMetadata(par.CommitteeApiHosts, &par.ProgramHash)
+	md, err := multiclient.New(par.CommitteeApiHosts).CheckProgramMetadata(&par.ProgramHash)
 	if err != nil {
 		fmt.Fprintf(textout, "checking program metadata: FAILED: %v\n", err)
 		return nil, nil, err
@@ -222,7 +223,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
-	succ, errs := PutSCDataMulti(par.CommitteeApiHosts, registry.BootupData{
+	err = multiclient.New(par.CommitteeApiHosts).PutBootupData(&registry.BootupData{
 		Address:        *scAddr,
 		OwnerAddress:   ownerAddr,
 		Color:          (balance.Color)(originTx.ID()),
@@ -231,13 +232,11 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 	})
 
 	fmt.Fprint(textout, par.Prefix)
-	if !succ {
-		err = multicall.WrapErrors(errs)
+	if err != nil {
 		fmt.Fprintf(textout, "sending smart contract metadata to Wasp nodes.. FAILED: %v\n", err)
 		return nil, nil, err
-	} else {
-		fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 	}
+	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 	// TODO not finished with access nodes
 
 	scColor := (balance.Color)(originTx.ID())

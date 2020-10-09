@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // PluginName is the name of the RunVM plugin.
@@ -59,7 +59,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 
 	txb, err := txbuilder.NewFromAddressBalances(&ctx.Address, ctx.Balances)
 	if err != nil {
-		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, util.BalancesToString(ctx.Balances))
+		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
 		return err
 	}
 

@@ -2,10 +2,11 @@ package sctransaction
 
 import (
 	"errors"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/util"
-	"io"
+	"github.com/iotaledger/wasp/packages/txutil"
 )
 
 func ReadRequestId(r io.Reader, reqid *RequestId) error {
@@ -25,5 +26,5 @@ func OutputValueOfColor(tx *Transaction, addr address.Address, color balance.Col
 		return 0
 	}
 
-	return util.BalanceOfColor(bals.([]*balance.Balance), color)
+	return txutil.BalanceOfColor(bals.([]*balance.Balance), color)
 }

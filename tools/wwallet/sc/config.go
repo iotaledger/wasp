@@ -203,10 +203,10 @@ func (c *Config) BootupData() *registry.BootupData {
 	if c.bootupData != nil {
 		return c.bootupData
 	}
-	d, exists, err := waspapi.GetSCData(config.WaspApi(), c.Address())
-	if err != nil || !exists {
-		panic(fmt.Sprintf("GetSCData host = %s, addr = %s exists = %v err = %v\n",
-			config.WaspApi(), c.Address(), exists, err))
+	d, err := c.MakeClient(nil).GetBootupData()
+	if err != nil {
+		panic(fmt.Sprintf("GetBootupData failed: host = %s, addr = %s err = %v\n",
+			config.WaspApi(), c.Address(), err))
 	}
 	c.bootupData = d
 	return c.bootupData

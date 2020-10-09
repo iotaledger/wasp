@@ -17,11 +17,13 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/txutil"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -192,6 +194,10 @@ func (cluster *Cluster) IsGoshimmerUp() bool {
 
 func (cluster *Cluster) NumSmartContracts() int {
 	return len(cluster.Config.SmartContracts)
+}
+
+func (cluster *Cluster) MultiClient() *multiclient.MultiClient {
+	return multiclient.New(cluster.ApiHosts())
 }
 
 func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
@@ -797,7 +803,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpect
 		fmt.Printf("[cluster] GetConfirmedAccountOutputs error: %v\n", err)
 		return false
 	}
-	byColor, total := util.OutputBalancesByColor(allOuts)
+	byColor, total := txutil.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
 
 	totalExpectedStr := "(-)"

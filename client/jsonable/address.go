@@ -28,6 +28,6 @@ func (a *Address) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (a Address) Address() address.Address {
-	return a.address
+func (a Address) Address() *address.Address {
+	return &a.address
 }

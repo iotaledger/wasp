@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 )
@@ -19,7 +19,7 @@ func infoCmd(args []string) {
 	nodes := parseIntList(args[1])
 
 	for _, host := range config.CommitteeApi(nodes) {
-		md, err := apilib.GetProgramMetadata(host, &hash)
+		md, err := client.NewWaspClient(host).GetProgramMetadata(&hash)
 		check(err)
 
 		fmt.Printf("Node %s:\n", host)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 )
 
@@ -39,7 +39,7 @@ func balanceCmd(args []string) {
 }
 
 func byColor(outs map[valuetransaction.OutputID][]*balance.Balance) int64 {
-	byColor, total := util.OutputBalancesByColor(outs)
+	byColor, total := txutil.OutputBalancesByColor(outs)
 	for color, value := range byColor {
 		fmt.Printf("    %s: %d\n", color.String(), value)
 	}

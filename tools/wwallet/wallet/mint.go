@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
@@ -21,7 +21,7 @@ func mintCmd(args []string) {
 	amount, err := strconv.Atoi(args[0])
 	check(err)
 
-	tx, err := apilib.NewColoredTokensTransaction(config.GoshimmerClient(), wallet.SignatureScheme(), int64(amount))
+	tx, err := vtxbuilder.NewColoredTokensTransaction(config.GoshimmerClient(), wallet.SignatureScheme(), int64(amount))
 	check(err)
 
 	util.PostTransaction(tx)

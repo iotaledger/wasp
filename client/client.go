@@ -15,6 +15,8 @@ type WaspClient struct {
 	baseURL    string
 }
 
+const AdminRoutePrefix = "adm"
+
 // NewWaspClient returns a new *WaspClient with the given baseURL and httpClient.
 func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 	if !strings.Contains(baseURL, "://") {

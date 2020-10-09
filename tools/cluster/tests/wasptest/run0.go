@@ -2,11 +2,9 @@ package wasptest
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/util/multicall"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -48,41 +46,20 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	}
 
 	color := balance.Color(origTx.ID())
-
 	committeePeerNodes := clu.WaspHosts(sc.CommitteeNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
-	allNodesApi := clu.WaspHosts(sc.AllNodes(), (*cluster.WaspNodeConfig).ApiHost)
 
-	succ, errs := waspapi.PutSCDataMulti(allNodesApi, registry.BootupData{
+	err = clu.MultiClient().PutBootupData(&registry.BootupData{
 		Address:        addr,
 		Color:          color,
 		OwnerAddress:   *sc.OwnerAddress(),
 		CommitteeNodes: committeePeerNodes,
 		AccessNodes:    accessPeerNodes,
 	})
-	if !succ {
-		fmt.Printf("[cluster] apilib.PutSCData returned: %v\n", multicall.WrapErrors(errs))
+
+	if err != nil {
+		fmt.Printf("[cluster] PutBootupData returned: %v\n", err)
 		return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
 	}
 	return &color, nil
-
-	//var failed bool
-	//for _, host := range allNodesApi {
-	//
-	//	err = waspapi.PutSCData(host, registry.BootupData{
-	//		Addresses:        addr,
-	//		Color:          color,
-	//		OwnerAddress:   sc.OwnerAddress(),
-	//		CommitteeApiHosts: committeePeerNodes,
-	//		AccessNodes:    accessPeerNodes,
-	//	})
-	//	if err != nil {
-	//		fmt.Printf("[cluster] apilib.PutSCData returned for host %s: %v\n", host, err)
-	//		failed = true
-	//	}
-	//}
-	//if failed {
-	//	return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
-	//}
-	//return &color, nil
 }

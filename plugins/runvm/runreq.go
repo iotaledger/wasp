@@ -2,7 +2,7 @@ package runvm
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtin"
 	"github.com/iotaledger/wasp/packages/vm/processor"
@@ -41,7 +41,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 				"req", vmctx.RequestRef.RequestId().String(),
 				"code", reqBlock.RequestCode(),
 				"owner", vmctx.OwnerAddress.String(),
-				"inputs", util.InputsToStringByAddress(vmctx.RequestRef.Tx.Inputs()),
+				"inputs", txutil.InputsToStringByAddress(vmctx.RequestRef.Tx.Inputs()),
 			)
 			return
 		}

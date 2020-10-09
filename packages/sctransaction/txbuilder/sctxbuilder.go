@@ -3,13 +3,14 @@ package txbuilder
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder/vtxbuilder"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
+	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 )
 
 type Builder struct {
@@ -74,7 +75,7 @@ func (txb *Builder) CreateStateBlock(color balance.Color) error {
 	foundAddress := false
 	var scAddress address.Address
 	txb.ForEachInputBalance(func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool {
-		if util.BalanceOfColor(bals, color) > 0 {
+		if txutil.BalanceOfColor(bals, color) > 0 {
 			scAddress = oid.Address()
 			foundAddress = true
 			return false

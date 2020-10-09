@@ -3,9 +3,10 @@ package sctransaction
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/txutil"
 )
 
 type Properties struct {
@@ -65,7 +66,7 @@ func (prop *Properties) countMintedTokens(tx *Transaction) {
 	prop.numMintedTokensByAddr = make(map[address.Address]int64)
 
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		v := util.BalanceOfColor(bals, balance.ColorNew)
+		v := txutil.BalanceOfColor(bals, balance.ColorNew)
 		if v != 0 {
 			va, _ := prop.numMintedTokensByAddr[addr]
 			prop.numMintedTokensByAddr[addr] = va + v
@@ -89,7 +90,7 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 		// it is not origin. Must contain exactly one output with value 1 of that color
 		var v int64
 		tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-			v += util.BalanceOfColor(bals, prop.stateColor)
+			v += txutil.BalanceOfColor(bals, prop.stateColor)
 			if v > 1 {
 				err = errors.New("sc transaction must contain exactly one sc token output")
 				return false
