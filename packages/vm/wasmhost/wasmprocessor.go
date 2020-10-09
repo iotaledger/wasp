@@ -10,12 +10,14 @@ import (
 
 type wasmProcessor struct {
 	WasmHost
-	ctx vmtypes.Sandbox
+	ctx       vmtypes.Sandbox
+	scContext *ScContext
 }
 
 func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	vm := &wasmProcessor{}
-	err := vm.Init(NewNullObject(vm), NewScContext(vm), &keyMap, vm)
+	vm.scContext = NewScContext(vm)
+	err := vm.Init(NewNullObject(vm), vm.scContext, &keyMap, vm)
 	if err != nil {
 		return nil, err
 	}
@@ -60,10 +62,8 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 		panic(errorMsg)
 	}
 
-	ctx.Publish("Processing events...")
-	eventsId := vm.GetObjectId(1, KeyEvents, OBJTYPE_MAP_ARRAY)
-	events := vm.FindObject(eventsId).(*ScEvents)
-	events.Send()
+	ctx.Publish("Finalizing call")
+	vm.scContext.Finalize()
 }
 
 func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

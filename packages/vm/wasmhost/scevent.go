@@ -39,13 +39,12 @@ func (o *ScEvent) Send() {
 		}
 		o.vm.ctx.SendRequestToSelfWithDelay(sctransaction.RequestCode(uint16(o.code)), params, uint32(o.delay))
 	}
+	//TODO handle o.contract != ""
 }
 
 func (o *ScEvent) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		// clear request, tracker will still know about object
-		// so maybe move it to an allocation pool for reuse
 		o.contract = ""
 		o.function = ""
 		o.code = 0
@@ -76,14 +75,6 @@ type ScEvents struct {
 	ArrayObject
 }
 
-func (a *ScEvents) Clear() {
-	for i := len(a.objects) - 1; i >= 0; i-- {
-		a.vm.SetInt(a.objects[i], KeyLength, 0)
-	}
-	//TODO move to pool for reuse of events?
-	a.objects = nil
-}
-
 func (a *ScEvents) GetObjectId(keyId int32, typeId int32) int32 {
 	return a.GetArrayObjectId(keyId, typeId, func() WaspObject {
 		event := &ScEvent{}
@@ -97,13 +88,12 @@ func (a *ScEvents) Send() {
 		request := a.vm.FindObject(a.objects[i]).(*ScEvent)
 		request.Send()
 	}
-	a.Clear()
 }
 
 func (a *ScEvents) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		a.Clear()
+		a.objects = nil
 		return
 	default:
 		a.ArrayObject.SetInt(keyId, value)
@@ -154,9 +144,6 @@ func (o *ScEventParams) SetBytes(keyId int32, value []byte) {
 func (o *ScEventParams) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		//TODO clear kv map?
-		// clear params, tracker will still know about object
-		// so maybe move it to an allocation pool for reuse
 		o.Params = kv.NewMap()
 	default:
 		o.Params.Codec().SetInt64(kv.Key(o.vm.GetKey(keyId)), value)

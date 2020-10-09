@@ -71,8 +71,18 @@ type ScContext struct {
 	MapObject
 }
 
-func NewScContext(vm *wasmProcessor) HostObject {
+func NewScContext(vm *wasmProcessor) *ScContext {
 	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root"}, objects: make(map[int32]int32)}}
+}
+
+func (o *ScContext) Finalize() {
+	eventsId, ok := o.objects[KeyEvents]
+	if ok {
+		events := o.vm.FindObject(eventsId).(*ScEvents)
+		events.Send()
+	}
+	o.objects = make(map[int32]int32)
+	o.vm.objIdToObj = o.vm.objIdToObj[:2]
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {

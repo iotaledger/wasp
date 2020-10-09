@@ -38,8 +38,6 @@ func (o *ScTransfer) Send() {
 func (o *ScTransfer) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		// clear transfer, tracker will still know about it
-		// so maybe move it to an allocation pool for reuse
 		o.address = ""
 		o.color = ""
 		o.amount = 0
@@ -79,11 +77,6 @@ func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 func (a *ScTransfers) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		// tell objects to clear themselves
-		for i := len(a.objects) - 1; i >= 0; i-- {
-			a.vm.SetInt(a.objects[i], keyId, 0)
-		}
-		//TODO move to pool for reuse of transfers
 		a.objects = nil
 	default:
 		a.error("SetInt: Invalid access")
