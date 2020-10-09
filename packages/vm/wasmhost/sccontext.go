@@ -76,11 +76,15 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 }
 
 func (o *ScContext) Finalize() {
-	eventsId, ok := o.objects[KeyEvents]
-	if ok {
-		events := o.vm.FindObject(eventsId).(*ScEvents)
-		events.Send()
+		eventsId, ok := o.objects[KeyEvents]
+		if ok {
+			haltEvents, _, _ := o.vm.ctx.AccessRequest().Args().GetInt64("$haltEvents")
+			if haltEvents == 0 {
+				events := o.vm.FindObject(eventsId).(*ScEvents)
+			events.Send()
+		}
 	}
+
 	o.objects = make(map[int32]int32)
 	o.vm.objIdToObj = o.vm.objIdToObj[:2]
 }

@@ -850,8 +850,17 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 		} else {
 			pass = false
 		}
-		// TODO pretty output
-		fmt.Printf("      '%s': %s (%v) -- %s\n", k, string(vact), vexp, vres)
+		// TODO prettier output?
+		var actualValue interface{}
+		switch vexp.(type) {
+		case string:
+			actualValue = string(vact)
+		case []byte:
+			actualValue = vact
+		default:
+			actualValue = util.Uint64From8Bytes(vact)
+		}
+		fmt.Printf("      '%s': %v (%v) -- %s\n", k, actualValue, vexp, vres)
 	}
 	return pass
 }

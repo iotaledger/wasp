@@ -1,9 +1,11 @@
 package wasmtest
 
 import (
+	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -48,25 +50,27 @@ func checkSuccess(err error, t *testing.T, success string) {
 	}
 }
 
-func loadWasmIntoWasps(t *testing.T, wasmPath string) error {
+func loadWasmIntoWasps(t *testing.T, wasmPath string, scDescription string) error {
 	wasm, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return err
 	}
 	scProgramHash = nil
-	hosts := wasps.ApiHosts()
-	for _, host := range hosts {
-		hashValue, err := apilib.PutProgram(host, wasmvm.PluginName, wasmPath, wasm)
+	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
+		var err error
+		hashValue, err := w.PutProgram(wasmvm.PluginName, scDescription, wasm)
 		if err != nil {
 			return err
 		}
 		if scProgramHash == nil {
 			scProgramHash = hashValue
-			continue
+			return nil
 		}
-		assert.Equal(t, *scProgramHash, *hashValue)
-	}
-	return nil
+		if *scProgramHash != *hashValue {
+			return errors.New("code hash mismatch")
+		}
+		return nil
+	})
 }
 
 func preamble(t *testing.T, wasmPath string, scDescription string, testName string) {
@@ -81,7 +85,7 @@ func preamble(t *testing.T, wasmPath string, scDescription string, testName stri
 	startWasps(t, "test_cluster2", testName)
 
 	// load sc code into wasps, save hash for later use
-	err := loadWasmIntoWasps(t, wasmPath)
+	err := loadWasmIntoWasps(t, wasmPath, scDescription)
 	check(err, t)
 
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
