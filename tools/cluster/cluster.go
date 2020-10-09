@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
@@ -193,6 +194,10 @@ func (cluster *Cluster) IsGoshimmerUp() bool {
 
 func (cluster *Cluster) NumSmartContracts() int {
 	return len(cluster.Config.SmartContracts)
+}
+
+func (cluster *Cluster) MultiClient() *multiclient.MultiClient {
+	return multiclient.New(cluster.ApiHosts())
 }
 
 func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {

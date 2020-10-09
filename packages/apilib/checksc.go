@@ -2,12 +2,14 @@ package apilib
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 )
 
 const prefix = "[checkSC] "
@@ -30,21 +32,21 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 	}
 	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", scAddr.String())
 	var err error
-	var exists, missing bool
+	var missing bool
 	fmt.Fprintf(out, prefix+"loading bootup record from hosts %+v\n", apiHosts)
 	var first *registry.BootupData
 	var firstHost string
 
 	bdRecords := make([]*registry.BootupData, len(apiHosts))
 	for i, host := range apiHosts {
-		bdRecords[i], exists, err = GetSCData(host, scAddr)
+		bdRecords[i], err = client.NewWaspClient(host).GetBootupData(scAddr)
 		if err != nil {
 			fmt.Fprintf(out, prefix+"%2d: %s -> %v\n", i, host, err)
 			ret = false
 			missing = true
 			continue
 		}
-		if !exists {
+		if client.IsNotFound(err) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data for %s does not exist\n", i, host, scAddr.String())
 			ret = false
 			missing = true

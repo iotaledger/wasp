@@ -142,9 +142,8 @@ func TestGetSCData(t *testing.T) {
 	})
 	checkSuccess(err, t, "smart contract has been activated and initialized")
 
-	bd, exists, err := waspapi.GetSCData(wasps.ApiHosts()[0], scAddr)
+	bd, err := wasps.Config.Nodes[0].Client().GetBootupData(scAddr)
 	assert.NoError(t, err)
-	assert.True(t, exists)
 	assert.NotNil(t, bd)
 	assert.EqualValues(t, bd.OwnerAddress, scOwnerAddr)
 	assert.True(t, bytes.Equal(bd.Color[:], scColor[:]))

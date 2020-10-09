@@ -18,3 +18,7 @@ func BadRequest(message string) *HTTPError {
 func NotFound(message string) *HTTPError {
 	return &HTTPError{Code: http.StatusNotFound, Message: message}
 }
+
+func Conflict(message string) *HTTPError {
+	return &HTTPError{Code: http.StatusConflict, Message: message}
+}

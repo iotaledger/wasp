@@ -2,6 +2,7 @@ package program
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/client"
@@ -60,7 +61,7 @@ func handlePutProgram(c echo.Context) error {
 
 	log.Infof("Program metadata record has been saved. Program hash: %s, description: %s",
 		md.ProgramHash.String(), md.Description)
-	return misc.OkJson(c, &client.PutProgramResponse{ProgramHash: &progHash})
+	return c.JSON(http.StatusCreated, &client.PutProgramResponse{ProgramHash: &progHash})
 }
 
 func handleGetProgramMetadata(c echo.Context) error {
