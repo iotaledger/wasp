@@ -222,3 +222,63 @@ func TestRepeatIncrement(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestRepeatManyIncrement(t *testing.T) {
+	const numRepeats = 5
+	preamble(t, wasmPath, scDescription, "TestRepeatManyIncrement")
+
+	err := wasps.ListenToMessages(map[string]int{
+		"bootuprec":           2,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"request_in":          1 + 1 + numRepeats,
+		"request_out":         2 + 1 + numRepeats,
+		"state":               -1,
+		"vmmsg":               -1,
+	})
+	check(err, t)
+
+	startSmartContract(t, scProgramHash, scDescription)
+
+	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
+		SCAddress: scAddr,
+		Vars: map[string]interface{}{
+			"fn":         "incrementRepeatMany",
+			"numRepeats": numRepeats,
+		},
+		// also send 5i to the SC address to use as request tokens
+		Transfer: map[balance.Color]int64{
+			balance.ColorIOTA: 5,
+		},
+	})
+	check(err, t)
+
+	if !wasps.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-6, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 6,
+	}, "sc owner in the end") {
+		t.Fail()
+		return
+	}
+
+	if !wasps.VerifyAddressBalances(scAddr, 6, map[balance.Color]int64{
+		balance.ColorIOTA: 5,
+		*scColor:          1,
+	}, "sc in the end") {
+		t.Fail()
+		return
+	}
+
+	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
+		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
+		vmconst.VarNameProgramHash:  scProgramHash[:],
+		vmconst.VarNameDescription:  scDescription,
+		"counter":                   util.Uint64To8Bytes(uint64(numRepeats + 1)),
+		"numRepeats":                util.Uint64To8Bytes(0),
+	}) {
+		t.Fail()
+	}
+}
