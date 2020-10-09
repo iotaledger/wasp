@@ -2,12 +2,11 @@ package wasptest
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"testing"
-	"time"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"testing"
+	"time"
 )
 
 func TestWasmSend1Bet(t *testing.T) {
@@ -140,7 +139,7 @@ func TestWasmSend5Bets(t *testing.T) {
 
 	scColor := sc.GetColor()
 
-	if !wasps.VerifyAddressBalances(scAddress, 501, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(&scAddress, 501, map[balance.Color]int64{
 		balance.ColorIOTA: 499, // one request sent to itself
 		scColor:           1,
 	}) {
@@ -237,7 +236,7 @@ func TestWasmSendBetsAndPlay(t *testing.T) {
 
 	scColor := sc.GetColor()
 
-	if !wasps.VerifyAddressBalances(scAddress, 2, map[balance.Color]int64{
+	if !wasps.VerifyAddressBalances(&scAddress, 2, map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 		scColor:           1,
 	}) {

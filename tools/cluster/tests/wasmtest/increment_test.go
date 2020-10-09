@@ -11,12 +11,12 @@ import (
 	"testing"
 )
 
-const wasmPath = "increment_bg.wasm"
-const scDescription = "Increment, a PoC smart contract"
+const inc_wasmPath = "increment_bg.wasm"
+const inc_description = "Increment, a PoC smart contract"
 
 func TestDeployment(t *testing.T) {
-	preamble(t, wasmPath, scDescription, "TestDeployment")
-	startSmartContract(t, scProgramHash, scDescription)
+	preamble(t, inc_wasmPath, inc_description, "TestDeployment")
+	startSmartContract(t, scProgramHash, inc_description)
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -35,22 +35,22 @@ func TestDeployment(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  scProgramHash[:],
-		vmconst.VarNameDescription:  scDescription,
+		vmconst.VarNameDescription:  inc_description,
 	}) {
 		t.Fail()
 	}
 }
 
-func TestNothing(t *testing.T) {
-	testNothing(t, "TestNothing", 1)
+func TestIncNothing(t *testing.T) {
+	testNothing(t, "TestIncNothing", inc_wasmPath, inc_description, 1)
 }
 
-func Test5xNothing(t *testing.T) {
-	testNothing(t, "Test5xNothing", 5)
+func Test5xIncNothing(t *testing.T) {
+	testNothing(t, "Test5xIncNothing", inc_wasmPath, inc_description, 5)
 }
 
-func testNothing(t *testing.T, testName string, numRequests int) {
-	preamble(t, wasmPath, scDescription, testName)
+func testNothing(t *testing.T, testName string, wasmPath string, descr string, numRequests int) {
+	preamble(t, wasmPath, descr, testName)
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
@@ -63,7 +63,7 @@ func testNothing(t *testing.T, testName string, numRequests int) {
 	})
 	check(err, t)
 
-	startSmartContract(t, scProgramHash, scDescription)
+	startSmartContract(t, scProgramHash, inc_description)
 
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
@@ -97,7 +97,7 @@ func testNothing(t *testing.T, testName string, numRequests int) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  scProgramHash[:],
-		vmconst.VarNameDescription:  scDescription,
+		vmconst.VarNameDescription:  inc_description,
 	}) {
 		t.Fail()
 	}
@@ -112,7 +112,7 @@ func Test5xIncrement(t *testing.T) {
 }
 
 func testIncrement(t *testing.T, testName string, increments int) {
-	preamble(t, wasmPath, scDescription, testName)
+	preamble(t, inc_wasmPath, inc_description, testName)
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
@@ -125,7 +125,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	})
 	check(err, t)
 
-	startSmartContract(t, scProgramHash, scDescription)
+	startSmartContract(t, scProgramHash, inc_description)
 
 	for i := 0; i < increments; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
@@ -159,7 +159,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  scProgramHash[:],
-		vmconst.VarNameDescription:  scDescription,
+		vmconst.VarNameDescription:  inc_description,
 		"counter":                   util.Uint64To8Bytes(uint64(increments)),
 	}) {
 		t.Fail()
@@ -167,7 +167,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 }
 
 func TestRepeatIncrement(t *testing.T) {
-	preamble(t, wasmPath, scDescription, "TestRepeatIncrement")
+	preamble(t, inc_wasmPath, inc_description, "TestRepeatIncrement")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
@@ -180,7 +180,7 @@ func TestRepeatIncrement(t *testing.T) {
 	})
 	check(err, t)
 
-	startSmartContract(t, scProgramHash, scDescription)
+	startSmartContract(t, scProgramHash, inc_description)
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: scAddr,
@@ -216,7 +216,7 @@ func TestRepeatIncrement(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  scProgramHash[:],
-		vmconst.VarNameDescription:  scDescription,
+		vmconst.VarNameDescription:  inc_description,
 		"counter":                   util.Uint64To8Bytes(uint64(2)),
 	}) {
 		t.Fail()
@@ -225,7 +225,7 @@ func TestRepeatIncrement(t *testing.T) {
 
 func TestRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	preamble(t, wasmPath, scDescription, "TestRepeatManyIncrement")
+	preamble(t, inc_wasmPath, inc_description, "TestRepeatManyIncrement")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
@@ -238,7 +238,7 @@ func TestRepeatManyIncrement(t *testing.T) {
 	})
 	check(err, t)
 
-	startSmartContract(t, scProgramHash, scDescription)
+	startSmartContract(t, scProgramHash, inc_description)
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: scAddr,
@@ -275,7 +275,7 @@ func TestRepeatManyIncrement(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  scProgramHash[:],
-		vmconst.VarNameDescription:  scDescription,
+		vmconst.VarNameDescription:  inc_description,
 		"counter":                   util.Uint64To8Bytes(uint64(numRepeats + 1)),
 		"numRepeats":                util.Uint64To8Bytes(0),
 	}) {
