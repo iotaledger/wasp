@@ -76,7 +76,7 @@ func initSC(ctx vmtypes.Sandbox) {
 	// set description
 	dscr, ok, err := ctx.AccessRequest().Args().GetString(vmconst.VarNameDescription)
 	if err != nil {
-		ctx.Publishf("init_sc error Could not read description from the request: %s", err.Error())
+		ctx.Publishf("init_sc error can't read description from the request: %s", err.Error())
 		return
 	}
 	if !ok {
