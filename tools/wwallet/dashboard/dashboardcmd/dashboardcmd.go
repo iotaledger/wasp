@@ -33,24 +33,24 @@ func cmd(args []string) {
 	scs := make([]dashboard.SCDashboard, 0)
 	if fr.Config.IsAvailable() {
 		scs = append(scs, frdashboard.Dashboard())
-		fmt.Printf("FairRoulette: %s", fr.Config.Href())
+		fmt.Printf("FairRoulette: %s\n", fr.Config.Href())
 	} else {
 		fmt.Println("FairRoulette not available")
 	}
 	if fa.Config.IsAvailable() {
 		scs = append(scs, fadashboard.Dashboard())
-		fmt.Printf("FairAuction: %s", fa.Config.Href())
+		fmt.Printf("FairAuction: %s\n", fa.Config.Href())
 	} else {
 		fmt.Println("FairAuction not available")
 	}
 	if tr.Config.IsAvailable() {
 		scs = append(scs, trdashboard.Dashboard())
-		fmt.Printf("TokenRegistry: %s", tr.Config.Href())
+		fmt.Printf("TokenRegistry: %s\n", tr.Config.Href())
 	} else {
 		fmt.Println("TokenRegistry not available")
 	}
 	if dwf.Config.IsAvailable() {
-		fmt.Printf("DonateWithFeedback: %s", dwf.Config.Href())
+		fmt.Printf("DonateWithFeedback: %s\n", dwf.Config.Href())
 		scs = append(scs, dwfdashboard.Dashboard())
 	} else {
 		fmt.Println("DonateWithFeedback not available")
