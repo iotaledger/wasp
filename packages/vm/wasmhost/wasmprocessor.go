@@ -51,25 +51,26 @@ func (vm *wasmProcessor) GetDescription() string {
 }
 
 func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
+	vm.ctx = ctx
+
 	reqId := ctx.AccessRequest().ID()
-	ctx.Publish(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
+	vm.LogText(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
-	ctx.Publish("Calling " + vm.function)
-	vm.ctx = ctx
+	vm.LogText("Calling " + vm.function)
 	err := vm.RunWasmFunction(vm.function)
 	if err != nil {
-		ctx.Publish("error running wasm: " + err.Error())
+		vm.LogText("error running wasm: " + err.Error())
 		panic(err)
 	}
 
 	if vm.HasError() {
 		errorMsg := vm.GetString(1, KeyError)
-		ctx.Publish("error running wasm function: " + errorMsg)
+		vm.LogText("error running wasm function: " + errorMsg)
 		panic(errorMsg)
 	}
 
-	ctx.Publish("Finalizing call")
+	vm.LogText("Finalizing call")
 	vm.scContext.Finalize()
 }
 
@@ -80,14 +81,23 @@ func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (vm *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		//proc.ctx.Publish(text)
+		//vm.LogText(text)
 	case KeyTrace:
-		vm.ctx.Publish(text)
+		vm.LogText(text)
 	case KeyLog:
-		vm.ctx.Publish(text)
+		vm.LogText(text)
 	case KeyWarning:
-		vm.ctx.Publish(text)
+		vm.LogText(text)
 	case KeyError:
-		vm.ctx.Publish(text)
+		vm.LogText(text)
 	}
+}
+
+func (vm *wasmProcessor) LogText(text string) {
+	if vm.ctx != nil {
+		vm.ctx.Publish(text)
+		return
+	}
+	// fallback logging
+	fmt.Println(text)
 }
