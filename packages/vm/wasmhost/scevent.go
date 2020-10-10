@@ -10,7 +10,6 @@ type ScEvent struct {
 	code     int64
 	contract string
 	delay    int64
-	function string
 }
 
 func (o *ScEvent) GetObjectId(keyId int32, typeId int32) int32 {
@@ -20,7 +19,7 @@ func (o *ScEvent) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScEvent) Send() {
-	o.vm.Trace("EVENT f'%s' c%d d%d a'%s'", o.function, o.code, o.delay, o.contract)
+	o.vm.Trace("EVENT f'%s' c%d d%d a'%s'", o.vm.codeToFunc[int32(o.code)], o.code, o.delay, o.contract)
 	if o.contract == "" {
 		params := kv.NewMap()
 		paramsId, ok := o.objects[KeyParams]
@@ -30,9 +29,6 @@ func (o *ScEvent) Send() {
 				o.vm.Trace("  PARAM '%s'", key)
 				return true
 			})
-		}
-		if o.function != "" {
-			params.Codec().SetString("fn", o.function)
 		}
 		if params.IsEmpty() {
 			params = nil
@@ -46,7 +42,6 @@ func (o *ScEvent) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		o.contract = ""
-		o.function = ""
 		o.code = 0
 		o.delay = 0
 	case KeyCode:
@@ -63,7 +58,12 @@ func (o *ScEvent) SetString(keyId int32, value string) {
 	case KeyContract:
 		o.contract = value
 	case KeyFunction:
-		o.function = value
+		code, ok := o.vm.funcToCode[value]
+		if !ok {
+			o.error("SetString: invalid function: %s", value)
+			return
+		}
+		o.code = int64(code)
 	default:
 		o.MapObject.SetString(keyId, value)
 	}

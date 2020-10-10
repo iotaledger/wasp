@@ -4,11 +4,20 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest"
 	"testing"
+)
+
+const (
+	inc_code_nothing             = sctransaction.RequestCode(1)
+	inc_code_test                = sctransaction.RequestCode(2)
+	inc_code_increment           = sctransaction.RequestCode(3)
+	inc_code_incrementRepeat1    = sctransaction.RequestCode(4)
+	inc_code_incrementRepeatMany = sctransaction.RequestCode(5)
 )
 
 const inc_wasmPath = "increment_bg.wasm"
@@ -68,9 +77,7 @@ func testNothing(t *testing.T, testName string, wasmPath string, descr string, n
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: scAddr,
-			Vars: map[string]interface{}{
-				"fn": "nothing",
-			},
+			RequestCode: inc_code_nothing,
 		})
 		check(err, t)
 	}
@@ -130,9 +137,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	for i := 0; i < increments; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: scAddr,
-			Vars: map[string]interface{}{
-				"fn": "increment",
-			},
+			RequestCode: inc_code_increment,
 		})
 		check(err, t)
 	}
@@ -184,9 +189,7 @@ func TestRepeatIncrement(t *testing.T) {
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: scAddr,
-		Vars: map[string]interface{}{
-			"fn": "incrementRepeat1",
-		},
+		RequestCode: inc_code_incrementRepeat1,
 		// also send 1i to the SC address to use as request token
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -242,8 +245,8 @@ func TestRepeatManyIncrement(t *testing.T) {
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: scAddr,
+		RequestCode: inc_code_incrementRepeatMany,
 		Vars: map[string]interface{}{
-			"fn":         "incrementRepeatMany",
 			"numRepeats": numRepeats,
 		},
 		// also send 5i to the SC address to use as request tokens

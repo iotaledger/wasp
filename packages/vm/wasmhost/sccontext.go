@@ -13,7 +13,8 @@ const (
 	KeyDelay       = KeyData - 1
 	KeyDescription = KeyDelay - 1
 	KeyEvents      = KeyDescription - 1
-	KeyFunction    = KeyEvents - 1
+	KeyExports     = KeyEvents - 1
+	KeyFunction    = KeyExports - 1
 	KeyHash        = KeyFunction - 1
 	KeyId          = KeyHash - 1
 	KeyIota        = KeyId - 1
@@ -51,6 +52,7 @@ var keyMap = map[string]int32{
 	"delay":       KeyDelay,
 	"description": KeyDescription,
 	"events":      KeyEvents,
+	"exports":     KeyExports,
 	"function":    KeyFunction,
 	"hash":        KeyHash,
 	"id":          KeyId,
@@ -76,11 +78,11 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 }
 
 func (o *ScContext) Finalize() {
-		eventsId, ok := o.objects[KeyEvents]
-		if ok {
-			haltEvents, _, _ := o.vm.ctx.AccessRequest().Args().GetInt64("$haltEvents")
-			if haltEvents == 0 {
-				events := o.vm.FindObject(eventsId).(*ScEvents)
+	eventsId, ok := o.objects[KeyEvents]
+	if ok {
+		haltEvents, _, _ := o.vm.ctx.AccessRequest().Args().GetInt64("$haltEvents")
+		if haltEvents == 0 {
+			events := o.vm.FindObject(eventsId).(*ScEvents)
 			events.Send()
 		}
 	}
@@ -90,10 +92,16 @@ func (o *ScContext) Finalize() {
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
+	if keyId == KeyExports && o.vm.ctx != nil {
+		// once map has entries (onLoad) this cannot be called any more
+		return o.MapObject.GetObjectId(keyId, typeId)
+	}
+
 	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
 		KeyAccount:   {OBJTYPE_MAP, func() WaspObject { return &ScAccount{} }},
 		KeyContract:  {OBJTYPE_MAP, func() WaspObject { return &ScContract{} }},
 		KeyEvents:    {OBJTYPE_MAP_ARRAY, func() WaspObject { return &ScEvents{} }},
+		KeyExports:   {OBJTYPE_STRING_ARRAY, func() WaspObject { return &ScExports{} }},
 		KeyLogs:      {OBJTYPE_MAP, func() WaspObject { return &ScLogs{} }},
 		KeyRequest:   {OBJTYPE_MAP, func() WaspObject { return &ScRequest{} }},
 		KeyState:     {OBJTYPE_MAP, func() WaspObject { return &ScState{} }},

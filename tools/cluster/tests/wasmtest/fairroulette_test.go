@@ -4,10 +4,19 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest"
 	"testing"
+)
+
+const (
+	fr_code_nothing    = sctransaction.RequestCode(1)
+	fr_code_placeBet   = sctransaction.RequestCode(2)
+	fr_code_lockBets   = sctransaction.RequestCode(3)
+	fr_code_payWinners = sctransaction.RequestCode(4)
+	fr_code_playPeriod = sctransaction.RequestCode(5 | sctransaction.RequestCodeProtected)
 )
 
 const fr_wasmPath = "fairroulette_bg.wasm"
@@ -39,9 +48,9 @@ func TestPlaceBet(t *testing.T) {
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: scAddr,
+		RequestCode: fr_code_placeBet,
 		Vars: map[string]interface{}{
-			"fn": "placeBet",
-			"color": 3,
+			"color":       3,
 			"$haltEvents": 1, // do not propagate queued events
 		},
 		Transfer: map[balance.Color]int64{
@@ -55,7 +64,7 @@ func TestPlaceBet(t *testing.T) {
 	}
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-100, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 1-100,
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 100,
 	}, "sc owner in the end") {
 		t.Fail()
 		return
@@ -96,8 +105,8 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress: scAddr,
+		RequestCode: fr_code_playPeriod,
 		Vars: map[string]interface{}{
-			"fn":         "playPeriod",
 			"playPeriod": 10,
 		},
 		Transfer: map[balance.Color]int64{
@@ -109,8 +118,8 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress: scAddr,
+			RequestCode: fr_code_placeBet,
 			Vars: map[string]interface{}{
-				"fn":    "placeBet",
 				"color": i + 1,
 			},
 			Transfer: map[balance.Color]int64{
@@ -143,7 +152,7 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  scProgramHash[:],
 		vmconst.VarNameDescription:  fr_description,
-		"playPeriod": 10,
+		"playPeriod":                10,
 		//"lastWinningColor": 3,
 	}) {
 		t.Fail()

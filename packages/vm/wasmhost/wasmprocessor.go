@@ -10,12 +10,17 @@ import (
 
 type wasmProcessor struct {
 	WasmHost
-	ctx       vmtypes.Sandbox
-	scContext *ScContext
+	codeToFunc map[int32]string
+	ctx        vmtypes.Sandbox
+	function   string
+	funcToCode map[string]int32
+	scContext  *ScContext
 }
 
 func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	vm := &wasmProcessor{}
+	vm.codeToFunc = make(map[int32]string)
+	vm.funcToCode = make(map[string]int32)
 	vm.scContext = NewScContext(vm)
 	err := vm.Init(NewNullObject(vm), vm.scContext, &keyMap, vm)
 	if err != nil {
@@ -25,11 +30,19 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = vm.RunWasmFunction("onLoad")
+	if err != nil {
+		return nil, err
+	}
 	return vm, nil
 }
 
-func (vm *wasmProcessor) GetEntryPoint(sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
-	//TODO we don't use request code for now, but 'fn' request parameter instead
+func (vm *wasmProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+	function, ok := vm.codeToFunc[int32(code)]
+	if !ok {
+		return nil, false
+	}
+	vm.function = function
 	return vm, true
 }
 
@@ -42,15 +55,9 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 	ctx.Publish(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
-	functionName, _, _ := ctx.AccessRequest().Args().GetString("fn")
-	if functionName == "" {
-		ctx.Publish("error starting wasm: Missing fn parameter")
-		return
-	}
-
-	ctx.Publish("Calling " + functionName)
+	ctx.Publish("Calling " + vm.function)
 	vm.ctx = ctx
-	err := vm.RunWasmFunction(functionName)
+	err := vm.RunWasmFunction(vm.function)
 	if err != nil {
 		ctx.Publish("error running wasm: " + err.Error())
 		panic(err)
