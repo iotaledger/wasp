@@ -33,15 +33,23 @@ func cmd(args []string) {
 	scs := make([]dashboard.SCDashboard, 0)
 	if fr.Config.IsAvailable() {
 		scs = append(scs, frdashboard.Dashboard())
+	} else {
+		fmt.Println("FairRoulette not available")
 	}
 	if fa.Config.IsAvailable() {
 		scs = append(scs, fadashboard.Dashboard())
+	} else {
+		fmt.Println("FairAuction not available")
 	}
 	if tr.Config.IsAvailable() {
 		scs = append(scs, trdashboard.Dashboard())
+	} else {
+		fmt.Println("TokenRegistry not available")
 	}
 	if dwf.Config.IsAvailable() {
 		scs = append(scs, dwfdashboard.Dashboard())
+	} else {
+		fmt.Println("DonateWithFeedback not available")
 	}
 
 	dashboard.StartServer(listenAddr, scs)
