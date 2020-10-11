@@ -9,7 +9,6 @@ type VMConstructor func(binaryCode []byte) (Processor, error)
 
 var (
 	vmtypes        = make(map[string]VMConstructor)
-	defaultVMType  string
 	vmfactoryMutex sync.Mutex
 )
 
@@ -33,19 +32,9 @@ func FromBinaryCode(vmtype string, binaryCode []byte) (Processor, error) {
 	vmfactoryMutex.Lock()
 	defer vmfactoryMutex.Unlock()
 
-	if vmtype == "" {
-		vmtype = defaultVMType
-	}
 	constructor, ok := vmtypes[vmtype]
 	if !ok {
 		return nil, fmt.Errorf("unknown VM type '%s'", vmtype)
 	}
 	return constructor(binaryCode)
-}
-
-func SetDefaultVMType(vmtype string) {
-	vmfactoryMutex.Lock()
-	defer vmfactoryMutex.Unlock()
-
-	defaultVMType = vmtype
 }
