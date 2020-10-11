@@ -33,7 +33,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	ctx.Log.Debugw("runTask IN",
 		"addr", ctx.Address.String(),
-		"finalTimestamp", ctx.Timestamp,
+		"timestamp", ctx.Timestamp,
 		"state index", ctx.VirtualState.StateIndex(),
 		"num req", len(ctx.Requests),
 		"leader", ctx.LeaderPeerIndex,
@@ -61,6 +61,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
 			vmctx.Timestamp += 1
 		}
+		// mutate entropy
 		vmctx.Entropy = *hashing.HashData(vmctx.Entropy[:])
 	}
 	if len(stateUpdates) == 0 {
@@ -72,7 +73,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	// create batch from state updates.
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
+		ctx.OnFinish(fmt.Errorf("RunVM.NewBatch: %v", err))
 		return
 	}
 	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
@@ -80,7 +81,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	// calculate resulting state hash
 	vsClone := ctx.VirtualState.Clone()
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
+		ctx.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
