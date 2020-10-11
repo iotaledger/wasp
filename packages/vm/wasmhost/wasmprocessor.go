@@ -8,8 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-const VMType = "wasmtime"
-
 type wasmProcessor struct {
 	WasmHost
 	codeToFunc map[int32]string
