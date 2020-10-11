@@ -2,11 +2,11 @@ package runvm
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -32,23 +32,19 @@ func Init() *node.Plugin {
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
-	vmtypes.SetDefaultVMType(parameters.GetString(parameters.VMDefaultVmType))
+
+	// register VM type(s)
+	err := vmtypes.RegisterVMType(wasmhost.VMType, wasmhost.GetProcessor)
+	if err != nil {
+		log.Panicf("RunVM: %v", err)
+	}
+	log.Infof("registered VM type: '%s'", wasmhost.VMType)
 }
 
 func run(_ *node.Plugin) {
 	vmDaemon = daemon.New()
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		// globally initialize VM
-		go vmDaemon.Run()
-
-		<-shutdownSignal
-
-		vmDaemon.Shutdown()
-		log.Infof("shutdown RunVM...  Done")
-	})
-	if err != nil {
-		log.Errorf("failed to start RunVM worker")
-	}
+	go vmDaemon.Run()
+	log.Infof("running VM daemon..")
 }
 
 // RunComputationsAsync runs computations for the batch of requests in the background

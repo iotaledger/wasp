@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/runvm"
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/testplugins/roundtrip"
-	"github.com/iotaledger/wasp/plugins/wasmvm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -35,7 +34,6 @@ func main() {
 		gracefulshutdown.Init(),
 		webapi.Init(),
 		cli.Init(),
-		wasmvm.Init(),
 		database.Init(),
 		peering.Init(),
 		nodeconn.Init(),
