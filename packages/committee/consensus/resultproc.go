@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/plugins/initvm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
 type runCalculationsParams struct {
@@ -54,7 +54,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		}
 		op.committee.ReceiveMessage(ctx)
 	}
-	if err := initvm.RunComputationsAsync(ctx); err != nil {
+	if err := runvm.RunComputationsAsync(ctx); err != nil {
 		op.log.Errorf("RunComputationsAsync: %v", err)
 	}
 }

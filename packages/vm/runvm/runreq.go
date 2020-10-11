@@ -1,4 +1,4 @@
-package initvm
+package runvm
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"

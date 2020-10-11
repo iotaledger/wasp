@@ -1,4 +1,4 @@
-package initvm
+package runvm
 
 import (
 	"fmt"
