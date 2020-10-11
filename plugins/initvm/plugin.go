@@ -1,4 +1,4 @@
-package runvm
+package initvm
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ const PluginName = "RunVM"
 var (
 	log *logger.Logger
 
-	vmDaemon *daemon.OrderedDaemon
+	//vmDaemon *daemon.OrderedDaemon
 )
 
 func Init() *node.Plugin {
@@ -42,9 +42,6 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	vmDaemon = daemon.New()
-	go vmDaemon.Run()
-	log.Infof("running VM daemon..")
 }
 
 // RunComputationsAsync runs computations for the batch of requests in the background
@@ -65,7 +62,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	bh := vm.BatchHash(reqids, ctx.Timestamp, ctx.LeaderPeerIndex)
 	taskName := ctx.Address.String() + "." + bh.String()
 
-	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
+	err = daemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
 		runTask(ctx, txb, shutdownSignal)
 	})
 	return err
