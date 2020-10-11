@@ -24,8 +24,11 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return err
 	}
 
-	// TODO graceful shutdown of the running VM task (with daemon)
+	// TODO 1 graceful shutdown of the running VM task (with daemon)
+	// TODO 2 timeout for VM. Gas limit
+
 	go runTask(ctx, txb)
+
 	return nil
 }
 
@@ -42,7 +45,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	// create VM context, including state block, move smart contract token and request tokens
 	vmctx, err := createVMContext(ctx, txb)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("createVMContext: %v", err))
+		ctx.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
 		return
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
