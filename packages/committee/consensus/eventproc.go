@@ -305,5 +305,5 @@ func timelockedToString(reqs []*request) string {
 	for i := range ret {
 		ret[i] = fmt.Sprintf("%s: %d (-%d)", reqs[i].reqId.Short(), reqs[i].timelock(), reqs[i].timelock()-nowis)
 	}
-	return fmt.Sprintf("now: %d, [%s]", strings.Join(ret, ","))
+	return fmt.Sprintf("now: %d, [%s]", nowis, strings.Join(ret, ","))
 }

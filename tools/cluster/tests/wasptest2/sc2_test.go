@@ -266,6 +266,8 @@ func TestPlus2SC(t *testing.T) {
 	})
 	checkSuccess(err, t, "token minted")
 
+	time.Sleep(2 * time.Second)
+
 	mintedColor := balance.Color(tx.ID())
 
 	if !wasps.VerifyAddressBalances(scFAAddr, 1, map[balance.Color]int64{
