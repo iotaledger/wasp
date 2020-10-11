@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/plugins/runvm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
 type runCalculationsParams struct {

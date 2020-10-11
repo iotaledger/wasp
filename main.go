@@ -17,9 +17,9 @@ import (
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"github.com/iotaledger/wasp/plugins/runvm"
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/testplugins/roundtrip"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -39,7 +39,7 @@ func main() {
 		nodeconn.Init(),
 		dispatcher.Init(),
 		committees.Init(),
-		runvm.Init(),
+		wasmtimevm.Init(),
 		publisher.Init(),
 		dashboard.Init(),
 		examples.Init(),

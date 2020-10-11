@@ -36,7 +36,7 @@ func configure(ctx *node.Plugin) {
 		{logsc.ProgramHash, logsc.GetProcessor, "logsc"},
 		{inccounter.ProgramHash, inccounter.GetProcessor, "inccounter"},
 		{fairroulette.ProgramHash, fairroulette.GetProcessor, "FairRoulette"},
-		//{wasmpoc.ProgramHash, wasmpoc.GetProcessor, "wasmpoc"},
+		//{wasmhost.ProgramHash, wasmhost.GetProcessor, "wasmpoc"},
 		{fairauction.ProgramHash, fairauction.GetProcessor, "FairAuction"},
 		{tokenregistry.ProgramHash, tokenregistry.GetProcessor, "TokenRegistry"},
 		{sc7.ProgramHash, sc7.GetProcessor, "sc7"},

@@ -24,9 +24,6 @@ const (
 	DashboardExploreAddressUrl = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
-	VMBinaryDir     = "vm.binaries"
-	VMDefaultVmType = "vm.defaultvm"
-
 	NodeAddress = "nodeconn.address"
 
 	PeeringMyNetId = "peering.netid"
@@ -53,9 +50,6 @@ func InitFlags() {
 	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
 	flag.String(DashboardExploreAddressUrl, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
-
-	flag.String(VMBinaryDir, "wasm", "path where Wasm binaries are located (using file:// schema")
-	flag.String(VMDefaultVmType, "dummmy", "default VM type")
 
 	flag.String(NodeAddress, "127.0.0.1:5000", "node host address")
 

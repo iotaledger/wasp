@@ -2,3 +2,4 @@ wasp.log
 waspdb/
 cluster-data/
 dist/
+.idea/
