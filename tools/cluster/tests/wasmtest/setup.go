@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/plugins/wasmvm"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +58,7 @@ func loadWasmIntoWasps(t *testing.T, wasmPath string, scDescription string) erro
 	scProgramHash = nil
 	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
 		var err error
-		hashValue, err := w.PutProgram(wasmvm.PluginName, scDescription, wasm)
+		hashValue, err := w.PutProgram(wasmtimevm.PluginName, scDescription, wasm)
 		if err != nil {
 			return err
 		}

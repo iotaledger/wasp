@@ -18,6 +18,7 @@ func main() {
 	if len(os.Args) >= 4 {
 		node = os.Args[3]
 	}
+	fmt.Printf("using %s\n", node)
 
 	switch os.Args[1] {
 	case "tx":

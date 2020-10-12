@@ -2,54 +2,13 @@ package runvm
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"time"
-
-	"github.com/iotaledger/hive.go/daemon"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/state"
 )
-
-// PluginName is the name of the RunVM plugin.
-const PluginName = "RunVM"
-
-var (
-	log *logger.Logger
-
-	vmDaemon *daemon.OrderedDaemon
-)
-
-func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
-}
-
-func configure(_ *node.Plugin) {
-	log = logger.NewLogger(PluginName)
-	vmtypes.SetDefaultVMType(parameters.GetString(parameters.VMDefaultVmType))
-}
-
-func run(_ *node.Plugin) {
-	vmDaemon = daemon.New()
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		// globally initialize VM
-		go vmDaemon.Run()
-
-		<-shutdownSignal
-
-		vmDaemon.Shutdown()
-		log.Infof("shutdown RunVM...  Done")
-	})
-	if err != nil {
-		log.Errorf("failed to start RunVM worker")
-	}
-}
 
 // RunComputationsAsync runs computations for the batch of requests in the background
 func RunComputationsAsync(ctx *vm.VMTask) error {
@@ -57,29 +16,24 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return fmt.Errorf("must be at least 1 request")
 	}
 
+	// create txbuilder for the task. It will accumulate all token movements produced
+	// by the SC program during batch run. In the end it will produce finalized transaction
 	txb, err := txbuilder.NewFromAddressBalances(&ctx.Address, ctx.Balances)
 	if err != nil {
-		ctx.Log.Debugf("NewTxBuilder: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
+		ctx.Log.Debugf("txbuilder.NewFromAddressBalances: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
 		return err
 	}
 
-	//ctx.Log.Infof("$$$$ dump orig txbuilder\n%s\n", txb.Dump())
-
-	reqids := sctransaction.TakeRequestIds(ctx.Requests)
-	bh := vm.BatchHash(reqids, ctx.Timestamp, ctx.LeaderPeerIndex)
-	taskName := ctx.Address.String() + "." + bh.String()
-
-	err = vmDaemon.BackgroundWorker(taskName, func(shutdownSignal <-chan struct{}) {
-		runTask(ctx, txb, shutdownSignal)
-	})
-	return err
+	// TODO graceful shutdown of the running VM task (with daemon)
+	go runTask(ctx, txb)
+	return nil
 }
 
-// runs batch
-func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struct{}) {
+// runTask runs batch of requests on VM
+func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	ctx.Log.Debugw("runTask IN",
 		"addr", ctx.Address.String(),
-		"finalTimestamp", ctx.Timestamp,
+		"timestamp", ctx.Timestamp,
 		"state index", ctx.VirtualState.StateIndex(),
 		"num req", len(ctx.Requests),
 		"leader", ctx.LeaderPeerIndex,
@@ -107,6 +61,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
 			vmctx.Timestamp += 1
 		}
+		// mutate entropy
 		vmctx.Entropy = *hashing.HashData(vmctx.Entropy[:])
 	}
 	if len(stateUpdates) == 0 {
@@ -118,7 +73,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	// create batch from state updates.
 	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
+		ctx.OnFinish(fmt.Errorf("RunVM.NewBatch: %v", err))
 		return
 	}
 	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
@@ -126,7 +81,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 	// calculate resulting state hash
 	vsClone := ctx.VirtualState.Clone()
 	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM: %v", err))
+		ctx.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
@@ -148,13 +103,6 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder, shutdownSignal <-chan struc
 		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Properties: %v", err))
 		return
 	}
-
-	// deprecate
-	// check of all provided inputs were properly consumed
-	//if err := ctx.ResultTransaction.ValidateConsumptionOfInputs(&ctx.Addresses, ctx.Balances); err != nil {
-	//	ctx.Log.Errorf("RunVM.ValidateConsumptionOfInputs: wrong result transaction: %v", err)
-	//	return
-	//}
 
 	ctx.Log.Debugw("runTask OUT",
 		"result batch size", ctx.ResultBatch.Size(),

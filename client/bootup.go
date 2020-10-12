@@ -24,7 +24,7 @@ func (c *WaspClient) PutBootupData(bd *registry.BootupData) error {
 
 // GetBootupData calls node to get BootupData record by address
 func (c *WaspClient) GetBootupData(addr *address.Address) (*registry.BootupData, error) {
-	res := jsonable.BootupData{}
+	res := &jsonable.BootupData{}
 	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+GetBootupDataRoute(addr.String()), nil, res); err != nil {
 		return nil, err
 	}

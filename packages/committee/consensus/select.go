@@ -61,6 +61,7 @@ func (op *operator) selectRequestsToProcess() []*request {
 // sort by arrival time
 func (op *operator) requestCandidateList() []*request {
 	ret := make([]*request, 0, len(op.requests))
+
 	nowis := time.Now()
 	for _, req := range op.requests {
 		if req.reqTx == nil {
@@ -74,6 +75,22 @@ func (op *operator) requestCandidateList() []*request {
 	sort.Slice(ret, func(i, j int) bool {
 		return ret[i].whenMsgReceived.Before(ret[j].whenMsgReceived)
 	})
+	return ret
+}
+
+func (op *operator) requestTimelocked() []*request {
+	ret := make([]*request, 0, len(op.requests))
+
+	nowis := time.Now()
+	for _, req := range op.requests {
+		if req.reqTx == nil {
+			continue
+		}
+		if !req.isTimelocked(nowis) {
+			continue
+		}
+		ret = append(ret, req)
+	}
 	return ret
 }
 

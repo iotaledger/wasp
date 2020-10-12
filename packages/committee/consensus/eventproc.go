@@ -1,7 +1,9 @@
 package consensus
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/committee"
@@ -285,10 +287,23 @@ func (op *operator) EventTimerMsg(msg committee.TimerTick) {
 			"req backlog", len(op.requests),
 			"leader", leader,
 			"selection", len(op.selectRequestsToProcess()),
+			"timelocked", timelockedToString(op.requestTimelocked()),
 			"notif backlog", len(op.notificationsBacklog),
 		)
 	}
 	if msg%2 == 0 {
 		op.takeAction()
 	}
+}
+
+func timelockedToString(reqs []*request) string {
+	if len(reqs) == 0 {
+		return "[]"
+	}
+	ret := make([]string, len(reqs))
+	nowis := uint32(time.Now().Unix())
+	for i := range ret {
+		ret[i] = fmt.Sprintf("%s: %d (-%d)", reqs[i].reqId.Short(), reqs[i].timelock(), reqs[i].timelock()-nowis)
+	}
+	return fmt.Sprintf("now: %d, [%s]", nowis, strings.Join(ret, ","))
 }
