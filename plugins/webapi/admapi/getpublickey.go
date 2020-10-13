@@ -1,10 +1,9 @@
-package dkg
+package admapi
 
 import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -14,14 +13,7 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-var log *logger.Logger
-
-func initLogger() {
-	log = logger.NewLogger("webapi/dkg")
-}
-
-func AddEndpoints(server *echo.Group) {
-	initLogger()
+func addPublicKeyEndpoint(server *echo.Group) {
 	server.GET("/"+client.GetPubKeyInfoRoute(":address"), handleGetPubKeyInfo)
 }
 

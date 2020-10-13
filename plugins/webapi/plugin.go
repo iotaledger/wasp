@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
-	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 
@@ -46,7 +45,6 @@ func WaitUntilIsUp() {
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
 	dkgapi.InitLogger()
-	admapi.InitLogger()
 
 	Server.HideBanner = true
 	Server.HidePort = true

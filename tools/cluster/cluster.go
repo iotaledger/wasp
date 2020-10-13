@@ -496,9 +496,8 @@ func (cluster *Cluster) stopNode(nodeIndex int) {
 	if !node.IsUp() {
 		return
 	}
-	url := node.ApiHost()
-	fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", url)
-	err := waspapi.Shutdown(url)
+	fmt.Printf("[cluster] Sending shutdown to wasp node at %s\n", node.ApiHost())
+	err := node.Client().Shutdown()
 	if err != nil {
 		fmt.Println(err)
 	}
