@@ -32,7 +32,6 @@ func addEndpoints(adminWhitelist []net.IP) {
 
 		adm.POST("/sc/:scaddress/activate", admapi.HandlerActivateSC)
 		adm.POST("/sc/:scaddress/deactivate", admapi.HandlerDeactivateSC)
-		adm.GET("/sc/:scaddress/dumpstate", admapi.HandlerDumpSCState)
 
 		admapi.AddEndpoints(adm)
 	}

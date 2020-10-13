@@ -17,4 +17,5 @@ func AddEndpoints(server *echo.Group) {
 	addPublicKeyEndpoint(server)
 	addBootupEndpoints(server)
 	addProgramEndpoints(server)
+	addStateEndpoints(server)
 }

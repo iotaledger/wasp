@@ -779,16 +779,15 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 		if !cluster.Config.Nodes[i].IsUp() {
 			continue
 		}
-		actual, err := waspapi.DumpSCState(host, sc.Address)
-		if err != nil {
-			panic(err)
-		}
-		if !actual.Exists {
+		actual, err := cluster.WaspClient(i).DumpSCState(sc.SCAddress())
+		if client.IsNotFound(err) {
 			pass = false
 			fmt.Printf("   FAIL: state does not exist\n")
 			continue
 		}
-
+		if err != nil {
+			panic(err)
+		}
 		if !f(host, actual.Index, kv.FromGoMap(actual.Variables)) {
 			pass = false
 		}
@@ -828,13 +827,13 @@ func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpect
 }
 
 func verifySCStateVariables2(host string, addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
-	actual, err := waspapi.DumpSCState(host, addr.String())
-	if err != nil {
-		panic(err)
-	}
-	if !actual.Exists {
+	actual, err := client.NewWaspClient(host).DumpSCState(addr)
+	if client.IsNotFound(err) {
 		fmt.Printf("              state does not exist: FAIL\n")
 		return false
+	}
+	if err != nil {
+		panic(err)
 	}
 	pass := true
 	fmt.Printf("    host %s, state index #%d\n", host, actual.Index)
