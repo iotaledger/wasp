@@ -78,24 +78,6 @@ func callCommit(netloc string, params dkgapi.CommitDKSRequest) (*address.Address
 	return nil, errors.New(result.Err)
 }
 
-func callGetPubKeyInfo(netLoc string, params dkgapi.GetPubKeyInfoRequest) *dkgapi.GetPubKeyInfoResponse {
-	data, err := json.Marshal(params)
-	if err != nil {
-		return &dkgapi.GetPubKeyInfoResponse{Err: err.Error()}
-	}
-	url := fmt.Sprintf("http://%s/adm/getpubkeyinfo", netLoc)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return &dkgapi.GetPubKeyInfoResponse{Err: err.Error()}
-	}
-	result := &dkgapi.GetPubKeyInfoResponse{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
-		return &dkgapi.GetPubKeyInfoResponse{Err: err.Error()}
-	}
-	return result
-}
-
 func callExportDKShare(netLoc string, params dkgapi.ExportDKShareRequest) (string, error) {
 	data, err := json.Marshal(params)
 	if err != nil {

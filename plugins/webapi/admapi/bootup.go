@@ -1,11 +1,10 @@
-package bootup
+package admapi
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -14,17 +13,10 @@ import (
 	"github.com/labstack/echo"
 )
 
-var log *logger.Logger
-
-func InitLogger() {
-	log = logger.NewLogger("webapi/bootup")
-}
-
-func AddEndpoints(server *echo.Group) {
-	InitLogger()
-	server.POST("/"+client.PutBootupDataRoute, handlePutBootupData)
-	server.GET("/"+client.GetBootupDataRoute(":address"), handleGetBootupData)
-	server.GET("/"+client.GetBootupDataListRoute, handleGetBootupDataList)
+func addBootupEndpoints(adm *echo.Group) {
+	adm.POST("/"+client.PutBootupDataRoute, handlePutBootupData)
+	adm.GET("/"+client.GetBootupDataRoute(":address"), handleGetBootupData)
+	adm.GET("/"+client.GetBootupDataListRoute, handleGetBootupDataList)
 }
 
 func handlePutBootupData(c echo.Context) error {

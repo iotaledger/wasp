@@ -29,6 +29,7 @@ Pending
 - [ ] Add authentication to web api calls
 
 To discuss/RFC
+- [ ] off-tangle messaging. Sending hash over the tangle and the rest of the request data with other means
 - [ ] optimize SC ledger database. Currently, key/value is stored twice: in the virtual state and in the batch which
 last updated the value. For small virtual states it is OK. For big ones (data Oracle) it would be better
 to for virtual state keep reference to the last updating mutatation in the batch/state update 

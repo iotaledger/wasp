@@ -1,16 +1,15 @@
 package apilib
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
@@ -18,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 )
 
 type CreateSCParams struct {
@@ -51,32 +49,6 @@ type DeactivateSCParams struct {
 	Timeout           time.Duration
 }
 
-func DeactivateSC(host string, addr *address.Address) error {
-	return postScRequest(host, addr, "deactivate")
-}
-
-func ActivateSC(host string, addr *address.Address) error {
-	return postScRequest(host, addr, "activate")
-}
-
-func postScRequest(host string, addr *address.Address, request string) error {
-	addrStr := addr.String()
-	url := fmt.Sprintf("http://%s/adm/sc/%s/%s", host, addrStr, request)
-	resp, err := http.Post(url, "application/json", nil)
-	if err != nil {
-		return err
-	}
-	var respbody misc.SimpleResponse
-	err = json.NewDecoder(resp.Body).Decode(&respbody)
-	if err != nil {
-		return fmt.Errorf("response status %d: %v", resp.StatusCode, err)
-	}
-	if resp.StatusCode != http.StatusOK || respbody.Error != "" {
-		return fmt.Errorf("response status %d: %s", resp.StatusCode, respbody.Error)
-	}
-	return nil
-}
-
 func ActivateSCMulti(par ActivateSCParams) error {
 	funs := make([]func() error, 0)
 	for _, addr := range par.Addresses {
@@ -84,7 +56,7 @@ func ActivateSCMulti(par ActivateSCParams) error {
 			h := host
 			addr1 := addr
 			funs = append(funs, func() error {
-				return ActivateSC(h, addr1)
+				return client.NewWaspClient(h).ActivateSC(addr1)
 			})
 		}
 	}
@@ -121,7 +93,7 @@ func DeactivateSCMulti(par DeactivateSCParams) error {
 			h := host
 			addr1 := addr
 			funs = append(funs, func() error {
-				return DeactivateSC(h, addr1)
+				return client.NewWaspClient(h).ActivateSC(addr1)
 			})
 		}
 	}

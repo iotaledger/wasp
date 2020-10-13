@@ -1,10 +1,9 @@
-package program
+package admapi
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -13,16 +12,9 @@ import (
 	"github.com/labstack/echo"
 )
 
-var log *logger.Logger
-
-func InitLogger() {
-	log = logger.NewLogger("webapi/program")
-}
-
-func AddEndpoints(server *echo.Group) {
-	InitLogger()
-	server.POST("/"+client.PutProgramRoute, handlePutProgram)
-	server.GET("/"+client.GetProgramMetadataRoute(":hash"), handleGetProgramMetadata)
+func addProgramEndpoints(adm *echo.Group) {
+	adm.POST("/"+client.PutProgramRoute, handlePutProgram)
+	adm.GET("/"+client.GetProgramMetadataRoute(":hash"), handleGetProgramMetadata)
 }
 
 func handlePutProgram(c echo.Context) error {
