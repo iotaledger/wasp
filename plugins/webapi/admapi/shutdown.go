@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-func addShutdownEndpoint(server *echo.Group) {
-	server.GET("/"+client.ShutdownRoute, handleShutdown)
+func addShutdownEndpoint(adm *echo.Group) {
+	adm.GET("/"+client.ShutdownRoute, handleShutdown)
 }
 
 func handleShutdown(c echo.Context) error {

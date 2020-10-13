@@ -13,8 +13,8 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-func addPublicKeyEndpoint(server *echo.Group) {
-	server.GET("/"+client.GetPubKeyInfoRoute(":address"), handleGetPubKeyInfo)
+func addPublicKeyEndpoint(adm *echo.Group) {
+	adm.GET("/"+client.GetPubKeyInfoRoute(":address"), handleGetPubKeyInfo)
 }
 
 func handleGetPubKeyInfo(c echo.Context) error {

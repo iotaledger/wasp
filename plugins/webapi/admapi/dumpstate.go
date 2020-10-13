@@ -11,8 +11,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-func addStateEndpoints(server *echo.Group) {
-	server.GET("/"+client.DumpSCStateRoute(":address"), handleDumpSCState)
+func addStateEndpoints(adm *echo.Group) {
+	adm.GET("/"+client.DumpSCStateRoute(":address"), handleDumpSCState)
 }
 
 func handleDumpSCState(c echo.Context) error {

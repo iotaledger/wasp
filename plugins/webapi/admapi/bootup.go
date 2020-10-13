@@ -13,10 +13,10 @@ import (
 	"github.com/labstack/echo"
 )
 
-func addBootupEndpoints(server *echo.Group) {
-	server.POST("/"+client.PutBootupDataRoute, handlePutBootupData)
-	server.GET("/"+client.GetBootupDataRoute(":address"), handleGetBootupData)
-	server.GET("/"+client.GetBootupDataListRoute, handleGetBootupDataList)
+func addBootupEndpoints(adm *echo.Group) {
+	adm.POST("/"+client.PutBootupDataRoute, handlePutBootupData)
+	adm.GET("/"+client.GetBootupDataRoute(":address"), handleGetBootupData)
+	adm.GET("/"+client.GetBootupDataListRoute, handleGetBootupDataList)
 }
 
 func handlePutBootupData(c echo.Context) error {

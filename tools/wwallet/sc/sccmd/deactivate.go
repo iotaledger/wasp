@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 )
 
@@ -18,9 +18,7 @@ func deactivateCmd(args []string) {
 	check(err)
 	committee := parseIntList(args[1])
 
-	for _, host := range config.CommitteeApi(committee) {
-		check(apilib.DeactivateSC(host, &scAddress))
-	}
+	check(multiclient.New(config.CommitteeApi(committee)).DeactivateSC(&scAddress))
 }
 
 func deactivateUsage() {

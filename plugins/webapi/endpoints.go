@@ -30,9 +30,6 @@ func addEndpoints(adminWhitelist []net.IP) {
 		adm.POST("/exportdkshare", dkgapi.HandlerExportDKShare)
 		adm.POST("/importdkshare", dkgapi.HandlerImportDKShare)
 
-		adm.POST("/sc/:scaddress/activate", admapi.HandlerActivateSC)
-		adm.POST("/sc/:scaddress/deactivate", admapi.HandlerDeactivateSC)
-
 		admapi.AddEndpoints(adm)
 	}
 

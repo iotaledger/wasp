@@ -12,9 +12,9 @@ import (
 	"github.com/labstack/echo"
 )
 
-func addProgramEndpoints(server *echo.Group) {
-	server.POST("/"+client.PutProgramRoute, handlePutProgram)
-	server.GET("/"+client.GetProgramMetadataRoute(":hash"), handleGetProgramMetadata)
+func addProgramEndpoints(adm *echo.Group) {
+	adm.POST("/"+client.PutProgramRoute, handlePutProgram)
+	adm.GET("/"+client.GetProgramMetadataRoute(":hash"), handleGetProgramMetadata)
 }
 
 func handlePutProgram(c echo.Context) error {

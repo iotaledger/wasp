@@ -11,11 +11,12 @@ func initLogger() {
 	log = logger.NewLogger("webapi/adm")
 }
 
-func AddEndpoints(server *echo.Group) {
+func AddEndpoints(adm *echo.Group) {
 	initLogger()
-	addShutdownEndpoint(server)
-	addPublicKeyEndpoint(server)
-	addBootupEndpoints(server)
-	addProgramEndpoints(server)
-	addStateEndpoints(server)
+	addShutdownEndpoint(adm)
+	addPublicKeyEndpoint(adm)
+	addBootupEndpoints(adm)
+	addProgramEndpoints(adm)
+	addSCEndpoints(adm)
+	addStateEndpoints(adm)
 }
