@@ -15,12 +15,12 @@ import (
 
 var log *logger.Logger
 
-func InitLogger() {
+func initLogger() {
 	log = logger.NewLogger("webapi/program")
 }
 
 func AddEndpoints(server *echo.Group) {
-	InitLogger()
+	initLogger()
 	server.POST("/"+client.PutProgramRoute, handlePutProgram)
 	server.GET("/"+client.GetProgramMetadataRoute(":hash"), handleGetProgramMetadata)
 }

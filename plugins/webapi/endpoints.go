@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/plugins/webapi/admapi"
 	"github.com/iotaledger/wasp/plugins/webapi/bootup"
+	"github.com/iotaledger/wasp/plugins/webapi/dkg"
 	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/iotaledger/wasp/plugins/webapi/info"
 	"github.com/iotaledger/wasp/plugins/webapi/program"
@@ -29,7 +30,6 @@ func addEndpoints(adminWhitelist []net.IP) {
 		adm.POST("/aggregatedks", dkgapi.HandlerAggregateDks)
 		adm.POST("/commitdks", dkgapi.HandlerCommitDks)
 		adm.POST("/signdigest", dkgapi.HandlerSignDigest)
-		adm.POST("/getpubkeyinfo", dkgapi.HandlerGetKeyPubInfo)
 		adm.POST("/exportdkshare", dkgapi.HandlerExportDKShare)
 		adm.POST("/importdkshare", dkgapi.HandlerImportDKShare)
 
@@ -38,6 +38,7 @@ func addEndpoints(adminWhitelist []net.IP) {
 		adm.POST("/sc/:scaddress/deactivate", admapi.HandlerDeactivateSC)
 		adm.GET("/sc/:scaddress/dumpstate", admapi.HandlerDumpSCState)
 
+		dkg.AddEndpoints(adm)
 		bootup.AddEndpoints(adm)
 		program.AddEndpoints(adm)
 	}

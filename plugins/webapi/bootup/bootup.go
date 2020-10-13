@@ -16,12 +16,12 @@ import (
 
 var log *logger.Logger
 
-func InitLogger() {
+func initLogger() {
 	log = logger.NewLogger("webapi/bootup")
 }
 
 func AddEndpoints(server *echo.Group) {
-	InitLogger()
+	initLogger()
 	server.POST("/"+client.PutBootupDataRoute, handlePutBootupData)
 	server.GET("/"+client.GetBootupDataRoute(":address"), handleGetBootupData)
 	server.GET("/"+client.GetBootupDataListRoute, handleGetBootupDataList)

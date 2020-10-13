@@ -8,8 +8,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 )
 
 const prefix = "[checkSC] "
@@ -101,29 +101,27 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	resps := GetPublicKeyInfoMulti(apiHosts, scAddr)
-	var keyExample *dkgapi.GetPubKeyInfoResponse
+	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(scAddr)
+	if err != nil {
+		fmt.Fprintf(out, prefix+"%s\n", err.Error())
+		return false
+	}
+
+	var keyExample *client.PubKeyInfo
 	for i := range resps {
-		if resps[i].Err == "" {
-			keyExample = resps[i]
-			fmt.Fprintf(out, prefix+"public key info example was taken from %s:\n%s\n", apiHosts[i], publicKeyInfoToString(keyExample))
-			break
-		}
+		keyExample = resps[i]
+		fmt.Fprintf(out, prefix+"public key info example was taken from %s:\n%s\n", apiHosts[i], publicKeyInfoToString(keyExample))
+		break
 	}
 	for i, resp := range resps {
 		host := apiHosts[i]
-		if resp.Err != "" {
-			fmt.Fprintf(out, prefix+"%2d: %s -> %s\n", i, host, resp.Err)
-			ret = false
-			continue
-		}
-		if !consistentPublicKeyInfo(keyExample, resps[i]) {
+		if !consistentPublicKeyInfo(keyExample, resp) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key info. Expected consistent with example, got \n%v\n",
-				i, host, resps[i])
+				i, host, resp)
 			ret = false
 			continue
 		}
-		if i != int(resps[i].Index) {
+		if i != int(resp.Index) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key index. Expected %d, got %d\n", i, host, i, resps[i].Index)
 			ret = false
 			continue
@@ -134,8 +132,8 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 	return ret
 }
 
-func consistentPublicKeyInfo(pki1, pki2 *dkgapi.GetPubKeyInfoResponse) bool {
-	if pki1.Address != pki2.Address {
+func consistentPublicKeyInfo(pki1, pki2 *client.PubKeyInfo) bool {
+	if *pki1.Address.Address() != *pki2.Address.Address() {
 		return false
 	}
 	if pki1.PubKeyMaster != pki2.PubKeyMaster {
@@ -158,7 +156,7 @@ func consistentPublicKeyInfo(pki1, pki2 *dkgapi.GetPubKeyInfoResponse) bool {
 	return true
 }
 
-func publicKeyInfoToString(pki *dkgapi.GetPubKeyInfoResponse) string {
+func publicKeyInfoToString(pki *client.PubKeyInfo) string {
 	ret := fmt.Sprintf("    Master public key: %s\n", pki.PubKeyMaster)
 	ret += fmt.Sprintf("    N: %d\n", pki.N)
 	ret += fmt.Sprintf("    T: %d\n", pki.T)
