@@ -22,13 +22,7 @@ func addEndpoints(adminWhitelist []net.IP) {
 		adm := Server.Group("/" + client.AdminRoutePrefix)
 		adm.Use(protected(adminWhitelist))
 
-		// dkgapi
-		adm.POST("/newdks", dkgapi.HandlerNewDks)
-		adm.POST("/aggregatedks", dkgapi.HandlerAggregateDks)
-		adm.POST("/commitdks", dkgapi.HandlerCommitDks)
 		adm.POST("/signdigest", dkgapi.HandlerSignDigest)
-		adm.POST("/exportdkshare", dkgapi.HandlerExportDKShare)
-		adm.POST("/importdkshare", dkgapi.HandlerImportDKShare)
 
 		admapi.AddEndpoints(adm)
 	}

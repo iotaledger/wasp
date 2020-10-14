@@ -30,14 +30,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 
+	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
 )
 
 type SmartContractFinalConfig struct {
@@ -47,7 +45,7 @@ type SmartContractFinalConfig struct {
 	CommitteeNodes []int    `json:"committee_nodes"`
 	AccessNodes    []int    `json:"access_nodes,omitempty"`
 	OwnerSeed      []byte   `json:"owner_seed"`
-	DKShares       []string `json:"dkshares"` // [node index]
+	DKShares       [][]byte `json:"dkshares"` // [node index]
 	//
 	originTx *sctransaction.Transaction // cached after CreateOrigin call
 }
@@ -469,7 +467,7 @@ func (cluster *Cluster) importKeys() error {
 	for _, scKeys := range cluster.SmartContractConfig {
 		fmt.Printf("[cluster] Importing DKShares for address %s...\n", scKeys.Address)
 		for nodeIndex, dks := range scKeys.DKShares {
-			err := waspapi.ImportDKShare(cluster.Config.Nodes[nodeIndex].ApiHost(), dks)
+			err := cluster.WaspClient(nodeIndex).ImportDKShare(dks)
 			if err != nil {
 				return err
 			}

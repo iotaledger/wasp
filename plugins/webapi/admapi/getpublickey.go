@@ -2,13 +2,13 @@ package admapi
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
 )
@@ -43,7 +43,7 @@ func handleGetPubKeyInfo(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return misc.OkJson(c, &client.PubKeyInfo{
+	return c.JSON(http.StatusOK, &client.PubKeyInfo{
 		Address:      jsonable.NewAddress(&addr),
 		N:            ks.N,
 		T:            ks.T,

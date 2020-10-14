@@ -1,10 +1,11 @@
 package dkgapi
 
 import (
+	"net/http"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
 )
@@ -13,11 +14,11 @@ func HandlerSignDigest(c echo.Context) error {
 	var req SignDigestRequest
 
 	if err := c.Bind(&req); err != nil {
-		return misc.OkJson(c, &SignDigestResponse{
+		return c.JSON(http.StatusBadRequest, &SignDigestResponse{
 			Err: err.Error(),
 		})
 	}
-	return misc.OkJson(c, SignDigestReq(&req))
+	return c.JSON(http.StatusOK, SignDigestReq(&req))
 }
 
 type SignDigestRequest struct {

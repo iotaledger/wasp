@@ -3,14 +3,14 @@ package apilib
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/multicall"
 	"math/rand"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +23,7 @@ func GenerateNewDistributedKeySetOld(nodes []string, n, t uint16) (*address.Addr
 		return nil, err
 	}
 	// temporary numeric id during DKG
-	params := dkgapi.NewDKSRequest{
+	params := client.NewDKSRequest{
 		TmpId: rand.Int(),
 		N:     n,
 		T:     t,
@@ -34,14 +34,14 @@ func GenerateNewDistributedKeySetOld(nodes []string, n, t uint16) (*address.Addr
 	for i, host := range nodes {
 		par := params
 		par.Index = uint16(i)
-		resp, err := callNewKey(host, par)
+		priShares, err := client.NewWaspClient(host).NewDKShare(par)
 		if err != nil {
 			return nil, err
 		}
-		if len(resp.PriShares) != int(params.N) {
-			return nil, errors.New("apilib: len(resp.PriShares) != int(params.N)")
+		if len(priShares) != int(params.N) {
+			return nil, errors.New("apilib: len(priShares) != int(params.N)")
 		}
-		priSharesMatrix[i] = resp.PriShares
+		priSharesMatrix[i] = priShares
 	}
 
 	// aggregate private shares
@@ -51,7 +51,7 @@ func GenerateNewDistributedKeySetOld(nodes []string, n, t uint16) (*address.Addr
 		for row := range nodes {
 			priSharesCol[row] = priSharesMatrix[row][col]
 		}
-		resp, err := callAggregate(host, dkgapi.AggregateDKSRequest{
+		pubShare, err := client.NewWaspClient(host).AggregateDKShare(client.AggregateDKSRequest{
 			TmpId:     params.TmpId,
 			Index:     uint16(col),
 			PriShares: priSharesCol,
@@ -59,13 +59,13 @@ func GenerateNewDistributedKeySetOld(nodes []string, n, t uint16) (*address.Addr
 		if err != nil {
 			return nil, err
 		}
-		pubShares[col] = resp.PubShare
+		pubShares[col] = pubShare
 	}
 
 	// commit keys
 	var addrRet *address.Address
 	for _, host := range nodes {
-		addr, err := callCommit(host, dkgapi.CommitDKSRequest{
+		addr, err := client.NewWaspClient(host).CommitDKShare(client.CommitDKSRequest{
 			TmpId:     params.TmpId,
 			PubShares: pubShares,
 		})
@@ -106,7 +106,7 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 		h := host
 		idx := i
 		funs[i] = func() error {
-			resp, err := callNewKey(h, dkgapi.NewDKSRequest{
+			priShares, err := client.NewWaspClient(h).NewDKShare(client.NewDKSRequest{
 				TmpId: tmpId,
 				N:     n,
 				T:     t,
@@ -115,10 +115,10 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 			if err != nil {
 				return err
 			}
-			if len(resp.PriShares) != int(n) {
-				return errors.New("inconsistency: len(resp.PriShares) != int(params.N)")
+			if len(priShares) != int(n) {
+				return errors.New("inconsistency: len(priShares) != int(params.N)")
 			}
-			priSharesMatrix[idx] = resp.PriShares
+			priSharesMatrix[idx] = priShares
 			return nil
 		}
 	}
@@ -138,7 +138,7 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 		h := host
 		c := col
 		funs[col] = func() error {
-			resp, err := callAggregate(h, dkgapi.AggregateDKSRequest{
+			pubShare, err := client.NewWaspClient(h).AggregateDKShare(client.AggregateDKSRequest{
 				TmpId:     tmpId,
 				Index:     uint16(c),
 				PriShares: priSharesCol,
@@ -146,7 +146,7 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 			if err != nil {
 				return err
 			}
-			pubShares[c] = resp.PubShare
+			pubShares[c] = pubShare
 			return nil
 		}
 	}
@@ -160,7 +160,7 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 	for i, host := range hosts {
 		h := host
 		funs[i] = func() error {
-			addr, err := callCommit(h, dkgapi.CommitDKSRequest{
+			addr, err := client.NewWaspClient(h).CommitDKShare(client.CommitDKSRequest{
 				TmpId:     tmpId,
 				PubShares: pubShares,
 			})
@@ -182,16 +182,4 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 		return nil, multicall.WrapErrors(errs)
 	}
 	return addrRet, nil
-}
-
-func ExportDKShare(node string, address *address.Address) (string, error) {
-	return callExportDKShare(node, dkgapi.ExportDKShareRequest{
-		Address: address.String(),
-	})
-}
-
-func ImportDKShare(node string, base58blob string) error {
-	return callImportDKShare(node, dkgapi.ImportDKShareRequest{
-		Blob: base58blob,
-	})
 }

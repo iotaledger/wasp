@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
 
@@ -70,7 +69,7 @@ func handleGetProgramMetadata(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Program not found: %v", progHash.String()))
 	}
 
-	return misc.OkJson(c, &client.ProgramMetadata{
+	return c.JSON(http.StatusOK, &client.ProgramMetadata{
 		VMType:      md.VMType,
 		Description: md.Description,
 	})

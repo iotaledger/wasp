@@ -1,8 +1,11 @@
-package dkgapi
+package dkg
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
+	"net/http"
+
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
@@ -29,43 +32,30 @@ import (
 //
 // After response from all nodes, dealer has all public information and nodes have all private informations.
 // Key set is not saved yet!
-// Next: see API call 'adm/commitdks'
+// Next: see API call 'commit'
 
-func HandlerAggregateDks(c echo.Context) error {
-	var req AggregateDKSRequest
+func addDksAggregateEndpoint(adm *echo.Group) {
+	adm.POST("/"+client.DKSAggregateRoute, handleAggregateDks)
+}
 
+func handleAggregateDks(c echo.Context) error {
+	var req client.AggregateDKSRequest
 	if err := c.Bind(&req); err != nil {
-		return misc.OkJson(c, &AggregateDKSResponse{
-			Err: err.Error(),
-		})
+		return httperrors.BadRequest("Invalid request body")
 	}
-	return misc.OkJson(c, AggregateDKSReq(&req))
-}
 
-type AggregateDKSRequest struct {
-	TmpId     int      `json:"tmpId"`
-	Index     uint16   `json:"index"`      // 0 to N-1
-	PriShares []string `json:"pri_shares"` // base58
-}
-
-type AggregateDKSResponse struct {
-	PubShare string `json:"pub_share"` // base58
-	Err      string `json:"err"`
-}
-
-func AggregateDKSReq(req *AggregateDKSRequest) *AggregateDKSResponse {
 	ks := getFromDkgCache(req.TmpId)
 	if ks == nil {
-		return &AggregateDKSResponse{Err: fmt.Sprintf("wrong tmpId %d", req.TmpId)}
+		return httperrors.BadRequest(fmt.Sprintf("wrong tmpId %d", req.TmpId))
 	}
 	if ks.Aggregated {
-		return &AggregateDKSResponse{Err: "key set already aggregated"}
+		return httperrors.BadRequest("key set already aggregated")
 	}
 	if len(req.PriShares) != int(ks.N) {
-		return &AggregateDKSResponse{Err: "wrong number of private shares"}
+		return httperrors.BadRequest("wrong number of private shares")
 	}
 	if req.Index != ks.Index {
-		return &AggregateDKSResponse{Err: "wrong index"}
+		return httperrors.BadRequest("wrong index")
 	}
 	// aggregate secret shares
 	priShares := make([]kyber.Scalar, ks.N)
@@ -75,21 +65,19 @@ func AggregateDKSReq(req *AggregateDKSRequest) *AggregateDKSResponse {
 		}
 		pkb, err := base58.Decode(pks)
 		if err != nil {
-			return &AggregateDKSResponse{Err: fmt.Sprintf("decode error: %v", err)}
+			return httperrors.BadRequest(fmt.Sprintf("decode error: %v", err))
 		}
 		priShares[i] = ks.Suite.G2().Scalar()
 		if err := priShares[i].UnmarshalBinary(pkb); err != nil {
-			return &AggregateDKSResponse{Err: fmt.Sprintf("unmarshal error: %v", err)}
+			return httperrors.BadRequest(fmt.Sprintf("unmarshal error: %v", err))
 		}
 	}
 	if err := ks.AggregateDKS(priShares); err != nil {
-		return &AggregateDKSResponse{Err: fmt.Sprintf("aggregate error 1: %v", err)}
+		return fmt.Errorf("aggregate error 1: %v", err)
 	}
 	pkb, err := ks.PubKeyOwn.MarshalBinary()
 	if err != nil {
-		return &AggregateDKSResponse{Err: fmt.Sprintf("marshal error 2: %v", err)}
+		return fmt.Errorf("marshal error 1: %v", err)
 	}
-	return &AggregateDKSResponse{
-		PubShare: base58.Encode(pkb),
-	}
+	return c.JSON(http.StatusOK, base58.Encode(pkb))
 }

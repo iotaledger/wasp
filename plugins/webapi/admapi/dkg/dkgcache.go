@@ -1,5 +1,5 @@
 // handles dkgCache used during DKG process
-package dkgapi
+package dkg
 
 import (
 	"fmt"

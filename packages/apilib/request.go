@@ -50,6 +50,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	}
 
 	for targetAddress, amount := range par.Mint {
+		// TODO: check that targetAddress is not any target address in request blocks
 		err = txb.MintColor(targetAddress, balance.ColorIOTA, amount)
 		if err != nil {
 			return nil, err

@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 // PluginName is the name of the web API plugin.
@@ -49,6 +50,9 @@ func configure(*node.Plugin) {
 	Server.HideBanner = true
 	Server.HidePort = true
 	Server.HTTPErrorHandler = customHTTPErrorHandler
+	Server.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+	}))
 
 	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.WebAPIAuth))
 
