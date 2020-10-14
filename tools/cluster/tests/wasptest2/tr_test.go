@@ -2,6 +2,7 @@ package wasptest2
 
 import (
 	"crypto/rand"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -106,11 +107,16 @@ func TestTRTest(t *testing.T) {
 	})
 	checkSuccess(err, t, "token minted and registered successfully")
 
-	reqId := sctransaction.NewRequestId(tx1.ID(), 0)
-	r, err := wasps.WaspClient(0).RequestStatus(scAddr, &reqId)
-	check(err, t)
-	if !r.IsProcessed {
-		t.Fail()
+	for {
+		// the sleep 1 second is usually enough
+		time.Sleep(time.Second)
+		reqId := sctransaction.NewRequestId(tx1.ID(), 0)
+		r, err := wasps.WaspClient(0).RequestStatus(scAddr, &reqId)
+		check(err, t)
+		if r.IsProcessed {
+			break
+		}
+		fmt.Println("Busy waiting for transaction to be processed")
 	}
 
 	mintedColor1 := balance.Color(tx1.ID())
