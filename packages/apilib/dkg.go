@@ -183,15 +183,3 @@ func GenerateNewDistributedKeySet(hosts []string, n, t uint16) (*address.Address
 	}
 	return addrRet, nil
 }
-
-func ExportDKShare(node string, address *address.Address) (string, error) {
-	return callExportDKShare(node, dkgapi.ExportDKShareRequest{
-		Address: address.String(),
-	})
-}
-
-func ImportDKShare(node string, base58blob string) error {
-	return callImportDKShare(node, dkgapi.ImportDKShareRequest{
-		Blob: base58blob,
-	})
-}

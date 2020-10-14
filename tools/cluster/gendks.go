@@ -41,9 +41,9 @@ func (cluster *Cluster) GenerateDKSetsToFile() error {
 
 		fmt.Printf("[cluster] Generated key set for SC with address %s\n", addr)
 
-		dkShares := make([]string, 0)
-		for _, host := range cluster.ApiHosts() {
-			dks, err := waspapi.ExportDKShare(host, addr)
+		dkShares := make([][]byte, 0)
+		for i := range cluster.Config.Nodes {
+			dks, err := cluster.WaspClient(i).ExportDKShare(addr)
 			if err != nil {
 				return err
 			}

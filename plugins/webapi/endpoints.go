@@ -27,8 +27,6 @@ func addEndpoints(adminWhitelist []net.IP) {
 		adm.POST("/aggregatedks", dkgapi.HandlerAggregateDks)
 		adm.POST("/commitdks", dkgapi.HandlerCommitDks)
 		adm.POST("/signdigest", dkgapi.HandlerSignDigest)
-		adm.POST("/exportdkshare", dkgapi.HandlerExportDKShare)
-		adm.POST("/importdkshare", dkgapi.HandlerImportDKShare)
 
 		admapi.AddEndpoints(adm)
 	}

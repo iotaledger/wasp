@@ -77,39 +77,3 @@ func callCommit(netloc string, params dkgapi.CommitDKSRequest) (*address.Address
 	}
 	return nil, errors.New(result.Err)
 }
-
-func callExportDKShare(netLoc string, params dkgapi.ExportDKShareRequest) (string, error) {
-	data, err := json.Marshal(params)
-	if err != nil {
-		return "", err
-	}
-	url := fmt.Sprintf("http://%s/adm/exportdkshare", netLoc)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return "", err
-	}
-	result := &dkgapi.ExportDKShareResponse{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("%s returned code %d: %s", url, resp.StatusCode, result.Err)
-	}
-	return result.DKShare, err
-}
-
-func callImportDKShare(netLoc string, params dkgapi.ImportDKShareRequest) error {
-	data, err := json.Marshal(params)
-	if err != nil {
-		return err
-	}
-	url := fmt.Sprintf("http://%s/adm/importdkshare", netLoc)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-	result := &dkgapi.ImportDKShareResponse{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s returned code %d: %s", url, resp.StatusCode, result.Err)
-	}
-	return err
-}

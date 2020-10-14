@@ -2,6 +2,7 @@ package admapi
 
 import (
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/plugins/webapi/admapi/dkg"
 	"github.com/labstack/echo"
 )
 
@@ -19,4 +20,5 @@ func AddEndpoints(adm *echo.Group) {
 	addProgramEndpoints(adm)
 	addSCEndpoints(adm)
 	addStateEndpoints(adm)
+	dkg.AddEndpoints(adm)
 }
