@@ -90,7 +90,13 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 
-	tc := trclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scAddr, minter.SigScheme()))
+	tc := trclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scAddr,
+		minter.SigScheme(),
+		15*time.Second,
+	))
 
 	tx1, err := tc.MintAndRegister(trclient.MintAndRegisterParams{
 		Supply:      1,

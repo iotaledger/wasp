@@ -109,6 +109,7 @@ func Test2SC(t *testing.T) {
 		wasps.WaspClient(0),
 		scTRAddr,
 		auctionOwner.SigScheme(),
+		20*time.Second,
 	))
 
 	// minting 1 token with TokenRegistry
@@ -258,6 +259,7 @@ func TestPlus2SC(t *testing.T) {
 		wasps.WaspClient(0),
 		scTRAddr,
 		auctionOwner.SigScheme(),
+		20*time.Second,
 	))
 
 	// minting 1 token with TokenRegistry
@@ -267,8 +269,6 @@ func TestPlus2SC(t *testing.T) {
 		Description: "Non-fungible coin 1. Very expensive",
 	})
 	checkSuccess(err, t, "token minted")
-
-	time.Sleep(2 * time.Second)
 
 	mintedColor := balance.Color(tx.ID())
 
@@ -310,7 +310,13 @@ func TestPlus2SC(t *testing.T) {
 		return
 	}
 
-	faclientOwner := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, auctionOwner.SigScheme()))
+	faclientOwner := faclient.NewClient(scclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		scFAAddr,
+		auctionOwner.SigScheme(),
+		20*time.Second,
+	))
 
 	_, err = faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction created")
