@@ -145,7 +145,7 @@ func TestGetSCData(t *testing.T) {
 	bd, err := wasps.Config.Nodes[0].Client().GetBootupData(scAddr)
 	assert.NoError(t, err)
 	assert.NotNil(t, bd)
-	assert.EqualValues(t, bd.OwnerAddress, scOwnerAddr)
+	assert.EqualValues(t, bd.OwnerAddress, *scOwnerAddr)
 	assert.True(t, bytes.Equal(bd.Color[:], scColor[:]))
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{

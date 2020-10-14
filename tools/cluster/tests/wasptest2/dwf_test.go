@@ -291,6 +291,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		wasps.WaspClient(0),
 		scAddr,
 		donor.SigScheme(),
+		15*time.Second,
 	))
 	_, err = dwfDonorClient.Donate(42, "well done, I give you 42i")
 	check(err, t)
@@ -298,20 +299,20 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
-	}, "sc owner in the end") {
+	}, "sc owner after donation") {
 		t.Fail()
 	}
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+42, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 42,
-	}, "sc in the end") {
+	}, "sc after donation") {
 		t.Fail()
 	}
 
 	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount-42, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 42,
-	}, "donor in the end") {
+	}, "donor after donation") {
 		t.Fail()
 	}
 
@@ -320,6 +321,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		wasps.WaspClient(0),
 		scAddr,
 		scOwner.SigScheme(),
+		15*time.Second,
 	))
 	_, err = dwfOwnerClient.Withdraw(40)
 	check(err, t)
@@ -327,20 +329,20 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1+40, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 + 40,
-	}, "sc owner in the end") {
+	}, "sc owner after withdraw") {
 		t.Fail()
 	}
 
 	if !wasps.VerifyAddressBalances(scAddr, 1+2, map[balance.Color]int64{
 		*scColor:          1,
 		balance.ColorIOTA: 2,
-	}, "sc in the end") {
+	}, "sc after withdraw") {
 		t.Fail()
 	}
 
 	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount-42, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 42,
-	}, "donor in the end") {
+	}, "donor after withdraw") {
 		t.Fail()
 	}
 
@@ -420,6 +422,7 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 		wasps.WaspClient(0),
 		scAddr,
 		donor.SigScheme(),
+		15*time.Second,
 	))
 	_, err = dwfDonorClient.Donate(42, "well done, I give you 42i")
 	check(err, t)
