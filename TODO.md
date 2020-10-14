@@ -65,11 +65,33 @@ Future
 - [ ] Prometheus metrics
 - [ ] MQTT publisher
 
-# Roadmap
-- `DonateWithFeedback`, `TokenRegistry`, `FairAuction`, `FairRoulette`,  on Pollen testnet
-- Wasm VM and Rust environment for Wasm smart contracts. Programming tools. 
-- PoC smart contracts on Rust->Wasm
-- Node dashboard, smart contract dashboard, visualisation
-- Admin tools and APIs 
-- CLI wallet (universal and template)
-- architecture WP 
+# Roadmap of the ISCP Core
+
+## ISCP Core alpha. Dec 2020
+- Wasp alpha version on Pollen
+- release 1 ISCP Core Architecture specs  
+- Fully decentralized DKG
+- Wasmtime VM fully functional. VM sandbox API alpha
+- Ver 1 SC development tools, libraries and tutorials/docs for Rust 
+- Ver 1 SC client libraries for Go (and Rust ?)
+- builtin SC logic: 
+    - partially on wasm
+    - fallback logic
+    - reward processing logic
+    - SC log support
+    - moving to another committee
+    - internal SC governance, voting support   
+   
+## ISCP Core beta. 2Q 2021
+- Wasp beta version on Nectar (optionally, on Chrysalis)
+- release 2 ISCP Core Architecture specs  
+- Core BFT consensus vetted and peer reviewed. Adjusted to Nectar version of the underlying ledger
+- Merkle proofs of inclusion into the state
+- identity system for nodes, node owners and SC owners
+- complete committee change protocol based on ColorLockedOutputs 
+- Ver 2 SC development tools, libraries and tutorials/docs for Rust 
+- Ver 2 SC client libraries for Go, Rust and Javascript
+- builtin SC logic functionally completed. Fully on wasm. 
+   
+
+
