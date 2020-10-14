@@ -3,7 +3,6 @@ package wasptest2
 import (
 	"crypto/rand"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -27,19 +26,19 @@ func TestTRTest(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet := testutil.NewWallet(seed58)
 	scOwner := wallet.WithIndex(0)
+	scOwnerAddr := scOwner.Address()
 	minter := wallet.WithIndex(1)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestTRTest")
+	minterAddr := minter.Address()
 
 	programHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
+	// setup
+	wasps := setup(t, "test_cluster2", "TestTRTest")
+
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
-	minterAddr := minter.Address()
 	err = wasps.NodeClient.RequestFunds(minterAddr)
 	check(err, t)
 
@@ -55,7 +54,7 @@ func TestTRTest(t *testing.T) {
 		t.Fail()
 		return
 	}
-	scDescription := "TokenRegistry PoC smart contract"
+
 	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
@@ -64,7 +63,7 @@ func TestTRTest(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
-		Description:           scDescription,
+		Description:           tokenregistry.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
@@ -127,7 +126,7 @@ func TestTRTest(t *testing.T) {
 		vmconst.VarNameOwnerAddress:      scOwnerAddr[:],
 		vmconst.VarNameProgramHash:       programHash[:],
 		tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
-		vmconst.VarNameDescription:       strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:       tokenregistry.Description,
 	}) {
 		t.Fail()
 	}

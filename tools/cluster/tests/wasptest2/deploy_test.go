@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
-	"strings"
 	"testing"
 	"time"
 )
@@ -28,14 +27,14 @@ func TestDeploySC(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet1 := testutil.NewWallet(seed58)
 	scOwner = wallet1.WithIndex(0)
+	scOwnerAddr := scOwner.Address()
 
 	// setup
-	wasps := setup(t, "test_cluster2", "TestDeploySC")
-
 	programHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
+	wasps := setup(t, "test_cluster2", "TestDeploySC")
+
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
@@ -45,7 +44,7 @@ func TestDeploySC(t *testing.T) {
 		t.Fail()
 		return
 	}
-	scDescription := "TokenRegistry, a PoC smart contract"
+
 	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
@@ -54,7 +53,7 @@ func TestDeploySC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
-		Description:           scDescription,
+		Description:           tokenregistry.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
@@ -89,7 +88,7 @@ func TestDeploySC(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  ph[:],
-		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:  tokenregistry.Description,
 	}) {
 		t.Fail()
 	}
@@ -101,14 +100,14 @@ func TestGetSCData(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet1 := testutil.NewWallet(seed58)
 	scOwner = wallet1.WithIndex(0)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestDeploySC")
+	scOwnerAddr := scOwner.Address()
 
 	programHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
+	// setup
+	wasps := setup(t, "test_cluster2", "TestDeploySC")
+
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
@@ -118,7 +117,7 @@ func TestGetSCData(t *testing.T) {
 		t.Fail()
 		return
 	}
-	scDescription := "TokenRegistry, a PoC smart contract"
+
 	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
@@ -127,7 +126,7 @@ func TestGetSCData(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
-		Description:           scDescription,
+		Description:           tokenregistry.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
@@ -145,7 +144,7 @@ func TestGetSCData(t *testing.T) {
 	bd, err := wasps.Config.Nodes[0].Client().GetBootupData(scAddr)
 	assert.NoError(t, err)
 	assert.NotNil(t, bd)
-	assert.EqualValues(t, bd.OwnerAddress, scOwnerAddr)
+	assert.EqualValues(t, bd.OwnerAddress, *scOwnerAddr)
 	assert.True(t, bytes.Equal(bd.Color[:], scColor[:]))
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
@@ -168,7 +167,7 @@ func TestGetSCData(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  ph[:],
-		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:  tokenregistry.Description,
 	}) {
 		t.Fail()
 	}
@@ -182,11 +181,15 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet1 := testutil.NewWallet(seed58)
 	scOwner = wallet1.WithIndex(0)
+	scOwnerAddr := scOwner.Address()
+
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
+	check(err, t)
 
 	// setup
 	wasps := setup(t, "test_cluster2", "TestSend5ReqInc0SecDeploy")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err = wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -197,10 +200,6 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	})
 	check(err, t)
 
-	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
@@ -220,6 +219,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
+		Description:           inccounter.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
@@ -265,6 +265,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameDescription:  inccounter.Description,
 	}) {
 		t.Fail()
 	}
@@ -278,11 +279,15 @@ func TestSend100ReqMulti(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet1 := testutil.NewWallet(seed58)
 	scOwner = wallet1.WithIndex(0)
+	scOwnerAddr := scOwner.Address()
+
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
+	check(err, t)
 
 	// setup
 	wasps := setup(t, "test_cluster2", "TestSend5ReqInc0SecDeploy")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err = wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -293,10 +298,6 @@ func TestSend100ReqMulti(t *testing.T) {
 	})
 	check(err, t)
 
-	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
@@ -316,6 +317,7 @@ func TestSend100ReqMulti(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
+		Description:           inccounter.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
@@ -363,6 +365,7 @@ func TestSend100ReqMulti(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameDescription:  inccounter.Description,
 	}) {
 		t.Fail()
 	}

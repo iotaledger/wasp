@@ -29,10 +29,9 @@ func Test2SC(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet := testutil.NewWallet(seed58)
 	scOwner := wallet.WithIndex(0) // owner of 2 SCs
+	scOwnerAddr := scOwner.Address()
 	auctionOwner := wallet.WithIndex(2)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "Test2SC")
+	auctionOwnerAddr := auctionOwner.Address()
 
 	programHashTR, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
@@ -40,11 +39,12 @@ func Test2SC(t *testing.T) {
 	programHashFA, err := hashing.HashValueFromBase58(fairauction.ProgramHash)
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
+	// setup
+	wasps := setup(t, "test_cluster2", "Test2SC")
+
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
-	auctionOwnerAddr := auctionOwner.Address()
 	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
@@ -69,7 +69,7 @@ func Test2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashTR,
-		Description:           "TokenRegistry, a PoC smart contract",
+		Description:           tokenregistry.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
@@ -83,7 +83,7 @@ func Test2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashFA,
-		Description:           "FairAuction, a PoC smart contract",
+		Description:           fairauction.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + fairauction.ProgramHash + "]",
 	})
@@ -155,12 +155,13 @@ func TestPlus2SC(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet := testutil.NewWallet(seed58)
 	scOwner := wallet.WithIndex(0) // owner of 2 SCs
+	scOwnerAddr := scOwner.Address()
 	auctionOwner := wallet.WithIndex(1)
+	auctionOwnerAddr := auctionOwner.Address()
 	bidder1 := wallet.WithIndex(2)
+	bidder1Addr := bidder1.Address()
 	bidder2 := wallet.WithIndex(3)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestFA")
+	bidder2Addr := bidder2.Address()
 
 	programHashTR, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
@@ -168,19 +169,18 @@ func TestPlus2SC(t *testing.T) {
 	programHashFA, err := hashing.HashValueFromBase58(fairauction.ProgramHash)
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
+	// setup
+	wasps := setup(t, "test_cluster2", "TestFA")
+
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
-	auctionOwnerAddr := auctionOwner.Address()
 	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
-	bidder1Addr := bidder1.Address()
 	err = wasps.NodeClient.RequestFunds(bidder1Addr)
 	check(err, t)
 
-	bidder2Addr := bidder2.Address()
 	err = wasps.NodeClient.RequestFunds(bidder2Addr)
 	check(err, t)
 
@@ -190,6 +190,7 @@ func TestPlus2SC(t *testing.T) {
 		t.Fail()
 		return
 	}
+
 	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "auctionOwner in the beginning") {
@@ -210,6 +211,7 @@ func TestPlus2SC(t *testing.T) {
 		t.Fail()
 		return
 	}
+
 	t.Logf("bidder1 addr: %s", bidder1Addr.String())
 	t.Logf("bidder2 addr: %s", bidder2Addr.String())
 
@@ -222,7 +224,7 @@ func TestPlus2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashTR,
-		Description:           "TokenRegistry, a PoC smart contract",
+		Description:           tokenregistry.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
 	})
@@ -236,7 +238,7 @@ func TestPlus2SC(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHashFA,
-		Description:           "FairAuction, a PoC smart contract",
+		Description:           fairauction.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + fairauction.ProgramHash + "]",
 	})

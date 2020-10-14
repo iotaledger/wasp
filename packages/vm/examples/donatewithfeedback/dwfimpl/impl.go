@@ -13,6 +13,7 @@ import (
 
 // program hash: the ID of the code
 const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
+const Description = "DonateWithFeedback, a PoC smart contract"
 
 // implementation of 'vmtypes.Processor' and 'vmtypes.EntryPoint' interfaces
 type dwfProcessor map[sctransaction.RequestCode]dwfEntryPoint

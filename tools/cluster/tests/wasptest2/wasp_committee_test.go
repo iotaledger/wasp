@@ -25,14 +25,14 @@ func TestKillNode(t *testing.T) {
 	seed58 := base58.Encode(seed[:])
 	wallet1 := testutil.NewWallet(seed58)
 	scOwner = wallet1.WithIndex(0)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestKillNode")
+	scOwnerAddr := scOwner.Address()
 
 	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
+	// setup
+	wasps := setup(t, "test_cluster2", "TestKillNode")
+
 	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
 	check(err, t)
 
@@ -51,6 +51,7 @@ func TestKillNode(t *testing.T) {
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
 		ProgramHash:           programHash,
+		Description:           inccounter.Description,
 		Textout:               os.Stdout,
 		Prefix:                "[deploy] ",
 	})
