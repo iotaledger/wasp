@@ -13,5 +13,8 @@ func initLogger() {
 
 func AddEndpoints(adm *echo.Group) {
 	initLogger()
+	addDksNewEndpoint(adm)
+	addDksAggregateEndpoint(adm)
+	addDksCommitEndpoint(adm)
 	addExportEndpoints(adm)
 }

@@ -3,6 +3,7 @@ package state
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
 
@@ -59,5 +59,5 @@ func handleStateQuery(c echo.Context) error {
 		ret.KeyQueryResults[i] = result
 	}
 
-	return misc.OkJson(c, ret)
+	return c.JSON(http.StatusOK, ret)
 }

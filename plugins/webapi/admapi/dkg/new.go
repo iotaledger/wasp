@@ -1,8 +1,11 @@
-package dkgapi
+package dkg
 
 import (
+	"net/http"
+
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
+	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
 )
@@ -36,55 +39,40 @@ import (
 // In the next call 'adm/aggregatedks' dealer will be sending COLUMNS of the matrix to the same nodes.
 // Note, that diagonal values never appear in public, so dealer is not able to reconstruct secret polynomials
 //
-// Next: see '/adm/aggregatedks' API
+// Next: see 'aggregate' API call
 
-func HandlerNewDks(c echo.Context) error {
+func addDksNewEndpoint(adm *echo.Group) {
+	adm.POST("/"+client.DKSNewRoute, handleNewDks)
+}
+
+func handleNewDks(c echo.Context) error {
 	log.Debugw("HandlerNewDks")
-	var req NewDKSRequest
+	var req client.NewDKSRequest
 
 	if err := c.Bind(&req); err != nil {
-		return misc.OkJson(c, &NewDKSResponse{
-			Err: err.Error(),
-		})
+		return httperrors.BadRequest("Invalid request body")
 	}
-	return misc.OkJson(c, NewDKSetReq(&req))
-}
 
-type NewDKSRequest struct {
-	TmpId int    `json:"tmpId"`
-	N     uint16 `json:"n"`
-	T     uint16 `json:"t"`
-	Index uint16 `json:"index"` // 0 to N-1
-}
-
-type NewDKSResponse struct {
-	PriShares []string `json:"pri_shares"` // base58
-	Err       string   `json:"err"`
-}
-
-func NewDKSetReq(req *NewDKSRequest) *NewDKSResponse {
 	if err := tcrypto.ValidateDKSParams(req.T, req.N, req.Index); err != nil {
-		return &NewDKSResponse{Err: err.Error()}
+		return httperrors.BadRequest(err.Error())
 	}
 	ks, err := tcrypto.NewRndDKShare(req.T, req.N, req.Index)
 	if err != nil {
-		return &NewDKSResponse{Err: err.Error()}
+		return err
 	}
 	err = putToDkgCache(req.TmpId, ks)
 	if err != nil {
-		return &NewDKSResponse{Err: err.Error()}
+		return err
 	}
-	resp := NewDKSResponse{
-		PriShares: make([]string, ks.N),
-	}
+	priShares := make([]string, ks.N)
 	for i, s := range ks.PriShares {
 		if uint16(i) != ks.Index {
 			data, err := s.V.MarshalBinary()
 			if err != nil {
-				return &NewDKSResponse{Err: err.Error()}
+				return err
 			}
-			resp.PriShares[i] = base58.Encode(data)
+			priShares[i] = base58.Encode(data)
 		}
 	}
-	return &resp
+	return c.JSON(http.StatusOK, priShares)
 }

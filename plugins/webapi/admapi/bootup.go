@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
 	"github.com/labstack/echo"
 )
 
@@ -42,7 +41,7 @@ func handlePutBootupData(c echo.Context) error {
 
 	log.Infof("Bootup record saved for addr: %s color: %s", bd.Address.String(), bd.Color.String())
 
-	return c.JSON(http.StatusCreated, "OK")
+	return c.NoContent(http.StatusCreated)
 }
 
 func handleGetBootupData(c echo.Context) error {
@@ -57,7 +56,7 @@ func handleGetBootupData(c echo.Context) error {
 	if bd == nil {
 		return httperrors.NotFound(fmt.Sprintf("Bootup data not found: %s", addr))
 	}
-	return misc.OkJson(c, jsonable.NewBootupData(bd))
+	return c.JSON(http.StatusOK, jsonable.NewBootupData(bd))
 }
 
 func handleGetBootupDataList(c echo.Context) error {
@@ -69,5 +68,5 @@ func handleGetBootupDataList(c echo.Context) error {
 	for i := range ret {
 		ret[i] = jsonable.NewBootupData(lst[i])
 	}
-	return misc.OkJson(c, ret)
+	return c.JSON(http.StatusOK, ret)
 }

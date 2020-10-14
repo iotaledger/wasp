@@ -14,8 +14,8 @@ import (
 )
 
 func addExportEndpoints(adm *echo.Group) {
-	adm.GET("/"+client.DKGExportRoute(":address"), handleExportDKShare)
-	adm.POST("/"+client.DKGImportRoute, handleImportDKShare)
+	adm.GET("/"+client.DKSExportRoute(":address"), handleExportDKShare)
+	adm.POST("/"+client.DKSImportRoute, handleImportDKShare)
 }
 
 func handleExportDKShare(c echo.Context) error {

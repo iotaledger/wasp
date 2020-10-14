@@ -1,9 +1,13 @@
-package dkgapi
+package dkg
 
 import (
 	"fmt"
+	"net/http"
+
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/misc"
+	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
@@ -26,54 +30,42 @@ import (
 // ensure that nobody, except at least 't' of nodes can create valid BLS signatures.
 // Even dealer has not enough information to do that
 
-func HandlerCommitDks(c echo.Context) error {
-	var req CommitDKSRequest
+func addDksCommitEndpoint(adm *echo.Group) {
+	adm.POST("/"+client.DKSCommitRoute, handleCommitDks)
+}
 
+func handleCommitDks(c echo.Context) error {
+	var req client.CommitDKSRequest
 	if err := c.Bind(&req); err != nil {
-		return misc.OkJson(c, &CommitDKSResponse{
-			Err: err.Error(),
-		})
+		return httperrors.BadRequest("Invalid request body")
 	}
-	return misc.OkJson(c, CommitDKSReq(&req))
-}
 
-type CommitDKSRequest struct {
-	TmpId     int      `json:"tmpId"`
-	PubShares []string `json:"pub_shares"` // base58
-}
-
-type CommitDKSResponse struct {
-	Address string `json:"address"` //base58
-	Err     string `json:"err"`
-}
-
-func CommitDKSReq(req *CommitDKSRequest) *CommitDKSResponse {
 	ks := getFromDkgCache(req.TmpId)
 	if ks == nil {
-		return &CommitDKSResponse{Err: fmt.Sprintf("wrong tmpId %d", req.TmpId)}
+		return httperrors.BadRequest(fmt.Sprintf("wrong tmpId %d", req.TmpId))
 	}
 	if ks.Committed {
-		return &CommitDKSResponse{Err: "key set is already committed"}
+		return httperrors.Conflict("key set is already committed")
 	}
 	if len(req.PubShares) != int(ks.N) {
-		return &CommitDKSResponse{Err: "wrong number of private shares"}
+		return httperrors.BadRequest("wrong number of private shares")
 	}
 
 	pubKeys := make([]kyber.Point, len(req.PubShares))
 	for i, s := range req.PubShares {
 		b, err := base58.Decode(s)
 		if err != nil {
-			return &CommitDKSResponse{Err: err.Error()}
+			return httperrors.BadRequest(err.Error())
 		}
 		p := ks.Suite.G2().Point()
 		if err := p.UnmarshalBinary(b); err != nil {
-			return &CommitDKSResponse{Err: err.Error()}
+			return httperrors.BadRequest(err.Error())
 		}
 		pubKeys[i] = p
 	}
 	err := registry.CommitDKShare(ks, pubKeys)
 	if err != nil {
-		return &CommitDKSResponse{Err: err.Error()}
+		return err
 	}
 
 	// delete from the DKG cache
@@ -86,7 +78,5 @@ func CommitDKSReq(req *CommitDKSRequest) *CommitDKSResponse {
 		"Index", ks.Index,
 	)
 
-	return &CommitDKSResponse{
-		Address: ks.Address.String(),
-	}
+	return c.JSON(http.StatusOK, jsonable.NewAddress(ks.Address))
 }
