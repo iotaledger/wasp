@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
-	"github.com/iotaledger/wasp/plugins/webapi/dkgapi"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -45,7 +44,6 @@ func WaitUntilIsUp() {
 
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
-	dkgapi.InitLogger()
 
 	Server.HideBanner = true
 	Server.HidePort = true
