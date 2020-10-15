@@ -14,6 +14,7 @@ import (
 
 // program hash is an ID of the smart contract program
 const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
+const Description = "TokenRegistry, a PoC smart contract"
 
 const (
 	RequestInitSC            = sctransaction.RequestCode(uint16(0)) // NOP

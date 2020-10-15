@@ -30,7 +30,7 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = vm.RunWasmFunction("onLoad")
+	err = vm.RunFunction("onLoad")
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
 
 	vm.LogText("Calling " + vm.function)
-	err := vm.RunWasmFunction(vm.function)
+	err := vm.RunFunction(vm.function)
 	if err != nil {
 		vm.LogText("error running wasm: " + err.Error())
 		panic(err)

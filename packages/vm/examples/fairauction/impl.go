@@ -18,6 +18,7 @@ import (
 
 // program has is an id of the program
 const ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
+const Description = "FairAuction, a PoC smart contract"
 
 // implement Processor and EntryPoint interfaces
 

@@ -1,102 +1,39 @@
 package wasptest2
 
 import (
-	"crypto/rand"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction/faclient"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
-	"github.com/mr-tron/base58"
 )
 
 func Test2SC(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet := testutil.NewWallet(seed58)
-	scOwner := wallet.WithIndex(0) // owner of 2 SCs
-	auctionOwner := wallet.WithIndex(2)
+	wasps := setup(t, "Test2SC")
 
-	// setup
-	wasps := setup(t, "test_cluster2", "Test2SC")
-
-	programHashTR, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	programHashFA, err := hashing.HashValueFromBase58(fairauction.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
+	auctionOwner := wallet.WithIndex(1)
 	auctionOwnerAddr := auctionOwner.Address()
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = requestFunds(wasps, auctionOwnerAddr, "auction owner")
 	check(err, t)
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "auctionOwner in the beginning") {
-		t.Fail()
-		return
-	}
 
-	// create TokenRegistry
-	scTRAddr, scTRColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHashTR,
-		Description:           "TokenRegistry, a PoC smart contract",
-		Textout:               os.Stdout,
-		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
-	})
-	checkSuccess(err, t, "TokenRegistry created")
+	scTRAddr, scTRColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	checkSuccess(err, t, "TokenRegistry has been created and activated")
 
-	scFAAddr, scFAColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHashFA,
-		Description:           "FairAuction, a PoC smart contract",
-		Textout:               os.Stdout,
-		Prefix:                "[deploy " + fairauction.ProgramHash + "]",
-	})
-	checkSuccess(err, t, "FairAuction created")
-
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scFAAddr, scTRAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           60 * time.Second,
-	})
-	checkSuccess(err, t, "2 smart contracts activated and initialized")
+	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
+	checkSuccess(err, t, "FairAuction has been created and activated")
 
 	succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
 	assert.True(t, succ)
@@ -151,106 +88,31 @@ func Test2SC(t *testing.T) {
 
 // scenario with 2 smart contracts
 func TestPlus2SC(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet := testutil.NewWallet(seed58)
-	scOwner := wallet.WithIndex(0) // owner of 2 SCs
+	wasps := setup(t, "TestPlus2SC")
+
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
 	auctionOwner := wallet.WithIndex(1)
-	bidder1 := wallet.WithIndex(2)
-	bidder2 := wallet.WithIndex(3)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestFA")
-
-	programHashTR, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
-	check(err, t)
-
-	programHashFA, err := hashing.HashValueFromBase58(fairauction.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
 	auctionOwnerAddr := auctionOwner.Address()
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = requestFunds(wasps, auctionOwnerAddr, "auction owner")
 	check(err, t)
 
+	bidder1 := wallet.WithIndex(2)
 	bidder1Addr := bidder1.Address()
-	err = wasps.NodeClient.RequestFunds(bidder1Addr)
+	err = requestFunds(wasps, bidder1Addr, "bidder 1")
 	check(err, t)
 
+	bidder2 := wallet.WithIndex(3)
 	bidder2Addr := bidder2.Address()
-	err = wasps.NodeClient.RequestFunds(bidder2Addr)
+	err = requestFunds(wasps, bidder2Addr, "bidder 2")
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	if !wasps.VerifyAddressBalances(auctionOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "auctionOwner in the beginning") {
-		t.Fail()
-		return
-	}
+	scTRAddr, scTRColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	checkSuccess(err, t, "TokenRegistry has been created and activated")
 
-	if !wasps.VerifyAddressBalances(bidder1Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "bidder1 in the beginning") {
-		t.Fail()
-		return
-	}
-
-	if !wasps.VerifyAddressBalances(bidder2Addr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "bidder2 in the beginning") {
-		t.Fail()
-		return
-	}
-	t.Logf("bidder1 addr: %s", bidder1Addr.String())
-	t.Logf("bidder2 addr: %s", bidder2Addr.String())
-
-	// create TokenRegistry
-	scTRAddr, scTRColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHashTR,
-		Description:           "TokenRegistry, a PoC smart contract",
-		Textout:               os.Stdout,
-		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
-	})
-	checkSuccess(err, t, "TokenRegistry created")
-
-	scFAAddr, scFAColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHashFA,
-		Description:           "FairAuction, a PoC smart contract",
-		Textout:               os.Stdout,
-		Prefix:                "[deploy " + fairauction.ProgramHash + "]",
-	})
-	checkSuccess(err, t, "FairAuction created")
-
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scFAAddr, scTRAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           60 * time.Second,
-	})
-	checkSuccess(err, t, "2 smart contracts have been activated and initialized")
+	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
+	checkSuccess(err, t, "FairAuction has been created and activated")
 
 	tc := trclient.NewClient(scclient.New(
 		wasps.NodeClient,
@@ -341,7 +203,7 @@ func TestPlus2SC(t *testing.T) {
 	checkSuccess(err, t, "2 bids have been placed")
 
 	// wait for auction to finish
-	time.Sleep(90 * time.Second)
+	time.Sleep(65 * time.Second)
 
 	if !wasps.VerifyAddressBalances(scFAAddr, 2, map[balance.Color]int64{
 		*scFAColor:        1, // sc token

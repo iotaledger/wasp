@@ -1,17 +1,12 @@
 package wasptest2
 
 import (
-	"crypto/rand"
 	"fmt"
-	"os"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/scclient"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -19,55 +14,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfclient"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfimpl"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"github.com/mr-tron/base58"
 )
 
 func TestDeployDWF(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet1 := testutil.NewWallet(seed58)
-	scOwner = wallet1.WithIndex(0)
+	wasps := setup(t, "TestDeployDWF")
 
-	// setup
-	wasps := setup(t, "test_cluster2", "TestDeployDWF")
-
-	programHash, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	scDescription := "DonateWithFeedback, a PoC smart contract"
-	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHash,
-		Description:           scDescription,
-		Textout:               os.Stdout,
-		Prefix:                "[deploy] ",
-	})
-	checkSuccess(err, t, "smart contract has been created")
-
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
-	})
-	checkSuccess(err, t, "smart contract has been activated and initialized")
+	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -89,7 +45,7 @@ func TestDeployDWF(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  ph[:],
-		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
 	}
@@ -98,63 +54,18 @@ func TestDeployDWF(t *testing.T) {
 const numDonations = 5
 
 func TestDWFDonateNTimes(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet := testutil.NewWallet(seed58)
-	scOwner := wallet.WithIndex(0)
+	wasps := setup(t, "TestDeployDWF")
+
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
 	donor := wallet.WithIndex(1)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestDeployDWF")
-
-	programHash, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
 	donorAddr := donor.Address()
-	err = wasps.NodeClient.RequestFunds(donorAddr)
+	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "donor in the beginning") {
-		t.Fail()
-		return
-	}
-
-	scDescription := "DonateWithFeedback, a PoC smart contract"
-	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHash,
-		Description:           scDescription,
-		Textout:               os.Stdout,
-		Prefix:                "[deploy] ",
-	})
-	checkSuccess(err, t, "smart contract has been created")
-
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
-	})
-	checkSuccess(err, t, "smart contract has been activated and initialized")
+	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	dwfClient := dwfclient.NewClient(scclient.New(
 		wasps.NodeClient,
@@ -219,7 +130,7 @@ func TestDWFDonateNTimes(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
 		vmconst.VarNameProgramHash:                ph[:],
-		vmconst.VarNameDescription:                strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:                dwfimpl.Description,
 		donatewithfeedback.VarStateMaxDonation:    42,
 		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
 	}) {
@@ -228,63 +139,18 @@ func TestDWFDonateNTimes(t *testing.T) {
 }
 
 func TestDWFDonateWithdrawAuthorised(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet := testutil.NewWallet(seed58)
-	scOwner := wallet.WithIndex(0)
+	wasps := setup(t, "TestDeployDWF")
+
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
 	donor := wallet.WithIndex(1)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestDeployDWF")
-
-	programHash, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
 	donorAddr := donor.Address()
-	err = wasps.NodeClient.RequestFunds(donorAddr)
+	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "donor in the beginning") {
-		t.Fail()
-		return
-	}
-
-	scDescription := "DonateWithFeedback, a PoC smart contract"
-	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHash,
-		Description:           scDescription,
-		Textout:               os.Stdout,
-		Prefix:                "[deploy] ",
-	})
-	checkSuccess(err, t, "smart contract has been created")
-
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           30 * time.Second,
-	})
-	checkSuccess(err, t, "smart contract has been activated and initialized")
+	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	dwfDonorClient := dwfclient.NewClient(scclient.New(
 		wasps.NodeClient,
@@ -352,70 +218,25 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  ph[:],
-		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
 	}
 }
 
 func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet := testutil.NewWallet(seed58)
-	scOwner := wallet.WithIndex(0)
+	wasps := setup(t, "TestDeployDWF")
+
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
 	donor := wallet.WithIndex(1)
-
-	// setup
-	wasps := setup(t, "test_cluster2", "TestDeployDWF")
-
-	programHash, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
-	scOwnerAddr := scOwner.Address()
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
 	donorAddr := donor.Address()
-	err = wasps.NodeClient.RequestFunds(donorAddr)
+	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	if !wasps.VerifyAddressBalances(donorAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "donor in the beginning") {
-		t.Fail()
-		return
-	}
-
-	scDescription := "DonateWithFeedback, a PoC smart contract"
-	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHash,
-		Description:           scDescription,
-		Textout:               os.Stdout,
-		Prefix:                "[deploy] ",
-	})
-	checkSuccess(err, t, "smart contract has been created")
-
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
-	})
-	checkSuccess(err, t, "smart contract has been activated and initialized")
+	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	dwfDonorClient := dwfclient.NewClient(scclient.New(
 		wasps.NodeClient,
@@ -477,7 +298,7 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  ph[:],
-		vmconst.VarNameDescription:  strings.TrimSpace(scDescription),
+		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
 	}

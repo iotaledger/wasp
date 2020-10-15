@@ -10,6 +10,7 @@ type incCounterProcessor map[sctransaction.RequestCode]incEntryPoint
 
 const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
+	Description = "Increment, a PoC smart contract"
 
 	RequestInc                     = sctransaction.RequestCode(uint16(1))
 	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(uint16(2))

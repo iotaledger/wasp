@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest"
 	"testing"
@@ -23,17 +24,24 @@ const fr_wasmPath = "fairroulette_bg.wasm"
 const fr_description = "Fair roulette, a PoC smart contract"
 
 func TestFrNothing(t *testing.T) {
-	testNothing(t, "TestFrNothing", fr_wasmPath, fr_description, 1)
+	testNothing(t, "TestFrNothing", fairroulette.ProgramHash, fr_wasmPath, fr_description, 1)
 }
 
 func Test5xFrNothing(t *testing.T) {
-	testNothing(t, "Test5xFrNothing", fr_wasmPath, fr_description, 5)
+	testNothing(t, "Test5xFrNothing", fairroulette.ProgramHash, fr_wasmPath, fr_description, 5)
 }
 
 func TestPlaceBet(t *testing.T) {
-	preamble(t, fr_wasmPath, fr_description, "TestPlaceBet")
+	wasps := setup(t, "TestPlaceBet")
 
-	err := wasps.ListenToMessages(map[string]int{
+	// load sc code into wasps, save hash for later use
+	err := loadWasmIntoWasps(wasps, fr_wasmPath, fr_description)
+	check(err, t)
+
+	err = requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
+	err = wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -44,10 +52,11 @@ func TestPlaceBet(t *testing.T) {
 	})
 	check(err, t)
 
-	startSmartContract(t, scProgramHash, fr_description)
+	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, fr_description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress: scAddr,
+		SCAddress:   scAddr,
 		RequestCode: fr_code_placeBet,
 		Vars: map[string]interface{}{
 			"color":       3,
@@ -80,7 +89,7 @@ func TestPlaceBet(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  scProgramHash[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  fr_description,
 	}) {
 		t.Fail()
@@ -88,9 +97,16 @@ func TestPlaceBet(t *testing.T) {
 }
 
 func TestPlace5BetsAndPlay(t *testing.T) {
-	preamble(t, fr_wasmPath, fr_description, "TestPlace5BetsAndPlay")
+	wasps := setup(t, "TestPlace5BetsAndPlay")
 
-	err := wasps.ListenToMessages(map[string]int{
+	// load sc code into wasps, save hash for later use
+	err := loadWasmIntoWasps(wasps, fr_wasmPath, fr_description)
+	check(err, t)
+
+	err = requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
+	err = wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -101,10 +117,11 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 	})
 	check(err, t)
 
-	startSmartContract(t, scProgramHash, fr_description)
+	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, fr_description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress: scAddr,
+		SCAddress:   scAddr,
 		RequestCode: fr_code_playPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
@@ -117,7 +134,7 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress: scAddr,
+			SCAddress:   scAddr,
 			RequestCode: fr_code_placeBet,
 			Vars: map[string]interface{}{
 				"color": i + 1,
@@ -150,7 +167,7 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  scProgramHash[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  fr_description,
 		"playPeriod":                10,
 		//"lastWinningColor": 3,
