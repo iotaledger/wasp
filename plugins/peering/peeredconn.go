@@ -12,7 +12,7 @@ import (
 // extension of BufferedConnection from hive.go
 // BufferedConnection is a wrapper for net.Conn
 // peeredConnection first handles handshake and then links
-// with peer (peers) according to the handshake information
+// with peer according to the handshake information
 type peeredConnection struct {
 	*buffconn.BufferedConnection
 	peer        *Peer
@@ -67,7 +67,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		} else {
 			// expected handshake msg
 			if msg.MsgType != MsgTypeHandshake {
-				log.Errorf("peeredConnection.receiveData: unexpected message during handshake")
+				log.Errorf("peeredConnection.receiveData: unexpected message during handshake 1")
 				return
 			}
 			// not handshaked => do handshake
@@ -77,7 +77,7 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		// can only be inbound
 		// expected handshake msg
 		if msg.MsgType != MsgTypeHandshake {
-			log.Errorf("peeredConnection.receiveData: unexpected message during handshake")
+			log.Errorf("peeredConnection.receiveData: unexpected message during handshake 2")
 			return
 		}
 		// not peered yet can be only inbound
