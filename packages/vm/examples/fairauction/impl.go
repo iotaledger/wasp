@@ -39,8 +39,8 @@ var entryPoints = fairAuctionProcessor{
 	RequestInitSC:          initSC,
 	RequestStartAuction:    startAuction,
 	RequestFinalizeAuction: finalizeAuction,
-	RequestSetOwnerMargin:  setOwnerMargin,
 	RequestPlaceBid:        placeBid,
+	RequestSetOwnerMargin:  setOwnerMargin,
 }
 
 // string constants for request arguments and state variable names

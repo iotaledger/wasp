@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/scclient"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
@@ -39,12 +38,9 @@ func TestDeployDWF(t *testing.T) {
 		return
 	}
 
-	ph, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
@@ -124,12 +120,9 @@ func TestDWFDonateNTimes(t *testing.T) {
 		t.Fail()
 	}
 
-	ph, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
-		vmconst.VarNameProgramHash:                ph[:],
+		vmconst.VarNameProgramHash:                programHash[:],
 		vmconst.VarNameDescription:                dwfimpl.Description,
 		donatewithfeedback.VarStateMaxDonation:    42,
 		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
@@ -212,12 +205,9 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	ph, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
@@ -292,12 +282,9 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	ph, err := hashing.HashValueFromBase58(dwfimpl.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()

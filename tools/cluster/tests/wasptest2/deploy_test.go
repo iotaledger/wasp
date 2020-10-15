@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -38,12 +37,9 @@ func TestDeploySC(t *testing.T) {
 		return
 	}
 
-	ph, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  tokenregistry.Description,
 	}) {
 		t.Fail()
@@ -79,12 +75,9 @@ func TestGetSCData(t *testing.T) {
 		return
 	}
 
-	ph, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  tokenregistry.Description,
 	}) {
 		t.Fail()

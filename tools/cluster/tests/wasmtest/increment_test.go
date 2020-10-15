@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	inc_code_nothing             = sctransaction.RequestCode(1)
-	inc_code_test                = sctransaction.RequestCode(2)
-	inc_code_increment           = sctransaction.RequestCode(3)
-	inc_code_incrementRepeat1    = sctransaction.RequestCode(4)
-	inc_code_incrementRepeatMany = sctransaction.RequestCode(5)
+	inc_code_increment           = sctransaction.RequestCode(1)
+	inc_code_incrementRepeat1    = sctransaction.RequestCode(2)
+	inc_code_incrementRepeatMany = sctransaction.RequestCode(3)
+	inc_code_test                = sctransaction.RequestCode(4)
+	inc_code_nothing             = sctransaction.RequestCode(5)
 )
 
 const inc_wasmPath = "increment_bg.wasm"

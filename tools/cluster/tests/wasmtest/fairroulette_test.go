@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	fr_code_nothing    = sctransaction.RequestCode(1)
-	fr_code_placeBet   = sctransaction.RequestCode(2)
-	fr_code_lockBets   = sctransaction.RequestCode(3)
-	fr_code_payWinners = sctransaction.RequestCode(4)
-	fr_code_playPeriod = sctransaction.RequestCode(5 | sctransaction.RequestCodeProtected)
+	fr_code_placeBet   = sctransaction.RequestCode(1)
+	fr_code_lockBets   = sctransaction.RequestCode(2)
+	fr_code_payWinners = sctransaction.RequestCode(3)
+	fr_code_playPeriod = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
+	fr_code_nothing    = sctransaction.RequestCode(5)
 )
 
 const fr_wasmPath = "fairroulette_bg.wasm"
