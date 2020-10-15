@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
@@ -20,9 +23,10 @@ import (
 )
 
 var (
-	seed = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
-	wallet  = testutil.NewWallet(seed)
-	scOwner = wallet.WithIndex(0)
+	useWasm     = false
+	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
+	wallet      = testutil.NewWallet(seed)
+	scOwner     = wallet.WithIndex(0)
 	scOwnerAddr = scOwner.Address()
 	programHash hashing.HashValue
 )
@@ -45,6 +49,29 @@ func checkSuccess(err error, t *testing.T, success string) {
 	}
 }
 
+func loadWasmIntoWasps(wasps *cluster.Cluster, wasmPath string, scDescription string) error {
+	wasm, err := ioutil.ReadFile(wasmPath)
+	if err != nil {
+		return err
+	}
+	programHash = *hashing.NilHash
+	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
+		var err error
+		hashValue, err := w.PutProgram(wasmtimevm.PluginName, scDescription, wasm)
+		if err != nil {
+			return err
+		}
+		if programHash == *hashing.NilHash {
+			programHash = *hashValue
+			return nil
+		}
+		if programHash != *hashValue {
+			return errors.New("code hash mismatch")
+		}
+		return nil
+	})
+}
+
 func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {
 	err := wasps.NodeClient.RequestFunds(addr)
 	if err != nil {
@@ -52,16 +79,22 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	}
 	if !wasps.VerifyAddressBalances(addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "requested funds for " + who) {
+	}, "requested funds for "+who) {
 		return errors.New("unexpected requested amount")
 	}
 	return nil
 }
 
-func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string)(*address.Address, *balance.Color, error) {
+func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*address.Address, *balance.Color, error) {
 	var err error
-	programHash, err = hashing.HashValueFromBase58(scProgramHash)
-	if err != nil { return nil, nil, err}
+	if !useWasm {
+		programHash, err = hashing.HashValueFromBase58(scProgramHash)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		scProgramHash = programHash.String()
+	}
 	scAddr, scColor, err := apilib.CreateSC(apilib.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
@@ -74,7 +107,9 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		Textout:               os.Stdout,
 		Prefix:                "[deploy " + scProgramHash + "]",
 	})
-	if err != nil { return nil, nil, err}
+	if err != nil {
+		return nil, nil, err
+	}
 
 	err = apilib.ActivateSCMulti(apilib.ActivateSCParams{
 		Addresses:         []*address.Address{scAddr},
@@ -83,7 +118,7 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		PublisherHosts:    wasps.PublisherHosts(),
 		Timeout:           30 * time.Second,
 	})
-    return scAddr, scColor, err
+	return scAddr, scColor, err
 }
 
 func setup(t *testing.T, testName string) *cluster.Cluster {

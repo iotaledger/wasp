@@ -26,7 +26,7 @@ func TestTRTest(t *testing.T) {
 	err = requestFunds(wasps, minterAddr, "minter")
 	check(err, t)
 
-	scAddr, scColor, err:= startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{

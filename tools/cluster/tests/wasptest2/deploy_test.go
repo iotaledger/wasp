@@ -21,7 +21,7 @@ func TestDeploySC(t *testing.T) {
 	err := requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err:= startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
@@ -56,7 +56,7 @@ func TestGetSCData(t *testing.T) {
 	err := requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err:= startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	bd, err := wasps.Config.Nodes[0].Client().GetBootupData(scAddr)
@@ -110,7 +110,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err:= startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
+	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	for i := 0; i < numRequests; i++ {
@@ -169,7 +169,7 @@ func TestSend100ReqMulti(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err:= startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
+	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	pars := make([]waspapi.CreateSimpleRequestParamsOld, numRequestsInTheBlock)

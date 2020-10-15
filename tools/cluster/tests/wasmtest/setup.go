@@ -23,13 +23,12 @@ import (
 )
 
 var (
-	wallet        = testutil.NewWallet("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
-	scOwner       = wallet.WithIndex(0)
-	scAddr        *address.Address
-	scColor       *balance.Color
-	scOwnerAddr   *address.Address
-	scProgramHash *hashing.HashValue
-	wasps         *cluster.Cluster
+	useWasm     = true
+	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
+	wallet      = testutil.NewWallet(seed)
+	scOwner     = wallet.WithIndex(0)
+	scOwnerAddr = scOwner.Address()
+	programHash hashing.HashValue
 )
 
 func check(err error, t *testing.T) {
@@ -50,46 +49,27 @@ func checkSuccess(err error, t *testing.T, success string) {
 	}
 }
 
-func loadWasmIntoWasps(t *testing.T, wasmPath string, scDescription string) error {
+func loadWasmIntoWasps(wasps *cluster.Cluster, wasmPath string, scDescription string) error {
 	wasm, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return err
 	}
-	scProgramHash = nil
+	programHash = *hashing.NilHash
 	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
 		var err error
 		hashValue, err := w.PutProgram(wasmtimevm.PluginName, scDescription, wasm)
 		if err != nil {
 			return err
 		}
-		if scProgramHash == nil {
-			scProgramHash = hashValue
+		if programHash == *hashing.NilHash {
+			programHash = *hashValue
 			return nil
 		}
-		if *scProgramHash != *hashValue {
+		if programHash != *hashValue {
 			return errors.New("code hash mismatch")
 		}
 		return nil
 	})
-}
-
-func preamble(t *testing.T, wasmPath string, scDescription string, testName string) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet = testutil.NewWallet(seed58)
-	scOwner = wallet.WithIndex(0)
-	scOwnerAddr = scOwner.Address()
-
-	// start wasp nodes
-	startWasps(t, "test_cluster2", testName)
-
-	// load sc code into wasps, save hash for later use
-	err := loadWasmIntoWasps(t, wasmPath, scDescription)
-	check(err, t)
-
-	err = requestFunds(wasps, scOwnerAddr, "sc owner")
-	check(err, t)
 }
 
 func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {
@@ -99,27 +79,37 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	}
 	if !wasps.VerifyAddressBalances(addr, testutil.RequestFundsAmount, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "requested funds for " + who) {
+	}, "requested funds for "+who) {
 		return errors.New("unexpected requested amount")
 	}
 	return nil
 }
 
-func startSmartContract(t *testing.T, scProgramHash *hashing.HashValue, scDescription string) {
+func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*address.Address, *balance.Color, error) {
 	var err error
-	scAddr, scColor, err = apilib.CreateSC(apilib.CreateSCParams{
+	if !useWasm {
+		programHash, err = hashing.HashValueFromBase58(scProgramHash)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		scProgramHash = programHash.String()
+	}
+	scAddr, scColor, err := apilib.CreateSC(apilib.CreateSCParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
 		N:                     4,
 		T:                     3,
 		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           *scProgramHash,
+		ProgramHash:           programHash,
 		Description:           scDescription,
 		Textout:               os.Stdout,
-		Prefix:                "[deploy] ",
+		Prefix:                "[deploy " + scProgramHash + "]",
 	})
-	checkSuccess(err, t, "smart contract has been created")
+	if err != nil {
+		return nil, nil, err
+	}
 
 	err = apilib.ActivateSCMulti(apilib.ActivateSCParams{
 		Addresses:         []*address.Address{scAddr},
@@ -128,21 +118,23 @@ func startSmartContract(t *testing.T, scProgramHash *hashing.HashValue, scDescri
 		PublisherHosts:    wasps.PublisherHosts(),
 		Timeout:           30 * time.Second,
 	})
-	checkSuccess(err, t, "smart contract has been activated and initialized")
+	return scAddr, scColor, err
 }
 
-func startWasps(t *testing.T, configPath string, testName string) {
-	var err error
+func setup(t *testing.T, testName string) *cluster.Cluster {
+	var seedBytes [32]byte
+	rand.Read(seedBytes[:])
+	seed = base58.Encode(seedBytes[:])
+	wallet = testutil.NewWallet(seed)
+	scOwner = wallet.WithIndex(0)
+	scOwnerAddr = scOwner.Address()
 	_, filename, _, _ := runtime.Caller(0)
-
-	wasps, err = cluster.New(path.Join(path.Dir(filename), "..", configPath), "cluster-data")
+	wasps, err := cluster.New(path.Join(path.Dir(filename), "..", "test_cluster2"), "cluster-data")
 	check(err, t)
-
 	err = wasps.Init(true, testName)
 	check(err, t)
-
 	err = wasps.Start()
 	check(err, t)
-
 	t.Cleanup(wasps.Stop)
+	return wasps
 }

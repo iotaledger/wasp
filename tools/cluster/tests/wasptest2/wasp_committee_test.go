@@ -21,7 +21,7 @@ func TestKillNode(t *testing.T) {
 	err := requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err:= startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
+	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	wasps.StopNode(3)

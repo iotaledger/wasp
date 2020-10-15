@@ -29,10 +29,10 @@ func Test2SC(t *testing.T) {
 	err = requestFunds(wasps, auctionOwnerAddr, "auction owner")
 	check(err, t)
 
-	scTRAddr, scTRColor, err:= startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	scTRAddr, scTRColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "TokenRegistry has been created and activated")
 
-	scFAAddr, scFAColor, err:= startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
+	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
 	succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
@@ -108,10 +108,10 @@ func TestPlus2SC(t *testing.T) {
 	err = requestFunds(wasps, bidder2Addr, "bidder 2")
 	check(err, t)
 
-	scTRAddr, scTRColor, err:= startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	scTRAddr, scTRColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "TokenRegistry has been created and activated")
 
-	scFAAddr, scFAColor, err:= startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
+	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
 	tc := trclient.NewClient(scclient.New(
