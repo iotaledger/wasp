@@ -1,82 +1,33 @@
 package wasptest2
 
 import (
-	"crypto/rand"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/scclient"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"github.com/mr-tron/base58"
 )
 
 func TestTRTest(t *testing.T) {
-	var seed [32]byte
-	rand.Read(seed[:])
-	seed58 := base58.Encode(seed[:])
-	wallet := testutil.NewWallet(seed58)
-	scOwner := wallet.WithIndex(0)
-	scOwnerAddr := scOwner.Address()
+	wasps := setup(t, "TestTRTest")
+
+	err := requestFunds(wasps, scOwnerAddr, "sc owner")
+	check(err, t)
+
 	minter := wallet.WithIndex(1)
 	minterAddr := minter.Address()
-
-	programHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
+	err = requestFunds(wasps, minterAddr, "minter")
 	check(err, t)
 
-	// setup
-	wasps := setup(t, "test_cluster2", "TestTRTest")
-
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
-	check(err, t)
-
-	err = wasps.NodeClient.RequestFunds(minterAddr)
-	check(err, t)
-
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.Fail()
-		return
-	}
-	if !wasps.VerifyAddressBalances(minterAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "minter in the beginning") {
-		t.Fail()
-		return
-	}
-
-	scAddr, scColor, err := waspapi.CreateSC(waspapi.CreateSCParams{
-		Node:                  wasps.NodeClient,
-		CommitteeApiHosts:     wasps.ApiHosts(),
-		CommitteePeeringHosts: wasps.PeeringHosts(),
-		N:                     4,
-		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
-		ProgramHash:           programHash,
-		Description:           tokenregistry.Description,
-		Textout:               os.Stdout,
-		Prefix:                "[deploy " + tokenregistry.ProgramHash + "]",
-	})
-	check(err, t)
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
-		ApiHosts:          wasps.ApiHosts(),
-		WaitForCompletion: true,
-		PublisherHosts:    wasps.PublisherHosts(),
-		Timeout:           20 * time.Second,
-	})
-	checkSuccess(err, t, "smart contract has been activated")
+	scAddr, scColor, err:= startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
+	checkSuccess(err, t, "smart contract has been created and activated")
 
 	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
 		*scColor: 1, // sc token

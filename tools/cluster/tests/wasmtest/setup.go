@@ -88,14 +88,21 @@ func preamble(t *testing.T, wasmPath string, scDescription string, testName stri
 	err := loadWasmIntoWasps(t, wasmPath, scDescription)
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(scOwnerAddr)
+	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
+}
 
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
-	}, "sc owner in the beginning") {
-		t.FailNow()
+func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {
+	err := wasps.NodeClient.RequestFunds(addr)
+	if err != nil {
+		return err
 	}
+	if !wasps.VerifyAddressBalances(addr, testutil.RequestFundsAmount, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount,
+	}, "requested funds for " + who) {
+		return errors.New("unexpected requested amount")
+	}
+	return nil
 }
 
 func startSmartContract(t *testing.T, scProgramHash *hashing.HashValue, scDescription string) {
