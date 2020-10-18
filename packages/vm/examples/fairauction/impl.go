@@ -27,11 +27,11 @@ type fairAuctionProcessor map[sctransaction.RequestCode]fairAuctionEntryPoint
 type fairAuctionEntryPoint func(ctx vmtypes.Sandbox)
 
 const (
-	RequestInitSC          = sctransaction.RequestCode(uint16(0)) // NOP
-	RequestStartAuction    = sctransaction.RequestCode(uint16(1))
-	RequestFinalizeAuction = sctransaction.RequestCode(uint16(2))
-	RequestPlaceBid        = sctransaction.RequestCode(uint16(3))
-	RequestSetOwnerMargin  = sctransaction.RequestCode(uint16(4) | sctransaction.RequestCodeProtected)
+	RequestInitSC          = sctransaction.RequestCode(0) // NOP
+	RequestStartAuction    = sctransaction.RequestCode(1)
+	RequestFinalizeAuction = sctransaction.RequestCode(2)
+	RequestPlaceBid        = sctransaction.RequestCode(3)
+	RequestSetOwnerMargin  = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
 )
 
 // the processor is a map of entry points

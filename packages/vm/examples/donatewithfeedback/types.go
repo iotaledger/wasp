@@ -14,9 +14,9 @@ import (
 // main external constants
 const (
 	// code of the 'donate' request
-	RequestDonate = sctransaction.RequestCode(uint16(1))
+	RequestDonate = sctransaction.RequestCode(1)
 	// code of the 'withdraw' request. It is protected (checks authorisation at the protocol level)
-	RequestWithdraw = sctransaction.RequestCode(uint16(2) | sctransaction.RequestCodeProtected)
+	RequestWithdraw = sctransaction.RequestCode(2 | sctransaction.RequestCodeProtected)
 
 	// state vars
 	// name of the feedback message log

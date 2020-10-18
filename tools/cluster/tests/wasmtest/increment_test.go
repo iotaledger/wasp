@@ -68,9 +68,6 @@ func Test5xIncNothing(t *testing.T) {
 }
 
 func testNothing(t *testing.T, testName string, hash string, wasmPath string, description string, numRequests int) {
-    // this one only works for Wasm, so we override the flag
-	//forceBuiltin = false
-
 	wasps := setup(t, testName)
 
 	err := loadWasmIntoWasps(wasps, wasmPath, description)

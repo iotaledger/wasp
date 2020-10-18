@@ -13,7 +13,7 @@ import (
 const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
 const (
-	RequestCodeAddLog = sctransaction.RequestCode(uint16(0))
+	RequestCodeAddLog = sctransaction.RequestCode(0)
 )
 
 type logscEntryPoint func(ctx vmtypes.Sandbox)

@@ -17,10 +17,10 @@ const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
 const (
-	RequestInitSC            = sctransaction.RequestCode(uint16(0)) // NOP
-	RequestMintSupply        = sctransaction.RequestCode(uint16(1))
-	RequestUpdateMetadata    = sctransaction.RequestCode(uint16(2))
-	RequestTransferOwnership = sctransaction.RequestCode(uint16(3))
+	RequestInitSC            = sctransaction.RequestCode(0) // NOP
+	RequestMintSupply        = sctransaction.RequestCode(1)
+	RequestUpdateMetadata    = sctransaction.RequestCode(2)
+	RequestTransferOwnership = sctransaction.RequestCode(3)
 
 	// state vars
 	VarStateTheRegistry = "tr"
