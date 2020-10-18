@@ -23,14 +23,28 @@ import (
 )
 
 var (
-	wasmLoaded   = false
 	forceBuiltin = false
+	wasmLoaded   = false
+	wasmLanguage = "Rust"
 	seed         = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
 	wallet       = testutil.NewWallet(seed)
 	scOwner      = wallet.WithIndex(0)
 	scOwnerAddr  = scOwner.Address()
 	programHash  hashing.HashValue
 )
+
+func init() {
+	switch os.Getenv("WASM_TEST") {
+	case "Go":
+		fmt.Println("[test] Use Go Wasm")
+		wasmLanguage = "Go"
+	case "Builtin":
+		fmt.Println("[test] Use built-in")
+		forceBuiltin = true
+	default:
+		fmt.Println("[test] Use Rust Wasm")
+	}
+}
 
 func check(err error, t *testing.T) {
 	t.Helper()
@@ -52,6 +66,8 @@ func checkSuccess(err error, t *testing.T, success string) {
 
 func loadWasmIntoWasps(wasps *cluster.Cluster, wasmPath string, scDescription string) error {
 	wasmLoaded = true
+	if wasmLanguage == "Rust" { wasmPath += "_bg.wasm"}
+	if wasmLanguage == "Go" { wasmPath += "_go.wasm"}
 	wasm, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return err

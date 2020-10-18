@@ -16,8 +16,8 @@ const (
 	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(uint16(2))
 	RequestIncAndRepeatMany        = sctransaction.RequestCode(uint16(3))
 
-	ArgNumRepeats = "numrepeats"
-	VarNumRepeats = "numrepeats"
+	ArgNumRepeats = "numRepeats"
+	VarNumRepeats = "numRepeats"
 	VarCounter    = "counter"
 )
 

@@ -1,3 +1,6 @@
+set OLD_WASM_TEST=%WASM_TEST%
+if not "%1"=="" set WASM_TEST=%1
+
 go test -buildmode=exe -run TestDeployment
 pause
 go test -buildmode=exe -run TestIncNothing
@@ -19,3 +22,8 @@ pause
 go test -buildmode=exe -run TestPlaceBet
 pause
 go test -buildmode=exe -run TestPlace5BetsAndPlay
+pause
+go test -buildmode=exe -run TestMintSupply
+
+set WASM_TEST=%OLD_WASM_TEST%
+set OLD_WASM_TEST=

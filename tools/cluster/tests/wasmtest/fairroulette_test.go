@@ -20,7 +20,7 @@ const (
 	fr_code_nothing    = sctransaction.RequestCode(5)
 )
 
-const fr_wasmPath = "fairroulette_bg.wasm"
+const fr_wasmPath = "fairroulette"
 const fr_description = "Fair roulette, a PoC smart contract"
 
 func TestFrNothing(t *testing.T) {
@@ -34,7 +34,6 @@ func Test5xFrNothing(t *testing.T) {
 func TestPlaceBet(t *testing.T) {
 	wasps := setup(t, "TestPlaceBet")
 
-	// load sc code into wasps, save hash for later use
 	err := loadWasmIntoWasps(wasps, fr_wasmPath, fr_description)
 	check(err, t)
 
@@ -46,7 +45,7 @@ func TestPlaceBet(t *testing.T) {
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1,
-		"request_out":         2 + 1,
+		"request_out":         2 + 0,
 		"state":               -1,
 		"vmmsg":               -1,
 	})
@@ -59,8 +58,7 @@ func TestPlaceBet(t *testing.T) {
 		SCAddress:   scAddr,
 		RequestCode: fr_code_placeBet,
 		Vars: map[string]interface{}{
-			"color":       3,
-			"$haltEvents": 1, // do not propagate queued events
+			"color": 3,
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 100,
@@ -72,16 +70,16 @@ func TestPlaceBet(t *testing.T) {
 		t.Fail()
 	}
 
-	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-100, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 100,
+	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-2-100, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 2 - 100,
 	}, "sc owner in the end") {
 		t.Fail()
 		return
 	}
 
-	if !wasps.VerifyAddressBalances(scAddr, 1+100, map[balance.Color]int64{
-		balance.ColorIOTA: 100,
-		*scColor:          1,
+	if !wasps.VerifyAddressBalances(scAddr, 2+100, map[balance.Color]int64{
+		balance.ColorIOTA: 100, // 1 extra is locked up in time-locked
+		*scColor:          1,   // request that hasn't been processed yet
 	}, "sc in the end") {
 		t.Fail()
 		return
@@ -99,7 +97,6 @@ func TestPlaceBet(t *testing.T) {
 func TestPlace5BetsAndPlay(t *testing.T) {
 	wasps := setup(t, "TestPlace5BetsAndPlay")
 
-	// load sc code into wasps, save hash for later use
 	err := loadWasmIntoWasps(wasps, fr_wasmPath, fr_description)
 	check(err, t)
 

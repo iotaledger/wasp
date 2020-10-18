@@ -23,12 +23,13 @@ import (
 )
 
 var (
-	useWasm     = false
-	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
-	wallet      = testutil.NewWallet(seed)
-	scOwner     = wallet.WithIndex(0)
-	scOwnerAddr = scOwner.Address()
-	programHash hashing.HashValue
+	wasmLoaded   = false
+	forceBuiltin = false
+	seed         = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
+	wallet       = testutil.NewWallet(seed)
+	scOwner      = wallet.WithIndex(0)
+	scOwnerAddr  = scOwner.Address()
+	programHash  hashing.HashValue
 )
 
 func check(err error, t *testing.T) {
@@ -50,6 +51,7 @@ func checkSuccess(err error, t *testing.T, success string) {
 }
 
 func loadWasmIntoWasps(wasps *cluster.Cluster, wasmPath string, scDescription string) error {
+	wasmLoaded = true
 	wasm, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return err
@@ -87,7 +89,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 
 func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*address.Address, *balance.Color, error) {
 	var err error
-	if !useWasm {
+	if forceBuiltin || !wasmLoaded {
 		programHash, err = hashing.HashValueFromBase58(scProgramHash)
 		if err != nil {
 			return nil, nil, err
