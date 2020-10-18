@@ -96,7 +96,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   scAddr,
-			RequestCode: 1,
+			RequestCode: inc_code_nothing,
 		})
 		check(err, t)
 	}
