@@ -854,7 +854,11 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 		case []byte:
 			actualValue = vact
 		default:
-			actualValue = util.Uint64From8Bytes(vact)
+			if len(vact) == 8 {
+				actualValue = util.Uint64From8Bytes(vact)
+			} else {
+				actualValue = vact
+			}
 		}
 		fmt.Printf("      '%s': %v (%v) -- %s\n", k, actualValue, vexp, vres)
 	}
