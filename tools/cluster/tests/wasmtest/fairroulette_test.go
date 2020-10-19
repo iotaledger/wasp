@@ -20,7 +20,7 @@ const (
 	frCodeNothing    = sctransaction.RequestCode(5)
 )
 
-const frWasmPath = "fairroulette"
+const frWasmPath = "wasm/fairroulette"
 const frDescription = "Fair roulette, a PoC smart contract"
 
 func TestFrNothing(t *testing.T) {

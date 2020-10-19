@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 )
 
-const faWasmPath = "fairauction"
+const faWasmPath = "wasm/fairauction"
 const faDescription = "Fair auction, a PoC smart contract"
 
 func TestLoadTRAndLoadFAAndMint(t *testing.T) {

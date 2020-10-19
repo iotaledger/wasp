@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
-const dwfWasmPath = "donatewithfeedback"
+const dwfWasmPath = "wasm/donatewithfeedback"
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 
 func TestDWFDeploy(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
-const trWasmPath = "tokenregistry"
+const trWasmPath = "wasm/tokenregistry"
 const trDescription = "Token registry, a PoC smart contract"
 
 func TestMintSupply(t *testing.T) {

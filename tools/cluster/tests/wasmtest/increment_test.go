@@ -21,7 +21,7 @@ const (
 	incCodeNothing             = sctransaction.RequestCode(5)
 )
 
-const incWasmPath = "increment"
+const incWasmPath = "wasm/increment"
 const incDescription = "Increment, a PoC smart contract"
 
 func TestDeployment(t *testing.T) {
