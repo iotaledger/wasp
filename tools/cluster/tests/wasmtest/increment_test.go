@@ -21,7 +21,7 @@ const (
 	inc_code_incrementRepeatMany = sctransaction.RequestCode(5)
 )
 
-const inc_wasmPath = "increment_bg.wasm"
+const inc_wasmPath = "wasm/increment_bg.wasm"
 const inc_description = "Increment, a PoC smart contract"
 
 func TestDeployment(t *testing.T) {

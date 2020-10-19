@@ -20,7 +20,7 @@ const (
 	fr_code_playPeriod = sctransaction.RequestCode(5 | sctransaction.RequestCodeProtected)
 )
 
-const fr_wasmPath = "fairroulette_bg.wasm"
+const fr_wasmPath = "wasm/fairroulette_bg.wasm"
 const fr_description = "Fair roulette, a PoC smart contract"
 
 func TestFrNothing(t *testing.T) {
