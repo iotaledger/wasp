@@ -15,13 +15,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
-const tr_wasmPath = "tokenregistry"
-const tr_description = "Token registry, a PoC smart contract"
+const trWasmPath = "tokenregistry"
+const trDescription = "Token registry, a PoC smart contract"
 
 func TestMintSupply(t *testing.T) {
 	wasps := setup(t, "TestMintSupply")
 
-	err := loadWasmIntoWasps(wasps, tr_wasmPath, tr_description)
+	err := loadWasmIntoWasps(wasps, trWasmPath, trDescription)
 	check(err, t)
 
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
@@ -32,7 +32,7 @@ func TestMintSupply(t *testing.T) {
 	err = requestFunds(wasps, minterAddr, "minter")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tr_description)
+	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, trDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
@@ -96,7 +96,7 @@ func TestMintSupply(t *testing.T) {
 		vmconst.VarNameOwnerAddress:      scOwnerAddr[:],
 		vmconst.VarNameProgramHash:       programHash[:],
 		tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
-		vmconst.VarNameDescription:       tr_description,
+		vmconst.VarNameDescription:       trDescription,
 	}) {
 		t.Fail()
 	}

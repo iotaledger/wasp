@@ -13,28 +13,28 @@ import (
 )
 
 const (
-	fr_code_placeBet   = sctransaction.RequestCode(1)
-	fr_code_lockBets   = sctransaction.RequestCode(2)
-	fr_code_payWinners = sctransaction.RequestCode(3)
-	fr_code_playPeriod = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
-	fr_code_nothing    = sctransaction.RequestCode(5)
+	frCodePlaceBet   = sctransaction.RequestCode(1)
+	frCodeLockBets   = sctransaction.RequestCode(2)
+	frCodePayWinners = sctransaction.RequestCode(3)
+	frCodePlayPeriod = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
+	frCodeNothing    = sctransaction.RequestCode(5)
 )
 
-const fr_wasmPath = "fairroulette"
-const fr_description = "Fair roulette, a PoC smart contract"
+const frWasmPath = "fairroulette"
+const frDescription = "Fair roulette, a PoC smart contract"
 
 func TestFrNothing(t *testing.T) {
-	testNothing(t, "TestFrNothing", fairroulette.ProgramHash, fr_wasmPath, fr_description, 1)
+	testNothing(t, "TestFrNothing", fairroulette.ProgramHash, frWasmPath, frDescription, 1)
 }
 
 func Test5xFrNothing(t *testing.T) {
-	testNothing(t, "Test5xFrNothing", fairroulette.ProgramHash, fr_wasmPath, fr_description, 5)
+	testNothing(t, "Test5xFrNothing", fairroulette.ProgramHash, frWasmPath, frDescription, 5)
 }
 
 func TestPlaceBet(t *testing.T) {
 	wasps := setup(t, "TestPlaceBet")
 
-	err := loadWasmIntoWasps(wasps, fr_wasmPath, fr_description)
+	err := loadWasmIntoWasps(wasps, frWasmPath, frDescription)
 	check(err, t)
 
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
@@ -51,12 +51,12 @@ func TestPlaceBet(t *testing.T) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, fr_description)
+	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, frDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   scAddr,
-		RequestCode: fr_code_placeBet,
+		RequestCode: frCodePlaceBet,
 		Vars: map[string]interface{}{
 			"color": 3,
 		},
@@ -88,7 +88,7 @@ func TestPlaceBet(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  programHash[:],
-		vmconst.VarNameDescription:  fr_description,
+		vmconst.VarNameDescription:  frDescription,
 	}) {
 		t.Fail()
 	}
@@ -97,7 +97,7 @@ func TestPlaceBet(t *testing.T) {
 func TestPlace5BetsAndPlay(t *testing.T) {
 	wasps := setup(t, "TestPlace5BetsAndPlay")
 
-	err := loadWasmIntoWasps(wasps, fr_wasmPath, fr_description)
+	err := loadWasmIntoWasps(wasps, frWasmPath, frDescription)
 	check(err, t)
 
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
@@ -114,12 +114,12 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, fr_description)
+	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, frDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		SCAddress:   scAddr,
-		RequestCode: fr_code_playPeriod,
+		RequestCode: frCodePlayPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
 		},
@@ -132,7 +132,7 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   scAddr,
-			RequestCode: fr_code_placeBet,
+			RequestCode: frCodePlaceBet,
 			Vars: map[string]interface{}{
 				"color": i + 1,
 			},
@@ -165,7 +165,7 @@ func TestPlace5BetsAndPlay(t *testing.T) {
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
 		vmconst.VarNameProgramHash:  programHash[:],
-		vmconst.VarNameDescription:  fr_description,
+		vmconst.VarNameDescription:  frDescription,
 		"playPeriod":                10,
 		//"lastWinningColor": 3,
 	}) {
