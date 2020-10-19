@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	erc20_wasmPath    = "C:\\Users\\evaldas\\Documents\\proj\\Go\\src\\github.com\\iotaledger\\wasplib\\rust\\target\\wasm32-unknown-unknown\\release\\ERC20_ISCP.wasm"
+	erc20_wasmPath    = "C:\\Users\\evaldas\\Documents\\proj\\Go\\src\\github.com\\iotaledger\\wasplib\\rust\\contracts\\erc20\\pkg\\ERC20_ISCP_bg.wasm"
 	erc20_description = "ERC-20, a PoC smart contract"
 
 	erc20_req_init_sc  = sctransaction.RequestCode(1 | sctransaction.RequestCodeProtected)
