@@ -31,7 +31,7 @@ func Test5xFrNothing(t *testing.T) {
 	testNothing(t, "Test5xFrNothing", fairroulette.ProgramHash, frWasmPath, frDescription, 5)
 }
 
-func TestPlaceBet(t *testing.T) {
+func TestFrPlaceBet(t *testing.T) {
 	wasps := setup(t, "TestPlaceBet")
 
 	err := loadWasmIntoWasps(wasps, frWasmPath, frDescription)
@@ -94,7 +94,7 @@ func TestPlaceBet(t *testing.T) {
 	}
 }
 
-func TestPlace5BetsAndPlay(t *testing.T) {
+func TestFrPlace5BetsAndPlay(t *testing.T) {
 	wasps := setup(t, "TestPlace5BetsAndPlay")
 
 	err := loadWasmIntoWasps(wasps, frWasmPath, frDescription)

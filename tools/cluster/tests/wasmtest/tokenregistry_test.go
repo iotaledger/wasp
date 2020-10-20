@@ -18,7 +18,7 @@ import (
 const trWasmPath = "wasm/tokenregistry"
 const trDescription = "Token registry, a PoC smart contract"
 
-func TestMintSupply(t *testing.T) {
+func TestTrMintSupply(t *testing.T) {
 	wasps := setup(t, "TestMintSupply")
 
 	err := loadWasmIntoWasps(wasps, trWasmPath, trDescription)

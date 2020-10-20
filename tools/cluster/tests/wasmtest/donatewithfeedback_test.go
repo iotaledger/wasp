@@ -18,7 +18,7 @@ import (
 const dwfWasmPath = "wasm/donatewithfeedback"
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 
-func TestDWFDeploy(t *testing.T) {
+func TestDwfDeploy(t *testing.T) {
 	wasps := setup(t, "TestDWFDeploy")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
@@ -53,7 +53,7 @@ func TestDWFDeploy(t *testing.T) {
 	}
 }
 
-func TestDWFDonateNTimes(t *testing.T) {
+func TestDwfDonateNTimes(t *testing.T) {
 	const numDonations = 5
 
 	wasps := setup(t, "TestDWFDonateNTimes")
@@ -143,7 +143,7 @@ func TestDWFDonateNTimes(t *testing.T) {
 	}
 }
 
-func TestDWFDonateWithdrawAuthorised(t *testing.T) {
+func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 	wasps := setup(t, "TestDWFDonateWithdrawAuthorised")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
@@ -229,7 +229,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 	}
 }
 
-func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
+func TestDwfDonateWithdrawNotAuthorised(t *testing.T) {
 	wasps := setup(t, "TestDWFDonateWithdrawNotAuthorised")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)

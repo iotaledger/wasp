@@ -311,8 +311,7 @@ func (host *WasmHost) vmGetInt(offset int32) int64 {
 	return int64(binary.LittleEndian.Uint64(ptr[offset : offset+8]))
 }
 
-func (host *WasmHost) vmSetBytes(offset int32, size int32, value []byte) int32 {
-	bytes := []byte(value)
+func (host *WasmHost) vmSetBytes(offset int32, size int32, bytes []byte) int32 {
 	if size != 0 {
 		ptr := host.vm.UnsafeMemory()
 		copy(ptr[offset:offset+size], bytes)
