@@ -19,7 +19,7 @@ const trWasmPath = "wasm/tokenregistry"
 const trDescription = "Token registry, a PoC smart contract"
 
 func TestTrMintSupply(t *testing.T) {
-	wasps := setup(t, "TestMintSupply")
+	wasps := setup(t, "TestTrMintSupply")
 
 	err := loadWasmIntoWasps(wasps, trWasmPath, trDescription)
 	check(err, t)

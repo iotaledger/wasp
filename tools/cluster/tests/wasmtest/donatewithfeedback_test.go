@@ -19,7 +19,7 @@ const dwfWasmPath = "wasm/donatewithfeedback"
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 
 func TestDwfDeploy(t *testing.T) {
-	wasps := setup(t, "TestDWFDeploy")
+	wasps := setup(t, "TestDwfDeploy")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
 	check(err, t)
@@ -56,7 +56,7 @@ func TestDwfDeploy(t *testing.T) {
 func TestDwfDonateNTimes(t *testing.T) {
 	const numDonations = 5
 
-	wasps := setup(t, "TestDWFDonateNTimes")
+	wasps := setup(t, "TestDwfDonateNTimes")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
 	check(err, t)
@@ -144,7 +144,7 @@ func TestDwfDonateNTimes(t *testing.T) {
 }
 
 func TestDwfDonateWithdrawAuthorised(t *testing.T) {
-	wasps := setup(t, "TestDWFDonateWithdrawAuthorised")
+	wasps := setup(t, "TestDwfDonateWithdrawAuthorised")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
 	check(err, t)
@@ -230,7 +230,7 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 }
 
 func TestDwfDonateWithdrawNotAuthorised(t *testing.T) {
-	wasps := setup(t, "TestDWFDonateWithdrawNotAuthorised")
+	wasps := setup(t, "TestDwfDonateWithdrawNotAuthorised")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
 	check(err, t)

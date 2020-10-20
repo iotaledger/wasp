@@ -14,7 +14,7 @@ go test -buildmode=exe -run TestIncRepeatManyIncrement %1
 pause
 go test -buildmode=exe -run TestFrNothing %1
 pause
-go test -buildmode=exe -run Test5xFrNothing %1
+go test -buildmode=exe -run TestFr5xNothing %1
 pause
 go test -buildmode=exe -run TestFrPlaceBet %1
 pause

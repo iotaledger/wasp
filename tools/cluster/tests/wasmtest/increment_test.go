@@ -25,7 +25,7 @@ const incWasmPath = "wasm/increment"
 const incDescription = "Increment, a PoC smart contract"
 
 func TestIncDeployment(t *testing.T) {
-	wasps := setup(t, "TestDeployment")
+	wasps := setup(t, "TestIncDeployment")
 
 	err := loadWasmIntoWasps(wasps, incWasmPath, incDescription)
 	check(err, t)
@@ -64,7 +64,7 @@ func TestIncNothing(t *testing.T) {
 }
 
 func TestInc5xNothing(t *testing.T) {
-	testNothing(t, "Test5xIncNothing", inccounter.ProgramHash, incWasmPath, incDescription, 5)
+	testNothing(t, "TestInc5xNothing", inccounter.ProgramHash, incWasmPath, incDescription, 5)
 }
 
 func testNothing(t *testing.T, testName string, hash string, wasmPath string, description string, numRequests int) {
@@ -127,11 +127,11 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 }
 
 func TestIncIncrement(t *testing.T) {
-	testIncrement(t, "TestIncrement", 1)
+	testIncrement(t, "TestIncIncrement", 1)
 }
 
 func TestInc5xIncrement(t *testing.T) {
-	testIncrement(t, "Test5xIncrement", 5)
+	testIncrement(t, "TestInc5xIncrement", 5)
 }
 
 func testIncrement(t *testing.T, testName string, increments int) {
@@ -195,7 +195,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 }
 
 func TestIncRepeatIncrement(t *testing.T) {
-	wasps := setup(t, "TestRepeatIncrement")
+	wasps := setup(t, "TestIncRepeatIncrement")
 
 	err := loadWasmIntoWasps(wasps, incWasmPath, incDescription)
 	check(err, t)
@@ -259,7 +259,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
 
-	wasps := setup(t, "TestRepeatManyIncrement")
+	wasps := setup(t, "TestIncRepeatManyIncrement")
 
 	err := loadWasmIntoWasps(wasps, incWasmPath, incDescription)
 	check(err, t)

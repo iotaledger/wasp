@@ -22,7 +22,7 @@ const faWasmPath = "wasm/fairauction"
 const faDescription = "Fair auction, a PoC smart contract"
 
 func TestLoadTrAndFaAndThenRunTrMint(t *testing.T) {
-	wasps := setup(t, "TestLoadTRAndLoadFAAndMint")
+	wasps := setup(t, "TestLoadTrAndFaAndThenRunTrMint")
 
 	err := loadWasmIntoWasps(wasps, trWasmPath, trDescription)
 	check(err, t)
@@ -101,7 +101,7 @@ func TestLoadTrAndFaAndThenRunTrMint(t *testing.T) {
 
 // scenario with 2 smart contracts
 func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
-	wasps := setup(t, "TestCombinedTRAndFA")
+	wasps := setup(t, "TestTrMintAndFaAuctionWith2Bids")
 
 	err := loadWasmIntoWasps(wasps, trWasmPath, trDescription)
 	check(err, t)
