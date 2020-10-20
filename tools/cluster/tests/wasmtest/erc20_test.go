@@ -12,14 +12,14 @@ import (
 )
 
 const (
-	erc20_wasmPath    = "C:\\Users\\evaldas\\Documents\\proj\\Go\\src\\github.com\\iotaledger\\wasplib-develop\\rust\\contracts\\erc20\\pkg\\ERC20_ISCP_bg.wasm"
+	erc20_wasmPath    = "C:\\Users\\evaldas\\Documents\\proj\\Go\\src\\github.com\\iotaledger\\wasplib-develop\\rust\\contracts\\erc20\\pkg\\erc20_bg.wasm"
 	erc20_description = "ERC-20, a PoC smart contract"
 
 	erc20_req_init_sc  = sctransaction.RequestCode(1 | sctransaction.RequestCodeProtected)
 	erc20_req_transfer = sctransaction.RequestCode(2)
 	erc20_req_approve  = sctransaction.RequestCode(3)
 
-	erc20_var_supply         = "s"
+	erc20_var_supply         = "supply"
 	erc20_var_target_address = "addr"
 	erc20_var_amount         = "amount"
 )
@@ -192,7 +192,7 @@ func TestTransferOk(t *testing.T) {
 		t.Fatal("erc20 test is only for wasm SC code")
 		return
 	}
-	wasps := setup(t, "TestTransferSuccess")
+	wasps := setup(t, "TestTransferOk")
 
 	err := loadWasmIntoWasps(wasps, erc20_wasmPath, erc20_description)
 	check(err, t)
