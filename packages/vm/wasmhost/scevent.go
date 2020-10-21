@@ -33,7 +33,7 @@ func (o *ScEvent) Send() {
 		if params.IsEmpty() {
 			params = nil
 		}
-		o.vm.ctx.SendRequestToSelfWithDelay(sctransaction.RequestCode(uint16(o.code)), params, uint32(o.delay))
+		o.vm.ctx.SendRequestToSelfWithDelay(sctransaction.RequestCode(o.code), params, uint32(o.delay))
 	}
 	//TODO handle o.contract != ""
 }

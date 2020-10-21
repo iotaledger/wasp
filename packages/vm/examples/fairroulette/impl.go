@@ -42,14 +42,15 @@ const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 // constants for request codes
 const (
 	// request to place the bet
-	RequestPlaceBet = sctransaction.RequestCode(uint16(1))
+	RequestPlaceBet = sctransaction.RequestCode(1)
 	// request to lock the bets
-	RequestLockBets = sctransaction.RequestCode(uint16(2))
+	RequestLockBets = sctransaction.RequestCode(2)
 	// request to play and distribute
-	RequestPlayAndDistribute = sctransaction.RequestCode(uint16(3))
+	RequestPlayAndDistribute = sctransaction.RequestCode(3)
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
-	RequestSetPlayPeriod = sctransaction.RequestCode(uint16(4) | sctransaction.RequestCodeProtected)
+	RequestSetPlayPeriod = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
+	RequestDoNothing     = sctransaction.RequestCode(5)
 )
 
 // the processor is a map of entry points
@@ -58,6 +59,7 @@ var entryPoints = fairRouletteProcessor{
 	RequestLockBets:          lockBets,
 	RequestPlayAndDistribute: playAndDistribute,
 	RequestSetPlayPeriod:     setPlayPeriod,
+	RequestDoNothing:         doNothing,
 }
 
 // string constants for names of state and request argument variables
@@ -345,6 +347,10 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 			ctx.Panic(err)
 		}
 	}
+}
+
+func doNothing(ctx vmtypes.Sandbox) {
+	ctx.Publish("Doing nothing as requested. Oh, wait...")
 }
 
 func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {

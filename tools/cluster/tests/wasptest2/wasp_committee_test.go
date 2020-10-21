@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -60,12 +59,9 @@ func TestKillNode(t *testing.T) {
 		return
 	}
 
-	ph, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
-	check(err, t)
-
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  ph[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		inccounter.VarCounter:       noRequests,
 	}) {
 		t.Fail()

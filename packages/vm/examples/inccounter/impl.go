@@ -12,12 +12,14 @@ const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
 	Description = "Increment, a PoC smart contract"
 
-	RequestInc                     = sctransaction.RequestCode(uint16(1))
-	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(uint16(2))
-	RequestIncAndRepeatMany        = sctransaction.RequestCode(uint16(3))
+	RequestInc                     = sctransaction.RequestCode(1)
+	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(2)
+	RequestIncAndRepeatMany        = sctransaction.RequestCode(3)
+	RequestIncTest                 = sctransaction.RequestCode(4)
+	RequestIncDoNothing            = sctransaction.RequestCode(5)
 
-	ArgNumRepeats = "numrepeats"
-	VarNumRepeats = "numrepeats"
+	ArgNumRepeats = "numRepeats"
+	VarNumRepeats = "numRepeats"
 	VarCounter    = "counter"
 )
 
@@ -25,6 +27,7 @@ var entryPoints = incCounterProcessor{
 	RequestInc:                     incCounter,
 	RequestIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
 	RequestIncAndRepeatMany:        incCounterAndRepeatMany,
+	RequestIncDoNothing:            incDoNothing,
 }
 
 type incEntryPoint func(ctx vmtypes.Sandbox)
@@ -107,4 +110,8 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 	} else {
 		ctx.Publishf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
+}
+
+func incDoNothing(ctx vmtypes.Sandbox) {
+	ctx.Publish("Doing nothing as requested. Oh, wait...")
 }

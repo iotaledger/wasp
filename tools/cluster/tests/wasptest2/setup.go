@@ -2,6 +2,7 @@ package wasptest2
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -23,7 +24,9 @@ import (
 )
 
 var (
-	useWasm     = false
+	useGo       = flag.Bool("go", false, "use Go instead of Rust")
+	useWasp     = flag.Bool("wasp", false, "use Wasp built-in instead of Rust")
+	wasmLoaded  = false
 	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
 	wallet      = testutil.NewWallet(seed)
 	scOwner     = wallet.WithIndex(0)
@@ -49,7 +52,14 @@ func checkSuccess(err error, t *testing.T, success string) {
 	}
 }
 
-func loadWasmIntoWasps(wasps *cluster.Cluster, wasmPath string, scDescription string) error {
+func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription string) error {
+	wasmLoaded = true
+	wasmPath := wasmName + "_bg.wasm"
+	if *useGo {
+		fmt.Println("Using Go Wasm instead of Rust Wasm")
+		time.Sleep(time.Second)
+		wasmPath = wasmName + "_go.wasm"
+	}
 	wasm, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return err
@@ -87,7 +97,9 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 
 func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*address.Address, *balance.Color, error) {
 	var err error
-	if !useWasm {
+	if *useWasp || !wasmLoaded {
+		fmt.Println("Using Wasp built-in instead of Rust Wasm")
+		time.Sleep(time.Second)
 		programHash, err = hashing.HashValueFromBase58(scProgramHash)
 		if err != nil {
 			return nil, nil, err

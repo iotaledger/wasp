@@ -102,7 +102,7 @@ func (fc *FairAuctionClient) StartAuction(
 			*color:            tokensForSale,
 		},
 		map[string]interface{}{
-			fairauction.VarReqAuctionColor:                color,
+			fairauction.VarReqAuctionColor:                color.String(),
 			fairauction.VarReqStartAuctionDescription:     description,
 			fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
 			fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
@@ -115,6 +115,6 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 		fairauction.RequestPlaceBid,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-		map[string]interface{}{fairauction.VarReqAuctionColor: color},
+		map[string]interface{}{fairauction.VarReqAuctionColor: color.String()},
 	)
 }
