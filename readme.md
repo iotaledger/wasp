@@ -35,4 +35,4 @@ of critical data is involved._
 
 ## Instructions, docs
 - [How to run a Wasp node](articles/docs/runwasp.md)
-- [Wasp Pubisher](articles/docs/publisher.md)
+- [Wasp Publisher](articles/docs/publisher.md)
