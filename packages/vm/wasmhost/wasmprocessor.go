@@ -11,9 +11,9 @@ import (
 
 type wasmProcessor struct {
 	WasmHost
-	ctx        vmtypes.Sandbox
-	function   string
-	scContext  *ScContext
+	ctx       vmtypes.Sandbox
+	function  string
+	scContext *ScContext
 }
 
 func (vm *wasmProcessor) GetDescription() string {

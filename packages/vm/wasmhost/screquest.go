@@ -24,7 +24,7 @@ func (o *ScRequest) GetString(keyId int32) string {
 	switch keyId {
 	case KeyAddress:
 		return o.vm.ctx.AccessRequest().Sender().String()
-	case KeyHash:
+	case KeyHash: // used to determine minted color
 		id := o.vm.ctx.AccessRequest().ID()
 		return id.TransactionId().String()
 	case KeyId:
@@ -38,6 +38,12 @@ func (o *ScRequest) GetString(keyId int32) string {
 
 type ScRequestParams struct {
 	MapObject
+}
+
+func (o *ScRequestParams) GetBytes(keyId int32) []byte {
+	key := o.vm.GetKey(keyId)
+	value, _ := o.vm.ctx.AccessRequest().Args().Get(key)
+	return value
 }
 
 func (o *ScRequestParams) GetInt(keyId int32) int64 {
