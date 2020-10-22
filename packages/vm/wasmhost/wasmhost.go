@@ -58,7 +58,9 @@ type WasmVM interface {
 
 type WasmHost struct {
 	vm            WasmVM
+	codeToFunc    map[int32]string
 	error         string
+	funcToCode    map[string]int32
 	keyIdToKey    []string
 	keyIdToKeyMap []string
 	keyMapToKeyId *map[string]int32
@@ -75,7 +77,9 @@ func (host *WasmHost) Init(null HostObject, root HostObject, keyMap *map[string]
 		keyMap = &baseKeyMap
 	}
 	elements := len(*keyMap) + 1
+	host.codeToFunc = make(map[int32]string)
 	host.error = ""
+	host.funcToCode = make(map[string]int32)
 	host.logger = logger
 	host.objIdToObj = nil
 	host.keyIdToKey = []string{"<null>"}
@@ -260,6 +264,19 @@ func (host *WasmHost) SetError(text string) {
 	if !host.HasError() {
 		host.error = text
 	}
+}
+
+func (host *WasmHost) SetExport(keyId int32, value string) {
+	_, ok := host.codeToFunc[keyId]
+	if ok {
+		host.SetError("SetExport: duplicate code")
+	}
+	_, ok = host.funcToCode[value]
+	if ok {
+		host.SetError("SetExport: duplicate function")
+	}
+	host.funcToCode[value] = keyId
+	host.codeToFunc[keyId] = value
 }
 
 func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {

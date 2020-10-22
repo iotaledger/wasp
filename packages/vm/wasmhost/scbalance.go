@@ -12,7 +12,7 @@ type ScBalance struct {
 
 func (o *ScBalance) GetInt(keyId int32) int64 {
 	color := balance.ColorIOTA
-	key := o.vm.GetKey(keyId)
+	key := string(o.vm.GetKey(keyId))
 	switch key {
 	case "iota":
 		color = balance.ColorIOTA

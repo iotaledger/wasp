@@ -113,12 +113,12 @@ func (o *ScEventParams) InitVM(vm *wasmProcessor, keyId int32) {
 }
 
 func (o *ScEventParams) GetBytes(keyId int32) []byte {
-	value, _ := o.Params.Get(kv.Key(o.vm.GetKey(keyId)))
+	value, _ := o.Params.Get(o.vm.GetKey(keyId))
 	return value
 }
 
 func (o *ScEventParams) GetInt(keyId int32) int64 {
-	value, ok, _ := o.Params.Codec().GetInt64(kv.Key(o.vm.GetKey(keyId)))
+	value, ok, _ := o.Params.Codec().GetInt64(o.vm.GetKey(keyId))
 	if ok {
 		return value
 	}
@@ -130,7 +130,7 @@ func (o *ScEventParams) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScEventParams) GetString(keyId int32) string {
-	value, ok, _ := o.Params.Codec().GetString(kv.Key(o.vm.GetKey(keyId)))
+	value, ok, _ := o.Params.Codec().GetString(o.vm.GetKey(keyId))
 	if ok {
 		return value
 	}
@@ -138,7 +138,7 @@ func (o *ScEventParams) GetString(keyId int32) string {
 }
 
 func (o *ScEventParams) SetBytes(keyId int32, value []byte) {
-	o.Params.Set(kv.Key(o.vm.GetKey(keyId)), value)
+	o.Params.Set(o.vm.GetKey(keyId), value)
 }
 
 func (o *ScEventParams) SetInt(keyId int32, value int64) {
@@ -146,10 +146,10 @@ func (o *ScEventParams) SetInt(keyId int32, value int64) {
 	case KeyLength:
 		o.Params = kv.NewMap()
 	default:
-		o.Params.Codec().SetInt64(kv.Key(o.vm.GetKey(keyId)), value)
+		o.Params.Codec().SetInt64(o.vm.GetKey(keyId), value)
 	}
 }
 
 func (o *ScEventParams) SetString(keyId int32, value string) {
-	o.Params.Codec().SetString(kv.Key(o.vm.GetKey(keyId)), value)
+	o.Params.Codec().SetString(o.vm.GetKey(keyId), value)
 }

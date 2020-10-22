@@ -23,7 +23,7 @@ func NewNullObject(vm *wasmProcessor) WaspObject {
 
 func (o *ModelObject) error(format string, args ...interface{}) {
 	if o.keyId != 0 {
-		o.name = o.vm.GetKey(o.keyId)
+		o.name = string(o.vm.GetKey(o.keyId))
 		o.keyId = 0
 	}
 	o.vm.SetError(o.name + "." + fmt.Sprintf(format, args...))
