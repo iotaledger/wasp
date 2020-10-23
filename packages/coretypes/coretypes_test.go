@@ -39,19 +39,12 @@ func TestBase(t *testing.T) {
 	assert.EqualValues(t, scidBack, scid)
 
 	ep := NewEntryPointCodeFromFunctionName("dummyFunction")
-	ep58 := ep.String()
+	epbytes := ep.Bytes()
+	epstr := ep.String()
 
-	t.Logf("ep58 = %s", ep58)
+	t.Logf("epstr = %s", epstr)
 
-	epback, err := NewEntryPointCodeFromBytes(ep[:])
-	assert.NoError(t, err)
-	assert.EqualValues(t, ep, epback)
-
-	epuint := ep.Uint32()
-	epback = NewEntryPointCodeFromUint32(epuint)
-	assert.EqualValues(t, ep, epback)
-
-	epback, err = NewEntryPointCodeFromBase58(ep58)
+	epback, err := NewEntryPointCodeFromBytes(epbytes)
 	assert.NoError(t, err)
 	assert.EqualValues(t, ep, epback)
 }

@@ -13,7 +13,7 @@ const RequestIDLength = valuetransaction.IDLength + 2
 
 type RequestID [RequestIDLength]byte
 
-func NewRequestID(txid valuetransaction.ID, index Int16) (ret RequestID) {
+func NewRequestID(txid valuetransaction.ID, index Uint16) (ret RequestID) {
 	copy(ret[:valuetransaction.IDLength], txid.Bytes())
 	copy(ret[valuetransaction.IDLength:], index.Bytes())
 	return
@@ -43,8 +43,8 @@ func (rid *RequestID) TransactionID() *valuetransaction.ID {
 	return &ret
 }
 
-func (rid *RequestID) Index() (ret Int16) {
-	ret, _ = NewInt16From2Bytes(rid[valuetransaction.IDLength:])
+func (rid *RequestID) Index() (ret Uint16) {
+	ret, _ = NewUint16From2Bytes(rid[valuetransaction.IDLength:])
 	return
 }
 
