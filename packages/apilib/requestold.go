@@ -3,6 +3,7 @@ package apilib
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"strconv"
 	"sync"
@@ -21,7 +22,7 @@ import (
 
 type CreateSimpleRequestParamsOld struct {
 	SCAddress   *address.Address
-	RequestCode sctransaction.RequestCode
+	RequestCode coretypes.EntryPointCode
 	Timelock    uint32
 	Transfer    map[balance.Color]int64 // should not not include request token. It is added automatically
 	Vars        map[string]interface{}  ` `
@@ -153,11 +154,11 @@ func convertArgsOld(vars map[string]interface{}) kv.Map {
 
 // Deprecated
 type RequestBlockJson struct {
-	Address     string                    `json:"address"`
-	RequestCode sctransaction.RequestCode `json:"request_code"`
-	Timelock    uint32                    `json:"timelock"`
-	AmountIotas int64                     `json:"amount_iotas"` // minimum 1 iota will be taken anyway
-	Vars        map[string]interface{}    `json:"vars"`
+	Address     string                   `json:"address"`
+	RequestCode coretypes.EntryPointCode `json:"request_code"`
+	Timelock    uint32                   `json:"timelock"`
+	AmountIotas int64                    `json:"amount_iotas"` // minimum 1 iota will be taken anyway
+	Vars        map[string]interface{}   `json:"vars"`
 }
 
 // Deprecated
@@ -214,7 +215,7 @@ func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestB
 	if err != nil {
 		return nil, err
 	}
-	ret := sctransaction.NewRequestBlock(addr, sctransaction.RequestCode(reqBlkJson.RequestCode))
+	ret := sctransaction.NewRequestBlock(addr, reqBlkJson.RequestCode)
 	ret.WithTimelock(reqBlkJson.Timelock)
 
 	if reqBlkJson.Vars == nil {

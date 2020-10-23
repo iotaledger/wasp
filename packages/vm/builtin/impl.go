@@ -1,12 +1,12 @@
 package builtin
 
 import (
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type builtinProcessor map[sctransaction.RequestCode]builtinEntryPoint
+type builtinProcessor map[coretypes.EntryPointCode]builtinEntryPoint
 
 type builtinEntryPoint func(ctx vmtypes.Sandbox)
 
@@ -16,10 +16,7 @@ var Processor = builtinProcessor{
 	vmconst.RequestCodeSetMinimumReward: setMinimumReward,
 }
 
-func (v *builtinProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
-	if !code.IsReserved() {
-		return nil, false
-	}
+func (v *builtinProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	ep, ok := Processor[code]
 	return ep, ok
 }

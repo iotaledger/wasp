@@ -4,6 +4,7 @@ package fairauction
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/mr-tron/base58"
 	"sort"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -22,16 +22,16 @@ const Description = "FairAuction, a PoC smart contract"
 
 // implement Processor and EntryPoint interfaces
 
-type fairAuctionProcessor map[sctransaction.RequestCode]fairAuctionEntryPoint
+type fairAuctionProcessor map[coretypes.EntryPointCode]fairAuctionEntryPoint
 
 type fairAuctionEntryPoint func(ctx vmtypes.Sandbox)
 
 const (
-	RequestInitSC          = sctransaction.RequestCode(0) // NOP
-	RequestStartAuction    = sctransaction.RequestCode(1)
-	RequestFinalizeAuction = sctransaction.RequestCode(2)
-	RequestPlaceBid        = sctransaction.RequestCode(3)
-	RequestSetOwnerMargin  = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
+	RequestInitSC          = coretypes.EntryPointCode(0) // NOP
+	RequestStartAuction    = coretypes.EntryPointCode(1)
+	RequestFinalizeAuction = coretypes.EntryPointCode(2)
+	RequestPlaceBid        = coretypes.EntryPointCode(3)
+	RequestSetOwnerMargin  = coretypes.EntryPointCode(4)
 )
 
 // the processor is a map of entry points
@@ -92,7 +92,7 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -228,7 +228,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		ctx.Publish("startAuction: exit 1.1")
 		return
 	}
-	colorForSale,_,err := balance.ColorFromBytes(colorh)
+	colorForSale, _, err := balance.ColorFromBytes(colorh)
 	if err != nil {
 		ctx.Publish("startAuction: exit 1.2")
 		return
@@ -390,7 +390,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 		ctx.Publish("startAuction: exit 1.1")
 		return
 	}
-	col,_,err := balance.ColorFromBytes(colorh)
+	col, _, err := balance.ColorFromBytes(colorh)
 	if err != nil {
 		ctx.Publish("startAuction: exit 1.2")
 		return
@@ -480,7 +480,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 		ctx.Publish("startAuction: exit 1.1")
 		return
 	}
-	col,_,err := balance.ColorFromBytes(colorh)
+	col, _, err := balance.ColorFromBytes(colorh)
 	if err != nil {
 		ctx.Publish("startAuction: exit 1.2")
 		return
@@ -606,11 +606,16 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 }
 
 // setOwnerMargin is a request to set the service fee to place a bid
-// It is protected, i.e. must be sent by the owner of the smart contract
 // Arguments:
 // - VarReqOwnerMargin: the margin value in promilles
 func setOwnerMargin(ctx vmtypes.Sandbox) {
 	ctx.Publish("setOwnerMargin: begin")
+
+	if ctx.AccessRequest().Sender() != *ctx.GetOwnerAddress() {
+		// not authorized
+		ctx.Publish("setOwnerMargin: not authorized")
+		return
+	}
 	margin, ok, err := ctx.AccessRequest().Args().GetInt64(VarReqOwnerMargin)
 	if err != nil || !ok {
 		ctx.Publish("setOwnerMargin: exit 1")

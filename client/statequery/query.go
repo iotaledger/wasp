@@ -3,13 +3,13 @@ package statequery
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 type Request struct {
@@ -26,7 +26,7 @@ type Results struct {
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
 	StateTxId  *jsonable.ValueTxID
-	Requests   []*sctransaction.RequestId
+	Requests   []*coretypes.RequestID
 }
 
 type KeyQuery struct {

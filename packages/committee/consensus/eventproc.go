@@ -98,10 +98,10 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 		op.log.Warn("received already processed request id = %s", reqMsg.RequestId().Short())
 		return
 	}
-	if reqMsg.Timelock() != 0 {
-		req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
-			reqMsg.RequestBlock().String(reqMsg.RequestId()), time.Now().Unix())
-	}
+	//if reqMsg.Timelock() != 0 {
+	//	req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
+	//		reqMsg.RequestBlock().String(reqMsg.RequestID()), time.Now().Unix())
+	//}
 
 	op.takeAction()
 }

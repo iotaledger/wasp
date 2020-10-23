@@ -3,7 +3,7 @@ package dwfimpl
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -16,7 +16,7 @@ const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
 const Description = "DonateWithFeedback, a PoC smart contract"
 
 // implementation of 'vmtypes.Processor' and 'vmtypes.EntryPoint' interfaces
-type dwfProcessor map[sctransaction.RequestCode]dwfEntryPoint
+type dwfProcessor map[coretypes.EntryPointCode]dwfEntryPoint
 
 type dwfEntryPoint func(ctx vmtypes.Sandbox)
 
@@ -33,7 +33,7 @@ func GetProcessor() vmtypes.Processor {
 
 // GetEntryPoint implements EntryPoint interfaces. It resolves request code to the
 // function
-func (v dwfProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (v dwfProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -70,13 +70,12 @@ func donate(ctx vmtypes.Sandbox) {
 	stateAccess := ctx.AccessState()
 	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
 
+	sender := ctx.AccessRequest().Sender()
 	// determine sender of the request
 	// create donation info record
-	reqId := ctx.AccessRequest().ID()
-	sender := ctx.AccessRequest().Sender()
 	di := &donatewithfeedback.DonationInfo{
 		Seq:      int64(tlog.Len()),
-		Id:       &reqId,
+		Id:       ctx.AccessRequest().ID(),
 		Amount:   donated,
 		Sender:   sender,
 		Feedback: feedback,
@@ -116,13 +115,15 @@ func donate(ctx vmtypes.Sandbox) {
 		di.Amount, di.Sender.String(), di.Feedback, di.Error)
 }
 
-// protected request. Only owner can withdraw iotas from smart contract at any time
-// this function will only be called if the request transaction contains signature from the
-// smart contract owner. It is checked before calling the VM
 // TODO implement withdrawal of other than IOTA colored tokens
 func withdraw(ctx vmtypes.Sandbox) {
 	ctx.Publishf("DonateWithFeedback: withdraw")
 
+	if ctx.AccessRequest().Sender() != *ctx.GetOwnerAddress() {
+		// not authorized
+		ctx.Publish("withdraw: not authorized")
+		return
+	}
 	// take argument value coming with the request
 	bal := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
 	withdrawSum, amountGiven, err := ctx.AccessRequest().Args().GetInt64(donatewithfeedback.VarReqWithdrawSum)

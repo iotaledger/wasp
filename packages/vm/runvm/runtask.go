@@ -52,7 +52,7 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	for _, reqRef := range ctx.Requests {
 
 		vmctx.RequestRef = reqRef
-		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
+		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(vmctx.Timestamp)
 
 		runTheRequest(vmctx)
 

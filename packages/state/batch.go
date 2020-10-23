@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
 	"io"
@@ -98,8 +98,8 @@ func (b *batch) Size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 
-func (b *batch) RequestIds() []*sctransaction.RequestId {
-	ret := make([]*sctransaction.RequestId, b.Size())
+func (b *batch) RequestIds() []*coretypes.RequestID {
+	ret := make([]*coretypes.RequestID, b.Size())
 	for i, su := range b.stateUpdates {
 		ret[i] = su.RequestId()
 	}

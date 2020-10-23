@@ -1,6 +1,7 @@
 package scclient
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -8,7 +9,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
@@ -18,7 +18,7 @@ type SCStatus struct {
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
 	StateTxId  *valuetransaction.ID
-	Requests   []*sctransaction.RequestId
+	Requests   []*coretypes.RequestID
 
 	ProgramHash   *hashing.HashValue
 	Description   string

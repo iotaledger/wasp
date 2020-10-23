@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -107,7 +108,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	return true
 }
 
-func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool {
+func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv.Map) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetAddress: &vctx.Address,
 		RequestCode:   reqCode,
@@ -116,7 +117,7 @@ func (vctx *sandbox) SendRequestToSelf(reqCode sctransaction.RequestCode, args k
 	})
 }
 
-func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, delaySec uint32) bool {
+func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args kv.Map, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vctx.Timestamp) + delaySec
 
 	return vctx.SendRequest(vmtypes.NewRequestParams{

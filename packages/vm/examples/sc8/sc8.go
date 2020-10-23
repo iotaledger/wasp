@@ -3,7 +3,7 @@
 package sc8
 
 import (
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -16,7 +16,7 @@ func GetProcessor() vmtypes.Processor {
 	return nilProcessor{}
 }
 
-func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (v nilProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	return v, true
 }
 

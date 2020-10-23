@@ -29,7 +29,7 @@ func (o *ScUtility) GetInt(keyId int32) int64 {
 		// deterministic entropy that cannot be interrupted
 		if o.random == nil {
 			id := o.vm.ctx.AccessRequest().ID()
-			o.random = id.TransactionId().Bytes()
+			o.random = id.TransactionID().Bytes()
 		}
 		i := o.nextRandom
 		if i == transaction.IDLength {

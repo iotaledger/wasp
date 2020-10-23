@@ -184,7 +184,7 @@ func (tx *Transaction) String() string {
 	for i, reqBlk := range tx.Requests() {
 		addr := reqBlk.Address()
 		ret += fmt.Sprintf("Req #%d: addr: %s code: %s\n", i,
-			util.Short(addr.String()), reqBlk.RequestCode().String())
+			util.Short(addr.String()), reqBlk.EntryPointCode().String())
 	}
 	return ret
 }

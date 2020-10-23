@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/committees"
 )
@@ -70,7 +71,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		if reqBlk.Address() == addr {
 			cmt.ReceiveMessage(&committee.RequestMsg{
 				Transaction: tx,
-				Index:       uint16(i),
+				Index:       coretypes.Uint16(i),
 			})
 		}
 	}

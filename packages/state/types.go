@@ -1,13 +1,13 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 // represents an interface to the mutable state of the smart contract
@@ -42,7 +42,7 @@ type VirtualState interface {
 // ResultBatch is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
-	RequestId() *sctransaction.RequestId
+	RequestId() *coretypes.RequestID
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
@@ -63,7 +63,7 @@ type Batch interface {
 	WithStateTransaction(valuetransaction.ID) Batch
 	Timestamp() int64
 	Size() uint16
-	RequestIds() []*sctransaction.RequestId
+	RequestIds() []*coretypes.RequestID
 	EssenceHash() *hashing.HashValue // except state transaction id
 	String() string
 	Write(io.Writer) error

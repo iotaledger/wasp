@@ -1,8 +1,8 @@
 package wasmhost
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 type ScEvent struct {
@@ -33,7 +33,7 @@ func (o *ScEvent) Send() {
 		if params.IsEmpty() {
 			params = nil
 		}
-		o.vm.ctx.SendRequestToSelfWithDelay(sctransaction.RequestCode(o.code), params, uint32(o.delay))
+		o.vm.ctx.SendRequestToSelfWithDelay(coretypes.EntryPointCode(o.code), params, uint32(o.delay))
 	}
 	//TODO handle o.contract != ""
 }

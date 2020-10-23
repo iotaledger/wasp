@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -242,10 +242,10 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return database.MakeKey(database.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
+func dbkeyRequest(reqid *coretypes.RequestID) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
+func IsRequestCompleted(addr *address.Address, reqid *coretypes.RequestID) (bool, error) {
 	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

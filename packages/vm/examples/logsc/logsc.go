@@ -3,22 +3,22 @@ package logsc
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
 const (
-	RequestCodeAddLog = sctransaction.RequestCode(0)
+	RequestCodeAddLog = coretypes.EntryPointCode(0)
 )
 
 type logscEntryPoint func(ctx vmtypes.Sandbox)
 
-type logscProcessor map[sctransaction.RequestCode]logscEntryPoint
+type logscProcessor map[coretypes.EntryPointCode]logscEntryPoint
 
 var entryPoints = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
@@ -28,7 +28,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (p logscProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	ep, ok := p[code]
 	return ep, ok
 }

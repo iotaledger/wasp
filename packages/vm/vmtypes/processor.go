@@ -2,7 +2,7 @@
 package vmtypes
 
 import (
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 // Processor is a abstract interface to the VM processor instance. It can be called via exported entry points
@@ -12,7 +12,7 @@ import (
 type Processor interface {
 	// returns true if processor can process specific request code. Valid only for not reserved codes
 	// to return true for reserved codes is ignored
-	GetEntryPoint(code sctransaction.RequestCode) (EntryPoint, bool)
+	GetEntryPoint(code coretypes.EntryPointCode) (EntryPoint, bool)
 	GetDescription() string
 }
 

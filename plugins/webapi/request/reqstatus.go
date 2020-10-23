@@ -2,12 +2,12 @@ package request
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
@@ -26,12 +26,12 @@ func handleRequestStatus(c echo.Context) error {
 	if cmt == nil {
 		return httperrors.NotFound(fmt.Sprintf("Smart contract not found: %+v", addr.String()))
 	}
-	reqId, err := sctransaction.RequestIdFromBase58(c.Param("reqId"))
+	reqId, err := coretypes.NewRequestIDFromBase58(c.Param("reqId"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqId"), err.Error()))
 	}
 	var isProcessed bool
-	switch cmt.GetRequestProcessingStatus(reqId) {
+	switch cmt.GetRequestProcessingStatus(&reqId) {
 	case committee.RequestProcessingStatusCompleted:
 		isProcessed = true
 	case committee.RequestProcessingStatusBacklog:

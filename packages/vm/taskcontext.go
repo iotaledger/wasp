@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -37,7 +38,7 @@ type VMTask struct {
 }
 
 // BatchHash is used to uniquely identify the VM task
-func BatchHash(reqids []sctransaction.RequestId, ts int64, leaderIndex uint16) hashing.HashValue {
+func BatchHash(reqids []coretypes.RequestID, ts int64, leaderIndex uint16) hashing.HashValue {
 	var buf bytes.Buffer
 	for i := range reqids {
 		buf.Write(reqids[i].Bytes())

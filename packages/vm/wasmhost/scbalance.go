@@ -20,7 +20,7 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 		if o.requestOnly {
 			request := o.vm.ctx.AccessRequest()
 			reqId := request.ID()
-			if key == reqId.TransactionId().String() {
+			if key == reqId.TransactionID().String() {
 				return request.NumFreeMintedTokens()
 			}
 		}

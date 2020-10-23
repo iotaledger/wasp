@@ -2,6 +2,7 @@ package sandbox
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
@@ -11,12 +12,12 @@ type requestWrapper struct {
 	ref *sctransaction.RequestRef
 }
 
-func (r *requestWrapper) ID() sctransaction.RequestId {
-	return *r.ref.RequestId()
+func (r *requestWrapper) ID() coretypes.RequestID {
+	return *r.ref.RequestID()
 }
 
-func (r *requestWrapper) Code() sctransaction.RequestCode {
-	return r.ref.RequestBlock().RequestCode()
+func (r *requestWrapper) Code() coretypes.EntryPointCode {
+	return r.ref.RequestBlock().EntryPointCode()
 }
 
 func (r *requestWrapper) Args() kv.RCodec {

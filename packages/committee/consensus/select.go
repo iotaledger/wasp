@@ -141,10 +141,11 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 			op.log.Debugf("request %s not yet known to the node: can't be processed", req.reqId.Short())
 			continue
 		}
-		if req.requestCode().IsUserDefined() && !op.processorReady {
-			op.log.Debugf("request %s can't be processed: processor not ready", req.reqId.Short())
-			continue
-		}
+		// TODO
+		//if req.requestCode().IsUserDefined() && !op.processorReady {
+		//	op.log.Debugf("request %s can't be processed: processor not ready", req.reqId.Short())
+		//	continue
+		//}
 		ret = append(ret, req)
 	}
 	before := len(ret)
@@ -165,7 +166,7 @@ func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 	byColor, _ := txutil.BalancesByColor(op.balances)
 	ret := reqs[:0]
 	for _, req := range reqs {
-		col := (balance.Color)(*req.reqId.TransactionId())
+		col := (balance.Color)(*req.reqId.TransactionID())
 		v, _ := byColor[col]
 		if v <= 0 {
 			continue

@@ -20,19 +20,19 @@ package fairroulette
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"sort"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // implement Processor and EntryPoint interfaces
-type fairRouletteProcessor map[sctransaction.RequestCode]fairRouletteEntryPoint
+type fairRouletteProcessor map[coretypes.EntryPointCode]fairRouletteEntryPoint
 
 type fairRouletteEntryPoint func(ctx vmtypes.Sandbox)
 
@@ -42,15 +42,15 @@ const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 // constants for request codes
 const (
 	// request to place the bet
-	RequestPlaceBet = sctransaction.RequestCode(1)
+	RequestPlaceBet = coretypes.EntryPointCode(1)
 	// request to lock the bets
-	RequestLockBets = sctransaction.RequestCode(2)
+	RequestLockBets = coretypes.EntryPointCode(2)
 	// request to play and distribute
-	RequestPlayAndDistribute = sctransaction.RequestCode(3)
+	RequestPlayAndDistribute = coretypes.EntryPointCode(3)
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
-	RequestSetPlayPeriod = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
-	RequestDoNothing     = sctransaction.RequestCode(5)
+	RequestSetPlayPeriod = coretypes.EntryPointCode(4)
+	RequestDoNothing     = coretypes.EntryPointCode(5)
 )
 
 // the processor is a map of entry points
@@ -97,7 +97,7 @@ const (
 // BetInfo contains data of the bet
 type BetInfo struct {
 	Player address.Address
-	reqId  sctransaction.RequestId
+	reqId  coretypes.RequestID
 	Sum    int64
 	Color  byte
 }
@@ -113,7 +113,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (f fairRouletteProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (f fairRouletteProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	ep, ok := entryPoints[code]
 	return ep, ok
 }
@@ -216,6 +216,11 @@ func placeBet(ctx vmtypes.Sandbox) {
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
 func setPlayPeriod(ctx vmtypes.Sandbox) {
 	ctx.Publish("setPlayPeriod")
+	if ctx.AccessRequest().Sender() != *ctx.GetOwnerAddress() {
+		// not authorized
+		ctx.Publish("setPlayPeriod: not authorized")
+		return
+	}
 
 	period, ok, err := ctx.AccessRequest().Args().GetInt64(ReqVarPlayPeriodSec)
 	if err != nil || !ok || period < 10 {

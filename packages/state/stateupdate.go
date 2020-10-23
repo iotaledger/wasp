@@ -2,22 +2,22 @@ package state
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type stateUpdate struct {
 	batchIndex uint16
-	requestId  sctransaction.RequestId
+	requestId  coretypes.RequestID
 	timestamp  int64
 	mutations  kv.MutationSequence
 }
 
-func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
-	var req sctransaction.RequestId
+func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
+	var req coretypes.RequestID
 	if reqid != nil {
 		req = *reqid
 	}
@@ -52,7 +52,7 @@ func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
 	return su
 }
 
-func (su *stateUpdate) RequestId() *sctransaction.RequestId {
+func (su *stateUpdate) RequestId() *coretypes.RequestID {
 	return &su.requestId
 }
 

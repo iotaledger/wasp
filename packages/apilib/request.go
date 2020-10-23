@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/nodeclient"
@@ -18,7 +19,7 @@ import (
 
 type RequestBlockParams struct {
 	TargetSCAddress *address.Address
-	RequestCode     sctransaction.RequestCode
+	RequestCode     coretypes.EntryPointCode
 	Timelock        uint32
 	Transfer        map[balance.Color]int64 // should not not include request token. It is added automatically
 	Vars            map[string]interface{}  ` `

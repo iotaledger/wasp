@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -45,7 +46,7 @@ type StateIndexPingPongMsg struct {
 type NotifyReqMsg struct {
 	PeerMsgHeader
 	// list of request ids ordered by the time of arrival
-	RequestIds []sctransaction.RequestId
+	RequestIds []coretypes.RequestID
 }
 
 // message is sent by the leader to all peers immediately after the final transaction is posted
@@ -65,7 +66,7 @@ type StartProcessingBatchMsg struct {
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp int64
 	// batch of request ids
-	RequestIds []sctransaction.RequestId
+	RequestIds []coretypes.RequestID
 	// reward address
 	RewardAddress address.Address
 	// balances/outputs
@@ -130,7 +131,7 @@ type StateTransitionMsg struct {
 	// corresponding state transaction
 	StateTransaction *sctransaction.Transaction
 	// processed requests
-	RequestIds []*sctransaction.RequestId
+	RequestIds []*coretypes.RequestID
 	// is the state index last seen
 	Synchronized bool
 }

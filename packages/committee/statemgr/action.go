@@ -156,7 +156,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	for i, reqid := range pending.batch.RequestIds() {
 		publisher.Publish("request_out",
 			sm.committee.Address().String(),
-			reqid.TransactionId().String(),
+			reqid.TransactionID().String(),
 			fmt.Sprintf("%d", reqid.Index()),
 			strconv.Itoa(int(sm.solidState.StateIndex())),
 			strconv.Itoa(i),

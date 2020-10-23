@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -280,7 +280,7 @@ func (c *committeeObj) PeerStatus() []*committee.PeerStatus {
 	return ret
 }
 
-func (c *committeeObj) GetRequestProcessingStatus(reqId *sctransaction.RequestId) committee.RequestProcessingStatus {
+func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) committee.RequestProcessingStatus {
 	if c.IsDismissed() {
 		return committee.RequestProcessingStatusUnknown
 	}

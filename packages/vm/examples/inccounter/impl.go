@@ -2,21 +2,21 @@ package inccounter
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type incCounterProcessor map[sctransaction.RequestCode]incEntryPoint
+type incCounterProcessor map[coretypes.EntryPointCode]incEntryPoint
 
 const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
 	Description = "Increment, a PoC smart contract"
 
-	RequestInc                     = sctransaction.RequestCode(1)
-	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(2)
-	RequestIncAndRepeatMany        = sctransaction.RequestCode(3)
-	RequestIncTest                 = sctransaction.RequestCode(4)
-	RequestIncDoNothing            = sctransaction.RequestCode(5)
+	RequestInc                     = coretypes.EntryPointCode(1)
+	RequestIncAndRepeatOnceAfter5s = coretypes.EntryPointCode(2)
+	RequestIncAndRepeatMany        = coretypes.EntryPointCode(3)
+	RequestIncTest                 = coretypes.EntryPointCode(4)
+	RequestIncDoNothing            = coretypes.EntryPointCode(5)
 
 	ArgNumRepeats = "numRepeats"
 	VarNumRepeats = "numRepeats"
@@ -36,7 +36,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (proc incCounterProcessor) GetEntryPoint(rc sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (proc incCounterProcessor) GetEntryPoint(rc coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	f, ok := proc[rc]
 	if !ok {
 		return nil, false

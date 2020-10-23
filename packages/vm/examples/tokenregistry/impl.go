@@ -7,7 +7,7 @@ package tokenregistry
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -17,10 +17,10 @@ const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
 const (
-	RequestInitSC            = sctransaction.RequestCode(0) // NOP
-	RequestMintSupply        = sctransaction.RequestCode(1)
-	RequestUpdateMetadata    = sctransaction.RequestCode(2)
-	RequestTransferOwnership = sctransaction.RequestCode(3)
+	RequestInitSC            = coretypes.EntryPointCode(0) // NOP
+	RequestMintSupply        = coretypes.EntryPointCode(1)
+	RequestUpdateMetadata    = coretypes.EntryPointCode(2)
+	RequestTransferOwnership = coretypes.EntryPointCode(3)
 
 	// state vars
 	VarStateTheRegistry = "tr"
@@ -33,7 +33,7 @@ const (
 
 // implement Processor and EntryPoint interfaces
 
-type tokenRegistryProcessor map[sctransaction.RequestCode]tokenRegistryEntryPoint
+type tokenRegistryProcessor map[coretypes.EntryPointCode]tokenRegistryEntryPoint
 
 type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox)
 
@@ -61,7 +61,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -93,7 +93,7 @@ func mintSupply(ctx vmtypes.Sandbox) {
 
 	reqAccess := ctx.AccessRequest()
 	reqId := reqAccess.ID()
-	colorOfTheSupply := (balance.Color)(*reqId.TransactionId())
+	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
 	registry := ctx.AccessState().GetDictionary(VarStateTheRegistry)
 	// check for duplicated colors

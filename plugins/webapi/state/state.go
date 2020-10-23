@@ -3,6 +3,7 @@ package state
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
@@ -47,7 +47,7 @@ func handleStateQuery(c echo.Context) error {
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  jsonable.NewValueTxID(&txid),
-		Requests:   make([]*sctransaction.RequestId, len(batch.RequestIds())),
+		Requests:   make([]*coretypes.RequestID, len(batch.RequestIds())),
 	}
 	copy(ret.Requests, batch.RequestIds())
 	vars := state.Variables()

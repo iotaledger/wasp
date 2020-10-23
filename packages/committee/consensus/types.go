@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"sync"
 	"time"
@@ -38,7 +39,7 @@ type operator struct {
 	notificationsBacklog []*committee.NotifyReqMsg
 
 	// backlog of requests with all information
-	requests map[sctransaction.RequestId]*request
+	requests map[coretypes.RequestID]*request
 
 	peerPermutation *util.Permutation16
 
@@ -53,7 +54,7 @@ type operator struct {
 
 	// data for concurrent access, from APIs mostly
 	concurrentAccessMutex sync.RWMutex
-	requestIdsProtected   map[sctransaction.RequestId]bool
+	requestIdsProtected   map[coretypes.RequestID]bool
 }
 
 type leaderStatus struct {
@@ -75,7 +76,7 @@ type signedResult struct {
 // keeps stateTx of the request
 type request struct {
 	// id of the hash of request tx id and request block index
-	reqId sctransaction.RequestId
+	reqId coretypes.RequestID
 	// from request message. nil if request message wasn't received yet
 	reqTx *sctransaction.Transaction
 	// time when request message was received by the operator
@@ -92,8 +93,8 @@ func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *l
 	ret := &operator{
 		committee:           committee,
 		dkshare:             dkshare,
-		requests:            make(map[sctransaction.RequestId]*request),
-		requestIdsProtected: make(map[sctransaction.RequestId]bool),
+		requests:            make(map[coretypes.RequestID]*request),
+		requestIdsProtected: make(map[coretypes.RequestID]bool),
 		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
 		log:                 log.Named("c"),
 	}

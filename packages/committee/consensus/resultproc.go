@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -73,9 +73,9 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		return
 	}
 
-	reqids := make([]sctransaction.RequestId, len(result.Requests))
+	reqids := make([]coretypes.RequestID, len(result.Requests))
 	for i := range reqids {
-		reqids[i] = *result.Requests[i].RequestId()
+		reqids[i] = *result.Requests[i].RequestID()
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
@@ -120,9 +120,9 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		return
 	}
 
-	reqids := make([]sctransaction.RequestId, len(result.Requests))
+	reqids := make([]coretypes.RequestID, len(result.Requests))
 	for i := range reqids {
-		reqids[i] = *result.Requests[i].RequestId()
+		reqids[i] = *result.Requests[i].RequestID()
 	}
 
 	bh := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)

@@ -3,7 +3,7 @@ package committee
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -51,7 +51,7 @@ func (msg *NotifyReqMsg) Read(r io.Reader) error {
 	if arrLen == 0 {
 		return nil
 	}
-	msg.RequestIds = make([]sctransaction.RequestId, arrLen)
+	msg.RequestIds = make([]coretypes.RequestID, arrLen)
 	for i := range msg.RequestIds {
 		_, err = r.Read(msg.RequestIds[i][:])
 		if err != nil {
@@ -111,9 +111,9 @@ func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	msg.RequestIds = make([]sctransaction.RequestId, size)
+	msg.RequestIds = make([]coretypes.RequestID, size)
 	for i := range msg.RequestIds {
-		if err := sctransaction.ReadRequestId(r, &msg.RequestIds[i]); err != nil {
+		if err := msg.RequestIds[i].Read(r); err != nil {
 			return err
 		}
 	}

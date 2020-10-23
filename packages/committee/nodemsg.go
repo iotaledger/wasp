@@ -3,6 +3,7 @@ package committee
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
@@ -21,11 +22,11 @@ type BalancesMsg struct {
 
 type RequestMsg struct {
 	*sctransaction.Transaction
-	Index uint16
+	Index coretypes.Uint16
 }
 
-func (reqMsg *RequestMsg) RequestId() *sctransaction.RequestId {
-	ret := sctransaction.NewRequestId(reqMsg.Transaction.ID(), reqMsg.Index)
+func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {
+	ret := coretypes.NewRequestID(reqMsg.Transaction.ID(), reqMsg.Index)
 	return &ret
 }
 

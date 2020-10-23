@@ -2,6 +2,7 @@ package scclient
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/url"
 	"time"
 
@@ -46,7 +47,7 @@ func New(
 }
 
 func (sc *SCClient) PostRequest(
-	code sctransaction.RequestCode,
+	code coretypes.EntryPointCode,
 	mint map[address.Address]int64,
 	transfer map[balance.Color]int64,
 	vars map[string]interface{},

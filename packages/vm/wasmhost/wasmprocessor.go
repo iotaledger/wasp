@@ -4,7 +4,7 @@ package wasmhost
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -37,7 +37,7 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	return vm, nil
 }
 
-func (vm *wasmProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (vm *wasmProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	function, ok := vm.codeToFunc[int32(code)]
 	if !ok {
 		return nil, false

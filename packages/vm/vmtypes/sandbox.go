@@ -4,9 +4,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -36,9 +36,9 @@ type Sandbox interface {
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
-	SendRequestToSelf(reqCode sctransaction.RequestCode, args kv.Map) bool
+	SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv.Map) bool
 	// Send request to itself with timelock for some seconds after the current timestamp
-	SendRequestToSelfWithDelay(reqCode sctransaction.RequestCode, args kv.Map, deferForSec uint32) bool
+	SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args kv.Map, deferForSec uint32) bool
 	// for testing
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
@@ -51,9 +51,9 @@ type Sandbox interface {
 // access to request parameters (arguments)
 type RequestAccess interface {
 	//request id
-	ID() sctransaction.RequestId
+	ID() coretypes.RequestID
 	// request code
-	Code() sctransaction.RequestCode
+	Code() coretypes.EntryPointCode
 	// sender address (exactly 1)
 	Sender() address.Address
 	// arguments
@@ -81,7 +81,7 @@ type AccountAccess interface {
 
 type NewRequestParams struct {
 	TargetAddress *address.Address
-	RequestCode   sctransaction.RequestCode
+	RequestCode   coretypes.EntryPointCode
 	Timelock      uint32
 	Args          kv.Map
 	IncludeReward int64

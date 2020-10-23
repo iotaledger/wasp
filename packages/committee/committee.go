@@ -2,12 +2,12 @@ package committee
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -32,7 +32,7 @@ type Committee interface {
 	SetReadyConsensus()
 	Dismiss()
 	IsDismissed() bool
-	GetRequestProcessingStatus(*sctransaction.RequestId) RequestProcessingStatus
+	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
 }
 
 type PeerStatus struct {
@@ -78,7 +78,7 @@ type Operator interface {
 	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)
 	EventTimerMsg(TimerTick)
 	//
-	IsRequestInBacklog(*sctransaction.RequestId) bool
+	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
 var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Committee
