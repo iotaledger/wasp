@@ -1,3 +1,5 @@
+// program subscribes and listens to the nanomsg stream publiched by the Wasp host
+// and displays it in the console
 package main
 
 import (
