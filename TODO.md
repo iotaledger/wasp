@@ -20,7 +20,8 @@ Done
 - [x] wasp node dashboard: show structure of committee, which SCs are running, etc
 
 Pending
-- [ ] rename in codec and sandbox Dictionary to Map 
+- [ ] rename in codec and sandbox Dictionary to Map
+- [ ] refactor in sandbox Publish to Event 
 - [ ] wwallet: separate binaries for admin/client operations
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
