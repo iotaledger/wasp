@@ -5,5 +5,5 @@ import (
 )
 
 func (c *Client) GetBootupData() (*registry.BootupData, error) {
-	return c.WaspClient.GetBootupData(c.ChainID)
+	return c.WaspClient.GetBootupData(&c.ChainID)
 }
