@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -54,8 +55,8 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 			BaseTemplateParams: BaseParams(c, scListRoute),
 			Address:            &addr,
 		}
-
-		br, err := registry.GetBootupData(&addr)
+		chainid := (coretypes.ChainID)(addr)
+		br, err := registry.GetBootupData(&chainid)
 		if err != nil {
 			return err
 		}
@@ -82,7 +83,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 					return err
 				}
 			}
-			result.Committee = committees.GetStatus(&br.Address)
+			result.Committee = committees.GetStatus(&br.ChainID)
 		}
 
 		return c.Render(http.StatusOK, scTplName, result)
@@ -110,7 +111,8 @@ func fetchSmartContracts() ([]*SmartContractOverview, error) {
 }
 
 func fetchDescription(br *registry.BootupData) (string, error) {
-	state, _, _, err := state.LoadSolidState(&br.Address)
+	addr := (address.Address)(br.ChainID)
+	state, _, _, err := state.LoadSolidState(&addr)
 	if err != nil || state == nil {
 		return "", err
 	}
@@ -136,7 +138,7 @@ const tplScList = `
 	<table>
 		<thead>
 			<tr>
-				<th>Address / Description</th>
+				<th>Target / Description</th>
 				<th>Status</th>
 				<th></th>
 			</tr>
@@ -144,9 +146,9 @@ const tplScList = `
 		<tbody>
 		{{range $_, $sc := .SmartContracts}}
 			<tr>
-				<td><code>{{$sc.BootupRecord.Address}}</code><br/>{{$sc.Description}}</td>
+				<td><code>{{$sc.BootupRecord.Target}}</code><br/>{{$sc.Description}}</td>
 				<td>{{if $sc.BootupRecord.Active}}active{{else}}inactive{{end}}</td>
-				<td><a href="/smart-contracts/{{$sc.BootupRecord.Address}}">Details</a></td>
+				<td><a href="/smart-contracts/{{$sc.BootupRecord.Target}}">Details</a></td>
 			</tr>
 		{{end}}
 		</tbody>
@@ -175,7 +177,7 @@ const tplSc = `
 	{{if .BootupRecord}}
 		<div>
 			<h3>Bootup record</h3>
-			<p>Address: {{template "address" .BootupRecord.Address}}</p>
+			<p>Target: {{template "address" .BootupRecord.Target}}</p>
 			<p>Owner address:   {{template "address" .BootupRecord.OwnerAddress}}</p>
 			<p>Color:           <code>{{.BootupRecord.Color}}</code></p>
 			<p>Committee Nodes: <code>{{.BootupRecord.CommitteeNodes}}</code></p>
@@ -183,7 +185,7 @@ const tplSc = `
 			<p>Active:          <code>{{.BootupRecord.Active}}</code></p>
 		</div>
 	{{else}}
-		<p>No bootup record for address {{template "address" .Address}}</p>
+		<p>No bootup record for address {{template "address" .Target}}</p>
 	{{end}}
 	<hr/>
 	{{if .State}}

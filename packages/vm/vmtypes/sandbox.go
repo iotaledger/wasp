@@ -14,7 +14,7 @@ import (
 type Sandbox interface {
 	// general function
 	IsOriginState() bool
-	GetSCAddress() *address.Address
+	GetContractID() coretypes.ContractID
 	GetOwnerAddress() *address.Address
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
@@ -80,9 +80,9 @@ type AccountAccess interface {
 }
 
 type NewRequestParams struct {
-	TargetAddress *address.Address
-	RequestCode   coretypes.EntryPointCode
-	Timelock      uint32
-	Args          kv.Map
-	IncludeReward int64
+	TargetContractID coretypes.ContractID
+	EntryPoint       coretypes.EntryPointCode
+	Timelock         uint32
+	Args             kv.Map
+	IncludeReward    int64
 }

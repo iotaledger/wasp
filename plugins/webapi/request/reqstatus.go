@@ -13,6 +13,8 @@ import (
 	"github.com/labstack/echo"
 )
 
+// TODO do we need it
+
 func AddEndpoints(server *echo.Echo) {
 	server.GET("/"+client.RequestStatusRoute(":scAddr", ":reqId"), handleRequestStatus)
 }
@@ -22,7 +24,7 @@ func handleRequestStatus(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address %+v: %s", c.Param("scAddr"), err.Error()))
 	}
-	cmt := committees.CommitteeByAddress(addr)
+	cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr))
 	if cmt == nil {
 		return httperrors.NotFound(fmt.Sprintf("Smart contract not found: %+v", addr.String()))
 	}

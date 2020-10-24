@@ -283,8 +283,8 @@ func (vtxb *Builder) addToOutputs(targetAddr address.Address, col balance.Color,
 	cmap[col] = b + amount
 }
 
-// MoveToAddress move token without changing color
-func (vtxb *Builder) MoveToAddress(targetAddr address.Address, col balance.Color, amount int64) error {
+// MoveTokensToAddress move token without changing color
+func (vtxb *Builder) MoveTokensToAddress(targetAddr address.Address, col balance.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}

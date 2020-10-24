@@ -10,7 +10,7 @@ func (vctx *sandbox) AvailableBalance(col *balance.Color) int64 {
 }
 
 func (vctx *sandbox) MoveTokens(targetAddr *address.Address, col *balance.Color, amount int64) bool {
-	return vctx.TxBuilder.MoveToAddress(*targetAddr, *col, amount) == nil
+	return vctx.TxBuilder.MoveTokensToAddress(*targetAddr, *col, amount) == nil
 }
 
 func (vctx *sandbox) EraseColor(targetAddr *address.Address, col *balance.Color, amount int64) bool {
@@ -28,7 +28,7 @@ func (vctx *sandbox) HarvestFees(amount int64) int64 {
 	if available < amount {
 		amount = available
 	}
-	if err := vctx.TxBuilder.MoveToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount); err != nil {
+	if err := vctx.TxBuilder.MoveTokensToAddress(vctx.OwnerAddress, balance.ColorIOTA, amount); err != nil {
 		return 0
 	}
 	return amount

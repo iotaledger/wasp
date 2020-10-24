@@ -3,9 +3,10 @@ package faclient
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/client/statequery"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -14,15 +15,19 @@ import (
 )
 
 type FairAuctionClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractIndex coretypes.Uint16
 }
 
-func NewClient(scClient *scclient.SCClient) *FairAuctionClient {
-	return &FairAuctionClient{scClient}
+func NewClient(scClient *chainclient.Client, contractIndex coretypes.Uint16) *FairAuctionClient {
+	return &FairAuctionClient{
+		Client:        scClient,
+		contractIndex: contractIndex,
+	}
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	OwnerMarginPromille int64
 	AuctionsLen         uint32
@@ -59,6 +64,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 
 func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transaction, error) {
 	return fc.PostRequest(
+		fc.contractIndex,
 		fairauction.RequestSetOwnerMargin,
 		nil,
 		nil,
@@ -95,6 +101,7 @@ func (fc *FairAuctionClient) StartAuction(
 		return nil, fmt.Errorf("GetFeeAmount failed: %v", err)
 	}
 	return fc.PostRequest(
+		fc.contractIndex,
 		fairauction.RequestStartAuction,
 		nil,
 		map[balance.Color]int64{
@@ -112,6 +119,7 @@ func (fc *FairAuctionClient) StartAuction(
 
 func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction.Transaction, error) {
 	return fc.PostRequest(
+		fc.contractIndex,
 		fairauction.RequestPlaceBid,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},

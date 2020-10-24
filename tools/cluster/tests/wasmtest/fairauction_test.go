@@ -2,6 +2,7 @@ package wasmtest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
 	"time"
 
@@ -48,13 +49,15 @@ func TestLoadTrAndFaAndThenRunTrMint(t *testing.T) {
 	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, faDescription)
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
-	succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
+	chidTR := (coretypes.ChainID)(*scTRAddr)
+	succ := waspapi.CheckDeployment(wasps.ApiHosts(), &chidTR)
 	assert.True(t, succ)
 
-	succ = waspapi.CheckSC(wasps.ApiHosts(), scFAAddr)
+	chidFA := (coretypes.ChainID)(*scFAAddr)
+	succ = waspapi.CheckDeployment(wasps.ApiHosts(), &chidFA)
 	assert.True(t, succ)
 
-	tc := trclient.NewClient(scclient.New(
+	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scTRAddr,
@@ -137,7 +140,7 @@ func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
 	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, faDescription)
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
-	tc := trclient.NewClient(scclient.New(
+	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scTRAddr,
@@ -193,7 +196,7 @@ func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
 		return
 	}
 
-	faclientOwner := faclient.NewClient(scclient.New(
+	faclientOwner := faclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scFAAddr,
@@ -204,8 +207,8 @@ func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
 	_, err = faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction created")
 
-	faclientBidder1 := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder1.SigScheme()))
-	faclientBidder2 := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder2.SigScheme()))
+	faclientBidder1 := faclient.NewClient(chainclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder1.SigScheme()))
+	faclientBidder2 := faclient.NewClient(chainclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder2.SigScheme()))
 
 	subs, err := subscribe.SubscribeMulti(wasps.PublisherHosts(), "request_out")
 	check(err, t)

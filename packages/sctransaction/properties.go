@@ -3,6 +3,7 @@ package sctransaction
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -16,13 +17,13 @@ type Properties struct {
 	isState bool
 	// if isState == true: it states if it is the origin transaction
 	isOrigin bool
-	// if isState == true: smart contract address
-	stateAddress address.Address
+	// if isState == true: chainID
+	chainID coretypes.ChainID
 	// if isState == true: smart contract color
 	stateColor balance.Color
 	// number of newly minted tokens
-	numMintedTokensByAddr map[address.Address]int64
-	numMintedTokens       int64
+	numMintedTokensByChain map[coretypes.ChainID]int64
+	numMintedTokens        int64
 	// number of requests
 	numRequests int
 }
@@ -63,13 +64,13 @@ func (prop *Properties) analyzeSender(tx *Transaction) error {
 }
 
 func (prop *Properties) countMintedTokens(tx *Transaction) {
-	prop.numMintedTokensByAddr = make(map[address.Address]int64)
+	prop.numMintedTokensByChain = make(map[coretypes.ChainID]int64)
 
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
 		v := txutil.BalanceOfColor(bals, balance.ColorNew)
 		if v != 0 {
-			va, _ := prop.numMintedTokensByAddr[addr]
-			prop.numMintedTokensByAddr[addr] = va + v
+			va, _ := prop.numMintedTokensByChain[(coretypes.ChainID)(addr)]
+			prop.numMintedTokensByChain[(coretypes.ChainID)(addr)] = va + v
 			prop.numMintedTokens += v
 		}
 		return true
@@ -95,14 +96,14 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 				err = errors.New("sc transaction must contain exactly one sc token output")
 				return false
 			}
-			prop.stateAddress = addr
+			prop.chainID = (coretypes.ChainID)(addr)
 			return true
 		})
 		if err != nil {
 			return err
 		}
 		// TODO May change in the future
-		if prop.stateAddress != prop.sender {
+		if prop.chainID != (coretypes.ChainID)(prop.sender) {
 			return errors.New("SC token must move from the SC address to itself")
 		}
 		return nil
@@ -110,12 +111,12 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 	// it can be a smart contract origin transaction (color == new)
 	// in this case transaction must contain number of requests + 1 newly minted token
 	// in the same address
-	if len(prop.numMintedTokensByAddr) > 1 {
+	if len(prop.numMintedTokensByChain) > 1 {
 		return errors.New("in the origin transaction tokens can be minted only to 1 address")
 	}
 	// one address with minted tokens.
-	for stateAddr := range prop.numMintedTokensByAddr {
-		prop.stateAddress = stateAddr
+	for stateAddr := range prop.numMintedTokensByChain {
+		prop.chainID = stateAddr
 		break
 	}
 	prop.isOrigin = true
@@ -132,10 +133,10 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	}
 	prop.numRequests = len(tx.Requests())
 
-	numReqByAddr := make(map[address.Address]int64)
+	numReqByAddr := make(map[coretypes.ChainID]int64)
 	for _, reqBlk := range tx.Requests() {
-		n, _ := numReqByAddr[reqBlk.Address()]
-		numReqByAddr[reqBlk.Address()] = n + 1
+		n, _ := numReqByAddr[reqBlk.Target().ChainID()]
+		numReqByAddr[reqBlk.Target().ChainID()] = n + 1
 	}
 
 	if prop.isOrigin {
@@ -144,11 +145,11 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 			// must be exactly one target address for requests
 			return errWrongTokens
 		}
-		if _, ok := numReqByAddr[prop.stateAddress]; !ok {
+		if _, ok := numReqByAddr[prop.chainID]; !ok {
 			// that one address must be address of the originated smart contract
 			return errWrongTokens
 		}
-		numMinted, _ := prop.numMintedTokensByAddr[prop.stateAddress]
+		numMinted, _ := prop.numMintedTokensByChain[prop.chainID]
 		if numMinted != int64(len(tx.Requests())+1) {
 			// number of minted must be one more that number of requests
 			return errWrongTokens
@@ -162,7 +163,7 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	// Total number of minted tokens can be larger that the total number of requests, however the
 	// rest of minted tokens must be in outputs different from any of the target smart contract address
 	for targetAddr, numReq := range numReqByAddr {
-		numMinted, _ := prop.numMintedTokensByAddr[targetAddr]
+		numMinted, _ := prop.numMintedTokensByChain[targetAddr]
 		if numMinted != numReq {
 			return fmt.Errorf("number of minted tokens to the SC address %s is not equal to the number of requests to that SC. Txid = %s",
 				targetAddr.String(), tx.ID().String())
@@ -183,11 +184,11 @@ func (prop *Properties) IsOrigin() bool {
 	return prop.isState
 }
 
-func (prop *Properties) MustStateAddress() *address.Address {
+func (prop *Properties) MustChainID() *coretypes.ChainID {
 	if !prop.isState {
-		panic("MustStateAddress: must be a state transaction")
+		panic("MustChainID: must be a state transaction")
 	}
-	return &prop.stateAddress
+	return &prop.chainID
 }
 
 func (prop *Properties) MustStateColor() *balance.Color {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -50,7 +51,7 @@ func createVMContext(ctx *vm.VMTask, txb *txbuilder.Builder) (*vm.VMContext, err
 	}
 
 	vmctx := &vm.VMContext{
-		Address:            ctx.Address,
+		ContractID:         coretypes.NewContractID((coretypes.ChainID)(ctx.Address), 0), // TODO
 		OwnerAddress:       ctx.OwnerAddress,
 		RewardAddress:      ctx.RewardAddress,
 		ProgramHash:        ctx.ProgramHash,

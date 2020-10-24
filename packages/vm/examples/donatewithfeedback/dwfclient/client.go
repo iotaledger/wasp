@@ -1,10 +1,11 @@
 package dwfclient
 
 import (
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -12,15 +13,20 @@ import (
 )
 
 type DWFClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractIndex coretypes.Uint16
 }
 
-func NewClient(scClient *scclient.SCClient) *DWFClient {
-	return &DWFClient{scClient}
+func NewClient(scClient *chainclient.Client, contractIndex coretypes.Uint16) *DWFClient {
+	return &DWFClient{
+		Client:        scClient,
+		contractIndex: contractIndex,
+	}
 }
 
 func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Transaction, error) {
 	return dwf.PostRequest(
+		dwf.contractIndex,
 		donatewithfeedback.RequestDonate,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amount},
@@ -30,6 +36,7 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Tran
 
 func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error) {
 	return dwf.PostRequest(
+		dwf.contractIndex,
 		donatewithfeedback.RequestWithdraw,
 		nil,
 		nil,
@@ -38,7 +45,7 @@ func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error)
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	NumRecords      uint32
 	FirstDonated    time.Time

@@ -1,4 +1,4 @@
-package scclient
+package chainclient
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -29,8 +29,8 @@ type SCStatus struct {
 	FetchedAt     time.Time
 }
 
-func (sc *SCClient) FetchSCStatus(addCustomQueries func(query *statequery.Request)) (*SCStatus, *statequery.Results, error) {
-	balance, err := sc.FetchBalance()
+func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request)) (*SCStatus, *statequery.Results, error) {
+	balance, err := c.FetchBalance()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -43,7 +43,7 @@ func (sc *SCClient) FetchSCStatus(addCustomQueries func(query *statequery.Reques
 	query.AddScalar(vmconst.VarNameMinimumReward)
 	addCustomQueries(query)
 
-	res, err := sc.WaspClient.StateQuery(sc.Address, query)
+	res, err := c.WaspClient.StateQuery(c.ChainID, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -62,14 +62,14 @@ func (sc *SCClient) FetchSCStatus(addCustomQueries func(query *statequery.Reques
 		Description:   description,
 		OwnerAddress:  res.Get(vmconst.VarNameOwnerAddress).MustAddress(),
 		MinimumReward: minReward,
-		SCAddress:     sc.Address,
+		SCAddress:     c.ChainID,
 		Balance:       balance,
 		FetchedAt:     time.Now().UTC(),
 	}, res, nil
 }
 
-func (sc *SCClient) FetchBalance() (map[balance.Color]int64, error) {
-	outs, err := sc.NodeClient.GetConfirmedAccountOutputs(sc.Address)
+func (c *Client) FetchBalance() (map[balance.Color]int64, error) {
+	outs, err := c.NodeClient.GetConfirmedAccountOutputs(c.ChainID)
 	if err != nil {
 		return nil, err
 	}

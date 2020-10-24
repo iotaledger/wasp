@@ -1,4 +1,4 @@
-package scclient
+package chainclient
 
 import (
 	"fmt"
@@ -15,10 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-type SCClient struct {
+type Client struct {
 	NodeClient nodeclient.NodeClient
 	WaspClient *client.WaspClient
-	Address    *address.Address
+	ChainID    coretypes.ChainID
 	SigScheme  signaturescheme.SignatureScheme
 
 	timeout time.Duration
@@ -29,56 +29,57 @@ type SCClient struct {
 func New(
 	nodeClient nodeclient.NodeClient,
 	waspClient *client.WaspClient,
-	scAddress *address.Address,
+	chainID *coretypes.ChainID,
 	sigScheme signaturescheme.SignatureScheme,
 	waitForCompletionTimeout ...time.Duration,
-) *SCClient {
+) *Client {
 	var t time.Duration
 	if len(waitForCompletionTimeout) > 0 {
 		t = waitForCompletionTimeout[0]
 	}
-	return &SCClient{
+	return &Client{
 		NodeClient: nodeClient,
 		WaspClient: waspClient,
-		Address:    scAddress,
+		ChainID:    *chainID,
 		SigScheme:  sigScheme,
 		timeout:    t,
 	}
 }
 
-func (sc *SCClient) PostRequest(
-	code coretypes.EntryPointCode,
-	mint map[address.Address]int64,
+func (c *Client) PostRequest(
+	contractIndex coretypes.Uint16,
+	entryPoint coretypes.EntryPointCode,
+	mint map[address.Address]int64, // TODO
 	transfer map[balance.Color]int64,
 	vars map[string]interface{},
 ) (*sctransaction.Transaction, error) {
-	if sc.timeout > 0 && len(sc.publisherHost) == 0 {
-		info, err := sc.WaspClient.Info()
+	if c.timeout > 0 && len(c.publisherHost) == 0 {
+		info, err := c.WaspClient.Info()
 		if err != nil {
 			return nil, err
 		}
-		u, err := url.Parse(sc.WaspClient.BaseURL())
+		u, err := url.Parse(c.WaspClient.BaseURL())
 		if err != nil {
 			return nil, err
 		}
-		sc.publisherHost = fmt.Sprintf("%s:%d", u.Hostname(), info.PublisherPort)
+		c.publisherHost = fmt.Sprintf("%s:%d", u.Hostname(), info.PublisherPort)
 	}
 
 	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
-		NodeClient:      sc.NodeClient,
-		SenderSigScheme: sc.SigScheme,
+		NodeClient:      c.NodeClient,
+		SenderSigScheme: c.SigScheme,
 		Mint:            mint,
 		BlockParams: []apilib.RequestBlockParams{{
-			TargetSCAddress: sc.Address,
-			RequestCode:     code,
-			Transfer:        transfer,
-			Vars:            vars,
+			TargetContractID: coretypes.NewContractID(c.ChainID, contractIndex),
+			EntryPointCode:   entryPoint,
+			Transfer:         transfer,
+			Vars:             vars,
 		}},
 		Post:                true,
-		WaitForConfirmation: sc.timeout > 0,
-		WaitForCompletion:   sc.timeout > 0,
-		PublisherHosts:      []string{sc.publisherHost},
+		WaitForConfirmation: c.timeout > 0,
+		WaitForCompletion:   c.timeout > 0,
+		PublisherHosts:      []string{c.publisherHost},
 		PublisherQuorum:     1,
-		Timeout:             sc.timeout,
+		Timeout:             c.timeout,
 	})
 }

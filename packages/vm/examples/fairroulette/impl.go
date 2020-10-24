@@ -238,7 +238,8 @@ func setPlayPeriod(ctx vmtypes.Sandbox) {
 func lockBets(ctx vmtypes.Sandbox) {
 	ctx.Publish("lockBets")
 
-	if ctx.AccessRequest().Sender() != *ctx.GetSCAddress() {
+	scAddr := (address.Address)(ctx.GetContractID().ChainID())
+	if ctx.AccessRequest().Sender() != scAddr {
 		// ignore if request is not from itself
 		return
 	}
@@ -263,7 +264,8 @@ func lockBets(ctx vmtypes.Sandbox) {
 func playAndDistribute(ctx vmtypes.Sandbox) {
 	ctx.Publish("playAndDistribute")
 
-	if ctx.AccessRequest().Sender() != *ctx.GetSCAddress() {
+	scAddr := (address.Address)(ctx.GetContractID().ChainID())
+	if ctx.AccessRequest().Sender() != scAddr {
 		// ignore if request is not from itself
 		return
 	}
@@ -331,7 +333,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		if !ctx.AccessSCAccount().MoveTokens(ctx.GetSCAddress(), &balance.ColorIOTA, totalLockedAmount) {
+		scAddr := (address.Address)(ctx.GetContractID().ChainID())
+		if !ctx.AccessSCAccount().MoveTokens(&scAddr, &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Publishf("$$$$$$$$$$ something went wrong 1")
 			ctx.Panic("MoveTokens failed")

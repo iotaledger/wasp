@@ -1,7 +1,6 @@
 package sctransaction
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"time"
@@ -19,10 +18,10 @@ import (
 // counting from 2020.01.01 Then it would extend until 2140 or so
 
 type RequestBlock struct {
-	// address of the target smart contract
-	address address.Address
-	// request code
-	reqCode coretypes.EntryPointCode
+	// ID of the target smart contract
+	targetContractID coretypes.ContractID
+	// entry point code
+	entryPoint coretypes.EntryPointCode
 	// timelock in Unix seconds.
 	// Request will only be processed when time reaches
 	// specified moment. It is guaranteed that timestamp of the state transaction which
@@ -40,11 +39,11 @@ type RequestRef struct {
 
 // RequestBlock
 
-func NewRequestBlock(addr address.Address, reqCode coretypes.EntryPointCode) *RequestBlock {
+func NewRequestBlock(targetContract coretypes.ContractID, reqCode coretypes.EntryPointCode) *RequestBlock {
 	return &RequestBlock{
-		address: addr,
-		reqCode: reqCode,
-		args:    kv.NewMap(),
+		targetContractID: targetContract,
+		entryPoint:       reqCode,
+		args:             kv.NewMap(),
 	}
 }
 
@@ -52,13 +51,13 @@ func (req *RequestBlock) Clone() *RequestBlock {
 	if req == nil {
 		return nil
 	}
-	ret := NewRequestBlock(req.address, req.reqCode)
+	ret := NewRequestBlock(req.targetContractID, req.entryPoint)
 	ret.args = req.args.Clone()
 	return ret
 }
 
-func (req *RequestBlock) Address() address.Address {
-	return req.address
+func (req *RequestBlock) Target() coretypes.ContractID {
+	return req.targetContractID
 }
 
 func (req *RequestBlock) SetArgs(args kv.Map) {
@@ -72,7 +71,7 @@ func (req *RequestBlock) Args() kv.RCodec {
 }
 
 func (req *RequestBlock) EntryPointCode() coretypes.EntryPointCode {
-	return req.reqCode
+	return req.entryPoint
 }
 
 func (req *RequestBlock) Timelock() uint32 {
@@ -91,13 +90,13 @@ func (req *RequestBlock) WithTimelockUntil(deadline time.Time) *RequestBlock {
 // encoding
 
 func (req *RequestBlock) Write(w io.Writer) error {
-	if _, err := w.Write(req.address.Bytes()); err != nil {
+	if err := req.targetContractID.Write(w); err != nil {
 		return err
 	}
 	if err := util.WriteUint32(w, req.timelock); err != nil {
 		return err
 	}
-	if err := req.reqCode.Write(w); err != nil {
+	if err := req.entryPoint.Write(w); err != nil {
 		return err
 	}
 	if err := req.args.Write(w); err != nil {
@@ -107,13 +106,13 @@ func (req *RequestBlock) Write(w io.Writer) error {
 }
 
 func (req *RequestBlock) Read(r io.Reader) error {
-	if err := util.ReadAddress(r, &req.address); err != nil {
-		return fmt.Errorf("error while reading address: %v", err)
+	if err := req.targetContractID.Read(r); err != nil {
+		return err
 	}
 	if err := util.ReadUint32(r, &req.timelock); err != nil {
 		return err
 	}
-	if err := req.reqCode.Read(r); err != nil {
+	if err := req.entryPoint.Read(r); err != nil {
 		return err
 	}
 	req.args = kv.NewMap()

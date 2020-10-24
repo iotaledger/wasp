@@ -83,7 +83,7 @@ func initSC(ctx vmtypes.Sandbox) {
 	ctx.AccessState().SetString(vmconst.VarNameDescription, dscr)
 	ctx.Publishf("init_sc info description set to '%s'", dscr)
 
-	ctx.Publishf("init_sc success %s", ctx.GetSCAddress().String())
+	ctx.Publishf("init_sc success %s", ctx.GetContractID().String())
 }
 
 func setMinimumReward(ctx vmtypes.Sandbox) {

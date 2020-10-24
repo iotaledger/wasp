@@ -2,6 +2,7 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,11 +15,11 @@ import (
 
 const prefix = "[checkSC] "
 
-// CheckSC checks and reports deployment data of SC in the given list of node
+// CheckDeployment checks and reports deployment data of SC in the given list of node
 // it loads bootuo data from the first node in the list and uses CommitteeNodes from that
 // bootup data to check the whole committee
 //goland:noinspection ALL
-func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) bool {
+func CheckDeployment(apiHosts []string, chainid *coretypes.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {
@@ -30,7 +31,7 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			out = ioutil.Discard
 		}
 	}
-	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", scAddr.String())
+	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", chainid.String())
 	var err error
 	var missing bool
 	fmt.Fprintf(out, prefix+"loading bootup record from hosts %+v\n", apiHosts)
@@ -39,7 +40,7 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 
 	bdRecords := make([]*registry.BootupData, len(apiHosts))
 	for i, host := range apiHosts {
-		bdRecords[i], err = client.NewWaspClient(host).GetBootupData(scAddr)
+		bdRecords[i], err = client.NewWaspClient(host).GetBootupData(chainid)
 		if err != nil {
 			fmt.Fprintf(out, prefix+"%2d: %s -> %v\n", i, host, err)
 			ret = false
@@ -47,14 +48,14 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			continue
 		}
 		if client.IsNotFound(err) {
-			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data for %s does not exist\n", i, host, scAddr.String())
+			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data for %s does not exist\n", i, host, chainid.String())
 			ret = false
 			missing = true
 			continue
 		}
-		if bdRecords[i].Address != *scAddr {
+		if bdRecords[i].ChainID != *chainid {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the bootup record. Expected %s, got %s\n",
-				i, host, scAddr.String(), bdRecords[i].Address.String())
+				i, host, chainid.String(), bdRecords[i].ChainID.String())
 			ret = false
 			missing = true
 			continue
@@ -84,9 +85,9 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			ret = false
 			continue
 		}
-		if bd.Address != *scAddr {
+		if bd.ChainID != *chainid {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the bootupo data record\n",
-				i, host, bd.Address.String())
+				i, host, bd.ChainID.String())
 			ret = false
 			continue
 		}
@@ -101,7 +102,8 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(scAddr)
+	scAddr := (address.Address)(*chainid)
+	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(&scAddr)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())
 		return false
@@ -165,7 +167,7 @@ func publicKeyInfoToString(pki *client.PubKeyInfo) string {
 }
 
 func consistentBootupRecords(bd1, bd2 *registry.BootupData) bool {
-	if bd1.Address != bd2.Address {
+	if bd1.ChainID != bd2.ChainID {
 		return false
 	}
 	if bd1.OwnerAddress != bd2.OwnerAddress {

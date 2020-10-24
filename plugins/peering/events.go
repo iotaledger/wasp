@@ -1,8 +1,8 @@
 package peering
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 var EventPeerMessageReceived = events.NewEvent(func(handler interface{}, params ...interface{}) {
@@ -10,7 +10,7 @@ var EventPeerMessageReceived = events.NewEvent(func(handler interface{}, params 
 })
 
 type PeerMessage struct {
-	Address     address.Address
+	ChainID     coretypes.ChainID
 	SenderIndex uint16
 	Timestamp   int64
 	MsgType     byte

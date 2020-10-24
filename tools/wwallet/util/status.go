@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wwallet/sc"
 )
 
-func DumpSCStatus(sc *sc.Config, status *scclient.SCStatus) {
+func DumpSCStatus(sc *sc.Config, status *chainclient.SCStatus) {
 	fmt.Printf("%s smart contract status:\n", sc.Name)
 	fmt.Printf("  Program hash: %s\n", status.ProgramHash)
 	fmt.Printf("  Description: %s\n", status.Description)

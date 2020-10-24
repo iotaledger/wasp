@@ -36,7 +36,7 @@ func sendFundsCmd(args []string) {
 	vtxb, err := vtxbuilder.NewFromOutputBalances(bals)
 	check(err)
 
-	check(vtxb.MoveToAddress(targetAddress, *color, int64(amount)))
+	check(vtxb.MoveTokensToAddress(targetAddress, *color, int64(amount)))
 
 	tx := vtxb.Build(false)
 	tx.Sign(wallet.SignatureScheme())

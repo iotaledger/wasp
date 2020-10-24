@@ -16,7 +16,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 		// not state transaction
 		return
 	}
-	cmt := committees.CommitteeByAddress(*txProp.MustStateAddress())
+	cmt := committees.CommitteeByChainID(*txProp.MustChainID())
 	if cmt == nil {
 		return
 	}
@@ -32,7 +32,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
-	if cmt := committees.CommitteeByAddress(addr); cmt != nil {
+	if cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr)); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
 }
@@ -40,7 +40,7 @@ func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*bala
 func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
 	log.Debugw("dispatchAddressUpdate", "addr", addr.String())
 
-	cmt := committees.CommitteeByAddress(addr)
+	cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr))
 	if cmt == nil {
 		log.Debugw("committee not found", "addr", addr.String())
 		// wrong addressee
@@ -59,7 +59,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	})
 
 	txProp := tx.MustProperties() // was parsed before
-	if txProp.IsState() && *txProp.MustStateAddress() == addr {
+	if txProp.IsState() && *txProp.MustChainID() == (coretypes.ChainID)(addr) {
 		// it is a state update to addr. Send it
 		cmt.ReceiveMessage(&committee.StateTransactionMsg{
 			Transaction: tx,
@@ -68,7 +68,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 	// send all requests to addr
 	for i, reqBlk := range tx.Requests() {
-		if reqBlk.Address() == addr {
+		if reqBlk.Target().ChainID() == (coretypes.ChainID)(addr) {
 			cmt.ReceiveMessage(&committee.RequestMsg{
 				Transaction: tx,
 				Index:       coretypes.Uint16(i),
@@ -79,7 +79,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 func dispatchTxInclusionLevel(level byte, txid *valuetransaction.ID, addrs []address.Address) {
 	for _, addr := range addrs {
-		cmt := committees.CommitteeByAddress(addr)
+		cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr))
 		if cmt == nil {
 			continue
 		}

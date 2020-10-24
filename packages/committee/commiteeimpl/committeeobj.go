@@ -41,9 +41,9 @@ type committeeObj struct {
 }
 
 func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) committee.Committee {
-	log.Debugw("creating committee", "addr", bootupData.Address.String())
+	log.Debugw("creating committee", "addr", bootupData.ChainID.String())
 
-	addr := bootupData.Address
+	addr := bootupData.ChainID
 	if util.ContainsDuplicates(bootupData.CommitteeNodes) ||
 		util.ContainsDuplicates(bootupData.AccessNodes) ||
 		util.IntersectsLists(bootupData.CommitteeNodes, bootupData.AccessNodes) ||
@@ -53,7 +53,8 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 			addr.String(), bootupData.CommitteeNodes)
 		return nil
 	}
-	dkshare, keyExists, err := registry.GetDKShare(&bootupData.Address)
+	a := (address.Address)(bootupData.ChainID)
+	dkshare, keyExists, err := registry.GetDKShare(&a)
 	if err != nil {
 		log.Error(err)
 		return nil
@@ -84,12 +85,12 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 
 	ret := &committeeObj{
 		chMsg:        make(chan interface{}, 100),
-		address:      bootupData.Address,
+		address:      (address.Address)(bootupData.ChainID),
 		ownerAddress: bootupData.OwnerAddress,
 		color:        bootupData.Color,
 		peers:        make([]*peering.Peer, 0),
 		onActivation: onActivation,
-		log:          log.Named(util.Short(bootupData.Address.String())),
+		log:          log.Named(util.Short(bootupData.ChainID.String())),
 	}
 	if keyExists {
 		ret.ownIndex = dkshare.Index

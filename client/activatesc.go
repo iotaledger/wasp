@@ -1,23 +1,22 @@
 package client
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 )
 
-func ActivateSCRoute(address string) string {
-	return "sc/" + address + "/activate"
+func ActivateChainRoute(chainid string) string {
+	return "chain/" + chainid + "/activate"
 }
 
-func DeactivateSCRoute(address string) string {
-	return "sc/" + address + "/deactivate"
+func DeactivateChainRoute(chainid string) string {
+	return "chain/" + chainid + "/deactivate"
 }
 
-func (c *WaspClient) ActivateSC(addr *address.Address) error {
-	return c.do(http.MethodPost, AdminRoutePrefix+"/"+ActivateSCRoute(addr.String()), nil, nil)
+func (c *WaspClient) ActivateChain(chainid *coretypes.ChainID) error {
+	return c.do(http.MethodPost, AdminRoutePrefix+"/"+ActivateChainRoute(chainid.String()), nil, nil)
 }
 
-func (c *WaspClient) DeactivateSC(addr *address.Address) error {
-	return c.do(http.MethodPost, AdminRoutePrefix+"/"+DeactivateSCRoute(addr.String()), nil, nil)
+func (c *WaspClient) DeactivateChain(chainid *coretypes.ChainID) error {
+	return c.do(http.MethodPost, AdminRoutePrefix+"/"+DeactivateChainRoute(chainid.String()), nil, nil)
 }

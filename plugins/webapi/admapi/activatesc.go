@@ -2,6 +2,7 @@ package admapi
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -13,22 +14,22 @@ import (
 )
 
 func addSCEndpoints(adm *echo.Group) {
-	adm.POST("/"+client.ActivateSCRoute(":address"), handleActivateSC)
-	adm.POST("/"+client.DeactivateSCRoute(":address"), handleDeactivateSC)
+	adm.POST("/"+client.ActivateChainRoute(":chainid"), handleActivateChain)
+	adm.POST("/"+client.DeactivateChainRoute(":chainid"), handleDeactivateChain)
 }
 
-func handleActivateSC(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("address"))
+func handleActivateChain(c echo.Context) error {
+	scAddress, err := address.FromBase58(c.Param("chainid"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
 	}
-
-	bd, err := registry.ActivateBootupData(&scAddress)
+	chainID := (coretypes.ChainID)(scAddress)
+	bd, err := registry.ActivateBootupData(&chainID)
 	if err != nil {
 		return err
 	}
 
-	log.Debugw("calling committees.ActivateCommittee", "addr", bd.Address.String())
+	log.Debugw("calling committees.ActivateCommittee", "chainid", bd.ChainID.String())
 	if err := committees.ActivateCommittee(bd); err != nil {
 		return err
 	}
@@ -36,13 +37,14 @@ func handleActivateSC(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func handleDeactivateSC(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("address"))
+func handleDeactivateChain(c echo.Context) error {
+	scAddress, err := address.FromBase58(c.Param("chainid"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainid")))
 	}
 
-	bd, err := registry.DeactivateBootupData(&scAddress)
+	chainID := (coretypes.ChainID)(scAddress)
+	bd, err := registry.DeactivateBootupData(&chainID)
 	if err != nil {
 		return err
 	}

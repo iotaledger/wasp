@@ -85,7 +85,7 @@ func (txb *Builder) CreateStateBlock(color balance.Color) error {
 	if !foundAddress {
 		return errorWrongScToken
 	}
-	if err := txb.MoveToAddress(scAddress, color, 1); err != nil {
+	if err := txb.MoveTokensToAddress(scAddress, color, 1); err != nil {
 		return err
 	}
 	txb.stateBlock = sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
@@ -123,17 +123,18 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashVal
 
 // AddRequestBlock adds new request block to the builder. It automatically handles request token
 func (txb *Builder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
-	return txb.AddRequestBlockWithTransfer(reqBlk, nil, nil)
+	return txb.AddRequestBlockWithTransfer(reqBlk, nil)
 }
 
-// AddRequestBlockWithTransfer adds request block with the request token and adds respective
-// outputs for the colored transfers
-func (txb *Builder) AddRequestBlockWithTransfer(reqBlk *sctransaction.RequestBlock, targetAddr *address.Address, bals map[balance.Color]int64) error {
-	if err := txb.MintColor(reqBlk.Address(), balance.ColorIOTA, 1); err != nil {
+// AddRequestBlockWithTransfer adds request block with the request
+// token and adds respective outputs for the colored transfers
+func (txb *Builder) AddRequestBlockWithTransfer(reqBlk *sctransaction.RequestBlock, transfer map[balance.Color]int64) error {
+	targetAddr := (address.Address)(reqBlk.Target().ChainID())
+	if err := txb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
-	for col, b := range bals {
-		if err := txb.MoveToAddress(*targetAddr, col, b); err != nil {
+	for col, b := range transfer {
+		if err := txb.MoveTokensToAddress(targetAddr, col, b); err != nil {
 			return err
 		}
 	}

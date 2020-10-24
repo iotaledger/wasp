@@ -3,6 +3,7 @@ package vm
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
@@ -11,9 +12,8 @@ import (
 
 // context of one VM call (for one request)
 type VMContext struct {
-	// invariant through the batch
-	// address of the smart contract
-	Address address.Address
+	// contract id. For each call to processor chain id is the same and SC index part changes
+	ContractID coretypes.ContractID
 	// programHash
 	ProgramHash hashing.HashValue
 	// owner address

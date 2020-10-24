@@ -49,8 +49,8 @@ func (vctx *sandbox) Rollback() {
 	vctx.StateUpdate.Clear()
 }
 
-func (vctx *sandbox) GetSCAddress() *address.Address {
-	return &vctx.Address
+func (vctx *sandbox) GetContractID() coretypes.ContractID {
+	return vctx.ContractID
 }
 
 func (vctx *sandbox) GetOwnerAddress() *address.Address {
@@ -93,12 +93,12 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 		if par.IncludeReward+1 > availableIotas {
 			return false
 		}
-		err := vctx.TxBuilder.MoveToAddress(*par.TargetAddress, balance.ColorIOTA, par.IncludeReward)
+		err := vctx.TxBuilder.MoveTokensToAddress((address.Address)(par.TargetContractID.ChainID()), balance.ColorIOTA, par.IncludeReward)
 		if err != nil {
 			return false
 		}
 	}
-	reqBlock := sctransaction.NewRequestBlock(*par.TargetAddress, par.RequestCode)
+	reqBlock := sctransaction.NewRequestBlock(par.TargetContractID, par.EntryPoint)
 	reqBlock.WithTimelock(par.Timelock)
 	reqBlock.SetArgs(par.Args)
 
@@ -110,22 +110,22 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 
 func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv.Map) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
-		TargetAddress: &vctx.Address,
-		RequestCode:   reqCode,
-		Args:          args,
-		IncludeReward: 0,
+		TargetContractID: vctx.ContractID,
+		EntryPoint:       reqCode,
+		Args:             args,
+		IncludeReward:    0,
 	})
 }
 
-func (vctx *sandbox) SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args kv.Map, delaySec uint32) bool {
+func (vctx *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args kv.Map, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vctx.Timestamp) + delaySec
 
 	return vctx.SendRequest(vmtypes.NewRequestParams{
-		TargetAddress: &vctx.Address,
-		RequestCode:   reqCode,
-		Args:          args,
-		Timelock:      timelock,
-		IncludeReward: 0,
+		TargetContractID: vctx.ContractID,
+		EntryPoint:       entryPoint,
+		Args:             args,
+		Timelock:         timelock,
+		IncludeReward:    0,
 	})
 }
 

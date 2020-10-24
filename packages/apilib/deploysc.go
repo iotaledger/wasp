@@ -2,6 +2,7 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"io/ioutil"
 	"time"
@@ -19,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/multicall"
 )
 
-type CreateSCParams struct {
+type CreateChainParams struct {
 	Node                  nodeclient.NodeClient
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
@@ -33,32 +34,21 @@ type CreateSCParams struct {
 	Prefix                string
 }
 
-type ActivateSCParams struct {
-	Addresses         []*address.Address
+type ActivateChainParams struct {
+	ChainID           coretypes.ChainID
 	ApiHosts          []string
 	WaitForCompletion bool
 	PublisherHosts    []string
 	Timeout           time.Duration
 }
 
-type DeactivateSCParams struct {
-	Addresses         []*address.Address
-	ApiHosts          []string
-	WaitForCompletion bool
-	PublisherHosts    []string
-	Timeout           time.Duration
-}
-
-func ActivateSCMulti(par ActivateSCParams) error {
+func ActivateChain(par ActivateChainParams) error {
 	funs := make([]func() error, 0)
-	for _, addr := range par.Addresses {
-		for _, host := range par.ApiHosts {
-			h := host
-			addr1 := addr
-			funs = append(funs, func() error {
-				return client.NewWaspClient(h).ActivateSC(addr1)
-			})
-		}
+	for _, host := range par.ApiHosts {
+		h := host
+		funs = append(funs, func() error {
+			return client.NewWaspClient(h).ActivateChain(&par.ChainID)
+		})
 	}
 	if !par.WaitForCompletion {
 		_, errs := multicall.MultiCall(funs, 1*time.Second)
@@ -74,11 +64,8 @@ func ActivateSCMulti(par ActivateSCParams) error {
 	if err != nil {
 		return err
 	}
-	// SC is initialized when it reaches state index #1
-	patterns := make([][]string, len(par.Addresses))
-	for i := range patterns {
-		patterns[i] = []string{"state", par.Addresses[i].String(), "1"}
-	}
+	// Chain is initialized when it reaches state index #1
+	patterns := [][]string{{"state", par.ChainID.String(), "1"}}
 	succ := subs.WaitForPatterns(patterns, par.Timeout)
 	if !succ {
 		return fmt.Errorf("didn't receive activation message in %v", par.Timeout)
@@ -86,16 +73,13 @@ func ActivateSCMulti(par ActivateSCParams) error {
 	return nil
 }
 
-func DeactivateSCMulti(par DeactivateSCParams) error {
+func DeactivateChain(par ActivateChainParams) error {
 	funs := make([]func() error, 0)
-	for _, addr := range par.Addresses {
-		for _, host := range par.ApiHosts {
-			h := host
-			addr1 := addr
-			funs = append(funs, func() error {
-				return client.NewWaspClient(h).ActivateSC(addr1)
-			})
-		}
+	for _, host := range par.ApiHosts {
+		h := host
+		funs = append(funs, func() error {
+			return client.NewWaspClient(h).DeactivateChain(&par.ChainID)
+		})
 	}
 	if !par.WaitForCompletion {
 		_, errs := multicall.MultiCall(funs, 1*time.Second)
@@ -111,10 +95,7 @@ func DeactivateSCMulti(par DeactivateSCParams) error {
 	if err != nil {
 		return err
 	}
-	patterns := make([][]string, len(par.Addresses))
-	for i := range patterns {
-		patterns[i] = []string{"dismissed_committee", par.Addresses[i].String(), "1"}
-	}
+	patterns := [][]string{{"dismissed_committee", par.ChainID.String(), "1"}}
 	succ := subs.WaitForPatterns(patterns, par.Timeout)
 	if !succ {
 		return fmt.Errorf("didn't receive deactivation message in %v", par.Timeout)
@@ -122,9 +103,9 @@ func DeactivateSCMulti(par DeactivateSCParams) error {
 	return nil
 }
 
-// CreateSC performs all actions needed to deploy smart contract, except activation
+// CreateChain performs all actions needed to deploy smart contract, except activation
 // noinspection ALL
-func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
+func CreateChain(par CreateChainParams) (*address.Address, *balance.Color, error) {
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
@@ -170,7 +151,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 
 	// create origin transaction
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		Address:              *scAddr,
+		OriginAddress:        *scAddr,
 		OwnerSignatureScheme: par.OwnerSigScheme,
 		AllInputs:            allOuts,
 		ProgramHash:          par.ProgramHash,
@@ -195,8 +176,9 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
+	chainid := (coretypes.ChainID)(*scAddr)
 	err = multiclient.New(par.CommitteeApiHosts).PutBootupData(&registry.BootupData{
-		Address:        *scAddr,
+		ChainID:        chainid,
 		OwnerAddress:   ownerAddr,
 		Color:          (balance.Color)(originTx.ID()),
 		CommitteeNodes: par.CommitteePeeringHosts,
@@ -213,7 +195,7 @@ func CreateSC(par CreateSCParams) (*address.Address, *balance.Color, error) {
 
 	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "smart contract has been created succesfully. Address: %s, Color: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "smart contract has been created succesfully. Target: %s, Color: %s, N = %d, T = %d\n",
 		scAddr.String(), scColor.String(), par.N, par.T)
 	return scAddr, &scColor, err
 }

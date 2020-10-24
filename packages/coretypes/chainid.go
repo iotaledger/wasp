@@ -11,6 +11,8 @@ const ChainIDLength = address.Length
 
 type ChainID address.Address // in the future type ChainIDs balance.Color
 
+var NilChainID = ChainID{}
+
 func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
 	var b []byte
 	b, err = base58.Decode(b58)

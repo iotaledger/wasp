@@ -50,7 +50,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
 
 	err = clu.MultiClient().PutBootupData(&registry.BootupData{
-		Address:        addr,
+		ChainID:        addr,
 		Color:          color,
 		OwnerAddress:   *sc.OwnerAddress(),
 		CommitteeNodes: committeePeerNodes,

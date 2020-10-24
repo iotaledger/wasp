@@ -29,7 +29,7 @@ func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetWaspLog().Debugw("run nilProcessor 8",
 		"request code", ctx.AccessRequest().Code(),
-		"addr", ctx.GetSCAddress().String(),
+		"addr", ctx.GetContractID().String(),
 		"ts", ctx.GetTimestamp(),
 		"req", reqId.String(),
 	)

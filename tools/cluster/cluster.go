@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,7 +20,6 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -202,11 +203,12 @@ func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
 	return cluster.Config.Nodes[nodeIndex].Client()
 }
 
-func (cluster *Cluster) SCClient(sc *SmartContractFinalConfig, sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
-	return scclient.New(
+func (cluster *Cluster) SCClient(sc *SmartContractFinalConfig, sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
+	chainid := (coretypes.ChainID)(*sc.SCAddress())
+	return chainclient.New(
 		cluster.NodeClient,
 		cluster.WaspClient(sc.CommitteeNodes[0]),
-		sc.SCAddress(),
+		&chainid,
 		sigScheme,
 		30*time.Second,
 	)

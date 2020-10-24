@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/publisher"
@@ -13,10 +14,10 @@ import (
 	"io"
 )
 
-// BootupData is a minimum data needed to load a committee for the smart contract
+// BootupData is a minimum data needed to load a committee for the chain
 // it is up to the node (not smart contract) to check authorisations to create/update this record
 type BootupData struct {
-	Address        address.Address
+	ChainID        coretypes.ChainID
 	OwnerAddress   address.Address // only needed for committee nodes, can be nil for access nodes
 	Color          balance.Color   // origin tx hash
 	CommitteeNodes []string        // "host_addr:port"
@@ -24,14 +25,13 @@ type BootupData struct {
 	Active         bool
 }
 
-func dbkeyBootupData(addr *address.Address) []byte {
-	return database.MakeKey(database.ObjectTypeBootupData, addr[:])
+func dbkeyBootupData(chainID *coretypes.ChainID) []byte {
+	return database.MakeKey(database.ObjectTypeBootupData, chainID[:])
 }
 
 func SaveBootupData(bd *BootupData) error {
-	var niladdr address.Address
-	if bd.Address == niladdr {
-		return fmt.Errorf("can be empty address")
+	if bd.ChainID == coretypes.NilChainID {
+		return fmt.Errorf("can be empty chain id")
 	}
 	if bd.Color == balance.ColorNew || bd.Color == balance.ColorIOTA {
 		return fmt.Errorf("can't be IOTA or New color")
@@ -40,15 +40,15 @@ func SaveBootupData(bd *BootupData) error {
 	if err := bd.Write(&buf); err != nil {
 		return err
 	}
-	if err := database.GetRegistryPartition().Set(dbkeyBootupData(&bd.Address), buf.Bytes()); err != nil {
+	if err := database.GetRegistryPartition().Set(dbkeyBootupData(&bd.ChainID), buf.Bytes()); err != nil {
 		return err
 	}
-	publisher.Publish("bootuprec", bd.Address.String(), bd.Color.String())
+	publisher.Publish("bootuprec", bd.ChainID.String(), bd.Color.String())
 	return nil
 }
 
-func GetBootupData(addr *address.Address) (*BootupData, error) {
-	data, err := database.GetRegistryPartition().Get(dbkeyBootupData(addr))
+func GetBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
+	data, err := database.GetRegistryPartition().Get(dbkeyBootupData(chainID))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -62,13 +62,13 @@ func GetBootupData(addr *address.Address) (*BootupData, error) {
 	return ret, nil
 }
 
-func UpdateBootupData(addr *address.Address, f func(*BootupData) bool) (*BootupData, error) {
-	bd, err := GetBootupData(addr)
+func UpdateBootupData(chainID *coretypes.ChainID, f func(*BootupData) bool) (*BootupData, error) {
+	bd, err := GetBootupData(chainID)
 	if err != nil {
 		return nil, err
 	}
 	if bd == nil {
-		return nil, fmt.Errorf("No bootup data found for address %s", addr)
+		return nil, fmt.Errorf("no bootup data found for address %s", chainID.String())
 	}
 	if f(bd) {
 		err = SaveBootupData(bd)
@@ -79,8 +79,8 @@ func UpdateBootupData(addr *address.Address, f func(*BootupData) bool) (*BootupD
 	return bd, nil
 }
 
-func ActivateBootupData(addr *address.Address) (*BootupData, error) {
-	return UpdateBootupData(addr, func(bd *BootupData) bool {
+func ActivateBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
+	return UpdateBootupData(chainID, func(bd *BootupData) bool {
 		if bd.Active {
 			return false
 		}
@@ -89,8 +89,8 @@ func ActivateBootupData(addr *address.Address) (*BootupData, error) {
 	})
 }
 
-func DeactivateBootupData(addr *address.Address) (*BootupData, error) {
-	return UpdateBootupData(addr, func(bd *BootupData) bool {
+func DeactivateBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
+	return UpdateBootupData(chainID, func(bd *BootupData) bool {
 		if !bd.Active {
 			return false
 		}
@@ -116,7 +116,7 @@ func GetBootupRecords() ([]*BootupData, error) {
 }
 
 func (bd *BootupData) Write(w io.Writer) error {
-	if _, err := w.Write(bd.Address[:]); err != nil {
+	if _, err := w.Write(bd.ChainID[:]); err != nil {
 		return err
 	}
 	if _, err := w.Write(bd.OwnerAddress[:]); err != nil {
@@ -139,7 +139,7 @@ func (bd *BootupData) Write(w io.Writer) error {
 
 func (bd *BootupData) Read(r io.Reader) error {
 	var err error
-	if err = util.ReadAddress(r, &bd.Address); err != nil {
+	if err = bd.ChainID.Read(r); err != nil {
 		return err
 	}
 	if err = util.ReadAddress(r, &bd.OwnerAddress); err != nil {
@@ -161,7 +161,7 @@ func (bd *BootupData) Read(r io.Reader) error {
 }
 
 func (bd *BootupData) String() string {
-	ret := "      Address: " + bd.Address.String() + "\n"
+	ret := "      Target: " + bd.ChainID.String() + "\n"
 	ret += "      Color: " + bd.Color.String() + "\n"
 	ret += "      Owner address: " + bd.OwnerAddress.String() + "\n"
 	ret += fmt.Sprintf("      Committee nodes: %+v\n", bd.CommitteeNodes)

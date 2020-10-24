@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"time"
 )
@@ -51,9 +52,9 @@ func activate(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) error 
 	if err != nil {
 		return err
 	}
-	return waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses: []*address.Address{&addr},
-		ApiHosts:  allNodesApi,
+	return waspapi.ActivateChain(waspapi.ActivateChainParams{
+		ChainID:  (coretypes.ChainID)(addr),
+		ApiHosts: allNodesApi,
 	})
 }
 
@@ -64,8 +65,8 @@ func deactivate(sc *cluster.SmartContractFinalConfig, clu *cluster.Cluster) erro
 	if err != nil {
 		return err
 	}
-	return waspapi.DeactivateSCMulti(waspapi.DeactivateSCParams{
-		Addresses: []*address.Address{&addr},
-		ApiHosts:  allNodesApi,
+	return waspapi.DeactivateChain(waspapi.ActivateChainParams{
+		ChainID:  (coretypes.ChainID)(addr),
+		ApiHosts: allNodesApi,
 	})
 }

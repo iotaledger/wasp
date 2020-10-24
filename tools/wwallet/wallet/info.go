@@ -12,10 +12,10 @@ import (
 func addressCmd(args []string) {
 	wallet := Load()
 	kp := wallet.KeyPair()
-	fmt.Printf("Address index %d\n", addressIndex)
+	fmt.Printf("Target index %d\n", addressIndex)
 	fmt.Printf("  Private key: %s\n", kp.PrivateKey)
 	fmt.Printf("  Public key:  %s\n", kp.PublicKey)
-	fmt.Printf("  Address:     %s\n", wallet.Address())
+	fmt.Printf("  Target:     %s\n", wallet.Address())
 }
 
 func balanceCmd(args []string) {
@@ -25,8 +25,8 @@ func balanceCmd(args []string) {
 	outs, err := config.GoshimmerClient().GetConfirmedAccountOutputs(&address)
 	check(err)
 
-	fmt.Printf("Address index %d\n", addressIndex)
-	fmt.Printf("  Address: %s\n", address)
+	fmt.Printf("Target index %d\n", addressIndex)
+	fmt.Printf("  Target: %s\n", address)
 	fmt.Printf("  Balance:\n")
 	var total int64
 	if config.Verbose {

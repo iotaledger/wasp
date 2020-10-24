@@ -81,7 +81,7 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClien
 		return nil, err
 	}
 	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		Address:              addr,
+		OriginAddress:        addr,
 		OwnerSignatureScheme: scdata.OwnerSigScheme(),
 		AllInputs:            allOuts,
 		InputColor:           balance.ColorIOTA,

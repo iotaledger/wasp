@@ -107,7 +107,7 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 	} else {
 		scProgramHash = programHash.String()
 	}
-	scAddr, scColor, err := apilib.CreateSC(apilib.CreateSCParams{
+	scAddr, scColor, err := apilib.CreateChain(apilib.CreateChainParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
@@ -123,8 +123,8 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		return nil, nil, err
 	}
 
-	err = apilib.ActivateSCMulti(apilib.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
+	err = apilib.ActivateChain(apilib.ActivateChainParams{
+		ChainID:           []*address.Address{scAddr},
 		ApiHosts:          wasps.ApiHosts(),
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),

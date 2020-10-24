@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
-	"github.com/iotaledger/wasp/plugins/testplugins/roundtrip"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
@@ -46,7 +45,6 @@ func main() {
 	)
 
 	testPlugins := node.Plugins(
-		roundtrip.Init(),
 		nodeping.Init(),
 	)
 

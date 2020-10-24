@@ -2,9 +2,10 @@ package committees
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"sync"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -18,7 +19,7 @@ const PluginName = "Committees"
 var (
 	log *logger.Logger
 
-	committeesByAddress = make(map[address.Address]committee.Committee)
+	committeesByChainID = make(map[coretypes.ChainID]committee.Committee)
 	committeesMutex     = &sync.RWMutex{}
 )
 
@@ -40,14 +41,14 @@ func run(_ *node.Plugin) {
 
 		astr := make([]string, len(bootupRecords))
 		for i := range astr {
-			astr[i] = bootupRecords[i].Address.String()[:10] + ".."
+			astr[i] = bootupRecords[i].ChainID.String()[:10] + ".."
 		}
 		log.Debugf("loaded %d bootup record(s) from registry: %+v", len(bootupRecords), astr)
 
 		for _, bootupData := range bootupRecords {
 			if bootupData.Active {
 				if err := ActivateCommittee(bootupData); err != nil {
-					log.Errorf("cannot activate committee %s: %v", bootupData.Address, err)
+					log.Errorf("cannot activate committee %s: %v", bootupData.ChainID, err)
 				}
 			}
 		}
@@ -59,7 +60,7 @@ func run(_ *node.Plugin) {
 			committeesMutex.RLock()
 			defer committeesMutex.RUnlock()
 
-			for _, com := range committeesByAddress {
+			for _, com := range committeesByChainID {
 				com.Dismiss()
 			}
 			log.Infof("shutdown signal received: dismissing committees.. Done")
@@ -79,16 +80,16 @@ func ActivateCommittee(bootupData *registry.BootupData) error {
 		return fmt.Errorf("cannot activate committee for inactive SC")
 	}
 
-	_, ok := committeesByAddress[bootupData.Address]
+	_, ok := committeesByChainID[bootupData.ChainID]
 	if ok {
-		log.Debugf("committee already active: %s", bootupData.Address)
+		log.Debugf("committee already active: %s", bootupData.ChainID)
 		return nil
 	}
 	c := committee.New(bootupData, log, func() {
-		nodeconn.Subscribe(bootupData.Address, bootupData.Color)
+		nodeconn.Subscribe((address.Address)(bootupData.ChainID), bootupData.Color)
 	})
 	if c != nil {
-		committeesByAddress[bootupData.Address] = c
+		committeesByChainID[bootupData.ChainID] = c
 		log.Infof("activated smart contract:\n%s", bootupData.String())
 	} else {
 		log.Infof("failed to activate smart contract:\n%s", bootupData.String())
@@ -104,23 +105,23 @@ func DeactivateCommittee(bootupData *registry.BootupData) error {
 		return fmt.Errorf("cannot deactivate committee for active SC")
 	}
 
-	c, ok := committeesByAddress[bootupData.Address]
+	c, ok := committeesByChainID[bootupData.ChainID]
 	if !ok || c.IsDismissed() {
-		log.Debugf("committee already inactive: %s", bootupData.Address)
+		log.Debugf("committee already inactive: %s", bootupData.ChainID)
 		return nil
 	}
 	c.Dismiss()
 	return nil
 }
 
-func CommitteeByAddress(addr address.Address) committee.Committee {
+func CommitteeByChainID(chainID coretypes.ChainID) committee.Committee {
 	committeesMutex.RLock()
 	defer committeesMutex.RUnlock()
 
-	ret, ok := committeesByAddress[addr]
+	ret, ok := committeesByChainID[chainID]
 	if ok && ret.IsDismissed() {
-		delete(committeesByAddress, addr)
-		nodeconn.Unsubscribe(addr)
+		delete(committeesByChainID, chainID)
+		nodeconn.Unsubscribe((address.Address)(chainID))
 		return nil
 	}
 	return ret

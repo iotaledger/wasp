@@ -100,7 +100,7 @@ func TestNextState(t *testing.T) {
 	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
-	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 5)
+	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 5)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -231,14 +231,14 @@ func TestDeterminism(t *testing.T) {
 	err = txb.CreateOriginStateBlock(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 50)
+	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 
 	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
 
-	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 50)
+	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
 	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
@@ -247,7 +247,7 @@ func TestDeterminism(t *testing.T) {
 	err = txbClone.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
-	err = txbClone.MoveToAddress(scAddress, balance.ColorIOTA, 50)
+	err = txbClone.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)

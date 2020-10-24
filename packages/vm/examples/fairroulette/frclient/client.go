@@ -2,11 +2,12 @@ package frclient
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -14,15 +15,19 @@ import (
 )
 
 type FairRouletteClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractIndex coretypes.Uint16
 }
 
-func NewClient(scClient *scclient.SCClient) *FairRouletteClient {
-	return &FairRouletteClient{scClient}
+func NewClient(scClient *chainclient.Client, contractIndex coretypes.Uint16) *FairRouletteClient {
+	return &FairRouletteClient{
+		Client:        scClient,
+		contractIndex: contractIndex,
+	}
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	CurrentBetsAmount uint16
 	CurrentBets       []*fairroulette.BetInfo
@@ -148,6 +153,7 @@ func decodePlayerStats(result *statequery.DictResult) (map[address.Address]*fair
 
 func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transaction, error) {
 	return frc.PostRequest(
+		frc.contractIndex,
 		fairroulette.RequestPlaceBet,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
@@ -157,6 +163,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transa
 
 func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transaction, error) {
 	return frc.PostRequest(
+		frc.contractIndex,
 		fairroulette.RequestSetPlayPeriod,
 		nil,
 		nil,

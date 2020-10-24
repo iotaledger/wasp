@@ -7,7 +7,7 @@ type ScContract struct {
 func (o *ScContract) GetString(keyId int32) string {
 	switch keyId {
 	case KeyAddress:
-		return o.vm.ctx.GetSCAddress().String()
+		return o.vm.ctx.GetContractID().String()
 	case KeyColor: //TODO
 	case KeyDescription:
 		return o.vm.GetDescription()

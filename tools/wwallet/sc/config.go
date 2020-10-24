@@ -25,12 +25,12 @@ type Config struct {
 	bootupData *registry.BootupData
 }
 
-func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
+func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.SCClient {
 	var timeout time.Duration
 	if config.WaitForCompletion {
 		timeout = 1 * time.Minute
 	}
-	client := scclient.New(
+	client := chainclient.New(
 		config.GoshimmerClient(),
 		client.NewWaspClient(config.WaspApi()),
 		c.Address(),
@@ -150,7 +150,7 @@ type DeployParams struct {
 }
 
 func Deploy(params *DeployParams) (*address.Address, error) {
-	scAddress, _, err := waspapi.CreateSC(waspapi.CreateSCParams{
+	scAddress, _, err := waspapi.CreateChain(waspapi.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
@@ -166,8 +166,8 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddress},
+	err = waspapi.ActivateChain(waspapi.ActivateChainParams{
+		ChainID:           []*address.Address{scAddress},
 		ApiHosts:          config.CommitteeApi(params.Committee),
 		PublisherHosts:    config.CommitteeNanomsg(params.Committee),
 		WaitForCompletion: config.WaitForCompletion,
@@ -177,7 +177,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		return nil, err
 	}
 	fmt.Printf("Initialized %s smart contract\n", params.Description)
-	fmt.Printf("SC Address: %s\n", scAddress)
+	fmt.Printf("SC Target: %s\n", scAddress)
 
 	if config.SCAlias != "" {
 		c := Config{

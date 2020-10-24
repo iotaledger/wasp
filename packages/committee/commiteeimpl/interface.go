@@ -178,7 +178,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 		return fmt.Errorf("SendMsg: wrong peer")
 	}
 	msg := &peering.PeerMessage{
-		Address:     c.address,
+		ChainID:     (coretypes.ChainID)(c.address),
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
@@ -188,7 +188,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 
 func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
-		Address:     c.address,
+		ChainID:     (coretypes.ChainID)(c.address),
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,

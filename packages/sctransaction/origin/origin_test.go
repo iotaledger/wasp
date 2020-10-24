@@ -31,7 +31,7 @@ func TestReadWrite(t *testing.T) {
 	u.RequestFunds(ownerSigScheme.Address())
 
 	tx, err := NewOriginTransaction(NewOriginTransactionParams{
-		Address:              scAddr,
+		OriginAddress:        scAddr,
 		OwnerSignatureScheme: ownerSigScheme,
 		AllInputs:            u.GetAddressOutputs(ownerSigScheme.Address()),
 		InputColor:           balance.ColorIOTA,

@@ -72,7 +72,7 @@ func TestDwfDonateNTimes(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfClient := dwfclient.NewClient(scclient.New(
+	dwfClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -160,7 +160,7 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfDonorClient := dwfclient.NewClient(scclient.New(
+	dwfDonorClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -190,7 +190,7 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	dwfOwnerClient := dwfclient.NewClient(scclient.New(
+	dwfOwnerClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -246,7 +246,7 @@ func TestDwfDonateWithdrawNotAuthorised(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfDonorClient := dwfclient.NewClient(scclient.New(
+	dwfDonorClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,

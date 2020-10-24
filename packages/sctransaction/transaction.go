@@ -182,19 +182,9 @@ func (tx *Transaction) String() string {
 		ret += "State: none\n"
 	}
 	for i, reqBlk := range tx.Requests() {
-		addr := reqBlk.Address()
+		addr := reqBlk.Target()
 		ret += fmt.Sprintf("Req #%d: addr: %s code: %s\n", i,
 			util.Short(addr.String()), reqBlk.EntryPointCode().String())
-	}
-	return ret
-}
-
-func (tx *Transaction) NumRequestsToAddress(addr *address.Address) int {
-	ret := 0
-	for _, reqBlock := range tx.Requests() {
-		if reqBlock.Address() == *addr {
-			ret++
-		}
 	}
 	return ret
 }

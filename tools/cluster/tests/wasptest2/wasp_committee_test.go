@@ -31,8 +31,8 @@ func TestKillNode(t *testing.T) {
 			SenderSigScheme: scOwner.SigScheme(),
 			BlockParams: []waspapi.RequestBlockParams{
 				{
-					TargetSCAddress: scAddr,
-					RequestCode:     inccounter.RequestInc,
+					TargetContractID: scAddr,
+					EntryPointCode:   inccounter.RequestInc,
 				},
 			},
 			Post:                true,

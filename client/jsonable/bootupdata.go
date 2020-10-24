@@ -5,7 +5,7 @@ import (
 )
 
 type BootupData struct {
-	Address        *Address
+	ChainID        *ChainID
 	OwnerAddress   *Address
 	Color          *Color
 	CommitteeNodes []string
@@ -15,7 +15,7 @@ type BootupData struct {
 
 func NewBootupData(bd *registry.BootupData) *BootupData {
 	return &BootupData{
-		Address:        NewAddress(&bd.Address),
+		ChainID:        NewChainID(&bd.ChainID),
 		OwnerAddress:   NewAddress(&bd.OwnerAddress),
 		Color:          NewColor(&bd.Color),
 		CommitteeNodes: bd.CommitteeNodes[:],
@@ -26,7 +26,7 @@ func NewBootupData(bd *registry.BootupData) *BootupData {
 
 func (bd *BootupData) BootupData() *registry.BootupData {
 	return &registry.BootupData{
-		Address:        *bd.Address.Address(),
+		ChainID:        *bd.ChainID.ChainID(),
 		OwnerAddress:   *bd.OwnerAddress.Address(),
 		Color:          *bd.Color.Color(),
 		CommitteeNodes: bd.CommitteeNodes[:],

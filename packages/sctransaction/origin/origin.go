@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -15,7 +16,7 @@ import (
 )
 
 type NewOriginTransactionParams struct {
-	Address              address.Address
+	OriginAddress        address.Address
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
 	ProgramHash          hashing.HashValue
@@ -29,15 +30,17 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 		return nil, err
 	}
 
-	originState := state.NewVirtualState(nil, &par.Address)
+	originState := state.NewVirtualState(nil, &par.OriginAddress)
 	if err := originState.ApplyBatch(state.MustNewOriginBatch(nil)); err != nil {
 		return nil, err
 	}
-	if err := txb.CreateOriginStateBlock(originState.Hash(), &par.Address); err != nil {
+	if err := txb.CreateOriginStateBlock(originState.Hash(), &par.OriginAddress); err != nil {
 		return nil, err
 	}
 
-	initRequest := sctransaction.NewRequestBlock(par.Address, vmconst.RequestCodeInit)
+	chainid := (coretypes.ChainID)(par.OriginAddress)
+	bootupContractID := coretypes.NewContractID(chainid, 0)
+	initRequest := sctransaction.NewRequestBlock(bootupContractID, vmconst.RequestCodeInit)
 	args := kv.NewMap()
 	ownerAddress := par.OwnerSignatureScheme.Address()
 	args.Codec().SetAddress(vmconst.VarNameOwnerAddress, &ownerAddress)

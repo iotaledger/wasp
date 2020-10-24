@@ -461,7 +461,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	ctx.Publish("finalizeAuction begin")
 
 	accessReq := ctx.AccessRequest()
-	if accessReq.Sender() != *ctx.GetSCAddress() {
+	scAddr := (address.Address)(ctx.GetContractID().ChainID())
+	if accessReq.Sender() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return
 	}

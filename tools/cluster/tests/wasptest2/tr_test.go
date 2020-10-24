@@ -42,7 +42,7 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 
-	tc := trclient.NewClient(scclient.New(
+	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,

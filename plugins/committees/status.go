@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 type CommittteeStatus struct {
@@ -18,8 +19,8 @@ type CommittteeStatus struct {
 	PeerStatus   []*committee.PeerStatus
 }
 
-func GetStatus(address *address.Address) *CommittteeStatus {
-	c := CommitteeByAddress(*address)
+func GetStatus(chainID *coretypes.ChainID) *CommittteeStatus {
+	c := CommitteeByChainID(*chainID)
 	if c == nil {
 		return nil
 	}

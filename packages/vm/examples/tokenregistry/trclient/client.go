@@ -2,21 +2,21 @@ package trclient
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"sort"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 )
 
 type TokenRegistryClient struct {
-	*scclient.SCClient
+	*chainclient.Client
 }
 
-func NewClient(scClient *scclient.SCClient) *TokenRegistryClient {
+func NewClient(scClient *chainclient.Client) *TokenRegistryClient {
 	return &TokenRegistryClient{scClient}
 }
 
@@ -48,7 +48,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	Registry                     map[balance.Color]*tokenregistry.TokenMetadata
 	RegistrySortedByMintTimeDesc []*TokenMetadataWithColor // may be nil

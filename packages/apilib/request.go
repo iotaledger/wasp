@@ -18,11 +18,11 @@ import (
 )
 
 type RequestBlockParams struct {
-	TargetSCAddress *address.Address
-	RequestCode     coretypes.EntryPointCode
-	Timelock        uint32
-	Transfer        map[balance.Color]int64 // should not not include request token. It is added automatically
-	Vars            map[string]interface{}  ` `
+	TargetContractID coretypes.ContractID
+	EntryPointCode   coretypes.EntryPointCode
+	Timelock         uint32
+	Transfer         map[balance.Color]int64 // should not not include request token. It is added automatically
+	Vars             map[string]interface{}  ` `
 }
 
 type CreateRequestTransactionParams struct {
@@ -59,7 +59,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	}
 
 	for _, blockPar := range par.BlockParams {
-		reqBlk := sctransaction.NewRequestBlock(*blockPar.TargetSCAddress, blockPar.RequestCode).
+		reqBlk := sctransaction.NewRequestBlock(blockPar.TargetContractID, blockPar.EntryPointCode).
 			WithTimelock(blockPar.Timelock)
 
 		args := convertArgs(blockPar.Vars)
@@ -68,7 +68,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		}
 		reqBlk.SetArgs(args)
 
-		err = txb.AddRequestBlockWithTransfer(reqBlk, blockPar.TargetSCAddress, blockPar.Transfer)
+		err = txb.AddRequestBlockWithTransfer(reqBlk, blockPar.Transfer)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +115,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	if par.WaitForCompletion {
 		patterns := make([][]string, len(par.BlockParams))
 		for i := range patterns {
-			patterns[i] = []string{"request_out", par.BlockParams[i].TargetSCAddress.String(), tx.ID().String(), strconv.Itoa(i)}
+			patterns[i] = []string{"request_out", par.BlockParams[i].TargetContractID.String(), tx.ID().String(), strconv.Itoa(i)}
 		}
 		if !subs.WaitForPatterns(patterns, par.Timeout, par.PublisherQuorum) {
 			return nil, fmt.Errorf("didn't receive completion message after %v", par.Timeout)
