@@ -87,7 +87,7 @@ func TestFrPlaceBet(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  frDescription,
 	}) {
 		t.Fail()
@@ -164,7 +164,7 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  frDescription,
 		"playPeriod":                10,
 		//"lastWinningColor": 3,

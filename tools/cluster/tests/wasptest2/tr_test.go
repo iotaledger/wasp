@@ -87,7 +87,7 @@ func TestTRTest(t *testing.T) {
 	}
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:      scOwnerAddr[:],
-		vmconst.VarNameProgramHash:       programHash[:],
+		vmconst.VarNameProgramData:       programHash[:],
 		tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
 		vmconst.VarNameDescription:       tokenregistry.Description,
 	}) {

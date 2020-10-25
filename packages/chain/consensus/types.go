@@ -133,7 +133,7 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.currentSCState == nil {
 		return nil, false
 	}
-	h, ok, err := op.currentSCState.Variables().Codec().GetHashValue(vmconst.VarNameProgramHash)
+	h, ok, err := op.currentSCState.Variables().Codec().GetHashValue(vmconst.VarNameProgramData)
 	if !ok || err != nil {
 		return nil, false
 	}

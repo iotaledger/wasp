@@ -59,7 +59,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -111,7 +111,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -174,7 +174,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(2)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -242,7 +242,7 @@ func TestChainIncTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(chainOfRequestsLength + 1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 		inccounter.VarNumRepeats:    util.Uint64To8Bytes(0),
 	}) {
 		t.Fail()

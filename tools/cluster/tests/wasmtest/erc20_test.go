@@ -56,7 +56,7 @@ func TestDeploymentERC20(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  erc20_description,
 	}) {
 		t.Fail()
@@ -109,7 +109,7 @@ func TestInitERC20Once(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  erc20_description,
 		erc20_var_supply:            supply,
 	}) {
@@ -163,7 +163,7 @@ func TestInitERC20Twice(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  erc20_description,
 		erc20_var_supply:            supply,
 	}) {
@@ -179,7 +179,7 @@ func TestInitERC20Twice(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  erc20_description,
 		erc20_var_supply:            supply,
 	}) {
@@ -233,7 +233,7 @@ func TestTransferOk(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  erc20_description,
 		erc20_var_supply:            supply,
 	}) {
@@ -249,7 +249,7 @@ func TestTransferOk(t *testing.T) {
 	// TODO check properly the dictionary state
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  erc20_description,
 		erc20_var_supply:            supply,
 	}) {

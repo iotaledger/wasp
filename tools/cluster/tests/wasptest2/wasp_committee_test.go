@@ -61,7 +61,7 @@ func TestKillNode(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		inccounter.VarCounter:       noRequests,
 	}) {
 		t.Fail()

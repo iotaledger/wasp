@@ -278,7 +278,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(60)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}

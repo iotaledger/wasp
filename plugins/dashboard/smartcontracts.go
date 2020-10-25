@@ -70,7 +70,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 			result.Batch = batch
 			if state != nil {
 				codec := state.Variables().Codec()
-				result.ProgramHash, _, err = codec.GetHashValue(vmconst.VarNameProgramHash)
+				result.ProgramHash, _, err = codec.GetHashValue(vmconst.VarNameProgramData)
 				if err != nil {
 					return err
 				}

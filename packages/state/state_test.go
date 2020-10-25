@@ -47,14 +47,14 @@ func TestApply(t *testing.T) {
 	reqid1 := sctransaction.NewRequestId(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
-	assert.EqualValues(t, *su1.RequestId(), reqid1)
+	assert.EqualValues(t, *su1.RequestID(), reqid1)
 
 	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
 	reqid2 := sctransaction.NewRequestId(txid2, 2)
 	su2 := NewStateUpdate(&reqid2)
 	suwrong := NewStateUpdate(&reqid2)
 
-	assert.EqualValues(t, *su2.RequestId(), reqid2)
+	assert.EqualValues(t, *su2.RequestID(), reqid2)
 
 	_, err := NewBatch(nil)
 	assert.Equal(t, err == nil, false)

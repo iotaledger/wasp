@@ -3,6 +3,7 @@ package apilib
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/builtin"
 	"io"
 	"io/ioutil"
 	"time"
@@ -105,7 +106,7 @@ func DeactivateChain(par ActivateChainParams) error {
 
 // CreateChain performs all actions needed to deploy smart contract, except activation
 // noinspection ALL
-func CreateChain(par CreateChainParams) (*address.Address, *balance.Color, error) {
+func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
@@ -113,30 +114,20 @@ func CreateChain(par CreateChainParams) (*address.Address, *balance.Color, error
 	ownerAddr := par.OwnerSigScheme.Address()
 
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "creating and deploying smart contract. Owner address is %s. Parameters N = %d, T = %d\n",
+	fmt.Fprintf(textout, "creating new chain. Owner address is %s. Parameters N = %d, T = %d\n",
 		ownerAddr.String(), par.N, par.T)
 	// check if SC is hardcoded. If not, require consistent metadata in all nodes
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "checking program hash %s.. \n", par.ProgramHash.String())
-
-	fmt.Fprint(textout, par.Prefix)
-	md, err := multiclient.New(par.CommitteeApiHosts).CheckProgramMetadata(&par.ProgramHash)
-	if err != nil {
-		fmt.Fprintf(textout, "checking program metadata: FAILED: %v\n", err)
-		return nil, nil, err
-	}
-	fmt.Fprintf(textout, "checking program metadata: OK. VMType: '%s', description: '%s'\n",
-		md.VMType, md.Description)
 
 	// generate distributed key set on committee nodes
-	scAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)
+	chainAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "generating distributed key set.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	} else {
-		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", scAddr.String())
+		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", chainAddr.String())
 	}
 
 	allOuts, err := par.Node.GetConfirmedAccountOutputs(&ownerAddr)
@@ -144,39 +135,37 @@ func CreateChain(par CreateChainParams) (*address.Address, *balance.Color, error
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "requesting owner address' UTXOs from node.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	} else {
 		fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 	}
 
 	// create origin transaction
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:        *scAddr,
+		OriginAddress:        *chainAddr,
 		OwnerSignatureScheme: par.OwnerSigScheme,
 		AllInputs:            allOuts,
-		ProgramHash:          par.ProgramHash,
-		Description:          par.Description,
-		InputColor:           balance.ColorIOTA,
 	})
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating origin transaction.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	} else {
 		fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
+	// post origin transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(originTx.Transaction)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "posting origin transaction.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	} else {
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
-	chainid := (coretypes.ChainID)(*scAddr)
+	chainid := (coretypes.ChainID)(*chainAddr) // using address as chain id
 	err = multiclient.New(par.CommitteeApiHosts).PutBootupData(&registry.BootupData{
 		ChainID:        chainid,
 		OwnerAddress:   ownerAddr,
@@ -188,14 +177,40 @@ func CreateChain(par CreateChainParams) (*address.Address, *balance.Color, error
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "sending smart contract metadata to Wasp nodes.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
-	// TODO not finished with access nodes
+
+	allOuts, err = par.Node.GetConfirmedAccountOutputs(&ownerAddr)
+
+	reqTx, err := origin.NewBootupRequestTransaction(origin.NewBootupRequestTransactionParams{
+		ChainID:              chainid,
+		OwnerSignatureScheme: par.OwnerSigScheme,
+		AllInputs:            allOuts,
+		CoreContractBinary:   []byte(builtin.DummyBuiltinProgramHash),
+		VMType:               "builtin",
+	})
+	if err != nil {
+		fmt.Fprintf(textout, "creating bootup request.. FAILED: %v\n", err)
+		return nil, nil, nil, err
+	}
+	fmt.Fprintf(textout, "creating bootup request.. OK: %v\n", err)
+
+	// post bootup request transaction and wait for confirmation
+	err = par.Node.PostAndWaitForConfirmation(reqTx.Transaction)
+	fmt.Fprint(textout, par.Prefix)
+	if err != nil {
+		fmt.Fprintf(textout, "posting bootup request transaction.. FAILED: %v\n", err)
+		return nil, nil, nil, err
+	} else {
+		fmt.Fprintf(textout, "posting bootup request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
+	}
 
 	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "smart contract has been created succesfully. Target: %s, Color: %s, N = %d, T = %d\n",
-		scAddr.String(), scColor.String(), par.N, par.T)
-	return scAddr, &scColor, err
+
+	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, Address: %s, Color: %s, N = %d, T = %d\n",
+		chainid.String(), chainAddr.String(), scColor.String(), par.N, par.T)
+
+	return &chainid, chainAddr, &scColor, err
 }

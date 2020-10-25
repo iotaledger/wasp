@@ -84,7 +84,6 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClien
 		OriginAddress:        addr,
 		OwnerSignatureScheme: scdata.OwnerSigScheme(),
 		AllInputs:            allOuts,
-		InputColor:           balance.ColorIOTA,
 		ProgramHash:          progHash,
 	})
 	if err != nil {

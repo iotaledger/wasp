@@ -94,14 +94,15 @@ func (txb *Builder) CreateStateBlock(color balance.Color) error {
 	return nil
 }
 
-// CreateOriginStateBlock initalizes origin state transaction of the smart contract
-// with address scAddress in the builder. It mints smart contract token, sets origin state hash
-// It sets state index and timestamp to 0
-func (txb *Builder) CreateOriginStateBlock(stateHash *hashing.HashValue, scAddress *address.Address) error {
+// CreateOriginStateBlock
+// - initializes origin state transaction of the chain with originAddress in the builder.
+// - mints chain token, sets origin state hash
+// - sets state index and timestamp to 0
+func (txb *Builder) CreateOriginStateBlock(stateHash *hashing.HashValue, originAddress *address.Address) error {
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
-	if err := txb.MintColor(*scAddress, balance.ColorIOTA, 1); err != nil {
+	if err := txb.MintColor(*originAddress, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
 	txb.stateBlock = sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{

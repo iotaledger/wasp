@@ -3,6 +3,7 @@ package kv
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -37,6 +38,7 @@ type RCodec interface {
 	GetInt64(key Key) (int64, bool, error)
 	GetAddress(key Key) (*address.Address, bool, error)
 	GetHashValue(key Key) (*hashing.HashValue, bool, error)
+	GetChainID(key Key) (*coretypes.ChainID, bool, error)
 }
 
 // MustrCodec is like a RCodec that automatically panics on error
@@ -47,6 +49,7 @@ type MustRCodec interface {
 	GetInt64(key Key) (int64, bool)
 	GetAddress(key Key) (*address.Address, bool)
 	GetHashValue(key Key) (*hashing.HashValue, bool)
+	GetChainID(key Key) (*coretypes.ChainID, bool)
 }
 
 // WCodec is an interface that offers easy conversions between []byte and other types when
@@ -58,6 +61,7 @@ type WCodec interface {
 	SetInt64(key Key, value int64)
 	SetAddress(key Key, value *address.Address)
 	SetHashValue(key Key, value *hashing.HashValue)
+	SetChainID(key Key, value *coretypes.ChainID)
 }
 
 type codec struct {
@@ -241,4 +245,26 @@ func (c mustcodec) GetHashValue(key Key) (*hashing.HashValue, bool) {
 
 func (c codec) SetHashValue(key Key, h *hashing.HashValue) {
 	c.kv.Set(key, h[:])
+}
+
+func (c codec) GetChainID(key Key) (*coretypes.ChainID, bool, error) {
+	var b []byte
+	b, err := c.kv.Get(key)
+	if err != nil || b == nil {
+		return nil, false, err
+	}
+	ret, err := coretypes.NewChainIDFromBytes(b)
+	return &ret, err == nil, err
+}
+
+func (c mustcodec) GetChainID(key Key) (*coretypes.ChainID, bool) {
+	ret, ok, err := c.codec.GetChainID(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret, ok
+}
+
+func (c codec) SetChainID(key Key, chid *coretypes.ChainID) {
+	c.kv.Set(key, chid[:])
 }

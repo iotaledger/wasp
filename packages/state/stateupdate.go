@@ -11,7 +11,7 @@ import (
 
 type stateUpdate struct {
 	batchIndex uint16
-	requestId  coretypes.RequestID
+	requestID  coretypes.RequestID
 	timestamp  int64
 	mutations  kv.MutationSequence
 }
@@ -22,7 +22,7 @@ func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
 		req = *reqid
 	}
 	return &stateUpdate{
-		requestId: req,
+		requestID: req,
 		mutations: kv.NewMutationSequence(),
 	}
 }
@@ -39,7 +39,7 @@ func (su *stateUpdate) Clear() {
 }
 
 func (su *stateUpdate) String() string {
-	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestId.String(), su.Timestamp(), su.mutations)
+	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestID.String(), su.Timestamp(), su.mutations)
 	return ret
 }
 
@@ -52,8 +52,8 @@ func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
 	return su
 }
 
-func (su *stateUpdate) RequestId() *coretypes.RequestID {
-	return &su.requestId
+func (su *stateUpdate) RequestID() *coretypes.RequestID {
+	return &su.requestID
 }
 
 func (su *stateUpdate) Mutations() kv.MutationSequence {
@@ -61,7 +61,7 @@ func (su *stateUpdate) Mutations() kv.MutationSequence {
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
-	if _, err := w.Write(su.requestId[:]); err != nil {
+	if err := su.requestID.Write(w); err != nil {
 		return err
 	}
 	if err := su.mutations.Write(w); err != nil {
@@ -71,7 +71,7 @@ func (su *stateUpdate) Write(w io.Writer) error {
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
-	if _, err := r.Read(su.requestId[:]); err != nil {
+	if err := su.requestID.Read(r); err != nil {
 		return err
 	}
 	if err := su.mutations.Read(r); err != nil {

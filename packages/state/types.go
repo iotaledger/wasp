@@ -42,7 +42,7 @@ type VirtualState interface {
 // ResultBatch is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
-	RequestId() *coretypes.RequestID
+	RequestID() *coretypes.RequestID
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values

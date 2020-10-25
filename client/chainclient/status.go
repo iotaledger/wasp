@@ -38,7 +38,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 	query := statequery.NewRequest()
 	query.AddGeneralData()
 	query.AddScalar(vmconst.VarNameOwnerAddress)
-	query.AddScalar(vmconst.VarNameProgramHash)
+	query.AddScalar(vmconst.VarNameProgramData)
 	query.AddScalar(vmconst.VarNameDescription)
 	query.AddScalar(vmconst.VarNameMinimumReward)
 	addCustomQueries(query)
@@ -58,7 +58,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 		StateTxId:  res.StateTxId.ID(),
 		Requests:   res.Requests,
 
-		ProgramHash:   res.Get(vmconst.VarNameProgramHash).MustHashValue(),
+		ProgramHash:   res.Get(vmconst.VarNameProgramData).MustHashValue(),
 		Description:   description,
 		OwnerAddress:  res.Get(vmconst.VarNameOwnerAddress).MustAddress(),
 		MinimumReward: minReward,

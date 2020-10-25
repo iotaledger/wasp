@@ -6,6 +6,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
+const DummyBuiltinProgramHash = "J2iLkpSUbuebg6XEV51DbrTtJmgeisGW6hgLcUUsGQH2"
+
 type builtinProcessor map[coretypes.EntryPointCode]builtinEntryPoint
 
 type builtinEntryPoint func(ctx vmtypes.Sandbox)
@@ -58,7 +60,7 @@ func initSC(ctx vmtypes.Sandbox) {
 	ctx.AccessState().SetAddress(vmconst.VarNameOwnerAddress, ownerAddress)
 
 	// set program hash
-	progHash, ok, err := ctx.AccessRequest().Args().GetHashValue(vmconst.VarNameProgramHash)
+	progHash, ok, err := ctx.AccessRequest().Args().GetHashValue(vmconst.VarNameProgramData)
 	if err != nil {
 		ctx.Publishf("init_sc error Could not read program hash from the request: %s", err.Error())
 		return
@@ -67,7 +69,7 @@ func initSC(ctx vmtypes.Sandbox) {
 		ctx.Publishf("init_sc warn program hash not set; smart contract will be able to process only built-in requests.")
 		return
 	}
-	ctx.AccessState().SetHashValue(vmconst.VarNameProgramHash, progHash)
+	ctx.AccessState().SetHashValue(vmconst.VarNameProgramData, progHash)
 	ctx.Publishf("init_sc info program hash set to %s.", progHash.String())
 
 	// set description

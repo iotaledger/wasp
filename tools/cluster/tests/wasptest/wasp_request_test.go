@@ -55,7 +55,7 @@ func TestSend1Request(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -109,7 +109,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -163,7 +163,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -217,7 +217,7 @@ func TestSend60Requests500msec(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -270,7 +270,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}

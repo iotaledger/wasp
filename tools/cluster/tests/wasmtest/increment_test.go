@@ -52,7 +52,7 @@ func TestIncDeployment(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 	}) {
 		t.Fail()
@@ -119,7 +119,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  description,
 	}) {
 		t.Fail()
@@ -186,7 +186,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 		"counter":                   util.Uint64To8Bytes(uint64(increments)),
 	}) {
@@ -248,7 +248,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 		"counter":                   util.Uint64To8Bytes(uint64(2)),
 	}) {
@@ -315,7 +315,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 		"counter":                   util.Uint64To8Bytes(uint64(numRepeats + 1)),
 		"numRepeats":                util.Uint64To8Bytes(0),

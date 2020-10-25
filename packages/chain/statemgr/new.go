@@ -21,7 +21,7 @@ type stateManager struct {
 	// after that it is always true
 	solidStateValid bool
 
-	// flag pingPong[idx] if ping-pong message wes received from the peer idx
+	// flag pingPong[idx] if ping-pong message was received from the peer idx
 	pingPong              []bool
 	deadlineForPongQuorum time.Time
 

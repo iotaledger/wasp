@@ -95,7 +95,7 @@ func TestTRMint1Token(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables(sc, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress:      scOwnerAddr.Bytes(),
-		vmconst.VarNameProgramHash:       progHash.Bytes(),
+		vmconst.VarNameProgramData:       progHash.Bytes(),
 		tokenregistry.VarStateListColors: []byte(mintedColor.String()),
 	}) {
 		t.Fail()

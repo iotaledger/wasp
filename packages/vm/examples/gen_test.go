@@ -1,4 +1,4 @@
-package fairroulette
+package examples
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -7,6 +7,6 @@ import (
 
 // it is needed only to generate dummy hash code
 func TestGenData(t *testing.T) {
-	h := hashing.HashStrings("FairRoulette smart contract")
-	t.Logf("FairRulette program hash = %s", h.String())
+	h := hashing.HashStrings("dummy builtin program")
+	t.Logf("dummy builtin program hash = %s", h.String())
 }

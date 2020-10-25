@@ -755,7 +755,7 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 
 		expectedState := kv.FromGoMap(expectedState)
 		expectedState.Codec().SetAddress(vmconst.VarNameOwnerAddress, sc.OwnerAddress())
-		expectedState.Codec().SetHashValue(vmconst.VarNameProgramHash, &scProgHash)
+		expectedState.Codec().SetHashValue(vmconst.VarNameProgramData, &scProgHash)
 
 		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
 		fmt.Printf("      Actual: index %d\n%s\n", stateIndex, state)

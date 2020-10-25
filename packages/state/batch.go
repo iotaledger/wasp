@@ -27,7 +27,7 @@ func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
 	}
 	for i, su := range stateUpdates {
 		for j := i + 1; j < len(stateUpdates); j++ {
-			if *su.RequestId() == *stateUpdates[j].RequestId() {
+			if *su.RequestID() == *stateUpdates[j].RequestID() {
 				return nil, fmt.Errorf("duplicate request id")
 			}
 		}
@@ -101,7 +101,7 @@ func (b *batch) Size() uint16 {
 func (b *batch) RequestIds() []*coretypes.RequestID {
 	ret := make([]*coretypes.RequestID, b.Size())
 	for i, su := range b.stateUpdates {
-		ret[i] = su.RequestId()
+		ret[i] = su.RequestID()
 	}
 	return ret
 }

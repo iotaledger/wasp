@@ -46,7 +46,7 @@ func TestDwfDeploy(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfDescription,
 	}) {
 		t.Fail()
@@ -134,7 +134,7 @@ func TestDwfDonateNTimes(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
-		vmconst.VarNameProgramHash:                programHash[:],
+		vmconst.VarNameProgramData:                programHash[:],
 		vmconst.VarNameDescription:                dwfDescription,
 		donatewithfeedback.VarStateMaxDonation:    42,
 		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
@@ -222,7 +222,7 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfDescription,
 	}) {
 		t.Fail()
@@ -302,7 +302,7 @@ func TestDwfDonateWithdrawNotAuthorised(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfDescription,
 	}) {
 		t.Fail()

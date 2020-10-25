@@ -75,7 +75,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  []byte(sc9.ProgramHash),
+		vmconst.VarNameProgramData:  []byte(sc9.ProgramHash),
 	}) {
 		t.Fail()
 	}
