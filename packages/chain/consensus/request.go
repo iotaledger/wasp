@@ -2,7 +2,7 @@ package consensus
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -37,7 +37,7 @@ func (op *operator) requestFromId(reqId coretypes.RequestID) (*request, bool) {
 }
 
 // request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg *committee.RequestMsg) (*request, bool) {
+func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	reqId := reqMsg.RequestId()
 	if op.isRequestProcessed(reqId) {
 		return nil, false

@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -35,8 +35,8 @@ func (op *operator) sendRequestNotificationsToLeader() {
 		currentLeaderPeerIndex, len(op.requests), len(reqs))
 
 	reqIds := takeIds(reqs)
-	msgData := util.MustBytes(&committee.NotifyReqMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	msgData := util.MustBytes(&chain.NotifyReqMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: op.mustStateIndex(),
 		},
 		RequestIds: reqIds,
@@ -48,13 +48,13 @@ func (op *operator) sendRequestNotificationsToLeader() {
 		"state index", op.mustStateIndex(),
 		"reqs", idsShortStr(reqIds),
 	)
-	if err := op.committee.SendMsg(currentLeaderPeerIndex, committee.MsgNotifyRequests, msgData); err != nil {
+	if err := op.committee.SendMsg(currentLeaderPeerIndex, chain.MsgNotifyRequests, msgData); err != nil {
 		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
 	op.setNextConsensusStage(consensusStageSubNotificationsSent)
 }
 
-func (op *operator) storeNotification(msg *committee.NotifyReqMsg) {
+func (op *operator) storeNotification(msg *chain.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if stateDefined && msg.StateIndex < stateIndex {
 		// don't save from earlier. The current currentSCState saved only for tracking
@@ -64,7 +64,7 @@ func (op *operator) storeNotification(msg *committee.NotifyReqMsg) {
 }
 
 // markRequestsNotified stores information about notification in the current currentSCState
-func (op *operator) markRequestsNotified(msgs []*committee.NotifyReqMsg) {
+func (op *operator) markRequestsNotified(msgs []*chain.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {
 		return

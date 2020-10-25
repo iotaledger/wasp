@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
@@ -34,9 +34,9 @@ func handleRequestStatus(c echo.Context) error {
 	}
 	var isProcessed bool
 	switch cmt.GetRequestProcessingStatus(&reqId) {
-	case committee.RequestProcessingStatusCompleted:
+	case chain.RequestProcessingStatusCompleted:
 		isProcessed = true
-	case committee.RequestProcessingStatusBacklog:
+	case chain.RequestProcessingStatusBacklog:
 		isProcessed = false
 	}
 	return c.JSON(http.StatusOK, client.RequestStatusResponse{

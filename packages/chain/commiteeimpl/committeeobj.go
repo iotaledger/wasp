@@ -4,9 +4,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/packages/committee/consensus"
-	"github.com/iotaledger/wasp/packages/committee/statemgr"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -34,13 +34,13 @@ type committeeObj struct {
 	quorum          uint16
 	ownIndex        uint16
 	chMsg           chan interface{}
-	stateMgr        committee.StateManager
-	operator        committee.Operator
+	stateMgr        chain.StateManager
+	operator        chain.Operator
 	isCommitteeNode atomic.Bool
 	log             *logger.Logger
 }
 
-func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) committee.Committee {
+func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) chain.Chain {
 	log.Debugw("creating committee", "addr", bootupData.ChainID.String())
 
 	addr := bootupData.ChainID
@@ -49,7 +49,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		util.IntersectsLists(bootupData.CommitteeNodes, bootupData.AccessNodes) ||
 		util.ContainsInList(peering.MyNetworkId(), bootupData.AccessNodes) {
 
-		log.Errorf("can't create committee object for %s: bootup data contains duplicate node addresses. Committee nodes: %+v",
+		log.Errorf("can't create committee object for %s: bootup data contains duplicate node addresses. Chain nodes: %+v",
 			addr.String(), bootupData.CommitteeNodes)
 		return nil
 	}
@@ -139,8 +139,8 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		ret.SetQuorumOfConnectionsReached()
 
 		go func() {
-			ret.log.Infof("wait for %s more before activating the committee", committee.AdditionalConnectPeriod)
-			time.Sleep(committee.AdditionalConnectPeriod)
+			ret.log.Infof("wait for %s more before activating the committee", chain.AdditionalConnectPeriod)
+			time.Sleep(chain.AdditionalConnectPeriod)
 			ret.log.Infof("connection period is over. Peer status: %s", ret.PeerStatus())
 
 			ret.SetConnectPeriodOver()

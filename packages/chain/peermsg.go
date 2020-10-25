@@ -1,4 +1,4 @@
-package committee
+package chain
 
 import (
 	"fmt"

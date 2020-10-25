@@ -1,4 +1,4 @@
-package committee
+package chain
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"

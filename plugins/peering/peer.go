@@ -24,7 +24,7 @@ type Peer struct {
 	peerconn    *peeredConnection // nil means not connected
 	handshakeOk bool
 	// network locations as taken from the SC data
-	remoteLocation string
+	remoteNetid string
 
 	startOnce *sync.Once
 	numUsers  int
@@ -35,13 +35,13 @@ var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetr
 
 func isInbound(remoteLocation string) bool {
 	if remoteLocation == MyNetworkId() {
-		panic("remoteLocation == myLocation")
+		panic("remoteNetid == myLocation")
 	}
 	return remoteLocation < MyNetworkId()
 }
 
 func (peer *Peer) isInbound() bool {
-	return isInbound(peer.remoteLocation)
+	return isInbound(peer.remoteNetid)
 }
 
 func peeringId(remoteLocation string) string {
@@ -53,7 +53,7 @@ func peeringId(remoteLocation string) string {
 }
 
 func (peer *Peer) PeeringId() string {
-	return peeringId(peer.remoteLocation)
+	return peeringId(peer.remoteNetid)
 }
 
 // return true if is alive and average latencyRingBuf in nanosec
@@ -101,7 +101,7 @@ func (peer *Peer) runOutbound() {
 	if peer.peerconn != nil {
 		panic("peer.peerconn != nil")
 	}
-	log.Debugf("runOutbound %s", peer.remoteLocation)
+	log.Debugf("runOutbound %s", peer.remoteNetid)
 
 	// always try to reconnect
 	defer func() {
@@ -120,9 +120,9 @@ func (peer *Peer) runOutbound() {
 
 	if err := backoff.Retry(dialRetryPolicy, func() error {
 		var err error
-		conn, err = net.DialTimeout("tcp", peer.remoteLocation, dialTimeout)
+		conn, err = net.DialTimeout("tcp", peer.remoteNetid, dialTimeout)
 		if err != nil {
-			return fmt.Errorf("dial %s failed: %w", peer.remoteLocation, err)
+			return fmt.Errorf("dial %s failed: %w", peer.remoteNetid, err)
 		}
 		return nil
 	}); err != nil {
@@ -134,9 +134,9 @@ func (peer *Peer) runOutbound() {
 		log.Errorf("error during sendHandshake: %v", err)
 		return
 	}
-	log.Debugf("starting reading outbound %s", peer.remoteLocation)
+	log.Debugf("starting reading outbound %s", peer.remoteNetid)
 	err := peer.peerconn.Read()
-	log.Debugw("stopped reading outbound. Closing", "remote", peer.remoteLocation, "err", err)
+	log.Debugw("stopped reading outbound. Closing", "remote", peer.remoteNetid, "err", err)
 	peer.closeConn()
 }
 
@@ -147,7 +147,7 @@ func (peer *Peer) sendHandshake() error {
 		MsgData: []byte(peer.PeeringId()),
 	}, time.Now().UnixNano())
 	_, err := peer.peerconn.Write(data)
-	log.Debugf("sendHandshake '%s' --> '%s', id = %s", MyNetworkId(), peer.remoteLocation, peer.PeeringId())
+	log.Debugf("sendHandshake '%s' --> '%s', id = %s", MyNetworkId(), peer.remoteNetid, peer.PeeringId())
 	return err
 }
 
@@ -215,7 +215,7 @@ func SendMsgToPeers(msg *PeerMessage, ts int64, peers ...*Peer) uint16 {
 
 func (peer *Peer) sendData(data []byte) error {
 	if peer.peerconn == nil {
-		return fmt.Errorf("no connection with %s", peer.remoteLocation)
+		return fmt.Errorf("no connection with %s", peer.remoteNetid)
 	}
 	num, err := peer.peerconn.Write(data)
 	if num != len(data) {

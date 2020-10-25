@@ -2,7 +2,7 @@ package commiteeimpl
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
@@ -18,39 +18,39 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 		// receive a message from peer
 		c.processPeerMessage(msgt)
 
-	case *committee.StateUpdateMsg:
+	case *chain.StateUpdateMsg:
 		// StateUpdateMsg may come from peer and from own consensus operator
 		c.stateMgr.EventStateUpdateMsg(msgt)
 
-	case *committee.StateTransitionMsg:
+	case *chain.StateTransitionMsg:
 		if c.operator != nil {
 			c.operator.EventStateTransitionMsg(msgt)
 		}
 
-	case committee.PendingBatchMsg:
+	case chain.PendingBatchMsg:
 		c.stateMgr.EventPendingBatchMsg(msgt)
 
-	case committee.ProcessorIsReady:
+	case chain.ProcessorIsReady:
 		if c.operator != nil {
 			c.operator.EventProcessorReady(msgt)
 		}
 
-	case *committee.StateTransactionMsg:
+	case *chain.StateTransactionMsg:
 		// receive state transaction message
 		c.stateMgr.EventStateTransactionMsg(msgt)
 
-	case *committee.TransactionInclusionLevelMsg:
+	case *chain.TransactionInclusionLevelMsg:
 		if c.operator != nil {
 			c.operator.EventTransactionInclusionLevelMsg(msgt)
 		}
 
-	case *committee.RequestMsg:
+	case *chain.RequestMsg:
 		// receive request message
 		if c.operator != nil {
 			c.operator.EventRequestMsg(msgt)
 		}
 
-	case committee.BalancesMsg:
+	case chain.BalancesMsg:
 		if c.operator != nil {
 			c.operator.EventBalancesMsg(msgt)
 		}
@@ -60,7 +60,7 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 		if c.operator != nil {
 			c.operator.EventResultCalculated(msgt)
 		}
-	case committee.TimerTick:
+	case chain.TimerTick:
 
 		if msgt%2 == 0 {
 			if c.stateMgr != nil {
@@ -80,8 +80,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 
 	switch msg.MsgType {
 
-	case committee.MsgStateIndexPingPong:
-		msgt := &committee.StateIndexPingPongMsg{}
+	case chain.MsgStateIndexPingPong:
+		msgt := &chain.StateIndexPingPongMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -91,8 +91,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
 		c.stateMgr.EventStateIndexPingPongMsg(msgt)
 
-	case committee.MsgNotifyRequests:
-		msgt := &committee.NotifyReqMsg{}
+	case chain.MsgNotifyRequests:
+		msgt := &chain.NotifyReqMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -105,8 +105,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.operator.EventNotifyReqMsg(msgt)
 		}
 
-	case committee.MsgNotifyFinalResultPosted:
-		msgt := &committee.NotifyFinalResultPostedMsg{}
+	case chain.MsgNotifyFinalResultPosted:
+		msgt := &chain.NotifyFinalResultPostedMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -119,8 +119,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.operator.EventNotifyFinalResultPostedMsg(msgt)
 		}
 
-	case committee.MsgStartProcessingRequest:
-		msgt := &committee.StartProcessingBatchMsg{}
+	case chain.MsgStartProcessingRequest:
+		msgt := &chain.StartProcessingBatchMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -134,8 +134,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.operator.EventStartProcessingBatchMsg(msgt)
 		}
 
-	case committee.MsgSignedHash:
-		msgt := &committee.SignedHashMsg{}
+	case chain.MsgSignedHash:
+		msgt := &chain.SignedHashMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -149,8 +149,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.operator.EventSignedHashMsg(msgt)
 		}
 
-	case committee.MsgGetBatch:
-		msgt := &committee.GetBatchMsg{}
+	case chain.MsgGetBatch:
+		msgt := &chain.GetBatchMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -160,8 +160,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 
 		c.stateMgr.EventGetBatchMsg(msgt)
 
-	case committee.MsgBatchHeader:
-		msgt := &committee.BatchHeaderMsg{}
+	case chain.MsgBatchHeader:
+		msgt := &chain.BatchHeaderMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -171,8 +171,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventBatchHeaderMsg(msgt)
 
-	case committee.MsgStateUpdate:
-		msgt := &committee.StateUpdateMsg{}
+	case chain.MsgStateUpdate:
+		msgt := &chain.StateUpdateMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -182,8 +182,8 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventStateUpdateMsg(msgt)
 
-	case committee.MsgTestTrace:
-		msgt := &committee.TestTraceMsg{}
+	case chain.MsgTestTrace:
+		msgt := &chain.TestTraceMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return

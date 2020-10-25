@@ -1,4 +1,4 @@
-package committee
+package chain
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type Committee interface {
+type Chain interface {
 	Address() *address.Address
 	OwnerAddress() *address.Address
 	Color() *balance.Color
@@ -21,7 +21,6 @@ type Committee interface {
 	NumPeers() uint16
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16
-	SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error)
 	IsAlivePeer(peerIndex uint16) bool
 	ReceiveMessage(msg interface{})
 	InitTestRound()
@@ -81,8 +80,8 @@ type Operator interface {
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
-var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Committee
+var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Chain
 
-func New(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Committee {
+func New(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Chain {
 	return ConstructorNew(bootupData, log, onActivation)
 }

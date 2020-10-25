@@ -3,7 +3,7 @@ package statemgr
 import (
 	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -35,13 +35,11 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 	}
 
 	sm.consensusNotifiedOnStateTransition = true
-	go func() {
-		sm.committee.ReceiveMessage(&committee.StateTransitionMsg{
-			VariableState:    sm.solidState,
-			StateTransaction: sm.approvingTransaction,
-			Synchronized:     sm.isSynchronized(),
-		})
-	}()
+	go sm.committee.ReceiveMessage(&chain.StateTransitionMsg{
+		VariableState:    sm.solidState,
+		StateTransaction: sm.approvingTransaction,
+		Synchronized:     sm.isSynchronized(),
+	})
 }
 
 // sendPingsIfNeeded sends pings to the committee peers to gather evidence about the largest
@@ -177,17 +175,17 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		return
 	}
 	// it is time to ask for the next state update to next peer in the permutation
-	data := util.MustBytes(&committee.GetBatchMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	data := util.MustBytes(&chain.GetBatchMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: sm.solidState.StateIndex() + 1,
 		},
 	})
 	// send messages until first without error
 	for i := uint16(0); i < sm.committee.Size(); i++ {
-		if err := sm.committee.SendMsg(sm.permutation.Next(), committee.MsgGetBatch, data); err == nil {
+		if err := sm.committee.SendMsg(sm.permutation.Next(), chain.MsgGetBatch, data); err == nil {
 			break
 		}
-		sm.syncMessageDeadline = time.Now().Add(committee.PeriodBetweenSyncMessages)
+		sm.syncMessageDeadline = time.Now().Add(chain.PeriodBetweenSyncMessages)
 	}
 }
 
@@ -317,7 +315,7 @@ func (sm *stateManager) requestStateTransaction(pb *pendingBatch) {
 	txid := pb.batch.StateTransactionId()
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
 	_ = nodeconn.RequestConfirmedTransactionFromNode(&txid)
-	pb.stateTransactionRequestDeadline = time.Now().Add(committee.StateTransactionRequestTimeout)
+	pb.stateTransactionRequestDeadline = time.Now().Add(chain.StateTransactionRequestTimeout)
 }
 
 func (sm *stateManager) numPongs() uint16 {
@@ -339,8 +337,8 @@ func (sm *stateManager) pingPongReceived(senderIndex uint16) {
 }
 
 func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
-	sm.committee.SendMsg(targetPeerIndex, committee.MsgStateIndexPingPong, util.MustBytes(&committee.StateIndexPingPongMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	sm.committee.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: sm.solidState.StateIndex(),
 		},
 		RSVP: false,
@@ -350,8 +348,8 @@ func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
 func (sm *stateManager) sendPingsToCommitteePeers() {
 	sm.log.Debugf("pinging peers")
 
-	data := util.MustBytes(&committee.StateIndexPingPongMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	data := util.MustBytes(&chain.StateIndexPingPongMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: sm.solidState.StateIndex(),
 		},
 		RSVP: true,
@@ -361,10 +359,10 @@ func (sm *stateManager) sendPingsToCommitteePeers() {
 		if pinged {
 			continue
 		}
-		if err := sm.committee.SendMsg(uint16(i), committee.MsgStateIndexPingPong, data); err == nil {
+		if err := sm.committee.SendMsg(uint16(i), chain.MsgStateIndexPingPong, data); err == nil {
 			numSent++
 		}
 	}
 	sm.log.Debugf("sent pings to %d committee peers", numSent)
-	sm.deadlineForPongQuorum = time.Now().Add(committee.RepeatPingAfter)
+	sm.deadlineForPongQuorum = time.Now().Add(chain.RepeatPingAfter)
 }

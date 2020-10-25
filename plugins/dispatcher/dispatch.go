@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/plugins/chains"
@@ -25,7 +25,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 		"addr", cmt.Address().String(),
 	)
 
-	cmt.ReceiveMessage(&committee.StateTransactionMsg{
+	cmt.ReceiveMessage(&chain.StateTransactionMsg{
 		Transaction: tx,
 	})
 }
@@ -33,7 +33,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
 	if cmt := chains.GetChain((coretypes.ChainID)(addr)); cmt != nil {
-		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
+		cmt.ReceiveMessage(chain.BalancesMsg{Balances: bals})
 	}
 }
 
@@ -54,14 +54,14 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	log.Debugf("received tx with balances: %s", tx.ID().String())
 
 	// update balances before state and requests
-	cmt.ReceiveMessage(committee.BalancesMsg{
+	cmt.ReceiveMessage(chain.BalancesMsg{
 		Balances: balances,
 	})
 
 	txProp := tx.MustProperties() // was parsed before
 	if txProp.IsState() && *txProp.MustChainID() == (coretypes.ChainID)(addr) {
 		// it is a state update to addr. Send it
-		cmt.ReceiveMessage(&committee.StateTransactionMsg{
+		cmt.ReceiveMessage(&chain.StateTransactionMsg{
 			Transaction: tx,
 		})
 	}
@@ -69,7 +69,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	// send all requests to addr
 	for i, reqBlk := range tx.Requests() {
 		if reqBlk.Target().ChainID() == (coretypes.ChainID)(addr) {
-			cmt.ReceiveMessage(&committee.RequestMsg{
+			cmt.ReceiveMessage(&chain.RequestMsg{
 				Transaction: tx,
 				Index:       coretypes.Uint16(i),
 			})
@@ -83,7 +83,7 @@ func dispatchTxInclusionLevel(level byte, txid *valuetransaction.ID, addrs []add
 		if cmt == nil {
 			continue
 		}
-		cmt.ReceiveMessage(&committee.TransactionInclusionLevelMsg{
+		cmt.ReceiveMessage(&chain.TransactionInclusionLevelMsg{
 			TxId:  txid,
 			Level: level,
 		})

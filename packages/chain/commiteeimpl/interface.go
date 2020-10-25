@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	committee.ConstructorNew = newCommitteeObj
+	chain.ConstructorNew = newCommitteeObj
 }
 
 func (c *committeeObj) IsOpenQueue() bool {
@@ -104,8 +104,8 @@ func (c *committeeObj) startTimer() {
 	go func() {
 		tick := 0
 		for c.isOpenQueue.Load() {
-			time.Sleep(committee.TimerTickPeriod)
-			c.ReceiveMessage(committee.TimerTick(tick))
+			time.Sleep(chain.TimerTickPeriod)
+			c.ReceiveMessage(chain.TimerTick(tick))
 			tick++
 		}
 	}()
@@ -159,9 +159,9 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 		select {
 		case c.chMsg <- msg:
 		default:
-			c.log.Warnf("ReceiveMessage with type '%T' failed. Retrying after %s", msg, committee.ReceiveMsgChannelRetryDelay)
+			c.log.Warnf("ReceiveMessage with type '%T' failed. Retrying after %s", msg, chain.ReceiveMsgChannelRetryDelay)
 			go func() {
-				time.Sleep(committee.ReceiveMsgChannelRetryDelay)
+				time.Sleep(chain.ReceiveMsgChannelRetryDelay)
 				c.ReceiveMessage(msg)
 			}()
 		}
@@ -261,10 +261,10 @@ func (c *committeeObj) HasQuorum() bool {
 	return false
 }
 
-func (c *committeeObj) PeerStatus() []*committee.PeerStatus {
-	ret := make([]*committee.PeerStatus, 0)
+func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
+	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.committeePeers() {
-		status := &committee.PeerStatus{
+		status := &chain.PeerStatus{
 			Index:  i,
 			IsSelf: peer == nil,
 		}
@@ -280,21 +280,21 @@ func (c *committeeObj) PeerStatus() []*committee.PeerStatus {
 	return ret
 }
 
-func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) committee.RequestProcessingStatus {
+func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) chain.RequestProcessingStatus {
 	if c.IsDismissed() {
-		return committee.RequestProcessingStatusUnknown
+		return chain.RequestProcessingStatusUnknown
 	}
 	if c.isCommitteeNode.Load() {
 		if c.IsDismissed() {
-			return committee.RequestProcessingStatusUnknown
+			return chain.RequestProcessingStatusUnknown
 		}
 		if c.operator.IsRequestInBacklog(reqId) {
-			return committee.RequestProcessingStatusBacklog
+			return chain.RequestProcessingStatusBacklog
 		}
 	}
 	processed, err := state.IsRequestCompleted(c.Address(), reqId)
 	if err != nil || !processed {
-		return committee.RequestProcessingStatusUnknown
+		return chain.RequestProcessingStatusUnknown
 	}
-	return committee.RequestProcessingStatusCompleted
+	return chain.RequestProcessingStatusCompleted
 }

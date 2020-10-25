@@ -3,7 +3,7 @@ package chains
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
@@ -16,7 +16,7 @@ type CommittteeStatus struct {
 	OwnPeerIndex uint16
 	NumPeers     uint16
 	HasQuorum    bool
-	PeerStatus   []*committee.PeerStatus
+	PeerStatus   []*chain.PeerStatus
 }
 
 func GetStatus(chainID *coretypes.ChainID) *CommittteeStatus {

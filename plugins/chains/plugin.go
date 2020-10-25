@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
@@ -19,7 +19,7 @@ const PluginName = "Chains"
 var (
 	log *logger.Logger
 
-	chains      = make(map[coretypes.ChainID]committee.Committee)
+	chains      = make(map[coretypes.ChainID]chain.Chain)
 	chainsMutex = &sync.RWMutex{}
 )
 
@@ -90,7 +90,7 @@ func ActivateChain(bootupData *registry.BootupData) error {
 		return nil
 	}
 	// create new chain object
-	c := committee.New(bootupData, log, func() {
+	c := chain.New(bootupData, log, func() {
 		nodeconn.Subscribe((address.Address)(bootupData.ChainID), bootupData.Color)
 	})
 	if c != nil {
@@ -118,7 +118,7 @@ func DeactivateChain(bootupData *registry.BootupData) error {
 }
 
 // GetChain returns active chain object or nil if it doesn't exist
-func GetChain(chainID coretypes.ChainID) committee.Committee {
+func GetChain(chainID coretypes.ChainID) chain.Chain {
 	chainsMutex.RLock()
 	defer chainsMutex.RUnlock()
 

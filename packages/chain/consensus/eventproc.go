@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
-func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
+func (op *operator) EventProcessorReady(msg chain.ProcessorIsReady) {
 	if op.processorReady {
 		return
 	}
@@ -25,7 +25,7 @@ func (op *operator) EventProcessorReady(msg committee.ProcessorIsReady) {
 }
 
 // EventStateTransitionMsg is triggered by new currentSCState transition message sent by currentSCState manager
-func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
+func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.currentSCState.Hash()
@@ -61,7 +61,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	if !op.processorReady {
 		processor.LoadProcessorAsync(progHash, func(err error) {
 			if err == nil {
-				op.committee.ReceiveMessage(committee.ProcessorIsReady{
+				op.committee.ReceiveMessage(chain.ProcessorIsReady{
 					ProgramHash: progHashStr,
 				})
 				publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
@@ -72,7 +72,7 @@ func (op *operator) EventStateTransitionMsg(msg *committee.StateTransitionMsg) {
 	}
 }
 
-func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
+func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
 	if err := op.checkSCToken(reqMsg.Balances); err != nil {
 		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
@@ -80,13 +80,13 @@ func (op *operator) EventBalancesMsg(reqMsg committee.BalancesMsg) {
 	}
 
 	op.balances = reqMsg.Balances
-	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
 
 	op.takeAction()
 }
 
 // EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
+func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
 	op.log.Debugw("EventRequestMsg",
 		"reqid", reqMsg.RequestId().Short(),
 		"backlog req", len(op.requests),
@@ -107,20 +107,20 @@ func (op *operator) EventRequestMsg(reqMsg *committee.RequestMsg) {
 }
 
 // EventNotifyReqMsg request notification received from the peer
-func (op *operator) EventNotifyReqMsg(msg *committee.NotifyReqMsg) {
+func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
 		"reqIds", idsShortStr(msg.RequestIds),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
 	)
 	op.storeNotification(msg)
-	op.markRequestsNotified([]*committee.NotifyReqMsg{msg})
+	op.markRequestsNotified([]*chain.NotifyReqMsg{msg})
 
 	op.takeAction()
 }
 
 // EventStartProcessingBatchMsg leader sent command to start processing the batch
-func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingBatchMsg) {
+func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
 
 	op.log.Debugw("EventStartProcessingBatchMsg",
@@ -162,7 +162,7 @@ func (op *operator) EventStartProcessingBatchMsg(msg *committee.StartProcessingB
 	if diff < 0 {
 		diff = -diff
 	}
-	if diff > committee.MaxClockDifferenceAllowed.Nanoseconds() {
+	if diff > chain.MaxClockDifferenceAllowed.Nanoseconds() {
 		op.log.Warn("reject consensus on timestamp: clock difference is too big. Leader ts: %d, local ts: %d, diff: %d",
 			msg.Timestamp, localts, diff)
 		return
@@ -197,7 +197,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 
 	// inform state manager about new result batch
 	go func() {
-		op.committee.ReceiveMessage(committee.PendingBatchMsg{
+		op.committee.ReceiveMessage(chain.PendingBatchMsg{
 			Batch: ctx.ResultBatch,
 		})
 	}()
@@ -212,7 +212,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 }
 
 // EventSignedHashMsg result received from another peer
-func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
+func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
 	op.log.Debugw("EventSignedHashMsg",
 		"sender", msg.SenderIndex,
 		"batch hash", msg.BatchHash.String(),
@@ -248,7 +248,7 @@ func (op *operator) EventSignedHashMsg(msg *committee.SignedHashMsg) {
 // EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to other peers
 // immediately after posting finalized transaction to the tangle.
 // The message is used to postpone leader rotation deadline for at least confirmation period
-func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalResultPostedMsg) {
+func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.StateIndex,
@@ -265,7 +265,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *committee.NotifyFinalRe
 	op.setFinalizedTransaction(&msg.TxId)
 }
 
-func (op *operator) EventTransactionInclusionLevelMsg(msg *committee.TransactionInclusionLevelMsg) {
+func (op *operator) EventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
 	op.log.Debugw("EventTransactionInclusionLevelMsg",
 		"txid", msg.TxId.String(),
 		"level", waspconn.InclusionLevelText(msg.Level),
@@ -273,7 +273,7 @@ func (op *operator) EventTransactionInclusionLevelMsg(msg *committee.Transaction
 	op.checkInclusionLevel(msg.TxId, msg.Level)
 }
 
-func (op *operator) EventTimerMsg(msg committee.TimerTick) {
+func (op *operator) EventTimerMsg(msg chain.TimerTick) {
 	if msg%40 == 0 {
 		stateIndex, ok := op.stateIndex()
 		si := int32(-1)

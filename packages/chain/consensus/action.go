@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -79,8 +79,8 @@ func (op *operator) startCalculationsAsLeader() {
 	rewardAddress := op.getRewardAddress()
 
 	// send to subordinated peers requests to process the batch
-	msgData := util.MustBytes(&committee.StartProcessingBatchMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
@@ -99,7 +99,7 @@ func (op *operator) startCalculationsAsLeader() {
 		op.log.Info("timestamp was adjusted to %d", ts)
 	}
 
-	numSucc := op.committee.SendMsgToCommitteePeers(committee.MsgStartProcessingRequest, msgData, ts)
+	numSucc := op.committee.SendMsgToCommitteePeers(chain.MsgStartProcessingRequest, msgData, ts)
 
 	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
@@ -198,15 +198,15 @@ func (op *operator) checkQuorum() bool {
 	op.log.Debugf("result transaction has been posted to node. txid: %s", txid.String())
 
 	// notify peers about finalization
-	msgData := util.MustBytes(&committee.NotifyFinalResultPostedMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	msgData := util.MustBytes(&chain.NotifyFinalResultPostedMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
 			StateIndex: op.stateTx.MustState().StateIndex(),
 		},
 		TxId: txid,
 	})
 
-	numSent := op.committee.SendMsgToCommitteePeers(committee.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
+	numSent := op.committee.SendMsgToCommitteePeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
 	op.log.Debugf("%d peers has been notified about finalized result", numSent)
 
 	op.setNextConsensusStage(consensusStageLeaderResultFinalized)
@@ -240,5 +240,5 @@ func (op *operator) queryOutputs() {
 	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
 		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
 	}
-	op.requestBalancesDeadline = time.Now().Add(committee.RequestBalancesPeriod)
+	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
 }

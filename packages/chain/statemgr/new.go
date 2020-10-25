@@ -7,7 +7,7 @@ import (
 
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -15,7 +15,7 @@ import (
 )
 
 type stateManager struct {
-	committee committee.Committee
+	committee chain.Chain
 
 	// becomes true after initially loaded state is validated.
 	// after that it is always true
@@ -79,7 +79,7 @@ type pendingBatch struct {
 	stateTransactionRequestDeadline time.Time
 }
 
-func New(c committee.Committee, log *logger.Logger) committee.StateManager {
+func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		committee:      c,
 		pingPong:       make([]bool, c.Size()),

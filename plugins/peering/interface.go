@@ -9,29 +9,32 @@ func MyNetworkId() string {
 	return parameters.GetString(parameters.PeeringMyNetId)
 }
 
-// adds new connection to the peer pool
-// if it already exists, returns existing
+// UsePeer adds new connection to the peer pool
+// if it already exists, returns existing.
+// Return nil for for own netid
 // connection added to the pool is picked by loops which will try to establish connection
-func UsePeer(remoteLocation string) *Peer {
+func UsePeer(netid string) *Peer {
 	if !initialized.Load() {
 		log.Panic("UsePeer: plugin not initialized")
 	}
-	if remoteLocation == MyNetworkId() {
+	if netid == MyNetworkId() {
 		// nil for itself
 		return nil
 	}
 	peersMutex.Lock()
 	defer peersMutex.Unlock()
 
-	if peer, ok := peers[peeringId(remoteLocation)]; ok {
+	if peer, ok := peers[peeringId(netid)]; ok {
+		// existing peer
 		peer.numUsers++
 		return peer
 	}
+	// new peer
 	ret := &Peer{
-		RWMutex:        &sync.RWMutex{},
-		remoteLocation: remoteLocation,
-		startOnce:      &sync.Once{},
-		numUsers:       1,
+		RWMutex:     &sync.RWMutex{},
+		remoteNetid: netid,
+		startOnce:   &sync.Once{},
+		numUsers:    1,
 	}
 	peers[ret.PeeringId()] = ret
 	log.Debugf("added new peer id %s inbound = %v", ret.PeeringId(), ret.isInbound())

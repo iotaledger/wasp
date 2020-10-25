@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -21,7 +21,7 @@ import (
 )
 
 type operator struct {
-	committee committee.Committee
+	committee chain.Chain
 	dkshare   *tcrypto.DKShare
 	//currentSCState
 	currentSCState state.VirtualState
@@ -36,7 +36,7 @@ type operator struct {
 	processorReady          bool
 
 	// notifications with future currentSCState indices
-	notificationsBacklog []*committee.NotifyReqMsg
+	notificationsBacklog []*chain.NotifyReqMsg
 
 	// backlog of requests with all information
 	requests map[coretypes.RequestID]*request
@@ -87,7 +87,7 @@ type request struct {
 	log *logger.Logger
 }
 
-func NewOperator(committee committee.Committee, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
+func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
 	defer committee.SetReadyConsensus()
 
 	ret := &operator{

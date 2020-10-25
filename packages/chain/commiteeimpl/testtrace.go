@@ -1,14 +1,14 @@
 package commiteeimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/prometheus/common/log"
 	"time"
 )
 
-func (c *committeeObj) testTrace(msg *committee.TestTraceMsg) {
+func (c *committeeObj) testTrace(msg *chain.TestTraceMsg) {
 	log.Debugf("++++ received TestTraceMsg from #%d", msg.SenderIndex)
 
 	if len(msg.Sequence) != int(c.Size()) || !util.ValidPermutation(msg.Sequence) {
@@ -24,7 +24,7 @@ func (c *committeeObj) testTrace(msg *committee.TestTraceMsg) {
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)
 	targetSeqIndex := (seqIndex + 1) % c.Size()
 
-	sentToSeqIdx, err := c.SendMsgInSequence(committee.MsgTestTrace, util.MustBytes(msg), targetSeqIndex, msg.Sequence)
+	sentToSeqIdx, err := c.SendMsgInSequence(chain.MsgTestTrace, util.MustBytes(msg), targetSeqIndex, msg.Sequence)
 	if err != nil {
 		c.log.Errorf("testTrace: %v", err)
 	} else {
@@ -36,7 +36,7 @@ func (c *committeeObj) testTrace(msg *committee.TestTraceMsg) {
 }
 
 func (c *committeeObj) InitTestRound() {
-	msg := &committee.TestTraceMsg{
+	msg := &chain.TestTraceMsg{
 		InitTime:      time.Now().UnixNano(),
 		InitPeerIndex: c.ownIndex,
 		Sequence:      util.NewPermutation16(c.NumPeers(), hashing.RandomHash(nil).Bytes()).GetArray(),
@@ -45,7 +45,7 @@ func (c *committeeObj) InitTestRound() {
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)
 	targetSeqIndex := (seqIndex + 1) % c.Size()
 
-	sentToSeqIdx, err := c.SendMsgInSequence(committee.MsgTestTrace, util.MustBytes(msg), targetSeqIndex, msg.Sequence)
+	sentToSeqIdx, err := c.SendMsgInSequence(chain.MsgTestTrace, util.MustBytes(msg), targetSeqIndex, msg.Sequence)
 	if err != nil {
 		c.log.Errorf("TEST FAILED: initial send returned an error: %v", err)
 	} else {

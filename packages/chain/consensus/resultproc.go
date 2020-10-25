@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -88,8 +88,8 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		"ts", result.Timestamp,
 	)
 
-	msgData := util.MustBytes(&committee.SignedHashMsg{
-		PeerMsgHeader: committee.PeerMsgHeader{
+	msgData := util.MustBytes(&chain.SignedHashMsg{
+		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: op.mustStateIndex(),
 		},
 		BatchHash:     batchHash,
@@ -98,7 +98,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		SigShare:      sigShare,
 	})
 
-	if err := op.committee.SendMsg(result.LeaderPeerIndex, committee.MsgSignedHash, msgData); err != nil {
+	if err := op.committee.SendMsg(result.LeaderPeerIndex, chain.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
 		return
 	}
