@@ -116,7 +116,7 @@ func GetBootupRecords() ([]*BootupData, error) {
 }
 
 func (bd *BootupData) Write(w io.Writer) error {
-	if _, err := w.Write(bd.ChainID[:]); err != nil {
+	if err := bd.ChainID.Write(w); err != nil {
 		return err
 	}
 	if _, err := w.Write(bd.OwnerAddress[:]); err != nil {

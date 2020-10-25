@@ -1,4 +1,4 @@
-package committees
+package chains
 
 import (
 	"fmt"
@@ -14,13 +14,13 @@ import (
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
 
-const PluginName = "Committees"
+const PluginName = "Chains"
 
 var (
 	log *logger.Logger
 
-	committeesByChainID = make(map[coretypes.ChainID]committee.Committee)
-	committeesMutex     = &sync.RWMutex{}
+	chains      = make(map[coretypes.ChainID]committee.Committee)
+	chainsMutex = &sync.RWMutex{}
 )
 
 func Init() *node.Plugin {
@@ -47,7 +47,7 @@ func run(_ *node.Plugin) {
 
 		for _, bootupData := range bootupRecords {
 			if bootupData.Active {
-				if err := ActivateCommittee(bootupData); err != nil {
+				if err := ActivateChain(bootupData); err != nil {
 					log.Errorf("cannot activate committee %s: %v", bootupData.ChainID, err)
 				}
 			}
@@ -57,10 +57,10 @@ func run(_ *node.Plugin) {
 
 		func() {
 			log.Infof("shutdown signal received: dismissing committees..")
-			committeesMutex.RLock()
-			defer committeesMutex.RUnlock()
+			chainsMutex.RLock()
+			defer chainsMutex.RUnlock()
 
-			for _, com := range committeesByChainID {
+			for _, com := range chains {
 				com.Dismiss()
 			}
 			log.Infof("shutdown signal received: dismissing committees.. Done")
@@ -72,55 +72,59 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func ActivateCommittee(bootupData *registry.BootupData) error {
-	committeesMutex.Lock()
-	defer committeesMutex.Unlock()
+// ActivateChain activates chain on the Wasp node:
+// - creates chain object
+// - insert it into the runtime registry
+// - subscribes for related transactions in he IOTA node
+func ActivateChain(bootupData *registry.BootupData) error {
+	chainsMutex.Lock()
+	defer chainsMutex.Unlock()
 
 	if !bootupData.Active {
-		return fmt.Errorf("cannot activate committee for inactive SC")
+		return fmt.Errorf("cannot activate chain for deactivated bootup record")
 	}
 
-	_, ok := committeesByChainID[bootupData.ChainID]
+	_, ok := chains[bootupData.ChainID]
 	if ok {
-		log.Debugf("committee already active: %s", bootupData.ChainID)
+		log.Debugf("chain is already active: %s", bootupData.ChainID.String())
 		return nil
 	}
+	// create new chain object
 	c := committee.New(bootupData, log, func() {
 		nodeconn.Subscribe((address.Address)(bootupData.ChainID), bootupData.Color)
 	})
 	if c != nil {
-		committeesByChainID[bootupData.ChainID] = c
-		log.Infof("activated smart contract:\n%s", bootupData.String())
+		chains[bootupData.ChainID] = c
+		log.Infof("activated chain:\n%s", bootupData.String())
 	} else {
-		log.Infof("failed to activate smart contract:\n%s", bootupData.String())
+		log.Infof("failed to activate chain:\n%s", bootupData.String())
 	}
 	return nil
 }
 
-func DeactivateCommittee(bootupData *registry.BootupData) error {
-	committeesMutex.Lock()
-	defer committeesMutex.Unlock()
+// DeactivateChain deactivates chain in the node
+func DeactivateChain(bootupData *registry.BootupData) error {
+	chainsMutex.Lock()
+	defer chainsMutex.Unlock()
 
-	if bootupData.Active {
-		return fmt.Errorf("cannot deactivate committee for active SC")
-	}
-
-	c, ok := committeesByChainID[bootupData.ChainID]
+	c, ok := chains[bootupData.ChainID]
 	if !ok || c.IsDismissed() {
-		log.Debugf("committee already inactive: %s", bootupData.ChainID)
+		log.Debugf("chain is not active: %s", bootupData.ChainID.String())
 		return nil
 	}
 	c.Dismiss()
+	log.Debugf("chain has been deactivated: %s", bootupData.ChainID.String())
 	return nil
 }
 
-func CommitteeByChainID(chainID coretypes.ChainID) committee.Committee {
-	committeesMutex.RLock()
-	defer committeesMutex.RUnlock()
+// GetChain returns active chain object or nil if it doesn't exist
+func GetChain(chainID coretypes.ChainID) committee.Committee {
+	chainsMutex.RLock()
+	defer chainsMutex.RUnlock()
 
-	ret, ok := committeesByChainID[chainID]
+	ret, ok := chains[chainID]
 	if ok && ret.IsDismissed() {
-		delete(committeesByChainID, chainID)
+		delete(chains, chainID)
 		nodeconn.Unsubscribe((address.Address)(chainID))
 		return nil
 	}

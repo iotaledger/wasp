@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo"
 )
 
@@ -83,7 +83,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 					return err
 				}
 			}
-			result.Committee = committees.GetStatus(&br.ChainID)
+			result.Committee = chains.GetStatus(&br.ChainID)
 		}
 
 		return c.Render(http.StatusOK, scTplName, result)
@@ -165,7 +165,7 @@ type ScTemplateParams struct {
 	ProgramHash   *hashing.HashValue
 	Description   string
 	MinimumReward int64
-	Committee     *committees.CommittteeStatus
+	Committee     *chains.CommittteeStatus
 }
 
 const tplSc = `

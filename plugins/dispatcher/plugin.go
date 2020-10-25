@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
@@ -40,7 +40,7 @@ func run(_ *node.Plugin) {
 		})
 
 		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
-			if committee := committees.CommitteeByChainID(msg.ChainID); committee != nil {
+			if committee := chains.GetChain(msg.ChainID); committee != nil {
 				committee.ReceiveMessage(msg)
 			}
 		})

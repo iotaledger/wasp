@@ -1,4 +1,4 @@
-package committees
+package chains
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -20,7 +20,7 @@ type CommittteeStatus struct {
 }
 
 func GetStatus(chainID *coretypes.ChainID) *CommittteeStatus {
-	c := CommitteeByChainID(*chainID)
+	c := GetChain(*chainID)
 	if c == nil {
 		return nil
 	}

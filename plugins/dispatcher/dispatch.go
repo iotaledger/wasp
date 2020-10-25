@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/committee"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 )
 
 func dispatchState(tx *sctransaction.Transaction) {
@@ -16,7 +16,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 		// not state transaction
 		return
 	}
-	cmt := committees.CommitteeByChainID(*txProp.MustChainID())
+	cmt := chains.GetChain(*txProp.MustChainID())
 	if cmt == nil {
 		return
 	}
@@ -32,7 +32,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
-	if cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr)); cmt != nil {
+	if cmt := chains.GetChain((coretypes.ChainID)(addr)); cmt != nil {
 		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
 	}
 }
@@ -40,7 +40,7 @@ func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*bala
 func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
 	log.Debugw("dispatchAddressUpdate", "addr", addr.String())
 
-	cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr))
+	cmt := chains.GetChain((coretypes.ChainID)(addr))
 	if cmt == nil {
 		log.Debugw("committee not found", "addr", addr.String())
 		// wrong addressee
@@ -79,7 +79,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 func dispatchTxInclusionLevel(level byte, txid *valuetransaction.ID, addrs []address.Address) {
 	for _, addr := range addrs {
-		cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr))
+		cmt := chains.GetChain((coretypes.ChainID)(addr))
 		if cmt == nil {
 			continue
 		}

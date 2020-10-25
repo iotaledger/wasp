@@ -5,8 +5,8 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/banner"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/cli"
-	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -37,7 +37,7 @@ func main() {
 		peering.Init(),
 		nodeconn.Init(),
 		dispatcher.Init(),
-		committees.Init(),
+		chains.Init(),
 		wasmtimevm.Init(),
 		publisher.Init(),
 		dashboard.Init(),

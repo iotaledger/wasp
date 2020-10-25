@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/committee"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
@@ -24,7 +24,7 @@ func handleRequestStatus(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address %+v: %s", c.Param("scAddr"), err.Error()))
 	}
-	cmt := committees.CommitteeByChainID((coretypes.ChainID)(addr))
+	cmt := chains.GetChain((coretypes.ChainID)(addr))
 	if cmt == nil {
 		return httperrors.NotFound(fmt.Sprintf("Smart contract not found: %+v", addr.String()))
 	}

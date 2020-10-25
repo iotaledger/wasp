@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
@@ -29,8 +29,8 @@ func handleActivateChain(c echo.Context) error {
 		return err
 	}
 
-	log.Debugw("calling committees.ActivateCommittee", "chainid", bd.ChainID.String())
-	if err := committees.ActivateCommittee(bd); err != nil {
+	log.Debugw("calling committees.ActivateChain", "chainid", bd.ChainID.String())
+	if err := chains.ActivateChain(bd); err != nil {
 		return err
 	}
 
@@ -49,7 +49,7 @@ func handleDeactivateChain(c echo.Context) error {
 		return err
 	}
 
-	err = committees.DeactivateCommittee(bd)
+	err = chains.DeactivateChain(bd)
 	if err != nil {
 		return err
 	}
