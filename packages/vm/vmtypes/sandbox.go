@@ -13,7 +13,6 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	// general function
-	IsOriginState() bool
 	GetContractID() coretypes.ContractID
 	GetOwnerAddress() *address.Address
 	GetTimestamp() int64
@@ -79,10 +78,24 @@ type AccountAccess interface {
 	HarvestFeesFromRequest(amount int64) bool
 }
 
+type Contracts interface {
+	NewContract(params kv.Map) (Contract, bool)
+	GetContract(uint16) (Contract, bool)
+}
+
+type Contract interface {
+	Index() uint16
+	GetFunction(coretypes.EntryPointCode) (ContractFunction, bool)
+}
+
+type ContractFunction interface {
+	Call(params kv.Map) (interface{}, bool)
+}
+
 type NewRequestParams struct {
 	TargetContractID coretypes.ContractID
 	EntryPoint       coretypes.EntryPointCode
 	Timelock         uint32
-	Args             kv.Map
+	Params           kv.Map
 	IncludeReward    int64
 }

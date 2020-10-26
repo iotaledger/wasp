@@ -2,12 +2,13 @@ package processor
 
 import (
 	"fmt"
+	processors2 "github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/sema"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type processorInstance struct {
@@ -71,5 +72,5 @@ func loadProcessor(progHash *hashing.HashValue) (vmtypes.Processor, error) {
 		return nil, err
 	}
 
-	return vmtypes.FromBinaryCode(md.VMType, binaryCode)
+	return processors2.FromBinaryCode(md.VMType, binaryCode)
 }

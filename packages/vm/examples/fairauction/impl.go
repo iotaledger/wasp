@@ -5,6 +5,7 @@ package fairauction
 import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/mr-tron/base58"
 	"sort"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // program has is an id of the program

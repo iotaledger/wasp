@@ -14,8 +14,9 @@ const (
 
 const (
 	VarNameChainID       = "$chainid$"
+	VarNameProgramData   = "$progdata$"
+	VarContractRegustrt  = "$c"
 	VarNameOwnerAddress  = "$owneraddr$"
-	VarNameProgramData   = "$proghash$"
 	VarNameDescription   = "$description$"
 	VarNameMinimumReward = "$minreward$"
 )

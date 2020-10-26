@@ -33,7 +33,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 	vmctx.Log.Debugf("processing entry point %s for processor prog hash: %s",
 		reqBlock.EntryPointCode().String(), vmctx.ProgramHash.String())
 
-	sndbox := sandbox.NewSandbox(vmctx)
+	sndbox := sandbox.New(vmctx)
 	func() {
 		defer func() {
 			if r := recover(); r != nil {

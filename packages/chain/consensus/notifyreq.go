@@ -57,13 +57,13 @@ func (op *operator) sendRequestNotificationsToLeader() {
 func (op *operator) storeNotification(msg *chain.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if stateDefined && msg.StateIndex < stateIndex {
-		// don't save from earlier. The current currentSCState saved only for tracking
+		// don't save from earlier. The current currentState saved only for tracking
 		return
 	}
 	op.notificationsBacklog = append(op.notificationsBacklog, msg)
 }
 
-// markRequestsNotified stores information about notification in the current currentSCState
+// markRequestsNotified stores information about notification in the current currentState
 func (op *operator) markRequestsNotified(msgs []*chain.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
 	if !stateDefined {

@@ -215,10 +215,10 @@ func (op *operator) checkQuorum() bool {
 	return true
 }
 
-// sets new currentSCState transaction and initializes respective variables
+// sets new currentState transaction and initializes respective variables
 func (op *operator) setNewSCState(stateTx *sctransaction.Transaction, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
-	op.currentSCState = variableState
+	op.currentState = variableState
 	op.sentResultToLeader = nil
 	op.postedResultTxid = nil
 

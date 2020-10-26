@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
-// TODO implement mocked sandbox for testing
-
 type sandbox struct {
 	*vm.VMContext
 	saveTxBuilder  *txbuilder.Builder // for rollback
@@ -25,7 +23,7 @@ type sandbox struct {
 	stateWrapper   *stateWrapper
 }
 
-func NewSandbox(vctx *vm.VMContext) vmtypes.Sandbox {
+func New(vctx *vm.VMContext) vmtypes.Sandbox {
 	return &sandbox{
 		VMContext:      vctx,
 		saveTxBuilder:  vctx.TxBuilder.Clone(),
@@ -35,10 +33,6 @@ func NewSandbox(vctx *vm.VMContext) vmtypes.Sandbox {
 }
 
 // Sandbox interface
-
-func (vctx *sandbox) IsOriginState() bool {
-	return vctx.VirtualState.StateIndex() == 0
-}
 
 func (vctx *sandbox) Panic(v interface{}) {
 	panic(v)
@@ -100,7 +94,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	}
 	reqBlock := sctransaction.NewRequestBlock(par.TargetContractID, par.EntryPoint)
 	reqBlock.WithTimelock(par.Timelock)
-	reqBlock.SetArgs(par.Args)
+	reqBlock.SetArgs(par.Params)
 
 	if err := vctx.TxBuilder.AddRequestBlock(reqBlock); err != nil {
 		return false
@@ -112,7 +106,7 @@ func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetContractID: vctx.ContractID,
 		EntryPoint:       reqCode,
-		Args:             args,
+		Params:           args,
 		IncludeReward:    0,
 	})
 }
@@ -123,7 +117,7 @@ func (vctx *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointC
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetContractID: vctx.ContractID,
 		EntryPoint:       entryPoint,
-		Args:             args,
+		Params:           args,
 		Timelock:         timelock,
 		IncludeReward:    0,
 	})

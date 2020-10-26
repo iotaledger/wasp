@@ -119,8 +119,20 @@ func (d *Dictionary) HasAt(key []byte) (bool, error) {
 	return d.kv.Has(d.getElemKey(key))
 }
 
+func (d *MustDictionary) HasAt(key []byte) bool {
+	ret, err := d.dict.HasAt(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func (d *Dictionary) Len() uint32 {
 	return d.cachedsize
+}
+
+func (d *MustDictionary) Len() uint32 {
+	return d.dict.cachedsize
 }
 
 func (d *Dictionary) len() (uint32, error) {

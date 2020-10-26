@@ -31,8 +31,8 @@ func (ep builtinEntryPoint) Run(ctx vmtypes.Sandbox) {
 	ep(ctx)
 }
 
-func (v builtinEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
-	return v
+func (ep builtinEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+	return ep
 }
 
 func nopRequest(ctx vmtypes.Sandbox) {

@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/banner"
+	"github.com/iotaledger/wasp/plugins/builtinvm"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/config"
@@ -41,6 +42,7 @@ func main() {
 		wasmtimevm.Init(),
 		publisher.Init(),
 		dashboard.Init(),
+		builtinvm.Init(),
 		examples.Init(),
 	)
 

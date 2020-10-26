@@ -9,8 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/processor"
-	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 func (op *operator) EventProcessorReady(msg chain.ProcessorIsReady) {
@@ -24,11 +22,11 @@ func (op *operator) EventProcessorReady(msg chain.ProcessorIsReady) {
 	}
 }
 
-// EventStateTransitionMsg is triggered by new currentSCState transition message sent by currentSCState manager
+// EventStateTransitionMsg is triggered by new currentState transition message sent by currentState manager
 func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
 
-	vh := op.currentSCState.Hash()
+	vh := op.currentState.Hash()
 	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
 		op.stateTx.ID().String(), vh.String(), len(op.requests))
@@ -48,28 +46,6 @@ func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 		op.setNextConsensusStage(consensusStageNoSync)
 	}
 	op.takeAction()
-
-	// check is processor is ready for the current consensusStage. If no, initiate load of the processor
-	op.processorReady = false
-	progHash, ok := op.getProgramHash()
-	if !ok {
-		op.log.Warnf("program hash is undefined. Only builtin requests can be processed")
-		return
-	}
-	progHashStr := progHash.String()
-	op.processorReady = processor.CheckProcessor(progHashStr)
-	if !op.processorReady {
-		processor.LoadProcessorAsync(progHash, func(err error) {
-			if err == nil {
-				op.committee.ReceiveMessage(chain.ProcessorIsReady{
-					ProgramHash: progHashStr,
-				})
-				publisher.Publish("vmready", op.committee.Address().String(), progHashStr)
-			} else {
-				op.log.Warnf("failed to load processor: %v", err)
-			}
-		})
-	}
 }
 
 func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {

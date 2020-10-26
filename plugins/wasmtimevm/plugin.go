@@ -8,7 +8,7 @@ package wasmtimevm
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -25,7 +25,7 @@ func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 
 	// register VM type(s)
-	err := vmtypes.RegisterVMType(PluginName, wasmhost.GetProcessor)
+	err := processors.RegisterVMType(PluginName, wasmhost.GetProcessor)
 	if err != nil {
 		log.Panicf("%v: %v", PluginName, err)
 	}

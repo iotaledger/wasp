@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"sync"
 	"time"
 
@@ -21,12 +22,14 @@ import (
 )
 
 type operator struct {
-	committee chain.Chain
-	dkshare   *tcrypto.DKShare
-	//currentSCState
-	currentSCState state.VirtualState
-	stateTx        *sctransaction.Transaction
-	balances       map[valuetransaction.ID][]*balance.Balance
+	committee  chain.Chain
+	processors *processors.ChainProcessors
+
+	dkshare *tcrypto.DKShare
+	//currentState
+	currentState state.VirtualState
+	stateTx      *sctransaction.Transaction
+	balances     map[valuetransaction.ID][]*balance.Balance
 
 	// consensus stage
 	consensusStage         int
@@ -35,7 +38,7 @@ type operator struct {
 	requestBalancesDeadline time.Time
 	processorReady          bool
 
-	// notifications with future currentSCState indices
+	// notifications with future currentState indices
 	notificationsBacklog []*chain.NotifyReqMsg
 
 	// backlog of requests with all information
@@ -81,7 +84,7 @@ type request struct {
 	reqTx *sctransaction.Transaction
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
-	// notification vector for the current currentSCState
+	// notification vector for the current currentState
 	notifications []bool
 
 	log *logger.Logger
@@ -92,6 +95,7 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 
 	ret := &operator{
 		committee:           committee,
+		processors:          processors.New(),
 		dkshare:             dkshare,
 		requests:            make(map[coretypes.RequestID]*request),
 		requestIdsProtected: make(map[coretypes.RequestID]bool),
@@ -115,10 +119,10 @@ func (op *operator) size() uint16 {
 }
 
 func (op *operator) stateIndex() (uint32, bool) {
-	if op.currentSCState == nil {
+	if op.currentState == nil {
 		return 0, false
 	}
-	return op.currentSCState.StateIndex(), true
+	return op.currentState.StateIndex(), true
 }
 
 func (op *operator) mustStateIndex() uint32 {
@@ -130,10 +134,10 @@ func (op *operator) mustStateIndex() uint32 {
 }
 
 func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
-	if op.currentSCState == nil {
+	if op.currentState == nil {
 		return nil, false
 	}
-	h, ok, err := op.currentSCState.Variables().Codec().GetHashValue(vmconst.VarNameProgramData)
+	h, ok, err := op.currentState.Variables().Codec().GetHashValue(vmconst.VarNameProgramData)
 	if !ok || err != nil {
 		return nil, false
 	}
@@ -148,7 +152,7 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.stateIndex(); !ok {
 		return 0
 	}
-	vt, ok, err := op.currentSCState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
+	vt, ok, err := op.currentState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
 	if err != nil {
 		panic(err)
 	}

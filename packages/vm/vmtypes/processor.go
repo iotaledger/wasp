@@ -1,9 +1,7 @@
 // package present processor interface. It must be implemented by VM
 package vmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-)
+import "github.com/iotaledger/wasp/packages/coretypes"
 
 // Processor is a abstract interface to the VM processor instance. It can be called via exported entry points
 // Each entry point is uniquely identified by the request code (uint16). The request code contains information
