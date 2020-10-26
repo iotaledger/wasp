@@ -17,6 +17,17 @@ func (a *ScLog) InitVM(vm *wasmProcessor, keyId int32) {
 	a.lines = vm.ctx.AccessState().GetTimestampedLog(key)
 }
 
+func (a *ScLog) Exists(keyId int32) bool {
+	switch keyId {
+	case KeyData:
+	case KeyLength:
+	case KeyTimestamp:
+	default:
+		return false
+	}
+	return true
+}
+
 func (a *ScLog) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyLength:

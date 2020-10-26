@@ -5,7 +5,8 @@ const (
 	KeyAddress        = KeyAccount - 1
 	KeyAmount         = KeyAddress - 1
 	KeyBalance        = KeyAmount - 1
-	KeyCode           = KeyBalance - 1
+	KeyBase58         = KeyBalance - 1
+	KeyCode           = KeyBase58 - 1
 	KeyColor          = KeyCode - 1
 	KeyColors         = KeyColor - 1
 	KeyContract       = KeyColors - 1
@@ -44,6 +45,7 @@ var keyMap = map[string]int32{
 	"address":        KeyAddress,
 	"amount":         KeyAmount,
 	"balance":        KeyBalance,
+	"base58":         KeyBase58,
 	"code":           KeyCode,
 	"color":          KeyColor,
 	"colors":         KeyColors,
@@ -75,6 +77,22 @@ type ScContext struct {
 
 func NewScContext(vm *wasmProcessor) *ScContext {
 	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root"}, objects: make(map[int32]int32)}}
+}
+
+func (o *ScContext) Exists(keyId int32) bool {
+	switch keyId {
+	case KeyAccount:
+	case KeyContract:
+	case KeyLogs:
+	case KeyPostedRequests:
+	case KeyRequest:
+	case KeyState:
+	case KeyTransfers:
+	case KeyUtility:
+	default:
+		return false
+	}
+	return true
 }
 
 func (o *ScContext) Finalize() {

@@ -1,9 +1,22 @@
 package wasmhost
 
+import "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+
 type ScColors struct {
 	ArrayObject
 	requestOnly bool
-	colors      []string
+	colors      []balance.Color
+}
+
+func (a *ScColors) Exists(keyId int32) bool {
+	return keyId >= 0 && keyId < a.GetLength()
+}
+
+func (a *ScColors) GetBytes(keyId int32) []byte {
+	if keyId >= 0 && keyId < a.GetLength() {
+		return a.colors[keyId].Bytes()
+	}
+	return a.ArrayObject.GetBytes(keyId)
 }
 
 func (a *ScColors) GetInt(keyId int32) int64 {
@@ -17,13 +30,6 @@ func (a *ScColors) GetInt(keyId int32) int64 {
 func (a *ScColors) GetLength() int32 {
 	a.loadColors()
 	return int32(len(a.colors))
-}
-
-func (a *ScColors) GetString(keyId int32) string {
-	if keyId >= 0 && keyId < a.GetLength() {
-		return a.colors[keyId]
-	}
-	return a.ArrayObject.GetString(keyId)
 }
 
 func (a *ScColors) loadColors() {

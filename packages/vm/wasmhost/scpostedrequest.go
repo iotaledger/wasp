@@ -1,6 +1,7 @@
 package wasmhost
 
 import (
+	"bytes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
@@ -8,7 +9,7 @@ import (
 type ScPostedRequest struct {
 	MapObject
 	code     int64
-	contract string
+	contract []byte
 	delay    int64
 }
 
@@ -19,8 +20,9 @@ func (o *ScPostedRequest) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScPostedRequest) Send() {
-	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", o.vm.codeToFunc[int32(o.code)], o.code, o.delay, o.contract)
-	if o.contract == o.vm.ctx.GetSCAddress().String() {
+	function := o.vm.codeToFunc[int32(o.code)]
+	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, o.contract)
+	if bytes.Equal(o.contract, o.vm.ctx.GetSCAddress().Bytes()) {
 		params := kv.NewMap()
 		paramsId, ok := o.objects[KeyParams]
 		if ok {
@@ -38,10 +40,19 @@ func (o *ScPostedRequest) Send() {
 	//TODO handle external contract
 }
 
+func (o *ScPostedRequest) SetBytes(keyId int32, value []byte) {
+	switch keyId {
+	case KeyContract:
+		o.contract = value
+	default:
+		o.MapObject.SetBytes(keyId, value)
+	}
+}
+
 func (o *ScPostedRequest) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		o.contract = ""
+		o.contract = nil
 		o.code = 0
 		o.delay = 0
 	case KeyCode:
@@ -55,8 +66,6 @@ func (o *ScPostedRequest) SetInt(keyId int32, value int64) {
 
 func (o *ScPostedRequest) SetString(keyId int32, value string) {
 	switch keyId {
-	case KeyContract:
-		o.contract = value
 	case KeyFunction:
 		code, ok := o.vm.funcToCode[value]
 		if !ok {

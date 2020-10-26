@@ -66,7 +66,7 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 	}
 
 	if vm.HasError() {
-		errorMsg := vm.GetString(1, KeyError)
+		errorMsg := vm.WasmHost.error
 		vm.LogText("error running wasm function: " + errorMsg)
 		panic(errorMsg)
 	}

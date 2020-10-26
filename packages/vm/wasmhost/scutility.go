@@ -4,17 +4,22 @@ import (
 	"encoding/binary"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/mr-tron/base58"
 )
 
 type ScUtility struct {
 	MapObject
-	hash       []byte
-	random     []byte
-	nextRandom int
+	base58Decoded []byte
+	base58Encoded string
+	hash          []byte
+	random        []byte
+	nextRandom    int
 }
 
 func (o *ScUtility) GetBytes(keyId int32) []byte {
 	switch keyId {
+	case KeyBase58:
+		return o.base58Decoded
 	case KeyHash:
 		return o.hash
 	}
@@ -42,10 +47,30 @@ func (o *ScUtility) GetInt(keyId int32) int64 {
 	return o.MapObject.GetInt(keyId)
 }
 
+func (o *ScUtility) GetString(keyId int32) string {
+	switch keyId {
+	case KeyBase58:
+		return o.base58Encoded
+	}
+	return o.MapObject.GetString(keyId)
+}
+
 func (o *ScUtility) SetBytes(keyId int32, value []byte) {
 	switch keyId {
+	case KeyBase58:
+		o.base58Encoded = base58.Encode(value)
 	case KeyHash:
 		o.hash = hashing.HashData(value).Bytes()
+	default:
+		o.MapObject.SetBytes(keyId, value)
 	}
-	o.MapObject.SetBytes(keyId, value)
+}
+
+func (o *ScUtility) SetString(keyId int32, value string) {
+	switch keyId {
+	case KeyBase58:
+		o.base58Decoded, _ = base58.Decode(value)
+	default:
+		o.MapObject.SetString(keyId, value)
+	}
 }
