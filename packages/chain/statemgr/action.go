@@ -224,7 +224,7 @@ func (sm *stateManager) isSynchronized() bool {
 var niltxid valuetransaction.ID
 
 // adding batch of state updates to the 'pending' map
-func (sm *stateManager) addPendingBatch(batch state.Batch) bool {
+func (sm *stateManager) addPendingBatch(batch state.Block) bool {
 	sm.log.Debugw("addPendingBatch",
 		"state index", batch.StateIndex(),
 		"timestamp", batch.Timestamp(),

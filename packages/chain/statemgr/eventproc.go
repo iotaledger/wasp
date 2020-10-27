@@ -34,7 +34,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *chain.GetBatchMsg) {
 		"state index", msg.StateIndex,
 	)
 	addr := sm.committee.Address()
-	batch, err := state.LoadBatch(addr, msg.StateIndex)
+	batch, err := state.LoadBlock(addr, msg.StateIndex)
 	if err != nil || batch == nil {
 		// can't load batch, can't respond
 		return
@@ -123,7 +123,7 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 		}
 	}
 	// the whole batch received
-	batch, err := state.NewBatch(sm.syncedBatch.stateUpdates)
+	batch, err := state.NewBlock(sm.syncedBatch.stateUpdates)
 	if err != nil {
 		sm.log.Errorf("failed to create batch: %v", err)
 		sm.syncedBatch = nil

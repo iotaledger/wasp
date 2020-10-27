@@ -129,8 +129,8 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	if bh != op.leaderStatus.batchHash {
 		panic("bh != op.leaderStatus.batchHash")
 	}
-	if len(result.Requests) != int(result.ResultBatch.Size()) {
-		panic("len(result.RequestIds) != int(result.ResultBatch.Size())")
+	if len(result.Requests) != int(result.ResultBlock.Size()) {
+		panic("len(result.RequestIds) != int(result.ResultBlock.Size())")
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
@@ -141,7 +141,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	)
 
 	op.leaderStatus.resultTx = result.ResultTransaction
-	op.leaderStatus.batch = result.ResultBatch
+	op.leaderStatus.batch = result.ResultBlock
 	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
 		essenceHash: *essenceHash,
 		sigShare:    sigShare,

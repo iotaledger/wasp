@@ -34,7 +34,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	// - apply to it an empty batch
 	// - take the hash. Note: hash of the state do not depend on the address
 	originState := state.NewVirtualState(nil, &par.OriginAddress)
-	if err := originState.ApplyBatch(state.MustNewOriginBatch(nil)); err != nil {
+	if err := originState.ApplyBatch(state.MustNewOriginBlock(nil)); err != nil {
 		return nil, err
 	}
 	originHash := originState.Hash()

@@ -161,7 +161,7 @@ type ScTemplateParams struct {
 	Address       *address.Address
 	BootupRecord  *registry.BootupData
 	State         state.VirtualState
-	Batch         state.Batch
+	Batch         state.Block
 	ProgramHash   *hashing.HashValue
 	Description   string
 	MinimumReward int64
@@ -202,23 +202,23 @@ const tplSc = `
 		<p>State is empty.</p>
 	{{end}}
 	<hr/>
-	{{if .Batch}}
+	{{if .Block}}
 		<div>
-			<h3>Batch</h3>
-			<p>State Transaction ID: <code>{{.Batch.StateTransactionId}}</code></p>
-			<p>Timestamp: <code>{{formatTimestamp .Batch.Timestamp}}</code></p>
-			<p>Essence Hash: <code>{{.Batch.EssenceHash}}</code></p>
+			<h3>Block</h3>
+			<p>State Transaction ID: <code>{{.Block.StateTransactionId}}</code></p>
+			<p>Timestamp: <code>{{formatTimestamp .Block.Timestamp}}</code></p>
+			<p>Essence Hash: <code>{{.Block.EssenceHash}}</code></p>
 			<div>
-				<p>Requests: (<code>{{.Batch.Size}}</code> total)</p>
+				<p>Requests: (<code>{{.Block.Size}}</code> total)</p>
 				<ul>
-				{{range $_, $reqId := .Batch.RequestIds}}
+				{{range $_, $reqId := .Block.RequestIds}}
 					<li><code>{{$reqId}}</code></li>
 				{{end}}
 				</ul>
 			</div>
 		</div>
 	{{else}}
-		<p>Batch is empty.</p>
+		<p>Block is empty.</p>
 	{{end}}
 	<hr/>
 	{{if .Committee}}

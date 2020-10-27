@@ -34,7 +34,7 @@ type VMTask struct {
 	OnFinish func(error)
 	// outputs
 	ResultTransaction *sctransaction.Transaction
-	ResultBatch       state.Batch
+	ResultBlock       state.Block
 }
 
 // BatchHash is used to uniquely identify the VM task

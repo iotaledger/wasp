@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -9,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,32 +44,32 @@ func TestVariableStateBasic(t *testing.T) {
 
 func TestApply(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := sctransaction.NewRequestId(txid1, 5)
+	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	assert.EqualValues(t, *su1.RequestID(), reqid1)
 
 	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
-	reqid2 := sctransaction.NewRequestId(txid2, 2)
+	reqid2 := coretypes.NewRequestID(txid2, 2)
 	su2 := NewStateUpdate(&reqid2)
 	suwrong := NewStateUpdate(&reqid2)
 
 	assert.EqualValues(t, *su2.RequestID(), reqid2)
 
-	_, err := NewBatch(nil)
+	_, err := NewBlock(nil)
 	assert.Equal(t, err == nil, false)
 
-	_, err = NewBatch([]StateUpdate{su1, su1})
+	_, err = NewBlock([]StateUpdate{su1, su1})
 	assert.Equal(t, err == nil, false)
 
-	_, err = NewBatch([]StateUpdate{su2, suwrong})
+	_, err = NewBlock([]StateUpdate{su2, suwrong})
 	assert.Equal(t, err == nil, false)
 
-	batch1, err := NewBatch([]StateUpdate{su1, su2})
+	batch1, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(2), batch1.Size())
 
-	batch2, err := NewBatch([]StateUpdate{su1, su2})
+	batch2, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(2), batch2.Size())
 
@@ -97,9 +97,9 @@ func TestApply(t *testing.T) {
 
 func TestApply2(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := sctransaction.NewRequestId(txid1, 0)
-	reqid2 := sctransaction.NewRequestId(txid1, 2)
-	reqid3 := sctransaction.NewRequestId(txid1, 5)
+	reqid1 := coretypes.NewRequestID(txid1, 0)
+	reqid2 := coretypes.NewRequestID(txid1, 2)
+	reqid3 := coretypes.NewRequestID(txid1, 5)
 
 	su1 := NewStateUpdate(&reqid1)
 	su2 := NewStateUpdate(&reqid2)
@@ -110,11 +110,11 @@ func TestApply2(t *testing.T) {
 	vs1 := NewVirtualState(db, &addr)
 	vs2 := NewVirtualState(db, &addr)
 
-	batch23, err := NewBatch([]StateUpdate{su2, su3})
+	batch23, err := NewBlock([]StateUpdate{su2, su3})
 	assert.NoError(t, err)
 	batch23.WithStateIndex(1)
 
-	batch3, err := NewBatch([]StateUpdate{su3})
+	batch3, err := NewBlock([]StateUpdate{su3})
 	assert.NoError(t, err)
 	batch3.WithStateIndex(1)
 
@@ -134,8 +134,8 @@ func TestApply2(t *testing.T) {
 
 func TestApply3(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := sctransaction.NewRequestId(txid1, 0)
-	reqid2 := sctransaction.NewRequestId(txid1, 2)
+	reqid1 := coretypes.NewRequestID(txid1, 0)
+	reqid2 := coretypes.NewRequestID(txid1, 2)
 
 	su1 := NewStateUpdate(&reqid1)
 	su2 := NewStateUpdate(&reqid2)
@@ -149,7 +149,7 @@ func TestApply3(t *testing.T) {
 	vs1.ApplyStateUpdate(su2)
 	vs1.ApplyStateIndex(0)
 
-	batch, err := NewBatch([]StateUpdate{su1, su2})
+	batch, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
 	err = vs2.ApplyBatch(batch)
 	assert.NoError(t, err)
@@ -164,12 +164,12 @@ func TestCommit(t *testing.T) {
 	partition := db.WithRealm([]byte("2"))
 
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := sctransaction.NewRequestId(txid1, 5)
+	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	su1.Mutations().Add(kv.NewMutationSet("x", []byte{1}))
 
-	batch1, err := NewBatch([]StateUpdate{su1})
+	batch1, err := NewBlock([]StateUpdate{su1})
 	assert.NoError(t, err)
 
 	addr := address.Random()
@@ -202,12 +202,12 @@ func TestCommit(t *testing.T) {
 	assert.Equal(t, []byte{1}, v)
 
 	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
-	reqid2 := sctransaction.NewRequestId(txid2, 6)
+	reqid2 := coretypes.NewRequestID(txid2, 6)
 	su2 := NewStateUpdate(&reqid2)
 
 	su2.Mutations().Add(kv.NewMutationDel("x"))
 
-	batch2, err := NewBatch([]StateUpdate{su2})
+	batch2, err := NewBlock([]StateUpdate{su2})
 	assert.NoError(t, err)
 
 	addr = address.Random()

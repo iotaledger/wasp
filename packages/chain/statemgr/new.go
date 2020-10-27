@@ -72,7 +72,7 @@ type syncedBatch struct {
 
 type pendingBatch struct {
 	// batch of state updates, not validated yet
-	batch state.Batch
+	batch state.Block
 	// resulting variable state after applied the batch to the solidState
 	nextState state.VirtualState
 	// state transaction request deadline. For committed batches only
@@ -95,7 +95,7 @@ func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
 	var err error
-	var batch state.Batch
+	var batch state.Block
 	var stateExists bool
 
 	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.committee.Address())
@@ -120,7 +120,7 @@ func (sm *stateManager) initLoadState() {
 	} else {
 		// pre-origin state. Origin batch is emty batch.
 		// Will be waiting for the origin transaction to arrive
-		sm.addPendingBatch(state.MustNewOriginBatch(sm.committee.Color()))
+		sm.addPendingBatch(state.MustNewOriginBlock(sm.committee.Color()))
 
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}

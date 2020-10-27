@@ -139,7 +139,7 @@ type StateTransitionMsg struct {
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
 // - state manager to itself when batch is completed after syncing
 type PendingBatchMsg struct {
-	Batch state.Batch
+	Batch state.Block
 }
 
 // message sent to notify VM processor is ready. It is a successful finish of asynchronous loading of the processor

@@ -14,16 +14,16 @@ import (
 	"io"
 )
 
-type batch struct {
+type block struct {
 	stateIndex   uint32
 	stateTxId    valuetransaction.ID
 	stateUpdates []StateUpdate
 }
 
-// validates, enumerates and creates a batch from array of state updates
-func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
+// validates, enumerates and creates a block from array of state updates
+func NewBlock(stateUpdates []StateUpdate) (Block, error) {
 	if len(stateUpdates) == 0 {
-		return nil, fmt.Errorf("batch can't be empty")
+		return nil, fmt.Errorf("block can't be empty")
 	}
 	for i, su := range stateUpdates {
 		for j := i + 1; j < len(stateUpdates); j++ {
@@ -32,14 +32,22 @@ func NewBatch(stateUpdates []StateUpdate) (Batch, error) {
 			}
 		}
 	}
-	return &batch{
+	return &block{
 		stateUpdates: stateUpdates,
 	}, nil
 }
 
-// batch with empty state update and nil state hash
-func MustNewOriginBatch(color *balance.Color) Batch {
-	ret, err := NewBatch([]StateUpdate{NewStateUpdate(nil)})
+func NewBlockFromBytes(data []byte) (Block, error) {
+	ret := new(block)
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// block with empty state update and nil state hash
+func MustNewOriginBlock(color *balance.Color) Block {
+	ret, err := NewBlock([]StateUpdate{NewStateUpdate(nil)})
 	if err != nil {
 		log.Panic(err)
 	}
@@ -50,9 +58,9 @@ func MustNewOriginBatch(color *balance.Color) Batch {
 	return ret.WithStateTransaction((valuetransaction.ID)(col))
 }
 
-func (b *batch) String() string {
+func (b *block) String() string {
 	ret := ""
-	ret += fmt.Sprintf("Batch: state index: %d\n", b.StateIndex())
+	ret += fmt.Sprintf("Block: state index: %d\n", b.StateIndex())
 	ret += fmt.Sprintf("state txid: %s\n", b.StateTransactionId().String())
 	ret += fmt.Sprintf("timestamp: %d\n", b.Timestamp())
 	ret += fmt.Sprintf("size: %d\n", b.Size())
@@ -63,30 +71,30 @@ func (b *batch) String() string {
 	return ret
 }
 
-func (b *batch) StateTransactionId() valuetransaction.ID {
+func (b *block) StateTransactionId() valuetransaction.ID {
 	return b.stateTxId
 }
 
-func (b *batch) StateIndex() uint32 {
+func (b *block) StateIndex() uint32 {
 	return b.stateIndex
 }
 
 // timestmap of the last state update
-func (b *batch) Timestamp() int64 {
+func (b *block) Timestamp() int64 {
 	return b.stateUpdates[len(b.stateUpdates)-1].Timestamp()
 }
 
-func (b *batch) WithStateIndex(stateIndex uint32) Batch {
+func (b *block) WithStateIndex(stateIndex uint32) Block {
 	b.stateIndex = stateIndex
 	return b
 }
 
-func (b *batch) WithStateTransaction(vtxid valuetransaction.ID) Batch {
+func (b *block) WithStateTransaction(vtxid valuetransaction.ID) Block {
 	b.stateTxId = vtxid
 	return b
 }
 
-func (b *batch) ForEach(fun func(uint16, StateUpdate) bool) {
+func (b *block) ForEach(fun func(uint16, StateUpdate) bool) {
 	for i, su := range b.stateUpdates {
 		if !fun(uint16(i), su) {
 			return
@@ -94,11 +102,11 @@ func (b *batch) ForEach(fun func(uint16, StateUpdate) bool) {
 	}
 }
 
-func (b *batch) Size() uint16 {
+func (b *block) Size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 
-func (b *batch) RequestIds() []*coretypes.RequestID {
+func (b *block) RequestIds() []*coretypes.RequestID {
 	ret := make([]*coretypes.RequestID, b.Size())
 	for i, su := range b.stateUpdates {
 		ret[i] = su.RequestID()
@@ -107,7 +115,7 @@ func (b *batch) RequestIds() []*coretypes.RequestID {
 }
 
 // hash of all data except state transaction hash
-func (b *batch) EssenceHash() *hashing.HashValue {
+func (b *block) EssenceHash() *hashing.HashValue {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
 		panic("EssenceHash")
@@ -115,7 +123,7 @@ func (b *batch) EssenceHash() *hashing.HashValue {
 	return hashing.HashData(buf.Bytes())
 }
 
-func (b *batch) Write(w io.Writer) error {
+func (b *block) Write(w io.Writer) error {
 	if err := b.writeEssence(w); err != nil {
 		return err
 	}
@@ -125,7 +133,7 @@ func (b *batch) Write(w io.Writer) error {
 	return nil
 }
 
-func (b *batch) writeEssence(w io.Writer) error {
+func (b *block) writeEssence(w io.Writer) error {
 	if err := util.WriteUint32(w, b.stateIndex); err != nil {
 		return err
 	}
@@ -140,7 +148,7 @@ func (b *batch) writeEssence(w io.Writer) error {
 	return nil
 }
 
-func (b *batch) Read(r io.Reader) error {
+func (b *block) Read(r io.Reader) error {
 	if err := b.readEssence(r); err != nil {
 		return err
 	}
@@ -150,7 +158,7 @@ func (b *batch) Read(r io.Reader) error {
 	return nil
 }
 
-func (b *batch) readEssence(r io.Reader) error {
+func (b *block) readEssence(r io.Reader) error {
 	if err := util.ReadUint32(r, &b.stateIndex); err != nil {
 		return err
 	}
@@ -173,7 +181,7 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
+func LoadBlock(addr *address.Address, stateIndex uint32) (Block, error) {
 	data, err := database.GetPartition(addr).Get(dbkeyBatch(stateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
@@ -181,13 +189,5 @@ func LoadBatch(addr *address.Address, stateIndex uint32) (Batch, error) {
 	if err != nil {
 		return nil, err
 	}
-	return BatchFromBytes(data)
-}
-
-func BatchFromBytes(data []byte) (Batch, error) {
-	ret := new(batch)
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return NewBlockFromBytes(data)
 }

@@ -74,16 +74,16 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	}
 
 	// create batch from state updates.
-	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
+	ctx.ResultBlock, err = state.NewBlock(stateUpdates)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.NewBatch: %v", err))
+		ctx.OnFinish(fmt.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
-	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
+	ctx.ResultBlock.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
 
 	// calculate resulting state hash
 	vsClone := ctx.VirtualState.Clone()
-	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
+	if err = vsClone.ApplyBatch(ctx.ResultBlock); err != nil {
 		ctx.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
 		return
 	}
@@ -108,8 +108,8 @@ func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	}
 
 	ctx.Log.Debugw("runTask OUT",
-		"result batch size", ctx.ResultBatch.Size(),
-		"result batch state index", ctx.ResultBatch.StateIndex(),
+		"result batch size", ctx.ResultBlock.Size(),
+		"result batch state index", ctx.ResultBlock.StateIndex(),
 		"result variable state hash", stateHash.String(),
 		"result essence hash", hashing.HashData(ctx.ResultTransaction.EssenceBytes()).String(),
 		"result tx finalTimestamp", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),

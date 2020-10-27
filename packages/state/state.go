@@ -96,16 +96,16 @@ func (vs *virtualState) Timestamp() int64 {
 	return vs.timestamp
 }
 
-// applies batch of state updates. Increases state index
-func (vs *virtualState) ApplyBatch(batch Batch) error {
+// applies block of state updates. Increases state index
+func (vs *virtualState) ApplyBatch(batch Block) error {
 	if !vs.empty {
 		if batch.StateIndex() != vs.stateIndex+1 {
-			return fmt.Errorf("ApplyBatch: batch state index #%d can't be applied to the state #%d",
+			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the state #%d",
 				batch.StateIndex(), vs.stateIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
-			return fmt.Errorf("ApplyBatch: batch state index #%d can't be applied to the empty state", batch.StateIndex())
+			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
 	batch.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
@@ -160,8 +160,8 @@ func (vs *virtualState) Read(r io.Reader) error {
 	return nil
 }
 
-// saves variable state to db atomically with the batch of state updates and records of processed requests
-func (vs *virtualState) CommitToDb(b Batch) error {
+// saves variable state to db atomically with the block of state updates and records of processed requests
+func (vs *virtualState) CommitToDb(b Block) error {
 	batchData, err := util.Bytes(b)
 	if err != nil {
 		return err
@@ -203,11 +203,11 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	return nil
 }
 
-func LoadSolidState(scAddress *address.Address) (VirtualState, Batch, bool, error) {
+func LoadSolidState(scAddress *address.Address) (VirtualState, Block, bool, error) {
 	return loadSolidState(getSCPartition(scAddress), scAddress)
 }
 
-func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualState, Batch, bool, error) {
+func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualState, Block, bool, error) {
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
@@ -228,9 +228,9 @@ func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualStat
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
 
-	batch, err := BatchFromBytes(values[1])
+	batch, err := NewBlockFromBytes(values[1])
 	if err != nil {
-		return nil, nil, false, fmt.Errorf("loading batch: %v", err)
+		return nil, nil, false, fmt.Errorf("loading block: %v", err)
 	}
 	if vs.StateIndex() != batch.StateIndex() {
 		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")

@@ -62,7 +62,7 @@ type operator struct {
 
 type leaderStatus struct {
 	reqs          []*request
-	batch         state.Batch
+	batch         state.Block
 	batchHash     hashing.HashValue
 	timestamp     int64
 	balances      map[valuetransaction.ID][]*balance.Balance

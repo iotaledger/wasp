@@ -22,10 +22,10 @@ type VirtualState interface {
 	Timestamp() int64
 	// updates state without changing state index
 	ApplyStateUpdate(stateUpd StateUpdate)
-	// applies batch of state updates, state index and timestamp
-	ApplyBatch(Batch) error
+	// applies block of state updates, state index and timestamp
+	ApplyBatch(Block) error
 	// commit means saving virtual state to sc db, making it persistent (solid)
-	CommitToDb(batch Batch) error
+	CommitToDb(batch Block) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
 	Hash() *hashing.HashValue
@@ -37,9 +37,9 @@ type VirtualState interface {
 
 // AccessState update represents update to the variable state
 // it is calculated by the VM (in batches)
-// AccessState updates comes in batches, all state updates within one batch
-// has same state index, state tx id and batch size. ResultBatch index is unique in batch
-// ResultBatch is completed when it contains one state update for each index
+// AccessState updates comes in batches, all state updates within one block
+// has same state index, state tx id and block size. ResultBlock index is unique in block
+// ResultBlock is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
 	RequestID() *coretypes.RequestID
@@ -53,14 +53,13 @@ type StateUpdate interface {
 	Read(io.Reader) error
 }
 
-// ResultBatch of state updates applicable to the variable state by applying state updates
-// in a sequence defined by batch indices
-type Batch interface {
+// Block is a sequence of state updates applicable to the variable state
+type Block interface {
 	ForEach(func(uint16, StateUpdate) bool)
 	StateIndex() uint32
-	WithStateIndex(uint32) Batch
+	WithStateIndex(uint32) Block
 	StateTransactionId() valuetransaction.ID
-	WithStateTransaction(valuetransaction.ID) Batch
+	WithStateTransaction(valuetransaction.ID) Block
 	Timestamp() int64
 	Size() uint16
 	RequestIds() []*coretypes.RequestID

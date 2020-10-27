@@ -162,19 +162,19 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
-	if ctx.ResultBatch.StateIndex() != op.mustStateIndex()+1 {
+	if ctx.ResultBlock.StateIndex() != op.mustStateIndex()+1 {
 		// out of context. ignore
 		return
 	}
 	op.log.Debugw("eventResultCalculated",
-		"batch size", ctx.ResultBatch.Size(),
+		"batch size", ctx.ResultBlock.Size(),
 		"stateIndex", op.mustStateIndex(),
 	)
 
 	// inform state manager about new result batch
 	go func() {
 		op.committee.ReceiveMessage(chain.PendingBatchMsg{
-			Batch: ctx.ResultBatch,
+			Batch: ctx.ResultBlock,
 		})
 	}()
 
