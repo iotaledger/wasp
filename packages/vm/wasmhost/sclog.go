@@ -13,8 +13,19 @@ type ScLog struct {
 func (a *ScLog) InitVM(vm *wasmProcessor, keyId int32) {
 	a.ModelObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
-	a.name = "log." + key
-	a.lines = vm.ctx.AccessState().GetTimestampedLog(kv.Key(key))
+	a.name = "log." + string(key)
+	a.lines = vm.ctx.AccessState().GetTimestampedLog(key)
+}
+
+func (a *ScLog) Exists(keyId int32) bool {
+	switch keyId {
+	case KeyData:
+	case KeyLength:
+	case KeyTimestamp:
+	default:
+		return false
+	}
+	return true
 }
 
 func (a *ScLog) GetInt(keyId int32) int64 {

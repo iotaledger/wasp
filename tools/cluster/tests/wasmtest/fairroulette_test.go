@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/tests/wasptest"
 	"testing"
 )
@@ -94,9 +95,17 @@ func TestFrPlaceBet(t *testing.T) {
 	}
 }
 
-func TestFrPlace5BetsAndPlay(t *testing.T) {
+func TestFrPlace1BetAndWin(t *testing.T) {
 	wasps := setup(t, "TestFrPlace5BetsAndPlay")
+	testFrPlaceBetsAndPlay(t, 1, wasps)
+}
 
+func TestFrPlace5BetsAndWin(t *testing.T) {
+	wasps := setup(t, "TestFrPlace5BetsAndPlay")
+	testFrPlaceBetsAndPlay(t, 5, wasps)
+}
+
+func testFrPlaceBetsAndPlay(t *testing.T, nrOfBets int, wasps *cluster.Cluster) {
 	err := loadWasmIntoWasps(wasps, frWasmPath, frDescription)
 	check(err, t)
 
@@ -107,8 +116,8 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
-		"request_in":          1 + 1 + 5 + 1 + 1,
-		"request_out":         2 + 1 + 5 + 1 + 1,
+		"request_in":          1 + 1 + nrOfBets + 1 + 1,
+		"request_out":         2 + 1 + nrOfBets + 1 + 1,
 		"state":               -1,
 		"vmmsg":               -1,
 	})
@@ -122,6 +131,7 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 		RequestCode: frCodePlayPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
+			"testMode":   1,
 		},
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -129,12 +139,12 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 	})
 	check(err, t)
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < nrOfBets; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
 			SCAddress:   scAddr,
 			RequestCode: frCodePlaceBet,
 			Vars: map[string]interface{}{
-				"color": i + 1,
+				"color": (1+i)%5 + 1,
 			},
 			Transfer: map[balance.Color]int64{
 				balance.ColorIOTA: 100,
@@ -167,7 +177,7 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 		vmconst.VarNameProgramHash:  programHash[:],
 		vmconst.VarNameDescription:  frDescription,
 		"playPeriod":                10,
-		//"lastWinningColor": 3,
+		"lastWinningColor":          2,
 	}) {
 		t.Fail()
 	}

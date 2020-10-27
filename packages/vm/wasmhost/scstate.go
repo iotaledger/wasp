@@ -17,11 +17,16 @@ func (o *ScState) InitVM(vm *wasmProcessor, keyId int32) {
 	o.types = make(map[int32]int32)
 }
 
+func (o *ScState) Exists(keyId int32) bool {
+	key := o.vm.GetKey(keyId)
+	return o.vm.ctx.AccessState().Has(key)
+}
+
 func (o *ScState) GetBytes(keyId int32) []byte {
 	if !o.valid(keyId, OBJTYPE_BYTES) {
 		return []byte(nil)
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
+	key := o.vm.GetKey(keyId)
 	return o.vm.ctx.AccessState().Get(key)
 }
 
@@ -29,7 +34,7 @@ func (o *ScState) GetInt(keyId int32) int64 {
 	if !o.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
+	key := o.vm.GetKey(keyId)
 	value, _ := o.vm.ctx.AccessState().GetInt64(key)
 	return value
 }
@@ -55,7 +60,7 @@ func (o *ScState) GetString(keyId int32) string {
 	if !o.valid(keyId, OBJTYPE_STRING) {
 		return ""
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
+	key := o.vm.GetKey(keyId)
 	value, _ := o.vm.ctx.AccessState().GetString(key)
 	return value
 }
@@ -64,7 +69,7 @@ func (o *ScState) SetBytes(keyId int32, value []byte) {
 	if !o.valid(keyId, OBJTYPE_BYTES) {
 		return
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
+	key := o.vm.GetKey(keyId)
 	o.vm.ctx.AccessState().Set(key, value)
 }
 
@@ -72,7 +77,7 @@ func (o *ScState) SetInt(keyId int32, value int64) {
 	if !o.valid(keyId, OBJTYPE_INT) {
 		return
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
+	key := o.vm.GetKey(keyId)
 	o.vm.ctx.AccessState().SetInt64(key, value)
 }
 
@@ -80,7 +85,7 @@ func (o *ScState) SetString(keyId int32, value string) {
 	if !o.valid(keyId, OBJTYPE_STRING) {
 		return
 	}
-	key := kv.Key(o.vm.GetKey(keyId))
+	key := o.vm.GetKey(keyId)
 	o.vm.ctx.AccessState().SetString(key, value)
 }
 
@@ -108,8 +113,12 @@ type ScStateArray struct {
 func (a *ScStateArray) InitVM(vm *wasmProcessor, keyId int32) {
 	a.ArrayObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
-	a.name = "state.array." + key
-	a.items = vm.ctx.AccessState().GetArray(kv.Key(key))
+	a.name = "state.array." + string(key)
+	a.items = vm.ctx.AccessState().GetArray(key)
+}
+
+func (a *ScStateArray) Exists(keyId int32) bool {
+	return keyId >= 0 && keyId < int32(a.items.Len())
 }
 
 func (a *ScStateArray) GetBytes(keyId int32) []byte {
@@ -202,9 +211,14 @@ type ScStateMap struct {
 func (m *ScStateMap) InitVM(vm *wasmProcessor, keyId int32) {
 	m.MapObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
-	m.name = "state.map." + key
-	m.items = vm.ctx.AccessState().GetDictionary(kv.Key(key))
+	m.name = "state.map." + string(key)
+	m.items = vm.ctx.AccessState().GetDictionary(key)
 	m.types = make(map[int32]int32)
+}
+
+func (m *ScStateMap) Exists(keyId int32) bool {
+	key := []byte(m.vm.GetKey(keyId))
+	return m.items.HasAt(key)
 }
 
 func (m *ScStateMap) GetBytes(keyId int32) []byte {

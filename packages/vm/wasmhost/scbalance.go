@@ -1,8 +1,8 @@
 package wasmhost
 
 import (
+	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/mr-tron/base58/base58"
 )
 
 type ScBalance struct {
@@ -10,28 +10,23 @@ type ScBalance struct {
 	requestOnly bool
 }
 
+func (o *ScBalance) Exists(keyId int32) bool {
+	return o.GetInt(keyId) != 0
+}
+
 func (o *ScBalance) GetInt(keyId int32) int64 {
-	color := balance.ColorIOTA
-	key := o.vm.GetKey(keyId)
-	switch key {
-	case "iota":
-		color = balance.ColorIOTA
-	default:
-		if o.requestOnly {
-			request := o.vm.ctx.AccessRequest()
-			reqId := request.ID()
-			if key == reqId.TransactionId().String() {
-				return request.NumFreeMintedTokens()
-			}
+	key := o.vm.WasmHost.GetKey(keyId)
+	if o.requestOnly {
+		request := o.vm.ctx.AccessRequest()
+		reqId := request.ID()
+		if bytes.Equal(key, reqId.TransactionId().Bytes()) {
+			return request.NumFreeMintedTokens()
 		}
-		bytes, err := base58.Decode(key)
-		if err != nil {
-			panic(err)
-		}
-		color, _, err = balance.ColorFromBytes(bytes)
-		if err != nil {
-			panic(err)
-		}
+	}
+	color, _, err := balance.ColorFromBytes(key)
+	if err != nil {
+		o.error(err.Error())
+		return 0
 	}
 	account := o.vm.ctx.AccessSCAccount()
 	if o.requestOnly {
