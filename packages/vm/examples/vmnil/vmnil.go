@@ -25,7 +25,7 @@ func (v nilProcessor) GetDescription() string {
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
+func (v nilProcessor) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetWaspLog().Debugw("run nilProcessor",
 		"request code", ctx.AccessRequest().Code(),
@@ -33,6 +33,7 @@ func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
 		"ts", ctx.GetTimestamp(),
 		"req", reqId.String(),
 	)
+	return nil
 }
 
 func (v nilProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

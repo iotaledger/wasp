@@ -127,8 +127,9 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f
 }
 
-func (f fairRouletteEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	f(ctx)
+	return nil
 }
 
 // the request places bet into the smart contract

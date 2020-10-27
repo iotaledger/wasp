@@ -28,7 +28,7 @@ func (cs Contracts) LoadContract(binaryCode []byte, vmtype string, index uint16)
 	if cs[index] != nil {
 		return fmt.Errorf("Contracts.LoadContract: contract with index %d already loaded", index)
 	}
-	proc, err := processors.FromBinaryCode(vmtype, binaryCode)
+	proc, err := processors.NewProcessorFromBinaryCode(vmtype, binaryCode)
 	if err != nil {
 		return err
 	}

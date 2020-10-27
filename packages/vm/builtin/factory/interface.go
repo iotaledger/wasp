@@ -28,8 +28,9 @@ func (v bootupProcessor) GetDescription() string {
 	return "Bootup processor"
 }
 
-func (ep bootupEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep bootupEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 func (ep bootupEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {

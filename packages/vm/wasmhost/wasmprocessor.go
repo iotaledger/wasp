@@ -50,7 +50,7 @@ func (vm *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
+func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	vm.ctx = ctx
 
 	reqId := ctx.AccessRequest().ID()
@@ -72,6 +72,7 @@ func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 
 	vm.LogText("Finalizing call")
 	vm.scContext.Finalize()
+	return nil
 }
 
 func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

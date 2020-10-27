@@ -52,8 +52,9 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }
 
-func (ep incEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 func incCounter(ctx vmtypes.Sandbox) {

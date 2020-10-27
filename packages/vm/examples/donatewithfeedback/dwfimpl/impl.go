@@ -44,8 +44,9 @@ func (v dwfProcessor) GetDescription() string {
 }
 
 // Run calls the function wrapped into the EntryPoint
-func (ep dwfEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 // not used

@@ -36,8 +36,9 @@ func (v logscProcessor) GetDescription() string {
 	return "LogSc hard coded smart contract processor"
 }
 
-func (ep logscEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {

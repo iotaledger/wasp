@@ -71,8 +71,9 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 // WithGasLimit not used

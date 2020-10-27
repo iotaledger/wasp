@@ -45,7 +45,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 				sndbox.Rollback()
 			}
 		}()
-		entryPoint.Run(sndbox)
+		entryPoint.Call(sndbox, nil)
 	}()
 
 	defer vmctx.Log.Debugw("runTheRequest OUT USER DEFINED",

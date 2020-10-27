@@ -72,5 +72,5 @@ func loadProcessor(progHash *hashing.HashValue) (vmtypes.Processor, error) {
 		return nil, err
 	}
 
-	return processors2.FromBinaryCode(md.VMType, binaryCode)
+	return processors2.NewProcessorFromBinaryCode(md.VMType, binaryCode)
 }

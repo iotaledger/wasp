@@ -97,8 +97,9 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmty
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 func (ep fairAuctionEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {

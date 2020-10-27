@@ -27,8 +27,9 @@ func (v *builtinProcessor) GetDescription() string {
 	return "Builtin processor"
 }
 
-func (ep builtinEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep builtinEntryPoint) Run(ctx vmtypes.Sandbox, params interface{}) interface{} {
 	ep(ctx)
+	return nil
 }
 
 func (ep builtinEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
