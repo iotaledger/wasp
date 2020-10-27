@@ -13,7 +13,7 @@ type ScTransfer struct {
 }
 
 func (o *ScTransfer) Send() {
-	o.vm.Trace("TRANSFER a%d c'%16s' a'%16s'", o.amount, o.color.String(), o.address.String())
+	o.vm.Trace("TRANSFER a%d c'%s' a'%s'", o.amount, o.color.String(), o.address.String())
 	if !o.vm.ctx.AccessSCAccount().MoveTokens(&o.address, &o.color, o.amount) {
 		o.vm.ctx.Panic("Failed to move tokens")
 	}

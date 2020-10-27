@@ -35,6 +35,7 @@ func (o *ModelObject) error(format string, args ...interface{}) {
 }
 
 func (o *ModelObject) Exists(keyId int32) bool {
+	o.vm.LogText("IMPLEMENT " + o.name + ".Exists???")
 	return false
 }
 

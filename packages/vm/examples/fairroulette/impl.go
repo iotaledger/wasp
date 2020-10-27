@@ -53,6 +53,8 @@ const (
 	RequestDoNothing     = sctransaction.RequestCode(5)
 )
 
+var testMode = false
+
 // the processor is a map of entry points
 var entryPoints = fairRouletteProcessor{
 	RequestPlaceBet:          placeBet,
@@ -216,6 +218,7 @@ func placeBet(ctx vmtypes.Sandbox) {
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
 func setPlayPeriod(ctx vmtypes.Sandbox) {
 	ctx.Publish("setPlayPeriod")
+	testMode,_=ctx.AccessRequest().Args().Has("testMode")
 
 	period, ok, err := ctx.AccessRequest().Args().GetInt64(ReqVarPlayPeriodSec)
 	if err != nil || !ok || period < 10 {
@@ -283,6 +286,9 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
 	// calculating it modulo NumColors.
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
+	if testMode {
+		winningColor = 2
+	}
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	ctx.Publishf("$$$$$$$$$$ winning color is = %d", winningColor)

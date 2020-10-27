@@ -16,6 +16,16 @@ type wasmProcessor struct {
 	scContext *ScContext
 }
 
+func NewWasmProcessor() (*wasmProcessor, error) {
+	vm := &wasmProcessor{}
+	vm.scContext = NewScContext(vm)
+	err := vm.Init(NewNullObject(vm), vm.scContext, &keyMap, vm)
+	if err != nil {
+		return nil, err
+	}
+	return vm, nil
+}
+
 func (vm *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
@@ -34,9 +44,7 @@ func (vm *wasmProcessor) GetKey(keyId int32) kv.Key {
 }
 
 func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
-	vm := &wasmProcessor{}
-	vm.scContext = NewScContext(vm)
-	err := vm.Init(NewNullObject(vm), vm.scContext, &keyMap, vm)
+	vm, err := NewWasmProcessor()
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +62,11 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 func (vm *wasmProcessor) Run(ctx vmtypes.Sandbox) {
 	vm.ctx = ctx
 
+	testMode, _ := ctx.AccessRequest().Args().Has("testMode")
+	if testMode {
+		vm.LogText("TEST MODE")
+		TestMode = true
+	}
 	reqId := ctx.AccessRequest().ID()
 	vm.LogText(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
 		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))

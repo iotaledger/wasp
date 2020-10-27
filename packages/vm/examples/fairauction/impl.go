@@ -4,7 +4,7 @@ package fairauction
 
 import (
 	"bytes"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"sort"
 	"time"
 
@@ -214,7 +214,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	ownerMargin := GetOwnerMarginPromille(ctx.AccessState().GetInt64(VarStateOwnerMarginPromille))
 
 	// determine color of the token for sale
-	colh, ok, err := reqArgs.GetString(VarReqAuctionColor)
+	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil || !ok {
 		// incorrect request arguments, colore for sale is not determined
 		// refund half of the deposit in iotas
@@ -223,16 +223,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 		ctx.Publish("startAuction: exit 1")
 		return
 	}
-	colorh, err := base58.Decode(colh)
-	if err != nil {
-		ctx.Publish("startAuction: exit 1.1")
-		return
-	}
-	colorForSale,_,err := balance.ColorFromBytes(colorh)
-	if err != nil {
-		ctx.Publish("startAuction: exit 1.2")
-		return
-	}
+	colorForSale := balance.Color(*colh)
 	if colorForSale == balance.ColorIOTA || colorForSale == balance.ColorNew {
 		// reserved color code are not allowed
 		// refund half
@@ -341,7 +332,7 @@ func startAuction(ctx vmtypes.Sandbox) {
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
 	args := kv.NewMap()
-	args.Codec().SetString(VarReqAuctionColor, colorForSale.String())
+	args.Codec().SetHashValue(VarReqAuctionColor, (*hashing.HashValue)(&colorForSale))
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
 	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
@@ -372,7 +363,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 
 	reqArgs := ctx.AccessRequest().Args()
 	// determine color of the bid
-	colh, ok, err := reqArgs.GetString(VarReqAuctionColor)
+	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil {
 		// inconsistency. return all?
 		ctx.Publish("placeBid: exit 1")
@@ -385,16 +376,7 @@ func placeBid(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	colorh, err := base58.Decode(colh)
-	if err != nil {
-		ctx.Publish("startAuction: exit 1.1")
-		return
-	}
-	col,_,err := balance.ColorFromBytes(colorh)
-	if err != nil {
-		ctx.Publish("startAuction: exit 1.2")
-		return
-	}
+	col := balance.Color(*colh)
 	if col == balance.ColorIOTA || col == balance.ColorNew {
 		// reserved color not allowed. Incorrect arguments
 		refundFromRequest(ctx, &balance.ColorIOTA, 0)
@@ -468,23 +450,14 @@ func finalizeAuction(ctx vmtypes.Sandbox) {
 	reqArgs := accessReq.Args()
 
 	// determine color of the auction to finalize
-	colh, ok, err := reqArgs.GetString(VarReqAuctionColor)
+	colh, ok, err := reqArgs.GetHashValue(VarReqAuctionColor)
 	if err != nil || !ok {
 		// wrong request arguments
 		// internal error. Refund completely?
 		ctx.Publish("finalizeAuction: exit 1")
 		return
 	}
-	colorh, err := base58.Decode(colh)
-	if err != nil {
-		ctx.Publish("startAuction: exit 1.1")
-		return
-	}
-	col,_,err := balance.ColorFromBytes(colorh)
-	if err != nil {
-		ctx.Publish("startAuction: exit 1.2")
-		return
-	}
+	col := balance.Color(*colh)
 	if col == balance.ColorIOTA || col == balance.ColorNew {
 		// inconsistency
 		ctx.Publish("finalizeAuction: exit 2")
