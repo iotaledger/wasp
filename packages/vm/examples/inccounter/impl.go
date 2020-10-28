@@ -50,12 +50,12 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }
 
-func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
-	return err
+	return nil, err
 }
 
 func incCounter(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {

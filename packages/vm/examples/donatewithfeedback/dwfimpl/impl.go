@@ -46,12 +46,12 @@ func (v dwfProcessor) GetDescription() string {
 }
 
 // Run calls the function wrapped into the EntryPoint
-func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	ret := ep(ctx, params)
 	if ret != nil {
 		ctx.Publishf("error %v", ret)
 	}
-	return ret
+	return nil, ret
 }
 
 // not used

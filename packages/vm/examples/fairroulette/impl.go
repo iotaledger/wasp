@@ -126,12 +126,12 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f
 }
 
-func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	err := f(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
-	return err
+	return nil, err
 }
 
 // the request places bet into the smart contract

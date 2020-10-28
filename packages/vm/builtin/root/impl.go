@@ -25,24 +25,24 @@ type contractProgram struct {
 	programBinary []byte
 }
 
-func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	ctx.Publishf("root.initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
-		return fmt.Errorf("root.initialize.fail: already_initialized")
+		return nil, fmt.Errorf("root.initialize.fail: already_initialized")
 	}
 	chainID, ok, err := params.GetChainID(VarChainID)
 	if err != nil {
-		return fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", VarChainID, err.Error())
+		return nil, fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", VarChainID, err.Error())
 	}
 	if !ok {
-		return fmt.Errorf("root.initialize.fail: 'chainID' not found")
+		return nil, fmt.Errorf("root.initialize.fail: 'chainID' not found")
 	}
 	registry := state.GetDictionary(VarContractRegistry)
 	nextIndex := coretypes.Uint16(registry.Len())
 
 	if nextIndex != 0 {
-		return fmt.Errorf("root.initialize.fail: registry_not_empty")
+		return nil, fmt.Errorf("root.initialize.fail: registry_not_empty")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
@@ -52,10 +52,10 @@ func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 		programBinary: hashing.NilHash[:],
 	}))
 	ctx.Publishf("root.initialize.success")
-	return nil
+	return nil, nil
 }
 
-func newContract(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func newContract(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	ctx.Publishf("root.newContract.begin")
 
 	var err error
@@ -63,22 +63,22 @@ func newContract(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	rec := &contractProgram{}
 	rec.vmtype, ok, err = params.GetString(ParamVMType)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !ok {
-		return fmt.Errorf("VMType undefined")
+		return nil, fmt.Errorf("VMType undefined")
 	}
 	rec.programBinary, err = params.Get(ParamProgramBinary)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	contractIndex, err := ctx.InstallProgram(rec.vmtype, rec.programBinary)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	registry := ctx.AccessState().GetDictionary(VarContractRegistry)
 	registry.SetAt(contractIndex.Bytes(), util.MustBytes(rec))
-	return nil
+	return nil, nil
 }
 
 // serde

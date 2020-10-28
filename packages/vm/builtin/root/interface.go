@@ -10,7 +10,7 @@ import (
 
 type factoryProcessor struct{}
 
-type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{}
+type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error)
 
 var Processor = factoryProcessor{}
 
@@ -34,14 +34,12 @@ func (v factoryProcessor) GetDescription() string {
 	return "Factory processor"
 }
 
-func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
-	err := ep(ctx, params)
+func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
+	ret, err := ep(ctx, params)
 	if err != nil {
-		if _, isError := err.(error); isError {
-			ctx.Publishf("error occured: '%v'", err)
-		}
+		ctx.Publishf("error occured: '%v'", err)
 	}
-	return err
+	return ret, err
 }
 
 func (ep factoryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {

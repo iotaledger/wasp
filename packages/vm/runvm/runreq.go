@@ -45,15 +45,12 @@ func runTheRequest(vmctx *vm.VMContext) {
 				sandbox.Rollback()
 			}
 		}()
-		err := entryPoint.Call(sandbox, reqBlock.Args())
+		_, err := entryPoint.Call(sandbox, reqBlock.Args())
 		if err != nil {
-			if _, isError := err.(error); isError {
-				vmctx.Log.Warnw("call to entry point",
-					"err", err,
-					"reqId", vmctx.RequestRef.RequestID().Short(),
-				)
-			}
-			// ignored if if not error type
+			vmctx.Log.Warnw("call to entry point",
+				"err", err,
+				"reqId", vmctx.RequestRef.RequestID().Short(),
+			)
 		}
 	}()
 

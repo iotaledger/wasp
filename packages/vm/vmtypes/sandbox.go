@@ -91,7 +91,7 @@ type Contract interface {
 }
 
 type ContractFunction interface {
-	Call(params kv.Map) (interface{}, bool)
+	Call(params kv.Map) (interface{}, bool) //??????
 }
 
 type NewRequestParams struct {

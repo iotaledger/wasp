@@ -71,12 +71,12 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
-	return err
+	return nil, err
 }
 
 // WithGasLimit not used

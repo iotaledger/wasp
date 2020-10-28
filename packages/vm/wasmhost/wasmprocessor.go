@@ -53,7 +53,7 @@ func (vm *wasmProcessor) GetDescription() string {
 
 // TODO use params in immplementation, not ctx.AccessRequest().Args()
 // this is needed for alignment of calling convention between requests and intra-cain calls
-func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	vm.ctx = ctx
 
 	reqId := ctx.AccessRequest().ID()
@@ -75,7 +75,7 @@ func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) int
 
 	vm.LogText("Finalizing call")
 	vm.scContext.Finalize()
-	return nil
+	return nil, nil
 }
 
 func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

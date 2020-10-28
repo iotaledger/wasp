@@ -96,12 +96,12 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmty
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
+func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
-	return err
+	return nil, err
 }
 
 func (ep fairAuctionEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
