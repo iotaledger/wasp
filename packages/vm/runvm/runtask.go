@@ -2,12 +2,14 @@ package runvm
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"time"
 )
 
 // RunComputationsAsync runs computations for the batch of requests in the background
@@ -18,7 +20,8 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 
 	// create txbuilder for the task. It will accumulate all token movements produced
 	// by the SC program during batch run. In the end it will produce finalized transaction
-	txb, err := txbuilder.NewFromAddressBalances(&ctx.Address, ctx.Balances)
+	addr := address.Address(ctx.ChainID)
+	txb, err := txbuilder.NewFromAddressBalances(&addr, ctx.Balances)
 	if err != nil {
 		ctx.Log.Debugf("txbuilder.NewFromAddressBalances: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
 		return err
@@ -35,7 +38,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 // runTask runs batch of requests on VM
 func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
 	ctx.Log.Debugw("runTask IN",
-		"addr", ctx.Address.String(),
+		"chainID", ctx.ChainID.String(),
 		"timestamp", ctx.Timestamp,
 		"state index", ctx.VirtualState.StateIndex(),
 		"num req", len(ctx.Requests),

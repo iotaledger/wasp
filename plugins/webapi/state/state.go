@@ -3,27 +3,26 @@ package state
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
 
 func AddEndpoints(server *echo.Echo) {
-	server.GET("/"+client.StateQueryRoute(":scAddr"), handleStateQuery)
+	server.GET("/"+client.StateQueryRoute(":chainID"), handleStateQuery)
 }
 
 func handleStateQuery(c echo.Context) error {
-	scAddr, err := address.FromBase58(c.Param("scAddr"))
+	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %+v", c.Param("scAddr")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %+v", c.Param("chainID")))
 	}
 
 	var req statequery.Request
@@ -32,12 +31,12 @@ func handleStateQuery(c echo.Context) error {
 	}
 
 	// TODO serialize access to solid state
-	state, batch, exist, err := state.LoadSolidState(&scAddr)
+	state, batch, exist, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}
 	if !exist {
-		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", scAddr.String()))
+		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", chainID.String()))
 	}
 	txid := batch.StateTransactionId()
 	ret := &statequery.Results{

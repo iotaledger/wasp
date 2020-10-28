@@ -3,7 +3,8 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/kvstore"
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
-	"io"
 )
 
 type block struct {
@@ -181,8 +181,8 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func LoadBlock(addr *address.Address, stateIndex uint32) (Block, error) {
-	data, err := database.GetPartition(addr).Get(dbkeyBatch(stateIndex))
+func LoadBlock(chainID *coretypes.ChainID, stateIndex uint32) (Block, error) {
+	data, err := database.GetPartition(chainID).Get(dbkeyBatch(stateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}

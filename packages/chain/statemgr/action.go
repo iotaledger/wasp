@@ -35,7 +35,7 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 	}
 
 	sm.consensusNotifiedOnStateTransition = true
-	go sm.committee.ReceiveMessage(&chain.StateTransitionMsg{
+	go sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
 		VariableState:    sm.solidState,
 		StateTransaction: sm.approvingTransaction,
 		Synchronized:     sm.isSynchronized(),
@@ -50,7 +50,7 @@ func (sm *stateManager) sendPingsIfNeeded() {
 		// no need for pinging, all state information is gathered already
 		return
 	}
-	if !sm.committee.HasQuorum() {
+	if !sm.chain.HasQuorum() {
 		// doesn't make sense the pinging, alive nodes does not make quorum
 		return
 	}
@@ -99,10 +99,10 @@ func (sm *stateManager) checkStateApproval() bool {
 	if sm.solidStateValid || sm.solidState == nil {
 		if sm.solidState == nil {
 			// pre-origin
-			if sm.nextStateTransaction.ID() != (valuetransaction.ID)(*sm.committee.Color()) {
+			if sm.nextStateTransaction.ID() != (valuetransaction.ID)(*sm.chain.Color()) {
 				sm.log.Errorf("major inconsistency: origin transaction hash %s not equal to the color of the SC %s",
-					sm.nextStateTransaction.ID().String(), sm.committee.Color().String())
-				sm.committee.Dismiss()
+					sm.nextStateTransaction.ID().String(), sm.chain.Color().String())
+				sm.chain.Dismiss()
 				return false
 			}
 		}
@@ -143,7 +143,7 @@ func (sm *stateManager) checkStateApproval() bool {
 
 	// publish state transition
 	publisher.Publish("state",
-		sm.committee.Address().String(),
+		sm.chain.ID().String(),
 		strconv.Itoa(int(sm.solidState.StateIndex())),
 		strconv.Itoa(int(pending.batch.Size())),
 		sm.approvingTransaction.ID().String(),
@@ -153,7 +153,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// publish processed requests
 	for i, reqid := range pending.batch.RequestIds() {
 		publisher.Publish("request_out",
-			sm.committee.Address().String(),
+			sm.chain.ID().String(),
 			reqid.TransactionID().String(),
 			fmt.Sprintf("%d", reqid.Index()),
 			strconv.Itoa(int(sm.solidState.StateIndex())),
@@ -181,8 +181,8 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		},
 	})
 	// send messages until first without error
-	for i := uint16(0); i < sm.committee.Size(); i++ {
-		if err := sm.committee.SendMsg(sm.permutation.Next(), chain.MsgGetBatch, data); err == nil {
+	for i := uint16(0); i < sm.chain.Size(); i++ {
+		if err := sm.chain.SendMsg(sm.permutation.Next(), chain.MsgGetBatch, data); err == nil {
 			break
 		}
 		sm.syncMessageDeadline = time.Now().Add(chain.PeriodBetweenSyncMessages)
@@ -294,7 +294,7 @@ func (sm *stateManager) addPendingBatch(batch state.Block) bool {
 
 func (sm *stateManager) createStateToApprove() state.VirtualState {
 	if sm.solidState == nil {
-		return state.NewEmptyVirtualState(sm.committee.Address())
+		return state.NewEmptyVirtualState(sm.chain.ID())
 	}
 	return sm.solidState.Clone()
 }
@@ -329,7 +329,7 @@ func (sm *stateManager) numPongs() uint16 {
 }
 
 func (sm *stateManager) numPongsHasQuorum() bool {
-	return sm.numPongs() >= sm.committee.Quorum()-1
+	return sm.numPongs() >= sm.chain.Quorum()-1
 }
 
 func (sm *stateManager) pingPongReceived(senderIndex uint16) {
@@ -337,7 +337,7 @@ func (sm *stateManager) pingPongReceived(senderIndex uint16) {
 }
 
 func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
-	sm.committee.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
+	sm.chain.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: sm.solidState.StateIndex(),
 		},
@@ -359,7 +359,7 @@ func (sm *stateManager) sendPingsToCommitteePeers() {
 		if pinged {
 			continue
 		}
-		if err := sm.committee.SendMsg(uint16(i), chain.MsgStateIndexPingPong, data); err == nil {
+		if err := sm.chain.SendMsg(uint16(i), chain.MsgStateIndexPingPong, data); err == nil {
 			numSent++
 		}
 	}

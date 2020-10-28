@@ -22,7 +22,7 @@ import (
 )
 
 type operator struct {
-	committee  chain.Chain
+	chain      chain.Chain
 	processors *processors.ChainProcessors
 
 	dkshare *tcrypto.DKShare
@@ -94,7 +94,7 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 	defer committee.SetReadyConsensus()
 
 	ret := &operator{
-		committee:           committee,
+		chain:               committee,
 		processors:          processors.New(),
 		dkshare:             dkshare,
 		requests:            make(map[coretypes.RequestID]*request),
@@ -145,7 +145,8 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 }
 
 func (op *operator) getRewardAddress() address.Address {
-	return registry.GetRewardAddress(op.committee.Address())
+	addr := address.Address(*op.chain.ID())
+	return registry.GetRewardAddress(&addr)
 }
 
 func (op *operator) getMinimumReward() int64 {

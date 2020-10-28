@@ -33,8 +33,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *chain.GetBatchMsg) {
 		"sender index", msg.SenderIndex,
 		"state index", msg.StateIndex,
 	)
-	addr := sm.committee.Address()
-	batch, err := state.LoadBlock(addr, msg.StateIndex)
+	batch, err := state.LoadBlock(sm.chain.ID(), msg.StateIndex)
 	if err != nil || batch == nil {
 		// can't load batch, can't respond
 		return
@@ -42,7 +41,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *chain.GetBatchMsg) {
 
 	sm.log.Debugf("EventGetBatchMsg for state index #%d --> peer %d", msg.StateIndex, msg.SenderIndex)
 
-	err = sm.committee.SendMsg(msg.SenderIndex, chain.MsgBatchHeader, util.MustBytes(&chain.BatchHeaderMsg{
+	err = sm.chain.SendMsg(msg.SenderIndex, chain.MsgBatchHeader, util.MustBytes(&chain.BatchHeaderMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			StateIndex: msg.StateIndex,
 		},
@@ -53,7 +52,7 @@ func (sm *stateManager) EventGetBatchMsg(msg *chain.GetBatchMsg) {
 		return
 	}
 	batch.ForEach(func(batchIndex uint16, stateUpdate state.StateUpdate) bool {
-		err = sm.committee.SendMsg(msg.SenderIndex, chain.MsgStateUpdate, util.MustBytes(&chain.StateUpdateMsg{
+		err = sm.chain.SendMsg(msg.SenderIndex, chain.MsgStateUpdate, util.MustBytes(&chain.StateUpdateMsg{
 			PeerMsgHeader: chain.PeerMsgHeader{
 				StateIndex: msg.StateIndex,
 			},
@@ -134,7 +133,7 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
 
 	sm.syncedBatch = nil
-	go sm.committee.ReceiveMessage(chain.PendingBatchMsg{
+	go sm.chain.ReceiveMessage(chain.PendingBatchMsg{
 		Batch: batch,
 	})
 	sm.takeAction()

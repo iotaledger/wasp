@@ -1,10 +1,9 @@
 package dashboard
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -46,23 +45,22 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 	})
 
 	e.GET(scRoute, func(c echo.Context) error {
-		addr, err := address.FromBase58(c.Param("address"))
+		cid, err := coretypes.NewContractIDFromBase58(c.Param("address"))
 		if err != nil {
 			return err
 		}
 
 		result := &ScTemplateParams{
 			BaseTemplateParams: BaseParams(c, scListRoute),
-			Address:            &addr,
 		}
-		chainid := (coretypes.ChainID)(addr)
-		br, err := registry.GetBootupData(&chainid)
+		chainID := cid.ChainID()
+		br, err := registry.GetBootupData(&chainID)
 		if err != nil {
 			return err
 		}
 		if br != nil {
 			result.BootupRecord = br
-			state, batch, _, err := state.LoadSolidState(&addr)
+			state, batch, _, err := state.LoadSolidState(&chainID)
 			if err != nil {
 				return err
 			}
@@ -111,8 +109,8 @@ func fetchSmartContracts() ([]*SmartContractOverview, error) {
 }
 
 func fetchDescription(br *registry.BootupData) (string, error) {
-	addr := (address.Address)(br.ChainID)
-	state, _, _, err := state.LoadSolidState(&addr)
+	chainID := br.ChainID
+	state, _, _, err := state.LoadSolidState(&chainID)
 	if err != nil || state == nil {
 		return "", err
 	}
@@ -158,14 +156,13 @@ const tplScList = `
 
 type ScTemplateParams struct {
 	BaseTemplateParams
-	Address       *address.Address
 	BootupRecord  *registry.BootupData
 	State         state.VirtualState
 	Batch         state.Block
 	ProgramHash   *hashing.HashValue
 	Description   string
 	MinimumReward int64
-	Committee     *chains.CommittteeStatus
+	Committee     *chains.ChainStatus
 }
 
 const tplSc = `

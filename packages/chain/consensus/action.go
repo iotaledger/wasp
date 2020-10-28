@@ -1,13 +1,15 @@
 package consensus
 
 import (
+	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"time"
 )
 
 func (op *operator) takeAction() {
@@ -24,7 +26,8 @@ func (op *operator) pullInclusionLevel() {
 		return
 	}
 	if time.Now().After(op.nextPullInclusionLevel) {
-		if err := nodeconn.RequestInclusionLevelFromNode(op.postedResultTxid, op.committee.Address()); err != nil {
+		addr := address.Address(*op.chain.ID())
+		if err := nodeconn.RequestInclusionLevelFromNode(op.postedResultTxid, &addr); err != nil {
 			op.log.Errorf("RequestInclusionLevelFromNode: %v", err)
 		}
 		op.setNextPullInclusionStageDeadline()
@@ -36,7 +39,7 @@ func (op *operator) rotateLeader() {
 	if !op.consensusStageDeadlineExpired() {
 		return
 	}
-	if !op.committee.HasQuorum() {
+	if !op.chain.HasQuorum() {
 		op.log.Debugf("leader not rotated due to no quorum")
 		return
 	}
@@ -63,7 +66,7 @@ func (op *operator) startCalculationsAsLeader() {
 		// only for leader in the beginning of the starting stage
 		return
 	}
-	if !op.committee.HasQuorum() {
+	if !op.chain.HasQuorum() {
 		// no quorum, doesn't make sense to start
 		return
 	}
@@ -99,7 +102,7 @@ func (op *operator) startCalculationsAsLeader() {
 		op.log.Info("timestamp was adjusted to %d", ts)
 	}
 
-	numSucc := op.committee.SendMsgToCommitteePeers(chain.MsgStartProcessingRequest, msgData, ts)
+	numSucc := op.chain.SendMsgToCommitteePeers(chain.MsgStartProcessingRequest, msgData, ts)
 
 	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
@@ -115,7 +118,7 @@ func (op *operator) startCalculationsAsLeader() {
 		batchHash:     batchHash,
 		balances:      op.balances,
 		timestamp:     ts,
-		signedResults: make([]*signedResult, op.committee.Size()),
+		signedResults: make([]*signedResult, op.chain.Size()),
 	}
 	op.log.Debugw("runCalculationsAsync leader",
 		"batch hash", batchHash.String(),
@@ -125,7 +128,7 @@ func (op *operator) startCalculationsAsLeader() {
 	// process the batch on own side
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
-		leaderPeerIndex: op.committee.OwnPeerIndex(),
+		leaderPeerIndex: op.chain.OwnPeerIndex(),
 		balances:        op.balances,
 		timestamp:       ts,
 		rewardAddress:   rewardAddress,
@@ -143,8 +146,8 @@ func (op *operator) checkQuorum() bool {
 	}
 
 	// collect signature shares available
-	mainHash := op.leaderStatus.signedResults[op.committee.OwnPeerIndex()].essenceHash
-	sigShares := make([][]byte, 0, op.committee.Size())
+	mainHash := op.leaderStatus.signedResults[op.chain.OwnPeerIndex()].essenceHash
+	sigShares := make([][]byte, 0, op.chain.Size())
 	contributingPeers := make([]uint16, 0, op.size())
 	for i := range op.leaderStatus.signedResults {
 		if op.leaderStatus.signedResults[i] == nil {
@@ -190,7 +193,8 @@ func (op *operator) checkQuorum() bool {
 		txid.String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
-	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, op.committee.Address(), op.committee.OwnPeerIndex())
+	addr := address.Address(*op.chain.ID())
+	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
@@ -206,7 +210,7 @@ func (op *operator) checkQuorum() bool {
 		TxId: txid,
 	})
 
-	numSent := op.committee.SendMsgToCommitteePeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
+	numSent := op.chain.SendMsgToCommitteePeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
 	op.log.Debugf("%d peers has been notified about finalized result", numSent)
 
 	op.setNextConsensusStage(consensusStageLeaderResultFinalized)
@@ -237,7 +241,8 @@ func (op *operator) queryOutputs() {
 	if op.balances != nil && op.requestBalancesDeadline.After(time.Now()) {
 		return
 	}
-	if err := nodeconn.RequestOutputsFromNode(op.committee.Address()); err != nil {
+	addr := address.Address(*op.chain.ID())
+	if err := nodeconn.RequestOutputsFromNode(&addr); err != nil {
 		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
 	}
 	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)

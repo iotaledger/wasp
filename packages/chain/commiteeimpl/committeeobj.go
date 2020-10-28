@@ -1,18 +1,20 @@
 package commiteeimpl
 
 import (
+	"sync"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
-	"sync"
-	"time"
 )
 
 type committeeObj struct {
@@ -26,7 +28,7 @@ type committeeObj struct {
 	dismissOnce                  sync.Once
 	onActivation                 func()
 	//
-	address         address.Address
+	chainID         coretypes.ChainID
 	ownerAddress    address.Address
 	color           balance.Color
 	peers           []*peering.Peer
@@ -85,7 +87,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 
 	ret := &committeeObj{
 		chMsg:        make(chan interface{}, 100),
-		address:      (address.Address)(bootupData.ChainID),
+		chainID:      bootupData.ChainID,
 		ownerAddress: bootupData.OwnerAddress,
 		color:        bootupData.Color,
 		peers:        make([]*peering.Peer, 0),

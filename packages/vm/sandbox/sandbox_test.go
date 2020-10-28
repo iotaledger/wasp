@@ -3,17 +3,17 @@ package sandbox
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
-	addr := address.Random()
+	chainID := coretypes.ChainID{1, 3, 3, 7}
 	s := stateWrapper{
-		virtualState: state.NewVirtualState(db, &addr),
+		virtualState: state.NewVirtualState(db, &chainID),
 		stateUpdate:  state.NewStateUpdate(nil),
 	}
 

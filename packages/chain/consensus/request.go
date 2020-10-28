@@ -62,7 +62,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	}
 	if publish {
 		publisher.Publish("request_in",
-			op.committee.Address().String(),
+			op.chain.ID().String(),
 			reqMsg.Transaction.ID().String(),
 			fmt.Sprintf("%d", reqMsg.Index),
 		)
@@ -92,8 +92,7 @@ func (req *request) isTimelocked(nowis time.Time) bool {
 }
 
 func (op *operator) isRequestProcessed(reqid *coretypes.RequestID) bool {
-	addr := op.committee.Address()
-	processed, err := state.IsRequestCompleted(addr, reqid)
+	processed, err := state.IsRequestCompleted(op.chain.ID(), reqid)
 	if err != nil {
 		panic(err)
 	}
@@ -105,7 +104,7 @@ func (op *operator) deleteCompletedRequests() error {
 	toDelete := make([]*coretypes.RequestID, 0)
 
 	for _, req := range op.requests {
-		if completed, err := state.IsRequestCompleted(op.committee.Address(), &req.reqId); err != nil {
+		if completed, err := state.IsRequestCompleted(op.chain.ID(), &req.reqId); err != nil {
 			return err
 		} else {
 			if completed {

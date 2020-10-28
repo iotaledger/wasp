@@ -18,7 +18,7 @@ type VMTask struct {
 	// inputs (immutable)
 	LeaderPeerIndex uint16
 	ProgramHash     hashing.HashValue
-	Address         address.Address
+	ChainID         coretypes.ChainID
 	Color           balance.Color
 	// deterministic source of entropy (pseudorandom, unpredictable for parties)
 	Entropy       hashing.HashValue

@@ -12,7 +12,7 @@ import (
 )
 
 type Chain interface {
-	Address() *address.Address
+	ID() *coretypes.ChainID
 	OwnerAddress() *address.Address
 	Color() *balance.Color
 	Size() uint16

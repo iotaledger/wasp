@@ -51,7 +51,7 @@ func createVMContext(ctx *vm.VMTask, txb *txbuilder.Builder) (*vm.VMContext, err
 	}
 
 	vmctx := &vm.VMContext{
-		ContractID:         coretypes.NewContractID((coretypes.ChainID)(ctx.Address), 0), // TODO
+		ContractID:         coretypes.NewContractID(ctx.ChainID, 0), // TODO
 		OwnerAddress:       ctx.OwnerAddress,
 		RewardAddress:      ctx.RewardAddress,
 		ProgramHash:        ctx.ProgramHash,

@@ -17,7 +17,7 @@ import (
 )
 
 type virtualState struct {
-	scAddress  address.Address
+	chainID    coretypes.ChainID
 	db         kvstore.KVStore
 	stateIndex uint32
 	timestamp  int64
@@ -26,21 +26,21 @@ type virtualState struct {
 	variables  buffered.BufferedKVStore
 }
 
-func NewVirtualState(db kvstore.KVStore, scAddress *address.Address) *virtualState {
+func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	return &virtualState{
-		scAddress: *scAddress,
+		chainID:   *chainID,
 		db:        db,
 		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
 		empty:     true,
 	}
 }
 
-func NewEmptyVirtualState(scAddress *address.Address) *virtualState {
-	return NewVirtualState(getSCPartition(scAddress), scAddress)
+func NewEmptyVirtualState(chainID *coretypes.ChainID) *virtualState {
+	return NewVirtualState(getSCPartition(chainID), chainID)
 }
 
-func getSCPartition(scAddress *address.Address) kvstore.KVStore {
-	return database.GetPartition(scAddress)
+func getSCPartition(chainID *coretypes.ChainID) kvstore.KVStore {
+	return database.GetPartition(chainID)
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -52,7 +52,7 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	return &virtualState{
-		scAddress:  vs.scAddress,
+		chainID:    vs.chainID,
 		db:         vs.db,
 		stateIndex: vs.stateIndex,
 		timestamp:  vs.timestamp,
@@ -205,11 +205,11 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	return nil
 }
 
-func LoadSolidState(scAddress *address.Address) (VirtualState, Block, bool, error) {
-	return loadSolidState(getSCPartition(scAddress), scAddress)
+func LoadSolidState(chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
+	return loadSolidState(getSCPartition(chainID), chainID)
 }
 
-func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualState, Block, bool, error) {
+func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
@@ -225,7 +225,7 @@ func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualStat
 		return nil, nil, false, err
 	}
 
-	vs := NewVirtualState(db, scAddress)
+	vs := NewVirtualState(db, chainID)
 	if err = vs.Read(bytes.NewReader(values[0])); err != nil {
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
@@ -248,6 +248,6 @@ func dbkeyRequest(reqid *coretypes.RequestID) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *address.Address, reqid *coretypes.RequestID) (bool, error) {
+func IsRequestCompleted(addr *coretypes.ChainID, reqid *coretypes.RequestID) (bool, error) {
 	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

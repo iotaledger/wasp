@@ -35,11 +35,11 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 	ctx := &vm.VMTask{
 		LeaderPeerIndex: par.leaderPeerIndex,
 		ProgramHash:     progHash,
-		Address:         *op.committee.Address(),
-		Color:           *op.committee.Color(),
+		ChainID:         *op.chain.ID(),
+		Color:           *op.chain.Color(),
 		Entropy:         (hashing.HashValue)(op.stateTx.ID()),
 		Balances:        par.balances,
-		OwnerAddress:    *op.committee.OwnerAddress(),
+		OwnerAddress:    *op.chain.OwnerAddress(),
 		RewardAddress:   par.rewardAddress,
 		MinimumReward:   op.getMinimumReward(),
 		Requests:        takeRefs(par.requests),
@@ -52,7 +52,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 			op.log.Errorf("VM task failed: %v", err)
 			return
 		}
-		op.committee.ReceiveMessage(ctx)
+		op.chain.ReceiveMessage(ctx)
 	}
 	if err := runvm.RunComputationsAsync(ctx); err != nil {
 		op.log.Errorf("RunComputationsAsync: %v", err)
@@ -98,7 +98,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		SigShare:      sigShare,
 	})
 
-	if err := op.committee.SendMsg(result.LeaderPeerIndex, chain.MsgSignedHash, msgData); err != nil {
+	if err := op.chain.SendMsg(result.LeaderPeerIndex, chain.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
 		return
 	}
@@ -142,7 +142,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 
 	op.leaderStatus.resultTx = result.ResultTransaction
 	op.leaderStatus.batch = result.ResultBlock
-	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
+	op.leaderStatus.signedResults[op.chain.OwnPeerIndex()] = &signedResult{
 		essenceHash: *essenceHash,
 		sigShare:    sigShare,
 	}

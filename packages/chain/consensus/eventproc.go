@@ -173,13 +173,13 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 
 	// inform state manager about new result batch
 	go func() {
-		op.committee.ReceiveMessage(chain.PendingBatchMsg{
+		op.chain.ReceiveMessage(chain.PendingBatchMsg{
 			Batch: ctx.ResultBlock,
 		})
 	}()
 
 	// save own result or send to the leader
-	if ctx.LeaderPeerIndex == op.committee.OwnPeerIndex() {
+	if ctx.LeaderPeerIndex == op.chain.OwnPeerIndex() {
 		op.saveOwnResult(ctx)
 	} else {
 		op.sendResultToTheLeader(ctx)

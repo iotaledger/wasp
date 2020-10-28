@@ -179,7 +179,7 @@ func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 
 func (op *operator) checkSCToken(balances map[valuetransaction.ID][]*balance.Balance) error {
 	sum := int64(0)
-	color := *op.committee.Color()
+	color := *op.chain.Color()
 	for _, bals := range balances {
 		sum += txutil.BalanceOfColor(bals, color)
 	}

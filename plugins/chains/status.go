@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-type CommittteeStatus struct {
-	Address      *address.Address
+type ChainStatus struct {
+	ID           *coretypes.ChainID
 	OwnerAddress *address.Address
 	Color        *balance.Color
 	Size         uint16
@@ -19,13 +19,13 @@ type CommittteeStatus struct {
 	PeerStatus   []*chain.PeerStatus
 }
 
-func GetStatus(chainID *coretypes.ChainID) *CommittteeStatus {
+func GetStatus(chainID *coretypes.ChainID) *ChainStatus {
 	c := GetChain(*chainID)
 	if c == nil {
 		return nil
 	}
-	return &CommittteeStatus{
-		Address:      c.Address(),
+	return &ChainStatus{
+		ID:           c.ID(),
 		OwnerAddress: c.OwnerAddress(),
 		Color:        c.Color(),
 		Size:         c.Size(),

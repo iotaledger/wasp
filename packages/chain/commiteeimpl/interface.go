@@ -2,6 +2,8 @@ package commiteeimpl
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"time"
 )
 
 func init() {
@@ -95,7 +96,7 @@ func (c *committeeObj) checkReady() bool {
 		c.onActivation()
 
 		c.log.Infof("committee now is fully initialized")
-		publisher.Publish("active_committee", c.address.String())
+		publisher.Publish("active_committee", c.chainID.String())
 	}
 	return c.isReady()
 }
@@ -112,7 +113,7 @@ func (c *committeeObj) startTimer() {
 }
 
 func (c *committeeObj) Dismiss() {
-	c.log.Infof("Dismiss committee for %s", c.address.String())
+	c.log.Infof("Dismiss committee for %s", c.chainID.String())
 
 	c.dismissOnce.Do(func() {
 		c.isOpenQueue.Store(false)
@@ -127,15 +128,15 @@ func (c *committeeObj) Dismiss() {
 		}
 	})
 
-	publisher.Publish("dismissed_committee", c.address.String())
+	publisher.Publish("dismissed_committee", c.chainID.String())
 }
 
 func (c *committeeObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *committeeObj) Address() *address.Address {
-	return &c.address
+func (c *committeeObj) ID() *coretypes.ChainID {
+	return &c.chainID
 }
 
 func (c *committeeObj) OwnerAddress() *address.Address {
@@ -178,7 +179,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 		return fmt.Errorf("SendMsg: wrong peer")
 	}
 	msg := &peering.PeerMessage{
-		ChainID:     (coretypes.ChainID)(c.address),
+		ChainID:     c.chainID,
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
@@ -188,7 +189,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 
 func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
-		ChainID:     (coretypes.ChainID)(c.address),
+		ChainID:     (coretypes.ChainID)(c.chainID),
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
@@ -292,7 +293,7 @@ func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) ch
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.Address(), reqId)
+	processed, err := state.IsRequestCompleted(c.ID(), reqId)
 	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 type stateManager struct {
-	committee chain.Chain
+	chain chain.Chain
 
 	// becomes true after initially loaded state is validated.
 	// after that it is always true
@@ -81,7 +81,7 @@ type pendingBatch struct {
 
 func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
-		committee:      c,
+		chain:          c,
 		pingPong:       make([]bool, c.Size()),
 		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
 		permutation:    util.NewPermutation16(c.NumPeers(), nil),
@@ -98,10 +98,10 @@ func (sm *stateManager) initLoadState() {
 	var batch state.Block
 	var stateExists bool
 
-	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.committee.Address())
+	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.chain.ID())
 	if err != nil {
 		sm.log.Errorf("initLoadState: %v", err)
-		sm.committee.Dismiss()
+		sm.chain.Dismiss()
 		return
 	}
 
@@ -120,11 +120,11 @@ func (sm *stateManager) initLoadState() {
 	} else {
 		// pre-origin state. Origin batch is emty batch.
 		// Will be waiting for the origin transaction to arrive
-		sm.addPendingBatch(state.MustNewOriginBlock(sm.committee.Color()))
+		sm.addPendingBatch(state.MustNewOriginBlock(sm.chain.Color()))
 
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 
 	// open msg queue for the committee
-	sm.committee.SetReadyStateManager()
+	sm.chain.SetReadyStateManager()
 }

@@ -22,7 +22,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 	}
 	log.Debugw("dispatchState",
 		"txid", tx.ID().String(),
-		"addr", cmt.Address().String(),
+		"chainid", cmt.ID().String(),
 	)
 
 	cmt.ReceiveMessage(&chain.StateTransactionMsg{
