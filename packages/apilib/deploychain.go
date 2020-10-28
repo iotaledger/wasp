@@ -2,8 +2,6 @@ package apilib
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/vm/builtin"
 	"io"
 	"io/ioutil"
 	"time"
@@ -13,6 +11,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"

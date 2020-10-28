@@ -1,12 +1,13 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )

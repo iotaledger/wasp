@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
@@ -70,8 +69,9 @@ func NewBootupRequestTransaction(par NewBootupRequestTransactionParams) (*sctran
 	bootupContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
 	bootupRequest := sctransaction.NewRequestBlock(bootupContractID, 0)
 	args := dict.NewDict()
-	args.Codec().SetChainID(vmconst.VarNameChainID, &par.ChainID)
-	args.Codec().Set(vmconst.VarNameProgramData, par.CoreContractBinary)
+	c := codec.NewCodec(args)
+	c.SetChainID(vmconst.VarNameChainID, &par.ChainID)
+	c.Set(vmconst.VarNameProgramData, par.CoreContractBinary)
 	bootupRequest.SetArgs(args)
 
 	if err := txb.AddRequestBlock(bootupRequest); err != nil {
