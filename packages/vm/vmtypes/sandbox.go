@@ -92,7 +92,7 @@ type Contract interface {
 }
 
 type ContractFunction interface {
-	Call(params dict.Dict) (interface{}, bool) //??????
+	Call(params dict.Dict) (interface{}, bool)
 }
 
 type NewRequestParams struct {
