@@ -51,6 +51,8 @@ func (vm *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
+// TODO use params in immplementation, not ctx.AccessRequest().Args()
+// this is needed for alignment of calling convention between requests and intra-cain calls
 func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
 	vm.ctx = ctx
 
