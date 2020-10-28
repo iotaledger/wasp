@@ -14,12 +14,17 @@ type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) interface{}
 
 var Processor = factoryProcessor{}
 
+var (
+	entryPointInitalize   = coretypes.NewEntryPointCodeFromFunctionName("initialize")
+	entryPointNewContract = coretypes.NewEntryPointCodeFromFunctionName("newContract")
+)
+
 func (v factoryProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	switch code {
-	case 0:
+	case entryPointInitalize:
 		return (factoryEntryPoint)(initialize), true
 
-	case 1:
+	case entryPointNewContract:
 		return (factoryEntryPoint)(newContract), true
 	}
 	return nil, false
