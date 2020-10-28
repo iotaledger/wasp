@@ -2,13 +2,14 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -34,7 +35,7 @@ type RequestBlock struct {
 	// 0 timelock naturally means it has no effect
 	timelock uint32
 	// input arguments in the form of variable/value pairs
-	args kv.Map
+	args dict.Dict
 }
 
 type RequestRef struct {
@@ -48,7 +49,7 @@ func NewRequestBlock(senderContractIndex coretypes.Uint16, targetContract corety
 		senderContractIndex: senderContractIndex,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
-		args:                kv.NewMap(),
+		args:                dict.NewDict(),
 	}
 }
 
@@ -74,14 +75,14 @@ func (req *RequestBlock) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestBlock) SetArgs(args kv.Map) {
+func (req *RequestBlock) SetArgs(args dict.Dict) {
 	if args != nil {
 		req.args = args.Clone()
 	}
 }
 
-func (req *RequestBlock) Args() kv.ImmutableCodec {
-	return req.args.Codec()
+func (req *RequestBlock) Args() codec.ImmutableCodec {
+	return codec.NewCodec(req.args)
 }
 
 func (req *RequestBlock) EntryPointCode() coretypes.EntryPointCode {
@@ -135,7 +136,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 	if err := req.entryPoint.Read(r); err != nil {
 		return err
 	}
-	req.args = kv.NewMap()
+	req.args = dict.NewDict()
 	if err := req.args.Read(r); err != nil {
 		return err
 	}

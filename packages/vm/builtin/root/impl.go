@@ -7,12 +7,13 @@ package root
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io"
 )
 
 const (
@@ -25,7 +26,7 @@ type contractProgram struct {
 	programBinary []byte
 }
 
-func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
+func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
@@ -38,7 +39,7 @@ func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCode
 	if !ok {
 		return nil, fmt.Errorf("root.initialize.fail: 'chainID' not found")
 	}
-	registry := state.GetDictionary(VarContractRegistry)
+	registry := state.GetMap(VarContractRegistry)
 	nextIndex := coretypes.Uint16(registry.Len())
 
 	if nextIndex != 0 {
@@ -55,7 +56,7 @@ func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCode
 	return nil, nil
 }
 
-func newContract(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
+func newContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.newContract.begin")
 
 	var err error
@@ -76,7 +77,7 @@ func newContract(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCod
 	if err != nil {
 		return nil, err
 	}
-	registry := ctx.AccessState().GetDictionary(VarContractRegistry)
+	registry := ctx.AccessState().GetMap(VarContractRegistry)
 	registry.SetAt(contractIndex.Bytes(), util.MustBytes(rec))
 	return nil, nil
 }

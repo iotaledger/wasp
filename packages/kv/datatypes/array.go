@@ -1,15 +1,16 @@
-package kv
+package datatypes
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type Array struct {
-	kv        KVStore
+	kv        kv.KVStore
 	name      string
 	cachedLen uint16
 }
@@ -18,7 +19,7 @@ type MustArray struct {
 	array Array
 }
 
-func newArray(kv KVStore, name string) (*Array, error) {
+func NewArray(kv kv.KVStore, name string) (*Array, error) {
 	ret := &Array{
 		kv:   kv,
 		name: name,
@@ -31,7 +32,7 @@ func newArray(kv KVStore, name string) (*Array, error) {
 	return ret, nil
 }
 
-func newMustArray(array *Array) *MustArray {
+func NewMustArray(array *Array) *MustArray {
 	return &MustArray{*array}
 }
 
@@ -40,33 +41,33 @@ const (
 	arrayElemKeyCode = byte(1)
 )
 
-func (l *Array) getSizeKey() Key {
+func (l *Array) getSizeKey() kv.Key {
 	return ArraySizeKey(l.name)
 }
 
-func ArraySizeKey(name string) Key {
+func ArraySizeKey(name string) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
 	buf.WriteByte(arraySizeKeyCode)
-	return Key(buf.Bytes())
+	return kv.Key(buf.Bytes())
 }
 
-func (l *Array) getElemKey(idx uint16) Key {
+func (l *Array) getElemKey(idx uint16) kv.Key {
 	return ArrayElemKey(l.name, idx)
 }
 
-func ArrayElemKey(name string, idx uint16) Key {
+func ArrayElemKey(name string, idx uint16) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
 	buf.WriteByte(arrayElemKeyCode)
 	_ = util.WriteUint16(&buf, idx)
-	return Key(buf.Bytes())
+	return kv.Key(buf.Bytes())
 }
 
 // ArrayRangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
 // assuming it has `length` elements.
-func ArrayRangeKeys(name string, length uint16, from uint16, to uint16) []Key {
-	keys := make([]Key, 0)
+func ArrayRangeKeys(name string, length uint16, from uint16, to uint16) []kv.Key {
+	keys := make([]kv.Key, 0)
 	if to >= from {
 		for i := from; i < to && i < length; i++ {
 			keys = append(keys, ArrayElemKey(name, i))

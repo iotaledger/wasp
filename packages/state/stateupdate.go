@@ -2,10 +2,10 @@ package state
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -13,7 +13,7 @@ type stateUpdate struct {
 	batchIndex uint16
 	requestID  coretypes.RequestID
 	timestamp  int64
-	mutations  kv.MutationSequence
+	mutations  buffered.MutationSequence
 }
 
 func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
@@ -23,7 +23,7 @@ func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
 	}
 	return &stateUpdate{
 		requestID: req,
-		mutations: kv.NewMutationSequence(),
+		mutations: buffered.NewMutationSequence(),
 	}
 }
 
@@ -35,7 +35,7 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 // StateUpdate
 
 func (su *stateUpdate) Clear() {
-	su.mutations = kv.NewMutationSequence()
+	su.mutations = buffered.NewMutationSequence()
 }
 
 func (su *stateUpdate) String() string {
@@ -56,7 +56,7 @@ func (su *stateUpdate) RequestID() *coretypes.RequestID {
 	return &su.requestID
 }
 
-func (su *stateUpdate) Mutations() kv.MutationSequence {
+func (su *stateUpdate) Mutations() buffered.MutationSequence {
 	return su.mutations
 }
 

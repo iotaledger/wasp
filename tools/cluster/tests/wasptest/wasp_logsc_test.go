@@ -95,7 +95,7 @@ func TestLogsc5(t *testing.T) {
 		t.Fail()
 	}
 
-	clu.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+	clu.WithSCState(sc, func(host string, stateIndex uint32, state dict.Dict) bool {
 		{
 			state := state.ToGoMap()
 			assert.EqualValues(t, 8, len(state)) // 5 log items + log length + program_hash + owner address

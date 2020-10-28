@@ -1,27 +1,30 @@
-package kv
+package buffered
 
 import (
 	"encoding/hex"
 	"fmt"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/mr-tron/base58"
 )
 
 // BufferedKVStore represents a KVStore backed by a database. Writes are cached in-memory as
 // a MutationSequence; reads are delegated to the backing database when not cached.
 type BufferedKVStore interface {
-	KVStore
+	kv.KVStore
 
 	// the uncommitted mutations
 	Mutations() MutationSequence
 	ClearMutations()
 	Clone() BufferedKVStore
 
-	Codec() MutableCodec
+	Codec() codec.MutableCodec
 
 	// only for testing!
-	DangerouslyDumpToMap() Map
+	DangerouslyDumpToDict() dict.Dict
 	// only for testing!
 	DangerouslyDumpToString() string
 }
@@ -62,8 +65,8 @@ func (b *bufferedKVStore) Clone() BufferedKVStore {
 	}
 }
 
-func (b *bufferedKVStore) Codec() MutableCodec {
-	return NewCodec(b)
+func (b *bufferedKVStore) Codec() codec.MutableCodec {
+	return codec.NewCodec(b)
 }
 
 func (b *bufferedKVStore) Mutations() MutationSequence {
@@ -75,10 +78,10 @@ func (b *bufferedKVStore) ClearMutations() {
 }
 
 // iterates over all key-value pairs in KVStore
-func (b *bufferedKVStore) DangerouslyDumpToMap() Map {
-	ret := NewMap()
+func (b *bufferedKVStore) DangerouslyDumpToDict() dict.Dict {
+	ret := dict.NewDict()
 	err := b.db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
-		ret.Set(Key(key), value)
+		ret.Set(kv.Key(key), value)
 		return true
 	})
 	if err != nil {
@@ -91,7 +94,7 @@ func (b *bufferedKVStore) DangerouslyDumpToMap() Map {
 // iterates over all key-value pairs in KVStore
 func (b *bufferedKVStore) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStore:\n"
-	for k, v := range b.DangerouslyDumpToMap().ToGoMap() {
+	for k, v := range b.DangerouslyDumpToDict().ToGoMap() {
 		ret += fmt.Sprintf(
 			"           [%s] 0x%s: 0x%s (base58: %s)\n",
 			b.flag(k),
@@ -103,7 +106,14 @@ func (b *bufferedKVStore) DangerouslyDumpToString() string {
 	return ret
 }
 
-func (b *bufferedKVStore) flag(k Key) string {
+func slice(s string) string {
+	if len(s) > 44 {
+		return s[:10] + "[...]" + s[len(s)-10:]
+	}
+	return s
+}
+
+func (b *bufferedKVStore) flag(k kv.Key) string {
 	mut := b.mutations.Latest(k)
 	if mut != nil {
 		return "+"
@@ -111,15 +121,15 @@ func (b *bufferedKVStore) flag(k Key) string {
 	return " "
 }
 
-func (b *bufferedKVStore) Set(key Key, value []byte) {
+func (b *bufferedKVStore) Set(key kv.Key, value []byte) {
 	b.mutations.Add(NewMutationSet(key, value))
 }
 
-func (b *bufferedKVStore) Del(key Key) {
+func (b *bufferedKVStore) Del(key kv.Key) {
 	b.mutations.Add(NewMutationDel(key))
 }
 
-func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
+func (b *bufferedKVStore) Get(key kv.Key) ([]byte, error) {
 	mut := b.mutations.Latest(key)
 	if mut != nil {
 		return mut.Value(), nil
@@ -131,7 +141,7 @@ func (b *bufferedKVStore) Get(key Key) ([]byte, error) {
 	return v, asDBError(err)
 }
 
-func (b *bufferedKVStore) Has(key Key) (bool, error) {
+func (b *bufferedKVStore) Has(key kv.Key) (bool, error) {
 	mut := b.mutations.Latest(key)
 	if mut != nil {
 		return mut.Value() != nil, nil
@@ -140,13 +150,13 @@ func (b *bufferedKVStore) Has(key Key) (bool, error) {
 	return v, asDBError(err)
 }
 
-func (b *bufferedKVStore) Iterate(prefix Key, f func(key Key, value []byte) bool) error {
+func (b *bufferedKVStore) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	seen, done := b.mutations.IterateValues(prefix, f)
 	if done {
 		return nil
 	}
 	return b.db.Iterate([]byte(prefix), func(key kvstore.Key, value kvstore.Value) bool {
-		k := Key(key)
+		k := kv.Key(key)
 		_, ok := seen[k]
 		if ok {
 			return true
@@ -155,15 +165,15 @@ func (b *bufferedKVStore) Iterate(prefix Key, f func(key Key, value []byte) bool
 	})
 }
 
-func (b *bufferedKVStore) IterateKeys(prefix Key, f func(key Key) bool) error {
-	seen, done := b.mutations.IterateValues(prefix, func(key Key, value []byte) bool {
+func (b *bufferedKVStore) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	seen, done := b.mutations.IterateValues(prefix, func(key kv.Key, value []byte) bool {
 		return f(key)
 	})
 	if done {
 		return nil
 	}
 	return b.db.IterateKeys([]byte(prefix), func(key kvstore.Key) bool {
-		k := Key(key)
+		k := kv.Key(key)
 		_, ok := seen[k]
 		if ok {
 			return true

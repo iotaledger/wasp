@@ -6,7 +6,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -31,15 +32,15 @@ type Sandbox interface {
 	// access to the request block
 	AccessRequest() RequestAccess
 	// base level of virtual state access
-	AccessState() kv.MutableMustCodec
+	AccessState() codec.MutableMustCodec
 	// AccessSCAccount
 	AccessSCAccount() AccountAccess
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
-	SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv.Map) bool
+	SendRequestToSelf(reqCode coretypes.EntryPointCode, args dict.Dict) bool
 	// Send request to itself with timelock for some seconds after the current timestamp
-	SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args kv.Map, deferForSec uint32) bool
+	SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args dict.Dict, deferForSec uint32) bool
 	// for testing
 	// Publish "vmmsg" message through Publisher
 	Publish(msg string)
@@ -58,7 +59,7 @@ type RequestAccess interface {
 	// sender address (exactly 1)
 	SenderAddress() address.Address
 	// arguments
-	Args() kv.ImmutableCodec // TODO must return MustCodec
+	Args() codec.ImmutableCodec // TODO must return MustCodec
 	// number of free minted tokens in the request transaction
 	// it is equal to total minted tokens minus number of requests
 	NumFreeMintedTokens() int64
@@ -81,7 +82,7 @@ type AccountAccess interface {
 }
 
 type Contracts interface {
-	NewContract(params kv.Map) (Contract, bool)
+	NewContract(params dict.Dict) (Contract, bool)
 	GetContract(uint16) (Contract, bool)
 }
 
@@ -91,13 +92,13 @@ type Contract interface {
 }
 
 type ContractFunction interface {
-	Call(params kv.Map) (interface{}, bool) //??????
+	Call(params dict.Dict) (interface{}, bool) //??????
 }
 
 type NewRequestParams struct {
 	TargetContractID coretypes.ContractID
 	EntryPoint       coretypes.EntryPointCode
 	Timelock         uint32
-	Params           kv.Map
+	Params           dict.Dict
 	IncludeReward    int64
 }

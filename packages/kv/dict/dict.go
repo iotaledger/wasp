@@ -1,4 +1,4 @@
-package kv
+package dict
 
 import (
 	"encoding/hex"
@@ -6,60 +6,55 @@ import (
 	"io"
 	"sort"
 
-	"github.com/mr-tron/base58"
-
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/mr-tron/base58"
 )
 
-// Map is a KVStore backed by an in-memory map
-type Map interface {
-	KVStore
+// Dict is a KVStore backed by an in-memory map
+type Dict interface {
+	kv.KVStore
 
 	IsEmpty() bool
 
-	ToGoMap() map[Key][]byte
+	ToGoMap() map[kv.Key][]byte
 
-	ForEach(func(key Key, value []byte) bool)
-	ForEachDeterministic(func(key Key, value []byte) bool)
-	Clone() Map
+	ForEach(func(key kv.Key, value []byte) bool)
+	ForEachDeterministic(func(key kv.Key, value []byte) bool)
+	Clone() Dict
 
 	Read(io.Reader) error
 	Write(io.Writer) error
 
 	String() string
-
-	Mutations() MutationSequence
-
-	Codec() MutableCodec
-	MustCodec() MutableMustCodec
 }
 
-type kvmap map[Key][]byte
+type kvmap map[kv.Key][]byte
 
 // create/clone
-func NewMap() Map {
+func NewDict() Dict {
 	return make(kvmap)
 }
 
-func (m kvmap) Clone() Map {
+func (m kvmap) Clone() Dict {
 	clone := make(kvmap)
-	m.ForEach(func(key Key, value []byte) bool {
+	m.ForEach(func(key kv.Key, value []byte) bool {
 		clone.Set(key, value)
 		return true
 	})
 	return clone
 }
 
-func FromGoMap(m map[Key][]byte) Map {
+func FromGoMap(m map[kv.Key][]byte) Dict {
 	return kvmap(m)
 }
 
-func (m kvmap) ToGoMap() map[Key][]byte {
+func (m kvmap) ToGoMap() map[kv.Key][]byte {
 	return m
 }
 
-func (m kvmap) sortedKeys() []Key {
-	keys := make([]Key, 0)
+func (m kvmap) sortedKeys() []kv.Key {
+	keys := make([]kv.Key, 0)
 	for k := range m {
 		keys = append(keys, k)
 	}
@@ -70,7 +65,7 @@ func (m kvmap) sortedKeys() []Key {
 }
 
 func (m kvmap) String() string {
-	ret := "         Map:\n"
+	ret := "         Dict:\n"
 	for _, key := range m.sortedKeys() {
 		ret += fmt.Sprintf(
 			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
@@ -91,25 +86,8 @@ func slice(s string) string {
 	return s
 }
 
-func (m kvmap) Codec() MutableCodec {
-	return NewCodec(m)
-}
-
-func (m kvmap) MustCodec() MutableMustCodec {
-	return NewMustCodec(m)
-}
-
-func (m kvmap) Mutations() MutationSequence {
-	ms := NewMutationSequence()
-	m.ForEachDeterministic(func(key Key, value []byte) bool {
-		ms.Add(NewMutationSet(key, value))
-		return true
-	})
-	return ms
-}
-
 // NON DETERMINISTIC!
-func (m kvmap) ForEach(fun func(key Key, value []byte) bool) {
+func (m kvmap) ForEach(fun func(key kv.Key, value []byte) bool) {
 	for k, v := range m {
 		if !fun(k, v) {
 			return // abort when callback returns false
@@ -117,7 +95,7 @@ func (m kvmap) ForEach(fun func(key Key, value []byte) bool) {
 	}
 }
 
-func (m kvmap) ForEachDeterministic(fun func(key Key, value []byte) bool) {
+func (m kvmap) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	if m == nil {
 		return
 	}
@@ -132,23 +110,23 @@ func (m kvmap) IsEmpty() bool {
 	return len(m) == 0
 }
 
-func (m kvmap) Set(key Key, value []byte) {
+func (m kvmap) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
 	m[key] = value
 }
 
-func (m kvmap) Del(key Key) {
+func (m kvmap) Del(key kv.Key) {
 	delete(m, key)
 }
 
-func (m kvmap) Has(key Key) (bool, error) {
+func (m kvmap) Has(key kv.Key) (bool, error) {
 	_, ok := m[key]
 	return ok, nil
 }
 
-func (m kvmap) Iterate(prefix Key, f func(key Key, value []byte) bool) error {
+func (m kvmap) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	for k, v := range m {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -160,7 +138,7 @@ func (m kvmap) Iterate(prefix Key, f func(key Key, value []byte) bool) error {
 	return nil
 }
 
-func (m kvmap) IterateKeys(prefix Key, f func(key Key) bool) error {
+func (m kvmap) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	for k, _ := range m {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -172,7 +150,7 @@ func (m kvmap) IterateKeys(prefix Key, f func(key Key) bool) error {
 	return nil
 }
 
-func (m kvmap) Get(key Key) ([]byte, error) {
+func (m kvmap) Get(key kv.Key) ([]byte, error) {
 	v, _ := m[key]
 	return v, nil
 }
@@ -208,7 +186,7 @@ func (m kvmap) Read(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		m.Set(Key(k), v)
+		m.Set(kv.Key(k), v)
 	}
 	return nil
 }

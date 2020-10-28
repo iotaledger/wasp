@@ -37,7 +37,7 @@ type Status struct {
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	scStatus, results, err := fc.FetchSCStatus(func(query *statequery.Request) {
 		query.AddScalar(fairauction.VarStateOwnerMarginPromille)
-		query.AddDictionary(fairauction.VarStateAuctions, 100)
+		query.AddMap(fairauction.VarStateAuctions, 100)
 	})
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	ownerMargin, ok := results.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
 	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok)
 
-	auctions := results.Get(fairauction.VarStateAuctions).MustDictionaryResult()
+	auctions := results.Get(fairauction.VarStateAuctions).MustMapResult()
 	status.AuctionsLen = auctions.Len
 	status.Auctions = make(map[balance.Color]*fairauction.AuctionInfo)
 	for _, entry := range auctions.Entries {

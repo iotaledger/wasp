@@ -1,13 +1,15 @@
-package kv
+package datatypes
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBasicArray(t *testing.T) {
-	vars := NewMap()
-	arr, err := newArray(vars, "testArray")
+	vars := dict.NewDict()
+	arr, err := NewArray(vars, "testArray")
 	assert.NoError(t, err)
 
 	d1 := []byte("datum1")
@@ -33,7 +35,7 @@ func TestBasicArray(t *testing.T) {
 	arr.Push(d4)
 	assert.EqualValues(t, 4, arr.Len())
 
-	arr2, err := newArray(vars, "testArray2")
+	arr2, err := NewArray(vars, "testArray2")
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, arr2.Len())
 
@@ -44,6 +46,6 @@ func TestBasicArray(t *testing.T) {
 	assert.EqualValues(t, arr.Len()+1, arr2.Len())
 
 	assert.Panics(t, func() {
-		newMustArray(arr2).GetAt(arr2.Len())
+		NewMustArray(arr2).GetAt(arr2.Len())
 	})
 }

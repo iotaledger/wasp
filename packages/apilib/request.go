@@ -125,8 +125,8 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	return tx, nil
 }
 
-func convertArgs(vars map[string]interface{}) kv.Map {
-	args := kv.NewMap()
+func convertArgs(vars map[string]interface{}) dict.Dict {
+	args := dict.NewDict()
 	codec := args.Codec()
 	for k, v := range vars {
 		key := kv.Key(k)

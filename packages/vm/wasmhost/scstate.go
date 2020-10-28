@@ -2,6 +2,8 @@ package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -101,7 +103,7 @@ func (o *ScState) valid(keyId int32, typeId int32) bool {
 
 type ScStateArray struct {
 	ArrayObject
-	items  *kv.MustArray
+	items  *datatypes.MustArray
 	typeId int32
 }
 
@@ -128,7 +130,7 @@ func (a *ScStateArray) GetInt(keyId int32) int64 {
 	if !a.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
-	value, _ := kv.DecodeInt64(a.items.GetAt(uint16(keyId)))
+	value, _ := codec.DecodeInt64(a.items.GetAt(uint16(keyId)))
 	return value
 }
 
@@ -195,7 +197,7 @@ func (a *ScStateArray) valid(keyId int32, typeId int32) bool {
 
 type ScStateMap struct {
 	MapObject
-	items *kv.MustDictionary
+	items *datatypes.MustMap
 	types map[int32]int32
 }
 
@@ -203,7 +205,7 @@ func (m *ScStateMap) InitVM(vm *wasmProcessor, keyId int32) {
 	m.MapObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
 	m.name = "state.map." + key
-	m.items = vm.ctx.AccessState().GetDictionary(kv.Key(key))
+	m.items = vm.ctx.AccessState().GetMap(kv.Key(key))
 	m.types = make(map[int32]int32)
 }
 
@@ -220,7 +222,7 @@ func (m *ScStateMap) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := []byte(m.vm.GetKey(keyId))
-	value, _ := kv.DecodeInt64(m.items.GetAt(key))
+	value, _ := codec.DecodeInt64(m.items.GetAt(key))
 	return value
 }
 

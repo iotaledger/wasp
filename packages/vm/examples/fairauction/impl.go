@@ -5,16 +5,18 @@ package fairauction
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/mr-tron/base58"
 	"sort"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/mr-tron/base58"
 )
 
 // program has is an id of the program
@@ -25,7 +27,7 @@ const Description = "FairAuction, a PoC smart contract"
 
 type fairAuctionProcessor map[coretypes.EntryPointCode]fairAuctionEntryPoint
 
-type fairAuctionEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
+type fairAuctionEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error
 
 const (
 	RequestStartAuction    = coretypes.EntryPointCode(1)
@@ -96,7 +98,7 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmty
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
+func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
@@ -189,7 +191,7 @@ func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 // Request transaction must contain at least number of iotas >= of current owner margin from the minimum bid
 // (not including node reward with request token)
 // Tokens for sale must be included into the request transaction
-func startAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
+func startAuction(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	ctx.Publish("startAuction begin")
 
 	sender := ctx.AccessRequest().SenderAddress()
@@ -298,7 +300,7 @@ func startAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	description = util.GentleTruncate(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
-	auctions := ctx.AccessState().GetDictionary(VarStateAuctions)
+	auctions := ctx.AccessState().GetMap(VarStateAuctions)
 	if b := auctions.GetAt(colorForSale.Bytes()); b != nil {
 		// auction already exists. Ignore sale auction.
 		// refund iotas less fee
@@ -328,8 +330,9 @@ func startAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
-	args := kv.NewMap()
-	args.Codec().SetString(VarReqAuctionColor, colorForSale.String())
+	args := dict.FromGoMap(map[kv.Key][]byte{
+		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
+	})
 	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
 	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
@@ -348,7 +351,7 @@ func startAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 // a rise of the bid and are added to the total
 // Arguments:
 // - VarReqAuctionColor: color of the tokens for sale
-func placeBid(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
+func placeBid(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	ctx.Publish("placeBid: begin")
 
 	// all iotas in the request transaction are considered a bid/rise sum
@@ -386,7 +389,7 @@ func placeBid(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	}
 
 	// find the auction
-	auctions := ctx.AccessState().GetDictionary(VarStateAuctions)
+	auctions := ctx.AccessState().GetMap(VarStateAuctions)
 	data := auctions.GetAt(col.Bytes())
 	if data == nil {
 		// no such auction. refund everything
@@ -439,7 +442,7 @@ func placeBid(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 // not by the smart contract instance itself
 // Arguments:
 // - VarReqAuctionColor: color of the auction
-func finalizeAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
+func finalizeAuction(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	ctx.Publish("finalizeAuction begin")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
@@ -469,7 +472,7 @@ func finalizeAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	}
 
 	// find the record of the auction by color
-	auctDict := ctx.AccessState().GetDictionary(VarStateAuctions)
+	auctDict := ctx.AccessState().GetMap(VarStateAuctions)
 	data := auctDict.GetAt(col.Bytes())
 	if data == nil {
 		// auction with this color does not exist. Inconsistency
@@ -584,7 +587,7 @@ func finalizeAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 // setOwnerMargin is a request to set the service fee to place a bid
 // Arguments:
 // - VarReqOwnerMargin: the margin value in promilles
-func setOwnerMargin(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
+func setOwnerMargin(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	ctx.Publish("setOwnerMargin: begin")
 
 	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {

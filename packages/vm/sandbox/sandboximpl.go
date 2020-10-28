@@ -2,12 +2,14 @@ package sandbox
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/util"
@@ -75,7 +77,7 @@ func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return vctx.requestWrapper
 }
 
-func (vctx *sandbox) AccessState() kv.MutableMustCodec {
+func (vctx *sandbox) AccessState() codec.MutableMustCodec {
 	return vctx.stateWrapper.MustCodec()
 }
 
@@ -104,7 +106,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	return true
 }
 
-func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv.Map) bool {
+func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args dict.Dict) bool {
 	return vctx.SendRequest(vmtypes.NewRequestParams{
 		TargetContractID: vctx.ContractID,
 		EntryPoint:       reqCode,
@@ -113,7 +115,7 @@ func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args kv
 	})
 }
 
-func (vctx *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args kv.Map, delaySec uint32) bool {
+func (vctx *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vctx.Timestamp) + delaySec
 
 	return vctx.SendRequest(vmtypes.NewRequestParams{

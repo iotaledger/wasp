@@ -1,9 +1,10 @@
-package kv
+package buffered
 
 import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,22 +20,22 @@ func TestBufferedKVStore(t *testing.T) {
 
 	b := NewBufferedKVStore(realm)
 
-	v, err = b.Get(Key([]byte("cd")))
+	v, err = b.Get(kv.Key([]byte("cd")))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	m := b.DangerouslyDumpToMap().ToGoMap()
+	m := b.DangerouslyDumpToDict().ToGoMap()
 	assert.Equal(
 		t,
-		map[Key][]byte{
-			Key([]byte("cd")): []byte("v1"),
+		map[kv.Key][]byte{
+			kv.Key([]byte("cd")): []byte("v1"),
 		},
 		m,
 	)
 
 	n := 0
-	b.Iterate(EmptyPrefix, func(key Key, value []byte) bool {
-		assert.Equal(t, Key([]byte("cd")), key)
+	b.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+		assert.Equal(t, kv.Key([]byte("cd")), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
 		return true
@@ -42,29 +43,29 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.Equal(t, 1, n)
 
 	n = 0
-	b.IterateKeys(EmptyPrefix, func(key Key) bool {
-		assert.Equal(t, Key([]byte("cd")), key)
+	b.IterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
+		assert.Equal(t, kv.Key([]byte("cd")), key)
 		n++
 		return true
 	})
 	assert.Equal(t, 1, n)
 
-	b.Set(Key([]byte("cd")), []byte("v2"))
+	b.Set(kv.Key([]byte("cd")), []byte("v2"))
 
 	// not committed to DB
 	v, err = realm.Get([]byte("cd"))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	v, err = b.Get(Key([]byte("cd")))
+	v, err = b.Get(kv.Key([]byte("cd")))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v2"), v)
 
-	m = b.DangerouslyDumpToMap().ToGoMap()
+	m = b.DangerouslyDumpToDict().ToGoMap()
 	assert.Equal(
 		t,
-		map[Key][]byte{
-			Key([]byte("cd")): []byte("v2"),
+		map[kv.Key][]byte{
+			kv.Key([]byte("cd")): []byte("v2"),
 		},
 		m,
 	)

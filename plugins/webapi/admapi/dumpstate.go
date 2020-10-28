@@ -31,6 +31,6 @@ func handleDumpSCState(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, &client.SCStateDump{
 		Index:     virtualState.StateIndex(),
-		Variables: virtualState.Variables().DangerouslyDumpToMap().ToGoMap(),
+		Variables: virtualState.Variables().DangerouslyDumpToDict().ToGoMap(),
 	})
 }

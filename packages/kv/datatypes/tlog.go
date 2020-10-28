@@ -1,9 +1,11 @@
-package kv
+package datatypes
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
+
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -12,8 +14,8 @@ import (
 // sequence of timestamps is considered consistent if for any indices i<j, Ti<=Tj,
 // i.e. non-decreasing
 type TimestampedLog struct {
-	kv             KVStore
-	name           Key
+	kv             kv.KVStore
+	name           kv.Key
 	cachedLen      uint32
 	cachedLatest   int64
 	cachedEarliest int64
@@ -36,7 +38,7 @@ type TimeSlice struct {
 	latest   int64
 }
 
-func newTimestampedLog(kv KVStore, name Key) (*TimestampedLog, error) {
+func NewTimestampedLog(kv kv.KVStore, name kv.Key) (*TimestampedLog, error) {
 	ret := &TimestampedLog{
 		kv:   kv,
 		name: name,
@@ -54,7 +56,7 @@ func newTimestampedLog(kv KVStore, name Key) (*TimestampedLog, error) {
 	return ret, nil
 }
 
-func newMustTimestampedLog(tlog *TimestampedLog) *MustTimestampedLog {
+func NewMustTimestampedLog(tlog *TimestampedLog) *MustTimestampedLog {
 	return &MustTimestampedLog{*tlog}
 }
 
@@ -63,19 +65,19 @@ const (
 	tslElemKeyCode
 )
 
-func (l *TimestampedLog) getSizeKey() Key {
+func (l *TimestampedLog) getSizeKey() kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(l.name))
 	buf.WriteByte(tslSizeKeyCode)
-	return Key(buf.Bytes())
+	return kv.Key(buf.Bytes())
 }
 
-func (l *TimestampedLog) getElemKey(idx uint32) Key {
+func (l *TimestampedLog) getElemKey(idx uint32) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(l.name))
 	buf.WriteByte(tslElemKeyCode)
 	_ = util.WriteUint32(&buf, idx)
-	return Key(buf.Bytes())
+	return kv.Key(buf.Bytes())
 }
 
 func (l *TimestampedLog) setSize(size uint32) {

@@ -61,7 +61,7 @@ type TokenMetadataWithColor struct {
 
 func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error) {
 	scStatus, results, err := trc.FetchSCStatus(func(query *statequery.Request) {
-		query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
+		query.AddMap(tokenregistry.VarStateTheRegistry, 100)
 	})
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 
 	status := &Status{SCStatus: scStatus}
 
-	status.Registry, err = decodeRegistry(results.Get(tokenregistry.VarStateTheRegistry).MustDictionaryResult())
+	status.Registry, err = decodeRegistry(results.Get(tokenregistry.VarStateTheRegistry).MustMapResult())
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +109,14 @@ func decodeRegistry(result *statequery.DictResult) (map[balance.Color]*tokenregi
 
 func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.TokenMetadata, error) {
 	query := statequery.NewRequest()
-	query.AddDictionaryElement(tokenregistry.VarStateTheRegistry, color.Bytes())
+	query.AddMapElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 
 	res, err := trc.StateQuery(query)
 	if err != nil {
 		return nil, err
 	}
 
-	value := res.Get(tokenregistry.VarStateTheRegistry).MustDictionaryElementResult()
+	value := res.Get(tokenregistry.VarStateTheRegistry).MustMapElementResult()
 	if value == nil {
 		// not found
 		return nil, nil

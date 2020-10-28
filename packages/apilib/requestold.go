@@ -113,8 +113,8 @@ func CreateSimpleRequestMultiOld(client nodeclient.NodeClient, sigScheme signatu
 	return tx, nil
 }
 
-func convertArgsOld(vars map[string]interface{}) kv.Map {
-	args := kv.NewMap()
+func convertArgsOld(vars map[string]interface{}) dict.Dict {
+	args := dict.NewDict()
 	codec := args.Codec()
 	for k, v := range vars {
 		key := kv.Key(k)

@@ -1,15 +1,16 @@
-package kv
+package buffered
 
 import (
 	"bytes"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestApplyMutationSet(t *testing.T) {
-	vars := NewMap()
+	vars := dict.NewDict()
 
 	mset := NewMutationSet("k1", []byte("v1"))
 	mset.ApplyTo(vars)
@@ -19,7 +20,7 @@ func TestApplyMutationSet(t *testing.T) {
 }
 
 func TestApplyMutationDel(t *testing.T) {
-	vars := NewMap()
+	vars := dict.NewDict()
 	vars.Set("k1", []byte("v1"))
 
 	mset := NewMutationDel("k1")

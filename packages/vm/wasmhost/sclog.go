@@ -2,11 +2,12 @@ package wasmhost
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 )
 
 type ScLog struct {
 	ModelObject
-	lines     *kv.MustTimestampedLog
+	lines     *datatypes.MustTimestampedLog
 	timestamp int64
 }
 

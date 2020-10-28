@@ -2,8 +2,9 @@ package inccounter
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -28,7 +29,7 @@ var entryPoints = incCounterProcessor{
 	RequestIncAndRepeatMany:        incCounterAndRepeatMany,
 }
 
-type incEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
+type incEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error
 
 func GetProcessor() vmtypes.Processor {
 	return entryPoints
@@ -50,7 +51,7 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }
 
-func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
+func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
@@ -58,7 +59,7 @@ func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.
 	return nil, err
 }
 
-func incCounter(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {
+func incCounter(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
@@ -66,7 +67,7 @@ func incCounter(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {
 	return nil
 }
 
-func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {
+func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 
@@ -83,7 +84,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {
 	return nil
 }
 
-func incCounterAndRepeatMany(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
+func incCounterAndRepeatMany(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	state := ctx.AccessState()
 
 	val, _ := state.GetInt64(VarCounter)

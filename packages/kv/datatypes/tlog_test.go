@@ -1,16 +1,18 @@
-package kv
+package datatypes
 
 import (
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTlogBasic(t *testing.T) {
-	vars := NewMap()
-	tl, err := newTimestampedLog(vars, "testTlog")
+	vars := dict.NewDict()
+	tl, err := NewTimestampedLog(vars, "testTlog")
 	assert.NoError(t, err)
 	assert.Zero(t, tl.Len())
 
@@ -91,8 +93,8 @@ func initLog(t *testing.T, tl *TimestampedLog) {
 }
 
 func TestTlogBig(t *testing.T) {
-	vars := NewMap()
-	tl, err := newTimestampedLog(vars, "testTimestampedlog")
+	vars := dict.NewDict()
+	tl, err := NewTimestampedLog(vars, "testTimestampedlog")
 	assert.NoError(t, err)
 
 	initLog(t, tl)

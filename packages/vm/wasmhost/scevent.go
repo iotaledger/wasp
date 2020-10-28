@@ -3,6 +3,8 @@ package wasmhost
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type ScEvent struct {
@@ -21,7 +23,7 @@ func (o *ScEvent) GetObjectId(keyId int32, typeId int32) int32 {
 func (o *ScEvent) Send() {
 	o.vm.Trace("EVENT f'%s' c%d d%d a'%s'", o.vm.codeToFunc[int32(o.code)], o.code, o.delay, o.contract)
 	if o.contract == "" {
-		params := kv.NewMap()
+		params := dict.NewDict()
 		paramsId, ok := o.objects[KeyParams]
 		if ok {
 			params = o.vm.FindObject(paramsId).(*ScEventParams).Params
@@ -104,12 +106,12 @@ func (a *ScEvents) SetInt(keyId int32, value int64) {
 
 type ScEventParams struct {
 	MapObject
-	Params kv.Map
+	Params dict.Dict
 }
 
 func (o *ScEventParams) InitVM(vm *wasmProcessor, keyId int32) {
 	o.MapObject.InitVM(vm, keyId)
-	o.Params = kv.NewMap()
+	o.Params = dict.NewDict()
 }
 
 func (o *ScEventParams) GetBytes(keyId int32) []byte {
@@ -118,7 +120,7 @@ func (o *ScEventParams) GetBytes(keyId int32) []byte {
 }
 
 func (o *ScEventParams) GetInt(keyId int32) int64 {
-	value, ok, _ := o.Params.Codec().GetInt64(kv.Key(o.vm.GetKey(keyId)))
+	value, ok, _ := o.paramsCodec().GetInt64(kv.Key(o.vm.GetKey(keyId)))
 	if ok {
 		return value
 	}
@@ -130,7 +132,7 @@ func (o *ScEventParams) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScEventParams) GetString(keyId int32) string {
-	value, ok, _ := o.Params.Codec().GetString(kv.Key(o.vm.GetKey(keyId)))
+	value, ok, _ := o.paramsCodec().GetString(kv.Key(o.vm.GetKey(keyId)))
 	if ok {
 		return value
 	}
@@ -144,12 +146,16 @@ func (o *ScEventParams) SetBytes(keyId int32, value []byte) {
 func (o *ScEventParams) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		o.Params = kv.NewMap()
+		o.Params = dict.NewDict()
 	default:
-		o.Params.Codec().SetInt64(kv.Key(o.vm.GetKey(keyId)), value)
+		o.paramsCodec().SetInt64(kv.Key(o.vm.GetKey(keyId)), value)
 	}
 }
 
 func (o *ScEventParams) SetString(keyId int32, value string) {
-	o.Params.Codec().SetString(kv.Key(o.vm.GetKey(keyId)), value)
+	o.paramsCodec().SetString(kv.Key(o.vm.GetKey(keyId)), value)
+}
+
+func (o *ScEventParams) paramsCodec() codec.MutableCodec {
+	return codec.NewCodec(o.Params)
 }

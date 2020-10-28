@@ -69,7 +69,7 @@ func NewBootupRequestTransaction(par NewBootupRequestTransactionParams) (*sctran
 	}
 	bootupContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
 	bootupRequest := sctransaction.NewRequestBlock(bootupContractID, 0)
-	args := kv.NewMap()
+	args := dict.NewDict()
 	args.Codec().SetChainID(vmconst.VarNameChainID, &par.ChainID)
 	args.Codec().Set(vmconst.VarNameProgramData, par.CoreContractBinary)
 	bootupRequest.SetArgs(args)

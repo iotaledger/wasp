@@ -1,7 +1,7 @@
 package runvm
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processor"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -38,7 +38,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.Log.Errorf("Recovered from panic in SC: %v", r)
-				if _, ok := r.(kv.DBError); ok {
+				if _, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB
 					// TODO invalidate the whole batch?
 				}

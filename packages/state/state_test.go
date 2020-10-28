@@ -167,7 +167,7 @@ func TestCommit(t *testing.T) {
 	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
-	su1.Mutations().Add(kv.NewMutationSet("x", []byte{1}))
+	su1.Mutations().Add(buffered.NewMutationSet("x", []byte{1}))
 
 	batch1, err := NewBlock([]StateUpdate{su1})
 	assert.NoError(t, err)
@@ -205,7 +205,7 @@ func TestCommit(t *testing.T) {
 	reqid2 := coretypes.NewRequestID(txid2, 6)
 	su2 := NewStateUpdate(&reqid2)
 
-	su2.Mutations().Add(kv.NewMutationDel("x"))
+	su2.Mutations().Add(buffered.NewMutationDel("x"))
 
 	batch2, err := NewBlock([]StateUpdate{su2})
 	assert.NoError(t, err)

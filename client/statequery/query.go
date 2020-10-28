@@ -3,8 +3,10 @@ package statequery
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client/jsonable"
@@ -32,7 +34,7 @@ type Results struct {
 type KeyQuery struct {
 	Key    []byte
 	Type   ValueType
-	Params json.RawMessage // one of DictQueryParams, ArrayQueryParams, ...
+	Params json.RawMessage // one of MapQueryParams, ArrayQueryParams, ...
 }
 
 type ValueType string
@@ -40,8 +42,8 @@ type ValueType string
 const (
 	ValueTypeScalar        = ValueType("scalar")
 	ValueTypeArray         = ValueType("array")
-	ValueTypeDict          = ValueType("dict")
-	ValueTypeDictElement   = ValueType("dict-elem")
+	ValueTypeMap           = ValueType("map")
+	ValueTypeMapElement    = ValueType("map-elem")
 	ValueTypeTLogSlice     = ValueType("tlog_slice")
 	ValueTypeTLogSliceData = ValueType("tlog_slice_data")
 )
@@ -61,11 +63,11 @@ type TLogSliceDataQueryParams struct {
 	Descending bool
 }
 
-type DictQueryParams struct {
+type MapQueryParams struct {
 	Limit uint32
 }
 
-type DictElementQueryParams struct {
+type MapElementQueryParams struct {
 	Key []byte
 }
 
@@ -77,7 +79,7 @@ type ArrayQueryParams struct {
 type QueryResult struct {
 	Key   []byte
 	Type  ValueType
-	Value json.RawMessage // one of []byte, DictResult, ArrayResult, ...
+	Value json.RawMessage // one of []byte, MapResult, ArrayResult, ...
 }
 
 type KeyValuePair struct {
@@ -85,12 +87,12 @@ type KeyValuePair struct {
 	Value []byte
 }
 
-type DictResult struct {
+type MapResult struct {
 	Len     uint32
 	Entries []KeyValuePair
 }
 
-type DictElementResult struct {
+type MapElementResult struct {
 	Value []byte
 }
 
@@ -137,22 +139,22 @@ func (q *Request) AddArray(key kv.Key, from uint16, to uint16) {
 	})
 }
 
-func (q *Request) AddDictionary(key kv.Key, limit uint32) {
-	p := &DictQueryParams{Limit: limit}
+func (q *Request) AddMap(key kv.Key, limit uint32) {
+	p := &MapQueryParams{Limit: limit}
 	params, _ := json.Marshal(p)
 	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
 		Key:    []byte(key),
-		Type:   ValueTypeDict,
+		Type:   ValueTypeMap,
 		Params: json.RawMessage(params),
 	})
 }
 
-func (q *Request) AddDictionaryElement(dictKey kv.Key, elemKey []byte) {
-	p := &DictElementQueryParams{Key: elemKey}
+func (q *Request) AddMapElement(mapKey kv.Key, elemKey []byte) {
+	p := &MapElementQueryParams{Key: elemKey}
 	params, _ := json.Marshal(p)
 	q.KeyQueries = append(q.KeyQueries, &KeyQuery{
-		Key:    []byte(dictKey),
-		Type:   ValueTypeDictElement,
+		Key:    []byte(mapKey),
+		Type:   ValueTypeMapElement,
 		Params: json.RawMessage(params),
 	})
 }
@@ -198,7 +200,7 @@ func (r *QueryResult) MustInt64() (int64, bool) {
 	if b == nil {
 		return 0, false
 	}
-	n, err := kv.DecodeInt64(b)
+	n, err := codec.DecodeInt64(b)
 	if err != nil {
 		panic(err)
 	}
@@ -246,8 +248,8 @@ func (r *QueryResult) MustArrayResult() *ArrayResult {
 	return &ar
 }
 
-func (r *QueryResult) MustDictionaryResult() *DictResult {
-	var dr DictResult
+func (r *QueryResult) MustMapResult() *MapResult {
+	var dr MapResult
 	err := json.Unmarshal(r.Value, &dr)
 	if err != nil {
 		panic(err)
@@ -255,8 +257,8 @@ func (r *QueryResult) MustDictionaryResult() *DictResult {
 	return &dr
 }
 
-func (r *QueryResult) MustDictionaryElementResult() []byte {
-	var dr *DictElementResult
+func (r *QueryResult) MustMapElementResult() []byte {
+	var dr *MapElementResult
 	err := json.Unmarshal(r.Value, &dr)
 	if err != nil {
 		panic(err)
@@ -295,7 +297,7 @@ func (r *Results) Get(key kv.Key) *QueryResult {
 	return r.byKey[key]
 }
 
-func (q *KeyQuery) Execute(vars kv.BufferedKVStore) (*QueryResult, error) {
+func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
 	key := kv.Key(q.Key)
 	switch q.Type {
 	case ValueTypeScalar:
@@ -312,7 +314,7 @@ func (q *KeyQuery) Execute(vars kv.BufferedKVStore) (*QueryResult, error) {
 			return nil, err
 		}
 
-		arr, err := vars.Codec().GetArray(key)
+		arr, err := vars.GetArray(key)
 		if err != nil {
 			return nil, err
 		}
@@ -328,48 +330,48 @@ func (q *KeyQuery) Execute(vars kv.BufferedKVStore) (*QueryResult, error) {
 		}
 		return q.makeResult(ArrayResult{Len: size, Values: values})
 
-	case ValueTypeDict:
-		var params DictQueryParams
+	case ValueTypeMap:
+		var params MapQueryParams
 		err := json.Unmarshal(q.Params, &params)
 		if err != nil {
 			return nil, err
 		}
 
-		dict, err := vars.Codec().GetDictionary(key)
+		m, err := vars.GetMap(key)
 		if err != nil {
 			return nil, err
 		}
 
 		entries := make([]KeyValuePair, 0)
-		err = dict.Iterate(func(elemKey []byte, value []byte) bool {
+		err = m.Iterate(func(elemKey []byte, value []byte) bool {
 			entries = append(entries, KeyValuePair{Key: elemKey, Value: value})
 			return len(entries) < int(params.Limit)
 		})
 		if err != nil {
 			return nil, err
 		}
-		return q.makeResult(DictResult{Len: dict.Len(), Entries: entries})
+		return q.makeResult(MapResult{Len: m.Len(), Entries: entries})
 
-	case ValueTypeDictElement:
-		var params DictElementQueryParams
+	case ValueTypeMapElement:
+		var params MapElementQueryParams
 		err := json.Unmarshal(q.Params, &params)
 		if err != nil {
 			return nil, err
 		}
 
-		dict, err := vars.Codec().GetDictionary(key)
+		m, err := vars.GetMap(key)
 		if err != nil {
 			return nil, err
 		}
 
-		v, err := dict.GetAt(params.Key)
+		v, err := m.GetAt(params.Key)
 		if err != nil {
 			return nil, err
 		}
 		if v == nil {
 			return nil, nil
 		}
-		return q.makeResult(DictElementResult{Value: v})
+		return q.makeResult(MapElementResult{Value: v})
 
 	case ValueTypeTLogSlice:
 		var params TLogSliceQueryParams
@@ -378,7 +380,7 @@ func (q *KeyQuery) Execute(vars kv.BufferedKVStore) (*QueryResult, error) {
 			return nil, err
 		}
 
-		tlog, err := vars.Codec().GetTimestampedLog(key)
+		tlog, err := vars.GetTimestampedLog(key)
 		if err != nil {
 			return nil, err
 		}
@@ -405,7 +407,7 @@ func (q *KeyQuery) Execute(vars kv.BufferedKVStore) (*QueryResult, error) {
 			return nil, err
 		}
 
-		tlog, err := vars.Codec().GetTimestampedLog(key)
+		tlog, err := vars.GetTimestampedLog(key)
 		if err != nil {
 			return nil, err
 		}

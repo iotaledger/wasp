@@ -1,13 +1,13 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
 // represents an interface to the mutable state of the smart contract
@@ -30,7 +30,7 @@ type VirtualState interface {
 	// state updates starting from the origin
 	Hash() *hashing.HashValue
 	// the storage of variable/value pairs
-	Variables() kv.BufferedKVStore
+	Variables() buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string
 }
@@ -47,7 +47,7 @@ type StateUpdate interface {
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
 	String() string
-	Mutations() kv.MutationSequence
+	Mutations() buffered.MutationSequence
 	Clear()
 	Write(io.Writer) error
 	Read(io.Reader) error

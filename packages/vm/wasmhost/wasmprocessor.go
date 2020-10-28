@@ -4,8 +4,9 @@ package wasmhost
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -53,7 +54,7 @@ func (vm *wasmProcessor) GetDescription() string {
 
 // TODO use params in immplementation, not ctx.AccessRequest().Args()
 // this is needed for alignment of calling convention between requests and intra-cain calls
-func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) (kv.ImmutableCodec, error) {
+func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	vm.ctx = ctx
 
 	reqId := ctx.AccessRequest().ID()

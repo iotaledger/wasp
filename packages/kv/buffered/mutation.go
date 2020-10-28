@@ -1,9 +1,10 @@
-package kv
+package buffered
 
 import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -14,10 +15,10 @@ type Mutation interface {
 
 	String() string
 
-	ApplyTo(kv KVStore)
+	ApplyTo(kv kv.KVStore)
 
 	// Key returns the key that is mutated
-	Key() Key
+	Key() kv.Key
 	// Value returns the value after the mutation (nil if deleted)
 	Value() []byte
 
@@ -37,15 +38,15 @@ type MutationSequence interface {
 	// Iterate over all mutations in order, even ones affecting the same key repeatedly
 	Iterate(func(mut Mutation) bool)
 	// Iterate over the latest mutation recorded for each key
-	IterateLatest(func(key Key, mut Mutation) bool)
+	IterateLatest(func(key kv.Key, mut Mutation) bool)
 	// Iterate over the latest value recorded for each non-deleted key
-	IterateValues(prefix Key, f func(key Key, value []byte) bool) (map[Key]bool, bool)
+	IterateValues(prefix kv.Key, f func(key kv.Key, value []byte) bool) (map[kv.Key]bool, bool)
 
-	Latest(key Key) Mutation
+	Latest(key kv.Key) Mutation
 
 	Add(mut Mutation)
 
-	ApplyTo(kv KVStore)
+	ApplyTo(kv kv.KVStore)
 }
 
 const (
@@ -55,13 +56,13 @@ const (
 
 type mutationSequence struct {
 	muts        []Mutation
-	latestByKey map[Key]*Mutation
+	latestByKey map[kv.Key]*Mutation
 }
 
 func NewMutationSequence() MutationSequence {
 	return &mutationSequence{
 		muts:        make([]Mutation, 0),
-		latestByKey: make(map[Key]*Mutation),
+		latestByKey: make(map[kv.Key]*Mutation),
 	}
 }
 
@@ -122,7 +123,7 @@ func (ms *mutationSequence) Iterate(f func(mut Mutation) bool) {
 	}
 }
 
-func (ms *mutationSequence) IterateLatest(f func(Key, Mutation) bool) {
+func (ms *mutationSequence) IterateLatest(f func(kv.Key, Mutation) bool) {
 	for key, mut := range ms.latestByKey {
 		if !f(key, *mut) {
 			break
@@ -130,8 +131,8 @@ func (ms *mutationSequence) IterateLatest(f func(Key, Mutation) bool) {
 	}
 }
 
-func (ms *mutationSequence) IterateValues(prefix Key, f func(key Key, value []byte) bool) (map[Key]bool, bool) {
-	seen := make(map[Key]bool)
+func (ms *mutationSequence) IterateValues(prefix kv.Key, f func(key kv.Key, value []byte) bool) (map[kv.Key]bool, bool) {
+	seen := make(map[kv.Key]bool)
 	for key, mut := range ms.latestByKey {
 		if !key.HasPrefix(prefix) {
 			continue
@@ -154,13 +155,13 @@ func (ms *mutationSequence) Add(mut Mutation) {
 	ms.latestByKey[mut.Key()] = &mut
 }
 
-func (ms *mutationSequence) ApplyTo(kv KVStore) {
+func (ms *mutationSequence) ApplyTo(kv kv.KVStore) {
 	for _, mut := range ms.muts {
 		mut.ApplyTo(kv)
 	}
 }
 
-func (ms *mutationSequence) Latest(key Key) Mutation {
+func (ms *mutationSequence) Latest(key kv.Key) Mutation {
 	mut, ok := ms.latestByKey[key]
 	if !ok {
 		return nil
@@ -169,7 +170,7 @@ func (ms *mutationSequence) Latest(key Key) Mutation {
 }
 
 func (ms *mutationSequence) Clone() MutationSequence {
-	mapClone := make(map[Key]*Mutation)
+	mapClone := make(map[kv.Key]*Mutation)
 	for k, v := range ms.latestByKey {
 		mapClone[k] = v
 	}
@@ -177,12 +178,12 @@ func (ms *mutationSequence) Clone() MutationSequence {
 }
 
 type mutationSet struct {
-	k Key
+	k kv.Key
 	v []byte
 }
 
 type mutationDel struct {
-	k Key
+	k kv.Key
 }
 
 func newFromMagic(magic int) (Mutation, error) {
@@ -195,7 +196,7 @@ func newFromMagic(magic int) (Mutation, error) {
 	return nil, fmt.Errorf("Unknown mutation magic %d", magic)
 }
 
-func NewMutationSet(k Key, v []byte) *mutationSet {
+func NewMutationSet(k kv.Key, v []byte) *mutationSet {
 	return &mutationSet{k: k, v: v}
 }
 
@@ -222,7 +223,7 @@ func (m *mutationSet) Read(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	m.k = Key(k)
+	m.k = kv.Key(k)
 	m.v = v
 	return nil
 }
@@ -231,7 +232,7 @@ func (m *mutationSet) String() string {
 	return fmt.Sprintf("SET \"%s\"={%x}", m.k, m.v)
 }
 
-func (m *mutationSet) Key() Key {
+func (m *mutationSet) Key() kv.Key {
 	return m.k
 }
 
@@ -239,7 +240,7 @@ func (m *mutationSet) Value() []byte {
 	return m.v
 }
 
-func (m *mutationSet) ApplyTo(kv KVStore) {
+func (m *mutationSet) ApplyTo(kv kv.KVStore) {
 	kv.Set(m.k, m.v)
 }
 
@@ -247,7 +248,7 @@ func (m *mutationDel) getMagic() int {
 	return mutationMagicDel
 }
 
-func NewMutationDel(k Key) *mutationDel {
+func NewMutationDel(k kv.Key) *mutationDel {
 	return &mutationDel{k: k}
 }
 
@@ -260,7 +261,7 @@ func (m *mutationDel) Read(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	m.k = Key(k)
+	m.k = kv.Key(k)
 	return nil
 }
 
@@ -268,7 +269,7 @@ func (m *mutationDel) String() string {
 	return fmt.Sprintf("DEL %s", m.k)
 }
 
-func (m *mutationDel) Key() Key {
+func (m *mutationDel) Key() kv.Key {
 	return m.k
 }
 
@@ -276,6 +277,6 @@ func (m *mutationDel) Value() []byte {
 	return nil
 }
 
-func (m *mutationDel) ApplyTo(kv KVStore) {
+func (m *mutationDel) ApplyTo(kv kv.KVStore) {
 	kv.Del(m.k)
 }

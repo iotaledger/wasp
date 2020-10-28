@@ -3,15 +3,17 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
-	"io"
 )
 
 type virtualState struct {
@@ -21,14 +23,14 @@ type virtualState struct {
 	timestamp  int64
 	empty      bool
 	stateHash  hashing.HashValue
-	variables  kv.BufferedKVStore
+	variables  buffered.BufferedKVStore
 }
 
 func NewVirtualState(db kvstore.KVStore, scAddress *address.Address) *virtualState {
 	return &virtualState{
 		scAddress: *scAddress,
 		db:        db,
-		variables: kv.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
+		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
 		empty:     true,
 	}
 }
@@ -77,7 +79,7 @@ func (vs *virtualState) DangerouslyConvertToString() string {
 	)
 }
 
-func (vs *virtualState) Variables() kv.BufferedKVStore {
+func (vs *virtualState) Variables() buffered.BufferedKVStore {
 	return vs.variables
 }
 
@@ -187,7 +189,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	}
 
 	// store uncommitted mutations
-	vs.variables.Mutations().IterateLatest(func(k kv.Key, mut kv.Mutation) bool {
+	vs.variables.Mutations().IterateLatest(func(k kv.Key, mut buffered.Mutation) bool {
 		keys = append(keys, dbkeyStateVariable(k))
 
 		// if mutation is MutationDel, mut.Value() = nil and the key is deleted

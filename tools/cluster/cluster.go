@@ -722,7 +722,7 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 }
 
 func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, expectedValues map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state dict.Dict) bool {
 		fmt.Printf("[cluster] Verifying state vars for node %s\n", host)
 		pass := true
 		for k, v := range expectedValues {
@@ -745,7 +745,7 @@ func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, exp
 }
 
 func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state dict.Dict) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)
 
 		scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
@@ -773,7 +773,7 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 	})
 }
 
-func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host string, stateIndex uint32, state kv.Map) bool) bool {
+func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host string, stateIndex uint32, state dict.Dict) bool) bool {
 	pass := true
 	for i, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
 		if !cluster.Config.Nodes[i].IsUp() {

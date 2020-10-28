@@ -3,7 +3,7 @@ package sandbox
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
@@ -20,7 +20,7 @@ func (r *requestWrapper) Code() coretypes.EntryPointCode {
 	return r.ref.RequestBlock().EntryPointCode()
 }
 
-func (r *requestWrapper) Args() kv.ImmutableCodec {
+func (r *requestWrapper) Args() codec.ImmutableCodec {
 	return r.ref.RequestBlock().Args()
 }
 

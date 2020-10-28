@@ -50,7 +50,7 @@ func handleStateQuery(c echo.Context) error {
 		Requests:   make([]*coretypes.RequestID, len(batch.RequestIds())),
 	}
 	copy(ret.Requests, batch.RequestIds())
-	vars := state.Variables()
+	vars := state.Variables().Codec()
 	for i, q := range req.KeyQueries {
 		result, err := q.Execute(vars)
 		if err != nil {

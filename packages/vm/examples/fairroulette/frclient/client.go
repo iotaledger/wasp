@@ -63,7 +63,7 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 		query.AddScalar(fairroulette.StateVarLastWinningColor)
 		query.AddScalar(fairroulette.ReqVarPlayPeriodSec)
 		query.AddScalar(fairroulette.StateVarNextPlayTimestamp)
-		query.AddDictionary(fairroulette.StateVarPlayerStats, 100)
+		query.AddMap(fairroulette.StateVarPlayerStats, 100)
 		query.AddArray(fairroulette.StateArrayWinsPerColor, 0, fairroulette.NumColors)
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 	nextPlayTimestamp, _ := results.Get(fairroulette.StateVarNextPlayTimestamp).MustInt64()
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
 
-	status.PlayerStats, err = decodePlayerStats(results.Get(fairroulette.StateVarPlayerStats).MustDictionaryResult())
+	status.PlayerStats, err = decodePlayerStats(results.Get(fairroulette.StateVarPlayerStats).MustMapResult())
 	if err != nil {
 		return nil, err
 	}
