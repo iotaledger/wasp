@@ -33,7 +33,7 @@ func runTheRequest(vmctx *vm.VMContext) {
 	vmctx.Log.Debugf("processing entry point %s for processor prog hash: %s",
 		reqBlock.EntryPointCode().String(), vmctx.ProgramHash.String())
 
-	sndbox := sandbox.New(vmctx)
+	sandbox := sandbox.New(vmctx)
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -42,16 +42,25 @@ func runTheRequest(vmctx *vm.VMContext) {
 					// There was an error accessing the DB
 					// TODO invalidate the whole batch?
 				}
-				sndbox.Rollback()
+				sandbox.Rollback()
 			}
 		}()
-		entryPoint.Call(sndbox, nil)
+		err := entryPoint.Call(sandbox, reqBlock.Args())
+		if err != nil {
+			if _, isError := err.(error); isError {
+				vmctx.Log.Warnw("call to entry point",
+					"err", err,
+					"reqId", vmctx.RequestRef.RequestID().Short(),
+				)
+			}
+			// ignored if if not error type
+		}
 	}()
 
 	defer vmctx.Log.Debugw("runTheRequest OUT USER DEFINED",
 		"reqId", vmctx.RequestRef.RequestID().Short(),
 		"programHash", vmctx.ProgramHash.String(),
-		"code", vmctx.RequestRef.RequestBlock().EntryPointCode().String(),
+		"entry point", vmctx.RequestRef.RequestBlock().EntryPointCode().String(),
 		"state update", vmctx.StateUpdate.String(),
 	)
 }

@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"io"
 	"sort"
@@ -34,7 +35,7 @@ import (
 // implement Processor and EntryPoint interfaces
 type fairRouletteProcessor map[coretypes.EntryPointCode]fairRouletteEntryPoint
 
-type fairRouletteEntryPoint func(ctx vmtypes.Sandbox)
+type fairRouletteEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
 
 // ID of the smart contract program
 const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
@@ -50,7 +51,6 @@ const (
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
 	RequestSetPlayPeriod = coretypes.EntryPointCode(4)
-	RequestDoNothing     = coretypes.EntryPointCode(5)
 )
 
 // the processor is a map of entry points
@@ -59,7 +59,6 @@ var entryPoints = fairRouletteProcessor{
 	RequestLockBets:          lockBets,
 	RequestPlayAndDistribute: playAndDistribute,
 	RequestSetPlayPeriod:     setPlayPeriod,
-	RequestDoNothing:         doNothing,
 }
 
 // string constants for names of state and request argument variables
@@ -127,13 +126,16 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f
 }
 
-func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
-	f(ctx)
-	return nil
+func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+	err := f(ctx, params)
+	if err != nil {
+		ctx.Publishf("error %v", err)
+	}
+	return err
 }
 
 // the request places bet into the smart contract
-func placeBet(ctx vmtypes.Sandbox) {
+func placeBet(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	ctx.Publish("placeBet")
 
 	state := ctx.AccessState()
@@ -153,21 +155,19 @@ func placeBet(ctx vmtypes.Sandbox) {
 
 	// take input addresses of the request transaction. Must be exactly 1 otherwise.
 	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	sender := ctx.AccessRequest().Sender()
+	sender := ctx.AccessRequest().SenderAddress()
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
 	sum := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
-		ctx.Publish("placeBet: sum == 0: nothing to bet")
-		return
+		return fmt.Errorf("placeBet: sum == 0: nothing to bet")
 	}
 	// check if there's a Color variable among args. If not, ignore the request
 	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
 	if !ok {
-		ctx.Publish("wrong request, no Color specified")
-		return
+		return fmt.Errorf("wrong request, no Color specified")
 	}
 	firstBet := state.GetArray(StateVarBets).Len() == 0
 
@@ -212,37 +212,38 @@ func placeBet(ctx vmtypes.Sandbox) {
 			ctx.Publishf("failed to set play deadline")
 		}
 	}
+	return nil
 }
 
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
-func setPlayPeriod(ctx vmtypes.Sandbox) {
+func setPlayPeriod(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	ctx.Publish("setPlayPeriod")
-	if ctx.AccessRequest().Sender() != *ctx.GetOwnerAddress() {
+	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized
-		ctx.Publish("setPlayPeriod: not authorized")
-		return
+		return fmt.Errorf("setPlayPeriod: not authorized")
 	}
 
-	period, ok, err := ctx.AccessRequest().Args().GetInt64(ReqVarPlayPeriodSec)
+	period, ok, err := params.GetInt64(ReqVarPlayPeriodSec)
 	if err != nil || !ok || period < 10 {
 		// incorrect request arguments
 		// minimum is 10 seconds
-		return
+		return fmt.Errorf("wrong parameter '%s'", ReqVarPlayPeriodSec)
 	}
 	ctx.AccessState().SetInt64(ReqVarPlayPeriodSec, period)
 
 	ctx.Publishf("setPlayPeriod = %d", period)
+	return nil
 }
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
-func lockBets(ctx vmtypes.Sandbox) {
+func lockBets(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	ctx.Publish("lockBets")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
-	if ctx.AccessRequest().Sender() != scAddr {
+	if ctx.AccessRequest().SenderAddress() != scAddr {
 		// ignore if request is not from itself
-		return
+		return fmt.Errorf("attempt of unauthorised access")
 	}
 	state := ctx.AccessState()
 	// append all current bets to the locked bets array
@@ -259,16 +260,17 @@ func lockBets(ctx vmtypes.Sandbox) {
 	// send request to self for playing the wheel with the entropy whicl will be known
 	// after signing this state update transaction therefore unpredictable
 	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
+	return nil
 }
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
-func playAndDistribute(ctx vmtypes.Sandbox) {
+func playAndDistribute(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	ctx.Publish("playAndDistribute")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
-	if ctx.AccessRequest().Sender() != scAddr {
+	if ctx.AccessRequest().SenderAddress() != scAddr {
 		// ignore if request is not from itself
-		return
+		return fmt.Errorf("playAndDistribute from the wrong sender")
 	}
 	state := ctx.AccessState()
 
@@ -276,7 +278,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	numLockedBets := lockedBetsArray.Len()
 	if numLockedBets == 0 {
 		// nothing to play. Should not happen
-		return
+		return fmt.Errorf("internal error. Nothing to play")
 	}
 
 	// take the entropy from the signing of the locked bets
@@ -356,10 +358,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 			ctx.Panic(err)
 		}
 	}
-}
-
-func doNothing(ctx vmtypes.Sandbox) {
-	ctx.Publish("Doing nothing as requested. Oh, wait...")
+	return nil
 }
 
 func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {

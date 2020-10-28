@@ -36,7 +36,7 @@ func (v logscProcessor) GetDescription() string {
 	return "LogSc hard coded smart contract processor"
 }
 
-func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
+func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
 	ep(ctx)
 	return nil
 }
@@ -54,7 +54,6 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	// TODO: implement using tlog
 	length, _ := ctx.AccessState().GetInt64(logArrayKey)
 	length += 1
 	ctx.AccessState().SetInt64(logArrayKey, length)

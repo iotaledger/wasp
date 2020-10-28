@@ -104,6 +104,9 @@ func (req *RequestBlock) WithTimelockUntil(deadline time.Time) *RequestBlock {
 // encoding
 
 func (req *RequestBlock) Write(w io.Writer) error {
+	if err := req.senderContractIndex.Write(w); err != nil {
+		return err
+	}
 	if err := req.targetContractID.Write(w); err != nil {
 		return err
 	}
@@ -120,6 +123,9 @@ func (req *RequestBlock) Write(w io.Writer) error {
 }
 
 func (req *RequestBlock) Read(r io.Reader) error {
+	if err := req.senderContractIndex.Read(r); err != nil {
+		return err
+	}
 	if err := req.targetContractID.Read(r); err != nil {
 		return err
 	}

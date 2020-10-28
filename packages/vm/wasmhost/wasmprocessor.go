@@ -5,6 +5,7 @@ package wasmhost
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -50,7 +51,7 @@ func (vm *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
+func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
 	vm.ctx = ctx
 
 	reqId := ctx.AccessRequest().ID()

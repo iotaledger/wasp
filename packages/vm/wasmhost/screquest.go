@@ -25,7 +25,7 @@ func (o *ScRequest) GetObjectId(keyId int32, typeId int32) int32 {
 func (o *ScRequest) GetString(keyId int32) string {
 	switch keyId {
 	case KeyAddress:
-		return o.vm.ctx.AccessRequest().Sender().String()
+		return o.vm.ctx.AccessRequest().SenderAddress().String()
 	case KeyHash:
 		id := o.vm.ctx.AccessRequest().ID()
 		return id.TransactionID().String()

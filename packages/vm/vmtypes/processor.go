@@ -1,7 +1,10 @@
 // package present processor interface. It must be implemented by VM
 package vmtypes
 
-import "github.com/iotaledger/wasp/packages/coretypes"
+import (
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
+)
 
 // Processor is a abstract interface to the VM processor instance.
 type Processor interface {
@@ -10,10 +13,10 @@ type Processor interface {
 }
 
 // EntryPoint is an abstract interface by which VM is called by passing
-// the Sandbox interface and optional parameters to it
-// VM is expected to be fully deterministic and it result is 100% reflected
-// as a side effect on the Sandbox interface
+// the Sandbox interface and parameters to it
+// the call from the request transaction has request argument as parameters
+// the call from another contract can have any kv.Map
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
-	Call(ctx Sandbox, params ...interface{}) interface{}
+	Call(ctx Sandbox, params kv.RCodec) interface{}
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/builtin/factory"
+	"github.com/iotaledger/wasp/packages/vm/builtin/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -27,7 +27,7 @@ func configure(_ *node.Plugin) {
 	err := processors.RegisterVMType(PluginName, func(binaryCode []byte) (vmtypes.Processor, error) {
 		if len(binaryCode) == 0 {
 			// bootup processor
-			return factory.Processor, nil
+			return root.Processor, nil
 		}
 		programHash, err := hashing.HashValueFromBytes(binaryCode)
 		if err != nil {

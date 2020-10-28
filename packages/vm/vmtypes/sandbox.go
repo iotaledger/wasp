@@ -54,7 +54,7 @@ type RequestAccess interface {
 	// request code
 	Code() coretypes.EntryPointCode
 	// sender address (exactly 1)
-	Sender() address.Address
+	SenderAddress() address.Address
 	// arguments
 	Args() kv.RCodec // TODO must return MustCodec
 	// number of free minted tokens in the request transaction

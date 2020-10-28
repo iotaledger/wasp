@@ -4,6 +4,7 @@ package vmnil
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -25,7 +26,7 @@ func (v nilProcessor) GetDescription() string {
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
+func (v nilProcessor) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetWaspLog().Debugw("run nilProcessor",
 		"request code", ctx.AccessRequest().Code(),

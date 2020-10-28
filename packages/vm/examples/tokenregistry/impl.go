@@ -5,9 +5,11 @@
 package tokenregistry
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -17,7 +19,6 @@ const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
 const (
-	RequestInitSC            = coretypes.EntryPointCode(0) // NOP
 	RequestMintSupply        = coretypes.EntryPointCode(1)
 	RequestUpdateMetadata    = coretypes.EntryPointCode(2)
 	RequestTransferOwnership = coretypes.EntryPointCode(3)
@@ -35,11 +36,10 @@ const (
 
 type tokenRegistryProcessor map[coretypes.EntryPointCode]tokenRegistryEntryPoint
 
-type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox)
+type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
 
 // the processor is a map of entry points
 var entryPoints = tokenRegistryProcessor{
-	RequestInitSC:            initSC,
 	RequestMintSupply:        mintSupply,
 	RequestUpdateMetadata:    updateMetadata,
 	RequestTransferOwnership: transferOwnership,
@@ -71,9 +71,12 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
-	ep(ctx)
-	return nil
+func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+	err := ep(ctx, params)
+	if err != nil {
+		ctx.Publishf("error %v", err)
+	}
+	return err
 }
 
 // WithGasLimit not used
@@ -81,41 +84,32 @@ func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }
 
-// initSC NOP
-func initSC(ctx vmtypes.Sandbox) {
-	ctx.Publishf("TokenRegistry: initSC")
-}
-
 const maxDescription = 150
 
 // mintSupply implements 'mint supply' request
-func mintSupply(ctx vmtypes.Sandbox) {
+func mintSupply(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	ctx.Publish("TokenRegistry: mintSupply")
 
-	reqAccess := ctx.AccessRequest()
-	reqId := reqAccess.ID()
+	reqId := ctx.AccessRequest().ID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
 	registry := ctx.AccessState().GetDictionary(VarStateTheRegistry)
 	// check for duplicated colors
 	if registry.GetAt(colorOfTheSupply[:]) != nil {
 		// already exist
-		ctx.Publishf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
-		return
+		return fmt.Errorf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
 	}
 	// get the number of tokens, which are minted by the request transaction - tokens which are used for requests tracking
-	supply := reqAccess.NumFreeMintedTokens()
+	supply := ctx.AccessRequest().NumFreeMintedTokens()
 	if supply <= 0 {
 		// no tokens were minted on top of request tokens
-		ctx.Publish("TokenRegistry: the free minted Supply must be > 0")
-		return
+		return fmt.Errorf("TokenRegistry: the free minted Supply must be > 0")
 
 	}
 	// get the description of the supply form the request argument
-	description, ok, err := reqAccess.Args().GetString(VarReqDescription)
+	description, ok, err := params.GetString(VarReqDescription)
 	if err != nil {
-		ctx.Publish("TokenRegistry: inconsistency 1")
-		return
+		return fmt.Errorf("TokenRegistry: inconsistency 1")
 	}
 	if !ok {
 		description = "no dscr"
@@ -123,16 +117,16 @@ func mintSupply(ctx vmtypes.Sandbox) {
 	description = util.GentleTruncate(description, maxDescription)
 
 	// get the additional arbitrary deta attached to the supply record
-	uddata, err := reqAccess.Args().Get(VarReqUserDefinedMetadata)
+	uddata, err := params.Get(VarReqUserDefinedMetadata)
 	if err != nil {
-		ctx.Publish("TokenRegistry: inconsistency 2")
-		return
+		return fmt.Errorf("TokenRegistry: inconsistency 2")
 	}
 	// create the metadata record and marshal it into binary
+	senderAddress := ctx.AccessRequest().SenderAddress()
 	rec := &TokenMetadata{
 		Supply:      supply,
-		MintedBy:    reqAccess.Sender(),
-		Owner:       reqAccess.Sender(),
+		MintedBy:    senderAddress,
+		Owner:       senderAddress,
 		Created:     ctx.GetTimestamp(),
 		Updated:     ctx.GetTimestamp(),
 		Description: description,
@@ -140,8 +134,7 @@ func mintSupply(ctx vmtypes.Sandbox) {
 	}
 	data, err := util.Bytes(rec)
 	if err != nil {
-		ctx.Publish("TokenRegistry: inconsistency 3")
-		return
+		return fmt.Errorf("TokenRegistry: inconsistency 3")
 	}
 	// put the metadata into the dictionary of the registry by color
 	registry.SetAt(colorOfTheSupply[:], data)
@@ -160,14 +153,15 @@ func mintSupply(ctx vmtypes.Sandbox) {
 
 	ctx.Publishf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
 		colorOfTheSupply.String(), rec.Owner.String(), rec.Description, string(rec.UserDefined))
+	return nil
 }
 
-func updateMetadata(ctx vmtypes.Sandbox) {
+func updateMetadata(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	// TODO not implemented
-	ctx.Publishf("TokenRegistry: updateMetadata not implemented")
+	return fmt.Errorf("TokenRegistry: updateMetadata not implemented")
 }
 
-func transferOwnership(ctx vmtypes.Sandbox) {
+func transferOwnership(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	// TODO not implemented
-	ctx.Publishf("TokenRegistry: transferOwnership not implemented")
+	return fmt.Errorf("TokenRegistry: transferOwnership not implemented")
 }

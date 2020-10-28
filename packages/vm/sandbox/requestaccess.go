@@ -25,7 +25,7 @@ func (r *requestWrapper) Args() kv.RCodec {
 }
 
 // addresses of request transaction inputs
-func (r *requestWrapper) Sender() address.Address {
+func (r *requestWrapper) SenderAddress() address.Address {
 	return *r.ref.Tx.MustProperties().Sender()
 }
 
