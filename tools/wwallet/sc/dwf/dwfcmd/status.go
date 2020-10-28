@@ -20,7 +20,7 @@ func statusCmd(args []string) {
 	for _, di := range status.LastRecordsDesc {
 		fmt.Printf("  - When: %s\n", di.When.UTC().Format(time.RFC3339))
 		fmt.Printf("    Amount: %d IOTAs\n", di.Amount)
-		fmt.Printf("    Sender: %s\n", di.Sender)
+		fmt.Printf("    SenderAddress: %s\n", di.Sender)
 		fmt.Printf("    Feedback: %s\n", di.Feedback)
 		if len(di.Error) > 0 {
 			fmt.Printf("    Error: %s\n", di.Error)

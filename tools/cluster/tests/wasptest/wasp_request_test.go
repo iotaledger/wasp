@@ -38,8 +38,8 @@ func TestSend1Request(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
+		TargetContract: scAddress,
+		RequestCode:    vmconst.RequestCodeNOP,
 	})
 	check(err, t)
 
@@ -90,8 +90,8 @@ func TestSend5Requests1Sec(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			TargetContract: scAddress,
+			RequestCode:    vmconst.RequestCodeNOP,
 		})
 		check(err, t)
 		time.Sleep(1 * time.Second)
@@ -145,8 +145,8 @@ func TestSend10Requests0Sec(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			TargetContract: scAddress,
+			RequestCode:    vmconst.RequestCodeNOP,
 		})
 		check(err, t)
 	}
@@ -198,8 +198,8 @@ func TestSend60Requests500msec(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			TargetContract: scAddress,
+			RequestCode:    vmconst.RequestCodeNOP,
 		})
 		check(err, t)
 		time.Sleep(500 * time.Millisecond)
@@ -252,8 +252,8 @@ func TestSend60Requests0Sec(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			TargetContract: scAddress,
+			RequestCode:    vmconst.RequestCodeNOP,
 		})
 		check(err, t)
 	}

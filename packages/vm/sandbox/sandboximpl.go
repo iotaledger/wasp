@@ -18,17 +18,19 @@ import (
 
 type sandbox struct {
 	*vm.VMContext
-	saveTxBuilder  *txbuilder.Builder // for rollback
-	requestWrapper *requestWrapper
-	stateWrapper   *stateWrapper
+	saveTxBuilder     *txbuilder.Builder // for rollback
+	requestWrapper    *requestWrapper
+	stateWrapper      *stateWrapper
+	contractCallStack []coretypes.Uint16
 }
 
 func New(vctx *vm.VMContext) vmtypes.Sandbox {
 	return &sandbox{
-		VMContext:      vctx,
-		saveTxBuilder:  vctx.TxBuilder.Clone(),
-		requestWrapper: &requestWrapper{&vctx.RequestRef},
-		stateWrapper:   &stateWrapper{vctx.VirtualState, vctx.StateUpdate},
+		VMContext:         vctx,
+		saveTxBuilder:     vctx.TxBuilder.Clone(),
+		requestWrapper:    &requestWrapper{&vctx.RequestRef},
+		stateWrapper:      &stateWrapper{vctx.VirtualState, vctx.StateUpdate},
+		contractCallStack: make([]coretypes.Uint16, 0),
 	}
 }
 
@@ -92,7 +94,7 @@ func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 			return false
 		}
 	}
-	reqBlock := sctransaction.NewRequestBlock(par.TargetContractID, par.EntryPoint)
+	reqBlock := sctransaction.NewRequestBlock(vctx.mustCurrentContractIndex(), par.TargetContractID, par.EntryPoint)
 	reqBlock.WithTimelock(par.Timelock)
 	reqBlock.SetArgs(par.Params)
 

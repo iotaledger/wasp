@@ -55,8 +55,8 @@ func TestFrPlaceBet(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: frCodePlaceBet,
+		TargetContract: scAddr,
+		RequestCode:    frCodePlaceBet,
 		Vars: map[string]interface{}{
 			"color": 3,
 		},
@@ -118,8 +118,8 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: frCodePlayPeriod,
+		TargetContract: scAddr,
+		RequestCode:    frCodePlayPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
 		},
@@ -131,8 +131,8 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: frCodePlaceBet,
+			TargetContract: scAddr,
+			RequestCode:    frCodePlaceBet,
 			Vars: map[string]interface{}{
 				"color": i + 1,
 			},

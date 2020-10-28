@@ -12,7 +12,7 @@ import (
 // previous state block can be determined by the chain transfer of the SC token in the UTXO part of the
 // transaction
 type StateBlock struct {
-	// color of the SC which is updated
+	// color of the chain which is updated
 	// color contains balance.NEW_COLOR for the origin transaction
 	color balance.Color
 	// stata index is 0 for the origin transaction

@@ -7,33 +7,33 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type bootupProcessor struct{}
+type factoryProcessor struct{}
 
-type bootupEntryPoint func(ctx vmtypes.Sandbox)
+type factoryEntryPoint func(ctx vmtypes.Sandbox, params ...interface{})
 
-var Processor = bootupProcessor{}
+var Processor = factoryProcessor{}
 
-func (v bootupProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v factoryProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	switch code {
 	case 0:
-		return (bootupEntryPoint)(initialize), true
+		return (factoryEntryPoint)(initialize), true
 
 	case 1:
-		return (bootupEntryPoint)(newContract), true
+		return (factoryEntryPoint)(newContract), true
 	}
 	return nil, false
 }
 
-func (v bootupProcessor) GetDescription() string {
-	return "Bootup processor"
+func (v factoryProcessor) GetDescription() string {
+	return "Factory processor"
 }
 
-func (ep bootupEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
-	ep(ctx)
+func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params ...interface{}) interface{} {
+	ep(ctx, params...)
 	return nil
 }
 
-func (ep bootupEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (ep factoryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }
 

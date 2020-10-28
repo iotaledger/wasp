@@ -47,8 +47,8 @@ func TestSC9Requests5Sec1(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			TargetContract: scAddress,
+			RequestCode:    vmconst.RequestCodeNOP,
 		})
 		check(err, t)
 		time.Sleep(1 * time.Second)

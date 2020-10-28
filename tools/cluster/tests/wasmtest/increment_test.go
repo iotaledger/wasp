@@ -92,8 +92,8 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: incCodeNothing,
+			TargetContract: scAddr,
+			RequestCode:    incCodeNothing,
 		})
 		check(err, t)
 	}
@@ -159,8 +159,8 @@ func testIncrement(t *testing.T, testName string, increments int) {
 
 	for i := 0; i < increments; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: incCodeIncrement,
+			TargetContract: scAddr,
+			RequestCode:    incCodeIncrement,
 		})
 		check(err, t)
 	}
@@ -218,8 +218,8 @@ func TestIncRepeatIncrement(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: incCodeIncrementRepeat1,
+		TargetContract: scAddr,
+		RequestCode:    incCodeIncrementRepeat1,
 		// also send 1i to the SC address to use as request token
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -282,8 +282,8 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: incCodeIncrementRepeatMany,
+		TargetContract: scAddr,
+		RequestCode:    incCodeIncrementRepeatMany,
 		Vars: map[string]interface{}{
 			"numRepeats": numRepeats,
 		},

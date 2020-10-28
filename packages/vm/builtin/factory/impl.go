@@ -1,18 +1,40 @@
-// bootup implement bootup processor. Its the only purpose:
-// - to deploy core smart contract at index according to provided data
-// - store chain id in the state
+// factory implements factory processor. This processor is always present on the chain
+// and most likely it will always be built in. It functions:
+// - initialize state of the chain (store chain id and other parameters)
+// - to handle 'ownership' of the chain
+// - to provide constructors for deployment of new contracts
 package factory
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-func initialize(ctx vmtypes.Sandbox) {
-	ctx.Publishf("factory.initialize.begon")
+func Initialize(ctx vmtypes.Sandbox, chainID *coretypes.ChainID) error {
+	ctx.Publishf("factory.Initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
-		ctx.Publishf("factory.initialize.fail: already_initalized")
+		return fmt.Errorf("factory.Initialize.fail already_initialized")
+	}
+	registry := state.GetDictionary(VarContractRegistry)
+	nextIndex := coretypes.Uint16(registry.Len())
+
+	if nextIndex != 0 {
+		return fmt.Errorf("factory.initialize.fail: internal error, registry not empty")
+	}
+	state.Set(VarStateInitialized, []byte{0xFF})
+	state.SetChainID(VarChainID, chainID)
+	// at index 0 always this contract
+	registry.SetAt(nextIndex.Bytes(), chainID[:])
+	return nil
+}
+
+func initialize(ctx vmtypes.Sandbox, params ...interface{}) {
+	ctx.Publishf("factory.initialize.begin")
+	state := ctx.AccessState()
+	if state.Get(VarStateInitialized) != nil {
+		ctx.Publishf("factory.initialize.fail: already_initialized")
 		return
 	}
 	request := ctx.AccessRequest()
@@ -25,20 +47,12 @@ func initialize(ctx vmtypes.Sandbox) {
 		ctx.Publishf("factory.initialize.fail: 'chainID' not found")
 		return
 	}
-	registry := state.GetDictionary(VarContractRegistry)
-	nextIndex := coretypes.Uint16(registry.Len())
-
-	if nextIndex != 0 {
-		ctx.Publishf("factory.initialize.fail: internal error, registry not empty")
-		return
+	if err := Initialize(ctx, chainID); err != nil {
+		ctx.Publishf("factory.initialize.fail: %v", err)
 	}
-	state.Set(VarStateInitialized, []byte{0xFF})
-	state.SetChainID(VarChainID, chainID)
-	// at index 0 always this contract
-	registry.SetAt(nextIndex.Bytes(), chainID[:])
 
 	ctx.Publishf("bootup.success")
 }
 
-func newContract(ctx vmtypes.Sandbox) {
+func newContract(ctx vmtypes.Sandbox, params ...interface{}) {
 }

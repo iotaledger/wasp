@@ -21,11 +21,11 @@ import (
 )
 
 type CreateSimpleRequestParamsOld struct {
-	SCAddress   *address.Address
-	RequestCode coretypes.EntryPointCode
-	Timelock    uint32
-	Transfer    map[balance.Color]int64 // should not not include request token. It is added automatically
-	Vars        map[string]interface{}  ` `
+	TargetContract coretypes.ContractID
+	RequestCode    coretypes.EntryPointCode
+	Timelock       uint32
+	Transfer       map[balance.Color]int64 // should not not include request token. It is added automatically
+	Vars           map[string]interface{}  ` `
 }
 
 func CreateSimpleRequestOld(client nodeclient.NodeClient, sigScheme signaturescheme.SignatureScheme, par CreateSimpleRequestParamsOld) (*sctransaction.Transaction, error) {
@@ -40,7 +40,7 @@ func CreateSimpleRequestOld(client nodeclient.NodeClient, sigScheme signaturesch
 		return nil, err
 	}
 
-	reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
+	reqBlk := sctransaction.NewRequestBlockByWallet(par.TargetContract, par.RequestCode).WithTimelock(par.Timelock)
 
 	args := convertArgsOld(par.Vars)
 	if args == nil {
@@ -48,7 +48,7 @@ func CreateSimpleRequestOld(client nodeclient.NodeClient, sigScheme signaturesch
 	}
 	reqBlk.SetArgs(args)
 
-	err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
+	err = txb.AddRequestBlockWithTransfer(reqBlk, par.Transfer)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func CreateSimpleRequestMultiOld(client nodeclient.NodeClient, sigScheme signatu
 	}
 
 	for _, par := range pars {
-		reqBlk := sctransaction.NewRequestBlock(*par.SCAddress, par.RequestCode).WithTimelock(par.Timelock)
+		reqBlk := sctransaction.NewRequestBlockByWallet(par.TargetContract, par.RequestCode).WithTimelock(par.Timelock)
 
 		args := convertArgsOld(par.Vars)
 		if args == nil {
@@ -92,7 +92,7 @@ func CreateSimpleRequestMultiOld(client nodeclient.NodeClient, sigScheme signatu
 		}
 		reqBlk.SetArgs(args)
 
-		err = txb.AddRequestBlockWithTransfer(reqBlk, par.SCAddress, par.Transfer)
+		err = txb.AddRequestBlockWithTransfer(reqBlk, par.Transfer)
 		if err != nil {
 			return nil, err
 		}
@@ -188,7 +188,7 @@ func CreateRequestTransactionOld(client nodeclient.NodeClient, senderSigScheme s
 			return nil, err
 		}
 		if reqBlkJson.AmountIotas > 1 {
-			if err = txb.MoveToAddress(reqBlk.Address(), balance.ColorIOTA, reqBlkJson.AmountIotas-1); err != nil {
+			if err = txb.MoveTokensToAddress(reqBlk.Address(), balance.ColorIOTA, reqBlkJson.AmountIotas-1); err != nil {
 				return nil, err
 			}
 		}

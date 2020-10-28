@@ -1,6 +1,7 @@
 package sctransaction
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"time"
@@ -18,6 +19,10 @@ import (
 // counting from 2020.01.01 Then it would extend until 2140 or so
 
 type RequestBlock struct {
+	// sender contract index
+	// - if state block present, it is index of the sending contracts
+	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
+	senderContractIndex coretypes.Uint16
 	// ID of the target smart contract
 	targetContractID coretypes.ContractID
 	// entry point code
@@ -37,23 +42,32 @@ type RequestRef struct {
 	Index coretypes.Uint16
 }
 
-// RequestBlock
-
-func NewRequestBlock(targetContract coretypes.ContractID, reqCode coretypes.EntryPointCode) *RequestBlock {
+// RequestBlock creates new request block
+func NewRequestBlock(senderContractIndex coretypes.Uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestBlock {
 	return &RequestBlock{
-		targetContractID: targetContract,
-		entryPoint:       reqCode,
-		args:             kv.NewMap(),
+		senderContractIndex: senderContractIndex,
+		targetContractID:    targetContract,
+		entryPoint:          entryPointCode,
+		args:                kv.NewMap(),
 	}
+}
+
+// NewRequestBlockByWallet same as NewRequestBlock but assumes sender index is 0
+func NewRequestBlockByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestBlock {
+	return NewRequestBlock(0, targetContract, entryPointCode)
 }
 
 func (req *RequestBlock) Clone() *RequestBlock {
 	if req == nil {
 		return nil
 	}
-	ret := NewRequestBlock(req.targetContractID, req.entryPoint)
+	ret := NewRequestBlock(req.senderContractIndex, req.targetContractID, req.entryPoint)
 	ret.args = req.args.Clone()
 	return ret
+}
+
+func (req *RequestBlock) SenderContractIndex() uint16 {
+	return (uint16)(req.senderContractIndex)
 }
 
 func (req *RequestBlock) Target() coretypes.ContractID {
@@ -151,6 +165,15 @@ func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
 	return auth
 }
 
-func (ref *RequestRef) Sender() *address.Address {
+func (ref *RequestRef) SenderAddress() *address.Address {
 	return ref.Tx.MustProperties().Sender()
+}
+
+func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) {
+	if _, ok := ref.Tx.State(); !ok {
+		err = fmt.Errorf("request not sent by the smart contract: %s", ref.RequestID().String())
+		return
+	}
+	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.Index)
+	return
 }

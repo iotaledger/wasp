@@ -108,8 +108,8 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: inccounter.RequestInc,
+			TargetContract: scAddr,
+			RequestCode:    inccounter.RequestInc,
 		})
 		check(err, t)
 	}
@@ -168,8 +168,8 @@ func TestSend100ReqMulti(t *testing.T) {
 	pars := make([]waspapi.CreateSimpleRequestParamsOld, numRequestsInTheBlock)
 	for i := 0; i < numRequestsInTheBlock; i++ {
 		pars[i] = waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: inccounter.RequestInc,
+			TargetContract: scAddr,
+			RequestCode:    inccounter.RequestInc,
 		}
 	}
 	err = wasptest.SendSimpleRequestMulti(wasps, scOwner.SigScheme(), pars)

@@ -89,7 +89,7 @@ const TplSCInfo = `
 {{define "sc-info"}}
 	<details>
 		<summary>Smart contract details</summary>
-		<p>SC address: {{template "address" .Status.SCAddress}}</p>
+		<p>SC address: {{template "address" .Status.TargetContract}}</p>
 		<p>Program hash: <code>{{.Status.ProgramHash}}</code></p>
 		<p>Description of the instance: <code>{{trim .Status.Description}}</code></p>
 		<p>Owner address: {{template "address" .Status.OwnerAddress}}</p>
