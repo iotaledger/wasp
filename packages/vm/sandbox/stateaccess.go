@@ -10,7 +10,7 @@ type stateWrapper struct {
 	stateUpdate  state.StateUpdate
 }
 
-func (s *stateWrapper) MustCodec() kv.MustCodec {
+func (s *stateWrapper) MustCodec() kv.MutableMustCodec {
 	return kv.NewMustCodec(s)
 }
 

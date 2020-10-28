@@ -36,7 +36,7 @@ func (v logscProcessor) GetDescription() string {
 	return "LogSc hard coded smart contract processor"
 }
 
-func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	ep(ctx)
 	return nil
 }

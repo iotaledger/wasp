@@ -20,7 +20,7 @@ func (r *requestWrapper) Code() coretypes.EntryPointCode {
 	return r.ref.RequestBlock().EntryPointCode()
 }
 
-func (r *requestWrapper) Args() kv.RCodec {
+func (r *requestWrapper) Args() kv.ImmutableCodec {
 	return r.ref.RequestBlock().Args()
 }
 

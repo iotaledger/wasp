@@ -35,7 +35,7 @@ import (
 // implement Processor and EntryPoint interfaces
 type fairRouletteProcessor map[coretypes.EntryPointCode]fairRouletteEntryPoint
 
-type fairRouletteEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
+type fairRouletteEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
 
 // ID of the smart contract program
 const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
@@ -126,7 +126,7 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f
 }
 
-func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	err := f(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
@@ -135,7 +135,7 @@ func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) inte
 }
 
 // the request places bet into the smart contract
-func placeBet(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func placeBet(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("placeBet")
 
 	state := ctx.AccessState()
@@ -216,7 +216,7 @@ func placeBet(ctx vmtypes.Sandbox, params kv.RCodec) error {
 }
 
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
-func setPlayPeriod(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func setPlayPeriod(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("setPlayPeriod")
 	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized
@@ -237,7 +237,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox, params kv.RCodec) error {
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
-func lockBets(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func lockBets(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("lockBets")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
@@ -264,7 +264,7 @@ func lockBets(ctx vmtypes.Sandbox, params kv.RCodec) error {
 }
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
-func playAndDistribute(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func playAndDistribute(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("playAndDistribute")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())

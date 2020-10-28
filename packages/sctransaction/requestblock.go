@@ -80,7 +80,7 @@ func (req *RequestBlock) SetArgs(args kv.Map) {
 	}
 }
 
-func (req *RequestBlock) Args() kv.RCodec {
+func (req *RequestBlock) Args() kv.ImmutableCodec {
 	return req.args.Codec()
 }
 

@@ -10,7 +10,7 @@ import (
 
 type factoryProcessor struct{}
 
-type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) interface{}
+type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{}
 
 var Processor = factoryProcessor{}
 
@@ -34,7 +34,7 @@ func (v factoryProcessor) GetDescription() string {
 	return "Factory processor"
 }
 
-func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	err := ep(ctx, params)
 	if err != nil {
 		if _, isError := err.(error); isError {

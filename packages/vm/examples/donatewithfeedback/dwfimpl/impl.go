@@ -20,7 +20,7 @@ const Description = "DonateWithFeedback, a PoC smart contract"
 // implementation of 'vmtypes.Processor' and 'vmtypes.EntryPoint' interfaces
 type dwfProcessor map[coretypes.EntryPointCode]dwfEntryPoint
 
-type dwfEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
+type dwfEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
 
 // the processor implementation is a map of entry points: one for each request
 var entryPoints = dwfProcessor{
@@ -46,7 +46,7 @@ func (v dwfProcessor) GetDescription() string {
 }
 
 // Run calls the function wrapped into the EntryPoint
-func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	ret := ep(ctx, params)
 	if ret != nil {
 		ctx.Publishf("error %v", ret)
@@ -63,7 +63,7 @@ const maxComment = 150
 
 // donate implements request 'donate'. It takes feedback text from the request
 // and adds it into the log of feedback messages
-func donate(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func donate(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publishf("DonateWithFeedback: donate")
 
 	// how many iotas are sent by the request.
@@ -123,7 +123,7 @@ func donate(ctx vmtypes.Sandbox, params kv.RCodec) error {
 }
 
 // TODO implement withdrawal of other than IOTA colored tokens
-func withdraw(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func withdraw(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publishf("DonateWithFeedback: withdraw")
 
 	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {

@@ -28,7 +28,7 @@ var entryPoints = incCounterProcessor{
 	RequestIncAndRepeatMany:        incCounterAndRepeatMany,
 }
 
-type incEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
+type incEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
 
 func GetProcessor() vmtypes.Processor {
 	return entryPoints
@@ -50,7 +50,7 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }
 
-func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
@@ -58,7 +58,7 @@ func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} 
 	return err
 }
 
-func incCounter(ctx vmtypes.Sandbox, _ kv.RCodec) error {
+func incCounter(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
@@ -66,7 +66,7 @@ func incCounter(ctx vmtypes.Sandbox, _ kv.RCodec) error {
 	return nil
 }
 
-func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ kv.RCodec) error {
+func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ kv.ImmutableCodec) error {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 
@@ -83,7 +83,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ kv.RCodec) error {
 	return nil
 }
 
-func incCounterAndRepeatMany(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func incCounterAndRepeatMany(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	state := ctx.AccessState()
 
 	val, _ := state.GetInt64(VarCounter)

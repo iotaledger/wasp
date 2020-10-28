@@ -25,7 +25,7 @@ const Description = "FairAuction, a PoC smart contract"
 
 type fairAuctionProcessor map[coretypes.EntryPointCode]fairAuctionEntryPoint
 
-type fairAuctionEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
+type fairAuctionEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
 
 const (
 	RequestStartAuction    = coretypes.EntryPointCode(1)
@@ -96,7 +96,7 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmty
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
@@ -189,7 +189,7 @@ func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 // Request transaction must contain at least number of iotas >= of current owner margin from the minimum bid
 // (not including node reward with request token)
 // Tokens for sale must be included into the request transaction
-func startAuction(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func startAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("startAuction begin")
 
 	sender := ctx.AccessRequest().SenderAddress()
@@ -348,7 +348,7 @@ func startAuction(ctx vmtypes.Sandbox, params kv.RCodec) error {
 // a rise of the bid and are added to the total
 // Arguments:
 // - VarReqAuctionColor: color of the tokens for sale
-func placeBid(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func placeBid(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("placeBid: begin")
 
 	// all iotas in the request transaction are considered a bid/rise sum
@@ -439,7 +439,7 @@ func placeBid(ctx vmtypes.Sandbox, params kv.RCodec) error {
 // not by the smart contract instance itself
 // Arguments:
 // - VarReqAuctionColor: color of the auction
-func finalizeAuction(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func finalizeAuction(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("finalizeAuction begin")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
@@ -584,7 +584,7 @@ func finalizeAuction(ctx vmtypes.Sandbox, params kv.RCodec) error {
 // setOwnerMargin is a request to set the service fee to place a bid
 // Arguments:
 // - VarReqOwnerMargin: the margin value in promilles
-func setOwnerMargin(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func setOwnerMargin(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("setOwnerMargin: begin")
 
 	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {

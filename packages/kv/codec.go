@@ -10,28 +10,28 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// Codec is an interface that offers easy conversions between []byte (scalar)
-// and other types (including complex) when manipulating a KVStore
-type Codec interface {
-	RCodec
-	WCodec
+// MutableCodec is an interface that offers easy conversions between []byte
+// and other types (including collections) when manipulating a KVStore
+type MutableCodec interface {
+	ImmutableCodec
+	wCodec
 	GetArray(Key) (*Array, error)
 	GetDictionary(Key) (*Dictionary, error)
 	GetTimestampedLog(Key) (*TimestampedLog, error)
 }
 
-// MustCodec is like a Codec that automatically panics on error
-type MustCodec interface {
-	MustRCodec
-	WCodec
+// MutableMustCodec is a MutableCodec that automatically panics on error
+type MutableMustCodec interface {
+	ImmutableMustCodec
+	wCodec
 	GetArray(Key) *MustArray
 	GetDictionary(Key) *MustDictionary
 	GetTimestampedLog(Key) *MustTimestampedLog
 }
 
-// RCodec is an interface that offers easy conversions between []byte and other types when
+// ImmutableCodec is an interface that offers easy conversions between []byte and other types when
 // manipulating a read-only KVStore
-type RCodec interface {
+type ImmutableCodec interface {
 	Has(key Key) (bool, error)
 	Get(key Key) ([]byte, error)
 	GetString(key Key) (string, bool, error)
@@ -41,8 +41,8 @@ type RCodec interface {
 	GetChainID(key Key) (*coretypes.ChainID, bool, error)
 }
 
-// MustrCodec is like a RCodec that automatically panics on error
-type MustRCodec interface {
+// ImmutableMustCodec is an ImmutableCodec that automatically panics on error
+type ImmutableMustCodec interface {
 	Has(key Key) bool
 	Get(key Key) []byte
 	GetString(key Key) (string, bool)
@@ -52,9 +52,9 @@ type MustRCodec interface {
 	GetChainID(key Key) (*coretypes.ChainID, bool)
 }
 
-// WCodec is an interface that offers easy conversions between []byte and other types when
-// manipulating a write-only KVStore
-type WCodec interface {
+// wCodec is an interface that offers easy conversions between []byte and other types when
+// manipulating a writable KVStore
+type wCodec interface {
 	Del(key Key)
 	Set(key Key, value []byte)
 	SetString(key Key, value string)
@@ -72,11 +72,11 @@ type mustcodec struct {
 	codec
 }
 
-func NewCodec(kv KVStore) Codec {
+func NewCodec(kv KVStore) MutableCodec {
 	return codec{kv: kv}
 }
 
-func NewMustCodec(kv KVStore) MustCodec {
+func NewMustCodec(kv KVStore) MutableMustCodec {
 	return mustcodec{codec{kv: kv}}
 }
 

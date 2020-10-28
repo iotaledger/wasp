@@ -18,5 +18,5 @@ type Processor interface {
 // the call from another contract can have any kv.Map
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
-	Call(ctx Sandbox, params kv.RCodec) interface{}
+	Call(ctx Sandbox, params kv.ImmutableCodec) interface{}
 }

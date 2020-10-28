@@ -18,7 +18,7 @@ type BufferedKVStore interface {
 	ClearMutations()
 	Clone() BufferedKVStore
 
-	Codec() Codec
+	Codec() MutableCodec
 
 	// only for testing!
 	DangerouslyDumpToMap() Map
@@ -62,7 +62,7 @@ func (b *bufferedKVStore) Clone() BufferedKVStore {
 	}
 }
 
-func (b *bufferedKVStore) Codec() Codec {
+func (b *bufferedKVStore) Codec() MutableCodec {
 	return NewCodec(b)
 }
 

@@ -36,7 +36,7 @@ const (
 
 type tokenRegistryProcessor map[coretypes.EntryPointCode]tokenRegistryEntryPoint
 
-type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
+type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error
 
 // the processor is a map of entry points
 var entryPoints = tokenRegistryProcessor{
@@ -71,7 +71,7 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error %v", err)
@@ -87,7 +87,7 @@ func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 const maxDescription = 150
 
 // mintSupply implements 'mint supply' request
-func mintSupply(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func mintSupply(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	ctx.Publish("TokenRegistry: mintSupply")
 
 	reqId := ctx.AccessRequest().ID()
@@ -156,12 +156,12 @@ func mintSupply(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	return nil
 }
 
-func updateMetadata(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func updateMetadata(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: updateMetadata not implemented")
 }
 
-func transferOwnership(ctx vmtypes.Sandbox, params kv.RCodec) error {
+func transferOwnership(ctx vmtypes.Sandbox, params kv.ImmutableCodec) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: transferOwnership not implemented")
 }

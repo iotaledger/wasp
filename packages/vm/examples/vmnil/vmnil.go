@@ -26,7 +26,7 @@ func (v nilProcessor) GetDescription() string {
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (v nilProcessor) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetWaspLog().Debugw("run nilProcessor",
 		"request code", ctx.AccessRequest().Code(),

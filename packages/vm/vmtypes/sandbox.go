@@ -31,7 +31,7 @@ type Sandbox interface {
 	// access to the request block
 	AccessRequest() RequestAccess
 	// base level of virtual state access
-	AccessState() kv.MustCodec
+	AccessState() kv.MutableMustCodec
 	// AccessSCAccount
 	AccessSCAccount() AccountAccess
 	// Send request
@@ -58,7 +58,7 @@ type RequestAccess interface {
 	// sender address (exactly 1)
 	SenderAddress() address.Address
 	// arguments
-	Args() kv.RCodec // TODO must return MustCodec
+	Args() kv.ImmutableCodec // TODO must return MustCodec
 	// number of free minted tokens in the request transaction
 	// it is equal to total minted tokens minus number of requests
 	NumFreeMintedTokens() int64

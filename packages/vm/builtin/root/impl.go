@@ -25,7 +25,7 @@ type contractProgram struct {
 	programBinary []byte
 }
 
-func initialize(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func initialize(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	ctx.Publishf("root.initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
@@ -55,7 +55,7 @@ func initialize(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
 	return nil
 }
 
-func newContract(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func newContract(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	ctx.Publishf("root.newContract.begin")
 
 	var err error

@@ -53,7 +53,7 @@ func (vm *wasmProcessor) GetDescription() string {
 
 // TODO use params in immplementation, not ctx.AccessRequest().Args()
 // this is needed for alignment of calling convention between requests and intra-cain calls
-func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
+func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params kv.ImmutableCodec) interface{} {
 	vm.ctx = ctx
 
 	reqId := ctx.AccessRequest().ID()
