@@ -25,13 +25,12 @@ func configure(_ *node.Plugin) {
 
 	// treats binary as program hash
 	err := processors.RegisterVMType(PluginName, func(binaryCode []byte) (vmtypes.Processor, error) {
-		if len(binaryCode) == 0 {
-			// bootup processor
-			return root.Processor, nil
-		}
 		programHash, err := hashing.HashValueFromBytes(binaryCode)
 		if err != nil {
 			return nil, err
+		}
+		if programHash == *hashing.NilHash {
+			return root.Processor, nil
 		}
 		ret, ok := examples.GetExampleProcessor(programHash.String())
 		if !ok {

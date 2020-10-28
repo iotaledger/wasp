@@ -8,6 +8,7 @@ package root
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -34,7 +35,7 @@ func initialize(ctx vmtypes.Sandbox, params kv.RCodec) error {
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
 	// at index 0 always this contract
-	registry.SetAt(nextIndex.Bytes(), chainID[:])
+	registry.SetAt(nextIndex.Bytes(), hashing.NilHash[:])
 	ctx.Publishf("root.initialize.success")
 	return nil
 }
