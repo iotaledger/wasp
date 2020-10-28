@@ -10,7 +10,7 @@ import (
 
 type factoryProcessor struct{}
 
-type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) error
+type factoryEntryPoint func(ctx vmtypes.Sandbox, params kv.RCodec) interface{}
 
 var Processor = factoryProcessor{}
 
@@ -32,7 +32,9 @@ func (v factoryProcessor) GetDescription() string {
 func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params kv.RCodec) interface{} {
 	err := ep(ctx, params)
 	if err != nil {
-		ctx.Publishf("error occured: '%v'", err)
+		if _, isError := err.(error); isError {
+			ctx.Publishf("error occured: '%v'", err)
+		}
 	}
 	return err
 }

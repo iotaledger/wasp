@@ -12,6 +12,8 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
+	// only for root contract
+	InstallProgram(vmtype string, programBinary []byte) (coretypes.Uint16, error)
 	// general function
 	GetContractID() coretypes.ContractID
 	GetOwnerAddress() *address.Address
