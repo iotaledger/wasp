@@ -71,7 +71,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		if reqBlk.Target().ChainID() == (coretypes.ChainID)(addr) {
 			cmt.ReceiveMessage(&chain.RequestMsg{
 				Transaction: tx,
-				Index:       coretypes.Uint16(i),
+				Index:       (uint16)(i),
 			})
 		}
 	}

@@ -23,7 +23,7 @@ type sandbox struct {
 	saveTxBuilder     *txbuilder.Builder // for rollback
 	requestWrapper    *requestWrapper
 	stateWrapper      *stateWrapper
-	contractCallStack []coretypes.Uint16
+	contractCallStack []uint16
 }
 
 func New(vctx *vm.VMContext) vmtypes.Sandbox {
@@ -32,7 +32,7 @@ func New(vctx *vm.VMContext) vmtypes.Sandbox {
 		saveTxBuilder:     vctx.TxBuilder.Clone(),
 		requestWrapper:    &requestWrapper{&vctx.RequestRef},
 		stateWrapper:      &stateWrapper{vctx.VirtualState, vctx.StateUpdate},
-		contractCallStack: make([]coretypes.Uint16, 0),
+		contractCallStack: make([]uint16, 0),
 	}
 }
 

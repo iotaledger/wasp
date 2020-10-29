@@ -22,7 +22,7 @@ type BalancesMsg struct {
 
 type RequestMsg struct {
 	*sctransaction.Transaction
-	Index coretypes.Uint16
+	Index uint16
 }
 
 func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {

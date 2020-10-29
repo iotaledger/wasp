@@ -2,25 +2,24 @@ package processors
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
 )
 
 type vmProcessor struct {
-	index     coretypes.Uint16
+	index     uint16
 	processor vmtypes.Processor
 }
 
 type ChainProcessors struct {
 	*sync.Mutex
-	processors map[coretypes.Uint16]*vmProcessor
+	processors map[uint16]*vmProcessor
 }
 
 func New() *ChainProcessors {
 	ret := &ChainProcessors{
 		Mutex:      &sync.Mutex{},
-		processors: make(map[coretypes.Uint16]*vmProcessor),
+		processors: make(map[uint16]*vmProcessor),
 	}
 	// get factory processor
 	proc, err := NewProcessorFromBinaryCode("builtinvm", nil)
@@ -35,7 +34,7 @@ func New() *ChainProcessors {
 	return ret
 }
 
-func (cps *ChainProcessors) AddProcessor(index coretypes.Uint16, programCode []byte, vmtype string) error {
+func (cps *ChainProcessors) AddProcessor(index uint16, programCode []byte, vmtype string) error {
 	cps.Lock()
 	defer cps.Unlock()
 
@@ -57,7 +56,7 @@ func (cps *ChainProcessors) GetProcessor(index uint16) (vmtypes.Processor, bool)
 	cps.Lock()
 	defer cps.Unlock()
 
-	proc, ok := cps.processors[(coretypes.Uint16)(index)]
+	proc, ok := cps.processors[index]
 	return proc.processor, ok
 }
 
@@ -65,6 +64,6 @@ func (cps *ChainProcessors) ExistsProcessor(index uint16) bool {
 	cps.Lock()
 	defer cps.Unlock()
 
-	_, ok := cps.processors[(coretypes.Uint16)(index)]
+	_, ok := cps.processors[index]
 	return ok
 }

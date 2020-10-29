@@ -3,6 +3,7 @@ package coretypes
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/mr-tron/base58"
 	"io"
 )
@@ -11,9 +12,9 @@ const ContractIDLength = ChainIDLength + 2
 
 type ContractID [ContractIDLength]byte
 
-func NewContractID(chid ChainID, index Uint16) (ret ContractID) {
+func NewContractID(chid ChainID, index uint16) (ret ContractID) {
 	copy(ret[:ChainIDLength], chid[:])
-	copy(ret[ChainIDLength:], index.Bytes())
+	copy(ret[ChainIDLength:], util.Uint16To2Bytes(index))
 	return
 }
 
@@ -35,9 +36,8 @@ func (scid ContractID) ChainID() (ret ChainID) {
 	return
 }
 
-func (scid ContractID) Index() (ret Uint16) {
-	ret, _ = NewUint16From2Bytes(scid[ChainIDLength:])
-	return
+func (scid ContractID) Index() uint16 {
+	return util.Uint16From2Bytes(scid[ChainIDLength:])
 }
 
 func (scid ContractID) Base58() string {

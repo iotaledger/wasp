@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
@@ -40,7 +39,7 @@ func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immutab
 		return nil, fmt.Errorf("root.initialize.fail: 'chainID' not found")
 	}
 	registry := state.GetMap(VarContractRegistry)
-	nextIndex := coretypes.Uint16(registry.Len())
+	nextIndex := (uint16)(registry.Len())
 
 	if nextIndex != 0 {
 		return nil, fmt.Errorf("root.initialize.fail: registry_not_empty")
@@ -48,7 +47,7 @@ func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immutab
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
 	// at index 0 always this contract
-	registry.SetAt(nextIndex.Bytes(), util.MustBytes(&contractProgram{
+	registry.SetAt(util.Uint16To2Bytes(nextIndex), util.MustBytes(&contractProgram{
 		vmtype:        "builtin",
 		programBinary: hashing.NilHash[:],
 	}))
@@ -78,7 +77,7 @@ func newContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immuta
 		return nil, err
 	}
 	registry := ctx.AccessState().GetMap(VarContractRegistry)
-	registry.SetAt(contractIndex.Bytes(), util.MustBytes(rec))
+	registry.SetAt(util.Uint16To2Bytes(contractIndex), util.MustBytes(rec))
 	return nil, nil
 }
 

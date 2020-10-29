@@ -23,7 +23,7 @@ type RequestBlock struct {
 	// sender contract index
 	// - if state block present, it is index of the sending contracts
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
-	senderContractIndex coretypes.Uint16
+	senderContractIndex uint16
 	// ID of the target smart contract
 	targetContractID coretypes.ContractID
 	// entry point code
@@ -40,11 +40,11 @@ type RequestBlock struct {
 
 type RequestRef struct {
 	Tx    *Transaction
-	Index coretypes.Uint16
+	Index uint16
 }
 
 // RequestBlock creates new request block
-func NewRequestBlock(senderContractIndex coretypes.Uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestBlock {
+func NewRequestBlock(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestBlock {
 	return &RequestBlock{
 		senderContractIndex: senderContractIndex,
 		targetContractID:    targetContract,
@@ -105,7 +105,7 @@ func (req *RequestBlock) WithTimelockUntil(deadline time.Time) *RequestBlock {
 // encoding
 
 func (req *RequestBlock) Write(w io.Writer) error {
-	if err := req.senderContractIndex.Write(w); err != nil {
+	if err := util.WriteUint16(w, req.senderContractIndex); err != nil {
 		return err
 	}
 	if err := req.targetContractID.Write(w); err != nil {
@@ -124,7 +124,7 @@ func (req *RequestBlock) Write(w io.Writer) error {
 }
 
 func (req *RequestBlock) Read(r io.Reader) error {
-	if err := req.senderContractIndex.Read(r); err != nil {
+	if err := util.ReadUint16(r, &req.senderContractIndex); err != nil {
 		return err
 	}
 	if err := req.targetContractID.Read(r); err != nil {

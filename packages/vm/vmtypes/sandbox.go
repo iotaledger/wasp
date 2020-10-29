@@ -14,7 +14,7 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	// only for root contract
-	InstallProgram(vmtype string, programBinary []byte) (coretypes.Uint16, error)
+	InstallProgram(vmtype string, programBinary []byte) (uint16, error)
 	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 	// general function
 	GetContractID() coretypes.ContractID

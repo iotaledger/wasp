@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/mr-tron/base58"
 	"io"
 )
@@ -13,9 +14,9 @@ const RequestIDLength = valuetransaction.IDLength + 2
 
 type RequestID [RequestIDLength]byte
 
-func NewRequestID(txid valuetransaction.ID, index Uint16) (ret RequestID) {
+func NewRequestID(txid valuetransaction.ID, index uint16) (ret RequestID) {
 	copy(ret[:valuetransaction.IDLength], txid.Bytes())
-	copy(ret[valuetransaction.IDLength:], index.Bytes())
+	copy(ret[valuetransaction.IDLength:], util.Uint16To2Bytes(index))
 	return
 }
 
@@ -43,9 +44,8 @@ func (rid *RequestID) TransactionID() *valuetransaction.ID {
 	return &ret
 }
 
-func (rid *RequestID) Index() (ret Uint16) {
-	ret, _ = NewUint16From2Bytes(rid[valuetransaction.IDLength:])
-	return
+func (rid *RequestID) Index() uint16 {
+	return util.Uint16From2Bytes(rid[valuetransaction.IDLength:])
 }
 
 func (rid *RequestID) Write(w io.Writer) error {
