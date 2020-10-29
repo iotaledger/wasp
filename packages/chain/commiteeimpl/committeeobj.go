@@ -1,6 +1,7 @@
 package commiteeimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ type committeeObj struct {
 	onActivation                 func()
 	//
 	chainID         coretypes.ChainID
+	procset         *processors.ChainProcessors
 	ownerAddress    address.Address
 	color           balance.Color
 	peers           []*peering.Peer
@@ -84,8 +86,14 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 			return nil
 		}
 	}
+	procset, err := processors.New()
+	if err != nil {
+		log.Errorf("can't create instance for VM processor collection. Can't continue")
+		return nil
+	}
 
 	ret := &committeeObj{
+		procset:      procset,
 		chMsg:        make(chan interface{}, 100),
 		chainID:      bootupData.ChainID,
 		ownerAddress: bootupData.OwnerAddress,

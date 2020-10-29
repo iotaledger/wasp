@@ -1,18 +1,66 @@
-// factory implements factory processor. This processor is always present on the chain
-// and most likely it will always be built in. It functions:
-// - initialize state of the chain (store chain id and other parameters)
-// - to handle 'ownership' of the chain
-// - to provide constructors for deployment of new contracts
+// factory implement processor which is always present at the index 0
+// it initializes and operates contract registry: creates contracts and provides search
 package root
 
 import (
 	"fmt"
-	"io"
-
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"io"
+)
+
+type factoryProcessor struct{}
+
+type factoryEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+
+var (
+	processor   = &factoryProcessor{}
+	ProgramHash = hashing.AllFHash
+)
+
+func GetProcessor() vmtypes.Processor {
+	return processor
+}
+
+var (
+	entryPointInitialize  = coretypes.NewEntryPointCodeFromFunctionName("initialize")
+	entryPointNewContract = coretypes.NewEntryPointCodeFromFunctionName("newContract")
+)
+
+func (v *factoryProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+	switch code {
+	case entryPointInitialize:
+		return (factoryEntryPoint)(initialize), true
+
+	case entryPointNewContract:
+		return (factoryEntryPoint)(newContract), true
+	}
+	return nil, false
+}
+
+func (v *factoryProcessor) GetDescription() string {
+	return "Factory processor"
+}
+
+func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	ret, err := ep(ctx, params)
+	if err != nil {
+		ctx.Publishf("error occured: '%v'", err)
+	}
+	return ret, err
+}
+
+func (ep factoryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+	return ep
+}
+
+const (
+	VarStateInitialized = "i"
+	VarChainID          = "c"
+	VarContractRegistry = "r"
 )
 
 const (
@@ -49,7 +97,7 @@ func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immutab
 	// at index 0 always this contract
 	registry.SetAt(util.Uint16To2Bytes(nextIndex), util.MustBytes(&contractProgram{
 		vmtype:        "builtin",
-		programBinary: hashing.NilHash[:],
+		programBinary: ProgramHash[:],
 	}))
 	ctx.Publishf("root.initialize.success")
 	return nil, nil

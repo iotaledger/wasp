@@ -2,6 +2,7 @@ package commiteeimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -298,4 +299,8 @@ func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) ch
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted
+}
+
+func (c *committeeObj) Processors() *processors.ChainProcessors {
+	return c.procset
 }

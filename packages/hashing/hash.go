@@ -21,8 +21,18 @@ const HashSize = sha256.Size
 type HashValue [HashSize]byte
 type HashableBytes []byte
 
-var nilHash HashValue
-var NilHash = &nilHash
+var (
+	nilHash  HashValue
+	NilHash  = &nilHash
+	allFHash HashValue
+	AllFHash = &allFHash
+)
+
+func init() {
+	for i := range allFHash {
+		allFHash[i] = 0xFF
+	}
+}
 
 func (h *HashValue) Bytes() []byte {
 	return (*h)[:]

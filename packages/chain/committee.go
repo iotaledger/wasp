@@ -3,6 +3,7 @@ package chain
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -32,6 +33,8 @@ type Chain interface {
 	Dismiss()
 	IsDismissed() bool
 	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
+	//
+	Processors() *processors.ChainProcessors
 }
 
 type PeerStatus struct {

@@ -28,8 +28,8 @@ func RegisterVMType(vmtype string, constructor VMConstructor) error {
 	return nil
 }
 
-// NewProcessorFromBinaryCode creates an instance of the processor by its VM type and the binary code
-func NewProcessorFromBinaryCode(vmtype string, binaryCode []byte) (vmtypes.Processor, error) {
+// NewProcessorFromBinary creates an instance of the processor by its VM type and the binary code
+func NewProcessorFromBinary(vmtype string, binaryCode []byte) (vmtypes.Processor, error) {
 	vmfactoryMutex.Lock()
 	defer vmfactoryMutex.Unlock()
 

@@ -3,7 +3,6 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 	"sync"
 	"time"
 
@@ -22,8 +21,7 @@ import (
 )
 
 type operator struct {
-	chain      chain.Chain
-	processors *processors.ChainProcessors
+	chain chain.Chain
 
 	dkshare *tcrypto.DKShare
 	//currentState
@@ -95,7 +93,6 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 
 	ret := &operator{
 		chain:               committee,
-		processors:          processors.New(),
 		dkshare:             dkshare,
 		requests:            make(map[coretypes.RequestID]*request),
 		requestIdsProtected: make(map[coretypes.RequestID]bool),

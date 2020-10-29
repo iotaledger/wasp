@@ -1,14 +1,10 @@
 package builtinvm
 
 import (
-	"fmt"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/builtin/root"
-	"github.com/iotaledger/wasp/packages/vm/examples"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // PluginName is the name of the plugin.
@@ -24,20 +20,7 @@ func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 
 	// treats binary as program hash
-	err := processors.RegisterVMType(PluginName, func(binaryCode []byte) (vmtypes.Processor, error) {
-		programHash, err := hashing.HashValueFromBytes(binaryCode)
-		if err != nil {
-			return nil, err
-		}
-		if programHash == *hashing.NilHash {
-			return root.Processor, nil
-		}
-		ret, ok := examples.GetExampleProcessor(programHash.String())
-		if !ok {
-			return nil, fmt.Errorf("can't load example processor with hash %s", programHash.String())
-		}
-		return ret, nil
-	})
+	err := processors.RegisterVMType(PluginName, builtinvm.Constructor)
 	if err != nil {
 		log.Panicf("%v: %v", PluginName, err)
 	}

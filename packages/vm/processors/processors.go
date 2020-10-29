@@ -2,68 +2,66 @@ package processors
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/nilprocessor"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
 )
 
-type vmProcessor struct {
-	index     uint16
-	processor vmtypes.Processor
-}
-
 type ChainProcessors struct {
 	*sync.Mutex
-	processors map[uint16]*vmProcessor
+	processors []vmtypes.Processor
 }
 
-func New() *ChainProcessors {
+func New() (*ChainProcessors, error) {
 	ret := &ChainProcessors{
 		Mutex:      &sync.Mutex{},
-		processors: make(map[uint16]*vmProcessor),
+		processors: make([]vmtypes.Processor, 0, 20),
 	}
-	// get factory processor
-	proc, err := NewProcessorFromBinaryCode("builtinvm", nil)
+	index, err := ret.AddProcessor(nilprocessor.ProgramHash[:], "builtinvm")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	// factory processor always exist at index 0
-	ret.processors[0] = &vmProcessor{
-		index:     0,
-		processor: proc,
+	if index != 0 {
+		panic("assertion failed: index != 0")
 	}
-	return ret
+	return ret, nil
 }
 
-func (cps *ChainProcessors) AddProcessor(index uint16, programCode []byte, vmtype string) error {
+func (cps *ChainProcessors) AddProcessor(programCode []byte, vmtype string) (uint16, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	if _, ok := cps.processors[index]; ok {
-		return fmt.Errorf("smart contract processor with index %d already exists", index)
-	}
-	proc, err := NewProcessorFromBinaryCode(vmtype, programCode)
+	proc, err := NewProcessorFromBinary(vmtype, programCode)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	cps.processors[index] = &vmProcessor{
-		index:     index,
-		processor: proc,
-	}
-	return nil
+	cps.processors = append(cps.processors, proc)
+	return uint16(len(cps.processors) - 1), nil
 }
 
 func (cps *ChainProcessors) GetProcessor(index uint16) (vmtypes.Processor, bool) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	proc, ok := cps.processors[index]
-	return proc.processor, ok
+	if int(index) >= len(cps.processors) {
+		return nil, false
+	}
+	return cps.processors[index], true
+}
+
+func (cps *ChainProcessors) RemoveProcessor(index uint16) error {
+	cps.Lock()
+	defer cps.Unlock()
+	if int(index) >= len(cps.processors) {
+		return fmt.Errorf("wrong index")
+	}
+	cps.processors[index] = nilprocessor.GetProcessor()
+	return nil
 }
 
 func (cps *ChainProcessors) ExistsProcessor(index uint16) bool {
 	cps.Lock()
 	defer cps.Unlock()
 
-	_, ok := cps.processors[index]
-	return ok
+	return int(index) < len(cps.processors)
 }
