@@ -31,7 +31,7 @@ func New(vctx *vm.VMContext) vmtypes.Sandbox {
 		VMContext:         vctx,
 		saveTxBuilder:     vctx.TxBuilder.Clone(),
 		requestWrapper:    &requestWrapper{&vctx.RequestRef},
-		stateWrapper:      &stateWrapper{vctx.VirtualState, vctx.StateUpdate},
+		stateWrapper:      &stateWrapper{vctx.ContractID, vctx.VirtualState, vctx.StateUpdate},
 		contractCallStack: make([]uint16, 0),
 	}
 }
