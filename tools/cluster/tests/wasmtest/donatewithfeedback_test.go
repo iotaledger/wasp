@@ -143,10 +143,10 @@ func TestDwfDonateOnce(t *testing.T) {
 	}
 }
 
-func TestDwfDonateNTimes(t *testing.T) {
+func TestDwfDonate5Times(t *testing.T) {
 	const numDonations = 5
 
-	wasps := setup(t, "TestDwfDonateNTimes")
+	wasps := setup(t, "TestDwfDonate5Times")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
 	check(err, t)
