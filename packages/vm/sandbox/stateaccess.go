@@ -1,7 +1,6 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -10,9 +9,9 @@ import (
 )
 
 type stateWrapper struct {
-	contractID   coretypes.ContractID
-	virtualState codec.ImmutableCodec
-	stateUpdate  state.StateUpdate
+	contractIndex uint16
+	virtualState  codec.ImmutableCodec
+	stateUpdate   state.StateUpdate
 }
 
 func (s *stateWrapper) MustCodec() codec.MutableMustCodec {
@@ -20,7 +19,7 @@ func (s *stateWrapper) MustCodec() codec.MutableMustCodec {
 }
 
 func (s *stateWrapper) addContractSubPartition(key kv.Key) kv.Key {
-	return kv.Key(util.Uint16To2Bytes(s.contractID.Index())) + key
+	return kv.Key(util.Uint16To2Bytes(s.contractIndex)) + key
 }
 
 func (s *stateWrapper) Has(name kv.Key) (bool, error) {

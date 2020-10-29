@@ -18,9 +18,9 @@ func TestSetThenGet(t *testing.T) {
 	stateUpdate := state.NewStateUpdate(nil)
 
 	s := stateWrapper{
-		contractID:   coretypes.NewContractID(chainID, 2),
-		virtualState: virtualState.Variables().Codec(),
-		stateUpdate:  stateUpdate,
+		contractIndex: 2,
+		virtualState:  virtualState.Variables().Codec(),
+		stateUpdate:   stateUpdate,
 	}
 
 	// contract sets variable x
