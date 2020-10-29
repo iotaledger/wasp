@@ -15,6 +15,7 @@ import (
 type Sandbox interface {
 	// only for root contract
 	InstallProgram(vmtype string, programBinary []byte) (coretypes.Uint16, error)
+	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 	// general function
 	GetContractID() coretypes.ContractID
 	GetOwnerAddress() *address.Address
@@ -59,8 +60,10 @@ type RequestAccess interface {
 	// sender address (exactly 1)
 	SenderAddress() address.Address
 
-	// TODO Will be removed.
-	// Deprecated: should not be used by the wasmhost, The request data is passed to the call
+	// Deprecated:
+	// TODO method will be removed as DEPRECATED
+	// It is use only by yhe wasmhost. Should be refactored (removed),
+	// The request data is passed to the call
 	// as `params code.ImmutableCodec`, the VM should pass the context in calls
 	Args() codec.ImmutableCodec
 
@@ -83,20 +86,6 @@ type AccountAccess interface {
 	// send iotas to the smart contract owner
 	HarvestFees(amount int64) int64
 	HarvestFeesFromRequest(amount int64) bool
-}
-
-type Contracts interface {
-	NewContract(params dict.Dict) (Contract, bool)
-	GetContract(uint16) (Contract, bool)
-}
-
-type Contract interface {
-	Index() uint16
-	GetFunction(coretypes.EntryPointCode) (ContractFunction, bool)
-}
-
-type ContractFunction interface {
-	Call(params dict.Dict) (interface{}, bool)
 }
 
 type NewRequestParams struct {
