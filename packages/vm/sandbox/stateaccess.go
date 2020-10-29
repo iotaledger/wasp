@@ -11,7 +11,7 @@ import (
 
 type stateWrapper struct {
 	contractID   coretypes.ContractID
-	virtualState state.VirtualState
+	virtualState codec.ImmutableCodec
 	stateUpdate  state.StateUpdate
 }
 
@@ -29,7 +29,7 @@ func (s *stateWrapper) Has(name kv.Key) (bool, error) {
 	if mut != nil {
 		return mut.Value() != nil, nil
 	}
-	return s.virtualState.Variables().Has(name)
+	return s.virtualState.Has(name)
 }
 
 func (s *stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
@@ -38,7 +38,7 @@ func (s *stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) b
 	if done {
 		return nil
 	}
-	return s.virtualState.Variables().Iterate(prefix, func(key kv.Key, value []byte) bool {
+	return s.virtualState.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		_, ok := seen[key]
 		if ok {
 			return true
@@ -55,7 +55,7 @@ func (s *stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
 	if done {
 		return nil
 	}
-	return s.virtualState.Variables().IterateKeys(prefix, func(key kv.Key) bool {
+	return s.virtualState.IterateKeys(prefix, func(key kv.Key) bool {
 		_, ok := seen[key]
 		if ok {
 			return true
@@ -70,7 +70,7 @@ func (s *stateWrapper) Get(name kv.Key) ([]byte, error) {
 	if mut != nil {
 		return mut.Value(), nil
 	}
-	return s.virtualState.Variables().Get(name)
+	return s.virtualState.Get(name)
 }
 
 func (s *stateWrapper) Del(name kv.Key) {

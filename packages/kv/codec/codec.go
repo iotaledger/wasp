@@ -41,6 +41,8 @@ type ImmutableCodec interface {
 	GetAddress(key kv.Key) (*address.Address, bool, error)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool, error)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool, error)
+	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
+	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
 }
 
 // ImmutableMustCodec is an ImmutableCodec that automatically panics on error

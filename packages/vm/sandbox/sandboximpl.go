@@ -28,10 +28,14 @@ type sandbox struct {
 
 func New(vctx *vm.VMContext) vmtypes.Sandbox {
 	return &sandbox{
-		VMContext:         vctx,
-		saveTxBuilder:     vctx.TxBuilder.Clone(),
-		requestWrapper:    &requestWrapper{&vctx.RequestRef},
-		stateWrapper:      &stateWrapper{vctx.ContractID, vctx.VirtualState, vctx.StateUpdate},
+		VMContext:      vctx,
+		saveTxBuilder:  vctx.TxBuilder.Clone(),
+		requestWrapper: &requestWrapper{&vctx.RequestRef},
+		stateWrapper: &stateWrapper{
+			contractID:   vctx.ContractID,
+			virtualState: vctx.VirtualState.Variables().Codec(),
+			stateUpdate:  vctx.StateUpdate,
+		},
 		contractCallStack: make([]uint16, 0),
 	}
 }
