@@ -165,7 +165,7 @@ func placeBet(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 		return fmt.Errorf("placeBet: sum == 0: nothing to bet")
 	}
 	// check if there's a Color variable among args. If not, ignore the request
-	col, ok, _ := ctx.AccessRequest().Args().GetInt64(ReqVarColor)
+	col, ok, _ := params.GetInt64(ReqVarColor)
 	if !ok {
 		return fmt.Errorf("wrong request, no Color specified")
 	}

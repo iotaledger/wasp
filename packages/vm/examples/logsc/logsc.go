@@ -17,7 +17,7 @@ const (
 	RequestCodeAddLog = coretypes.EntryPointCode(0)
 )
 
-type logscEntryPoint func(ctx vmtypes.Sandbox)
+type logscEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec)
 
 type logscProcessor map[coretypes.EntryPointCode]logscEntryPoint
 
@@ -39,7 +39,7 @@ func (v logscProcessor) GetDescription() string {
 }
 
 func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	ep(ctx)
+	ep(ctx, params)
 	return nil, nil
 }
 
@@ -49,8 +49,8 @@ func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 
 const logArrayKey = kv.Key("log")
 
-func handleAddLogRequest(ctx vmtypes.Sandbox) {
-	msg, ok, _ := ctx.AccessRequest().Args().GetString("message")
+func handleAddLogRequest(ctx vmtypes.Sandbox, params codec.ImmutableCodec) {
+	msg, ok, _ := params.GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")
 		return

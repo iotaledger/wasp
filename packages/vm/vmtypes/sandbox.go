@@ -58,8 +58,12 @@ type RequestAccess interface {
 	Code() coretypes.EntryPointCode
 	// sender address (exactly 1)
 	SenderAddress() address.Address
-	// arguments
-	Args() codec.ImmutableCodec // TODO must return MustCodec
+
+	// TODO Will be removed.
+	// Deprecated: should not be used by the wasmhost, The request data is passed to the call
+	// as `params code.ImmutableCodec`, the VM should pass the context in calls
+	Args() codec.ImmutableCodec
+
 	// number of free minted tokens in the request transaction
 	// it is equal to total minted tokens minus number of requests
 	NumFreeMintedTokens() int64

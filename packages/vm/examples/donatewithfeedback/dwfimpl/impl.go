@@ -133,7 +133,7 @@ func withdraw(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	}
 	// take argument value coming with the request
 	bal := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
-	withdrawSum, amountGiven, err := ctx.AccessRequest().Args().GetInt64(donatewithfeedback.VarReqWithdrawSum)
+	withdrawSum, amountGiven, err := params.GetInt64(donatewithfeedback.VarReqWithdrawSum)
 	if err != nil {
 		// the error from GetInt64 means binary data sent as a value of the variable
 		// cannot be interpreted as int64
