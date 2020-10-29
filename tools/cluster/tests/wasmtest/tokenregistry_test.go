@@ -93,10 +93,10 @@ func TestTrMintSupply(t *testing.T) {
 	}
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
-		vmconst.VarNameOwnerAddress:      scOwnerAddr[:],
-		vmconst.VarNameProgramHash:       programHash[:],
+		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
+		vmconst.VarNameProgramHash:  programHash[:],
 		//tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
-		vmconst.VarNameDescription:       trDescription,
+		vmconst.VarNameDescription: trDescription,
 	}) {
 		t.Fail()
 	}
