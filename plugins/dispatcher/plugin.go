@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	_ "github.com/iotaledger/wasp/packages/chain/commiteeimpl" // activate init
+	_ "github.com/iotaledger/wasp/packages/chain/chainimpl" // activate init
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"

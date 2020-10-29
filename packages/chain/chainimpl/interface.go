@@ -1,4 +1,4 @@
-package commiteeimpl
+package chainimpl
 
 import (
 	"fmt"

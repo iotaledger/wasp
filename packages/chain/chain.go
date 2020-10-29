@@ -33,7 +33,7 @@ type Chain interface {
 	Dismiss()
 	IsDismissed() bool
 	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
-	//
+	// chain processors
 	Processors() *processors.ChainProcessors
 }
 
