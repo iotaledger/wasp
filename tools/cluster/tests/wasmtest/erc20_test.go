@@ -2,8 +2,9 @@ package wasmtest
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"testing"
@@ -14,9 +15,9 @@ const (
 	erc20_wasmPath    = "wasm/erc20"
 	erc20_description = "ERC-20, a PoC smart contract"
 
-	erc20_req_init_sc  = sctransaction.RequestCode(1 | sctransaction.RequestCodeProtected)
-	erc20_req_transfer = sctransaction.RequestCode(2)
-	erc20_req_approve  = sctransaction.RequestCode(3)
+	erc20_req_init_sc  = coretypes.EntryPointCode(1)
+	erc20_req_transfer = coretypes.EntryPointCode(2)
+	erc20_req_approve  = coretypes.EntryPointCode(3)
 
 	erc20_var_supply         = "supply"
 	erc20_var_target_address = "addr"
@@ -36,8 +37,9 @@ func TestDeploymentERC20(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
 	checkSuccess(err, t, "smart contract has been created and activated")
+	_ = scChain
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -75,19 +77,19 @@ func TestInitERC20Once(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	client := chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		scOwner.SigScheme(),
 		1*time.Minute,
 	)
 
 	supply := int64(1000000)
-	_, err = client.PostRequest(erc20_req_init_sc, nil, nil, map[string]interface{}{
+	_, err = client.PostRequest(0, erc20_req_init_sc, nil, nil, map[string]interface{}{
 		erc20_var_supply: supply,
 	})
 	checkSuccess(err, t, "posted initSC request")
@@ -129,19 +131,19 @@ func TestInitERC20Twice(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	client := chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		scOwner.SigScheme(),
 		1*time.Minute,
 	)
 
 	supply := int64(1000000)
-	_, err = client.PostRequest(erc20_req_init_sc, nil, nil, map[string]interface{}{
+	_, err = client.PostRequest(0, erc20_req_init_sc, nil, nil, map[string]interface{}{
 		erc20_var_supply: supply,
 	})
 	checkSuccess(err, t, "posted initSC request 1")
@@ -170,7 +172,7 @@ func TestInitERC20Twice(t *testing.T) {
 	}
 
 	// second time should not pass
-	_, err = client.PostRequest(erc20_req_init_sc, nil, nil, map[string]interface{}{
+	_, err = client.PostRequest(0, erc20_req_init_sc, nil, nil, map[string]interface{}{
 		erc20_var_supply: supply - 1000,
 	})
 
@@ -199,19 +201,19 @@ func TestTransferOk(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, "", erc20_description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	client := chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		scOwner.SigScheme(),
 		1*time.Minute,
 	)
 
 	supply := int64(1000000)
-	_, err = client.PostRequest(erc20_req_init_sc, nil, nil, map[string]interface{}{
+	_, err = client.PostRequest(0, erc20_req_init_sc, nil, nil, map[string]interface{}{
 		erc20_var_supply: supply,
 	})
 	checkSuccess(err, t, "posted initSC request")
@@ -239,7 +241,7 @@ func TestTransferOk(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.PostRequest(erc20_req_transfer, nil, nil, map[string]interface{}{
+	_, err = client.PostRequest(0, erc20_req_transfer, nil, nil, map[string]interface{}{
 		erc20_var_target_address: "fake_address",
 		erc20_var_amount:         1337,
 	})

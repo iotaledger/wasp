@@ -18,13 +18,17 @@ go test -buildmode=exe -run TestFr5xNothing %1
 pause
 go test -buildmode=exe -run TestFrPlaceBet %1
 pause
-go test -buildmode=exe -run TestFrPlace5BetsAndPlay %1
+go test -buildmode=exe -run TestFrPlace1BetAndWin %1
+pause
+go test -buildmode=exe -run TestFrPlace5BetsAndWin %1
 pause
 go test -buildmode=exe -run TestTrMintSupply %1
 pause
 go test -buildmode=exe -run TestDwfDeploy %1
 pause
-go test -buildmode=exe -run TestDwfDonateNTimes %1
+go test -buildmode=exe -run TestDwfDonateOnce %1
+pause
+go test -buildmode=exe -run TestDwfDonate5Times %1
 pause
 go test -buildmode=exe -run TestDwfDonateWithdrawAuthorised %1
 pause
