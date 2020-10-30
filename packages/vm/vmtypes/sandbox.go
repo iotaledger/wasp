@@ -59,14 +59,6 @@ type RequestAccess interface {
 	Code() coretypes.EntryPointCode
 	// sender address (exactly 1)
 	SenderAddress() address.Address
-
-	// Deprecated:
-	// TODO method will be removed as DEPRECATED
-	// It is use only by yhe wasmhost. Should be refactored (removed),
-	// The request data is passed to the call
-	// as `params code.ImmutableCodec`, the VM should pass the context in calls
-	Args() codec.ImmutableCodec
-
 	// number of free minted tokens in the request transaction
 	// it is equal to total minted tokens minus number of requests
 	NumFreeMintedTokens() int64

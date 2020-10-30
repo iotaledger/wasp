@@ -21,17 +21,22 @@ func NewNullObject(vm *wasmProcessor) WaspObject {
 	return &ModelObject{vm: vm, name: "null"}
 }
 
+func (o *ModelObject) InitVM(vm *wasmProcessor, keyId int32) {
+	o.vm = vm
+	o.keyId = keyId
+}
+
 func (o *ModelObject) error(format string, args ...interface{}) {
 	if o.keyId != 0 {
-		o.name = o.vm.GetKey(o.keyId)
+		o.name = string(o.vm.GetKey(o.keyId))
 		o.keyId = 0
 	}
 	o.vm.SetError(o.name + "." + fmt.Sprintf(format, args...))
 }
 
-func (o *ModelObject) InitVM(vm *wasmProcessor, keyId int32) {
-	o.vm = vm
-	o.keyId = keyId
+func (o *ModelObject) Exists(keyId int32) bool {
+	o.vm.LogText("IMPLEMENT " + o.name + ".Exists???")
+	return false
 }
 
 func (o *ModelObject) GetBytes(keyId int32) []byte {

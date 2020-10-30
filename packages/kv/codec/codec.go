@@ -195,6 +195,10 @@ func DecodeInt64(b []byte) (int64, error) {
 	return int64(util.Uint64From8Bytes(b)), nil
 }
 
+func EncodeInt64(value int64) []byte {
+	return util.Uint64To8Bytes(uint64(value))
+}
+
 func (c codec) GetInt64(key kv.Key) (int64, bool, error) {
 	b, err := c.kv.Get(key)
 	if err != nil || b == nil {

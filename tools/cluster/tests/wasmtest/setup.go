@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -95,19 +96,19 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	return nil
 }
 
-func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*address.Address, *balance.Color, error) {
+func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
 	var err error
 	if *useWasp || !wasmLoaded {
 		fmt.Println("Using Wasp built-in instead of Rust Wasm")
 		time.Sleep(time.Second)
 		programHash, err = hashing.HashValueFromBase58(scProgramHash)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	} else {
 		scProgramHash = programHash.String()
 	}
-	scAddr, scColor, err := apilib.CreateChain(apilib.CreateChainParams{
+	scChain, scAddr, scColor, err := apilib.CreateChain(apilib.CreateChainParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
@@ -120,17 +121,17 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		Prefix:                "[deploy " + scProgramHash + "]",
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	err = apilib.ActivateChain(apilib.ActivateChainParams{
-		ChainID:           []*address.Address{scAddr},
+		ChainID:           *scChain,
 		ApiHosts:          wasps.ApiHosts(),
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),
 		Timeout:           30 * time.Second,
 	})
-	return scAddr, scColor, err
+	return scChain, scAddr, scColor, err
 }
 
 func setup(t *testing.T, testName string) *cluster.Cluster {
