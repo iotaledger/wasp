@@ -287,6 +287,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) {
 	// calculating it modulo NumColors.
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
 	if testMode {
+		// in test mode always pick the same winning color
 		winningColor = 2
 	}
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
