@@ -2,13 +2,13 @@ package wasmtest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
@@ -32,7 +32,7 @@ func TestTrMintSupply(t *testing.T) {
 	err = requestFunds(wasps, minterAddr, "minter")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, trDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, trDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	if !wasps.VerifyAddressBalances(scAddr, 1, map[balance.Color]int64{
@@ -51,7 +51,7 @@ func TestTrMintSupply(t *testing.T) {
 	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		minter.SigScheme(),
 		15*time.Second,
 	))
@@ -66,7 +66,7 @@ func TestTrMintSupply(t *testing.T) {
 	for {
 		// the sleep 1 second is usually enough
 		time.Sleep(time.Second)
-		reqId := sctransaction.NewRequestId(tx1.ID(), 0)
+		reqId := coretypes.NewRequestID(tx1.ID(), 0)
 		r, err := wasps.WaspClient(0).RequestStatus(scAddr, &reqId)
 		check(err, t)
 		if r.IsProcessed {

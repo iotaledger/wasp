@@ -3,8 +3,8 @@ package wasmtest
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	frCodePlaceBet   = sctransaction.RequestCode(1)
-	frCodeLockBets   = sctransaction.RequestCode(2)
-	frCodePayWinners = sctransaction.RequestCode(3)
-	frCodePlayPeriod = sctransaction.RequestCode(4 | sctransaction.RequestCodeProtected)
-	frCodeNothing    = sctransaction.RequestCode(5)
+	frCodePlaceBet   = coretypes.EntryPointCode(1)
+	frCodeLockBets   = coretypes.EntryPointCode(2)
+	frCodePayWinners = coretypes.EntryPointCode(3)
+	frCodePlayPeriod = coretypes.EntryPointCode(4)
+	frCodeNothing    = coretypes.EntryPointCode(5)
 )
 
 const frWasmPath = "wasm/fairroulette"
@@ -51,11 +51,11 @@ func TestFrPlaceBet(t *testing.T) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, frDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, frDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		TargetContract: scAddr,
+		TargetContract: coretypes.NewContractID(*scChain, 0),
 		RequestCode:    frCodePlaceBet,
 		Vars: map[string]interface{}{
 			"color": 3,
@@ -114,11 +114,11 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, frDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, fairroulette.ProgramHash, frDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		TargetContract: scAddr,
+		TargetContract: coretypes.NewContractID(*scChain, 0),
 		RequestCode:    frCodePlayPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
@@ -131,7 +131,7 @@ func TestFrPlace5BetsAndPlay(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			TargetContract: scAddr,
+			TargetContract: coretypes.NewContractID(*scChain, 0),
 			RequestCode:    frCodePlaceBet,
 			Vars: map[string]interface{}{
 				"color": i + 1,
