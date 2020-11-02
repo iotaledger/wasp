@@ -209,7 +209,7 @@ func CreateRequestTransactionOld(client nodeclient.NodeClient, senderSigScheme s
 	return tx, nil
 }
 
-func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestBlock, error) {
+func requestBlockFromJson(reqBlkJson *RequestBlockJson) (*sctransaction.RequestSection, error) {
 	var err error
 	addr, err := address.FromBase58(reqBlkJson.Address)
 	if err != nil {

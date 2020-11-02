@@ -1,142 +1,105 @@
 package sandbox
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 type sandbox struct {
-	*vm.VMContext
-	saveTxBuilder     *txbuilder.Builder // for rollback
-	requestWrapper    *requestWrapper
-	stateWrapper      *stateWrapper
-	contractCallStack []uint16
+	vmctx *vmcontext.VMContext
 }
 
-func New(vctx *vm.VMContext) vmtypes.Sandbox {
+func init() {
+	vmcontext.NewSandbox = new
+}
+
+func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
 	return &sandbox{
-		VMContext:      vctx,
-		saveTxBuilder:  vctx.TxBuilder.Clone(),
-		requestWrapper: &requestWrapper{&vctx.RequestRef},
-		stateWrapper: &stateWrapper{
-			contractIndex: vctx.ContractID.Index(),
-			virtualState:  vctx.VirtualState.Variables().Codec(),
-			stateUpdate:   vctx.StateUpdate,
-		},
-		contractCallStack: make([]uint16, 0),
+		vmctx: vmctx,
 	}
 }
 
 // Sandbox interface
 
-func (vctx *sandbox) Panic(v interface{}) {
+func (s *sandbox) Panic(v interface{}) {
 	panic(v)
 }
 
-func (vctx *sandbox) Rollback() {
-	vctx.TxBuilder = vctx.saveTxBuilder
-	vctx.StateUpdate.Clear()
+func (s *sandbox) Rollback() {
+	s.vmctx.Rollback()
 }
 
-func (vctx *sandbox) GetContractID() coretypes.ContractID {
-	return vctx.ContractID
+func (s *sandbox) GetContractID() coretypes.ContractID {
+	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractIndex())
 }
 
-func (vctx *sandbox) GetOwnerAddress() *address.Address {
-	return &vctx.OwnerAddress
+func (s *sandbox) GetChainID() coretypes.ChainID {
+	return s.vmctx.ChainID()
 }
 
-func (vctx *sandbox) GetTimestamp() int64 {
-	return vctx.Timestamp
+func (s *sandbox) GetContractIndex() uint16 {
+	return s.vmctx.ContractIndex()
 }
 
-func (vctx *sandbox) GetEntropy() hashing.HashValue {
-	return vctx.VMContext.Entropy
+func (s *sandbox) GetOwnerAddress() *address.Address {
+	return s.vmctx.OwnerAddress()
 }
 
-func (vctx *sandbox) GetWaspLog() *logger.Logger {
-	return vctx.Log
+func (s *sandbox) GetTimestamp() int64 {
+	return s.vmctx.Timestamp()
 }
 
-func (vctx *sandbox) DumpAccount() string {
-	return vctx.TxBuilder.Dump()
+func (s *sandbox) GetEntropy() hashing.HashValue {
+	return s.vmctx.Entropy()
+}
+
+// deprecated
+func (s *sandbox) GetWaspLog() *logger.Logger {
+	return s.vmctx.Log()
+}
+
+func (s *sandbox) DumpAccount() string {
+	return s.vmctx.DumpAccount()
 }
 
 // request arguments
 
-func (vctx *sandbox) AccessRequest() vmtypes.RequestAccess {
-	return vctx.requestWrapper
+func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
+	return s
 }
 
-func (vctx *sandbox) AccessState() codec.MutableMustCodec {
-	return vctx.stateWrapper.MustCodec()
+func (s *sandbox) AccessState() codec.MutableMustCodec {
+	return codec.NewMustCodec(s)
 }
 
-func (vctx *sandbox) AccessSCAccount() vmtypes.AccountAccess {
-	return vctx
+func (s *sandbox) AccessSCAccount() vmtypes.AccountAccess {
+	return s.vmctx
 }
 
-func (vctx *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
-	if par.IncludeReward > 0 {
-		availableIotas := vctx.TxBuilder.GetInputBalance(balance.ColorIOTA)
-		if par.IncludeReward+1 > availableIotas {
-			return false
-		}
-		err := vctx.TxBuilder.MoveTokensToAddress((address.Address)(par.TargetContractID.ChainID()), balance.ColorIOTA, par.IncludeReward)
-		if err != nil {
-			return false
-		}
-	}
-	reqBlock := sctransaction.NewRequestBlock(vctx.mustCurrentContractIndex(), par.TargetContractID, par.EntryPoint)
-	reqBlock.WithTimelock(par.Timelock)
-	reqBlock.SetArgs(par.Params)
-
-	if err := vctx.TxBuilder.AddRequestBlock(reqBlock); err != nil {
-		return false
-	}
-	return true
+func (s *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
+	return s.vmctx.SendRequest(par)
 }
 
-func (vctx *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args dict.Dict) bool {
-	return vctx.SendRequest(vmtypes.NewRequestParams{
-		TargetContractID: vctx.ContractID,
-		EntryPoint:       reqCode,
-		Params:           args,
-		IncludeReward:    0,
-	})
+func (s *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args dict.Dict) bool {
+	return s.vmctx.SendRequestToSelf(reqCode, args)
 }
 
-func (vctx *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args dict.Dict, delaySec uint32) bool {
-	timelock := util.NanoSecToUnixSec(vctx.Timestamp) + delaySec
-
-	return vctx.SendRequest(vmtypes.NewRequestParams{
-		TargetContractID: vctx.ContractID,
-		EntryPoint:       entryPoint,
-		Params:           args,
-		Timelock:         timelock,
-		IncludeReward:    0,
-	})
+func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args dict.Dict, delaySec uint32) bool {
+	return s.vmctx.SendRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 
-func (vctx *sandbox) Publish(msg string) {
-	vctx.Log.Infof("VMMSG: %s '%s'", vctx.ProgramHash.String(), msg)
-	publisher.Publish("vmmsg", vctx.ProgramHash.String(), msg)
+func (s *sandbox) Publish(msg string) {
+	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.GetContractIndex(), msg)
+	s.vmctx.Publish(msg)
 }
 
-func (vctx *sandbox) Publishf(format string, args ...interface{}) {
-	vctx.Log.Infof("VMMSG: "+format, args...)
-	publisher.Publish("vmmsg", vctx.ProgramHash.String(), fmt.Sprintf(format, args...))
+func (s *sandbox) Publishf(format string, args ...interface{}) {
+	s.vmctx.Log().Infof("VMMSG: "+format, args...)
+	s.vmctx.Publishf(format, args...)
 }

@@ -2,82 +2,28 @@ package sandbox
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
-type stateWrapper struct {
-	contractIndex uint16
-	virtualState  codec.ImmutableCodec
-	stateUpdate   state.StateUpdate
+func (s *sandbox) Has(name kv.Key) (bool, error) {
+	return s.vmctx.Has(name)
 }
 
-func (s *stateWrapper) MustCodec() codec.MutableMustCodec {
-	return codec.NewMustCodec(s)
+func (s *sandbox) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	return s.vmctx.Iterate(prefix, f)
 }
 
-func (s *stateWrapper) addContractSubPartition(key kv.Key) kv.Key {
-	return kv.Key(util.Uint16To2Bytes(s.contractIndex)) + key
+func (s *sandbox) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	return s.vmctx.IterateKeys(prefix, f)
 }
 
-func (s *stateWrapper) Has(name kv.Key) (bool, error) {
-	name = s.addContractSubPartition(name)
-	mut := s.stateUpdate.Mutations().Latest(name)
-	if mut != nil {
-		return mut.Value() != nil, nil
-	}
-	return s.virtualState.Has(name)
+func (s *sandbox) Get(name kv.Key) ([]byte, error) {
+	return s.vmctx.Get(name)
 }
 
-func (s *stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	prefix = s.addContractSubPartition(prefix)
-	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, f)
-	if done {
-		return nil
-	}
-	return s.virtualState.Iterate(prefix, func(key kv.Key, value []byte) bool {
-		_, ok := seen[key]
-		if ok {
-			return true
-		}
-		return f(key, value)
-	})
+func (s *sandbox) Del(name kv.Key) {
+	s.vmctx.Del(name)
 }
 
-func (s *stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	prefix = s.addContractSubPartition(prefix)
-	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, func(key kv.Key, value []byte) bool {
-		return f(key)
-	})
-	if done {
-		return nil
-	}
-	return s.virtualState.IterateKeys(prefix, func(key kv.Key) bool {
-		_, ok := seen[key]
-		if ok {
-			return true
-		}
-		return f(key)
-	})
-}
-
-func (s *stateWrapper) Get(name kv.Key) ([]byte, error) {
-	name = s.addContractSubPartition(name)
-	mut := s.stateUpdate.Mutations().Latest(name)
-	if mut != nil {
-		return mut.Value(), nil
-	}
-	return s.virtualState.Get(name)
-}
-
-func (s *stateWrapper) Del(name kv.Key) {
-	name = s.addContractSubPartition(name)
-	s.stateUpdate.Mutations().Add(buffered.NewMutationDel(name))
-}
-
-func (s *stateWrapper) Set(name kv.Key, value []byte) {
-	name = s.addContractSubPartition(name)
-	s.stateUpdate.Mutations().Add(buffered.NewMutationSet(name, value))
+func (s *sandbox) Set(name kv.Key, value []byte) {
+	s.vmctx.Set(name, value)
 }

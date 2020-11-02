@@ -2,6 +2,7 @@ package runvm
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -36,87 +37,71 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 }
 
 // runTask runs batch of requests on VM
-func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
-	ctx.Log.Debugw("runTask IN",
-		"chainID", ctx.ChainID.String(),
-		"timestamp", ctx.Timestamp,
-		"state index", ctx.VirtualState.StateIndex(),
-		"num req", len(ctx.Requests),
-		"leader", ctx.LeaderPeerIndex,
+func runTask(task *vm.VMTask, txb *txbuilder.Builder) {
+	task.Log.Debugw("runTask IN",
+		"chainID", task.ChainID.String(),
+		"timestamp", task.Timestamp,
+		"state index", task.VirtualState.StateIndex(),
+		"num req", len(task.Requests),
+		"leader", task.LeaderPeerIndex,
 	)
 
 	// create VM context, including state block, move smart contract token and request tokens
-	vmctx, err := createVMContext(ctx, txb)
+	vmctx, err := vmcontext.NewVMContext(task, txb)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
+		task.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
 		return
 	}
-	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
-	for _, reqRef := range ctx.Requests {
+	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
+	timestamp := task.Timestamp
+	for _, reqRef := range task.Requests {
+		stateUpdate := vmctx.RunTheRequest(reqRef, timestamp)
 
-		vmctx.RequestRef = reqRef
-		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(vmctx.Timestamp)
-
-		runTheRequest(vmctx)
-
-		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
+		stateUpdates = append(stateUpdates, stateUpdate)
 		// update state
-		vmctx.VirtualState.ApplyStateUpdate(vmctx.StateUpdate)
-		if vmctx.Timestamp != 0 {
+		if timestamp != 0 {
 			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
-			vmctx.Timestamp += 1
+			timestamp += 1
 		}
-		// mutate entropy
-		vmctx.Entropy = *hashing.HashData(vmctx.Entropy[:])
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
-		ctx.OnFinish(fmt.Errorf("RunVM: no state updates were produced"))
+		task.OnFinish(fmt.Errorf("RunVM: no state updates were produced"))
 		return
 	}
 
-	// create batch from state updates.
-	ctx.ResultBlock, err = state.NewBlock(stateUpdates)
+	// create block from state updates.
+	task.ResultBlock, err = state.NewBlock(stateUpdates)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.NewBlock: %v", err))
+		task.OnFinish(fmt.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
-	ctx.ResultBlock.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
+	task.ResultBlock.WithBlockIndex(task.VirtualState.StateIndex() + 1)
 
 	// calculate resulting state hash
-	vsClone := ctx.VirtualState.Clone()
-	if err = vsClone.ApplyBatch(ctx.ResultBlock); err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
+	vsClone := task.VirtualState.Clone()
+	if err = vsClone.ApplyBatch(task.ResultBlock); err != nil {
+		task.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
-
-	// add state block
-	err = vmctx.TxBuilder.SetStateParams(ctx.VirtualState.StateIndex()+1, stateHash, vsClone.Timestamp())
-	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.SetStateParams: %v", err))
-		return
-	}
-	// create result transaction
-	ctx.ResultTransaction, err = vmctx.TxBuilder.Build(false)
-	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Build: %v", err))
-		return
-	}
-	// check semantic just in case
-	if _, err := ctx.ResultTransaction.Properties(); err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Properties: %v", err))
-		return
-	}
-
-	ctx.Log.Debugw("runTask OUT",
-		"result batch size", ctx.ResultBlock.Size(),
-		"result batch state index", ctx.ResultBlock.StateIndex(),
-		"result variable state hash", stateHash.String(),
-		"result essence hash", hashing.HashData(ctx.ResultTransaction.EssenceBytes()).String(),
-		"result tx finalTimestamp", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
+	task.ResultTransaction, err = vmctx.FinalizeTransaction(
+		task.VirtualState.StateIndex()+1,
+		stateHash,
+		vsClone.Timestamp(),
 	)
-	// call back
-	ctx.OnFinish(nil)
+	if err != nil {
+		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransaction: %v", err))
+		return
+	}
+
+	task.Log.Debugw("runTask OUT",
+		"result batch size", task.ResultBlock.Size(),
+		"result batch state index", task.ResultBlock.StateIndex(),
+		"result variable state hash", stateHash.String(),
+		"result essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
+		"result tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
+	)
+	task.OnFinish(nil)
 }

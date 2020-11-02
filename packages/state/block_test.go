@@ -30,12 +30,12 @@ func TestBatches(t *testing.T) {
 
 	batch1, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	batch1.WithStateIndex(2)
+	batch1.WithBlockIndex(2)
 	assert.Equal(t, uint16(2), batch1.Size())
 
 	batch2, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	batch2.WithStateIndex(2)
+	batch2.WithBlockIndex(2)
 	assert.Equal(t, uint16(2), batch2.Size())
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
@@ -59,7 +59,7 @@ func TestBatchMarshaling(t *testing.T) {
 	su1.Mutations().Add(buffered.NewMutationSet("k", []byte{2}))
 	batch1, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	batch1.WithStateIndex(2)
+	batch1.WithBlockIndex(2)
 
 	b, err := util.Bytes(batch1)
 	assert.NoError(t, err)

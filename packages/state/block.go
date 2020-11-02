@@ -84,7 +84,7 @@ func (b *block) Timestamp() int64 {
 	return b.stateUpdates[len(b.stateUpdates)-1].Timestamp()
 }
 
-func (b *block) WithStateIndex(stateIndex uint32) Block {
+func (b *block) WithBlockIndex(stateIndex uint32) Block {
 	b.stateIndex = stateIndex
 	return b
 }

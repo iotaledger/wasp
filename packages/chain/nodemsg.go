@@ -30,7 +30,7 @@ func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {
 	return &ret
 }
 
-func (reqMsg *RequestMsg) RequestBlock() *sctransaction.RequestBlock {
+func (reqMsg *RequestMsg) RequestBlock() *sctransaction.RequestSection {
 	return reqMsg.Requests()[reqMsg.Index]
 }
 

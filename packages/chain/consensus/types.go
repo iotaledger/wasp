@@ -34,7 +34,6 @@ type operator struct {
 	consensusStageDeadline time.Time
 	//
 	requestBalancesDeadline time.Time
-	processorReady          bool
 
 	// notifications with future currentState indices
 	notificationsBacklog []*chain.NotifyReqMsg

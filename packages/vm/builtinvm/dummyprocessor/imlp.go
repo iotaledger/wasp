@@ -1,5 +1,5 @@
 // implements nil processor
-package nilprocessor
+package dummyprocessor
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -7,21 +7,21 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type nilProcessorStruct struct{}
+type dummyProcessorStruct struct{}
 
 var (
-	processor   = &nilProcessorStruct{}
-	ProgramHash = hashing.NilHash
+	processor   = &dummyProcessorStruct{}
+	ProgramHash = hashing.AllFHash
 )
 
 func GetProcessor() vmtypes.Processor {
 	return processor
 }
 
-func (p *nilProcessorStruct) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (p *dummyProcessorStruct) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	return nil, false
 }
 
-func (p *nilProcessorStruct) GetDescription() string {
+func (p *dummyProcessorStruct) GetDescription() string {
 	return "Nil processor"
 }

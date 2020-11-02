@@ -18,12 +18,12 @@ import (
 type Transaction struct {
 	*valuetransaction.Transaction
 	stateBlock    *StateBlock
-	requestBlocks []*RequestBlock
+	requestBlocks []*RequestSection
 	properties    *Properties // cached properties. If nil, transaction is semantically validated and properties are calculated
 }
 
 // creates new sc transaction. It is immutable, i.e. tx hash is stable
-func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateBlock, requestBlocks []*RequestBlock) (*Transaction, error) {
+func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateBlock, requestBlocks []*RequestSection) (*Transaction, error) {
 	ret := &Transaction{
 		Transaction:   vtx,
 		stateBlock:    stateBlock,
@@ -84,7 +84,7 @@ func (tx *Transaction) MustState() *StateBlock {
 	return tx.stateBlock
 }
 
-func (tx *Transaction) Requests() []*RequestBlock {
+func (tx *Transaction) Requests() []*RequestSection {
 	return tx.requestBlocks
 }
 
@@ -157,9 +157,9 @@ func (tx *Transaction) readDataPayload(r io.Reader) error {
 			return err
 		}
 	}
-	reqBlks := make([]*RequestBlock, numRequests)
+	reqBlks := make([]*RequestSection, numRequests)
 	for i := range reqBlks {
-		reqBlks[i] = &RequestBlock{}
+		reqBlks[i] = &RequestSection{}
 		if err := reqBlks[i].Read(r); err != nil {
 			return err
 		}

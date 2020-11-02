@@ -34,7 +34,7 @@ type Chain interface {
 	IsDismissed() bool
 	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
 	// chain processors
-	Processors() *processors.ChainProcessors
+	Processors() *processors.ProcessorCache
 }
 
 type PeerStatus struct {
@@ -68,7 +68,6 @@ type StateManager interface {
 }
 
 type Operator interface {
-	EventProcessorReady(ProcessorIsReady)
 	EventStateTransitionMsg(*StateTransitionMsg)
 	EventBalancesMsg(BalancesMsg)
 	EventRequestMsg(*RequestMsg)

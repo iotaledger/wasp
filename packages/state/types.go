@@ -57,7 +57,7 @@ type StateUpdate interface {
 type Block interface {
 	ForEach(func(uint16, StateUpdate) bool)
 	StateIndex() uint32
-	WithStateIndex(uint32) Block
+	WithBlockIndex(uint32) Block
 	StateTransactionId() valuetransaction.ID
 	WithStateTransaction(valuetransaction.ID) Block
 	Timestamp() int64

@@ -14,6 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
+const VMType = "examplevm"
+
 var allExamples = map[string]vmtypes.Processor{
 	vmnil.ProgramHash:         vmnil.GetProcessor(),
 	logsc.ProgramHash:         logsc.GetProcessor(),

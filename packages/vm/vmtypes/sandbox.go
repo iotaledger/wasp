@@ -14,10 +14,13 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	// only for root contract
-	InstallProgram(vmtype string, programBinary []byte) (uint16, error)
+	InstallProgram(vmtype string, programBinary []byte, description string) (uint16, error)
 	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
-	// general function
+	// general functions
+	GetChainID() coretypes.ChainID
+	GetContractIndex() uint16 // current contract index, mutates with each call
 	GetContractID() coretypes.ContractID
+
 	GetOwnerAddress() *address.Address
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data

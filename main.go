@@ -4,8 +4,8 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
+	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/plugins/banner"
-	"github.com/iotaledger/wasp/plugins/builtinvm"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/config"
@@ -41,7 +41,6 @@ func main() {
 		publisher.Init(),
 		dashboard.Init(),
 		wasmtimevm.Init(),
-		builtinvm.Init(),
 	)
 
 	testPlugins := node.Plugins(

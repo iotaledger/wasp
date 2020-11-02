@@ -128,7 +128,7 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 		sm.syncedBatch = nil
 		return
 	}
-	batch.WithStateIndex(sm.syncedBatch.stateIndex).WithStateTransaction(sm.syncedBatch.stateTxId)
+	batch.WithBlockIndex(sm.syncedBatch.stateIndex).WithStateTransaction(sm.syncedBatch.stateTxId)
 
 	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
 

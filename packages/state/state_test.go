@@ -112,11 +112,11 @@ func TestApply2(t *testing.T) {
 
 	batch23, err := NewBlock([]StateUpdate{su2, su3})
 	assert.NoError(t, err)
-	batch23.WithStateIndex(1)
+	batch23.WithBlockIndex(1)
 
 	batch3, err := NewBlock([]StateUpdate{su3})
 	assert.NoError(t, err)
-	batch3.WithStateIndex(1)
+	batch3.WithBlockIndex(1)
 
 	vs1.ApplyStateUpdate(su1)
 	err = vs1.ApplyBatch(batch23)

@@ -7,18 +7,17 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io"
 )
 
-type factoryProcessor struct{}
+type rootProcessor struct{}
 
-type factoryEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+type rootEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 
 var (
-	processor   = &factoryProcessor{}
-	ProgramHash = hashing.AllFHash
+	processor   = &rootProcessor{}
+	ProgramHash = hashing.NilHash
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -26,26 +25,31 @@ func GetProcessor() vmtypes.Processor {
 }
 
 var (
-	entryPointInitialize  = coretypes.NewEntryPointCodeFromFunctionName("initialize")
-	entryPointNewContract = coretypes.NewEntryPointCodeFromFunctionName("newContract")
+	EntryPointInitialize   = coretypes.NewEntryPointCodeFromFunctionName("initialize")
+	EntryPointNewContract  = coretypes.NewEntryPointCodeFromFunctionName("deployContract")
+	EntryPointFindContract = coretypes.NewEntryPointCodeFromFunctionName("findContract")
+	EntryPointGetBinary    = coretypes.NewEntryPointCodeFromFunctionName("getBinary")
 )
 
-func (v *factoryProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v *rootProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	switch code {
-	case entryPointInitialize:
-		return (factoryEntryPoint)(initialize), true
+	case EntryPointInitialize:
+		return (rootEntryPoint)(initialize), true
 
-	case entryPointNewContract:
-		return (factoryEntryPoint)(newContract), true
+	case EntryPointNewContract:
+		return (rootEntryPoint)(deployContract), true
+
+	case EntryPointFindContract:
+		return (rootEntryPoint)(findContract), true
 	}
 	return nil, false
 }
 
-func (v *factoryProcessor) GetDescription() string {
+func (v *rootProcessor) GetDescription() string {
 	return "Factory processor"
 }
 
-func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	ret, err := ep(ctx, params)
 	if err != nil {
 		ctx.Publishf("error occured: '%v'", err)
@@ -53,25 +57,24 @@ func (ep factoryEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCode
 	return ret, err
 }
 
-func (ep factoryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (ep rootEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }
 
 const (
-	VarStateInitialized = "i"
-	VarChainID          = "c"
-	VarContractRegistry = "r"
+	VarStateInitialized   = "i"
+	VarChainID            = "c"
+	VarRegistryOfBinaries = "b"
+	VarContractRegistry   = "r"
 )
 
 const (
 	ParamVMType        = "vmtype"
 	ParamProgramBinary = "programBinary"
+	ParamDescription   = "description"
+	ParamIndex         = "index"
+	ParamHash          = "hash"
 )
-
-type contractProgram struct {
-	vmtype        string
-	programBinary []byte
-}
 
 func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.initialize.begin")
@@ -86,67 +89,84 @@ func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immutab
 	if !ok {
 		return nil, fmt.Errorf("root.initialize.fail: 'chainID' not found")
 	}
-	registry := state.GetMap(VarContractRegistry)
-	nextIndex := (uint16)(registry.Len())
+	contractRegistry := state.GetArray(VarContractRegistry)
 
-	if nextIndex != 0 {
+	if contractRegistry.Len() != 0 {
 		return nil, fmt.Errorf("root.initialize.fail: registry_not_empty")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
+
 	// at index 0 always this contract
-	registry.SetAt(util.Uint16To2Bytes(nextIndex), util.MustBytes(&contractProgram{
-		vmtype:        "builtin",
-		programBinary: ProgramHash[:],
-	}))
+	contractRegistry.Push(EncodeContractRecord(GetRootContractRecord()))
 	ctx.Publishf("root.initialize.success")
 	return nil, nil
 }
 
-func newContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	ctx.Publishf("root.newContract.begin")
+func deployContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	ctx.Publishf("root.deployContract.begin")
 
-	var err error
-	var ok bool
-	rec := &contractProgram{}
-	rec.vmtype, ok, err = params.GetString(ParamVMType)
+	vmtype, ok, err := params.GetString(ParamVMType)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, fmt.Errorf("VMType undefined")
 	}
-	rec.programBinary, err = params.Get(ParamProgramBinary)
+	programBinary, err := params.Get(ParamProgramBinary)
 	if err != nil {
 		return nil, err
 	}
-	contractIndex, err := ctx.InstallProgram(rec.vmtype, rec.programBinary)
+	if len(programBinary) == 0 {
+		return nil, fmt.Errorf("programBinary undefined")
+	}
+	description, ok, err := params.GetString(ParamDescription)
 	if err != nil {
 		return nil, err
 	}
-	registry := ctx.AccessState().GetMap(VarContractRegistry)
-	registry.SetAt(util.Uint16To2Bytes(contractIndex), util.MustBytes(rec))
-	return nil, nil
+	if !ok {
+		return nil, fmt.Errorf("description undefined")
+	}
+	contractIndex, err := ctx.InstallProgram(vmtype, programBinary, description)
+	ret := codec.NewCodec(dict.NewDict())
+	ret.SetInt64("index", int64(contractIndex))
+	return ret, nil
 }
 
-// serde
-func (p *contractProgram) Write(w io.Writer) error {
-	if err := util.WriteString16(w, p.vmtype); err != nil {
-		return err
+func findContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	ctx.Publishf("root.findContract.begin")
+
+	contractIndex, ok, err := params.GetInt64(ParamIndex)
+	if err != nil {
+		return nil, err
 	}
-	if err := util.WriteBytes32(w, p.programBinary); err != nil {
-		return err
+	if !ok {
+		return nil, fmt.Errorf("parameter 'index' undefined")
 	}
-	return nil
+	contractRegistry := ctx.AccessState().GetArray(VarContractRegistry)
+	if contractIndex >= int64(contractRegistry.Len()) {
+		return nil, fmt.Errorf("wrong index")
+	}
+	ret := codec.NewCodec(dict.NewDict())
+	ret.Set("data", contractRegistry.GetAt(uint16(contractIndex)))
+	return ret, nil
 }
 
-func (p *contractProgram) Read(r io.Reader) error {
-	var err error
-	if p.vmtype, err = util.ReadString16(r); err != nil {
-		return err
+func getBinary(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	ctx.Publishf("root.getBinary.begin")
+
+	deploymentHash, ok, err := params.GetHashValue(ParamHash)
+	if err != nil {
+		return nil, err
 	}
-	if p.programBinary, err = util.ReadBytes32(r); err != nil {
-		return err
+	if !ok {
+		return nil, fmt.Errorf("parameter 'hash' undefined")
 	}
-	return nil
+	contractRegistry := ctx.AccessState().GetMap(VarRegistryOfBinaries)
+	binary := contractRegistry.GetAt(deploymentHash[:])
+
+	ret := codec.NewCodec(dict.NewDict())
+	ret.Set("data", binary)
+	return ret, nil
+
 }

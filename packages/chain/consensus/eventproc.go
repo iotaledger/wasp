@@ -11,17 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-func (op *operator) EventProcessorReady(msg chain.ProcessorIsReady) {
-	if op.processorReady {
-		return
-	}
-	progHash, ok := op.getProgramHash()
-	op.processorReady = ok && msg.ProgramHash == progHash.String()
-	if op.processorReady {
-		op.log.Infof("User defined VM processor is ready. Program hash: %s", progHash)
-	}
-}
-
 // EventStateTransitionMsg is triggered by new currentState transition message sent by currentState manager
 func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
@@ -76,7 +65,7 @@ func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
 	}
 	//if reqMsg.Timelock() != 0 {
 	//	req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
-	//		reqMsg.RequestBlock().String(reqMsg.RequestID()), time.Now().Unix())
+	//		reqMsg.RequestSection().String(reqMsg.RequestID()), time.Now().Unix())
 	//}
 
 	op.takeAction()

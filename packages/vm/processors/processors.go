@@ -2,66 +2,107 @@ package processors
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/nilprocessor"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm"
+	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
 )
 
-type ChainProcessors struct {
+// ProcessorCache is an object maintained by each chain
+type ProcessorCache struct {
 	*sync.Mutex
-	processors []vmtypes.Processor
+	processors map[hashing.HashValue]vmtypes.Processor
 }
 
-func New() (*ChainProcessors, error) {
-	ret := &ChainProcessors{
+func MustNew() *ProcessorCache {
+	ret := &ProcessorCache{
 		Mutex:      &sync.Mutex{},
-		processors: make([]vmtypes.Processor, 0, 20),
+		processors: make(map[hashing.HashValue]vmtypes.Processor),
 	}
-	index, err := ret.AddProcessor(nilprocessor.ProgramHash[:], "builtinvm")
+	// default builtin processor has nil hash
+	_, err := ret.NewProcessor(hashing.NilHash[:], builtinvm.VMType)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	if index != 0 {
-		panic("assertion failed: index != 0")
-	}
-	return ret, nil
+	return ret
 }
 
-func (cps *ChainProcessors) AddProcessor(programCode []byte, vmtype string) (uint16, error) {
+// NewProcessor deploys new processor in the cache. Return error if it is already in the chache
+func (cps *ProcessorCache) NewProcessor(programCode []byte, vmtype string) (*hashing.HashValue, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	proc, err := NewProcessorFromBinary(vmtype, programCode)
-	if err != nil {
-		return 0, err
+	var proc vmtypes.Processor
+	var err error
+	var ok bool
+	var programHash hashing.HashValue
+
+	switch vmtype {
+	case builtinvm.VMType:
+		programHash, err = hashing.HashValueFromBytes(programCode)
+		if err != nil {
+			return nil, err
+		}
+		if cps.ExistsProcessor(&programHash) {
+			return nil, fmt.Errorf("processor already exists")
+		}
+		proc, err = builtinvm.GetProcessor(programHash)
+		if err != nil {
+			return nil, err
+		}
+
+	case examples.VMType:
+		programHash, err = hashing.HashValueFromBase58(string(programCode))
+		if err != nil {
+			return nil, err
+		}
+		if cps.ExistsProcessor(&programHash) {
+			return nil, fmt.Errorf("processor already exists")
+		}
+		if proc, ok = examples.GetExampleProcessor(programHash.String()); !ok {
+			return nil, fmt.Errorf("can't load example processor with hash %s", programHash.String())
+		}
+
+	default:
+		programHash = deploymentHash(programCode, vmtype)
+		if cps.ExistsProcessor(&programHash) {
+			return nil, fmt.Errorf("processor already exists")
+		}
+		proc, err = NewProcessorFromBinary(vmtype, programCode)
+		if err != nil {
+			return nil, err
+		}
 	}
-	cps.processors = append(cps.processors, proc)
-	return uint16(len(cps.processors) - 1), nil
+	cps.processors[programHash] = proc
+	return &programHash, nil
 }
 
-func (cps *ChainProcessors) GetProcessor(index uint16) (vmtypes.Processor, bool) {
+func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
+	_, ok := cps.processors[*h]
+	return ok
+}
+
+// GetProcessor returns processor from cache if exists
+func (cps *ProcessorCache) GetProcessor(deploymentHash *hashing.HashValue) (vmtypes.Processor, bool) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	if int(index) >= len(cps.processors) {
+	ret, ok := cps.processors[*deploymentHash]
+	if !ok {
 		return nil, false
 	}
-	return cps.processors[index], true
+	return ret, true
 }
 
-func (cps *ChainProcessors) RemoveProcessor(index uint16) error {
+// RemoveProcessor deletes processor from cache
+func (cps *ProcessorCache) RemoveProcessor(h *hashing.HashValue) {
 	cps.Lock()
 	defer cps.Unlock()
-	if int(index) >= len(cps.processors) {
-		return fmt.Errorf("wrong index")
-	}
-	cps.processors[index] = nilprocessor.GetProcessor()
-	return nil
+	delete(cps.processors, *h)
 }
 
-func (cps *ChainProcessors) ExistsProcessor(index uint16) bool {
-	cps.Lock()
-	defer cps.Unlock()
-
-	return int(index) < len(cps.processors)
+// deploymentHash helper function to calculate hash of the cache
+func deploymentHash(programCode []byte, vmtype string) hashing.HashValue {
+	return *hashing.HashData(programCode, []byte(vmtype))
 }

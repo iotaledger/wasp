@@ -19,7 +19,7 @@ import (
 // other wise we can use values in 'timelock' field of the request block
 // counting from 2020.01.01 Then it would extend until 2140 or so
 
-type RequestBlock struct {
+type RequestSection struct {
 	// sender contract index
 	// - if state block present, it is index of the sending contracts
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
@@ -43,9 +43,9 @@ type RequestRef struct {
 	Index uint16
 }
 
-// RequestBlock creates new request block
-func NewRequestBlock(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestBlock {
-	return &RequestBlock{
+// RequestSection creates new request block
+func NewRequestBlock(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
+	return &RequestSection{
 		senderContractIndex: senderContractIndex,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
@@ -54,11 +54,11 @@ func NewRequestBlock(senderContractIndex uint16, targetContract coretypes.Contra
 }
 
 // NewRequestBlockByWallet same as NewRequestBlock but assumes sender index is 0
-func NewRequestBlockByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestBlock {
+func NewRequestBlockByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
 	return NewRequestBlock(0, targetContract, entryPointCode)
 }
 
-func (req *RequestBlock) Clone() *RequestBlock {
+func (req *RequestSection) Clone() *RequestSection {
 	if req == nil {
 		return nil
 	}
@@ -67,44 +67,44 @@ func (req *RequestBlock) Clone() *RequestBlock {
 	return ret
 }
 
-func (req *RequestBlock) SenderContractIndex() uint16 {
+func (req *RequestSection) SenderContractIndex() uint16 {
 	return (uint16)(req.senderContractIndex)
 }
 
-func (req *RequestBlock) Target() coretypes.ContractID {
+func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestBlock) SetArgs(args dict.Dict) {
+func (req *RequestSection) SetArgs(args dict.Dict) {
 	if args != nil {
 		req.args = args.Clone()
 	}
 }
 
-func (req *RequestBlock) Args() codec.ImmutableCodec {
+func (req *RequestSection) Args() codec.ImmutableCodec {
 	return codec.NewCodec(req.args)
 }
 
-func (req *RequestBlock) EntryPointCode() coretypes.EntryPointCode {
+func (req *RequestSection) EntryPointCode() coretypes.EntryPointCode {
 	return req.entryPoint
 }
 
-func (req *RequestBlock) Timelock() uint32 {
+func (req *RequestSection) Timelock() uint32 {
 	return req.timelock
 }
 
-func (req *RequestBlock) WithTimelock(tl uint32) *RequestBlock {
+func (req *RequestSection) WithTimelock(tl uint32) *RequestSection {
 	req.timelock = tl
 	return req
 }
 
-func (req *RequestBlock) WithTimelockUntil(deadline time.Time) *RequestBlock {
+func (req *RequestSection) WithTimelockUntil(deadline time.Time) *RequestSection {
 	return req.WithTimelock(uint32(deadline.Unix()))
 }
 
 // encoding
 
-func (req *RequestBlock) Write(w io.Writer) error {
+func (req *RequestSection) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, req.senderContractIndex); err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (req *RequestBlock) Write(w io.Writer) error {
 	return nil
 }
 
-func (req *RequestBlock) Read(r io.Reader) error {
+func (req *RequestSection) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &req.senderContractIndex); err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (req *RequestBlock) Read(r io.Reader) error {
 
 // request ref
 
-func (ref *RequestRef) RequestBlock() *RequestBlock {
+func (ref *RequestRef) RequestSection() *RequestSection {
 	return ref.Tx.Requests()[ref.Index]
 }
 

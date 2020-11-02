@@ -16,7 +16,7 @@ import (
 type Builder struct {
 	*vtxbuilder.Builder
 	stateBlock    *sctransaction.StateBlock
-	requestBlocks []*sctransaction.RequestBlock
+	requestBlocks []*sctransaction.RequestSection
 }
 
 var (
@@ -30,7 +30,7 @@ func NewFromAddressBalances(scAddress *address.Address, addressBalances map[valu
 	}
 	return &Builder{
 		Builder:       vtxb,
-		requestBlocks: make([]*sctransaction.RequestBlock, 0),
+		requestBlocks: make([]*sctransaction.RequestSection, 0),
 	}, nil
 }
 
@@ -41,7 +41,7 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 	}
 	return &Builder{
 		Builder:       vtxb,
-		requestBlocks: make([]*sctransaction.RequestBlock, 0),
+		requestBlocks: make([]*sctransaction.RequestSection, 0),
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (txb *Builder) Clone() *Builder {
 	ret := &Builder{
 		Builder:       txb.Builder.Clone(),
 		stateBlock:    txb.stateBlock.Clone(),
-		requestBlocks: make([]*sctransaction.RequestBlock, len(txb.requestBlocks)),
+		requestBlocks: make([]*sctransaction.RequestSection, len(txb.requestBlocks)),
 	}
 	for i := range ret.requestBlocks {
 		ret.requestBlocks[i] = txb.requestBlocks[i].Clone()
@@ -123,13 +123,13 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashVal
 }
 
 // AddRequestBlock adds new request block to the builder. It automatically handles request token
-func (txb *Builder) AddRequestBlock(reqBlk *sctransaction.RequestBlock) error {
+func (txb *Builder) AddRequestBlock(reqBlk *sctransaction.RequestSection) error {
 	return txb.AddRequestBlockWithTransfer(reqBlk, nil)
 }
 
 // AddRequestBlockWithTransfer adds request block with the request
 // token and adds respective outputs for the colored transfers
-func (txb *Builder) AddRequestBlockWithTransfer(reqBlk *sctransaction.RequestBlock, transfer map[balance.Color]int64) error {
+func (txb *Builder) AddRequestBlockWithTransfer(reqBlk *sctransaction.RequestSection, transfer map[balance.Color]int64) error {
 	targetAddr := (address.Address)(reqBlk.Target().ChainID())
 	if err := txb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
 		return err

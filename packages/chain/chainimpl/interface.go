@@ -301,6 +301,6 @@ func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) ch
 	return chain.RequestProcessingStatusCompleted
 }
 
-func (c *committeeObj) Processors() *processors.ChainProcessors {
+func (c *committeeObj) Processors() *processors.ProcessorCache {
 	return c.procset
 }
