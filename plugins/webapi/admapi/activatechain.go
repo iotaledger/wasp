@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-func addSCEndpoints(adm *echo.Group) {
+func addChainEndpoints(adm *echo.Group) {
 	adm.POST("/"+client.ActivateChainRoute(":chainid"), handleActivateChain)
 	adm.POST("/"+client.DeactivateChainRoute(":chainid"), handleDeactivateChain)
 }
