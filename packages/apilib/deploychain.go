@@ -186,8 +186,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		ChainID:              chainid,
 		OwnerSignatureScheme: par.OwnerSigScheme,
 		AllInputs:            allOuts,
-		CoreContractBinary:   []byte(builtin.DummyBuiltinProgramHash),
-		VMType:               "builtin",
+		Description:          par.Description,
 	})
 	if err != nil {
 		fmt.Fprintf(textout, "creating bootup request.. FAILED: %v\n", err)

@@ -72,10 +72,6 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClien
 	if err != nil {
 		return nil, err
 	}
-	progHash, err := hashing.HashValueFromBase58(scdata.ProgramHash)
-	if err != nil {
-		return nil, err
-	}
 	allOuts, err := client.GetConfirmedAccountOutputs(scdata.OwnerAddress())
 	if err != nil {
 		return nil, err
@@ -84,7 +80,6 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClien
 		OriginAddress:        addr,
 		OwnerSignatureScheme: scdata.OwnerSigScheme(),
 		AllInputs:            allOuts,
-		ProgramHash:          progHash,
 	})
 	if err != nil {
 		return nil, err

@@ -6,9 +6,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -32,7 +35,8 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	// - take empty state
 	// - apply to it an empty batch
 	// - take the hash. Note: hash of the state do not depend on the address
-	originState := state.NewVirtualState(nil, &par.OriginAddress)
+	var dummyChainID coretypes.ChainID
+	originState := state.NewVirtualState(nil, &dummyChainID)
 	if err := originState.ApplyBatch(state.MustNewOriginBlock(nil)); err != nil {
 		return nil, err
 	}
@@ -51,10 +55,9 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 
 type NewBootupRequestTransactionParams struct {
 	ChainID              coretypes.ChainID
+	Description          string
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
-	CoreContractBinary   []byte
-	VMType               string
 }
 
 // NewBootupRequestTransaction is a first request to be sent to the uninitialized
@@ -67,11 +70,11 @@ func NewBootupRequestTransaction(par NewBootupRequestTransactionParams) (*sctran
 		return nil, err
 	}
 	bootupContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
-	bootupRequest := sctransaction.NewRequestBlock(bootupContractID, 0)
+	bootupRequest := sctransaction.NewRequestBlock(0, bootupContractID, root.EntryPointInitialize)
 	args := dict.NewDict()
 	c := codec.NewCodec(args)
 	c.SetChainID(vmconst.VarNameChainID, &par.ChainID)
-	c.Set(vmconst.VarNameProgramData, par.CoreContractBinary)
+	c.SetString(vmconst.VarNameDescription, par.Description)
 	bootupRequest.SetArgs(args)
 
 	if err := txb.AddRequestBlock(bootupRequest); err != nil {

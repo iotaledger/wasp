@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"io"
 	"io/ioutil"
 	"os"
@@ -753,9 +755,10 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 			panic("could not convert SC program hash")
 		}
 
-		expectedState := kv.FromGoMap(expectedState)
-		expectedState.Codec().SetAddress(vmconst.VarNameOwnerAddress, sc.OwnerAddress())
-		expectedState.Codec().SetHashValue(vmconst.VarNameProgramData, &scProgHash)
+		d := dict.FromGoMap(expectedState)
+		expectedState := codec.NewCodec(d)
+		expectedState.SetAddress(vmconst.VarNameOwnerAddress, sc.OwnerAddress())
+		expectedState.SetHashValue(vmconst.VarNameProgramData, &scProgHash)
 
 		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
 		fmt.Printf("      Actual: index %d\n%s\n", stateIndex, state)
@@ -765,7 +768,7 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 			return false
 		}
 
-		if util.GetHashValue(expectedState) != util.GetHashValue(state) {
+		if util.GetHashValue(d) != util.GetHashValue(state) {
 			fmt.Printf("   FAIL: variables mismatch\n")
 			return false
 		}
@@ -779,7 +782,9 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 		if !cluster.Config.Nodes[i].IsUp() {
 			continue
 		}
-		actual, err := cluster.WaspClient(i).DumpSCState(sc.SCAddress())
+		// TODO
+		contractID := coretypes.NewContractID((coretypes.ChainID)(*sc.SCAddress()), 0)
+		actual, err := cluster.WaspClient(i).DumpSCState(&contractID)
 		if client.IsNotFound(err) {
 			pass = false
 			fmt.Printf("   FAIL: state does not exist\n")
@@ -788,7 +793,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 		if err != nil {
 			panic(err)
 		}
-		if !f(host, actual.Index, kv.FromGoMap(actual.Variables)) {
+		if !f(host, actual.Index, dict.FromGoMap(actual.Variables)) {
 			pass = false
 		}
 	}
@@ -827,7 +832,8 @@ func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpect
 }
 
 func verifySCStateVariables2(host string, addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
-	actual, err := client.NewWaspClient(host).DumpSCState(addr)
+	contractID := coretypes.NewContractID((coretypes.ChainID)(*addr), 0)
+	actual, err := client.NewWaspClient(host).DumpSCState(&contractID)
 	if client.IsNotFound(err) {
 		fmt.Printf("              state does not exist: FAIL\n")
 		return false

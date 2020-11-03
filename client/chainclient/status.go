@@ -43,7 +43,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 	query.AddScalar(vmconst.VarNameMinimumReward)
 	addCustomQueries(query)
 
-	res, err := c.WaspClient.StateQuery(c.ChainID, query)
+	res, err := c.WaspClient.StateQuery(&c.ChainID, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,6 +51,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 	description, _ := res.Get(vmconst.VarNameDescription).MustString()
 	minReward, _ := res.Get(vmconst.VarNameMinimumReward).MustInt64()
 
+	addr := (address.Address)(c.ChainID)
 	return &SCStatus{
 		StateIndex: res.StateIndex,
 		Timestamp:  res.Timestamp.UTC(),
@@ -62,14 +63,15 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 		Description:   description,
 		OwnerAddress:  res.Get(vmconst.VarNameOwnerAddress).MustAddress(),
 		MinimumReward: minReward,
-		SCAddress:     c.ChainID,
+		SCAddress:     &addr,
 		Balance:       balance,
 		FetchedAt:     time.Now().UTC(),
 	}, res, nil
 }
 
 func (c *Client) FetchBalance() (map[balance.Color]int64, error) {
-	outs, err := c.NodeClient.GetConfirmedAccountOutputs(c.ChainID)
+	addr := (address.Address)(c.ChainID)
+	outs, err := c.NodeClient.GetConfirmedAccountOutputs(&addr)
 	if err != nil {
 		return nil, err
 	}

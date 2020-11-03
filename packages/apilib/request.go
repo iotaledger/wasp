@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
@@ -126,40 +128,42 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 }
 
 func convertArgs(vars map[string]interface{}) dict.Dict {
-	args := dict.NewDict()
-	codec := args.Codec()
+	ret := dict.NewDict()
+	args := codec.NewCodec(ret)
 	for k, v := range vars {
 		key := kv.Key(k)
 		switch vt := v.(type) {
 		case int:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case byte:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case int16:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case int32:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case int64:
-			codec.SetInt64(key, vt)
+			args.SetInt64(key, vt)
 		case uint16:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case uint32:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case uint64:
-			codec.SetInt64(key, int64(vt))
+			args.SetInt64(key, int64(vt))
 		case string:
-			codec.SetString(key, vt)
+			args.SetString(key, vt)
 		case []byte:
-			codec.Set(key, vt)
+			args.Set(key, vt)
 		case *hashing.HashValue:
-			args.Codec().SetHashValue(key, vt)
+			args.SetHashValue(key, vt)
 		case *address.Address:
-			args.Codec().Set(key, vt.Bytes())
+			args.Set(key, vt.Bytes())
 		case *balance.Color:
-			args.Codec().Set(key, vt.Bytes())
+			args.Set(key, vt.Bytes())
+		case *coretypes.ChainID:
+			args.SetChainID(key, vt)
 		default:
 			return nil
 		}
 	}
-	return args
+	return ret
 }

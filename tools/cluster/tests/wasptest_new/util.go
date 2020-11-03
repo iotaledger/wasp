@@ -53,24 +53,6 @@ func mintNewColoredTokens(wasps *cluster.Cluster, sigScheme signaturescheme.Sign
 	return &ret, nil
 }
 
-func MakeRequests(n int, constr func(int) *waspapi.RequestBlockJson) []*waspapi.RequestBlockJson {
-	ret := make([]*waspapi.RequestBlockJson, n)
-	for i := range ret {
-		ret[i] = constr(i)
-	}
-	return ret
-}
-
-func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []waspapi.RequestBlockParams) error {
-	for i := 0; i < n; i++ {
-		err := SendRequests(clu, sigScheme, reqs)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func SendSimpleRequest(
 	clu *cluster.Cluster,
 	sigScheme signaturescheme.SignatureScheme,
