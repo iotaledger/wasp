@@ -1,45 +1,11 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
-
-// context for one request
-type VMContext struct {
-	// same for the block
-	chainID            coretypes.ChainID
-	processors         *processors.ProcessorCache
-	ownerAddress       address.Address
-	rewardAddress      address.Address
-	minimumReward      int64
-	nodeRewardsEnabled bool
-	txBuilder          *txbuilder.Builder // mutated
-	saveTxBuilder      *txbuilder.Builder // for rollback
-	virtualState       state.VirtualState // mutated
-	log                *logger.Logger
-	// request context
-	entropy     hashing.HashValue // mutates with each request
-	reqRef      sctransaction.RequestRef
-	timestamp   int64
-	stateUpdate state.StateUpdate // mutated
-	callStack   []*callContext
-}
-
-type callContext struct {
-	contractIndex uint16
-	params        codec.ImmutableCodec
-	budget        map[balance.Color]int64
-}
 
 func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.ImmutableCodec, budget map[balance.Color]int64) error {
 	vmctx.callStack = append(vmctx.callStack, &callContext{
@@ -88,10 +54,6 @@ func (vmctx *VMContext) handleNodeRewards() bool {
 		proceed = false
 	}
 	return proceed
-}
-
-func (vmctx *VMContext) getEntryPoint() (vmtypes.EntryPoint, bool) {
-	return nil, false
 }
 
 func (vmctx *VMContext) FinalizeTransaction(blockIndex uint32, stateHash *hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {

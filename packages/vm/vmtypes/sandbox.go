@@ -13,6 +13,7 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
+	Params() codec.ImmutableCodec // TODO
 	// only for root contract
 	InstallProgram(vmtype string, programBinary []byte, description string) (uint16, error)
 	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error)

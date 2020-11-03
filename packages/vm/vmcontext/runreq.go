@@ -26,10 +26,6 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 	if !vmctx.handleNodeRewards() {
 		return vmctx.stateUpdate
 	}
-	entryPoint, ok := vmctx.getEntryPoint()
-	if !ok {
-		return vmctx.stateUpdate
-	}
 
 	func() {
 		defer func() {
@@ -42,14 +38,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 				vmctx.Rollback()
 			}
 		}()
-		// TODO remove param passing
-		_, err := entryPoint.Call(NewSandbox(vmctx), nil)
-		if err != nil {
-			vmctx.log.Warnw("call to entry point",
-				"err", err,
-				"reqId", vmctx.reqRef.RequestID().Short(),
-			)
-		}
+		vmctx.callFromRequest()
 	}()
 	return vmctx.stateUpdate
 }
@@ -62,8 +51,6 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
-	// TODO budget
-	vmctx.PushCallContext(vmctx.reqRef.RequestSection().Target().Index(), vmctx.reqRef.RequestSection().Args(), nil)
 }
 
 func (vmctx *VMContext) Rollback() {

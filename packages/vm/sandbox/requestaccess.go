@@ -14,10 +14,6 @@ func (s *sandbox) Code() coretypes.EntryPointCode {
 	return s.vmctx.Request().RequestSection().EntryPointCode()
 }
 
-func (s *sandbox) Args() codec.ImmutableCodec {
-	return s.vmctx.Request().RequestSection().Args()
-}
-
 // addresses of request transaction inputs
 func (s *sandbox) SenderAddress() address.Address {
 	return *s.vmctx.Request().Tx.MustProperties().Sender()
@@ -26,4 +22,8 @@ func (s *sandbox) SenderAddress() address.Address {
 //MintedBalances return total minted tokens minus number of
 func (s *sandbox) NumFreeMintedTokens() int64 {
 	return s.vmctx.Request().Tx.MustProperties().NumFreeMintedTokens()
+}
+
+func (s *sandbox) Params() codec.ImmutableCodec {
+	return s.vmctx.Params()
 }

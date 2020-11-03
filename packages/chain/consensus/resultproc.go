@@ -33,6 +33,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		progHash = *ph
 	}
 	ctx := &vm.VMTask{
+		Processors:      op.chain.Processors(),
 		LeaderPeerIndex: par.leaderPeerIndex,
 		ProgramHash:     progHash,
 		ChainID:         *op.chain.ID(),

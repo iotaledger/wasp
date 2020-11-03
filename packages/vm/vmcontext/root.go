@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -37,10 +36,6 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, des
 	}))
 
 	return contractRegistry.Len() - 1, nil
-}
-
-func (vmctx *VMContext) callRoot(entryPointCode coretypes.EntryPointCode, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	return vmctx.CallContract(0, entryPointCode, params, nil)
 }
 
 func (vmctx *VMContext) findContract(contractIndex uint16) (*root.ContractRecord, bool) {
@@ -101,18 +96,6 @@ func (vmctx *VMContext) getProcessor(rec *root.ContractRecord) (vmtypes.Processo
 	return nil, fmt.Errorf("internal error: can't get the deployed processor")
 }
 
-func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.EntryPointCode, params codec.ImmutableCodec, budget map[balance.Color]int64) (codec.ImmutableCodec, error) {
-	rec, ok := vmctx.findContract(contractIndex)
-	if !ok {
-		return nil, fmt.Errorf("failed to find contract with index %d", contractIndex)
-	}
-	proc, err := vmctx.getProcessor(rec)
-	if err != nil {
-		return nil, err
-	}
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
-	}
-	return ep.Call(NewSandbox(vmctx), params)
+func (vmctx *VMContext) callRoot(entryPointCode coretypes.EntryPointCode, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	return vmctx.CallContract(0, entryPointCode, params, nil)
 }

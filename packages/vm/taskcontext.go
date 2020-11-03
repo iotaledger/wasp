@@ -11,10 +11,12 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // task context (for batch of requests)
 type VMTask struct {
+	Processors *processors.ProcessorCache
 	// inputs (immutable)
 	LeaderPeerIndex uint16
 	ProgramHash     hashing.HashValue
