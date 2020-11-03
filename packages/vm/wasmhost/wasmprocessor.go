@@ -62,11 +62,11 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	return vm, nil
 }
 
-func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	vm.ctx = ctx
-	vm.params = params
+	vm.params = ctx.Params()
 
-	testMode, _ := params.Has("testMode")
+	testMode, _ := vm.params.Has("testMode")
 	if testMode {
 		vm.LogText("TEST MODE")
 		TestMode = true

@@ -35,22 +35,22 @@ import (
 // implement Processor and EntryPoint interfaces
 type fairRouletteProcessor map[coretypes.EntryPointCode]fairRouletteEntryPoint
 
-type fairRouletteEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error
+type fairRouletteEntryPoint func(ctx vmtypes.Sandbox) error
 
 // ID of the smart contract program
 const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 
 // constants for request codes
-const (
+var (
 	// request to place the bet
-	RequestPlaceBet = coretypes.EntryPointCode(1)
+	RequestPlaceBet = coretypes.NewEntryPointCodeFromFunctionName("placeBet")
 	// request to lock the bets
-	RequestLockBets = coretypes.EntryPointCode(2)
+	RequestLockBets = coretypes.NewEntryPointCodeFromFunctionName("lockBets")
 	// request to play and distribute
-	RequestPlayAndDistribute = coretypes.EntryPointCode(3)
+	RequestPlayAndDistribute = coretypes.NewEntryPointCodeFromFunctionName("playAndDistribute")
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
-	RequestSetPlayPeriod = coretypes.EntryPointCode(4)
+	RequestSetPlayPeriod = coretypes.NewEntryPointCodeFromFunctionName("setPlayPeriod")
 )
 
 // the processor is a map of entry points
@@ -126,8 +126,8 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 	return f
 }
 
-func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	err := f(ctx, params)
+func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	err := f(ctx)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
@@ -135,8 +135,9 @@ func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox, params codec.Immutable
 }
 
 // the request places bet into the smart contract
-func placeBet(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func placeBet(ctx vmtypes.Sandbox) error {
 	ctx.Publish("placeBet")
+	params := ctx.Params()
 
 	state := ctx.AccessState()
 
@@ -216,8 +217,10 @@ func placeBet(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 }
 
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
-func setPlayPeriod(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func setPlayPeriod(ctx vmtypes.Sandbox) error {
 	ctx.Publish("setPlayPeriod")
+	params := ctx.Params()
+
 	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized
 		return fmt.Errorf("setPlayPeriod: not authorized")
@@ -237,7 +240,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
-func lockBets(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Publish("lockBets")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
@@ -264,7 +267,7 @@ func lockBets(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 }
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
-func playAndDistribute(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Publish("playAndDistribute")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())

@@ -13,7 +13,7 @@ import (
 
 type rootProcessor struct{}
 
-type rootEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+type rootEntryPoint func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 
 var (
 	processor   = &rootProcessor{}
@@ -41,6 +41,10 @@ func (v *rootProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.En
 
 	case EntryPointFindContract:
 		return (rootEntryPoint)(findContract), true
+
+	case EntryPointGetBinary:
+		return (rootEntryPoint)(getBinary), true
+
 	}
 	return nil, false
 }
@@ -49,8 +53,8 @@ func (v *rootProcessor) GetDescription() string {
 	return "Factory processor"
 }
 
-func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	ret, err := ep(ctx, params)
+func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ret, err := ep(ctx)
 	if err != nil {
 		ctx.Publishf("error occured: '%v'", err)
 	}
@@ -76,7 +80,8 @@ const (
 	ParamHash          = "hash"
 )
 
-func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	params := ctx.Params()
 	ctx.Publishf("root.initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
@@ -103,8 +108,9 @@ func initialize(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immutab
 	return nil, nil
 }
 
-func deployContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.deployContract.begin")
+	params := ctx.Params()
 
 	vmtype, ok, err := params.GetString(ParamVMType)
 	if err != nil {
@@ -133,8 +139,9 @@ func deployContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Imm
 	return ret, nil
 }
 
-func findContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func findContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.findContract.begin")
+	params := ctx.Params()
 
 	contractIndex, ok, err := params.GetInt64(ParamIndex)
 	if err != nil {
@@ -152,8 +159,9 @@ func findContract(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immut
 	return ret, nil
 }
 
-func getBinary(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func getBinary(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.getBinary.begin")
+	params := ctx.Params()
 
 	deploymentHash, ok, err := params.GetHashValue(ParamHash)
 	if err != nil {
@@ -168,5 +176,4 @@ func getBinary(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.Immutabl
 	ret := codec.NewCodec(dict.NewDict())
 	ret.Set("data", binary)
 	return ret, nil
-
 }

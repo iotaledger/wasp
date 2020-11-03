@@ -17,7 +17,7 @@ func GetProcessor() vmtypes.Processor {
 	return nilProcessor{}
 }
 
-func (v nilProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v nilProcessor) GetEntryPoint(_ coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	return v, true
 }
 
@@ -26,7 +26,7 @@ func (v nilProcessor) GetDescription() string {
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.GetWaspLog().Debugw("run nilProcessor 7",
 		"request code", ctx.AccessRequest().Code(),

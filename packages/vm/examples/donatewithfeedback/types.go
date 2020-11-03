@@ -12,11 +12,12 @@ import (
 )
 
 // main external constants
+var (
+	RequestDonate   = coretypes.NewEntryPointCodeFromFunctionName("donate")
+	RequestWithdraw = coretypes.NewEntryPointCodeFromFunctionName("withdraw")
+)
+
 const (
-	// code of the 'donate' request
-	RequestDonate = coretypes.EntryPointCode(1)
-	// code of the 'withdraw' request. It is protected (checks authorisation at the protocol level)
-	RequestWithdraw = coretypes.EntryPointCode(2)
 
 	// state vars
 	// name of the feedback message log

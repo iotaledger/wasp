@@ -14,22 +14,24 @@ const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
 	Description = "Increment, a PoC smart contract"
 
-	RequestInc                     = coretypes.EntryPointCode(1)
-	RequestIncAndRepeatOnceAfter5s = coretypes.EntryPointCode(2)
-	RequestIncAndRepeatMany        = coretypes.EntryPointCode(3)
-
 	ArgNumRepeats = "numRepeats"
 	VarNumRepeats = "numRepeats"
 	VarCounter    = "counter"
 )
 
+var (
+	RequestIncCounter              = coretypes.NewEntryPointCodeFromFunctionName("incCounter")
+	RequestIncAndRepeatOnceAfter5s = coretypes.NewEntryPointCodeFromFunctionName("incAndRepeatOnceAfter5s")
+	RequestIncAndRepeatMany        = coretypes.NewEntryPointCodeFromFunctionName("incAndRepeatMany")
+)
+
 var entryPoints = incCounterProcessor{
-	RequestInc:                     incCounter,
+	RequestIncCounter:              incCounter,
 	RequestIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
 	RequestIncAndRepeatMany:        incCounterAndRepeatMany,
 }
 
-type incEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error
+type incEntryPoint func(ctx vmtypes.Sandbox) error
 
 func GetProcessor() vmtypes.Processor {
 	return entryPoints
@@ -51,15 +53,15 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }
 
-func (ep incEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	err := ep(ctx, params)
+func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	err := ep(ctx)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
 	return nil, err
 }
 
-func incCounter(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error {
+func incCounter(ctx vmtypes.Sandbox) error {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
@@ -67,7 +69,7 @@ func incCounter(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error {
 	return nil
 }
 
-func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error {
+func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 
@@ -75,7 +77,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error 
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
 
-		if ctx.SendRequestToSelfWithDelay(RequestInc, nil, 5) {
+		if ctx.SendRequestToSelfWithDelay(RequestIncCounter, nil, 5) {
 			ctx.Publish("SendRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
 			ctx.Publish("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
@@ -84,8 +86,9 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox, _ codec.ImmutableCodec) error 
 	return nil
 }
 
-func incCounterAndRepeatMany(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 	state := ctx.AccessState()
+	params := ctx.Params()
 
 	val, _ := state.GetInt64(VarCounter)
 	state.SetInt64(VarCounter, val+1)

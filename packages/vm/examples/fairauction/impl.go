@@ -27,13 +27,13 @@ const Description = "FairAuction, a PoC smart contract"
 
 type fairAuctionProcessor map[coretypes.EntryPointCode]fairAuctionEntryPoint
 
-type fairAuctionEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error
+type fairAuctionEntryPoint func(ctx vmtypes.Sandbox) error
 
-const (
-	RequestStartAuction    = coretypes.EntryPointCode(1)
-	RequestFinalizeAuction = coretypes.EntryPointCode(2)
-	RequestPlaceBid        = coretypes.EntryPointCode(3)
-	RequestSetOwnerMargin  = coretypes.EntryPointCode(4)
+var (
+	RequestStartAuction    = coretypes.NewEntryPointCodeFromFunctionName("startAuction")
+	RequestFinalizeAuction = coretypes.NewEntryPointCodeFromFunctionName("finalizeAuction")
+	RequestPlaceBid        = coretypes.NewEntryPointCodeFromFunctionName("placeBid")
+	RequestSetOwnerMargin  = coretypes.NewEntryPointCodeFromFunctionName("setOwnerMargin")
 )
 
 // the processor is a map of entry points
@@ -98,8 +98,8 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmty
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	err := ep(ctx, params)
+func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	err := ep(ctx)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
@@ -191,8 +191,9 @@ func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 // Request transaction must contain at least number of iotas >= of current owner margin from the minimum bid
 // (not including node reward with request token)
 // Tokens for sale must be included into the request transaction
-func startAuction(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func startAuction(ctx vmtypes.Sandbox) error {
 	ctx.Publish("startAuction begin")
+	params := ctx.Params()
 
 	sender := ctx.AccessRequest().SenderAddress()
 	account := ctx.AccessSCAccount()
@@ -351,9 +352,9 @@ func startAuction(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 // a rise of the bid and are added to the total
 // Arguments:
 // - VarReqAuctionColor: color of the tokens for sale
-func placeBid(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func placeBid(ctx vmtypes.Sandbox) error {
 	ctx.Publish("placeBid: begin")
-
+	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
 	// it also means several bids can't be placed in the same transaction <-- TODO generic solution for it
 	bidAmount := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
@@ -442,8 +443,9 @@ func placeBid(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 // not by the smart contract instance itself
 // Arguments:
 // - VarReqAuctionColor: color of the auction
-func finalizeAuction(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Publish("finalizeAuction begin")
+	params := ctx.Params()
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
 	if ctx.AccessRequest().SenderAddress() != scAddr {
@@ -587,8 +589,9 @@ func finalizeAuction(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 // setOwnerMargin is a request to set the service fee to place a bid
 // Arguments:
 // - VarReqOwnerMargin: the margin value in promilles
-func setOwnerMargin(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	ctx.Publish("setOwnerMargin: begin")
+	params := ctx.Params()
 
 	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized

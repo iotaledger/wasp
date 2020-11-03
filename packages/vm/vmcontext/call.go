@@ -20,12 +20,13 @@ func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Entr
 	if !ok {
 		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
 	}
+
 	if err := vmctx.PushCallContext(contractIndex, params, budget); err != nil {
 		return nil, err
 	}
 	defer vmctx.PopCallContext()
 
-	return ep.Call(NewSandbox(vmctx), params)
+	return ep.Call(NewSandbox(vmctx))
 }
 
 func (vmctx *VMContext) callFromRequest() {

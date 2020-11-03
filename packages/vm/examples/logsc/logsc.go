@@ -13,11 +13,11 @@ import (
 
 const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
-const (
-	RequestCodeAddLog = coretypes.EntryPointCode(0)
+var (
+	RequestCodeAddLog = coretypes.NewEntryPointCodeFromFunctionName("codeAddLog")
 )
 
-type logscEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec)
+type logscEntryPoint func(ctx vmtypes.Sandbox)
 
 type logscProcessor map[coretypes.EntryPointCode]logscEntryPoint
 
@@ -38,8 +38,8 @@ func (v logscProcessor) GetDescription() string {
 	return "LogSc hard coded smart contract processor"
 }
 
-func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	ep(ctx, params)
+func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ep(ctx)
 	return nil, nil
 }
 
@@ -49,7 +49,8 @@ func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 
 const logArrayKey = kv.Key("log")
 
-func handleAddLogRequest(ctx vmtypes.Sandbox, params codec.ImmutableCodec) {
+func handleAddLogRequest(ctx vmtypes.Sandbox) {
+	params := ctx.Params()
 	msg, ok, _ := params.GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")

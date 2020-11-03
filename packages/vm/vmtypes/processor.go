@@ -18,5 +18,5 @@ type Processor interface {
 // the call from another contract can have any dict.Dict
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
-	Call(ctx Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+	Call(ctx Sandbox) (codec.ImmutableCodec, error)
 }

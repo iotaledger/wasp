@@ -18,7 +18,7 @@ func GetProcessor() vmtypes.Processor {
 	return processor
 }
 
-func (p *dummyProcessorStruct) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (p *dummyProcessorStruct) GetEntryPoint(_ coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
 	return nil, false
 }
 

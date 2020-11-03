@@ -19,10 +19,13 @@ import (
 const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
+var (
+	RequestMintSupply        = coretypes.NewEntryPointCodeFromFunctionName("mintSupply")
+	RequestUpdateMetadata    = coretypes.NewEntryPointCodeFromFunctionName("updateMetadata")
+	RequestTransferOwnership = coretypes.NewEntryPointCodeFromFunctionName("transferOwnership")
+)
+
 const (
-	RequestMintSupply        = coretypes.EntryPointCode(1)
-	RequestUpdateMetadata    = coretypes.EntryPointCode(2)
-	RequestTransferOwnership = coretypes.EntryPointCode(3)
 
 	// state vars
 	VarStateTheRegistry = "tr"
@@ -37,7 +40,7 @@ const (
 
 type tokenRegistryProcessor map[coretypes.EntryPointCode]tokenRegistryEntryPoint
 
-type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error
+type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox) error
 
 // the processor is a map of entry points
 var entryPoints = tokenRegistryProcessor{
@@ -72,8 +75,8 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	err := ep(ctx, params)
+func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	err := ep(ctx)
 	if err != nil {
 		ctx.Publishf("error %v", err)
 	}
@@ -88,8 +91,9 @@ func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 const maxDescription = 150
 
 // mintSupply implements 'mint supply' request
-func mintSupply(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func mintSupply(ctx vmtypes.Sandbox) error {
 	ctx.Publish("TokenRegistry: mintSupply")
+	params := ctx.Params()
 
 	reqId := ctx.AccessRequest().ID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
@@ -157,12 +161,12 @@ func mintSupply(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
 	return nil
 }
 
-func updateMetadata(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func updateMetadata(ctx vmtypes.Sandbox) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: updateMetadata not implemented")
 }
 
-func transferOwnership(ctx vmtypes.Sandbox, params codec.ImmutableCodec) error {
+func transferOwnership(ctx vmtypes.Sandbox) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: transferOwnership not implemented")
 }
