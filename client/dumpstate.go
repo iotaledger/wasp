@@ -18,7 +18,7 @@ func DumpSCStateRoute(scid string) string {
 
 func (c *WaspClient) DumpSCState(scid *coretypes.ContractID) (*SCStateDump, error) {
 	res := &SCStateDump{}
-	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DumpSCStateRoute(scid.String()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DumpSCStateRoute(scid.Base58()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil

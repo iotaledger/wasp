@@ -18,7 +18,7 @@ func addStateEndpoints(adm *echo.Group) {
 func handleDumpSCState(c echo.Context) error {
 	scid, err := coretypes.NewContractIDFromBase58(c.Param("scid"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("scAddr")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("scid")))
 	}
 
 	chainID := scid.ChainID()

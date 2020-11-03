@@ -86,15 +86,14 @@ func (scdata *SmartContractFinalConfig) CreateOrigin(client nodeclient.NodeClien
 	}
 	fmt.Printf("[cluster] created origin data: addr : %s descr: %s program hash: %s\n",
 		addr.String(), scdata.Description, scdata.ProgramHash)
-	scdata.originTx = origTx
 	return origTx, nil
 }
 
 func (scdata *SmartContractFinalConfig) GetColor() balance.Color {
-	if scdata.originTx == nil {
-		panic("origin trabsaction hasn't been created yet")
+	if scdata.color == nil {
+		panic("origin transaction hasn't been created yet")
 	}
-	return (balance.Color)(scdata.originTx.ID())
+	return *scdata.color
 }
 
 func (scdata *SmartContractFinalConfig) GetProgramHash() *hashing.HashValue {

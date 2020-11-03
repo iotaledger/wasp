@@ -129,6 +129,9 @@ func TestCreateChain(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[0]
 
+	err = wasps.NodeClient.RequestFunds(sc.OwnerAddress())
+	check(err, t)
+
 	_, _, _, err = wasps.CreateChain(sc, wasps.Config.SmartContracts[0].Quorum)
 	check(err, t)
 

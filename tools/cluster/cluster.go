@@ -49,7 +49,7 @@ type SmartContractFinalConfig struct {
 	OwnerSeed      []byte   `json:"owner_seed"`
 	DKShares       [][]byte `json:"dkshares"` // [node index]
 	//
-	originTx *sctransaction.Transaction // cached after CreateOrigin call
+	color *balance.Color // cached after CreateChain call
 }
 
 type SmartContractInitData struct {
@@ -723,7 +723,7 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 }
 
 func (cluster *Cluster) CreateChain(sc *SmartContractFinalConfig, quorum int) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
-	return waspapi.CreateChain(waspapi.CreateChainParams{
+	chainid, addr, color, err := waspapi.CreateChain(waspapi.CreateChainParams{
 		Node:                  cluster.NodeClient,
 		CommitteeApiHosts:     cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost),
 		CommitteePeeringHosts: cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).PeeringHost),
@@ -735,6 +735,10 @@ func (cluster *Cluster) CreateChain(sc *SmartContractFinalConfig, quorum int) (*
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",
 	})
+	if err == nil {
+		sc.color = color
+	}
+	return chainid, addr, color, err
 }
 
 func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, expectedValues map[kv.Key][]byte) bool {
