@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
@@ -28,7 +27,6 @@ type CreateChainParams struct {
 	N                     uint16
 	T                     uint16
 	OwnerSigScheme        signaturescheme.SignatureScheme
-	ProgramHash           hashing.HashValue
 	Description           string
 	Textout               io.Writer
 	Prefix                string
@@ -164,8 +162,11 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
+	committee := multiclient.New(par.CommitteeApiHosts)
+
 	chainid := (coretypes.ChainID)(*chainAddr) // using address as chain id
-	err = multiclient.New(par.CommitteeApiHosts).PutBootupData(&registry.BootupData{
+
+	err = committee.PutBootupData(&registry.BootupData{
 		ChainID:        chainid,
 		OwnerAddress:   ownerAddr,
 		Color:          (balance.Color)(originTx.ID()),
@@ -180,7 +181,20 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 
+	err = committee.ActivateChain(&chainid)
+
+	fmt.Fprint(textout, par.Prefix)
+	if err != nil {
+		fmt.Fprintf(textout, "activating chain.. FAILED: %v\n", err)
+		return nil, nil, nil, err
+	}
+	fmt.Fprint(textout, "activating chain.. OK.\n")
+
 	allOuts, err = par.Node.GetConfirmedAccountOutputs(&ownerAddr)
+	if err != nil {
+		fmt.Fprintf(textout, "GetConfirmedAccountOutputs.. FAILED: %v\n", err)
+		return nil, nil, nil, err
+	}
 
 	reqTx, err := origin.NewBootupRequestTransaction(origin.NewBootupRequestTransactionParams{
 		ChainID:              chainid,

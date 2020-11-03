@@ -5,10 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,23 +16,26 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/nodeclient"
-	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/txutil"
-
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/client/multiclient"
+	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
@@ -721,6 +720,21 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 	}
 	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
 	return nil
+}
+
+func (cluster *Cluster) CreateChain(sc *SmartContractFinalConfig, quorum int) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
+	return waspapi.CreateChain(waspapi.CreateChainParams{
+		Node:                  cluster.NodeClient,
+		CommitteeApiHosts:     cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost),
+		CommitteePeeringHosts: cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).PeeringHost),
+		AccessNodes:           cluster.WaspHosts(sc.AccessNodes, (*WaspNodeConfig).PeeringHost),
+		N:                     uint16(len(sc.CommitteeNodes)),
+		T:                     uint16(quorum),
+		OwnerSigScheme:        sc.OwnerSigScheme(),
+		Description:           sc.Description,
+		Textout:               os.Stdout,
+		Prefix:                "[cluster] ",
+	})
 }
 
 func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, expectedValues map[kv.Key][]byte) bool {

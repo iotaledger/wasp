@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
+func Activate1Chain(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	if err := activate(sc, clu); err != nil {
 		return fmt.Errorf("activate %s: %v\n", sc.Address, err)
 	}
@@ -18,7 +18,7 @@ func Activate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) err
 	return nil
 }
 
-func Deactivate1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
+func Deactivate1Chain(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
 	if err := deactivate(sc, clu); err != nil {
 		return fmt.Errorf("deactivate %s: %v\n", sc.Address, err)
 	}
