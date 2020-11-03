@@ -48,8 +48,11 @@ type SmartContractFinalConfig struct {
 	AccessNodes    []int    `json:"access_nodes,omitempty"`
 	OwnerSeed      []byte   `json:"owner_seed"`
 	DKShares       [][]byte `json:"dkshares"` // [node index]
-	//
-	color *balance.Color // cached after CreateChain call
+
+	// cached after CreateChain call:
+	chainid *coretypes.ChainID
+	addr    *address.Address
+	color   *balance.Color
 }
 
 type SmartContractInitData struct {
@@ -736,6 +739,8 @@ func (cluster *Cluster) CreateChain(sc *SmartContractFinalConfig, quorum int) (*
 		Prefix:                "[cluster] ",
 	})
 	if err == nil {
+		sc.chainid = chainid
+		sc.addr = addr
 		sc.color = color
 	}
 	return chainid, addr, color, err
@@ -801,7 +806,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host st
 			continue
 		}
 		// TODO
-		contractID := coretypes.NewContractID((coretypes.ChainID)(*sc.SCAddress()), 0)
+		contractID := coretypes.NewContractID(*sc.chainid, 0)
 		actual, err := cluster.WaspClient(i).DumpSCState(&contractID)
 		if client.IsNotFound(err) {
 			pass = false

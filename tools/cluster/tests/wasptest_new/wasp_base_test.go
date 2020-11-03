@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -140,6 +141,7 @@ func TestCreateChain(t *testing.T) {
 	}
 	if !wasps.VerifySCState(sc, 1, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
+		root.VarStateInitialized:    []byte{0xFF},
 	}) {
 		t.Fail()
 	}
