@@ -17,8 +17,6 @@ type Dict interface {
 
 	IsEmpty() bool
 
-	ToGoMap() map[kv.Key][]byte
-
 	ForEach(func(key kv.Key, value []byte) bool)
 	ForEachDeterministic(func(key kv.Key, value []byte) bool)
 	Clone() Dict
@@ -47,10 +45,6 @@ func (m kvmap) Clone() Dict {
 
 func FromGoMap(m map[kv.Key][]byte) Dict {
 	return kvmap(m)
-}
-
-func (m kvmap) ToGoMap() map[kv.Key][]byte {
-	return m
 }
 
 func (m kvmap) sortedKeys() []kv.Key {

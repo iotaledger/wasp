@@ -101,12 +101,8 @@ func (sc *SmartContractFinalConfig) AllNodes() []int {
 	return r
 }
 
-func (sc *SmartContractFinalConfig) SCAddress() *address.Address {
-	ret, err := address.FromBase58(sc.Address)
-	if err != nil {
-		panic(err)
-	}
-	return &ret
+func (sc *SmartContractFinalConfig) ChainID() *coretypes.ChainID {
+	return sc.chainid
 }
 
 func (sc *SmartContractFinalConfig) OwnerAddress() *address.Address {
@@ -206,11 +202,10 @@ func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
 }
 
 func (cluster *Cluster) SCClient(sc *SmartContractFinalConfig, sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
-	chainid := (coretypes.ChainID)(*sc.SCAddress())
 	return chainclient.New(
 		cluster.NodeClient,
 		cluster.WaspClient(sc.CommitteeNodes[0]),
-		&chainid,
+		sc.ChainID(),
 		sigScheme,
 	)
 }
@@ -743,8 +738,8 @@ func (cluster *Cluster) DeployChain(sc *SmartContractFinalConfig, quorum int) (*
 	return chainid, addr, color, err
 }
 
-func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, expectedValues map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state dict.Dict) bool {
+func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, contractIndex uint16, expectedValues map[kv.Key][]byte) bool {
+	return cluster.WithSCState(sc, contractIndex, func(host string, blockIndex uint32, state dict.Dict) bool {
 		fmt.Printf("[cluster] Verifying state vars for node %s\n", host)
 		pass := true
 		for k, v := range expectedValues {
@@ -766,8 +761,8 @@ func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, exp
 	})
 }
 
-func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, func(host string, blockIndex uint32, state dict.Dict) bool {
+func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, contractIndex uint16, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
+	return cluster.WithSCState(sc, contractIndex, func(host string, blockIndex uint32, state dict.Dict) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)
 
 		d := dict.FromGoMap(expectedState)
@@ -789,14 +784,13 @@ func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedInde
 	})
 }
 
-func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, f func(host string, stateIndex uint32, state dict.Dict) bool) bool {
+func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, contractIndex uint16, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
 	pass := true
 	for i, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
 		if !cluster.Config.Nodes[i].IsUp() {
 			continue
 		}
-		// TODO
-		contractID := coretypes.NewContractID(*sc.chainid, 0)
+		contractID := coretypes.NewContractID(*sc.chainid, contractIndex)
 		actual, err := cluster.WaspClient(i).DumpSCState(&contractID)
 		if client.IsNotFound(err) {
 			pass = false

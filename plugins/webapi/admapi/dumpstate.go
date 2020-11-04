@@ -6,7 +6,10 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
@@ -31,7 +34,10 @@ func handleDumpSCState(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, &client.SCStateDump{
-		Index:     virtualState.StateIndex(),
-		Variables: virtualState.Variables().DangerouslyDumpToDict().ToGoMap(),
+		Index: virtualState.StateIndex(),
+		Variables: kv.ToGoMap(subrealm.New(
+			virtualState.Variables().DangerouslyDumpToDict(),
+			kv.Key(util.Uint16To2Bytes(scid.Index())),
+		)),
 	})
 }

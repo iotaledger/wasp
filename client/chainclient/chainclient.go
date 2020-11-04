@@ -13,10 +13,11 @@ import (
 )
 
 type Client struct {
-	NodeClient nodeclient.NodeClient
-	WaspClient *client.WaspClient
-	ChainID    coretypes.ChainID
-	SigScheme  signaturescheme.SignatureScheme
+	NodeClient          nodeclient.NodeClient
+	WaspClient          *client.WaspClient
+	ChainID             coretypes.ChainID
+	SigScheme           signaturescheme.SignatureScheme
+	WaitForConfirmation bool
 }
 
 func New(
@@ -51,6 +52,6 @@ func (c *Client) PostRequest(
 			Vars:             vars,
 		}},
 		Post:                true,
-		WaitForConfirmation: true,
+		WaitForConfirmation: c.WaitForConfirmation,
 	})
 }

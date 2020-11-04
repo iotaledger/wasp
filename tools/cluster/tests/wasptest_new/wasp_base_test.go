@@ -1,17 +1,19 @@
 package wasptest
 
 import (
+	"fmt"
 	"testing"
-	"time"
 
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPutBootupRecord(t *testing.T) {
-	wasps := setup(t, "test_cluster", "TestPutBootupRecord")
+	clu := setup(t, "test_cluster", "TestPutBootupRecord")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := clu.ListenToMessages(map[string]int{
 		"bootuprec":           1,
 		"active_committee":    0,
 		"dismissed_committee": 0,
@@ -21,12 +23,12 @@ func TestPutBootupRecord(t *testing.T) {
 	})
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[0]
+	sc := &clu.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutBootupRecord(clu, sc)
 	check(err, t)
 
-	if !wasps.WaitUntilExpectationsMet() {
+	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 }
@@ -34,45 +36,53 @@ func TestPutBootupRecord(t *testing.T) {
 // TODO deploy cycle with chainclient
 
 func TestDeployChain(t *testing.T) {
-	wasps := setup(t, "test_cluster", "TestDeployChain")
+	clu := setup(t, "test_cluster", "TestDeployChain")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := clu.ListenToMessages(map[string]int{
 		"bootuprec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_in":          1,
-		"request_out":         1,
+		"request_out":         2,
 	})
 	check(err, t)
 
-	sc := &wasps.SmartContractConfig[0]
+	sc := &clu.SmartContractConfig[0]
 
-	err = wasps.NodeClient.RequestFunds(sc.OwnerAddress())
+	err = clu.NodeClient.RequestFunds(sc.OwnerAddress())
 	check(err, t)
 
-	_, _, _, err = wasps.DeployChain(sc, wasps.Config.SmartContracts[0].Quorum)
+	_, _, _, err = clu.DeployChain(sc, clu.Config.SmartContracts[0].Quorum)
 	check(err, t)
 
-	if !wasps.WaitUntilExpectationsMet() {
+	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-	time.Sleep(5 * time.Second)
 
-	if !wasps.VerifySCState(sc, 1, map[kv.Key][]byte{
-		root.VarChainID:          sc.SCAddress().Bytes(),
-		root.VarDescription:      []byte(sc.Description),
-		root.VarStateInitialized: []byte{0xFF},
-	}) {
-		t.Fail()
-	}
+	clu.WithSCState(sc, 0, func(host string, stateIndex uint32, state dict.Dict) bool {
+		fmt.Printf("%s\n", state)
+		assert.EqualValues(t, 1, stateIndex)
+		{
+			state := codec.NewMustCodec(state)
+
+			assert.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
+
+			chid, _ := state.GetChainID(root.VarChainID)
+			assert.EqualValues(t, sc.ChainID(), chid)
+
+			desc, _ := state.GetString(root.VarDescription)
+			assert.EqualValues(t, []byte(sc.Description), desc)
+		}
+		return true
+	})
 }
 
 //
 //func TestActivate1Chain(t *testing.T) {
-//	wasps := setup(t, "test_cluster", "TestActivate1Chain")
+//	clu := setup(t, "test_cluster", "TestActivate1Chain")
 //
-//	err := wasps.ListenToMessages(map[string]int{
+//	err := clu.ListenToMessages(map[string]int{
 //		"bootuprec":           2,
 //		"active_committee":    1,
 //		"dismissed_committee": 0,
@@ -82,25 +92,25 @@ func TestDeployChain(t *testing.T) {
 //	})
 //	check(err, t)
 //
-//	sc := &wasps.SmartContractConfig[0]
+//	sc := &clu.SmartContractConfig[0]
 //
-//	_, err = PutBootupRecord(wasps, sc)
+//	_, err = PutBootupRecord(clu, sc)
 //	check(err, t)
 //
-//	err = Activate1Chain(wasps, sc)
+//	err = Activate1Chain(clu, sc)
 //	check(err, t)
 //
-//	if !wasps.WaitUntilExpectationsMet() {
+//	if !clu.WaitUntilExpectationsMet() {
 //		t.Fail()
 //	}
 //}
 //
 //func TestActivateAllChains(t *testing.T) {
-//	wasps := setup(t, "test_cluster", "TestActivateAllSC")
+//	clu := setup(t, "test_cluster", "TestActivateAllSC")
 //
-//	err := wasps.ListenToMessages(map[string]int{
-//		"bootuprec":           wasps.NumSmartContracts() * 2,
-//		"active_committee":    wasps.NumSmartContracts(),
+//	err := clu.ListenToMessages(map[string]int{
+//		"bootuprec":           clu.NumSmartContracts() * 2,
+//		"active_committee":    clu.NumSmartContracts(),
 //		"dismissed_committee": 0,
 //		"request_in":          0,
 //		"request_out":         0,
@@ -108,23 +118,23 @@ func TestDeployChain(t *testing.T) {
 //	})
 //	check(err, t)
 //
-//	for _, sc := range wasps.SmartContractConfig {
-//		_, err = PutBootupRecord(wasps, &sc)
+//	for _, sc := range clu.SmartContractConfig {
+//		_, err = PutBootupRecord(clu, &sc)
 //		check(err, t)
 //	}
 //
-//	err = ActivateAllSC(wasps)
+//	err = ActivateAllSC(clu)
 //	check(err, t)
 //
-//	if !wasps.WaitUntilExpectationsMet() {
+//	if !clu.WaitUntilExpectationsMet() {
 //		t.Fail()
 //	}
 //}
 //
 //func TestDeactivate1Chain(t *testing.T) {
-//	wasps := setup(t, "test_cluster", "TestDeactivate1SC")
+//	clu := setup(t, "test_cluster", "TestDeactivate1SC")
 //
-//	err := wasps.ListenToMessages(map[string]int{
+//	err := clu.ListenToMessages(map[string]int{
 //		"bootuprec":           3,
 //		"active_committee":    1,
 //		"dismissed_committee": 1,
@@ -134,20 +144,20 @@ func TestDeployChain(t *testing.T) {
 //	})
 //	check(err, t)
 //
-//	sc := &wasps.SmartContractConfig[0]
+//	sc := &clu.SmartContractConfig[0]
 //
-//	_, err = PutBootupRecord(wasps, sc)
+//	_, err = PutBootupRecord(clu, sc)
 //	check(err, t)
 //
-//	err = Activate1Chain(wasps, sc)
+//	err = Activate1Chain(clu, sc)
 //	check(err, t)
 //
 //	time.Sleep(5 * time.Second)
 //
-//	err = Deactivate1Chain(wasps, sc)
+//	err = Deactivate1Chain(clu, sc)
 //	check(err, t)
 //
-//	if !wasps.WaitUntilExpectationsMet() {
+//	if !clu.WaitUntilExpectationsMet() {
 //		t.Fail()
 //	}
 //}

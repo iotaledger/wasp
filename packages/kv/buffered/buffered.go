@@ -94,7 +94,7 @@ func (b *bufferedKVStore) DangerouslyDumpToDict() dict.Dict {
 // iterates over all key-value pairs in KVStore
 func (b *bufferedKVStore) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStore:\n"
-	for k, v := range b.DangerouslyDumpToDict().ToGoMap() {
+	for k, v := range kv.ToGoMap(b.DangerouslyDumpToDict()) {
 		ret += fmt.Sprintf(
 			"           [%s] 0x%s: 0x%s (base58: %s)\n",
 			b.flag(k),
