@@ -57,7 +57,7 @@ func TestDeployChain(t *testing.T) {
 	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-	time.Sleep(5 % time.Second)
+	time.Sleep(5 * time.Second)
 
 	if !wasps.VerifySCState(sc, 1, map[kv.Key][]byte{
 		root.VarChainID:          sc.SCAddress().Bytes(),

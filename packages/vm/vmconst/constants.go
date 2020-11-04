@@ -7,9 +7,8 @@ import (
 // built in request codes: the requests processed by any smart contract
 // all of them are 'reserved' and 'protected'
 const (
-	RequestCodeNOP              = coretypes.EntryPointCode(10000)
-	RequestCodeInit             = coretypes.EntryPointCode(10001)
-	RequestCodeSetMinimumReward = coretypes.EntryPointCode(10002)
+	RequestCodeNOP  = coretypes.EntryPointCode(10000)
+	RequestCodeInit = coretypes.EntryPointCode(10001)
 )
 
 const (
