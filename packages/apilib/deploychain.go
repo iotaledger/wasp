@@ -101,9 +101,9 @@ func DeactivateChain(par ActivateChainParams) error {
 	return nil
 }
 
-// CreateChain performs all actions needed to deploy smart contract, except activation
+// DeployChain performs all actions needed to deploy the chain
 // noinspection ALL
-func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
+func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
@@ -116,7 +116,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// check if SC is hardcoded. If not, require consistent metadata in all nodes
 	fmt.Fprint(textout, par.Prefix)
 
-	// generate distributed key set on committee nodes
+	// ----------- run DKG on committee nodes
 	chainAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)
 
 	fmt.Fprint(textout, par.Prefix)
@@ -127,6 +127,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", chainAddr.String())
 	}
 
+	// ----------- request owner address' outputs from the ledger
 	allOuts, err := par.Node.GetConfirmedAccountOutputs(&ownerAddr)
 
 	fmt.Fprint(textout, par.Prefix)
@@ -137,7 +138,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 	}
 
-	// create origin transaction
+	// ----------- create origin transaction
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:        *chainAddr,
 		OwnerSignatureScheme: par.OwnerSigScheme,
@@ -152,7 +153,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
-	// post origin transaction and wait for confirmation
+	// ------------- post origin transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(originTx.Transaction)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
@@ -166,6 +167,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	chainid := (coretypes.ChainID)(*chainAddr) // using address as chain id
 
+	// ------------ put bootup records to hosts
 	err = committee.PutBootupData(&registry.BootupData{
 		ChainID:        chainid,
 		OwnerAddress:   ownerAddr,
@@ -181,6 +183,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 
+	// ------------- activate chain
 	err = committee.ActivateChain(&chainid)
 
 	fmt.Fprint(textout, par.Prefix)
@@ -190,12 +193,16 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 	fmt.Fprint(textout, "activating chain.. OK.\n")
 
+	// ============= create bootup request for the root contract
+
+	// ------------- get UTXOs of the owner
 	allOuts, err = par.Node.GetConfirmedAccountOutputs(&ownerAddr)
 	if err != nil {
 		fmt.Fprintf(textout, "GetConfirmedAccountOutputs.. FAILED: %v\n", err)
 		return nil, nil, nil, err
 	}
 
+	// create bootup (init) transation
 	reqTx, err := origin.NewBootupRequestTransaction(origin.NewBootupRequestTransactionParams{
 		ChainID:              chainid,
 		OwnerSignatureScheme: par.OwnerSigScheme,
@@ -208,7 +215,7 @@ func CreateChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 	fmt.Fprintf(textout, "creating bootup request.. OK: %v\n", err)
 
-	// post bootup request transaction and wait for confirmation
+	// ---------- post bootup request transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(reqTx.Transaction)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {

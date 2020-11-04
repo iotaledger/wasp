@@ -150,7 +150,7 @@ type DeployParams struct {
 }
 
 func Deploy(params *DeployParams) (*address.Address, error) {
-	scAddress, _, err := waspapi.CreateChain(waspapi.CreateChainParams{
+	scAddress, _, err := waspapi.DeployChain(waspapi.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),

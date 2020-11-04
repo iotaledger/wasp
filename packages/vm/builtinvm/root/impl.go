@@ -80,6 +80,8 @@ const (
 	ParamHash          = "hash"
 )
 
+// initialize is a handler for the "initialize" request
+// It stores chain ID in the state and creates record for root contract in the contract registry at 0 index
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	params := ctx.Params()
 	ctx.Publishf("root.initialize.begin")
@@ -110,6 +112,10 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.deployContract.begin")
+
+	if ctx.AccessState().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
+	}
 	params := ctx.Params()
 
 	vmtype, ok, err := params.GetString(ParamVMType)
@@ -141,6 +147,10 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 func findContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.findContract.begin")
+	if ctx.AccessState().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
+	}
+
 	params := ctx.Params()
 
 	contractIndex, ok, err := params.GetInt64(ParamIndex)
@@ -161,6 +171,10 @@ func findContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 func getBinary(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Publishf("root.getBinary.begin")
+	if ctx.AccessState().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
+	}
+
 	params := ctx.Params()
 
 	deploymentHash, ok, err := params.GetHashValue(ParamHash)

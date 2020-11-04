@@ -49,7 +49,7 @@ type SmartContractFinalConfig struct {
 	OwnerSeed      []byte   `json:"owner_seed"`
 	DKShares       [][]byte `json:"dkshares"` // [node index]
 
-	// cached after CreateChain call:
+	// cached after DeployChain call:
 	chainid *coretypes.ChainID
 	addr    *address.Address
 	color   *balance.Color
@@ -726,7 +726,7 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 }
 
 func (cluster *Cluster) CreateChain(sc *SmartContractFinalConfig, quorum int) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
-	chainid, addr, color, err := waspapi.CreateChain(waspapi.CreateChainParams{
+	chainid, addr, color, err := waspapi.DeployChain(waspapi.CreateChainParams{
 		Node:                  cluster.NodeClient,
 		CommitteeApiHosts:     cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost),
 		CommitteePeeringHosts: cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).PeeringHost),
