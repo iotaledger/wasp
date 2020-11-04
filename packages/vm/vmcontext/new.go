@@ -49,7 +49,7 @@ type callContext struct {
 // All request tokens are handled for the whole block
 func NewVMContext(task *vm.VMTask, txb *txbuilder.Builder) (*VMContext, error) {
 	// create state block and move smart contract token
-	if err := txb.CreateStateBlock(task.Color); err != nil {
+	if err := txb.CreateStateSection(task.Color); err != nil {
 		task.Log.Errorf("createVMContext: %v\nDump txbuilder accounts:\n%s\n", err, txb.Dump())
 		return nil, fmt.Errorf("createVMContext: %v", err)
 	}

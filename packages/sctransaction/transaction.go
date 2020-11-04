@@ -17,13 +17,13 @@ import (
 // the stateBlock and requestBlocks are parsed from the dataPayload of the value transaction
 type Transaction struct {
 	*valuetransaction.Transaction
-	stateBlock    *StateBlock
+	stateBlock    *StateSection
 	requestBlocks []*RequestSection
 	properties    *Properties // cached properties. If nil, transaction is semantically validated and properties are calculated
 }
 
 // creates new sc transaction. It is immutable, i.e. tx hash is stable
-func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateBlock, requestBlocks []*RequestSection) (*Transaction, error) {
+func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateSection, requestBlocks []*RequestSection) (*Transaction, error) {
 	ret := &Transaction{
 		Transaction:   vtx,
 		stateBlock:    stateBlock,
@@ -73,11 +73,11 @@ func (tx *Transaction) MustProperties() *Properties {
 	return ret
 }
 
-func (tx *Transaction) State() (*StateBlock, bool) {
+func (tx *Transaction) State() (*StateSection, bool) {
 	return tx.stateBlock, tx.stateBlock != nil
 }
 
-func (tx *Transaction) MustState() *StateBlock {
+func (tx *Transaction) MustState() *StateSection {
 	if tx.stateBlock == nil {
 		panic("MustState: state block expected")
 	}
@@ -150,9 +150,9 @@ func (tx *Transaction) readDataPayload(r io.Reader) error {
 	} else {
 		hasState, numRequests = decodeMetaByte(b)
 	}
-	var stateBlock *StateBlock
+	var stateBlock *StateSection
 	if hasState {
-		stateBlock = &StateBlock{}
+		stateBlock = &StateSection{}
 		if err := stateBlock.Read(r); err != nil {
 			return err
 		}

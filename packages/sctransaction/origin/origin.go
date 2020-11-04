@@ -42,7 +42,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	}
 	originHash := originState.Hash()
 
-	if err := txb.CreateOriginStateBlock(originHash, &par.OriginAddress); err != nil {
+	if err := txb.CreateOriginStateSection(originHash, &par.OriginAddress); err != nil {
 		return nil, err
 	}
 	tx, err := txb.Build(false)
@@ -77,7 +77,7 @@ func NewBootupRequestTransaction(par NewBootupRequestTransactionParams) (*sctran
 	c.SetString(vmconst.VarNameDescription, par.Description)
 	bootupRequest.SetArgs(args)
 
-	if err := txb.AddRequestBlock(bootupRequest); err != nil {
+	if err := txb.AddRequestSection(bootupRequest); err != nil {
 		return nil, err
 	}
 

@@ -70,7 +70,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		}
 		reqBlk.SetArgs(args)
 
-		err = txb.AddRequestBlockWithTransfer(reqBlk, blockPar.Transfer)
+		err = txb.AddRequestSectionWithTransfer(reqBlk, blockPar.Transfer)
 		if err != nil {
 			return nil, err
 		}

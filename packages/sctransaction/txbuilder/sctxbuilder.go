@@ -15,7 +15,7 @@ import (
 
 type Builder struct {
 	*vtxbuilder.Builder
-	stateBlock    *sctransaction.StateBlock
+	stateBlock    *sctransaction.StateSection
 	requestBlocks []*sctransaction.RequestSection
 }
 
@@ -57,11 +57,11 @@ func (txb *Builder) Clone() *Builder {
 	return ret
 }
 
-// CreateStateBlock assumes txb contain balances of the smart contract with 'color'.
+// CreateStateSection assumes txb contain balances of the smart contract with 'color'.
 // It adds state block and moves smart contract token to the same address.
 // State block will have 0 state index, 0 timestamp, nil stateHash
 // The function is used by VM wrapper to create new state transaction
-func (txb *Builder) CreateStateBlock(color balance.Color) error {
+func (txb *Builder) CreateStateSection(color balance.Color) error {
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
@@ -88,24 +88,24 @@ func (txb *Builder) CreateStateBlock(color balance.Color) error {
 	if err := txb.MoveTokensToAddress(scAddress, color, 1); err != nil {
 		return err
 	}
-	txb.stateBlock = sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
+	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
 		Color: color,
 	})
 	return nil
 }
 
-// CreateOriginStateBlock
+// CreateOriginStateSection
 // - initializes origin state transaction of the chain with originAddress in the builder.
 // - mints chain token, sets origin state hash
 // - sets state index and timestamp to 0
-func (txb *Builder) CreateOriginStateBlock(stateHash *hashing.HashValue, originAddress *address.Address) error {
+func (txb *Builder) CreateOriginStateSection(stateHash *hashing.HashValue, originAddress *address.Address) error {
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
 	if err := txb.MintColor(*originAddress, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
-	txb.stateBlock = sctransaction.NewStateBlock(sctransaction.NewStateBlockParams{
+	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
 		Color:      balance.ColorNew,
 		StateIndex: 0,
 		StateHash:  *stateHash,
@@ -122,14 +122,14 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashVal
 	return nil
 }
 
-// AddRequestBlock adds new request block to the builder. It automatically handles request token
-func (txb *Builder) AddRequestBlock(reqBlk *sctransaction.RequestSection) error {
-	return txb.AddRequestBlockWithTransfer(reqBlk, nil)
+// AddRequestSection adds new request block to the builder. It automatically handles request token
+func (txb *Builder) AddRequestSection(reqBlk *sctransaction.RequestSection) error {
+	return txb.AddRequestSectionWithTransfer(reqBlk, nil)
 }
 
-// AddRequestBlockWithTransfer adds request block with the request
+// AddRequestSectionWithTransfer adds request block with the request
 // token and adds respective outputs for the colored transfers
-func (txb *Builder) AddRequestBlockWithTransfer(reqBlk *sctransaction.RequestSection, transfer map[balance.Color]int64) error {
+func (txb *Builder) AddRequestSectionWithTransfer(reqBlk *sctransaction.RequestSection, transfer map[balance.Color]int64) error {
 	targetAddr := (address.Address)(reqBlk.Target().ChainID())
 	if err := txb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
 		return err

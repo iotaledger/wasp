@@ -8,10 +8,10 @@ import (
 	"io"
 )
 
-// state block of the SC transaction. Represents SC state update
+// StateSection of the SC transaction. Represents SC state update
 // previous state block can be determined by the chain transfer of the SC token in the UTXO part of the
 // transaction
-type StateBlock struct {
+type StateSection struct {
 	// color of the chain which is updated
 	// color contains balance.NEW_COLOR for the origin transaction
 	color balance.Color
@@ -26,15 +26,15 @@ type StateBlock struct {
 	stateHash hashing.HashValue
 }
 
-type NewStateBlockParams struct {
+type NewStateSectionParams struct {
 	Color      balance.Color
 	StateIndex uint32
 	StateHash  hashing.HashValue
 	Timestamp  int64
 }
 
-func NewStateBlock(par NewStateBlockParams) *StateBlock {
-	return &StateBlock{
+func NewStateSection(par NewStateSectionParams) *StateSection {
+	return &StateSection{
 		color:      par.Color,
 		stateIndex: par.StateIndex,
 		stateHash:  par.StateHash,
@@ -42,11 +42,11 @@ func NewStateBlock(par NewStateBlockParams) *StateBlock {
 	}
 }
 
-func (sb *StateBlock) Clone() *StateBlock {
+func (sb *StateSection) Clone() *StateSection {
 	if sb == nil {
 		return nil
 	}
-	return NewStateBlock(NewStateBlockParams{
+	return NewStateSection(NewStateSectionParams{
 		Color:      sb.color,
 		StateIndex: sb.stateIndex,
 		StateHash:  sb.stateHash,
@@ -54,23 +54,23 @@ func (sb *StateBlock) Clone() *StateBlock {
 	})
 }
 
-func (sb *StateBlock) Color() balance.Color {
+func (sb *StateSection) Color() balance.Color {
 	return sb.color
 }
 
-func (sb *StateBlock) StateIndex() uint32 {
+func (sb *StateSection) StateIndex() uint32 {
 	return sb.stateIndex
 }
 
-func (sb *StateBlock) Timestamp() int64 {
+func (sb *StateSection) Timestamp() int64 {
 	return sb.timestamp
 }
 
-func (sb *StateBlock) StateHash() hashing.HashValue {
+func (sb *StateSection) StateHash() hashing.HashValue {
 	return sb.stateHash
 }
 
-func (sb *StateBlock) WithStateParams(stateIndex uint32, h *hashing.HashValue, ts int64) *StateBlock {
+func (sb *StateSection) WithStateParams(stateIndex uint32, h *hashing.HashValue, ts int64) *StateSection {
 	sb.stateIndex = stateIndex
 	sb.stateHash = *h
 	sb.timestamp = ts
@@ -80,7 +80,7 @@ func (sb *StateBlock) WithStateParams(stateIndex uint32, h *hashing.HashValue, t
 // encoding
 // important: each block starts with 65 bytes of scid
 
-func (sb *StateBlock) Write(w io.Writer) error {
+func (sb *StateSection) Write(w io.Writer) error {
 	if _, err := w.Write(sb.color[:]); err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (sb *StateBlock) Write(w io.Writer) error {
 	return nil
 }
 
-func (sb *StateBlock) Read(r io.Reader) error {
+func (sb *StateSection) Read(r io.Reader) error {
 	if n, err := r.Read(sb.color[:]); err != nil || n != balance.ColorLength {
 		return fmt.Errorf("error while reading color: %v", err)
 	}

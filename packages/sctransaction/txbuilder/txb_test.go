@@ -25,7 +25,7 @@ func TestBasic(t *testing.T) {
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -58,10 +58,10 @@ func TestWithRequest(t *testing.T) {
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -94,10 +94,10 @@ func TestNextState(t *testing.T) {
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 5)
@@ -151,7 +151,7 @@ func TestNextState(t *testing.T) {
 	txb, err = NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
+	err = txb.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
 	tx, err = txb.Build(false)
@@ -192,10 +192,10 @@ func TestClone(t *testing.T) {
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
@@ -228,12 +228,12 @@ func TestDeterminism(t *testing.T) {
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
 	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
@@ -241,10 +241,10 @@ func TestDeterminism(t *testing.T) {
 	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
+	err = txb.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
-	err = txbClone.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
+	err = txbClone.AddRequestSection(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
 	err = txbClone.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)

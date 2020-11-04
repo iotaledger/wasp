@@ -57,7 +57,7 @@ func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
 	reqBlock.WithTimelock(par.Timelock)
 	reqBlock.SetArgs(par.Params)
 
-	if err := vmctx.txBuilder.AddRequestBlock(reqBlock); err != nil {
+	if err := vmctx.txBuilder.AddRequestSection(reqBlock); err != nil {
 		return false
 	}
 	return true
