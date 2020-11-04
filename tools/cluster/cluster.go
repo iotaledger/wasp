@@ -725,7 +725,7 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 	return nil
 }
 
-func (cluster *Cluster) CreateChain(sc *SmartContractFinalConfig, quorum int) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
+func (cluster *Cluster) DeployChain(sc *SmartContractFinalConfig, quorum int) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
 	chainid, addr, color, err := waspapi.DeployChain(waspapi.CreateChainParams{
 		Node:                  cluster.NodeClient,
 		CommitteeApiHosts:     cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost),

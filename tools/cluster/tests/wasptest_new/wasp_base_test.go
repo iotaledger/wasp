@@ -115,8 +115,8 @@ func TestDeactivate1Chain(t *testing.T) {
 	}
 }
 
-func TestCreateChain(t *testing.T) {
-	wasps := setup(t, "test_cluster", "TestCreateChain")
+func TestDeployChain(t *testing.T) {
+	wasps := setup(t, "test_cluster", "TestDeployChain")
 
 	err := wasps.ListenToMessages(map[string]int{
 		"bootuprec":           2,
@@ -133,12 +133,14 @@ func TestCreateChain(t *testing.T) {
 	err = wasps.NodeClient.RequestFunds(sc.OwnerAddress())
 	check(err, t)
 
-	_, _, _, err = wasps.CreateChain(sc, wasps.Config.SmartContracts[0].Quorum)
+	_, _, _, err = wasps.DeployChain(sc, wasps.Config.SmartContracts[0].Quorum)
 	check(err, t)
 
 	if !wasps.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
+	time.Sleep(5 % time.Second)
+
 	if !wasps.VerifySCState(sc, 1, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
 		root.VarStateInitialized:    []byte{0xFF},

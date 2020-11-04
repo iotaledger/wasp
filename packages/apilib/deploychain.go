@@ -195,6 +195,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	// ============= create bootup request for the root contract
 
+	// TODO to via chainclient with timeout etc
+
 	// ------------- get UTXOs of the owner
 	allOuts, err = par.Node.GetConfirmedAccountOutputs(&ownerAddr)
 	if err != nil {
