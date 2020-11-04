@@ -1,11 +1,9 @@
 package wasptest
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/assert"
 )
@@ -60,20 +58,17 @@ func TestDeployChain(t *testing.T) {
 		t.Fail()
 	}
 
-	clu.WithSCState(sc, 0, func(host string, stateIndex uint32, state dict.Dict) bool {
-		fmt.Printf("%s\n", state)
+	clu.WithSCState(sc, 0, func(host string, stateIndex uint32, state codec.ImmutableMustCodec) bool {
 		assert.EqualValues(t, 1, stateIndex)
-		{
-			state := codec.NewMustCodec(state)
 
-			assert.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
+		assert.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
 
-			chid, _ := state.GetChainID(root.VarChainID)
-			assert.EqualValues(t, sc.ChainID(), chid)
+		chid, _ := state.GetChainID(root.VarChainID)
+		assert.EqualValues(t, sc.ChainID(), chid)
 
-			desc, _ := state.GetString(root.VarDescription)
-			assert.EqualValues(t, []byte(sc.Description), desc)
-		}
+		desc, _ := state.GetString(root.VarDescription)
+		assert.EqualValues(t, []byte(sc.Description), desc)
+
 		return true
 	})
 }

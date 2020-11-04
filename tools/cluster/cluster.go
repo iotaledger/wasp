@@ -739,15 +739,11 @@ func (cluster *Cluster) DeployChain(sc *SmartContractFinalConfig, quorum int) (*
 }
 
 func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, contractIndex uint16, expectedValues map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, contractIndex, func(host string, blockIndex uint32, state dict.Dict) bool {
+	return cluster.WithSCState(sc, contractIndex, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		fmt.Printf("[cluster] Verifying state vars for node %s\n", host)
 		pass := true
 		for k, v := range expectedValues {
-			v1, err := state.Get(k)
-			if err != nil {
-				fmt.Printf("   %s: %v\n", string(k), err)
-				return false
-			}
+			v1 := state.Get(k)
 			if bytes.Equal(v, v1) {
 				fmt.Printf("   %s: OK. Expected '%s', actual '%s'\n",
 					string(k), string(v), string(v1))
@@ -761,30 +757,7 @@ func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, con
 	})
 }
 
-func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, contractIndex uint16, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, contractIndex, func(host string, blockIndex uint32, state dict.Dict) bool {
-		fmt.Printf("[cluster] State verification for node %s\n", host)
-
-		d := dict.FromGoMap(expectedState)
-		expectedState := codec.NewCodec(d)
-
-		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
-		fmt.Printf("      Actual: index %d\n%s\n", blockIndex, state)
-
-		if expectedIndex > 0 && blockIndex != expectedIndex {
-			fmt.Printf("   FAIL: index mismatch\n")
-			return false
-		}
-
-		if util.GetHashValue(d) != util.GetHashValue(state) {
-			fmt.Printf("   FAIL: variables mismatch\n")
-			return false
-		}
-		return true
-	})
-}
-
-func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, contractIndex uint16, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
+func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, contractIndex uint16, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
 	pass := true
 	for i, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
 		if !cluster.Config.Nodes[i].IsUp() {
@@ -800,7 +773,7 @@ func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, contractIndex 
 		if err != nil {
 			panic(err)
 		}
-		if !f(host, actual.Index, dict.FromGoMap(actual.Variables)) {
+		if !f(host, actual.Index, codec.NewMustCodec(dict.FromGoMap(actual.Variables))) {
 			pass = false
 		}
 	}
