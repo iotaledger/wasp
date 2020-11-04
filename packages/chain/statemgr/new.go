@@ -28,8 +28,8 @@ type stateManager struct {
 	// pending batches of state updates are candidates to confirmation by the state transaction
 	// which leads to the state transition
 	// the map key is hash of the variable state which is a result of applying the
-	// batch of state updates to the solid variable state
-	pendingBatches map[hashing.HashValue]*pendingBatch
+	// block of state updates to the solid variable state
+	pendingBlocks map[hashing.HashValue]*pendingBlock
 
 	// last variable state stored in the database
 	// it may be nil at bootstrap when origin variable state is calculated
@@ -53,7 +53,7 @@ type stateManager struct {
 	// the timeout deadline for sync inquiries
 	syncMessageDeadline time.Time
 
-	// current batch being synced
+	// current block being synced
 	syncedBatch *syncedBatch
 
 	// for the pseudo-random sequence of peers
@@ -70,10 +70,10 @@ type syncedBatch struct {
 	stateTxId    valuetransaction.ID
 }
 
-type pendingBatch struct {
-	// batch of state updates, not validated yet
-	batch state.Block
-	// resulting variable state after applied the batch to the solidState
+type pendingBlock struct {
+	// block of state updates, not validated yet
+	block state.Block
+	// resulting variable state after applied the block to the solidState
 	nextState state.VirtualState
 	// state transaction request deadline. For committed batches only
 	stateTransactionRequestDeadline time.Time
@@ -81,11 +81,11 @@ type pendingBatch struct {
 
 func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
-		chain:          c,
-		pingPong:       make([]bool, c.Size()),
-		pendingBatches: make(map[hashing.HashValue]*pendingBatch),
-		permutation:    util.NewPermutation16(c.NumPeers(), nil),
-		log:            log.Named("s"),
+		chain:         c,
+		pingPong:      make([]bool, c.Size()),
+		pendingBlocks: make(map[hashing.HashValue]*pendingBlock),
+		permutation:   util.NewPermutation16(c.NumPeers(), nil),
+		log:           log.Named("s"),
 	}
 	go ret.initLoadState()
 
@@ -107,20 +107,20 @@ func (sm *stateManager) initLoadState() {
 
 	if stateExists {
 		// state loaded, will be waiting for it to be confirmed from the tangle
-		sm.addPendingBatch(batch)
+		sm.addPendingBlock(batch)
 		sm.largestEvidencedStateIndex = sm.solidState.StateIndex()
 
 		h := sm.solidState.Hash()
-		txh := batch.StateTransactionId()
+		txh := batch.StateTransactionID()
 		sm.log.Debugw("solid state has been loaded",
 			"state index", sm.solidState.StateIndex(),
 			"state hash", h.String(),
 			"approving tx", txh.String(),
 		)
 	} else {
-		// pre-origin state. Origin batch is emty batch.
+		// pre-origin state. Origin block is emty block.
 		// Will be waiting for the origin transaction to arrive
-		sm.addPendingBatch(state.MustNewOriginBlock(sm.chain.Color()))
+		sm.addPendingBlock(state.MustNewOriginBlock(sm.chain.Color()))
 
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}

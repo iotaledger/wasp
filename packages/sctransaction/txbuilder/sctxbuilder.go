@@ -107,7 +107,7 @@ func (txb *Builder) CreateOriginStateSection(stateHash *hashing.HashValue, origi
 	}
 	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
 		Color:      balance.ColorNew,
-		StateIndex: 0,
+		BlockIndex: 0,
 		StateHash:  *stateHash,
 		Timestamp:  0,
 	})

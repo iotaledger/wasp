@@ -27,15 +27,15 @@ func (sm *stateManager) EventStateIndexPingPongMsg(msg *chain.StateIndexPingPong
 	//)
 }
 
-// EventGetBatchMsg is a request for a block while syncing
+// EventGetBlockMsg is a request for a block while syncing
 func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg",
 		"sender index", msg.SenderIndex,
-		"state index", msg.BlockIndex,
+		"block index", msg.BlockIndex,
 	)
-	batch, err := state.LoadBlock(sm.chain.ID(), msg.BlockIndex)
-	if err != nil || batch == nil {
-		// can't load batch, can't respond
+	block, err := state.LoadBlock(sm.chain.ID(), msg.BlockIndex)
+	if err != nil || block == nil {
+		// can't load block, can't respond
 		return
 	}
 
@@ -45,13 +45,13 @@ func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 		PeerMsgHeader: chain.PeerMsgHeader{
 			BlockIndex: msg.BlockIndex,
 		},
-		Size:                batch.Size(),
-		AnchorTransactionID: batch.StateTransactionId(),
+		Size:                block.Size(),
+		AnchorTransactionID: block.StateTransactionID(),
 	}))
 	if err != nil {
 		return
 	}
-	batch.ForEach(func(batchIndex uint16, stateUpdate state.StateUpdate) bool {
+	block.ForEach(func(batchIndex uint16, stateUpdate state.StateUpdate) bool {
 		err = sm.chain.SendMsg(msg.SenderIndex, chain.MsgStateUpdate, util.MustBytes(&chain.StateUpdateMsg{
 			PeerMsgHeader: chain.PeerMsgHeader{
 				BlockIndex: msg.BlockIndex,
@@ -92,7 +92,7 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 	sm.log.Debugw("EventStateUpdateMsg",
 		"sender", msg.SenderIndex,
 		"state index", msg.BlockIndex,
-		"batch index", msg.IndexInTheBlock,
+		"block index", msg.IndexInTheBlock,
 	)
 	if sm.syncedBatch == nil {
 		return
@@ -101,11 +101,11 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 		return
 	}
 	if int(msg.IndexInTheBlock) >= len(sm.syncedBatch.stateUpdates) {
-		sm.log.Errorf("bad batch index in the state update message")
+		sm.log.Errorf("bad block index in the state update message")
 		return
 	}
 	sh := util.GetHashValue(msg.StateUpdate)
-	sm.log.Debugf("EventStateUpdateMsg: receiving stateUpdate batch index: %d hash: %s",
+	sm.log.Debugf("EventStateUpdateMsg: receiving stateUpdate block index: %d hash: %s",
 		msg.IndexInTheBlock, sh.String())
 
 	sm.syncedBatch.stateUpdates[msg.IndexInTheBlock] = msg.StateUpdate
@@ -115,23 +115,23 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 		// some are missing
 		return
 	}
-	// check if whole batch already received
+	// check if whole block already received
 	for _, su := range sm.syncedBatch.stateUpdates {
 		if su == nil {
 			// some state updates are missing
 			return
 		}
 	}
-	// the whole batch received
+	// the whole block received
 	batch, err := state.NewBlock(sm.syncedBatch.stateUpdates)
 	if err != nil {
-		sm.log.Errorf("failed to create batch: %v", err)
+		sm.log.Errorf("failed to create block: %v", err)
 		sm.syncedBatch = nil
 		return
 	}
 	batch.WithBlockIndex(sm.syncedBatch.stateIndex).WithStateTransaction(sm.syncedBatch.stateTxId)
 
-	sm.log.Debugf("EventStateUpdateMsg: reconstructed batch %s", batch.String())
+	sm.log.Debugf("EventStateUpdateMsg: reconstructed block %s", batch.String())
 
 	sm.syncedBatch = nil
 	go sm.chain.ReceiveMessage(chain.PendingBlockMsg{
@@ -152,27 +152,27 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 	vh := stateBlock.StateHash()
 	sm.log.Debugw("EventStateTransactionMsg",
 		"txid", msg.ID().String(),
-		"state index", stateBlock.StateIndex(),
+		"state index", stateBlock.BlockIndex(),
 		"state hash", vh.String(),
 	)
 
-	sm.EvidenceStateIndex(stateBlock.StateIndex())
+	sm.EvidenceStateIndex(stateBlock.BlockIndex())
 
 	if sm.solidStateValid {
-		if stateBlock.StateIndex() != sm.solidState.StateIndex()+1 {
+		if stateBlock.BlockIndex() != sm.solidState.StateIndex()+1 {
 			sm.log.Debugf("skip state transaction: expected with state index #%d, got #%d, Txid: %s",
-				sm.solidState.StateIndex()+1, stateBlock.StateIndex(), msg.ID().String())
+				sm.solidState.StateIndex()+1, stateBlock.BlockIndex(), msg.ID().String())
 			return
 		}
 	} else {
 		if sm.solidState == nil {
 			// pre-origin
-			if stateBlock.StateIndex() != 0 {
+			if stateBlock.BlockIndex() != 0 {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != 0")
 				return
 			}
 		} else {
-			if stateBlock.StateIndex() != sm.solidState.StateIndex() {
+			if stateBlock.BlockIndex() != sm.solidState.StateIndex() {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != sm.solidState.BlockIndex()")
 				return
 			}
@@ -187,12 +187,12 @@ func (sm *stateManager) EventPendingBatchMsg(msg chain.PendingBlockMsg) {
 	sm.log.Debugw("EventPendingBatchMsg",
 		"state index", msg.Block.StateIndex(),
 		"size", msg.Block.Size(),
-		"txid", msg.Block.StateTransactionId().String(),
-		"batch essence", msg.Block.EssenceHash().String(),
+		"txid", msg.Block.StateTransactionID().String(),
+		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)
 
-	sm.addPendingBatch(msg.Block)
+	sm.addPendingBlock(msg.Block)
 	sm.takeAction()
 }
 

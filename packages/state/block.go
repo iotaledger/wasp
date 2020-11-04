@@ -61,7 +61,7 @@ func MustNewOriginBlock(color *balance.Color) Block {
 func (b *block) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.StateIndex())
-	ret += fmt.Sprintf("state txid: %s\n", b.StateTransactionId().String())
+	ret += fmt.Sprintf("state txid: %s\n", b.StateTransactionID().String())
 	ret += fmt.Sprintf("timestamp: %d\n", b.Timestamp())
 	ret += fmt.Sprintf("size: %d\n", b.Size())
 	ret += fmt.Sprintf("essence: %s\n", b.EssenceHash().String())
@@ -71,7 +71,7 @@ func (b *block) String() string {
 	return ret
 }
 
-func (b *block) StateTransactionId() valuetransaction.ID {
+func (b *block) StateTransactionID() valuetransaction.ID {
 	return b.stateTxId
 }
 
@@ -106,7 +106,7 @@ func (b *block) Size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 
-func (b *block) RequestIds() []*coretypes.RequestID {
+func (b *block) RequestIDs() []*coretypes.RequestID {
 	ret := make([]*coretypes.RequestID, b.Size())
 	for i, su := range b.stateUpdates {
 		ret[i] = su.RequestID()

@@ -38,7 +38,7 @@ func handleStateQuery(c echo.Context) error {
 	if !exist {
 		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", chainID.String()))
 	}
-	txid := batch.StateTransactionId()
+	txid := batch.StateTransactionID()
 	ret := &statequery.Results{
 		KeyQueryResults: make([]*statequery.QueryResult, len(req.KeyQueries)),
 
@@ -46,9 +46,9 @@ func handleStateQuery(c echo.Context) error {
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  jsonable.NewValueTxID(&txid),
-		Requests:   make([]*coretypes.RequestID, len(batch.RequestIds())),
+		Requests:   make([]*coretypes.RequestID, len(batch.RequestIDs())),
 	}
-	copy(ret.Requests, batch.RequestIds())
+	copy(ret.Requests, batch.RequestIDs())
 	vars := state.Variables().Codec()
 	for i, q := range req.KeyQueries {
 		result, err := q.Execute(vars)

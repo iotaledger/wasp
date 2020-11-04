@@ -85,7 +85,7 @@ func (op *operator) startCalculationsAsLeader() {
 	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			BlockIndex: op.stateTx.MustState().StateIndex(),
+			BlockIndex: op.stateTx.MustState().BlockIndex(),
 		},
 		RewardAddress: rewardAddress,
 		Balances:      op.balances,
@@ -188,7 +188,7 @@ func (op *operator) checkQuorum() bool {
 
 	txid := op.leaderStatus.resultTx.ID()
 	sh := op.leaderStatus.resultTx.MustState().StateHash()
-	stateIndex := op.leaderStatus.resultTx.MustState().StateIndex()
+	stateIndex := op.leaderStatus.resultTx.MustState().BlockIndex()
 	op.log.Infof("FINALIZED RESULT. txid: %s, state index: #%d, state hash: %s, contributors: %+v",
 		txid.String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
@@ -205,7 +205,7 @@ func (op *operator) checkQuorum() bool {
 	msgData := util.MustBytes(&chain.NotifyFinalResultPostedMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			BlockIndex: op.stateTx.MustState().StateIndex(),
+			BlockIndex: op.stateTx.MustState().BlockIndex(),
 		},
 		TxId: txid,
 	})

@@ -58,11 +58,11 @@ type Block interface {
 	ForEach(func(uint16, StateUpdate) bool)
 	StateIndex() uint32
 	WithBlockIndex(uint32) Block
-	StateTransactionId() valuetransaction.ID
+	StateTransactionID() valuetransaction.ID
 	WithStateTransaction(valuetransaction.ID) Block
 	Timestamp() int64
 	Size() uint16
-	RequestIds() []*coretypes.RequestID
+	RequestIDs() []*coretypes.RequestID
 	EssenceHash() *hashing.HashValue // except state transaction id
 	String() string
 	Write(io.Writer) error

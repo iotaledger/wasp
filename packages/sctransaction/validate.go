@@ -43,7 +43,7 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 	if outBalance != expectedOutputBalance {
 		return false, fmt.Errorf("non-existent or wrong output with SC token")
 	}
-	if mayBeOrigin && stateBlock.StateIndex() != 0 {
+	if mayBeOrigin && stateBlock.BlockIndex() != 0 {
 		return false, fmt.Errorf("origin transaction must have state index 0")
 	}
 	return mayBeOrigin, nil
