@@ -188,7 +188,7 @@ const tplSc = `
 	{{if .State}}
 		<div>
 			<h3>State</h3>
-			<p>State index: <code>{{.State.StateIndex}}</code></p>
+			<p>State index: <code>{{.State.BlockIndex}}</code></p>
 			<p>Timestamp: <code>{{formatTimestamp .State.Timestamp}}</code></p>
 			<p>State Hash: <code>{{.State.Hash}}</code></p>
 			<p>SC Program Hash: <code>{{.ProgramHash}}</code></p>
@@ -202,13 +202,13 @@ const tplSc = `
 	{{if .Block}}
 		<div>
 			<h3>Block</h3>
-			<p>State Transaction ID: <code>{{.Block.StateTransactionId}}</code></p>
+			<p>State Transaction ID: <code>{{.Block.AnchorTransactionID}}</code></p>
 			<p>Timestamp: <code>{{formatTimestamp .Block.Timestamp}}</code></p>
 			<p>Essence Hash: <code>{{.Block.EssenceHash}}</code></p>
 			<div>
 				<p>Requests: (<code>{{.Block.Size}}</code> total)</p>
 				<ul>
-				{{range $_, $reqId := .Block.RequestIds}}
+				{{range $_, $reqId := .Block.RequestIDs}}
 					<li><code>{{$reqId}}</code></li>
 				{{end}}
 				</ul>

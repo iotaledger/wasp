@@ -106,7 +106,7 @@ const TplSCInfo = `
 	<h4>State details</h4>
     <p>
 	  <ul>
-		<li>Index: <code>{{.Status.StateIndex}}</code></li>
+		<li>Index: <code>{{.Status.BlockIndex}}</code></li>
 		<li>Timestamp: <code>{{.Status.Timestamp}}</code></li>
 		<li>Anchor transaction: <code>{{.Status.StateTxId}}</code></li>
 		<li>State hash: <code>{{.Status.StateHash}}</code></li>

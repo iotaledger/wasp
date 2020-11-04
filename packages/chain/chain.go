@@ -59,11 +59,11 @@ const (
 type StateManager interface {
 	EvidenceStateIndex(idx uint32)
 	EventStateIndexPingPongMsg(msg *StateIndexPingPongMsg)
-	EventGetBatchMsg(msg *GetBatchMsg)
-	EventBatchHeaderMsg(msg *BatchHeaderMsg)
+	EventGetBlockMsg(msg *GetBlockMsg)
+	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
 	EventStateTransactionMsg(msg *StateTransactionMsg)
-	EventPendingBatchMsg(msg PendingBatchMsg)
+	EventPendingBatchMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 }
 

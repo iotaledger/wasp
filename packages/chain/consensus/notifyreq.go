@@ -37,9 +37,9 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	reqIds := takeIds(reqs)
 	msgData := util.MustBytes(&chain.NotifyReqMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			StateIndex: op.mustStateIndex(),
+			BlockIndex: op.mustStateIndex(),
 		},
-		RequestIds: reqIds,
+		RequestIDs: reqIds,
 	})
 
 	// send until first success, but no more than number of nodes in the committee
@@ -56,7 +56,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 
 func (op *operator) storeNotification(msg *chain.NotifyReqMsg) {
 	stateIndex, stateDefined := op.stateIndex()
-	if stateDefined && msg.StateIndex < stateIndex {
+	if stateDefined && msg.BlockIndex < stateIndex {
 		// don't save from earlier. The current currentState saved only for tracking
 		return
 	}
@@ -70,10 +70,10 @@ func (op *operator) markRequestsNotified(msgs []*chain.NotifyReqMsg) {
 		return
 	}
 	for _, msg := range msgs {
-		if msg.StateIndex != stateIndex {
+		if msg.BlockIndex != stateIndex {
 			continue
 		}
-		for _, reqid := range msg.RequestIds {
+		for _, reqid := range msg.RequestIDs {
 			req, ok := op.requestFromId(reqid)
 			if !ok {
 				continue
@@ -101,7 +101,7 @@ func (op *operator) adjustNotifications() {
 	// clean notification backlog from messages from current and and past stages
 	newBacklog := op.notificationsBacklog[:0] // new slice, same underlying array!
 	for _, msg := range op.notificationsBacklog {
-		if msg.StateIndex < stateIndex {
+		if msg.BlockIndex < stateIndex {
 			continue
 		}
 		newBacklog = append(newBacklog, msg)

@@ -14,7 +14,7 @@ func (s *sandbox) InstallProgram(vmtype string, programBinary []byte, descriptio
 	par := codec.NewCodec(dict.NewDict())
 	par.SetString("vmtype", vmtype)
 	par.Set("programBinary", programBinary)
-	resp, err := s.CallContract(0, "newContract", par)
+	resp, err := s.CallContract(0, "deployContract", par)
 	if err != nil {
 		return 0, err
 	}

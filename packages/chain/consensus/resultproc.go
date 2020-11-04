@@ -91,7 +91,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 
 	msgData := util.MustBytes(&chain.SignedHashMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			StateIndex: op.mustStateIndex(),
+			BlockIndex: op.mustStateIndex(),
 		},
 		BatchHash:     batchHash,
 		OrigTimestamp: result.Timestamp,
@@ -131,7 +131,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		panic("bh != op.leaderStatus.batchHash")
 	}
 	if len(result.Requests) != int(result.ResultBlock.Size()) {
-		panic("len(result.RequestIds) != int(result.ResultBlock.Size())")
+		panic("len(result.RequestIDs) != int(result.ResultBlock.Size())")
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())

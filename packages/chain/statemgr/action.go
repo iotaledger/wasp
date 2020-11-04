@@ -36,9 +36,9 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 
 	sm.consensusNotifiedOnStateTransition = true
 	go sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState:    sm.solidState,
-		StateTransaction: sm.approvingTransaction,
-		Synchronized:     sm.isSynchronized(),
+		VariableState:     sm.solidState,
+		AnchorTransaction: sm.approvingTransaction,
+		Synchronized:      sm.isSynchronized(),
 	})
 }
 
@@ -175,9 +175,9 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		return
 	}
 	// it is time to ask for the next state update to next peer in the permutation
-	data := util.MustBytes(&chain.GetBatchMsg{
+	data := util.MustBytes(&chain.GetBlockMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			StateIndex: sm.solidState.StateIndex() + 1,
+			BlockIndex: sm.solidState.StateIndex() + 1,
 		},
 	})
 	// send messages until first without error
@@ -339,7 +339,7 @@ func (sm *stateManager) pingPongReceived(senderIndex uint16) {
 func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
 	sm.chain.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			StateIndex: sm.solidState.StateIndex(),
+			BlockIndex: sm.solidState.StateIndex(),
 		},
 		RSVP: false,
 	}))
@@ -350,7 +350,7 @@ func (sm *stateManager) sendPingsToCommitteePeers() {
 
 	data := util.MustBytes(&chain.StateIndexPingPongMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			StateIndex: sm.solidState.StateIndex(),
+			BlockIndex: sm.solidState.StateIndex(),
 		},
 		RSVP: true,
 	})

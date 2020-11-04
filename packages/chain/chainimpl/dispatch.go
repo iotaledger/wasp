@@ -27,7 +27,7 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 			c.operator.EventStateTransitionMsg(msgt)
 		}
 
-	case chain.PendingBatchMsg:
+	case chain.PendingBlockMsg:
 		c.stateMgr.EventPendingBatchMsg(msgt)
 
 	case *chain.StateTransactionMsg:
@@ -83,7 +83,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 		}
 		msgt.SenderIndex = msg.SenderIndex
 
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 		c.stateMgr.EventStateIndexPingPongMsg(msgt)
 
 	case chain.MsgNotifyRequests:
@@ -92,7 +92,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 
@@ -106,7 +106,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 
@@ -120,7 +120,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		msgt.Timestamp = msg.Timestamp
@@ -135,7 +135,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		msgt.Timestamp = msg.Timestamp
@@ -145,7 +145,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 		}
 
 	case chain.MsgGetBatch:
-		msgt := &chain.GetBatchMsg{}
+		msgt := &chain.GetBlockMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -153,18 +153,18 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 
 		msgt.SenderIndex = msg.SenderIndex
 
-		c.stateMgr.EventGetBatchMsg(msgt)
+		c.stateMgr.EventGetBlockMsg(msgt)
 
 	case chain.MsgBatchHeader:
-		msgt := &chain.BatchHeaderMsg{}
+		msgt := &chain.BlockHeaderMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
-		c.stateMgr.EventBatchHeaderMsg(msgt)
+		c.stateMgr.EventBlockHeaderMsg(msgt)
 
 	case chain.MsgStateUpdate:
 		msgt := &chain.StateUpdateMsg{}
@@ -172,7 +172,7 @@ func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.StateIndex)
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventStateUpdateMsg(msgt)

@@ -13,7 +13,7 @@ import (
 
 // EventStateTransitionMsg is triggered by new currentState transition message sent by currentState manager
 func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
-	op.setNewSCState(msg.StateTransaction, msg.VariableState, msg.Synchronized)
+	op.setNewSCState(msg.AnchorTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.currentState.Hash()
 	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",
@@ -74,9 +74,9 @@ func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
 // EventNotifyReqMsg request notification received from the peer
 func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
-		"reqIds", idsShortStr(msg.RequestIds),
+		"reqIds", idsShortStr(msg.RequestIDs),
 		"sender", msg.SenderIndex,
-		"stateIdx", msg.StateIndex,
+		"stateIdx", msg.BlockIndex,
 	)
 	op.storeNotification(msg)
 	op.markRequestsNotified([]*chain.NotifyReqMsg{msg})
@@ -95,7 +95,7 @@ func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"reqIds", idsShortStr(msg.RequestIds),
 	)
 	stateIndex, ok := op.stateIndex()
-	if !ok || msg.StateIndex != stateIndex {
+	if !ok || msg.BlockIndex != stateIndex {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
@@ -162,8 +162,8 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 
 	// inform state manager about new result batch
 	go func() {
-		op.chain.ReceiveMessage(chain.PendingBatchMsg{
-			Batch: ctx.ResultBlock,
+		op.chain.ReceiveMessage(chain.PendingBlockMsg{
+			Block: ctx.ResultBlock,
 		})
 	}()
 
@@ -189,7 +189,7 @@ func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
 		// shouldn't be
 		return
 	}
-	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
+	if stateIndex, ok := op.stateIndex(); !ok || msg.BlockIndex != stateIndex {
 		// out of context
 		op.log.Debugf("EventSignedHashMsg: out of context")
 		return
@@ -216,10 +216,10 @@ func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
 func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
-		"stateIdx", msg.StateIndex,
+		"stateIdx", msg.BlockIndex,
 		"txid", msg.TxId.String(),
 	)
-	if stateIndex, ok := op.stateIndex(); !ok || msg.StateIndex != stateIndex {
+	if stateIndex, ok := op.stateIndex(); !ok || msg.BlockIndex != stateIndex {
 		return
 	}
 	if op.iAmCurrentLeader() {

@@ -31,7 +31,7 @@ type PeerMsgHeader struct {
 	// is set upon receive the message
 	SenderIndex uint16
 	// state index in the context of which the message is sent
-	StateIndex uint32
+	BlockIndex uint32
 }
 
 // Ping is sent to receive Pong
@@ -46,7 +46,7 @@ type StateIndexPingPongMsg struct {
 type NotifyReqMsg struct {
 	PeerMsgHeader
 	// list of request ids ordered by the time of arrival
-	RequestIds []coretypes.RequestID
+	RequestIDs []coretypes.RequestID
 }
 
 // message is sent by the leader to all peers immediately after the final transaction is posted
@@ -89,19 +89,17 @@ type SignedHashMsg struct {
 	SigShare tbdn.SigShare
 }
 
-// request batch of updates from peer. Used in syn process
-type GetBatchMsg struct {
+// request block of updates from peer. Used in syn process
+type GetBlockMsg struct {
 	PeerMsgHeader
 }
 
-// the header of the batch message sent by peers in the process of syncing
+// the header of the block message sent by peers in the process of syncing
 // it is sent as a first message while syncing a batch
-type BatchHeaderMsg struct {
+type BlockHeaderMsg struct {
 	PeerMsgHeader
-	// state index of the batch
-	Size uint16
-	// approving transaction id
-	StateTransactionId valuetransaction.ID
+	Size                uint16
+	AnchorTransactionID valuetransaction.ID
 }
 
 // state update sent to peer. Used in sync process, as part of batch
@@ -110,7 +108,7 @@ type StateUpdateMsg struct {
 	// state update
 	StateUpdate state.StateUpdate
 	// position in a batch
-	BatchIndex uint16
+	IndexInTheBlock uint16
 }
 
 // used for testing of the communications
@@ -129,17 +127,17 @@ type StateTransitionMsg struct {
 	// new variable state
 	VariableState state.VirtualState
 	// corresponding state transaction
-	StateTransaction *sctransaction.Transaction
+	AnchorTransaction *sctransaction.Transaction
 	// processed requests
-	RequestIds []*coretypes.RequestID
+	RequestIDs []*coretypes.RequestID
 	// is the state index last seen
 	Synchronized bool
 }
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
 // - state manager to itself when batch is completed after syncing
-type PendingBatchMsg struct {
-	Batch state.Block
+type PendingBlockMsg struct {
+	Block state.Block
 }
 
 // message is sent to the consensus manager after it receives state transaction

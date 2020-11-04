@@ -85,7 +85,7 @@ func (op *operator) startCalculationsAsLeader() {
 	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			StateIndex: op.stateTx.MustState().StateIndex(),
+			BlockIndex: op.stateTx.MustState().StateIndex(),
 		},
 		RewardAddress: rewardAddress,
 		Balances:      op.balances,
@@ -205,7 +205,7 @@ func (op *operator) checkQuorum() bool {
 	msgData := util.MustBytes(&chain.NotifyFinalResultPostedMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			StateIndex: op.stateTx.MustState().StateIndex(),
+			BlockIndex: op.stateTx.MustState().StateIndex(),
 		},
 		TxId: txid,
 	})
