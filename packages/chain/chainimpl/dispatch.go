@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 )
 
-func (c *committeeObj) dispatchMessage(msg interface{}) {
+func (c *chainObj) dispatchMessage(msg interface{}) {
 	if !c.isOpenQueue.Load() {
 		return
 	}
@@ -69,7 +69,7 @@ func (c *committeeObj) dispatchMessage(msg interface{}) {
 	}
 }
 
-func (c *committeeObj) processPeerMessage(msg *peering.PeerMessage) {
+func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 
 	rdr := bytes.NewReader(msg.MsgData)
 

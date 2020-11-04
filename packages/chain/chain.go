@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
@@ -32,7 +33,9 @@ type Chain interface {
 	SetReadyConsensus()
 	Dismiss()
 	IsDismissed() bool
+	// requests
 	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
+	EventRequestProcessed() *events.Event
 	// chain processors
 	Processors() *processors.ProcessorCache
 }

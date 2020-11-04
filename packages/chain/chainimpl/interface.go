@@ -2,6 +2,7 @@ package chainimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"time"
 
@@ -19,7 +20,7 @@ func init() {
 	chain.ConstructorNew = newCommitteeObj
 }
 
-func (c *committeeObj) IsOpenQueue() bool {
+func (c *chainObj) IsOpenQueue() bool {
 	if c.IsDismissed() {
 		return false
 	}
@@ -32,7 +33,7 @@ func (c *committeeObj) IsOpenQueue() bool {
 	return c.checkReady()
 }
 
-func (c *committeeObj) SetReadyStateManager() {
+func (c *chainObj) SetReadyStateManager() {
 	if c.IsDismissed() {
 		return
 	}
@@ -44,7 +45,7 @@ func (c *committeeObj) SetReadyStateManager() {
 	c.checkReady()
 }
 
-func (c *committeeObj) SetReadyConsensus() {
+func (c *chainObj) SetReadyConsensus() {
 	if c.IsDismissed() {
 		return
 	}
@@ -56,7 +57,7 @@ func (c *committeeObj) SetReadyConsensus() {
 	c.checkReady()
 }
 
-func (c *committeeObj) SetConnectPeriodOver() {
+func (c *chainObj) SetConnectPeriodOver() {
 	if c.IsDismissed() {
 		return
 	}
@@ -68,7 +69,7 @@ func (c *committeeObj) SetConnectPeriodOver() {
 	c.checkReady()
 }
 
-func (c *committeeObj) SetQuorumOfConnectionsReached() {
+func (c *chainObj) SetQuorumOfConnectionsReached() {
 	if c.IsDismissed() {
 		return
 	}
@@ -80,14 +81,14 @@ func (c *committeeObj) SetQuorumOfConnectionsReached() {
 	c.checkReady()
 }
 
-func (c *committeeObj) isReady() bool {
+func (c *chainObj) isReady() bool {
 	return c.isReadyConsensus &&
 		c.isReadyStateManager &&
 		c.isConnectPeriodOver &&
 		c.isQuorumOfConnectionsReached
 }
 
-func (c *committeeObj) checkReady() bool {
+func (c *chainObj) checkReady() bool {
 	if c.IsDismissed() {
 		panic("dismissed")
 	}
@@ -102,7 +103,7 @@ func (c *committeeObj) checkReady() bool {
 	return c.isReady()
 }
 
-func (c *committeeObj) startTimer() {
+func (c *chainObj) startTimer() {
 	go func() {
 		tick := 0
 		for c.isOpenQueue.Load() {
@@ -113,7 +114,7 @@ func (c *committeeObj) startTimer() {
 	}()
 }
 
-func (c *committeeObj) Dismiss() {
+func (c *chainObj) Dismiss() {
 	c.log.Infof("Dismiss committee for %s", c.chainID.String())
 
 	c.dismissOnce.Do(func() {
@@ -132,31 +133,31 @@ func (c *committeeObj) Dismiss() {
 	publisher.Publish("dismissed_committee", c.chainID.String())
 }
 
-func (c *committeeObj) IsDismissed() bool {
+func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *committeeObj) ID() *coretypes.ChainID {
+func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *committeeObj) OwnerAddress() *address.Address {
+func (c *chainObj) OwnerAddress() *address.Address {
 	return &c.ownerAddress
 }
 
-func (c *committeeObj) Color() *balance.Color {
+func (c *chainObj) Color() *balance.Color {
 	return &c.color
 }
 
-func (c *committeeObj) Size() uint16 {
+func (c *chainObj) Size() uint16 {
 	return c.size
 }
 
-func (c *committeeObj) Quorum() uint16 {
+func (c *chainObj) Quorum() uint16 {
 	return c.quorum
 }
 
-func (c *committeeObj) ReceiveMessage(msg interface{}) {
+func (c *chainObj) ReceiveMessage(msg interface{}) {
 	if c.isOpenQueue.Load() {
 		select {
 		case c.chMsg <- msg:
@@ -171,7 +172,7 @@ func (c *committeeObj) ReceiveMessage(msg interface{}) {
 }
 
 // sends message to peer by index. It can be both committee peer or access peer
-func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+func (c *chainObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 	if int(targetPeerIndex) >= len(c.peers) {
 		return fmt.Errorf("SendMsg: wrong peer index")
 	}
@@ -188,7 +189,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	return peer.SendMsg(msg)
 }
 
-func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
+func (c *chainObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
 		ChainID:     (coretypes.ChainID)(c.chainID),
 		SenderIndex: c.ownIndex,
@@ -202,7 +203,7 @@ func (c *committeeObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts 
 // if is not able to send message after size attempts, returns an error
 // seqIndex is start seqIndex
 // returned index is seqIndex of the successful send
-func (c *committeeObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error) {
+func (c *chainObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error) {
 	if len(seq) != int(c.Size()) || seqIndex >= c.Size() || !util.ValidPermutation(seq) {
 		return 0, fmt.Errorf("SendMsgInSequence: wrong params")
 	}
@@ -220,7 +221,7 @@ func (c *committeeObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex 
 }
 
 // returns true if peer is alive. Used by the operator to determine current leader
-func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
+func (c *chainObj) IsAlivePeer(peerIndex uint16) bool {
 	if int(peerIndex) >= len(c.peers) {
 		return false
 	}
@@ -233,20 +234,20 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	return c.peers[peerIndex].IsAlive()
 }
 
-func (c *committeeObj) OwnPeerIndex() uint16 {
+func (c *chainObj) OwnPeerIndex() uint16 {
 	return c.ownIndex
 }
 
-func (c *committeeObj) NumPeers() uint16 {
+func (c *chainObj) NumPeers() uint16 {
 	return uint16(len(c.peers))
 }
 
 // first N peers are committee peers, the rest are access peers in any
-func (c *committeeObj) committeePeers() []*peering.Peer {
+func (c *chainObj) committeePeers() []*peering.Peer {
 	return c.peers[:c.size]
 }
 
-func (c *committeeObj) HasQuorum() bool {
+func (c *chainObj) HasQuorum() bool {
 	count := uint16(0)
 	for _, peer := range c.committeePeers() {
 		if peer == nil {
@@ -263,7 +264,7 @@ func (c *committeeObj) HasQuorum() bool {
 	return false
 }
 
-func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
+func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.committeePeers() {
 		status := &chain.PeerStatus{
@@ -282,7 +283,7 @@ func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) chain.RequestProcessingStatus {
+func (c *chainObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) chain.RequestProcessingStatus {
 	if c.IsDismissed() {
 		return chain.RequestProcessingStatusUnknown
 	}
@@ -301,6 +302,10 @@ func (c *committeeObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) ch
 	return chain.RequestProcessingStatusCompleted
 }
 
-func (c *committeeObj) Processors() *processors.ProcessorCache {
+func (c *chainObj) Processors() *processors.ProcessorCache {
 	return c.procset
+}
+
+func (c *chainObj) EventRequestProcessed() *events.Event {
+	return c.eventRequestProcessed
 }

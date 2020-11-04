@@ -3,6 +3,7 @@ package chains
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"sync"
 
@@ -96,6 +97,12 @@ func ActivateChain(bootupData *registry.BootupData) error {
 	if c != nil {
 		chains[bootupData.ChainID] = c
 		log.Infof("activated chain:\n%s", bootupData.String())
+
+		// FOR TESTING ONLY
+		c.EventRequestProcessed().Attach(events.NewClosure(func(reqid coretypes.RequestID) {
+			log.Infof("+++++++ request processed: %s", reqid.String())
+		}))
+
 	} else {
 		log.Infof("failed to activate chain:\n%s", bootupData.String())
 	}

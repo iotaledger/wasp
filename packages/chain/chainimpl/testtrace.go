@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *committeeObj) testTrace(msg *chain.TestTraceMsg) {
+func (c *chainObj) testTrace(msg *chain.TestTraceMsg) {
 	log.Debugf("++++ received TestTraceMsg from #%d", msg.SenderIndex)
 
 	if len(msg.Sequence) != int(c.Size()) || !util.ValidPermutation(msg.Sequence) {
@@ -35,7 +35,7 @@ func (c *committeeObj) testTrace(msg *chain.TestTraceMsg) {
 	}
 }
 
-func (c *committeeObj) InitTestRound() {
+func (c *chainObj) InitTestRound() {
 	msg := &chain.TestTraceMsg{
 		InitTime:      time.Now().UnixNano(),
 		InitPeerIndex: c.ownIndex,
@@ -54,7 +54,7 @@ func (c *committeeObj) InitTestRound() {
 	}
 }
 
-func (c *committeeObj) mustFindIndexOf(val uint16, sequence []uint16) uint16 {
+func (c *chainObj) mustFindIndexOf(val uint16, sequence []uint16) uint16 {
 	for i, s := range sequence {
 		if s == val {
 			return uint16(i)

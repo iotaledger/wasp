@@ -1,6 +1,7 @@
 package chainimpl
 
 import (
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"sync"
 	"time"
@@ -18,7 +19,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-type committeeObj struct {
+type chainObj struct {
 	isReadyStateManager          bool
 	isReadyConsensus             bool
 	isConnectPeriodOver          bool
@@ -41,7 +42,13 @@ type committeeObj struct {
 	stateMgr        chain.StateManager
 	operator        chain.Operator
 	isCommitteeNode atomic.Bool
-	log             *logger.Logger
+	//
+	eventRequestProcessed *events.Event
+	log                   *logger.Logger
+}
+
+func requestIDCaller(handler interface{}, params ...interface{}) {
+	handler.(func(interface{}))(params[0])
 }
 
 func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) chain.Chain {
@@ -86,7 +93,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 			return nil
 		}
 	}
-	ret := &committeeObj{
+	ret := &chainObj{
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      bootupData.ChainID,
@@ -94,7 +101,10 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		color:        bootupData.Color,
 		peers:        make([]*peering.Peer, 0),
 		onActivation: onActivation,
-		log:          log.Named(util.Short(bootupData.ChainID.String())),
+		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
+			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
+		}),
+		log: log.Named(util.Short(bootupData.ChainID.String())),
 	}
 	if keyExists {
 		ret.ownIndex = dkshare.Index
