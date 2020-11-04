@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 type NewOriginTransactionParams struct {
@@ -73,8 +72,8 @@ func NewBootupRequestTransaction(par NewBootupRequestTransactionParams) (*sctran
 	bootupRequest := sctransaction.NewRequestBlock(0, bootupContractID, root.EntryPointInitialize)
 	args := dict.NewDict()
 	c := codec.NewCodec(args)
-	c.SetChainID(vmconst.VarNameChainID, &par.ChainID)
-	c.SetString(vmconst.VarNameDescription, par.Description)
+	c.SetChainID(root.VarChainID, &par.ChainID)
+	c.SetString(root.VarDescription, par.Description)
 	bootupRequest.SetArgs(args)
 
 	if err := txb.AddRequestSection(bootupRequest); err != nil {

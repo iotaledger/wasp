@@ -70,6 +70,7 @@ const (
 	VarChainID            = "c"
 	VarRegistryOfBinaries = "b"
 	VarContractRegistry   = "r"
+	VarDescription        = "d"
 )
 
 const (
@@ -93,8 +94,12 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", VarChainID, err.Error())
 	}
+	chainDescription, ok, err := params.GetString(VarDescription)
+	if err != nil {
+		return nil, fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", VarDescription, err.Error())
+	}
 	if !ok {
-		return nil, fmt.Errorf("root.initialize.fail: 'chainID' not found")
+		chainDescription = "M/A"
 	}
 	contractRegistry := state.GetArray(VarContractRegistry)
 
@@ -103,6 +108,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
+	state.SetString(VarDescription, chainDescription)
 
 	// at index 0 always this contract
 	contractRegistry.Push(EncodeContractRecord(GetRootContractRecord()))

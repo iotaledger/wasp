@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -37,7 +36,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 type SmartContractFinalConfig struct {
@@ -770,23 +768,16 @@ func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, exp
 }
 
 func (cluster *Cluster) VerifySCState(sc *SmartContractFinalConfig, expectedIndex uint32, expectedState map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, func(host string, stateIndex uint32, state dict.Dict) bool {
+	return cluster.WithSCState(sc, func(host string, blockIndex uint32, state dict.Dict) bool {
 		fmt.Printf("[cluster] State verification for node %s\n", host)
-
-		scProgHash, err := hashing.HashValueFromBase58(sc.ProgramHash)
-		if err != nil {
-			panic("could not convert SC program hash")
-		}
 
 		d := dict.FromGoMap(expectedState)
 		expectedState := codec.NewCodec(d)
-		expectedState.SetAddress(vmconst.VarNameOwnerAddress, sc.OwnerAddress())
-		expectedState.SetHashValue(vmconst.VarNameProgramData, &scProgHash)
 
 		fmt.Printf("    Expected: index %d\n%s\n", expectedIndex, expectedState)
-		fmt.Printf("      Actual: index %d\n%s\n", stateIndex, state)
+		fmt.Printf("      Actual: index %d\n%s\n", blockIndex, state)
 
-		if expectedIndex > 0 && stateIndex != expectedIndex {
+		if expectedIndex > 0 && blockIndex != expectedIndex {
 			fmt.Printf("   FAIL: index mismatch\n")
 			return false
 		}

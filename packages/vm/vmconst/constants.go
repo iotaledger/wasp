@@ -13,7 +13,6 @@ const (
 )
 
 const (
-	VarNameChainID       = "$chainid$"
 	VarNameProgramData   = "$progdata$"
 	VarNameOwnerAddress  = "$owneraddr$"
 	VarNameDescription   = "$description$"
