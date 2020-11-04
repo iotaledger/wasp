@@ -227,6 +227,12 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprintf(textout, "posting bootup request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
 	}
 
+	// ---------- wait until the request is processed in all committee nodes
+	if err = committee.WaitUntilAllRequestsProcessed(reqTx, 30*time.Second); err != nil {
+		fmt.Fprintf(textout, "waiting bootup request transaction.. FAILED: %v\n", err)
+		return nil, nil, nil, err
+	}
+
 	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
 

@@ -22,3 +22,7 @@ func NotFound(message string) *HTTPError {
 func Conflict(message string) *HTTPError {
 	return &HTTPError{Code: http.StatusConflict, Message: message}
 }
+
+func Timeout(message string) *HTTPError {
+	return &HTTPError{Code: http.StatusRequestTimeout, Message: message}
+}

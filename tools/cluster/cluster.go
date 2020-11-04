@@ -212,7 +212,6 @@ func (cluster *Cluster) SCClient(sc *SmartContractFinalConfig, sigScheme signatu
 		cluster.WaspClient(sc.CommitteeNodes[0]),
 		&chainid,
 		sigScheme,
-		30*time.Second,
 	)
 }
 

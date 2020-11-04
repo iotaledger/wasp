@@ -3,6 +3,7 @@ package apilib
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -14,9 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/subscribe"
-	"strconv"
-	"time"
 )
 
 type RequestBlockParams struct {
@@ -34,10 +32,6 @@ type CreateRequestTransactionParams struct {
 	Mint                map[address.Address]int64
 	Post                bool
 	WaitForConfirmation bool
-	WaitForCompletion   bool
-	PublisherHosts      []string
-	PublisherQuorum     int
-	Timeout             time.Duration
 }
 
 func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.Transaction, error) {
@@ -94,36 +88,18 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	if !par.Post {
 		return tx, nil
 	}
+
 	if !par.WaitForConfirmation {
 		if err = par.NodeClient.PostTransaction(tx.Transaction); err != nil {
 			return nil, err
 		}
 		return tx, nil
 	}
-	var subs *subscribe.Subscription
-	if par.WaitForCompletion {
-		// post and wait for completion
-		subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out", par.PublisherQuorum)
-		if err != nil {
-			return nil, err
-		}
-		defer subs.Close()
-	}
 
 	err = par.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
-	if par.WaitForCompletion {
-		patterns := make([][]string, len(par.BlockParams))
-		for i := range patterns {
-			patterns[i] = []string{"request_out", par.BlockParams[i].TargetContractID.String(), tx.ID().String(), strconv.Itoa(i)}
-		}
-		if !subs.WaitForPatterns(patterns, par.Timeout, par.PublisherQuorum) {
-			return nil, fmt.Errorf("didn't receive completion message after %v", par.Timeout)
-		}
-	}
-
 	return tx, nil
 }
 
