@@ -167,8 +167,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	chainid := (coretypes.ChainID)(*chainAddr) // using address as chain id
 
-	// ------------ put bootup records to hosts
-	err = committee.PutBootupData(&registry.BootupData{
+	// ------------ put chain records to hosts
+	err = committee.PutChainRecord(&registry.ChainRecord{
 		ChainID:        chainid,
 		OwnerAddress:   ownerAddr,
 		Color:          (balance.Color)(originTx.ID()),
@@ -193,7 +193,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 	fmt.Fprint(textout, "activating chain.. OK.\n")
 
-	// ============= create bootup request for the root contract
+	// ============= create root init request for the root contract
 
 	// TODO to via chainclient with timeout etc
 
@@ -204,32 +204,32 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		return nil, nil, nil, err
 	}
 
-	// create bootup (init) transation
-	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewBootupRequestTransactionParams{
+	// create root init transaction
+	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainid,
 		OwnerSignatureScheme: par.OwnerSigScheme,
 		AllInputs:            allOuts,
 		Description:          par.Description,
 	})
 	if err != nil {
-		fmt.Fprintf(textout, "creating bootup request.. FAILED: %v\n", err)
+		fmt.Fprintf(textout, "creating root init request.. FAILED: %v\n", err)
 		return nil, nil, nil, err
 	}
-	fmt.Fprintf(textout, "creating bootup request.. OK: %v\n", err)
+	fmt.Fprintf(textout, "creating root init request.. OK: %v\n", err)
 
-	// ---------- post bootup request transaction and wait for confirmation
+	// ---------- post root init request transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(reqTx.Transaction)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "posting bootup request transaction.. FAILED: %v\n", err)
+		fmt.Fprintf(textout, "posting root init request transaction.. FAILED: %v\n", err)
 		return nil, nil, nil, err
 	} else {
-		fmt.Fprintf(textout, "posting bootup request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
+		fmt.Fprintf(textout, "posting root init request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
 	}
 
 	// ---------- wait until the request is processed in all committee nodes
 	if err = committee.WaitUntilAllRequestsProcessed(reqTx, 30*time.Second); err != nil {
-		fmt.Fprintf(textout, "waiting bootup request transaction.. FAILED: %v\n", err)
+		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return nil, nil, nil, err
 	}
 

@@ -14,9 +14,9 @@ import (
 	"io"
 )
 
-// BootupData is a minimum data needed to load a committee for the chain
+// ChainRecord is a minimum data needed to load a committee for the chain
 // it is up to the node (not smart contract) to check authorisations to create/update this record
-type BootupData struct {
+type ChainRecord struct {
 	ChainID        coretypes.ChainID
 	OwnerAddress   address.Address // only needed for committee nodes, can be nil for access nodes
 	Color          balance.Color   // origin tx hash
@@ -25,11 +25,11 @@ type BootupData struct {
 	Active         bool
 }
 
-func dbkeyBootupData(chainID *coretypes.ChainID) []byte {
-	return database.MakeKey(database.ObjectTypeBootupData, chainID[:])
+func dbkeyChainRecord(chainID *coretypes.ChainID) []byte {
+	return database.MakeKey(database.ObjectTypeChainRecord, chainID[:])
 }
 
-func SaveBootupData(bd *BootupData) error {
+func SaveChainRecord(bd *ChainRecord) error {
 	if bd.ChainID == coretypes.NilChainID {
 		return fmt.Errorf("can be empty chain id")
 	}
@@ -40,38 +40,38 @@ func SaveBootupData(bd *BootupData) error {
 	if err := bd.Write(&buf); err != nil {
 		return err
 	}
-	if err := database.GetRegistryPartition().Set(dbkeyBootupData(&bd.ChainID), buf.Bytes()); err != nil {
+	if err := database.GetRegistryPartition().Set(dbkeyChainRecord(&bd.ChainID), buf.Bytes()); err != nil {
 		return err
 	}
-	publisher.Publish("bootuprec", bd.ChainID.String(), bd.Color.String())
+	publisher.Publish("chainrec", bd.ChainID.String(), bd.Color.String())
 	return nil
 }
 
-func GetBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
-	data, err := database.GetRegistryPartition().Get(dbkeyBootupData(chainID))
+func GetChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
+	data, err := database.GetRegistryPartition().Get(dbkeyChainRecord(chainID))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	ret := new(BootupData)
+	ret := new(ChainRecord)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-func UpdateBootupData(chainID *coretypes.ChainID, f func(*BootupData) bool) (*BootupData, error) {
-	bd, err := GetBootupData(chainID)
+func UpdateChainRecord(chainID *coretypes.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
+	bd, err := GetChainRecord(chainID)
 	if err != nil {
 		return nil, err
 	}
 	if bd == nil {
-		return nil, fmt.Errorf("no bootup data found for address %s", chainID.String())
+		return nil, fmt.Errorf("no chain record found for address %s", chainID.String())
 	}
 	if f(bd) {
-		err = SaveBootupData(bd)
+		err = SaveChainRecord(bd)
 		if err != nil {
 			return nil, err
 		}
@@ -79,8 +79,8 @@ func UpdateBootupData(chainID *coretypes.ChainID, f func(*BootupData) bool) (*Bo
 	return bd, nil
 }
 
-func ActivateBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
-	return UpdateBootupData(chainID, func(bd *BootupData) bool {
+func ActivateChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
+	return UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if bd.Active {
 			return false
 		}
@@ -89,8 +89,8 @@ func ActivateBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
 	})
 }
 
-func DeactivateBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
-	return UpdateBootupData(chainID, func(bd *BootupData) bool {
+func DeactivateChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
+	return UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if !bd.Active {
 			return false
 		}
@@ -99,23 +99,23 @@ func DeactivateBootupData(chainID *coretypes.ChainID) (*BootupData, error) {
 	})
 }
 
-func GetBootupRecords() ([]*BootupData, error) {
+func GetChainRecords() ([]*ChainRecord, error) {
 	db := database.GetRegistryPartition()
-	ret := make([]*BootupData, 0)
+	ret := make([]*ChainRecord, 0)
 
-	err := db.Iterate([]byte{database.ObjectTypeBootupData}, func(key kvstore.Key, value kvstore.Value) bool {
-		bd := new(BootupData)
+	err := db.Iterate([]byte{database.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
+		bd := new(ChainRecord)
 		if err := bd.Read(bytes.NewReader(value)); err == nil {
 			ret = append(ret, bd)
 		} else {
-			log.Warnf("corrupted bootup record with key %s", base58.Encode(key))
+			log.Warnf("corrupted chain record with key %s", base58.Encode(key))
 		}
 		return true
 	})
 	return ret, err
 }
 
-func (bd *BootupData) Write(w io.Writer) error {
+func (bd *ChainRecord) Write(w io.Writer) error {
 	if err := bd.ChainID.Write(w); err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (bd *BootupData) Write(w io.Writer) error {
 	return nil
 }
 
-func (bd *BootupData) Read(r io.Reader) error {
+func (bd *ChainRecord) Read(r io.Reader) error {
 	var err error
 	if err = bd.ChainID.Read(r); err != nil {
 		return err
@@ -160,7 +160,7 @@ func (bd *BootupData) Read(r io.Reader) error {
 	return nil
 }
 
-func (bd *BootupData) String() string {
+func (bd *ChainRecord) String() string {
 	ret := "      Target: " + bd.ChainID.String() + "\n"
 	ret += "      Color: " + bd.Color.String() + "\n"
 	ret += "      Owner address: " + bd.OwnerAddress.String() + "\n"

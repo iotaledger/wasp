@@ -19,7 +19,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFASetOwnerMargin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          -1,
@@ -31,7 +31,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -121,7 +121,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color0Bids")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -134,7 +134,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -228,7 +228,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          5,
@@ -241,7 +241,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -359,7 +359,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -371,7 +371,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -493,7 +493,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color1Bidder5WinningBids")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2, // wasps.NumSmartContracts(),
+		"chainrec":           2, // wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          8,
@@ -505,7 +505,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -631,7 +631,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color2Bidders")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          13,
@@ -644,7 +644,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)

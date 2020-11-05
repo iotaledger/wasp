@@ -42,7 +42,7 @@ func TestFrPlaceBet(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1,
@@ -113,7 +113,7 @@ func testFrPlaceBetsAndPlay(t *testing.T, nrOfBets int, wasps *cluster.Cluster) 
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1 + nrOfBets + 1 + 1,

@@ -78,7 +78,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequests,
@@ -145,7 +145,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + increments,
@@ -205,7 +205,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 2,
@@ -269,7 +269,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1 + numRepeats,

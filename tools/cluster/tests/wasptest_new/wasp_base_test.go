@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPutBootupRecord(t *testing.T) {
-	clu := setup(t, "test_cluster", "TestPutBootupRecord")
+func TestPutChainRecord(t *testing.T) {
+	clu := setup(t, "test_cluster", "TestPutChainRecord")
 
 	err := clu.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"chainrec":           1,
 		"active_committee":    0,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -27,7 +27,7 @@ func TestPutBootupRecord(t *testing.T) {
 
 	sc := &clu.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(clu, sc)
+	_, err = PutChainRecord(clu, sc)
 	check(err, t)
 
 	if !clu.WaitUntilExpectationsMet() {
@@ -41,7 +41,7 @@ func TestDeployChain(t *testing.T) {
 	clu := setup(t, "test_cluster", "TestDeployChain")
 
 	err := clu.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
@@ -81,7 +81,7 @@ func TestDeployContract(t *testing.T) {
 	clu := setup(t, "test_cluster", "TestDeployContract")
 
 	err := clu.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
@@ -134,7 +134,7 @@ func TestDeployContract(t *testing.T) {
 //	clu := setup(t, "test_cluster", "TestActivate1Chain")
 //
 //	err := clu.ListenToMessages(map[string]int{
-//		"bootuprec":           2,
+//		"chainrec":           2,
 //		"active_committee":    1,
 //		"dismissed_committee": 0,
 //		"request_in":          0,
@@ -145,7 +145,7 @@ func TestDeployContract(t *testing.T) {
 //
 //	sc := &clu.SmartContractConfig[0]
 //
-//	_, err = PutBootupRecord(clu, sc)
+//	_, err = PutChainRecord(clu, sc)
 //	check(err, t)
 //
 //	err = Activate1Chain(clu, sc)
@@ -160,7 +160,7 @@ func TestDeployContract(t *testing.T) {
 //	clu := setup(t, "test_cluster", "TestActivateAllSC")
 //
 //	err := clu.ListenToMessages(map[string]int{
-//		"bootuprec":           clu.NumSmartContracts() * 2,
+//		"chainrec":           clu.NumSmartContracts() * 2,
 //		"active_committee":    clu.NumSmartContracts(),
 //		"dismissed_committee": 0,
 //		"request_in":          0,
@@ -170,7 +170,7 @@ func TestDeployContract(t *testing.T) {
 //	check(err, t)
 //
 //	for _, sc := range clu.SmartContractConfig {
-//		_, err = PutBootupRecord(clu, &sc)
+//		_, err = PutChainRecord(clu, &sc)
 //		check(err, t)
 //	}
 //
@@ -186,7 +186,7 @@ func TestDeployContract(t *testing.T) {
 //	clu := setup(t, "test_cluster", "TestDeactivate1SC")
 //
 //	err := clu.ListenToMessages(map[string]int{
-//		"bootuprec":           3,
+//		"chainrec":           3,
 //		"active_committee":    1,
 //		"dismissed_committee": 1,
 //		"request_in":          0,
@@ -197,7 +197,7 @@ func TestDeployContract(t *testing.T) {
 //
 //	sc := &clu.SmartContractConfig[0]
 //
-//	_, err = PutBootupRecord(clu, sc)
+//	_, err = PutChainRecord(clu, sc)
 //	check(err, t)
 //
 //	err = Activate1Chain(clu, sc)

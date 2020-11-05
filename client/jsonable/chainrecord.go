@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
-type BootupData struct {
+type ChainRecord struct {
 	ChainID        *ChainID
 	OwnerAddress   *Address
 	Color          *Color
@@ -13,8 +13,8 @@ type BootupData struct {
 	Active         bool
 }
 
-func NewBootupData(bd *registry.BootupData) *BootupData {
-	return &BootupData{
+func NewChainRecord(bd *registry.ChainRecord) *ChainRecord {
+	return &ChainRecord{
 		ChainID:        NewChainID(&bd.ChainID),
 		OwnerAddress:   NewAddress(&bd.OwnerAddress),
 		Color:          NewColor(&bd.Color),
@@ -24,8 +24,8 @@ func NewBootupData(bd *registry.BootupData) *BootupData {
 	}
 }
 
-func (bd *BootupData) BootupData() *registry.BootupData {
-	return &registry.BootupData{
+func (bd *ChainRecord) ChainRecord() *registry.ChainRecord {
+	return &registry.ChainRecord{
 		ChainID:        *bd.ChainID.ChainID(),
 		OwnerAddress:   *bd.OwnerAddress.Address(),
 		Color:          *bd.Color.Color(),

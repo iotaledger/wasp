@@ -51,20 +51,20 @@ func requestIDCaller(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])
 }
 
-func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) chain.Chain {
-	log.Debugw("creating committee", "addr", bootupData.ChainID.String())
+func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) chain.Chain {
+	log.Debugw("creating committee", "addr", chr.ChainID.String())
 
-	addr := bootupData.ChainID
-	if util.ContainsDuplicates(bootupData.CommitteeNodes) ||
-		util.ContainsDuplicates(bootupData.AccessNodes) ||
-		util.IntersectsLists(bootupData.CommitteeNodes, bootupData.AccessNodes) ||
-		util.ContainsInList(peering.MyNetworkId(), bootupData.AccessNodes) {
+	addr := chr.ChainID
+	if util.ContainsDuplicates(chr.CommitteeNodes) ||
+		util.ContainsDuplicates(chr.AccessNodes) ||
+		util.IntersectsLists(chr.CommitteeNodes, chr.AccessNodes) ||
+		util.ContainsInList(peering.MyNetworkId(), chr.AccessNodes) {
 
-		log.Errorf("can't create committee object for %s: bootup data contains duplicate node addresses. Chain nodes: %+v",
-			addr.String(), bootupData.CommitteeNodes)
+		log.Errorf("can't create committee object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
+			addr.String(), chr.CommitteeNodes)
 		return nil
 	}
-	a := (address.Address)(bootupData.ChainID)
+	a := (address.Address)(chr.ChainID)
 	dkshare, keyExists, err := registry.GetDKShare(&a)
 	if err != nil {
 		log.Error(err)
@@ -74,21 +74,21 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 	if !keyExists {
 		// if key doesn't exists, the node still can provide access to the smart contract state as an "access node"
 		// for access nodes, committee nodes are ignored
-		if len(bootupData.AccessNodes) > 0 {
+		if len(chr.AccessNodes) > 0 {
 			log.Info("can't find private key. Node will run as an access node for the address %s", addr.String())
 		} else {
 			log.Errorf("private key wasn't found and no access peers specified. Node can't run for the address %s", addr.String())
 			return nil
 		}
 	} else {
-		if !iAmInTheCommittee(bootupData.CommitteeNodes, dkshare.N, dkshare.Index) {
-			log.Errorf("bootup data inconsistency: the own node %s is not in the committee for %s: %+v",
-				peering.MyNetworkId(), addr.String(), bootupData.CommitteeNodes)
+		if !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, dkshare.Index) {
+			log.Errorf("chain record inconsistency: the own node %s is not in the committee for %s: %+v",
+				peering.MyNetworkId(), addr.String(), chr.CommitteeNodes)
 			return nil
 		}
 		// check for owner address. It is mandatory for the committee node
 		var niladdr address.Address
-		if bootupData.OwnerAddress == niladdr {
+		if chr.OwnerAddress == niladdr {
 			log.Errorf("undefined owner address for the committee node. Dismiss. Addr = %s", addr.String())
 			return nil
 		}
@@ -96,15 +96,15 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 	ret := &chainObj{
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
-		chainID:      bootupData.ChainID,
-		ownerAddress: bootupData.OwnerAddress,
-		color:        bootupData.Color,
+		chainID:      chr.ChainID,
+		ownerAddress: chr.OwnerAddress,
+		color:        chr.Color,
 		peers:        make([]*peering.Peer, 0),
 		onActivation: onActivation,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
-		log: log.Named(util.Short(bootupData.ChainID.String())),
+		log: log.Named(util.Short(chr.ChainID.String())),
 	}
 	if keyExists {
 		ret.ownIndex = dkshare.Index
@@ -112,7 +112,7 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		ret.quorum = dkshare.T
 
 		numNil := 0
-		for _, remoteLocation := range bootupData.CommitteeNodes {
+		for _, remoteLocation := range chr.CommitteeNodes {
 			peer := peering.UsePeer(remoteLocation)
 			if peer == nil {
 				numNil++
@@ -122,10 +122,10 @@ func newCommitteeObj(bootupData *registry.BootupData, log *logger.Logger, onActi
 		if numNil != 1 || ret.peers[dkshare.Index] != nil {
 			// at this point must be exactly 1 element in ret.peers == to nil,
 			// the one with the index in the committee
-			ret.log.Panicf("failed to initialize peers of the committee. committeePeers: %+v. myId: %s", bootupData.CommitteeNodes, peering.MyNetworkId())
+			ret.log.Panicf("failed to initialize peers of the committee. committeePeers: %+v. myId: %s", chr.CommitteeNodes, peering.MyNetworkId())
 		}
 	}
-	for _, remoteLocation := range bootupData.AccessNodes {
+	for _, remoteLocation := range chr.AccessNodes {
 		p := peering.UsePeer(remoteLocation)
 		if p != nil {
 			ret.peers = append(ret.peers, p)

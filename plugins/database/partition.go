@@ -15,7 +15,7 @@ import (
 
 const (
 	ObjectTypeDBSchemaVersion byte = iota
-	ObjectTypeBootupData
+	ObjectTypeChainRecord
 	ObjectTypeDistributedKeyData
 	ObjectTypeSolidState
 	ObjectTypeStateUpdateBatch

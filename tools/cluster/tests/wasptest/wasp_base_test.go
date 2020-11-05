@@ -8,11 +8,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
-func TestPutBootupRecords(t *testing.T) {
-	wasps := setup(t, "test_cluster", "TestPutBootupRecords")
+func TestPutChainRecord(t *testing.T) {
+	wasps := setup(t, "test_cluster", "TestPutChainRecord")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           1,
+		"chainrec":           1,
 		"active_committee":    0,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -23,7 +23,7 @@ func TestPutBootupRecords(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	if !wasps.WaitUntilExpectationsMet() {
@@ -35,7 +35,7 @@ func TestActivate1SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -46,7 +46,7 @@ func TestActivate1SC(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -62,7 +62,7 @@ func TestActivateAllSC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivateAllSC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           wasps.NumSmartContracts() * 2,
+		"chainrec":           wasps.NumSmartContracts() * 2,
 		"active_committee":    wasps.NumSmartContracts(),
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -72,7 +72,7 @@ func TestActivateAllSC(t *testing.T) {
 	check(err, t)
 
 	for _, sc := range wasps.SmartContractConfig {
-		_, err = PutBootupRecord(wasps, &sc)
+		_, err = PutChainRecord(wasps, &sc)
 		check(err, t)
 	}
 
@@ -90,7 +90,7 @@ func TestCreateOrigin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestCreateOrigin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
@@ -101,7 +101,7 @@ func TestCreateOrigin(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -125,7 +125,7 @@ func TestDeactivate1SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestDeactivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           3,
+		"chainrec":           3,
 		"active_committee":    1,
 		"dismissed_committee": 1,
 		"request_in":          0,
@@ -136,7 +136,7 @@ func TestDeactivate1SC(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)

@@ -18,7 +18,7 @@ Currently supported messages and formats (space separated list of strings):
 
 |Message|Format|
 |:--- |:--- |
-|SC bootup record has been saved in the registry | ```bootuprec <SC address> <SC color>``` |
+|Chain record has been saved in the registry | ```chainrec <chainid> <color>``` |
 |SC committee has been activated|```active_committee <SC address>```|
 |SC committee dismissed|```dismissed_commitee <SC address>```|
 |A new SC request reached the node|```request_in <SC address> <request tx ID> <request block index>```|

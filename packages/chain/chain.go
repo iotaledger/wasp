@@ -85,8 +85,8 @@ type Operator interface {
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
-var ConstructorNew func(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Chain
+var ConstructorNew func(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) Chain
 
-func New(bootupData *registry.BootupData, log *logger.Logger, onActivation func()) Chain {
-	return ConstructorNew(bootupData, log, onActivation)
+func New(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) Chain {
+	return ConstructorNew(chr, log, onActivation)
 }

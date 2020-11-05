@@ -10,11 +10,11 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-// Puts bootup records into the nodes. Also requests funds from the nodeClient for owners.
-func PutBootupRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
+// Puts chain records into the nodes. Also requests funds from the nodeClient for owners.
+func PutChainRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
 	requested := make(map[address.Address]bool)
 
-	fmt.Printf("[cluster] creating bootup record for smart contract addr: %s\n", sc.Address)
+	fmt.Printf("[cluster] creating chain record for smart contract addr: %s\n", sc.Address)
 
 	ownerAddr := sc.OwnerAddress()
 	_, ok := requested[*ownerAddr]
@@ -30,7 +30,7 @@ func PutBootupRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 	color, err := putScData(clu, sc)
 	if err != nil {
 		fmt.Printf("[cluster] putScdata: addr = %s: %v\n", sc.Address, err)
-		return nil, fmt.Errorf("failed to create bootup records: %v", err)
+		return nil, fmt.Errorf("failed to create chain records: %v", err)
 	}
 	return color, nil
 }
@@ -50,7 +50,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	committeePeerNodes := clu.WaspHosts(sc.CommitteeNodes, (*cluster.WaspNodeConfig).PeeringHost)
 	accessPeerNodes := clu.WaspHosts(sc.AccessNodes, (*cluster.WaspNodeConfig).PeeringHost)
 
-	err = clu.MultiClient().PutBootupData(&registry.BootupData{
+	err = clu.MultiClient().PutChainRecord(&registry.ChainRecord{
 		ChainID:        (coretypes.ChainID)(addr),
 		Color:          color,
 		OwnerAddress:   *sc.OwnerAddress(),
@@ -59,8 +59,8 @@ func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*bal
 	})
 
 	if err != nil {
-		fmt.Printf("[cluster] PutBootupData returned: %v\n", err)
-		return nil, fmt.Errorf("failed to send bootup data to some commitee nodes")
+		fmt.Printf("[cluster] PutChainRecord returned: %v\n", err)
+		return nil, fmt.Errorf("failed to send chain record to some commitee nodes")
 	}
 	return &color, nil
 }

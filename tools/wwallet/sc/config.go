@@ -22,7 +22,7 @@ type Config struct {
 	Name        string
 	ProgramHash string
 
-	bootupData *registry.BootupData
+	chainRecord *registry.ChainRecord
 }
 
 func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.SCClient {
@@ -199,15 +199,15 @@ func (p *DeployParams) progHash() hashing.HashValue {
 	return hash
 }
 
-func (c *Config) BootupData() *registry.BootupData {
-	if c.bootupData != nil {
-		return c.bootupData
+func (c *Config) ChainRecord() *registry.ChainRecord {
+	if c.chainRecord != nil {
+		return c.chainRecord
 	}
-	d, err := c.MakeClient(nil).GetBootupData()
+	d, err := c.MakeClient(nil).GetChainRecord()
 	if err != nil {
-		panic(fmt.Sprintf("GetBootupData failed: host = %s, addr = %s err = %v\n",
+		panic(fmt.Sprintf("GetChainRecord failed: host = %s, addr = %s err = %v\n",
 			config.WaspApi(), c.Address(), err))
 	}
-	c.bootupData = d
-	return c.bootupData
+	c.chainRecord = d
+	return c.chainRecord
 }

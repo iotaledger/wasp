@@ -54,12 +54,12 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 			BaseTemplateParams: BaseParams(c, scListRoute),
 		}
 		chainID := cid.ChainID()
-		br, err := registry.GetBootupData(&chainID)
+		br, err := registry.GetChainRecord(&chainID)
 		if err != nil {
 			return err
 		}
 		if br != nil {
-			result.BootupRecord = br
+			result.ChainRecord = br
 			state, batch, _, err := state.LoadSolidState(&chainID)
 			if err != nil {
 				return err
@@ -90,7 +90,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 
 func fetchSmartContracts() ([]*SmartContractOverview, error) {
 	r := make([]*SmartContractOverview, 0)
-	brs, err := registry.GetBootupRecords()
+	brs, err := registry.GetChainRecords()
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +101,14 @@ func fetchSmartContracts() ([]*SmartContractOverview, error) {
 			return nil, err
 		}
 		r = append(r, &SmartContractOverview{
-			BootupRecord: br,
-			Description:  desc,
+			ChainRecord: br,
+			Description: desc,
 		})
 	}
 	return r, nil
 }
 
-func fetchDescription(br *registry.BootupData) (string, error) {
+func fetchDescription(br *registry.ChainRecord) (string, error) {
 	chainID := br.ChainID
 	state, _, _, err := state.LoadSolidState(&chainID)
 	if err != nil || state == nil {
@@ -124,8 +124,8 @@ type ScListTemplateParams struct {
 }
 
 type SmartContractOverview struct {
-	BootupRecord *registry.BootupData
-	Description  string
+	ChainRecord *registry.ChainRecord
+	Description string
 }
 
 const tplScList = `
@@ -144,9 +144,9 @@ const tplScList = `
 		<tbody>
 		{{range $_, $sc := .SmartContracts}}
 			<tr>
-				<td><code>{{$sc.BootupRecord.Target}}</code><br/>{{$sc.Description}}</td>
-				<td>{{if $sc.BootupRecord.Active}}active{{else}}inactive{{end}}</td>
-				<td><a href="/smart-contracts/{{$sc.BootupRecord.Target}}">Details</a></td>
+				<td><code>{{$sc.ChainRecord.Target}}</code><br/>{{$sc.Description}}</td>
+				<td>{{if $sc.ChainRecord.Active}}active{{else}}inactive{{end}}</td>
+				<td><a href="/smart-contracts/{{$sc.ChainRecord.Target}}">Details</a></td>
 			</tr>
 		{{end}}
 		</tbody>
@@ -156,7 +156,7 @@ const tplScList = `
 
 type ScTemplateParams struct {
 	BaseTemplateParams
-	BootupRecord  *registry.BootupData
+	ChainRecord   *registry.ChainRecord
 	State         state.VirtualState
 	Batch         state.Block
 	ProgramHash   *hashing.HashValue
@@ -171,18 +171,18 @@ const tplSc = `
 {{define "body"}}
 	<h2>Smart Contract details</h2>
 
-	{{if .BootupRecord}}
+	{{if .ChainRecord}}
 		<div>
-			<h3>Bootup record</h3>
-			<p>Target: {{template "address" .BootupRecord.Target}}</p>
-			<p>Owner address:   {{template "address" .BootupRecord.OwnerAddress}}</p>
-			<p>Color:           <code>{{.BootupRecord.Color}}</code></p>
-			<p>Committee Nodes: <code>{{.BootupRecord.CommitteeNodes}}</code></p>
-			<p>Access Nodes:    <code>{{.BootupRecord.AccessNodes}}</code></p>
-			<p>Active:          <code>{{.BootupRecord.Active}}</code></p>
+			<h3>Chain record</h3>
+			<p>Target: {{template "address" .ChainRecord.Target}}</p>
+			<p>Owner address:   {{template "address" .ChainRecord.OwnerAddress}}</p>
+			<p>Color:           <code>{{.ChainRecord.Color}}</code></p>
+			<p>Committee Nodes: <code>{{.ChainRecord.CommitteeNodes}}</code></p>
+			<p>Access Nodes:    <code>{{.ChainRecord.AccessNodes}}</code></p>
+			<p>Active:          <code>{{.ChainRecord.Active}}</code></p>
 		</div>
 	{{else}}
-		<p>No bootup record for address {{template "address" .Target}}</p>
+		<p>No chain record for address {{template "address" .Target}}</p>
 	{{end}}
 	<hr/>
 	{{if .State}}

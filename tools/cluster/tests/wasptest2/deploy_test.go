@@ -55,7 +55,7 @@ func TestGetSCData(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	bd, err := wasps.Config.Nodes[0].Client().GetBootupData(scAddr)
+	bd, err := wasps.Config.Nodes[0].Client().GetChainRecord(scAddr)
 	assert.NoError(t, err)
 	assert.NotNil(t, bd)
 	assert.EqualValues(t, bd.OwnerAddress, *scOwnerAddr)
@@ -90,7 +90,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	wasps := setup(t, "TestSend5ReqInc0SecDeploy")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequests,
@@ -149,7 +149,7 @@ func TestSend100ReqMulti(t *testing.T) {
 	wasps := setup(t, "TestSend5ReqInc0SecDeploy")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequestsInTheBlock,

@@ -24,7 +24,7 @@ func handleActivateChain(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
 	}
 	chainID := (coretypes.ChainID)(scAddress)
-	bd, err := registry.ActivateBootupData(&chainID)
+	bd, err := registry.ActivateChainRecord(&chainID)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func handleDeactivateChain(c echo.Context) error {
 	}
 
 	chainID := (coretypes.ChainID)(scAddress)
-	bd, err := registry.DeactivateBootupData(&chainID)
+	bd, err := registry.DeactivateChainRecord(&chainID)
 	if err != nil {
 		return err
 	}

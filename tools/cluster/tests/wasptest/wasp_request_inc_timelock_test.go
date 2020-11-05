@@ -16,7 +16,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -27,7 +27,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -70,7 +70,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatFailTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -81,7 +81,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -122,7 +122,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatSuccessTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -133,7 +133,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -187,7 +187,7 @@ func TestChainIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          chainOfRequestsLength + 3,
@@ -198,7 +198,7 @@ func TestChainIncTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)

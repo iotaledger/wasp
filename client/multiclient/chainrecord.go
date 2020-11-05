@@ -5,9 +5,9 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
-// PutBootupData calls PutBootupData to hosts in parallel
-func (m *MultiClient) PutBootupData(bd *registry.BootupData) error {
+// PutChainRecord calls PutChainRecord to hosts in parallel
+func (m *MultiClient) PutChainRecord(bd *registry.ChainRecord) error {
 	return m.Do(func(i int, w *client.WaspClient) error {
-		return w.PutBootupData(bd)
+		return w.PutChainRecord(bd)
 	})
 }

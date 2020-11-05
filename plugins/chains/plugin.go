@@ -34,22 +34,22 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		bootupRecords, err := registry.GetBootupRecords()
+		chainRecords, err := registry.GetChainRecords()
 		if err != nil {
-			log.Error("failed to load bootup records from registry: %v", err)
+			log.Error("failed to load chain records from registry: %v", err)
 			return
 		}
 
-		astr := make([]string, len(bootupRecords))
+		astr := make([]string, len(chainRecords))
 		for i := range astr {
-			astr[i] = bootupRecords[i].ChainID.String()[:10] + ".."
+			astr[i] = chainRecords[i].ChainID.String()[:10] + ".."
 		}
-		log.Debugf("loaded %d bootup record(s) from registry: %+v", len(bootupRecords), astr)
+		log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
 
-		for _, bootupData := range bootupRecords {
-			if bootupData.Active {
-				if err := ActivateChain(bootupData); err != nil {
-					log.Errorf("cannot activate committee %s: %v", bootupData.ChainID, err)
+		for _, chr := range chainRecords {
+			if chr.Active {
+				if err := ActivateChain(chr); err != nil {
+					log.Errorf("cannot activate committee %s: %v", chr.ChainID, err)
 				}
 			}
 		}
@@ -77,26 +77,26 @@ func run(_ *node.Plugin) {
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func ActivateChain(bootupData *registry.BootupData) error {
+func ActivateChain(chr *registry.ChainRecord) error {
 	chainsMutex.Lock()
 	defer chainsMutex.Unlock()
 
-	if !bootupData.Active {
-		return fmt.Errorf("cannot activate chain for deactivated bootup record")
+	if !chr.Active {
+		return fmt.Errorf("cannot activate chain for deactivated chain record")
 	}
 
-	_, ok := chains[bootupData.ChainID]
+	_, ok := chains[chr.ChainID]
 	if ok {
-		log.Debugf("chain is already active: %s", bootupData.ChainID.String())
+		log.Debugf("chain is already active: %s", chr.ChainID.String())
 		return nil
 	}
 	// create new chain object
-	c := chain.New(bootupData, log, func() {
-		nodeconn.Subscribe((address.Address)(bootupData.ChainID), bootupData.Color)
+	c := chain.New(chr, log, func() {
+		nodeconn.Subscribe((address.Address)(chr.ChainID), chr.Color)
 	})
 	if c != nil {
-		chains[bootupData.ChainID] = c
-		log.Infof("activated chain:\n%s", bootupData.String())
+		chains[chr.ChainID] = c
+		log.Infof("activated chain:\n%s", chr.String())
 
 		// FOR TESTING ONLY
 		c.EventRequestProcessed().Attach(events.NewClosure(func(reqid coretypes.RequestID) {
@@ -104,23 +104,23 @@ func ActivateChain(bootupData *registry.BootupData) error {
 		}))
 
 	} else {
-		log.Infof("failed to activate chain:\n%s", bootupData.String())
+		log.Infof("failed to activate chain:\n%s", chr.String())
 	}
 	return nil
 }
 
 // DeactivateChain deactivates chain in the node
-func DeactivateChain(bootupData *registry.BootupData) error {
+func DeactivateChain(chr *registry.ChainRecord) error {
 	chainsMutex.Lock()
 	defer chainsMutex.Unlock()
 
-	c, ok := chains[bootupData.ChainID]
+	c, ok := chains[chr.ChainID]
 	if !ok || c.IsDismissed() {
-		log.Debugf("chain is not active: %s", bootupData.ChainID.String())
+		log.Debugf("chain is not active: %s", chr.ChainID.String())
 		return nil
 	}
 	c.Dismiss()
-	log.Debugf("chain has been deactivated: %s", bootupData.ChainID.String())
+	log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil
 }
 
