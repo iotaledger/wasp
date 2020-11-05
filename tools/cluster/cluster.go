@@ -3,10 +3,8 @@ package cluster
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -18,17 +16,13 @@ import (
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -38,53 +32,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type SmartContractFinalConfig struct {
-	Address        string   `json:"address"`
-	Description    string   `json:"description"`
-	ProgramHash    string   `json:"program_hash"`
-	CommitteeNodes []int    `json:"committee_nodes"`
-	AccessNodes    []int    `json:"access_nodes,omitempty"`
-	OwnerSeed      []byte   `json:"owner_seed"`
-	DKShares       [][]byte `json:"dkshares"` // [node index]
-
-	// cached after DeployChain call:
-	chainid *coretypes.ChainID
-	addr    *address.Address
-	color   *balance.Color
-}
-
-type SmartContractInitData struct {
-	Description    string `json:"description"`
-	CommitteeNodes []int  `json:"committee_nodes"`
-	AccessNodes    []int  `json:"access_nodes,omitempty"`
-	Quorum         int    `json:"quorum"`
-}
-
-type WaspNodeConfig struct {
-	ApiPort       int `json:"api_port"`
-	PeeringPort   int `json:"peering_port"`
-	NanomsgPort   int `json:"nanomsg_port"`
-	DashboardPort int `json:"dashboard_port"`
-	cmd           *exec.Cmd
-}
-
-type ClusterConfig struct {
-	Nodes     []*WaspNodeConfig `json:"nodes"`
-	Goshimmer *struct {
-		ApiPort  int  `json:"api_port"`
-		Provided bool `json:"provided"`
-		cmd      *exec.Cmd
-	} `json:"goshimmer"`
-	SmartContracts []SmartContractInitData `json:"smart_contracts"`
-}
-
 type Cluster struct {
-	Config              *ClusterConfig
-	SmartContractConfig []SmartContractFinalConfig
-	ConfigPath          string // where the cluster configuration is stored - read only
-	DataPath            string // where the cluster's volatile data lives
-	Started             bool
-	NodeClient          nodeclient.NodeClient
+	Config     *ClusterConfig
+	ConfigPath string // where the cluster configuration is stored - read only
+	DataPath   string // where the cluster's volatile data lives
+	Started    bool
+	NodeClient nodeclient.NodeClient
 	// reading publisher's output
 	messagesCh   chan *subscribe.HostMessage
 	stopReading  chan bool
@@ -92,68 +45,6 @@ type Cluster struct {
 	topics       []string
 	counters     map[string]map[string]int
 	testName     string
-}
-
-func (sc *SmartContractFinalConfig) AllNodes() []int {
-	r := make([]int, 0)
-	r = append(r, sc.CommitteeNodes...)
-	r = append(r, sc.AccessNodes...)
-	return r
-}
-
-func (sc *SmartContractFinalConfig) ChainID() *coretypes.ChainID {
-	return sc.chainid
-}
-
-func (sc *SmartContractFinalConfig) OwnerAddress() *address.Address {
-	addr := seed.NewSeed(sc.OwnerSeed).Address(0).Address
-	return &addr
-}
-
-func (sc *SmartContractFinalConfig) OwnerSigScheme() signaturescheme.SignatureScheme {
-	return signaturescheme.ED25519(*seed.NewSeed(sc.OwnerSeed).KeyPair(0))
-}
-
-func (c *ClusterConfig) goshimmerApiHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.ApiPort)
-}
-
-func (w *WaspNodeConfig) ApiHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", w.ApiPort)
-}
-
-func (w *WaspNodeConfig) PeeringHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", w.PeeringPort)
-}
-
-func (w *WaspNodeConfig) NanomsgHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", w.NanomsgPort)
-}
-
-func (w *WaspNodeConfig) IsUp() bool {
-	return w.cmd != nil
-}
-
-func (w *WaspNodeConfig) Client() *client.WaspClient {
-	return client.NewWaspClient(w.ApiHost())
-}
-
-func readConfig(configPath string) (*ClusterConfig, error) {
-	data, err := ioutil.ReadFile(path.Join(configPath, "cluster.json"))
-	if err != nil {
-		return nil, err
-	}
-
-	config := &ClusterConfig{}
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return nil, err
-	}
-	x := os.Getenv("GOSHIMMER_PROVIDED")
-	if x != "" {
-		config.Goshimmer.Provided = true
-	}
-	return config, nil
 }
 
 func New(configPath string, dataPath string) (*Cluster, error) {
@@ -185,12 +76,54 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 	}, nil
 }
 
-func (cluster *Cluster) IsGoshimmerUp() bool {
-	return cluster.Config.Goshimmer.cmd != nil
+func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
+	committee := clu.Config.AllWaspNodes()
+	quorum := uint16(len(committee) * 3 / 4)
+	return clu.DeployChain("Default chain", committee, quorum, []int{})
 }
 
-func (cluster *Cluster) NumSmartContracts() int {
-	return len(cluster.Config.SmartContracts)
+func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16, accessNodes []int) (*Chain, error) {
+	ownerSeed := seed.NewSeed()
+
+	chain := &Chain{
+		Description:    description,
+		OwnerSeed:      ownerSeed,
+		CommitteeNodes: committeeNodes,
+		AccessNodes:    accessNodes,
+		Quorum:         quorum,
+		Cluster:        clu,
+	}
+
+	err := clu.NodeClient.RequestFunds(chain.OwnerAddress())
+	if err != nil {
+		return nil, err
+	}
+
+	chainid, addr, color, err := waspapi.DeployChain(waspapi.CreateChainParams{
+		Node:                  clu.NodeClient,
+		CommitteeApiHosts:     clu.WaspHosts(committeeNodes, (*WaspNodeConfig).ApiHost),
+		CommitteePeeringHosts: clu.WaspHosts(committeeNodes, (*WaspNodeConfig).PeeringHost),
+		AccessNodes:           clu.WaspHosts(accessNodes, (*WaspNodeConfig).PeeringHost),
+		N:                     uint16(len(committeeNodes)),
+		T:                     quorum,
+		OwnerSigScheme:        chain.OwnerSigScheme(),
+		Description:           description,
+		Textout:               os.Stdout,
+		Prefix:                "[cluster] ",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	chain.Address = *addr
+	chain.ChainID = *chainid
+	chain.Color = *color
+
+	return chain, nil
+}
+
+func (cluster *Cluster) IsGoshimmerUp() bool {
+	return cluster.Config.Goshimmer.cmd != nil
 }
 
 func (cluster *Cluster) MultiClient() *multiclient.MultiClient {
@@ -199,29 +132,6 @@ func (cluster *Cluster) MultiClient() *multiclient.MultiClient {
 
 func (cluster *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
 	return cluster.Config.Nodes[nodeIndex].Client()
-}
-
-func (cluster *Cluster) SCClient(sc *SmartContractFinalConfig, sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
-	return chainclient.New(
-		cluster.NodeClient,
-		cluster.WaspClient(sc.CommitteeNodes[0]),
-		sc.ChainID(),
-		sigScheme,
-	)
-}
-
-func (cluster *Cluster) readKeysConfig() ([]SmartContractFinalConfig, error) {
-	data, err := ioutil.ReadFile(cluster.ConfigKeysPath())
-	if err != nil {
-		return nil, err
-	}
-
-	config := make([]SmartContractFinalConfig, 0)
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return nil, err
-	}
-	return config, nil
 }
 
 func (cluster *Cluster) JoinConfigPath(s string) string {
@@ -336,19 +246,6 @@ func (cluster *Cluster) Start() error {
 		return err
 	}
 
-	keysExist, err := cluster.readKeysAndData()
-	if err != nil {
-		return err
-	}
-	if keysExist {
-		err = cluster.importKeys()
-		if err != nil {
-			return err
-		}
-
-	} else {
-		fmt.Printf("[cluster] keys.json does not exist\n")
-	}
 	cluster.Started = true
 	return nil
 }
@@ -442,37 +339,6 @@ func waitFor(msg string, initOk chan<- bool) func(line string) {
 			found = true
 		}
 	}
-}
-
-func (cluster *Cluster) readKeysAndData() (bool, error) {
-	exists, err := fileExists(cluster.ConfigKeysPath())
-	if err != nil {
-		return false, err
-	}
-	if !exists {
-		return false, nil
-	}
-
-	fmt.Printf("[cluster] loading keys and smart contract data from %s\n", cluster.ConfigKeysPath())
-	cluster.SmartContractConfig, err = cluster.readKeysConfig()
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (cluster *Cluster) importKeys() error {
-	for _, scKeys := range cluster.SmartContractConfig {
-		fmt.Printf("[cluster] Importing DKShares for address %s...\n", scKeys.Address)
-		for nodeIndex, dks := range scKeys.DKShares {
-			err := cluster.WaspClient(nodeIndex).ImportDKShare(dks)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func (cluster *Cluster) stopGoshimmer() {
@@ -715,69 +581,6 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 	}
 	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
 	return nil
-}
-
-func (cluster *Cluster) DeployChain(sc *SmartContractFinalConfig, quorum int) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
-	chainid, addr, color, err := waspapi.DeployChain(waspapi.CreateChainParams{
-		Node:                  cluster.NodeClient,
-		CommitteeApiHosts:     cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost),
-		CommitteePeeringHosts: cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).PeeringHost),
-		AccessNodes:           cluster.WaspHosts(sc.AccessNodes, (*WaspNodeConfig).PeeringHost),
-		N:                     uint16(len(sc.CommitteeNodes)),
-		T:                     uint16(quorum),
-		OwnerSigScheme:        sc.OwnerSigScheme(),
-		Description:           sc.Description,
-		Textout:               os.Stdout,
-		Prefix:                "[cluster] ",
-	})
-	if err == nil {
-		sc.chainid = chainid
-		sc.addr = addr
-		sc.color = color
-	}
-	return chainid, addr, color, err
-}
-
-func (cluster *Cluster) VerifySCStateVariables(sc *SmartContractFinalConfig, contractIndex uint16, expectedValues map[kv.Key][]byte) bool {
-	return cluster.WithSCState(sc, contractIndex, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		fmt.Printf("[cluster] Verifying state vars for node %s\n", host)
-		pass := true
-		for k, v := range expectedValues {
-			v1 := state.Get(k)
-			if bytes.Equal(v, v1) {
-				fmt.Printf("   %s: OK. Expected '%s', actual '%s'\n",
-					string(k), string(v), string(v1))
-			} else {
-				fmt.Printf("   %s: FAIL. Expected '%s', actual '%s'\n",
-					string(k), string(v), string(v1))
-				pass = false
-			}
-		}
-		return pass
-	})
-}
-
-func (cluster *Cluster) WithSCState(sc *SmartContractFinalConfig, contractIndex uint16, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
-	pass := true
-	for i, host := range cluster.WaspHosts(sc.CommitteeNodes, (*WaspNodeConfig).ApiHost) {
-		if !cluster.Config.Nodes[i].IsUp() {
-			continue
-		}
-		contractID := coretypes.NewContractID(*sc.chainid, contractIndex)
-		actual, err := cluster.WaspClient(i).DumpSCState(&contractID)
-		if client.IsNotFound(err) {
-			pass = false
-			fmt.Printf("   FAIL: state does not exist\n")
-			continue
-		}
-		if err != nil {
-			panic(err)
-		}
-		if !f(host, actual.Index, codec.NewMustCodec(dict.FromGoMap(actual.Variables))) {
-			pass = false
-		}
-	}
-	return pass
 }
 
 func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {

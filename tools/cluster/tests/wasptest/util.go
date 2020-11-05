@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
+func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.Chain) error {
 	//fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
 	tx, err := sc.CreateOrigin(clu.NodeClient)

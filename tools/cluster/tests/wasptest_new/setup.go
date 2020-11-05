@@ -25,14 +25,13 @@ func check(err error, t *testing.T) {
 	}
 }
 
-func setup(t *testing.T, configPath string, testName string) *cluster.Cluster {
-
+func setup(t *testing.T, configPath string) *cluster.Cluster {
 	_, filename, _, _ := runtime.Caller(0)
 
 	wasps, err := cluster.New(path.Join(path.Dir(filename), "..", configPath), "cluster-data")
 	check(err, t)
 
-	err = wasps.Init(true, testName)
+	err = wasps.Init(true, t.Name())
 	check(err, t)
 
 	err = wasps.Start()

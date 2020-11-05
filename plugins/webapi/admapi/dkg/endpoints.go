@@ -16,5 +16,4 @@ func AddEndpoints(adm *echo.Group) {
 	addDksNewEndpoint(adm)
 	addDksAggregateEndpoint(adm)
 	addDksCommitEndpoint(adm)
-	addExportEndpoints(adm)
 }

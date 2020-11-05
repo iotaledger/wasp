@@ -26,9 +26,6 @@ type MutableCodec interface {
 type MutableMustCodec interface {
 	ImmutableMustCodec
 	wCodec
-	GetArray(kv.Key) *datatypes.MustArray
-	GetMap(kv.Key) *datatypes.MustMap
-	GetTimestampedLog(kv.Key) *datatypes.MustTimestampedLog
 }
 
 // ImmutableCodec is an interface that offers easy conversions between []byte and other types when
@@ -54,6 +51,10 @@ type ImmutableMustCodec interface {
 	GetAddress(key kv.Key) (*address.Address, bool)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
+
+	GetArray(kv.Key) *datatypes.MustArray
+	GetMap(kv.Key) *datatypes.MustMap
+	GetTimestampedLog(kv.Key) *datatypes.MustTimestampedLog
 }
 
 // wCodec is an interface that offers easy conversions between []byte and other types when

@@ -10,7 +10,7 @@ import (
 )
 
 // Puts chain records into the nodes. Also requests funds from the nodeClient for owners.
-func PutChainRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
+func PutChainRecord(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, error) {
 	requested := make(map[address.Address]bool)
 
 	fmt.Printf("[cluster] creating chain record for smart contract addr: %s\n", sc.Address)
@@ -34,7 +34,7 @@ func PutChainRecord(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) 
 	return color, nil
 }
 
-func putScData(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) (*balance.Color, error) {
+func putScData(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, error) {
 	addr, err := address.FromBase58(sc.Address)
 	if err != nil {
 		return nil, err

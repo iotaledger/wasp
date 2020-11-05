@@ -23,18 +23,6 @@
 This creates `my-cluster/cluster-data` directory, which contains each
 node's configuration and database.
 
-## Create the SC addresses
-
-	waspt gendksets
-
-This creates an address and key shares for each node in the committee
-for each smart contract.
-
-The newly created keys are exported to `my-cluster/keys.json`.
-Later, if the `cluster-data` directory (which contains the DBs) is
-deleted, the `gendksets` step can be skipped, since the nodes will
-automatically import keys from `keys.json`.
-
 ## Start the cluster
 
 	waspt start

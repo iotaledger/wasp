@@ -146,7 +146,7 @@ func (a *MustArray) Erase() {
 
 func (l *Array) GetAt(idx uint16) ([]byte, error) {
 	if idx >= l.Len() {
-		return nil, errors.New("index out of range")
+		return nil, fmt.Errorf("index %d out of range for array of len %d", idx, l.Len())
 	}
 	ret, err := l.kv.Get(l.getElemKey(idx))
 	if err != nil {

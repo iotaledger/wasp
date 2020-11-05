@@ -17,7 +17,7 @@ func check(err error) {
 }
 
 func usage(globalFlags *flag.FlagSet) {
-	fmt.Printf("Usage: %s [options] [init|start|gendksets]\n", os.Args[0])
+	fmt.Printf("Usage: %s [options] [init|start]\n", os.Args[0])
 	globalFlags.PrintDefaults()
 	os.Exit(1)
 }
@@ -55,16 +55,6 @@ func main() {
 
 		waitCtrlC()
 		wasps.Wait()
-
-	case "gendksets":
-		err = wasps.Start()
-		check(err)
-		fmt.Printf("-----------------------------------------------------------------\n")
-		fmt.Printf("           Generate DKSets\n")
-		fmt.Printf("-----------------------------------------------------------------\n")
-		err = wasps.GenerateDKSetsToFile()
-		check(err)
-		wasps.Stop()
 
 	default:
 		usage(globalFlags)

@@ -15,7 +15,7 @@ import (
 
 // FIXME move log tests to the same keys.json file with other tests
 
-func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.SmartContractFinalConfig) {
+func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.Chain) {
 	clu := setup(t, "logsc_cluster", "TestLogsc")
 
 	err := clu.ListenToMessages(expectations)
