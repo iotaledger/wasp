@@ -44,7 +44,7 @@ type RequestRef struct {
 }
 
 // RequestSection creates new request block
-func NewRequestBlock(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
+func NewRequestSection(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
 	return &RequestSection{
 		senderContractIndex: senderContractIndex,
 		targetContractID:    targetContract,
@@ -53,22 +53,27 @@ func NewRequestBlock(senderContractIndex uint16, targetContract coretypes.Contra
 	}
 }
 
-// NewRequestBlockByWallet same as NewRequestBlock but assumes sender index is 0
-func NewRequestBlockByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
-	return NewRequestBlock(0, targetContract, entryPointCode)
+// NewRequestSectionByWallet same as NewRequestSection but assumes sender index is 0
+func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
+	return NewRequestSection(0, targetContract, entryPointCode)
+}
+
+func (req *RequestSection) String() string {
+	return fmt.Sprintf("[[sender: %d, target: %s, entry point: '%s', args: %s]]",
+		req.senderContractIndex, req.targetContractID.String(), req.entryPoint.String(), req.args.String())
 }
 
 func (req *RequestSection) Clone() *RequestSection {
 	if req == nil {
 		return nil
 	}
-	ret := NewRequestBlock(req.senderContractIndex, req.targetContractID, req.entryPoint)
+	ret := NewRequestSection(req.senderContractIndex, req.targetContractID, req.entryPoint)
 	ret.args = req.args.Clone()
 	return ret
 }
 
 func (req *RequestSection) SenderContractIndex() uint16 {
-	return (uint16)(req.senderContractIndex)
+	return req.senderContractIndex
 }
 
 func (req *RequestSection) Target() coretypes.ContractID {

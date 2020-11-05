@@ -55,7 +55,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	}
 
 	for _, blockPar := range par.BlockParams {
-		reqBlk := sctransaction.NewRequestBlockByWallet(blockPar.TargetContractID, blockPar.EntryPointCode).
+		reqBlk := sctransaction.NewRequestSectionByWallet(blockPar.TargetContractID, blockPar.EntryPointCode).
 			WithTimelock(blockPar.Timelock)
 
 		args := convertArgs(blockPar.Vars)

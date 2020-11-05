@@ -205,7 +205,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 
 	// create bootup (init) transation
-	reqTx, err := origin.NewBootupRequestTransaction(origin.NewBootupRequestTransactionParams{
+	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewBootupRequestTransactionParams{
 		ChainID:              chainid,
 		OwnerSignatureScheme: par.OwnerSigScheme,
 		AllInputs:            allOuts,

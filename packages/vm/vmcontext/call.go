@@ -31,6 +31,8 @@ func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Entr
 
 func (vmctx *VMContext) callFromRequest() {
 	req := vmctx.reqRef.RequestSection()
+	vmctx.log.Debugf("callFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
+
 	_, err := vmctx.CallContract(req.Target().Index(), req.EntryPointCode(), req.Args(), nil)
 	if err != nil {
 		vmctx.log.Warnf("callFromRequest: %v", err)

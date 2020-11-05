@@ -30,7 +30,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				vmctx.log.Errorf("Recovered from panic in SC: %v", r)
+				vmctx.log.Errorf("Recovered from panic in VM: %v", r)
 				if _, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB
 					// TODO invalidate the whole block?

@@ -53,7 +53,7 @@ func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
 			return false
 		}
 	}
-	reqBlock := sctransaction.NewRequestBlock(vmctx.ContractIndex(), par.TargetContractID, par.EntryPoint)
+	reqBlock := sctransaction.NewRequestSection(vmctx.ContractIndex(), par.TargetContractID, par.EntryPoint)
 	reqBlock.WithTimelock(par.Timelock)
 	reqBlock.SetArgs(par.Params)
 

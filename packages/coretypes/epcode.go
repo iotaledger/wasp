@@ -10,6 +10,10 @@ import (
 
 type EntryPointCode uint32
 
+const FuncInit = "init"
+
+var EntryPointCodeInit = NewEntryPointCodeFromFunctionName(FuncInit)
+
 func NewEntryPointCodeFromBytes(data []byte) (ret EntryPointCode, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return

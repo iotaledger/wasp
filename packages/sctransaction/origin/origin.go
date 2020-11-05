@@ -59,17 +59,17 @@ type NewBootupRequestTransactionParams struct {
 	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
 }
 
-// NewBootupRequestTransaction is a first request to be sent to the uninitialized
+// NewRootInitRequestTransaction is a first request to be sent to the uninitialized
 // chain. At this moment it only is able to process this specific request
 // the request contains minimum data needed to bootstrap the chain
 // Transaction must be signed by the same address which created origin transaction
-func NewBootupRequestTransaction(par NewBootupRequestTransactionParams) (*sctransaction.Transaction, error) {
+func NewRootInitRequestTransaction(par NewBootupRequestTransactionParams) (*sctransaction.Transaction, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
 	if err != nil {
 		return nil, err
 	}
-	bootupContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
-	bootupRequest := sctransaction.NewRequestBlock(0, bootupContractID, root.EntryPointInitialize)
+	rootContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
+	bootupRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointCodeInit)
 	args := dict.NewDict()
 	c := codec.NewCodec(args)
 	c.SetChainID(root.VarChainID, &par.ChainID)

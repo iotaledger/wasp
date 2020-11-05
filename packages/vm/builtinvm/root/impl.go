@@ -4,81 +4,10 @@ package root
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-)
-
-type rootProcessor struct{}
-
-type rootEntryPoint func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
-
-var (
-	processor   = &rootProcessor{}
-	ProgramHash = hashing.NilHash
-)
-
-func GetProcessor() vmtypes.Processor {
-	return processor
-}
-
-var (
-	EntryPointInitialize   = coretypes.NewEntryPointCodeFromFunctionName("initialize")
-	EntryPointNewContract  = coretypes.NewEntryPointCodeFromFunctionName("deployContract")
-	EntryPointFindContract = coretypes.NewEntryPointCodeFromFunctionName("findContract")
-	EntryPointGetBinary    = coretypes.NewEntryPointCodeFromFunctionName("getBinary")
-)
-
-func (v *rootProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
-	switch code {
-	case EntryPointInitialize:
-		return (rootEntryPoint)(initialize), true
-
-	case EntryPointNewContract:
-		return (rootEntryPoint)(deployContract), true
-
-	case EntryPointFindContract:
-		return (rootEntryPoint)(findContract), true
-
-	case EntryPointGetBinary:
-		return (rootEntryPoint)(getBinary), true
-
-	}
-	return nil, false
-}
-
-func (v *rootProcessor) GetDescription() string {
-	return "Factory processor"
-}
-
-func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	ret, err := ep(ctx)
-	if err != nil {
-		ctx.Publishf("error occured: '%v'", err)
-	}
-	return ret, err
-}
-
-func (ep rootEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
-	return ep
-}
-
-const (
-	VarStateInitialized   = "i"
-	VarChainID            = "c"
-	VarRegistryOfBinaries = "b"
-	VarContractRegistry   = "r"
-	VarDescription        = "d"
-)
-
-const (
-	ParamVMType        = "vmtype"
-	ParamProgramBinary = "programBinary"
-	ParamDescription   = "description"
-	ParamIndex         = "index"
-	ParamHash          = "hash"
 )
 
 // initialize is a handler for the "initialize" request
@@ -145,7 +74,16 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, fmt.Errorf("description undefined")
 	}
-	contractIndex, err := ctx.InstallProgram(vmtype, programBinary, description)
+
+	// pass to init function all params not consumed so far
+	initParams := codec.NewCodec(dict.NewDict())
+	err = params.Iterate("", func(key kv.Key, value []byte) bool {
+		if key != ParamVMType && key != ParamProgramBinary && key != ParamDescription {
+			initParams.Set(key, value)
+		}
+		return true
+	})
+	contractIndex, err := ctx.DeployContract(vmtype, programBinary, description, initParams)
 	ret := codec.NewCodec(dict.NewDict())
 	ret.SetInt64("index", int64(contractIndex))
 	return ret, nil

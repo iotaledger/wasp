@@ -66,6 +66,7 @@ type wCodec interface {
 	SetAddress(key kv.Key, value *address.Address)
 	SetHashValue(key kv.Key, value *hashing.HashValue)
 	SetChainID(key kv.Key, value *coretypes.ChainID)
+	Append(from ImmutableCodec) error
 }
 
 type codec struct {
@@ -286,4 +287,11 @@ func (c mustcodec) GetChainID(key kv.Key) (*coretypes.ChainID, bool) {
 
 func (c codec) SetChainID(key kv.Key, chid *coretypes.ChainID) {
 	c.kv.Set(key, chid[:])
+}
+
+func (c codec) Append(from ImmutableCodec) error {
+	return from.Iterate("", func(key kv.Key, value []byte) bool {
+		c.Set(key, value)
+		return true
+	})
 }

@@ -58,8 +58,8 @@ func TestDeployChain(t *testing.T) {
 		t.Fail()
 	}
 
-	clu.WithSCState(sc, 0, func(host string, stateIndex uint32, state codec.ImmutableMustCodec) bool {
-		assert.EqualValues(t, 1, stateIndex)
+	clu.WithSCState(sc, 0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		assert.EqualValues(t, 1, blockIndex)
 
 		assert.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
 
