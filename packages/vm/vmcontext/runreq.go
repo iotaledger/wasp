@@ -16,7 +16,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 	defer func() {
 		vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
-		vmctx.log.Debugw("runTheRequest OUT USER DEFINED",
+		vmctx.log.Debugw("runTheRequest OUT",
 			"reqId", vmctx.reqRef.RequestID().Short(),
 			"entry point", vmctx.reqRef.RequestSection().EntryPointCode().String(),
 			"state update", vmctx.stateUpdate.String(),

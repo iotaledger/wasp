@@ -58,21 +58,21 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("VMType undefined")
+		return nil, fmt.Errorf("root.deployContract.begin: VMType undefined")
 	}
 	programBinary, err := params.Get(ParamProgramBinary)
 	if err != nil {
 		return nil, err
 	}
 	if len(programBinary) == 0 {
-		return nil, fmt.Errorf("programBinary undefined")
+		return nil, fmt.Errorf("root.deployContract.begin: programBinary undefined")
 	}
 	description, ok, err := params.GetString(ParamDescription)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("description undefined")
+		return nil, fmt.Errorf("root.deployContract.begin: description undefined")
 	}
 
 	// pass to init function all params not consumed so far
@@ -84,8 +84,12 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return true
 	})
 	contractIndex, err := ctx.DeployContract(vmtype, programBinary, description, initParams)
+	if err != nil {
+		return nil, fmt.Errorf("root.deployContract: %v", err)
+	}
 	ret := codec.NewCodec(dict.NewDict())
 	ret.SetInt64("index", int64(contractIndex))
+	ctx.Publishf("root.deployContract.success. Deployed contract index %d", contractIndex)
 	return ret, nil
 }
 

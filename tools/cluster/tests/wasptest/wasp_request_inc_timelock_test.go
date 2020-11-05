@@ -94,7 +94,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		TargetContract: scAddress,
-		RequestCode:    inccounter.RequestIncAndRepeatOnceAfter5s,
+		RequestCode:    inccounter.EntryPointIncAndRepeatOnceAfter5s,
 	})
 	check(err, t)
 
@@ -157,7 +157,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		TargetContract: scAddress,
-		RequestCode:    inccounter.RequestIncAndRepeatOnceAfter5s,
+		RequestCode:    inccounter.EntryPointIncAndRepeatOnceAfter5s,
 	})
 	check(err, t)
 
@@ -222,7 +222,7 @@ func TestChainIncTimelock(t *testing.T) {
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
 		TargetContract: scAddress,
-		RequestCode:    inccounter.RequestIncAndRepeatMany,
+		RequestCode:    inccounter.EntryPointIncAndRepeatMany,
 		Vars: map[string]interface{}{
 			inccounter.ArgNumRepeats: chainOfRequestsLength,
 		},

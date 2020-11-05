@@ -1,6 +1,10 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/examples"
+	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -60,6 +64,58 @@ func TestDeployChain(t *testing.T) {
 
 	clu.WithSCState(sc, 0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		assert.EqualValues(t, 1, blockIndex)
+
+		assert.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
+
+		chid, _ := state.GetChainID(root.VarChainID)
+		assert.EqualValues(t, sc.ChainID(), chid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		assert.EqualValues(t, []byte(sc.Description), desc)
+
+		return true
+	})
+}
+
+func TestDeployContract(t *testing.T) {
+	clu := setup(t, "test_cluster", "TestDeployContract")
+
+	err := clu.ListenToMessages(map[string]int{
+		"bootuprec":           2,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"state":               2,
+		"request_in":          1,
+		"request_out":         2,
+	})
+	check(err, t)
+
+	sc := &clu.SmartContractConfig[0]
+
+	err = clu.NodeClient.RequestFunds(sc.OwnerAddress())
+	check(err, t)
+
+	chainid, _, _, err := clu.DeployChain(sc, clu.Config.SmartContracts[0].Quorum)
+	check(err, t)
+
+	client := chainclient.New(clu.NodeClient, clu.WaspClient(0), chainid, sc.OwnerSigScheme())
+
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHash)
+	check(err, t)
+
+	_, err = client.PostRequest(0, root.EntryPointDeployContract, nil, nil, map[string]interface{}{
+		root.ParamVMType:        examples.VMType,
+		root.ParamDescription:   "testing contract deployment with inccounter",
+		root.ParamProgramBinary: programHash[:],
+	})
+	check(err, t)
+
+	if !clu.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+
+	clu.WithSCState(sc, 0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		assert.EqualValues(t, 2, blockIndex)
 
 		assert.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
 
