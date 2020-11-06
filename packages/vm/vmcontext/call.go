@@ -11,14 +11,16 @@ import (
 func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.EntryPointCode, params codec.ImmutableCodec, budget map[balance.Color]int64) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("CallContract", "contactIndex", contractIndex, "epCode", epCode.String())
 
-	rec, ok := vmctx.findContract(contractIndex)
+	rec, ok := vmctx.findContractByIndex(contractIndex)
 	if !ok {
 		return nil, fmt.Errorf("failed to find contract with index %d", contractIndex)
 	}
+
 	proc, err := vmctx.getProcessor(rec)
 	if err != nil {
 		return nil, err
 	}
+
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
 		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())

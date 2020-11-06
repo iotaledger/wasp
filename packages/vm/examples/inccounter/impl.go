@@ -2,9 +2,10 @@ package inccounter
 
 import (
 	"fmt"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -22,6 +23,7 @@ var (
 	EntryPointIncCounter              = coretypes.NewEntryPointCodeFromFunctionName("incCounter")
 	EntryPointIncAndRepeatOnceAfter5s = coretypes.NewEntryPointCodeFromFunctionName("incAndRepeatOnceAfter5s")
 	EntryPointIncAndRepeatMany        = coretypes.NewEntryPointCodeFromFunctionName("incAndRepeatMany")
+	EntryPointSpawn                   = coretypes.NewEntryPointCodeFromFunctionName("spawn")
 )
 
 var entryPoints = incCounterProcessor{
@@ -29,6 +31,7 @@ var entryPoints = incCounterProcessor{
 	EntryPointIncCounter:              incCounter,
 	EntryPointIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
 	EntryPointIncAndRepeatMany:        incCounterAndRepeatMany,
+	EntryPointSpawn:                   spawn,
 }
 
 type incEntryPoint func(ctx vmtypes.Sandbox) error
@@ -74,6 +77,7 @@ func initialize(ctx vmtypes.Sandbox) error {
 }
 
 func incCounter(ctx vmtypes.Sandbox) error {
+	ctx.Publishf("inccounter.incCounter")
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
@@ -82,6 +86,7 @@ func incCounter(ctx vmtypes.Sandbox) error {
 }
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
+	ctx.Publishf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 
@@ -99,6 +104,8 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 }
 
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
+	ctx.Publishf("inccounter.incCounterAndRepeatMany")
+
 	state := ctx.AccessState()
 	params := ctx.Params()
 
@@ -130,5 +137,25 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 	} else {
 		ctx.Publishf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
+	return nil
+}
+
+func spawn(ctx vmtypes.Sandbox) error {
+	ctx.Publishf("inccounter.spawn")
+	state := ctx.AccessState()
+
+	val, _ := state.GetInt64(VarCounter)
+
+	hashBin, err := hashing.HashValueFromBase58(ProgramHash)
+	if err != nil {
+		ctx.Panic(err)
+	}
+	par := codec.NewCodec(dict.NewDict())
+	par.SetInt64(VarCounter, val+1)
+	spawnedContractIndex, err := ctx.DeployContract("examplevm", hashBin[:], "", "Inccounter spawned", par)
+	if err != nil {
+		return err
+	}
+	ctx.Publishf("inccounter.spawn: new contract index = %d", spawnedContractIndex)
 	return nil
 }

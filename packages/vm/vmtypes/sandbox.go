@@ -15,7 +15,7 @@ import (
 type Sandbox interface {
 	Params() codec.ImmutableCodec // TODO
 	// only for root contract
-	DeployContract(vmtype string, programBinary []byte, description string, initParams codec.ImmutableCodec) (uint16, error)
+	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) (uint16, error)
 	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 	// general functions
 	GetChainID() coretypes.ChainID

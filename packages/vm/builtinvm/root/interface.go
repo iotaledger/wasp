@@ -16,30 +16,36 @@ const (
 	VarChainID            = "c"
 	VarRegistryOfBinaries = "b"
 	VarContractRegistry   = "r"
+	VarContractsByName    = "n"
 	VarDescription        = "d"
 )
 
 // param variables
 const (
+	ParamChainID       = "chainid"
 	ParamVMType        = "vmtype"
 	ParamProgramBinary = "programBinary"
 	ParamDescription   = "description"
 	ParamIndex         = "index"
+	ParamName          = "name"
 	ParamHash          = "hash"
+	ParamData          = "data"
 )
 
 // function names
 const (
-	FuncDeployContract = "deployContract"
-	FuncFindContract   = "findContract"
-	FuncGetBinary      = "getBinary"
+	FuncDeployContract      = "deployContract"
+	FuncFindContractByIndex = "findContractByIndex"
+	FuncFindContractByName  = "findContractRecordByName"
+	FuncGetBinary           = "getBinary"
 )
 
 // entry point codes
 var (
-	EntryPointDeployContract = coretypes.NewEntryPointCodeFromFunctionName(FuncDeployContract)
-	EntryPointFindContract   = coretypes.NewEntryPointCodeFromFunctionName(FuncFindContract)
-	EntryPointGetBinary      = coretypes.NewEntryPointCodeFromFunctionName(FuncGetBinary)
+	EntryPointDeployContract      = coretypes.NewEntryPointCodeFromFunctionName(FuncDeployContract)
+	EntryPointFindContractByIndex = coretypes.NewEntryPointCodeFromFunctionName(FuncFindContractByIndex)
+	EntryPointFindContractByName  = coretypes.NewEntryPointCodeFromFunctionName(FuncFindContractByName)
+	EntryPointGetBinary           = coretypes.NewEntryPointCodeFromFunctionName(FuncGetBinary)
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract
@@ -47,6 +53,7 @@ type ContractRecord struct {
 	VMType         string
 	DeploymentHash hashing.HashValue // hash(VMType, program binary)
 	Description    string
+	Name           string
 	NodeFee        int64 // minimum node fee
 }
 
@@ -56,10 +63,11 @@ type rootEntryPoint func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 
 var (
 	processor = rootProcessor{
-		coretypes.EntryPointCodeInit: initialize,
-		EntryPointDeployContract:     deployContract,
-		EntryPointFindContract:       findContract,
-		EntryPointGetBinary:          getBinary,
+		coretypes.EntryPointCodeInit:  initialize,
+		EntryPointDeployContract:      deployContract,
+		EntryPointFindContractByIndex: findContractByIndex,
+		EntryPointFindContractByName:  findContractByName,
+		EntryPointGetBinary:           getBinary,
 	}
 	ProgramHash = hashing.NilHash
 )
@@ -100,6 +108,9 @@ func (p *ContractRecord) Write(w io.Writer) error {
 	if err := util.WriteString16(w, p.Description); err != nil {
 		return err
 	}
+	if err := util.WriteString16(w, p.Name); err != nil {
+		return err
+	}
 	if err := util.WriteInt64(w, p.NodeFee); err != nil {
 		return err
 	}
@@ -115,6 +126,9 @@ func (p *ContractRecord) Read(r io.Reader) error {
 		return err
 	}
 	if p.Description, err = util.ReadString16(r); err != nil {
+		return err
+	}
+	if p.Name, err = util.ReadString16(r); err != nil {
 		return err
 	}
 	if err := util.ReadInt64(r, &p.NodeFee); err != nil {
@@ -139,5 +153,6 @@ func GetRootContractRecord() *ContractRecord {
 		VMType:         "builtin",
 		DeploymentHash: *ProgramHash,
 		Description:    "root contract",
+		Name:           "root",
 	}
 }

@@ -11,7 +11,7 @@ import (
 )
 
 // installProgram is a privileged call for root contract
-func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, description string) (uint16, error) {
+func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, name string, description string) (uint16, error) {
 	if vmctx.ContractIndex() != 0 {
 		panic("DeployBuiltinContract must be called from root contract")
 	}
@@ -36,25 +36,26 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, des
 		VMType:         vmtype,
 		DeploymentHash: *deploymentHash,
 		Description:    description,
+		Name:           name,
 	}))
 
 	return contractRegistry.Len() - 1, nil
 }
 
-func (vmctx *VMContext) findContract(contractIndex uint16) (*root.ContractRecord, bool) {
-	vmctx.log.Debugf("findContract: %d", contractIndex)
+func (vmctx *VMContext) findContractByIndex(contractIndex uint16) (*root.ContractRecord, bool) {
+	//vmctx.log.Debugf("findContractByIndex: %d", contractIndex)
 
 	if contractIndex == 0 {
 		// root
 		return root.GetRootContractRecord(), true
 	}
 	params := codec.NewCodec(dict.NewDict())
-	params.SetInt64("index", int64(contractIndex))
-	res, err := vmctx.callRoot(root.EntryPointFindContract, params)
+	params.SetInt64(root.ParamIndex, int64(contractIndex))
+	res, err := vmctx.callRoot(root.EntryPointFindContractByIndex, params)
 	if err != nil {
 		return nil, false
 	}
-	data, err := res.Get("data")
+	data, err := res.Get(root.ParamData)
 	if err != nil {
 		return nil, false
 	}
@@ -67,12 +68,12 @@ func (vmctx *VMContext) findContract(contractIndex uint16) (*root.ContractRecord
 
 func (vmctx *VMContext) getBinary(deploymentHash *hashing.HashValue) ([]byte, bool) {
 	params := codec.NewCodec(dict.NewDict())
-	params.SetHashValue("hash", deploymentHash)
+	params.SetHashValue(root.ParamHash, deploymentHash)
 	res, err := vmctx.callRoot(root.EntryPointGetBinary, params)
 	if err != nil {
 		return nil, false
 	}
-	data, err := res.Get("data")
+	data, err := res.Get(root.ParamData)
 	if err != nil {
 		return nil, false
 	}
