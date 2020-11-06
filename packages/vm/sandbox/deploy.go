@@ -12,7 +12,7 @@ import (
 // - if called from other than root contract, it redirects call to the root contract
 // - call "init" endpoint (constructor) with provided parameters
 func (s *sandbox) DeployContract(vmtype string, programBinary []byte, description string, initParams codec.ImmutableCodec) (uint16, error) {
-	s.vmctx.Log().Debugf("sandbox.DeployContract")
+	s.vmctx.Log().Debugf("sandbox.DeployBuiltinContract")
 
 	var ret uint16
 	if s.GetContractIndex() == 0 {

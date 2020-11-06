@@ -72,7 +72,9 @@ func TestDeployContract(t *testing.T) {
 
 	description := "testing contract deployment with inccounter"
 
-	_, err = chain.DeployContract(examples.VMType, inccounter.ProgramHash, description)
+	_, err = chain.DeployBuiltinContract(examples.VMType, inccounter.ProgramHash, description, map[string]interface{}{
+		inccounter.VarCounter: 42,
+	})
 	check(err, t)
 
 	if !clu.WaitUntilExpectationsMet() {
@@ -96,6 +98,13 @@ func TestDeployContract(t *testing.T) {
 		require.EqualValues(t, 0, cr.NodeFee)
 
 		return true
+	})
+	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, 42, counterValue)
+
+		return true
+
 	})
 }
 

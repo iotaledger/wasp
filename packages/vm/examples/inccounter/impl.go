@@ -63,6 +63,13 @@ func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 
 func initialize(ctx vmtypes.Sandbox) error {
 	ctx.Publishf("inccounter.init")
+	params := ctx.Params()
+	val, _, err := params.GetInt64(VarCounter)
+	if err != nil {
+		return fmt.Errorf("incCounter: %v", err)
+	}
+	ctx.AccessState().SetInt64(VarCounter, val)
+	ctx.Publishf("inccounter.init.success. counter = %d", val)
 	return nil
 }
 

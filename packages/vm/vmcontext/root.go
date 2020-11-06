@@ -13,7 +13,7 @@ import (
 // installProgram is a privileged call for root contract
 func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, description string) (uint16, error) {
 	if vmctx.ContractIndex() != 0 {
-		panic("DeployContract must be called from root contract")
+		panic("DeployBuiltinContract must be called from root contract")
 	}
 	vmctx.log.Debugf("VMContext.InstallContract.begin")
 	deploymentHash, err := vmctx.processors.NewProcessor(programBinary, vmtype)

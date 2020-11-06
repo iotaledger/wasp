@@ -95,17 +95,21 @@ func (ch *Chain) WithSCState(contractIndex uint16, f func(host string, blockInde
 	return pass
 }
 
-func (ch *Chain) DeployContract(vmtype string, progHashStr string, description string) (*sctransaction.Transaction, error) {
+func (ch *Chain) DeployBuiltinContract(vmtype string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := ch.OwnerClient().PostRequest(0, root.EntryPointDeployContract, nil, nil, map[string]interface{}{
+	params := map[string]interface{}{
 		root.ParamVMType:        vmtype,
 		root.ParamDescription:   description,
 		root.ParamProgramBinary: programHash[:],
-	})
+	}
+	for k, v := range initParams {
+		params[k] = v
+	}
+	tx, err := ch.OwnerClient().PostRequest(0, root.EntryPointDeployContract, nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
