@@ -1,10 +1,11 @@
 package wasptest
 
 import (
-	"testing"
-
+	"bytes"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
+	"testing"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -44,6 +45,11 @@ func TestDeployChain(t *testing.T) {
 		desc, _ := state.GetString(root.VarDescription)
 		require.EqualValues(t, chain.Description, desc)
 
+		contractRegistry := state.GetArray(root.VarContractRegistry)
+		require.EqualValues(t, 1, contractRegistry.Len())
+
+		crBytes := contractRegistry.GetAt(0)
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
 		return true
 	})
 }
@@ -74,17 +80,21 @@ func TestDeployContract(t *testing.T) {
 	}
 
 	chain.WithSCState(0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		t.Logf("Verifying state of SC 0, node %s", host)
+		t.Logf("Verifying state of SC 0, node %s blockIndex %d", host, blockIndex)
 
 		require.EqualValues(t, 2, blockIndex)
 
 		contractRegistry := state.GetArray(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
 
-		cr, err := root.DecodeContractRecord(contractRegistry.GetAt(1))
+		crBytes := contractRegistry.GetAt(1)
+		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
+
 		require.EqualValues(t, examples.VMType, cr.VMType)
 		require.EqualValues(t, description, cr.Description)
+		require.EqualValues(t, 0, cr.NodeFee)
+
 		return true
 	})
 }

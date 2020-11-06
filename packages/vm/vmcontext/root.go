@@ -15,11 +15,14 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, des
 	if vmctx.ContractIndex() != 0 {
 		panic("DeployContract must be called from root contract")
 	}
+	vmctx.log.Debugf("VMContext.InstallContract.begin")
 	deploymentHash, err := vmctx.processors.NewProcessor(programBinary, vmtype)
 	if err != nil {
 		return 0, err
 	}
 	// processor loaded
+	vmctx.log.Debugf("VMContext.InstallContract.1")
+
 	state := codec.NewMustCodec(vmctx)
 
 	// if program binary is not in the registry, write it there
@@ -39,6 +42,8 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, des
 }
 
 func (vmctx *VMContext) findContract(contractIndex uint16) (*root.ContractRecord, bool) {
+	vmctx.log.Debugf("findContract: %d", contractIndex)
+
 	if contractIndex == 0 {
 		// root
 		return root.GetRootContractRecord(), true

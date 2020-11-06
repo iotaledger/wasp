@@ -7,7 +7,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
+// CallContract
 func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.EntryPointCode, params codec.ImmutableCodec, budget map[balance.Color]int64) (codec.ImmutableCodec, error) {
+	vmctx.log.Debugw("CallContract", "contactIndex", contractIndex, "epCode", epCode.String())
+
 	rec, ok := vmctx.findContract(contractIndex)
 	if !ok {
 		return nil, fmt.Errorf("failed to find contract with index %d", contractIndex)
