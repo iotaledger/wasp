@@ -100,6 +100,8 @@ func TestDeployContract(t *testing.T) {
 		return true
 	})
 	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 1, node %s blockIndex %d", host, blockIndex)
+
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, 42, counterValue)
 
