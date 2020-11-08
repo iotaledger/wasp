@@ -2,7 +2,6 @@ package sandbox
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -59,16 +58,11 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-// deprecated
-func (s *sandbox) GetWaspLog() *logger.Logger {
-	return s.vmctx.Log()
-}
-
 func (s *sandbox) DumpAccount() string {
 	return s.vmctx.DumpAccount()
 }
 
-// request arguments
+// request context
 
 func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return s
@@ -80,6 +74,10 @@ func (s *sandbox) AccessState() codec.MutableMustCodec {
 
 func (s *sandbox) AccessSCAccount() vmtypes.AccountAccess {
 	return s.vmctx
+}
+
+func (s *sandbox) Accounts() vmtypes.Accounts {
+	return s.vmctx.Accounts()
 }
 
 func (s *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {

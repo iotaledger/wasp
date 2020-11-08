@@ -5,6 +5,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -66,4 +67,24 @@ func TestRequestID(t *testing.T) {
 	reqidback, err = NewRequestIDFromBase58(reqid58)
 	assert.NoError(t, err)
 	assert.EqualValues(t, reqid, reqidback)
+}
+
+func TestAgentID(t *testing.T) {
+	chid := (ChainID)(address.Random())
+
+	chid58 := chid.String()
+	t.Logf("chid58 = %s", chid58)
+
+	addr := address.Random()
+	t.Logf("addr = %s", addr.String())
+
+	aid := NewAgentIDFromAddress(addr)
+	require.True(t, aid.IsAddress())
+
+	contrId := NewContractID(chid, 22)
+	aid1 := NewAgentIDFromContractID(contrId)
+	require.True(t, !aid1.IsAddress())
+
+	contrIdBack := aid1.MustContractID()
+	require.EqualValues(t, contrId, contrIdBack)
 }

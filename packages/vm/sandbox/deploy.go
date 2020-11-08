@@ -29,7 +29,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		par.SetString(root.ParamName, name)
 		par.SetString(root.ParamDescription, description)
 
-		resp, err := s.CallContract(0, root.FuncDeployContract, par)
+		resp, err := s.CallContract(0, root.FuncDeployContract, par, nil)
 		if err != nil {
 			return 0, err
 		}
@@ -42,12 +42,12 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 	}
 	// calling constructor
 	// error ignored, for example init entry point does not exist
-	_, _ = s.CallContract(ret, "init", initParams)
+	_, _ = s.CallContract(ret, "init", initParams, nil)
 
 	return ret, nil
 }
 
-func (s *sandbox) CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (s *sandbox) CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
 	epCode := coretypes.NewEntryPointCodeFromFunctionName(funName)
 	// TODO budget
 	return s.vmctx.CallContract(contractIndex, epCode, params, nil)

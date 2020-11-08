@@ -28,11 +28,11 @@ func (v nilProcessor) GetDescription() string {
 // does nothing, i.e. resulting state update is empty
 func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	reqId := ctx.AccessRequest().ID()
-	ctx.GetWaspLog().Debugw("run nilProcessor",
-		"request code", ctx.AccessRequest().Code(),
-		"addr", ctx.GetContractID().String(),
-		"ts", ctx.GetTimestamp(),
-		"req", reqId.String(),
+	ctx.Publishf("run nilProcessor. Req.code %s, Contract ID: %s, ts: %d, reqid: %s",
+		ctx.AccessRequest().Code().String(),
+		ctx.GetContractID().String(),
+		ctx.GetTimestamp(),
+		reqId.String(),
 	)
 	return nil, nil
 }

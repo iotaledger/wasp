@@ -34,6 +34,8 @@ type VMContext struct {
 	timestamp   int64
 	stateUpdate state.StateUpdate // mutated
 	callStack   []*callContext
+
+	accountsWrapper
 }
 
 type callContext struct {
@@ -81,7 +83,7 @@ func NewVMContext(task *vm.VMTask, txb *txbuilder.Builder) (*VMContext, error) {
 			reqColor.String(), targetAddress.String(),
 			txb.GetInputBalanceFromTransaction(reqColor, reqTxId))
 	}
-	return &VMContext{
+	ret := &VMContext{
 		processors:         task.Processors,
 		chainID:            task.ChainID,
 		ownerAddress:       task.OwnerAddress,
@@ -93,5 +95,7 @@ func NewVMContext(task *vm.VMTask, txb *txbuilder.Builder) (*VMContext, error) {
 		log:                task.Log,
 		entropy:            task.Entropy,
 		callStack:          make([]*callContext, 0),
-	}, nil
+	}
+	ret.accountsWrapper = accountsWrapper{ret}
+	return ret, nil
 }

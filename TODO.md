@@ -21,6 +21,7 @@ Done
 - [x] rename in codec and sandbox Dictionary to Map
 
 Pending
+- [ ] discuss system of builtin contracts: factory, accounts, on-contract logging
 - [ ] discuss and introduce "view" entry points
 - [ ] discuss AgentID/sender structure. 
 - [ ] move all general interfaces from vmtypes, kv and similar to coretypes
@@ -34,6 +35,7 @@ Pending
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
       change until released).
 - [ ] Add authentication to web api calls
+- [ ] discuss market for iota/colored coins + trustless oracle for every chain
 
 To discuss/RFC
 - [ ] off-tangle messaging. Sending hash over the tangle and the rest of the request data with other means

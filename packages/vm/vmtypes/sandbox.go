@@ -3,7 +3,6 @@ package vmtypes
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -13,10 +12,9 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
-	Params() codec.ImmutableCodec // TODO
-	// only for root contract
+	Params() codec.ImmutableCodec
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) (uint16, error)
-	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
 	// general functions
 	GetChainID() coretypes.ChainID
 	GetContractIndex() uint16 // current contract index, mutates with each call
@@ -38,8 +36,10 @@ type Sandbox interface {
 	AccessRequest() RequestAccess
 	// base level of virtual state access
 	AccessState() codec.MutableMustCodec
-	// AccessSCAccount
+	// Deprecated
 	AccessSCAccount() AccountAccess
+	// new implementation
+	Accounts() Accounts
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
@@ -51,11 +51,18 @@ type Sandbox interface {
 	Publish(msg string)
 	Publishf(format string, args ...interface{})
 
-	GetWaspLog() *logger.Logger
 	DumpAccount() string
 }
 
-// access to request parameters (arguments)
+type NewRequestParams struct {
+	TargetContractID coretypes.ContractID
+	EntryPoint       coretypes.EntryPointCode
+	Timelock         uint32
+	Params           dict.Dict
+	IncludeReward    int64
+}
+
+// access to request
 type RequestAccess interface {
 	//request id
 	ID() coretypes.RequestID
@@ -67,11 +74,14 @@ type RequestAccess interface {
 	MustSender() coretypes.AgentID
 	// number of free minted tokens in the request transaction
 	// it is equal to total minted tokens minus number of requests
+	// Deprecated
 	NumFreeMintedTokens() int64
 }
 
 // access to token operations (txbuilder)
 // mint (create new color) is not here on purpose: ColorNew is used for request tokens
+// to be replaced with new interface for access to token accounts
+// Deprecated
 type AccountAccess interface {
 	// access to total available outputs/balances
 	AvailableBalance(col *balance.Color) int64
@@ -86,10 +96,12 @@ type AccountAccess interface {
 	HarvestFeesFromRequest(amount int64) bool
 }
 
-type NewRequestParams struct {
-	TargetContractID coretypes.ContractID
-	EntryPoint       coretypes.EntryPointCode
-	Timelock         uint32
-	Params           dict.Dict
-	IncludeReward    int64
+// Accounts is an interface to access all functions with tokens
+// in the local context of the call to a smart contract
+type Accounts interface {
+	// gives all accounts of the current contract context
+	coretypes.ColoredAccounts
+	// Incoming is a collection of spendable colored balances (a.k.a. budget)
+	// It is coming either from request or from calling contract
+	Incoming() coretypes.ColoredBalancesSpendable
 }

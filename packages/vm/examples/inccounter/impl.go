@@ -124,7 +124,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 		}
 	}
 	if numRepeats == 0 {
-		ctx.GetWaspLog().Infof("finished chain of requests")
+		ctx.Publishf("finished chain of requests")
 		return nil
 	}
 
