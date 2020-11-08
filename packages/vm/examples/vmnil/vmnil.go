@@ -29,7 +29,7 @@ func (v nilProcessor) GetDescription() string {
 func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.Eventf("run nilProcessor. Req.code %s, Contract ID: %s, ts: %d, reqid: %s",
-		ctx.AccessRequest().Code().String(),
+		ctx.AccessRequest().EntryPointCode().String(),
 		ctx.GetContractID().String(),
 		ctx.GetTimestamp(),
 		reqId.String(),

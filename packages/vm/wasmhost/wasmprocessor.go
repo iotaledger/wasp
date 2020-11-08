@@ -73,7 +73,7 @@ func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 	}
 	reqId := ctx.AccessRequest().ID()
 	vm.LogText(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
-		ctx.AccessRequest().Code().String(), reqId.String(), ctx.GetTimestamp()))
+		ctx.AccessRequest().EntryPointCode().String(), reqId.String(), ctx.GetTimestamp()))
 
 	vm.LogText("Calling " + vm.function)
 	err := vm.RunFunction(vm.function)

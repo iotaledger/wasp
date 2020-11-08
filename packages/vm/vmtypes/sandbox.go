@@ -67,8 +67,9 @@ type RequestAccess interface {
 	//request id
 	ID() coretypes.RequestID
 	// request code
-	Code() coretypes.EntryPointCode
+	EntryPointCode() coretypes.EntryPointCode
 	// Return address of non-contract sender
+	// Deprecated
 	MustSenderAddress() address.Address
 	//  Return agent id of sender. Assumes properties are semantically correct
 	MustSender() coretypes.AgentID
