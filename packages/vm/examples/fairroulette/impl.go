@@ -129,14 +129,14 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	err := f(ctx)
 	if err != nil {
-		ctx.Publishf("error %v", err)
+		ctx.Eventf("error %v", err)
 	}
 	return nil, err
 }
 
 // the request places bet into the smart contract
 func placeBet(ctx vmtypes.Sandbox) error {
-	ctx.Publish("placeBet")
+	ctx.Event("placeBet")
 	params := ctx.Params()
 
 	state := ctx.AccessState()
@@ -183,7 +183,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	// save the bet info in the array
 	state.GetArray(StateVarBets).Push(encodeBetInfo(betInfo))
 
-	ctx.Publishf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
+	ctx.Eventf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
 
 	err := withPlayerStats(ctx, &betInfo.Player, func(ps *PlayerStats) {
 		ps.Bets += 1
@@ -203,14 +203,14 @@ func placeBet(ctx vmtypes.Sandbox) error {
 		nextPlayTimestamp := (time.Duration(ctx.GetTimestamp())*time.Nanosecond + time.Duration(period)*time.Second).Nanoseconds()
 		state.SetInt64(StateVarNextPlayTimestamp, nextPlayTimestamp)
 
-		ctx.Publishf("SendRequestToSelfWithDelay period = %d", period)
+		ctx.Eventf("SendRequestToSelfWithDelay period = %d", period)
 
 		// send the timelocked Lock request to self. Timelock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
 		if ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period)) {
-			ctx.Publishf("play deadline is set after %d seconds", period)
+			ctx.Eventf("play deadline is set after %d seconds", period)
 		} else {
-			ctx.Publishf("failed to set play deadline")
+			ctx.Eventf("failed to set play deadline")
 		}
 	}
 	return nil
@@ -218,7 +218,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
 func setPlayPeriod(ctx vmtypes.Sandbox) error {
-	ctx.Publish("setPlayPeriod")
+	ctx.Event("setPlayPeriod")
 	params := ctx.Params()
 
 	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
@@ -234,14 +234,14 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 	}
 	ctx.AccessState().SetInt64(ReqVarPlayPeriodSec, period)
 
-	ctx.Publishf("setPlayPeriod = %d", period)
+	ctx.Eventf("setPlayPeriod = %d", period)
 	return nil
 }
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
 func lockBets(ctx vmtypes.Sandbox) error {
-	ctx.Publish("lockBets")
+	ctx.Event("lockBets")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
@@ -255,7 +255,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 	state.GetArray(StateVarBets).Erase()
 
 	numLockedBets := lockedBets.Len()
-	ctx.Publishf("lockBets: num = %d", numLockedBets)
+	ctx.Eventf("lockBets: num = %d", numLockedBets)
 
 	// clear entropy to be picked in the next request
 	state.Del(StateVarEntropyFromLocking)
@@ -268,7 +268,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
 func playAndDistribute(ctx vmtypes.Sandbox) error {
-	ctx.Publish("playAndDistribute")
+	ctx.Event("playAndDistribute")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
@@ -298,7 +298,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
-	ctx.Publishf("$$$$$$$$$$ winning color is = %d", winningColor)
+	ctx.Eventf("$$$$$$$$$$ winning color is = %d", winningColor)
 
 	addToWinsPerColor(ctx, winningColor)
 
@@ -315,7 +315,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		lockedBets[i] = bi
 	}
 
-	ctx.Publishf("$$$$$$$$$$ totalLockedAmount = %d", totalLockedAmount)
+	ctx.Eventf("$$$$$$$$$$ totalLockedAmount = %d", totalLockedAmount)
 
 	// select bets on winning Color
 	winningBets := lockedBets[:0] // same underlying array
@@ -325,7 +325,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		}
 	}
 
-	ctx.Publishf("$$$$$$$$$$ winningBets: %d", len(winningBets))
+	ctx.Eventf("$$$$$$$$$$ winningBets: %d", len(winningBets))
 
 	// locked bets neither entropy are not needed anymore
 	lockedBetsArray.Erase()
@@ -333,7 +333,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 
 	if len(winningBets) == 0 {
 
-		ctx.Publishf("$$$$$$$$$$ nobody wins: amount of %d stays in the smart contract", totalLockedAmount)
+		ctx.Eventf("$$$$$$$$$$ nobody wins: amount of %d stays in the smart contract", totalLockedAmount)
 
 		// nobody played on winning Color -> all sums stay in the smart contract
 		// move tokens to itself.
@@ -342,14 +342,14 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		scAddr := (address.Address)(ctx.GetContractID().ChainID())
 		if !ctx.AccessSCAccount().MoveTokens(&scAddr, &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
-			ctx.Publishf("$$$$$$$$$$ something went wrong 1")
+			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
 			ctx.Panic("MoveTokens failed")
 		}
 	}
 
 	// distribute total staked amount to players
 	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
-		ctx.Publishf("$$$$$$$$$$ something went wrong 2")
+		ctx.Eventf("$$$$$$$$$$ something went wrong 2")
 		ctx.Panic("distributeLockedAmount failed")
 	}
 
@@ -426,7 +426,7 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	for i := range finalWinners {
 
 		available := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
-		ctx.Publishf("sending reward iotas %d to the winner %s. Available iotas: %d",
+		ctx.Eventf("sending reward iotas %d to the winner %s. Available iotas: %d",
 			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available)
 
 		if !ctx.AccessSCAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {

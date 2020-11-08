@@ -92,12 +92,12 @@ func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode
 	return s.vmctx.SendRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 
-func (s *sandbox) Publish(msg string) {
+func (s *sandbox) Event(msg string) {
 	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.GetContractIndex(), msg)
 	s.vmctx.Publish(msg)
 }
 
-func (s *sandbox) Publishf(format string, args ...interface{}) {
+func (s *sandbox) Eventf(format string, args ...interface{}) {
 	s.vmctx.Log().Infof("VMMSG: "+format, args...)
 	s.vmctx.Publishf(format, args...)
 }

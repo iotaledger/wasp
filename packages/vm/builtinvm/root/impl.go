@@ -15,7 +15,7 @@ import (
 // It stores chain ID in the state and creates record for root contract in the contract registry at 0 index
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	params := ctx.Params()
-	ctx.Publishf("root.initialize.begin")
+	ctx.Eventf("root.initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
 		return nil, fmt.Errorf("root.initialize.fail: already_initialized")
@@ -46,12 +46,12 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 	state.GetMap(VarContractsByName).SetAt([]byte("root"), util.Uint64To8Bytes(0))
 
-	ctx.Publishf("root.initialize.success")
+	ctx.Eventf("root.initialize.success")
 	return nil, nil
 }
 
 func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	ctx.Publishf("root.deployContract.begin")
+	ctx.Eventf("root.deployContract.begin")
 
 	if ctx.AccessState().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
@@ -60,7 +60,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 	vmtype, ok, err := params.GetString(ParamVMType)
 	if err != nil {
-		ctx.Publishf("root.deployContract.error 1: %v", err)
+		ctx.Eventf("root.deployContract.error 1: %v", err)
 		return nil, err
 	}
 	if !ok {
@@ -69,7 +69,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 	programBinary, err := params.Get(ParamProgramBinary)
 	if err != nil {
-		ctx.Publishf("root.deployContract.error 2: %v", err)
+		ctx.Eventf("root.deployContract.error 2: %v", err)
 		return nil, err
 	}
 	if len(programBinary) == 0 {
@@ -77,7 +77,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 	description, ok, err := params.GetString(ParamDescription)
 	if err != nil {
-		ctx.Publishf("root.deployContract.error 3: %v", err)
+		ctx.Eventf("root.deployContract.error 3: %v", err)
 		return nil, err
 	}
 	if !ok {
@@ -85,7 +85,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 	name, ok, err := params.GetString(ParamName)
 	if err != nil {
-		ctx.Publishf("root.deployContract.error 4: %v", err)
+		ctx.Eventf("root.deployContract.error 4: %v", err)
 		return nil, err
 	}
 	if !ok {
@@ -114,12 +114,12 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		contractsByName.SetAt([]byte(name), util.Uint64To8Bytes(uint64(contractIndex)))
 	}
 
-	ctx.Publishf("root.deployContract.success. Deployed contract index %d", contractIndex)
+	ctx.Eventf("root.deployContract.success. Deployed contract index %d", contractIndex)
 	return ret, nil
 }
 
 func findContractByIndex(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	ctx.Publishf("root.findContractByIndex.begin")
+	ctx.Eventf("root.findContractByIndex.begin")
 	if ctx.AccessState().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
@@ -138,12 +138,12 @@ func findContractByIndex(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 	ret := codec.NewCodec(dict.NewDict())
 	ret.Set("data", contractRegistry.GetAt(uint16(contractIndex)))
-	ctx.Publishf("root.findContractByIndex.success")
+	ctx.Eventf("root.findContractByIndex.success")
 	return ret, nil
 }
 
 func findContractByName(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	ctx.Publishf("root.findContractByName.begin")
+	ctx.Eventf("root.findContractByName.begin")
 	if ctx.AccessState().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
@@ -167,12 +167,12 @@ func findContractByName(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ret := codec.NewCodec(dict.NewDict())
 	ret.SetInt64(ParamIndex, index)
 
-	ctx.Publishf("root.findContractByName.success")
+	ctx.Eventf("root.findContractByName.success")
 	return ret, nil
 }
 
 func getBinary(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	ctx.Publishf("root.getBinary.begin")
+	ctx.Eventf("root.getBinary.begin")
 	if ctx.AccessState().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}

@@ -111,7 +111,7 @@ func (vm *wasmProcessor) Log(logLevel int32, text string) {
 
 func (vm *wasmProcessor) LogText(text string) {
 	if vm.ctx != nil {
-		vm.ctx.Publish(text)
+		vm.ctx.Event(text)
 		return
 	}
 	// fallback logging

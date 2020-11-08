@@ -48,8 +48,8 @@ type Sandbox interface {
 	SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args dict.Dict, deferForSec uint32) bool
 	// for testing
 	// Publish "vmmsg" message through Publisher
-	Publish(msg string)
-	Publishf(format string, args ...interface{})
+	Event(msg string)
+	Eventf(format string, args ...interface{})
 
 	DumpAccount() string
 }

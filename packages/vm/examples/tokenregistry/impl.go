@@ -78,7 +78,7 @@ func (v tokenRegistryProcessor) GetDescription() string {
 func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	err := ep(ctx)
 	if err != nil {
-		ctx.Publishf("error %v", err)
+		ctx.Eventf("error %v", err)
 	}
 	return nil, err
 }
@@ -92,7 +92,7 @@ const maxDescription = 150
 
 // mintSupply implements 'mint supply' request
 func mintSupply(ctx vmtypes.Sandbox) error {
-	ctx.Publish("TokenRegistry: mintSupply")
+	ctx.Event("TokenRegistry: mintSupply")
 	params := ctx.Params()
 
 	reqId := ctx.AccessRequest().ID()
@@ -156,7 +156,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	}
 	stateAccess.SetString(VarStateListColors, lst)
 
-	ctx.Publishf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
+	ctx.Eventf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
 		colorOfTheSupply.String(), rec.Owner.String(), rec.Description, string(rec.UserDefined))
 	return nil
 }

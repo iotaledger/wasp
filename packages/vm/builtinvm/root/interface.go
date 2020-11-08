@@ -88,7 +88,7 @@ func (v rootProcessor) GetDescription() string {
 func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ret, err := ep(ctx)
 	if err != nil {
-		ctx.Publishf("error occurred: '%v'", err)
+		ctx.Eventf("error occurred: '%v'", err)
 	}
 	return ret, err
 }

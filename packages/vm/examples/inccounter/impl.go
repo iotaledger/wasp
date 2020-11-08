@@ -59,59 +59,59 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	err := ep(ctx)
 	if err != nil {
-		ctx.Publishf("error %v", err)
+		ctx.Eventf("error %v", err)
 	}
 	return nil, err
 }
 
 func initialize(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("inccounter.init")
+	ctx.Eventf("inccounter.init")
 	params := ctx.Params()
 	val, _, err := params.GetInt64(VarCounter)
 	if err != nil {
 		return fmt.Errorf("incCounter: %v", err)
 	}
 	ctx.AccessState().SetInt64(VarCounter, val)
-	ctx.Publishf("inccounter.init.success. counter = %d", val)
+	ctx.Eventf("inccounter.init.success. counter = %d", val)
 	return nil
 }
 
 func incCounter(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("inccounter.incCounter")
+	ctx.Eventf("inccounter.incCounter")
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
-	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
+	ctx.Event(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64(VarCounter, val+1)
 	return nil
 }
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("inccounter.incCounterAndRepeatOnce")
+	ctx.Eventf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.AccessState()
 	val, _ := state.GetInt64(VarCounter)
 
-	ctx.Publish(fmt.Sprintf("increasing counter value: %d", val))
+	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
 
 		if ctx.SendRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
-			ctx.Publish("SendRequestToSelfWithDelay RequestInc 5 sec")
+			ctx.Event("SendRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
-			ctx.Publish("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
+			ctx.Event("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
 		}
 	}
 	return nil
 }
 
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("inccounter.incCounterAndRepeatMany")
+	ctx.Eventf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.AccessState()
 	params := ctx.Params()
 
 	val, _ := state.GetInt64(VarCounter)
 	state.SetInt64(VarCounter, val+1)
-	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
+	ctx.Event(fmt.Sprintf("'increasing counter value: %d'", val))
 
 	numRepeats, ok, err := params.GetInt64(VarNumRepeats)
 	if err != nil {
@@ -124,24 +124,24 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 		}
 	}
 	if numRepeats == 0 {
-		ctx.Publishf("finished chain of requests")
+		ctx.Eventf("finished chain of requests")
 		return nil
 	}
 
-	ctx.Publishf("chain of %d requests ahead", numRepeats)
+	ctx.Eventf("chain of %d requests ahead", numRepeats)
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
 	if ctx.SendRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 3) {
-		ctx.Publishf("SendRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+		ctx.Eventf("SendRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
-		ctx.Publishf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+		ctx.Eventf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
 	return nil
 }
 
 func spawn(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("inccounter.spawn")
+	ctx.Eventf("inccounter.spawn")
 	state := ctx.AccessState()
 
 	val, _ := state.GetInt64(VarCounter)
@@ -156,6 +156,6 @@ func spawn(ctx vmtypes.Sandbox) error {
 	if err != nil {
 		return err
 	}
-	ctx.Publishf("inccounter.spawn: new contract index = %d", spawnedContractIndex)
+	ctx.Eventf("inccounter.spawn: new contract index = %d", spawnedContractIndex)
 	return nil
 }

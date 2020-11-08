@@ -50,7 +50,7 @@ func (v dwfProcessor) GetDescription() string {
 func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ret := ep(ctx)
 	if ret != nil {
-		ctx.Publishf("error %v", ret)
+		ctx.Eventf("error %v", ret)
 	}
 	return nil, ret
 }
@@ -65,7 +65,7 @@ const maxComment = 150
 // donate implements request 'donate'. It takes feedback text from the request
 // and adds it into the log of feedback messages
 func donate(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("DonateWithFeedback: donate")
+	ctx.Eventf("DonateWithFeedback: donate")
 	params := ctx.Params()
 
 	// how many iotas are sent by the request.
@@ -114,19 +114,19 @@ func donate(ctx vmtypes.Sandbox) error {
 	stateAccess.SetInt64(donatewithfeedback.VarStateTotalDonations, total+di.Amount)
 
 	// publish message for tracing
-	ctx.Publishf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
+	ctx.Eventf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
 		tlog.Len(),
 		time.Unix(0, tlog.Earliest()).Format("2006-01-02 15:04:05"),
 		time.Unix(0, tlog.Latest()).Format("2006-01-02 15:04:05"),
 	)
-	ctx.Publishf("DonateWithFeedback: donate. amount: %d, sender: %s, feedback: '%s', err: %s",
+	ctx.Eventf("DonateWithFeedback: donate. amount: %d, sender: %s, feedback: '%s', err: %s",
 		di.Amount, di.Sender.String(), di.Feedback, di.Error)
 	return nil
 }
 
 // TODO implement withdrawal of other than IOTA colored tokens
 func withdraw(ctx vmtypes.Sandbox) error {
-	ctx.Publishf("DonateWithFeedback: withdraw")
+	ctx.Eventf("DonateWithFeedback: withdraw")
 	params := ctx.Params()
 
 	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
@@ -158,6 +158,6 @@ func withdraw(ctx vmtypes.Sandbox) error {
 	}
 	// transfer iotas to the owner address
 	ctx.AccessSCAccount().MoveTokens(ctx.GetOwnerAddress(), &balance.ColorIOTA, withdrawSum)
-	ctx.Publishf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum)
+	ctx.Eventf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum)
 	return nil
 }
