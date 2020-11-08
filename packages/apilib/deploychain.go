@@ -236,7 +236,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	scColor := (balance.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
 
-	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, Address: %s, Color: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, MustAddress: %s, Color: %s, N = %d, T = %d\n",
 		chainid.String(), chainAddr.String(), scColor.String(), par.N, par.T)
 
 	return &chainid, chainAddr, &scColor, err

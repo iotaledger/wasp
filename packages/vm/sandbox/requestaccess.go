@@ -15,8 +15,23 @@ func (s *sandbox) Code() coretypes.EntryPointCode {
 }
 
 // addresses of request transaction inputs
-func (s *sandbox) SenderAddress() address.Address {
-	return *s.vmctx.Request().Tx.MustProperties().Sender()
+func (s *sandbox) MustSenderAddress() address.Address {
+	sender := s.MustSender()
+	if !sender.IsAddress() {
+		panic("sender must be address, not contract")
+	}
+	return sender.MustAddress()
+}
+
+// addresses of request transaction inputs
+func (s *sandbox) MustSender() coretypes.AgentID {
+	req := s.vmctx.Request()
+	prop := req.Tx.MustProperties()
+	if prop.IsState() {
+		return coretypes.NewAgentIDFromAddress(*s.vmctx.Request().Tx.MustProperties().Sender())
+	}
+	senderContractID := coretypes.NewContractID(*prop.MustChainID(), req.RequestSection().SenderContractIndex())
+	return coretypes.NewAgentIDFromContractID(senderContractID)
 }
 
 //MintedBalances return total minted tokens minus number of

@@ -156,7 +156,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 	// take input addresses of the request transaction. Must be exactly 1 otherwise.
 	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	sender := ctx.AccessRequest().SenderAddress()
+	sender := ctx.AccessRequest().MustSenderAddress()
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
@@ -221,7 +221,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 	ctx.Publish("setPlayPeriod")
 	params := ctx.Params()
 
-	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
+	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized
 		return fmt.Errorf("setPlayPeriod: not authorized")
 	}
@@ -244,7 +244,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Publish("lockBets")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
-	if ctx.AccessRequest().SenderAddress() != scAddr {
+	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
 	}
@@ -271,7 +271,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Publish("playAndDistribute")
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
-	if ctx.AccessRequest().SenderAddress() != scAddr {
+	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
 	}

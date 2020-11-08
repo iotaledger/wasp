@@ -22,7 +22,7 @@ func (o *ScRequest) Exists(keyId int32) bool {
 func (o *ScRequest) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case KeyAddress:
-		return o.vm.ctx.AccessRequest().SenderAddress().Bytes()
+		return o.vm.ctx.AccessRequest().MustSenderAddress().Bytes()
 	case KeyHash:
 		id := o.vm.ctx.AccessRequest().ID()
 		return id.TransactionID().Bytes()

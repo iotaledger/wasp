@@ -11,8 +11,8 @@ import (
 )
 
 type Properties struct {
-	// the only sender of the SC transaction
-	sender address.Address
+	// the only senderAddress of the SC transaction
+	senderAddress address.Address
 	// is it state transaction (== does it contain valid stateBlock)
 	isState bool
 	// if isState == true: it states if it is the origin transaction
@@ -46,9 +46,9 @@ func (tx *Transaction) calcProperties() (*Properties, error) {
 }
 
 func (prop *Properties) analyzeSender(tx *Transaction) error {
-	// check if the sender is exactly one
+	// check if the senderAddress is exactly one
 	// only value transaction with one input address can be parsed as smart contract transactions
-	// because we always need to deterministically identify the sender
+	// because we always need to deterministically identify the senderAddress
 	senderFound := false
 	var err error
 	tx.Transaction.Inputs().ForEachAddress(func(addr address.Address) bool {
@@ -56,7 +56,7 @@ func (prop *Properties) analyzeSender(tx *Transaction) error {
 			err = errors.New("smart contract transaction must contain exactly 1 input address")
 			return false
 		}
-		prop.sender = addr
+		prop.senderAddress = addr
 		senderFound = true
 		return true
 	})
@@ -103,7 +103,7 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 			return err
 		}
 		// TODO May change in the future
-		if prop.chainID != (coretypes.ChainID)(prop.sender) {
+		if prop.chainID != (coretypes.ChainID)(prop.senderAddress) {
 			return errors.New("SC token must move from the SC address to itself")
 		}
 		return nil
@@ -173,7 +173,7 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 }
 
 func (prop *Properties) Sender() *address.Address {
-	return &prop.sender
+	return &prop.senderAddress
 }
 
 func (prop *Properties) IsState() bool {

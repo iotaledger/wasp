@@ -20,7 +20,7 @@ import (
 // counting from 2020.01.01 Then it would extend until 2140 or so
 
 type RequestSection struct {
-	// sender contract index
+	// senderAddress contract index
 	// - if state block present, it is index of the sending contracts
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
 	senderContractIndex uint16
@@ -53,13 +53,13 @@ func NewRequestSection(senderContractIndex uint16, targetContract coretypes.Cont
 	}
 }
 
-// NewRequestSectionByWallet same as NewRequestSection but assumes sender index is 0
+// NewRequestSectionByWallet same as NewRequestSection but assumes senderAddress index is 0
 func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
 	return NewRequestSection(0, targetContract, entryPointCode)
 }
 
 func (req *RequestSection) String() string {
-	return fmt.Sprintf("[[sender: %d, target: %s, entry point: '%s', args: %s]]",
+	return fmt.Sprintf("[[senderAddress: %d, target: %s, entry point: '%s', args: %s]]",
 		req.senderContractIndex, req.targetContractID.String(), req.entryPoint.String(), req.args.String())
 }
 

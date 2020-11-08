@@ -61,8 +61,10 @@ type RequestAccess interface {
 	ID() coretypes.RequestID
 	// request code
 	Code() coretypes.EntryPointCode
-	// sender address (exactly 1)
-	SenderAddress() address.Address
+	// Return address of non-contract sender
+	MustSenderAddress() address.Address
+	//  Return agent id of sender. Assumes properties are semantically correct
+	MustSender() coretypes.AgentID
 	// number of free minted tokens in the request transaction
 	// it is equal to total minted tokens minus number of requests
 	NumFreeMintedTokens() int64

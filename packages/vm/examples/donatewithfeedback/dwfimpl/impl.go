@@ -78,7 +78,7 @@ func donate(ctx vmtypes.Sandbox) error {
 	stateAccess := ctx.AccessState()
 	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
 
-	sender := ctx.AccessRequest().SenderAddress()
+	sender := ctx.AccessRequest().MustSenderAddress()
 	// determine sender of the request
 	// create donation info record
 	di := &donatewithfeedback.DonationInfo{
@@ -129,7 +129,7 @@ func withdraw(ctx vmtypes.Sandbox) error {
 	ctx.Publishf("DonateWithFeedback: withdraw")
 	params := ctx.Params()
 
-	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
+	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized
 		return fmt.Errorf("withdraw: not authorized")
 	}
@@ -140,7 +140,7 @@ func withdraw(ctx vmtypes.Sandbox) error {
 		// the error from GetInt64 means binary data sent as a value of the variable
 		// cannot be interpreted as int64
 		// return everything TODO RefundAll function ?
-		sender := ctx.AccessRequest().SenderAddress()
+		sender := ctx.AccessRequest().MustSenderAddress()
 		sent := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
 		ctx.AccessSCAccount().MoveTokensFromRequest(&sender, &balance.ColorIOTA, sent)
 		return fmt.Errorf("DonateWithFeedback: withdraw wrong argument %v", err)

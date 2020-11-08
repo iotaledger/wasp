@@ -195,7 +195,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	ctx.Publish("startAuction begin")
 	params := ctx.Params()
 
-	sender := ctx.AccessRequest().SenderAddress()
+	sender := ctx.AccessRequest().MustSenderAddress()
 	account := ctx.AccessSCAccount()
 
 	// check how many iotas the request contains
@@ -404,7 +404,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("placeBid: exit 6")
 	}
 	// determine the sender of the bid
-	sender := ctx.AccessRequest().SenderAddress()
+	sender := ctx.AccessRequest().MustSenderAddress()
 
 	// find bids of this bidder in the auction
 	var bi *BidInfo
@@ -448,7 +448,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 
 	scAddr := (address.Address)(ctx.GetContractID().ChainID())
-	if ctx.AccessRequest().SenderAddress() != scAddr {
+	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")
 	}
@@ -593,7 +593,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	ctx.Publish("setOwnerMargin: begin")
 	params := ctx.Params()
 
-	if ctx.AccessRequest().SenderAddress() != *ctx.GetOwnerAddress() {
+	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
 		// not authorized
 		return fmt.Errorf("setOwnerMargin: not authorized")
 	}
@@ -617,7 +617,7 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 	account := ctx.AccessSCAccount()
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	available := account.AvailableBalanceFromRequest(color)
-	sender := ctx.AccessRequest().SenderAddress()
+	sender := ctx.AccessRequest().MustSenderAddress()
 	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	account.MoveTokensFromRequest(&sender, color, available)
 }
