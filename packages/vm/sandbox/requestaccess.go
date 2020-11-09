@@ -10,7 +10,7 @@ func (s *sandbox) ID() coretypes.RequestID {
 	return *s.vmctx.Request().RequestID()
 }
 
-func (s *sandbox) EntryPointCode() coretypes.EntryPointCode {
+func (s *sandbox) EntryPointCode() coretypes.Hname {
 	return s.vmctx.Request().RequestSection().EntryPointCode()
 }
 

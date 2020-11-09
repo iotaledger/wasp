@@ -41,7 +41,7 @@ type VMContext struct {
 type callContext struct {
 	contractIndex uint16
 	params        codec.ImmutableCodec
-	budget        map[balance.Color]int64
+	budget        coretypes.ColoredBalancesSpendable
 }
 
 // NewVMContext:

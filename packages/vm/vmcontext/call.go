@@ -2,13 +2,12 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // CallContract
-func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.EntryPointCode, params codec.ImmutableCodec, budget map[balance.Color]int64) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("CallContract", "contactIndex", contractIndex, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByIndex(contractIndex)

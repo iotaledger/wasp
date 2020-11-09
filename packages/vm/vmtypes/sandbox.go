@@ -14,7 +14,7 @@ import (
 type Sandbox interface {
 	Params() codec.ImmutableCodec
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) (uint16, error)
-	CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
+	CallContract(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
 	// general functions
 	GetChainID() coretypes.ChainID
 	GetContractIndex() uint16 // current contract index, mutates with each call
@@ -43,9 +43,9 @@ type Sandbox interface {
 	// Send request
 	SendRequest(par NewRequestParams) bool
 	// Send request to itself
-	SendRequestToSelf(reqCode coretypes.EntryPointCode, args dict.Dict) bool
+	SendRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool
 	// Send request to itself with timelock for some seconds after the current timestamp
-	SendRequestToSelfWithDelay(reqCode coretypes.EntryPointCode, args dict.Dict, deferForSec uint32) bool
+	SendRequestToSelfWithDelay(reqCode coretypes.Hname, args dict.Dict, deferForSec uint32) bool
 	// for testing
 	// Publish "vmmsg" message through Publisher
 	Event(msg string)
@@ -56,7 +56,7 @@ type Sandbox interface {
 
 type NewRequestParams struct {
 	TargetContractID coretypes.ContractID
-	EntryPoint       coretypes.EntryPointCode
+	EntryPoint       coretypes.Hname
 	Timelock         uint32
 	Params           dict.Dict
 	IncludeReward    int64
@@ -67,7 +67,7 @@ type RequestAccess interface {
 	//request id
 	ID() coretypes.RequestID
 	// request code
-	EntryPointCode() coretypes.EntryPointCode
+	EntryPointCode() coretypes.Hname
 	// Return address of non-contract sender
 	// Deprecated
 	MustSenderAddress() address.Address

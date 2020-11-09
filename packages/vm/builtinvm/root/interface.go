@@ -42,10 +42,10 @@ const (
 
 // entry point codes
 var (
-	EntryPointDeployContract      = coretypes.NewEntryPointCodeFromFunctionName(FuncDeployContract)
-	EntryPointFindContractByIndex = coretypes.NewEntryPointCodeFromFunctionName(FuncFindContractByIndex)
-	EntryPointFindContractByName  = coretypes.NewEntryPointCodeFromFunctionName(FuncFindContractByName)
-	EntryPointGetBinary           = coretypes.NewEntryPointCodeFromFunctionName(FuncGetBinary)
+	EntryPointDeployContract      = coretypes.Hn(FuncDeployContract)
+	EntryPointFindContractByIndex = coretypes.Hn(FuncFindContractByIndex)
+	EntryPointFindContractByName  = coretypes.Hn(FuncFindContractByName)
+	EntryPointGetBinary           = coretypes.Hn(FuncGetBinary)
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract
@@ -57,7 +57,7 @@ type ContractRecord struct {
 	NodeFee        int64 // minimum node fee
 }
 
-type rootProcessor map[coretypes.EntryPointCode]rootEntryPoint
+type rootProcessor map[coretypes.Hname]rootEntryPoint
 
 type rootEntryPoint func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 
@@ -76,7 +76,7 @@ func GetProcessor() vmtypes.Processor {
 	return processor
 }
 
-func (v rootProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v rootProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	ret, ok := processor[code]
 	return ret, ok
 }

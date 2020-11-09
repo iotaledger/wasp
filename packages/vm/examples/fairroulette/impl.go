@@ -33,7 +33,7 @@ import (
 )
 
 // implement Processor and EntryPoint interfaces
-type fairRouletteProcessor map[coretypes.EntryPointCode]fairRouletteEntryPoint
+type fairRouletteProcessor map[coretypes.Hname]fairRouletteEntryPoint
 
 type fairRouletteEntryPoint func(ctx vmtypes.Sandbox) error
 
@@ -43,14 +43,14 @@ const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 // constants for request codes
 var (
 	// request to place the bet
-	RequestPlaceBet = coretypes.NewEntryPointCodeFromFunctionName("placeBet")
+	RequestPlaceBet = coretypes.Hn("placeBet")
 	// request to lock the bets
-	RequestLockBets = coretypes.NewEntryPointCodeFromFunctionName("lockBets")
+	RequestLockBets = coretypes.Hn("lockBets")
 	// request to play and distribute
-	RequestPlayAndDistribute = coretypes.NewEntryPointCodeFromFunctionName("playAndDistribute")
+	RequestPlayAndDistribute = coretypes.Hn("playAndDistribute")
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
-	RequestSetPlayPeriod = coretypes.NewEntryPointCodeFromFunctionName("setPlayPeriod")
+	RequestSetPlayPeriod = coretypes.Hn("setPlayPeriod")
 )
 
 // the processor is a map of entry points
@@ -112,7 +112,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (f fairRouletteProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	ep, ok := entryPoints[code]
 	return ep, ok
 }

@@ -38,7 +38,7 @@ func (o *ScPostedRequest) Send() {
 		if params.IsEmpty() {
 			params = nil
 		}
-		o.vm.ctx.SendRequestToSelfWithDelay(coretypes.EntryPointCode(o.code), params, uint32(o.delay))
+		o.vm.ctx.SendRequestToSelfWithDelay(coretypes.Hname(o.code), params, uint32(o.delay))
 	}
 	//TODO handle external contract
 }

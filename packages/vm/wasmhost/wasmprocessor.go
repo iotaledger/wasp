@@ -33,7 +33,7 @@ func (vm *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (vm *wasmProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (vm *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	function, ok := vm.codeToFunc[int32(code)]
 	if !ok {
 		return nil, false

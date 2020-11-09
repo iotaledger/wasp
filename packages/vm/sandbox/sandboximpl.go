@@ -84,11 +84,11 @@ func (s *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
 	return s.vmctx.SendRequest(par)
 }
 
-func (s *sandbox) SendRequestToSelf(reqCode coretypes.EntryPointCode, args dict.Dict) bool {
+func (s *sandbox) SendRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
 	return s.vmctx.SendRequestToSelf(reqCode, args)
 }
 
-func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args dict.Dict, delaySec uint32) bool {
+func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	return s.vmctx.SendRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 

@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	incCodeIncrement           = coretypes.EntryPointCode(1)
-	incCodeIncrementRepeat1    = coretypes.EntryPointCode(2)
-	incCodeIncrementRepeatMany = coretypes.EntryPointCode(3)
-	incCodeTest                = coretypes.EntryPointCode(4)
-	incCodeNothing             = coretypes.EntryPointCode(5)
+	incCodeIncrement           = coretypes.Hname(1)
+	incCodeIncrementRepeat1    = coretypes.Hname(2)
+	incCodeIncrementRepeatMany = coretypes.Hname(3)
+	incCodeTest                = coretypes.Hname(4)
+	incCodeNothing             = coretypes.Hname(5)
 )
 
 const incWasmPath = "wasm/increment"
@@ -78,7 +78,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequests,
@@ -145,7 +145,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + increments,
@@ -205,7 +205,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 2,
@@ -269,7 +269,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1 + numRepeats,

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type incCounterProcessor map[coretypes.EntryPointCode]incEntryPoint
+type incCounterProcessor map[coretypes.Hname]incEntryPoint
 
 const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
@@ -20,10 +20,10 @@ const (
 )
 
 var (
-	EntryPointIncCounter              = coretypes.NewEntryPointCodeFromFunctionName("incCounter")
-	EntryPointIncAndRepeatOnceAfter5s = coretypes.NewEntryPointCodeFromFunctionName("incAndRepeatOnceAfter5s")
-	EntryPointIncAndRepeatMany        = coretypes.NewEntryPointCodeFromFunctionName("incAndRepeatMany")
-	EntryPointSpawn                   = coretypes.NewEntryPointCodeFromFunctionName("spawn")
+	EntryPointIncCounter              = coretypes.Hn("incCounter")
+	EntryPointIncAndRepeatOnceAfter5s = coretypes.Hn("incAndRepeatOnceAfter5s")
+	EntryPointIncAndRepeatMany        = coretypes.Hn("incAndRepeatMany")
+	EntryPointSpawn                   = coretypes.Hn("spawn")
 )
 
 var entryPoints = incCounterProcessor{
@@ -40,7 +40,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (proc incCounterProcessor) GetEntryPoint(rc coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (proc incCounterProcessor) GetEntryPoint(rc coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := proc[rc]
 	if !ok {
 		return nil, false
@@ -140,6 +140,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 	return nil
 }
 
+// spawn deploys new contract an calls it
 func spawn(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.spawn")
 	state := ctx.AccessState()
@@ -156,6 +157,13 @@ func spawn(ctx vmtypes.Sandbox) error {
 	if err != nil {
 		return err
 	}
+
+	// increase counter in newly spawned contract
+	_, err = ctx.CallContract(spawnedContractIndex, EntryPointIncCounter, nil, nil)
+	if err != nil {
+		return err
+	}
+
 	ctx.Eventf("inccounter.spawn: new contract index = %d", spawnedContractIndex)
 	return nil
 }

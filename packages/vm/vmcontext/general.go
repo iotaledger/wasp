@@ -67,7 +67,7 @@ func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
 	return true
 }
 
-func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.EntryPointCode, params dict.Dict) bool {
+func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
 	return vmctx.SendRequest(vmtypes.NewRequestParams{
 		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.ContractIndex()),
 		EntryPoint:       reqCode,
@@ -76,7 +76,7 @@ func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.EntryPointCode, para
 	})
 }
 
-func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.EntryPointCode, args dict.Dict, delaySec uint32) bool {
+func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
 	return vmctx.SendRequest(vmtypes.NewRequestParams{

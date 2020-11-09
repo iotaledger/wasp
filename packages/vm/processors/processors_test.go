@@ -25,7 +25,7 @@ func TestBasic(t *testing.T) {
 	_, exists := proc.GetEntryPoint(0)
 	assert.False(t, exists)
 
-	_, exists = proc.GetEntryPoint(coretypes.NewEntryPointCodeFromFunctionName("initialize"))
+	_, exists = proc.GetEntryPoint(coretypes.Hn("initialize"))
 	assert.True(t, exists)
 
 	_, err = p.NewProcessor([]byte(dwfimpl.ProgramHash), examples.VMType)

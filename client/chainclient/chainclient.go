@@ -36,7 +36,7 @@ func New(
 
 func (c *Client) PostRequest(
 	contractIndex uint16,
-	entryPoint coretypes.EntryPointCode,
+	entryPoint coretypes.Hname,
 	mint map[address.Address]int64, // TODO
 	transfer map[balance.Color]int64,
 	vars map[string]interface{},

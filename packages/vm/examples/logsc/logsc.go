@@ -14,12 +14,12 @@ import (
 const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
 var (
-	RequestCodeAddLog = coretypes.NewEntryPointCodeFromFunctionName("codeAddLog")
+	RequestCodeAddLog = coretypes.Hn("codeAddLog")
 )
 
 type logscEntryPoint func(ctx vmtypes.Sandbox)
 
-type logscProcessor map[coretypes.EntryPointCode]logscEntryPoint
+type logscProcessor map[coretypes.Hname]logscEntryPoint
 
 var entryPoints = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
@@ -29,7 +29,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (p logscProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (p logscProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	ep, ok := p[code]
 	return ep, ok
 }

@@ -13,8 +13,8 @@ import (
 
 // main external constants
 var (
-	RequestDonate   = coretypes.NewEntryPointCodeFromFunctionName("donate")
-	RequestWithdraw = coretypes.NewEntryPointCodeFromFunctionName("withdraw")
+	RequestDonate   = coretypes.Hn("donate")
+	RequestWithdraw = coretypes.Hn("withdraw")
 )
 
 const (

@@ -29,7 +29,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		par.SetString(root.ParamName, name)
 		par.SetString(root.ParamDescription, description)
 
-		resp, err := s.CallContract(0, root.FuncDeployContract, par, nil)
+		resp, err := s.CallContract(0, root.EntryPointDeployContract, par, nil)
 		if err != nil {
 			return 0, err
 		}
@@ -41,14 +41,12 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		ret = uint16(t)
 	}
 	// calling constructor
-	// error ignored, for example init entry point does not exist
-	_, _ = s.CallContract(ret, "init", initParams, nil)
+	// error ignored, if for example init entry point does not exist
+	_, _ = s.CallContract(ret, coretypes.EntryPointCodeInit, initParams, nil)
 
 	return ret, nil
 }
 
-func (s *sandbox) CallContract(contractIndex uint16, funName string, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
-	epCode := coretypes.NewEntryPointCodeFromFunctionName(funName)
-	// TODO budget
-	return s.vmctx.CallContract(contractIndex, epCode, params, nil)
+func (s *sandbox) CallContract(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
+	return s.vmctx.CallContract(contractIndex, entryPoint, params, budget)
 }

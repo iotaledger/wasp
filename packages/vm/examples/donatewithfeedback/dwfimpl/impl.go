@@ -19,7 +19,7 @@ const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
 const Description = "DonateWithFeedback, a PoC smart contract"
 
 // implementation of 'vmtypes.Processor' and 'vmtypes.EntryPoint' interfaces
-type dwfProcessor map[coretypes.EntryPointCode]dwfEntryPoint
+type dwfProcessor map[coretypes.Hname]dwfEntryPoint
 
 type dwfEntryPoint func(ctx vmtypes.Sandbox) error
 
@@ -36,7 +36,7 @@ func GetProcessor() vmtypes.Processor {
 
 // GetEntryPoint implements EntryPoint interfaces. It resolves request code to the
 // function
-func (v dwfProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v dwfProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }

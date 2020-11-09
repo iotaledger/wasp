@@ -8,7 +8,7 @@ import (
 
 // Processor is a abstract interface to the VM processor instance.
 type Processor interface {
-	GetEntryPoint(code coretypes.EntryPointCode) (EntryPoint, bool)
+	GetEntryPoint(code coretypes.Hname) (EntryPoint, bool)
 	GetDescription() string
 }
 

@@ -102,6 +102,6 @@ func (vmctx *VMContext) getProcessor(rec *root.ContractRecord) (vmtypes.Processo
 	return nil, fmt.Errorf("internal error: can't get the deployed processor")
 }
 
-func (vmctx *VMContext) callRoot(entryPointCode coretypes.EntryPointCode, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) callRoot(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	return vmctx.CallContract(0, entryPointCode, params, nil)
 }

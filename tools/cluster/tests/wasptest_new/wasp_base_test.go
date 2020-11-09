@@ -177,7 +177,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		t.Logf("Verifying state of SC 2, node %s blockIndex %d", host, blockIndex)
 
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 43, counterValue)
+		require.EqualValues(t, 44, counterValue)
 
 		return true
 	})

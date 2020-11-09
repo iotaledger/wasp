@@ -25,15 +25,15 @@ const Description = "FairAuction, a PoC smart contract"
 
 // implement Processor and EntryPoint interfaces
 
-type fairAuctionProcessor map[coretypes.EntryPointCode]fairAuctionEntryPoint
+type fairAuctionProcessor map[coretypes.Hname]fairAuctionEntryPoint
 
 type fairAuctionEntryPoint func(ctx vmtypes.Sandbox) error
 
 var (
-	RequestStartAuction    = coretypes.NewEntryPointCodeFromFunctionName("startAuction")
-	RequestFinalizeAuction = coretypes.NewEntryPointCodeFromFunctionName("finalizeAuction")
-	RequestPlaceBid        = coretypes.NewEntryPointCodeFromFunctionName("placeBid")
-	RequestSetOwnerMargin  = coretypes.NewEntryPointCodeFromFunctionName("setOwnerMargin")
+	RequestStartAuction    = coretypes.Hn("startAuction")
+	RequestFinalizeAuction = coretypes.Hn("finalizeAuction")
+	RequestPlaceBid        = coretypes.Hn("placeBid")
+	RequestSetOwnerMargin  = coretypes.Hn("setOwnerMargin")
 )
 
 // the processor is a map of entry points
@@ -93,7 +93,7 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }

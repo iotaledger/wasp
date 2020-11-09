@@ -20,9 +20,9 @@ const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
 var (
-	RequestMintSupply        = coretypes.NewEntryPointCodeFromFunctionName("mintSupply")
-	RequestUpdateMetadata    = coretypes.NewEntryPointCodeFromFunctionName("updateMetadata")
-	RequestTransferOwnership = coretypes.NewEntryPointCodeFromFunctionName("transferOwnership")
+	RequestMintSupply        = coretypes.Hn("mintSupply")
+	RequestUpdateMetadata    = coretypes.Hn("updateMetadata")
+	RequestTransferOwnership = coretypes.Hn("transferOwnership")
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 
 // implement Processor and EntryPoint interfaces
 
-type tokenRegistryProcessor map[coretypes.EntryPointCode]tokenRegistryEntryPoint
+type tokenRegistryProcessor map[coretypes.Hname]tokenRegistryEntryPoint
 
 type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox) error
 
@@ -65,7 +65,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.EntryPointCode) (vmtypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }

@@ -79,7 +79,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	return ret, msgFirstTime
 }
 
-func (req *request) requestCode() coretypes.EntryPointCode {
+func (req *request) requestCode() coretypes.Hname {
 	return req.reqTx.Requests()[req.reqId.Index()].EntryPointCode()
 }
 

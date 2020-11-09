@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	frCodePlaceBet   = coretypes.EntryPointCode(1)
-	frCodeLockBets   = coretypes.EntryPointCode(2)
-	frCodePayWinners = coretypes.EntryPointCode(3)
-	frCodePlayPeriod = coretypes.EntryPointCode(4)
-	frCodeNothing    = coretypes.EntryPointCode(5)
+	frCodePlaceBet   = coretypes.Hname(1)
+	frCodeLockBets   = coretypes.Hname(2)
+	frCodePayWinners = coretypes.Hname(3)
+	frCodePlayPeriod = coretypes.Hname(4)
+	frCodeNothing    = coretypes.Hname(5)
 )
 
 const frWasmPath = "wasm/fairroulette"
@@ -42,7 +42,7 @@ func TestFrPlaceBet(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1,
@@ -113,7 +113,7 @@ func testFrPlaceBetsAndPlay(t *testing.T, nrOfBets int, wasps *cluster.Cluster) 
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1 + nrOfBets + 1 + 1,

@@ -15,9 +15,9 @@ const (
 	erc20_wasmPath    = "wasm/erc20"
 	erc20_description = "ERC-20, a PoC smart contract"
 
-	erc20_req_init_sc  = coretypes.EntryPointCode(1)
-	erc20_req_transfer = coretypes.EntryPointCode(2)
-	erc20_req_approve  = coretypes.EntryPointCode(3)
+	erc20_req_init_sc  = coretypes.Hname(1)
+	erc20_req_transfer = coretypes.Hname(2)
+	erc20_req_approve  = coretypes.Hname(3)
 
 	erc20_var_supply         = "supply"
 	erc20_var_target_address = "addr"

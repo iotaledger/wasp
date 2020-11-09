@@ -27,7 +27,7 @@ type RequestSection struct {
 	// ID of the target smart contract
 	targetContractID coretypes.ContractID
 	// entry point code
-	entryPoint coretypes.EntryPointCode
+	entryPoint coretypes.Hname
 	// timelock in Unix seconds.
 	// Request will only be processed when time reaches
 	// specified moment. It is guaranteed that timestamp of the state transaction which
@@ -44,7 +44,7 @@ type RequestRef struct {
 }
 
 // RequestSection creates new request block
-func NewRequestSection(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
+func NewRequestSection(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
 	return &RequestSection{
 		senderContractIndex: senderContractIndex,
 		targetContractID:    targetContract,
@@ -54,7 +54,7 @@ func NewRequestSection(senderContractIndex uint16, targetContract coretypes.Cont
 }
 
 // NewRequestSectionByWallet same as NewRequestSection but assumes senderAddress index is 0
-func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.EntryPointCode) *RequestSection {
+func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
 	return NewRequestSection(0, targetContract, entryPointCode)
 }
 
@@ -90,7 +90,7 @@ func (req *RequestSection) Args() codec.ImmutableCodec {
 	return codec.NewCodec(req.args)
 }
 
-func (req *RequestSection) EntryPointCode() coretypes.EntryPointCode {
+func (req *RequestSection) EntryPointCode() coretypes.Hname {
 	return req.entryPoint
 }
 

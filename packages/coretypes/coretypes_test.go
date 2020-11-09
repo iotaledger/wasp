@@ -39,13 +39,13 @@ func TestBase(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, scidBack, scid)
 
-	ep := NewEntryPointCodeFromFunctionName("dummyFunction")
+	ep := Hn("dummyFunction")
 	epbytes := ep.Bytes()
 	epstr := ep.String()
 
 	t.Logf("epstr = %s", epstr)
 
-	epback, err := NewEntryPointCodeFromBytes(epbytes)
+	epback, err := NewHnameFromBytes(epbytes)
 	assert.NoError(t, err)
 	assert.EqualValues(t, ep, epback)
 }
@@ -87,4 +87,14 @@ func TestAgentID(t *testing.T) {
 
 	contrIdBack := aid1.MustContractID()
 	require.EqualValues(t, contrId, contrIdBack)
+}
+
+func TestHname(t *testing.T) {
+	hn1 := Hn("first")
+	t.Logf("Hname('first') = %d = %s", hn1, hn1.String())
+
+	hn1bytes := hn1.Bytes()
+	hn1back, err := NewHnameFromBytes(hn1bytes)
+	require.NoError(t, err)
+	require.EqualValues(t, hn1, hn1back)
 }

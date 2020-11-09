@@ -19,7 +19,7 @@ import (
 
 type RequestBlockParams struct {
 	TargetContractID coretypes.ContractID
-	EntryPointCode   coretypes.EntryPointCode
+	EntryPointCode   coretypes.Hname
 	Timelock         uint32
 	Transfer         map[balance.Color]int64 // should not not include request token. It is added automatically
 	Vars             map[string]interface{}  ` `

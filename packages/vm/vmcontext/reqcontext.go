@@ -2,12 +2,13 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.ImmutableCodec, budget map[balance.Color]int64) error {
+func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) error {
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		contractIndex: contractIndex,
 		params:        params,
