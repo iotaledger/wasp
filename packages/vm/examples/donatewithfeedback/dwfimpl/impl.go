@@ -55,6 +55,16 @@ func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 	return nil, ret
 }
 
+// TODO
+func (ep dwfEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep dwfEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 // not used
 func (ep dwfEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep

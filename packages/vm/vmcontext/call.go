@@ -8,7 +8,7 @@ import (
 
 // CallContract
 func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
-	vmctx.log.Debugw("CallContract", "contactIndex", contractIndex, "epCode", epCode.String())
+	vmctx.log.Debugw("Call", "contactIndex", contractIndex, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByIndex(contractIndex)
 	if !ok {

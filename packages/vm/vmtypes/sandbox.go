@@ -14,7 +14,7 @@ import (
 type Sandbox interface {
 	Params() codec.ImmutableCodec
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) (uint16, error)
-	CallContract(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
+	Call(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
 	// general functions
 	GetChainID() coretypes.ChainID
 	GetContractIndex() uint16 // current contract index, mutates with each call

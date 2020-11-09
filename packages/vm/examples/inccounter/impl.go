@@ -159,7 +159,7 @@ func spawn(ctx vmtypes.Sandbox) error {
 	}
 
 	// increase counter in newly spawned contract
-	_, err = ctx.CallContract(spawnedContractIndex, EntryPointIncCounter, nil, nil)
+	_, err = ctx.Call(spawnedContractIndex, EntryPointIncCounter, nil, nil)
 	if err != nil {
 		return err
 	}

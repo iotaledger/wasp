@@ -13,9 +13,7 @@ type Processor interface {
 }
 
 // EntryPoint is an abstract interface by which VM is called by passing
-// the Sandbox interface and parameters to it
-// the call from the request transaction has request argument as parameters
-// the call from another contract can have any dict.Dict
+// the Sandbox interface
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
 	Call(ctx Sandbox) (codec.ImmutableCodec, error)

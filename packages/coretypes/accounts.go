@@ -25,12 +25,16 @@ type ColoredBalancesMutable interface {
 	Add(color balance.Color, bal int64) bool
 }
 
-// ColoredAccounts interface to a collection of account.
-type ColoredAccounts interface {
+type ColoredAccountsImmutable interface {
 	BalancesImmutable(agentID AgentID) (ColoredBalancesImmutable, bool)
-	BalancesSpendable(agentID AgentID) (ColoredBalancesSpendable, bool)
-	Balances(agentID AgentID) (ColoredBalancesMutable, bool)
 	Iterate(func(agentID AgentID) bool)
 	IterateDeterministic(func(id AgentID) bool)
+}
+
+// ColoredAccounts interface to a collection of account.
+type ColoredAccounts interface {
+	ColoredAccountsImmutable
+	BalancesSpendable(agentID AgentID) (ColoredBalancesSpendable, bool)
+	Balances(agentID AgentID) (ColoredBalancesMutable, bool)
 	Create(agentID AgentID) bool
 }
