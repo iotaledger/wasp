@@ -31,7 +31,7 @@ type msgByteCoder interface {
 //
 
 //
-//
+//	rabin_dkg.Deal
 //
 type rabinDealMsg struct {
 	deal *rabin_dkg.Deal
@@ -89,10 +89,10 @@ func (m *rabinDealMsg) fromBytes(buf []byte, group kyber.Group) error {
 }
 
 //
-//
+//	rabin_dkg.Response
 //
 type rabinResponseMsg struct {
-	response *rabin_dkg.Response
+	responses []*rabin_dkg.Response
 }
 
 func (m *rabinResponseMsg) MsgType() byte {
@@ -100,56 +100,70 @@ func (m *rabinResponseMsg) MsgType() byte {
 }
 func (m *rabinResponseMsg) Write(w io.Writer) error {
 	var err error
-	if err = util.WriteUint32(w, m.response.Index); err != nil {
+	listLen := uint32(len(m.responses))
+	if err = util.WriteUint32(w, listLen); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, m.response.Response.SessionID); err != nil {
-		return err
-	}
-	if err = util.WriteUint32(w, m.response.Response.Index); err != nil {
-		return err
-	}
-	if err = util.WriteBoolByte(w, m.response.Response.Approved); err != nil {
-		return err
-	}
-	if err = util.WriteBytes16(w, m.response.Response.Signature); err != nil {
-		return err
+	for _, r := range m.responses {
+		if err = util.WriteUint32(w, r.Index); err != nil {
+			return err
+		}
+		if err = util.WriteBytes16(w, r.Response.SessionID); err != nil {
+			return err
+		}
+		if err = util.WriteUint32(w, r.Response.Index); err != nil {
+			return err
+		}
+		if err = util.WriteBoolByte(w, r.Response.Approved); err != nil {
+			return err
+		}
+		if err = util.WriteBytes16(w, r.Response.Signature); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 func (m *rabinResponseMsg) Read(r io.Reader) error {
 	var err error
-	if err = util.ReadUint32(r, &m.response.Index); err != nil {
+	var listLen uint32
+	if err = util.ReadUint32(r, &listLen); err != nil {
 		return err
 	}
-	if m.response.Response.SessionID, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	if err = util.ReadUint32(r, &m.response.Response.Index); err != nil {
-		return err
-	}
-	if err = util.ReadBoolByte(r, &m.response.Response.Approved); err != nil {
-		return err
-	}
-	if m.response.Response.Signature, err = util.ReadBytes16(r); err != nil {
-		return err
+	m.responses = make([]*rabin_dkg.Response, int(listLen))
+	for i := range m.responses {
+		response := rabin_dkg.Response{
+			Response: &rabin_vss.Response{},
+		}
+		m.responses[i] = &response
+		if err = util.ReadUint32(r, &response.Index); err != nil {
+			return err
+		}
+		if response.Response.SessionID, err = util.ReadBytes16(r); err != nil {
+			return err
+		}
+		if err = util.ReadUint32(r, &response.Response.Index); err != nil {
+			return err
+		}
+		if err = util.ReadBoolByte(r, &response.Response.Approved); err != nil {
+			return err
+		}
+		if response.Response.Signature, err = util.ReadBytes16(r); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 func (m *rabinResponseMsg) fromBytes(buf []byte) error {
-	m.response = &rabin_dkg.Response{
-		Response: &rabin_vss.Response{},
-	}
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
 }
 
 //
-//
+//	rabin_dkg.Justification
 //
 type rabinJustificationMsg struct {
-	group         kyber.Group // Just for un-marshaling.
-	justification *rabin_dkg.Justification
+	group          kyber.Group // Just for un-marshaling.
+	justifications []*rabin_dkg.Justification
 }
 
 func (m *rabinJustificationMsg) MsgType() byte {
@@ -157,161 +171,91 @@ func (m *rabinJustificationMsg) MsgType() byte {
 }
 func (m *rabinJustificationMsg) Write(w io.Writer) error {
 	var err error
-	if err = util.WriteBoolByte(w, m.justification == nil); err != nil {
+	jLen := uint32(len(m.justifications))
+	if err = util.WriteUint32(w, jLen); err != nil {
 		return err
 	}
-	if m.justification != nil {
-		if err = util.WriteUint32(w, m.justification.Index); err != nil {
+	for _, j := range m.justifications {
+		if err = util.WriteUint32(w, j.Index); err != nil {
 			return err
 		}
-		if err = util.WriteBoolByte(w, m.justification.Justification == nil); err != nil {
+		if err = util.WriteBytes16(w, j.Justification.SessionID); err != nil {
 			return err
 		}
-		if m.justification.Justification != nil {
-			// type Justification struct {
-			// 	// SessionID related to the current run of the protocol
-			// 	SessionID []byte
-			// 	// Index of the verifier who issued the Complaint,i.e. index of this Deal
-			// 	Index uint32
-			// 	// Deal in cleartext
-			// 	Deal *Deal
-			// 	// Signature over the whole packet
-			// 	Signature []byte
-			// }
-			if err = util.WriteBytes16(w, m.justification.Justification.SessionID); err != nil {
+		if err = util.WriteUint32(w, j.Justification.Index); err != nil {
+			return err
+		}
+		if err = util.WriteBytes16(w, j.Justification.Deal.SessionID); err != nil {
+			return err
+		}
+		if err = writePriShare(w, j.Justification.Deal.SecShare); err != nil {
+			return err
+		}
+		if err = writePriShare(w, j.Justification.Deal.RndShare); err != nil {
+			return err
+		}
+		if err = util.WriteUint32(w, j.Justification.Deal.T); err != nil {
+			return err
+		}
+		if err = util.WriteUint32(w, uint32(len(j.Justification.Deal.Commitments))); err != nil {
+			return err
+		}
+		for i := range j.Justification.Deal.Commitments {
+			if err = writeMarshaled(w, j.Justification.Deal.Commitments[i]); err != nil {
 				return err
 			}
-			if err = util.WriteUint32(w, m.justification.Justification.Index); err != nil {
-				return err
-			}
-			if err = util.WriteBoolByte(w, m.justification.Justification.Deal == nil); err != nil {
-				return err
-			}
-			if m.justification.Justification.Deal != nil {
-				// type Deal struct {
-				// 	// Unique session identifier for this protocol run
-				// 	SessionID []byte
-				// 	// Private share generated by the dealer
-				// 	SecShare *share.PriShare
-				// 	// Random share generated by the dealer
-				// 	RndShare *share.PriShare
-				// 	// Threshold used for this secret sharing run
-				// 	T uint32
-				// 	// Commitments are the coefficients used to verify the shares against
-				// 	Commitments []kyber.Point
-				// }
-				if err = util.WriteBytes16(w, m.justification.Justification.Deal.SessionID); err != nil {
-					return err
-				}
-				if err = writePriShare(w, m.justification.Justification.Deal.SecShare); err != nil {
-					return err
-				}
-				if err = writePriShare(w, m.justification.Justification.Deal.RndShare); err != nil {
-					return err
-				}
-				if err = util.WriteUint32(w, m.justification.Justification.Deal.T); err != nil {
-					return err
-				}
-				if err = util.WriteUint32(w, uint32(len(m.justification.Justification.Deal.Commitments))); err != nil {
-					return err
-				}
-				for i := range m.justification.Justification.Deal.Commitments {
-					if err = writeMarshaled(w, m.justification.Justification.Deal.Commitments[i]); err != nil {
-						return err
-					}
-				}
-			}
-			if err = util.WriteBytes16(w, m.justification.Justification.Signature); err != nil {
-				return err
-			}
+		}
+		if err = util.WriteBytes16(w, j.Justification.Signature); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 func (m *rabinJustificationMsg) Read(r io.Reader) error {
 	var err error
-	var isNil bool
-	if err = util.ReadBoolByte(r, &isNil); err != nil {
+	var jLen uint32
+	if err = util.ReadUint32(r, &jLen); err != nil {
 		return err
 	}
-	if isNil {
-		m.justification = nil
-		return nil
-	}
-	m.justification = &rabin_dkg.Justification{}
-	if err = util.ReadUint32(r, &m.justification.Index); err != nil {
-		return err
-	}
-	{ // m.justification.Justification
-		// type Justification struct {
-		// 	// SessionID related to the current run of the protocol
-		// 	SessionID []byte
-		// 	// Index of the verifier who issued the Complaint,i.e. index of this Deal
-		// 	Index uint32
-		// 	// Deal in cleartext
-		// 	Deal *Deal
-		// 	// Signature over the whole packet
-		// 	Signature []byte
-		// }
-		if err = util.ReadBoolByte(r, &isNil); err != nil {
+	m.justifications = make([]*rabin_dkg.Justification, int(jLen))
+	for i := range m.justifications {
+		j := rabin_dkg.Justification{
+			Justification: &rabin_vss.Justification{},
+		}
+		m.justifications[i] = &j
+		if err = util.ReadUint32(r, &j.Index); err != nil {
 			return err
 		}
-		if isNil {
-			m.justification.Justification = nil
-			return nil
-		}
-		m.justification.Justification = &rabin_vss.Justification{}
-		if m.justification.Justification.SessionID, err = util.ReadBytes16(r); err != nil {
+		if j.Justification.SessionID, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		if err = util.ReadUint32(r, &m.justification.Justification.Index); err != nil {
+		if err = util.ReadUint32(r, &j.Justification.Index); err != nil {
 			return err
 		}
-		{ // m.justification.Justification.Deal
-			m.justification.Justification.Deal = nil
-			if err = util.ReadBoolByte(r, &isNil); err != nil {
+		if j.Justification.Deal.SessionID, err = util.ReadBytes16(r); err != nil {
+			return err
+		}
+		if err = readPriShare(r, &j.Justification.Deal.SecShare); err != nil {
+			return err
+		}
+		if err = readPriShare(r, &j.Justification.Deal.RndShare); err != nil {
+			return err
+		}
+		if err = util.ReadUint32(r, &j.Justification.Deal.T); err != nil {
+			return err
+		}
+		var commitmentCount uint32
+		if err = util.ReadUint32(r, &commitmentCount); err != nil {
+			return err
+		}
+		j.Justification.Deal.Commitments = make([]kyber.Point, int(commitmentCount))
+		for i := range j.Justification.Deal.Commitments {
+			j.Justification.Deal.Commitments[i] = m.group.Point()
+			if err = readMarshaled(r, j.Justification.Deal.Commitments[i]); err != nil {
 				return err
 			}
-			if !isNil {
-				m.justification.Justification.Deal = &rabin_vss.Deal{}
-				// type Deal struct {
-				// 	// Unique session identifier for this protocol run
-				// 	SessionID []byte
-				// 	// Private share generated by the dealer
-				// 	SecShare *share.PriShare
-				// 	// Random share generated by the dealer
-				// 	RndShare *share.PriShare
-				// 	// Threshold used for this secret sharing run
-				// 	T uint32
-				// 	// Commitments are the coefficients used to verify the shares against
-				// 	Commitments []kyber.Point
-				// }
-				if m.justification.Justification.Deal.SessionID, err = util.ReadBytes16(r); err != nil {
-					return err
-				}
-				if err = readPriShare(r, &m.justification.Justification.Deal.SecShare); err != nil {
-					return err
-				}
-				if err = readPriShare(r, &m.justification.Justification.Deal.RndShare); err != nil {
-					return err
-				}
-				if err = util.ReadUint32(r, &m.justification.Justification.Deal.T); err != nil {
-					return err
-				}
-				var commitmentCount uint32
-				if err = util.ReadUint32(r, &commitmentCount); err != nil {
-					return err
-				}
-				m.justification.Justification.Deal.Commitments = make([]kyber.Point, int(commitmentCount))
-				for i := range m.justification.Justification.Deal.Commitments {
-					m.justification.Justification.Deal.Commitments[i] = m.group.Point()
-					if err = readMarshaled(r, m.justification.Justification.Deal.Commitments[i]); err != nil {
-						return err
-					}
-				}
-			}
 		}
-		if m.justification.Justification.Signature, err = util.ReadBytes16(r); err != nil {
+		if j.Justification.Signature, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
 	}

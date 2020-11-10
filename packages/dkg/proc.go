@@ -12,10 +12,6 @@ import (
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 )
 
-const (
-	stepTimeout = 10 * time.Second // TODO: Take it from config?
-)
-
 //
 // Stands for a DKG procedure instance on a particular node.
 //
@@ -28,6 +24,7 @@ type proc struct {
 	peerLocs              []string
 	peerPubs              []kyber.Point
 	coordPub              kyber.Point
+	stepTimeout           time.Duration
 	netGroup              peering.GroupProvider
 	dkgImpl               *rabin_dkg.DistKeyGenerator
 	cancelCh              chan bool        // To stop a timer on completion.
@@ -74,6 +71,7 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 	if nodeIndex, err = netGroup.PeerIndex(node.netProvider.Self()); err != nil {
 		return nil, err
 	}
+	timeout := time.Millisecond * time.Duration(msg.TimeoutMS)
 	p := proc{
 		dkgID:       dkgID,
 		chainID:     chainID,
@@ -82,6 +80,7 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 		peerLocs:    msg.PeerLocs,
 		peerPubs:    peerPubs,
 		coordPub:    coordPub,
+		stepTimeout: timeout,
 		netGroup:    netGroup,
 		dkgImpl:     dkgImpl,
 		cancelCh:    make(chan bool),
@@ -89,7 +88,7 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 		peerMsgCh:   make(chan peerMsgCh),
 		done:        false,
 	}
-	go p.processLoop(time.Millisecond * time.Duration(msg.TimeoutMS))
+	go p.processLoop(timeout)
 	node.netProvider.Attach(chainID, p.onPeerMessage)
 	return &p, nil
 }
@@ -173,7 +172,7 @@ func (p *proc) doCoordStepSendDeals(peerMsgCh chan peerMsgCh, errorCh chan error
 	var err error
 	var deals map[int]*rabin_dkg.Deal
 	if deals, err = p.dkgImpl.Deals(); err != nil {
-		fmt.Printf("[%v] doCoordStepSendDeals: ERROR %+v\n", p.nodeIndex, err)
+		fmt.Printf("[%v] ERROR: Deals -> %+v\n", p.nodeIndex, err)
 		errorCh <- err
 		return
 	}
@@ -187,7 +186,7 @@ func (p *proc) doCoordStepSendDeals(peerMsgCh chan peerMsgCh, errorCh chan error
 	//
 	// Receive other's deals.
 	var receivedDealMsgs map[int]*peering.PeerMessage
-	if receivedDealMsgs, err = p.waitForOthers(peerMsgCh, stepTimeout); err != nil {
+	if receivedDealMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		errorCh <- err
 		return
 	}
@@ -200,7 +199,6 @@ func (p *proc) doCoordStepSendDeals(peerMsgCh chan peerMsgCh, errorCh chan error
 			errorCh <- err
 			return
 		}
-		fmt.Printf("[%v] XXXXXXXXXXXXXX: receivedDeals[%v].Deal=%+v\n", p.nodeIndex, i, peerDealMsg.deal.Deal)
 		receivedDeals[i] = &peerDealMsg
 	}
 	p.recvDealMsgs = receivedDeals // Stored for the next step.
@@ -212,25 +210,27 @@ func (p *proc) doCoordStepSendResponses(peerMsgCh chan peerMsgCh, errorCh chan e
 	var err error
 	//
 	// Process the received deals and produce responses.
-	ourResponces := make(map[int]*rabin_dkg.Response)
+	ourResponses := []*rabin_dkg.Response{}
 	for i := range p.recvDealMsgs {
-		if ourResponces[i], err = p.dkgImpl.ProcessDeal(p.recvDealMsgs[i].deal); err != nil {
-			fmt.Printf("[%v] doCoordStepSendResponses: ERROR ProcessDeal(%v)=%+v\n", p.nodeIndex, i, err)
+		var r *rabin_dkg.Response
+		if r, err = p.dkgImpl.ProcessDeal(p.recvDealMsgs[i].deal); err != nil {
+			fmt.Printf("[%v] ERROR: ProcessDeal(%v) -> %+v\n", p.nodeIndex, i, err)
 			errorCh <- err
 			return
 		}
+		ourResponses = append(ourResponses, r)
 	}
 	//
 	// Send our responses.
-	for i := range ourResponces {
+	for i := range p.recvDealMsgs { // To all other peers.
 		p.castPeerByIndex(i, &rabinResponseMsg{
-			response: ourResponces[i],
+			responses: ourResponses,
 		})
 	}
 	//
 	// Receive other's responses.
 	var receivedRespMsgs map[int]*peering.PeerMessage
-	if receivedRespMsgs, err = p.waitForOthers(peerMsgCh, stepTimeout); err != nil {
+	if receivedRespMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		errorCh <- err
 		return
 	}
@@ -243,7 +243,6 @@ func (p *proc) doCoordStepSendResponses(peerMsgCh chan peerMsgCh, errorCh chan e
 			errorCh <- err
 			return
 		}
-		fmt.Printf("[%v] XXXXXXXXXXXXXX: receivedResponses[%v].Response=%+v\n", p.nodeIndex, i, peerResponseMsg.response.Response)
 		receivedResponses[i] = &peerResponseMsg
 	}
 	p.recvResponseMsgs = receivedResponses // Stored for the next step.
@@ -255,25 +254,31 @@ func (p *proc) doCoordStepSendJustifications(peerMsgCh chan peerMsgCh, errorCh c
 	var err error
 	//
 	// Process the received responses and produce justifications.
-	ourJustifications := make(map[int]*rabin_dkg.Justification)
+	ourJustifications := []*rabin_dkg.Justification{}
 	for i := range p.recvResponseMsgs {
-		if ourJustifications[i], err = p.dkgImpl.ProcessResponse(p.recvResponseMsgs[i].response); err != nil {
-			fmt.Printf("[%v] doCoordStepSendJustifications: ERROR ProcessResponse(%v)=%+v\n", p.nodeIndex, i, err)
-			errorCh <- err
-			return
+		for _, r := range p.recvResponseMsgs[i].responses {
+			var j *rabin_dkg.Justification
+			if j, err = p.dkgImpl.ProcessResponse(r); err != nil {
+				fmt.Printf("[%v] ERROR: ProcessResponse(%v) -> %+v\n", p.nodeIndex, i, err)
+				errorCh <- err
+				return
+			}
+			if j != nil {
+				ourJustifications = append(ourJustifications, j)
+			}
 		}
 	}
 	//
 	// Send our justifications.
-	for i := range ourJustifications {
+	for i := range p.recvDealMsgs { // To all other peers.
 		p.castPeerByIndex(i, &rabinJustificationMsg{
-			justification: ourJustifications[i],
+			justifications: ourJustifications,
 		})
 	}
 	//
 	// Receive other's justifications.
 	var receivedMsgs map[int]*peering.PeerMessage
-	if receivedMsgs, err = p.waitForOthers(peerMsgCh, stepTimeout); err != nil {
+	if receivedMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		errorCh <- err
 		return
 	}
@@ -298,8 +303,8 @@ func (p *proc) doCoordStepSendSecretCommits(peerMsgCh chan peerMsgCh, errorCh ch
 	//
 	// Process the received justifications.
 	for i := range p.recvJustificationMsgs {
-		if p.recvJustificationMsgs[i].justification != nil {
-			if err = p.dkgImpl.ProcessJustification(p.recvJustificationMsgs[i].justification); err != nil {
+		for _, j := range p.recvJustificationMsgs[i].justifications {
+			if err = p.dkgImpl.ProcessJustification(j); err != nil {
 				errorCh <- err
 				return
 			}

@@ -1,6 +1,7 @@
 package dkg_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,15 +16,18 @@ import (
 func TestSimple(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
-	var suite = edwards25519.NewBlakeSHA256Ed25519() //bn256.NewSuite()
-	var peerLocs []string = []string{"a", "b", "c"}
+	var timeout = 10 * time.Second
+	var peerCount = 3
+	var peerLocs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerLocs))
+	var suite = edwards25519.NewBlakeSHA256Ed25519() //bn256.NewSuite()
 	for i := range peerLocs {
+		peerLocs[i] = fmt.Sprintf("P%06d", i)
 		peerSecs[i] = suite.Scalar().Pick(suite.RandomStream())
 		peerPubs[i] = suite.Point().Mul(peerSecs[i], nil)
 	}
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(peerLocs, peerPubs, peerSecs, 1000)
+	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(peerLocs, peerPubs, peerSecs, 10000)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
@@ -37,9 +41,9 @@ func TestSimple(t *testing.T) {
 	var coordPub = suite.Point().Mul(coordKey, nil)
 	var coordNodeProvider dkg.CoordNodeProvider = testutil.NewDkgCoordNodeProvider(
 		dkgNodes,
-		time.Second,
+		timeout, // Single call timeout.
 	)
-	c, err := dkg.GenerateDistributedKey(coordKey, coordPub, peerLocs, peerPubs, 1*time.Second, suite, coordNodeProvider)
+	c, err := dkg.GenerateDistributedKey(coordKey, coordPub, peerLocs, peerPubs, timeout, suite, coordNodeProvider)
 	require.Nil(t, err)
 	require.NotNil(t, c)
 }
