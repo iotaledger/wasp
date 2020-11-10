@@ -164,14 +164,14 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, 42, counterValue)
 
 		return true
-
 	})
 
 	// send 'spawn' request to the SC which was just deployed
-	_, err = chain.OwnerClient().PostRequest(1, inccounter.EntryPointSpawn, nil, nil, nil)
+	tx, err := chain.OwnerClient().PostRequest(1, inccounter.EntryPointSpawn, nil, nil, nil)
 	check(err, t)
 
-	time.Sleep(3 * time.Second) // TODO temporary solution for waiting
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	check(err, t)
 
 	chain.WithSCState(2, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		t.Logf("Verifying state of SC 2, node %s blockIndex %d", host, blockIndex)
