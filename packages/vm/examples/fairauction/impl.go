@@ -106,6 +106,16 @@ func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec,
 	return nil, err
 }
 
+// TODO
+func (ep fairAuctionEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep fairAuctionEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 func (ep fairAuctionEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep
 }

@@ -1,0 +1,1 @@
+go install -buildmode=exe

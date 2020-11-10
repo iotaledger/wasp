@@ -64,6 +64,16 @@ func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 	return nil, err
 }
 
+// TODO
+func (ep incEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep incEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 func initialize(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.init")
 	params := ctx.Params()

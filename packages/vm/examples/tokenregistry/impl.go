@@ -83,6 +83,16 @@ func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCode
 	return nil, err
 }
 
+// TODO
+func (ep tokenRegistryEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep tokenRegistryEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 // WithGasLimit not used
 func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return ep

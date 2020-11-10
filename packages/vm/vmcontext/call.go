@@ -30,7 +30,40 @@ func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hnam
 	}
 	defer vmctx.PopCallContext()
 
+	// distinguishing between two types of entry points. Passing different types of sandboxes
+	if ep.IsView() {
+		return ep.CallView(NewSandboxView(vmctx))
+	}
 	return ep.Call(NewSandbox(vmctx))
+}
+
+// CallContract
+func (vmctx *VMContext) CallView(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	vmctx.log.Debugw("CallView", "contactIndex", contractIndex, "epCode", epCode.String())
+
+	rec, ok := vmctx.findContractByIndex(contractIndex)
+	if !ok {
+		return nil, fmt.Errorf("failed to find contract with index %d", contractIndex)
+	}
+
+	proc, err := vmctx.getProcessor(rec)
+	if err != nil {
+		return nil, err
+	}
+
+	ep, ok := proc.GetEntryPoint(epCode)
+	if !ok {
+		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
+	}
+	if !ep.IsView() {
+		return nil, fmt.Errorf("only view entry point can be called in this context")
+	}
+	if err := vmctx.PushCallContext(contractIndex, params, nil); err != nil {
+		return nil, err
+	}
+	defer vmctx.PopCallContext()
+
+	return ep.CallView(NewSandboxView(vmctx))
 }
 
 func (vmctx *VMContext) callFromRequest() {

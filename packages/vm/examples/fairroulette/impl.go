@@ -134,6 +134,16 @@ func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec,
 	return nil, err
 }
 
+// TODO
+func (ep fairRouletteEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep fairRouletteEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 // the request places bet into the smart contract
 func placeBet(ctx vmtypes.Sandbox) error {
 	ctx.Event("placeBet")
