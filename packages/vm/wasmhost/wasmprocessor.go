@@ -90,6 +90,16 @@ func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 	return nil, nil
 }
 
+// TODO
+func (ep wasmProcessor) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep wasmProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return vm
 }
