@@ -121,3 +121,26 @@ func (ch *Chain) DeployBuiltinContract(vmtype string, progHashStr string, descri
 
 	return tx, nil
 }
+
+func (ch *Chain) DeployExternalContract(vmtype string, name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
+	params := map[string]interface{}{
+		root.ParamVMType:        vmtype,
+		root.ParamName:          name,
+		root.ParamDescription:   description,
+		root.ParamProgramBinary: progBinary,
+	}
+	for k, v := range initParams {
+		params[k] = v
+	}
+	tx, err := ch.OwnerClient().PostRequest(0, root.EntryPointDeployContract, nil, nil, params)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx, nil
+}

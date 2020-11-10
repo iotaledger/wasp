@@ -2,12 +2,15 @@ package wasptest
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"testing"
 	"time"
 )
@@ -182,4 +185,72 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		return true
 	})
 
+}
+
+
+func TestDeployExternalContractOnly(t *testing.T) {
+	clu := setup(t, "test_cluster")
+
+	err := clu.ListenToMessages(map[string]int{
+		"chainrec":            2,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"state":               2,
+		"request_in":          1,
+		"request_out":         2,
+	})
+	check(err, t)
+
+	chain, err := clu.DeployDefaultChain()
+	check(err, t)
+
+	wasmName := "increment"
+	description := "Wasm PoC increment"
+	wasmLoaded = true
+	wasmPath := wasmName + "_bg.wasm"
+	if *useGo {
+		fmt.Println("Using Go Wasm instead of Rust Wasm")
+		time.Sleep(time.Second)
+		wasmPath = wasmName + "_go.wasm"
+	}
+	wasm, err := ioutil.ReadFile("../wasmtest/wasm/" + wasmPath)
+	check(err, t)
+
+	_, err = chain.DeployExternalContract(wasmtimevm.PluginName, wasmName, description, wasm, map[string]interface{}{
+		inccounter.VarCounter: 42,
+	})
+	check(err, t)
+
+	if !clu.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+
+	chain.WithSCState(0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 0, node %s blockIndex %d", host, blockIndex)
+
+		require.EqualValues(t, 2, blockIndex)
+
+		contractRegistry := state.GetArray(root.VarContractRegistry)
+		require.EqualValues(t, 2, contractRegistry.Len())
+
+		crBytes := contractRegistry.GetAt(1)
+		cr, err := root.DecodeContractRecord(crBytes)
+		check(err, t)
+
+		require.EqualValues(t, cr.VMType, wasmtimevm.PluginName)
+		require.EqualValues(t, cr.Name, wasmName)
+		require.EqualValues(t, cr.Description, description)
+		require.EqualValues(t, cr.NodeFee, 0)
+
+		return true
+	})
+	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 1, node %s blockIndex %d", host, blockIndex)
+
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, 42, counterValue)
+
+		return true
+
+	})
 }

@@ -1,6 +1,6 @@
-go test -buildmode=exe -run TestDeployChain
+go test -buildmode=exe -run TestDeployChain %1
 pause
-go test -buildmode=exe -run TestDeployContractOnly
+go test -buildmode=exe -run TestDeployContractOnly %1
 pause
-go test -buildmode=exe -run TestDeployContractAndSpawn
+go test -buildmode=exe -run TestDeployContractAndSpawn %1
 

@@ -10,7 +10,7 @@ import (
 
 type ScPostedRequest struct {
 	MapObject
-	code     int64
+	code     uint32
 	contract []byte
 	delay    int64
 }
@@ -22,7 +22,7 @@ func (o *ScPostedRequest) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScPostedRequest) Send() {
-	function := o.vm.codeToFunc[int32(o.code)]
+	function := o.vm.codeToFunc[o.code]
 	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, o.contract)
 	contractID := o.vm.ctx.GetContractID()
 	if bytes.Equal(o.contract, contractID[:coretypes.ChainIDLength]) {
@@ -59,7 +59,7 @@ func (o *ScPostedRequest) SetInt(keyId int32, value int64) {
 		o.code = 0
 		o.delay = 0
 	case KeyCode:
-		o.code = value
+		o.code = uint32(value)
 	case KeyDelay:
 		o.delay = value
 	default:
@@ -75,7 +75,7 @@ func (o *ScPostedRequest) SetString(keyId int32, value string) {
 			o.error("SetString: invalid function: %s", value)
 			return
 		}
-		o.code = int64(code)
+		o.code = code
 	default:
 		o.MapObject.SetString(keyId, value)
 	}
