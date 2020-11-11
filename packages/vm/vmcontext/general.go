@@ -23,11 +23,7 @@ func (vmctx *VMContext) ChainID() coretypes.ChainID {
 }
 
 func (vmctx *VMContext) ContractIndex() uint16 {
-	if len(vmctx.callStack) == 0 {
-		//return 0xFF
-		panic("ContractIndex::empty stack")
-	}
-	return vmctx.callStack[len(vmctx.callStack)-1].contractIndex
+	return vmctx.getCallContext().contractIndex
 }
 
 func (vmctx *VMContext) OwnerAddress() *address.Address {

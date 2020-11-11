@@ -9,7 +9,8 @@ import (
 )
 
 func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) error {
-	vmctx.Log().Debugf("+++++++++++ PUSH %d", contractIndex)
+	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contractIndex, len(vmctx.callStack))
+
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		contractIndex: contractIndex,
 		params:        params,
@@ -22,6 +23,13 @@ func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.Immut
 func (vmctx *VMContext) PopCallContext() {
 	vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
+}
+
+func (vmctx *VMContext) getCallContext() *callContext {
+	if len(vmctx.callStack) == 0 {
+		panic("getCallContext: stack is empty")
+	}
+	return vmctx.callStack[len(vmctx.callStack)-1]
 }
 
 // handleNodeRewards return true if to continue with request processing
