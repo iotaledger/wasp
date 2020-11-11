@@ -11,14 +11,14 @@ import (
 )
 
 // installProgram is a privileged call for root contract
-func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, name string, description string) (uint16, error) {
-	if vmctx.ContractIndex() != 0 {
+func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, name string, description string) error {
+	if vmctx.ContractHname() != root.ContractHname {
 		panic("DeployBuiltinContract must be called from root contract")
 	}
 	vmctx.log.Debugf("VMContext.InstallContract.begin")
 	deploymentHash, err := vmctx.processors.NewProcessor(programBinary, vmtype)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	// processor loaded
 	vmctx.log.Debugf("VMContext.InstallContract.1")
@@ -30,28 +30,29 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, nam
 	if !binRegistry.HasAt(deploymentHash[:]) {
 		binRegistry.SetAt(deploymentHash[:], programBinary)
 	}
-
-	contractRegistry := state.GetArray(root.VarContractRegistry)
-	contractRegistry.Push(root.EncodeContractRecord(&root.ContractRecord{
+	hname := coretypes.Hn(name)
+	contractRegistry := state.GetMap(root.VarContractRegistry)
+	if contractRegistry.HasAt(hname.Bytes()) {
+		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), name)
+	}
+	contractRegistry.SetAt(hname.Bytes(), root.EncodeContractRecord(&root.ContractRecord{
 		VMType:         vmtype,
 		DeploymentHash: *deploymentHash,
 		Description:    description,
 		Name:           name,
 	}))
 
-	return contractRegistry.Len() - 1, nil
+	return nil
 }
 
-func (vmctx *VMContext) findContractByIndex(contractIndex uint16) (*root.ContractRecord, bool) {
-	//vmctx.log.Debugf("findContractByIndex: %d", contractIndex)
-
-	if contractIndex == 0 {
+func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*root.ContractRecord, bool) {
+	if contractHname == root.ContractHname {
 		// root
 		return root.GetRootContractRecord(), true
 	}
 	params := codec.NewCodec(dict.NewDict())
-	params.SetInt64(root.ParamIndex, int64(contractIndex))
-	res, err := vmctx.callRoot(root.EntryPointFindContractByIndex, params)
+	params.SetInt64(root.ParamHname, int64(contractHname))
+	res, err := vmctx.callRoot(root.EntryPointFindContract, params)
 	if err != nil {
 		return nil, false
 	}
@@ -103,5 +104,5 @@ func (vmctx *VMContext) getProcessor(rec *root.ContractRecord) (vmtypes.Processo
 }
 
 func (vmctx *VMContext) callRoot(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	return vmctx.CallContract(0, entryPointCode, params, nil)
+	return vmctx.CallContract(root.ContractHname, entryPointCode, params, nil)
 }

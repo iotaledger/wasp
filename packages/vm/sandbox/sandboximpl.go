@@ -35,15 +35,15 @@ func (s *sandbox) Rollback() {
 }
 
 func (s *sandbox) GetContractID() coretypes.ContractID {
-	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractIndex())
+	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractHname())
 }
 
 func (s *sandbox) GetChainID() coretypes.ChainID {
 	return s.vmctx.ChainID()
 }
 
-func (s *sandbox) GetContractIndex() uint16 {
-	return s.vmctx.ContractIndex()
+func (s *sandbox) GetContractHname() coretypes.Hname {
+	return s.vmctx.ContractHname()
 }
 
 func (s *sandbox) GetOwnerAddress() *address.Address {
@@ -93,7 +93,7 @@ func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args di
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.GetContractIndex(), msg)
+	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.GetContractHname(), msg)
 	s.vmctx.Publish(msg)
 }
 

@@ -163,17 +163,19 @@ func spawn(ctx vmtypes.Sandbox) error {
 	}
 	par := codec.NewCodec(dict.NewDict())
 	par.SetInt64(VarCounter, val+1)
-	spawnedContractIndex, err := ctx.DeployContract("examplevm", hashBin[:], "", "Inccounter spawned", par)
+	name := "spawnedInccounter"
+	hname := coretypes.Hn(name)
+	err = ctx.DeployContract("examplevm", hashBin[:], name, "Inccounter spawned", par)
 	if err != nil {
 		return err
 	}
 
 	// increase counter in newly spawned contract
-	_, err = ctx.Call(spawnedContractIndex, EntryPointIncCounter, nil, nil)
+	_, err = ctx.Call(hname, EntryPointIncCounter, nil, nil)
 	if err != nil {
 		return err
 	}
 
-	ctx.Eventf("inccounter.spawn: new contract index = %d", spawnedContractIndex)
+	ctx.Eventf("inccounter.spawn: new contract hname = %s", hname.String())
 	return nil
 }

@@ -10,6 +10,8 @@ import (
 
 type Hname uint32
 
+const HnameLength = 4
+
 const FuncInit = "init"
 
 var EntryPointCodeInit = Hn(FuncInit)

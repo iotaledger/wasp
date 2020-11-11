@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
@@ -37,7 +36,7 @@ func handleDumpSCState(c echo.Context) error {
 		Index: virtualState.StateIndex(),
 		Variables: kv.ToGoMap(subrealm.New(
 			virtualState.Variables().DangerouslyDumpToDict(),
-			kv.Key(util.Uint16To2Bytes(scid.Index())),
+			kv.Key(scid.Hname().Bytes()),
 		)),
 	})
 }
