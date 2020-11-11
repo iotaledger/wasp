@@ -20,15 +20,15 @@ func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hnam
 		return nil, err
 	}
 
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
-	}
-
 	if err := vmctx.PushCallContext(contractIndex, params, budget); err != nil {
 		return nil, err
 	}
 	defer vmctx.PopCallContext()
+
+	ep, ok := proc.GetEntryPoint(epCode)
+	if !ok {
+		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
+	}
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
