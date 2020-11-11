@@ -14,6 +14,8 @@ import (
 const incName = "increment"
 const incDescription = "Increment, a PoC smart contract"
 
+var hname = coretypes.Hn(incName)
+
 func TestIncDeployment(t *testing.T) {
 	clu := setup(t, "test_cluster")
 
@@ -36,15 +38,17 @@ func TestIncDeployment(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		t.Logf("Verifying state of SC 0, node %s blockIndex %d", host, blockIndex)
+	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC %s, node %s blockIndex %d", hname.String(), host, blockIndex)
 
 		require.EqualValues(t, 2, blockIndex)
 
-		contractRegistry := state.GetArray(root.VarContractRegistry)
+		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
 
-		crBytes := contractRegistry.GetAt(1)
+		crBytes := contractRegistry.GetAt(hname.Bytes())
+		require.NotNil(t, crBytes)
+
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
@@ -55,14 +59,13 @@ func TestIncDeployment(t *testing.T) {
 
 		return true
 	})
-	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		t.Logf("Verifying state of SC 1, node %s blockIndex %d", host, blockIndex)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC %s, node %s blockIndex %d", hname.String(), host, blockIndex)
 
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, 0, counterValue)
 
 		return true
-
 	})
 }
 

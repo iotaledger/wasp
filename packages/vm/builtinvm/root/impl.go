@@ -40,9 +40,9 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
 	state.SetString(VarDescription, chainDescription)
-	contractRegistry.SetAt(ContractHname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
+	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
 
-	ctx.Eventf("root.initialize.success")
+	ctx.Eventf("root.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }
 

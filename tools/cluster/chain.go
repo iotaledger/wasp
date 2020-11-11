@@ -72,13 +72,13 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeApi())
 }
 
-func (ch *Chain) WithSCState(contractIndex uint16, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
+func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
 	pass := true
 	for i, host := range ch.CommitteeApi() {
 		if !ch.Cluster.Config.Nodes[i].IsUp() {
 			continue
 		}
-		contractID := coretypes.NewContractID(ch.ChainID, contractIndex)
+		contractID := coretypes.NewContractID(ch.ChainID, hname)
 		actual, err := ch.Cluster.WaspClient(i).DumpSCState(&contractID)
 		if client.IsNotFound(err) {
 			pass = false
@@ -95,13 +95,14 @@ func (ch *Chain) WithSCState(contractIndex uint16, f func(host string, blockInde
 	return pass
 }
 
-func (ch *Chain) DeployBuiltinContract(vmtype string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
+func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
 	}
 
 	params := map[string]interface{}{
+		root.ParamName:          name,
 		root.ParamVMType:        vmtype,
 		root.ParamDescription:   description,
 		root.ParamProgramBinary: programHash[:],

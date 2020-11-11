@@ -12,7 +12,7 @@ import (
 
 // installProgram is a privileged call for root contract
 func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, name string, description string) error {
-	if vmctx.ContractHname() != root.ContractHname {
+	if vmctx.ContractHname() != root.Hname {
 		panic("DeployBuiltinContract must be called from root contract")
 	}
 	vmctx.log.Debugf("VMContext.InstallContract.begin")
@@ -46,7 +46,7 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, nam
 }
 
 func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*root.ContractRecord, bool) {
-	if contractHname == root.ContractHname {
+	if contractHname == root.Hname {
 		// root
 		return root.GetRootContractRecord(), true
 	}
@@ -104,5 +104,5 @@ func (vmctx *VMContext) getProcessor(rec *root.ContractRecord) (vmtypes.Processo
 }
 
 func (vmctx *VMContext) callRoot(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	return vmctx.CallContract(root.ContractHname, entryPointCode, params, nil)
+	return vmctx.CallContract(root.Hname, entryPointCode, params, nil)
 }

@@ -42,7 +42,7 @@ const (
 const ContractName = "root"
 
 var (
-	ContractHname            = coretypes.Hn(ContractName)
+	Hname                    = coretypes.Hn(ContractName)
 	EntryPointDeployContract = coretypes.Hn(FuncDeployContract)
 	EntryPointFindContract   = coretypes.Hn(FuncFindContract)
 	EntryPointGetBinary      = coretypes.Hn(FuncGetBinary)

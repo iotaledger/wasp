@@ -14,7 +14,7 @@ import (
 func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error {
 	s.vmctx.Log().Debugf("sandbox.DeployContract")
 
-	if s.GetContractHname() == root.ContractHname {
+	if s.GetContractHname() == root.Hname {
 		// from root contract calling VMContext directly
 		var err error
 		if err = s.vmctx.InstallContract(vmtype, programBinary, name, description); err != nil {
@@ -28,7 +28,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		par.SetString(root.ParamName, name)
 		par.SetString(root.ParamDescription, description)
 
-		_, err := s.Call(root.ContractHname, root.EntryPointDeployContract, par, nil)
+		_, err := s.Call(root.Hname, root.EntryPointDeployContract, par, nil)
 		if err != nil {
 			return err
 		}
