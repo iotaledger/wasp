@@ -1,12 +1,10 @@
 package wasptest
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -57,7 +55,7 @@ func setup(t *testing.T, configPath string) *cluster.Cluster {
 	return wasps
 }
 
-func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription string) error {
+func loadWasmIntoWasps(chain *cluster.Chain, wasmName string, scDescription string, initParams map[string]interface{}) error {
 	wasmLoaded = true
 	wasmPath := wasmName + "_bg.wasm"
 	if *useGo {
@@ -65,26 +63,12 @@ func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription st
 		time.Sleep(time.Second)
 		wasmPath = wasmName + "_go.wasm"
 	}
-	wasm, err := ioutil.ReadFile(wasmPath)
+	wasm, err := ioutil.ReadFile("../wasmtest/wasm/" + wasmPath)
 	if err != nil {
 		return err
 	}
-	programHash = *hashing.NilHash
-	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
-		var err error
-		hashValue, err := w.PutProgram(wasmtimevm.PluginName, scDescription, wasm)
-		if err != nil {
-			return err
-		}
-		if programHash == *hashing.NilHash {
-			programHash = *hashValue
-			return nil
-		}
-		if programHash != *hashValue {
-			return errors.New("code hash mismatch")
-		}
-		return nil
-	})
+	_, err = chain.DeployExternalContract(wasmtimevm.PluginName, wasmName, scDescription, wasm, initParams)
+	return err
 }
 
 func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*coretypes.ChainID, *address.Address, *balance.Color, error) {

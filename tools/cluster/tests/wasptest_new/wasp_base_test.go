@@ -2,7 +2,6 @@ package wasptest
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -10,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"testing"
 	"time"
 )
@@ -187,7 +185,6 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 }
 
-
 func TestDeployExternalContractOnly(t *testing.T) {
 	clu := setup(t, "test_cluster")
 
@@ -206,17 +203,7 @@ func TestDeployExternalContractOnly(t *testing.T) {
 
 	wasmName := "increment"
 	description := "Wasm PoC increment"
-	wasmLoaded = true
-	wasmPath := wasmName + "_bg.wasm"
-	if *useGo {
-		fmt.Println("Using Go Wasm instead of Rust Wasm")
-		time.Sleep(time.Second)
-		wasmPath = wasmName + "_go.wasm"
-	}
-	wasm, err := ioutil.ReadFile("../wasmtest/wasm/" + wasmPath)
-	check(err, t)
-
-	_, err = chain.DeployExternalContract(wasmtimevm.PluginName, wasmName, description, wasm, map[string]interface{}{
+	err = loadWasmIntoWasps(chain, wasmName, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 	})
 	check(err, t)

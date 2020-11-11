@@ -40,7 +40,7 @@ func (vm *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint
 		return nil, false
 	}
 	vm.function = function
-	vm.LogText("%%%%%% GetEntryPoint.complete")
+	vm.LogText("%%%%%% GetEntryPoint.complete :" + function)
 	return vm, true
 }
 
@@ -54,7 +54,9 @@ func (vm *wasmProcessor) SetExport(index int32, functionName string) {
 		vm.SetError("SetExport: duplicate function name")
 		return
 	}
-	hashedName := uint32(coretypes.Hn(functionName))
+	hn := coretypes.Hn(functionName)
+	vm.LogText(functionName + " = " + hn.String())
+	hashedName := uint32(hn)
 	_, ok = vm.codeToFunc[hashedName]
 	if ok {
 		vm.SetError("SetExport: duplicate hashed name")
@@ -129,7 +131,7 @@ func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (vm *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		//vm.LogText(text)
+		vm.LogText(text)
 	case KeyTrace:
 		vm.LogText(text)
 	case KeyLog:
