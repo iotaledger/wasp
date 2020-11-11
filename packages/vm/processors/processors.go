@@ -2,11 +2,13 @@ package processors
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"sync"
 )
 
 // ProcessorCache is an object maintained by each chain
@@ -83,16 +85,28 @@ func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
 	return ok
 }
 
-// GetProcessor returns processor from cache if exists
-func (cps *ProcessorCache) GetProcessor(deploymentHash *hashing.HashValue) (vmtypes.Processor, bool) {
+func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(*hashing.HashValue) ([]byte, bool)) (vmtypes.Processor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	ret, ok := cps.processors[*deploymentHash]
-	if !ok {
-		return nil, false
+	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
+		return proc, nil
 	}
-	return ret, true
+	binary, ok := getBinary(&rec.DeploymentHash)
+	if !ok {
+		return nil, fmt.Errorf("internal error: can't get the binary for the program")
+	}
+	deploymentHash, err := cps.NewProcessor(binary, rec.VMType)
+	if err != nil {
+		return nil, err
+	}
+	if *deploymentHash != rec.DeploymentHash {
+		return nil, fmt.Errorf("internal error: *deploymentHash != deploymentHash")
+	}
+	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
+		return proc, nil
+	}
+	return nil, fmt.Errorf("internal error: can't get the deployed processor")
 }
 
 // RemoveProcessor deletes processor from cache
