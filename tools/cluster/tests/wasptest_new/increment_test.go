@@ -90,7 +90,9 @@ func testNothing(t *testing.T, name string, description string, numRequests int)
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	err = loadWasmIntoWasps(chain, name, description, nil)
+	err = loadWasmIntoWasps(chain, name, description, map[string]interface{}{
+		inccounter.VarCounter: 1,
+	})
 
 	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
@@ -107,7 +109,7 @@ func testNothing(t *testing.T, name string, description string, numRequests int)
 	chain.WithSCState(0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		t.Logf("Verifying state of SC 0, node %s blockIndex %d", host, blockIndex)
 
-		require.EqualValues(t, 2 + numRequests, blockIndex)
+		require.EqualValues(t, 2+numRequests, blockIndex)
 
 		contractRegistry := state.GetArray(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())

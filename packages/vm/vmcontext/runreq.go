@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"runtime/debug"
 )
 
 // runTheRequest:
@@ -31,6 +32,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.log.Errorf("Recovered from panic in VM: %v", r)
+				debug.PrintStack()
 				if _, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB
 					// TODO invalidate the whole block?
