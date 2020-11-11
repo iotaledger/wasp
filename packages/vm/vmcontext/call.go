@@ -8,7 +8,7 @@ import (
 
 // CallContract
 func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
-	vmctx.log.Debugw("Call", "contactIndex", contractIndex, "epCode", epCode.String())
+	vmctx.log.Debugw("Call", "contractIndex", contractIndex, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByIndex(contractIndex)
 	if !ok {
@@ -39,7 +39,7 @@ func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hnam
 
 // CallContract
 func (vmctx *VMContext) CallView(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	vmctx.log.Debugw("CallView", "contactIndex", contractIndex, "epCode", epCode.String())
+	vmctx.log.Debugw("CallView", "contractIndex", contractIndex, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByIndex(contractIndex)
 	if !ok {

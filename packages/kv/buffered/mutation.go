@@ -229,6 +229,10 @@ func (m *mutationSet) Read(r io.Reader) error {
 }
 
 func (m *mutationSet) String() string {
+	if len(m.v) > 80 {
+		// avoid dumping for example the entire Wasm binary
+		return fmt.Sprintf("SET \"%s\"={%x...}", m.k, m.v[:80])
+	}
 	return fmt.Sprintf("SET \"%s\"={%x}", m.k, m.v)
 }
 

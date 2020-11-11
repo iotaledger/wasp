@@ -34,12 +34,36 @@ func (vm *wasmProcessor) GetDescription() string {
 }
 
 func (vm *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
-	function, ok := vm.codeToFunc[int32(code)]
+	vm.LogText("%%%%%% GetEntryPoint")
+	function, ok := vm.codeToFunc[uint32(code)]
 	if !ok {
 		return nil, false
 	}
 	vm.function = function
+	vm.LogText("%%%%%% GetEntryPoint.complete :" + function)
 	return vm, true
+}
+
+func (vm *wasmProcessor) SetExport(index int32, functionName string) {
+	if index != int32(len(vm.codeToFunc) + 1) {
+		vm.SetError("SetExport: invalid index")
+		return
+	}
+	_, ok := vm.funcToCode[functionName]
+	if ok {
+		vm.SetError("SetExport: duplicate function name")
+		return
+	}
+	hn := coretypes.Hn(functionName)
+	vm.LogText(functionName + " = " + hn.String())
+	hashedName := uint32(hn)
+	_, ok = vm.codeToFunc[hashedName]
+	if ok {
+		vm.SetError("SetExport: duplicate hashed name")
+		return
+	}
+	vm.funcToCode[functionName] = hashedName
+	vm.codeToFunc[hashedName] = functionName
 }
 
 func (vm *wasmProcessor) GetKey(keyId int32) kv.Key {
@@ -107,7 +131,7 @@ func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (vm *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		//vm.LogText(text)
+		vm.LogText(text)
 	case KeyTrace:
 		vm.LogText(text)
 	case KeyLog:
