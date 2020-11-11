@@ -26,7 +26,7 @@ func (o *ScPostedRequest) Send() {
 	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, o.contract)
 	contractID := o.vm.ctx.GetContractID()
 	if bytes.Equal(o.contract, contractID[:coretypes.ChainIDLength]) {
-		params := dict.NewDict()
+		params := dict.New()
 		paramsId, ok := o.objects[KeyParams]
 		if ok {
 			params = o.vm.FindObject(paramsId).(*ScPostParams).Params
@@ -121,7 +121,7 @@ type ScPostParams struct {
 
 func (o *ScPostParams) InitVM(vm *wasmProcessor, keyId int32) {
 	o.MapObject.InitVM(vm, keyId)
-	o.Params = dict.NewDict()
+	o.Params = dict.New()
 }
 
 func (o *ScPostParams) GetBytes(keyId int32) []byte {
@@ -159,7 +159,7 @@ func (o *ScPostParams) SetBytes(keyId int32, value []byte) {
 func (o *ScPostParams) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		o.Params = dict.NewDict()
+		o.Params = dict.New()
 	default:
 		o.Params.Set(o.vm.GetKey(keyId), codec.EncodeInt64(value))
 	}

@@ -31,6 +31,7 @@ type MutableMustCodec interface {
 // ImmutableCodec is an interface that offers easy conversions between []byte and other types when
 // manipulating a read-only KVStore
 type ImmutableCodec interface {
+	KVStore() kv.KVStore
 	Has(key kv.Key) (bool, error)
 	Get(key kv.Key) ([]byte, error)
 	GetString(key kv.Key) (string, bool, error)
@@ -84,6 +85,10 @@ func NewCodec(kv kv.KVStore) MutableCodec {
 
 func NewMustCodec(kv kv.KVStore) MutableMustCodec {
 	return mustcodec{codec{kv: kv}}
+}
+
+func (c codec) KVStore() kv.KVStore {
+	return c.kv
 }
 
 func (c codec) GetArray(key kv.Key) (*datatypes.Array, error) {

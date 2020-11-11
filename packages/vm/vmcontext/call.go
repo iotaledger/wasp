@@ -2,20 +2,22 @@ package vmcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
 // CallContract
 func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("Call", "contractIndex", contractIndex, "epCode", epCode.String())
 
-	rec, ok := vmctx.findContractByIndex(contractIndex)
+	rec, ok := root.FindContractByIndex(contractIndex, vmctx.callRoot)
 	if !ok {
 		return nil, fmt.Errorf("failed to find contract with index %d", contractIndex)
 	}
 
-	proc, err := vmctx.getProcessor(rec)
+	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
@@ -41,12 +43,12 @@ func (vmctx *VMContext) CallContract(contractIndex uint16, epCode coretypes.Hnam
 func (vmctx *VMContext) CallView(contractIndex uint16, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("CallView", "contractIndex", contractIndex, "epCode", epCode.String())
 
-	rec, ok := vmctx.findContractByIndex(contractIndex)
+	rec, ok := root.FindContractByIndex(contractIndex, vmctx.callRoot)
 	if !ok {
 		return nil, fmt.Errorf("failed to find contract with index %d", contractIndex)
 	}
 
-	proc, err := vmctx.getProcessor(rec)
+	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package dict
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -16,6 +17,7 @@ type Dict interface {
 	kv.KVStore
 
 	IsEmpty() bool
+	Len() int
 
 	ForEach(func(key kv.Key, value []byte) bool)
 	ForEachDeterministic(func(key kv.Key, value []byte) bool)
@@ -27,29 +29,38 @@ type Dict interface {
 	String() string
 }
 
-type kvmap map[kv.Key][]byte
+type dict map[kv.Key][]byte
 
 // create/clone
-func NewDict() Dict {
-	return make(kvmap)
+func New() Dict {
+	return make(dict)
 }
 
-func (m kvmap) Clone() Dict {
-	clone := make(kvmap)
-	m.ForEach(func(key kv.Key, value []byte) bool {
+func (d dict) Clone() Dict {
+	clone := make(dict)
+	d.ForEach(func(key kv.Key, value []byte) bool {
 		clone.Set(key, value)
 		return true
 	})
 	return clone
 }
 
-func FromGoMap(m map[kv.Key][]byte) Dict {
-	return kvmap(m)
+func FromGoMap(d map[kv.Key][]byte) Dict {
+	return dict(d)
 }
 
-func (m kvmap) sortedKeys() []kv.Key {
+func FromKVStore(kvstore kv.KVStore) (Dict, error) {
+	d := make(dict)
+	err := kvstore.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
+		d[k] = v
+		return true
+	})
+	return d, err
+}
+
+func (d dict) sortedKeys() []kv.Key {
 	keys := make([]kv.Key, 0)
-	for k := range m {
+	for k := range d {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool {
@@ -58,16 +69,16 @@ func (m kvmap) sortedKeys() []kv.Key {
 	return keys
 }
 
-func (m kvmap) String() string {
+func (d dict) String() string {
 	ret := "         Dict:\n"
-	for _, key := range m.sortedKeys() {
+	for _, key := range d.sortedKeys() {
 		ret += fmt.Sprintf(
 			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
 			slice(hex.EncodeToString([]byte(key))),
-			slice(hex.EncodeToString(m[key])),
-			slice(base58.Encode(m[key])),
+			slice(hex.EncodeToString(d[key])),
+			slice(base58.Encode(d[key])),
 			string(key),
-			string(m[key]),
+			string(d[key]),
 		)
 	}
 	return ret
@@ -81,47 +92,51 @@ func slice(s string) string {
 }
 
 // NON DETERMINISTIC!
-func (m kvmap) ForEach(fun func(key kv.Key, value []byte) bool) {
-	for k, v := range m {
+func (d dict) ForEach(fun func(key kv.Key, value []byte) bool) {
+	for k, v := range d {
 		if !fun(k, v) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (m kvmap) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
-	if m == nil {
+func (d dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
+	if d == nil {
 		return
 	}
-	for _, k := range m.sortedKeys() {
-		if !fun(k, m[k]) {
+	for _, k := range d.sortedKeys() {
+		if !fun(k, d[k]) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (m kvmap) IsEmpty() bool {
-	return len(m) == 0
+func (d dict) IsEmpty() bool {
+	return len(d) == 0
 }
 
-func (m kvmap) Set(key kv.Key, value []byte) {
+func (d dict) Len() int {
+	return len(d)
+}
+
+func (d dict) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
-	m[key] = value
+	d[key] = value
 }
 
-func (m kvmap) Del(key kv.Key) {
-	delete(m, key)
+func (d dict) Del(key kv.Key) {
+	delete(d, key)
 }
 
-func (m kvmap) Has(key kv.Key) (bool, error) {
-	_, ok := m[key]
+func (d dict) Has(key kv.Key) (bool, error) {
+	_, ok := d[key]
 	return ok, nil
 }
 
-func (m kvmap) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	for k, v := range m {
+func (d dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	for k, v := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -132,8 +147,8 @@ func (m kvmap) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) err
 	return nil
 }
 
-func (m kvmap) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	for k, _ := range m {
+func (d dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	for k, _ := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -144,13 +159,13 @@ func (m kvmap) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return nil
 }
 
-func (m kvmap) Get(key kv.Key) ([]byte, error) {
-	v, _ := m[key]
+func (d dict) Get(key kv.Key) ([]byte, error) {
+	v, _ := d[key]
 	return v, nil
 }
 
-func (m kvmap) Write(w io.Writer) error {
-	keys := m.sortedKeys()
+func (d dict) Write(w io.Writer) error {
+	keys := d.sortedKeys()
 	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
 	}
@@ -158,14 +173,14 @@ func (m kvmap) Write(w io.Writer) error {
 		if err := util.WriteBytes16(w, []byte(k)); err != nil {
 			return err
 		}
-		if err := util.WriteBytes32(w, m[k]); err != nil {
+		if err := util.WriteBytes32(w, d[k]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m kvmap) Read(r io.Reader) error {
+func (d dict) Read(r io.Reader) error {
 	var num uint64
 	err := util.ReadUint64(r, &num)
 	if err != nil {
@@ -180,7 +195,32 @@ func (m kvmap) Read(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		m.Set(kv.Key(k), v)
+		d.Set(kv.Key(k), v)
+	}
+	return nil
+}
+
+type jsonItem struct {
+	Key   []byte
+	Value []byte
+}
+
+func (d dict) MarshalJSON() ([]byte, error) {
+	items := make([]jsonItem, d.Len())
+	for i, k := range d.sortedKeys() {
+		items[i].Key = []byte(k)
+		items[i].Value = d[k]
+	}
+	return json.Marshal(items)
+}
+
+func (d *dict) UnmarshalJSON(b []byte) error {
+	var items []jsonItem
+	if err := json.Unmarshal(b, &items); err != nil {
+		return err
+	}
+	for _, item := range items {
+		(*d)[kv.Key(item.Key)] = item.Value
 	}
 	return nil
 }

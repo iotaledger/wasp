@@ -3,12 +3,14 @@ package root
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io"
 )
 
 // state variables
@@ -178,4 +180,39 @@ func GetRootContractRecord() *ContractRecord {
 		Description:    "root contract",
 		Name:           "root",
 	}
+}
+
+func FindContractByIndex(contractIndex uint16, call func(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)) (*ContractRecord, bool) {
+	if contractIndex == 0 {
+		return GetRootContractRecord(), true
+	}
+	params := codec.NewCodec(dict.New())
+	params.SetInt64(ParamIndex, int64(contractIndex))
+	res, err := call(EntryPointFindContractByIndex, params)
+	if err != nil {
+		return nil, false
+	}
+	data, err := res.Get(ParamData)
+	if err != nil {
+		return nil, false
+	}
+	ret, err := DecodeContractRecord(data)
+	if err != nil {
+		return nil, false
+	}
+	return ret, true
+}
+
+func GetBinary(deploymentHash *hashing.HashValue, call func(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)) ([]byte, bool) {
+	params := codec.NewCodec(dict.New())
+	params.SetHashValue(ParamHash, deploymentHash)
+	res, err := call(EntryPointGetBinary, params)
+	if err != nil {
+		return nil, false
+	}
+	data, err := res.Get(ParamData)
+	if err != nil {
+		return nil, false
+	}
+	return data, true
 }

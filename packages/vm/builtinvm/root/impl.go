@@ -96,7 +96,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("root.deployContract.error: contract with the name '%s' already exists", name)
 	}
 	// pass to init function all params not consumed so far
-	initParams := codec.NewCodec(dict.NewDict())
+	initParams := codec.NewCodec(dict.New())
 	err = params.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != ParamVMType && key != ParamProgramBinary && key != ParamDescription {
 			initParams.Set(key, value)
@@ -107,7 +107,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract: %v", err)
 	}
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	ret.SetInt64(ParamIndex, int64(contractIndex))
 
 	if name != "" {
@@ -140,7 +140,7 @@ func findContractByName(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 		return nil, nil
 	}
 	index := int64(util.Uint64From8Bytes(r))
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	ret.SetInt64(ParamIndex, index)
 	return ret, nil
 }
@@ -163,7 +163,7 @@ func findContractByIndex(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) 
 	if contractIndex >= int64(contractRegistry.Len()) {
 		return nil, fmt.Errorf("wrong index")
 	}
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	ret.Set("data", contractRegistry.GetAt(uint16(contractIndex)))
 	return ret, nil
 }
@@ -186,7 +186,7 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	contractRegistry := ctx.State().GetMap(VarRegistryOfBinaries)
 	binary := contractRegistry.GetAt(deploymentHash[:])
 
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	ret.Set(ParamData, binary)
 	return ret, nil
 }
