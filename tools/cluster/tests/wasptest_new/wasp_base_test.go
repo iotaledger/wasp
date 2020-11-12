@@ -203,7 +203,7 @@ func TestDeployExternalContractOnly(t *testing.T) {
 
 	wasmName := "increment"
 	description := "Wasm PoC increment"
-	err = loadWasmIntoWasps(chain, wasmName, description, map[string]interface{}{
+	err = deployContract(chain, wasmName, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 	})
 	check(err, t)
