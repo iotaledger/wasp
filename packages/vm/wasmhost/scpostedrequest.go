@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/mr-tron/base58"
 )
 
 type ScPostedRequest struct {
@@ -43,24 +44,30 @@ func (o *ScPostedRequest) GetTypeId(keyId int32) int32 {
 
 func (o *ScPostedRequest) Send() {
 	function := o.vm.codeToFunc[o.code]
-	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, o.contract)
-	contractID := o.vm.ctx.GetContractID()
-	if bytes.Equal(o.contract, contractID[:coretypes.ChainIDLength]) {
-		params := dict.New()
-		paramsId, ok := o.objects[KeyParams]
-		if ok {
-			params = o.vm.FindObject(paramsId).(*ScPostParams).Params
-			params.ForEach(func(key kv.Key, value []byte) bool {
-				o.vm.Trace("  PARAM '%s'", key)
-				return true
-			})
-		}
-		if params.IsEmpty() {
-			params = nil
-		}
-		o.vm.ctx.SendRequestToSelfWithDelay(coretypes.Hname(o.code), params, uint32(o.delay))
+	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, base58.Encode(o.contract))
+	chainID := o.vm.ctx.GetChainID()
+	if !bytes.Equal(o.contract, chainID[:]) {
+		//TODO handle external contract
+		o.vm.Trace("Unknown chain id")
+		return
 	}
-	//TODO handle external contract
+
+	params := dict.New()
+	paramsId, ok := o.objects[KeyParams]
+	if ok {
+		params = o.vm.FindObject(paramsId).(*ScPostParams).Params
+		params.ForEach(func(key kv.Key, value []byte) bool {
+			o.vm.Trace("  PARAM '%s'", key)
+			return true
+		})
+	}
+	if params.IsEmpty() {
+		params = nil
+	}
+	reqCode := coretypes.Hname(o.code)
+	if !o.vm.ctx.SendRequestToSelfWithDelay(reqCode, params, uint32(o.delay)) {
+		o.vm.Trace("  FAILED to send")
+	}
 }
 
 func (o *ScPostedRequest) SetBytes(keyId int32, value []byte) {
