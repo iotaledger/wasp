@@ -34,18 +34,16 @@ func (vm *wasmProcessor) GetDescription() string {
 }
 
 func (vm *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
-	vm.LogText("%%%%%% GetEntryPoint")
 	function, ok := vm.codeToFunc[uint32(code)]
 	if !ok {
 		return nil, false
 	}
 	vm.function = function
-	vm.LogText("%%%%%% GetEntryPoint.complete :" + function)
 	return vm, true
 }
 
 func (vm *wasmProcessor) SetExport(index int32, functionName string) {
-	if index != int32(len(vm.codeToFunc) + 1) {
+	if index != int32(len(vm.codeToFunc)+1) {
 		vm.SetError("SetExport: invalid index")
 		return
 	}
@@ -89,15 +87,16 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	vm.ctx = ctx
 	vm.params = ctx.Params()
+	defer func() {
+		vm.ctx = nil
+		vm.params = nil
+	}()
 
 	testMode, _ := vm.params.Has("testMode")
 	if testMode {
 		vm.LogText("TEST MODE")
 		TestMode = true
 	}
-	reqId := ctx.AccessRequest().ID()
-	vm.LogText(fmt.Sprintf("run wasmProcessor: reqCode = %s reqId = %s timestamp = %d",
-		ctx.AccessRequest().EntryPointCode().String(), reqId.String(), ctx.GetTimestamp()))
 
 	vm.LogText("Calling " + vm.function)
 	err := vm.RunFunction(vm.function)
