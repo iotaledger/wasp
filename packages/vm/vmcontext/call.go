@@ -7,12 +7,12 @@ import (
 )
 
 // CallContract
-func (vmctx *VMContext) CallContract(contractHname coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
-	vmctx.log.Debugw("Call", "contract", contractHname, "epCode", epCode.String())
+func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
+	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
-	rec, ok := vmctx.findContractByHname(contractHname)
+	rec, ok := vmctx.findContractByHname(contract)
 	if !ok {
-		return nil, fmt.Errorf("failed to find contract with index %d", contractHname)
+		return nil, fmt.Errorf("failed to find contract with hname %s", contract.String())
 	}
 
 	proc, err := vmctx.getProcessor(rec)
@@ -25,7 +25,7 @@ func (vmctx *VMContext) CallContract(contractHname coretypes.Hname, epCode coret
 		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
 	}
 
-	if err := vmctx.PushCallContext(contractHname, params, budget); err != nil {
+	if err := vmctx.PushCallContext(contract, params, budget); err != nil {
 		return nil, err
 	}
 	defer vmctx.PopCallContext()

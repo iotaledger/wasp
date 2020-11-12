@@ -96,7 +96,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract: %v", err)
 	}
-	ctx.Eventf("root.deployContract.success. Deployed contract hname = %s, name = 's'",
+	ctx.Eventf("root.deployContract.success. Deployed contract hname = %s, name = '%s'",
 		coretypes.Hn(name).String(), name)
 	return nil, nil
 }

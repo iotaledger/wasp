@@ -15,8 +15,10 @@ const (
 	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
 	Description = "Increment counter, a PoC smart contract"
 
-	VarNumRepeats = "numRepeats"
-	VarCounter    = "counter"
+	VarNumRepeats  = "numRepeats"
+	VarCounter     = "counter"
+	VarName        = "name"
+	VarDescription = "dscr"
 )
 
 var (
@@ -161,21 +163,34 @@ func spawn(ctx vmtypes.Sandbox) error {
 	if err != nil {
 		ctx.Panic(err)
 	}
+	name, ok, err := ctx.Params().GetString(VarName)
+	if err != nil {
+		ctx.Panic(err)
+	}
+	if !ok {
+		return fmt.Errorf("parameter 'name' wasnt found")
+	}
+	dscr, ok, err := ctx.Params().GetString(VarDescription)
+	if err != nil {
+		ctx.Panic(err)
+	}
+	if !ok {
+		dscr = "N/A"
+	}
 	par := codec.NewCodec(dict.NewDict())
 	par.SetInt64(VarCounter, val+1)
-	name := "spawnedInccounter"
-	hname := coretypes.Hn(name)
-	err = ctx.DeployContract("examplevm", hashBin[:], name, "Inccounter spawned", par)
+	err = ctx.DeployContract("examplevm", hashBin[:], name, dscr, par)
 	if err != nil {
 		return err
 	}
 
 	// increase counter in newly spawned contract
+	hname := coretypes.Hn(name)
 	_, err = ctx.Call(hname, EntryPointIncCounter, nil, nil)
 	if err != nil {
 		return err
 	}
 
-	ctx.Eventf("inccounter.spawn: new contract hname = %s", hname.String())
+	ctx.Eventf("inccounter.spawn: new contract name = %s hname = %s", name, hname.String())
 	return nil
 }
