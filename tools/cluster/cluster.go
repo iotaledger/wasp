@@ -627,8 +627,8 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 	pass := true
 	fmt.Printf("    host %s, state index #%d\n", host, actual.Index)
 	for k, vexp := range expectedValues {
-		vact, _ := actual.Variables.Get(k)
-		if vact == nil {
+		vact, ok := actual.Variables[k]
+		if !ok {
 			vact = []byte("N/A")
 		}
 		vres := "FAIL"

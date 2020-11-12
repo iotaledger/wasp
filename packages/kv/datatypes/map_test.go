@@ -1,7 +1,6 @@
 package datatypes
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -92,30 +91,4 @@ func TestBasicMap(t *testing.T) {
 	v, err = m.GetAt(k3)
 	assert.NoError(t, err)
 	assert.EqualValues(t, v3, v)
-}
-
-func TestIterate(t *testing.T) {
-	vars := dict.NewDict()
-	m, err := NewMap(vars, "testMap")
-	assert.NoError(t, err)
-
-	assert.Zero(t, m.Len())
-
-	keys := []string{"k1", "k2", "k3"}
-	values := []string{"v1", "v2", "v3"}
-	for i, key := range keys {
-		err := m.SetAt([]byte(key), []byte(values[i]))
-		require.NoError(t, err)
-	}
-	m.Iterate(func(elemKey []byte, value []byte) bool {
-		t.Logf("key '%s' value '%s'", string(elemKey), string(value))
-		return true
-	})
-	t.Logf("---------------------")
-	err = m.SetAt([]byte("k4"), []byte("v4"))
-	require.NoError(t, err)
-	m.Iterate(func(elemKey []byte, value []byte) bool {
-		t.Logf("key '%s' value '%s'", string(elemKey), string(value))
-		return true
-	})
 }

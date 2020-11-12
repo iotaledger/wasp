@@ -8,13 +8,13 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-func (vmctx *VMContext) PushCallContext(contractHname coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) error {
-	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contractHname, len(vmctx.callStack))
+func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) error {
+	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contractIndex, len(vmctx.callStack))
 
 	vmctx.callStack = append(vmctx.callStack, &callContext{
-		contract: contractHname,
-		params:   params,
-		budget:   budget,
+		contractIndex: contractIndex,
+		params:        params,
+		budget:        budget,
 	})
 	// TODO check budget
 	return nil

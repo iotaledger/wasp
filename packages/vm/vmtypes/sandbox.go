@@ -13,11 +13,11 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	Params() codec.ImmutableCodec
-	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
-	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
+	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) (uint16, error)
+	Call(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
 	// general functions
 	GetChainID() coretypes.ChainID
-	GetContractHname() coretypes.Hname // current contract hname
+	GetContractIndex() uint16 // current contract index, mutates with each call
 	GetContractID() coretypes.ContractID
 
 	GetOwnerAddress() *address.Address

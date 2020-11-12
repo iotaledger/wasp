@@ -16,33 +16,33 @@ import (
 type Dict map[kv.Key][]byte
 
 // create/clone
-func NewDict() Dict {
+func New() Dict {
 	return make(Dict)
 }
 
-func (m Dict) Clone() Dict {
+func (d Dict) Clone() Dict {
 	clone := make(Dict)
-	m.ForEach(func(key kv.Key, value []byte) bool {
+	d.ForEach(func(key kv.Key, value []byte) bool {
 		clone.Set(key, value)
 		return true
 	})
 	return clone
 }
 
-func FromGoMap(m map[kv.Key][]byte) Dict {
-	return Dict(m)
+func FromGoMap(d map[kv.Key][]byte) Dict {
+	return Dict(d)
 }
 
-func FromKVStore(kvs kv.KVStore) (Dict, error) {
+func FromKVStore(kvstore kv.KVStore) (Dict, error) {
 	d := make(Dict)
-	err := kvs.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
+	err := kvstore.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
 		d[k] = v
 		return true
 	})
 	return d, err
 }
 
-func (m Dict) sortedKeys() []kv.Key {
+func (d Dict) sortedKeys() []kv.Key {
 	keys := make([]kv.Key, 0)
 	for k := range d {
 		keys = append(keys, k)
@@ -53,7 +53,7 @@ func (m Dict) sortedKeys() []kv.Key {
 	return keys
 }
 
-func (m Dict) String() string {
+func (d Dict) String() string {
 	ret := "         Dict:\n"
 	for _, key := range d.sortedKeys() {
 		ret += fmt.Sprintf(
@@ -76,16 +76,16 @@ func slice(s string) string {
 }
 
 // NON DETERMINISTIC!
-func (m Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
-	for k, v := range m {
+func (d Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
+	for k, v := range d {
 		if !fun(k, v) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (m Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
-	if m == nil {
+func (d Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
+	if d == nil {
 		return
 	}
 	for _, k := range d.sortedKeys() {
@@ -95,28 +95,32 @@ func (m Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	}
 }
 
-func (m Dict) IsEmpty() bool {
-	return len(m) == 0
+func (d Dict) IsEmpty() bool {
+	return len(d) == 0
 }
 
-func (m Dict) Set(key kv.Key, value []byte) {
+func (d Dict) Len() int {
+	return len(d)
+}
+
+func (d Dict) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
 	d[key] = value
 }
 
-func (m Dict) Del(key kv.Key) {
-	delete(m, key)
+func (d Dict) Del(key kv.Key) {
+	delete(d, key)
 }
 
-func (m Dict) Has(key kv.Key) (bool, error) {
-	_, ok := m[key]
+func (d Dict) Has(key kv.Key) (bool, error) {
+	_, ok := d[key]
 	return ok, nil
 }
 
-func (m Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	for k, v := range m {
+func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	for k, v := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -127,8 +131,8 @@ func (m Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) erro
 	return nil
 }
 
-func (m Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	for k, _ := range m {
+func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	for k, _ := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -139,13 +143,13 @@ func (m Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return nil
 }
 
-func (m Dict) Get(key kv.Key) ([]byte, error) {
-	v, _ := m[key]
+func (d Dict) Get(key kv.Key) ([]byte, error) {
+	v, _ := d[key]
 	return v, nil
 }
 
-func (m Dict) Write(w io.Writer) error {
-	keys := m.sortedKeys()
+func (d Dict) Write(w io.Writer) error {
+	keys := d.sortedKeys()
 	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
 	}
@@ -160,7 +164,7 @@ func (m Dict) Write(w io.Writer) error {
 	return nil
 }
 
-func (m Dict) Read(r io.Reader) error {
+func (d Dict) Read(r io.Reader) error {
 	var num uint64
 	err := util.ReadUint64(r, &num)
 	if err != nil {
@@ -187,32 +191,6 @@ type jsonItem struct {
 
 func (d Dict) MarshalJSON() ([]byte, error) {
 	items := make([]jsonItem, d.Len())
-	for i, k := range d.sortedKeys() {
-		items[i].Key = []byte(k)
-		items[i].Value = d[k]
-	}
-	return json.Marshal(items)
-}
-
-func (d *Dict) UnmarshalJSON(b []byte) error {
-	var items []jsonItem
-	if err := json.Unmarshal(b, &items); err != nil {
-		return err
-	}
-	*d = make(Dict)
-	for _, item := range items {
-		(*d)[kv.Key(item.Key)] = item.Value
-	}
-	return nil
-}
-
-type jsonItem struct {
-	Key   []byte
-	Value []byte
-}
-
-func (d Dict) MarshalJSON() ([]byte, error) {
-	items := make([]jsonItem, len(d))
 	for i, k := range d.sortedKeys() {
 		items[i].Key = []byte(k)
 		items[i].Value = d[k]

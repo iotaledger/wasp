@@ -1,10 +1,8 @@
 package wasptest
 
 import (
-	"bytes"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -16,8 +14,6 @@ import (
 const incName = "increment"
 const incDescription = "Increment, a PoC smart contract"
 
-var hname = coretypes.Hn(incName)
-
 func TestIncDeployment(t *testing.T) {
 	clu, chain := setupAndLoad(t, incName, incDescription, 0, nil)
 
@@ -25,30 +21,33 @@ func TestIncDeployment(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 0, node %s blockIndex %d", host, blockIndex)
+
 		require.EqualValues(t, 2, blockIndex)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := state.GetArray(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
-		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-		//--
-		crBytes = contractRegistry.GetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
+
+		crBytes := contractRegistry.GetAt(1)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
+
 		require.EqualValues(t, wasmtimevm.PluginName, cr.VMType)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
+
 		return true
 	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 1, node %s blockIndex %d", host, blockIndex)
+
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, 0, counterValue)
+
 		return true
+
 	})
 }
 
@@ -104,34 +103,20 @@ func testNothing(t *testing.T, numRequests int) {
 	})
 }
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, 2, blockIndex)
+func TestIncIncrement(t *testing.T) {
+	testIncrement(t, 1)
+}
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 2, contractRegistry.Len())
-		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-		//--
-		crBytes = contractRegistry.GetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-		require.EqualValues(t, wasmtimevm.PluginName, cr.VMType)
-		require.EqualValues(t, incName, cr.Name)
-		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
-		return true
-	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 1, counterValue)
-		return true
-	})
+func TestInc5xIncrement(t *testing.T) {
+	testIncrement(t, 5)
+}
 
+func testIncrement(t *testing.T, numRequests int) {
+	clu, chain := setupAndLoad(t, incName, incDescription, numRequests, nil)
+
+	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := chain.OwnerClient().PostRequest(coretypes.Hn(name), coretypes.Hn("nothing"), nil, nil, nil)
+		tx, err := chain.OwnerClient().PostRequest(1, entryPoint, nil, nil, nil)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -141,29 +126,31 @@ func testNothing(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, numRequests+2, blockIndex)
+	chain.WithSCState(0, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 0, node %s blockIndex %d", host, blockIndex)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		require.EqualValues(t, 2+numRequests, blockIndex)
+
+		contractRegistry := state.GetArray(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
-		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-		//--
-		crBytes = contractRegistry.GetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
+
+		crBytes := contractRegistry.GetAt(1)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
+
 		require.EqualValues(t, wasmtimevm.PluginName, cr.VMType)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
+
 		return true
 	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		t.Logf("Verifying state of SC 1, node %s blockIndex %d", host, blockIndex)
+
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 1, counterValue) // expected 1 ??????
+		require.EqualValues(t, numRequests, counterValue)
+
 		return true
 	})
 }

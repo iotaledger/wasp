@@ -19,6 +19,7 @@ const (
 	VarChainID            = "c"
 	VarRegistryOfBinaries = "b"
 	VarContractRegistry   = "r"
+	VarContractsByName    = "n"
 	VarDescription        = "d"
 )
 
@@ -28,7 +29,7 @@ const (
 	ParamVMType        = "vmtype"
 	ParamProgramBinary = "programBinary"
 	ParamDescription   = "description"
-	ParamHname         = "hname"
+	ParamIndex         = "index"
 	ParamName          = "name"
 	ParamHash          = "hash"
 	ParamData          = "data"
@@ -36,18 +37,18 @@ const (
 
 // function names
 const (
-	FuncDeployContract = "deployContract"
-	FuncFindContract   = "findContract"
-	FuncGetBinary      = "getBinary"
+	FuncDeployContract      = "deployContract"
+	FuncFindContractByIndex = "findContractByIndex"
+	FuncFindContractByName  = "findContractRecordByName"
+	FuncGetBinary           = "getBinary"
 )
 
-const ContractName = "root"
-
+// entry point codes
 var (
-	Hname                    = coretypes.Hn(ContractName)
-	EntryPointDeployContract = coretypes.Hn(FuncDeployContract)
-	EntryPointFindContract   = coretypes.Hn(FuncFindContract)
-	EntryPointGetBinary      = coretypes.Hn(FuncGetBinary)
+	EntryPointDeployContract      = coretypes.Hn(FuncDeployContract)
+	EntryPointFindContractByIndex = coretypes.Hn(FuncFindContractByIndex)
+	EntryPointFindContractByName  = coretypes.Hn(FuncFindContractByName)
+	EntryPointGetBinary           = coretypes.Hn(FuncGetBinary)
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract
@@ -70,10 +71,11 @@ type rootEntryPoint struct {
 
 var (
 	processor = rootProcessor{
-		coretypes.EntryPointCodeInit: {epFunc(initialize)},
-		EntryPointDeployContract:     {epFunc(deployContract)},
-		EntryPointFindContract:       {epFuncView(findContract)},
-		EntryPointGetBinary:          {epFuncView(getBinary)},
+		coretypes.EntryPointCodeInit:  {epFunc(initialize)},
+		EntryPointDeployContract:      {epFunc(deployContract)},
+		EntryPointFindContractByIndex: {epFuncView(findContractByIndex)},
+		EntryPointFindContractByName:  {epFuncView(findContractByName)},
+		EntryPointGetBinary:           {epFuncView(getBinary)},
 	}
 	ProgramHash = hashing.NilHash
 )
