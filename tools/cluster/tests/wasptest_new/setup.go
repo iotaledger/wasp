@@ -33,12 +33,12 @@ var (
 	programHash hashing.HashValue
 )
 
-var builtinProgramHash  = map[string]string{
-	"donatewithfeedback" : dwfimpl.ProgramHash,
-	"fairauction": fairauction.ProgramHash,
-	"fairroulette": fairroulette.ProgramHash,
-	"increment": inccounter.ProgramHash,
-	"tokenregistry": tokenregistry.ProgramHash,
+var builtinProgramHash = map[string]string{
+	"donatewithfeedback": dwfimpl.ProgramHash,
+	"fairauction":        fairauction.ProgramHash,
+	"fairroulette":       fairroulette.ProgramHash,
+	"increment":          inccounter.ProgramHash,
+	"tokenregistry":      tokenregistry.ProgramHash,
 }
 
 func check(err error, t *testing.T) {
@@ -66,7 +66,7 @@ func setup(t *testing.T, configPath string) *cluster.Cluster {
 	return clu
 }
 
-func setupAndLoad(t *testing.T, name string, description string, nrOfRequests int, expectedMessages map[string]int) (*cluster.Cluster, *cluster.Chain){
+func setupAndLoad(t *testing.T, name string, description string, nrOfRequests int, expectedMessages map[string]int) (*cluster.Cluster, *cluster.Chain) {
 	clu := setup(t, "test_cluster")
 
 	expectations := map[string]int{
@@ -77,7 +77,7 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 		"request_in":          2 + nrOfRequests,
 		"request_out":         3 + nrOfRequests,
 	}
-	for k,v := range expectedMessages {
+	for k, v := range expectedMessages {
 		expectations[k] = v
 	}
 	err := clu.ListenToMessages(expectations)
@@ -112,7 +112,7 @@ func deployContract(chain *cluster.Chain, wasmName string, scDescription string,
 
 	fmt.Println("Using Wasp built-in SC instead of Rust Wasm SC")
 	time.Sleep(time.Second)
-	hash,ok := builtinProgramHash[wasmName]
+	hash, ok := builtinProgramHash[wasmName]
 	if !ok {
 		return errors.New("Unknown built-in SC: " + wasmName)
 	}
