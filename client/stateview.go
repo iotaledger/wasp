@@ -12,8 +12,8 @@ func StateViewRoute(scID string, fname string) string {
 }
 
 func (c *WaspClient) StateView(scID *coretypes.ContractID, fname string, arguments dict.Dict) (dict.Dict, error) {
-	res := dict.New()
-	if err := c.do(http.MethodGet, StateViewRoute(scID.Base58(), fname), arguments, res); err != nil {
+	var res dict.Dict
+	if err := c.do(http.MethodGet, StateViewRoute(scID.Base58(), fname), arguments, &res); err != nil {
 		return nil, err
 	}
 	return res, nil

@@ -48,9 +48,14 @@ func handleStateView(c echo.Context) error {
 	}
 
 	// convert return value to Dict which can be marshalled into json
-	d, err := dict.FromKVStore(ret.KVStore())
-	if err != nil {
-		return err
+	var d dict.Dict
+	if ret == nil {
+		d = dict.New()
+	} else {
+		d, err = dict.FromKVStore(ret.KVStore())
+		if err != nil {
+			return err
+		}
 	}
 
 	return c.JSON(http.StatusOK, d)

@@ -35,6 +35,11 @@ type Chain struct {
 	Cluster *Cluster
 }
 
+func (ch *Chain) ContractID(contractIndex uint16) *coretypes.ContractID {
+	cid := coretypes.NewContractID(ch.ChainID, contractIndex)
+	return &cid
+}
+
 func (ch *Chain) AllNodes() []int {
 	r := make([]int, 0)
 	r = append(r, ch.CommitteeNodes...)

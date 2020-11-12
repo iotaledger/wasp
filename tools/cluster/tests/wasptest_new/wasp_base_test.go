@@ -2,15 +2,18 @@ package wasptest
 
 import (
 	"bytes"
+	"testing"
+	"time"
+
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestDeployChain(t *testing.T) {
@@ -102,6 +105,7 @@ func TestDeployContractOnly(t *testing.T) {
 
 		return true
 	})
+
 	chain.WithSCState(1, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		t.Logf("Verifying state of SC 1, node %s blockIndex %d", host, blockIndex)
 
@@ -111,6 +115,19 @@ func TestDeployContractOnly(t *testing.T) {
 		return true
 
 	})
+
+	// test calling root.FuncFindContractByName view function using client
+	ret, err := chain.Cluster.WaspClient(0).StateView(
+		chain.ContractID(0),
+		root.FuncFindContractByName,
+		dict.FromGoMap(map[kv.Key][]byte{
+			root.ParamName: codec.EncodeString("testIncCounter"),
+		}),
+	)
+	check(err, t)
+	index, ok := codec.NewMustCodec(ret).GetInt64(root.ParamIndex)
+	require.True(t, ok)
+	require.EqualValues(t, 1, index)
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
