@@ -68,9 +68,9 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	if err != nil {
 		return nil, err
 	}
-	rootContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
+	rootContractID := coretypes.NewContractID(par.ChainID, root.Hname)
 	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointCodeInit)
-	args := dict.New()
+	args := dict.NewDict()
 	c := codec.NewCodec(args)
 	c.SetChainID(root.ParamChainID, &par.ChainID)
 	c.SetString(root.ParamDescription, par.Description)

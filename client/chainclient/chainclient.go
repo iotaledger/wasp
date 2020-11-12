@@ -35,7 +35,7 @@ func New(
 }
 
 func (c *Client) PostRequest(
-	contractIndex uint16,
+	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
 	mint map[address.Address]int64, // TODO
 	transfer map[balance.Color]int64,
@@ -46,7 +46,7 @@ func (c *Client) PostRequest(
 		SenderSigScheme: c.SigScheme,
 		Mint:            mint,
 		BlockParams: []apilib.RequestBlockParams{{
-			TargetContractID: coretypes.NewContractID(c.ChainID, contractIndex),
+			TargetContractID: coretypes.NewContractID(c.ChainID, contractHname),
 			EntryPointCode:   entryPoint,
 			Transfer:         transfer,
 			Vars:             vars,

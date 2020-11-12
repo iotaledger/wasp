@@ -80,10 +80,19 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 }
 
 func (o *ScContext) Exists(keyId int32) bool {
-	if keyId == KeyExports {
-		return o.vm.ctx == nil
+	switch keyId {
+	case KeyAccount:
+	case KeyContract:
+	case KeyLogs:
+	case KeyPostedRequests:
+	case KeyRequest:
+	case KeyState:
+	case KeyTransfers:
+	case KeyUtility:
+	default:
+		return false
 	}
-	return o.GetTypeId(keyId) >= 0
+	return true
 }
 
 func (o *ScContext) Finalize() {
@@ -103,39 +112,15 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
 
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyAccount:        func() WaspObject { return &ScAccount{} },
-		KeyContract:       func() WaspObject { return &ScContract{} },
-		KeyExports:        func() WaspObject { return &ScExports{} },
-		KeyLogs:           func() WaspObject { return &ScLogs{} },
-		KeyPostedRequests: func() WaspObject { return &ScPostedRequests{} },
-		KeyRequest:        func() WaspObject { return &ScRequest{} },
-		KeyState:          func() WaspObject { return &ScState{} },
-		KeyTransfers:      func() WaspObject { return &ScTransfers{} },
-		KeyUtility:        func() WaspObject { return &ScUtility{} },
+	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
+		KeyAccount:        {OBJTYPE_MAP, func() WaspObject { return &ScAccount{} }},
+		KeyContract:       {OBJTYPE_MAP, func() WaspObject { return &ScContract{} }},
+		KeyExports:        {OBJTYPE_STRING_ARRAY, func() WaspObject { return &ScExports{} }},
+		KeyLogs:           {OBJTYPE_MAP, func() WaspObject { return &ScLogs{} }},
+		KeyPostedRequests: {OBJTYPE_MAP_ARRAY, func() WaspObject { return &ScPostedRequests{} }},
+		KeyRequest:        {OBJTYPE_MAP, func() WaspObject { return &ScRequest{} }},
+		KeyState:          {OBJTYPE_MAP, func() WaspObject { return &ScState{} }},
+		KeyTransfers:      {OBJTYPE_MAP_ARRAY, func() WaspObject { return &ScTransfers{} }},
+		KeyUtility:        {OBJTYPE_MAP, func() WaspObject { return &ScUtility{} }},
 	})
-}
-
-func (o *ScContext) GetTypeId(keyId int32) int32 {
-	switch keyId {
-	case KeyAccount:
-		return OBJTYPE_MAP
-	case KeyContract:
-		return OBJTYPE_MAP
-	case KeyExports:
-		return OBJTYPE_STRING_ARRAY
-	case KeyLogs:
-		return OBJTYPE_MAP
-	case KeyPostedRequests:
-		return OBJTYPE_MAP_ARRAY
-	case KeyRequest:
-		return OBJTYPE_MAP
-	case KeyState:
-		return OBJTYPE_MAP
-	case KeyTransfers:
-		return OBJTYPE_MAP_ARRAY
-	case KeyUtility:
-		return OBJTYPE_MAP
-	}
-	return -1
 }

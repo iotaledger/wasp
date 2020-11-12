@@ -11,7 +11,7 @@ import (
 )
 
 func TestTlogBasic(t *testing.T) {
-	vars := dict.New()
+	vars := dict.NewDict()
 	tl, err := NewTimestampedLog(vars, "testTlog")
 	assert.NoError(t, err)
 	assert.Zero(t, tl.Len())
@@ -93,7 +93,7 @@ func initLog(t *testing.T, tl *TimestampedLog) {
 }
 
 func TestTlogBig(t *testing.T) {
-	vars := dict.New()
+	vars := dict.NewDict()
 	tl, err := NewTimestampedLog(vars, "testTimestampedlog")
 	assert.NoError(t, err)
 

@@ -31,11 +31,11 @@ type MutableMustCodec interface {
 // ImmutableCodec is an interface that offers easy conversions between []byte and other types when
 // manipulating a read-only KVStore
 type ImmutableCodec interface {
-	KVStore() kv.KVStore
 	Has(key kv.Key) (bool, error)
 	Get(key kv.Key) ([]byte, error)
 	GetString(key kv.Key) (string, bool, error)
 	GetInt64(key kv.Key) (int64, bool, error)
+	GetHname(key kv.Key) (coretypes.Hname, bool, error)
 	GetAddress(key kv.Key) (*address.Address, bool, error)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool, error)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool, error)
@@ -49,9 +49,12 @@ type ImmutableMustCodec interface {
 	Get(key kv.Key) []byte
 	GetString(key kv.Key) (string, bool)
 	GetInt64(key kv.Key) (int64, bool)
+	GetHname(key kv.Key) (coretypes.Hname, bool)
 	GetAddress(key kv.Key) (*address.Address, bool)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
+	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
+	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
 
 	GetArray(kv.Key) *datatypes.MustArray
 	GetMap(kv.Key) *datatypes.MustMap
@@ -65,6 +68,7 @@ type wCodec interface {
 	Set(key kv.Key, value []byte)
 	SetString(key kv.Key, value string)
 	SetInt64(key kv.Key, value int64)
+	SetHname(key kv.Key, value coretypes.Hname)
 	SetAddress(key kv.Key, value *address.Address)
 	SetHashValue(key kv.Key, value *hashing.HashValue)
 	SetChainID(key kv.Key, value *coretypes.ChainID)
@@ -85,10 +89,6 @@ func NewCodec(kv kv.KVStore) MutableCodec {
 
 func NewMustCodec(kv kv.KVStore) MutableMustCodec {
 	return mustcodec{codec{kv: kv}}
-}
-
-func (c codec) KVStore() kv.KVStore {
-	return c.kv
 }
 
 func (c codec) GetArray(key kv.Key) (*datatypes.Array, error) {
@@ -135,8 +135,22 @@ func (c codec) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) err
 	return c.kv.Iterate(prefix, f)
 }
 
+func (c mustcodec) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	err := c.kv.Iterate(prefix, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (c codec) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return c.kv.IterateKeys(prefix, f)
+}
+
+func (c mustcodec) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+	err := c.kv.IterateKeys(prefix, f)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c mustcodec) Has(key kv.Key) bool {
@@ -223,8 +237,28 @@ func (c mustcodec) GetInt64(key kv.Key) (int64, bool) {
 	return ret, ok
 }
 
+func (c codec) GetHname(key kv.Key) (coretypes.Hname, bool, error) {
+	t, ok, err := c.GetInt64(key)
+	if err != nil || !ok {
+		return 0, ok, err
+	}
+	return coretypes.Hname(t), ok, err
+}
+
+func (c mustcodec) GetHname(key kv.Key) (coretypes.Hname, bool) {
+	ret, ok, err := c.codec.GetHname(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret, ok
+}
+
 func (c codec) SetInt64(key kv.Key, value int64) {
 	c.kv.Set(key, util.Uint64To8Bytes(uint64(value)))
+}
+
+func (c codec) SetHname(key kv.Key, value coretypes.Hname) {
+	c.kv.Set(key, value.Bytes())
 }
 
 func (c codec) GetAddress(key kv.Key) (*address.Address, bool, error) {

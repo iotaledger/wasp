@@ -82,16 +82,6 @@ func (o *ScUtility) GetString(keyId int32) string {
 	return o.MapObject.GetString(keyId)
 }
 
-func (o *ScUtility) GetTypeId(keyId int32) int32 {
-	switch keyId {
-	case KeyHash:
-		return OBJTYPE_BYTES
-	case KeyRandom:
-		return OBJTYPE_INT
-	}
-	return -1
-}
-
 func (o *ScUtility) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case KeyBase58:

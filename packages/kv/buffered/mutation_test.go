@@ -10,7 +10,7 @@ import (
 )
 
 func TestApplyMutationSet(t *testing.T) {
-	vars := dict.New()
+	vars := dict.NewDict()
 
 	mset := NewMutationSet("k1", []byte("v1"))
 	mset.ApplyTo(vars)
@@ -20,7 +20,7 @@ func TestApplyMutationSet(t *testing.T) {
 }
 
 func TestApplyMutationDel(t *testing.T) {
-	vars := dict.New()
+	vars := dict.NewDict()
 	vars.Set("k1", []byte("v1"))
 
 	mset := NewMutationDel("k1")

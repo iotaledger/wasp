@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
@@ -33,11 +32,6 @@ type Chain struct {
 	Color   balance.Color
 
 	Cluster *Cluster
-}
-
-func (ch *Chain) ContractID(contractIndex uint16) *coretypes.ContractID {
-	cid := coretypes.NewContractID(ch.ChainID, contractIndex)
-	return &cid
 }
 
 func (ch *Chain) AllNodes() []int {
@@ -77,13 +71,13 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeApi())
 }
 
-func (ch *Chain) WithSCState(contractIndex uint16, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
+func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
 	pass := true
 	for i, host := range ch.CommitteeApi() {
 		if !ch.Cluster.Config.Nodes[i].IsUp() {
 			continue
 		}
-		contractID := coretypes.NewContractID(ch.ChainID, contractIndex)
+		contractID := coretypes.NewContractID(ch.ChainID, hname)
 		actual, err := ch.Cluster.WaspClient(i).DumpSCState(&contractID)
 		if client.IsNotFound(err) {
 			pass = false
@@ -93,20 +87,21 @@ func (ch *Chain) WithSCState(contractIndex uint16, f func(host string, blockInde
 		if err != nil {
 			panic(err)
 		}
-		if !f(host, actual.Index, codec.NewMustCodec(dict.FromGoMap(actual.Variables))) {
+		if !f(host, actual.Index, codec.NewMustCodec(actual.Variables)) {
 			pass = false
 		}
 	}
 	return pass
 }
 
-func (ch *Chain) DeployBuiltinContract(vmtype string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
+func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
 	}
 
 	params := map[string]interface{}{
+		root.ParamName:          name,
 		root.ParamVMType:        vmtype,
 		root.ParamDescription:   description,
 		root.ParamProgramBinary: programHash[:],
@@ -114,7 +109,7 @@ func (ch *Chain) DeployBuiltinContract(vmtype string, progHashStr string, descri
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OwnerClient().PostRequest(0, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OwnerClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +132,7 @@ func (ch *Chain) DeployExternalContract(vmtype string, name string, description 
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OwnerClient().PostRequest(0, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OwnerClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
 	if err != nil {
 		return nil, err
 	}

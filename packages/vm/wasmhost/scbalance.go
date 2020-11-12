@@ -25,7 +25,7 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 	}
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
-		o.Error(err.Error())
+		o.error(err.Error())
 		return 0
 	}
 	account := o.vm.ctx.AccessSCAccount()
@@ -33,11 +33,4 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 		return account.AvailableBalanceFromRequest(&color)
 	}
 	return account.AvailableBalance(&color)
-}
-
-func (o *ScBalance) GetTypeId(keyId int32) int32 {
-	if o.Exists(keyId) {
-		return OBJTYPE_INT
-	}
-	return -1
 }

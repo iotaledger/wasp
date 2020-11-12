@@ -3,14 +3,12 @@ package root
 import (
 	"bytes"
 	"fmt"
-	"io"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"io"
 )
 
 // state variables
@@ -19,7 +17,6 @@ const (
 	VarChainID            = "c"
 	VarRegistryOfBinaries = "b"
 	VarContractRegistry   = "r"
-	VarContractsByName    = "n"
 	VarDescription        = "d"
 )
 
@@ -29,7 +26,7 @@ const (
 	ParamVMType        = "vmtype"
 	ParamProgramBinary = "programBinary"
 	ParamDescription   = "description"
-	ParamIndex         = "index"
+	ParamHname         = "hname"
 	ParamName          = "name"
 	ParamHash          = "hash"
 	ParamData          = "data"
@@ -37,18 +34,18 @@ const (
 
 // function names
 const (
-	FuncDeployContract      = "deployContract"
-	FuncFindContractByIndex = "findContractByIndex"
-	FuncFindContractByName  = "findContractRecordByName"
-	FuncGetBinary           = "getBinary"
+	FuncDeployContract = "deployContract"
+	FuncFindContract   = "findContract"
+	FuncGetBinary      = "getBinary"
 )
 
-// entry point codes
+const ContractName = "root"
+
 var (
-	EntryPointDeployContract      = coretypes.Hn(FuncDeployContract)
-	EntryPointFindContractByIndex = coretypes.Hn(FuncFindContractByIndex)
-	EntryPointFindContractByName  = coretypes.Hn(FuncFindContractByName)
-	EntryPointGetBinary           = coretypes.Hn(FuncGetBinary)
+	Hname                    = coretypes.Hn(ContractName)
+	EntryPointDeployContract = coretypes.Hn(FuncDeployContract)
+	EntryPointFindContract   = coretypes.Hn(FuncFindContract)
+	EntryPointGetBinary      = coretypes.Hn(FuncGetBinary)
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract
@@ -71,11 +68,10 @@ type rootEntryPoint struct {
 
 var (
 	processor = rootProcessor{
-		coretypes.EntryPointCodeInit:  {epFunc(initialize)},
-		EntryPointDeployContract:      {epFunc(deployContract)},
-		EntryPointFindContractByIndex: {epFuncView(findContractByIndex)},
-		EntryPointFindContractByName:  {epFuncView(findContractByName)},
-		EntryPointGetBinary:           {epFuncView(getBinary)},
+		coretypes.EntryPointCodeInit: {epFunc(initialize)},
+		EntryPointDeployContract:     {epFunc(deployContract)},
+		EntryPointFindContract:       {epFuncView(findContract)},
+		EntryPointGetBinary:          {epFuncView(getBinary)},
 	}
 	ProgramHash = hashing.NilHash
 )
@@ -180,39 +176,4 @@ func GetRootContractRecord() *ContractRecord {
 		Description:    "root contract",
 		Name:           "root",
 	}
-}
-
-func FindContractByIndex(contractIndex uint16, call func(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)) (*ContractRecord, bool) {
-	if contractIndex == 0 {
-		return GetRootContractRecord(), true
-	}
-	params := codec.NewCodec(dict.New())
-	params.SetInt64(ParamIndex, int64(contractIndex))
-	res, err := call(EntryPointFindContractByIndex, params)
-	if err != nil {
-		return nil, false
-	}
-	data, err := res.Get(ParamData)
-	if err != nil {
-		return nil, false
-	}
-	ret, err := DecodeContractRecord(data)
-	if err != nil {
-		return nil, false
-	}
-	return ret, true
-}
-
-func GetBinary(deploymentHash *hashing.HashValue, call func(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)) ([]byte, bool) {
-	params := codec.NewCodec(dict.New())
-	params.SetHashValue(ParamHash, deploymentHash)
-	res, err := call(EntryPointGetBinary, params)
-	if err != nil {
-		return nil, false
-	}
-	data, err := res.Get(ParamData)
-	if err != nil {
-		return nil, false
-	}
-	return data, true
 }

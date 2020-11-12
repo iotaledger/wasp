@@ -79,7 +79,7 @@ func (b *bufferedKVStore) ClearMutations() {
 
 // iterates over all key-value pairs in KVStore
 func (b *bufferedKVStore) DangerouslyDumpToDict() dict.Dict {
-	ret := dict.New()
+	ret := dict.NewDict()
 	err := b.db.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
 		ret.Set(kv.Key(key), value)
 		return true
