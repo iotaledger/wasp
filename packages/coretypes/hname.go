@@ -10,6 +10,8 @@ import (
 
 type Hname uint32
 
+const HnameLength = 4
+
 const FuncInit = "init"
 
 var EntryPointCodeInit = Hn(FuncInit)
@@ -22,12 +24,12 @@ func NewHnameFromBytes(data []byte) (ret Hname, err error) {
 // Hn beware collisions: hash is only 4 bytes!
 // must always be checked against the whole table for collisions and adjusted
 func Hn(funname string) (ret Hname) {
-	_ = ret.Read(bytes.NewReader(hashing.HashStrings(funname)[:4]))
+	_ = ret.Read(bytes.NewReader(hashing.HashStrings(funname)[:HnameLength]))
 	return ret
 }
 
 func (hn Hname) Bytes() []byte {
-	ret := make([]byte, 4)
+	ret := make([]byte, HnameLength)
 	binary.LittleEndian.PutUint32(ret, (uint32)(hn))
 	return ret
 }
@@ -42,12 +44,12 @@ func (hn *Hname) Write(w io.Writer) error {
 }
 
 func (hn *Hname) Read(r io.Reader) error {
-	var b [4]byte
+	var b [HnameLength]byte
 	n, err := r.Read(b[:])
 	if err != nil {
 		return err
 	}
-	if n != 4 {
+	if n != HnameLength {
 		return ErrWrongDataLength
 	}
 	t := binary.LittleEndian.Uint32(b[:])

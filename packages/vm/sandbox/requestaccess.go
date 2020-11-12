@@ -30,7 +30,7 @@ func (s *sandbox) MustSender() coretypes.AgentID {
 	if prop.IsState() {
 		return coretypes.NewAgentIDFromAddress(*s.vmctx.Request().Tx.MustProperties().Sender())
 	}
-	senderContractID := coretypes.NewContractID(*prop.MustChainID(), req.RequestSection().SenderContractIndex())
+	senderContractID := coretypes.NewContractID(*prop.MustChainID(), req.RequestSection().SenderContractHname())
 	return coretypes.NewAgentIDFromContractID(senderContractID)
 }
 

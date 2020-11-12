@@ -39,15 +39,15 @@ type VMContext struct {
 }
 
 type callContext struct {
-	contractIndex uint16
-	params        codec.ImmutableCodec
-	budget        coretypes.ColoredBalancesSpendable
+	contract coretypes.Hname
+	params   codec.ImmutableCodec
+	budget   coretypes.ColoredBalancesSpendable
 }
 
 // NewVMContext:
 // - creates state block in the tx builder, including moving the SC token
 // - handles request tokens by moving them either to the
-// reward address or sending it back to the requestor
+// reward address or sending it back to the requester
 // All request tokens are handled for the whole block
 func NewVMContext(task *vm.VMTask, txb *txbuilder.Builder) (*VMContext, error) {
 	// create state block and move smart contract token
