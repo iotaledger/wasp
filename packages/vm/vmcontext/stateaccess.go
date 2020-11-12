@@ -1,16 +1,12 @@
 package vmcontext
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
 func (vmctx *VMContext) addContractSubPartition(key kv.Key) kv.Key {
-	t := vmctx.ContractHname().Bytes()
-	ret := kv.Key(t) + key
-	fmt.Printf("$$addContractSubPartition: %v -> %v\n", []byte(key), []byte(ret))
-	return ret
+	return kv.Key(vmctx.ContractHname().Bytes()) + key
 }
 
 func (vmctx *VMContext) Has(name kv.Key) (bool, error) {

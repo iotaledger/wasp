@@ -45,8 +45,8 @@ func (scid ContractID) Base58() string {
 }
 
 const (
-	long_format  = "%s::%d"
-	short_format = "%s..::%d"
+	long_format  = "%s::%s"
+	short_format = "%s..::%s"
 )
 
 func (scid ContractID) String() string {

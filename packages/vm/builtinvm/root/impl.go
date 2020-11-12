@@ -31,32 +31,14 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if !ok {
 		chainDescription = "M/A"
 	}
-
 	contractRegistry := state.GetMap(VarContractRegistry)
-
 	if contractRegistry.Len() != 0 {
 		return nil, fmt.Errorf("root.initialize.fail: registry_not_empty")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
 	state.SetString(VarDescription, chainDescription)
-
-	b := EncodeContractRecord(GetRootContractRecord())
-	h := Hname.Bytes()
-
-	fmt.Printf("$$TEST : hname: %v -- record: %v registry name: %v\n", h, b, []byte(VarContractRegistry))
-	fmt.Printf("$$TEST context hname '%s' %v\n", ctx.GetContractID().Hname().String(), ctx.GetContractID().Hname().Bytes())
-
-	contractRegistry.SetAt([]byte("kuku"), []byte("zzz"))
-	contractRegistry.SetAt([]byte("mumu"), []byte("zzz"))
-	contractRegistry.SetAt(h, []byte("zzz"))
-	fmt.Println()
-	l := contractRegistry.Len()
-	contractRegistry.Iterate(func(elemKey []byte, value []byte) bool {
-		fmt.Printf("$$TEST (len = %d) key %v : value %v\n", l, elemKey, value)
-		return true
-	})
-
+	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
 	ctx.Eventf("root.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }

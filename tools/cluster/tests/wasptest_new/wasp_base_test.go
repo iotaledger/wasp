@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -47,29 +48,11 @@ func TestDeployChain(t *testing.T) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 1, contractRegistry.Len())
 
-		// TMP
-		contractRegistry.Iterate(func(elemKey []byte, value []byte) bool {
-			t.Logf("&&&&&&&&&& key = %v -- %v", elemKey, value)
-			return true
-		})
-
-		crBytes := contractRegistry.GetAt([]byte("kuku"))
-		require.True(t, bytes.Equal(crBytes, []byte("zzz")))
-
-		crBytes = contractRegistry.GetAt([]byte("mumu"))
-		require.True(t, bytes.Equal(crBytes, []byte("zzz")))
-
-		rn := root.Hname.Bytes()
-		t.Logf("&&&&& root.hname %v", rn)
-
-		crBytes = contractRegistry.GetAt(rn)
-		t.Logf("&&&&& crbytes %v", crBytes)
-
-		//require.NotNil(t, crBytes)
-		//require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-		require.True(t, bytes.Equal(crBytes, []byte("zzz")))
+		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
+		require.NotNil(t, crBytes)
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
 
 		return true
 	})

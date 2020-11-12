@@ -59,8 +59,8 @@ func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCo
 }
 
 func (req *RequestSection) String() string {
-	return fmt.Sprintf("[[senderAddress: %d, target: %s, entry point: '%s', args: %s]]",
-		req.senderContractHname, req.targetContractID.String(), req.entryPoint.String(), req.args.String())
+	return fmt.Sprintf("[[senderAddress: %s, target: %s, entry point: '%s', args: %s]]",
+		req.senderContractHname.String(), req.targetContractID.String(), req.entryPoint.String(), req.args.String())
 }
 
 func (req *RequestSection) Clone() *RequestSection {
