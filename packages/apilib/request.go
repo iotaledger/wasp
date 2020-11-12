@@ -104,7 +104,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 }
 
 func convertArgs(vars map[string]interface{}) dict.Dict {
-	ret := dict.NewDict()
+	ret := dict.New()
 	args := codec.NewCodec(ret)
 	for k, v := range vars {
 		key := kv.Key(k)

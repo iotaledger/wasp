@@ -161,7 +161,7 @@ func spawn(ctx vmtypes.Sandbox) error {
 	if err != nil {
 		ctx.Panic(err)
 	}
-	par := codec.NewCodec(dict.NewDict())
+	par := codec.NewCodec(dict.New())
 	par.SetInt64(VarCounter, val+1)
 	spawnedContractIndex, err := ctx.DeployContract("examplevm", hashBin[:], "", "Inccounter spawned", par)
 	if err != nil {
