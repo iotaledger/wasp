@@ -1,32 +1,18 @@
 package wasmhost
 
-import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-)
-
 type ScContract struct {
 	MapObject
 }
 
 func (o *ScContract) Exists(keyId int32) bool {
-	switch keyId {
-	case KeyAddress:
-	case KeyColor:
-	case KeyDescription:
-	case KeyId:
-	case KeyName:
-	case KeyOwner:
-	default:
-		return false
-	}
-	return true
+	return o.GetTypeId(keyId) >= 0
 }
 
 func (o *ScContract) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case KeyAddress:
-		id := o.vm.ctx.GetContractID()
-		return id[:coretypes.ChainIDLength]
+		id := o.vm.ctx.GetChainID()
+		return id[:]
 	case KeyColor: //TODO
 	case KeyId:
 		id := o.vm.ctx.GetContractID()
@@ -45,4 +31,22 @@ func (o *ScContract) GetString(keyId int32) string {
 	case KeyName: //TODO
 	}
 	return o.MapObject.GetString(keyId)
+}
+
+func (o *ScContract) GetTypeId(keyId int32) int32 {
+	switch keyId {
+	case KeyAddress:
+		return OBJTYPE_BYTES
+	case KeyColor:
+		return OBJTYPE_BYTES
+	case KeyDescription:
+		return OBJTYPE_STRING
+	case KeyId:
+		return OBJTYPE_STRING
+	case KeyName:
+		return OBJTYPE_STRING
+	case KeyOwner:
+		return OBJTYPE_BYTES
+	}
+	return -1
 }

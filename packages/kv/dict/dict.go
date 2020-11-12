@@ -34,12 +34,12 @@ func FromGoMap(m map[kv.Key][]byte) Dict {
 }
 
 func FromKVStore(kvs kv.KVStore) (Dict, error) {
-	d := make(Dict)
+	m := make(Dict)
 	err := kvs.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
-		d[k] = v
+		m[k] = v
 		return true
 	})
-	return d, err
+	return m, err
 }
 
 func (m Dict) sortedKeys() []kv.Key {
@@ -56,13 +56,17 @@ func (m Dict) sortedKeys() []kv.Key {
 func (m Dict) String() string {
 	ret := "         Dict:\n"
 	for _, key := range m.sortedKeys() {
+		val := m[key]
+		if len(val) >80 {
+			val = val[:80]
+		}
 		ret += fmt.Sprintf(
 			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
 			slice(hex.EncodeToString([]byte(key))),
-			slice(hex.EncodeToString(m[key])),
-			slice(base58.Encode(m[key])),
+			slice(hex.EncodeToString(val)),
+			slice(base58.Encode(val)),
 			string(key),
-			string(m[key]),
+			string(val),
 		)
 	}
 	return ret

@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -220,61 +219,4 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		return true
 	})
 
-}
-
-func TestDeployExternalContractOnly(t *testing.T) {
-	clu := setup(t, "test_cluster")
-
-	err := clu.ListenToMessages(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
-	})
-	check(err, t)
-
-	chain, err := clu.DeployDefaultChain()
-	check(err, t)
-
-	wasmName := "increment"
-	hname := coretypes.Hn(wasmName)
-	description := "Wasm PoC increment"
-	err = loadWasmIntoWasps(chain, wasmName, description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-	})
-	check(err, t)
-
-	if !clu.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
-
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, 2, blockIndex)
-
-		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 2, contractRegistry.Len())
-		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-
-		crBytes = contractRegistry.GetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, wasmtimevm.PluginName, cr.VMType)
-		require.EqualValues(t, wasmName, cr.Name)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
-		return true
-	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 42, counterValue)
-		return true
-
-	})
 }

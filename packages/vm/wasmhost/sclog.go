@@ -8,10 +8,19 @@ type ScLogs struct {
 	MapObject
 }
 
+func (o *ScLogs) Exists(keyId int32) bool {
+	_, ok := o.objects[keyId]
+	return ok
+}
+
 func (o *ScLogs) GetObjectId(keyId int32, typeId int32) int32 {
-	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
-		keyId: {OBJTYPE_MAP_ARRAY, func() WaspObject { return &ScLog{} }},
+	return GetMapObjectId(o, keyId, typeId, MapFactories{
+		keyId: func() WaspObject { return &ScLog{} },
 	})
+}
+
+func (o *ScLogs) GetTypeId(keyId int32) int32 {
+	return OBJTYPE_MAP_ARRAY
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -32,6 +41,10 @@ func (a *ScLog) InitVM(vm *wasmProcessor, keyId int32) {
 	a.logEntryId = a.vm.TrackObject(a.logEntry)
 }
 
+func (a *ScLog) Exists(keyId int32) bool {
+	return uint32(keyId) <= a.lines.Len()
+}
+
 func (a *ScLog) GetInt(keyId int32) int64 {
 	switch keyId {
 	case KeyLength:
@@ -42,13 +55,21 @@ func (a *ScLog) GetInt(keyId int32) int64 {
 
 func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 	if typeId != OBJTYPE_MAP {
-		a.error("GetObjectId: Invalid type")
+		a.Error("GetObjectId: Invalid type")
 		return 0
 	}
-	if keyId == int32(a.lines.Len()) {
+	//TODO can only access new entries for now
+	if uint32(keyId) == a.lines.Len() {
 		return a.logEntryId
 	}
 	return a.ArrayObject.GetObjectId(keyId, typeId)
+}
+
+func (a *ScLog) GetTypeId(keyId int32) int32 {
+	if a.Exists(keyId) {
+		return OBJTYPE_MAP
+	}
+	return -1
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -69,13 +90,23 @@ func (o *ScLogEntry) Exists(keyId int32) bool {
 	return true
 }
 
+func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
+	switch keyId {
+	case KeyData:
+		return OBJTYPE_BYTES
+	case KeyTimestamp:
+		return OBJTYPE_INT
+	}
+	return -1
+}
+
 func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case KeyData:
 		o.lines.Append(o.timestamp, value)
 		return
 	}
-	o.error("SetBytes: Invalid key")
+	o.Error("SetBytes: Invalid key")
 }
 
 func (o *ScLogEntry) SetInt(keyId int32, value int64) {
@@ -84,5 +115,5 @@ func (o *ScLogEntry) SetInt(keyId int32, value int64) {
 		o.timestamp = value
 		return
 	}
-	o.error("SetInt: Invalid key")
+	o.Error("SetInt: Invalid key")
 }
