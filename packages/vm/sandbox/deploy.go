@@ -22,7 +22,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		}
 	} else {
 		// calling root contract from another contract to install contract
-		par := codec.NewCodec(dict.NewDict())
+		par := codec.NewCodec(dict.New())
 		par.SetString(root.ParamVMType, vmtype)
 		par.Set(root.ParamProgramBinary, programBinary)
 		par.SetString(root.ParamName, name)

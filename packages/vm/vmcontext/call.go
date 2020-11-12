@@ -2,8 +2,10 @@ package vmcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
 // CallContract
@@ -15,7 +17,7 @@ func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.
 		return nil, fmt.Errorf("failed to find contract with hname %s", contract.String())
 	}
 
-	proc, err := vmctx.getProcessor(rec)
+	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +48,7 @@ func (vmctx *VMContext) CallView(contractHname coretypes.Hname, epCode coretypes
 		return nil, fmt.Errorf("failed to find contract with index %d", contractHname)
 	}
 
-	proc, err := vmctx.getProcessor(rec)
+	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}

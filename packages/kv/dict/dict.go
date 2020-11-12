@@ -44,7 +44,7 @@ func FromKVStore(kvs kv.KVStore) (Dict, error) {
 
 func (m Dict) sortedKeys() []kv.Key {
 	keys := make([]kv.Key, 0)
-	for k := range m {
+	for k := range d {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool {
@@ -55,14 +55,14 @@ func (m Dict) sortedKeys() []kv.Key {
 
 func (m Dict) String() string {
 	ret := "         Dict:\n"
-	for _, key := range m.sortedKeys() {
+	for _, key := range d.sortedKeys() {
 		ret += fmt.Sprintf(
 			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
 			slice(hex.EncodeToString([]byte(key))),
-			slice(hex.EncodeToString(m[key])),
-			slice(base58.Encode(m[key])),
+			slice(hex.EncodeToString(d[key])),
+			slice(base58.Encode(d[key])),
 			string(key),
-			string(m[key]),
+			string(d[key]),
 		)
 	}
 	return ret
@@ -88,8 +88,8 @@ func (m Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	if m == nil {
 		return
 	}
-	for _, k := range m.sortedKeys() {
-		if !fun(k, m[k]) {
+	for _, k := range d.sortedKeys() {
+		if !fun(k, d[k]) {
 			return // abort when callback returns false
 		}
 	}
@@ -103,7 +103,7 @@ func (m Dict) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
-	m[key] = value
+	d[key] = value
 }
 
 func (m Dict) Del(key kv.Key) {
@@ -153,7 +153,7 @@ func (m Dict) Write(w io.Writer) error {
 		if err := util.WriteBytes16(w, []byte(k)); err != nil {
 			return err
 		}
-		if err := util.WriteBytes32(w, m[k]); err != nil {
+		if err := util.WriteBytes32(w, d[k]); err != nil {
 			return err
 		}
 	}
@@ -175,7 +175,33 @@ func (m Dict) Read(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		m.Set(kv.Key(k), v)
+		d.Set(kv.Key(k), v)
+	}
+	return nil
+}
+
+type jsonItem struct {
+	Key   []byte
+	Value []byte
+}
+
+func (d Dict) MarshalJSON() ([]byte, error) {
+	items := make([]jsonItem, d.Len())
+	for i, k := range d.sortedKeys() {
+		items[i].Key = []byte(k)
+		items[i].Value = d[k]
+	}
+	return json.Marshal(items)
+}
+
+func (d *Dict) UnmarshalJSON(b []byte) error {
+	var items []jsonItem
+	if err := json.Unmarshal(b, &items); err != nil {
+		return err
+	}
+	*d = make(Dict)
+	for _, item := range items {
+		(*d)[kv.Key(item.Key)] = item.Value
 	}
 	return nil
 }

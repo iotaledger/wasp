@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestDeployChain(t *testing.T) {
@@ -111,6 +110,19 @@ func TestDeployContractOnly(t *testing.T) {
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
+
+	// test calling root.FuncFindContractByName view function using client
+	ret, err := chain.Cluster.WaspClient(0).StateView(
+		chain.ContractID(0),
+		root.FuncFindContractByName,
+		dict.FromGoMap(map[kv.Key][]byte{
+			root.ParamName: codec.EncodeString("testIncCounter"),
+		}),
+	)
+	check(err, t)
+	index, ok := codec.NewMustCodec(ret).GetInt64(root.ParamIndex)
+	require.True(t, ok)
+	require.EqualValues(t, 1, index)
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
@@ -241,7 +253,7 @@ func TestDeployExternalContractOnly(t *testing.T) {
 	wasmName := "increment"
 	hname := coretypes.Hn(wasmName)
 	description := "Wasm PoC increment"
-	err = loadWasmIntoWasps(chain, wasmName, description, map[string]interface{}{
+	err = deployContract(chain, wasmName, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 	})
 	check(err, t)

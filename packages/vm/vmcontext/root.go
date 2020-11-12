@@ -1,13 +1,10 @@
 package vmcontext
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // installProgram is a privileged call for root contract
@@ -68,39 +65,7 @@ func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*roo
 }
 
 func (vmctx *VMContext) getBinary(deploymentHash *hashing.HashValue) ([]byte, bool) {
-	params := codec.NewCodec(dict.NewDict())
-	params.SetHashValue(root.ParamHash, deploymentHash)
-	res, err := vmctx.callRoot(root.EntryPointGetBinary, params)
-	if err != nil {
-		return nil, false
-	}
-	data, err := res.Get(root.ParamData)
-	if err != nil {
-		return nil, false
-	}
-	return data, true
-}
-
-func (vmctx *VMContext) getProcessor(rec *root.ContractRecord) (vmtypes.Processor, error) {
-	if proc, ok := vmctx.processors.GetProcessor(&rec.DeploymentHash); ok {
-		return proc, nil
-	}
-	// load processor to the cache
-	binary, ok := vmctx.getBinary(&rec.DeploymentHash)
-	if !ok {
-		return nil, fmt.Errorf("internal error: can't get the binary for the program")
-	}
-	deploymentHash, err := vmctx.processors.NewProcessor(binary, rec.VMType)
-	if err != nil {
-		return nil, err
-	}
-	if *deploymentHash != rec.DeploymentHash {
-		return nil, fmt.Errorf("internal error: *deploymentHash != rec.DeploymentHash")
-	}
-	if proc, ok := vmctx.processors.GetProcessor(deploymentHash); ok {
-		return proc, nil
-	}
-	return nil, fmt.Errorf("internal error: can't get the deployed processor")
+	return root.GetBinary(deploymentHash, vmctx.callRoot)
 }
 
 func (vmctx *VMContext) callRoot(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {

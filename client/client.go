@@ -104,7 +104,7 @@ func (c *WaspClient) do(method string, route string, reqObj interface{}, resObj 
 	// make the request
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("Request failed: %v", err)
 	}
 
 	// write response into response object

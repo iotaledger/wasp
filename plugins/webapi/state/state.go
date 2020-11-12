@@ -15,14 +15,14 @@ import (
 	"github.com/labstack/echo"
 )
 
-func AddEndpoints(server *echo.Echo) {
+func addStateQueryEndpoint(server *echo.Echo) {
 	server.GET("/"+client.StateQueryRoute(":chainID"), handleStateQuery)
 }
 
 func handleStateQuery(c echo.Context) error {
 	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %+v", c.Param("chainID")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
 
 	var req statequery.Request

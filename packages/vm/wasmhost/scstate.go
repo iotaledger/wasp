@@ -41,7 +41,10 @@ func (o *ScState) GetInt(keyId int32) int64 {
 }
 
 func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
-	var factory func() WaspObject
+	if !o.valid(keyId, typeId) {
+		return 0
+	}
+	var factory MapFactory
 	switch typeId {
 	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_STRING_ARRAY:
 		//note that type of array elements can be found by decrementing typeId
@@ -49,11 +52,11 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	case OBJTYPE_MAP:
 		factory = func() WaspObject { return &ScStateMap{} }
 	default:
-		o.error("GetObjectId: Invalid type")
+		o.Error("GetObjectId: Invalid type")
 		return 0
 	}
-	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
-		keyId: {typeId, factory},
+	return GetMapObjectId(o, keyId, typeId, MapFactories{
+		keyId: factory,
 	})
 }
 
@@ -64,6 +67,14 @@ func (o *ScState) GetString(keyId int32) string {
 	key := o.vm.GetKey(keyId)
 	value, _ := o.vm.ctx.AccessState().GetString(key)
 	return value
+}
+
+func (o *ScState) GetTypeId(keyId int32) int32 {
+	typeId, ok := o.types[keyId]
+	if ok {
+		return typeId
+	}
+	return -1
 }
 
 func (o *ScState) SetBytes(keyId int32, value []byte) {
@@ -97,7 +108,7 @@ func (o *ScState) valid(keyId int32, typeId int32) bool {
 		return true
 	}
 	if fieldType != typeId {
-		o.error("valid: Invalid access")
+		o.Error("valid: Invalid access")
 		return false
 	}
 	return true
@@ -119,7 +130,7 @@ func (a *ScStateArray) InitVM(vm *wasmProcessor, keyId int32) {
 }
 
 func (a *ScStateArray) Exists(keyId int32) bool {
-	return keyId >= 0 && keyId < int32(a.items.Len())
+	return uint32(keyId) <= uint32(a.items.Len())
 }
 
 func (a *ScStateArray) GetBytes(keyId int32) []byte {
@@ -149,6 +160,13 @@ func (a *ScStateArray) GetString(keyId int32) string {
 	return string(a.items.GetAt(uint16(keyId)))
 }
 
+func (a *ScStateArray) GetTypeId(keyId int32) int32 {
+	if a.Exists(keyId) {
+		return a.typeId
+	}
+	return -1
+}
+
 func (a *ScStateArray) SetBytes(keyId int32, value []byte) {
 	if !a.valid(keyId, OBJTYPE_BYTES) {
 		return
@@ -176,7 +194,7 @@ func (a *ScStateArray) SetString(keyId int32, value string) {
 
 func (a *ScStateArray) valid(keyId int32, typeId int32) bool {
 	if a.typeId != typeId {
-		a.error("valid: Invalid access")
+		a.Error("valid: Invalid access")
 		return false
 	}
 	max := int32(a.items.Len())
@@ -189,13 +207,13 @@ func (a *ScStateArray) valid(keyId int32, typeId int32) bool {
 		case OBJTYPE_STRING:
 			a.items.Push([]byte(""))
 		default:
-			a.error("valid: Invalid type id")
+			a.Error("valid: Invalid type id")
 			return false
 		}
 		return true
 	}
 	if keyId < 0 || keyId >= max {
-		a.error("valid: Invalid index")
+		a.Error("valid: Invalid index")
 		return false
 	}
 	return true
@@ -240,7 +258,7 @@ func (m *ScStateMap) GetInt(keyId int32) int64 {
 }
 
 func (m *ScStateMap) GetObjectId(keyId int32, typeId int32) int32 {
-	m.error("GetObjectId: Invalid access")
+	m.Error("GetObjectId: Invalid access")
 	return 0
 }
 
@@ -250,6 +268,14 @@ func (m *ScStateMap) GetString(keyId int32) string {
 	}
 	key := []byte(m.vm.GetKey(keyId))
 	return string(m.items.GetAt(key))
+}
+
+func (m *ScStateMap) GetTypeId(keyId int32) int32 {
+	typeId, ok := m.types[keyId]
+	if ok {
+		return typeId
+	}
+	return -1
 }
 
 func (m *ScStateMap) SetBytes(keyId int32, value []byte) {
@@ -262,7 +288,7 @@ func (m *ScStateMap) SetBytes(keyId int32, value []byte) {
 
 func (m *ScStateMap) SetInt(keyId int32, value int64) {
 	if keyId == KeyLength {
-		m.error("SetInt: Invalid clear")
+		m.Error("SetInt: Invalid clear")
 		return
 	}
 	if !m.valid(keyId, OBJTYPE_INT) {
@@ -287,7 +313,7 @@ func (m *ScStateMap) valid(keyId int32, typeId int32) bool {
 		return true
 	}
 	if fieldType != typeId {
-		m.error("valid: Invalid access")
+		m.Error("valid: Invalid access")
 		return false
 	}
 	return true

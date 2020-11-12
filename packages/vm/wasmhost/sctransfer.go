@@ -12,6 +12,22 @@ type ScTransfer struct {
 	color   balance.Color
 }
 
+func (o *ScTransfer) Exists(keyId int32) bool {
+	return o.GetTypeId(keyId) >= 0
+}
+
+func (o *ScTransfer) GetTypeId(keyId int32) int32 {
+	switch keyId {
+	case KeyAddress:
+		return OBJTYPE_BYTES
+	case KeyColor:
+		return OBJTYPE_BYTES
+	case KeyAmount:
+		return OBJTYPE_INT
+	}
+	return -1
+}
+
 func (o *ScTransfer) Send() {
 	o.vm.Trace("TRANSFER a%d c'%s' a'%s'", o.amount, o.color.String(), o.address.String())
 	if !o.vm.ctx.AccessSCAccount().MoveTokens(&o.address, &o.color, o.amount) {
@@ -58,11 +74,18 @@ type ScTransfers struct {
 }
 
 func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
-	return a.GetArrayObjectId(keyId, typeId, func() WaspObject {
+	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		transfer := &ScTransfer{}
 		transfer.name = "transfer"
 		return transfer
 	})
+}
+
+func (a *ScTransfers) GetTypeId(keyId int32) int32 {
+	if a.Exists(keyId) {
+		return OBJTYPE_MAP
+	}
+	return -1
 }
 
 func (a *ScTransfers) SetInt(keyId int32, value int64) {
@@ -70,10 +93,10 @@ func (a *ScTransfers) SetInt(keyId int32, value int64) {
 	case KeyLength:
 		a.objects = nil
 	default:
-		a.error("SetInt: Invalid access")
+		a.Error("SetInt: Invalid access")
 	}
 }
 
 func (a *ScTransfers) SetString(keyId int32, value string) {
-	a.error("SetString: Invalid access")
+	a.Error("SetString: Invalid access")
 }

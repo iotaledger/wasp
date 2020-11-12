@@ -9,7 +9,7 @@ import (
 )
 
 func TestBasicMap(t *testing.T) {
-	vars := dict.NewDict()
+	vars := dict.New()
 	m, err := NewMap(vars, "testMap")
 	assert.NoError(t, err)
 
