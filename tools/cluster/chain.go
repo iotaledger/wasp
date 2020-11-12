@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
@@ -88,7 +87,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 		if err != nil {
 			panic(err)
 		}
-		if !f(host, actual.Index, codec.NewMustCodec(dict.FromGoMap(actual.Variables))) {
+		if !f(host, actual.Index, codec.NewMustCodec(actual.Variables)) {
 			pass = false
 		}
 	}

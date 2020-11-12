@@ -53,6 +53,8 @@ type ImmutableMustCodec interface {
 	GetAddress(key kv.Key) (*address.Address, bool)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
+	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
+	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
 
 	GetArray(kv.Key) *datatypes.MustArray
 	GetMap(kv.Key) *datatypes.MustMap
@@ -133,8 +135,22 @@ func (c codec) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) err
 	return c.kv.Iterate(prefix, f)
 }
 
+func (c mustcodec) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	err := c.kv.Iterate(prefix, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (c codec) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return c.kv.IterateKeys(prefix, f)
+}
+
+func (c mustcodec) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+	err := c.kv.IterateKeys(prefix, f)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c mustcodec) Has(key kv.Key) bool {
