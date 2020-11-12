@@ -39,9 +39,9 @@ type VMContext struct {
 }
 
 type callContext struct {
-	contractHname coretypes.Hname
-	params        codec.ImmutableCodec
-	budget        coretypes.ColoredBalancesSpendable
+	contract coretypes.Hname
+	params   codec.ImmutableCodec
+	budget   coretypes.ColoredBalancesSpendable
 }
 
 // NewVMContext:

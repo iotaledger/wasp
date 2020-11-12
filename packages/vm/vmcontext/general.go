@@ -23,7 +23,7 @@ func (vmctx *VMContext) ChainID() coretypes.ChainID {
 }
 
 func (vmctx *VMContext) ContractHname() coretypes.Hname {
-	return vmctx.getCallContext().contractHname
+	return vmctx.getCallContext().contract
 }
 
 func (vmctx *VMContext) OwnerAddress() *address.Address {

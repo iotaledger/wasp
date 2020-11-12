@@ -1,12 +1,16 @@
 package vmcontext
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
 func (vmctx *VMContext) addContractSubPartition(key kv.Key) kv.Key {
-	return kv.Key(vmctx.ContractHname().Bytes()) + key
+	t := vmctx.ContractHname().Bytes()
+	ret := kv.Key(t) + key
+	fmt.Printf("$$addContractSubPartition: %v -> %v\n", []byte(key), []byte(ret))
+	return ret
 }
 
 func (vmctx *VMContext) Has(name kv.Key) (bool, error) {
@@ -20,7 +24,7 @@ func (vmctx *VMContext) Has(name kv.Key) (bool, error) {
 
 func (vmctx *VMContext) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	prefix = vmctx.addContractSubPartition(prefix)
-	// TODO is ot correct?
+	// TODO is it correct?
 	seen, done := vmctx.stateUpdate.Mutations().IterateValues(prefix, f)
 	if done {
 		return nil

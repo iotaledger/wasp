@@ -12,9 +12,9 @@ func (vmctx *VMContext) PushCallContext(contractHname coretypes.Hname, params co
 	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contractHname, len(vmctx.callStack))
 
 	vmctx.callStack = append(vmctx.callStack, &callContext{
-		contractHname: contractHname,
-		params:        params,
-		budget:        budget,
+		contract: contractHname,
+		params:   params,
+		budget:   budget,
 	})
 	// TODO check budget
 	return nil
