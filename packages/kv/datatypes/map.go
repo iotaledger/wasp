@@ -3,7 +3,6 @@ package datatypes
 import (
 	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -156,16 +155,9 @@ func (d *Map) Erase() {
 	panic("implement me")
 }
 
-// Iterate non-deterministic
 func (d *Map) Iterate(f func(elemKey []byte, value []byte) bool) error {
-	prefix := d.getElemKey(nil)
-	fmt.Printf("$$TEST Map::Iterate.prefix = %v\n", []byte(prefix))
+	prefix := d.getElemKey([]byte{})
 	return d.kv.Iterate(prefix, func(key kv.Key, value []byte) bool {
-		return f([]byte(key)[len(prefix):], value)
+		return f([]byte(key[len(prefix):]), value)
 	})
-}
-
-// Iterate non-deterministic
-func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) error {
-	return d.m.Iterate(f)
 }

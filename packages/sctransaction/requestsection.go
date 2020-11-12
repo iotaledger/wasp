@@ -23,7 +23,7 @@ type RequestSection struct {
 	// senderAddress contract index
 	// - if state block present, it is index of the sending contracts
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
-	senderContractHname coretypes.Hname
+	senderContractIndex uint16
 	// ID of the target smart contract
 	targetContractID coretypes.ContractID
 	// entry point code
@@ -44,9 +44,9 @@ type RequestRef struct {
 }
 
 // RequestSection creates new request block
-func NewRequestSection(senderContractHname coretypes.Hname, targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
+func NewRequestSection(senderContractIndex uint16, targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
 	return &RequestSection{
-		senderContractHname: senderContractHname,
+		senderContractIndex: senderContractIndex,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
 		args:                dict.New(),
@@ -59,21 +59,21 @@ func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCo
 }
 
 func (req *RequestSection) String() string {
-	return fmt.Sprintf("[[senderAddress: %s, target: %s, entry point: '%s', args: %s]]",
-		req.senderContractHname.String(), req.targetContractID.String(), req.entryPoint.String(), req.args.String())
+	return fmt.Sprintf("[[senderAddress: %d, target: %s, entry point: '%s', args: %s]]",
+		req.senderContractIndex, req.targetContractID.String(), req.entryPoint.String(), req.args.String())
 }
 
 func (req *RequestSection) Clone() *RequestSection {
 	if req == nil {
 		return nil
 	}
-	ret := NewRequestSection(req.senderContractHname, req.targetContractID, req.entryPoint)
+	ret := NewRequestSection(req.senderContractIndex, req.targetContractID, req.entryPoint)
 	ret.args = req.args.Clone()
 	return ret
 }
 
-func (req *RequestSection) SenderContractHname() coretypes.Hname {
-	return req.senderContractHname
+func (req *RequestSection) SenderContractIndex() uint16 {
+	return req.senderContractIndex
 }
 
 func (req *RequestSection) Target() coretypes.ContractID {
@@ -110,7 +110,7 @@ func (req *RequestSection) WithTimelockUntil(deadline time.Time) *RequestSection
 // encoding
 
 func (req *RequestSection) Write(w io.Writer) error {
-	if err := req.senderContractHname.Write(w); err != nil {
+	if err := util.WriteUint16(w, req.senderContractIndex); err != nil {
 		return err
 	}
 	if err := req.targetContractID.Write(w); err != nil {
@@ -129,7 +129,7 @@ func (req *RequestSection) Write(w io.Writer) error {
 }
 
 func (req *RequestSection) Read(r io.Reader) error {
-	if err := req.senderContractHname.Read(r); err != nil {
+	if err := util.ReadUint16(r, &req.senderContractIndex); err != nil {
 		return err
 	}
 	if err := req.targetContractID.Read(r); err != nil {
@@ -152,10 +152,6 @@ func (req *RequestSection) Read(r io.Reader) error {
 
 func (ref *RequestRef) RequestSection() *RequestSection {
 	return ref.Tx.Requests()[ref.Index]
-}
-
-func (ref *RequestRef) SenderContractHname() coretypes.Hname {
-	return ref.RequestSection().senderContractHname
 }
 
 func (ref *RequestRef) RequestID() *coretypes.RequestID {
@@ -190,6 +186,6 @@ func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) 
 		err = fmt.Errorf("request not sent by the smart contract: %s", ref.RequestID().String())
 		return
 	}
-	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())
+	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.Index)
 	return
 }

@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 type SCStateDump struct {
-	Index     uint32    `json:"index"`
-	Variables dict.Dict `json:"variables"`
+	Index     uint32            `json:"index"`
+	Variables map[kv.Key][]byte `json:"variables"`
 }
 
 func DumpSCStateRoute(scid string) string {

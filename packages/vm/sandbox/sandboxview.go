@@ -31,6 +31,6 @@ func (s sandboxView) Accounts() coretypes.ColoredAccountsImmutable {
 	return s.vmctx.Accounts()
 }
 
-func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	return s.vmctx.CallView(contractHname, entryPoint, params)
+func (s sandboxView) Call(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	return s.vmctx.CallView(contractIndex, entryPoint, params)
 }

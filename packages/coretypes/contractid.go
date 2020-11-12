@@ -3,17 +3,18 @@ package coretypes
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/mr-tron/base58"
 	"io"
 )
 
-const ContractIDLength = ChainIDLength + HnameLength
+const ContractIDLength = ChainIDLength + 2
 
 type ContractID [ContractIDLength]byte
 
-func NewContractID(chid ChainID, contractHn Hname) (ret ContractID) {
+func NewContractID(chid ChainID, index uint16) (ret ContractID) {
 	copy(ret[:ChainIDLength], chid[:])
-	copy(ret[ChainIDLength:], contractHn.Bytes())
+	copy(ret[ChainIDLength:], util.Uint16To2Bytes(index))
 	return
 }
 
@@ -35,9 +36,8 @@ func (scid ContractID) ChainID() (ret ChainID) {
 	return
 }
 
-func (scid ContractID) Hname() Hname {
-	ret, _ := NewHnameFromBytes(scid[ChainIDLength:])
-	return ret
+func (scid ContractID) Index() uint16 {
+	return util.Uint16From2Bytes(scid[ChainIDLength:])
 }
 
 func (scid ContractID) Base58() string {
@@ -45,16 +45,16 @@ func (scid ContractID) Base58() string {
 }
 
 const (
-	long_format  = "%s::%s"
-	short_format = "%s..::%s"
+	long_format  = "%s::%d"
+	short_format = "%s..::%d"
 )
 
 func (scid ContractID) String() string {
-	return fmt.Sprintf(long_format, scid.ChainID().String(), scid.Hname().String())
+	return fmt.Sprintf(long_format, scid.ChainID().String(), scid.Index())
 }
 
 func (scid ContractID) Short() string {
-	return fmt.Sprintf(short_format, scid.ChainID().String()[:8], scid.Hname().String())
+	return fmt.Sprintf(short_format, scid.ChainID().String()[:8], scid.Index())
 }
 
 func (scid *ContractID) Read(r io.Reader) error {
