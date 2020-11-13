@@ -140,9 +140,9 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	// ----------- create origin transaction
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:        *chainAddr,
-		OwnerSignatureScheme: par.OriginatorSigScheme,
-		AllInputs:            allOuts,
+		OriginAddress:             *chainAddr,
+		OriginatorSignatureScheme: par.OriginatorSigScheme,
+		AllInputs:                 allOuts,
 	})
 
 	fmt.Fprint(textout, par.Prefix)
