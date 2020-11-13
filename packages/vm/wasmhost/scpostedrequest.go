@@ -45,7 +45,7 @@ func (o *ScPostedRequest) GetTypeId(keyId int32) int32 {
 func (o *ScPostedRequest) Send() {
 	function := o.vm.codeToFunc[o.code]
 	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, base58.Encode(o.contract))
-	chainID := o.vm.ctx.GetChainID()
+	chainID := o.vm.ctx.ChainID()
 	if !bytes.Equal(o.contract, chainID[:]) {
 		//TODO handle external contract
 		o.vm.Trace("Unknown chain id")

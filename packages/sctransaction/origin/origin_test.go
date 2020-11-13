@@ -29,10 +29,10 @@ func TestReadWrite(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx, err := NewOriginTransaction(NewOriginTransactionParams{
-		OriginAddress:        scAddr,
-		OwnerSignatureScheme: ownerSigScheme,
-		AllInputs:            u.GetAddressOutputs(ownerSigScheme.Address()),
-		ProgramHash:          *hashing.HashStrings(dscr),
+		OriginAddress:             scAddr,
+		OriginatorSignatureScheme: ownerSigScheme,
+		AllInputs:                 u.GetAddressOutputs(ownerSigScheme.Address()),
+		ProgramHash:               *hashing.HashStrings(dscr),
 	})
 	assert.NoError(t, err)
 	t.Logf("created transaction txid = %s", tx.ID().String())

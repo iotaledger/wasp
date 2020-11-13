@@ -15,7 +15,7 @@ func PutChainRecord(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, er
 
 	fmt.Printf("[cluster] creating chain record for smart contract addr: %s\n", sc.Address)
 
-	ownerAddr := sc.OwnerAddress()
+	ownerAddr := sc.OriginatorAddress()
 	_, ok := requested[*ownerAddr]
 	if !ok {
 		err := clu.NodeClient.RequestFunds(ownerAddr)
@@ -52,7 +52,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, error) 
 	err = clu.MultiClient().PutChainRecord(&registry.ChainRecord{
 		ChainID:        addr,
 		Color:          color,
-		OwnerAddress:   *sc.OwnerAddress(),
+		OwnerAddress:   *sc.OriginatorAddress(),
 		CommitteeNodes: committeePeerNodes,
 		AccessNodes:    accessPeerNodes,
 	})
