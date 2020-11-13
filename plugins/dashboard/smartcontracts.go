@@ -175,7 +175,7 @@ const tplSc = `
 		<div>
 			<h3>Chain record</h3>
 			<p>Target: {{template "address" .ChainRecord.Target}}</p>
-			<p>Owner address:   {{template "address" .ChainRecord.OwnerAddress}}</p>
+			<p>Owner address:   {{template "address" .ChainRecord.OriginatorAddress}}</p>
 			<p>Color:           <code>{{.ChainRecord.Color}}</code></p>
 			<p>Committee Nodes: <code>{{.ChainRecord.CommitteeNodes}}</code></p>
 			<p>Access Nodes:    <code>{{.ChainRecord.AccessNodes}}</code></p>

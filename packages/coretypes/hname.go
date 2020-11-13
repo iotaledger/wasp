@@ -24,7 +24,12 @@ func NewHnameFromBytes(data []byte) (ret Hname, err error) {
 // Hn beware collisions: hash is only 4 bytes!
 // must always be checked against the whole table for collisions and adjusted
 func Hn(funname string) (ret Hname) {
-	_ = ret.Read(bytes.NewReader(hashing.HashStrings(funname)[:HnameLength]))
+	h := hashing.HashStrings(funname)
+	_ = ret.Read(bytes.NewReader(h[:HnameLength]))
+	if ret == 0 || ret == Hname(^uint32(0)) {
+		// ensure 0 and ^0 are impossible
+		_ = ret.Read(bytes.NewReader(h[HnameLength : 2*HnameLength]))
+	}
 	return ret
 }
 

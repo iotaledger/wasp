@@ -170,9 +170,6 @@ func consistentChainRecords(bd1, bd2 *registry.ChainRecord) bool {
 	if bd1.ChainID != bd2.ChainID {
 		return false
 	}
-	if bd1.OwnerAddress != bd2.OwnerAddress {
-		return false
-	}
 	if bd1.Color != bd2.Color {
 		return false
 	}

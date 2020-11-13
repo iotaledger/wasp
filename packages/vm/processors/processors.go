@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
@@ -20,8 +21,8 @@ func MustNew() *ProcessorCache {
 		Mutex:      &sync.Mutex{},
 		processors: make(map[hashing.HashValue]vmtypes.Processor),
 	}
-	// default builtin processor has nil hash
-	_, err := ret.NewProcessor(hashing.NilHash[:], builtinvm.VMType)
+	// default builtin processor has root contract hash
+	_, err := ret.NewProcessor(root.ProgramHash[:], builtinvm.VMType)
 	if err != nil {
 		panic(err)
 	}

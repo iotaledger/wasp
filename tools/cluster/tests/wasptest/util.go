@@ -21,7 +21,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.Chain) error {
 
 	fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
 
-	ownerAddr := sc.OwnerAddress()
+	ownerAddr := sc.OriginatorAddress()
 	sh := tx.MustState().StateHash()
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
