@@ -21,7 +21,7 @@ import (
 type Chain struct {
 	Description string
 
-	OwnerSeed *seed.Seed
+	OriginatorSeed *seed.Seed
 
 	CommitteeNodes []int
 	AccessNodes    []int
@@ -45,17 +45,22 @@ func (ch *Chain) CommitteeApi() []string {
 	return ch.Cluster.WaspHosts(ch.CommitteeNodes, (*WaspNodeConfig).ApiHost)
 }
 
-func (ch *Chain) OwnerAddress() *address.Address {
-	addr := ch.OwnerSeed.Address(0).Address
+func (ch *Chain) OriginatorAddress() *address.Address {
+	addr := ch.OriginatorSeed.Address(0).Address
 	return &addr
 }
 
-func (ch *Chain) OwnerSigScheme() signaturescheme.SignatureScheme {
-	return signaturescheme.ED25519(*ch.OwnerSeed.KeyPair(0))
+func (ch *Chain) OriginatorID() *coretypes.AgentID {
+	ret := coretypes.NewAgentIDFromAddress(*ch.OriginatorAddress())
+	return &ret
 }
 
-func (ch *Chain) OwnerClient() *chainclient.Client {
-	return ch.Client(ch.OwnerSigScheme())
+func (ch *Chain) OriginatorSigScheme() signaturescheme.SignatureScheme {
+	return signaturescheme.ED25519(*ch.OriginatorSeed.KeyPair(0))
+}
+
+func (ch *Chain) OriginatorClient() *chainclient.Client {
+	return ch.Client(ch.OriginatorSigScheme())
 }
 
 func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
@@ -109,7 +114,7 @@ func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr s
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OwnerClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +137,7 @@ func (ch *Chain) DeployExternalContract(vmtype string, name string, description 
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OwnerClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
 	if err != nil {
 		return nil, err
 	}

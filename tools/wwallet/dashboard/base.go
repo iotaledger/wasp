@@ -92,7 +92,7 @@ const TplSCInfo = `
 		<p>SC address: {{template "address" .Status.TargetContract}}</p>
 		<p>Program hash: <code>{{.Status.ProgramHash}}</code></p>
 		<p>Description of the instance: <code>{{trim .Status.Description}}</code></p>
-		<p>Owner address: {{template "address" .Status.OwnerAddress}}</p>
+		<p>Owner address: {{template "address" .Status.OriginatorAddress}}</p>
 		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
 		<p>Color: <code>{{.Config.ChainRecord.Color}}</code></p>
 		<p>Committee nodes:

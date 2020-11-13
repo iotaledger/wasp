@@ -39,6 +39,7 @@ type ImmutableCodec interface {
 	GetAddress(key kv.Key) (*address.Address, bool, error)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool, error)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool, error)
+	GetAgentID(key kv.Key) (*coretypes.AgentID, bool, error)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
 }
@@ -53,6 +54,7 @@ type ImmutableMustCodec interface {
 	GetAddress(key kv.Key) (*address.Address, bool)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
+	GetAgentID(key kv.Key) (*coretypes.AgentID, bool)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
 
@@ -72,6 +74,7 @@ type wCodec interface {
 	SetAddress(key kv.Key, value *address.Address)
 	SetHashValue(key kv.Key, value *hashing.HashValue)
 	SetChainID(key kv.Key, value *coretypes.ChainID)
+	SetAgentID(key kv.Key, value *coretypes.AgentID)
 	Append(from ImmutableCodec) error
 }
 
@@ -327,6 +330,28 @@ func (c mustcodec) GetChainID(key kv.Key) (*coretypes.ChainID, bool) {
 
 func (c codec) SetChainID(key kv.Key, chid *coretypes.ChainID) {
 	c.kv.Set(key, chid[:])
+}
+
+func (c codec) GetAgentID(key kv.Key) (*coretypes.AgentID, bool, error) {
+	var b []byte
+	b, err := c.kv.Get(key)
+	if err != nil || b == nil {
+		return nil, false, err
+	}
+	ret, err := coretypes.NewAgentIDFromBytes(b)
+	return &ret, err == nil, err
+}
+
+func (c mustcodec) GetAgentID(key kv.Key) (*coretypes.AgentID, bool) {
+	ret, ok, err := c.codec.GetAgentID(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret, ok
+}
+
+func (c codec) SetAgentID(key kv.Key, aid *coretypes.AgentID) {
+	c.kv.Set(key, aid[:])
 }
 
 func (c codec) Append(from ImmutableCodec) error {

@@ -87,14 +87,14 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 
 	chain := &Chain{
 		Description:    description,
-		OwnerSeed:      ownerSeed,
+		OriginatorSeed: ownerSeed,
 		CommitteeNodes: committeeNodes,
 		AccessNodes:    accessNodes,
 		Quorum:         quorum,
 		Cluster:        clu,
 	}
 
-	err := clu.NodeClient.RequestFunds(chain.OwnerAddress())
+	err := clu.NodeClient.RequestFunds(chain.OriginatorAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		AccessNodes:           clu.WaspHosts(accessNodes, (*WaspNodeConfig).PeeringHost),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
-		OriginatorSigScheme:   chain.OwnerSigScheme(),
+		OriginatorSigScheme:   chain.OriginatorSigScheme(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",

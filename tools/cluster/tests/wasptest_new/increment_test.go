@@ -28,6 +28,15 @@ func TestIncDeployment(t *testing.T) {
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
 
+		chid, _ := state.GetChainID(root.VarChainID)
+		require.EqualValues(t, &chain.ChainID, chid)
+
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		require.EqualValues(t, chain.Description, desc)
+
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
 		//--
@@ -65,7 +74,7 @@ func testNothing(t *testing.T, numRequests int) {
 	clu, chain := setupAndLoad(t, incName, incDescription, numRequests, nil)
 
 	for i := 0; i < numRequests; i++ {
-		tx, err := chain.OwnerClient().PostRequest(incHname, coretypes.Hn("nothing"), nil, nil, nil)
+		tx, err := chain.OriginatorClient().PostRequest(incHname, coretypes.Hn("nothing"), nil, nil, nil)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -77,6 +86,15 @@ func testNothing(t *testing.T, numRequests int) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, numRequests+2, blockIndex)
+
+		chid, _ := state.GetChainID(root.VarChainID)
+		require.EqualValues(t, &chain.ChainID, chid)
+
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
@@ -102,7 +120,6 @@ func testNothing(t *testing.T, numRequests int) {
 	})
 }
 
-
 func TestIncIncrement(t *testing.T) {
 	testIncrement(t, 1)
 }
@@ -115,7 +132,7 @@ func testIncrement(t *testing.T, numRequests int) {
 	clu, chain := setupAndLoad(t, incName, incDescription, numRequests, nil)
 
 	for i := 0; i < numRequests; i++ {
-		tx, err := chain.OwnerClient().PostRequest(incHname, coretypes.Hn("increment"), nil, nil, nil)
+		tx, err := chain.OriginatorClient().PostRequest(incHname, coretypes.Hn("increment"), nil, nil, nil)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -127,6 +144,15 @@ func testIncrement(t *testing.T, numRequests int) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, numRequests+2, blockIndex)
+
+		chid, _ := state.GetChainID(root.VarChainID)
+		require.EqualValues(t, &chain.ChainID, chid)
+
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())

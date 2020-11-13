@@ -202,6 +202,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		return nil, nil, nil, err
 	}
 
+	// NOTE: whoever send first init request, is an owner of the chain
 	// create root init transaction
 	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainid,
