@@ -11,6 +11,9 @@ import (
 	"io"
 )
 
+// Version of the root contract
+const Version = "0.1"
+
 // state variables
 const (
 	VarStateInitialized   = "i"
@@ -40,9 +43,10 @@ const (
 	FuncGetBinary      = "getBinary"
 )
 
-const ContractName = "root"
+const ContractName = "root " + Version
 
 var (
+	ProgramHash              = hashing.HashStrings(ContractName)
 	Hname                    = coretypes.Hn(ContractName)
 	EntryPointDeployContract = coretypes.Hn(FuncDeployContract)
 	EntryPointFindContract   = coretypes.Hn(FuncFindContract)
@@ -74,7 +78,6 @@ var (
 		EntryPointFindContract:       {epFuncView(findContract)},
 		EntryPointGetBinary:          {epFuncView(getBinary)},
 	}
-	ProgramHash = hashing.NilHash
 )
 
 func GetProcessor() vmtypes.Processor {
