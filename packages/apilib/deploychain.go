@@ -26,7 +26,7 @@ type CreateChainParams struct {
 	AccessNodes           []string
 	N                     uint16
 	T                     uint16
-	OwnerSigScheme        signaturescheme.SignatureScheme
+	OriginatorSigScheme   signaturescheme.SignatureScheme
 	Description           string
 	Textout               io.Writer
 	Prefix                string
@@ -108,11 +108,11 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	ownerAddr := par.OwnerSigScheme.Address()
+	originatorAddr := par.OriginatorSigScheme.Address()
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address is %s. Parameters N = %d, T = %d\n",
-		ownerAddr.String(), par.N, par.T)
+		originatorAddr.String(), par.N, par.T)
 	// check if SC is hardcoded. If not, require consistent metadata in all nodes
 	fmt.Fprint(textout, par.Prefix)
 
@@ -128,7 +128,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 
 	// ----------- request owner address' outputs from the ledger
-	allOuts, err := par.Node.GetConfirmedAccountOutputs(&ownerAddr)
+	allOuts, err := par.Node.GetConfirmedAccountOutputs(&originatorAddr)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
@@ -141,7 +141,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// ----------- create origin transaction
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:        *chainAddr,
-		OwnerSignatureScheme: par.OwnerSigScheme,
+		OwnerSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:            allOuts,
 	})
 
@@ -170,10 +170,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&registry.ChainRecord{
 		ChainID:        chainid,
-		OwnerAddress:   ownerAddr,
 		Color:          (balance.Color)(originTx.ID()),
 		CommitteeNodes: par.CommitteePeeringHosts,
-		AccessNodes:    par.AccessNodes,
 	})
 
 	fmt.Fprint(textout, par.Prefix)
@@ -198,7 +196,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// TODO to via chainclient with timeout etc
 
 	// ------------- get UTXOs of the owner
-	allOuts, err = par.Node.GetConfirmedAccountOutputs(&ownerAddr)
+	allOuts, err = par.Node.GetConfirmedAccountOutputs(&originatorAddr)
 	if err != nil {
 		fmt.Fprintf(textout, "GetConfirmedAccountOutputs.. FAILED: %v\n", err)
 		return nil, nil, nil, err
@@ -207,7 +205,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// create root init transaction
 	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainid,
-		OwnerSignatureScheme: par.OwnerSigScheme,
+		OwnerSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:            allOuts,
 		Description:          par.Description,
 	})

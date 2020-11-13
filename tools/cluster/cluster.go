@@ -106,7 +106,7 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		AccessNodes:           clu.WaspHosts(accessNodes, (*WaspNodeConfig).PeeringHost),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
-		OwnerSigScheme:        chain.OwnerSigScheme(),
+		OriginatorSigScheme:   chain.OwnerSigScheme(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",

@@ -32,7 +32,6 @@ type chainObj struct {
 	//
 	chainID         coretypes.ChainID
 	procset         *processors.ProcessorCache
-	ownerAddress    address.Address
 	color           balance.Color
 	peers           []*peering.Peer
 	size            uint16
@@ -55,12 +54,8 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation
 	log.Debugw("creating committee", "addr", chr.ChainID.String())
 
 	addr := chr.ChainID
-	if util.ContainsDuplicates(chr.CommitteeNodes) ||
-		util.ContainsDuplicates(chr.AccessNodes) ||
-		util.IntersectsLists(chr.CommitteeNodes, chr.AccessNodes) ||
-		util.ContainsInList(peering.MyNetworkId(), chr.AccessNodes) {
-
-		log.Errorf("can't create committee object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
+	if util.ContainsDuplicates(chr.CommitteeNodes) {
+		log.Errorf("can't create chain object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
 			addr.String(), chr.CommitteeNodes)
 		return nil
 	}
@@ -72,32 +67,18 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation
 	}
 
 	if !keyExists {
-		// if key doesn't exists, the node still can provide access to the smart contract state as an "access node"
-		// for access nodes, committee nodes are ignored
-		if len(chr.AccessNodes) > 0 {
-			log.Info("can't find private key. Node will run as an access node for the address %s", addr.String())
-		} else {
-			log.Errorf("private key wasn't found and no access peers specified. Node can't run for the address %s", addr.String())
-			return nil
-		}
-	} else {
-		if !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, dkshare.Index) {
-			log.Errorf("chain record inconsistency: the own node %s is not in the committee for %s: %+v",
-				peering.MyNetworkId(), addr.String(), chr.CommitteeNodes)
-			return nil
-		}
-		// check for owner address. It is mandatory for the committee node
-		var niladdr address.Address
-		if chr.OwnerAddress == niladdr {
-			log.Errorf("undefined owner address for the committee node. Dismiss. Addr = %s", addr.String())
-			return nil
-		}
+		log.Errorf("private key wasn't found. Can't continue as committee node. Chain ID: %s", chr.ChainID.String())
+		return nil
+	}
+	if !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, dkshare.Index) {
+		log.Errorf("chain record inconsistency: the own node %s is not in the committee for %s: %+v",
+			peering.MyNetworkId(), addr.String(), chr.CommitteeNodes)
+		return nil
 	}
 	ret := &chainObj{
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      chr.ChainID,
-		ownerAddress: chr.OwnerAddress,
 		color:        chr.Color,
 		peers:        make([]*peering.Peer, 0),
 		onActivation: onActivation,
@@ -123,12 +104,6 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation
 			// at this point must be exactly 1 element in ret.peers == to nil,
 			// the one with the index in the committee
 			ret.log.Panicf("failed to initialize peers of the committee. committeePeers: %+v. myId: %s", chr.CommitteeNodes, peering.MyNetworkId())
-		}
-	}
-	for _, remoteLocation := range chr.AccessNodes {
-		p := peering.UsePeer(remoteLocation)
-		if p != nil {
-			ret.peers = append(ret.peers, p)
 		}
 	}
 

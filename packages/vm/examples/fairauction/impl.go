@@ -457,7 +457,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := (address.Address)(ctx.GetContractID().ChainID())
+	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")
@@ -545,9 +545,9 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 		}
 	}
 
-	// take fee for the smart contract owner
-	feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
-	ctx.Eventf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken)
+	// take fee for the smart contract owner TODO
+	//feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
+	//ctx.Eventf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken)
 
 	if winner != nil {
 		// send sold tokens to the winner
@@ -603,10 +603,11 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	ctx.Event("setOwnerMargin: begin")
 	params := ctx.Params()
 
-	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
-		// not authorized
-		return fmt.Errorf("setOwnerMargin: not authorized")
-	}
+	// TODO refactor to the new account system
+	//if ctx.AccessRequest().MustSenderAddress() != *ctx.OriginatorAddress() {
+	//	// not authorized
+	//	return fmt.Errorf("setOwnerMargin: not authorized")
+	//}
 	margin, ok, err := params.GetInt64(VarReqOwnerMargin)
 	if err != nil || !ok {
 		return fmt.Errorf("setOwnerMargin: exit 1")
@@ -624,15 +625,11 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 // TODO implement universal 'refund' function to be used in rollback situations
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
 func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64) {
-	account := ctx.AccessSCAccount()
-	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
-	available := account.AvailableBalanceFromRequest(color)
-	sender := ctx.AccessRequest().MustSenderAddress()
-	ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
-	account.MoveTokensFromRequest(&sender, color, available)
-}
-
-// TODO generic solution of on-contract logging
-func logToSC(ctx vmtypes.Sandbox, msg string) {
-	ctx.AccessState().GetTimestampedLog(VarStateLog).Append(ctx.GetTimestamp(), []byte(msg))
+	// TODO
+	//account := ctx.AccessSCAccount()
+	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
+	//available := account.AvailableBalanceFromRequest(color)
+	//sender := ctx.AccessRequest().MustSenderAddress()
+	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
+	//account.MoveTokensFromRequest(&sender, color, available)
 }

@@ -3,7 +3,6 @@ package registry
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -18,10 +17,8 @@ import (
 // it is up to the node (not smart contract) to check authorisations to create/update this record
 type ChainRecord struct {
 	ChainID        coretypes.ChainID
-	OwnerAddress   address.Address // only needed for committee nodes, can be nil for access nodes
-	Color          balance.Color   // origin tx hash
-	CommitteeNodes []string        // "host_addr:port"
-	AccessNodes    []string        // "host_addr:port"
+	Color          balance.Color // origin tx hash
+	CommitteeNodes []string      // "host_addr:port"
 	Active         bool
 }
 
@@ -119,16 +116,10 @@ func (bd *ChainRecord) Write(w io.Writer) error {
 	if err := bd.ChainID.Write(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(bd.OwnerAddress[:]); err != nil {
-		return err
-	}
 	if _, err := w.Write(bd.Color[:]); err != nil {
 		return err
 	}
 	if err := util.WriteStrings16(w, bd.CommitteeNodes); err != nil {
-		return err
-	}
-	if err := util.WriteStrings16(w, bd.AccessNodes); err != nil {
 		return err
 	}
 	if err := util.WriteBoolByte(w, bd.Active); err != nil {
@@ -142,16 +133,10 @@ func (bd *ChainRecord) Read(r io.Reader) error {
 	if err = bd.ChainID.Read(r); err != nil {
 		return err
 	}
-	if err = util.ReadAddress(r, &bd.OwnerAddress); err != nil {
-		return err
-	}
 	if err = util.ReadColor(r, &bd.Color); err != nil {
 		return err
 	}
 	if bd.CommitteeNodes, err = util.ReadStrings16(r); err != nil {
-		return err
-	}
-	if bd.AccessNodes, err = util.ReadStrings16(r); err != nil {
 		return err
 	}
 	if err = util.ReadBoolByte(r, &bd.Active); err != nil {
@@ -163,8 +148,6 @@ func (bd *ChainRecord) Read(r io.Reader) error {
 func (bd *ChainRecord) String() string {
 	ret := "      Target: " + bd.ChainID.String() + "\n"
 	ret += "      Color: " + bd.Color.String() + "\n"
-	ret += "      Owner address: " + bd.OwnerAddress.String() + "\n"
 	ret += fmt.Sprintf("      Committee nodes: %+v\n", bd.CommitteeNodes)
-	ret += fmt.Sprintf("      Access nodes: %+v\n", bd.AccessNodes)
 	return ret
 }

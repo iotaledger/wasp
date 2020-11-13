@@ -1,7 +1,6 @@
 package chains
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -9,7 +8,6 @@ import (
 
 type ChainStatus struct {
 	ID           *coretypes.ChainID
-	OwnerAddress *address.Address
 	Color        *balance.Color
 	Size         uint16
 	Quorum       uint16
@@ -26,7 +24,6 @@ func GetStatus(chainID *coretypes.ChainID) *ChainStatus {
 	}
 	return &ChainStatus{
 		ID:           c.ID(),
-		OwnerAddress: c.OwnerAddress(),
 		Color:        c.Color(),
 		Size:         c.Size(),
 		Quorum:       c.Quorum(),

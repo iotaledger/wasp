@@ -15,6 +15,7 @@ import (
 const (
 	VarStateInitialized   = "i"
 	VarChainID            = "c"
+	VarChainOwnerID       = "o"
 	VarRegistryOfBinaries = "b"
 	VarContractRegistry   = "r"
 	VarDescription        = "d"

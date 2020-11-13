@@ -114,7 +114,7 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		CommitteePeeringHosts: wasps.PeeringHosts(),
 		N:                     4,
 		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
+		OriginatorSigScheme:   scOwner.SigScheme(),
 		ProgramHash:           programHash,
 		Description:           scDescription,
 		Textout:               os.Stdout,

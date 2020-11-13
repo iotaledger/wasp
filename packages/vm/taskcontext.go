@@ -25,7 +25,6 @@ type VMTask struct {
 	// deterministic source of entropy (pseudorandom, unpredictable for parties)
 	Entropy       hashing.HashValue
 	Balances      map[valuetransaction.ID][]*balance.Balance
-	OwnerAddress  address.Address
 	RewardAddress address.Address
 	MinimumReward int64
 	Requests      []sctransaction.RequestRef

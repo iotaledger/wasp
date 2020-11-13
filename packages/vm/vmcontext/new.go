@@ -20,7 +20,6 @@ type VMContext struct {
 	// same for the block
 	chainID            coretypes.ChainID
 	processors         *processors.ProcessorCache
-	ownerAddress       address.Address
 	rewardAddress      address.Address
 	minimumReward      int64
 	nodeRewardsEnabled bool
@@ -86,7 +85,6 @@ func NewVMContext(task *vm.VMTask, txb *txbuilder.Builder) (*VMContext, error) {
 	ret := &VMContext{
 		processors:         task.Processors,
 		chainID:            task.ChainID,
-		ownerAddress:       task.OwnerAddress,
 		rewardAddress:      task.RewardAddress,
 		minimumReward:      task.MinimumReward,
 		nodeRewardsEnabled: nodeRewardsEnabled,

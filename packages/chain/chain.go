@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -15,7 +14,6 @@ import (
 
 type Chain interface {
 	ID() *coretypes.ChainID
-	OwnerAddress() *address.Address
 	Color() *balance.Color
 	Size() uint16
 	Quorum() uint16
