@@ -26,10 +26,6 @@ func (vmctx *VMContext) ContractHname() coretypes.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) OwnerAddress() *address.Address {
-	return &vmctx.ownerAddress
-}
-
 func (vmctx *VMContext) Timestamp() int64 {
 	return vmctx.timestamp
 }

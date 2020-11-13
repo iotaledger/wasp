@@ -157,7 +157,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		AccessNodes:           []string{},
 		N:                     uint16(len(params.Committee)),
 		T:                     uint16(params.Quorum),
-		OwnerSigScheme:        params.SigScheme,
+		OriginatorSigScheme:   params.SigScheme,
 		ProgramHash:           params.progHash(),
 		Description:           params.Description,
 		Textout:               os.Stdout,

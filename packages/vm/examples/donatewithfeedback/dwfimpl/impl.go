@@ -139,10 +139,11 @@ func withdraw(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("DonateWithFeedback: withdraw")
 	params := ctx.Params()
 
-	if ctx.AccessRequest().MustSenderAddress() != *ctx.GetOwnerAddress() {
-		// not authorized
-		return fmt.Errorf("withdraw: not authorized")
-	}
+	// TODO refactor to the new account system
+	//if ctx.AccessRequest().MustSenderAddress() != *ctx.OriginatorAddress() {
+	//	// not authorized
+	//	return fmt.Errorf("withdraw: not authorized")
+	//}
 	// take argument value coming with the request
 	bal := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
 	withdrawSum, amountGiven, err := params.GetInt64(donatewithfeedback.VarReqWithdrawSum)
@@ -167,7 +168,8 @@ func withdraw(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("DonateWithFeedback: withdraw. nothing to withdraw")
 	}
 	// transfer iotas to the owner address
-	ctx.AccessSCAccount().MoveTokens(ctx.GetOwnerAddress(), &balance.ColorIOTA, withdrawSum)
-	ctx.Eventf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum)
+	// TODO refactor to new account system
+	//ctx.AccessSCAccount().MoveTokens(ctx.OriginatorAddress(), &balance.ColorIOTA, withdrawSum)
+	//ctx.Eventf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum)
 	return nil
 }

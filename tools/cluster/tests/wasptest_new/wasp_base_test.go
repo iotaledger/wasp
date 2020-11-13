@@ -40,6 +40,9 @@ func TestDeployChain(t *testing.T) {
 		chid, _ := state.GetChainID(root.VarChainID)
 		require.EqualValues(t, &chain.ChainID, chid)
 
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
 		desc, _ := state.GetString(root.VarDescription)
 		require.EqualValues(t, chain.Description, desc)
 
@@ -86,6 +89,15 @@ func TestDeployContractOnly(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
+		chid, _ := state.GetChainID(root.VarChainID)
+		require.EqualValues(t, &chain.ChainID, chid)
+
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		require.EqualValues(t, chain.Description, desc)
+
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
 
@@ -143,6 +155,15 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
+		chid, _ := state.GetChainID(root.VarChainID)
+		require.EqualValues(t, &chain.ChainID, chid)
+
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		require.EqualValues(t, chain.Description, desc)
+
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
 		//--
@@ -171,7 +192,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OwnerClient().PostRequest(hname, inccounter.EntryPointSpawn, nil, nil, map[string]interface{}{
+	tx, err := chain.OriginatorClient().PostRequest(hname, inccounter.EntryPointSpawn, nil, nil, map[string]interface{}{
 		inccounter.VarName:        nameNew,
 		inccounter.VarDescription: dscrNew,
 	})
@@ -182,6 +203,15 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 3, blockIndex)
+		chid, _ := state.GetChainID(root.VarChainID)
+		require.EqualValues(t, &chain.ChainID, chid)
+
+		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		require.EqualValues(t, *chain.OriginatorID(), *aid)
+
+		desc, _ := state.GetString(root.VarDescription)
+		require.EqualValues(t, chain.Description, desc)
+
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 3, contractRegistry.Len())
 		//--

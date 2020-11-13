@@ -11,19 +11,23 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-// initialize is a handler for the "initialize" request
-// It stores chain ID in the state and creates record for root contract in the contract registry at 0 index
+// initialize is a handler for the "init" request
+// It stores chain ID in the state and creates record for root contract in the contract registry
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	params := ctx.Params()
 	ctx.Eventf("root.initialize.begin")
 	state := ctx.AccessState()
 	if state.Get(VarStateInitialized) != nil {
+		// can't be initialized twice
 		return nil, fmt.Errorf("root.initialize.fail: already_initialized")
 	}
+	// retrieving init parameters
+	// -- chain ID
 	chainID, ok, err := params.GetChainID(ParamChainID)
 	if err != nil {
 		return nil, fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", ParamChainID, err.Error())
 	}
+	// -- description
 	chainDescription, ok, err := params.GetString(ParamDescription)
 	if err != nil {
 		return nil, fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", ParamDescription, err.Error())
@@ -31,12 +35,15 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if !ok {
 		chainDescription = "M/A"
 	}
+	sender := ctx.AccessRequest().MustSender()
+
 	contractRegistry := state.GetMap(VarContractRegistry)
 	if contractRegistry.Len() != 0 {
 		return nil, fmt.Errorf("root.initialize.fail: registry_not_empty")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.SetChainID(VarChainID, chainID)
+	state.SetAgentID(VarChainOwnerID, &sender) // chain owner is whoever sends init request
 	state.SetString(VarDescription, chainDescription)
 	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
 	ctx.Eventf("root.initialize.success hname = %s", Hname.String())

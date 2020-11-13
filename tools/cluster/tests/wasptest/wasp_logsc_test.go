@@ -37,7 +37,7 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 
 func TestLogsc1(t *testing.T) {
 	clu, sc := startLogSC(t, map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -53,7 +53,7 @@ func TestLogsc1(t *testing.T) {
 			"message": "message 0",
 		},
 	}}
-	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
+	err := SendRequestsNTimes(clu, sc.OriginatorSigScheme(), 1, reqs)
 	check(err, t)
 
 	if !clu.WaitUntilExpectationsMet() {
@@ -70,7 +70,7 @@ func TestLogsc1(t *testing.T) {
 
 func TestLogsc5(t *testing.T) {
 	clu, sc := startLogSC(t, map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -88,7 +88,7 @@ func TestLogsc5(t *testing.T) {
 			},
 		}
 	})
-	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
+	err := SendRequestsNTimes(clu, sc.OriginatorSigScheme(), 1, reqs)
 	check(err, t)
 
 	if !clu.WaitUntilExpectationsMet() {
