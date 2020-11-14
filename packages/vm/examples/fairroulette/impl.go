@@ -182,7 +182,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	}
 	firstBet := state.GetArray(StateVarBets).Len() == 0
 
-	reqid := ctx.AccessRequest().ID()
+	reqid := ctx.RequestID()
 	betInfo := &BetInfo{
 		Player: sender,
 		Sum:    sum,
@@ -254,7 +254,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+	scAddr := (address.Address)(ctx.MyContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
@@ -281,7 +281,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+	scAddr := (address.Address)(ctx.MyContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
@@ -350,7 +350,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+		scAddr := (address.Address)(ctx.MyContractID().ChainID())
 		if !ctx.AccessSCAccount().MoveTokens(&scAddr, &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")

@@ -172,7 +172,7 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	return nil
 }
 
-func (prop *Properties) Sender() *address.Address {
+func (prop *Properties) SenderAddress() *address.Address {
 	return &prop.senderAddress
 }
 

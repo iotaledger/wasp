@@ -7,7 +7,7 @@ import (
 )
 
 // CallContract
-func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByHname(contract)
@@ -25,7 +25,7 @@ func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.
 		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
 	}
 
-	if err := vmctx.PushCallContext(contract, params, budget); err != nil {
+	if err := vmctx.PushCallContext(contract, params, transfer); err != nil {
 		return nil, err
 	}
 	defer vmctx.PopCallContext()

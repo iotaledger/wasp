@@ -33,14 +33,14 @@ type VMContext struct {
 	timestamp   int64
 	stateUpdate state.StateUpdate // mutated
 	callStack   []*callContext
-
-	accountsWrapper
 }
 
 type callContext struct {
-	contract coretypes.Hname
-	params   codec.ImmutableCodec
-	budget   coretypes.ColoredBalancesSpendable
+	isRequestContext bool                      // is called from the request (true) or from another SC (false)
+	caller           coretypes.AgentID         // calling agent
+	contract         coretypes.Hname           // called contract
+	params           codec.ImmutableCodec      // params passed
+	transfer         coretypes.ColoredBalances // transfer passed
 }
 
 // NewVMContext:
@@ -94,6 +94,5 @@ func NewVMContext(task *vm.VMTask, txb *txbuilder.Builder) (*VMContext, error) {
 		entropy:            task.Entropy,
 		callStack:          make([]*callContext, 0),
 	}
-	ret.accountsWrapper = accountsWrapper{ret}
 	return ret, nil
 }

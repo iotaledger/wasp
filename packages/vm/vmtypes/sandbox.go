@@ -13,16 +13,18 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
-	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
+	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
 
 	// general
 	ChainID() coretypes.ChainID
 	ChainOwnerID() coretypes.AgentID
+	IsRequestContext() bool
+	RequestID() coretypes.RequestID
 
 	// call context
 	Params() codec.ImmutableCodec
-	CurrentContractHname() coretypes.Hname
-	CurrentContractID() coretypes.ContractID
+	MyContractID() coretypes.ContractID
+	MyAgentID() coretypes.AgentID
 
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
@@ -66,11 +68,8 @@ type NewRequestParams struct {
 }
 
 // access to request
+// Deprecated
 type RequestAccess interface {
-	//request id
-	ID() coretypes.RequestID
-	// request code
-	EntryPointCode() coretypes.Hname
 	// Return address of non-contract sender
 	// Deprecated
 	MustSenderAddress() address.Address
@@ -100,9 +99,5 @@ type AccountAccess interface {
 // Accounts is an interface to access all functions with tokens
 // in the local context of the call to a smart contract
 type Accounts interface {
-	// gives all accounts of the current contract context
-	coretypes.ColoredAccounts
-	// Incoming is a collection of spendable colored balances (a.k.a. budget)
-	// It is coming either from request or from calling contract
-	Incoming() coretypes.ColoredBalancesSpendable
+	Transfer() coretypes.ColoredBalances
 }

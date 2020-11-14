@@ -34,16 +34,20 @@ func (s *sandbox) Rollback() {
 	s.vmctx.Rollback()
 }
 
-func (s *sandbox) CurrentContractID() coretypes.ContractID {
-	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractHname())
+func (s *sandbox) MyContractID() coretypes.ContractID {
+	return s.vmctx.CurrentContractID()
+}
+
+func (s *sandbox) MyAgentID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
+}
+
+func (s *sandbox) IsRequestContext() bool {
+	return s.vmctx.IsRequestContext()
 }
 
 func (s *sandbox) ChainID() coretypes.ChainID {
 	return s.vmctx.ChainID()
-}
-
-func (s *sandbox) CurrentContractHname() coretypes.Hname {
-	return s.vmctx.ContractHname()
 }
 
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {
@@ -93,7 +97,7 @@ func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args di
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.CurrentContractHname(), msg)
+	s.vmctx.Log().Infof("VMMSG contract %s '%s'", s.MyContractID().String(), msg)
 	s.vmctx.Publish(msg)
 }
 

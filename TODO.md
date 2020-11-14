@@ -20,14 +20,15 @@ Done
 - [x] wasp node dashboard: show structure of committee, which SCs are running, etc
 - [x] rename in codec and sandbox Dictionary to Map
 - [x] refactor in sandbox Publish to Event 
-
-Pending
-- [ ] discuss system of builtin contracts: factory, accounts, on-contract logging
 - [ ] discuss and introduce "view" entry points. Special read only sandbox 
 - [ ] discuss AgentID/sender structure. 
-- [ ] move all general interfaces from vmtypes, kv and similar to coretypes
 - [ ] refactor "contract index" to uint6(hash(name)[:4]) ????
-- [ ] refactor "variable name" to uint6(hash(name)[:4]) ????
+
+Pending
+- [ ] change params to MustCodec
+- [ ] discuss system of builtin contracts: factory, accounts, on-contract logging
+- [ ] move all general interfaces from vmtypes, kv and similar to coretypes
+- [ ] refactor "variable name" to uint6(hash(name)[:4]) ???? NO
 - [ ] wwallet: separate binaries for admin/client operations
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during

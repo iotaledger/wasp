@@ -18,7 +18,7 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 	key := o.vm.WasmHost.GetKey(keyId)
 	if o.requestOnly {
 		request := o.vm.ctx.AccessRequest()
-		reqId := request.ID()
+		reqId := o.vm.ctx.RequestID()
 		if bytes.Equal(key, reqId.TransactionID().Bytes()) {
 			return request.NumFreeMintedTokens()
 		}

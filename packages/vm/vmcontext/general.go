@@ -15,15 +15,23 @@ import (
 )
 
 func (vmctx *VMContext) Accounts() vmtypes.Accounts {
-	return &vmctx.accountsWrapper
+	return vmctx
 }
 
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
 	return vmctx.chainID
 }
 
-func (vmctx *VMContext) ContractHname() coretypes.Hname {
+func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
 	return vmctx.getCallContext().contract
+}
+
+func (vmctx *VMContext) IsRequestContext() bool {
+	return vmctx.getCallContext().isRequestContext
+}
+
+func (vmctx *VMContext) CurrentCaller() coretypes.AgentID {
+	return vmctx.getCallContext().caller
 }
 
 func (vmctx *VMContext) Timestamp() int64 {
@@ -53,7 +61,7 @@ func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
 			return false
 		}
 	}
-	reqBlock := sctransaction.NewRequestSection(vmctx.ContractHname(), par.TargetContractID, par.EntryPoint)
+	reqBlock := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint)
 	reqBlock.WithTimelock(par.Timelock)
 	reqBlock.SetArgs(par.Params)
 
@@ -65,7 +73,7 @@ func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
 
 func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
 	return vmctx.SendRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.ContractHname()),
+		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.CurrentContractHname()),
 		EntryPoint:       reqCode,
 		Params:           params,
 		IncludeReward:    0,
@@ -76,7 +84,7 @@ func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, a
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
 	return vmctx.SendRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.ContractHname()),
+		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.CurrentContractHname()),
 		EntryPoint:       entryPoint,
 		Params:           args,
 		Timelock:         timelock,
@@ -85,11 +93,11 @@ func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, a
 }
 
 func (vmctx *VMContext) Publish(msg string) {
-	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.ContractHname()), msg)
+	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.CurrentContractHname()), msg)
 }
 
 func (vmctx *VMContext) Publishf(format string, args ...interface{}) {
-	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.ContractHname()), fmt.Sprintf(format, args...))
+	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.CurrentContractHname()), fmt.Sprintf(format, args...))
 }
 
 func (vmctx *VMContext) Request() *sctransaction.RequestRef {

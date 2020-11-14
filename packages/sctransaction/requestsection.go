@@ -154,10 +154,6 @@ func (ref *RequestRef) RequestSection() *RequestSection {
 	return ref.Tx.Requests()[ref.Index]
 }
 
-func (ref *RequestRef) SenderContractHname() coretypes.Hname {
-	return ref.RequestSection().senderContractHname
-}
-
 func (ref *RequestRef) RequestID() *coretypes.RequestID {
 	ret := coretypes.NewRequestID(ref.Tx.ID(), ref.Index)
 	return &ret
@@ -181,8 +177,12 @@ func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
 	return auth
 }
 
+func (ref *RequestRef) SenderContractHname() coretypes.Hname {
+	return ref.RequestSection().senderContractHname
+}
+
 func (ref *RequestRef) SenderAddress() *address.Address {
-	return ref.Tx.MustProperties().Sender()
+	return ref.Tx.MustProperties().SenderAddress()
 }
 
 func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) {
@@ -192,4 +192,11 @@ func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) 
 	}
 	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())
 	return
+}
+
+func (ref *RequestRef) SenderAgentID() coretypes.AgentID {
+	if contractID, err := ref.SenderContractID(); err == nil {
+		return coretypes.NewAgentIDFromContractID(contractID)
+	}
+	return coretypes.NewAgentIDFromAddress(*ref.SenderAddress())
 }

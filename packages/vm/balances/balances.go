@@ -10,13 +10,13 @@ import (
 
 type coloredBalances map[balance.Color]int64
 
-func NewColoredBalancesMutable() coretypes.ColoredBalancesMutable {
-	return make(coloredBalances)
+func FromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
+	return coloredBalances(m)
 }
 
-func (b coloredBalances) Balance(col balance.Color) (int64, bool) {
-	ret, ok := b[col]
-	return ret, ok
+func (b coloredBalances) Balance(col balance.Color) int64 {
+	ret, _ := b[col]
+	return ret
 }
 
 func (b coloredBalances) Iterate(f func(col balance.Color, bal int64) bool) {
@@ -40,30 +40,4 @@ func (b coloredBalances) IterateDeterministic(f func(col balance.Color, bal int6
 			return
 		}
 	}
-}
-
-func (b coloredBalances) Add(col balance.Color, bal int64) bool {
-	v, found := b[col]
-	b[col] = v + bal
-	return found
-}
-
-func (b coloredBalances) Spend(target coretypes.ColoredBalancesMutable, col balance.Color, bal int64) bool {
-	v, found := b[col]
-	if !found || bal > v {
-		return false
-	}
-	b[col] = v - bal
-	if b[col] == 0 {
-		delete(b, col)
-	}
-	target.Add(col, bal)
-	return true
-}
-
-func (b coloredBalances) SpendAll(target coretypes.ColoredBalancesMutable) {
-	b.Iterate(func(col balance.Color, bal int64) bool {
-		b.Spend(target, col, bal)
-		return true
-	})
 }

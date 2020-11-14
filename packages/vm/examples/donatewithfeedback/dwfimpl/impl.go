@@ -93,7 +93,7 @@ func donate(ctx vmtypes.Sandbox) error {
 	// create donation info record
 	di := &donatewithfeedback.DonationInfo{
 		Seq:      int64(tlog.Len()),
-		Id:       ctx.AccessRequest().ID(),
+		Id:       ctx.RequestID(),
 		Amount:   donated,
 		Sender:   sender,
 		Feedback: feedback,

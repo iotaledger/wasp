@@ -457,7 +457,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+	scAddr := (address.Address)(ctx.MyContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")
