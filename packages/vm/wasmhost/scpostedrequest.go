@@ -6,13 +6,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/mr-tron/base58"
 )
 
 type ScPostedRequest struct {
 	MapObject
 	code     uint32
-	contract []byte
+	contract coretypes.AgentID
 	delay    int64
 }
 
@@ -44,11 +43,11 @@ func (o *ScPostedRequest) GetTypeId(keyId int32) int32 {
 
 func (o *ScPostedRequest) Send() {
 	function := o.vm.codeToFunc[o.code]
-	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, base58.Encode(o.contract))
-	chainID := o.vm.ctx.ChainID()
-	if !bytes.Equal(o.contract, chainID[:]) {
+	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, o.contract.String())
+	chainID := o.vm.ctx.CurrentContractID()
+	if !bytes.Equal(o.contract[:], chainID[:]) {
 		//TODO handle external contract
-		o.vm.Trace("Unknown chain id")
+		o.vm.Trace("Unknown contract id")
 		return
 	}
 
@@ -73,7 +72,7 @@ func (o *ScPostedRequest) Send() {
 func (o *ScPostedRequest) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case KeyContract:
-		o.contract = value
+		o.contract,_ = coretypes.NewAgentIDFromBytes(value)
 	default:
 		o.MapObject.SetBytes(keyId, value)
 	}
@@ -82,7 +81,7 @@ func (o *ScPostedRequest) SetBytes(keyId int32, value []byte) {
 func (o *ScPostedRequest) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		o.contract = nil
+		o.contract = coretypes.AgentID{}
 		o.code = 0
 		o.delay = 0
 	case KeyCode:

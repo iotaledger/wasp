@@ -4,12 +4,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 )
 
-const AgentIDLenght = ChainIDLength + HnameLength
+const AgentIDLength = ChainIDLength + HnameLength
 
 // AgentID assumes:
 // - ChainID is MustAddress
 // - AgentID is never used for contract with index 0  TODO ???
-type AgentID [AgentIDLenght]byte
+type AgentID [AgentIDLength]byte
 
 func NewAgentIDFromAddress(addr address.Address) (ret AgentID) {
 	copy(ret[HnameLength:], addr[:])
@@ -25,7 +25,7 @@ func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
 }
 
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
-	if len(data) != AgentIDLenght {
+	if len(data) != AgentIDLength {
 		err = ErrWrongDataLength
 		return
 	}
