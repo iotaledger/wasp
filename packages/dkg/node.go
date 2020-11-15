@@ -54,7 +54,7 @@ func (n *node) dropProcess(p *proc) bool {
 // DkgInit implements CoordNodeProvider.
 // peerAddrs here is always a slice of a single element equal to our node.
 func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
-	fmt.Printf("DkgInit on %v, dkgID=%v, msg.PeerLocs=%v\n", n.netProvider.Self().Location(), dkgID, msg.PeerLocs)
+	fmt.Printf("[%v] DkgInit, dkgID=%v, msg.PeerLocs=%v\n", n.netProvider.Self().Location(), dkgID, msg.PeerLocs)
 	var err error
 	var p *proc
 	if p, err = onCoordInit(dkgID, msg, n); err != nil {
@@ -67,7 +67,7 @@ func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
 
 // DkgStep implements CoordNodeProvider.
 func (n *node) DkgStep(peerAddrs []string, dkgID string, msg *StepReq) error {
-	fmt.Printf("DkgStep on %v, dkgID=%v, msg.Step=%v\n", n.netProvider.Self().Location(), dkgID, msg.Step)
+	fmt.Printf("[%v] DkgStep, dkgID=%v, msg.Step=%v\n", n.netProvider.Self().Location(), dkgID, msg.Step)
 	if p := n.processes[dkgID]; p != nil {
 		return p.onCoordStep(msg)
 	}

@@ -105,7 +105,7 @@ func newPeeringNode(location string, pubKey kyber.Point, secKey kyber.Scalar, ne
 		for {
 			var pm peeringMsg = <-recvCh
 			fmt.Printf(
-				"test.Net: %v received msgType=%v from=%v, chainID=%v\n",
+				"[%v] test.Net: received msgType=%v from=%v, chainID=%v\n",
 				node.location, pm.msg.MsgType, pm.from.location, pm.msg.ChainID,
 			)
 			msgChainID := pm.msg.ChainID.String()

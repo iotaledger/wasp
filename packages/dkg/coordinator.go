@@ -1,6 +1,8 @@
 package dkg
 
 import (
+	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -76,11 +78,29 @@ func GenerateDistributedKey(
 	if err = c.network.DkgStep(peerLocs, dkgID, &StepReq{Step: "4-R4-SendSecretCommits"}); err != nil {
 		return nil, err
 	}
-	// TODO:
-	// TODO: 5-R5-SendComplaintCommits
-	// TODO: 6-R6-ReconstructCommits
-	// TODO: 7-GetKeys
-	// TODO: 8-Commit
-
+	if err = c.network.DkgStep(peerLocs, dkgID, &StepReq{Step: "5-R5-SendComplaintCommits"}); err != nil {
+		return nil, err
+	}
+	//
+	// Now get the public keys.
+	// This also performs the "6-R6-SendReconstructCommits" step implicitly.
+	var pubKeyResponses []*PubKeyResp
+	if pubKeyResponses, err = c.network.DkgPubKey(peerLocs, dkgID); err != nil {
+		return nil, err
+	}
+	pubKeyBytes := pubKeyResponses[0].PubKey
+	for i := range pubKeyResponses {
+		if !bytes.Equal(pubKeyResponses[i].PubKey, pubKeyBytes) {
+			return nil, fmt.Errorf("nodes generated different public keys")
+		}
+	}
+	sharedPublic := suite.Point()
+	sharedPublic.UnmarshalBinary(pubKeyBytes)
+	fmt.Printf("COORD: Shared public key: %v\n", sharedPublic)
+	//
+	// Commit the keys to persistent storage.
+	if err = c.network.DkgStep(peerLocs, dkgID, &StepReq{Step: "7-CommitAndTerminate"}); err != nil {
+		return nil, err
+	}
 	return &c, nil
 }
