@@ -87,14 +87,14 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 
 	chain := &Chain{
 		Description:    description,
-		OwnerSeed:      ownerSeed,
+		OriginatorSeed: ownerSeed,
 		CommitteeNodes: committeeNodes,
 		AccessNodes:    accessNodes,
 		Quorum:         quorum,
 		Cluster:        clu,
 	}
 
-	err := clu.NodeClient.RequestFunds(chain.OwnerAddress())
+	err := clu.NodeClient.RequestFunds(chain.OriginatorAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		AccessNodes:           clu.WaspHosts(accessNodes, (*WaspNodeConfig).PeeringHost),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
-		OwnerSigScheme:        chain.OwnerSigScheme(),
+		OriginatorSigScheme:   chain.OriginatorSigScheme(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",
@@ -627,8 +627,8 @@ func verifySCStateVariables2(host string, addr *address.Address, expectedValues 
 	pass := true
 	fmt.Printf("    host %s, state index #%d\n", host, actual.Index)
 	for k, vexp := range expectedValues {
-		vact, ok := actual.Variables[k]
-		if !ok {
+		vact, _ := actual.Variables.Get(k)
+		if vact == nil {
 			vact = []byte("N/A")
 		}
 		vres := "FAIL"

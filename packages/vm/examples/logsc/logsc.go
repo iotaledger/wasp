@@ -43,6 +43,16 @@ func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error
 	return nil, nil
 }
 
+// TODO
+func (ep logscEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep logscEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
 func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return v
 }

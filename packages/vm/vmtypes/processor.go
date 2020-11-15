@@ -17,4 +17,6 @@ type Processor interface {
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
 	Call(ctx Sandbox) (codec.ImmutableCodec, error)
+	IsView() bool
+	CallView(ctx SandboxView) (codec.ImmutableCodec, error)
 }

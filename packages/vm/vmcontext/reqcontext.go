@@ -8,18 +8,28 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-func (vmctx *VMContext) PushCallContext(contractIndex uint16, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) error {
+func (vmctx *VMContext) PushCallContext(contractHname coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) error {
+	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contractHname, len(vmctx.callStack))
+
 	vmctx.callStack = append(vmctx.callStack, &callContext{
-		contractIndex: contractIndex,
-		params:        params,
-		budget:        budget,
+		contract: contractHname,
+		params:   params,
+		budget:   budget,
 	})
 	// TODO check budget
 	return nil
 }
 
 func (vmctx *VMContext) PopCallContext() {
+	vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
+}
+
+func (vmctx *VMContext) getCallContext() *callContext {
+	if len(vmctx.callStack) == 0 {
+		panic("getCallContext: stack is empty")
+	}
+	return vmctx.callStack[len(vmctx.callStack)-1]
 }
 
 // handleNodeRewards return true if to continue with request processing

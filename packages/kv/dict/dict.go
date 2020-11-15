@@ -2,6 +2,7 @@ package dict
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -12,30 +13,15 @@ import (
 )
 
 // Dict is a KVStore backed by an in-memory map
-type Dict interface {
-	kv.KVStore
-
-	IsEmpty() bool
-
-	ForEach(func(key kv.Key, value []byte) bool)
-	ForEachDeterministic(func(key kv.Key, value []byte) bool)
-	Clone() Dict
-
-	Read(io.Reader) error
-	Write(io.Writer) error
-
-	String() string
-}
-
-type kvmap map[kv.Key][]byte
+type Dict map[kv.Key][]byte
 
 // create/clone
 func NewDict() Dict {
-	return make(kvmap)
+	return make(Dict)
 }
 
-func (m kvmap) Clone() Dict {
-	clone := make(kvmap)
+func (m Dict) Clone() Dict {
+	clone := make(Dict)
 	m.ForEach(func(key kv.Key, value []byte) bool {
 		clone.Set(key, value)
 		return true
@@ -44,10 +30,19 @@ func (m kvmap) Clone() Dict {
 }
 
 func FromGoMap(m map[kv.Key][]byte) Dict {
-	return kvmap(m)
+	return Dict(m)
 }
 
-func (m kvmap) sortedKeys() []kv.Key {
+func FromKVStore(kvs kv.KVStore) (Dict, error) {
+	m := make(Dict)
+	err := kvs.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
+		m[k] = v
+		return true
+	})
+	return m, err
+}
+
+func (m Dict) sortedKeys() []kv.Key {
 	keys := make([]kv.Key, 0)
 	for k := range m {
 		keys = append(keys, k)
@@ -58,16 +53,20 @@ func (m kvmap) sortedKeys() []kv.Key {
 	return keys
 }
 
-func (m kvmap) String() string {
+func (m Dict) String() string {
 	ret := "         Dict:\n"
 	for _, key := range m.sortedKeys() {
+		val := m[key]
+		if len(val) >80 {
+			val = val[:80]
+		}
 		ret += fmt.Sprintf(
 			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
 			slice(hex.EncodeToString([]byte(key))),
-			slice(hex.EncodeToString(m[key])),
-			slice(base58.Encode(m[key])),
+			slice(hex.EncodeToString(val)),
+			slice(base58.Encode(val)),
 			string(key),
-			string(m[key]),
+			string(val),
 		)
 	}
 	return ret
@@ -81,7 +80,7 @@ func slice(s string) string {
 }
 
 // NON DETERMINISTIC!
-func (m kvmap) ForEach(fun func(key kv.Key, value []byte) bool) {
+func (m Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
 	for k, v := range m {
 		if !fun(k, v) {
 			return // abort when callback returns false
@@ -89,7 +88,7 @@ func (m kvmap) ForEach(fun func(key kv.Key, value []byte) bool) {
 	}
 }
 
-func (m kvmap) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
+func (m Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	if m == nil {
 		return
 	}
@@ -100,27 +99,27 @@ func (m kvmap) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	}
 }
 
-func (m kvmap) IsEmpty() bool {
+func (m Dict) IsEmpty() bool {
 	return len(m) == 0
 }
 
-func (m kvmap) Set(key kv.Key, value []byte) {
+func (m Dict) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
 	m[key] = value
 }
 
-func (m kvmap) Del(key kv.Key) {
+func (m Dict) Del(key kv.Key) {
 	delete(m, key)
 }
 
-func (m kvmap) Has(key kv.Key) (bool, error) {
+func (m Dict) Has(key kv.Key) (bool, error) {
 	_, ok := m[key]
 	return ok, nil
 }
 
-func (m kvmap) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+func (m Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	for k, v := range m {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -132,7 +131,7 @@ func (m kvmap) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) err
 	return nil
 }
 
-func (m kvmap) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+func (m Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	for k, _ := range m {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -144,12 +143,12 @@ func (m kvmap) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return nil
 }
 
-func (m kvmap) Get(key kv.Key) ([]byte, error) {
+func (m Dict) Get(key kv.Key) ([]byte, error) {
 	v, _ := m[key]
 	return v, nil
 }
 
-func (m kvmap) Write(w io.Writer) error {
+func (m Dict) Write(w io.Writer) error {
 	keys := m.sortedKeys()
 	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
@@ -165,7 +164,7 @@ func (m kvmap) Write(w io.Writer) error {
 	return nil
 }
 
-func (m kvmap) Read(r io.Reader) error {
+func (m Dict) Read(r io.Reader) error {
 	var num uint64
 	err := util.ReadUint64(r, &num)
 	if err != nil {
@@ -181,6 +180,32 @@ func (m kvmap) Read(r io.Reader) error {
 			return err
 		}
 		m.Set(kv.Key(k), v)
+	}
+	return nil
+}
+
+type jsonItem struct {
+	Key   []byte
+	Value []byte
+}
+
+func (d Dict) MarshalJSON() ([]byte, error) {
+	items := make([]jsonItem, len(d))
+	for i, k := range d.sortedKeys() {
+		items[i].Key = []byte(k)
+		items[i].Value = d[k]
+	}
+	return json.Marshal(items)
+}
+
+func (d *Dict) UnmarshalJSON(b []byte) error {
+	var items []jsonItem
+	if err := json.Unmarshal(b, &items); err != nil {
+		return err
+	}
+	*d = make(Dict)
+	for _, item := range items {
+		(*d)[kv.Key(item.Key)] = item.Value
 	}
 	return nil
 }

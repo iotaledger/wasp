@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -139,10 +138,6 @@ func (c *chainObj) IsDismissed() bool {
 
 func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
-}
-
-func (c *chainObj) OwnerAddress() *address.Address {
-	return &c.ownerAddress
 }
 
 func (c *chainObj) Color() *balance.Color {

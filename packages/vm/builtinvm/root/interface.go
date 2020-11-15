@@ -2,6 +2,7 @@ package root
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -10,13 +11,16 @@ import (
 	"io"
 )
 
+// Version of the root contract
+const Version = "0.1"
+
 // state variables
 const (
 	VarStateInitialized   = "i"
 	VarChainID            = "c"
+	VarChainOwnerID       = "o"
 	VarRegistryOfBinaries = "b"
 	VarContractRegistry   = "r"
-	VarContractsByName    = "n"
 	VarDescription        = "d"
 )
 
@@ -26,7 +30,7 @@ const (
 	ParamVMType        = "vmtype"
 	ParamProgramBinary = "programBinary"
 	ParamDescription   = "description"
-	ParamIndex         = "index"
+	ParamHname         = "hname"
 	ParamName          = "name"
 	ParamHash          = "hash"
 	ParamData          = "data"
@@ -34,18 +38,19 @@ const (
 
 // function names
 const (
-	FuncDeployContract      = "deployContract"
-	FuncFindContractByIndex = "findContractByIndex"
-	FuncFindContractByName  = "findContractRecordByName"
-	FuncGetBinary           = "getBinary"
+	FuncDeployContract = "deployContract"
+	FuncFindContract   = "findContract"
+	FuncGetBinary      = "getBinary"
 )
 
-// entry point codes
+const ContractName = "root " + Version
+
 var (
-	EntryPointDeployContract      = coretypes.Hn(FuncDeployContract)
-	EntryPointFindContractByIndex = coretypes.Hn(FuncFindContractByIndex)
-	EntryPointFindContractByName  = coretypes.Hn(FuncFindContractByName)
-	EntryPointGetBinary           = coretypes.Hn(FuncGetBinary)
+	ProgramHash              = hashing.HashStrings(ContractName)
+	Hname                    = coretypes.Hn(ContractName)
+	EntryPointDeployContract = coretypes.Hn(FuncDeployContract)
+	EntryPointFindContract   = coretypes.Hn(FuncFindContract)
+	EntryPointGetBinary      = coretypes.Hn(FuncGetBinary)
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract
@@ -59,17 +64,20 @@ type ContractRecord struct {
 
 type rootProcessor map[coretypes.Hname]rootEntryPoint
 
-type rootEntryPoint func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
+type epFunc func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
+type epFuncView func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
+
+type rootEntryPoint struct {
+	fun interface{}
+}
 
 var (
 	processor = rootProcessor{
-		coretypes.EntryPointCodeInit:  initialize,
-		EntryPointDeployContract:      deployContract,
-		EntryPointFindContractByIndex: findContractByIndex,
-		EntryPointFindContractByName:  findContractByName,
-		EntryPointGetBinary:           getBinary,
+		coretypes.EntryPointCodeInit: {epFunc(initialize)},
+		EntryPointDeployContract:     {epFunc(deployContract)},
+		EntryPointFindContract:       {epFuncView(findContract)},
+		EntryPointGetBinary:          {epFuncView(getBinary)},
 	}
-	ProgramHash = hashing.NilHash
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -86,11 +94,28 @@ func (v rootProcessor) GetDescription() string {
 }
 
 func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	ret, err := ep(ctx)
+	fun, ok := ep.fun.(epFunc)
+	if !ok {
+		return nil, fmt.Errorf("wrong type of entry point")
+	}
+	ret, err := fun(ctx)
 	if err != nil {
 		ctx.Eventf("error occurred: '%v'", err)
 	}
 	return ret, err
+}
+
+func (ep rootEntryPoint) IsView() bool {
+	_, ok := ep.fun.(epFuncView)
+	return ok
+}
+
+func (ep rootEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	fun, ok := ep.fun.(epFuncView)
+	if !ok {
+		return nil, fmt.Errorf("wrong type of entry point")
+	}
+	return fun(ctx)
 }
 
 func (ep rootEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {

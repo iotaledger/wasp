@@ -30,11 +30,21 @@ func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	reqId := ctx.AccessRequest().ID()
 	ctx.Eventf("run nilProcessor. Req.code %s, Contract ID: %s, ts: %d, reqid: %s",
 		ctx.AccessRequest().EntryPointCode().String(),
-		ctx.GetContractID().String(),
+		ctx.CurrentContractID().String(),
 		ctx.GetTimestamp(),
 		reqId.String(),
 	)
 	return nil, nil
+}
+
+// TODO
+func (ep nilProcessor) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep nilProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
 }
 
 func (v nilProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

@@ -1,11 +1,11 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -34,20 +34,20 @@ func (s *sandbox) Rollback() {
 	s.vmctx.Rollback()
 }
 
-func (s *sandbox) GetContractID() coretypes.ContractID {
-	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractIndex())
+func (s *sandbox) CurrentContractID() coretypes.ContractID {
+	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractHname())
 }
 
-func (s *sandbox) GetChainID() coretypes.ChainID {
+func (s *sandbox) ChainID() coretypes.ChainID {
 	return s.vmctx.ChainID()
 }
 
-func (s *sandbox) GetContractIndex() uint16 {
-	return s.vmctx.ContractIndex()
+func (s *sandbox) CurrentContractHname() coretypes.Hname {
+	return s.vmctx.ContractHname()
 }
 
-func (s *sandbox) GetOwnerAddress() *address.Address {
-	return s.vmctx.OwnerAddress()
+func (s *sandbox) ChainOwnerID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(s.vmctx.ChainID(), accountsc.Hname))
 }
 
 func (s *sandbox) GetTimestamp() int64 {
@@ -93,7 +93,7 @@ func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args di
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.GetContractIndex(), msg)
+	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.CurrentContractHname(), msg)
 	s.vmctx.Publish(msg)
 }
 

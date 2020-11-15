@@ -9,11 +9,11 @@ type ScColors struct {
 }
 
 func (a *ScColors) Exists(keyId int32) bool {
-	return keyId >= 0 && keyId < a.GetLength()
+	return uint32(keyId) < uint32(a.GetLength())
 }
 
 func (a *ScColors) GetBytes(keyId int32) []byte {
-	if keyId >= 0 && keyId < a.GetLength() {
+	if a.Exists(keyId) {
 		return a.colors[keyId].Bytes()
 	}
 	return a.ArrayObject.GetBytes(keyId)
@@ -30,6 +30,13 @@ func (a *ScColors) GetInt(keyId int32) int64 {
 func (a *ScColors) GetLength() int32 {
 	a.loadColors()
 	return int32(len(a.colors))
+}
+
+func (a *ScColors) GetTypeId(keyId int32) int32 {
+	if a.Exists(keyId) {
+		return OBJTYPE_BYTES
+	}
+	return -1
 }
 
 func (a *ScColors) loadColors() {

@@ -5,18 +5,7 @@ type ScRequest struct {
 }
 
 func (o *ScRequest) Exists(keyId int32) bool {
-	switch keyId {
-	case KeyAddress:
-	case KeyBalance:
-	case KeyColors:
-	case KeyHash:
-	case KeyId:
-	case KeyParams:
-	case KeyTimestamp:
-	default:
-		return false
-	}
-	return true
+	return o.GetTypeId(keyId) >= 0
 }
 
 func (o *ScRequest) GetBytes(keyId int32) []byte {
@@ -42,11 +31,31 @@ func (o *ScRequest) GetInt(keyId int32) int64 {
 }
 
 func (o *ScRequest) GetObjectId(keyId int32, typeId int32) int32 {
-	return o.GetMapObjectId(keyId, typeId, map[int32]MapObjDesc{
-		KeyColors:  {OBJTYPE_INT_ARRAY, func() WaspObject { return &ScColors{requestOnly: true} }},
-		KeyBalance: {OBJTYPE_MAP, func() WaspObject { return &ScBalance{requestOnly: true} }},
-		KeyParams:  {OBJTYPE_MAP, func() WaspObject { return &ScRequestParams{} }},
+	return GetMapObjectId(o, keyId, typeId, MapFactories{
+		KeyColors:  func() WaspObject { return &ScColors{requestOnly: true} },
+		KeyBalance: func() WaspObject { return &ScBalance{requestOnly: true} },
+		KeyParams:  func() WaspObject { return &ScRequestParams{} },
 	})
+}
+
+func (o *ScRequest) GetTypeId(keyId int32) int32 {
+	switch keyId {
+	case KeyAddress:
+		return OBJTYPE_BYTES
+	case KeyBalance:
+		return OBJTYPE_MAP
+	case KeyColors:
+		return OBJTYPE_BYTES_ARRAY
+	case KeyHash:
+		return OBJTYPE_BYTES
+	case KeyId:
+		return OBJTYPE_BYTES
+	case KeyParams:
+		return OBJTYPE_MAP
+	case KeyTimestamp:
+		return OBJTYPE_INT
+	}
+	return -1
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -77,4 +86,9 @@ func (o *ScRequestParams) GetString(keyId int32) string {
 	key := o.vm.GetKey(keyId)
 	value, _, _ := o.vm.params.GetString(key)
 	return value
+}
+
+//TODO keep track of field types
+func (o *ScRequestParams) GetTypeId(keyId int32) int32 {
+	return o.MapObject.GetTypeId(keyId)
 }

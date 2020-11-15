@@ -118,7 +118,7 @@ func (sm *stateManager) initLoadState() {
 			"approving tx", txh.String(),
 		)
 	} else {
-		// pre-origin state. Origin block is emty block.
+		// pre-origin state. Origin block is empty block.
 		// Will be waiting for the origin transaction to arrive
 		sm.addPendingBlock(state.MustNewOriginBlock(sm.chain.Color()))
 

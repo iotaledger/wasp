@@ -15,9 +15,9 @@ import (
 )
 
 type NewOriginTransactionParams struct {
-	OriginAddress        address.Address
-	OwnerSignatureScheme signaturescheme.SignatureScheme
-	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
+	OriginAddress             address.Address
+	OriginatorSignatureScheme signaturescheme.SignatureScheme
+	AllInputs                 map[valuetransaction.OutputID][]*balance.Balance
 }
 
 // NewOriginTransaction
@@ -48,7 +48,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	if err != nil {
 		return nil, err
 	}
-	tx.Sign(par.OwnerSignatureScheme)
+	tx.Sign(par.OriginatorSignatureScheme)
 	return tx, nil
 }
 
@@ -68,7 +68,7 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	if err != nil {
 		return nil, err
 	}
-	rootContractID := coretypes.NewContractID(par.ChainID, 0) // 0 is factory builtin contract
+	rootContractID := coretypes.NewContractID(par.ChainID, root.Hname)
 	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointCodeInit)
 	args := dict.NewDict()
 	c := codec.NewCodec(args)

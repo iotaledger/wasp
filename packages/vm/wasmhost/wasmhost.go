@@ -33,6 +33,7 @@ type HostObject interface {
 	GetInt(keyId int32) int64
 	GetObjectId(keyId int32, typeId int32) int32
 	GetString(keyId int32) string
+	GetTypeId(keyId int32) int32
 	SetBytes(keyId int32, value []byte)
 	SetInt(keyId int32, value int64)
 	SetString(keyId int32, value string)
@@ -60,9 +61,9 @@ type WasmVM interface {
 
 type WasmHost struct {
 	vm            WasmVM
-	codeToFunc    map[int32]string
+	codeToFunc    map[uint32]string
 	error         string
-	funcToCode    map[string]int32
+	funcToCode    map[string]uint32
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
 	keyMapToKeyId *map[string]int32
@@ -80,9 +81,9 @@ func (host *WasmHost) Init(null HostObject, root HostObject, keyMap *map[string]
 		keyMap = &baseKeyMap
 	}
 	elements := len(*keyMap) + 1
-	host.codeToFunc = make(map[int32]string)
+	host.codeToFunc = make(map[uint32]string)
 	host.error = ""
-	host.funcToCode = make(map[string]int32)
+	host.funcToCode = make(map[string]uint32)
 	host.logger = logger
 	host.objIdToObj = nil
 	host.keyIdToKey = [][]byte{[]byte("<null>")}
@@ -207,7 +208,7 @@ func (host *WasmHost) GetKeyId(keyRef int32, size int32) int32 {
 	// non-negative size means original key was a string
 	if size >= 0 {
 		key := host.vmGetBytes(keyRef, size)
-		keyId := host.getKeyId(key)
+		keyId := host.GetKeyIdFromBytes(key)
 		host.Trace("GetKeyId '%s'=k%d", string(key), keyId)
 		return keyId
 	}
@@ -217,7 +218,7 @@ func (host *WasmHost) GetKeyId(keyRef int32, size int32) int32 {
 
 	if !host.useBase58Keys {
 		// use byte slice key as is
-		keyId := host.getKeyId(key)
+		keyId := host.GetKeyIdFromBytes(key)
 		host.Trace("GetKeyId '%s'=k%d", base58.Encode(key), keyId)
 		return keyId
 	}
@@ -226,12 +227,12 @@ func (host *WasmHost) GetKeyId(keyRef int32, size int32) int32 {
 	// now all keys are byte slices from strings
 	base58Key := base58.Encode(key)
 	key = []byte(base58Key)
-	keyId := host.getKeyId(key)
+	keyId := host.GetKeyIdFromBytes(key)
 	host.Trace("GetKeyId '%s'=k%d", base58Key, keyId)
 	return keyId
 }
 
-func (host *WasmHost) getKeyId(key []byte) int32 {
+func (host *WasmHost) GetKeyIdFromBytes(key []byte) int32 {
 	// cannot use []byte as key in maps
 	// so we will convert to (non-utf8) string
 	// most will have started out as string anyway
@@ -348,19 +349,6 @@ func (host *WasmHost) SetError(text string) {
 	if !host.HasError() {
 		host.error = text
 	}
-}
-
-func (host *WasmHost) SetExport(keyId int32, value string) {
-	_, ok := host.codeToFunc[keyId]
-	if ok {
-		host.SetError("SetExport: duplicate code")
-	}
-	_, ok = host.funcToCode[value]
-	if ok {
-		host.SetError("SetExport: duplicate function")
-	}
-	host.funcToCode[value] = keyId
-	host.codeToFunc[keyId] = value
 }
 
 func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {

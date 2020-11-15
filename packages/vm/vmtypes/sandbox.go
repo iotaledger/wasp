@@ -12,15 +12,18 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
-	Params() codec.ImmutableCodec
-	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) (uint16, error)
-	Call(contractIndex uint16, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
-	// general functions
-	GetChainID() coretypes.ChainID
-	GetContractIndex() uint16 // current contract index, mutates with each call
-	GetContractID() coretypes.ContractID
+	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
+	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
 
-	GetOwnerAddress() *address.Address
+	// general
+	ChainID() coretypes.ChainID
+	ChainOwnerID() coretypes.AgentID
+
+	// call context
+	Params() codec.ImmutableCodec
+	CurrentContractHname() coretypes.Hname
+	CurrentContractID() coretypes.ContractID
+
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 
@@ -92,9 +95,6 @@ type AccountAccess interface {
 	AvailableBalanceFromRequest(col *balance.Color) int64
 	MoveTokensFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
 	EraseColorFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
-	// send iotas to the smart contract owner
-	HarvestFees(amount int64) int64
-	HarvestFeesFromRequest(amount int64) bool
 }
 
 // Accounts is an interface to access all functions with tokens

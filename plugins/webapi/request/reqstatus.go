@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -50,15 +51,31 @@ func handleWaitRequestProcessed(c echo.Context) error {
 		}
 	}
 
-	start := time.Now()
-	for time.Since(start) < req.Timeout {
+	if ch.GetRequestProcessingStatus(reqId) == chain.RequestProcessingStatusCompleted {
+		// request is already processed, no need to wait
+		return nil
+	}
+
+	// subscribe to event
+	requestProcessed := make(chan bool)
+	handler := events.NewClosure(func(rid coretypes.RequestID) {
+		if rid == *reqId {
+			requestProcessed <- true
+		}
+	})
+	ch.EventRequestProcessed().Attach(handler)
+	defer ch.EventRequestProcessed().Detach(handler)
+
+	select {
+	case <-requestProcessed:
+		return nil
+	case <-time.After(req.Timeout):
+		// check again, in case event was triggered just before we subscribed
 		if ch.GetRequestProcessingStatus(reqId) == chain.RequestProcessingStatusCompleted {
 			return nil
 		}
-		// TODO subscribe to EventRequestProcessed event instead of polling
-		time.Sleep(1 * time.Second)
+		return httperrors.Timeout("Timeout while waiting for request to be processed")
 	}
-	return httperrors.Timeout("Timeout while waiting for request to be processed")
 }
 
 func parseParams(c echo.Context) (chain.Chain, *coretypes.RequestID, error) {
