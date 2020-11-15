@@ -46,7 +46,7 @@ func TestLogsc1(t *testing.T) {
 		"logsc-addlog":        -1,
 	})
 
-	reqs := []*waspapi.RequestBlockParams{{
+	reqs := []*waspapi.RequestSectionParams{{
 		Address:     sc.Address,
 		RequestCode: logsc.RequestCodeAddLog,
 		Vars: map[string]interface{}{

@@ -2,8 +2,12 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	accounts "github.com/iotaledger/wasp/packages/vm/balances"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 )
 
 // CallContract
@@ -67,14 +71,57 @@ func (vmctx *VMContext) CallView(contractHname coretypes.Hname, epCode coretypes
 	return ep.CallView(NewSandboxView(vmctx))
 }
 
-func (vmctx *VMContext) callFromRequest() {
+// mustCallFromRequest is called for each request from the VM loop
+func (vmctx *VMContext) mustCallFromRequest() {
 	req := vmctx.reqRef.RequestSection()
-	vmctx.log.Debugf("callFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
+	transfer := req.Transfer()
+	vmctx.log.Debugf("mustCallFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
 
-	_, err := vmctx.CallContract(req.Target().Hname(), req.EntryPointCode(), req.Args(), nil)
-	if err != nil {
-		vmctx.log.Warnf("callFromRequest: %v", err)
+	vmctx.txBuilder.RequestProcessed(*vmctx.reqRef.RequestID())
+	if vmctx.contractRecord.NodeFee > 0 {
+		// handle node fees
+		if transfer.Balance(balance.ColorIOTA) < vmctx.contractRecord.NodeFee {
+			vmctx.mustFallbackNotEnoughFees()
+			return
+		}
+		transfer = vmctx.mustMoveFees()
 	}
+	_, err := vmctx.CallContract(vmctx.reqHname, req.EntryPointCode(), req.Args(), transfer)
+	if err != nil {
+		vmctx.log.Warnf("mustCallFromRequest: %v", err)
+	}
+}
+
+// mustFallbackNotEnoughFees calls fallback reaction in case fees iotas not enough for fees
+func (vmctx *VMContext) mustFallbackNotEnoughFees() {
+	transfer := vmctx.reqRef.RequestSection().Transfer()
+	if _, err := vmctx.CallContract(
+		accountsc.Hname,
+		accountsc.EntryPointFuncFallbackShortOfFees,
+		vmctx.reqRef.RequestSection().Args(),
+		transfer); err != nil {
+		vmctx.log.Panicf("executing fallback due to not enough fees': %v", err)
+		return
+	}
+	vmctx.log.Warnf("not enough fees for request %s", vmctx.reqRef.RequestID().Short())
+}
+
+// mustMoveFees call accountsc contract to move fees to destination
+func (vmctx *VMContext) mustMoveFees() coretypes.ColoredBalances {
+	par := codec.NewCodec(dict.NewDict())
+	par.SetAgentID(accountsc.ParamAgentID, &vmctx.accrueFeesTo)
+	fees := accounts.NewColoredBalancesFromMap(map[balance.Color]int64{
+		balance.ColorIOTA: vmctx.contractRecord.NodeFee,
+	})
+	if _, err := vmctx.CallContract(accountsc.Hname, accountsc.EntryPointMoveTokens, par, fees); err != nil {
+		vmctx.log.Panicf("moving fees: %v", err)
+	}
+	transfer := vmctx.reqRef.RequestSection().Transfer()
+	debit := map[balance.Color]int64{
+		balance.ColorIOTA: -vmctx.contractRecord.NodeFee,
+	}
+	transfer.AddToMap(debit)
+	return accounts.NewColoredBalancesFromMap(debit)
 }
 
 func (vmctx *VMContext) Params() codec.ImmutableCodec {

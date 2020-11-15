@@ -42,9 +42,9 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	return ret, nil
 }
 
-// TODO inter chain transfer
-// transfer moves tokens from smart contract account to another account inside same chain
-func transfer(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+// TODO inter chain moveTokens
+// moveTokens moves tokens from smart contract account to another account inside same chain
+func moveTokens(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	params := ctx.Params()
 	targetAgentID, ok, err := params.GetAgentID(ParamAgentID)
 	if err != nil {
@@ -60,7 +60,7 @@ func transfer(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	targetAccount := state.GetMap(kv.Key(targetAgentID[:]))
 
 	// first check balances
-	tran := ctx.Accounts().Transfer()
+	tran := ctx.Accounts().Incoming()
 	balancesOk := true
 	tran.Iterate(func(col balance.Color, bal int64) bool {
 		var sourceBalance int64
@@ -95,5 +95,47 @@ func transfer(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		}
 		return true
 	})
+	return nil, nil
+}
+
+func fallbackShortOfFees(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	panic("implement me")
+}
+
+func postRequest(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	params := ctx.Params()
+	sender, ok, err := params.GetHname(ParamSenderContractHname__)
+	if err != nil || !ok {
+		return nil, fmt.Errorf("wron parameter '%s'", ParamSenderContractHname__)
+	}
+	target, ok, err := params.GetContractID(ParamTargetContractID__)
+	if err != nil || !ok {
+		return nil, fmt.Errorf("wrong parameter '%s'", ParamTargetContractID__)
+	}
+	ep, ok, err := params.GetHname(ParamTargetEntryPoint__)
+	if err != nil || !ok {
+		return nil, fmt.Errorf("wrong parameter '%s'", ParamTargetEntryPoint__)
+	}
+	par := dict.NewDict()
+	_ = params.Iterate("", func(key kv.Key, value []byte) bool {
+		switch key {
+		case ParamTargetEntryPoint__, ParamTargetContractID__, ParamSenderContractHname__:
+		default:
+			par.Set(key, value)
+		}
+		return true
+	})
+	// TODO remove balances from the chain ledger
+	succ := ctx.PostRequest(vmtypes.NewRequestParams{
+		SenderContractHname: sender,
+		TargetContractID:    *target,
+		EntryPoint:          ep,
+		Timelock:            0,
+		Params:              par,
+		Transfer:            ctx.Accounts().Incoming(),
+	})
+	if !succ {
+		return nil, fmt.Errorf("failed to post request")
+	}
 	return nil, nil
 }

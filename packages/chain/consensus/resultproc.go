@@ -40,7 +40,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		Color:           *op.chain.Color(),
 		Entropy:         (hashing.HashValue)(op.stateTx.ID()),
 		Balances:        par.balances,
-		RewardAddress:   par.rewardAddress,
+		AccrueFeesTo:    par.rewardAddress,
 		MinimumReward:   op.getMinimumReward(),
 		Requests:        takeRefs(par.requests),
 		Timestamp:       par.timestamp,

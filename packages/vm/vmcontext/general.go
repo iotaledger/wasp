@@ -2,14 +2,14 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
@@ -46,49 +46,39 @@ func (vmctx *VMContext) Log() *logger.Logger {
 	return vmctx.log
 }
 
-func (vmctx *VMContext) DumpAccount() string {
-	return vmctx.txBuilder.Dump()
-}
-
-func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
-	if par.IncludeReward > 0 {
-		availableIotas := vmctx.txBuilder.GetInputBalance(balance.ColorIOTA)
-		if par.IncludeReward+1 > availableIotas {
-			return false
-		}
-		err := vmctx.txBuilder.MoveTokensToAddress((address.Address)(par.TargetContractID.ChainID()), balance.ColorIOTA, par.IncludeReward)
-		if err != nil {
-			return false
-		}
+func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
+	if vmctx.getCallContext().contract == accountsc.Hname {
+		reqSection := sctransaction.NewRequestSection(par.SenderContractHname, par.TargetContractID, par.EntryPoint).
+			WithTimelock(par.Timelock).
+			WithTransfer(par.Transfer).
+			WithArgs(par.Params)
+		vmctx.txBuilder.AddRequestSection(reqSection)
+		return true
 	}
-	reqBlock := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint)
-	reqBlock.WithTimelock(par.Timelock)
-	reqBlock.SetArgs(par.Params)
-
-	if err := vmctx.txBuilder.AddRequestSection(reqBlock); err != nil {
-		return false
-	}
-	return true
+	par1 := codec.NewCodec(par.Params.Clone())
+	par1.SetHname(accountsc.ParamSenderContractHname__, vmctx.CurrentContractHname())
+	par1.SetContractID(accountsc.ParamTargetContractID__, &par.TargetContractID)
+	par1.SetHname(accountsc.ParamTargetEntryPoint__, par.EntryPoint)
+	_, err := vmctx.CallContract(accountsc.Hname, accountsc.EntryPointPostRequest, par1, par.Transfer)
+	return err == nil
 }
 
 func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
-	return vmctx.SendRequest(vmtypes.NewRequestParams{
+	return vmctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.CurrentContractHname()),
 		EntryPoint:       reqCode,
 		Params:           params,
-		IncludeReward:    0,
 	})
 }
 
 func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
-	return vmctx.SendRequest(vmtypes.NewRequestParams{
+	return vmctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.CurrentContractHname()),
 		EntryPoint:       entryPoint,
 		Params:           args,
 		Timelock:         timelock,
-		IncludeReward:    0,
 	})
 }
 

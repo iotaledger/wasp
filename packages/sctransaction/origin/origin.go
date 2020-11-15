@@ -74,7 +74,7 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	c := codec.NewCodec(args)
 	c.SetChainID(root.ParamChainID, &par.ChainID)
 	c.SetString(root.ParamDescription, par.Description)
-	initRequest.SetArgs(args)
+	initRequest.WithArgs(args)
 
 	if err := txb.AddRequestSection(initRequest); err != nil {
 		return nil, err

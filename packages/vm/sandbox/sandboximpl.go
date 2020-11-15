@@ -62,10 +62,6 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) DumpAccount() string {
-	return s.vmctx.DumpAccount()
-}
-
 // request context
 
 func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
@@ -76,23 +72,19 @@ func (s *sandbox) AccessState() codec.MutableMustCodec {
 	return codec.NewMustCodec(s)
 }
 
-func (s *sandbox) AccessSCAccount() vmtypes.AccountAccess {
-	return s.vmctx
-}
-
 func (s *sandbox) Accounts() vmtypes.Accounts {
 	return s.vmctx.Accounts()
 }
 
-func (s *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
-	return s.vmctx.SendRequest(par)
+func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
+	return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) SendRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
+func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
 	return s.vmctx.SendRequestToSelf(reqCode, args)
 }
 
-func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
+func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	return s.vmctx.SendRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 

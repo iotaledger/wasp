@@ -20,23 +20,33 @@ type accountsEntryPoint struct {
 const (
 	ContractName = "accounts"
 
-	FuncBalance  = "balance"
-	FuncTransfer = "transfer"
+	FuncBalance             = "balance"
+	FuncMoveTokens          = "moveTokens"
+	FuncFallbackShortOfFees = "fallbackShortOfFees"
+	FuncPostRequest         = "postRequest"
 
 	VarStateInitialized = "i"
 
 	ParamAgentID = "a"
+
+	ParamTargetContractID__    = "__target_contract_id__"
+	ParamTargetEntryPoint__    = "__target_entry__point__"
+	ParamSenderContractHname__ = "__sender_contract_hname__"
 )
 
 var (
-	Hname              = coretypes.Hn(ContractName)
-	EntryPointBalance  = coretypes.Hn(FuncBalance)
-	EntryPointTransfer = coretypes.Hn(FuncTransfer)
+	Hname                             = coretypes.Hn(ContractName)
+	EntryPointBalance                 = coretypes.Hn(FuncBalance)
+	EntryPointMoveTokens              = coretypes.Hn(FuncMoveTokens)
+	EntryPointFuncFallbackShortOfFees = coretypes.Hn(FuncFallbackShortOfFees)
+	EntryPointPostRequest             = coretypes.Hn(FuncPostRequest)
 
 	processor = accountsProcessor{
-		coretypes.EntryPointCodeInit: {epFunc(initialize)},
-		EntryPointBalance:            {epFuncView(getBalance)},
-		EntryPointTransfer:           {epFunc(transfer)},
+		coretypes.EntryPointCodeInit:      {epFunc(initialize)},
+		EntryPointBalance:                 {epFuncView(getBalance)},
+		EntryPointMoveTokens:              {epFunc(moveTokens)},
+		EntryPointFuncFallbackShortOfFees: {epFunc(fallbackShortOfFees)},
+		EntryPointPostRequest:             {epFunc(postRequest)},
 	}
 	ProgramHash = hashing.NilHash
 
