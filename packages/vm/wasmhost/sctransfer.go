@@ -30,8 +30,7 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 
 func (o *ScTransfer) Send() {
 	o.vm.Trace("TRANSFER #%d c'%s' a'%s'", o.amount, o.color.String(), o.agent.String())
-	address := o.agent.MustAddress()
-	if !o.vm.ctx.AccessSCAccount().MoveTokens(&address, &o.color, o.amount) {
+	if !o.vm.ctx.Accounts().MoveBalance(o.agent, o.color, o.amount) {
 		o.vm.ctx.Panic("Failed to move tokens")
 	}
 }

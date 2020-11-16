@@ -14,7 +14,7 @@ const HnameLength = 4
 
 const FuncInit = "init"
 
-var EntryPointCodeInit = Hn(FuncInit)
+var EntryPointInit = Hn(FuncInit)
 
 func NewHnameFromBytes(data []byte) (ret Hname, err error) {
 	err = ret.Read(bytes.NewReader(data))

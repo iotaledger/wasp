@@ -1,7 +1,9 @@
 package coretypes
 
 import (
+	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"io"
 )
 
 const AgentIDLength = ChainIDLength + HnameLength
@@ -60,4 +62,15 @@ func (a AgentID) Bytes() []byte {
 
 func (a AgentID) String() string {
 	panic("implement me")
+}
+
+func ReadAgentID(r io.Reader, agentID *AgentID) error {
+	n, err := r.Read(agentID[:])
+	if err != nil {
+		return err
+	}
+	if n != AgentIDLenght {
+		return errors.New("error while reading agent ID")
+	}
+	return nil
 }

@@ -2,6 +2,7 @@
 package vmtypes
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
@@ -20,3 +21,5 @@ type EntryPoint interface {
 	IsView() bool
 	CallView(ctx SandboxView) (codec.ImmutableCodec, error)
 }
+
+var ErrWrongTypeEntryPoint = fmt.Errorf("wrong type of entry point")

@@ -11,10 +11,10 @@ func (o *ScRequest) Exists(keyId int32) bool {
 func (o *ScRequest) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case KeyHash:
-		id := o.vm.ctx.AccessRequest().ID()
+		id := o.vm.ctx.RequestID()
 		return id.TransactionID().Bytes()
 	case KeyId:
-		id := o.vm.ctx.AccessRequest().ID()
+		id := o.vm.ctx.RequestID()
 		return id.Bytes()
 	case KeySender:
 		id := o.vm.ctx.AccessRequest().MustSender()

@@ -12,7 +12,7 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case KeyColor: //TODO
 	case KeyId:
-		id := o.vm.ctx.CurrentContractID()
+		id := o.vm.ctx.MyContractID()
 		return id[:]
 	case KeyOwner:
 		id := o.vm.ctx.ChainOwnerID()

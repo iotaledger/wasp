@@ -99,8 +99,8 @@ func (tx *Transaction) Sender() *address.Address {
 	return &ret
 }
 
-func (tx *Transaction) OutputBalancesByAddress(addr *address.Address) ([]*balance.Balance, bool) {
-	untyped, ok := tx.Outputs().Get(*addr)
+func (tx *Transaction) OutputBalancesByAddress(addr address.Address) ([]*balance.Balance, bool) {
+	untyped, ok := tx.Outputs().Get(addr)
 	if !ok {
 		return nil, false
 	}

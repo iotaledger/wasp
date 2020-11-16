@@ -27,8 +27,8 @@ func (s sandboxView) State() codec.ImmutableMustCodec {
 	return codec.NewMustCodec(s.vmctx)
 }
 
-func (s sandboxView) Accounts() coretypes.ColoredAccountsImmutable {
-	return s.vmctx.Accounts()
+func (s sandboxView) Account() coretypes.ColoredBalances {
+	panic("implement me")
 }
 
 func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {

@@ -182,7 +182,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	}
 	firstBet := state.GetArray(StateVarBets).Len() == 0
 
-	reqid := ctx.AccessRequest().ID()
+	reqid := ctx.RequestID()
 	betInfo := &BetInfo{
 		Player: sender,
 		Sum:    sum,
@@ -213,11 +213,11 @@ func placeBet(ctx vmtypes.Sandbox) error {
 		nextPlayTimestamp := (time.Duration(ctx.GetTimestamp())*time.Nanosecond + time.Duration(period)*time.Second).Nanoseconds()
 		state.SetInt64(StateVarNextPlayTimestamp, nextPlayTimestamp)
 
-		ctx.Eventf("SendRequestToSelfWithDelay period = %d", period)
+		ctx.Eventf("PostRequestToSelfWithDelay period = %d", period)
 
 		// send the timelocked Lock request to self. Timelock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
-		if ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period)) {
+		if ctx.PostRequestToSelfWithDelay(RequestLockBets, nil, uint32(period)) {
 			ctx.Eventf("play deadline is set after %d seconds", period)
 		} else {
 			ctx.Eventf("failed to set play deadline")
@@ -254,7 +254,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+	scAddr := (address.Address)(ctx.MyContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
@@ -273,7 +273,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 
 	// send request to self for playing the wheel with the entropy whicl will be known
 	// after signing this state update transaction therefore unpredictable
-	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
+	ctx.PostRequestToSelf(RequestPlayAndDistribute, nil)
 	return nil
 }
 
@@ -281,7 +281,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+	scAddr := (address.Address)(ctx.MyContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
@@ -306,7 +306,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
 	// calculating it modulo NumColors.
-	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
+	winningColor := byte(util.MustUint64From8Bytes(entropy[:8]) % NumColors)
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	ctx.Eventf("$$$$$$$$$$ winning color is = %d", winningColor)
@@ -350,7 +350,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+		scAddr := (address.Address)(ctx.MyContractID().ChainID())
 		if !ctx.AccessSCAccount().MoveTokens(&scAddr, &balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
@@ -386,7 +386,7 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
 	}
 
 	winsb := winsPerColorArray.GetAt(uint16(winningColor))
-	wins := util.Uint32From4Bytes(winsb)
+	wins := util.MustUint32From4Bytes(winsb)
 	winsPerColorArray.SetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
 }
 

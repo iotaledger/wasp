@@ -2,6 +2,7 @@ package sctransaction
 
 import (
 	"fmt"
+	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 	"io"
 	"time"
 
@@ -21,7 +22,7 @@ import (
 
 type RequestSection struct {
 	// senderAddress contract index
-	// - if state block present, it is index of the sending contracts
+	// - if state block present, it is index of the sending contract in the chain of which state transaction it is
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
 	senderContractHname coretypes.Hname
 	// ID of the target smart contract
@@ -36,6 +37,8 @@ type RequestSection struct {
 	timelock uint32
 	// input arguments in the form of variable/value pairs
 	args dict.Dict
+	// all tokens transferred with the request EXCEPT the 1 minted request token
+	transfer coretypes.ColoredBalances
 }
 
 type RequestRef struct {
@@ -50,6 +53,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
 		args:                dict.NewDict(),
+		transfer:            accounts.NewColoredBalancesFromMap(nil),
 	}
 }
 
@@ -67,7 +71,9 @@ func (req *RequestSection) Clone() *RequestSection {
 	if req == nil {
 		return nil
 	}
-	ret := NewRequestSection(req.senderContractHname, req.targetContractID, req.entryPoint)
+	ret := NewRequestSection(req.senderContractHname, req.targetContractID, req.entryPoint).
+		WithTimelock(req.timelock).
+		WithTransfer(req.transfer)
 	ret.args = req.args.Clone()
 	return ret
 }
@@ -80,10 +86,11 @@ func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestSection) SetArgs(args dict.Dict) {
+func (req *RequestSection) WithArgs(args dict.Dict) *RequestSection {
 	if args != nil {
 		req.args = args.Clone()
 	}
+	return req
 }
 
 func (req *RequestSection) Args() codec.ImmutableCodec {
@@ -98,8 +105,20 @@ func (req *RequestSection) Timelock() uint32 {
 	return req.timelock
 }
 
+func (req *RequestSection) Transfer() coretypes.ColoredBalances {
+	return req.transfer
+}
+
 func (req *RequestSection) WithTimelock(tl uint32) *RequestSection {
 	req.timelock = tl
+	return req
+}
+
+func (req *RequestSection) WithTransfer(transfer coretypes.ColoredBalances) *RequestSection {
+	if transfer == nil {
+		transfer = accounts.NewColoredBalancesFromMap(nil)
+	}
+	req.transfer = transfer
 	return req
 }
 
@@ -125,6 +144,9 @@ func (req *RequestSection) Write(w io.Writer) error {
 	if err := req.args.Write(w); err != nil {
 		return err
 	}
+	if err := req.transfer.Write(w); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -145,6 +167,10 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.args.Read(r); err != nil {
 		return err
 	}
+	req.transfer = accounts.NewColoredBalances()
+	if err := req.transfer.Read(r); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -152,10 +178,6 @@ func (req *RequestSection) Read(r io.Reader) error {
 
 func (ref *RequestRef) RequestSection() *RequestSection {
 	return ref.Tx.Requests()[ref.Index]
-}
-
-func (ref *RequestRef) SenderContractHname() coretypes.Hname {
-	return ref.RequestSection().senderContractHname
 }
 
 func (ref *RequestRef) RequestID() *coretypes.RequestID {
@@ -181,8 +203,12 @@ func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
 	return auth
 }
 
+func (ref *RequestRef) SenderContractHname() coretypes.Hname {
+	return ref.RequestSection().senderContractHname
+}
+
 func (ref *RequestRef) SenderAddress() *address.Address {
-	return ref.Tx.MustProperties().Sender()
+	return ref.Tx.MustProperties().SenderAddress()
 }
 
 func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) {
@@ -192,4 +218,11 @@ func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) 
 	}
 	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())
 	return
+}
+
+func (ref *RequestRef) SenderAgentID() coretypes.AgentID {
+	if contractID, err := ref.SenderContractID(); err == nil {
+		return coretypes.NewAgentIDFromContractID(contractID)
+	}
+	return coretypes.NewAgentIDFromAddress(*ref.SenderAddress())
 }

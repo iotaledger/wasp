@@ -13,16 +13,19 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
-	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error)
+	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
 
 	// general
 	ChainID() coretypes.ChainID
 	ChainOwnerID() coretypes.AgentID
+	IsRequestContext() bool
+	RequestID() coretypes.RequestID
 
 	// call context
 	Params() codec.ImmutableCodec
-	CurrentContractHname() coretypes.Hname
-	CurrentContractID() coretypes.ContractID
+	Caller() coretypes.AgentID
+	MyContractID() coretypes.ContractID
+	MyAgentID() coretypes.AgentID
 
 	GetTimestamp() int64
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
@@ -39,22 +42,20 @@ type Sandbox interface {
 	AccessRequest() RequestAccess
 	// base level of virtual state access
 	AccessState() codec.MutableMustCodec
-	// Deprecated
-	AccessSCAccount() AccountAccess
 	// new implementation
 	Accounts() Accounts
+	// send tokens to address
+	SendToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
 	// Send request
-	SendRequest(par NewRequestParams) bool
+	PostRequest(par NewRequestParams) bool
 	// Send request to itself
-	SendRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool
+	PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool
 	// Send request to itself with timelock for some seconds after the current timestamp
-	SendRequestToSelfWithDelay(reqCode coretypes.Hname, args dict.Dict, deferForSec uint32) bool
+	PostRequestToSelfWithDelay(reqCode coretypes.Hname, args dict.Dict, deferForSec uint32) bool
 	// for testing
 	// Publish "vmmsg" message through Publisher
 	Event(msg string)
 	Eventf(format string, args ...interface{})
-
-	DumpAccount() string
 }
 
 type NewRequestParams struct {
@@ -62,15 +63,12 @@ type NewRequestParams struct {
 	EntryPoint       coretypes.Hname
 	Timelock         uint32
 	Params           dict.Dict
-	IncludeReward    int64
+	Transfer         coretypes.ColoredBalances
 }
 
 // access to request
+// Deprecated
 type RequestAccess interface {
-	//request id
-	ID() coretypes.RequestID
-	// request code
-	EntryPointCode() coretypes.Hname
 	// Return address of non-contract sender
 	// Deprecated
 	MustSenderAddress() address.Address
@@ -82,27 +80,10 @@ type RequestAccess interface {
 	NumFreeMintedTokens() int64
 }
 
-// access to token operations (txbuilder)
-// mint (create new color) is not here on purpose: ColorNew is used for request tokens
-// to be replaced with new interface for access to token accounts
-// Deprecated
-type AccountAccess interface {
-	// access to total available outputs/balances
-	AvailableBalance(col *balance.Color) int64
-	MoveTokens(targetAddr *address.Address, col *balance.Color, amount int64) bool
-	EraseColor(targetAddr *address.Address, col *balance.Color, amount int64) bool
-	// part of the outputs/balances which are coming from the current request transaction
-	AvailableBalanceFromRequest(col *balance.Color) int64
-	MoveTokensFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
-	EraseColorFromRequest(targetAddr *address.Address, col *balance.Color, amount int64) bool
-}
-
 // Accounts is an interface to access all functions with tokens
 // in the local context of the call to a smart contract
 type Accounts interface {
-	// gives all accounts of the current contract context
-	coretypes.ColoredAccounts
-	// Incoming is a collection of spendable colored balances (a.k.a. budget)
-	// It is coming either from request or from calling contract
-	Incoming() coretypes.ColoredBalancesSpendable
+	Incoming() coretypes.ColoredBalances
+	Balance(col balance.Color) int64
+	MoveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool
 }

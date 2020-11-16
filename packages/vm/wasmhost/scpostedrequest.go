@@ -64,7 +64,7 @@ func (o *ScPostedRequest) Send() {
 		params = nil
 	}
 	reqCode := coretypes.Hname(o.code)
-	if !o.vm.ctx.SendRequestToSelfWithDelay(reqCode, params, uint32(o.delay)) {
+	if !o.vm.ctx.PostRequestToSelfWithDelay(reqCode, params, uint32(o.delay)) {
 		o.vm.Trace("  FAILED to send")
 	}
 }

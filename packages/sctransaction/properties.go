@@ -3,7 +3,9 @@ package sctransaction
 import (
 	"errors"
 	"fmt"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -11,6 +13,8 @@ import (
 )
 
 type Properties struct {
+	// TX ID
+	txid valuetransaction.ID
 	// the only senderAddress of the SC transaction
 	senderAddress address.Address
 	// is it state transaction (== does it contain valid stateBlock)
@@ -20,22 +24,17 @@ type Properties struct {
 	// if isState == true: chainID
 	chainID coretypes.ChainID
 	// if isState == true: smart contract color
-	stateColor balance.Color
-	// number of newly minted tokens
-	numMintedTokensByChain map[coretypes.ChainID]int64
-	numMintedTokens        int64
+	stateColor      balance.Color
+	numMintedTokens int64
 	// number of requests
 	numRequests int
 }
 
 func (tx *Transaction) calcProperties() (*Properties, error) {
-	ret := &Properties{}
+	ret := &Properties{txid: tx.ID()}
 	if err := ret.analyzeSender(tx); err != nil {
 		return nil, err
 	}
-
-	ret.countMintedTokens(tx)
-
 	if err := ret.analyzeStateBlock(tx); err != nil {
 		return nil, err
 	}
@@ -63,22 +62,10 @@ func (prop *Properties) analyzeSender(tx *Transaction) error {
 	return err
 }
 
-func (prop *Properties) countMintedTokens(tx *Transaction) {
-	prop.numMintedTokensByChain = make(map[coretypes.ChainID]int64)
-
-	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		v := txutil.BalanceOfColor(bals, balance.ColorNew)
-		if v != 0 {
-			va, _ := prop.numMintedTokensByChain[(coretypes.ChainID)(addr)]
-			prop.numMintedTokensByChain[(coretypes.ChainID)(addr)] = va + v
-			prop.numMintedTokens += v
-		}
-		return true
-	})
-}
+var ErrWrongChainToken = errors.New("sc transaction must contain exactly one chain token output")
 
 func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
-	stateBlock, ok := tx.State()
+	stateSection, ok := tx.State()
 	prop.isState = ok
 	if !ok {
 		return nil
@@ -86,41 +73,36 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 
 	var err error
 
-	if stateBlock.Color() != balance.ColorNew {
-		prop.stateColor = stateBlock.Color()
-		// it is not origin. Must contain exactly one output with value 1 of that color
-		var v int64
-		tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-			v += txutil.BalanceOfColor(bals, prop.stateColor)
-			if v > 1 {
-				err = errors.New("sc transaction must contain exactly one sc token output")
-				return false
-			}
-			prop.chainID = (coretypes.ChainID)(addr)
-			return true
-		})
-		if err != nil {
-			return err
+	prop.isOrigin = stateSection.Color() == balance.ColorNew
+	sectionColor := stateSection.Color()
+	if sectionColor == balance.ColorIOTA {
+		return fmt.Errorf("state section color can't be IOTAColor")
+	}
+
+	// must contain exactly one output with sectionColor. It can be NewColor for origin
+	var v int64
+	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
+		v += txutil.BalanceOfColor(bals, sectionColor)
+		if v > 1 {
+			err = ErrWrongChainToken
+			return false
 		}
-		// TODO May change in the future
-		if prop.chainID != (coretypes.ChainID)(prop.senderAddress) {
-			return errors.New("SC token must move from the SC address to itself")
+		if v == 1 {
+			prop.chainID = coretypes.ChainID(addr)
 		}
-		return nil
+		return true
+	})
+	if v != 1 {
+		return ErrWrongChainToken
 	}
-	// it can be a smart contract origin transaction (color == new)
-	// in this case transaction must contain number of requests + 1 newly minted token
-	// in the same address
-	if len(prop.numMintedTokensByChain) > 1 {
-		return errors.New("in the origin transaction tokens can be minted only to 1 address")
+	if err != nil {
+		return err
 	}
-	// one address with minted tokens.
-	for stateAddr := range prop.numMintedTokensByChain {
-		prop.chainID = stateAddr
-		break
+	if prop.isOrigin {
+		prop.stateColor = balance.Color(prop.txid)
+	} else {
+		prop.stateColor = sectionColor
 	}
-	prop.isOrigin = true
-	prop.stateColor = (balance.Color)(tx.Transaction.ID())
 	return nil
 }
 
@@ -131,48 +113,42 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	if len(tx.Requests()) == 0 {
 		return nil
 	}
+	if prop.isOrigin {
+		return errors.New("origin transaction should not contain requests")
+	}
 	prop.numRequests = len(tx.Requests())
 
-	numReqByAddr := make(map[coretypes.ChainID]int64)
-	for _, reqBlk := range tx.Requests() {
-		n, _ := numReqByAddr[reqBlk.Target().ChainID()]
-		numReqByAddr[reqBlk.Target().ChainID()] = n + 1
+	// sum up transfers of requests by target chain
+	reqTransfersByTargetChain := make(map[coretypes.ChainID]map[balance.Color]int64)
+	for _, req := range tx.Requests() {
+		chainid := req.targetContractID.ChainID()
+		m, ok := reqTransfersByTargetChain[chainid]
+		if !ok {
+			m = make(map[balance.Color]int64)
+			reqTransfersByTargetChain[chainid] = m
+		}
+		req.transfer.AddToMap(m)
+		// add one request token
+		numMinted, _ := m[balance.ColorNew]
+		m[balance.ColorNew] = numMinted + 1
 	}
-
-	if prop.isOrigin {
-		errWrongTokens := errors.New("wrong minted tokens and/or requests in the origin transaction")
-		if len(numReqByAddr) != 1 {
-			// must be exactly one target address for requests
-			return errWrongTokens
+	// check if transfers from requests equal to transfers by output address
+	for chainid, m := range reqTransfersByTargetChain {
+		bals, ok := tx.OutputBalancesByAddress(address.Address(chainid))
+		if !ok {
+			return errors.New("can't find outputs for request section")
 		}
-		if _, ok := numReqByAddr[prop.chainID]; !ok {
-			// that one address must be address of the originated smart contract
-			return errWrongTokens
-		}
-		numMinted, _ := prop.numMintedTokensByChain[prop.chainID]
-		if numMinted != int64(len(tx.Requests())+1) {
-			// number of minted must be one more that number of requests
-			return errWrongTokens
-		}
-		return nil
-	}
-	// not origin transaction
-
-	// IMPORTANT: number of minted tokens to an address of some smart contract must be exactly equal to
-	// the number of requests to that smart contract.
-	// Total number of minted tokens can be larger that the total number of requests, however the
-	// rest of minted tokens must be in outputs different from any of the target smart contract address
-	for targetAddr, numReq := range numReqByAddr {
-		numMinted, _ := prop.numMintedTokensByChain[targetAddr]
-		if numMinted != numReq {
-			return fmt.Errorf("number of minted tokens to the SC address %s is not equal to the number of requests to that SC. Txid = %s",
-				targetAddr.String(), tx.ID().String())
+		txBals := accounts.NewColoredBalancesFromMap(txutil.BalancesToMap(bals))
+		reqBals := accounts.NewColoredBalancesFromMap(m)
+		if !txBals.Equal(reqBals) {
+			return errors.New("mismatch between transfer data in request section and tx outputs")
 		}
 	}
+	// TODO free minted tokens
 	return nil
 }
 
-func (prop *Properties) Sender() *address.Address {
+func (prop *Properties) SenderAddress() *address.Address {
 	return &prop.senderAddress
 }
 
@@ -204,4 +180,15 @@ func (prop *Properties) NumFreeMintedTokens() int64 {
 		return 0
 	}
 	return prop.numMintedTokens - int64(prop.numRequests)
+}
+
+func (prop *Properties) String() string {
+	ret := "---- Transaction:\n"
+	ret += fmt.Sprintf("   txid: %s\n", prop.txid.String())
+	ret += fmt.Sprintf("   requests: %d\n", prop.numRequests)
+	ret += fmt.Sprintf("   senderAddress: %s\n", prop.senderAddress.String())
+	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
+	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
+	ret += fmt.Sprintf("   numMinted: %d\n", prop.numMintedTokens)
+	return ret
 }
