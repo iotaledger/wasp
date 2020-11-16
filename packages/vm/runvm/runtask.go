@@ -90,7 +90,15 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		return
 	}
 
+	prop, err := task.ResultTransaction.Properties()
+	if err != nil {
+		task.OnFinish(err)
+	}
+
+	task.Log.Debugf("\n%s", prop.String())
+
 	task.Log.Debugw("runTask OUT",
+		"result txid", task.ResultTransaction.ID().String(),
 		"result batch size", task.ResultBlock.Size(),
 		"result batch state index", task.ResultBlock.StateIndex(),
 		"result variable state hash", stateHash.String(),

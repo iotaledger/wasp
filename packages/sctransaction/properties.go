@@ -2,6 +2,8 @@ package sctransaction
 
 import (
 	"errors"
+	"fmt"
+	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 
@@ -11,6 +13,8 @@ import (
 )
 
 type Properties struct {
+	// TX ID
+	txid valuetransaction.ID
 	// the only senderAddress of the SC transaction
 	senderAddress address.Address
 	// is it state transaction (== does it contain valid stateBlock)
@@ -27,7 +31,7 @@ type Properties struct {
 }
 
 func (tx *Transaction) calcProperties() (*Properties, error) {
-	ret := &Properties{}
+	ret := &Properties{txid: tx.ID()}
 	if err := ret.analyzeSender(tx); err != nil {
 		return nil, err
 	}
@@ -71,8 +75,11 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 
 	prop.isOrigin = stateSection.Color() == balance.ColorNew
 	sectionColor := stateSection.Color()
+	if sectionColor == balance.ColorIOTA {
+		return fmt.Errorf("state section color can't be IOTAColor")
+	}
 
-	// must contain exactly one output with sectionColor. It ca be NewColor for origin
+	// must contain exactly one output with sectionColor. It can be NewColor for origin
 	var v int64
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
 		v += txutil.BalanceOfColor(bals, sectionColor)
@@ -80,7 +87,9 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 			err = ErrWrongChainToken
 			return false
 		}
-		prop.chainID = (coretypes.ChainID)(addr)
+		if v == 1 {
+			prop.chainID = coretypes.ChainID(addr)
+		}
 		return true
 	})
 	if v != 1 {
@@ -89,7 +98,11 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 	if err != nil {
 		return err
 	}
-	prop.stateColor = (balance.Color)(tx.Transaction.ID())
+	if prop.isOrigin {
+		prop.stateColor = balance.Color(prop.txid)
+	} else {
+		prop.stateColor = sectionColor
+	}
 	return nil
 }
 
@@ -167,4 +180,15 @@ func (prop *Properties) NumFreeMintedTokens() int64 {
 		return 0
 	}
 	return prop.numMintedTokens - int64(prop.numRequests)
+}
+
+func (prop *Properties) String() string {
+	ret := "---- Transaction:\n"
+	ret += fmt.Sprintf("   txid: %s\n", prop.txid.String())
+	ret += fmt.Sprintf("   requests: %d\n", prop.numRequests)
+	ret += fmt.Sprintf("   senderAddress: %s\n", prop.senderAddress.String())
+	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
+	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
+	ret += fmt.Sprintf("   numMinted: %d\n", prop.numMintedTokens)
+	return ret
 }
