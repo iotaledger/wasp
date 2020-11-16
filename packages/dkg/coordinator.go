@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
 )
 
 // Coordinator runs at the requestor node and coordinates the
@@ -31,7 +30,7 @@ func GenerateDistributedKey(
 	peerLocs []string,
 	peerPubs []kyber.Point,
 	timeout time.Duration,
-	suite *edwards25519.SuiteEd25519,
+	suite kyber.Group,
 	network CoordNodeProvider,
 ) (*Coordinator, error) {
 	var err error

@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
+	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 )
 
 // In a normal execution mode, there will be exactly one node registered
@@ -19,7 +19,7 @@ var nodes []*node = []*node{}
 type node struct {
 	secKey      kyber.Scalar
 	pubKey      kyber.Point
-	suite       *edwards25519.SuiteEd25519
+	suite       rabin_dkg.Suite
 	netProvider peering.NetworkProvider
 	processes   map[string]*proc
 }
@@ -29,7 +29,7 @@ type node struct {
 func InitNode(
 	secKey kyber.Scalar,
 	pubKey kyber.Point,
-	suite *edwards25519.SuiteEd25519,
+	suite rabin_dkg.Suite,
 	netProvider peering.NetworkProvider,
 ) CoordNodeProvider {
 	n := node{
