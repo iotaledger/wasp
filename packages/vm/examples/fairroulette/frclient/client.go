@@ -125,7 +125,7 @@ func decodeWinsPerColor(result *statequery.ArrayResult) ([]uint32, error) {
 	for _, b := range result.Values {
 		var n uint32
 		if b != nil {
-			n = util.Uint32From4Bytes(b)
+			n = util.MustUint32From4Bytes(b)
 		}
 		ret = append(ret, n)
 	}

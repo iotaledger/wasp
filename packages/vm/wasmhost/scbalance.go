@@ -28,11 +28,15 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 		o.Error(err.Error())
 		return 0
 	}
-	account := o.vm.ctx.AccessSCAccount()
-	if o.requestOnly {
-		return account.AvailableBalanceFromRequest(&color)
-	}
-	return account.AvailableBalance(&color)
+	color = color
+	// TODO refactor
+	o.vm.ctx.Panic("to be refactored")
+	//account := o.vm.ctx.AccessSCAccount()
+	//if o.requestOnly {
+	//	return account.AvailableBalanceFromRequest(&color)
+	//}
+	//return account.AvailableBalance(&color)
+	return 0
 }
 
 func (o *ScBalance) GetTypeId(keyId int32) int32 {

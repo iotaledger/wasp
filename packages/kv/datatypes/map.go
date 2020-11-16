@@ -147,7 +147,7 @@ func (d *Map) len() (uint32, error) {
 	if len(v) != 4 {
 		return 0, errors.New("corrupted data")
 	}
-	return util.Uint32From4Bytes(v), nil
+	return util.MustUint32From4Bytes(v), nil
 }
 
 func (d *Map) Erase() {
@@ -177,7 +177,7 @@ func (d *MustMap) IterateBalances(f func(color balance.Color, bal int64) bool) {
 		if err != nil {
 			panic(err)
 		}
-		bal := int64(util.Uint64From8Bytes(value))
+		bal := int64(util.MustUint64From8Bytes(value))
 		return f(col, bal)
 	})
 }

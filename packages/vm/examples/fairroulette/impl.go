@@ -306,7 +306,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
 	// calculating it modulo NumColors.
-	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
+	winningColor := byte(util.MustUint64From8Bytes(entropy[:8]) % NumColors)
 	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	ctx.Eventf("$$$$$$$$$$ winning color is = %d", winningColor)
@@ -386,7 +386,7 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
 	}
 
 	winsb := winsPerColorArray.GetAt(uint16(winningColor))
-	wins := util.Uint32From4Bytes(winsb)
+	wins := util.MustUint32From4Bytes(winsb)
 	winsPerColorArray.SetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
 }
 

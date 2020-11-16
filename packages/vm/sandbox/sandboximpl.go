@@ -1,11 +1,11 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -38,6 +38,10 @@ func (s *sandbox) MyContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 
+func (s *sandbox) Caller() coretypes.AgentID {
+	return s.vmctx.Caller()
+}
+
 func (s *sandbox) MyAgentID() coretypes.AgentID {
 	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
 }
@@ -51,7 +55,7 @@ func (s *sandbox) ChainID() coretypes.ChainID {
 }
 
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(s.vmctx.ChainID(), accountsc.Hname))
+	return s.vmctx.ChainOwnerID()
 }
 
 func (s *sandbox) GetTimestamp() int64 {
@@ -74,6 +78,10 @@ func (s *sandbox) AccessState() codec.MutableMustCodec {
 
 func (s *sandbox) Accounts() vmtypes.Accounts {
 	return s.vmctx.Accounts()
+}
+
+func (s *sandbox) SendToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool {
+	panic("implement me")
 }
 
 func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {

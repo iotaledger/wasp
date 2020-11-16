@@ -15,7 +15,7 @@ func InitFlags() {
 	flag.String(CfgRewardAddress, "", "reward address for this Wasp node. Empty (default) means no rewards are collected")
 }
 
-func GetRewardAddress(scaddr *address.Address) address.Address {
+func GetFeeDestination(scaddr *address.Address) address.Address {
 	//TODO
 	ret, err := address.FromBase58(config.Node.GetString(CfgRewardAddress))
 	if err != nil {

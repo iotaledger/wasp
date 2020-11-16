@@ -23,6 +23,7 @@ type Sandbox interface {
 
 	// call context
 	Params() codec.ImmutableCodec
+	Caller() coretypes.AgentID
 	MyContractID() coretypes.ContractID
 	MyAgentID() coretypes.AgentID
 
@@ -43,6 +44,8 @@ type Sandbox interface {
 	AccessState() codec.MutableMustCodec
 	// new implementation
 	Accounts() Accounts
+	// send tokens to address
+	SendToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
 	// Send request
 	PostRequest(par NewRequestParams) bool
 	// Send request to itself
@@ -56,12 +59,11 @@ type Sandbox interface {
 }
 
 type NewRequestParams struct {
-	SenderContractHname coretypes.Hname
-	TargetContractID    coretypes.ContractID
-	EntryPoint          coretypes.Hname
-	Timelock            uint32
-	Params              dict.Dict
-	Transfer            coretypes.ColoredBalances
+	TargetContractID coretypes.ContractID
+	EntryPoint       coretypes.Hname
+	Timelock         uint32
+	Params           dict.Dict
+	Transfer         coretypes.ColoredBalances
 }
 
 // access to request

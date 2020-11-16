@@ -2,29 +2,28 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 )
 
-func (vmctx *VMContext) PushCallContext(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) error {
 	if transfer != nil {
+		agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), contract))
 		if len(vmctx.callStack) == 0 {
-			vmctx.doDeposit(contract, transfer)
+			vmctx.creditToAccount(agentID, transfer)
 		} else {
-			if !vmctx.doTransfer(vmctx.CurrentContractHname(), contract, transfer) {
-				return fmt.Errorf("PushCallContext: transfer failed")
+			fromAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname()))
+			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
+				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
 			}
 		}
 	}
-	vmctx.pushCallContextIntern(contract, params, transfer)
+	vmctx.pushCallContext(contract, params, transfer)
 	return nil
 }
 
-func (vmctx *VMContext) pushCallContextIntern(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) {
+func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) {
 	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	var caller coretypes.AgentID
 	isRequestContext := len(vmctx.callStack) == 0
@@ -43,13 +42,9 @@ func (vmctx *VMContext) pushCallContextIntern(contract coretypes.Hname, params c
 	})
 }
 
-func (vmctx *VMContext) PopCallContext() {
+func (vmctx *VMContext) popCallContext() {
 	vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
-}
-
-func (vmctx *VMContext) CurrentContractID() coretypes.ContractID {
-	return coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
 func (vmctx *VMContext) getCallContext() *callContext {
@@ -59,70 +54,35 @@ func (vmctx *VMContext) getCallContext() *callContext {
 	return vmctx.callStack[len(vmctx.callStack)-1]
 }
 
-// doDeposit deposits transfer from request to internal account of the called contracts
-func (vmctx *VMContext) doDeposit(toContract coretypes.Hname, transfer coretypes.ColoredBalances) {
-	vmctx.pushCallContextIntern(accountsc.Hname, nil, nil) // create local context for the state
-	defer vmctx.PopCallContext()
+// creditToAccount deposits transfer from request to chain account of of the called contract
+// It adds new tokens to the chain ledger
+// It is used when new tokens arrive with a request
+func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+	if len(vmctx.callStack) > 0 {
+		vmctx.log.Panicf("creditToAccount must be called only from request")
+	}
+	vmctx.pushCallContext(accountsc.Hname, nil, nil) // create local context for the state
+	defer vmctx.popCallContext()
 
-	targetAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), toContract))
-	account := codec.NewMustCodec(vmctx).GetMap(kv.Key(targetAgentID[:]))
-	transfer.Iterate(func(col balance.Color, bal int64) bool {
-		var currentBalance int64
-		v := account.GetAt(col[:])
-		if v != nil {
-			currentBalance = int64(util.Uint64From8Bytes(v))
-		}
-		account.SetAt(col[:], util.Uint64To8Bytes(uint64(currentBalance+bal)))
-		return true
-	})
+	accountsc.CreditToAccount(codec.NewMustCodec(vmctx), agentID, transfer)
 }
 
-// doTransfer transfers tokens from caller's account to target contract account
-func (vmctx *VMContext) doTransfer(fromContract, toContract coretypes.Hname, transfer coretypes.ColoredBalances) bool {
-	vmctx.pushCallContextIntern(accountsc.Hname, nil, nil) // create local context for the state
-	defer vmctx.PopCallContext()
+// debitFromAccount subtracts tokens from account if it is enough of it.
+// should be called only when posting request
+func (vmctx *VMContext) debitFromAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	vmctx.pushCallContext(accountsc.Hname, nil, nil) // create local context for the state
+	defer vmctx.popCallContext()
 
-	sourceAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), fromContract))
-	targetAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), toContract))
+	return accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), agentID, transfer)
+}
 
-	state := codec.NewMustCodec(vmctx)
-	sourceAccount := state.GetMap(kv.Key(sourceAgentID[:]))
-	targetAccount := state.GetMap(kv.Key(targetAgentID[:]))
-
-	// first check balances
-	balancesOk := true
-	transfer.Iterate(func(col balance.Color, bal int64) bool {
-		var sourceBalance int64
-		v := sourceAccount.GetAt(col[:])
-		if v != nil {
-			sourceBalance = int64(util.Uint64From8Bytes(v))
-		}
-		if sourceBalance < bal {
-			balancesOk = false
-			return false
-		}
-		return true
-	})
-	if !balancesOk {
-		return false
+func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	if len(vmctx.callStack) == 0 {
+		vmctx.log.Panicf("moveBetweenAccounts can't be called from request context")
 	}
-	transfer.Iterate(func(col balance.Color, bal int64) bool {
-		var sourceBalance, targetBalance int64
-		v := sourceAccount.GetAt(col[:])
-		if v != nil {
-			sourceBalance = int64(util.Uint64From8Bytes(v))
-		}
-		v = targetAccount.GetAt(col[:])
-		if v != nil {
-			targetBalance = int64(util.Uint64From8Bytes(v))
-		}
-		targetAccount.SetAt(col[:], util.Uint64To8Bytes(uint64(targetBalance+bal)))
-		if sourceBalance == bal {
-			sourceAccount.DelAt(col[:])
-		} else {
-			targetAccount.SetAt(col[:], util.Uint64To8Bytes(uint64(sourceBalance-bal)))
-		}
-		return true
-	})
-	return true
+
+	vmctx.pushCallContext(accountsc.Hname, nil, nil) // create local context for the state
+	defer vmctx.popCallContext()
+
+	return accountsc.MoveBetweenAccounts(codec.NewMustCodec(vmctx), fromAgentID, toAgentID, transfer)
 }

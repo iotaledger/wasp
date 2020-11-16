@@ -22,15 +22,27 @@ func (vmctx *VMContext) ChainID() coretypes.ChainID {
 	return vmctx.chainID
 }
 
+func (vmctx *VMContext) ChainOwnerID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), accountsc.Hname))
+}
+
 func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
 	return vmctx.getCallContext().contract
+}
+
+func (vmctx *VMContext) CurrentContractID() coretypes.ContractID {
+	return coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname())
+}
+
+func (vmctx *VMContext) MyAgentID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {
 	return vmctx.getCallContext().isRequestContext
 }
 
-func (vmctx *VMContext) CurrentCaller() coretypes.AgentID {
+func (vmctx *VMContext) Caller() coretypes.AgentID {
 	return vmctx.getCallContext().caller
 }
 
@@ -47,25 +59,20 @@ func (vmctx *VMContext) Log() *logger.Logger {
 }
 
 func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
-	if vmctx.getCallContext().contract == accountsc.Hname {
-		reqSection := sctransaction.NewRequestSection(par.SenderContractHname, par.TargetContractID, par.EntryPoint).
-			WithTimelock(par.Timelock).
-			WithTransfer(par.Transfer).
-			WithArgs(par.Params)
-		vmctx.txBuilder.AddRequestSection(reqSection)
-		return true
+	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), par.Transfer) {
+		return false
 	}
-	par1 := codec.NewCodec(par.Params.Clone())
-	par1.SetHname(accountsc.ParamSenderContractHname__, vmctx.CurrentContractHname())
-	par1.SetContractID(accountsc.ParamTargetContractID__, &par.TargetContractID)
-	par1.SetHname(accountsc.ParamTargetEntryPoint__, par.EntryPoint)
-	_, err := vmctx.CallContract(accountsc.Hname, accountsc.EntryPointPostRequest, par1, par.Transfer)
-	return err == nil
+	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
+		WithTimelock(par.Timelock).
+		WithTransfer(par.Transfer).
+		WithArgs(par.Params)
+	vmctx.txBuilder.AddRequestSection(reqSection)
+	return true
 }
 
 func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.CurrentContractHname()),
+		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       reqCode,
 		Params:           params,
 	})
@@ -75,7 +82,7 @@ func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, a
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.CurrentContractHname()),
+		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       entryPoint,
 		Params:           args,
 		Timelock:         timelock,

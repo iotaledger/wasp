@@ -25,6 +25,10 @@ func (b coloredBalances) Balance(col balance.Color) int64 {
 	return ret
 }
 
+func (b coloredBalances) AsMap() map[balance.Color]int64 {
+	return b
+}
+
 func (b coloredBalances) Iterate(f func(col balance.Color, bal int64) bool) {
 	for col, bal := range b {
 		if bal == 0 {

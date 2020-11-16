@@ -79,7 +79,7 @@ func (op *operator) startCalculationsAsLeader() {
 	reqIdsStr := idsShortStr(reqIds)
 
 	op.log.Debugf("requests selected to process. Current state: %d, Reqs: %+v", op.mustStateIndex(), reqIdsStr)
-	rewardAddress := op.getRewardAddress()
+	rewardAddress := op.getFeeDestination()
 
 	// send to subordinated peers requests to process the batch
 	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
@@ -87,9 +87,9 @@ func (op *operator) startCalculationsAsLeader() {
 			// timestamp is set by SendMsgToCommitteePeers
 			BlockIndex: op.stateTx.MustState().BlockIndex(),
 		},
-		RewardAddress: rewardAddress,
-		Balances:      op.balances,
-		RequestIds:    reqIds,
+		FeeDestination: rewardAddress,
+		Balances:       op.balances,
+		RequestIds:     reqIds,
 	})
 
 	// determine timestamp. Must be max(local clock, prev timestamp+1)
@@ -131,7 +131,7 @@ func (op *operator) startCalculationsAsLeader() {
 		leaderPeerIndex: op.chain.OwnPeerIndex(),
 		balances:        op.balances,
 		timestamp:       ts,
-		rewardAddress:   rewardAddress,
+		accrueFeesTo:    rewardAddress,
 	})
 	op.setNextConsensusStage(consensusStageLeaderCalculationsStarted)
 }

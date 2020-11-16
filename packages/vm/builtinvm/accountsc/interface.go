@@ -20,38 +20,37 @@ type accountsEntryPoint struct {
 const (
 	ContractName = "accounts"
 
-	FuncBalance             = "balance"
-	FuncMoveTokens          = "moveTokens"
-	FuncFallbackShortOfFees = "fallbackShortOfFees"
-	FuncPostRequest         = "postRequest"
+	FuncBalance  = "balance"
+	FuncDeposit  = "deposit"
+	FuncMove     = "move"
+	FuncWithdraw = "withdraw"
+	FuncAccounts = "accounts"
 
 	VarStateInitialized = "i"
+	VarStateAllAccounts = "a"
 
 	ParamAgentID = "a"
-
-	ParamTargetContractID__    = "__target_contract_id__"
-	ParamTargetEntryPoint__    = "__target_entry__point__"
-	ParamSenderContractHname__ = "__sender_contract_hname__"
 )
 
 var (
-	Hname                             = coretypes.Hn(ContractName)
-	EntryPointBalance                 = coretypes.Hn(FuncBalance)
-	EntryPointMoveTokens              = coretypes.Hn(FuncMoveTokens)
-	EntryPointFuncFallbackShortOfFees = coretypes.Hn(FuncFallbackShortOfFees)
-	EntryPointPostRequest             = coretypes.Hn(FuncPostRequest)
+	Hname              = coretypes.Hn(ContractName)
+	EntryPointBalance  = coretypes.Hn(FuncBalance)
+	EntryPointDeposit  = coretypes.Hn(FuncDeposit)
+	EntryPointMove     = coretypes.Hn(FuncMove)
+	EntryPointWithdraw = coretypes.Hn(FuncWithdraw)
+	EntryPointAccounts = coretypes.Hn(FuncAccounts)
 
 	processor = accountsProcessor{
-		coretypes.EntryPointCodeInit:      {epFunc(initialize)},
-		EntryPointBalance:                 {epFuncView(getBalance)},
-		EntryPointMoveTokens:              {epFunc(moveTokens)},
-		EntryPointFuncFallbackShortOfFees: {epFunc(fallbackShortOfFees)},
-		EntryPointPostRequest:             {epFunc(postRequest)},
+		coretypes.EntryPointCodeInit: {epFunc(initialize)},
+		EntryPointBalance:            {epFuncView(getBalance)},
+		EntryPointAccounts:           {epFuncView(getAccounts)},
+		EntryPointDeposit:            {epFunc(deposit)},
+		EntryPointMove:               {epFunc(move)},
+		EntryPointWithdraw:           {epFunc(withdraw)},
 	}
 	ProgramHash = hashing.NilHash
 
 	ErrParamsAgentIDNotFound = fmt.Errorf("wrong parameters: agent ID not specified")
-	ErrNotEnoughBalance      = fmt.Errorf("not enough balance")
 )
 
 func GetProcessor() vmtypes.Processor {

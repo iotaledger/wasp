@@ -30,9 +30,12 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 
 func (o *ScTransfer) Send() {
 	o.vm.Trace("TRANSFER a%d c'%s' a'%s'", o.amount, o.color.String(), o.address.String())
-	if !o.vm.ctx.AccessSCAccount().MoveTokens(&o.address, &o.color, o.amount) {
-		o.vm.ctx.Panic("Failed to move tokens")
-	}
+
+	// TODO
+	o.vm.ctx.Panic("to be refactored")
+	//if !o.vm.ctx.AccessSCAccount().MoveTokens(&o.address, &o.color, o.amount) {
+	//	o.vm.ctx.Panic("Failed to move tokens")
+	//}
 }
 
 func (o *ScTransfer) SetBytes(keyId int32, value []byte) {

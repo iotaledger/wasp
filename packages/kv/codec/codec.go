@@ -219,7 +219,7 @@ func DecodeInt64(b []byte) (int64, error) {
 	if len(b) != 8 {
 		return 0, fmt.Errorf("value %s is not an int64", hex.EncodeToString(b))
 	}
-	return int64(util.Uint64From8Bytes(b)), nil
+	return int64(util.MustUint64From8Bytes(b)), nil
 }
 
 func EncodeInt64(value int64) []byte {
