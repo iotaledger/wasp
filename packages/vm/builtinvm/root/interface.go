@@ -72,10 +72,10 @@ type rootEntryPoint struct {
 
 var (
 	processor = rootProcessor{
-		coretypes.EntryPointCodeInit: {epFunc(initialize)},
-		EntryPointDeployContract:     {epFunc(deployContract)},
-		EntryPointFindContract:       {epFuncView(findContract)},
-		EntryPointGetBinary:          {epFuncView(getBinary)},
+		coretypes.EntryPointInit: {epFunc(initialize)},
+		EntryPointDeployContract: {epFunc(deployContract)},
+		EntryPointFindContract:   {epFuncView(findContract)},
+		EntryPointGetBinary:      {epFuncView(getBinary)},
 	}
 )
 

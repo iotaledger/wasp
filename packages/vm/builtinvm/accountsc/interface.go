@@ -41,12 +41,12 @@ var (
 	EntryPointAccounts = coretypes.Hn(FuncAccounts)
 
 	processor = accountsProcessor{
-		coretypes.EntryPointCodeInit: {epFunc(initialize)},
-		EntryPointBalance:            {epFuncView(getBalance)},
-		EntryPointAccounts:           {epFuncView(getAccounts)},
-		EntryPointDeposit:            {epFunc(deposit)},
-		EntryPointMove:               {epFunc(move)},
-		EntryPointWithdraw:           {epFunc(withdraw)},
+		coretypes.EntryPointInit: {epFunc(initialize)},
+		EntryPointBalance:        {epFuncView(getBalance)},
+		EntryPointAccounts:       {epFuncView(getAccounts)},
+		EntryPointDeposit:        {epFunc(deposit)},
+		EntryPointMove:           {epFunc(move)},
+		EntryPointWithdraw:       {epFunc(withdraw)},
 	}
 	ProgramHash = hashing.NilHash
 

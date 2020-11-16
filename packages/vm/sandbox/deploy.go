@@ -35,7 +35,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 	}
 	// calling constructor
 	// error ignored, if for example init entry point does not exist
-	_, _ = s.Call(coretypes.Hn(name), coretypes.EntryPointCodeInit, initParams, nil)
+	_, _ = s.Call(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
 
 	return nil
 }

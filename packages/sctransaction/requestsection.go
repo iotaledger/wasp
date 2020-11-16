@@ -53,6 +53,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
 		args:                dict.NewDict(),
+		transfer:            accounts.NewColoredBalancesFromMap(nil),
 	}
 }
 
@@ -114,6 +115,9 @@ func (req *RequestSection) WithTimelock(tl uint32) *RequestSection {
 }
 
 func (req *RequestSection) WithTransfer(transfer coretypes.ColoredBalances) *RequestSection {
+	if transfer == nil {
+		transfer = accounts.NewColoredBalancesFromMap(nil)
+	}
 	req.transfer = transfer
 	return req
 }

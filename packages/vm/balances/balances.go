@@ -17,6 +17,9 @@ func NewColoredBalances() coretypes.ColoredBalances {
 }
 
 func NewColoredBalancesFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
+	if m == nil {
+		m = make(map[balance.Color]int64)
+	}
 	return coloredBalances(m)
 }
 

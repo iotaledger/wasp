@@ -29,7 +29,7 @@ var (
 )
 
 var entryPoints = incCounterProcessor{
-	coretypes.EntryPointCodeInit:      initialize,
+	coretypes.EntryPointInit:          initialize,
 	EntryPointIncCounter:              incCounter,
 	EntryPointIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
 	EntryPointIncAndRepeatMany:        incCounterAndRepeatMany,

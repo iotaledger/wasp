@@ -130,12 +130,15 @@ func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
 		return err
 	}
 	var err error
-	req.Transfer().Iterate(func(col balance.Color, bal int64) bool {
-		if err = txb.MoveTokensToAddress(targetAddr, col, bal); err != nil {
-			return false
-		}
-		return true
-	})
+	tran := req.Transfer()
+	if tran != nil {
+		tran.Iterate(func(col balance.Color, bal int64) bool {
+			if err = txb.MoveTokensToAddress(targetAddr, col, bal); err != nil {
+				return false
+			}
+			return true
+		})
+	}
 	txb.requestBlocks = append(txb.requestBlocks, req)
 	return nil
 }
