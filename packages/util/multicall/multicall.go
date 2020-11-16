@@ -49,6 +49,8 @@ func MultiCall(funs []func() error, timeout time.Duration) (bool, []error) {
 			// wait for all to finish and then cleanup
 			// if some function blocks it will leak the goroutine and the channel
 			wg.Wait()
+			mutex.Lock()
+			defer mutex.Unlock()
 			close(chNormal)
 		}()
 	}
