@@ -38,6 +38,11 @@ func RandomChainID() ChainID {
 	return (ChainID)(address.Random())
 }
 
+// Bytes returns a serialized version of this ChainID.
+func (chid ChainID) Bytes() []byte {
+	return (address.Address)(chid).Bytes()
+}
+
 func (chid ChainID) String() string {
 	return (address.Address)(chid).String()
 }

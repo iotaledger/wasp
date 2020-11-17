@@ -1,5 +1,8 @@
 package dkg
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // This file describes a WebAPI (REST based API) between the DKG
 // Coordinator and the DKG nodes (peers generating the shared key).
 
@@ -38,7 +41,9 @@ type InitReq struct {
 	PeerLocs  []string `json:"peerLocs"`
 	PeerPubs  [][]byte `json:"peerPubs"`
 	CoordPub  []byte   `json:"coordPub"`
-	TimeoutMS int64    `json:"timeoutMS"`
+	Treshold  uint32   `json:"treshold"`
+	Version   byte     `json:"version"`
+	TimeoutMS uint64   `json:"timeoutMS"`
 }
 
 // StepReq is a message used to coordinate the DKG procedure by
@@ -52,5 +57,7 @@ type StepReq struct {
 // by the DKG peers returning the shared public key.
 // All the nodes must return the same public key.
 type PubKeyResp struct {
-	PubKey []byte `json:"pubKey"`
+	ChainID   []byte `json:"address"`
+	PubKey    []byte `json:"pubKey"`
+	Signature []byte `json:"signature"`
 }

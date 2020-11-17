@@ -1,5 +1,8 @@
 package dkg
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"errors"
 	"fmt"
@@ -21,6 +24,7 @@ type node struct {
 	pubKey      kyber.Point
 	suite       rabin_dkg.Suite
 	netProvider peering.NetworkProvider
+	registry    RegistryProvider
 	processes   map[string]*proc
 }
 
@@ -31,12 +35,14 @@ func InitNode(
 	pubKey kyber.Point,
 	suite rabin_dkg.Suite,
 	netProvider peering.NetworkProvider,
+	registry RegistryProvider,
 ) CoordNodeProvider {
 	n := node{
 		secKey:      secKey,
 		pubKey:      pubKey,
 		suite:       suite,
 		netProvider: netProvider,
+		registry:    registry,
 		processes:   make(map[string]*proc),
 	}
 	nodes = append(nodes, &n)

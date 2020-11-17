@@ -1,5 +1,8 @@
 package dkg
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import "go.dedis.ch/kyber/v3"
 
 func pubToBytes(pub kyber.Point) ([]byte, error) {

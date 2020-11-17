@@ -1,10 +1,14 @@
 package dkg_test
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -19,6 +23,7 @@ func TestEd25519(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	var timeout = 10 * time.Second
+	var treshold uint32 = 2
 	var peerCount = 3
 	var peerLocs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
@@ -35,7 +40,8 @@ func TestEd25519(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []dkg.CoordNodeProvider = make([]dkg.CoordNodeProvider, len(peerLocs))
 	for i := range peerLocs {
-		dkgNodes[i] = dkg.InitNode(peerSecs[i], peerPubs[i], suite, networkProviders[i])
+		registry := testutil.NewDkgRegistryProvider(suite)
+		dkgNodes[i] = dkg.InitNode(peerSecs[i], peerPubs[i], suite, networkProviders[i], registry)
 	}
 	//
 	// Initiate the key generation from some client node.
@@ -45,13 +51,20 @@ func TestEd25519(t *testing.T) {
 		dkgNodes,
 		timeout, // Single call timeout.
 	)
-	c, err := dkg.GenerateDistributedKey(coordKey, coordPub, peerLocs, peerPubs, timeout, suite, coordNodeProvider)
+	sharedAddr, sharedPub, err := dkg.GenerateDistributedKey(
+		coordKey, coordPub,
+		peerLocs, peerPubs,
+		treshold, address.VersionED25519,
+		timeout, suite, coordNodeProvider,
+	)
 	require.Nil(t, err)
-	require.NotNil(t, c)
+	require.NotNil(t, sharedAddr)
+	require.NotNil(t, sharedPub)
 }
 
 func TestBn256(t *testing.T) {
 	var timeout = 10 * time.Second
+	var treshold uint32 = 2
 	var peerCount = 3
 	var peerLocs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
@@ -69,7 +82,8 @@ func TestBn256(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []dkg.CoordNodeProvider = make([]dkg.CoordNodeProvider, len(peerLocs))
 	for i := range peerLocs {
-		dkgNodes[i] = dkg.InitNode(peerSecs[i], peerPubs[i], suite, networkProviders[i])
+		registry := testutil.NewDkgRegistryProvider(suite)
+		dkgNodes[i] = dkg.InitNode(peerSecs[i], peerPubs[i], suite, networkProviders[i], registry)
 	}
 	//
 	// Initiate the key generation from some client node.
@@ -78,11 +92,13 @@ func TestBn256(t *testing.T) {
 		dkgNodes,
 		timeout, // Single call timeout.
 	)
-	c, err := dkg.GenerateDistributedKey(
+	sharedAddr, sharedPub, err := dkg.GenerateDistributedKey(
 		coordPair.Private, coordPair.Public,
 		peerLocs, peerPubs,
+		treshold, address.VersionBLS,
 		timeout, suite, coordNodeProvider,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, c)
+	require.NotNil(t, sharedAddr)
+	require.NotNil(t, sharedPub)
 }

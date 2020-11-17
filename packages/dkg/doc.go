@@ -6,3 +6,6 @@
 // Implementation is based on <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>
 // which is based on <https://link.springer.com/article/10.1007/s00145-006-0347-3>.
 package dkg
+
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0

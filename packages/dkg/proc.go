@@ -1,15 +1,22 @@
 package dkg
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
+	"go.dedis.ch/kyber/v3/sign/bdn"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 )
 
 //
@@ -18,6 +25,7 @@ import (
 type proc struct {
 	dkgID                    string            // DKG procedure ID we are participating in.
 	chainID                  coretypes.ChainID // Same as dkgID, just parsed.
+	dkShare                  *DKShare          // This will be generated as a result of this procedure.
 	step                     string            // The current step.
 	node                     *node             // DKG node we are running in.
 	nodeIndex                int               // Index of this node.
@@ -25,6 +33,8 @@ type proc struct {
 	peerLocs                 []string
 	peerPubs                 []kyber.Point
 	coordPub                 kyber.Point
+	treshold                 uint32
+	version                  byte // address.VersionED25519 = 1 | address.VersionBLS = 2
 	stepTimeout              time.Duration
 	netGroup                 peering.GroupProvider
 	dkgImpl                  *rabin_dkg.DistKeyGenerator
@@ -68,7 +78,7 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 		return nil, err
 	}
 	var dkgImpl *rabin_dkg.DistKeyGenerator
-	if dkgImpl, err = rabin_dkg.NewDistKeyGenerator(node.suite, node.secKey, peerPubs, len(peerPubs)); err != nil {
+	if dkgImpl, err = rabin_dkg.NewDistKeyGenerator(node.suite, node.secKey, peerPubs, int(msg.Treshold)); err != nil {
 		return nil, err
 	}
 	var nodeIndex int
@@ -85,6 +95,8 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 		peerLocs:    msg.PeerLocs,
 		peerPubs:    peerPubs,
 		coordPub:    coordPub,
+		treshold:    msg.Treshold,
+		version:     msg.Version,
 		stepTimeout: timeout,
 		netGroup:    netGroup,
 		dkgImpl:     dkgImpl,
@@ -111,7 +123,7 @@ func (p *proc) onCoordStep(msg *StepReq) error {
 // Handles a `pubKey` call from the coordinator.
 func (p *proc) onCoordPubKey() (*PubKeyResp, error) {
 	var err error
-	if p.distKeyShare == nil {
+	if p.dkShare == nil {
 		if err = p.onCoordStep(&StepReq{Step: "6-R6-SendReconstructCommits"}); err != nil {
 			return nil, err
 		}
@@ -120,7 +132,28 @@ func (p *proc) onCoordPubKey() (*PubKeyResp, error) {
 	if pubBytes, err = p.distKeyShare.Public().MarshalBinary(); err != nil {
 		return nil, err
 	}
-	return &PubKeyResp{PubKey: pubBytes}, nil
+	var signature []byte
+	switch p.version {
+	case address.VersionED25519:
+		if signature, err = schnorr.Sign(p.node.suite, p.dkShare.PrivateShare, pubBytes); err != nil {
+			return nil, err
+		}
+	case address.VersionBLS:
+		switch pairingSuite := p.node.suite.(type) {
+		case pairing.Suite:
+			if signature, err = bdn.Sign(pairingSuite, p.dkShare.PrivateShare, pubBytes); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("pairing suite is required for address.VersionBLS")
+		}
+	}
+	pubKeyResp := PubKeyResp{
+		ChainID:   p.dkShare.ChainID.Bytes(),
+		PubKey:    pubBytes,
+		Signature: signature,
+	}
+	return &pubKeyResp, nil
 }
 
 // Handles a message from a peer and pass it to the main thread.
@@ -190,9 +223,10 @@ func (p *proc) processLoop(timeout time.Duration) {
 					coordStepCall.resp <- res
 				}()
 			case "7-CommitAndTerminate":
-				//
-				// TODO: Save the keys.
-				//
+				if err := p.doCoordStepCommitAndTerminate(); err != nil {
+					coordStepCall.resp <- err
+					continue
+				}
 				p.node.dropProcess(p)
 				done = true
 				coordStepCall.resp <- nil
@@ -521,11 +555,27 @@ func (p *proc) doCoordStepSendReconstructCommits(peerMsgCh chan peerMsgCh) error
 	if p.distKeyShare, err = p.dkgImpl.DistKeyShare(); err != nil {
 		return err
 	}
+	p.dkShare, err = NewDKShare(
+		uint32(p.distKeyShare.PriShare().I),
+		uint32(len(p.peerPubs)),
+		p.treshold,
+		p.distKeyShare.Public(),
+		p.distKeyShare.PriShare().V,
+		p.version,
+		p.node.suite,
+	)
+	if err != nil {
+		return err
+	}
 	fmt.Printf(
 		"[%v] All reconstruct commits received, shared public: %v.\n",
 		p.nodeLoc, p.distKeyShare.Public(),
 	)
 	return nil
+}
+
+func (p *proc) doCoordStepCommitAndTerminate() error {
+	return p.node.registry.SaveDKShare(p.dkShare)
 }
 
 func (p *proc) castPeerByIndex(peerIdx int, msg msgByteCoder) {
