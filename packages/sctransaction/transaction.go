@@ -14,20 +14,20 @@ import (
 )
 
 // Smart contract transaction wraps value transaction
-// the stateBlock and requestBlocks are parsed from the dataPayload of the value transaction
+// the stateSection and requestSection are parsed from the dataPayload of the value transaction
 type Transaction struct {
 	*valuetransaction.Transaction
-	stateBlock    *StateSection
-	requestBlocks []*RequestSection
-	properties    *Properties // cached properties. If nil, transaction is semantically validated and properties are calculated
+	stateSection   *StateSection
+	requestSection []*RequestSection
+	properties     *Properties // cached properties. If nil, transaction is semantically validated and properties are calculated
 }
 
 // creates new sc transaction. It is immutable, i.e. tx hash is stable
 func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateSection, requestBlocks []*RequestSection) (*Transaction, error) {
 	ret := &Transaction{
-		Transaction:   vtx,
-		stateBlock:    stateBlock,
-		requestBlocks: requestBlocks,
+		Transaction:    vtx,
+		stateSection:   stateBlock,
+		requestSection: requestBlocks,
 	}
 	var buf bytes.Buffer
 	if err := ret.writeDataPayload(&buf); err != nil {
@@ -74,18 +74,18 @@ func (tx *Transaction) MustProperties() *Properties {
 }
 
 func (tx *Transaction) State() (*StateSection, bool) {
-	return tx.stateBlock, tx.stateBlock != nil
+	return tx.stateSection, tx.stateSection != nil
 }
 
 func (tx *Transaction) MustState() *StateSection {
-	if tx.stateBlock == nil {
+	if tx.stateSection == nil {
 		panic("MustState: state block expected")
 	}
-	return tx.stateBlock
+	return tx.stateSection
 }
 
 func (tx *Transaction) Requests() []*RequestSection {
-	return tx.requestBlocks
+	return tx.requestSection
 }
 
 // Sender returns first input address. It is the unique address, because
@@ -114,26 +114,26 @@ func (tx *Transaction) OutputBalancesByAddress(addr address.Address) ([]*balance
 
 // function writes bytes of the SC transaction-specific part
 func (tx *Transaction) writeDataPayload(w io.Writer) error {
-	if tx.stateBlock == nil && len(tx.requestBlocks) == 0 {
-		return errors.New("can't encode empty sc transaction")
+	if tx.stateSection == nil && len(tx.requestSection) == 0 {
+		return errors.New("can't encode empty chain transaction")
 	}
-	if len(tx.requestBlocks) > 127 {
-		return errors.New("max number of request blocks 127 exceeded")
+	if len(tx.requestSection) > 127 {
+		return errors.New("max number of request sections 127 exceeded")
 	}
-	numRequests := byte(len(tx.requestBlocks))
-	b, err := encodeMetaByte(tx.stateBlock != nil, numRequests)
+	numRequests := byte(len(tx.requestSection))
+	b, err := encodeMetaByte(tx.stateSection != nil, numRequests)
 	if err != nil {
 		return err
 	}
 	if err = util.WriteByte(w, b); err != nil {
 		return err
 	}
-	if tx.stateBlock != nil {
-		if err := tx.stateBlock.Write(w); err != nil {
+	if tx.stateSection != nil {
+		if err := tx.stateSection.Write(w); err != nil {
 			return err
 		}
 	}
-	for _, reqBlk := range tx.requestBlocks {
+	for _, reqBlk := range tx.requestSection {
 		if err := reqBlk.Write(w); err != nil {
 			return err
 		}
@@ -164,8 +164,8 @@ func (tx *Transaction) readDataPayload(r io.Reader) error {
 			return err
 		}
 	}
-	tx.stateBlock = stateBlock
-	tx.requestBlocks = reqBlks
+	tx.stateSection = stateBlock
+	tx.requestSection = reqBlks
 	return nil
 }
 

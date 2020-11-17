@@ -15,9 +15,11 @@ import (
 type Properties struct {
 	// TX ID
 	txid valuetransaction.ID
+	//
+	numSignatures int
 	// the only senderAddress of the SC transaction
 	senderAddress address.Address
-	// is it state transaction (== does it contain valid stateBlock)
+	// is it state transaction (== does it contain valid stateSection)
 	isState bool
 	// if isState == true: it states if it is the origin transaction
 	isOrigin bool
@@ -28,10 +30,20 @@ type Properties struct {
 	numMintedTokens int64
 	// number of requests
 	numRequests int
+	// data payload len
+	dataPayloadSize uint32
 }
 
 func (tx *Transaction) calcProperties() (*Properties, error) {
-	ret := &Properties{txid: tx.ID()}
+	ret := &Properties{
+		txid:            tx.ID(),
+		dataPayloadSize: tx.DataPayloadSize(),
+	}
+
+	if tx.SignaturesValid() {
+		ret.numSignatures = len(tx.Signatures())
+	}
+
 	if err := ret.analyzeSender(tx); err != nil {
 		return nil, err
 	}
@@ -182,13 +194,19 @@ func (prop *Properties) NumFreeMintedTokens() int64 {
 	return prop.numMintedTokens - int64(prop.numRequests)
 }
 
+// NumSignatures number of valid signatures
+func (prop *Properties) NumSignatures() int {
+	return prop.numSignatures
+}
+
 func (prop *Properties) String() string {
 	ret := "---- Transaction:\n"
-	ret += fmt.Sprintf("   txid: %s\n", prop.txid.String())
+	ret += fmt.Sprintf("   txid: %s\n   num signatures: %d\n", prop.txid.String(), prop.numSignatures)
 	ret += fmt.Sprintf("   requests: %d\n", prop.numRequests)
 	ret += fmt.Sprintf("   senderAddress: %s\n", prop.senderAddress.String())
 	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
 	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
 	ret += fmt.Sprintf("   numMinted: %d\n", prop.numMintedTokens)
+	ret += fmt.Sprintf("   data payload size: %d\n", prop.dataPayloadSize)
 	return ret
 }
