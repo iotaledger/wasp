@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 	"io"
@@ -304,17 +303,6 @@ func ReadAddress(r io.Reader, addr *address.Address) error {
 	}
 	if n != address.Length {
 		return errors.New("error while reading address")
-	}
-	return nil
-}
-
-func ReadAgent(r io.Reader, agent *coretypes.AgentID) error {
-	n, err := r.Read(agent[:])
-	if err != nil {
-		return err
-	}
-	if n != coretypes.AgentIDLength {
-		return errors.New("error while reading agent")
 	}
 	return nil
 }

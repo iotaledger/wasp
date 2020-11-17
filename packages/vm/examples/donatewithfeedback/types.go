@@ -80,7 +80,7 @@ func (di *DonationInfo) Read(r io.Reader) error {
 	if err = util.ReadInt64(r, &di.Amount); err != nil {
 		return err
 	}
-	if err = util.ReadAgent(r, &di.Sender); err != nil {
+	if err = coretypes.ReadAgentID(r, &di.Sender); err != nil {
 		return err
 	}
 	if di.Feedback, err = util.ReadString16(r); err != nil {

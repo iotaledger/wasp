@@ -478,7 +478,7 @@ func (bi *BetInfo) Write(w io.Writer) error {
 
 func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
-	if err = util.ReadAgent(r, &bi.Player); err != nil {
+	if err = coretypes.ReadAgentID(r, &bi.Player); err != nil {
 		return err
 	}
 	if err = bi.reqId.Read(r); err != nil {
