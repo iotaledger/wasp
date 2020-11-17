@@ -2,8 +2,13 @@ package wasptest
 
 import (
 	"bytes"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
@@ -11,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestDeployChain(t *testing.T) {
@@ -138,11 +141,27 @@ func TestDeployContractOnly(t *testing.T) {
 
 		return true
 	})
+
 	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
+
+	// test calling root.FuncFindContractByName view function using client
+	ret, err := chain.Cluster.WaspClient(0).StateView(
+		chain.ContractID(root.Hname),
+		root.FuncFindContract,
+		dict.FromGoMap(map[kv.Key][]byte{
+			root.ParamHname: hname.Bytes(),
+		}),
+	)
+	check(err, t)
+	recb, err := ret.Get(root.ParamData)
+	check(err, t)
+	rec, err := root.DecodeContractRecord(recb)
+	check(err, t)
+	require.EqualValues(t, description, rec.Description)
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
