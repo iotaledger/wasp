@@ -57,7 +57,8 @@ type StepReq struct {
 // by the DKG peers returning the shared public key.
 // All the nodes must return the same public key.
 type PubKeyResp struct {
-	ChainID   []byte `json:"address"`
-	PubKey    []byte `json:"pubKey"`
-	Signature []byte `json:"signature"`
+	ChainID      []byte `json:"address"`
+	SharedPublic []byte `json:"sharedPublic"`
+	PublicShare  []byte `json:"publicShare"`
+	Signature    []byte `json:"signature"`
 }

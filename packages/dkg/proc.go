@@ -128,20 +128,24 @@ func (p *proc) onCoordPubKey() (*PubKeyResp, error) {
 			return nil, err
 		}
 	}
-	var pubBytes []byte
-	if pubBytes, err = p.distKeyShare.Public().MarshalBinary(); err != nil {
+	var sharedPublicBytes []byte
+	if sharedPublicBytes, err = p.dkShare.SharedPublic.MarshalBinary(); err != nil {
+		return nil, err
+	}
+	var publicShareBytes []byte
+	if publicShareBytes, err = p.dkShare.PublicShare.MarshalBinary(); err != nil {
 		return nil, err
 	}
 	var signature []byte
 	switch p.version {
 	case address.VersionED25519:
-		if signature, err = schnorr.Sign(p.node.suite, p.dkShare.PrivateShare, pubBytes); err != nil {
+		if signature, err = schnorr.Sign(p.node.suite, p.dkShare.PrivateShare, publicShareBytes); err != nil {
 			return nil, err
 		}
 	case address.VersionBLS:
 		switch pairingSuite := p.node.suite.(type) {
 		case pairing.Suite:
-			if signature, err = bdn.Sign(pairingSuite, p.dkShare.PrivateShare, pubBytes); err != nil {
+			if signature, err = bdn.Sign(pairingSuite, p.dkShare.PrivateShare, publicShareBytes); err != nil {
 				return nil, err
 			}
 		default:
@@ -149,9 +153,10 @@ func (p *proc) onCoordPubKey() (*PubKeyResp, error) {
 		}
 	}
 	pubKeyResp := PubKeyResp{
-		ChainID:   p.dkShare.ChainID.Bytes(),
-		PubKey:    pubBytes,
-		Signature: signature,
+		ChainID:      p.dkShare.ChainID.Bytes(),
+		SharedPublic: sharedPublicBytes,
+		PublicShare:  publicShareBytes,
+		Signature:    signature,
 	}
 	return &pubKeyResp, nil
 }
@@ -555,14 +560,16 @@ func (p *proc) doCoordStepSendReconstructCommits(peerMsgCh chan peerMsgCh) error
 	if p.distKeyShare, err = p.dkgImpl.DistKeyShare(); err != nil {
 		return err
 	}
+	publicShare := p.node.suite.Point().Mul(p.distKeyShare.PriShare().V, nil)
 	p.dkShare, err = NewDKShare(
-		uint32(p.distKeyShare.PriShare().I),
-		uint32(len(p.peerPubs)),
-		p.treshold,
-		p.distKeyShare.Public(),
-		p.distKeyShare.PriShare().V,
-		p.version,
-		p.node.suite,
+		uint32(p.distKeyShare.PriShare().I), // Index
+		uint32(len(p.peerPubs)),             // N
+		p.treshold,                          // T
+		p.distKeyShare.Public(),             // SharedPublic
+		publicShare,                         // PublicShare
+		p.distKeyShare.PriShare().V,         // PrivateShare
+		p.version,                           // version
+		p.node.suite,                        // suite
 	)
 	if err != nil {
 		return err

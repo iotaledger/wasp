@@ -11,6 +11,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing"
+	"go.dedis.ch/kyber/v3/sign/bdn"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 )
 
 // GenerateDistributedKey is called from the client node to initiate the DKG
@@ -77,14 +80,40 @@ func GenerateDistributedKey(
 		return nil, nil, err
 	}
 	chainIDBytes := pubKeyResponses[0].ChainID
-	pubKeyBytes := pubKeyResponses[0].PubKey
+	sharedPublicBytes := pubKeyResponses[0].SharedPublic
 	signatures := [][]byte{}
 	for i := range pubKeyResponses {
 		if !bytes.Equal(pubKeyResponses[i].ChainID, chainIDBytes) {
 			return nil, nil, fmt.Errorf("nodes generated different addresses")
 		}
-		if !bytes.Equal(pubKeyResponses[i].PubKey, pubKeyBytes) {
-			return nil, nil, fmt.Errorf("nodes generated different public keys")
+		if !bytes.Equal(pubKeyResponses[i].SharedPublic, sharedPublicBytes) {
+			return nil, nil, fmt.Errorf("nodes generated different shared public keys")
+		}
+		{
+			publicShare := suite.Point()
+			publicShare.UnmarshalBinary(pubKeyResponses[i].PublicShare)
+			switch version {
+			case address.VersionED25519:
+				err = schnorr.Verify(
+					suite,
+					publicShare,
+					pubKeyResponses[i].PublicShare,
+					pubKeyResponses[i].Signature,
+				)
+				if err != nil {
+					return nil, nil, err
+				}
+			case address.VersionBLS:
+				err = bdn.Verify(
+					suite.(pairing.Suite),
+					publicShare,
+					pubKeyResponses[i].PublicShare,
+					pubKeyResponses[i].Signature,
+				)
+				if err != nil {
+					return nil, nil, err
+				}
+			}
 		}
 		signatures = append(signatures, pubKeyResponses[i].Signature)
 	}
@@ -93,27 +122,27 @@ func GenerateDistributedKey(
 		return nil, nil, err
 	}
 	sharedPublic := suite.Point()
-	sharedPublic.UnmarshalBinary(pubKeyBytes)
+	sharedPublic.UnmarshalBinary(sharedPublicBytes)
 	//
-	// Verify signatures.
-	switch version {
-	case address.VersionED25519:
-		// TODO
-	case address.VersionBLS:
-		// var pairingSuite = suite.(pairing.Suite) // TODO
-		// var signatureMask sign.Mask
-		// var aggregatedSig kyber.Point
-		// if aggregatedSig, err = bdn.AggregateSignatures(pairingSuite, signatures, &signatureMask); err != nil {
-		// 	return nil, nil, err
-		// }
-		// var aggregatedBin []byte
-		// if aggregatedBin, err = aggregatedSig.MarshalBinary(); err != nil {
-		// 	return nil, nil, err
-		// }
-		// if err = bdn.Verify(pairingSuite, sharedPublic, pubKeyBytes, aggregatedBin); err != nil {
-		// 	return nil, nil, err
-		// }
-	}
+	// TODO: Verify signatures.
+	// switch version {
+	// case address.VersionED25519:
+	// 	// TODO
+	// case address.VersionBLS:
+	// 	var pairingSuite = suite.(pairing.Suite)
+	// 	var signatureMask sign.Mask
+	// 	var aggregatedSig kyber.Point
+	// 	if aggregatedSig, err = bdn.AggregateSignatures(pairingSuite, signatures, &signatureMask); err != nil {
+	// 		return nil, nil, err
+	// 	}
+	// 	var aggregatedBin []byte
+	// 	if aggregatedBin, err = aggregatedSig.MarshalBinary(); err != nil {
+	// 		return nil, nil, err
+	// 	}
+	// 	if err = bdn.Verify(pairingSuite, sharedPublic, pubKeyBytes, aggregatedBin); err != nil {
+	// 		return nil, nil, err
+	// 	}
+	// }
 	fmt.Printf("COORD: Generated ChainID=%v, shared public key: %v\n", generatedChainID, sharedPublic)
 	//
 	// Commit the keys to persistent storage.

@@ -29,6 +29,7 @@ type DKShare struct {
 	N            uint32
 	T            uint32
 	SharedPublic kyber.Point
+	PublicShare  kyber.Point
 	PrivateShare kyber.Scalar
 	suite        kyber.Group // Transient, only needed for un-marshaling.
 }
@@ -39,11 +40,14 @@ func NewDKShare(
 	n uint32,
 	t uint32,
 	sharedPublic kyber.Point,
+	publicShare kyber.Point,
 	privateShare kyber.Scalar,
 	version byte, // address.VersionED25519 = 1 | address.VersionBLS = 2
 	suite kyber.Group,
 ) (*DKShare, error) {
 	var err error
+	//
+	// Derive the ChainID.
 	var pubBytes []byte
 	if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
 		return nil, err
@@ -63,12 +67,15 @@ func NewDKShare(
 	if chainID, err = coretypes.NewChainIDFromBytes(sharedAddress.Bytes()); err != nil {
 		return nil, err
 	}
+	//
+	// Construct the DKShare.
 	dkShare := DKShare{
 		ChainID:      chainID,
 		Index:        index,
 		N:            n,
 		T:            t,
 		SharedPublic: sharedPublic,
+		PublicShare:  publicShare,
 		PrivateShare: privateShare,
 	}
 	return &dkShare, nil
@@ -109,6 +116,9 @@ func (s *DKShare) Write(w io.Writer) error {
 	if err = writeMarshaled(w, s.SharedPublic); err != nil {
 		return err
 	}
+	if err = writeMarshaled(w, s.PublicShare); err != nil {
+		return err
+	}
 	if err = writeMarshaled(w, s.PrivateShare); err != nil {
 		return err
 	}
@@ -131,6 +141,10 @@ func (s *DKShare) Read(r io.Reader) error {
 	}
 	s.SharedPublic = s.suite.Point()
 	if err = readMarshaled(r, s.SharedPublic); err != nil {
+		return err
+	}
+	s.PublicShare = s.suite.Point()
+	if err = readMarshaled(r, s.PublicShare); err != nil {
 		return err
 	}
 	s.PrivateShare = s.suite.Scalar()
