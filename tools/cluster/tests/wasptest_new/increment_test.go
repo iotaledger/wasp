@@ -38,7 +38,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 2, contractRegistry.Len())
+		require.EqualValues(t, 3, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -98,7 +98,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 2, contractRegistry.Len())
+		require.EqualValues(t, 3, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -157,7 +157,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 2, contractRegistry.Len())
+		require.EqualValues(t, 3, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -221,7 +221,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, numRepeats + 1, counterValue)
+		require.EqualValues(t, numRepeats+1, counterValue)
 		repeats, _ := state.GetInt64(inccounter.VarNumRepeats)
 		require.EqualValues(t, 0, repeats)
 		return true

@@ -18,7 +18,9 @@ type accountsEntryPoint struct {
 }
 
 const (
-	ContractName = "accounts"
+	Version             = "0.1"
+	ContractName        = "accounts" + Version
+	ContractDescription = "chain account ledger contract"
 
 	FuncBalance  = "balance"
 	FuncDeposit  = "deposit"
@@ -33,6 +35,7 @@ const (
 )
 
 var (
+	ProgramHash        = hashing.HashStrings(ContractName)
 	Hname              = coretypes.Hn(ContractName)
 	EntryPointBalance  = coretypes.Hn(FuncBalance)
 	EntryPointDeposit  = coretypes.Hn(FuncDeposit)
@@ -48,7 +51,6 @@ var (
 		EntryPointMove:           {epFunc(move)},
 		EntryPointWithdraw:       {epFunc(withdraw)},
 	}
-	ProgramHash = hashing.NilHash
 
 	ErrParamsAgentIDNotFound = fmt.Errorf("wrong parameters: agent ID not specified")
 )

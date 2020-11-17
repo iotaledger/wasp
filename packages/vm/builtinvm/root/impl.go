@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -46,6 +47,17 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state.SetAgentID(VarChainOwnerID, &sender) // chain owner is whoever sends init request
 	state.SetString(VarDescription, chainDescription)
 	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
+
+	err = ctx.DeployContract(
+		"builtinvm",
+		accountsc.ProgramHash[:],
+		accountsc.ContractName,
+		accountsc.ContractDescription,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
 	ctx.Eventf("root.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }
