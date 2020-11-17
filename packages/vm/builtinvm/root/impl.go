@@ -114,7 +114,6 @@ func findContract(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
 	params := ctx.Params()
-
 	hname, ok, err := params.GetHname(ParamHname)
 	if err != nil {
 		return nil, err
@@ -122,11 +121,11 @@ func findContract(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
-	contractRegistry := ctx.State().GetMap(VarContractRegistry)
-	retBin := contractRegistry.GetAt(hname.Bytes())
-	if retBin == nil {
-		return nil, fmt.Errorf("contract '%s'  does not exist", hname.String())
+	rec, err := FindContract(ctx.State(), hname)
+	if err != nil {
+		return nil, err
 	}
+	retBin := EncodeContractRecord(rec)
 	ret := codec.NewCodec(dict.NewDict())
 	ret.Set(ParamData, retBin)
 	return ret, nil
@@ -137,9 +136,7 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if ctx.State().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
-
 	params := ctx.Params()
-
 	deploymentHash, ok, err := params.GetHashValue(ParamHash)
 	if err != nil {
 		return nil, err
@@ -147,10 +144,12 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hash' undefined")
 	}
-	contractRegistry := ctx.State().GetMap(VarRegistryOfBinaries)
-	binary := contractRegistry.GetAt(deploymentHash[:])
 
+	bin, err := GetBinary(ctx.State(), *deploymentHash)
+	if err != nil {
+		return nil, err
+	}
 	ret := codec.NewCodec(dict.NewDict())
-	ret.Set(ParamData, binary)
+	ret.Set(ParamData, bin)
 	return ret, nil
 }

@@ -48,19 +48,19 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 
 func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {
 	reqHname := reqRef.RequestSection().Target().Hname()
-	contractRec, ok := vmctx.findContractByHname(reqHname)
-	if !ok {
-		return false
-	}
 	vmctx.saveTxBuilder = vmctx.txBuilder.Clone()
-
 	vmctx.reqRef = reqRef
 	vmctx.reqHname = reqHname
-	vmctx.contractRecord = contractRec
+
 	vmctx.timestamp = timestamp
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
+	contractRec, ok := vmctx.findContractByHname(reqHname)
+	if !ok {
+		return false
+	}
+	vmctx.contractRecord = contractRec
 	return true
 }
 
