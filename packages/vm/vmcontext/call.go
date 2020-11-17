@@ -23,9 +23,8 @@ func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.
 	if !ok {
 		return nil, ErrContractNotFound
 	}
-	proc, err := vmctx.getProcessor(rec)
+	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
-		vmctx.log.Errorf("CallContract.getProcessor: %v", err)
 		return nil, ErrProcessorNotFound
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
@@ -45,7 +44,6 @@ func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.
 	return ep.Call(NewSandbox(vmctx))
 }
 
-// CallContract
 func (vmctx *VMContext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("CallView", "contract", contractHname, "epCode", epCode.String())
 
@@ -54,7 +52,7 @@ func (vmctx *VMContext) CallView(contractHname coretypes.Hname, epCode coretypes
 		return nil, fmt.Errorf("failed to find contract with index %d", contractHname)
 	}
 
-	proc, err := vmctx.getProcessor(rec)
+	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}

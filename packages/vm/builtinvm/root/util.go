@@ -14,7 +14,7 @@ func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*Contr
 	contractRegistry := state.GetMap(VarContractRegistry)
 	retBin := contractRegistry.GetAt(hname.Bytes())
 	if retBin == nil {
-		return nil, fmt.Errorf("root: contract not found")
+		return nil, fmt.Errorf("root: contract %s not found", hname)
 	}
 	ret, err := DecodeContractRecord(retBin)
 	if err != nil {

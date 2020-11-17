@@ -84,16 +84,28 @@ func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
 	return ok
 }
 
-// GetProcessor returns processor from cache if exists
-func (cps *ProcessorCache) GetProcessor(deploymentHash *hashing.HashValue) (vmtypes.Processor, bool) {
+func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(*hashing.HashValue) ([]byte, error)) (vmtypes.Processor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	ret, ok := cps.processors[*deploymentHash]
-	if !ok {
-		return nil, false
+	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
+		return proc, nil
 	}
-	return ret, true
+	binary, err := getBinary(&rec.DeploymentHash)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
+	}
+	deploymentHash, err := cps.NewProcessor(binary, rec.VMType)
+	if err != nil {
+		return nil, err
+	}
+	if *deploymentHash != rec.DeploymentHash {
+		return nil, fmt.Errorf("internal error: *deploymentHash != deploymentHash")
+	}
+	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
+		return proc, nil
+	}
+	return nil, fmt.Errorf("internal error: can't get the deployed processor")
 }
 
 // RemoveProcessor deletes processor from cache

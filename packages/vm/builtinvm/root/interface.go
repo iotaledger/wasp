@@ -2,12 +2,13 @@ package root
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"io"
 )
 
 // Version of the root contract
