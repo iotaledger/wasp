@@ -69,7 +69,7 @@ func ReadAgentID(r io.Reader, agentID *AgentID) error {
 	if err != nil {
 		return err
 	}
-	if n != AgentIDLenght {
+	if n != AgentIDLength {
 		return errors.New("error while reading agent ID")
 	}
 	return nil

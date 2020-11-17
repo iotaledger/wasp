@@ -10,9 +10,9 @@ import (
 
 type ScPostedRequest struct {
 	MapObject
-	code     uint32
 	contract coretypes.AgentID
 	delay    int64
+	funcCode uint32
 }
 
 func (o *ScPostedRequest) Exists(keyId int32) bool {
@@ -27,8 +27,6 @@ func (o *ScPostedRequest) GetObjectId(keyId int32, typeId int32) int32 {
 
 func (o *ScPostedRequest) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyCode:
-		return OBJTYPE_INT
 	case KeyContract:
 		return OBJTYPE_BYTES
 	case KeyDelay:
@@ -42,10 +40,10 @@ func (o *ScPostedRequest) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScPostedRequest) Send() {
-	function := o.vm.codeToFunc[o.code]
-	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.code, o.delay, o.contract.String())
-	chainID := o.vm.ctx.CurrentContractID()
-	if !bytes.Equal(o.contract[:], chainID[:]) {
+	function := o.vm.codeToFunc[o.funcCode]
+	o.vm.Trace("REQUEST f'%s' c%d d%d a'%s'", function, o.funcCode, o.delay, o.contract.String())
+	contract := o.vm.ctx.MyContractID()
+	if !bytes.Equal(o.contract[:], contract[:]) {
 		//TODO handle external contract
 		o.vm.Trace("Unknown contract id")
 		return
@@ -63,7 +61,7 @@ func (o *ScPostedRequest) Send() {
 	if params.IsEmpty() {
 		params = nil
 	}
-	reqCode := coretypes.Hname(o.code)
+	reqCode := coretypes.Hname(o.funcCode)
 	if !o.vm.ctx.PostRequestToSelfWithDelay(reqCode, params, uint32(o.delay)) {
 		o.vm.Trace("  FAILED to send")
 	}
@@ -82,10 +80,8 @@ func (o *ScPostedRequest) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		o.contract = coretypes.AgentID{}
-		o.code = 0
 		o.delay = 0
-	case KeyCode:
-		o.code = uint32(value)
+		o.funcCode = 0
 	case KeyDelay:
 		o.delay = value
 	default:
@@ -96,12 +92,12 @@ func (o *ScPostedRequest) SetInt(keyId int32, value int64) {
 func (o *ScPostedRequest) SetString(keyId int32, value string) {
 	switch keyId {
 	case KeyFunction:
-		code, ok := o.vm.funcToCode[value]
+		funcCode, ok := o.vm.funcToCode[value]
 		if !ok {
 			o.Error("SetString: invalid function: %s", value)
 			return
 		}
-		o.code = code
+		o.funcCode = funcCode
 	default:
 		o.MapObject.SetString(keyId, value)
 	}
