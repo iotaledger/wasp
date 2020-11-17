@@ -92,7 +92,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("incorrect contract name")
 	}
 	// pass to init function all params not consumed so far
-	initParams := codec.NewCodec(dict.NewDict())
+	initParams := codec.NewCodec(dict.New())
 	err = params.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != ParamVMType && key != ParamProgramBinary && key != ParamDescription {
 			initParams.Set(key, value)
@@ -126,7 +126,7 @@ func findContract(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 		return nil, err
 	}
 	retBin := EncodeContractRecord(rec)
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	ret.Set(ParamData, retBin)
 	return ret, nil
 }
@@ -149,7 +149,7 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	ret.Set(ParamData, bin)
 	return ret, nil
 }

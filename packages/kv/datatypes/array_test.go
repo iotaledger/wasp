@@ -8,7 +8,7 @@ import (
 )
 
 func TestBasicArray(t *testing.T) {
-	vars := dict.NewDict()
+	vars := dict.New()
 	arr, err := NewArray(vars, "testArray")
 	assert.NoError(t, err)
 
