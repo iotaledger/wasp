@@ -10,13 +10,14 @@ func (o *ScRequest) Exists(keyId int32) bool {
 
 func (o *ScRequest) GetBytes(keyId int32) []byte {
 	switch keyId {
-	case KeyAddress:
-		return o.vm.ctx.AccessRequest().MustSenderAddress().Bytes()
 	case KeyHash:
 		id := o.vm.ctx.RequestID()
 		return id.TransactionID().Bytes()
 	case KeyId:
 		id := o.vm.ctx.RequestID()
+		return id.Bytes()
+	case KeySender:
+		id := o.vm.ctx.AccessRequest().MustSender()
 		return id.Bytes()
 	}
 	return o.MapObject.GetBytes(keyId)
@@ -40,8 +41,6 @@ func (o *ScRequest) GetObjectId(keyId int32, typeId int32) int32 {
 
 func (o *ScRequest) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyAddress:
-		return OBJTYPE_BYTES
 	case KeyBalance:
 		return OBJTYPE_MAP
 	case KeyColors:
@@ -52,6 +51,8 @@ func (o *ScRequest) GetTypeId(keyId int32) int32 {
 		return OBJTYPE_BYTES
 	case KeyParams:
 		return OBJTYPE_MAP
+	case KeySender:
+		return OBJTYPE_BYTES
 	case KeyTimestamp:
 		return OBJTYPE_INT
 	}

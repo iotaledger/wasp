@@ -2,12 +2,11 @@ package wasmhost
 
 const (
 	KeyAccount        = KeyUserDefined
-	KeyAddress        = KeyAccount - 1
-	KeyAmount         = KeyAddress - 1
+	KeyAgent          = KeyAccount - 1
+	KeyAmount         = KeyAgent - 1
 	KeyBalance        = KeyAmount - 1
 	KeyBase58         = KeyBalance - 1
-	KeyCode           = KeyBase58 - 1
-	KeyColor          = KeyCode - 1
+	KeyColor          = KeyBase58 - 1
 	KeyColors         = KeyColor - 1
 	KeyContract       = KeyColors - 1
 	KeyData           = KeyContract - 1
@@ -25,7 +24,8 @@ const (
 	KeyPostedRequests = KeyParams - 1
 	KeyRandom         = KeyPostedRequests - 1
 	KeyRequest        = KeyRandom - 1
-	KeyState          = KeyRequest - 1
+	KeySender         = KeyRequest - 1
+	KeyState          = KeySender - 1
 	KeyTimestamp      = KeyState - 1
 	KeyTransfers      = KeyTimestamp - 1
 	KeyUtility        = KeyTransfers - 1
@@ -42,11 +42,10 @@ var keyMap = map[string]int32{
 
 	// user-defined keys
 	"account":        KeyAccount,
-	"address":        KeyAddress,
+	"agent":          KeyAgent,
 	"amount":         KeyAmount,
 	"balance":        KeyBalance,
 	"base58":         KeyBase58,
-	"code":           KeyCode,
 	"color":          KeyColor,
 	"colors":         KeyColors,
 	"contract":       KeyContract,
@@ -65,6 +64,7 @@ var keyMap = map[string]int32{
 	"postedRequests": KeyPostedRequests,
 	"random":         KeyRandom,
 	"request":        KeyRequest,
+	"sender":         KeySender,
 	"state":          KeyState,
 	"timestamp":      KeyTimestamp,
 	"transfers":      KeyTransfers,

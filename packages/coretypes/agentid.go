@@ -6,12 +6,12 @@ import (
 	"io"
 )
 
-const AgentIDLenght = ChainIDLength + HnameLength
+const AgentIDLength = ChainIDLength + HnameLength
 
 // AgentID assumes:
 // - ChainID is MustAddress
 // - AgentID is never used for contract with index 0  TODO ???
-type AgentID [AgentIDLenght]byte
+type AgentID [AgentIDLength]byte
 
 func NewAgentIDFromAddress(addr address.Address) (ret AgentID) {
 	copy(ret[HnameLength:], addr[:])
@@ -27,7 +27,7 @@ func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
 }
 
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
-	if len(data) != AgentIDLenght {
+	if len(data) != AgentIDLength {
 		err = ErrWrongDataLength
 		return
 	}
@@ -69,7 +69,7 @@ func ReadAgentID(r io.Reader, agentID *AgentID) error {
 	if err != nil {
 		return err
 	}
-	if n != AgentIDLenght {
+	if n != AgentIDLength {
 		return errors.New("error while reading agent ID")
 	}
 	return nil

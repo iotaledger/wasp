@@ -1,15 +1,15 @@
 package wasmhost
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 type ScTransfer struct {
 	MapObject
-	address address.Address
-	amount  int64
-	color   balance.Color
+	agent  coretypes.AgentID
+	amount int64
+	color  balance.Color
 }
 
 func (o *ScTransfer) Exists(keyId int32) bool {
@@ -18,7 +18,7 @@ func (o *ScTransfer) Exists(keyId int32) bool {
 
 func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyAddress:
+	case KeyAgent:
 		return OBJTYPE_BYTES
 	case KeyColor:
 		return OBJTYPE_BYTES
@@ -29,22 +29,19 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScTransfer) Send() {
-	o.vm.Trace("TRANSFER a%d c'%s' a'%s'", o.amount, o.color.String(), o.address.String())
-
-	// TODO
-	o.vm.ctx.Panic("to be refactored")
-	//if !o.vm.ctx.AccessSCAccount().MoveTokens(&o.address, &o.color, o.amount) {
-	//	o.vm.ctx.Panic("Failed to move tokens")
-	//}
+	o.vm.Trace("TRANSFER #%d c'%s' a'%s'", o.amount, o.color.String(), o.agent.String())
+	if !o.vm.ctx.Accounts().MoveBalance(o.agent, o.color, o.amount) {
+		o.vm.ctx.Panic("Failed to move tokens")
+	}
 }
 
 func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 	var err error
 	switch keyId {
-	case KeyAddress:
-		o.address, _, err = address.FromBytes(value)
+	case KeyAgent:
+		o.agent, err = coretypes.NewAgentIDFromBytes(value)
 		if err != nil {
-			o.vm.ctx.Panic("Invalid address")
+			o.vm.ctx.Panic("Invalid agent")
 		}
 	case KeyColor:
 		o.color, _, err = balance.ColorFromBytes(value)
@@ -59,7 +56,7 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 func (o *ScTransfer) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		o.address = address.Empty
+		o.agent = coretypes.AgentID{}
 		o.color = balance.ColorIOTA
 		o.amount = 0
 	case KeyAmount:
