@@ -48,19 +48,19 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 
 func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {
 	reqHname := reqRef.RequestSection().Target().Hname()
-	contractRec, ok := vmctx.findContractByHname(reqHname)
-	if !ok {
-		return false
-	}
 	vmctx.saveTxBuilder = vmctx.txBuilder.Clone()
-
 	vmctx.reqRef = reqRef
 	vmctx.reqHname = reqHname
-	vmctx.contractRecord = contractRec
+
 	vmctx.timestamp = timestamp
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
+	contractRec, ok := vmctx.findContractByHname(reqHname)
+	if !ok {
+		return false
+	}
+	vmctx.contractRecord = contractRec
 	return true
 }
 
@@ -69,7 +69,7 @@ func (vmctx *VMContext) Rollback() {
 	vmctx.stateUpdate.Clear()
 }
 
-func (vmctx *VMContext) FinalizeTransaction(blockIndex uint32, stateHash *hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {
+func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash *hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {
 	// add state block
 	err := vmctx.txBuilder.SetStateParams(blockIndex, stateHash, timestamp)
 	if err != nil {
@@ -79,10 +79,6 @@ func (vmctx *VMContext) FinalizeTransaction(blockIndex uint32, stateHash *hashin
 	addr := address.Address(vmctx.chainID)
 	tx, err := vmctx.txBuilder.Build(&addr, vmctx.balances)
 	if err != nil {
-		return nil, err
-	}
-	// check semantics just in case
-	if _, err := tx.Properties(); err != nil {
 		return nil, err
 	}
 	return tx, nil

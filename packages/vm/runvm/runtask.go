@@ -80,25 +80,17 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		return
 	}
 	stateHash := vsClone.Hash()
-	task.ResultTransaction, err = vmctx.FinalizeTransaction(
+	task.ResultTransaction, err = vmctx.FinalizeTransactionEssence(
 		task.VirtualState.StateIndex()+1,
 		stateHash,
 		vsClone.Timestamp(),
 	)
 	if err != nil {
-		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransaction: %v", err))
+		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
 		return
 	}
-
-	prop, err := task.ResultTransaction.Properties()
-	if err != nil {
-		task.OnFinish(err)
-	}
-
-	task.Log.Debugf("\n%s", prop.String())
-
+	// Note: can't take tx ID!!
 	task.Log.Debugw("runTask OUT",
-		"result txid", task.ResultTransaction.ID().String(),
 		"result batch size", task.ResultBlock.Size(),
 		"result batch state index", task.ResultBlock.StateIndex(),
 		"result variable state hash", stateHash.String(),

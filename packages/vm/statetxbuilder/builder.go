@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 )
 
 type Builder struct {
@@ -62,7 +61,7 @@ func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) {
 }
 
 func (txb *Builder) Build(chainAddress *address.Address, addressBalances map[valuetransaction.ID][]*balance.Balance) (*sctransaction.Transaction, error) {
-	vtxb, err := vtxbuilder.NewFromAddressBalances(chainAddress, addressBalances)
+	vtxb, err := newValueTxBuilder(*chainAddress, addressBalances)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +93,7 @@ func (txb *Builder) Build(chainAddress *address.Address, addressBalances map[val
 		}
 	}
 	return sctransaction.NewTransaction(
-		vtxb.Build(true),
+		vtxb.build(),
 		txb.stateSection,
 		txb.requestSections,
 	)

@@ -176,13 +176,22 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	// quorum detected
+
+	// finalizing result transaction with signatures
 	if err := op.aggregateSigShares(sigShares); err != nil {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
 	}
 
-	if !op.leaderStatus.resultTx.SignaturesValid() {
-		op.log.Error("final signature invalid: something went wrong while finalizing result transaction")
+	prop, err := op.leaderStatus.resultTx.Properties()
+	op.log.Debugf("checking result tx properties: %s", prop.String())
+
+	if err != nil {
+		op.log.Errorf("checking result tx properties: %v", err)
+		return false
+	}
+	if prop.NumSignatures() != 1 {
+		op.log.Errorf("checking result tx: num valid signatures != 1")
 		return false
 	}
 
@@ -194,7 +203,7 @@ func (op *operator) checkQuorum() bool {
 	op.leaderStatus.finalized = true
 
 	addr := address.Address(*op.chain.ID())
-	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
+	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false
