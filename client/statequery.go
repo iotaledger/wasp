@@ -8,7 +8,7 @@ import (
 )
 
 func StateQueryRoute(chainID string) string {
-	return "sc/" + chainID + "/state/query"
+	return "chain/" + chainID + "/state/query"
 }
 
 func (c *WaspClient) StateQuery(chainID *coretypes.ChainID, query *statequery.Request) (*statequery.Results, error) {

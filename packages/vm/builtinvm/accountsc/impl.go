@@ -34,7 +34,7 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, fmt.Errorf("getBalance: fail")
 	}
-	ret := codec.NewCodec(dict.NewDict())
+	ret := codec.NewCodec(dict.New())
 	for col, bal := range retMap {
 		ret.SetInt64(kv.Key(col[:]), bal)
 	}
@@ -42,7 +42,7 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 }
 
 func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	ret := dict.NewDict()
+	ret := dict.New()
 	ctx.State().GetMap(VarStateAllAccounts).Iterate(func(elemKey []byte, val []byte) bool {
 		ret.Set(kv.Key(elemKey), val)
 		return true
