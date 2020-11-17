@@ -45,7 +45,7 @@ func (c *Client) PostRequest(
 		NodeClient:      c.NodeClient,
 		SenderSigScheme: c.SigScheme,
 		Mint:            mint,
-		BlockParams: []apilib.RequestBlockParams{{
+		RequestSectionParams: []apilib.RequestSectionParams{{
 			TargetContractID: coretypes.NewContractID(c.ChainID, contractHname),
 			EntryPointCode:   entryPoint,
 			Transfer:         transfer,

@@ -2,7 +2,6 @@ package root
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -73,10 +72,10 @@ type rootEntryPoint struct {
 
 var (
 	processor = rootProcessor{
-		coretypes.EntryPointCodeInit: {epFunc(initialize)},
-		EntryPointDeployContract:     {epFunc(deployContract)},
-		EntryPointFindContract:       {epFuncView(findContract)},
-		EntryPointGetBinary:          {epFuncView(getBinary)},
+		coretypes.EntryPointInit: {epFunc(initialize)},
+		EntryPointDeployContract: {epFunc(deployContract)},
+		EntryPointFindContract:   {epFuncView(findContract)},
+		EntryPointGetBinary:      {epFuncView(getBinary)},
 	}
 )
 
@@ -96,7 +95,7 @@ func (v rootProcessor) GetDescription() string {
 func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	fun, ok := ep.fun.(epFunc)
 	if !ok {
-		return nil, fmt.Errorf("wrong type of entry point")
+		return nil, vmtypes.ErrWrongTypeEntryPoint
 	}
 	ret, err := fun(ctx)
 	if err != nil {
@@ -113,7 +112,7 @@ func (ep rootEntryPoint) IsView() bool {
 func (ep rootEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	fun, ok := ep.fun.(epFuncView)
 	if !ok {
-		return nil, fmt.Errorf("wrong type of entry point")
+		return nil, vmtypes.ErrWrongTypeEntryPoint
 	}
 	return fun(ctx)
 }

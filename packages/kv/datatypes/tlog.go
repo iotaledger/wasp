@@ -101,7 +101,7 @@ func (l *TimestampedLog) len() (uint32, error) {
 	if len(v) != 4 {
 		return 0, errors.New("corrupted data")
 	}
-	return util.Uint32From4Bytes(v), nil
+	return util.MustUint32From4Bytes(v), nil
 }
 
 // Len == 0/empty/non-existent are equivalent
@@ -162,7 +162,7 @@ func (l *TimestampedLog) latest() (int64, error) {
 	if len(data) < 8 {
 		return 0, errors.New("TimestampedLog: corrupted data")
 	}
-	return int64(util.Uint64From8Bytes(data[:8])), nil
+	return int64(util.MustUint64From8Bytes(data[:8])), nil
 }
 
 // Earliest returns timestamp of the first record in the log, if any, or otherwise it is 0
@@ -185,7 +185,7 @@ func (l *TimestampedLog) earliest() (int64, error) {
 	if len(data) < 8 {
 		return 0, errors.New("TimestampedLog: corrupted data")
 	}
-	return int64(util.Uint64From8Bytes(data[:8])), nil
+	return int64(util.MustUint64From8Bytes(data[:8])), nil
 }
 
 func (l *TimestampedLog) getRawRecordAtIndex(idx uint32) ([]byte, error) {
@@ -212,7 +212,7 @@ func ParseRawLogRecord(raw []byte) (*TimestampedLogRecord, error) {
 		return nil, fmt.Errorf("ParseRawLogRecord: wrong bytes")
 	}
 	return &TimestampedLogRecord{
-		Timestamp: int64(util.Uint64From8Bytes(raw[:8])),
+		Timestamp: int64(util.MustUint64From8Bytes(raw[:8])),
 		Data:      raw[8:],
 	}, nil
 }

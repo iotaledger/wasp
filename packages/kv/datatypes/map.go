@@ -3,8 +3,7 @@ package datatypes
 import (
 	"bytes"
 	"errors"
-	"fmt"
-
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -148,7 +147,7 @@ func (d *Map) len() (uint32, error) {
 	if len(v) != 4 {
 		return 0, errors.New("corrupted data")
 	}
-	return util.Uint32From4Bytes(v), nil
+	return util.MustUint32From4Bytes(v), nil
 }
 
 func (d *Map) Erase() {
@@ -159,13 +158,26 @@ func (d *Map) Erase() {
 // Iterate non-deterministic
 func (d *Map) Iterate(f func(elemKey []byte, value []byte) bool) error {
 	prefix := d.getElemKey(nil)
-	fmt.Printf("$$TEST Map::Iterate.prefix = %v\n", []byte(prefix))
 	return d.kv.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
 	})
 }
 
 // Iterate non-deterministic
-func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) error {
-	return d.m.Iterate(f)
+func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) {
+	err := d.m.Iterate(f)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (d *MustMap) IterateBalances(f func(color balance.Color, bal int64) bool) {
+	d.Iterate(func(elemKey []byte, value []byte) bool {
+		col, _, err := balance.ColorFromBytes(elemKey)
+		if err != nil {
+			panic(err)
+		}
+		bal := int64(util.MustUint64From8Bytes(value))
+		return f(col, bal)
+	})
 }

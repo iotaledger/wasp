@@ -59,7 +59,7 @@ func (o *ScUtility) GetInt(keyId int32) int64 {
 		if o.random == nil {
 			// need to initialize pseudo-random generator with
 			// a sufficiently random, yet deterministic, value
-			id := o.vm.ctx.AccessRequest().ID()
+			id := o.vm.ctx.RequestID()
 			o.random = id.TransactionID().Bytes()
 		}
 		i := o.nextRandom

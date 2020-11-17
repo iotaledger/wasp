@@ -219,7 +219,7 @@ func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualStat
 	}
 	values, err := util.DbGetMulti(db, [][]byte{
 		database.MakeKey(database.ObjectTypeSolidState),
-		dbkeyBatch(util.Uint32From4Bytes(stateIndexBin)),
+		dbkeyBatch(util.MustUint32From4Bytes(stateIndexBin)),
 	})
 	if err != nil {
 		return nil, nil, false, err

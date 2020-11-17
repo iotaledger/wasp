@@ -207,7 +207,7 @@ func testIncrement(t *testing.T, numRequests int) {
 //		TargetContractID: coretypes.NewContractID(*scChain, 0),
 //		EntryPointCode:   incCodeIncrementRepeat1,
 //		// also send 1i to the SC address to use as request token
-//		Transfer: map[balance.Color]int64{
+//		Incoming: map[balance.Color]int64{
 //			balance.ColorIOTA: 1,
 //		},
 //	})
@@ -276,7 +276,7 @@ func testIncrement(t *testing.T, numRequests int) {
 //			"numRepeats": numRepeats,
 //		},
 //		// also send 5i to the SC address to use as request tokens
-//		Transfer: map[balance.Color]int64{
+//		Incoming: map[balance.Color]int64{
 //			balance.ColorIOTA: 5,
 //		},
 //	})

@@ -27,10 +27,9 @@ func (v nilProcessor) GetDescription() string {
 
 // does nothing, i.e. resulting state update is empty
 func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	reqId := ctx.AccessRequest().ID()
-	ctx.Eventf("run nilProcessor. Req.code %s, Contract ID: %s, ts: %d, reqid: %s",
-		ctx.AccessRequest().EntryPointCode().String(),
-		ctx.CurrentContractID().String(),
+	reqId := ctx.RequestID()
+	ctx.Eventf("run nilProcessor. Contract ID: %s, ts: %d, reqid: %s",
+		ctx.MyContractID().String(),
 		ctx.GetTimestamp(),
 		reqId.String(),
 	)

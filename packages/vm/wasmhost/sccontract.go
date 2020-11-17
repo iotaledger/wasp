@@ -17,7 +17,7 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 		return id[:]
 	case KeyColor: //TODO
 	case KeyId:
-		id := o.vm.ctx.CurrentContractID()
+		id := o.vm.ctx.MyContractID()
 		return id[:]
 	case KeyOwner:
 		//address := o.vm.ctx.OriginatorAddress()

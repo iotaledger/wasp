@@ -155,13 +155,16 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
-		chid, _ := state.GetChainID(root.VarChainID)
-		require.EqualValues(t, &chain.ChainID, chid)
+		chid, ok := state.GetChainID(root.VarChainID)
+		require.True(t, ok)
+		require.EqualValues(t, chain.ChainID, *chid)
 
-		aid, _ := state.GetAgentID(root.VarChainOwnerID)
+		aid, ok := state.GetAgentID(root.VarChainOwnerID)
+		require.True(t, ok)
 		require.EqualValues(t, *chain.OriginatorID(), *aid)
 
-		desc, _ := state.GetString(root.VarDescription)
+		desc, ok := state.GetString(root.VarDescription)
+		require.True(t, ok)
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)

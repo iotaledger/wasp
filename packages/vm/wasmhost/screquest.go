@@ -13,10 +13,10 @@ func (o *ScRequest) GetBytes(keyId int32) []byte {
 	case KeyAddress:
 		return o.vm.ctx.AccessRequest().MustSenderAddress().Bytes()
 	case KeyHash:
-		id := o.vm.ctx.AccessRequest().ID()
+		id := o.vm.ctx.RequestID()
 		return id.TransactionID().Bytes()
 	case KeyId:
-		id := o.vm.ctx.AccessRequest().ID()
+		id := o.vm.ctx.RequestID()
 		return id.Bytes()
 	}
 	return o.MapObject.GetBytes(keyId)

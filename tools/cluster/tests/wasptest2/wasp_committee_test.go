@@ -29,7 +29,7 @@ func TestKillNode(t *testing.T) {
 		_, err = waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
 			NodeClient:      wasps.NodeClient,
 			SenderSigScheme: scOwner.SigScheme(),
-			BlockParams: []waspapi.RequestBlockParams{
+			RequestSectionParams: []waspapi.RequestSectionParams{
 				{
 					TargetContractID: scAddr,
 					EntryPointCode:   inccounter.RequestInc,

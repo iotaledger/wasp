@@ -5,14 +5,13 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // installProgram is a privileged call for root contract
 func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, name string, description string) error {
-	if vmctx.ContractHname() != root.Hname {
+	if vmctx.CurrentContractHname() != root.Hname {
 		panic("DeployBuiltinContract must be called from root contract")
 	}
 	vmctx.log.Debugf("VMContext.InstallContract.begin")
@@ -46,21 +45,10 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, nam
 }
 
 func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*root.ContractRecord, bool) {
-	if contractHname == root.Hname {
-		// root
-		return root.GetRootContractRecord(), true
-	}
-	params := codec.NewCodec(dict.NewDict())
-	params.SetInt64(root.ParamHname, int64(contractHname))
-	res, err := vmctx.callRoot(root.EntryPointFindContract, params)
-	if err != nil {
-		return nil, false
-	}
-	data, err := res.Get(root.ParamData)
-	if err != nil {
-		return nil, false
-	}
-	ret, err := root.DecodeContractRecord(data)
+	vmctx.pushCallContext(root.Hname, nil, nil)
+	defer vmctx.popCallContext()
+
+	ret, err := root.FindContract(codec.NewMustCodec(vmctx), contractHname)
 	if err != nil {
 		return nil, false
 	}
@@ -68,17 +56,14 @@ func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*roo
 }
 
 func (vmctx *VMContext) getBinary(deploymentHash *hashing.HashValue) ([]byte, bool) {
-	params := codec.NewCodec(dict.NewDict())
-	params.SetHashValue(root.ParamHash, deploymentHash)
-	res, err := vmctx.callRoot(root.EntryPointGetBinary, params)
+	vmctx.pushCallContext(root.Hname, nil, nil)
+	defer vmctx.popCallContext()
+
+	ret, err := root.GetBinary(codec.NewMustCodec(vmctx), *deploymentHash)
 	if err != nil {
 		return nil, false
 	}
-	data, err := res.Get(root.ParamData)
-	if err != nil {
-		return nil, false
-	}
-	return data, true
+	return ret, true
 }
 
 func (vmctx *VMContext) getProcessor(rec *root.ContractRecord) (vmtypes.Processor, error) {

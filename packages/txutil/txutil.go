@@ -70,6 +70,14 @@ func InputBalancesToString(outs map[valuetransaction.OutputID][]*balance.Balance
 	return ret
 }
 
+func BalancesToMap(bals []*balance.Balance) map[balance.Color]int64 {
+	ret := make(map[balance.Color]int64)
+	for _, bal := range bals {
+		ret[bal.Color] = bal.Value
+	}
+	return ret
+}
+
 func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balance.Color]int64, int64) {
 	ret := make(map[balance.Color]int64)
 	var total int64

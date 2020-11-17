@@ -138,7 +138,7 @@ func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		requests:        reqs,
 		timestamp:       msg.Timestamp,
 		balances:        msg.Balances,
-		rewardAddress:   msg.RewardAddress,
+		accrueFeesTo:    msg.FeeDestination,
 		leaderPeerIndex: msg.SenderIndex,
 	})
 	op.setNextConsensusStage(consensusStageSubCalculationsStarted)

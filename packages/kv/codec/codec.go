@@ -40,6 +40,7 @@ type ImmutableCodec interface {
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool, error)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool, error)
 	GetAgentID(key kv.Key) (*coretypes.AgentID, bool, error)
+	GetContractID(key kv.Key) (*coretypes.ContractID, bool, error)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
 }
@@ -55,6 +56,7 @@ type ImmutableMustCodec interface {
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool)
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
 	GetAgentID(key kv.Key) (*coretypes.AgentID, bool)
+	GetContractID(key kv.Key) (*coretypes.ContractID, bool)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
 
@@ -75,6 +77,7 @@ type wCodec interface {
 	SetHashValue(key kv.Key, value *hashing.HashValue)
 	SetChainID(key kv.Key, value *coretypes.ChainID)
 	SetAgentID(key kv.Key, value *coretypes.AgentID)
+	SetContractID(key kv.Key, value *coretypes.ContractID)
 	Append(from ImmutableCodec) error
 }
 
@@ -216,7 +219,7 @@ func DecodeInt64(b []byte) (int64, error) {
 	if len(b) != 8 {
 		return 0, fmt.Errorf("value %s is not an int64", hex.EncodeToString(b))
 	}
-	return int64(util.Uint64From8Bytes(b)), nil
+	return int64(util.MustUint64From8Bytes(b)), nil
 }
 
 func EncodeInt64(value int64) []byte {
@@ -352,6 +355,28 @@ func (c mustcodec) GetAgentID(key kv.Key) (*coretypes.AgentID, bool) {
 
 func (c codec) SetAgentID(key kv.Key, aid *coretypes.AgentID) {
 	c.kv.Set(key, aid[:])
+}
+
+func (c codec) GetContractID(key kv.Key) (*coretypes.ContractID, bool, error) {
+	var b []byte
+	b, err := c.kv.Get(key)
+	if err != nil || b == nil {
+		return nil, false, err
+	}
+	ret, err := coretypes.NewContractIDFromBytes(b)
+	return &ret, err == nil, err
+}
+
+func (c mustcodec) GetContractID(key kv.Key) (*coretypes.ContractID, bool) {
+	ret, ok, err := c.codec.GetContractID(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret, ok
+}
+
+func (c codec) SetContractID(key kv.Key, cid *coretypes.ContractID) {
+	c.kv.Set(key, cid[:])
 }
 
 func (c codec) Append(from ImmutableCodec) error {

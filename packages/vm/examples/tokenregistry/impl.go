@@ -105,7 +105,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	ctx.Event("TokenRegistry: mintSupply")
 	params := ctx.Params()
 
-	reqId := ctx.AccessRequest().ID()
+	reqId := ctx.RequestID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
 	registry := ctx.AccessState().GetMap(VarStateTheRegistry)

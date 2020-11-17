@@ -344,7 +344,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	args := dict.FromGoMap(map[kv.Key][]byte{
 		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
 	})
-	ctx.SendRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
+	ctx.PostRequestToSelfWithDelay(RequestFinalizeAuction, args, uint32(duration*60))
 
 	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
 	//	tokensForSale, colorForSale.String(), minimumBid, duration))
@@ -457,7 +457,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
+	scAddr := (address.Address)(ctx.MyContractID().ChainID())
 	if ctx.AccessRequest().MustSenderAddress() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")

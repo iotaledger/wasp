@@ -79,7 +79,7 @@ func (op *operator) startCalculationsAsLeader() {
 	reqIdsStr := idsShortStr(reqIds)
 
 	op.log.Debugf("requests selected to process. Current state: %d, Reqs: %+v", op.mustStateIndex(), reqIdsStr)
-	rewardAddress := op.getRewardAddress()
+	rewardAddress := op.getFeeDestination()
 
 	// send to subordinated peers requests to process the batch
 	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
@@ -87,9 +87,9 @@ func (op *operator) startCalculationsAsLeader() {
 			// timestamp is set by SendMsgToCommitteePeers
 			BlockIndex: op.stateTx.MustState().BlockIndex(),
 		},
-		RewardAddress: rewardAddress,
-		Balances:      op.balances,
-		RequestIds:    reqIds,
+		FeeDestination: rewardAddress,
+		Balances:       op.balances,
+		RequestIds:     reqIds,
 	})
 
 	// determine timestamp. Must be max(local clock, prev timestamp+1)
@@ -131,7 +131,7 @@ func (op *operator) startCalculationsAsLeader() {
 		leaderPeerIndex: op.chain.OwnPeerIndex(),
 		balances:        op.balances,
 		timestamp:       ts,
-		rewardAddress:   rewardAddress,
+		accrueFeesTo:    rewardAddress,
 	})
 	op.setNextConsensusStage(consensusStageLeaderCalculationsStarted)
 }
@@ -176,13 +176,22 @@ func (op *operator) checkQuorum() bool {
 		return false
 	}
 	// quorum detected
+
+	// finalizing result transaction with signatures
 	if err := op.aggregateSigShares(sigShares); err != nil {
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return false
 	}
 
-	if !op.leaderStatus.resultTx.SignaturesValid() {
-		op.log.Error("final signature invalid: something went wrong while finalizing result transaction")
+	prop, err := op.leaderStatus.resultTx.Properties()
+	op.log.Debugf("checking result tx properties: %s", prop.String())
+
+	if err != nil {
+		op.log.Errorf("checking result tx properties: %v", err)
+		return false
+	}
+	if prop.NumSignatures() != 1 {
+		op.log.Errorf("checking result tx: num valid signatures != 1")
 		return false
 	}
 
@@ -194,7 +203,7 @@ func (op *operator) checkQuorum() bool {
 	op.leaderStatus.finalized = true
 
 	addr := address.Address(*op.chain.ID())
-	err := nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
+	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return false

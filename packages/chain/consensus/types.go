@@ -3,16 +3,15 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
@@ -140,9 +139,10 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	return h, true
 }
 
-func (op *operator) getRewardAddress() address.Address {
-	addr := address.Address(*op.chain.ID())
-	return registry.GetRewardAddress(&addr)
+func (op *operator) getFeeDestination() coretypes.AgentID {
+	// TODO
+	// temporary to the chain owner's account
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accountsc.Hname))
 }
 
 func (op *operator) getMinimumReward() int64 {

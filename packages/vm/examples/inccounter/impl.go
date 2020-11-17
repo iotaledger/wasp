@@ -29,7 +29,7 @@ var (
 )
 
 var entryPoints = incCounterProcessor{
-	coretypes.EntryPointCodeInit:      initialize,
+	coretypes.EntryPointInit:          initialize,
 	EntryPointIncCounter:              incCounter,
 	EntryPointIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
 	EntryPointIncAndRepeatMany:        incCounterAndRepeatMany,
@@ -106,10 +106,10 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
 
-		if ctx.SendRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
-			ctx.Event("SendRequestToSelfWithDelay RequestInc 5 sec")
+		if ctx.PostRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
+			ctx.Event("PostRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
-			ctx.Event("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
+			ctx.Event("failed to PostRequestToSelfWithDelay RequestInc 5 sec")
 		}
 	}
 	return nil
@@ -144,10 +144,10 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	if ctx.SendRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 3) {
-		ctx.Eventf("SendRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+	if ctx.PostRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 3) {
+		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
-		ctx.Eventf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
 	return nil
 }
