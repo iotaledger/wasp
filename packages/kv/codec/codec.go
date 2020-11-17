@@ -49,6 +49,8 @@ type ImmutableCodec interface {
 
 // ImmutableMustCodec is an ImmutableCodec that automatically panics on error
 type ImmutableMustCodec interface {
+	KVStore() kv.KVStore
+
 	Has(key kv.Key) bool
 	Get(key kv.Key) []byte
 	GetString(key kv.Key) (string, bool)
@@ -250,11 +252,15 @@ func (c mustcodec) GetInt64(key kv.Key) (int64, bool) {
 }
 
 func (c codec) GetHname(key kv.Key) (coretypes.Hname, bool, error) {
-	t, ok, err := c.GetInt64(key)
-	if err != nil || !ok {
-		return 0, ok, err
+	b, err := c.Get(key)
+	if err != nil || b == nil {
+		return 0, false, err
 	}
-	return coretypes.Hname(t), ok, err
+	ret, err := coretypes.NewHnameFromBytes(b)
+	if err != nil {
+		return 0, false, err
+	}
+	return ret, true, nil
 }
 
 func (c mustcodec) GetHname(key kv.Key) (coretypes.Hname, bool) {
