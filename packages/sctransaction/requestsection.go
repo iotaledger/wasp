@@ -52,7 +52,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		senderContractHname: senderContractHname,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
-		args:                dict.NewDict(),
+		args:                dict.New(),
 		transfer:            accounts.NewColoredBalancesFromMap(nil),
 	}
 }
@@ -163,7 +163,7 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.entryPoint.Read(r); err != nil {
 		return err
 	}
-	req.args = dict.NewDict()
+	req.args = dict.New()
 	if err := req.args.Read(r); err != nil {
 		return err
 	}

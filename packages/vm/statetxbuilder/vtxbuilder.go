@@ -203,8 +203,8 @@ func (vtxb *vtxBuilder) addToOutputs(targetAddr address.Address, col balance.Col
 	cmap[col] = b + amount
 }
 
-// MoveTokensToAddress move token without changing color
-func (vtxb *vtxBuilder) MoveTokensToAddress(targetAddr address.Address, col balance.Color, amount int64) error {
+// MoveTokens move token without changing color
+func (vtxb *vtxBuilder) MoveTokens(targetAddr address.Address, col balance.Color, amount int64) error {
 	if vtxb.GetInputBalance(col) < amount {
 		return errorNotEnoughBalance
 	}

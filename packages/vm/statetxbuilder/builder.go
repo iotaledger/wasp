@@ -12,25 +12,36 @@ import (
 )
 
 type Builder struct {
+	vtxb                 *vtxBuilder
+	chainAddress         address.Address
 	stateSection         *sctransaction.StateSection
 	requestSections      []*sctransaction.RequestSection
 	numRequestsProcessed map[balance.Color]int64
 }
 
-func New(chainColor balance.Color) (*Builder, error) {
+func New(chainAddress address.Address, chainColor balance.Color, addressBalances map[valuetransaction.ID][]*balance.Balance) (*Builder, error) {
 	if chainColor == balance.ColorNew || chainColor == balance.ColorIOTA {
 		return nil, errors.New("statetxbuilder.New: wrong chain color")
 	}
+	vtxb, err := newValueTxBuilder(chainAddress, addressBalances)
+	if err != nil {
+		return nil, err
+	}
 	ret := &Builder{
+		vtxb:                 vtxb,
+		chainAddress:         chainAddress,
 		stateSection:         sctransaction.NewStateSection(sctransaction.NewStateSectionParams{Color: chainColor}),
 		requestSections:      make([]*sctransaction.RequestSection, 0),
 		numRequestsProcessed: make(map[balance.Color]int64),
 	}
-	return ret, nil
+	err = vtxb.MoveTokens(ret.chainAddress, chainColor, 1)
+	return ret, err
 }
 
 func (txb *Builder) Clone() *Builder {
 	ret := &Builder{
+		vtxb:            txb.vtxb.clone(),
+		chainAddress:    txb.chainAddress,
 		stateSection:    txb.stateSection.Clone(),
 		requestSections: make([]*sctransaction.RequestSection, len(txb.requestSections)),
 	}
@@ -56,44 +67,28 @@ func (txb *Builder) RequestProcessed(reqid coretypes.RequestID) {
 
 // AddRequestSectionWithTransfer adds request block with the request
 // token and adds respective outputs for the colored transfers
-func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) {
+func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
+	targetAddr := address.Address(req.Target().ChainID())
+	var err error
+	if err = txb.vtxb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
+		return err
+	}
+	req.Transfer().Iterate(func(col balance.Color, bal int64) bool {
+		if err = txb.vtxb.MoveTokens(targetAddr, col, bal); err != nil {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return err
+	}
 	txb.requestSections = append(txb.requestSections, req)
+	return nil
 }
 
-func (txb *Builder) Build(chainAddress *address.Address, addressBalances map[valuetransaction.ID][]*balance.Balance) (*sctransaction.Transaction, error) {
-	vtxb, err := newValueTxBuilder(*chainAddress, addressBalances)
-	if err != nil {
-		return nil, err
-	}
-	// move chain token
-	err = vtxb.MoveTokensToAddress(*chainAddress, txb.stateSection.Color(), 1)
-	if err != nil {
-		return nil, err
-	}
-	// Erase request tokens
-	for col, n := range txb.numRequestsProcessed {
-		if err = vtxb.EraseColor(*chainAddress, col, n); err != nil {
-			return nil, err
-		}
-	}
-	for _, req := range txb.requestSections {
-		var err error
-		targetAddr := address.Address(req.Target().ChainID())
-		// mint request token to the target address
-		if err = vtxb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
-			return nil, err
-		}
-		// move transfer tokens to the target address
-		req.Transfer().Iterate(func(col balance.Color, bal int64) bool {
-			err = vtxb.MoveTokensToAddress(targetAddr, col, bal)
-			return err == nil
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
+func (txb *Builder) Build() (*sctransaction.Transaction, error) {
 	return sctransaction.NewTransaction(
-		vtxb.build(),
+		txb.vtxb.build(),
 		txb.stateSection,
 		txb.requestSections,
 	)

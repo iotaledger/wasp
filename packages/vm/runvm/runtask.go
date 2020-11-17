@@ -2,6 +2,7 @@ package runvm
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"time"
@@ -17,7 +18,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return fmt.Errorf("must be at least 1 request")
 	}
 
-	txb, err := statetxbuilder.New(ctx.Color)
+	txb, err := statetxbuilder.New(address.Address(ctx.ChainID), ctx.Color, ctx.Balances)
 	if err != nil {
 		ctx.Log.Debugf("statetxbuilder.New: %v", err)
 		return err
