@@ -9,10 +9,10 @@ func (tm *TokenMetadata) Read(r io.Reader) error {
 	if err := util.ReadInt64(r, &tm.Supply); err != nil {
 		return err
 	}
-	if err := util.ReadAddress(r, &tm.MintedBy); err != nil {
+	if err := util.ReadAgent(r, &tm.MintedBy); err != nil {
 		return err
 	}
-	if err := util.ReadAddress(r, &tm.Owner); err != nil {
+	if err := util.ReadAgent(r, &tm.Owner); err != nil {
 		return err
 	}
 	if err := util.ReadInt64(r, &tm.Created); err != nil {

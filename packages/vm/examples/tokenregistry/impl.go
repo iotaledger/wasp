@@ -7,7 +7,6 @@ package tokenregistry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -52,8 +51,8 @@ var entryPoints = tokenRegistryProcessor{
 // TokenMetadata is a structure for one supply
 type TokenMetadata struct {
 	Supply      int64
-	MintedBy    address.Address // originator
-	Owner       address.Address // who can update metadata
+	MintedBy    coretypes.AgentID // originator
+	Owner       coretypes.AgentID // who can update metadata
 	Created     int64           // when created record
 	Updated     int64           // when recordt last updated
 	Description string          // any text
@@ -137,7 +136,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("TokenRegistry: inconsistency 2")
 	}
 	// create the metadata record and marshal it into binary
-	senderAddress := ctx.AccessRequest().MustSenderAddress()
+	senderAddress := ctx.AccessRequest().MustSender()
 	rec := &TokenMetadata{
 		Supply:      supply,
 		MintedBy:    senderAddress,

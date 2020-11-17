@@ -24,7 +24,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -95,7 +94,7 @@ const (
 
 // BetInfo contains data of the bet
 type BetInfo struct {
-	Player address.Address
+	Player coretypes.AgentID
 	reqId  coretypes.RequestID
 	Sum    int64
 	Color  byte
@@ -166,11 +165,11 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 	// take input addresses of the request transaction. Must be exactly 1 otherwise.
 	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	sender := ctx.AccessRequest().MustSenderAddress()
+	sender := ctx.AccessRequest().MustSender()
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
-	sum := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+	sum := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return fmt.Errorf("placeBet: sum == 0: nothing to bet")
@@ -232,7 +231,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 
 	// TODO refactor to new account system
-	//if ctx.AccessRequest().MustSenderAddress() != *ctx.OriginatorAddress() {
+	//if ctx.AccessRequest().MustSender() != *ctx.OriginatorAddress() {
 	//	// not authorized
 	//	return fmt.Errorf("setPlayPeriod: not authorized")
 	//}
@@ -254,8 +253,8 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := (address.Address)(ctx.MyContractID().ChainID())
-	if ctx.AccessRequest().MustSenderAddress() != scAddr {
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	if ctx.AccessRequest().MustSender() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
 	}
@@ -281,8 +280,8 @@ func lockBets(ctx vmtypes.Sandbox) error {
 func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := (address.Address)(ctx.MyContractID().ChainID())
-	if ctx.AccessRequest().MustSenderAddress() != scAddr {
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	if ctx.AccessRequest().MustSender() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
 	}
@@ -350,8 +349,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		scAddr := (address.Address)(ctx.MyContractID().ChainID())
-		if !ctx.AccessSCAccount().MoveTokens(&scAddr, &balance.ColorIOTA, totalLockedAmount) {
+		agent := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+		if !ctx.Accounts().MoveBalance(agent, balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
 			ctx.Panic("MoveTokens failed")
@@ -392,7 +391,7 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
 func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
-	sumsByPlayers := make(map[address.Address]int64)
+	sumsByPlayers := make(map[coretypes.AgentID]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
 		if _, ok := sumsByPlayers[bet.Player]; !ok {
@@ -410,7 +409,7 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	}
 
 	// make deterministic sequence by sorting. Eliminate possible rounding effects
-	seqPlayers := make([]address.Address, 0, len(sumsByPlayers))
+	seqPlayers := make([]coretypes.AgentID, 0, len(sumsByPlayers))
 	resultSum := int64(0)
 	for player, sum := range sumsByPlayers {
 		seqPlayers = append(seqPlayers, player)
@@ -436,11 +435,11 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	// distribute iotas
 	for i := range finalWinners {
 
-		available := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
+		available := ctx.Accounts().Balance(balance.ColorIOTA)
 		ctx.Eventf("sending reward iotas %d to the winner %s. Available iotas: %d",
 			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available)
 
-		if !ctx.AccessSCAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
+		if !ctx.Accounts().MoveBalance(finalWinners[i], balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
 
 			return false
 		}
@@ -479,7 +478,7 @@ func (bi *BetInfo) Write(w io.Writer) error {
 
 func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
-	if err = util.ReadAddress(r, &bi.Player); err != nil {
+	if err = util.ReadAgent(r, &bi.Player); err != nil {
 		return err
 	}
 	if err = bi.reqId.Read(r); err != nil {
@@ -538,7 +537,7 @@ func (ps *PlayerStats) String() string {
 	return fmt.Sprintf("[bets: %d - wins: %d]", ps.Bets, ps.Wins)
 }
 
-func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *PlayerStats)) error {
+func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
 	statsDict := ctx.AccessState().GetMap(StateVarPlayerStats)
 	b := statsDict.GetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)

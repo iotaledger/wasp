@@ -4,7 +4,6 @@ package donatewithfeedback
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -41,7 +40,7 @@ type DonationInfo struct {
 	Id       coretypes.RequestID
 	When     time.Time // not marshaled, filled in from timestamp
 	Amount   int64
-	Sender   address.Address
+	Sender   coretypes.AgentID
 	Feedback string // max 16 bit length
 	Error    string
 }
@@ -81,7 +80,7 @@ func (di *DonationInfo) Read(r io.Reader) error {
 	if err = util.ReadInt64(r, &di.Amount); err != nil {
 		return err
 	}
-	if err = util.ReadAddress(r, &di.Sender); err != nil {
+	if err = util.ReadAgent(r, &di.Sender); err != nil {
 		return err
 	}
 	if di.Feedback, err = util.ReadString16(r); err != nil {

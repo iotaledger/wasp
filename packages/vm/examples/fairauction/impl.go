@@ -8,7 +8,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -136,7 +135,7 @@ type AuctionInfo struct {
 	// duration of the auctions in minutes. Should be >= MinAuctionDurationMinutes
 	DurationMinutes int64
 	// address which issued StartAuction transaction
-	AuctionOwner address.Address
+	AuctionOwner coretypes.AgentID
 	// total deposit by the auction owner. Iotas sent by the auction owner together with the tokens for sale in the same
 	// transaction.
 	TotalDeposit int64
@@ -152,7 +151,7 @@ type BidInfo struct {
 	// the total is a cumulative sum of all bids from the same bidder
 	Total int64
 	// originator of the bid
-	Bidder address.Address
+	Bidder coretypes.AgentID
 	// timestamp Unix nano
 	When int64
 }
@@ -205,11 +204,11 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("startAuction begin")
 	params := ctx.Params()
 
-	sender := ctx.AccessRequest().MustSenderAddress()
-	account := ctx.AccessSCAccount()
+	sender := ctx.AccessRequest().MustSender()
+	accounts := ctx.Accounts()
 
 	// check how many iotas the request contains
-	totalDeposit := account.AvailableBalanceFromRequest(&balance.ColorIOTA)
+	totalDeposit := accounts.Incoming().Balance(balance.ColorIOTA)
 	if totalDeposit < 1 {
 		// it is expected at least 1 iota in deposit
 		// this 1 iota is needed as a "operating capital for the time locked request to itself"
@@ -248,7 +247,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine amount of colored tokens for sale. They must be in the outputs of the request transaction
-	tokensForSale := account.AvailableBalanceFromRequest(&colorForSale)
+	tokensForSale := accounts.Incoming().Balance(colorForSale)
 	if tokensForSale == 0 {
 		// no tokens transferred. Refund half of deposit
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
@@ -367,7 +366,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
 	// it also means several bids can't be placed in the same transaction <-- TODO generic solution for it
-	bidAmount := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+	bidAmount := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
 	if bidAmount == 0 {
 		// no iotas sent
 		return fmt.Errorf("placeBid: exit 0")
@@ -414,7 +413,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("placeBid: exit 6")
 	}
 	// determine the sender of the bid
-	sender := ctx.AccessRequest().MustSenderAddress()
+	sender := ctx.AccessRequest().MustSender()
 
 	// find bids of this bidder in the auction
 	var bi *BidInfo
@@ -457,8 +456,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := (address.Address)(ctx.MyContractID().ChainID())
-	if ctx.AccessRequest().MustSenderAddress() != scAddr {
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	if ctx.AccessRequest().MustSender() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")
 	}
@@ -498,7 +497,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("finalizeAuction: exit 4")
 	}
 
-	account := ctx.AccessSCAccount()
+	accounts := ctx.Accounts()
 
 	// find the winning amount and determine respective ownerFee
 	winningAmount := int64(0)
@@ -551,14 +550,14 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 
 	if winner != nil {
 		// send sold tokens to the winner
-		account.MoveTokens(&ai.Bids[winnerIndex].Bidder, &ai.Color, ai.NumTokens)
+		accounts.MoveBalance(ai.Bids[winnerIndex].Bidder, ai.Color, ai.NumTokens)
 		// send winning amount and return deposit sum less fees to the owner of the auction
-		account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
+		accounts.MoveBalance(ai.AuctionOwner, balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
 
 		for i, bi := range ai.Bids {
 			if i != winnerIndex {
 				// return staked sum to the non-winner
-				account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total)
+				accounts.MoveBalance(bi.Bidder, balance.ColorIOTA, bi.Total)
 			}
 		}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. Winning bid: %di", col.String(), winner.Total))
@@ -566,21 +565,21 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 		ctx.Eventf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
 	} else {
 		// return unsold tokens to auction owner
-		if account.MoveTokens(&ai.AuctionOwner, &ai.Color, ai.NumTokens) {
+		if accounts.MoveBalance(ai.AuctionOwner, ai.Color, ai.NumTokens) {
 			ctx.Eventf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens)
 		}
 
 		// return deposit less fees less 1 iota
-		if account.MoveTokens(&ai.AuctionOwner, &balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
+		if accounts.MoveBalance(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
 			ctx.Eventf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee)
 		}
 
 		// return bids to bidders
 		for _, bi := range ai.Bids {
-			if account.MoveTokens(&bi.Bidder, &balance.ColorIOTA, bi.Total) {
+			if accounts.MoveBalance(bi.Bidder, balance.ColorIOTA, bi.Total) {
 				ctx.Eventf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String())
 			} else {
-				avail := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
+				avail := accounts.Balance(balance.ColorIOTA)
 				ctx.Eventf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail)
 			}
 		}
@@ -604,7 +603,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 
 	// TODO refactor to the new account system
-	//if ctx.AccessRequest().MustSenderAddress() != *ctx.OriginatorAddress() {
+	//if ctx.AccessRequest().MustSender() != *ctx.OriginatorAddress() {
 	//	// not authorized
 	//	return fmt.Errorf("setOwnerMargin: not authorized")
 	//}
@@ -629,7 +628,7 @@ func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64)
 	//account := ctx.AccessSCAccount()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	//available := account.AvailableBalanceFromRequest(color)
-	//sender := ctx.AccessRequest().MustSenderAddress()
+	//sender := ctx.AccessRequest().MustSender()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
 	//account.MoveTokensFromRequest(&sender, color, available)
 }
