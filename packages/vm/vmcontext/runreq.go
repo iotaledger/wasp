@@ -1,7 +1,6 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -76,8 +75,7 @@ func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash 
 		return nil, err
 	}
 	// create result transaction
-	addr := address.Address(vmctx.chainID)
-	tx, err := vmctx.txBuilder.Build(&addr, vmctx.balances)
+	tx, err := vmctx.txBuilder.Build()
 	if err != nil {
 		return nil, err
 	}

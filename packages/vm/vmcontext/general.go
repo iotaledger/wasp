@@ -66,8 +66,7 @@ func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
 		WithTimelock(par.Timelock).
 		WithTransfer(par.Transfer).
 		WithArgs(par.Params)
-	vmctx.txBuilder.AddRequestSection(reqSection)
-	return true
+	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 }
 
 func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
