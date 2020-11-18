@@ -88,11 +88,11 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	})
 }
 
-func (b coloredBalances) Write(w io.Writer) error {
-	if err := util.WriteUint16(w, uint16(len(b))); err != nil {
+func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
+	if err := util.WriteUint16(w, b.Len()); err != nil {
 		return err
 	}
-	if len(b) == 0 {
+	if b.Len() == 0 {
 		return nil
 	}
 	var err error
@@ -110,34 +110,22 @@ func (b coloredBalances) Write(w io.Writer) error {
 	return err
 }
 
-func (b coloredBalances) Read(r io.Reader) error {
+func ReadColoredBalance(r io.Reader) (coretypes.ColoredBalances, error) {
 	var size uint16
 	if err := util.ReadUint16(r, &size); err != nil {
-		return err
+		return nil, err
 	}
-	if len(b) != 0 {
-		// clean if not empty
-		t := make([]balance.Color, 0, len(b))
-		for k := range b {
-			t = append(t, k)
-		}
-		for _, k := range t {
-			delete(b, k)
-		}
-	}
-	if size == 0 {
-		return nil
-	}
+	ret := make(coloredBalances)
 	var col balance.Color
 	var bal int64
 	for i := uint16(0); i < size; i++ {
 		if err := util.ReadColor(r, &col); err != nil {
-			return err
+			return nil, err
 		}
 		if err := util.ReadInt64(r, &bal); err != nil {
-			return err
+			return nil, err
 		}
-		b[col] = bal
+		ret[col] = bal
 	}
-	return nil
+	return ret, nil
 }

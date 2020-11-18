@@ -12,8 +12,8 @@ import (
 type incCounterProcessor map[coretypes.Hname]incEntryPoint
 
 const (
-	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
-	Description = "Increment counter, a PoC smart contract"
+	ProgramHashStr = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
+	Description    = "Increment counter, a PoC smart contract"
 
 	VarNumRepeats  = "numRepeats"
 	VarCounter     = "counter"
@@ -26,6 +26,8 @@ var (
 	EntryPointIncAndRepeatOnceAfter5s = coretypes.Hn("incAndRepeatOnceAfter5s")
 	EntryPointIncAndRepeatMany        = coretypes.Hn("incAndRepeatMany")
 	EntryPointSpawn                   = coretypes.Hn("spawn")
+
+	ProgramHash, _ = hashing.HashValueFromBase58(ProgramHashStr)
 )
 
 var entryPoints = incCounterProcessor{
@@ -159,7 +161,7 @@ func spawn(ctx vmtypes.Sandbox) error {
 
 	val, _ := state.GetInt64(VarCounter)
 
-	hashBin, err := hashing.HashValueFromBase58(ProgramHash)
+	hashBin, err := hashing.HashValueFromBase58(ProgramHashStr)
 	if err != nil {
 		ctx.Panic(err)
 	}

@@ -90,7 +90,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	wasps := setup(t, "TestSend5ReqInc0SecDeploy")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequests,
@@ -103,7 +103,7 @@ func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
+	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, inccounter.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	for i := 0; i < numRequests; i++ {
@@ -149,7 +149,7 @@ func TestSend100ReqMulti(t *testing.T) {
 	wasps := setup(t, "TestSend5ReqInc0SecDeploy")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequestsInTheBlock,
@@ -162,7 +162,7 @@ func TestSend100ReqMulti(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
+	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, inccounter.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	pars := make([]waspapi.CreateSimpleRequestParamsOld, numRequestsInTheBlock)

@@ -2,7 +2,11 @@ package wasptest
 
 import (
 	"bytes"
+	"errors"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
@@ -43,4 +47,17 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		return true
 	})
+}
+
+func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {
+	err := wasps.NodeClient.RequestFunds(addr)
+	if err != nil {
+		return err
+	}
+	if !wasps.VerifyAddressBalances(addr, testutil.RequestFundsAmount, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount,
+	}, "requested funds for "+who) {
+		return errors.New("unexpected requested amount")
+	}
+	return nil
 }

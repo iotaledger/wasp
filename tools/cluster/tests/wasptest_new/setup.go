@@ -22,6 +22,7 @@ var (
 	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
 	wallet      = testutil.NewWallet(seed)
 	scOwner     = wallet.WithIndex(0)
+	scOwnerAddr = scOwner.Address()
 	programHash hashing.HashValue
 )
 

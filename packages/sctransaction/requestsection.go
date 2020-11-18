@@ -144,7 +144,7 @@ func (req *RequestSection) Write(w io.Writer) error {
 	if err := req.args.Write(w); err != nil {
 		return err
 	}
-	if err := req.transfer.Write(w); err != nil {
+	if err := accounts.WriteColoredBalances(w, req.transfer); err != nil {
 		return err
 	}
 	return nil
@@ -167,8 +167,8 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.args.Read(r); err != nil {
 		return err
 	}
-	req.transfer = accounts.NewColoredBalances()
-	if err := req.transfer.Read(r); err != nil {
+	var err error
+	if req.transfer, err = accounts.ReadColoredBalance(r); err != nil {
 		return err
 	}
 	return nil
