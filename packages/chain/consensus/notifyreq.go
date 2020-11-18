@@ -55,7 +55,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 }
 
 func (op *operator) storeNotification(msg *chain.NotifyReqMsg) {
-	stateIndex, stateDefined := op.stateIndex()
+	stateIndex, stateDefined := op.blockIndex()
 	if stateDefined && msg.BlockIndex < stateIndex {
 		// don't save from earlier. The current currentState saved only for tracking
 		return
@@ -65,7 +65,7 @@ func (op *operator) storeNotification(msg *chain.NotifyReqMsg) {
 
 // markRequestsNotified stores information about notification in the current currentState
 func (op *operator) markRequestsNotified(msgs []*chain.NotifyReqMsg) {
-	stateIndex, stateDefined := op.stateIndex()
+	stateIndex, stateDefined := op.blockIndex()
 	if !stateDefined {
 		return
 	}
@@ -86,7 +86,7 @@ func (op *operator) markRequestsNotified(msgs []*chain.NotifyReqMsg) {
 
 // adjust all notification information to the current state index
 func (op *operator) adjustNotifications() {
-	stateIndex, stateDefined := op.stateIndex()
+	stateIndex, stateDefined := op.blockIndex()
 	if !stateDefined {
 		return
 	}

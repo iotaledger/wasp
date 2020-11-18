@@ -14,8 +14,8 @@ import (
 type VirtualState interface {
 	// index of the current state. State index is incremented when state transition occurs
 	// index 0 means origin state
-	StateIndex() uint32
-	ApplyStateIndex(uint32)
+	BlockIndex() uint32
+	ApplyBlockIndex(uint32)
 	// check if state contains record with the given owner address
 	InitiatedBy(*address.Address) bool
 	// timestamp

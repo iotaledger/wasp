@@ -16,6 +16,7 @@ import (
 type viewcontext struct {
 	processors *processors.ProcessorCache
 	state      buffered.BufferedKVStore
+	chainID    coretypes.ChainID
 }
 
 func New(chain chain.Chain) (*viewcontext, error) {
@@ -26,10 +27,10 @@ func New(chain chain.Chain) (*viewcontext, error) {
 	if !ok {
 		return nil, fmt.Errorf("State not found for chain %s", chain.ID())
 	}
-
 	return &viewcontext{
 		processors: chain.Processors(),
 		state:      state.Variables(),
+		chainID:    *chain.ID(),
 	}, nil
 }
 
@@ -53,7 +54,7 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 		return nil, fmt.Errorf("only view entry point can be called in this context")
 	}
 
-	return ep.CallView(NewSandboxView(v, contractHname, params))
+	return ep.CallView(NewSandboxView(v, v.chainID, contractHname, params))
 }
 
 func (v *viewcontext) getBinary(deploymentHash *hashing.HashValue) ([]byte, error) {

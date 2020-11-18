@@ -177,7 +177,7 @@ func (op *operator) checkSCToken(balances map[valuetransaction.ID][]*balance.Bal
 	for _, bals := range balances {
 		sum += txutil.BalanceOfColor(bals, color)
 	}
-	if stateIndex, ok := op.stateIndex(); ok && stateIndex > 0 {
+	if stateIndex, ok := op.blockIndex(); ok && stateIndex > 0 {
 		if sum != 1 {
 			return fmt.Errorf("must be exactly 1 SC token of color %s. Found %d instead", color.String(), sum)
 		}

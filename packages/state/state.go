@@ -19,7 +19,7 @@ import (
 type virtualState struct {
 	chainID    coretypes.ChainID
 	db         kvstore.KVStore
-	stateIndex uint32
+	blockIndex uint32
 	timestamp  int64
 	empty      bool
 	stateHash  hashing.HashValue
@@ -54,7 +54,7 @@ func (vs *virtualState) Clone() VirtualState {
 	return &virtualState{
 		chainID:    vs.chainID,
 		db:         vs.db,
-		stateIndex: vs.stateIndex,
+		blockIndex: vs.blockIndex,
 		timestamp:  vs.timestamp,
 		empty:      vs.empty,
 		stateHash:  vs.stateHash,
@@ -72,7 +72,7 @@ func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
 
 func (vs *virtualState) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %d, hash, %s\n%s",
-		vs.stateIndex,
+		vs.blockIndex,
 		vs.timestamp,
 		vs.stateHash.String(),
 		vs.Variables().DangerouslyDumpToString(),
@@ -83,15 +83,15 @@ func (vs *virtualState) Variables() buffered.BufferedKVStore {
 	return vs.variables
 }
 
-func (vs *virtualState) StateIndex() uint32 {
-	return vs.stateIndex
+func (vs *virtualState) BlockIndex() uint32 {
+	return vs.blockIndex
 }
 
-func (vs *virtualState) ApplyStateIndex(stateIndex uint32) {
+func (vs *virtualState) ApplyBlockIndex(blockIndex uint32) {
 	vh := vs.Hash()
-	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(stateIndex))
+	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(blockIndex))
 	vs.empty = false
-	vs.stateIndex = stateIndex
+	vs.blockIndex = blockIndex
 }
 
 func (vs *virtualState) Timestamp() int64 {
@@ -101,9 +101,9 @@ func (vs *virtualState) Timestamp() int64 {
 // applies block of state updates. Increases state index
 func (vs *virtualState) ApplyBatch(batch Block) error {
 	if !vs.empty {
-		if batch.StateIndex() != vs.stateIndex+1 {
+		if batch.StateIndex() != vs.blockIndex+1 {
 			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the state #%d",
-				batch.StateIndex(), vs.stateIndex)
+				batch.StateIndex(), vs.blockIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
@@ -114,7 +114,7 @@ func (vs *virtualState) ApplyBatch(batch Block) error {
 		vs.ApplyStateUpdate(stateUpd)
 		return true
 	})
-	vs.ApplyStateIndex(batch.StateIndex())
+	vs.ApplyBlockIndex(batch.StateIndex())
 	return nil
 }
 
@@ -133,7 +133,7 @@ func (vs *virtualState) Hash() *hashing.HashValue {
 }
 
 func (vs *virtualState) Write(w io.Writer) error {
-	if _, err := w.Write(util.Uint32To4Bytes(vs.stateIndex)); err != nil {
+	if _, err := w.Write(util.Uint32To4Bytes(vs.blockIndex)); err != nil {
 		return err
 	}
 	if err := util.WriteUint64(w, uint64(vs.timestamp)); err != nil {
@@ -146,7 +146,7 @@ func (vs *virtualState) Write(w io.Writer) error {
 }
 
 func (vs *virtualState) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &vs.stateIndex); err != nil {
+	if err := util.ReadUint32(r, &vs.blockIndex); err != nil {
 		return err
 	}
 	var ts uint64
@@ -176,7 +176,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	}
 	varStateDbkey := database.MakeKey(database.ObjectTypeSolidState)
 
-	solidStateValue := util.Uint32To4Bytes(vs.StateIndex())
+	solidStateValue := util.Uint32To4Bytes(vs.BlockIndex())
 	solidStateKey := database.MakeKey(database.ObjectTypeSolidStateIndex)
 
 	keys := [][]byte{varStateDbkey, batchDbKey, solidStateKey}
@@ -234,7 +234,7 @@ func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualStat
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("loading block: %v", err)
 	}
-	if vs.StateIndex() != batch.StateIndex() {
+	if vs.BlockIndex() != batch.StateIndex() {
 		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")
 	}
 	return vs, batch, true, nil

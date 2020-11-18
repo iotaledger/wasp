@@ -107,13 +107,13 @@ func (sm *stateManager) checkStateApproval() bool {
 			}
 		}
 		if err := pending.nextState.CommitToDb(pending.block); err != nil {
-			sm.log.Errorw("failed to save state at index #%d", pending.nextState.StateIndex())
+			sm.log.Errorw("failed to save state at index #%d", pending.nextState.BlockIndex())
 			return false
 		}
 
 		if sm.solidState != nil {
 			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s, block size: %d",
-				pending.nextState.StateIndex(), sm.nextStateTransaction.ID().String(), pending.block.Size())
+				pending.nextState.BlockIndex(), sm.nextStateTransaction.ID().String(), pending.block.Size())
 			sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
 				varStateHash.String(), pending.block.EssenceHash().String())
 		} else {
@@ -127,7 +127,7 @@ func (sm *stateManager) checkStateApproval() bool {
 		// !sm.solidStateValid && sm.solidState != nil --> initial load
 
 		sm.log.Infof("INITIAL STATE #%d LOADED FROM DB. State hash: %s, state txid: %s",
-			sm.solidState.StateIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
+			sm.solidState.BlockIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
 	}
 	sm.solidStateValid = true
 	sm.solidState = pending.nextState
@@ -144,7 +144,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// publish state transition
 	publisher.Publish("state",
 		sm.chain.ID().String(),
-		strconv.Itoa(int(sm.solidState.StateIndex())),
+		strconv.Itoa(int(sm.solidState.BlockIndex())),
 		strconv.Itoa(int(pending.block.Size())),
 		sm.approvingTransaction.ID().String(),
 		varStateHash.String(),
@@ -159,7 +159,7 @@ func (sm *stateManager) checkStateApproval() bool {
 			sm.chain.ID().String(),
 			reqid.TransactionID().String(),
 			fmt.Sprintf("%d", reqid.Index()),
-			strconv.Itoa(int(sm.solidState.StateIndex())),
+			strconv.Itoa(int(sm.solidState.BlockIndex())),
 			strconv.Itoa(i),
 			strconv.Itoa(int(pending.block.Size())),
 		)
@@ -180,7 +180,7 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 	// it is time to ask for the next state update to next peer in the permutation
 	data := util.MustBytes(&chain.GetBlockMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			BlockIndex: sm.solidState.StateIndex() + 1,
+			BlockIndex: sm.solidState.BlockIndex() + 1,
 		},
 	})
 	// send messages until first without error
@@ -201,7 +201,7 @@ func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
 
 	currStateIndex := int32(-1)
 	if sm.solidState != nil {
-		currStateIndex = int32(sm.solidState.StateIndex())
+		currStateIndex = int32(sm.solidState.BlockIndex())
 	}
 
 	if stateIndex > sm.largestEvidencedStateIndex {
@@ -213,7 +213,7 @@ func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
 		sm.log.Debugf("NOT SYNCED: current state index: %d, largest evidenced index: %d",
 			currStateIndex, sm.largestEvidencedStateIndex)
 	case sm.isSynchronized() && !wasSynchronized:
-		sm.log.Debugf("SYNCED: current state index: %d", sm.solidState.StateIndex())
+		sm.log.Debugf("SYNCED: current state index: %d", sm.solidState.BlockIndex())
 	}
 }
 
@@ -221,7 +221,7 @@ func (sm *stateManager) isSynchronized() bool {
 	if sm.solidState == nil {
 		return false // sm.largestEvidencedStateIndex == 0
 	}
-	return sm.largestEvidencedStateIndex == sm.solidState.StateIndex()
+	return sm.largestEvidencedStateIndex == sm.solidState.BlockIndex()
 }
 
 var niltxid valuetransaction.ID
@@ -236,7 +236,7 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 	)
 
 	if sm.solidStateValid {
-		if block.StateIndex() != sm.solidState.StateIndex()+1 {
+		if block.StateIndex() != sm.solidState.BlockIndex()+1 {
 			// if current state is validated, only interested in the batches of state updates for the next state
 			return false
 		}
@@ -250,9 +250,9 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 			}
 		} else {
 			// not origin state, the loaded state must be approved by the transaction
-			if block.StateIndex() != sm.solidState.StateIndex() {
+			if block.StateIndex() != sm.solidState.BlockIndex() {
 				sm.log.Errorf("addPendingBlock: expected block index %d got %d",
-					sm.solidState.StateIndex(), block.StateIndex())
+					sm.solidState.BlockIndex(), block.StateIndex())
 				return false
 			}
 		}
@@ -265,7 +265,7 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 		// In case of origin, the next state is origin block applied to the empty state
 		if err := stateToApprove.ApplyBatch(block); err != nil {
 			sm.log.Errorw("can't apply update to the current state",
-				"cur state index", sm.solidState.StateIndex(),
+				"cur state index", sm.solidState.BlockIndex(),
 				"err", err,
 			)
 			return false
@@ -342,7 +342,7 @@ func (sm *stateManager) pingPongReceived(senderIndex uint16) {
 func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
 	sm.chain.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			BlockIndex: sm.solidState.StateIndex(),
+			BlockIndex: sm.solidState.BlockIndex(),
 		},
 		RSVP: false,
 	}))
@@ -353,7 +353,7 @@ func (sm *stateManager) sendPingsToCommitteePeers() {
 
 	data := util.MustBytes(&chain.StateIndexPingPongMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			BlockIndex: sm.solidState.StateIndex(),
+			BlockIndex: sm.solidState.BlockIndex(),
 		},
 		RSVP: true,
 	})

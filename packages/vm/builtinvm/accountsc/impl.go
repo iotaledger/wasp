@@ -23,6 +23,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 // getBalance returns colored balances of the account belonging to the AgentID
 func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	ctx.Eventf("getBalance")
 	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {
 		return nil, err
@@ -30,6 +31,8 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, ErrParamsAgentIDNotFound
 	}
+	ctx.Eventf("getBalance for %s", aid.String())
+
 	retMap, ok := GetAccountBalances(ctx.State(), *aid)
 	if !ok {
 		return nil, fmt.Errorf("getBalance: fail")

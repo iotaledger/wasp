@@ -34,3 +34,17 @@ func (s sandboxView) MyBalances() coretypes.ColoredBalances {
 func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	return s.vmctx.CallView(contractHname, entryPoint, params)
 }
+
+func (s sandboxView) MyContractID() coretypes.ContractID {
+	return s.vmctx.CurrentContractID()
+}
+
+func (s sandboxView) Event(msg string) {
+	s.vmctx.Log().Infof("VMMSG contract %s '%s'", s.vmctx.CurrentContractID().String(), msg)
+	s.vmctx.Publish(msg)
+}
+
+func (s sandboxView) Eventf(format string, args ...interface{}) {
+	s.vmctx.Log().Infof("VMMSG: "+format, args...)
+	s.vmctx.Publishf(format, args...)
+}

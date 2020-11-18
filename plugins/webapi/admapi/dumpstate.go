@@ -42,7 +42,7 @@ func handleDumpSCState(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, &client.SCStateDump{
-		Index:     virtualState.StateIndex(),
+		Index:     virtualState.BlockIndex(),
 		Variables: vars,
 	})
 }
