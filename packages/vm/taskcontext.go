@@ -2,7 +2,6 @@ package vm
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
@@ -22,15 +21,14 @@ type VMTask struct {
 	ProgramHash     hashing.HashValue
 	ChainID         coretypes.ChainID
 	Color           balance.Color
-	// deterministic source of entropy (pseudorandom, unpredictable for parties)
-	Entropy       hashing.HashValue
-	Balances      map[valuetransaction.ID][]*balance.Balance
-	RewardAddress address.Address
-	MinimumReward int64
-	Requests      []sctransaction.RequestRef
-	Timestamp     int64
-	VirtualState  state.VirtualState // input immutable
-	Log           *logger.Logger
+	// deterministic source of entropy
+	Entropy      hashing.HashValue
+	Balances     map[valuetransaction.ID][]*balance.Balance
+	AccrueFeesTo coretypes.AgentID
+	Requests     []sctransaction.RequestRef
+	Timestamp    int64
+	VirtualState state.VirtualState // input immutable
+	Log          *logger.Logger
 	// call when finished
 	OnFinish func(error)
 	// outputs

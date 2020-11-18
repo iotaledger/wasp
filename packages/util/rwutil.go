@@ -32,7 +32,7 @@ func Uint16To2Bytes(val uint16) []byte {
 	return tmp2[:]
 }
 
-func Uint16From2Bytes(b []byte) uint16 {
+func MustUint16From2Bytes(b []byte) uint16 {
 	if len(b) != 2 {
 		panic("len(b) != 2")
 	}
@@ -46,18 +46,33 @@ func Uint32To4Bytes(val uint32) []byte {
 	return tmp4[:]
 }
 
-func Uint32From4Bytes(b []byte) uint32 {
+func MustUint32From4Bytes(b []byte) uint32 {
 	if len(b) != 4 {
 		panic("len(b) != 4")
 	}
 	return binary.LittleEndian.Uint32(b[:])
 }
 
-func Uint64From8Bytes(b []byte) uint64 {
+func MustUint64From8Bytes(b []byte) uint64 {
 	if len(b) != 8 {
 		panic("len(b) != 8")
 	}
 	return binary.LittleEndian.Uint64(b[:])
+}
+
+func Uint64From8Bytes(b []byte) (uint64, error) {
+	if len(b) != 8 {
+		return 0, errors.New("len(b) != 8")
+	}
+	return binary.LittleEndian.Uint64(b[:]), nil
+}
+
+func Int64From8Bytes(b []byte) (int64, error) {
+	ret, err := Uint64From8Bytes(b)
+	if err != nil {
+		return 0, err
+	}
+	return int64(ret), nil
 }
 
 func Uint64To8Bytes(val uint64) []byte {
@@ -92,7 +107,7 @@ func ReadUint32(r io.Reader, pval *uint32) error {
 	if err != nil {
 		return err
 	}
-	*pval = Uint32From4Bytes(tmp4[:])
+	*pval = MustUint32From4Bytes(tmp4[:])
 	return nil
 }
 

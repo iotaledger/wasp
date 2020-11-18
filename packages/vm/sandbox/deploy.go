@@ -14,7 +14,7 @@ import (
 func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error {
 	s.vmctx.Log().Debugf("sandbox.DeployContract")
 
-	if s.CurrentContractHname() == root.Hname {
+	if s.MyContractID().Hname() == root.Hname {
 		// from root contract calling VMContext directly
 		var err error
 		if err = s.vmctx.InstallContract(vmtype, programBinary, name, description); err != nil {
@@ -22,7 +22,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		}
 	} else {
 		// calling root contract from another contract to install contract
-		par := codec.NewCodec(dict.NewDict())
+		par := codec.NewCodec(dict.New())
 		par.SetString(root.ParamVMType, vmtype)
 		par.Set(root.ParamProgramBinary, programBinary)
 		par.SetString(root.ParamName, name)
@@ -35,11 +35,11 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 	}
 	// calling constructor
 	// error ignored, if for example init entry point does not exist
-	_, _ = s.Call(coretypes.Hn(name), coretypes.EntryPointCodeInit, initParams, nil)
+	_, _ = s.Call(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
 
 	return nil
 }
 
-func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, budget coretypes.ColoredBalancesSpendable) (codec.ImmutableCodec, error) {
-	return s.vmctx.CallContract(contractHname, entryPoint, params, budget)
+func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+	return s.vmctx.CallContract(contractHname, entryPoint, params, transfer)
 }

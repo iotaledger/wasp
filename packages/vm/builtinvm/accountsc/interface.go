@@ -18,21 +18,41 @@ type accountsEntryPoint struct {
 }
 
 const (
-	FuncFetchAccount = "fetchAccount"
-	ContractName     = "accounts"
+	Version             = "0.1"
+	ContractName        = "accounts" + Version
+	ContractDescription = "chain account ledger contract"
+
+	FuncBalance  = "balance"
+	FuncDeposit  = "deposit"
+	FuncMove     = "move"
+	FuncWithdraw = "withdraw"
+	FuncAccounts = "accounts"
 
 	VarStateInitialized = "i"
+	VarStateAllAccounts = "a"
+
+	ParamAgentID = "a"
 )
 
 var (
-	Hname                  = coretypes.Hn(ContractName)
-	EntryPointFetchAccount = coretypes.Hn(FuncFetchAccount)
+	ProgramHash        = hashing.HashStrings(ContractName)
+	Hname              = coretypes.Hn(ContractName)
+	EntryPointBalance  = coretypes.Hn(FuncBalance)
+	EntryPointDeposit  = coretypes.Hn(FuncDeposit)
+	EntryPointMove     = coretypes.Hn(FuncMove)
+	EntryPointWithdraw = coretypes.Hn(FuncWithdraw)
+	EntryPointAccounts = coretypes.Hn(FuncAccounts)
 
 	processor = accountsProcessor{
-		coretypes.EntryPointCodeInit: {epFunc(initialize)},
-		EntryPointFetchAccount:       {epFunc(fetchAccount)},
+		coretypes.EntryPointInit: {epFunc(initialize)},
+		EntryPointBalance:        {epFuncView(getBalance)},
+		EntryPointAccounts:       {epFuncView(getAccounts)},
+		EntryPointDeposit:        {epFunc(deposit)},
+		EntryPointMove:           {epFunc(move)},
+		EntryPointWithdraw:       {epFunc(withdraw)},
 	}
-	ProgramHash = hashing.NilHash
+
+	ErrParamsAgentIDNotFound = fmt.Errorf("wrong parameters: agent ID not specified")
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -45,17 +65,17 @@ func (v accountsProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 }
 
 func (v accountsProcessor) GetDescription() string {
-	return "Acount processor"
+	return "Accounts processor"
 }
 
 func (ep accountsEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	fun, ok := ep.fun.(epFunc)
 	if !ok {
-		return nil, fmt.Errorf("wrong type of entry point")
+		return nil, vmtypes.ErrWrongTypeEntryPoint
 	}
 	ret, err := fun(ctx)
 	if err != nil {
-		ctx.Eventf("error occurred: '%v'", err)
+		ctx.Eventf("accountsEntryPoint.Call: error occurred: '%v'", err)
 	}
 	return ret, err
 }
@@ -68,7 +88,7 @@ func (ep accountsEntryPoint) IsView() bool {
 func (ep accountsEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	fun, ok := ep.fun.(epFuncView)
 	if !ok {
-		return nil, fmt.Errorf("wrong type of entry point")
+		return nil, vmtypes.ErrWrongTypeEntryPoint
 	}
 	return fun(ctx)
 }

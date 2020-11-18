@@ -61,7 +61,7 @@ func MakeRequests(n int, constr func(int) *waspapi.RequestBlockJson) []*waspapi.
 	return ret
 }
 
-func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []waspapi.RequestBlockParams) error {
+func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []waspapi.RequestSectionParams) error {
 	for i := 0; i < n; i++ {
 		err := SendRequests(clu, sigScheme, reqs)
 		if err != nil {
@@ -74,13 +74,13 @@ func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.Signatur
 func SendSimpleRequest(
 	clu *cluster.Cluster,
 	sigScheme signaturescheme.SignatureScheme,
-	reqParams waspapi.RequestBlockParams) error {
+	reqParams waspapi.RequestSectionParams) error {
 
 	tx, err := waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
-		NodeClient:      clu.NodeClient,
-		SenderSigScheme: sigScheme,
-		BlockParams:     []waspapi.RequestBlockParams{reqParams},
-		Post:            true,
+		NodeClient:           clu.NodeClient,
+		SenderSigScheme:      sigScheme,
+		RequestSectionParams: []waspapi.RequestSectionParams{reqParams},
+		Post:                 true,
 	})
 	if err != nil {
 		return err
@@ -89,12 +89,12 @@ func SendSimpleRequest(
 	return nil
 }
 
-func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.RequestBlockParams) error {
+func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.RequestSectionParams) error {
 	tx, err := waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
-		NodeClient:      clu.NodeClient,
-		SenderSigScheme: sigScheme,
-		BlockParams:     reqParams,
-		Post:            true,
+		NodeClient:           clu.NodeClient,
+		SenderSigScheme:      sigScheme,
+		RequestSectionParams: reqParams,
+		Post:                 true,
 	})
 	if err != nil {
 		return err

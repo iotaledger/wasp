@@ -6,7 +6,7 @@ import (
 )
 
 func (vmctx *VMContext) addContractSubPartition(key kv.Key) kv.Key {
-	return kv.Key(vmctx.ContractHname().Bytes()) + key
+	return kv.Key(vmctx.CurrentContractHname().Bytes()) + key
 }
 
 func (vmctx *VMContext) Has(name kv.Key) (bool, error) {

@@ -122,24 +122,24 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashVal
 	return nil
 }
 
-// AddRequestSection adds new request block to the builder. It automatically handles request token
-func (txb *Builder) AddRequestSection(reqBlk *sctransaction.RequestSection) error {
-	return txb.AddRequestSectionWithTransfer(reqBlk, nil)
-}
-
 // AddRequestSectionWithTransfer adds request block with the request
 // token and adds respective outputs for the colored transfers
-func (txb *Builder) AddRequestSectionWithTransfer(reqBlk *sctransaction.RequestSection, transfer map[balance.Color]int64) error {
-	targetAddr := (address.Address)(reqBlk.Target().ChainID())
+func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
+	targetAddr := (address.Address)(req.Target().ChainID())
 	if err := txb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
-	for col, b := range transfer {
-		if err := txb.MoveTokensToAddress(targetAddr, col, b); err != nil {
-			return err
-		}
+	var err error
+	tran := req.Transfer()
+	if tran != nil {
+		tran.Iterate(func(col balance.Color, bal int64) bool {
+			if err = txb.MoveTokensToAddress(targetAddr, col, bal); err != nil {
+				return false
+			}
+			return true
+		})
 	}
-	txb.requestBlocks = append(txb.requestBlocks, reqBlk)
+	txb.requestBlocks = append(txb.requestBlocks, req)
 	return nil
 }
 

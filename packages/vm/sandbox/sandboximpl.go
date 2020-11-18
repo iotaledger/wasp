@@ -1,11 +1,11 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -34,20 +34,28 @@ func (s *sandbox) Rollback() {
 	s.vmctx.Rollback()
 }
 
-func (s *sandbox) CurrentContractID() coretypes.ContractID {
-	return coretypes.NewContractID(s.vmctx.ChainID(), s.vmctx.ContractHname())
+func (s *sandbox) MyContractID() coretypes.ContractID {
+	return s.vmctx.CurrentContractID()
+}
+
+func (s *sandbox) Caller() coretypes.AgentID {
+	return s.vmctx.Caller()
+}
+
+func (s *sandbox) MyAgentID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
+}
+
+func (s *sandbox) IsRequestContext() bool {
+	return s.vmctx.IsRequestContext()
 }
 
 func (s *sandbox) ChainID() coretypes.ChainID {
 	return s.vmctx.ChainID()
 }
 
-func (s *sandbox) CurrentContractHname() coretypes.Hname {
-	return s.vmctx.ContractHname()
-}
-
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(s.vmctx.ChainID(), accountsc.Hname))
+	return s.vmctx.ChainOwnerID()
 }
 
 func (s *sandbox) GetTimestamp() int64 {
@@ -58,42 +66,34 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) DumpAccount() string {
-	return s.vmctx.DumpAccount()
-}
-
 // request context
 
 func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return s
 }
 
-func (s *sandbox) AccessState() codec.MutableMustCodec {
+func (s *sandbox) State() codec.MutableMustCodec {
 	return codec.NewMustCodec(s)
 }
 
-func (s *sandbox) AccessSCAccount() vmtypes.AccountAccess {
-	return s.vmctx
+func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
 
-func (s *sandbox) Accounts() vmtypes.Accounts {
-	return s.vmctx.Accounts()
+func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
+	return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) SendRequest(par vmtypes.NewRequestParams) bool {
-	return s.vmctx.SendRequest(par)
+func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
+	return s.vmctx.PostRequestToSelf(reqCode, args)
 }
 
-func (s *sandbox) SendRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
-	return s.vmctx.SendRequestToSelf(reqCode, args)
-}
-
-func (s *sandbox) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
-	return s.vmctx.SendRequestToSelfWithDelay(entryPoint, args, delaySec)
+func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
+	return s.vmctx.PostRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract #%d '%s'", s.CurrentContractHname(), msg)
+	s.vmctx.Log().Infof("VMMSG contract %s '%s'", s.MyContractID().String(), msg)
 	s.vmctx.Publish(msg)
 }
 

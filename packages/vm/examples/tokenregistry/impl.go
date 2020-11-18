@@ -7,7 +7,6 @@ package tokenregistry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -52,12 +51,12 @@ var entryPoints = tokenRegistryProcessor{
 // TokenMetadata is a structure for one supply
 type TokenMetadata struct {
 	Supply      int64
-	MintedBy    address.Address // originator
-	Owner       address.Address // who can update metadata
-	Created     int64           // when created record
-	Updated     int64           // when recordt last updated
-	Description string          // any text
-	UserDefined []byte          // any other data (marshalled json etc)
+	MintedBy    coretypes.AgentID // originator
+	Owner       coretypes.AgentID // who can update metadata
+	Created     int64             // when created record
+	Updated     int64             // when recordt last updated
+	Description string            // any text
+	UserDefined []byte            // any other data (marshalled json etc)
 }
 
 // Point to link statically with the Wasp
@@ -105,17 +104,18 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	ctx.Event("TokenRegistry: mintSupply")
 	params := ctx.Params()
 
-	reqId := ctx.AccessRequest().ID()
+	reqId := ctx.RequestID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
-	registry := ctx.AccessState().GetMap(VarStateTheRegistry)
+	registry := ctx.State().GetMap(VarStateTheRegistry)
 	// check for duplicated colors
 	if registry.GetAt(colorOfTheSupply[:]) != nil {
 		// already exist
 		return fmt.Errorf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
 	}
 	// get the number of tokens, which are minted by the request transaction - tokens which are used for requests tracking
-	supply := ctx.AccessRequest().NumFreeMintedTokens()
+	//supply := ctx.AccessRequest().NumFreeMintedTokens() TODO
+	supply := int64(0) // TODO fake
 	if supply <= 0 {
 		// no tokens were minted on top of request tokens
 		return fmt.Errorf("TokenRegistry: the free minted Supply must be > 0")
@@ -137,7 +137,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("TokenRegistry: inconsistency 2")
 	}
 	// create the metadata record and marshal it into binary
-	senderAddress := ctx.AccessRequest().MustSenderAddress()
+	senderAddress := ctx.AccessRequest().MustSender()
 	rec := &TokenMetadata{
 		Supply:      supply,
 		MintedBy:    senderAddress,
@@ -157,7 +157,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	// maintain the list all colors in the registry (dictionary keys)
 	// only used for assertion in tests
 	// TODO not finished
-	stateAccess := ctx.AccessState()
+	stateAccess := ctx.State()
 	lst, ok := stateAccess.GetString(VarStateListColors)
 	if !ok {
 		lst = colorOfTheSupply.String()

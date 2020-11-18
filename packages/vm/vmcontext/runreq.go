@@ -12,7 +12,11 @@ import (
 // - handles request token
 // - processes reward logic
 func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp int64) state.StateUpdate {
-	vmctx.setRequestContext(reqRef, timestamp)
+	if !vmctx.setRequestContext(reqRef, timestamp) {
+		vmctx.log.Errorf("not found contract '%s' in %s",
+			reqRef.RequestSection().Target().Hname().String(), vmctx.reqRef.RequestID().Short())
+		return state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
+	}
 
 	defer func() {
 		vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
@@ -23,10 +27,6 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 			"state update", vmctx.stateUpdate.String(),
 		)
 	}()
-
-	if !vmctx.handleNodeRewards() {
-		return vmctx.stateUpdate
-	}
 
 	func() {
 		defer func() {
@@ -40,22 +40,44 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 				vmctx.Rollback()
 			}
 		}()
-		vmctx.callFromRequest()
+		vmctx.mustCallFromRequest()
 	}()
 	return vmctx.stateUpdate
 }
 
-func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) {
+func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {
+	reqHname := reqRef.RequestSection().Target().Hname()
 	vmctx.saveTxBuilder = vmctx.txBuilder.Clone()
-
 	vmctx.reqRef = reqRef
+	vmctx.reqHname = reqHname
+
 	vmctx.timestamp = timestamp
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
+	contractRec, ok := vmctx.findContractByHname(reqHname)
+	if !ok {
+		return false
+	}
+	vmctx.contractRecord = contractRec
+	return true
 }
 
 func (vmctx *VMContext) Rollback() {
 	vmctx.txBuilder = vmctx.saveTxBuilder
 	vmctx.stateUpdate.Clear()
+}
+
+func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash *hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {
+	// add state block
+	err := vmctx.txBuilder.SetStateParams(blockIndex, stateHash, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	// create result transaction
+	tx, err := vmctx.txBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
 }

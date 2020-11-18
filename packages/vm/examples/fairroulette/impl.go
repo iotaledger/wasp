@@ -24,7 +24,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -95,7 +94,7 @@ const (
 
 // BetInfo contains data of the bet
 type BetInfo struct {
-	Player address.Address
+	Player coretypes.AgentID
 	reqId  coretypes.RequestID
 	Sum    int64
 	Color  byte
@@ -149,7 +148,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	ctx.Event("placeBet")
 	params := ctx.Params()
 
-	state := ctx.AccessState()
+	state := ctx.State()
 
 	// if there are some bets locked, save the entropy derived immediately from it.
 	// it is not predictable at the moment of locking and this saving makes it not playable later
@@ -166,11 +165,11 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 	// take input addresses of the request transaction. Must be exactly 1 otherwise.
 	// Theoretically the transaction may have several addresses in inputs, then it is ignored
-	sender := ctx.AccessRequest().MustSenderAddress()
+	sender := ctx.AccessRequest().MustSender()
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
-	sum := ctx.AccessSCAccount().AvailableBalanceFromRequest(&balance.ColorIOTA)
+	sum := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return fmt.Errorf("placeBet: sum == 0: nothing to bet")
@@ -182,7 +181,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	}
 	firstBet := state.GetArray(StateVarBets).Len() == 0
 
-	reqid := ctx.AccessRequest().ID()
+	reqid := ctx.RequestID()
 	betInfo := &BetInfo{
 		Player: sender,
 		Sum:    sum,
@@ -213,11 +212,11 @@ func placeBet(ctx vmtypes.Sandbox) error {
 		nextPlayTimestamp := (time.Duration(ctx.GetTimestamp())*time.Nanosecond + time.Duration(period)*time.Second).Nanoseconds()
 		state.SetInt64(StateVarNextPlayTimestamp, nextPlayTimestamp)
 
-		ctx.Eventf("SendRequestToSelfWithDelay period = %d", period)
+		ctx.Eventf("PostRequestToSelfWithDelay period = %d", period)
 
 		// send the timelocked Lock request to self. Timelock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
-		if ctx.SendRequestToSelfWithDelay(RequestLockBets, nil, uint32(period)) {
+		if ctx.PostRequestToSelfWithDelay(RequestLockBets, nil, uint32(period)) {
 			ctx.Eventf("play deadline is set after %d seconds", period)
 		} else {
 			ctx.Eventf("failed to set play deadline")
@@ -232,7 +231,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 
 	// TODO refactor to new account system
-	//if ctx.AccessRequest().MustSenderAddress() != *ctx.OriginatorAddress() {
+	//if ctx.AccessRequest().MustSender() != *ctx.OriginatorAddress() {
 	//	// not authorized
 	//	return fmt.Errorf("setPlayPeriod: not authorized")
 	//}
@@ -243,7 +242,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 		// minimum is 10 seconds
 		return fmt.Errorf("wrong parameter '%s'", ReqVarPlayPeriodSec)
 	}
-	ctx.AccessState().SetInt64(ReqVarPlayPeriodSec, period)
+	ctx.State().SetInt64(ReqVarPlayPeriodSec, period)
 
 	ctx.Eventf("setPlayPeriod = %d", period)
 	return nil
@@ -254,12 +253,12 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
-	if ctx.AccessRequest().MustSenderAddress() != scAddr {
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	if ctx.AccessRequest().MustSender() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
 	}
-	state := ctx.AccessState()
+	state := ctx.State()
 	// append all current bets to the locked bets array
 	lockedBets := state.GetArray(StateVarLockedBets)
 	lockedBets.Extend(state.GetArray(StateVarBets))
@@ -273,7 +272,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 
 	// send request to self for playing the wheel with the entropy whicl will be known
 	// after signing this state update transaction therefore unpredictable
-	ctx.SendRequestToSelf(RequestPlayAndDistribute, nil)
+	ctx.PostRequestToSelf(RequestPlayAndDistribute, nil)
 	return nil
 }
 
@@ -281,12 +280,12 @@ func lockBets(ctx vmtypes.Sandbox) error {
 func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
-	if ctx.AccessRequest().MustSenderAddress() != scAddr {
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	if ctx.AccessRequest().MustSender() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
 	}
-	state := ctx.AccessState()
+	state := ctx.State()
 
 	lockedBetsArray := state.GetArray(StateVarLockedBets)
 	numLockedBets := lockedBetsArray.Len()
@@ -306,8 +305,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
 	// calculating it modulo NumColors.
-	winningColor := byte(util.Uint64From8Bytes(entropy[:8]) % NumColors)
-	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
+	winningColor := byte(util.MustUint64From8Bytes(entropy[:8]) % NumColors)
+	ctx.State().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	ctx.Eventf("$$$$$$$$$$ winning color is = %d", winningColor)
 
@@ -350,8 +349,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		scAddr := (address.Address)(ctx.CurrentContractID().ChainID())
-		if !ctx.AccessSCAccount().MoveTokens(&scAddr, &balance.ColorIOTA, totalLockedAmount) {
+		agent := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+		if !ctx.Accounts().MoveBalance(agent, balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
 			ctx.Panic("MoveTokens failed")
@@ -376,7 +375,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 }
 
 func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
-	winsPerColorArray := ctx.AccessState().GetArray(StateArrayWinsPerColor)
+	winsPerColorArray := ctx.State().GetArray(StateArrayWinsPerColor)
 
 	// first time? Initialize counters
 	if winsPerColorArray.Len() == 0 {
@@ -386,13 +385,13 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
 	}
 
 	winsb := winsPerColorArray.GetAt(uint16(winningColor))
-	wins := util.Uint32From4Bytes(winsb)
+	wins := util.MustUint32From4Bytes(winsb)
 	winsPerColorArray.SetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
 func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
-	sumsByPlayers := make(map[address.Address]int64)
+	sumsByPlayers := make(map[coretypes.AgentID]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
 		if _, ok := sumsByPlayers[bet.Player]; !ok {
@@ -410,7 +409,7 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	}
 
 	// make deterministic sequence by sorting. Eliminate possible rounding effects
-	seqPlayers := make([]address.Address, 0, len(sumsByPlayers))
+	seqPlayers := make([]coretypes.AgentID, 0, len(sumsByPlayers))
 	resultSum := int64(0)
 	for player, sum := range sumsByPlayers {
 		seqPlayers = append(seqPlayers, player)
@@ -436,11 +435,11 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	// distribute iotas
 	for i := range finalWinners {
 
-		available := ctx.AccessSCAccount().AvailableBalance(&balance.ColorIOTA)
+		available := ctx.Accounts().Balance(balance.ColorIOTA)
 		ctx.Eventf("sending reward iotas %d to the winner %s. Available iotas: %d",
 			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available)
 
-		if !ctx.AccessSCAccount().MoveTokens(&finalWinners[i], &balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
+		if !ctx.Accounts().MoveBalance(finalWinners[i], balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
 
 			return false
 		}
@@ -479,7 +478,7 @@ func (bi *BetInfo) Write(w io.Writer) error {
 
 func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
-	if err = util.ReadAddress(r, &bi.Player); err != nil {
+	if err = coretypes.ReadAgentID(r, &bi.Player); err != nil {
 		return err
 	}
 	if err = bi.reqId.Read(r); err != nil {
@@ -538,8 +537,8 @@ func (ps *PlayerStats) String() string {
 	return fmt.Sprintf("[bets: %d - wins: %d]", ps.Bets, ps.Wins)
 }
 
-func withPlayerStats(ctx vmtypes.Sandbox, player *address.Address, f func(ps *PlayerStats)) error {
-	statsDict := ctx.AccessState().GetMap(StateVarPlayerStats)
+func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
+	statsDict := ctx.State().GetMap(StateVarPlayerStats)
 	b := statsDict.GetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)
 	if err != nil {

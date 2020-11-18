@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -68,7 +67,7 @@ type StartProcessingBatchMsg struct {
 	// batch of request ids
 	RequestIds []coretypes.RequestID
 	// reward address
-	RewardAddress address.Address
+	FeeDestination coretypes.AgentID
 	// balances/outputs
 	Balances map[valuetransaction.ID][]*balance.Balance
 }

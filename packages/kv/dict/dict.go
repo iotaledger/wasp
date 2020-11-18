@@ -16,35 +16,35 @@ import (
 type Dict map[kv.Key][]byte
 
 // create/clone
-func NewDict() Dict {
+func New() Dict {
 	return make(Dict)
 }
 
-func (m Dict) Clone() Dict {
+func (d Dict) Clone() Dict {
 	clone := make(Dict)
-	m.ForEach(func(key kv.Key, value []byte) bool {
+	d.ForEach(func(key kv.Key, value []byte) bool {
 		clone.Set(key, value)
 		return true
 	})
 	return clone
 }
 
-func FromGoMap(m map[kv.Key][]byte) Dict {
-	return Dict(m)
+func FromGoMap(d map[kv.Key][]byte) Dict {
+	return Dict(d)
 }
 
 func FromKVStore(kvs kv.KVStore) (Dict, error) {
-	m := make(Dict)
+	d := make(Dict)
 	err := kvs.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
-		m[k] = v
+		d[k] = v
 		return true
 	})
-	return m, err
+	return d, err
 }
 
-func (m Dict) sortedKeys() []kv.Key {
+func (d Dict) sortedKeys() []kv.Key {
 	keys := make([]kv.Key, 0)
-	for k := range m {
+	for k := range d {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool {
@@ -53,11 +53,11 @@ func (m Dict) sortedKeys() []kv.Key {
 	return keys
 }
 
-func (m Dict) String() string {
+func (d Dict) String() string {
 	ret := "         Dict:\n"
-	for _, key := range m.sortedKeys() {
-		val := m[key]
-		if len(val) >80 {
+	for _, key := range d.sortedKeys() {
+		val := d[key]
+		if len(val) > 80 {
 			val = val[:80]
 		}
 		ret += fmt.Sprintf(
@@ -80,47 +80,47 @@ func slice(s string) string {
 }
 
 // NON DETERMINISTIC!
-func (m Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
-	for k, v := range m {
+func (d Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
+	for k, v := range d {
 		if !fun(k, v) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (m Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
-	if m == nil {
+func (d Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
+	if d == nil {
 		return
 	}
-	for _, k := range m.sortedKeys() {
-		if !fun(k, m[k]) {
+	for _, k := range d.sortedKeys() {
+		if !fun(k, d[k]) {
 			return // abort when callback returns false
 		}
 	}
 }
 
-func (m Dict) IsEmpty() bool {
-	return len(m) == 0
+func (d Dict) IsEmpty() bool {
+	return len(d) == 0
 }
 
-func (m Dict) Set(key kv.Key, value []byte) {
+func (d Dict) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
 	}
-	m[key] = value
+	d[key] = value
 }
 
-func (m Dict) Del(key kv.Key) {
-	delete(m, key)
+func (d Dict) Del(key kv.Key) {
+	delete(d, key)
 }
 
-func (m Dict) Has(key kv.Key) (bool, error) {
-	_, ok := m[key]
+func (d Dict) Has(key kv.Key) (bool, error) {
+	_, ok := d[key]
 	return ok, nil
 }
 
-func (m Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	for k, v := range m {
+func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	for k, v := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -131,8 +131,8 @@ func (m Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) erro
 	return nil
 }
 
-func (m Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	for k, _ := range m {
+func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	for k := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -143,13 +143,13 @@ func (m Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return nil
 }
 
-func (m Dict) Get(key kv.Key) ([]byte, error) {
-	v, _ := m[key]
+func (d Dict) Get(key kv.Key) ([]byte, error) {
+	v, _ := d[key]
 	return v, nil
 }
 
-func (m Dict) Write(w io.Writer) error {
-	keys := m.sortedKeys()
+func (d Dict) Write(w io.Writer) error {
+	keys := d.sortedKeys()
 	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
 	}
@@ -157,14 +157,14 @@ func (m Dict) Write(w io.Writer) error {
 		if err := util.WriteBytes16(w, []byte(k)); err != nil {
 			return err
 		}
-		if err := util.WriteBytes32(w, m[k]); err != nil {
+		if err := util.WriteBytes32(w, d[k]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m Dict) Read(r io.Reader) error {
+func (d Dict) Read(r io.Reader) error {
 	var num uint64
 	err := util.ReadUint64(r, &num)
 	if err != nil {
@@ -179,7 +179,7 @@ func (m Dict) Read(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		m.Set(kv.Key(k), v)
+		d.Set(kv.Key(k), v)
 	}
 	return nil
 }

@@ -106,7 +106,7 @@ func (l *Array) len() (uint16, error) {
 	if len(v) != 2 {
 		return 0, errors.New(fmt.Sprintf("corrupted data: %v", v))
 	}
-	return util.Uint16From2Bytes(v), nil
+	return util.MustUint16From2Bytes(v), nil
 }
 
 // adds to the end of the list

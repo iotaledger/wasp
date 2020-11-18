@@ -1,7 +1,5 @@
 package wasmhost
 
-import "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-
 type ScContract struct {
 	MapObject
 }
@@ -12,19 +10,13 @@ func (o *ScContract) Exists(keyId int32) bool {
 
 func (o *ScContract) GetBytes(keyId int32) []byte {
 	switch keyId {
-	case KeyAddress:
-		id := o.vm.ctx.ChainID()
-		return id[:]
 	case KeyColor: //TODO
 	case KeyId:
-		id := o.vm.ctx.CurrentContractID()
+		id := o.vm.ctx.MyContractID()
 		return id[:]
 	case KeyOwner:
-		//address := o.vm.ctx.OriginatorAddress()
-		//return address[:]
-		// TODO Owner address is deprecated
-		ret := new(address.Address)
-		return ret[:]
+		id := o.vm.ctx.ChainOwnerID()
+		return id[:]
 	}
 	return o.MapObject.GetBytes(keyId)
 }
@@ -40,8 +32,6 @@ func (o *ScContract) GetString(keyId int32) string {
 
 func (o *ScContract) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyAddress:
-		return OBJTYPE_BYTES
 	case KeyColor:
 		return OBJTYPE_BYTES
 	case KeyDescription:

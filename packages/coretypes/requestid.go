@@ -45,7 +45,7 @@ func (rid *RequestID) TransactionID() *valuetransaction.ID {
 }
 
 func (rid *RequestID) Index() uint16 {
-	return util.Uint16From2Bytes(rid[valuetransaction.IDLength:])
+	return util.MustUint16From2Bytes(rid[valuetransaction.IDLength:])
 }
 
 func (rid *RequestID) Write(w io.Writer) error {

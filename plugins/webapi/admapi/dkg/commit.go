@@ -14,7 +14,7 @@ import (
 )
 
 // The POST handler implements 'adm/commitdks' API
-// Params(see CommitDKSRequest struct):
+// RequestSectionParams(see CommitDKSRequest struct):
 //     tmpId:      tmp num id during DKG process
 //     pub_shares: all public chares collected from all nodes
 //

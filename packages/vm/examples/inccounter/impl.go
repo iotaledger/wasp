@@ -29,7 +29,7 @@ var (
 )
 
 var entryPoints = incCounterProcessor{
-	coretypes.EntryPointCodeInit:      initialize,
+	coretypes.EntryPointInit:          initialize,
 	EntryPointIncCounter:              incCounter,
 	EntryPointIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
 	EntryPointIncAndRepeatMany:        incCounterAndRepeatMany,
@@ -83,14 +83,14 @@ func initialize(ctx vmtypes.Sandbox) error {
 	if err != nil {
 		return fmt.Errorf("incCounter: %v", err)
 	}
-	ctx.AccessState().SetInt64(VarCounter, val)
+	ctx.State().SetInt64(VarCounter, val)
 	ctx.Eventf("inccounter.init.success. counter = %d", val)
 	return nil
 }
 
 func incCounter(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.incCounter")
-	state := ctx.AccessState()
+	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
 	ctx.Event(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64(VarCounter, val+1)
@@ -99,17 +99,17 @@ func incCounter(ctx vmtypes.Sandbox) error {
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.incCounterAndRepeatOnce")
-	state := ctx.AccessState()
+	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
 
 	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
 
-		if ctx.SendRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
-			ctx.Event("SendRequestToSelfWithDelay RequestInc 5 sec")
+		if ctx.PostRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
+			ctx.Event("PostRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
-			ctx.Event("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
+			ctx.Event("failed to PostRequestToSelfWithDelay RequestInc 5 sec")
 		}
 	}
 	return nil
@@ -118,7 +118,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.incCounterAndRepeatMany")
 
-	state := ctx.AccessState()
+	state := ctx.State()
 	params := ctx.Params()
 
 	val, _ := state.GetInt64(VarCounter)
@@ -144,10 +144,10 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	if ctx.SendRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 3) {
-		ctx.Eventf("SendRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+	if ctx.PostRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 3) {
+		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
-		ctx.Eventf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
 	return nil
 }
@@ -155,7 +155,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 // spawn deploys new contract an calls it
 func spawn(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.spawn")
-	state := ctx.AccessState()
+	state := ctx.State()
 
 	val, _ := state.GetInt64(VarCounter)
 
@@ -177,7 +177,7 @@ func spawn(ctx vmtypes.Sandbox) error {
 	if !ok {
 		dscr = "N/A"
 	}
-	par := codec.NewCodec(dict.NewDict())
+	par := codec.NewCodec(dict.New())
 	par.SetInt64(VarCounter, val+1)
 	err = ctx.DeployContract("examplevm", hashBin[:], name, dscr, par)
 	if err != nil {

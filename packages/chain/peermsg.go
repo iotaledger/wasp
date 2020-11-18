@@ -94,7 +94,7 @@ func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if _, err := w.Write(msg.RewardAddress[:]); err != nil {
+	if _, err := w.Write(msg.FeeDestination[:]); err != nil {
 		return err
 	}
 	if err := waspconn.WriteBalances(w, msg.Balances); err != nil {
@@ -117,7 +117,7 @@ func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 			return err
 		}
 	}
-	if err := util.ReadAddress(r, &msg.RewardAddress); err != nil {
+	if err := coretypes.ReadAgentID(r, &msg.FeeDestination); err != nil {
 		return err
 	}
 	var err error

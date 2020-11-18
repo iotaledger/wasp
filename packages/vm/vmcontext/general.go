@@ -3,27 +3,44 @@ package vmcontext
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
-
-func (vmctx *VMContext) Accounts() vmtypes.Accounts {
-	return &vmctx.accountsWrapper
-}
 
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
 	return vmctx.chainID
 }
 
-func (vmctx *VMContext) ContractHname() coretypes.Hname {
+func (vmctx *VMContext) ChainOwnerID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), accountsc.Hname))
+}
+
+func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
 	return vmctx.getCallContext().contract
+}
+
+func (vmctx *VMContext) CurrentContractID() coretypes.ContractID {
+	return coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname())
+}
+
+func (vmctx *VMContext) MyAgentID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+}
+
+func (vmctx *VMContext) IsRequestContext() bool {
+	return vmctx.getCallContext().isRequestContext
+}
+
+func (vmctx *VMContext) Caller() coretypes.AgentID {
+	return vmctx.getCallContext().caller
 }
 
 func (vmctx *VMContext) Timestamp() int64 {
@@ -38,58 +55,49 @@ func (vmctx *VMContext) Log() *logger.Logger {
 	return vmctx.log
 }
 
-func (vmctx *VMContext) DumpAccount() string {
-	return vmctx.txBuilder.Dump()
-}
-
-func (vmctx *VMContext) SendRequest(par vmtypes.NewRequestParams) bool {
-	if par.IncludeReward > 0 {
-		availableIotas := vmctx.txBuilder.GetInputBalance(balance.ColorIOTA)
-		if par.IncludeReward+1 > availableIotas {
-			return false
-		}
-		err := vmctx.txBuilder.MoveTokensToAddress((address.Address)(par.TargetContractID.ChainID()), balance.ColorIOTA, par.IncludeReward)
-		if err != nil {
-			return false
-		}
-	}
-	reqBlock := sctransaction.NewRequestSection(vmctx.ContractHname(), par.TargetContractID, par.EntryPoint)
-	reqBlock.WithTimelock(par.Timelock)
-	reqBlock.SetArgs(par.Params)
-
-	if err := vmctx.txBuilder.AddRequestSection(reqBlock); err != nil {
+func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), transfer) {
 		return false
 	}
-	return true
+	return vmctx.txBuilder.TransferToAddress(targetAddr, transfer) == nil
 }
 
-func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
-	return vmctx.SendRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.ContractHname()),
+func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
+	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), par.Transfer) {
+		return false
+	}
+	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
+		WithTimelock(par.Timelock).
+		WithTransfer(par.Transfer).
+		WithArgs(par.Params)
+	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
+}
+
+func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
+	return vmctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       reqCode,
 		Params:           params,
-		IncludeReward:    0,
 	})
 }
 
-func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
+func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
-	return vmctx.SendRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(vmctx.chainID, vmctx.ContractHname()),
+	return vmctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       entryPoint,
 		Params:           args,
 		Timelock:         timelock,
-		IncludeReward:    0,
 	})
 }
 
 func (vmctx *VMContext) Publish(msg string) {
-	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.ContractHname()), msg)
+	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.CurrentContractHname()), msg)
 }
 
 func (vmctx *VMContext) Publishf(format string, args ...interface{}) {
-	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.ContractHname()), fmt.Sprintf(format, args...))
+	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.CurrentContractHname()), fmt.Sprintf(format, args...))
 }
 
 func (vmctx *VMContext) Request() *sctransaction.RequestRef {

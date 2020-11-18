@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -17,7 +16,7 @@ type runCalculationsParams struct {
 	requests        []*request
 	leaderPeerIndex uint16
 	balances        map[valuetransaction.ID][]*balance.Balance
-	rewardAddress   address.Address
+	accrueFeesTo    coretypes.AgentID
 	timestamp       int64
 }
 
@@ -40,8 +39,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		Color:           *op.chain.Color(),
 		Entropy:         (hashing.HashValue)(op.stateTx.ID()),
 		Balances:        par.balances,
-		RewardAddress:   par.rewardAddress,
-		MinimumReward:   op.getMinimumReward(),
+		AccrueFeesTo:    par.accrueFeesTo,
 		Requests:        takeRefs(par.requests),
 		Timestamp:       par.timestamp,
 		VirtualState:    op.currentState,

@@ -2,14 +2,13 @@ package runvm
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -19,12 +18,9 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return fmt.Errorf("must be at least 1 request")
 	}
 
-	// create txbuilder for the task. It will accumulate all token movements produced
-	// by the SC program during batch run. In the end it will produce finalized transaction
-	addr := address.Address(ctx.ChainID)
-	txb, err := txbuilder.NewFromAddressBalances(&addr, ctx.Balances)
+	txb, err := statetxbuilder.New(address.Address(ctx.ChainID), ctx.Color, ctx.Balances)
 	if err != nil {
-		ctx.Log.Debugf("txbuilder.NewFromAddressBalances: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
+		ctx.Log.Debugf("statetxbuilder.New: %v", err)
 		return err
 	}
 
@@ -37,7 +33,7 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask, txb *txbuilder.Builder) {
+func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 	task.Log.Debugw("runTask IN",
 		"chainID", task.ChainID.String(),
 		"timestamp", task.Timestamp,
@@ -46,7 +42,6 @@ func runTask(task *vm.VMTask, txb *txbuilder.Builder) {
 		"leader", task.LeaderPeerIndex,
 	)
 
-	// create VM context, including state block, move smart contract token and request tokens
 	vmctx, err := vmcontext.NewVMContext(task, txb)
 	if err != nil {
 		task.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
@@ -86,16 +81,16 @@ func runTask(task *vm.VMTask, txb *txbuilder.Builder) {
 		return
 	}
 	stateHash := vsClone.Hash()
-	task.ResultTransaction, err = vmctx.FinalizeTransaction(
+	task.ResultTransaction, err = vmctx.FinalizeTransactionEssence(
 		task.VirtualState.StateIndex()+1,
 		stateHash,
 		vsClone.Timestamp(),
 	)
 	if err != nil {
-		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransaction: %v", err))
+		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
 		return
 	}
-
+	// Note: can't take tx ID!!
 	task.Log.Debugw("runTask OUT",
 		"result batch size", task.ResultBlock.Size(),
 		"result batch state index", task.ResultBlock.StateIndex(),

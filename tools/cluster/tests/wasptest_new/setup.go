@@ -1,17 +1,10 @@
 package wasptest
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/examples"
-	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback/dwfimpl"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
-	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
-	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
-	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/assert"
@@ -32,13 +25,14 @@ var (
 	programHash hashing.HashValue
 )
 
-var builtinProgramHash = map[string]string{
-	"donatewithfeedback": dwfimpl.ProgramHash,
-	"fairauction":        fairauction.ProgramHash,
-	"fairroulette":       fairroulette.ProgramHash,
-	"increment":          inccounter.ProgramHash,
-	"tokenregistry":      tokenregistry.ProgramHash,
-}
+// TODO detached example code
+//var builtinProgramHash = map[string]string{
+//	"donatewithfeedback": dwfimpl.ProgramHash,
+//	"fairauction":        fairauction.ProgramHash,
+//	"fairroulette":       fairroulette.ProgramHash,
+//	"increment":          inccounter.ProgramHash,
+//	"tokenregistry":      tokenregistry.ProgramHash,
+//}
 
 func check(err error, t *testing.T) {
 	t.Helper()
@@ -108,14 +102,16 @@ func deployContract(chain *cluster.Chain, wasmName string, scDescription string,
 		_, err = chain.DeployExternalContract(wasmtimevm.PluginName, wasmName, scDescription, wasm, initParams)
 		return err
 	}
+	panic("example contract disabled")
+	//fmt.Println("Using Wasp built-in SC instead of Rust Wasm SC")
+	//time.Sleep(time.Second)
+	//hash, ok := builtinProgramHash[wasmName]
+	//if !ok {
+	//	return errors.New("Unknown built-in SC: " + wasmName)
+	//}
 
-	fmt.Println("Using Wasp built-in SC instead of Rust Wasm SC")
-	time.Sleep(time.Second)
-	hash, ok := builtinProgramHash[wasmName]
-	if !ok {
-		return errors.New("Unknown built-in SC: " + wasmName)
-	}
-
-	_, err := chain.DeployBuiltinContract(wasmName, examples.VMType, hash, scDescription, initParams)
-	return err
+	// TODO detached example contract code
+	//_, err := chain.DeployBuiltinContract(wasmName, examples.VMType, hash, scDescription, initParams)
+	//return err
+	return nil
 }

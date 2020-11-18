@@ -29,7 +29,7 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 	color := stateBlock.Color()
 	mayBeOrigin := color == balance.ColorNew
 
-	balances, hasAddress := tx.OutputBalancesByAddress(addr)
+	balances, hasAddress := tx.OutputBalancesByAddress(*addr)
 	if !hasAddress {
 		// invalid state
 		return false, fmt.Errorf("invalid state block: SC state output not found")

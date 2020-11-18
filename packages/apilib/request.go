@@ -3,6 +3,7 @@ package apilib
 import (
 	"errors"
 	"fmt"
+	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -17,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 )
 
-type RequestBlockParams struct {
+type RequestSectionParams struct {
 	TargetContractID coretypes.ContractID
 	EntryPointCode   coretypes.Hname
 	Timelock         uint32
@@ -26,12 +27,12 @@ type RequestBlockParams struct {
 }
 
 type CreateRequestTransactionParams struct {
-	NodeClient          nodeclient.NodeClient
-	SenderSigScheme     signaturescheme.SignatureScheme
-	BlockParams         []RequestBlockParams
-	Mint                map[address.Address]int64
-	Post                bool
-	WaitForConfirmation bool
+	NodeClient           nodeclient.NodeClient
+	SenderSigScheme      signaturescheme.SignatureScheme
+	RequestSectionParams []RequestSectionParams
+	Mint                 map[address.Address]int64
+	Post                 bool
+	WaitForConfirmation  bool
 }
 
 func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.Transaction, error) {
@@ -54,22 +55,22 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		}
 	}
 
-	for _, blockPar := range par.BlockParams {
-		reqBlk := sctransaction.NewRequestSectionByWallet(blockPar.TargetContractID, blockPar.EntryPointCode).
-			WithTimelock(blockPar.Timelock)
+	for _, sectPar := range par.RequestSectionParams {
+		reqSect := sctransaction.NewRequestSectionByWallet(sectPar.TargetContractID, sectPar.EntryPointCode).
+			WithTimelock(sectPar.Timelock).
+			WithTransfer(accounts.NewColoredBalancesFromMap(sectPar.Transfer))
 
-		args := convertArgs(blockPar.Vars)
+		args := convertArgs(sectPar.Vars)
 		if args == nil {
 			return nil, errors.New("wrong arguments")
 		}
-		reqBlk.SetArgs(args)
+		reqSect.WithArgs(args)
 
-		err = txb.AddRequestSectionWithTransfer(reqBlk, blockPar.Transfer)
+		err = txb.AddRequestSection(reqSect)
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	tx, err := txb.Build(false)
 
 	//dump := txb.Dump()
@@ -104,7 +105,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 }
 
 func convertArgs(vars map[string]interface{}) dict.Dict {
-	ret := dict.NewDict()
+	ret := dict.New()
 	args := codec.NewCodec(ret)
 	for k, v := range vars {
 		key := kv.Key(k)

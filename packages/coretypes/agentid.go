@@ -1,15 +1,18 @@
 package coretypes
 
 import (
+	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/mr-tron/base58"
+	"io"
 )
 
-const AgentIDLenght = ChainIDLength + HnameLength
+const AgentIDLength = ChainIDLength + HnameLength
 
 // AgentID assumes:
 // - ChainID is MustAddress
 // - AgentID is never used for contract with index 0  TODO ???
-type AgentID [AgentIDLenght]byte
+type AgentID [AgentIDLength]byte
 
 func NewAgentIDFromAddress(addr address.Address) (ret AgentID) {
 	copy(ret[HnameLength:], addr[:])
@@ -25,7 +28,7 @@ func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
 }
 
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
-	if len(data) != AgentIDLenght {
+	if len(data) != AgentIDLength {
 		err = ErrWrongDataLength
 		return
 	}
@@ -59,5 +62,16 @@ func (a AgentID) Bytes() []byte {
 }
 
 func (a AgentID) String() string {
-	panic("implement me")
+	return base58.Encode(a[:])
+}
+
+func ReadAgentID(r io.Reader, agentID *AgentID) error {
+	n, err := r.Read(agentID[:])
+	if err != nil {
+		return err
+	}
+	if n != AgentIDLength {
+		return errors.New("error while reading agent ID")
+	}
+	return nil
 }

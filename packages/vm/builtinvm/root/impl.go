@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -16,7 +17,7 @@ import (
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	params := ctx.Params()
 	ctx.Eventf("root.initialize.begin")
-	state := ctx.AccessState()
+	state := ctx.State()
 	if state.Get(VarStateInitialized) != nil {
 		// can't be initialized twice
 		return nil, fmt.Errorf("root.initialize.fail: already_initialized")
@@ -46,6 +47,17 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state.SetAgentID(VarChainOwnerID, &sender) // chain owner is whoever sends init request
 	state.SetString(VarDescription, chainDescription)
 	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
+
+	err = ctx.DeployContract(
+		"builtinvm",
+		accountsc.ProgramHash[:],
+		accountsc.ContractName,
+		accountsc.ContractDescription,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
 	ctx.Eventf("root.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }
@@ -53,7 +65,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Eventf("root.deployContract.begin")
 
-	if ctx.AccessState().Get(VarStateInitialized) == nil {
+	if ctx.State().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
 	params := ctx.Params()
@@ -92,7 +104,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("incorrect contract name")
 	}
 	// pass to init function all params not consumed so far
-	initParams := codec.NewCodec(dict.NewDict())
+	initParams := codec.NewCodec(dict.New())
 	err = params.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != ParamVMType && key != ParamProgramBinary && key != ParamDescription {
 			initParams.Set(key, value)
@@ -114,7 +126,6 @@ func findContract(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
 	params := ctx.Params()
-
 	hname, ok, err := params.GetHname(ParamHname)
 	if err != nil {
 		return nil, err
@@ -122,12 +133,12 @@ func findContract(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
-	contractRegistry := ctx.State().GetMap(VarContractRegistry)
-	retBin := contractRegistry.GetAt(hname.Bytes())
-	if retBin == nil {
-		return nil, fmt.Errorf("contract '%s'  does not exist", hname.String())
+	rec, err := FindContract(ctx.State(), hname)
+	if err != nil {
+		return nil, err
 	}
-	ret := codec.NewCodec(dict.NewDict())
+	retBin := EncodeContractRecord(rec)
+	ret := codec.NewCodec(dict.New())
 	ret.Set(ParamData, retBin)
 	return ret, nil
 }
@@ -137,9 +148,7 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if ctx.State().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
-
 	params := ctx.Params()
-
 	deploymentHash, ok, err := params.GetHashValue(ParamHash)
 	if err != nil {
 		return nil, err
@@ -147,10 +156,12 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hash' undefined")
 	}
-	contractRegistry := ctx.State().GetMap(VarRegistryOfBinaries)
-	binary := contractRegistry.GetAt(deploymentHash[:])
 
-	ret := codec.NewCodec(dict.NewDict())
-	ret.Set(ParamData, binary)
+	bin, err := GetBinary(ctx.State(), *deploymentHash)
+	if err != nil {
+		return nil, err
+	}
+	ret := codec.NewCodec(dict.New())
+	ret.Set(ParamData, bin)
 	return ret, nil
 }

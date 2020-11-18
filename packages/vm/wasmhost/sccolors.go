@@ -43,5 +43,14 @@ func (a *ScColors) loadColors() {
 	if a.colors != nil {
 		return
 	}
-	//TODO determine valid colors for account or request and add them base58-encoded to colors array
+
+	//TODO for now we assume the colors are at least ColorIOTA and the colors in the request
+	accounts := a.vm.ctx.Accounts()
+	a.colors = append(a.colors, balance.ColorIOTA)
+	accounts.Incoming().IterateDeterministic(func(color balance.Color, amount int64) bool {
+		if color != balance.ColorIOTA {
+			a.colors = append(a.colors, color)
+		}
+		return true
+	})
 }
