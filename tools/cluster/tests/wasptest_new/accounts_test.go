@@ -48,6 +48,9 @@ func TestSimplest(t *testing.T) {
 		t.Fail()
 	}
 
+	t.Logf("   %s: %s", root.ContractName, root.Hname.String())
+	t.Logf("   %s: %s", accountsc.ContractName, accountsc.Hname.String())
+
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
@@ -105,11 +108,13 @@ func TestSimplest(t *testing.T) {
 			accountsc.ParamAgentID: agentID[:],
 		}),
 	)
+	check(err, t)
 	j, err := ret.MarshalJSON()
 	fmt.Printf("\n=========   %s\n", string(j))
-	require.NoError(t, err)
-	//c := codec.NewCodec(ret)
-	//actual, ok, err := c.GetInt64(kv.Key(balance.ColorIOTA[:]))
-	//require.True(t, ok)
-	//require.EqualValues(t, 1, actual)
+	check(err, t)
+
+	c := codec.NewCodec(ret)
+	actual, ok, err := c.GetInt64(kv.Key(balance.ColorIOTA[:]))
+	require.True(t, ok)
+	require.EqualValues(t, 1, actual)
 }

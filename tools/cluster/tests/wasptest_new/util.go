@@ -44,7 +44,6 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
 		require.EqualValues(t, accountsc.ContractName, cr.Name)
-
 		return true
 	})
 }

@@ -19,7 +19,7 @@ type accountsEntryPoint struct {
 
 const (
 	Version             = "0.1"
-	ContractName        = "accounts" + Version
+	ContractName        = "accounts " + Version
 	ContractDescription = "chain account ledger contract"
 
 	FuncBalance  = "balance"
