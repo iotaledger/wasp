@@ -1,10 +1,11 @@
-package sandbox
+package vmcontext
 
 import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,10 +17,11 @@ func TestSetThenGet(t *testing.T) {
 
 	virtualState := state.NewVirtualState(db, &chainID)
 	stateUpdate := state.NewStateUpdate(nil)
+	hname := coretypes.Hn("test")
 
 	s := stateWrapper{
-		contractIndex: 2,
-		virtualState:  virtualState.Variables().Codec(),
+		contractHname: hname,
+		virtualState:  virtualState,
 		stateUpdate:   stateUpdate,
 	}
 
@@ -31,11 +33,13 @@ func TestSetThenGet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{1}, v)
 
+	subpartitionedKey := kv.Key(hname.Bytes()) + "x"
+
 	// mutation is in stateUpdate, prefixed by the contract id
-	assert.Equal(t, []byte{1}, stateUpdate.Mutations().Latest("\x02\x00x").Value())
+	assert.Equal(t, []byte{1}, stateUpdate.Mutations().Latest(subpartitionedKey).Value())
 
 	// mutation is not committed to the virtual state
-	v, err = virtualState.Variables().Get("\x02\x00x")
+	v, err = virtualState.Variables().Get(subpartitionedKey)
 	assert.NoError(t, err)
 	assert.Nil(t, v)
 

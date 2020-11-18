@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,7 +31,6 @@ func TestReadWrite(t *testing.T) {
 		OriginAddress:             scAddr,
 		OriginatorSignatureScheme: ownerSigScheme,
 		AllInputs:                 u.GetAddressOutputs(ownerSigScheme.Address()),
-		ProgramHash:               *hashing.HashStrings(dscr),
 	})
 	assert.NoError(t, err)
 	t.Logf("created transaction txid = %s", tx.ID().String())
