@@ -29,7 +29,7 @@ func (s *sandboxview) State() codec.ImmutableMustCodec {
 	return s.state
 }
 
-func (s *sandboxview) Account() coretypes.ColoredBalances {
+func (s *sandboxview) MyBalances() coretypes.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 

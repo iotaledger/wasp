@@ -66,11 +66,11 @@ type NewRequestParams struct {
 	Transfer         coretypes.ColoredBalances
 }
 
-// access to request
+// To be removed
 // Deprecated
 type RequestAccess interface {
-	// Return address of non-contract sender
-	//  Return agent id of sender. Assumes properties are semantically correct
+	// TODO MustSender to be removed and refactored. Use Caller() instead
+	// Deprecated
 	MustSender() coretypes.AgentID
 }
 

@@ -27,7 +27,7 @@ func (s sandboxView) State() codec.ImmutableMustCodec {
 	return codec.NewMustCodec(s.vmctx)
 }
 
-func (s sandboxView) Account() coretypes.ColoredBalances {
+func (s sandboxView) MyBalances() coretypes.ColoredBalances {
 	panic("implement me")
 }
 

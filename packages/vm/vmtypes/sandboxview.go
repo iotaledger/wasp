@@ -9,7 +9,7 @@ import (
 type SandboxView interface {
 	Params() codec.ImmutableCodec
 	State() codec.ImmutableMustCodec
-	Account() coretypes.ColoredBalances
+	MyBalances() coretypes.ColoredBalances
 	// only calls view entry points
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 }
