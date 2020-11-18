@@ -3,6 +3,7 @@ package coretypes
 import (
 	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/mr-tron/base58"
 	"io"
 )
 
@@ -61,7 +62,7 @@ func (a AgentID) Bytes() []byte {
 }
 
 func (a AgentID) String() string {
-	panic("implement me")
+	return base58.Encode(a[:])
 }
 
 func ReadAgentID(r io.Reader, agentID *AgentID) error {
