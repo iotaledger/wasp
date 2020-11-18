@@ -41,7 +41,7 @@ type InitReq struct {
 	PeerLocs  []string `json:"peerLocs"`
 	PeerPubs  [][]byte `json:"peerPubs"`
 	CoordPub  []byte   `json:"coordPub"`
-	Treshold  uint32   `json:"treshold"`
+	Threshold uint32   `json:"threshold"`
 	Version   byte     `json:"version"`
 	TimeoutMS uint64   `json:"timeoutMS"`
 }

@@ -17,7 +17,7 @@ func TestDkgCoordNodeProvider(t *testing.T) {
 	targetProviders := make([]dkg.CoordNodeProvider, len(addrs))
 	dummyProviders := make([]*dummyCoordNodeProvider, len(addrs))
 	for i := range targetProviders {
-		dummyProviders[i] = &dummyCoordNodeProvider{pubKey: pubKey}
+		dummyProviders[i] = &dummyCoordNodeProvider{sharedPublic: pubKey}
 		targetProviders[i] = dummyProviders[i]
 	}
 	provider := testutil.NewDkgCoordNodeProvider(targetProviders, time.Second)
@@ -26,7 +26,7 @@ func TestDkgCoordNodeProvider(t *testing.T) {
 	pubKeys, err := provider.DkgPubKey(addrs, dkgId)
 	assert.Nil(t, err)
 	for i := range pubKeys {
-		assert.Equal(t, pubKeys[i].PubKey, pubKey)
+		assert.Equal(t, pubKeys[i].SharedPublic, pubKey)
 	}
 	for i := range dummyProviders {
 		assert.True(t, dummyProviders[i].init)
@@ -35,9 +35,9 @@ func TestDkgCoordNodeProvider(t *testing.T) {
 }
 
 type dummyCoordNodeProvider struct {
-	init   bool
-	step   bool
-	pubKey []byte
+	init         bool
+	step         bool
+	sharedPublic []byte
 }
 
 func (p *dummyCoordNodeProvider) DkgInit(peerAddrs []string, dkgID string, msg *dkg.InitReq) error {
@@ -51,7 +51,7 @@ func (p *dummyCoordNodeProvider) DkgStep(peerAddrs []string, dkgID string, msg *
 func (p *dummyCoordNodeProvider) DkgPubKey(peerAddrs []string, dkgID string) ([]*dkg.PubKeyResp, error) {
 	resp := make([]*dkg.PubKeyResp, len(peerAddrs))
 	for i := range resp {
-		resp[i] = &dkg.PubKeyResp{PubKey: p.pubKey}
+		resp[i] = &dkg.PubKeyResp{SharedPublic: p.sharedPublic}
 	}
 	return resp, nil
 }

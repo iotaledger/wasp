@@ -5,8 +5,8 @@ package dkg
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -26,6 +26,7 @@ type node struct {
 	netProvider peering.NetworkProvider
 	registry    RegistryProvider
 	processes   map[string]*proc
+	log         *logger.Logger
 }
 
 // InitNode creates new node, that can participate in the DKG procedure.
@@ -36,6 +37,7 @@ func InitNode(
 	suite rabin_dkg.Suite,
 	netProvider peering.NetworkProvider,
 	registry RegistryProvider,
+	log *logger.Logger,
 ) CoordNodeProvider {
 	n := node{
 		secKey:      secKey,
@@ -44,6 +46,7 @@ func InitNode(
 		netProvider: netProvider,
 		registry:    registry,
 		processes:   make(map[string]*proc),
+		log:         log,
 	}
 	nodes = append(nodes, &n)
 	return &n
@@ -60,7 +63,7 @@ func (n *node) dropProcess(p *proc) bool {
 // DkgInit implements CoordNodeProvider.
 // peerAddrs here is always a slice of a single element equal to our node.
 func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
-	fmt.Printf("[%v] DkgInit, dkgID=%v, msg.PeerLocs=%v\n", n.netProvider.Self().Location(), dkgID, msg.PeerLocs)
+	n.log.Debugf("DkgInit, dkgID=%v, msg.PeerLocs=%v", dkgID, msg.PeerLocs)
 	var err error
 	var p *proc
 	if p, err = onCoordInit(dkgID, msg, n); err != nil {
@@ -73,8 +76,8 @@ func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
 
 // DkgStep implements CoordNodeProvider.
 func (n *node) DkgStep(peerAddrs []string, dkgID string, msg *StepReq) error {
-	fmt.Printf("[%v] DkgStep, dkgID=%v, msg.Step=%v\n", n.netProvider.Self().Location(), dkgID, msg.Step)
 	if p := n.processes[dkgID]; p != nil {
+		p.log.Debugf("DkgStep, msg.Step=%v", msg.Step)
 		return p.onCoordStep(msg)
 	}
 	return errors.New("dkgID_not_found")

@@ -2,8 +2,8 @@ package testutil
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
@@ -17,10 +17,11 @@ type PeeringNetwork struct {
 	nodes     []*peeringNode
 	providers []*peeringNetworkProvider
 	bufSize   int
+	log       *logger.Logger
 }
 
 // NewPeeringNetworkForLocs creates a test network with new keys, etc.
-func NewPeeringNetworkForLocs(peerLocs []string, bufSize int) *PeeringNetwork {
+func NewPeeringNetworkForLocs(peerLocs []string, bufSize int, log *logger.Logger) *PeeringNetwork {
 	var suite = edwards25519.NewBlakeSHA256Ed25519() //bn256.NewSuite()
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerLocs))
@@ -28,17 +29,24 @@ func NewPeeringNetworkForLocs(peerLocs []string, bufSize int) *PeeringNetwork {
 		peerSecs[i] = suite.Scalar().Pick(suite.RandomStream())
 		peerPubs[i] = suite.Point().Mul(peerSecs[i], nil)
 	}
-	return NewPeeringNetwork(peerLocs, peerPubs, peerSecs, bufSize)
+	return NewPeeringNetwork(peerLocs, peerPubs, peerSecs, bufSize, log)
 }
 
 // NewPeeringNetwork creates new test network, it can then be used to create network nodes.
-func NewPeeringNetwork(locations []string, pubKeys []kyber.Point, secKeys []kyber.Scalar, bufSize int) *PeeringNetwork {
+func NewPeeringNetwork(
+	locations []string,
+	pubKeys []kyber.Point,
+	secKeys []kyber.Scalar,
+	bufSize int,
+	log *logger.Logger,
+) *PeeringNetwork {
 	nodes := make([]*peeringNode, len(locations))
 	providers := make([]*peeringNetworkProvider, len(locations))
 	var network = PeeringNetwork{
 		nodes:     nodes,
 		providers: providers,
 		bufSize:   bufSize,
+		log:       log,
 	}
 	for i := range nodes {
 		nodes[i] = newPeeringNode(locations[i], pubKeys[i], secKeys[i], &network)
@@ -79,6 +87,7 @@ type peeringNode struct {
 	recvCh   chan peeringMsg
 	recvCbs  []*peeringCb
 	network  *PeeringNetwork
+	log      *logger.Logger
 }
 type peeringMsg struct {
 	from *peeringNode
@@ -100,13 +109,14 @@ func newPeeringNode(location string, pubKey kyber.Point, secKey kyber.Scalar, ne
 		recvCh:   recvCh,
 		recvCbs:  recvCbs,
 		network:  network,
+		log:      network.log.With("loc", location),
 	}
 	go func() { // Receive loop.
 		for {
 			var pm peeringMsg = <-recvCh
-			fmt.Printf(
-				"[%v] test.Net: received msgType=%v from=%v, chainID=%v\n",
-				node.location, pm.msg.MsgType, pm.from.location, pm.msg.ChainID,
+			node.log.Debugf(
+				"received msgType=%v from=%v, chainID=%v",
+				pm.msg.MsgType, pm.from.location, pm.msg.ChainID,
 			)
 			msgChainID := pm.msg.ChainID.String()
 			for _, cb := range node.recvCbs {

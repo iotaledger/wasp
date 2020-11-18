@@ -42,7 +42,7 @@ func NewDKShare(
 	sharedPublic kyber.Point,
 	publicShare kyber.Point,
 	privateShare kyber.Scalar,
-	version byte, // address.VersionED25519 = 1 | address.VersionBLS = 2
+	version address.Version,
 	suite kyber.Group,
 ) (*DKShare, error) {
 	var err error

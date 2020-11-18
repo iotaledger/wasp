@@ -10,10 +10,12 @@ import (
 )
 
 func TestFakeNetwork(t *testing.T) {
+	log := testutil.NewLogger(t)
+	defer log.Sync()
 	doneCh := make(chan bool)
 	chain1 := coretypes.RandomChainID()
 	chain2 := coretypes.RandomChainID()
-	network := testutil.NewPeeringNetworkForLocs([]string{"a", "b", "c"}, 100)
+	network := testutil.NewPeeringNetworkForLocs([]string{"a", "b", "c"}, 100, log)
 	var netProviders []peering.NetworkProvider = network.NetworkProviders()
 	//
 	// Node "a" listens for chain1 messages.

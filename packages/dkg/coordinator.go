@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
@@ -25,11 +26,12 @@ func GenerateDistributedKey(
 	coordPub kyber.Point,
 	peerLocs []string,
 	peerPubs []kyber.Point,
-	treshold uint32,
-	version byte, // address.VersionED25519 = 1 | address.VersionBLS = 2
+	threshold uint32,
+	version address.Version,
 	timeout time.Duration,
 	suite kyber.Group,
 	netProvider CoordNodeProvider,
+	log *logger.Logger,
 ) (*coretypes.ChainID, *kyber.Point, error) {
 	var err error
 	var dkgID string = address.Random().String()
@@ -47,34 +49,41 @@ func GenerateDistributedKey(
 		PeerLocs:  peerLocs,
 		PeerPubs:  peerPubsBytes,
 		CoordPub:  coordPubBytes,
-		Treshold:  treshold,
+		Threshold: threshold,
 		Version:   version,
 		TimeoutMS: uint64(timeout.Milliseconds()),
 	}
+	timeInit := time.Now() // TODO: Nicer way to handle that.
 	if err = netProvider.DkgInit(peerLocs, dkgID, &initReq); err != nil {
 		return nil, nil, err
 	}
 	//
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
+	timeStep1 := time.Now()
 	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "1-R2.1-SendDeals"}); err != nil {
 		return nil, nil, err
 	}
+	timeStep2 := time.Now()
 	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "2-R2.2-SendResponses"}); err != nil {
 		return nil, nil, err
 	}
+	timeStep3 := time.Now()
 	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "3-R2.3-SendJustifications"}); err != nil {
 		return nil, nil, err
 	}
+	timeStep4 := time.Now()
 	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "4-R4-SendSecretCommits"}); err != nil {
 		return nil, nil, err
 	}
+	timeStep5 := time.Now()
 	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "5-R5-SendComplaintCommits"}); err != nil {
 		return nil, nil, err
 	}
 	//
 	// Now get the public keys.
 	// This also performs the "6-R6-SendReconstructCommits" step implicitly.
+	timeStep6 := time.Now()
 	var pubKeyResponses []*PubKeyResp
 	if pubKeyResponses, err = netProvider.DkgPubKey(peerLocs, dkgID); err != nil {
 		return nil, nil, err
@@ -143,11 +152,24 @@ func GenerateDistributedKey(
 	// 		return nil, nil, err
 	// 	}
 	// }
-	fmt.Printf("COORD: Generated ChainID=%v, shared public key: %v\n", generatedChainID, sharedPublic)
+	log.Debugf("COORD: Generated ChainID=%v, shared public key: %v", generatedChainID, sharedPublic)
 	//
 	// Commit the keys to persistent storage.
+	timeStep7 := time.Now()
 	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "7-CommitAndTerminate"}); err != nil {
 		return nil, nil, err
 	}
+	timeDone := time.Now()
+	log.Debugf(
+		"COORD: Timing: init=%v, Step1=%v, Step2=%v, Step3=%v, Step4=%v, Step5=%v, Step6=%v, Step7=%v",
+		timeStep1.Sub(timeInit).Milliseconds(),
+		timeStep2.Sub(timeStep1).Milliseconds(),
+		timeStep3.Sub(timeStep2).Milliseconds(),
+		timeStep4.Sub(timeStep3).Milliseconds(),
+		timeStep5.Sub(timeStep4).Milliseconds(),
+		timeStep6.Sub(timeStep5).Milliseconds(),
+		timeStep7.Sub(timeStep6).Milliseconds(),
+		timeDone.Sub(timeStep7).Milliseconds(),
+	)
 	return &generatedChainID, &sharedPublic, nil
 }
