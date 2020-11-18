@@ -1,7 +1,6 @@
 package wasptest
 
 import (
-	"bytes"
 	"testing"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -40,33 +38,9 @@ func TestDeployChain(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 1, blockIndex)
-		require.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
-
-		chid, _ := state.GetChainID(root.VarChainID)
-		require.EqualValues(t, &chain.ChainID, chid)
-
-		aid, _ := state.GetAgentID(root.VarChainOwnerID)
-		require.EqualValues(t, *chain.OriginatorID(), *aid)
-
-		desc, _ := state.GetString(root.VarDescription)
-		require.EqualValues(t, chain.Description, desc)
-
+		checkRoots(t, chain)
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 2, contractRegistry.Len())
-
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-
-		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.ContractName, cr.Name)
 		return true
 	})
 }
@@ -103,35 +77,12 @@ func TestDeployContractOnly(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
-		chid, _ := state.GetChainID(root.VarChainID)
-		require.EqualValues(t, &chain.ChainID, chid)
-
-		aid, _ := state.GetAgentID(root.VarChainOwnerID)
-		require.EqualValues(t, *chain.OriginatorID(), *aid)
-
-		desc, _ := state.GetString(root.VarDescription)
-		require.EqualValues(t, chain.Description, desc)
+		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
-
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-
-		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.ContractName, cr.Name)
-
-		crBytes = contractRegistry.GetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)
 
 		require.EqualValues(t, examples.VMType, cr.VMType)
@@ -195,37 +146,13 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
-		chid, ok := state.GetChainID(root.VarChainID)
-		require.True(t, ok)
-		require.EqualValues(t, chain.ChainID, *chid)
-
-		aid, ok := state.GetAgentID(root.VarChainOwnerID)
-		require.True(t, ok)
-		require.EqualValues(t, *chain.OriginatorID(), *aid)
-
-		desc, ok := state.GetString(root.VarDescription)
-		require.True(t, ok)
-		require.EqualValues(t, chain.Description, desc)
+		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 3, contractRegistry.Len())
-		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-		//--
-		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.ContractName, cr.Name)
-		//--
-		crBytes = contractRegistry.GetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)
 
 		require.EqualValues(t, examples.VMType, cr.VMType)
@@ -256,35 +183,14 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 3, blockIndex)
-		chid, _ := state.GetChainID(root.VarChainID)
-		require.EqualValues(t, &chain.ChainID, chid)
-
-		aid, _ := state.GetAgentID(root.VarChainOwnerID)
-		require.EqualValues(t, *chain.OriginatorID(), *aid)
-
-		desc, _ := state.GetString(root.VarDescription)
-		require.EqualValues(t, chain.Description, desc)
+		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
-		//--
-		crBytes = contractRegistry.GetAt(hname.Bytes())
+		crBytes := contractRegistry.GetAt(accountsc.Hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-		require.EqualValues(t, examples.VMType, cr.VMType)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, name, cr.Name)
-
-		//--
-		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)
 		require.EqualValues(t, builtinvm.VMType, cr.VMType)
 		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
