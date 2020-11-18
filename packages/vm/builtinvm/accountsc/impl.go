@@ -30,7 +30,7 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, ErrParamsAgentIDNotFound
 	}
-	retMap, ok := getAccountBalance(ctx.State(), *aid)
+	retMap, ok := GetAccountBalances(ctx.State(), *aid)
 	if !ok {
 		return nil, fmt.Errorf("getBalance: fail")
 	}
@@ -77,11 +77,11 @@ func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if caller.IsAddress() {
 		return nil, fmt.Errorf("can't send tokens, must be an address")
 	}
-	bals, ok := getAccountBalance(ctx.AccessState(), caller)
+	bals, ok := GetAccountBalances(ctx.AccessState(), caller)
 	if !ok {
 		return nil, fmt.Errorf("withdraw: account not found")
 	}
-	if !ctx.SendToAddress(caller.MustAddress(), accounts.NewColoredBalancesFromMap(bals)) {
+	if !ctx.TransferToAddress(caller.MustAddress(), accounts.NewColoredBalancesFromMap(bals)) {
 		return nil, fmt.Errorf("withdraw: account not found")
 	}
 	return nil, nil

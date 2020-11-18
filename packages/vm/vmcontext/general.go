@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -58,6 +59,13 @@ func (vmctx *VMContext) Log() *logger.Logger {
 	return vmctx.log
 }
 
+func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), transfer) {
+		return false
+	}
+	return vmctx.txBuilder.TransferToAddress(targetAddr, transfer) == nil
+}
+
 func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
 	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), par.Transfer) {
 		return false
@@ -69,7 +77,7 @@ func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
 	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 }
 
-func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
+func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       reqCode,
@@ -77,7 +85,7 @@ func (vmctx *VMContext) SendRequestToSelf(reqCode coretypes.Hname, params dict.D
 	})
 }
 
-func (vmctx *VMContext) SendRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
+func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
 	return vmctx.PostRequest(vmtypes.NewRequestParams{

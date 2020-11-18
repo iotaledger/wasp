@@ -80,8 +80,8 @@ func (s *sandbox) Accounts() vmtypes.Accounts {
 	return s.vmctx.Accounts()
 }
 
-func (s *sandbox) SendToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool {
-	panic("implement me")
+func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
 
 func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
@@ -89,11 +89,11 @@ func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
 }
 
 func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
-	return s.vmctx.SendRequestToSelf(reqCode, args)
+	return s.vmctx.PostRequestToSelf(reqCode, args)
 }
 
 func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
-	return s.vmctx.SendRequestToSelfWithDelay(entryPoint, args, delaySec)
+	return s.vmctx.PostRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 
 func (s *sandbox) Event(msg string) {

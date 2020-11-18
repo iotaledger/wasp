@@ -45,7 +45,7 @@ type Sandbox interface {
 	// new implementation
 	Accounts() Accounts
 	// send tokens to address
-	SendToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
+	TransferToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
 	// Send request
 	PostRequest(par NewRequestParams) bool
 	// Send request to itself
@@ -70,19 +70,14 @@ type NewRequestParams struct {
 // Deprecated
 type RequestAccess interface {
 	// Return address of non-contract sender
-	// Deprecated
-	MustSenderAddress() address.Address
 	//  Return agent id of sender. Assumes properties are semantically correct
 	MustSender() coretypes.AgentID
-	// number of free minted tokens in the request transaction
-	// it is equal to total minted tokens minus number of requests
-	// Deprecated
-	NumFreeMintedTokens() int64
 }
 
 // Accounts is an interface to access all functions with tokens
 // in the local context of the call to a smart contract
 type Accounts interface {
+	MyBalances() coretypes.ColoredBalances
 	Incoming() coretypes.ColoredBalances
 	Balance(col balance.Color) int64
 	MoveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool

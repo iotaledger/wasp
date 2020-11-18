@@ -75,7 +75,16 @@ func touchAccount(state codec.MutableMustCodec, agentID coretypes.AgentID) {
 	}
 }
 
-func getAccountBalance(state codec.ImmutableMustCodec, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
+func GetBalance(state codec.ImmutableMustCodec, agentID coretypes.AgentID, color balance.Color) int64 {
+	b := state.GetMap(kv.Key(agentID[:])).GetAt(color[:])
+	if b == nil {
+		return 0
+	}
+	ret, _ := util.Int64From8Bytes(b)
+	return ret
+}
+
+func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
 	ret := make(map[balance.Color]int64)
 	account := state.GetMap(kv.Key(agentID[:]))
 	if account.Len() == 0 {

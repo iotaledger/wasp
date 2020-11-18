@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 )
 
 func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) error {
@@ -52,37 +51,4 @@ func (vmctx *VMContext) getCallContext() *callContext {
 		panic("getCallContext: stack is empty")
 	}
 	return vmctx.callStack[len(vmctx.callStack)-1]
-}
-
-// creditToAccount deposits transfer from request to chain account of of the called contract
-// It adds new tokens to the chain ledger
-// It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
-	if len(vmctx.callStack) > 0 {
-		vmctx.log.Panicf("creditToAccount must be called only from request")
-	}
-	vmctx.pushCallContext(accountsc.Hname, nil, nil) // create local context for the state
-	defer vmctx.popCallContext()
-
-	accountsc.CreditToAccount(codec.NewMustCodec(vmctx), agentID, transfer)
-}
-
-// debitFromAccount subtracts tokens from account if it is enough of it.
-// should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
-	vmctx.pushCallContext(accountsc.Hname, nil, nil) // create local context for the state
-	defer vmctx.popCallContext()
-
-	return accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), agentID, transfer)
-}
-
-func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
-	if len(vmctx.callStack) == 0 {
-		vmctx.log.Panicf("moveBetweenAccounts can't be called from request context")
-	}
-
-	vmctx.pushCallContext(accountsc.Hname, nil, nil) // create local context for the state
-	defer vmctx.popCallContext()
-
-	return accountsc.MoveBetweenAccounts(codec.NewMustCodec(vmctx), fromAgentID, toAgentID, transfer)
 }

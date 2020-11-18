@@ -53,10 +53,10 @@ type TokenMetadata struct {
 	Supply      int64
 	MintedBy    coretypes.AgentID // originator
 	Owner       coretypes.AgentID // who can update metadata
-	Created     int64           // when created record
-	Updated     int64           // when recordt last updated
-	Description string          // any text
-	UserDefined []byte          // any other data (marshalled json etc)
+	Created     int64             // when created record
+	Updated     int64             // when recordt last updated
+	Description string            // any text
+	UserDefined []byte            // any other data (marshalled json etc)
 }
 
 // Point to link statically with the Wasp
@@ -114,7 +114,8 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
 	}
 	// get the number of tokens, which are minted by the request transaction - tokens which are used for requests tracking
-	supply := ctx.AccessRequest().NumFreeMintedTokens()
+	//supply := ctx.AccessRequest().NumFreeMintedTokens() TODO
+	supply := int64(0) // TODO fake
 	if supply <= 0 {
 		// no tokens were minted on top of request tokens
 		return fmt.Errorf("TokenRegistry: the free minted Supply must be > 0")

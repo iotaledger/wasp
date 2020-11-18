@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
@@ -42,26 +41,4 @@ func (vmctx *VMContext) InstallContract(vmtype string, programBinary []byte, nam
 	}))
 
 	return nil
-}
-
-func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*root.ContractRecord, bool) {
-	vmctx.pushCallContext(root.Hname, nil, nil)
-	defer vmctx.popCallContext()
-
-	ret, err := root.FindContract(codec.NewMustCodec(vmctx), contractHname)
-	if err != nil {
-		return nil, false
-	}
-	return ret, true
-}
-
-func (vmctx *VMContext) getBinary(deploymentHash *hashing.HashValue) ([]byte, error) {
-	vmctx.pushCallContext(root.Hname, nil, nil)
-	defer vmctx.popCallContext()
-
-	return root.GetBinary(codec.NewMustCodec(vmctx), *deploymentHash)
-}
-
-func (vmctx *VMContext) callRoot(entryPointCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	return vmctx.CallContract(root.Hname, entryPointCode, params, nil)
 }

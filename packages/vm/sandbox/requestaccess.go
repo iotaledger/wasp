@@ -1,22 +1,12 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 func (s *sandbox) RequestID() coretypes.RequestID {
 	return *s.vmctx.Request().RequestID()
-}
-
-// addresses of request transaction inputs
-func (s *sandbox) MustSenderAddress() address.Address {
-	sender := s.MustSender()
-	if !sender.IsAddress() {
-		panic("sender must be address, not contract")
-	}
-	return sender.MustAddress()
 }
 
 // addresses of request transaction inputs

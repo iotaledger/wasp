@@ -79,7 +79,6 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	transfer := req.Transfer()
 	vmctx.log.Debugf("mustCallFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
 
-	vmctx.txBuilder.RequestProcessed(*vmctx.reqRef.RequestID())
 	if vmctx.contractRecord.NodeFee > 0 {
 		// handle node fees
 		if transfer.Balance(balance.ColorIOTA) < vmctx.contractRecord.NodeFee {
