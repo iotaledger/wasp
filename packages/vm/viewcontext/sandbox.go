@@ -2,10 +2,9 @@ package viewcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
 type sandboxview struct {
@@ -16,11 +15,11 @@ type sandboxview struct {
 	chainID  coretypes.ChainID
 }
 
-func NewSandboxView(vctx *viewcontext, chainID coretypes.ChainID, contractHname coretypes.Hname, params codec.ImmutableCodec) *sandboxview {
+func newSandboxView(vctx *viewcontext, chainID coretypes.ChainID, contractHname coretypes.Hname, params codec.ImmutableCodec) *sandboxview {
 	return &sandboxview{
 		vctx:     vctx,
 		params:   params,
-		state:    codec.NewMustCodec(subrealm.New(vctx.state, kv.Key(contractHname.Bytes()))),
+		state:    contractStateSubpartition(vctx.state, contractHname),
 		contract: contractHname,
 		chainID:  chainID,
 	}
