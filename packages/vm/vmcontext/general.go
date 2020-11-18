@@ -1,7 +1,6 @@
 package vmcontext
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -10,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
@@ -92,12 +91,8 @@ func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, a
 	})
 }
 
-func (vmctx *VMContext) Publish(msg string) {
-	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.CurrentContractHname()), msg)
-}
-
-func (vmctx *VMContext) Publishf(format string, args ...interface{}) {
-	publisher.Publish("vmmsg", vmctx.chainID.String(), fmt.Sprintf("%d", vmctx.CurrentContractHname()), fmt.Sprintf(format, args...))
+func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
+	return vm.NewContractEventPublisher(vmctx.CurrentContractID(), vmctx.Log())
 }
 
 func (vmctx *VMContext) Request() *sctransaction.RequestRef {

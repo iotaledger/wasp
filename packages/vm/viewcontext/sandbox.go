@@ -1,27 +1,38 @@
 package viewcontext
 
 import (
-	"fmt"
+	"sync"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type sandboxview struct {
-	vctx     *viewcontext
-	params   codec.ImmutableCodec
-	state    codec.ImmutableMustCodec
-	contract coretypes.Hname
-	chainID  coretypes.ChainID
+var log *logger.Logger
+
+var logOnce sync.Once
+
+func initLogger() {
+	log = logger.NewLogger("viewcontext")
 }
 
-func newSandboxView(vctx *viewcontext, chainID coretypes.ChainID, contractHname coretypes.Hname, params codec.ImmutableCodec) *sandboxview {
+type sandboxview struct {
+	vctx       *viewcontext
+	params     codec.ImmutableCodec
+	state      codec.ImmutableMustCodec
+	contractID coretypes.ContractID
+	events     vm.ContractEventPublisher
+}
+
+func newSandboxView(vctx *viewcontext, contractID coretypes.ContractID, params codec.ImmutableCodec) *sandboxview {
+	logOnce.Do(initLogger)
 	return &sandboxview{
-		vctx:     vctx,
-		params:   params,
-		state:    contractStateSubpartition(vctx.state, contractHname),
-		contract: contractHname,
-		chainID:  chainID,
+		vctx:       vctx,
+		params:     params,
+		state:      contractStateSubpartition(vctx.state, contractID.Hname()),
+		contractID: contractID,
+		events:     vm.NewContractEventPublisher(contractID, log),
 	}
 }
 
@@ -42,18 +53,13 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 }
 
 func (s *sandboxview) MyContractID() coretypes.ContractID {
-	return coretypes.NewContractID(s.chainID, s.contract)
+	return s.contractID
 }
 
 func (s *sandboxview) Event(msg string) {
-	fmt.Printf("====================   VIEWMSG %s: %s\n", s.MyContractID(), msg)
-	//s.vctx.Log().Infof("VMMSG contract %s '%s'", s.MyContractID().String(), msg)
-	//s.vctx.Publish(msg)
+	s.events.Publish(msg)
 }
 
 func (s *sandboxview) Eventf(format string, args ...interface{}) {
-	msgf := fmt.Sprintf(format, args...)
-	fmt.Printf("====================   VIEWMSG %s: %s\n", s.MyContractID(), msgf)
-	//s.vctx.Log().Infof("VMMSG: "+format, args...)
-	//s.vctx.Publishf(format, args...)
+	s.events.Publishf(format, args...)
 }

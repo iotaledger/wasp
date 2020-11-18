@@ -56,7 +56,7 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 		return nil, fmt.Errorf("only view entry point can be called in this context")
 	}
 
-	return ep.CallView(newSandboxView(v, v.chainID, contractHname, params))
+	return ep.CallView(newSandboxView(v, coretypes.NewContractID(v.chainID, contractHname), params))
 }
 
 func (v *viewcontext) getBinary(deploymentHash *hashing.HashValue) ([]byte, error) {

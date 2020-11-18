@@ -93,11 +93,9 @@ func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args di
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract %s '%s'", s.MyContractID().String(), msg)
-	s.vmctx.Publish(msg)
+	s.vmctx.EventPublisher().Publish(msg)
 }
 
 func (s *sandbox) Eventf(format string, args ...interface{}) {
-	s.vmctx.Log().Infof("VMMSG: "+format, args...)
-	s.vmctx.Publishf(format, args...)
+	s.vmctx.EventPublisher().Publishf(format, args...)
 }

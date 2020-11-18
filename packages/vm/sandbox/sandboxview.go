@@ -40,11 +40,9 @@ func (s sandboxView) MyContractID() coretypes.ContractID {
 }
 
 func (s sandboxView) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract %s '%s'", s.vmctx.CurrentContractID().String(), msg)
-	s.vmctx.Publish(msg)
+	s.vmctx.EventPublisher().Publish(msg)
 }
 
 func (s sandboxView) Eventf(format string, args ...interface{}) {
-	s.vmctx.Log().Infof("VMMSG: "+format, args...)
-	s.vmctx.Publishf(format, args...)
+	s.vmctx.EventPublisher().Publishf(format, args...)
 }
