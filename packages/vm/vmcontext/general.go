@@ -15,10 +15,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
-func (vmctx *VMContext) Accounts() vmtypes.Accounts {
-	return vmctx
-}
-
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
 	return vmctx.chainID
 }

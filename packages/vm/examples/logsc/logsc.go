@@ -67,10 +67,10 @@ func handleAddLogRequest(ctx vmtypes.Sandbox) {
 		return
 	}
 
-	length, _ := ctx.AccessState().GetInt64(logArrayKey)
+	length, _ := ctx.State().GetInt64(logArrayKey)
 	length += 1
-	ctx.AccessState().SetInt64(logArrayKey, length)
-	ctx.AccessState().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
+	ctx.State().SetInt64(logArrayKey, length)
+	ctx.State().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

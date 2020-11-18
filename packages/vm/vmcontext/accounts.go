@@ -5,18 +5,18 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-func (vmctx *VMContext) Incoming() coretypes.ColoredBalances {
+func (vmctx *VMContext) GetIncoming() coretypes.ColoredBalances {
 	return vmctx.getCallContext().transfer
 }
 
-func (vmctx *VMContext) Balance(col balance.Color) int64 {
+func (vmctx *VMContext) GetBalance(col balance.Color) int64 {
 	return vmctx.getBalance(col)
 }
 
-func (vmctx *VMContext) MyBalances() coretypes.ColoredBalances {
+func (vmctx *VMContext) GetMyBalances() coretypes.ColoredBalances {
 	return vmctx.getMyBalances()
 }
 
-func (vmctx *VMContext) MoveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool {
+func (vmctx *VMContext) DoMoveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool {
 	return vmctx.moveBalance(target, col, amount)
 }

@@ -72,12 +72,8 @@ func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
 	return s
 }
 
-func (s *sandbox) AccessState() codec.MutableMustCodec {
+func (s *sandbox) State() codec.MutableMustCodec {
 	return codec.NewMustCodec(s)
-}
-
-func (s *sandbox) Accounts() vmtypes.Accounts {
-	return s.vmctx.Accounts()
 }
 
 func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {

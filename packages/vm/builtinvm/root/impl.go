@@ -17,7 +17,7 @@ import (
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	params := ctx.Params()
 	ctx.Eventf("root.initialize.begin")
-	state := ctx.AccessState()
+	state := ctx.State()
 	if state.Get(VarStateInitialized) != nil {
 		// can't be initialized twice
 		return nil, fmt.Errorf("root.initialize.fail: already_initialized")
@@ -65,7 +65,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Eventf("root.deployContract.begin")
 
-	if ctx.AccessState().Get(VarStateInitialized) == nil {
+	if ctx.State().Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
 	}
 	params := ctx.Params()

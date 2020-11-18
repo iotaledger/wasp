@@ -107,7 +107,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	reqId := ctx.RequestID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
-	registry := ctx.AccessState().GetMap(VarStateTheRegistry)
+	registry := ctx.State().GetMap(VarStateTheRegistry)
 	// check for duplicated colors
 	if registry.GetAt(colorOfTheSupply[:]) != nil {
 		// already exist
@@ -157,7 +157,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	// maintain the list all colors in the registry (dictionary keys)
 	// only used for assertion in tests
 	// TODO not finished
-	stateAccess := ctx.AccessState()
+	stateAccess := ctx.State()
 	lst, ok := stateAccess.GetString(VarStateListColors)
 	if !ok {
 		lst = colorOfTheSupply.String()

@@ -219,7 +219,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// take current setting of the smart contract owner margin
-	ownerMargin := GetOwnerMarginPromille(ctx.AccessState().GetInt64(VarStateOwnerMarginPromille))
+	ownerMargin := GetOwnerMarginPromille(ctx.State().GetInt64(VarStateOwnerMarginPromille))
 
 	// determine color of the token for sale
 	colh, ok, err := params.GetString(VarReqAuctionColor)
@@ -310,7 +310,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	description = util.GentleTruncate(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
-	auctions := ctx.AccessState().GetMap(VarStateAuctions)
+	auctions := ctx.State().GetMap(VarStateAuctions)
 	if b := auctions.GetAt(colorForSale.Bytes()); b != nil {
 		// auction already exists. Ignore sale auction.
 		// refund iotas less fee
@@ -399,7 +399,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	}
 
 	// find the auction
-	auctions := ctx.AccessState().GetMap(VarStateAuctions)
+	auctions := ctx.State().GetMap(VarStateAuctions)
 	data := auctions.GetAt(col.Bytes())
 	if data == nil {
 		// no such auction. refund everything
@@ -483,7 +483,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// find the record of the auction by color
-	auctDict := ctx.AccessState().GetMap(VarStateAuctions)
+	auctDict := ctx.State().GetMap(VarStateAuctions)
 	data := auctDict.GetAt(col.Bytes())
 	if data == nil {
 		// auction with this color does not exist. Inconsistency
@@ -616,7 +616,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	} else if margin > OwnerMarginMax {
 		margin = OwnerMarginMax
 	}
-	ctx.AccessState().SetInt64(VarStateOwnerMarginPromille, margin)
+	ctx.State().SetInt64(VarStateOwnerMarginPromille, margin)
 	ctx.Eventf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
 	return nil
 }

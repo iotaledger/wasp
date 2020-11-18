@@ -41,7 +41,7 @@ type Sandbox interface {
 	// access to the request block
 	AccessRequest() RequestAccess
 	// base level of virtual state access
-	AccessState() codec.MutableMustCodec
+	State() codec.MutableMustCodec
 	// new implementation
 	Accounts() Accounts
 	// send tokens to address

@@ -85,7 +85,7 @@ func donate(ctx vmtypes.Sandbox) error {
 	feedback, ok, err := params.GetString(donatewithfeedback.VarReqFeedback)
 	feedback = util.GentleTruncate(feedback, maxComment)
 
-	stateAccess := ctx.AccessState()
+	stateAccess := ctx.State()
 	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
 
 	sender := ctx.AccessRequest().MustSender()

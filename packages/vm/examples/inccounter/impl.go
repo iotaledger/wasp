@@ -83,14 +83,14 @@ func initialize(ctx vmtypes.Sandbox) error {
 	if err != nil {
 		return fmt.Errorf("incCounter: %v", err)
 	}
-	ctx.AccessState().SetInt64(VarCounter, val)
+	ctx.State().SetInt64(VarCounter, val)
 	ctx.Eventf("inccounter.init.success. counter = %d", val)
 	return nil
 }
 
 func incCounter(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.incCounter")
-	state := ctx.AccessState()
+	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
 	ctx.Event(fmt.Sprintf("'increasing counter value: %d'", val))
 	state.SetInt64(VarCounter, val+1)
@@ -99,7 +99,7 @@ func incCounter(ctx vmtypes.Sandbox) error {
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.incCounterAndRepeatOnce")
-	state := ctx.AccessState()
+	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
 
 	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
@@ -118,7 +118,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) error {
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.incCounterAndRepeatMany")
 
-	state := ctx.AccessState()
+	state := ctx.State()
 	params := ctx.Params()
 
 	val, _ := state.GetInt64(VarCounter)
@@ -155,7 +155,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) error {
 // spawn deploys new contract an calls it
 func spawn(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("inccounter.spawn")
-	state := ctx.AccessState()
+	state := ctx.State()
 
 	val, _ := state.GetInt64(VarCounter)
 

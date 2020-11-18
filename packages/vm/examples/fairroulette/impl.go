@@ -148,7 +148,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	ctx.Event("placeBet")
 	params := ctx.Params()
 
-	state := ctx.AccessState()
+	state := ctx.State()
 
 	// if there are some bets locked, save the entropy derived immediately from it.
 	// it is not predictable at the moment of locking and this saving makes it not playable later
@@ -242,7 +242,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 		// minimum is 10 seconds
 		return fmt.Errorf("wrong parameter '%s'", ReqVarPlayPeriodSec)
 	}
-	ctx.AccessState().SetInt64(ReqVarPlayPeriodSec, period)
+	ctx.State().SetInt64(ReqVarPlayPeriodSec, period)
 
 	ctx.Eventf("setPlayPeriod = %d", period)
 	return nil
@@ -258,7 +258,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
 	}
-	state := ctx.AccessState()
+	state := ctx.State()
 	// append all current bets to the locked bets array
 	lockedBets := state.GetArray(StateVarLockedBets)
 	lockedBets.Extend(state.GetArray(StateVarBets))
@@ -285,7 +285,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
 	}
-	state := ctx.AccessState()
+	state := ctx.State()
 
 	lockedBetsArray := state.GetArray(StateVarLockedBets)
 	numLockedBets := lockedBetsArray.Len()
@@ -306,7 +306,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
 	// calculating it modulo NumColors.
 	winningColor := byte(util.MustUint64From8Bytes(entropy[:8]) % NumColors)
-	ctx.AccessState().SetInt64(StateVarLastWinningColor, int64(winningColor))
+	ctx.State().SetInt64(StateVarLastWinningColor, int64(winningColor))
 
 	ctx.Eventf("$$$$$$$$$$ winning color is = %d", winningColor)
 
@@ -375,7 +375,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 }
 
 func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
-	winsPerColorArray := ctx.AccessState().GetArray(StateArrayWinsPerColor)
+	winsPerColorArray := ctx.State().GetArray(StateArrayWinsPerColor)
 
 	// first time? Initialize counters
 	if winsPerColorArray.Len() == 0 {
@@ -538,7 +538,7 @@ func (ps *PlayerStats) String() string {
 }
 
 func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
-	statsDict := ctx.AccessState().GetMap(StateVarPlayerStats)
+	statsDict := ctx.State().GetMap(StateVarPlayerStats)
 	b := statsDict.GetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)
 	if err != nil {

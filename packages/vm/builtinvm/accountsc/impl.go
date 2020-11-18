@@ -12,7 +12,7 @@ import (
 // initialize the init call
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ctx.Eventf("accountsc.initialize.begin")
-	state := ctx.AccessState()
+	state := ctx.State()
 	if state.Get(VarStateInitialized) != nil {
 		// can't be initialized twice
 		return nil, fmt.Errorf("accountsc.initialize.fail: already_initialized")
@@ -52,7 +52,7 @@ func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 
 // deposit moves balances to the sender's account
 func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	if !MoveBetweenAccounts(ctx.AccessState(), ctx.MyAgentID(), ctx.Caller(), ctx.Accounts().Incoming()) {
+	if !MoveBetweenAccounts(ctx.State(), ctx.MyAgentID(), ctx.Caller(), ctx.Accounts().Incoming()) {
 		return nil, fmt.Errorf("failed to deposit to %s", ctx.Caller().String())
 	}
 	return nil, nil
@@ -66,7 +66,7 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, ErrParamsAgentIDNotFound
 	}
-	if !MoveBetweenAccounts(ctx.AccessState(), ctx.MyAgentID(), *moveTo, ctx.Accounts().Incoming()) {
+	if !MoveBetweenAccounts(ctx.State(), ctx.MyAgentID(), *moveTo, ctx.Accounts().Incoming()) {
 		return nil, fmt.Errorf("failed to move to %s", moveTo.String())
 	}
 	return nil, nil
@@ -77,7 +77,7 @@ func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if caller.IsAddress() {
 		return nil, fmt.Errorf("can't send tokens, must be an address")
 	}
-	bals, ok := GetAccountBalances(ctx.AccessState(), caller)
+	bals, ok := GetAccountBalances(ctx.State(), caller)
 	if !ok {
 		return nil, fmt.Errorf("withdraw: account not found")
 	}
