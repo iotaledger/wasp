@@ -112,14 +112,14 @@ func TestSimplest(t *testing.T) {
 		t.Fail()
 	}
 	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, hname))
-	actual := getContractBalance(t, chain, agentID)
+	actual := getAgentBalanceOnChain(t, chain, agentID)
 	require.EqualValues(t, 42, actual)
 
 	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
-	actual = getContractBalance(t, chain, agentID)
+	actual = getAgentBalanceOnChain(t, chain, agentID)
 	require.EqualValues(t, 1, actual) // 1 request sent
 
 	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
-	actual = getContractBalance(t, chain, agentID)
+	actual = getAgentBalanceOnChain(t, chain, agentID)
 	require.EqualValues(t, 2, actual) // 1 request sent
 }

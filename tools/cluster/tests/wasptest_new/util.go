@@ -64,7 +64,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	return nil
 }
 
-func getContractBalance(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID) int64 {
+func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID) int64 {
 	ret, err := chain.Cluster.WaspClient(0).StateView(
 		chain.ContractID(accountsc.Hname),
 		accountsc.FuncBalance,
