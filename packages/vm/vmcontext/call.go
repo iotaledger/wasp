@@ -13,6 +13,8 @@ var (
 	ErrContractNotFound   = errors.New("contract not found")
 	ErrEntryPointNotFound = errors.New("entry point not found")
 	ErrProcessorNotFound  = errors.New("VM not found. Internal error")
+	ErrNotEnoughFees      = errors.New("not enough fees")
+	ErrWrongRequestToken  = errors.New("wrong request token")
 )
 
 // CallContract
@@ -76,18 +78,19 @@ func (vmctx *VMContext) CallView(contractHname coretypes.Hname, epCode coretypes
 // mustCallFromRequest is called for each request from the VM loop
 func (vmctx *VMContext) mustCallFromRequest() {
 	req := vmctx.reqRef.RequestSection()
-	transfer := req.Transfer()
 	vmctx.log.Debugf("mustCallFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
 
-	if vmctx.contractRecord.NodeFee > 0 {
-		// handle node fees
-		if transfer.Balance(balance.ColorIOTA) < vmctx.contractRecord.NodeFee {
-			vmctx.mustFallbackNotEnoughFees()
-			return
-		}
-		transfer = vmctx.mustCreditFees()
+	// handles request token and node fees
+	remaining, err := vmctx.mustDefaultHandleTokens()
+	if err != nil {
+		// may be due to not enough rewards
+		vmctx.log.Warnf("mustCallFromRequest: %v", err)
+		return
 	}
-	_, err := vmctx.CallContract(vmctx.reqHname, req.EntryPointCode(), req.Args(), transfer)
+
+	// call contract from request context
+	_, err = vmctx.CallContract(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
+
 	switch err {
 	case nil:
 		return
@@ -95,39 +98,57 @@ func (vmctx *VMContext) mustCallFromRequest() {
 		// if sent to the wrong contract or entry point, accrue the transfer to the sender' account on the chain
 		// the sender can withdraw it at any time
 		// TODO more sophisticated policy
-		sender := vmctx.reqRef.SenderAgentID()
-		vmctx.creditToAccount(sender, transfer)
+		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), remaining)
 	default:
 		vmctx.log.Warnf("mustCallFromRequest: %v", err)
 	}
 }
 
-// mustFallbackNotEnoughFees calls fallback reaction in case fees iotas not enough for fees
-func (vmctx *VMContext) mustFallbackNotEnoughFees() {
+// mustDefaultHandleTokens:
+// - handles request token
+// - handles node fee, including fallback if not enough
+func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, error) {
 	transfer := vmctx.reqRef.RequestSection().Transfer()
-	// move all tokens to the caller's account
-	// TODO more sophisticated policy
-	sender := vmctx.reqRef.SenderAgentID()
-	vmctx.creditToAccount(sender, transfer)
-	vmctx.log.Warnf("not enough fees for request %s", vmctx.reqRef.RequestID().Short())
-}
+	reqColor := balance.Color(vmctx.reqRef.Tx.ID())
 
-// mustCreditFees adds fees to chain owner's account.
-// Returns remaining transfer
-func (vmctx *VMContext) mustCreditFees() coretypes.ColoredBalances {
-	transfer := vmctx.reqRef.RequestSection().Transfer()
-	if vmctx.contractRecord.NodeFee == 0 || transfer.Balance(balance.ColorIOTA) < vmctx.contractRecord.NodeFee {
-		vmctx.log.Panicf("mustCreditFees: should not be called")
+	// handle request token
+	if vmctx.txBuilder.Balance(reqColor) == 0 {
+		// must be checked before, while validating transaction
+		vmctx.log.Panicf("request token not found: %s", reqColor.String())
 	}
+	if !vmctx.txBuilder.Erase1TokenToChain(reqColor) {
+		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
+	}
+	if vmctx.contractRecord.NodeFee == 0 {
+		// if no fees enabled, accrue the token to the caller
+		fee := map[balance.Color]int64{
+			balance.ColorIOTA: 1,
+		}
+		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), accounts.NewColoredBalancesFromMap(fee))
+		return transfer, nil
+	}
+
+	// handle fees
+	if vmctx.contractRecord.NodeFee-1 > transfer.Balance(balance.ColorIOTA) {
+		// fallback: not enough fees
+		// accrue everything to the sender
+		sender := vmctx.reqRef.SenderAgentID()
+		vmctx.creditToAccount(sender, transfer)
+
+		return accounts.NewColoredBalancesFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
+			vmctx.reqRef.RequestID().Short(), sender.String())
+	}
+	// enough fees
+	// accrue everything (including request token) to the chain owner
 	fee := map[balance.Color]int64{
 		balance.ColorIOTA: vmctx.contractRecord.NodeFee,
 	}
 	vmctx.creditToAccount(vmctx.ChainOwnerID(), accounts.NewColoredBalancesFromMap(fee))
 	remaining := map[balance.Color]int64{
-		balance.ColorIOTA: -vmctx.contractRecord.NodeFee,
+		balance.ColorIOTA: -vmctx.contractRecord.NodeFee + 1,
 	}
 	transfer.AddToMap(remaining)
-	return accounts.NewColoredBalancesFromMap(remaining)
+	return accounts.NewColoredBalancesFromMap(remaining), nil
 }
 
 func (vmctx *VMContext) Params() codec.ImmutableCodec {

@@ -1,13 +1,10 @@
 package wasptest
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -77,12 +74,20 @@ func TestSimplest(t *testing.T) {
 		return true
 	})
 
+	if !clu.VerifyAddressBalances(&chain.Address, 3, map[balance.Color]int64{
+		balance.ColorIOTA: 2,
+		chain.Color:       1,
+	}, "chain after deployment") {
+		t.Fail()
+	}
+
 	err = requestFunds(clu, scOwnerAddr, "originator")
 	check(err, t)
 
+	transferIotas := int64(42)
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), &chain.ChainID, scOwner.SigScheme())
 	reqTx, err := chClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
-		balance.ColorIOTA: 1,
+		balance.ColorIOTA: transferIotas,
 	}, nil)
 	check(err, t)
 
@@ -94,27 +99,27 @@ func TestSimplest(t *testing.T) {
 		require.EqualValues(t, 43, counterValue)
 		return true
 	})
-	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-2, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 2,
+	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-transferIotas, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - transferIotas,
 	}, "owner after") {
 		t.Fail()
 	}
 
+	if !clu.VerifyAddressBalances(&chain.Address, 4+transferIotas, map[balance.Color]int64{
+		balance.ColorIOTA: 3 + transferIotas,
+		chain.Color:       1,
+	}, "chain after") {
+		t.Fail()
+	}
 	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, hname))
-	ret, err := chain.Cluster.WaspClient(0).StateView(
-		chain.ContractID(accountsc.Hname),
-		accountsc.FuncBalance,
-		dict.FromGoMap(map[kv.Key][]byte{
-			accountsc.ParamAgentID: agentID[:],
-		}),
-	)
-	check(err, t)
-	j, err := ret.MarshalJSON()
-	fmt.Printf("\n=========   %s\n", string(j))
-	check(err, t)
+	actual := getContractBalance(t, chain, agentID)
+	require.EqualValues(t, 42, actual)
 
-	c := codec.NewCodec(ret)
-	actual, ok, err := c.GetInt64(kv.Key(balance.ColorIOTA[:]))
-	require.True(t, ok)
-	require.EqualValues(t, 1, actual)
+	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
+	actual = getContractBalance(t, chain, agentID)
+	require.EqualValues(t, 1, actual) // 1 request sent
+
+	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	actual = getContractBalance(t, chain, agentID)
+	require.EqualValues(t, 2, actual) // 1 request sent
 }

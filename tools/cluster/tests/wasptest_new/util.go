@@ -5,7 +5,10 @@ import (
 	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
@@ -59,4 +62,22 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 		return errors.New("unexpected requested amount")
 	}
 	return nil
+}
+
+func getContractBalance(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID) int64 {
+	ret, err := chain.Cluster.WaspClient(0).StateView(
+		chain.ContractID(accountsc.Hname),
+		accountsc.FuncBalance,
+		dict.FromGoMap(map[kv.Key][]byte{
+			accountsc.ParamAgentID: agentID[:],
+		}),
+	)
+	check(err, t)
+
+	c := codec.NewCodec(ret)
+	actual, ok, err := c.GetInt64(kv.Key(balance.ColorIOTA[:]))
+	check(err, t)
+
+	require.True(t, ok)
+	return actual
 }
