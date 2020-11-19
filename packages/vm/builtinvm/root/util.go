@@ -9,7 +9,7 @@ import (
 
 func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*ContractRecord, error) {
 	if hname == Hname {
-		return GetRootContractRecord(), nil
+		return &RootContractRecord, nil
 	}
 	contractRegistry := state.GetMap(VarContractRegistry)
 	retBin := contractRegistry.GetAt(hname.Bytes())

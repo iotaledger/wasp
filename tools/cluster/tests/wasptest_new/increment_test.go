@@ -42,7 +42,7 @@ func TestIncDeployment(t *testing.T) {
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 		//--
 		crBytes = contractRegistry.GetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -102,7 +102,7 @@ func testNothing(t *testing.T, numRequests int) {
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 		//--
 		crBytes = contractRegistry.GetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -161,7 +161,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 		//--
 		crBytes = contractRegistry.GetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)

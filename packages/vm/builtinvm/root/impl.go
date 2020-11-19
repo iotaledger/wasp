@@ -46,7 +46,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state.SetChainID(VarChainID, chainID)
 	state.SetAgentID(VarChainOwnerID, &sender) // chain owner is whoever sends init request
 	state.SetString(VarDescription, chainDescription)
-	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(GetRootContractRecord()))
+	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(&RootContractRecord))
 
 	err = ctx.DeployContract(
 		"builtinvm",

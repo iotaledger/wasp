@@ -3,6 +3,8 @@ package wasptest
 import (
 	"bytes"
 	"errors"
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func checkRoots(t *testing.T, chain *cluster.Chain) {
@@ -36,7 +37,7 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.GetRootContractRecord())))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 
 		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
 		require.NotNil(t, crBytes)

@@ -6,13 +6,34 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-// Version of the root contract
-const Version = "0.1"
+const (
+	Name        = "root"
+	Version     = "0.1"
+	Description = "Root Contract"
+)
+
+var (
+	RootContractRecord = NewBuiltinContractRecord(Name, Version, Description)
+
+	Interface = ContractInterface{
+		Name:        Name,
+		Version:     Version,
+		Description: Description,
+		VMType:      RootContractRecord.VMType,
+		Functions: Funcs(initialize, []ContractFunctionInterface{
+			Func(FuncDeployContract, deployContract),
+			ViewFunc(FuncFindContract, findContract),
+			ViewFunc(FuncGetBinary, getBinary),
+		}),
+	}
+
+	ProgramHash = BuiltinProgramHash(Name, Version)
+	Hname       = BuiltinHname(Name, Version)
+)
 
 // state variables
 const (
@@ -43,15 +64,9 @@ const (
 	FuncGetBinary      = "getBinary"
 )
 
-const ContractName = "root " + Version
-
-var (
-	ProgramHash              = hashing.HashStrings(ContractName)
-	Hname                    = coretypes.Hn(ContractName)
-	EntryPointDeployContract = coretypes.Hn(FuncDeployContract)
-	EntryPointFindContract   = coretypes.Hn(FuncFindContract)
-	EntryPointGetBinary      = coretypes.Hn(FuncGetBinary)
-)
+func GetProcessor() vmtypes.Processor {
+	return &Interface
+}
 
 // ContractRecord is a structure which contains metadata for a deployed contract
 type ContractRecord struct {
@@ -60,66 +75,6 @@ type ContractRecord struct {
 	Description    string
 	Name           string
 	NodeFee        int64 // minimum node fee
-}
-
-type rootProcessor map[coretypes.Hname]rootEntryPoint
-
-type epFunc func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
-type epFuncView func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
-
-type rootEntryPoint struct {
-	fun interface{}
-}
-
-var (
-	processor = rootProcessor{
-		coretypes.EntryPointInit: {epFunc(initialize)},
-		EntryPointDeployContract: {epFunc(deployContract)},
-		EntryPointFindContract:   {epFuncView(findContract)},
-		EntryPointGetBinary:      {epFuncView(getBinary)},
-	}
-)
-
-func GetProcessor() vmtypes.Processor {
-	return processor
-}
-
-func (v rootProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
-	ret, ok := processor[code]
-	return ret, ok
-}
-
-func (v rootProcessor) GetDescription() string {
-	return "Root processor"
-}
-
-func (ep rootEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	fun, ok := ep.fun.(epFunc)
-	if !ok {
-		return nil, vmtypes.ErrWrongTypeEntryPoint
-	}
-	ret, err := fun(ctx)
-	if err != nil {
-		ctx.Eventf("error occurred: '%v'", err)
-	}
-	return ret, err
-}
-
-func (ep rootEntryPoint) IsView() bool {
-	_, ok := ep.fun.(epFuncView)
-	return ok
-}
-
-func (ep rootEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	fun, ok := ep.fun.(epFuncView)
-	if !ok {
-		return nil, vmtypes.ErrWrongTypeEntryPoint
-	}
-	return fun(ctx)
-}
-
-func (ep rootEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
-	return ep
 }
 
 // serde
@@ -172,12 +127,19 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-// GetRootContractRecord creates predefined metadata for the root contract
-func GetRootContractRecord() *ContractRecord {
-	return &ContractRecord{
+func NewBuiltinContractRecord(name string, version string, description string) ContractRecord {
+	return ContractRecord{
 		VMType:         "builtin",
-		DeploymentHash: *ProgramHash,
-		Description:    "root contract",
-		Name:           "root",
+		DeploymentHash: BuiltinProgramHash(name, version),
+		Description:    description,
+		Name:           name,
 	}
+}
+
+func BuiltinProgramHash(name string, version string) hashing.HashValue {
+	return *hashing.HashStrings(name + "-" + version)
+}
+
+func BuiltinHname(name string, version string) coretypes.Hname {
+	return coretypes.Hn(name + "-" + version)
 }

@@ -45,7 +45,7 @@ func TestSimplest(t *testing.T) {
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.ContractName, root.Hname.String())
+	t.Logf("   %s: %s", root.RootContractRecord.Name, root.Hname.String())
 	t.Logf("   %s: %s", accountsc.ContractName, accountsc.Hname.String())
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
