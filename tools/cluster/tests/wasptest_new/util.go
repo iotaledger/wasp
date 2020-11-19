@@ -64,7 +64,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	return nil
 }
 
-func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID) int64 {
+func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color) int64 {
 	ret, err := chain.Cluster.WaspClient(0).StateView(
 		chain.ContractID(accountsc.Hname),
 		accountsc.FuncBalance,
@@ -75,7 +75,7 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretype
 	check(err, t)
 
 	c := codec.NewCodec(ret)
-	actual, ok, err := c.GetInt64(kv.Key(balance.ColorIOTA[:]))
+	actual, ok, err := c.GetInt64(kv.Key(color[:]))
 	check(err, t)
 
 	require.True(t, ok)
