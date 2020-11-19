@@ -14,7 +14,7 @@ const VMType = "builtinvm"
 func init() {
 	fmt.Printf("--------------- core contracts ------------------\n")
 	fmt.Printf("    %s: '%s'  \n", root.Hname.String(), root.Interface.Name)
-	fmt.Printf("    %s: '%s'  \n", accountsc.Hname.String(), accountsc.ContractName)
+	fmt.Printf("    %s: '%s'  \n", accountsc.Hname.String(), accountsc.Interface.Name)
 	fmt.Printf("--------------- core contracts ------------------\n")
 }
 
@@ -23,7 +23,7 @@ func GetProcessor(programHash hashing.HashValue) (vmtypes.Processor, error) {
 	case root.ProgramHash:
 		return root.GetProcessor(), nil
 
-	case *accountsc.ProgramHash:
+	case accountsc.ProgramHash:
 		return accountsc.GetProcessor(), nil
 
 	case *dummyprocessor.ProgramHash:

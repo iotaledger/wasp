@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	builtinutil "github.com/iotaledger/wasp/packages/vm/builtinvm/util"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -45,9 +46,9 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 		check(err, t)
 
 		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
+		require.EqualValues(t, accountsc.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.ContractName, cr.Name)
+		require.EqualValues(t, builtinutil.BuiltinFullName(accountsc.Name, accountsc.Version), cr.Name)
 		return true
 	})
 }

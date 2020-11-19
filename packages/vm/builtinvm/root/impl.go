@@ -4,11 +4,13 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -51,8 +53,8 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	err = ctx.DeployContract(
 		"builtinvm",
 		accountsc.ProgramHash[:],
-		accountsc.ContractName,
-		accountsc.ContractDescription,
+		util.BuiltinFullName(accountsc.Name, accountsc.Version),
+		accountsc.Description,
 		nil,
 	)
 	if err != nil {

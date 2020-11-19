@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
+	builtinutil "github.com/iotaledger/wasp/packages/vm/builtinvm/util"
+	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -19,20 +20,20 @@ const (
 var (
 	RootContractRecord = NewBuiltinContractRecord(Name, Version, Description)
 
-	Interface = ContractInterface{
+	Interface = contract.ContractInterface{
 		Name:        Name,
 		Version:     Version,
 		Description: Description,
 		VMType:      RootContractRecord.VMType,
-		Functions: Funcs(initialize, []ContractFunctionInterface{
-			Func(FuncDeployContract, deployContract),
-			ViewFunc(FuncFindContract, findContract),
-			ViewFunc(FuncGetBinary, getBinary),
+		Functions: contract.Funcs(initialize, []contract.ContractFunctionInterface{
+			contract.Func(FuncDeployContract, deployContract),
+			contract.ViewFunc(FuncFindContract, findContract),
+			contract.ViewFunc(FuncGetBinary, getBinary),
 		}),
 	}
 
-	ProgramHash = BuiltinProgramHash(Name, Version)
-	Hname       = BuiltinHname(Name, Version)
+	ProgramHash = builtinutil.BuiltinProgramHash(Name, Version)
+	Hname       = builtinutil.BuiltinHname(Name, Version)
 )
 
 // state variables
@@ -130,16 +131,8 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 func NewBuiltinContractRecord(name string, version string, description string) ContractRecord {
 	return ContractRecord{
 		VMType:         "builtin",
-		DeploymentHash: BuiltinProgramHash(name, version),
+		DeploymentHash: builtinutil.BuiltinProgramHash(name, version),
 		Description:    description,
 		Name:           name,
 	}
-}
-
-func BuiltinProgramHash(name string, version string) hashing.HashValue {
-	return *hashing.HashStrings(name + "-" + version)
-}
-
-func BuiltinHname(name string, version string) coretypes.Hname {
-	return coretypes.Hn(name + "-" + version)
 }
