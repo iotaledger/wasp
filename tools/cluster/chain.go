@@ -119,7 +119,7 @@ func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr s
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Hname, coretypes.Hn(root.FuncDeployContract), nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (ch *Chain) DeployExternalContract(vmtype string, name string, description 
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Hname, coretypes.Hn(root.FuncDeployContract), nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
