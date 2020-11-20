@@ -9,21 +9,31 @@ import (
 )
 
 type stateWrapper struct {
-	contractHname coretypes.Hname
-	virtualState  state.VirtualState
-	stateUpdate   state.StateUpdate
+	contractHname              coretypes.Hname
+	contractSubPartitionPrefix kv.Key
+	virtualState               state.VirtualState
+	stateUpdate                state.StateUpdate
+}
+
+func newStateWrapper(contractHname coretypes.Hname, virtualState state.VirtualState, stateUpdate state.StateUpdate) stateWrapper {
+	return stateWrapper{
+		contractHname:              contractHname,
+		contractSubPartitionPrefix: kv.Key(contractHname.Bytes()),
+		virtualState:               virtualState,
+		stateUpdate:                stateUpdate,
+	}
 }
 
 func (s *stateWrapper) addContractSubPartition(key kv.Key) kv.Key {
-	return kv.Key(s.contractHname.Bytes()) + key
+	return s.contractSubPartitionPrefix + key
 }
 
 func (vmctx *VMContext) stateWrapper() stateWrapper {
-	return stateWrapper{
-		contractHname: vmctx.CurrentContractHname(),
-		virtualState:  vmctx.virtualState,
-		stateUpdate:   vmctx.stateUpdate,
-	}
+	return newStateWrapper(
+		vmctx.CurrentContractHname(),
+		vmctx.virtualState,
+		vmctx.stateUpdate,
+	)
 }
 
 func (s stateWrapper) Has(name kv.Key) (bool, error) {
@@ -35,10 +45,11 @@ func (s stateWrapper) Has(name kv.Key) (bool, error) {
 	return s.virtualState.Variables().Has(name)
 }
 
-func (s stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+func (s stateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
 	prefix = s.addContractSubPartition(prefix)
-	// TODO is it correct?
-	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, f)
+	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, func(key kv.Key, value []byte) bool {
+		return f(key[len(s.contractSubPartitionPrefix):], value)
+	})
 	if done {
 		return nil
 	}
@@ -47,14 +58,14 @@ func (s stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bo
 		if ok {
 			return true
 		}
-		return f(key, value)
+		return f(key[len(s.contractSubPartitionPrefix):], value)
 	})
 }
 
 func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	prefix = s.addContractSubPartition(prefix)
 	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, func(key kv.Key, value []byte) bool {
-		return f(key)
+		return f(key[len(s.contractSubPartitionPrefix):])
 	})
 	if done {
 		return nil
@@ -64,7 +75,7 @@ func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error 
 		if ok {
 			return true
 		}
-		return f(key)
+		return f(key[len(s.contractSubPartitionPrefix):])
 	})
 }
 
