@@ -1,10 +1,12 @@
 package accountsc
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -84,20 +86,35 @@ func GetBalance(state codec.ImmutableMustCodec, agentID coretypes.AgentID, color
 	return ret
 }
 
+func GetAccounts(state codec.ImmutableMustCodec) codec.ImmutableCodec {
+	ret := codec.NewCodec(dict.New())
+	state.GetMap(VarStateAllAccounts).Iterate(func(elemKey []byte, val []byte) bool {
+		ret.Set(kv.Key(elemKey), val)
+		return true
+	})
+	return ret
+}
+
 func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
+	s, ok := state.GetString("tmptest")
+	fmt.Printf("account.GetString %s -- %v\n", s, ok)
+
 	ret := make(map[balance.Color]int64)
 	account := state.GetMap(kv.Key(agentID[:]))
 	if account.Len() == 0 {
 		return nil, false
 	}
 	account.Iterate(func(elemKey []byte, value []byte) bool {
-		col, _, err := balance.ColorFromBytes(elemKey)
-		if err != nil {
-			return true // skip
-		}
-		val, _ := util.Int64From8Bytes(value)
-		ret[col] = val
+		fmt.Printf("account.IterateBalances1 %v -- %v\n", elemKey, value)
 		return true
 	})
+	err := account.IterateBalances(func(col balance.Color, bal int64) bool {
+		fmt.Printf("account.IterateBalances2 col %s bal %d\n", col.String(), bal)
+		ret[col] = bal
+		return true
+	})
+	if err != nil {
+		return nil, false
+	}
 	return ret, true
 }

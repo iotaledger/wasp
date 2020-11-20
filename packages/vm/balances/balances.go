@@ -3,6 +3,7 @@ package accounts
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
@@ -30,6 +31,15 @@ func (b coloredBalances) Balance(col balance.Color) int64 {
 
 func (b coloredBalances) AsMap() map[balance.Color]int64 {
 	return b
+}
+
+func (b coloredBalances) String() string {
+	ret := ""
+	b.IterateDeterministic(func(col balance.Color, bal int64) bool {
+		ret += fmt.Sprintf("       %s: %d\n", col.String(), bal)
+		return true
+	})
+	return ret
 }
 
 func (b coloredBalances) Iterate(f func(col balance.Color, bal int64) bool) {

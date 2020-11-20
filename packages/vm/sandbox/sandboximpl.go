@@ -73,7 +73,7 @@ func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
 }
 
 func (s *sandbox) State() codec.MutableMustCodec {
-	return codec.NewMustCodec(s)
+	return s.vmctx.State()
 }
 
 func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {

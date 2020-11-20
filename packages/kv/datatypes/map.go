@@ -3,6 +3,7 @@ package datatypes
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -24,6 +25,7 @@ const (
 )
 
 func NewMap(kv kv.KVStore, name string) (*Map, error) {
+	fmt.Printf("tracing:NewMap: %s %v len %d\n", name, []byte(name), len(name))
 	ret := &Map{
 		kv:   kv,
 		name: name,
@@ -160,6 +162,7 @@ func (d *Map) Iterate(f func(elemKey []byte, value []byte) bool) error {
 	prefix := d.getElemKey(nil)
 	return d.kv.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
+		//return f([]byte(key), value)
 	})
 }
 
@@ -171,13 +174,19 @@ func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) {
 	}
 }
 
-func (d *MustMap) IterateBalances(f func(color balance.Color, bal int64) bool) {
+func (d *MustMap) IterateBalances(f func(color balance.Color, bal int64) bool) error {
+	var err error
 	d.Iterate(func(elemKey []byte, value []byte) bool {
 		col, _, err := balance.ColorFromBytes(elemKey)
 		if err != nil {
-			panic(err)
+			return false
 		}
-		bal := int64(util.MustUint64From8Bytes(value))
+		v, err := util.Uint64From8Bytes(value)
+		if err != nil {
+			return false
+		}
+		bal := int64(v)
 		return f(col, bal)
 	})
+	return err
 }

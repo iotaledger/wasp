@@ -3,7 +3,6 @@ package coretypes
 import (
 	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/mr-tron/base58"
 	"io"
 )
 
@@ -20,9 +19,9 @@ func NewAgentIDFromAddress(addr address.Address) (ret AgentID) {
 }
 
 func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
-	if id.Hname() == 0 {
-		panic("can't be 0 contract hname")
-	}
+	//if id.Hname() == 0 {
+	//	panic("can't be 0 contract hname")
+	//}
 	copy(ret[:], id[:])
 	return
 }
@@ -62,7 +61,10 @@ func (a AgentID) Bytes() []byte {
 }
 
 func (a AgentID) String() string {
-	return base58.Encode(a[:])
+	if a.IsAddress() {
+		return "A-" + a.MustAddress().String()
+	}
+	return "C-" + a.MustContractID().String()
 }
 
 func ReadAgentID(r io.Reader, agentID *AgentID) error {

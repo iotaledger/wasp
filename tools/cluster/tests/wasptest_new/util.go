@@ -83,3 +83,52 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretype
 	require.True(t, ok)
 	return actual
 }
+
+func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID {
+	r, err := chain.Cluster.WaspClient(0).StateView(
+		chain.ContractID(accountsc.Hname),
+		accountsc.FuncAccounts,
+		nil,
+	)
+	check(err, t)
+
+	ret := make([]coretypes.AgentID, 0)
+	c := codec.NewCodec(r)
+	err = c.Iterate("", func(key kv.Key, value []byte) bool {
+		aid, err := coretypes.NewAgentIDFromBytes([]byte(key))
+		check(err, t)
+
+		ret = append(ret, aid)
+		return true
+	})
+	check(err, t)
+
+	return ret
+}
+
+func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentID]map[balance.Color]int64 {
+	ret := make(map[coretypes.AgentID]map[balance.Color]int64)
+	accounts := getAccountsOnChain(t, chain)
+	for _, agentID := range accounts {
+		r, err := chain.Cluster.WaspClient(0).StateView(
+			chain.ContractID(accountsc.Hname),
+			accountsc.FuncBalance,
+			dict.FromGoMap(map[kv.Key][]byte{
+				accountsc.ParamAgentID: agentID[:],
+			}),
+		)
+		check(err, t)
+		c := codec.NewCodec(r)
+		ret[agentID] = make(map[balance.Color]int64)
+		err = c.Iterate("", func(key kv.Key, value []byte) bool {
+			col, _, err := balance.ColorFromBytes([]byte(key))
+			check(err, t)
+			v, err := util.Int64From8Bytes(value)
+			check(err, t)
+			ret[agentID][col] = v
+			return true
+		})
+		check(err, t)
+	}
+	return ret
+}

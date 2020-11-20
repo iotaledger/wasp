@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -34,10 +35,6 @@ func (s stateWrapper) Has(name kv.Key) (bool, error) {
 	return s.virtualState.Variables().Has(name)
 }
 
-func (vmctx *VMContext) Has(name kv.Key) (bool, error) {
-	return vmctx.stateWrapper().Has(name)
-}
-
 func (s stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	prefix = s.addContractSubPartition(prefix)
 	// TODO is it correct?
@@ -52,10 +49,6 @@ func (s stateWrapper) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bo
 		}
 		return f(key, value)
 	})
-}
-
-func (vmctx *VMContext) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	return vmctx.stateWrapper().Iterate(prefix, f)
 }
 
 func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
@@ -75,10 +68,6 @@ func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error 
 	})
 }
 
-func (vmctx *VMContext) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	return vmctx.stateWrapper().IterateKeys(prefix, f)
-}
-
 func (s stateWrapper) Get(name kv.Key) ([]byte, error) {
 	name = s.addContractSubPartition(name)
 	mut := s.stateUpdate.Mutations().Latest(name)
@@ -88,17 +77,9 @@ func (s stateWrapper) Get(name kv.Key) ([]byte, error) {
 	return s.virtualState.Variables().Get(name)
 }
 
-func (vmctx *VMContext) Get(name kv.Key) ([]byte, error) {
-	return vmctx.stateWrapper().Get(name)
-}
-
 func (s stateWrapper) Del(name kv.Key) {
 	name = s.addContractSubPartition(name)
 	s.stateUpdate.Mutations().Add(buffered.NewMutationDel(name))
-}
-
-func (vmctx *VMContext) Del(name kv.Key) {
-	vmctx.stateWrapper().Del(name)
 }
 
 func (s stateWrapper) Set(name kv.Key, value []byte) {
@@ -106,6 +87,34 @@ func (s stateWrapper) Set(name kv.Key, value []byte) {
 	s.stateUpdate.Mutations().Add(buffered.NewMutationSet(name, value))
 }
 
+// ------------------------ VMContext kvstore implementation
+
 func (vmctx *VMContext) Set(name kv.Key, value []byte) {
 	vmctx.stateWrapper().Set(name, value)
+}
+
+func (vmctx *VMContext) Has(name kv.Key) (bool, error) {
+	return vmctx.stateWrapper().Has(name)
+}
+
+func (vmctx *VMContext) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	return vmctx.stateWrapper().Iterate(prefix, f)
+}
+
+func (vmctx *VMContext) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	return vmctx.stateWrapper().IterateKeys(prefix, f)
+}
+
+func (vmctx *VMContext) Get(name kv.Key) ([]byte, error) {
+	return vmctx.stateWrapper().Get(name)
+}
+
+func (vmctx *VMContext) Del(name kv.Key) {
+	vmctx.stateWrapper().Del(name)
+}
+
+func (vmctx *VMContext) State() codec.MutableMustCodec {
+	w := vmctx.stateWrapper()
+	vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
+	return codec.NewMustCodec(w)
 }
