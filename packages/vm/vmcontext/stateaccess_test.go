@@ -19,11 +19,7 @@ func TestSetThenGet(t *testing.T) {
 	stateUpdate := state.NewStateUpdate(nil)
 	hname := coretypes.Hn("test")
 
-	s := stateWrapper{
-		contractHname: hname,
-		virtualState:  virtualState,
-		stateUpdate:   stateUpdate,
-	}
+	s := newStateWrapper(hname, virtualState, stateUpdate)
 
 	// contract sets variable x
 	s.Set("x", []byte{1})
@@ -61,4 +57,23 @@ func TestSetThenGet(t *testing.T) {
 
 	// all changes are mutations in stateUpdate
 	assert.Equal(t, 4, stateUpdate.Mutations().Len())
+}
+
+func TestIterate(t *testing.T) {
+	db := mapdb.NewMapDB()
+
+	chainID := coretypes.ChainID{1, 3, 3, 7}
+
+	virtualState := state.NewVirtualState(db, &chainID)
+	stateUpdate := state.NewStateUpdate(nil)
+	hname := coretypes.Hn("test")
+
+	s := newStateWrapper(hname, virtualState, stateUpdate)
+
+	s.Set("xyz", []byte{1})
+
+	s.Iterate("x", func(k kv.Key, v []byte) bool {
+		assert.EqualValues(t, "xyz", string(k))
+		return true
+	})
 }
