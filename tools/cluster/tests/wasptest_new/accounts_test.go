@@ -2,6 +2,9 @@ package wasptest
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -12,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestBasicAccounts(t *testing.T) {
@@ -155,8 +156,8 @@ func TestBasic2Accounts(t *testing.T) {
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.ContractName, root.Hname.String())
-	t.Logf("   %s: %s", accountsc.ContractName, accountsc.Hname.String())
+	t.Logf("   %s: %s", root.Name, root.Hname.String())
+	t.Logf("   %s: %s", accountsc.Name, accountsc.Hname.String())
 
 	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
