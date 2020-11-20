@@ -37,9 +37,6 @@ type Sandbox interface {
 	// clear all updates, restore same context as in the beginning of the VM call
 	Rollback()
 
-	// sub interfaces
-	// access to the request block
-	AccessRequest() RequestAccess
 	// base level of virtual state access
 	State() codec.MutableMustCodec
 	// new implementation

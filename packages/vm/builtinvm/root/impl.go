@@ -38,7 +38,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if !ok {
 		chainDescription = "M/A"
 	}
-	sender := ctx.AccessRequest().MustSender()
+	sender := ctx.Caller()
 
 	contractRegistry := state.GetMap(VarContractRegistry)
 	if contractRegistry.Len() != 0 {

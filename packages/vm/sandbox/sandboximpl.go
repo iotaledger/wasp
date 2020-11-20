@@ -66,12 +66,6 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-// request context
-
-func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
-	return s
-}
-
 func (s *sandbox) State() codec.MutableMustCodec {
 	return s.vmctx.State()
 }
