@@ -11,6 +11,8 @@ import (
 )
 
 func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+	fmt.Printf("----- CreditToAccount %s\n %s\n", agentID.String(), transfer.String())
+
 	account := state.GetMap(kv.Key(agentID[:]))
 	defer touchAccount(state, agentID)
 
@@ -26,6 +28,8 @@ func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, tr
 }
 
 func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	fmt.Printf("----- DebitFromAccount %s\n %s\n", agentID.String(), transfer.String())
+
 	account := state.GetMap(kv.Key(agentID[:]))
 	defer touchAccount(state, agentID)
 
@@ -60,6 +64,8 @@ func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 }
 
 func MoveBetweenAccounts(state codec.MutableMustCodec, fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	fmt.Printf("----- MoveBetweenAccounts: from %s to %s", fromAgentID.String(), toAgentID.String())
+
 	if !DebitFromAccount(state, fromAgentID, transfer) {
 		return false
 	}
@@ -95,21 +101,15 @@ func GetAccounts(state codec.ImmutableMustCodec) codec.ImmutableCodec {
 	return ret
 }
 
+// GetAccountBalances returns all colored balances belonging to the agentID on the state.
+// Normally, the state is the partition of the 'accountsc'
 func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
-	s, ok := state.GetString("tmptest")
-	fmt.Printf("account.GetString %s -- %v\n", s, ok)
-
 	ret := make(map[balance.Color]int64)
 	account := state.GetMap(kv.Key(agentID[:]))
 	if account.Len() == 0 {
 		return nil, false
 	}
-	account.Iterate(func(elemKey []byte, value []byte) bool {
-		fmt.Printf("account.IterateBalances1 %v -- %v\n", elemKey, value)
-		return true
-	})
 	err := account.IterateBalances(func(col balance.Color, bal int64) bool {
-		fmt.Printf("account.IterateBalances2 col %s bal %d\n", col.String(), bal)
 		ret[col] = bal
 		return true
 	})

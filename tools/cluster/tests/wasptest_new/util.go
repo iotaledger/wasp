@@ -3,6 +3,7 @@ package wasptest
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -77,10 +78,9 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretype
 	check(err, t)
 
 	c := codec.NewCodec(ret)
-	actual, ok, err := c.GetInt64(kv.Key(color[:]))
+	actual, _, err := c.GetInt64(kv.Key(color[:]))
 	check(err, t)
 
-	require.True(t, ok)
 	return actual
 }
 
@@ -131,4 +131,16 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 		check(err, t)
 	}
 	return ret
+}
+
+func printAccounts(t *testing.T, chain *cluster.Chain, title string) {
+	allBalances := getBalancesOnChain(t, chain)
+	s := fmt.Sprintf("------------------------------------- %s\n", title)
+	for aid, bals := range allBalances {
+		s += fmt.Sprintf("     %s\n", aid.String())
+		for k, v := range bals {
+			s += fmt.Sprintf("                %s: %d\n", k.String(), v)
+		}
+	}
+	fmt.Println(s)
 }

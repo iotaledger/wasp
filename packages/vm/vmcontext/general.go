@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -54,9 +55,15 @@ func (vmctx *VMContext) Log() *logger.Logger {
 	return vmctx.log
 }
 
+// TODO wrong
 func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
-	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), transfer) {
-		return false
+	privileged := vmctx.CurrentContractHname() == accountsc.Hname
+	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
+	if !privileged {
+		// if caller is accoutsc, it must debit from account by itself
+		if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), transfer) {
+			return false
+		}
 	}
 	return vmctx.txBuilder.TransferToAddress(targetAddr, transfer) == nil
 }

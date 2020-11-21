@@ -2,8 +2,6 @@ package accountsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -20,7 +18,6 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("accountsc.initialize.fail: already_initialized")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
-	state.SetString("tmptest", "valio")
 	ctx.Eventf("accountsc.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }
@@ -38,10 +35,10 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	ctx.Eventf("getBalance for %s", aid.String())
 
 	retMap, ok := GetAccountBalances(ctx.State(), *aid)
-	if !ok {
-		return nil, fmt.Errorf("getBalance: fail")
-	}
 	ret := codec.NewCodec(dict.New())
+	if !ok {
+		return ret, nil
+	}
 	for col, bal := range retMap {
 		ret.SetInt64(kv.Key(col[:]), bal)
 	}
@@ -74,36 +71,26 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	return nil, nil
 }
 
+// withdraw sends caller's funds to the caller
 func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.initialize.fail: not_initialized")
+	}
 	caller := ctx.Caller()
 	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.MyContractID().String())
 
-	state := ctx.State()
 	if !caller.IsAddress() {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: can't send tokens, must be an address. AgentID: %s", caller.String())
 	}
-	b := GetBalance(state, caller, balance.ColorIOTA)
-	tmptest, _ := state.GetString("tmptest")
-	ctx.Eventf("kukukuku caller %s tmptest = '%s' balance %d init: %+v",
-		caller.String(), tmptest, b, ctx.State().Get(VarStateInitialized))
-
-	acc := GetAccounts(state)
-	s := "============= list accounts from within:\n"
-	acc.Iterate("", func(key kv.Key, value []byte) bool {
-		a, _ := coretypes.NewAgentIDFromBytes([]byte(key)[4:])
-		s += fmt.Sprintf("            %s -- %v\n", a.String(), []byte(key)[:4])
-		return true
-	})
-	ctx.Eventf("accountsc.withdraw.begin: GetAccounts: %s", s)
-
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: account not found 1")
 	}
 	send := accounts.NewColoredBalancesFromMap(bals)
-
-	ctx.Eventf("accountsc.withdraw: balances to transfer map: \n%v\n", bals)
-
+	if !DebitFromAccount(state, caller, send) {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: internal error 1")
+	}
 	if !ctx.TransferToAddress(caller.MustAddress(), send) {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
 	}
