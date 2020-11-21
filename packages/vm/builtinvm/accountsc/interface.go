@@ -2,7 +2,7 @@ package accountsc
 
 import (
 	"fmt"
-
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/util"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -29,8 +29,9 @@ var (
 		}),
 	}
 
-	ProgramHash = util.BuiltinProgramHash(Name, Version)
-	Hname       = util.BuiltinHname(Name, Version)
+	ProgramHash          = util.BuiltinProgramHash(Name, Version)
+	Hname                = util.BuiltinHname(Name, Version)
+	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Hname))
 )
 
 const (

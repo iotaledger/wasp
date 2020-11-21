@@ -11,6 +11,7 @@ type ColoredBalances interface {
 	IterateDeterministic(func(color balance.Color, balance int64) bool)
 	Len() uint16
 	Equal(b1 ColoredBalances) bool
+	Diff(b1 ColoredBalances) ColoredBalances
 	AddToMap(m map[balance.Color]int64)
 	AsMap() map[balance.Color]int64
 	String() string

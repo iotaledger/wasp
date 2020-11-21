@@ -273,4 +273,6 @@ func TestBasic2Accounts(t *testing.T) {
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 
+	diff := diffBalancesOnChain(t, chain)
+	require.EqualValues(t, 0, diff.Len())
 }

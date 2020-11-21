@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -143,4 +144,23 @@ func printAccounts(t *testing.T, chain *cluster.Chain, title string) {
 		}
 	}
 	fmt.Println(s)
+}
+
+func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBalances {
+	balances := getBalancesOnChain(t, chain)
+	totalAssets, ok := balances[accountsc.TotalAssetsAccountID]
+	require.True(t, ok)
+	sum := make(map[balance.Color]int64)
+	for aid, bal := range balances {
+		if aid == accountsc.TotalAssetsAccountID {
+			continue
+		}
+		for col, b := range bal {
+			s, _ := sum[col]
+			sum[col] = s + b
+		}
+	}
+	sum1 := accounts.NewColoredBalancesFromMap(sum)
+	total := accounts.NewColoredBalancesFromMap(totalAssets)
+	return sum1.Diff(total)
 }
