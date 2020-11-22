@@ -34,6 +34,11 @@ type Chain struct {
 	Cluster *Cluster
 }
 
+func (ch *Chain) ChainAddress() *address.Address {
+	r := address.Address(ch.ChainID)
+	return &r
+}
+
 func (ch *Chain) ContractID(contractHname coretypes.Hname) *coretypes.ContractID {
 	cid := coretypes.NewContractID(ch.ChainID, contractHname)
 	return &cid

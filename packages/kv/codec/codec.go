@@ -30,6 +30,7 @@ type MutableMustCodec interface {
 
 // ImmutableCodec is an interface that offers easy conversions between []byte and other types when
 // manipulating a read-only KVStore
+// TODO replace returned pointers to values
 type ImmutableCodec interface {
 	KVStore() kv.KVStore
 

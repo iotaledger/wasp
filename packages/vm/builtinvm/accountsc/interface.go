@@ -24,7 +24,7 @@ var (
 			contract.ViewFunc(FuncBalance, getBalance),
 			contract.ViewFunc(FuncAccounts, getAccounts),
 			contract.Func(FuncDeposit, deposit),
-			contract.Func(FuncMove, move),
+			contract.Func(FuncMoveOnChain, moveOnChain),
 			contract.Func(FuncWithdraw, withdraw),
 		}),
 	}
@@ -35,11 +35,11 @@ var (
 )
 
 const (
-	FuncBalance  = "balance"
-	FuncDeposit  = "deposit"
-	FuncMove     = "move"
-	FuncWithdraw = "withdraw"
-	FuncAccounts = "accounts"
+	FuncBalance     = "balance"
+	FuncDeposit     = "deposit"
+	FuncMoveOnChain = "moveOnChain"
+	FuncWithdraw    = "withdraw"
+	FuncAccounts    = "accounts"
 
 	VarStateInitialized = "i"
 	VarStateAllAccounts = "a"

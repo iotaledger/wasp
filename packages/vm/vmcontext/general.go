@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -55,7 +57,6 @@ func (vmctx *VMContext) Log() *logger.Logger {
 	return vmctx.log
 }
 
-// TODO wrong
 func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
 	privileged := vmctx.CurrentContractHname() == accountsc.Hname
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
@@ -68,8 +69,39 @@ func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer c
 	return vmctx.txBuilder.TransferToAddress(targetAddr, transfer) == nil
 }
 
+// TransferCrossChain moves the whole transfer to another chain to the target account
+// 1 request token should not be included into the transfer parameter but it is transferred automatically
+// as a request token from the caller's account on top of specified transfer. It will be taken as a fee or accrued
+// to the caller's account
+// node fee is deducted from the transfer by the target
+func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool {
+	if targetChainID == vmctx.ChainID() {
+		return false
+	}
+	// the transfer is performed by the accountsc contract on another chain
+	// it deposits received funds to the target on behalf of the caller
+	par := dict.New()
+	pari := codec.NewCodec(par)
+	pari.SetAgentID(accountsc.ParamAgentID, &targetAgentID)
+	return vmctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Hname),
+		EntryPoint:       coretypes.Hn(accountsc.FuncDeposit),
+		Params:           par,
+		Transfer:         transfer,
+	})
+}
+
+// PostRequest creates a request section in the transaction with specified parameters
+// The transfer not include 1 iota for the request token but includes node fee, if eny
 func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
-	if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), par.Transfer) {
+	state := codec.NewMustCodec(vmctx)
+	toAgentID := vmctx.MyAgentID()
+	if !accountsc.DebitFromAccount(state, toAgentID, accounts.NewColoredBalancesFromMap(map[balance.Color]int64{
+		balance.ColorIOTA: 1,
+	})) {
+		return false
+	}
+	if !accountsc.DebitFromAccount(state, toAgentID, par.Transfer) {
 		return false
 	}
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).

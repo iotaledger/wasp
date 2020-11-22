@@ -197,6 +197,7 @@ func TestBasic2Accounts(t *testing.T) {
 	}, "originator after deployment") {
 		t.Fail()
 	}
+	checkLedger(t, chain)
 
 	err = requestFunds(clu, scOwnerAddr, "originator")
 	check(err, t)
@@ -210,6 +211,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
+	checkLedger(t, chain)
 
 	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
@@ -273,6 +275,5 @@ func TestBasic2Accounts(t *testing.T) {
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 
-	diff := diffBalancesOnChain(t, chain)
-	require.EqualValues(t, 0, diff.Len())
+	checkLedger(t, chain)
 }

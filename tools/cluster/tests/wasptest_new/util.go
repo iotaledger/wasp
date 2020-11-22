@@ -85,6 +85,11 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretype
 	return actual
 }
 
+func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color, expected int64) {
+	actual := getAgentBalanceOnChain(t, chain, agentID, color)
+	require.EqualValues(t, expected, actual)
+}
+
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID {
 	r, err := chain.Cluster.WaspClient(0).StateView(
 		chain.ContractID(accountsc.Hname),
@@ -163,4 +168,9 @@ func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBa
 	sum1 := accounts.NewColoredBalancesFromMap(sum)
 	total := accounts.NewColoredBalancesFromMap(totalAssets)
 	return sum1.Diff(total)
+}
+
+func checkLedger(t *testing.T, chain *cluster.Chain) {
+	diff := diffBalancesOnChain(t, chain)
+	require.EqualValues(t, 0, diff.Len())
 }

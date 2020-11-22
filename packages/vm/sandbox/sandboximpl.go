@@ -74,6 +74,10 @@ func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretyp
 	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
 
+func (s *sandbox) TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool {
+	return s.vmctx.TransferCrossChain(targetAgentID, targetChainID, transfer)
+}
+
 func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
