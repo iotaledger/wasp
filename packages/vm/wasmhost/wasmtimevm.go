@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
@@ -120,10 +123,20 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) error {
 func (vm *WasmTimeVM) RunFunction(functionName string) error {
 	export := vm.instance.GetExport(functionName)
 	if export == nil {
-		return errors.New("Unknown export function: '" + functionName + "'")
+		return errors.New("unknown export function: '" + functionName + "'")
 	}
 	function := export.Func()
 	_, err := function.Call()
+	return err
+}
+
+func (vm *WasmTimeVM) RunScFunction(index int32) error {
+	export := vm.instance.GetExport("sc_call_entrypoint")
+	if export == nil {
+		return errors.New("unknown export function: 'sc_call_entrypoint'")
+	}
+	function := export.Func()
+	_, err := function.Call(index)
 	return err
 }
 
