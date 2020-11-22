@@ -2,9 +2,10 @@ package coretypes
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/mr-tron/base58"
-	"io"
 )
 
 const ChainIDLength = address.Length
@@ -30,6 +31,16 @@ func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
 func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
+}
+
+// RandomChainID creates a random chain ID.
+func RandomChainID() ChainID {
+	return (ChainID)(address.Random())
+}
+
+// Bytes returns a serialized version of this ChainID.
+func (chid ChainID) Bytes() []byte {
+	return (address.Address)(chid).Bytes()
 }
 
 func (chid ChainID) String() string {
