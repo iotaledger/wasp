@@ -90,6 +90,26 @@ func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 	return ret
 }
 
+func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
+	ret := make(map[balance.Color]int64)
+	allColors := make(map[balance.Color]bool)
+	for c := range b {
+		allColors[c] = true
+	}
+	b1.Iterate(func(c balance.Color, _ int64) bool {
+		allColors[c] = true
+		return true
+	})
+	for col := range allColors {
+		s, _ := b[col]
+		s1 := b1.Balance(col)
+		if s != s1 {
+			ret[col] = s - s1
+		}
+	}
+	return NewColoredBalancesFromMap(ret)
+}
+
 func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	b.Iterate(func(col balance.Color, bal int64) bool {
 		s, _ := m[col]

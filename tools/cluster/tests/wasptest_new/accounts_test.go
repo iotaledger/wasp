@@ -197,6 +197,7 @@ func TestBasic2Accounts(t *testing.T) {
 	}, "originator after deployment") {
 		t.Fail()
 	}
+	checkLedger(t, chain)
 
 	err = requestFunds(clu, scOwnerAddr, "originator")
 	check(err, t)
@@ -210,6 +211,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
+	checkLedger(t, chain)
 
 	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
@@ -250,17 +252,9 @@ func TestBasic2Accounts(t *testing.T) {
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 2, actual) // 1 request + 1 chain
 
-	allBalances := getBalancesOnChain(t, chain)
-	s += "-------------------------------------\n"
-	for aid, bals := range allBalances {
-		s += fmt.Sprintf("     %s\n", aid.String())
-		for k, v := range bals {
-			s += fmt.Sprintf("                %s: %d\n", k.String(), v)
-		}
-	}
-	fmt.Println(s)
+	printAccounts(t, chain, "withdraw before")
 
-	// withdraw back 2 iotas
+	// withdraw back 2 iotas to originator address
 	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), &chain.ChainID, chain.OriginatorSigScheme())
 	reqTx2, err := originatorClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
 	check(err, t)
@@ -268,9 +262,18 @@ func TestBasic2Accounts(t *testing.T) {
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)
 	check(err, t)
 
+	printAccounts(t, chain, "withdraw after")
+
 	if !clu.VerifyAddressBalances(chain.OriginatorAddress(), testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "originator after withdraw") {
 		t.Fail()
 	}
+
+	// must remain 0 on chain
+	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
+	require.EqualValues(t, 0, actual)
+
+	checkLedger(t, chain)
 }

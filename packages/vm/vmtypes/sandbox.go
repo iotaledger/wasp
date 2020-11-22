@@ -41,16 +41,22 @@ type Sandbox interface {
 	State() codec.MutableMustCodec
 	// new implementation
 	Accounts() Accounts
-	// send tokens to address
+
+	// TransferToAddress send tokens to ledger address (not contract)
 	TransferToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
-	// Send request
+	// TransferCrossChain send funds to the targetAgentID account cross chain
+	// to move own funds to own account use MyAgentID() as a targetAgentID
+	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
+
+	// PostRequest sends cross chain request
 	PostRequest(par NewRequestParams) bool
-	// Send request to itself
-	PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool
-	// Send request to itself with timelock for some seconds after the current timestamp
-	PostRequestToSelfWithDelay(reqCode coretypes.Hname, args dict.Dict, deferForSec uint32) bool
+	// PostRequestToSelf sendd cross chain request to the caller contract on the same chain
+	PostRequestToSelf(entryPoint coretypes.Hname, args dict.Dict) bool
+	// PostRequestToSelfWithDelay sends request to itself with timelock for some seconds after the current timestamp
+	PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, deferForSec uint32) bool
+
 	// for testing
-	// Publish "vmmsg" message through Publisher
+	// Event and Eventf publish "vmmsg" message through Publisher on nanomsg
 	Event(msg string)
 	Eventf(format string, args ...interface{})
 }

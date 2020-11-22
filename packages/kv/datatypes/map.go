@@ -3,7 +3,6 @@ package datatypes
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -25,7 +24,6 @@ const (
 )
 
 func NewMap(kv kv.KVStore, name string) (*Map, error) {
-	fmt.Printf("tracing:NewMap: %s %v len %d\n", name, []byte(name), len(name))
 	ret := &Map{
 		kv:   kv,
 		name: name,
