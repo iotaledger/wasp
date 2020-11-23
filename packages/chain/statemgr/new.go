@@ -108,12 +108,12 @@ func (sm *stateManager) initLoadState() {
 	if stateExists {
 		// state loaded, will be waiting for it to be confirmed from the tangle
 		sm.addPendingBlock(batch)
-		sm.largestEvidencedStateIndex = sm.solidState.StateIndex()
+		sm.largestEvidencedStateIndex = sm.solidState.BlockIndex()
 
 		h := sm.solidState.Hash()
 		txh := batch.StateTransactionID()
 		sm.log.Debugw("solid state has been loaded",
-			"state index", sm.solidState.StateIndex(),
+			"state index", sm.solidState.BlockIndex(),
 			"state hash", h.String(),
 			"approving tx", txh.String(),
 		)

@@ -10,14 +10,14 @@ import (
 const VMType = "examplevm"
 
 var allExamples = map[string]vmtypes.Processor{
-	vmnil.ProgramHash:      vmnil.GetProcessor(),
-	logsc.ProgramHash:      logsc.GetProcessor(),
-	inccounter.ProgramHash: inccounter.GetProcessor(),
+	vmnil.ProgramHash:         vmnil.GetProcessor(),
+	logsc.ProgramHash:         logsc.GetProcessor(),
+	inccounter.ProgramHashStr: inccounter.GetProcessor(),
 	// TODO
-	//fairroulette.ProgramHash:  fairroulette.GetProcessor(),
-	//fairauction.ProgramHash:   fairauction.GetProcessor(),
-	//tokenregistry.ProgramHash: tokenregistry.GetProcessor(),
-	//dwfimpl.ProgramHash:       dwfimpl.GetProcessor(),
+	//fairroulette.ProgramHashStr:  fairroulette.GetProcessor(),
+	//fairauction.ProgramHashStr:   fairauction.GetProcessor(),
+	//tokenregistry.ProgramHashStr: tokenregistry.GetProcessor(),
+	//dwfimpl.ProgramHashStr:       dwfimpl.GetProcessor(),
 }
 
 func GetExampleProcessor(progHash string) (vmtypes.Processor, bool) {

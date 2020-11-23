@@ -24,7 +24,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	m := b.DangerouslyDumpToDict().ToGoMap()
+	m := kv.ToGoMap(b.DangerouslyDumpToDict())
 	assert.Equal(
 		t,
 		map[kv.Key][]byte{
@@ -35,6 +35,15 @@ func TestBufferedKVStore(t *testing.T) {
 
 	n := 0
 	b.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+		assert.Equal(t, kv.Key([]byte("cd")), key)
+		assert.Equal(t, []byte("v1"), value)
+		n++
+		return true
+	})
+	assert.Equal(t, 1, n)
+
+	n = 0
+	b.Iterate(kv.Key("c"), func(key kv.Key, value []byte) bool {
 		assert.Equal(t, kv.Key([]byte("cd")), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
@@ -61,7 +70,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v2"), v)
 
-	m = b.DangerouslyDumpToDict().ToGoMap()
+	m = kv.ToGoMap(b.DangerouslyDumpToDict())
 	assert.Equal(
 		t,
 		map[kv.Key][]byte{

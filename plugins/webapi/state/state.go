@@ -42,7 +42,7 @@ func handleStateQuery(c echo.Context) error {
 	ret := &statequery.Results{
 		KeyQueryResults: make([]*statequery.QueryResult, len(req.KeyQueries)),
 
-		StateIndex: state.StateIndex(),
+		StateIndex: state.BlockIndex(),
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  jsonable.NewValueTxID(&txid),

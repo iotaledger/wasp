@@ -3,6 +3,7 @@ package accounts
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
@@ -30,6 +31,15 @@ func (b coloredBalances) Balance(col balance.Color) int64 {
 
 func (b coloredBalances) AsMap() map[balance.Color]int64 {
 	return b
+}
+
+func (b coloredBalances) String() string {
+	ret := ""
+	b.IterateDeterministic(func(col balance.Color, bal int64) bool {
+		ret += fmt.Sprintf("       %s: %d\n", col.String(), bal)
+		return true
+	})
+	return ret
 }
 
 func (b coloredBalances) Iterate(f func(col balance.Color, bal int64) bool) {
@@ -80,6 +90,26 @@ func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 	return ret
 }
 
+func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
+	ret := make(map[balance.Color]int64)
+	allColors := make(map[balance.Color]bool)
+	for c := range b {
+		allColors[c] = true
+	}
+	b1.Iterate(func(c balance.Color, _ int64) bool {
+		allColors[c] = true
+		return true
+	})
+	for col := range allColors {
+		s, _ := b[col]
+		s1 := b1.Balance(col)
+		if s != s1 {
+			ret[col] = s - s1
+		}
+	}
+	return NewColoredBalancesFromMap(ret)
+}
+
 func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	b.Iterate(func(col balance.Color, bal int64) bool {
 		s, _ := m[col]
@@ -88,11 +118,11 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	})
 }
 
-func (b coloredBalances) Write(w io.Writer) error {
-	if err := util.WriteUint16(w, uint16(len(b))); err != nil {
+func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
+	if err := util.WriteUint16(w, b.Len()); err != nil {
 		return err
 	}
-	if len(b) == 0 {
+	if b.Len() == 0 {
 		return nil
 	}
 	var err error
@@ -110,34 +140,22 @@ func (b coloredBalances) Write(w io.Writer) error {
 	return err
 }
 
-func (b coloredBalances) Read(r io.Reader) error {
+func ReadColoredBalance(r io.Reader) (coretypes.ColoredBalances, error) {
 	var size uint16
 	if err := util.ReadUint16(r, &size); err != nil {
-		return err
+		return nil, err
 	}
-	if len(b) != 0 {
-		// clean if not empty
-		t := make([]balance.Color, 0, len(b))
-		for k := range b {
-			t = append(t, k)
-		}
-		for _, k := range t {
-			delete(b, k)
-		}
-	}
-	if size == 0 {
-		return nil
-	}
+	ret := make(coloredBalances)
 	var col balance.Color
 	var bal int64
 	for i := uint16(0); i < size; i++ {
 		if err := util.ReadColor(r, &col); err != nil {
-			return err
+			return nil, err
 		}
 		if err := util.ReadInt64(r, &bal); err != nil {
-			return err
+			return nil, err
 		}
-		b[col] = bal
+		ret[col] = bal
 	}
-	return nil
+	return ret, nil
 }

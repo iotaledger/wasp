@@ -137,7 +137,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("TokenRegistry: inconsistency 2")
 	}
 	// create the metadata record and marshal it into binary
-	senderAddress := ctx.AccessRequest().MustSender()
+	senderAddress := ctx.Caller()
 	rec := &TokenMetadata{
 		Supply:      supply,
 		MintedBy:    senderAddress,

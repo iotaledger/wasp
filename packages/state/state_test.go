@@ -19,12 +19,12 @@ func TestVariableStateBasic(t *testing.T) {
 	vs1 := NewVirtualState(mapdb.NewMapDB(), &chainID)
 	h1 := vs1.Hash()
 	assert.EqualValues(t, *hashing.NilHash, *h1)
-	assert.Equal(t, vs1.StateIndex(), uint32(0))
+	assert.Equal(t, vs1.BlockIndex(), uint32(0))
 
 	vs2 := vs1.Clone()
 	h2 := vs2.Hash()
 	assert.EqualValues(t, h1, h2)
-	assert.EqualValues(t, vs1.StateIndex(), vs1.StateIndex())
+	assert.EqualValues(t, vs1.BlockIndex(), vs1.BlockIndex())
 
 	vs1.Variables().Codec().SetInt64("num", int64(123))
 	vs1.Variables().Codec().SetString("kuku", "A")
@@ -127,7 +127,7 @@ func TestApply2(t *testing.T) {
 	err = vs2.ApplyBatch(batch3)
 	assert.NoError(t, err)
 
-	assert.EqualValues(t, vs1.StateIndex(), vs2.StateIndex())
+	assert.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 }
@@ -147,7 +147,7 @@ func TestApply3(t *testing.T) {
 
 	vs1.ApplyStateUpdate(su1)
 	vs1.ApplyStateUpdate(su2)
-	vs1.ApplyStateIndex(0)
+	vs1.ApplyBlockIndex(0)
 
 	batch, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)

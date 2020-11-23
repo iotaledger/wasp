@@ -28,7 +28,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 		par.SetString(root.ParamName, name)
 		par.SetString(root.ParamDescription, description)
 
-		_, err := s.Call(root.Hname, root.EntryPointDeployContract, par, nil)
+		_, err := s.Call(root.Hname, coretypes.Hn(root.FuncDeployContract), par, nil)
 		if err != nil {
 			return err
 		}

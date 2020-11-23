@@ -37,7 +37,7 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 	task.Log.Debugw("runTask IN",
 		"chainID", task.ChainID.String(),
 		"timestamp", task.Timestamp,
-		"state index", task.VirtualState.StateIndex(),
+		"state index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 		"leader", task.LeaderPeerIndex,
 	)
@@ -72,7 +72,7 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		task.OnFinish(fmt.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
-	task.ResultBlock.WithBlockIndex(task.VirtualState.StateIndex() + 1)
+	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
 	// calculate resulting state hash
 	vsClone := task.VirtualState.Clone()
@@ -82,7 +82,7 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 	}
 	stateHash := vsClone.Hash()
 	task.ResultTransaction, err = vmctx.FinalizeTransactionEssence(
-		task.VirtualState.StateIndex()+1,
+		task.VirtualState.BlockIndex()+1,
 		stateHash,
 		vsClone.Timestamp(),
 	)

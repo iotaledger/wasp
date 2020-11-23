@@ -66,18 +66,16 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-// request context
-
-func (s *sandbox) AccessRequest() vmtypes.RequestAccess {
-	return s
-}
-
 func (s *sandbox) State() codec.MutableMustCodec {
-	return codec.NewMustCodec(s)
+	return s.vmctx.State()
 }
 
 func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
 	return s.vmctx.TransferToAddress(targetAddr, transfer)
+}
+
+func (s *sandbox) TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool {
+	return s.vmctx.TransferCrossChain(targetAgentID, targetChainID, transfer)
 }
 
 func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
@@ -93,11 +91,9 @@ func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args di
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.Log().Infof("VMMSG contract %s '%s'", s.MyContractID().String(), msg)
-	s.vmctx.Publish(msg)
+	s.vmctx.EventPublisher().Publish(msg)
 }
 
 func (s *sandbox) Eventf(format string, args ...interface{}) {
-	s.vmctx.Log().Infof("VMMSG: "+format, args...)
-	s.vmctx.Publishf(format, args...)
+	s.vmctx.EventPublisher().Publishf(format, args...)
 }

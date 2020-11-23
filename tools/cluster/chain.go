@@ -34,6 +34,11 @@ type Chain struct {
 	Cluster *Cluster
 }
 
+func (ch *Chain) ChainAddress() *address.Address {
+	r := address.Address(ch.ChainID)
+	return &r
+}
+
 func (ch *Chain) ContractID(contractHname coretypes.Hname) *coretypes.ContractID {
 	cid := coretypes.NewContractID(ch.ChainID, contractHname)
 	return &cid
@@ -119,7 +124,7 @@ func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr s
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Hname, coretypes.Hn(root.FuncDeployContract), nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +147,7 @@ func (ch *Chain) DeployExternalContract(vmtype string, name string, description 
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Hname, root.EntryPointDeployContract, nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Hname, coretypes.Hn(root.FuncDeployContract), nil, nil, params)
 	if err != nil {
 		return nil, err
 	}

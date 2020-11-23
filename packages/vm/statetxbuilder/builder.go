@@ -81,6 +81,14 @@ func (txb *Builder) TransferToAddress(targetAddr address.Address, transfer coret
 	return err
 }
 
+func (txb *Builder) Balance(col balance.Color) int64 {
+	return txb.vtxb.GetInputBalance(col)
+}
+
+func (txb *Builder) Erase1TokenToChain(col balance.Color) bool {
+	return txb.vtxb.EraseColor(txb.chainAddress, col, 1) == nil
+}
+
 func (txb *Builder) Build() (*sctransaction.Transaction, error) {
 	return sctransaction.NewTransaction(
 		txb.vtxb.build(),

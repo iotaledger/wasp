@@ -1,14 +1,26 @@
 package accountsc
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// CreditToAccount brings new funds to the on chain ledger.
+// Alone it is called when new funds arrive with the request, otherwise it called from MoveBetweenAccounts
 func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+	fmt.Printf("----- CreditToAccount %s\n %s\n", agentID.String(), transfer.String())
+
+	creditToAccount(state, agentID, transfer)
+	creditToAccount(state, TotalAssetsAccountID, transfer)
+}
+
+// creditToAccount internal
+func creditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
 	account := state.GetMap(kv.Key(agentID[:]))
 	defer touchAccount(state, agentID)
 
@@ -23,7 +35,21 @@ func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, tr
 	})
 }
 
+// DebitFromAccount removes funds from the chain ledger.
+// Alone it is called when posting a request, otherwise it called from MoveBetweenAccounts
 func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	fmt.Printf("----- DebitFromAccount %s\n %s\n", agentID.String(), transfer.String())
+	if !debitFromAccount(state, agentID, transfer) {
+		return false
+	}
+	if !debitFromAccount(state, TotalAssetsAccountID, transfer) {
+		panic("debitFromAccount: inconsistent accounts ledger state")
+	}
+	return true
+}
+
+// debitFromAccount internal
+func debitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
 	account := state.GetMap(kv.Key(agentID[:]))
 	defer touchAccount(state, agentID)
 
@@ -58,10 +84,13 @@ func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 }
 
 func MoveBetweenAccounts(state codec.MutableMustCodec, fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
-	if !DebitFromAccount(state, fromAgentID, transfer) {
+	fmt.Printf("----- MoveBetweenAccounts: from %s to %s", fromAgentID.String(), toAgentID.String())
+
+	// total assets account doesn't change
+	if !debitFromAccount(state, fromAgentID, transfer) {
 		return false
 	}
-	CreditToAccount(state, toAgentID, transfer)
+	creditToAccount(state, toAgentID, transfer)
 	return true
 }
 
@@ -84,20 +113,29 @@ func GetBalance(state codec.ImmutableMustCodec, agentID coretypes.AgentID, color
 	return ret
 }
 
+func GetAccounts(state codec.ImmutableMustCodec) codec.ImmutableCodec {
+	ret := codec.NewCodec(dict.New())
+	state.GetMap(VarStateAllAccounts).Iterate(func(elemKey []byte, val []byte) bool {
+		ret.Set(kv.Key(elemKey), val)
+		return true
+	})
+	return ret
+}
+
+// GetAccountBalances returns all colored balances belonging to the agentID on the state.
+// Normally, the state is the partition of the 'accountsc'
 func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
 	ret := make(map[balance.Color]int64)
 	account := state.GetMap(kv.Key(agentID[:]))
 	if account.Len() == 0 {
 		return nil, false
 	}
-	account.Iterate(func(elemKey []byte, value []byte) bool {
-		col, _, err := balance.ColorFromBytes(elemKey)
-		if err != nil {
-			return true // skip
-		}
-		val, _ := util.Int64From8Bytes(value)
-		ret[col] = val
+	err := account.IterateBalances(func(col balance.Color, bal int64) bool {
+		ret[col] = bal
 		return true
 	})
+	if err != nil {
+		return nil, false
+	}
 	return ret, true
 }

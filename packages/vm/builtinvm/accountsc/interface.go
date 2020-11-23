@@ -3,30 +3,43 @@ package accountsc
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/util"
+	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type accountsProcessor map[coretypes.Hname]accountsEntryPoint
+const (
+	Name        = "accounts"
+	Version     = "0.1"
+	Description = "Chain account ledger contract"
+)
 
-type epFunc func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
-type epFuncView func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
+var (
+	Interface = contract.ContractInterface{
+		Name:        Name,
+		Version:     Version,
+		Description: Description,
+		VMType:      "builtin",
+		Functions: contract.Funcs(initialize, []contract.ContractFunctionInterface{
+			contract.ViewFunc(FuncBalance, getBalance),
+			contract.ViewFunc(FuncAccounts, getAccounts),
+			contract.Func(FuncDeposit, deposit),
+			contract.Func(FuncMoveOnChain, moveOnChain),
+			contract.Func(FuncWithdraw, withdraw),
+		}),
+	}
 
-type accountsEntryPoint struct {
-	fun interface{}
-}
+	ProgramHash          = util.BuiltinProgramHash(Name, Version)
+	Hname                = util.BuiltinHname(Name, Version)
+	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Hname))
+)
 
 const (
-	Version             = "0.1"
-	ContractName        = "accounts" + Version
-	ContractDescription = "chain account ledger contract"
-
-	FuncBalance  = "balance"
-	FuncDeposit  = "deposit"
-	FuncMove     = "move"
-	FuncWithdraw = "withdraw"
-	FuncAccounts = "accounts"
+	FuncBalance     = "balance"
+	FuncDeposit     = "deposit"
+	FuncMoveOnChain = "moveOnChain"
+	FuncWithdraw    = "withdraw"
+	FuncAccounts    = "accounts"
 
 	VarStateInitialized = "i"
 	VarStateAllAccounts = "a"
@@ -34,65 +47,8 @@ const (
 	ParamAgentID = "a"
 )
 
-var (
-	ProgramHash        = hashing.HashStrings(ContractName)
-	Hname              = coretypes.Hn(ContractName)
-	EntryPointBalance  = coretypes.Hn(FuncBalance)
-	EntryPointDeposit  = coretypes.Hn(FuncDeposit)
-	EntryPointMove     = coretypes.Hn(FuncMove)
-	EntryPointWithdraw = coretypes.Hn(FuncWithdraw)
-	EntryPointAccounts = coretypes.Hn(FuncAccounts)
-
-	processor = accountsProcessor{
-		coretypes.EntryPointInit: {epFunc(initialize)},
-		EntryPointBalance:        {epFuncView(getBalance)},
-		EntryPointAccounts:       {epFuncView(getAccounts)},
-		EntryPointDeposit:        {epFunc(deposit)},
-		EntryPointMove:           {epFunc(move)},
-		EntryPointWithdraw:       {epFunc(withdraw)},
-	}
-
-	ErrParamsAgentIDNotFound = fmt.Errorf("wrong parameters: agent ID not specified")
-)
+var ErrParamsAgentIDNotFound = fmt.Errorf("wrong parameters: agent ID not specified")
 
 func GetProcessor() vmtypes.Processor {
-	return processor
-}
-
-func (v accountsProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
-	ret, ok := processor[code]
-	return ret, ok
-}
-
-func (v accountsProcessor) GetDescription() string {
-	return "Accounts processor"
-}
-
-func (ep accountsEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	fun, ok := ep.fun.(epFunc)
-	if !ok {
-		return nil, vmtypes.ErrWrongTypeEntryPoint
-	}
-	ret, err := fun(ctx)
-	if err != nil {
-		ctx.Eventf("accountsEntryPoint.Call: error occurred: '%v'", err)
-	}
-	return ret, err
-}
-
-func (ep accountsEntryPoint) IsView() bool {
-	_, ok := ep.fun.(epFuncView)
-	return ok
-}
-
-func (ep accountsEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	fun, ok := ep.fun.(epFuncView)
-	if !ok {
-		return nil, vmtypes.ErrWrongTypeEntryPoint
-	}
-	return fun(ctx)
-}
-
-func (ep accountsEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
-	return ep
+	return &Interface
 }

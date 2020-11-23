@@ -65,7 +65,7 @@ func TestDeployContractOnly(t *testing.T) {
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 
-	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHash, description, map[string]interface{}{
+	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHashStr, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})
@@ -135,7 +135,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 
-	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHash, description, map[string]interface{}{
+	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHashStr, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 	})
 	check(err, t)
@@ -193,9 +193,9 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.ContractDescription, cr.Description)
+		require.EqualValues(t, accountsc.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.ContractName, cr.Name)
+		require.EqualValues(t, accountsc.Name, cr.Name)
 
 		//--
 		crBytes = contractRegistry.GetAt(hnameNew.Bytes())

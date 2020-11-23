@@ -20,11 +20,6 @@ func (s *sandbox) MustSender() coretypes.AgentID {
 	return coretypes.NewAgentIDFromContractID(senderContractID)
 }
 
-//MintedBalances return total minted tokens minus number of
-func (s *sandbox) NumFreeMintedTokens() int64 {
-	return s.vmctx.Request().Tx.MustProperties().NumFreeMintedTokens()
-}
-
 func (s *sandbox) Params() codec.ImmutableCodec {
 	return s.vmctx.Params()
 }

@@ -113,15 +113,15 @@ func (op *operator) size() uint16 {
 	return op.dkshare.N
 }
 
-func (op *operator) stateIndex() (uint32, bool) {
+func (op *operator) blockIndex() (uint32, bool) {
 	if op.currentState == nil {
 		return 0, false
 	}
-	return op.currentState.StateIndex(), true
+	return op.currentState.BlockIndex(), true
 }
 
 func (op *operator) mustStateIndex() uint32 {
-	ret, ok := op.stateIndex()
+	ret, ok := op.blockIndex()
 	if !ok {
 		panic("mustStateIndex")
 	}
@@ -146,7 +146,7 @@ func (op *operator) getFeeDestination() coretypes.AgentID {
 }
 
 func (op *operator) getMinimumReward() int64 {
-	if _, ok := op.stateIndex(); !ok {
+	if _, ok := op.blockIndex(); !ok {
 		return 0
 	}
 	vt, ok, err := op.currentState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)

@@ -94,7 +94,7 @@ func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"batch hash", bh.String(),
 		"reqIds", idsShortStr(msg.RequestIds),
 	)
-	stateIndex, ok := op.stateIndex()
+	stateIndex, ok := op.blockIndex()
 	if !ok || msg.BlockIndex != stateIndex {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
@@ -157,7 +157,7 @@ func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
 	}
 	op.log.Debugw("eventResultCalculated",
 		"batch size", ctx.ResultBlock.Size(),
-		"stateIndex", op.mustStateIndex(),
+		"blockIndex", op.mustStateIndex(),
 	)
 
 	// inform state manager about new result batch
@@ -189,7 +189,7 @@ func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
 		// shouldn't be
 		return
 	}
-	if stateIndex, ok := op.stateIndex(); !ok || msg.BlockIndex != stateIndex {
+	if stateIndex, ok := op.blockIndex(); !ok || msg.BlockIndex != stateIndex {
 		// out of context
 		op.log.Debugf("EventSignedHashMsg: out of context")
 		return
@@ -219,7 +219,7 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 		"stateIdx", msg.BlockIndex,
 		"txid", msg.TxId.String(),
 	)
-	if stateIndex, ok := op.stateIndex(); !ok || msg.BlockIndex != stateIndex {
+	if stateIndex, ok := op.blockIndex(); !ok || msg.BlockIndex != stateIndex {
 		return
 	}
 	if op.iAmCurrentLeader() {
@@ -240,15 +240,15 @@ func (op *operator) EventTransactionInclusionLevelMsg(msg *chain.TransactionIncl
 
 func (op *operator) EventTimerMsg(msg chain.TimerTick) {
 	if msg%40 == 0 {
-		stateIndex, ok := op.stateIndex()
+		blockIndex, ok := op.blockIndex()
 		si := int32(-1)
 		if ok {
-			si = int32(stateIndex)
+			si = int32(blockIndex)
 		}
 		leader, _ := op.currentLeader()
 		op.log.Infow("timer tick",
 			"#", msg,
-			"state index", si,
+			"block index", si,
 			"req backlog", len(op.requests),
 			"leader", leader,
 			"selection", len(op.selectRequestsToProcess()),

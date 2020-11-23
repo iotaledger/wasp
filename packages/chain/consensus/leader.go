@@ -1,7 +1,7 @@
 package consensus
 
 func (op *operator) currentLeader() (uint16, bool) {
-	_, ok := op.stateIndex()
+	_, ok := op.blockIndex()
 	return op.peerPermutation.Current(), ok
 }
 

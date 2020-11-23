@@ -17,12 +17,14 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		// can't be initialized twice
 		return nil, fmt.Errorf("accountsc.initialize.fail: already_initialized")
 	}
+	state.Set(VarStateInitialized, []byte{0xFF})
 	ctx.Eventf("accountsc.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }
 
 // getBalance returns colored balances of the account belonging to the AgentID
 func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	ctx.Eventf("getBalance")
 	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {
 		return nil, err
@@ -30,11 +32,13 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if !ok {
 		return nil, ErrParamsAgentIDNotFound
 	}
+	ctx.Eventf("getBalance for %s", aid.String())
+
 	retMap, ok := GetAccountBalances(ctx.State(), *aid)
-	if !ok {
-		return nil, fmt.Errorf("getBalance: fail")
-	}
 	ret := codec.NewCodec(dict.New())
+	if !ok {
+		return ret, nil
+	}
 	for col, bal := range retMap {
 		ret.SetInt64(kv.Key(col[:]), bal)
 	}
@@ -42,23 +46,28 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 }
 
 func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	ret := dict.New()
-	ctx.State().GetMap(VarStateAllAccounts).Iterate(func(elemKey []byte, val []byte) bool {
-		ret.Set(kv.Key(elemKey), val)
-		return true
-	})
-	return codec.NewCodec(ret), nil
+	return GetAccounts(ctx.State()), nil
 }
 
-// deposit moves balances to the sender's account
+// deposit moves balances to the specified account, if any.
+// if target account is not in parameters it is deposited to the caller's account
 func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	if !MoveBetweenAccounts(ctx.State(), ctx.MyAgentID(), ctx.Caller(), ctx.Accounts().Incoming()) {
+	targetAgentID := ctx.Caller()
+	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		targetAgentID = *aid
+	}
+	// funds currently are at the disposition of accountsc, they are moved to the target
+	if !MoveBetweenAccounts(ctx.State(), ctx.MyAgentID(), targetAgentID, ctx.Accounts().Incoming()) {
 		return nil, fmt.Errorf("failed to deposit to %s", ctx.Caller().String())
 	}
 	return nil, nil
 }
 
-func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func moveOnChain(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	moveTo, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {
 		return nil, err
@@ -67,22 +76,35 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, ErrParamsAgentIDNotFound
 	}
 	if !MoveBetweenAccounts(ctx.State(), ctx.MyAgentID(), *moveTo, ctx.Accounts().Incoming()) {
-		return nil, fmt.Errorf("failed to move to %s", moveTo.String())
+		return nil, fmt.Errorf("failed to moveOnChain to %s", moveTo.String())
 	}
 	return nil, nil
 }
 
+// withdraw sends caller's funds to the caller
+// TODO with all kinds of callers
 func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.initialize.fail: not_initialized")
+	}
 	caller := ctx.Caller()
-	if caller.IsAddress() {
-		return nil, fmt.Errorf("can't send tokens, must be an address")
+	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.MyContractID().String())
+
+	if !caller.IsAddress() {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: can't send tokens, must be an address. AgentID: %s", caller.String())
 	}
-	bals, ok := GetAccountBalances(ctx.State(), caller)
+	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
-		return nil, fmt.Errorf("withdraw: account not found")
+		return nil, fmt.Errorf("accountsc.withdraw.fail: account not found 1")
 	}
-	if !ctx.TransferToAddress(caller.MustAddress(), accounts.NewColoredBalancesFromMap(bals)) {
-		return nil, fmt.Errorf("withdraw: account not found")
+	send := accounts.NewColoredBalancesFromMap(bals)
+	if !DebitFromAccount(state, caller, send) {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: internal error 1")
 	}
+	if !ctx.TransferToAddress(caller.MustAddress(), send) {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
+	}
+	ctx.Eventf("accountsc.withdraw.success")
 	return nil, nil
 }

@@ -159,9 +159,9 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 	sm.EvidenceStateIndex(stateBlock.BlockIndex())
 
 	if sm.solidStateValid {
-		if stateBlock.BlockIndex() != sm.solidState.StateIndex()+1 {
+		if stateBlock.BlockIndex() != sm.solidState.BlockIndex()+1 {
 			sm.log.Debugf("skip state transaction: expected with state index #%d, got #%d, Txid: %s",
-				sm.solidState.StateIndex()+1, stateBlock.BlockIndex(), msg.ID().String())
+				sm.solidState.BlockIndex()+1, stateBlock.BlockIndex(), msg.ID().String())
 			return
 		}
 	} else {
@@ -172,7 +172,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 				return
 			}
 		} else {
-			if stateBlock.BlockIndex() != sm.solidState.StateIndex() {
+			if stateBlock.BlockIndex() != sm.solidState.BlockIndex() {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != sm.solidState.BlockIndex()")
 				return
 			}

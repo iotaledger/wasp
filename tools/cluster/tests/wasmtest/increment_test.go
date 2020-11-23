@@ -33,7 +33,7 @@ func TestIncDeployment(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 	_ = scChain
 
@@ -61,11 +61,11 @@ func TestIncDeployment(t *testing.T) {
 }
 
 func TestIncNothing(t *testing.T) {
-	testNothing(t, "TestIncNothing", inccounter.ProgramHash, incWasmPath, incDescription, 1)
+	testNothing(t, "TestIncNothing", inccounter.ProgramHashStr, incWasmPath, incDescription, 1)
 }
 
 func TestInc5xNothing(t *testing.T) {
-	testNothing(t, "TestInc5xNothing", inccounter.ProgramHash, incWasmPath, incDescription, 5)
+	testNothing(t, "TestInc5xNothing", inccounter.ProgramHashStr, incWasmPath, incDescription, 5)
 }
 
 func testNothing(t *testing.T, testName string, hash string, wasmPath string, description string, numRequests int) {
@@ -155,7 +155,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	})
 	check(err, t)
 
-	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	for i := 0; i < increments; i++ {
@@ -215,7 +215,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 	})
 	check(err, t)
 
-	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
@@ -279,7 +279,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	})
 	check(err, t)
 
-	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{

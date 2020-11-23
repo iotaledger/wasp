@@ -14,6 +14,7 @@ import (
 type wasmProcessor struct {
 	WasmHost
 	ctx       vmtypes.Sandbox
+	ctxView   vmtypes.SandboxView
 	function  string
 	params    codec.ImmutableCodec
 	scContext *ScContext
@@ -43,10 +44,6 @@ func (vm *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint
 }
 
 func (vm *wasmProcessor) SetExport(index int32, functionName string) {
-	if index != int32(len(vm.codeToFunc)+1) {
-		vm.SetError("SetExport: invalid index")
-		return
-	}
 	_, ok := vm.funcToCode[functionName]
 	if ok {
 		vm.SetError("SetExport: duplicate function name")
@@ -60,8 +57,9 @@ func (vm *wasmProcessor) SetExport(index int32, functionName string) {
 		vm.SetError("SetExport: duplicate hashed name")
 		return
 	}
-	vm.funcToCode[functionName] = hashedName
 	vm.codeToFunc[hashedName] = functionName
+	vm.funcToCode[functionName] = hashedName
+	vm.funcToIndex[functionName] = index
 }
 
 func (vm *wasmProcessor) GetKey(keyId int32) kv.Key {
@@ -74,10 +72,6 @@ func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 		return nil, err
 	}
 	err = vm.LoadWasm(binaryCode)
-	if err != nil {
-		return nil, err
-	}
-	err = vm.RunFunction("onLoad")
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +93,7 @@ func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 	}
 
 	vm.LogText("Calling " + vm.function)
-	err := vm.RunFunction(vm.function)
+	err := vm.RunScFunction(vm.function)
 	if err != nil {
 		return nil, err
 	}
@@ -110,17 +104,45 @@ func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 
 	vm.LogText("Finalizing call")
 	vm.scContext.Finalize()
+
+	// TODO
 	return nil, nil
 }
 
 // TODO
-func (ep wasmProcessor) IsView() bool {
-	return false
+func (vm *wasmProcessor) IsView() bool {
+	return (vm.funcToIndex[vm.function] & 0x8000) != 0
 }
 
-// TODO
-func (ep wasmProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	panic("implement me")
+func (vm *wasmProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	vm.ctxView = ctx
+	vm.params = ctx.Params()
+	defer func() {
+		vm.ctxView = nil
+		vm.params = nil
+	}()
+
+	testMode, _ := vm.params.Has("testMode")
+	if testMode {
+		vm.LogText("TEST MODE")
+		TestMode = true
+	}
+
+	vm.LogText("Calling " + vm.function)
+	err := vm.RunScFunction(vm.function)
+	if err != nil {
+		return nil, err
+	}
+
+	if vm.HasError() {
+		return nil, errors.New(vm.WasmHost.error)
+	}
+
+	vm.LogText("Finalizing call")
+	vm.scContext.Finalize()
+
+	// TODO
+	return nil, nil
 }
 
 func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

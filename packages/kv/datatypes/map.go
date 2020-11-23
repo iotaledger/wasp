@@ -160,6 +160,7 @@ func (d *Map) Iterate(f func(elemKey []byte, value []byte) bool) error {
 	prefix := d.getElemKey(nil)
 	return d.kv.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
+		//return f([]byte(key), value)
 	})
 }
 
@@ -171,13 +172,19 @@ func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) {
 	}
 }
 
-func (d *MustMap) IterateBalances(f func(color balance.Color, bal int64) bool) {
+func (d *MustMap) IterateBalances(f func(color balance.Color, bal int64) bool) error {
+	var err error
 	d.Iterate(func(elemKey []byte, value []byte) bool {
 		col, _, err := balance.ColorFromBytes(elemKey)
 		if err != nil {
-			panic(err)
+			return false
 		}
-		bal := int64(util.MustUint64From8Bytes(value))
+		v, err := util.Uint64From8Bytes(value)
+		if err != nil {
+			return false
+		}
+		bal := int64(v)
 		return f(col, bal)
 	})
+	return err
 }

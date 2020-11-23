@@ -17,7 +17,7 @@ func (o *ScRequest) GetBytes(keyId int32) []byte {
 		id := o.vm.ctx.RequestID()
 		return id.Bytes()
 	case KeySender:
-		id := o.vm.ctx.AccessRequest().MustSender()
+		id := o.vm.ctx.Caller()
 		return id.Bytes()
 	}
 	return o.MapObject.GetBytes(keyId)

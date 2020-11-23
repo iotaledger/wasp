@@ -184,12 +184,11 @@ func (op *operator) checkQuorum() bool {
 	}
 
 	prop, err := op.leaderStatus.resultTx.Properties()
-	op.log.Debugf("checking result tx properties: %s", prop.String())
-
 	if err != nil {
 		op.log.Errorf("checking result tx properties: %v", err)
 		return false
 	}
+	op.log.Debugf("checking result tx properties: %s", prop.String())
 	if prop.NumSignatures() != 1 {
 		op.log.Errorf("checking result tx: num valid signatures != 1")
 		return false
