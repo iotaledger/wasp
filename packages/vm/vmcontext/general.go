@@ -12,8 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -22,7 +22,7 @@ func (vmctx *VMContext) ChainID() coretypes.ChainID {
 }
 
 func (vmctx *VMContext) ChainOwnerID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), accountsc.Hname))
+	return accountsc.ChainOwnerAgentID(vmctx.ChainID())
 }
 
 func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
@@ -96,7 +96,7 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
 	state := codec.NewMustCodec(vmctx)
 	toAgentID := vmctx.MyAgentID()
-	if !accountsc.DebitFromAccount(state, toAgentID, accounts.NewColoredBalancesFromMap(map[balance.Color]int64{
+	if !accountsc.DebitFromAccount(state, toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
 		return false

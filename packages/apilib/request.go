@@ -3,7 +3,7 @@ package apilib
 import (
 	"errors"
 	"fmt"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -58,7 +58,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	for _, sectPar := range par.RequestSectionParams {
 		reqSect := sctransaction.NewRequestSectionByWallet(sectPar.TargetContractID, sectPar.EntryPointCode).
 			WithTimelock(sectPar.Timelock).
-			WithTransfer(accounts.NewColoredBalancesFromMap(sectPar.Transfer))
+			WithTransfer(cbalances.NewFromMap(sectPar.Transfer))
 
 		args := convertArgs(sectPar.Vars)
 		if args == nil {
@@ -135,9 +135,13 @@ func convertArgs(vars map[string]interface{}) dict.Dict {
 		case *address.Address:
 			args.Set(key, vt.Bytes())
 		case *balance.Color:
-			args.Set(key, vt.Bytes())
+			args.SetColor(key, vt)
 		case *coretypes.ChainID:
 			args.SetChainID(key, vt)
+		case *coretypes.ContractID:
+			args.SetContractID(key, vt)
+		case *coretypes.AgentID:
+			args.SetAgentID(key, vt)
 		default:
 			return nil
 		}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -150,8 +150,8 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 		if !ok {
 			return errors.New("can't find outputs for request section")
 		}
-		txBals := accounts.NewColoredBalancesFromMap(txutil.BalancesToMap(bals))
-		reqBals := accounts.NewColoredBalancesFromMap(m)
+		txBals := cbalances.NewFromMap(txutil.BalancesToMap(bals))
+		reqBals := cbalances.NewFromMap(m)
 		if !txBals.Equal(reqBals) {
 			return errors.New("mismatch between transfer data in request section and tx outputs")
 		}

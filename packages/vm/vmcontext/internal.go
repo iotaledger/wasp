@@ -5,9 +5,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -73,7 +73,7 @@ func (vmctx *VMContext) getMyBalances() coretypes.ColoredBalances {
 	defer vmctx.popCallContext()
 
 	ret, _ := accountsc.GetAccountBalances(codec.NewMustCodec(vmctx), vmctx.MyAgentID())
-	return accounts.NewColoredBalancesFromMap(ret)
+	return cbalances.NewFromMap(ret)
 }
 
 func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool {
@@ -84,6 +84,6 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color,
 		codec.NewMustCodec(vmctx),
 		vmctx.MyAgentID(),
 		target,
-		accounts.NewColoredBalancesFromMap(map[balance.Color]int64{col: amount}),
+		cbalances.NewFromMap(map[balance.Color]int64{col: amount}),
 	)
 }

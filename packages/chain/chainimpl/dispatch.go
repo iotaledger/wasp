@@ -28,7 +28,7 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		}
 
 	case chain.PendingBlockMsg:
-		c.stateMgr.EventPendingBatchMsg(msgt)
+		c.stateMgr.EventPendingBlockMsg(msgt)
 
 	case *chain.StateTransactionMsg:
 		// receive state transaction message

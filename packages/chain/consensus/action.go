@@ -40,7 +40,7 @@ func (op *operator) rotateLeader() {
 		return
 	}
 	if !op.chain.HasQuorum() {
-		op.log.Debugf("leader not rotated due to no quorum")
+		op.log.Debugf("leader was not rotated due to no quorum")
 		return
 	}
 	prevlead, _ := op.currentLeader()
@@ -242,16 +242,17 @@ func (op *operator) setNewSCState(stateTx *sctransaction.Transaction, variableSt
 	op.adjustNotifications()
 }
 
-func (op *operator) queryOutputs() {
-	if op.consensusStage != consensusStageNoSync {
-		return
-	}
-	if op.balances != nil && op.requestBalancesDeadline.After(time.Now()) {
-		return
-	}
-	addr := address.Address(*op.chain.ID())
-	if err := nodeconn.RequestOutputsFromNode(&addr); err != nil {
-		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
-	}
-	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
-}
+//
+//func (op *operator) queryOutputs() {
+//	if op.consensusStage != consensusStageNoSync {
+//		return
+//	}
+//	if op.balances != nil && op.requestBalancesDeadline.After(time.Now()) {
+//		return
+//	}
+//	addr := address.Address(*op.chain.ID())
+//	if err := nodeconn.RequestOutputsFromNode(&addr); err != nil {
+//		op.log.Debugf("RequestOutputsFromNode failed: %v", err)
+//	}
+//	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
+//}
