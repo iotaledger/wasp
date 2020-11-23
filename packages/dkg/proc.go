@@ -34,32 +34,23 @@ const (
 // Stands for a DKG procedure instance on a particular node.
 //
 type proc struct {
-	dkgID                    string            // DKG procedure ID we are participating in.
-	chainID                  coretypes.ChainID // Same as dkgID, just parsed.
-	dkShare                  *DKShare          // This will be generated as a result of this procedure.
-	step                     string            // The current step.
-	node                     *node             // DKG node we are running in.
-	nodeIndex                int               // Index of this node.
-	nodeLoc                  string
-	peerLocs                 []string
-	peerPubs                 []kyber.Point
-	initiatorPub             kyber.Point
-	threshold                uint32
-	version                  address.Version
-	stepTimeout              time.Duration
-	netGroup                 peering.GroupProvider
-	dkgImpl                  *rabin_dkg.DistKeyGenerator
-	cancelCh                 chan bool            // To stop a timer on completion.
-	initiatorStepCh          chan initiatorStepCh // To process all the step requests in a single thread.
-	peerMsgCh                chan peerMsgCh       //
-	done                     bool                 // Indicates, if the process is completed.
-	log                      *logger.Logger
-	recvDealMsgs             map[int]*rabinDealMsg
-	recvResponseMsgs         map[int]*rabinResponseMsg
-	recvJustificationMsgs    map[int]*rabinJustificationMsg
-	recvSecretCommitsMsgs    map[int]*rabinSecretCommitsMsg
-	recvComplaintCommitsMsgs map[int]*rabinComplaintCommitsMsg
-	distKeyShare             *rabin_dkg.DistKeyShare
+	dkgID           string            // DKG procedure ID we are participating in.
+	dkgChainID      coretypes.ChainID // The same as dkgID, just converted to ChainID.
+	dkShare         *DKShare          // This will be generated as a result of this procedure.
+	step            string            // The current step.
+	node            *node             // DKG node we are running in.
+	nodeIndex       int               // Index of this node.
+	initiatorPub    kyber.Point
+	threshold       uint32
+	version         address.Version
+	stepTimeout     time.Duration
+	netGroup        peering.GroupProvider
+	dkgImpl         *rabin_dkg.DistKeyGenerator
+	cancelCh        chan bool                            // To stop a timer on completion.
+	initiatorStepCh chan initiatorStepCh                 // To process all the step requests in a single thread.
+	peerMsgCh       chan peerMsgCh                       // A buffer for the received peer messages.
+	log             *logger.Logger                       // A logger to use.
+	recvMsgs        map[int]map[int]*peering.PeerMessage // Messages received in particular step ([Step][Peer]).
 }
 type initiatorStepCh struct { // Only for communicating with the main thread.
 	msg  *StepReq
@@ -101,12 +92,9 @@ func onInitiatorInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 	timeout := time.Millisecond * time.Duration(msg.TimeoutMS)
 	p := proc{
 		dkgID:           dkgID,
-		chainID:         chainID,
+		dkgChainID:      chainID,
 		node:            node,
 		nodeIndex:       nodeIndex,
-		nodeLoc:         node.netProvider.Self().Location(),
-		peerLocs:        msg.PeerLocs,
-		peerPubs:        peerPubs,
 		initiatorPub:    initiatorPub,
 		threshold:       msg.Threshold,
 		version:         msg.Version,
@@ -116,8 +104,8 @@ func onInitiatorInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 		cancelCh:        make(chan bool),
 		initiatorStepCh: make(chan initiatorStepCh, 10),
 		peerMsgCh:       make(chan peerMsgCh, len(peerPubs)),
-		done:            false,
 		log:             log,
+		recvMsgs:        map[int]map[int]*peering.PeerMessage{},
 	}
 	go p.processLoop(timeout)
 	node.netProvider.Attach(chainID, p.onPeerMessage)
@@ -196,7 +184,7 @@ func (p *proc) processLoop(timeout time.Duration) {
 	timeoutCh := time.After(timeout)
 	done := false
 	acceptPeerMsgType := rabinDealMsgType
-	acceptPeerMsgCh := make(chan peerMsgCh, len(p.peerPubs))
+	acceptPeerMsgCh := make(chan peerMsgCh, len(p.netGroup.AllNodes()))
 	for !done {
 		select {
 		case initiatorStepCall := <-p.initiatorStepCh:
@@ -268,11 +256,12 @@ func (p *proc) processLoop(timeout time.Duration) {
 			done = true
 		}
 	}
-	p.done = true
 }
 
 func (p *proc) doInitiatorStepSendDeals(peerMsgCh chan peerMsgCh) error {
 	var err error
+	//
+	// Create the deals.
 	var deals map[int]*rabin_dkg.Deal
 	if deals, err = p.dkgImpl.Deals(); err != nil {
 		p.log.Errorf("Deals -> %+v", err)
@@ -287,21 +276,9 @@ func (p *proc) doInitiatorStepSendDeals(peerMsgCh chan peerMsgCh) error {
 	}
 	//
 	// Receive other's deals.
-	var receivedDealMsgs map[int]*peering.PeerMessage
-	if receivedDealMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
+	if p.recvMsgs[rabinStep1R21SendDeals], err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		return err
 	}
-	//
-	// Decode the received deals.
-	receivedDeals := make(map[int]*rabinDealMsg, len(receivedDealMsgs))
-	for i := range receivedDealMsgs {
-		peerDealMsg := rabinDealMsg{}
-		if err = peerDealMsg.fromBytes(receivedDealMsgs[i].MsgData, p.node.suite); err != nil {
-			return err
-		}
-		receivedDeals[i] = &peerDealMsg
-	}
-	p.recvDealMsgs = receivedDeals // Stored for the next step.
 	p.log.Debugf("All deals received.")
 	return nil
 }
@@ -309,11 +286,22 @@ func (p *proc) doInitiatorStepSendDeals(peerMsgCh chan peerMsgCh) error {
 func (p *proc) doInitiatorStepSendResponses(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
+	// Decode the received deals.
+	recvDealMsgs := p.recvMsgs[rabinStep1R21SendDeals]
+	recvDeals := make(map[int]*rabinDealMsg, len(recvDealMsgs))
+	for i := range recvDealMsgs {
+		peerDealMsg := rabinDealMsg{}
+		if err = peerDealMsg.fromBytes(recvDealMsgs[i].MsgData, p.node.suite); err != nil {
+			return err
+		}
+		recvDeals[i] = &peerDealMsg
+	}
+	//
 	// Process the received deals and produce responses.
 	ourResponses := []*rabin_dkg.Response{}
-	for i := range p.recvDealMsgs {
+	for i := range recvDeals {
 		var r *rabin_dkg.Response
-		if r, err = p.dkgImpl.ProcessDeal(p.recvDealMsgs[i].deal); err != nil {
+		if r, err = p.dkgImpl.ProcessDeal(recvDeals[i].deal); err != nil {
 			p.log.Errorf("ProcessDeal(%v) -> %+v", i, err)
 			return err
 		}
@@ -321,28 +309,16 @@ func (p *proc) doInitiatorStepSendResponses(peerMsgCh chan peerMsgCh) error {
 	}
 	//
 	// Send our responses.
-	for i := range p.recvDealMsgs { // To all other peers.
+	for i := range recvDealMsgs { // To all other peers.
 		p.castPeerByIndex(i, &rabinResponseMsg{
 			responses: ourResponses,
 		})
 	}
 	//
 	// Receive other's responses.
-	var receivedRespMsgs map[int]*peering.PeerMessage
-	if receivedRespMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
+	if p.recvMsgs[rabinStep2R22SendResponses], err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		return err
 	}
-	//
-	// Decode the received responces.
-	receivedResponses := make(map[int]*rabinResponseMsg, len(receivedRespMsgs))
-	for i := range receivedRespMsgs {
-		peerResponseMsg := rabinResponseMsg{}
-		if err = peerResponseMsg.fromBytes(receivedRespMsgs[i].MsgData); err != nil {
-			return err
-		}
-		receivedResponses[i] = &peerResponseMsg
-	}
-	p.recvResponseMsgs = receivedResponses // Stored for the next step.
 	p.log.Debugf("All responses received.")
 	return nil
 }
@@ -350,11 +326,21 @@ func (p *proc) doInitiatorStepSendResponses(peerMsgCh chan peerMsgCh) error {
 func (p *proc) doInitiatorStepSendJustifications(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
+	// Decode the received responces.
+	recvResponseMsgs := p.recvMsgs[rabinStep2R22SendResponses]
+	recvResponses := make(map[int]*rabinResponseMsg, len(recvResponseMsgs))
+	for i := range recvResponseMsgs {
+		peerResponseMsg := rabinResponseMsg{}
+		if err = peerResponseMsg.fromBytes(recvResponseMsgs[i].MsgData); err != nil {
+			return err
+		}
+		recvResponses[i] = &peerResponseMsg
+	}
+	//
 	// Process the received responses and produce justifications.
-	t0 := time.Now() // TODO: Handle it in a nicer way.
 	ourJustifications := []*rabin_dkg.Justification{}
-	for i := range p.recvResponseMsgs {
-		for _, r := range p.recvResponseMsgs[i].responses {
+	for i := range recvResponses {
+		for _, r := range recvResponses[i].responses {
 			var j *rabin_dkg.Justification
 			if j, err = p.dkgImpl.ProcessResponse(r); err != nil {
 				p.log.Errorf("ProcessResponse(%v) -> %+v", i, err)
@@ -367,48 +353,36 @@ func (p *proc) doInitiatorStepSendJustifications(peerMsgCh chan peerMsgCh) error
 	}
 	//
 	// Send our justifications.
-	t1 := time.Now()
-	for i := range p.recvDealMsgs { // To all other peers.
+	for i := range recvResponseMsgs { // To all other peers.
 		p.castPeerByIndex(i, &rabinJustificationMsg{
 			justifications: ourJustifications,
 		})
 	}
 	//
 	// Receive other's justifications.
-	t2 := time.Now()
-	var receivedMsgs map[int]*peering.PeerMessage
-	if receivedMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
+	if p.recvMsgs[rabinStep3R23SendJustifications], err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		return err
 	}
-	//
-	// Decode the received justifications.
-	t3 := time.Now()
-	receivedJustifications := make(map[int]*rabinJustificationMsg, len(receivedMsgs))
-	for i := range receivedMsgs {
-		peerJustificationMsg := rabinJustificationMsg{}
-		if err = peerJustificationMsg.fromBytes(receivedMsgs[i].MsgData, p.node.suite); err != nil {
-			return err
-		}
-		receivedJustifications[i] = &peerJustificationMsg
-	}
-	p.recvJustificationMsgs = receivedJustifications // Stored for the next step.
-	t4 := time.Now()
-	p.log.Debugf(
-		"doInitiatorStepSendJustifications: All justifications received, timing ProcessResponse=%v Send=%v Wait=%v Decode=%v",
-		t1.Sub(t0).Milliseconds(),
-		t2.Sub(t1).Milliseconds(),
-		t3.Sub(t2).Milliseconds(),
-		t4.Sub(t3).Milliseconds(),
-	)
 	return nil
 }
 
 func (p *proc) doInitiatorStepSendSecretCommits(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
+	// Decode the received justifications.
+	recvJustificationMsgs := p.recvMsgs[rabinStep3R23SendJustifications]
+	recvJustifications := make(map[int]*rabinJustificationMsg, len(recvJustificationMsgs))
+	for i := range recvJustificationMsgs {
+		peerJustificationMsg := rabinJustificationMsg{}
+		if err = peerJustificationMsg.fromBytes(recvJustificationMsgs[i].MsgData, p.node.suite); err != nil {
+			return err
+		}
+		recvJustifications[i] = &peerJustificationMsg
+	}
+	//
 	// Process the received justifications.
-	for i := range p.recvJustificationMsgs {
-		for _, j := range p.recvJustificationMsgs[i].justifications {
+	for i := range recvJustifications {
+		for _, j := range recvJustifications[i].justifications {
 			if err = p.dkgImpl.ProcessJustification(j); err != nil {
 				return err
 			}
@@ -419,7 +393,7 @@ func (p *proc) doInitiatorStepSendSecretCommits(peerMsgCh chan peerMsgCh) error 
 	// Take the QUAL set.
 	p.dkgImpl.SetTimeout()
 	if !p.dkgImpl.Certified() {
-		return fmt.Errorf("node %v not certified", p.nodeIndex)
+		return fmt.Errorf("node not certified")
 	}
 	thisInQual := p.nodeInQUAL(p.nodeIndex)
 	var ourSecretCommits *rabin_dkg.SecretCommits // Will be nil, if we are not in QUAL.
@@ -432,7 +406,7 @@ func (p *proc) doInitiatorStepSendSecretCommits(peerMsgCh chan peerMsgCh) error 
 	// Send our secret commits to all the peers in the QUAL set.
 	// Send the nil to all the other nodes, or if we are not in QUAL.
 	// We send the messages to all the peers to make it easier to detect the end of step.
-	for i := range p.recvDealMsgs { // To all other peers.
+	for i := range recvJustificationMsgs { // To all other peers.
 		if thisInQual && p.nodeInQUAL(i) {
 			p.castPeerByIndex(i, &rabinSecretCommitsMsg{
 				secretCommits: ourSecretCommits,
@@ -445,21 +419,9 @@ func (p *proc) doInitiatorStepSendSecretCommits(peerMsgCh chan peerMsgCh) error 
 	}
 	//
 	// Receive other's secret commits.
-	var receivedMsgs map[int]*peering.PeerMessage
-	if receivedMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
+	if p.recvMsgs[rabinStep4R4SendSecretCommits], err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		return err
 	}
-	//
-	// Decode and process the received secret commits.
-	receivedSecretCommits := make(map[int]*rabinSecretCommitsMsg, len(receivedMsgs))
-	for i := range receivedMsgs {
-		peerSecretCommitsMsg := rabinSecretCommitsMsg{}
-		if err = peerSecretCommitsMsg.fromBytes(receivedMsgs[i].MsgData, p.node.suite); err != nil {
-			return err
-		}
-		receivedSecretCommits[i] = &peerSecretCommitsMsg
-	}
-	p.recvSecretCommitsMsgs = receivedSecretCommits
 	p.log.Debugf("All secret commits received, QUAL=%v.", p.dkgImpl.QUAL())
 	return nil
 }
@@ -467,11 +429,22 @@ func (p *proc) doInitiatorStepSendSecretCommits(peerMsgCh chan peerMsgCh) error 
 func (p *proc) doInitiatorStepSendComplaintCommits(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
+	// Decode and process the received secret commits.
+	recvSecretCommitMsgs := p.recvMsgs[rabinStep4R4SendSecretCommits]
+	recvSecretCommits := make(map[int]*rabinSecretCommitsMsg, len(recvSecretCommitMsgs))
+	for i := range recvSecretCommitMsgs {
+		peerSecretCommitsMsg := rabinSecretCommitsMsg{}
+		if err = peerSecretCommitsMsg.fromBytes(recvSecretCommitMsgs[i].MsgData, p.node.suite); err != nil {
+			return err
+		}
+		recvSecretCommits[i] = &peerSecretCommitsMsg
+	}
+	//
 	// Process the received secret commits.
 	ourComplaintCommits := []*rabin_dkg.ComplaintCommits{}
 	if p.nodeInQUAL(p.nodeIndex) {
-		for i := range p.recvSecretCommitsMsgs {
-			sc := p.recvSecretCommitsMsgs[i].secretCommits
+		for i := range recvSecretCommits {
+			sc := recvSecretCommits[i].secretCommits
 			if sc != nil {
 				var cc *rabin_dkg.ComplaintCommits
 				if cc, err = p.dkgImpl.ProcessSecretCommits(sc); err != nil {
@@ -485,7 +458,7 @@ func (p *proc) doInitiatorStepSendComplaintCommits(peerMsgCh chan peerMsgCh) err
 	}
 	//
 	// Send our complaint commits.
-	for i := range p.recvDealMsgs { // To all other peers.
+	for i := range recvSecretCommitMsgs { // To all other peers.
 		if p.nodeInQUAL(i) {
 			p.castPeerByIndex(i, &rabinComplaintCommitsMsg{
 				complaintCommits: ourComplaintCommits,
@@ -498,21 +471,9 @@ func (p *proc) doInitiatorStepSendComplaintCommits(peerMsgCh chan peerMsgCh) err
 	}
 	//
 	// Receive other's complaint commits.
-	var receivedMsgs map[int]*peering.PeerMessage
-	if receivedMsgs, err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
+	if p.recvMsgs[rabinStep5R5SendComplaintCommits], err = p.waitForOthers(peerMsgCh, p.stepTimeout); err != nil {
 		return err
 	}
-	//
-	// Decode and process the received secret commits.
-	receivedComplaintCommits := make(map[int]*rabinComplaintCommitsMsg, len(receivedMsgs))
-	for i := range receivedMsgs {
-		peerComplaintCommitsMsg := rabinComplaintCommitsMsg{}
-		if err = peerComplaintCommitsMsg.fromBytes(receivedMsgs[i].MsgData, p.node.suite); err != nil {
-			return err
-		}
-		receivedComplaintCommits[i] = &peerComplaintCommitsMsg
-	}
-	p.recvComplaintCommitsMsgs = receivedComplaintCommits
 	p.log.Debugf("All complaint commits received.")
 	return nil
 }
@@ -520,11 +481,22 @@ func (p *proc) doInitiatorStepSendComplaintCommits(peerMsgCh chan peerMsgCh) err
 func (p *proc) doInitiatorStepSendReconstructCommits(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
+	// Decode and process the received secret commits.
+	recvComplaintCommitMsgs := p.recvMsgs[rabinStep5R5SendComplaintCommits]
+	recvComplaintCommits := make(map[int]*rabinComplaintCommitsMsg, len(recvComplaintCommitMsgs))
+	for i := range recvComplaintCommitMsgs {
+		peerComplaintCommitsMsg := rabinComplaintCommitsMsg{}
+		if err = peerComplaintCommitsMsg.fromBytes(recvComplaintCommitMsgs[i].MsgData, p.node.suite); err != nil {
+			return err
+		}
+		recvComplaintCommits[i] = &peerComplaintCommitsMsg
+	}
+	//
 	// Process the received complaint commits.
 	ourReconstructCommits := []*rabin_dkg.ReconstructCommits{}
 	if p.nodeInQUAL(p.nodeIndex) {
-		for i := range p.recvComplaintCommitsMsgs {
-			for _, cc := range p.recvComplaintCommitsMsgs[i].complaintCommits {
+		for i := range recvComplaintCommits {
+			for _, cc := range recvComplaintCommits[i].complaintCommits {
 				var rc *rabin_dkg.ReconstructCommits
 				if rc, err = p.dkgImpl.ProcessComplaintCommits(cc); err != nil {
 					return err
@@ -537,7 +509,7 @@ func (p *proc) doInitiatorStepSendReconstructCommits(peerMsgCh chan peerMsgCh) e
 	}
 	//
 	// Send our reconstruct commits.
-	for i := range p.recvDealMsgs { // To all other peers.
+	for i := range recvComplaintCommitMsgs { // To all other peers.
 		if p.nodeInQUAL(i) {
 			p.castPeerByIndex(i, &rabinReconstructCommitsMsg{
 				reconstructCommits: ourReconstructCommits,
@@ -569,28 +541,29 @@ func (p *proc) doInitiatorStepSendReconstructCommits(peerMsgCh chan peerMsgCh) e
 		}
 	}
 	if !p.dkgImpl.Finished() {
-		return fmt.Errorf("peer %v has not finished the DKG procedure", p.nodeLoc)
+		return fmt.Errorf("DKG procedure is not finished")
 	}
-	if p.distKeyShare, err = p.dkgImpl.DistKeyShare(); err != nil {
+	var distKeyShare *rabin_dkg.DistKeyShare
+	if distKeyShare, err = p.dkgImpl.DistKeyShare(); err != nil {
 		return err
 	}
-	publicShare := p.node.suite.Point().Mul(p.distKeyShare.PriShare().V, nil)
+	publicShare := p.node.suite.Point().Mul(distKeyShare.PriShare().V, nil)
 	p.dkShare, err = NewDKShare(
-		uint32(p.distKeyShare.PriShare().I), // Index
-		uint32(len(p.peerPubs)),             // N
-		p.threshold,                         // T
-		p.distKeyShare.Public(),             // SharedPublic
-		publicShare,                         // PublicShare
-		p.distKeyShare.PriShare().V,         // PrivateShare
-		p.version,                           // version
-		p.node.suite,                        // suite
+		uint32(distKeyShare.PriShare().I),  // Index
+		uint32(len(p.netGroup.AllNodes())), // N
+		p.threshold,                        // T
+		distKeyShare.Public(),              // SharedPublic
+		publicShare,                        // PublicShare
+		distKeyShare.PriShare().V,          // PrivateShare
+		p.version,                          // version
+		p.node.suite,                       // suite
 	)
 	if err != nil {
 		return err
 	}
 	p.log.Debugf(
 		"All reconstruct commits received, shared public: %v.",
-		p.distKeyShare.Public(),
+		distKeyShare.Public(),
 	)
 	return nil
 }
@@ -601,7 +574,7 @@ func (p *proc) doInitiatorStepCommitAndTerminate() error {
 
 func (p *proc) castPeerByIndex(peerIdx int, msg msgByteCoder) {
 	p.netGroup.SendMsgByIndex(peerIdx, &peering.PeerMessage{
-		ChainID:     p.chainID,
+		ChainID:     p.dkgChainID,
 		SenderIndex: 0, // TODO: Should be resolved on the receiving side.
 		Timestamp:   0, // TODO: What to do with this?
 		MsgType:     msg.MsgType(),
@@ -610,7 +583,7 @@ func (p *proc) castPeerByIndex(peerIdx int, msg msgByteCoder) {
 }
 
 func (p *proc) waitForOthers(peerMsgCh chan peerMsgCh, timeout time.Duration) (map[int]*peering.PeerMessage, error) {
-	flags := make([]bool, len(p.peerPubs))
+	flags := make([]bool, len(p.netGroup.AllNodes()))
 	flags[p.nodeIndex] = true // Assume our message is already present.
 	msgs := make(map[int]*peering.PeerMessage)
 	timeoutCh := time.After(timeout)

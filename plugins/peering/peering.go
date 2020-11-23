@@ -26,6 +26,8 @@ type GroupProvider interface {
 	PeerIndexByPub(peerPub kyber.Point) (int, error)
 	// PeerByIndex(peerIdx int) PeerSender
 	Broadcast(msg *PeerMessage)
+	AllNodes() map[int]PeerSender   // Returns all the nodes in the group.
+	OtherNodes() map[int]PeerSender // Returns other nodes in the group (excluding Self).
 	SendMsgByIndex(peerIdx int, msg *PeerMessage)
 	// Send(peerLoc string, msg *PeerMessage)
 }

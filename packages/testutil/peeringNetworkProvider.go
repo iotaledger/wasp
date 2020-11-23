@@ -243,12 +243,20 @@ func (p *peeringSender) SendMsg(msg *peering.PeerMessage) {
 type peeringGroupProvider struct {
 	netProvider *peeringNetworkProvider
 	nodes       []*peeringNode
+	other       map[int]peering.PeerSender
 }
 
 func newPeeringGroupProvider(netProvider *peeringNetworkProvider, nodes []*peeringNode) *peeringGroupProvider {
+	other := make(map[int]peering.PeerSender)
+	for i := range nodes {
+		if nodes[i].location != netProvider.Self().Location() {
+			other[i] = netProvider.senders[i]
+		}
+	}
 	return &peeringGroupProvider{
 		netProvider: netProvider,
 		nodes:       nodes,
+		other:       other,
 	}
 }
 
@@ -282,6 +290,18 @@ func (p *peeringGroupProvider) Broadcast(msg *peering.PeerMessage) {
 	for i := range p.nodes {
 		p.nodes[i].sendMsg(p.netProvider.self, msg)
 	}
+}
+
+func (p *peeringGroupProvider) AllNodes() map[int]peering.PeerSender {
+	all := make(map[int]peering.PeerSender)
+	for i := range p.nodes {
+		all[i] = p.netProvider.senders[i]
+	}
+	return all
+}
+
+func (p *peeringGroupProvider) OtherNodes() map[int]peering.PeerSender {
+	return p.other
 }
 
 // SendMsgByIndex implements peering.GroupProvider.
