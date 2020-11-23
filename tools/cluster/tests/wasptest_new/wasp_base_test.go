@@ -195,7 +195,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, builtinvm.VMType, cr.VMType)
 		require.EqualValues(t, accountsc.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.Name, cr.Name)
+		require.EqualValues(t, accountsc.FullName, cr.Name)
 
 		//--
 		crBytes = contractRegistry.GetAt(hnameNew.Bytes())

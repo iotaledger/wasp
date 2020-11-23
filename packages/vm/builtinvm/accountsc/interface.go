@@ -31,6 +31,7 @@ var (
 
 	ProgramHash          = util.BuiltinProgramHash(Name, Version)
 	Hname                = util.BuiltinHname(Name, Version)
+	FullName             = util.BuiltinFullName(Name, Version)
 	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Hname))
 )
 
