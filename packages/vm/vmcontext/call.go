@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 )
 
 var (
@@ -120,11 +120,12 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
 	if vmctx.contractRecord.NodeFee == 0 {
+		fmt.Printf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
 		// if no fees enabled, accrue the token to the caller
 		fee := map[balance.Color]int64{
 			balance.ColorIOTA: 1,
 		}
-		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), accounts.NewColoredBalancesFromMap(fee))
+		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), cbalances.NewFromMap(fee))
 		return transfer, nil
 	}
 
@@ -135,7 +136,7 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 		sender := vmctx.reqRef.SenderAgentID()
 		vmctx.creditToAccount(sender, transfer)
 
-		return accounts.NewColoredBalancesFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
+		return cbalances.NewFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
 			vmctx.reqRef.RequestID().Short(), sender.String())
 	}
 	// enough fees
@@ -143,12 +144,12 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	fee := map[balance.Color]int64{
 		balance.ColorIOTA: vmctx.contractRecord.NodeFee,
 	}
-	vmctx.creditToAccount(vmctx.ChainOwnerID(), accounts.NewColoredBalancesFromMap(fee))
+	vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(fee))
 	remaining := map[balance.Color]int64{
 		balance.ColorIOTA: -vmctx.contractRecord.NodeFee + 1,
 	}
 	transfer.AddToMap(remaining)
-	return accounts.NewColoredBalancesFromMap(remaining), nil
+	return cbalances.NewFromMap(remaining), nil
 }
 
 func (vmctx *VMContext) Params() codec.ImmutableCodec {

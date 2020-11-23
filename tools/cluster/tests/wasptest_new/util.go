@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
+	cbalances "github.com/iotaledger/wasp/packages/vm/cbalances"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -165,12 +165,15 @@ func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBa
 			sum[col] = s + b
 		}
 	}
-	sum1 := accounts.NewColoredBalancesFromMap(sum)
-	total := accounts.NewColoredBalancesFromMap(totalAssets)
+	sum1 := cbalances.NewFromMap(sum)
+	total := cbalances.NewFromMap(totalAssets)
 	return sum1.Diff(total)
 }
 
 func checkLedger(t *testing.T, chain *cluster.Chain) {
 	diff := diffBalancesOnChain(t, chain)
+	if diff.Len() > 0 {
+		fmt.Printf("\ninconsistent ledger %s\n", diff.String())
+	}
 	require.EqualValues(t, 0, diff.Len())
 }

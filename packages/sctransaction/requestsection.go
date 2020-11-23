@@ -2,7 +2,7 @@ package sctransaction
 
 import (
 	"fmt"
-	accounts "github.com/iotaledger/wasp/packages/vm/balances"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"io"
 	"time"
 
@@ -53,7 +53,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
 		args:                dict.New(),
-		transfer:            accounts.NewColoredBalancesFromMap(nil),
+		transfer:            cbalances.NewFromMap(nil),
 	}
 }
 
@@ -116,7 +116,7 @@ func (req *RequestSection) WithTimelock(tl uint32) *RequestSection {
 
 func (req *RequestSection) WithTransfer(transfer coretypes.ColoredBalances) *RequestSection {
 	if transfer == nil {
-		transfer = accounts.NewColoredBalancesFromMap(nil)
+		transfer = cbalances.NewFromMap(nil)
 	}
 	req.transfer = transfer
 	return req
@@ -144,7 +144,7 @@ func (req *RequestSection) Write(w io.Writer) error {
 	if err := req.args.Write(w); err != nil {
 		return err
 	}
-	if err := accounts.WriteColoredBalances(w, req.transfer); err != nil {
+	if err := cbalances.WriteColoredBalances(w, req.transfer); err != nil {
 		return err
 	}
 	return nil
@@ -168,7 +168,7 @@ func (req *RequestSection) Read(r io.Reader) error {
 		return err
 	}
 	var err error
-	if req.transfer, err = accounts.ReadColoredBalance(r); err != nil {
+	if req.transfer, err = cbalances.ReadColoredBalance(r); err != nil {
 		return err
 	}
 	return nil

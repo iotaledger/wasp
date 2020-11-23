@@ -1,5 +1,4 @@
-// experimental implementation
-package accounts
+package cbalances
 
 import (
 	"bytes"
@@ -13,11 +12,7 @@ import (
 
 type coloredBalances map[balance.Color]int64
 
-func NewColoredBalances() coretypes.ColoredBalances {
-	return new(coloredBalances)
-}
-
-func NewColoredBalancesFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
+func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	if m == nil {
 		m = make(map[balance.Color]int64)
 	}
@@ -107,7 +102,7 @@ func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBal
 			ret[col] = s - s1
 		}
 	}
-	return NewColoredBalancesFromMap(ret)
+	return NewFromMap(ret)
 }
 
 func (b coloredBalances) AddToMap(m map[balance.Color]int64) {

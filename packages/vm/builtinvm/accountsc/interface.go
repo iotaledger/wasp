@@ -45,10 +45,18 @@ const (
 	VarStateAllAccounts = "a"
 
 	ParamAgentID = "a"
+	ParamColor   = "c"
+	ParamAmount  = "t"
 )
 
-var ErrParamsAgentIDNotFound = fmt.Errorf("wrong parameters: agent ID not specified")
+var (
+	ErrParamWrongOrNotFound = fmt.Errorf("wrong parameters: agent ID is wrong or not found")
+)
 
 func GetProcessor() vmtypes.Processor {
 	return &Interface
+}
+
+func ChainOwnerAgentID(chainID coretypes.ChainID) coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, Hname))
 }

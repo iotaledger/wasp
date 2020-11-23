@@ -61,6 +61,7 @@ func TestDepositWithdraw(t *testing.T) {
 	check(err, t)
 	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, depositIotas+1) // 1 iota from request
+	checkBalanceOnChain(t, chain, origAgentId, balance.ColorIOTA, 1)
 
 	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-depositIotas-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - depositIotas - 1,
@@ -68,18 +69,36 @@ func TestDepositWithdraw(t *testing.T) {
 		t.Fail()
 	}
 
-	// withdraw iotas back
-	reqTx2, err := chClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
+	// move 1 iota to another account on chain
+	colorIota := balance.ColorIOTA
+	reqTx2, err := chClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncMoveOnChain), nil, nil,
+		map[string]interface{}{
+			accountsc.ParamAgentID: &origAgentId,
+			accountsc.ParamColor:   &colorIota,
+			accountsc.ParamAmount:  1,
+		},
+	)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)
 	check(err, t)
 
 	check(err, t)
 	checkLedger(t, chain)
+	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, depositIotas+1)
+	checkBalanceOnChain(t, chain, origAgentId, balance.ColorIOTA, 2)
+
+	// withdraw iotas back
+	reqTx3, err := chClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
+	check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx3, 30*time.Second)
+	check(err, t)
+
+	check(err, t)
+	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
+	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
 	}, "myAddress after withdraw") {
 		t.Fail()
 	}

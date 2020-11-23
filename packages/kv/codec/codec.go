@@ -3,6 +3,7 @@ package codec
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -44,6 +45,7 @@ type ImmutableCodec interface {
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool, error)
 	GetAgentID(key kv.Key) (*coretypes.AgentID, bool, error)
 	GetContractID(key kv.Key) (*coretypes.ContractID, bool, error)
+	GetColor(key kv.Key) (*balance.Color, bool, error)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
 }
@@ -62,6 +64,7 @@ type ImmutableMustCodec interface {
 	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
 	GetAgentID(key kv.Key) (*coretypes.AgentID, bool)
 	GetContractID(key kv.Key) (*coretypes.ContractID, bool)
+	GetColor(key kv.Key) (*balance.Color, bool)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
 
@@ -83,6 +86,7 @@ type wCodec interface {
 	SetChainID(key kv.Key, value *coretypes.ChainID)
 	SetAgentID(key kv.Key, value *coretypes.AgentID)
 	SetContractID(key kv.Key, value *coretypes.ContractID)
+	SetColor(key kv.Key, value *balance.Color)
 	Append(from ImmutableCodec) error
 }
 
@@ -390,6 +394,28 @@ func (c mustcodec) GetContractID(key kv.Key) (*coretypes.ContractID, bool) {
 
 func (c codec) SetContractID(key kv.Key, cid *coretypes.ContractID) {
 	c.kv.Set(key, cid[:])
+}
+
+func (c codec) GetColor(key kv.Key) (*balance.Color, bool, error) {
+	var b []byte
+	b, err := c.kv.Get(key)
+	if err != nil || b == nil {
+		return nil, false, err
+	}
+	ret, _, err := balance.ColorFromBytes(b)
+	return &ret, err == nil, err
+}
+
+func (c mustcodec) GetColor(key kv.Key) (*balance.Color, bool) {
+	ret, ok, err := c.codec.GetColor(key)
+	if err != nil {
+		panic(err)
+	}
+	return ret, ok
+}
+
+func (c codec) SetColor(key kv.Key, col *balance.Color) {
+	c.kv.Set(key, col[:])
 }
 
 func (c codec) Append(from ImmutableCodec) error {
