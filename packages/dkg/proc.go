@@ -20,6 +20,16 @@ import (
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 )
 
+const (
+	rabinStep1R21SendDeals             = 1
+	rabinStep2R22SendResponses         = 2
+	rabinStep3R23SendJustifications    = 3
+	rabinStep4R4SendSecretCommits      = 4
+	rabinStep5R5SendComplaintCommits   = 5
+	rabinStep6R6SendReconstructCommits = 6
+	rabinStep7CommitAndTerminate       = 7
+)
+
 //
 // Stands for a DKG procedure instance on a particular node.
 //
@@ -33,16 +43,16 @@ type proc struct {
 	nodeLoc                  string
 	peerLocs                 []string
 	peerPubs                 []kyber.Point
-	coordPub                 kyber.Point
+	initiatorPub             kyber.Point
 	threshold                uint32
 	version                  address.Version
 	stepTimeout              time.Duration
 	netGroup                 peering.GroupProvider
 	dkgImpl                  *rabin_dkg.DistKeyGenerator
-	cancelCh                 chan bool        // To stop a timer on completion.
-	coordStepCh              chan coordStepCh // To process all the step requests in a single thread.
-	peerMsgCh                chan peerMsgCh   //
-	done                     bool             // Indicates, if the process is completed.
+	cancelCh                 chan bool            // To stop a timer on completion.
+	initiatorStepCh          chan initiatorStepCh // To process all the step requests in a single thread.
+	peerMsgCh                chan peerMsgCh       //
+	done                     bool                 // Indicates, if the process is completed.
 	log                      *logger.Logger
 	recvDealMsgs             map[int]*rabinDealMsg
 	recvResponseMsgs         map[int]*rabinResponseMsg
@@ -51,7 +61,7 @@ type proc struct {
 	recvComplaintCommitsMsgs map[int]*rabinComplaintCommitsMsg
 	distKeyShare             *rabin_dkg.DistKeyShare
 }
-type coordStepCh struct { // Only for communicating with the main thread.
+type initiatorStepCh struct { // Only for communicating with the main thread.
 	msg  *StepReq
 	resp chan error
 }
@@ -61,7 +71,7 @@ type peerMsgCh struct { // Only for communicating with the main thread.
 	msg     *peering.PeerMessage
 }
 
-func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
+func onInitiatorInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 	log := node.log.With("dkgID", dkgID)
 	var err error
 	var chainID coretypes.ChainID
@@ -72,8 +82,8 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 	if peerPubs, err = pubsFromBytes(msg.PeerPubs, node.suite); err != nil {
 		return nil, err
 	}
-	var coordPub kyber.Point
-	if coordPub, err = pubFromBytes(msg.CoordPub, node.suite); err != nil {
+	var initiatorPub kyber.Point
+	if initiatorPub, err = pubFromBytes(msg.InitiatorPub, node.suite); err != nil {
 		return nil, err
 	}
 	var netGroup peering.GroupProvider
@@ -90,45 +100,45 @@ func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 	}
 	timeout := time.Millisecond * time.Duration(msg.TimeoutMS)
 	p := proc{
-		dkgID:       dkgID,
-		chainID:     chainID,
-		node:        node,
-		nodeIndex:   nodeIndex,
-		nodeLoc:     node.netProvider.Self().Location(),
-		peerLocs:    msg.PeerLocs,
-		peerPubs:    peerPubs,
-		coordPub:    coordPub,
-		threshold:   msg.Threshold,
-		version:     msg.Version,
-		stepTimeout: timeout,
-		netGroup:    netGroup,
-		dkgImpl:     dkgImpl,
-		cancelCh:    make(chan bool),
-		coordStepCh: make(chan coordStepCh, 10),
-		peerMsgCh:   make(chan peerMsgCh, len(peerPubs)),
-		done:        false,
-		log:         log,
+		dkgID:           dkgID,
+		chainID:         chainID,
+		node:            node,
+		nodeIndex:       nodeIndex,
+		nodeLoc:         node.netProvider.Self().Location(),
+		peerLocs:        msg.PeerLocs,
+		peerPubs:        peerPubs,
+		initiatorPub:    initiatorPub,
+		threshold:       msg.Threshold,
+		version:         msg.Version,
+		stepTimeout:     timeout,
+		netGroup:        netGroup,
+		dkgImpl:         dkgImpl,
+		cancelCh:        make(chan bool),
+		initiatorStepCh: make(chan initiatorStepCh, 10),
+		peerMsgCh:       make(chan peerMsgCh, len(peerPubs)),
+		done:            false,
+		log:             log,
 	}
 	go p.processLoop(timeout)
 	node.netProvider.Attach(chainID, p.onPeerMessage)
 	return &p, nil
 }
 
-// Handles a `step` call from the coordinator and pass it to the main thread.
-func (p *proc) onCoordStep(msg *StepReq) error {
+// Handles a `step` call from the initiator and pass it to the main thread.
+func (p *proc) onInitiatorStep(msg *StepReq) error {
 	resp := make(chan error)
-	p.coordStepCh <- coordStepCh{
+	p.initiatorStepCh <- initiatorStepCh{
 		msg:  msg,
 		resp: resp,
 	}
 	return <-resp
 }
 
-// Handles a `pubKey` call from the coordinator.
-func (p *proc) onCoordPubKey() (*PubKeyResp, error) {
+// Handles a `pubKey` call from the initiator.
+func (p *proc) onInitiatorPubKey() (*PubKeyResp, error) {
 	var err error
 	if p.dkShare == nil {
-		if err = p.onCoordStep(&StepReq{Step: "6-R6-SendReconstructCommits"}); err != nil {
+		if err = p.onInitiatorStep(&StepReq{Step: rabinStep6R6SendReconstructCommits}); err != nil {
 			return nil, err
 		}
 	}
@@ -189,55 +199,55 @@ func (p *proc) processLoop(timeout time.Duration) {
 	acceptPeerMsgCh := make(chan peerMsgCh, len(p.peerPubs))
 	for !done {
 		select {
-		case coordStepCall := <-p.coordStepCh:
-			switch coordStepCall.msg.Step {
-			case "1-R2.1-SendDeals":
+		case initiatorStepCall := <-p.initiatorStepCh:
+			switch initiatorStepCall.msg.Step {
+			case rabinStep1R21SendDeals:
 				go func() {
-					res := p.doCoordStepSendDeals(acceptPeerMsgCh)
+					res := p.doInitiatorStepSendDeals(acceptPeerMsgCh)
 					acceptPeerMsgType = rabinResponseMsgType
-					coordStepCall.resp <- res
+					initiatorStepCall.resp <- res
 				}()
-			case "2-R2.2-SendResponses":
+			case rabinStep2R22SendResponses:
 				go func() {
-					res := p.doCoordStepSendResponses(acceptPeerMsgCh)
+					res := p.doInitiatorStepSendResponses(acceptPeerMsgCh)
 					acceptPeerMsgType = rabinJustificationMsgType
-					coordStepCall.resp <- res
+					initiatorStepCall.resp <- res
 				}()
-			case "3-R2.3-SendJustifications":
+			case rabinStep3R23SendJustifications:
 				go func() {
-					res := p.doCoordStepSendJustifications(acceptPeerMsgCh)
+					res := p.doInitiatorStepSendJustifications(acceptPeerMsgCh)
 					acceptPeerMsgType = rabinSecretCommitsMsgType
-					coordStepCall.resp <- res
+					initiatorStepCall.resp <- res
 				}()
-			case "4-R4-SendSecretCommits":
+			case rabinStep4R4SendSecretCommits:
 				go func() {
-					res := p.doCoordStepSendSecretCommits(acceptPeerMsgCh)
+					res := p.doInitiatorStepSendSecretCommits(acceptPeerMsgCh)
 					acceptPeerMsgType = rabinComplaintCommitsMsgType
-					coordStepCall.resp <- res
+					initiatorStepCall.resp <- res
 				}()
-			case "5-R5-SendComplaintCommits":
+			case rabinStep5R5SendComplaintCommits:
 				go func() {
-					res := p.doCoordStepSendComplaintCommits(acceptPeerMsgCh)
+					res := p.doInitiatorStepSendComplaintCommits(acceptPeerMsgCh)
 					acceptPeerMsgType = rabinReconstructCommitsMsgType
-					coordStepCall.resp <- res
+					initiatorStepCall.resp <- res
 				}()
-			case "6-R6-SendReconstructCommits": // Invoked from onCoordPubKey
+			case rabinStep6R6SendReconstructCommits: // Invoked from onInitiatorPubKey
 				go func() {
-					res := p.doCoordStepSendReconstructCommits(acceptPeerMsgCh)
+					res := p.doInitiatorStepSendReconstructCommits(acceptPeerMsgCh)
 					acceptPeerMsgType = 0 // None accepted.
-					coordStepCall.resp <- res
+					initiatorStepCall.resp <- res
 				}()
-			case "7-CommitAndTerminate":
-				if err := p.doCoordStepCommitAndTerminate(); err != nil {
-					coordStepCall.resp <- err
+			case rabinStep7CommitAndTerminate:
+				if err := p.doInitiatorStepCommitAndTerminate(); err != nil {
+					initiatorStepCall.resp <- err
 					continue
 				}
 				p.node.dropProcess(p)
 				done = true
-				coordStepCall.resp <- nil
+				initiatorStepCall.resp <- nil
 			default:
-				p.log.Warnf("Dropping unexpected step message: %v", coordStepCall.msg.Step)
-				coordStepCall.resp <- errors.New("unknown_step")
+				p.log.Warnf("Dropping unexpected step message: %v", initiatorStepCall.msg.Step)
+				initiatorStepCall.resp <- errors.New("unknown_step")
 			}
 		case cast := <-p.peerMsgCh:
 			if cast.msg.MsgType != acceptPeerMsgType {
@@ -261,7 +271,7 @@ func (p *proc) processLoop(timeout time.Duration) {
 	p.done = true
 }
 
-func (p *proc) doCoordStepSendDeals(peerMsgCh chan peerMsgCh) error {
+func (p *proc) doInitiatorStepSendDeals(peerMsgCh chan peerMsgCh) error {
 	var err error
 	var deals map[int]*rabin_dkg.Deal
 	if deals, err = p.dkgImpl.Deals(); err != nil {
@@ -296,7 +306,7 @@ func (p *proc) doCoordStepSendDeals(peerMsgCh chan peerMsgCh) error {
 	return nil
 }
 
-func (p *proc) doCoordStepSendResponses(peerMsgCh chan peerMsgCh) error {
+func (p *proc) doInitiatorStepSendResponses(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
 	// Process the received deals and produce responses.
@@ -337,7 +347,7 @@ func (p *proc) doCoordStepSendResponses(peerMsgCh chan peerMsgCh) error {
 	return nil
 }
 
-func (p *proc) doCoordStepSendJustifications(peerMsgCh chan peerMsgCh) error {
+func (p *proc) doInitiatorStepSendJustifications(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
 	// Process the received responses and produce justifications.
@@ -384,7 +394,7 @@ func (p *proc) doCoordStepSendJustifications(peerMsgCh chan peerMsgCh) error {
 	p.recvJustificationMsgs = receivedJustifications // Stored for the next step.
 	t4 := time.Now()
 	p.log.Debugf(
-		"doCoordStepSendJustifications: All justifications received, timing ProcessResponse=%v Send=%v Wait=%v Decode=%v",
+		"doInitiatorStepSendJustifications: All justifications received, timing ProcessResponse=%v Send=%v Wait=%v Decode=%v",
 		t1.Sub(t0).Milliseconds(),
 		t2.Sub(t1).Milliseconds(),
 		t3.Sub(t2).Milliseconds(),
@@ -393,7 +403,7 @@ func (p *proc) doCoordStepSendJustifications(peerMsgCh chan peerMsgCh) error {
 	return nil
 }
 
-func (p *proc) doCoordStepSendSecretCommits(peerMsgCh chan peerMsgCh) error {
+func (p *proc) doInitiatorStepSendSecretCommits(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
 	// Process the received justifications.
@@ -454,7 +464,7 @@ func (p *proc) doCoordStepSendSecretCommits(peerMsgCh chan peerMsgCh) error {
 	return nil
 }
 
-func (p *proc) doCoordStepSendComplaintCommits(peerMsgCh chan peerMsgCh) error {
+func (p *proc) doInitiatorStepSendComplaintCommits(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
 	// Process the received secret commits.
@@ -507,7 +517,7 @@ func (p *proc) doCoordStepSendComplaintCommits(peerMsgCh chan peerMsgCh) error {
 	return nil
 }
 
-func (p *proc) doCoordStepSendReconstructCommits(peerMsgCh chan peerMsgCh) error {
+func (p *proc) doInitiatorStepSendReconstructCommits(peerMsgCh chan peerMsgCh) error {
 	var err error
 	//
 	// Process the received complaint commits.
@@ -585,7 +595,7 @@ func (p *proc) doCoordStepSendReconstructCommits(peerMsgCh chan peerMsgCh) error
 	return nil
 }
 
-func (p *proc) doCoordStepCommitAndTerminate() error {
+func (p *proc) doInitiatorStepCommitAndTerminate() error {
 	return p.node.registry.SaveDKShare(p.dkShare)
 }
 

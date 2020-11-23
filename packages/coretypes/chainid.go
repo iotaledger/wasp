@@ -28,6 +28,7 @@ func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
 	return
 }
 
+// NewChainIDFromBytes reconstructs a ChainID from its binary representation.
 func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
@@ -35,16 +36,16 @@ func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 
 // RandomChainID creates a random chain ID.
 func RandomChainID() ChainID {
-	return (ChainID)(address.Random())
+	return ChainID(address.Random())
 }
 
 // Bytes returns a serialized version of this ChainID.
 func (chid ChainID) Bytes() []byte {
-	return (address.Address)(chid).Bytes()
+	return address.Address(chid).Bytes()
 }
 
 func (chid ChainID) String() string {
-	return (address.Address)(chid).String()
+	return address.Address(chid).String()
 }
 
 func (chid *ChainID) Write(w io.Writer) error {

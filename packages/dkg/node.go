@@ -17,7 +17,7 @@ import (
 var nodes []*node = []*node{}
 
 // Node represents a node, that can participate in a DKG procedure.
-// It receives commands from the coordinator as a CoordNodeProvider,
+// It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type node struct {
 	secKey      kyber.Scalar
@@ -38,7 +38,7 @@ func InitNode(
 	netProvider peering.NetworkProvider,
 	registry RegistryProvider,
 	log *logger.Logger,
-) CoordNodeProvider {
+) NodeProvider {
 	n := node{
 		secKey:      secKey,
 		pubKey:      pubKey,
@@ -60,13 +60,13 @@ func (n *node) dropProcess(p *proc) bool {
 	return false
 }
 
-// DkgInit implements CoordNodeProvider.
+// DkgInit implements NodeProvider.
 // peerAddrs here is always a slice of a single element equal to our node.
 func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
 	n.log.Debugf("DkgInit, dkgID=%v, msg.PeerLocs=%v", dkgID, msg.PeerLocs)
 	var err error
 	var p *proc
-	if p, err = onCoordInit(dkgID, msg, n); err != nil {
+	if p, err = onInitiatorInit(dkgID, msg, n); err != nil {
 		return err
 	}
 	n.processes[dkgID] = p
@@ -74,21 +74,21 @@ func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
 
 }
 
-// DkgStep implements CoordNodeProvider.
+// DkgStep implements NodeProvider.
 func (n *node) DkgStep(peerAddrs []string, dkgID string, msg *StepReq) error {
 	if p := n.processes[dkgID]; p != nil {
 		p.log.Debugf("DkgStep, msg.Step=%v", msg.Step)
-		return p.onCoordStep(msg)
+		return p.onInitiatorStep(msg)
 	}
 	return errors.New("dkgID_not_found")
 }
 
-// DkgPubKey implements CoordNodeProvider.
+// DkgPubKey implements NodeProvider.
 func (n *node) DkgPubKey(peerAddrs []string, dkgID string) ([]*PubKeyResp, error) {
 	var err error
 	if p := n.processes[dkgID]; p != nil {
 		var resp *PubKeyResp
-		if resp, err = p.onCoordPubKey(); err != nil {
+		if resp, err = p.onInitiatorPubKey(); err != nil {
 			return nil, err
 		}
 		return []*PubKeyResp{resp}, nil

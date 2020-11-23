@@ -17,67 +17,71 @@ import (
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 )
 
+// GenerateDistributedKeyParams is only here to make long
+// list of paremeters in GenerateDistributedKey easier to specify.
+type GenerateDistributedKeyParams struct {
+	InitiatorPub kyber.Point
+	PeerLocs     []string
+	PeerPubs     []kyber.Point
+	Threshold    uint32
+	Version      address.Version
+	Timeout      time.Duration
+	Suite        kyber.Group
+	NodeProvider NodeProvider
+	Logger       *logger.Logger
+}
+
 // GenerateDistributedKey is called from the client node to initiate the DKG
 // procedure on a set of nodes. The client is not required to have an instance
 // of the DkgNode, but may have it (be one of the peers sharing the secret).
 // This function works synchronously, so the user should run it async if needed.
-func GenerateDistributedKey(
-	coordKey kyber.Scalar,
-	coordPub kyber.Point,
-	peerLocs []string,
-	peerPubs []kyber.Point,
-	threshold uint32,
-	version address.Version,
-	timeout time.Duration,
-	suite kyber.Group,
-	netProvider CoordNodeProvider,
-	log *logger.Logger,
-) (*coretypes.ChainID, *kyber.Point, error) {
+func GenerateDistributedKey(params *GenerateDistributedKeyParams) (*coretypes.ChainID, *kyber.Point, error) {
+	var log = params.Logger
 	var err error
 	var dkgID string = address.Random().String()
 	//
 	// Initialize the peers.
 	var peerPubsBytes [][]byte
-	if peerPubsBytes, err = pubsToBytes(peerPubs); err != nil {
+	if peerPubsBytes, err = pubsToBytes(params.PeerPubs); err != nil {
 		return nil, nil, err
 	}
-	var coordPubBytes []byte
-	if coordPubBytes, err = pubToBytes(coordPub); err != nil {
+	var initiatorPubBytes []byte
+	if initiatorPubBytes, err = pubToBytes(params.InitiatorPub); err != nil {
 		return nil, nil, err
 	}
 	initReq := InitReq{
-		PeerLocs:  peerLocs,
-		PeerPubs:  peerPubsBytes,
-		CoordPub:  coordPubBytes,
-		Threshold: threshold,
-		Version:   version,
-		TimeoutMS: uint64(timeout.Milliseconds()),
+		PeerLocs:     params.PeerLocs,
+		PeerPubs:     peerPubsBytes,
+		InitiatorPub: initiatorPubBytes,
+		Threshold:    params.Threshold,
+		Version:      params.Version,
+		TimeoutMS:    uint64(params.Timeout.Milliseconds()),
 	}
 	timeInit := time.Now() // TODO: Nicer way to handle that.
-	if err = netProvider.DkgInit(peerLocs, dkgID, &initReq); err != nil {
+	if err = params.NodeProvider.DkgInit(params.PeerLocs, dkgID, &initReq); err != nil {
 		return nil, nil, err
 	}
 	//
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
 	timeStep1 := time.Now()
-	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "1-R2.1-SendDeals"}); err != nil {
+	if err = params.NodeProvider.DkgStep(params.PeerLocs, dkgID, &StepReq{Step: rabinStep1R21SendDeals}); err != nil {
 		return nil, nil, err
 	}
 	timeStep2 := time.Now()
-	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "2-R2.2-SendResponses"}); err != nil {
+	if err = params.NodeProvider.DkgStep(params.PeerLocs, dkgID, &StepReq{Step: rabinStep2R22SendResponses}); err != nil {
 		return nil, nil, err
 	}
 	timeStep3 := time.Now()
-	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "3-R2.3-SendJustifications"}); err != nil {
+	if err = params.NodeProvider.DkgStep(params.PeerLocs, dkgID, &StepReq{Step: rabinStep3R23SendJustifications}); err != nil {
 		return nil, nil, err
 	}
 	timeStep4 := time.Now()
-	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "4-R4-SendSecretCommits"}); err != nil {
+	if err = params.NodeProvider.DkgStep(params.PeerLocs, dkgID, &StepReq{Step: rabinStep4R4SendSecretCommits}); err != nil {
 		return nil, nil, err
 	}
 	timeStep5 := time.Now()
-	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "5-R5-SendComplaintCommits"}); err != nil {
+	if err = params.NodeProvider.DkgStep(params.PeerLocs, dkgID, &StepReq{Step: rabinStep5R5SendComplaintCommits}); err != nil {
 		return nil, nil, err
 	}
 	//
@@ -85,7 +89,7 @@ func GenerateDistributedKey(
 	// This also performs the "6-R6-SendReconstructCommits" step implicitly.
 	timeStep6 := time.Now()
 	var pubKeyResponses []*PubKeyResp
-	if pubKeyResponses, err = netProvider.DkgPubKey(peerLocs, dkgID); err != nil {
+	if pubKeyResponses, err = params.NodeProvider.DkgPubKey(params.PeerLocs, dkgID); err != nil {
 		return nil, nil, err
 	}
 	chainIDBytes := pubKeyResponses[0].ChainID
@@ -99,12 +103,12 @@ func GenerateDistributedKey(
 			return nil, nil, fmt.Errorf("nodes generated different shared public keys")
 		}
 		{
-			publicShare := suite.Point()
+			publicShare := params.Suite.Point()
 			publicShare.UnmarshalBinary(pubKeyResponses[i].PublicShare)
-			switch version {
+			switch params.Version {
 			case address.VersionED25519:
 				err = schnorr.Verify(
-					suite,
+					params.Suite,
 					publicShare,
 					pubKeyResponses[i].PublicShare,
 					pubKeyResponses[i].Signature,
@@ -114,7 +118,7 @@ func GenerateDistributedKey(
 				}
 			case address.VersionBLS:
 				err = bdn.Verify(
-					suite.(pairing.Suite),
+					params.Suite.(pairing.Suite),
 					publicShare,
 					pubKeyResponses[i].PublicShare,
 					pubKeyResponses[i].Signature,
@@ -130,7 +134,7 @@ func GenerateDistributedKey(
 	if generatedChainID, err = coretypes.NewChainIDFromBytes(chainIDBytes); err != nil {
 		return nil, nil, err
 	}
-	sharedPublic := suite.Point()
+	sharedPublic := params.Suite.Point()
 	sharedPublic.UnmarshalBinary(sharedPublicBytes)
 	//
 	// TODO: Verify signatures.
@@ -152,16 +156,16 @@ func GenerateDistributedKey(
 	// 		return nil, nil, err
 	// 	}
 	// }
-	log.Debugf("COORD: Generated ChainID=%v, shared public key: %v", generatedChainID, sharedPublic)
+	log.Debugf("Generated ChainID=%v, shared public key: %v", generatedChainID, sharedPublic)
 	//
 	// Commit the keys to persistent storage.
 	timeStep7 := time.Now()
-	if err = netProvider.DkgStep(peerLocs, dkgID, &StepReq{Step: "7-CommitAndTerminate"}); err != nil {
+	if err = params.NodeProvider.DkgStep(params.PeerLocs, dkgID, &StepReq{Step: rabinStep7CommitAndTerminate}); err != nil {
 		return nil, nil, err
 	}
 	timeDone := time.Now()
 	log.Debugf(
-		"COORD: Timing: init=%v, Step1=%v, Step2=%v, Step3=%v, Step4=%v, Step5=%v, Step6=%v, Step7=%v",
+		"Timing: init=%v, Step1=%v, Step2=%v, Step3=%v, Step4=%v, Step5=%v, Step6=%v, Step7=%v",
 		timeStep1.Sub(timeInit).Milliseconds(),
 		timeStep2.Sub(timeStep1).Milliseconds(),
 		timeStep3.Sub(timeStep2).Milliseconds(),

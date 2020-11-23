@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDkgCoordNodeProvider(t *testing.T) {
+func TestDkgNodeProvider(t *testing.T) {
 	addrs := []string{"a", "b", "c"}
 	pubKey := []byte("someKey")
 	dkgId := "someDkgId"
-	targetProviders := make([]dkg.CoordNodeProvider, len(addrs))
-	dummyProviders := make([]*dummyCoordNodeProvider, len(addrs))
+	targetProviders := make([]dkg.NodeProvider, len(addrs))
+	dummyProviders := make([]*dummyNodeProvider, len(addrs))
 	for i := range targetProviders {
-		dummyProviders[i] = &dummyCoordNodeProvider{sharedPublic: pubKey}
+		dummyProviders[i] = &dummyNodeProvider{sharedPublic: pubKey}
 		targetProviders[i] = dummyProviders[i]
 	}
-	provider := testutil.NewDkgCoordNodeProvider(targetProviders, time.Second)
+	provider := testutil.NewDkgNodeProvider(targetProviders, time.Second)
 	require.Nil(t, provider.DkgInit(addrs, dkgId, &dkg.InitReq{}))
 	require.Nil(t, provider.DkgStep(addrs, dkgId, &dkg.StepReq{}))
 	pubKeys, err := provider.DkgPubKey(addrs, dkgId)
@@ -34,21 +34,21 @@ func TestDkgCoordNodeProvider(t *testing.T) {
 	}
 }
 
-type dummyCoordNodeProvider struct {
+type dummyNodeProvider struct {
 	init         bool
 	step         bool
 	sharedPublic []byte
 }
 
-func (p *dummyCoordNodeProvider) DkgInit(peerAddrs []string, dkgID string, msg *dkg.InitReq) error {
+func (p *dummyNodeProvider) DkgInit(peerAddrs []string, dkgID string, msg *dkg.InitReq) error {
 	p.init = true
 	return nil
 }
-func (p *dummyCoordNodeProvider) DkgStep(peerAddrs []string, dkgID string, msg *dkg.StepReq) error {
+func (p *dummyNodeProvider) DkgStep(peerAddrs []string, dkgID string, msg *dkg.StepReq) error {
 	p.step = true
 	return nil
 }
-func (p *dummyCoordNodeProvider) DkgPubKey(peerAddrs []string, dkgID string) ([]*dkg.PubKeyResp, error) {
+func (p *dummyNodeProvider) DkgPubKey(peerAddrs []string, dkgID string) ([]*dkg.PubKeyResp, error) {
 	resp := make([]*dkg.PubKeyResp, len(peerAddrs))
 	for i := range resp {
 		resp[i] = &dkg.PubKeyResp{SharedPublic: p.sharedPublic}

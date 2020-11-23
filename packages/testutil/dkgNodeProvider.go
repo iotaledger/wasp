@@ -8,23 +8,23 @@ import (
 	"github.com/iotaledger/wasp/packages/util/multicall"
 )
 
-// DkgCoordNodeProvider is an implementation for the
-// dkg.CoordNodeProvider interface for unit tests.
-type DkgCoordNodeProvider struct {
-	providers   []dkg.CoordNodeProvider
+// DkgNodeProvider is an implementation for the
+// dkg.NodeProvider interface for unit tests.
+type DkgNodeProvider struct {
+	providers   []dkg.NodeProvider
 	callTimeout time.Duration
 }
 
-// NewDkgCoordNodeProvider creates new fake network provider.
-func NewDkgCoordNodeProvider(providers []dkg.CoordNodeProvider, callTimeout time.Duration) *DkgCoordNodeProvider {
-	return &DkgCoordNodeProvider{
+// NewDkgNodeProvider creates new fake network provider.
+func NewDkgNodeProvider(providers []dkg.NodeProvider, callTimeout time.Duration) *DkgNodeProvider {
+	return &DkgNodeProvider{
 		providers:   providers,
 		callTimeout: callTimeout,
 	}
 }
 
-// DkgInit implements dkg.CoordNodeProvider interface.
-func (p *DkgCoordNodeProvider) DkgInit(peerAddrs []string, dkgID string, msg *dkg.InitReq) error {
+// DkgInit implements dkg.NodeProvider interface.
+func (p *DkgNodeProvider) DkgInit(peerAddrs []string, dkgID string, msg *dkg.InitReq) error {
 	funs := make([]func() error, len(peerAddrs))
 	for i := range peerAddrs {
 		ii := i // A copy for the closure.
@@ -38,8 +38,8 @@ func (p *DkgCoordNodeProvider) DkgInit(peerAddrs []string, dkgID string, msg *dk
 	return nil
 }
 
-// DkgStep implements dkg.CoordNodeProvider interface.
-func (p *DkgCoordNodeProvider) DkgStep(peerAddrs []string, dkgID string, msg *dkg.StepReq) error {
+// DkgStep implements dkg.NodeProvider interface.
+func (p *DkgNodeProvider) DkgStep(peerAddrs []string, dkgID string, msg *dkg.StepReq) error {
 	funs := make([]func() error, len(peerAddrs))
 	for i := range peerAddrs {
 		ii := i // A copy for the closure.
@@ -53,8 +53,8 @@ func (p *DkgCoordNodeProvider) DkgStep(peerAddrs []string, dkgID string, msg *dk
 	return nil
 }
 
-// DkgPubKey implements dkg.CoordNodeProvider interface.
-func (p *DkgCoordNodeProvider) DkgPubKey(peerAddrs []string, dkgID string) ([]*dkg.PubKeyResp, error) {
+// DkgPubKey implements dkg.NodeProvider interface.
+func (p *DkgNodeProvider) DkgPubKey(peerAddrs []string, dkgID string) ([]*dkg.PubKeyResp, error) {
 	funs := make([]func() error, len(peerAddrs))
 	pubs := make([]*dkg.PubKeyResp, len(peerAddrs))
 	for i := range peerAddrs {
