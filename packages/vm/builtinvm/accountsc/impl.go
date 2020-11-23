@@ -79,17 +79,20 @@ func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	return nil, nil
 }
 
-// moveOnChain moves funds on chain.
+// move moves funds of one color on-chain or cross-chain.
 // Parameters:
 // - ParamAgentID the target account
+// - ParamChainID the target chain. Default is the same chain
 // - ParamColor color of the tokens. Default is iota color
 // - ParamAmount the amount to move
-func moveOnChain(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+// - transfer must contain enough iotas for request and node fee (on top of the request token
+//   and node fee for this request)
+func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
-	MustCheckLedger(state, "accountsc.moveOnChain.begin")
-	defer MustCheckLedger(state, "accountsc.moveOnChain.exit")
+	MustCheckLedger(state, "accountsc.move.begin")
+	defer MustCheckLedger(state, "accountsc.move.exit")
 
-	ctx.Eventf("accountsc.moveOnChain.begin")
+	ctx.Eventf("accountsc.move.begin")
 	params := ctx.Params()
 	moveTo, ok, err := params.GetAgentID(ParamAgentID)
 	if err != nil {
@@ -102,6 +105,9 @@ func moveOnChain(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, err
 	}
+	if amount <= 0 {
+		return nil, ErrParamWrongOrNotFound
+	}
 	if !ok {
 		return nil, ErrParamWrongOrNotFound
 	}
@@ -112,68 +118,77 @@ func moveOnChain(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if !ok {
 		*color = balance.ColorIOTA
 	}
-	move := cbalances.NewFromMap(map[balance.Color]int64{*color: amount})
-	if !MoveBetweenAccounts(state, ctx.Caller(), *moveTo, move) {
-		return nil, fmt.Errorf("failed to moveOnChain to %s: %s", moveTo.String(), move.String())
+	targetChain := ctx.ChainID()
+	t, ok, err := params.GetChainID(ParamChainID)
+	if err != nil {
+		return nil, err
 	}
-	ctx.Eventf("accountsc.moveOnChain.success: %s", move.String())
+	if ok {
+		targetChain = *t
+	}
+	tokensToMove := map[balance.Color]int64{*color: amount}
+	caller := ctx.Caller()
+	if targetChain == ctx.ChainID() {
+		// move on-chain
+		move := cbalances.NewFromMap(tokensToMove)
+		if !MoveBetweenAccounts(state, caller, *moveTo, move) {
+			return nil, fmt.Errorf("failed to move to %s: %s", moveTo.String(), move.String())
+		}
+		ctx.Eventf("accountsc.move.success: %s", move.String())
+		return nil, nil
+	}
+	// move to another chain
+	// move all tokens to accountsc
+	if !MoveBetweenAccounts(state, caller, ctx.MyAgentID(), cbalances.NewFromMap(tokensToMove)) {
+		return nil, fmt.Errorf("accountsc.move.fail: not enough balance")
+	}
+	// add all incoming tokens from transfer: it must cointain request token + node fee
+	ctx.Accounts().Incoming().AddToMap(tokensToMove)
+	// post a 'deposit' request to the accountsc on the target chain
+	par := dict.New()
+	parCodec := codec.NewMustCodec(par)
+	parCodec.SetAgentID(ParamAgentID, moveTo)
+	if !ctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: coretypes.NewContractID(targetChain, Hname),
+		EntryPoint:       coretypes.Hn(FuncDeposit),
+		Params:           par,
+		Transfer:         cbalances.NewFromMap(tokensToMove),
+	}) {
+		return nil, fmt.Errorf("failed to post request")
+	}
+	ctx.Eventf("accountsc.withdraw.success")
 	return nil, nil
 }
 
 // withdraw sends caller's funds to the caller
+// The caller must be an address
 // different process for addresses and contracts as a caller
 func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
 	MustCheckLedger(state, "accountsc.withdraw.begin")
 	defer MustCheckLedger(state, "accountsc.withdraw.exit")
-
 	if state.Get(VarStateInitialized) == nil {
 		return nil, fmt.Errorf("accountsc.initialize.fail: not_initialized")
 	}
 	caller := ctx.Caller()
 	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.MyContractID().String())
 
+	if !caller.IsAddress() {
+		return nil, fmt.Errorf("accountsc.initialize.fail: caller must be an address")
+	}
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
 		return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 1, empty account")
 	}
-	if caller.IsAddress() {
-		// caller is address
-		send := cbalances.NewFromMap(bals)
-		addr := caller.MustAddress()
-		if !DebitFromAccount(state, caller, send) {
-			return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 2, DebitFromAccount failed")
-		}
-		if !ctx.TransferToAddress(addr, send) {
-			return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
-		}
-		// sent to address
-		ctx.Eventf("accountsc.withdraw.success. Sent to address %s", addr.String())
-		return nil, nil
+	send := cbalances.NewFromMap(bals)
+	addr := caller.MustAddress()
+	if !DebitFromAccount(state, caller, send) {
+		return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 2, DebitFromAccount failed")
 	}
-	// it is another contract. Deposit funds to another chain on caller's account
-	// take it all tothe accountsc
-	if !MoveBetweenAccounts(state, caller, ctx.MyAgentID(), cbalances.NewFromMap(bals)) {
-		return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 2, MoveBetweenAccounts failed")
+	if !ctx.TransferToAddress(addr, send) {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
 	}
-	// need one iota for request
-	iotas, ok := bals[balance.ColorIOTA]
-	if iotas <= 0 {
-		return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 3, empty iotas account")
-	}
-	bals[balance.ColorIOTA] = iotas - 1
-	targetChain := caller.MustContractID().ChainID()
-	par := dict.New()
-	parCodec := codec.NewMustCodec(par)
-	parCodec.SetAgentID(ParamAgentID, &caller)
-	if !ctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChain, Hname),
-		EntryPoint:       coretypes.Hn(FuncDeposit),
-		Params:           par,
-		Transfer:         cbalances.NewFromMap(bals),
-	}) {
-		return nil, fmt.Errorf("failed to post request")
-	}
-	ctx.Eventf("accountsc.withdraw.success")
+	// sent to address
+	ctx.Eventf("accountsc.withdraw.success. Sent to address %s", addr.String())
 	return nil, nil
 }
