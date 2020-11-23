@@ -1,4 +1,4 @@
-t_all_account.bat
+call t_all_account.bat
 pause
 go test -buildmode=exe -run TestDeployChain %1
 pause
