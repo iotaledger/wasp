@@ -183,8 +183,8 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 	sm.takeAction()
 }
 
-func (sm *stateManager) EventPendingBatchMsg(msg chain.PendingBlockMsg) {
-	sm.log.Debugw("EventPendingBatchMsg",
+func (sm *stateManager) EventPendingBlockMsg(msg chain.PendingBlockMsg) {
+	sm.log.Debugw("EventPendingBlockMsg",
 		"state index", msg.Block.StateIndex(),
 		"size", msg.Block.Size(),
 		"txid", msg.Block.StateTransactionID().String(),

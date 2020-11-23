@@ -1,3 +1,4 @@
+// implements coretypes.ColoredBalances interface
 package cbalances
 
 import (

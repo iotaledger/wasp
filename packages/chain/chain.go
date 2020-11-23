@@ -64,7 +64,7 @@ type StateManager interface {
 	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
 	EventStateTransactionMsg(msg *StateTransactionMsg)
-	EventPendingBatchMsg(msg PendingBlockMsg)
+	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 }
 
