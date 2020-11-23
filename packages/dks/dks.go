@@ -1,4 +1,8 @@
-package dkg
+// Package dks provides functions to operate on distributed key shares.
+// Distributed key shares are usually generated using a DKG procedure.
+// See the `dkg` package for the generation part. This package provides
+// a way to use them.
+package dks
 
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
@@ -24,7 +28,7 @@ type RegistryProvider interface {
 // DKShare stands for the information stored on
 // a node as a result of the DKG procedure.
 type DKShare struct {
-	ChainID      coretypes.ChainID
+	ChainID      *coretypes.ChainID
 	Index        uint32
 	N            uint32
 	T            uint32
@@ -70,7 +74,7 @@ func NewDKShare(
 	//
 	// Construct the DKShare.
 	dkShare := DKShare{
-		ChainID:      chainID,
+		ChainID:      &chainID,
 		Index:        index,
 		N:            n,
 		T:            t,
@@ -113,13 +117,13 @@ func (s *DKShare) Write(w io.Writer) error {
 	if err = util.WriteUint32(w, s.T); err != nil {
 		return err
 	}
-	if err = writeMarshaled(w, s.SharedPublic); err != nil {
+	if err = util.WriteMarshaled(w, s.SharedPublic); err != nil {
 		return err
 	}
-	if err = writeMarshaled(w, s.PublicShare); err != nil {
+	if err = util.WriteMarshaled(w, s.PublicShare); err != nil {
 		return err
 	}
-	if err = writeMarshaled(w, s.PrivateShare); err != nil {
+	if err = util.WriteMarshaled(w, s.PrivateShare); err != nil {
 		return err
 	}
 	return nil
@@ -140,15 +144,15 @@ func (s *DKShare) Read(r io.Reader) error {
 		return err
 	}
 	s.SharedPublic = s.suite.Point()
-	if err = readMarshaled(r, s.SharedPublic); err != nil {
+	if err = util.ReadMarshaled(r, s.SharedPublic); err != nil {
 		return err
 	}
 	s.PublicShare = s.suite.Point()
-	if err = readMarshaled(r, s.PublicShare); err != nil {
+	if err = util.ReadMarshaled(r, s.PublicShare); err != nil {
 		return err
 	}
 	s.PrivateShare = s.suite.Scalar()
-	if err = readMarshaled(r, s.PrivateShare); err != nil {
+	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
 		return err
 	}
 	return nil

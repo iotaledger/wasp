@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
@@ -36,7 +37,7 @@ const (
 type proc struct {
 	dkgID           string            // DKG procedure ID we are participating in.
 	dkgChainID      coretypes.ChainID // The same as dkgID, just converted to ChainID.
-	dkShare         *DKShare          // This will be generated as a result of this procedure.
+	dkShare         *dks.DKShare      // This will be generated as a result of this procedure.
 	step            string            // The current step.
 	node            *node             // DKG node we are running in.
 	nodeIndex       int               // Index of this node.
@@ -548,7 +549,7 @@ func (p *proc) doInitiatorStepSendReconstructCommits(peerMsgCh chan peerMsgCh) e
 		return err
 	}
 	publicShare := p.node.suite.Point().Mul(distKeyShare.PriShare().V, nil)
-	p.dkShare, err = NewDKShare(
+	p.dkShare, err = dks.NewDKShare(
 		uint32(distKeyShare.PriShare().I),  // Index
 		uint32(len(p.netGroup.AllNodes())), // N
 		p.threshold,                        // T

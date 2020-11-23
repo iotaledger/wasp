@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -24,7 +25,7 @@ type node struct {
 	pubKey      kyber.Point
 	suite       rabin_dkg.Suite
 	netProvider peering.NetworkProvider
-	registry    RegistryProvider
+	registry    dks.RegistryProvider
 	processes   map[string]*proc
 	log         *logger.Logger
 }
@@ -36,7 +37,7 @@ func InitNode(
 	pubKey kyber.Point,
 	suite rabin_dkg.Suite,
 	netProvider peering.NetworkProvider,
-	registry RegistryProvider,
+	registry dks.RegistryProvider,
 	log *logger.Logger,
 ) NodeProvider {
 	n := node{

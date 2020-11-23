@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/dks"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -23,7 +23,7 @@ func NewDkgRegistryProvider(group kyber.Group) *DkgRegistryProvider {
 }
 
 // SaveDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) SaveDKShare(dkShare *dkg.DKShare) error {
+func (p *DkgRegistryProvider) SaveDKShare(dkShare *dks.DKShare) error {
 	var err error
 	var dkShareBytes []byte
 	if dkShareBytes, err = dkShare.Bytes(); err != nil {
@@ -34,10 +34,10 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *dkg.DKShare) error {
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*dkg.DKShare, error) {
+func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*dks.DKShare, error) {
 	var dkShareBytes = p.DB[chainID.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", chainID)
 	}
-	return dkg.DKShareFromBytes(dkShareBytes, p.Group)
+	return dks.DKShareFromBytes(dkShareBytes, p.Group)
 }

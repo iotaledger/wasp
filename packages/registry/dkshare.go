@@ -3,7 +3,10 @@ package registry
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/database"
 	"go.dedis.ch/kyber/v3"
@@ -65,4 +68,49 @@ func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, err
 		return nil, err
 	}
 	return ret, nil
+}
+
+// Impl is just a placeholder to implement all interfaces needed by different components.
+// TODO: It should be used instead of the above after migration is complete.
+//
+type Impl struct {
+	suite kyber.Group
+}
+
+// New creates new instance of the registry implementation.
+func New(suite kyber.Group) *Impl {
+	return &Impl{suite: suite}
+}
+
+// SaveDKShare implements dkg.RegistryProvider.
+func (r *Impl) SaveDKShare(dkShare *dks.DKShare) error {
+	var err error
+	var exists bool
+	dbKey := dbKeyForDKShare(dkShare.ChainID)
+	kvStore := database.GetRegistryPartition()
+	if exists, err = kvStore.Has(dbKey); err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("attempt to overwrite existing DK key share")
+	}
+	var buf []byte
+	if buf, err = dkShare.Bytes(); err != nil {
+		return err
+	}
+	return kvStore.Set(dbKey, buf)
+
+}
+
+// LoadDKShare implements dkg.RegistryProvider.
+func (r *Impl) LoadDKShare(chainID *coretypes.ChainID) (*dks.DKShare, error) {
+	data, err := database.GetRegistryPartition().Get(dbKeyForDKShare(chainID))
+	if err != nil {
+		return nil, err
+	}
+	return dks.DKShareFromBytes(data, r.suite)
+}
+
+func dbKeyForDKShare(chainID *coretypes.ChainID) []byte {
+	return database.MakeKey(database.ObjectTypeDistributedKeyData, chainID.Bytes())
 }

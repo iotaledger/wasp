@@ -5,7 +5,6 @@ package dkg
 
 import (
 	"bytes"
-	"encoding"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -51,7 +50,7 @@ func (m *rabinDealMsg) Write(w io.Writer) error {
 	if err = util.WriteUint32(w, m.deal.Index); err != nil {
 		return err
 	}
-	if err = writeMarshaled(w, m.deal.Deal.DHKey); err != nil {
+	if err = util.WriteMarshaled(w, m.deal.Deal.DHKey); err != nil {
 		return err
 	}
 	if err = util.WriteBytes16(w, m.deal.Deal.Signature); err != nil {
@@ -70,7 +69,7 @@ func (m *rabinDealMsg) Read(r io.Reader) error {
 	if err = util.ReadUint32(r, &m.deal.Index); err != nil {
 		return err
 	}
-	if err = readMarshaled(r, m.deal.Deal.DHKey); err != nil {
+	if err = util.ReadMarshaled(r, m.deal.Deal.DHKey); err != nil {
 		return err
 	}
 	if m.deal.Deal.Signature, err = util.ReadBytes16(r); err != nil {
@@ -194,26 +193,6 @@ func (m *rabinJustificationMsg) Write(w io.Writer) error {
 		if err = writeVssDeal(w, j.Justification.Deal); err != nil {
 			return err
 		}
-		// if err = util.WriteBytes16(w, j.Justification.Deal.SessionID); err != nil {
-		// 	return err
-		// }
-		// if err = writePriShare(w, j.Justification.Deal.SecShare); err != nil {
-		// 	return err
-		// }
-		// if err = writePriShare(w, j.Justification.Deal.RndShare); err != nil {
-		// 	return err
-		// }
-		// if err = util.WriteUint32(w, j.Justification.Deal.T); err != nil {
-		// 	return err
-		// }
-		// if err = util.WriteUint32(w, uint32(len(j.Justification.Deal.Commitments))); err != nil {
-		// 	return err
-		// }
-		// for i := range j.Justification.Deal.Commitments {
-		// 	if err = writeMarshaled(w, j.Justification.Deal.Commitments[i]); err != nil {
-		// 		return err
-		// 	}
-		// }
 		if err = util.WriteBytes16(w, j.Justification.Signature); err != nil {
 			return err
 		}
@@ -244,29 +223,6 @@ func (m *rabinJustificationMsg) Read(r io.Reader) error {
 		if err = readVssDeal(r, &j.Justification.Deal, m.group); err != nil {
 			return err
 		}
-		// if j.Justification.Deal.SessionID, err = util.ReadBytes16(r); err != nil {
-		// 	return err
-		// }
-		// if err = readPriShare(r, &j.Justification.Deal.SecShare); err != nil {
-		// 	return err
-		// }
-		// if err = readPriShare(r, &j.Justification.Deal.RndShare); err != nil {
-		// 	return err
-		// }
-		// if err = util.ReadUint32(r, &j.Justification.Deal.T); err != nil {
-		// 	return err
-		// }
-		// var commitmentCount uint32
-		// if err = util.ReadUint32(r, &commitmentCount); err != nil {
-		// 	return err
-		// }
-		// j.Justification.Deal.Commitments = make([]kyber.Point, int(commitmentCount))
-		// for i := range j.Justification.Deal.Commitments {
-		// 	j.Justification.Deal.Commitments[i] = m.group.Point()
-		// 	if err = readMarshaled(r, j.Justification.Deal.Commitments[i]); err != nil {
-		// 		return err
-		// 	}
-		// }
 		if j.Justification.Signature, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
@@ -305,7 +261,7 @@ func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 		return err
 	}
 	for i := range m.secretCommits.Commitments {
-		if err = writeMarshaled(w, m.secretCommits.Commitments[i]); err != nil {
+		if err = util.WriteMarshaled(w, m.secretCommits.Commitments[i]); err != nil {
 			return err
 		}
 	}
@@ -338,7 +294,7 @@ func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	m.secretCommits.Commitments = make([]kyber.Point, cLen)
 	for i := range m.secretCommits.Commitments {
 		m.secretCommits.Commitments[i] = m.group.Point()
-		if err = readMarshaled(r, m.secretCommits.Commitments[i]); err != nil {
+		if err = util.ReadMarshaled(r, m.secretCommits.Commitments[i]); err != nil {
 			return err
 		}
 	}
@@ -487,32 +443,6 @@ func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte, group kyber.Group) er
 }
 
 //
-//	This works for kyber.Point, kyber.Scalar.
-//
-func writeMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
-	var err error
-	var bin []byte
-	if bin, err = val.MarshalBinary(); err != nil {
-		return err
-	}
-	if err = util.WriteBytes16(w, bin); err != nil {
-		return err
-	}
-	return nil
-}
-func readMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
-	var err error
-	var bin []byte
-	if bin, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	if err = val.UnmarshalBinary(bin); err != nil {
-		return err
-	}
-	return nil
-}
-
-//
 // type PriShare struct {
 // 	I int          // Index of the private share
 // 	V kyber.Scalar // Value of the private share
@@ -529,7 +459,7 @@ func writePriShare(w io.Writer, val *share.PriShare) error {
 	if err = util.WriteUint32(w, uint32(val.I)); err != nil {
 		return err
 	}
-	if err = writeMarshaled(w, val.V); err != nil {
+	if err = util.WriteMarshaled(w, val.V); err != nil {
 		return err
 	}
 	return nil
@@ -548,7 +478,7 @@ func readPriShare(r io.Reader, val **share.PriShare) error {
 		return err
 	}
 	(*val).I = int(i)
-	if err = readMarshaled(r, (*val).V); err != nil {
+	if err = util.ReadMarshaled(r, (*val).V); err != nil {
 		return err
 	}
 	return nil
@@ -581,7 +511,7 @@ func writeVssDeal(w io.Writer, d *rabin_vss.Deal) error {
 		return err
 	}
 	for i := range d.Commitments {
-		if err = writeMarshaled(w, d.Commitments[i]); err != nil {
+		if err = util.WriteMarshaled(w, d.Commitments[i]); err != nil {
 			return err
 		}
 	}
@@ -609,7 +539,7 @@ func readVssDeal(r io.Reader, d **rabin_vss.Deal, group kyber.Group) error {
 	dd.Commitments = make([]kyber.Point, int(commitmentCount))
 	for i := range dd.Commitments {
 		dd.Commitments[i] = group.Point()
-		if err = readMarshaled(r, dd.Commitments[i]); err != nil {
+		if err = util.ReadMarshaled(r, dd.Commitments[i]); err != nil {
 			return err
 		}
 	}
