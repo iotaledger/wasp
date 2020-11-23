@@ -89,7 +89,7 @@ func (o *ScContext) Exists(keyId int32) bool {
 func (o *ScContext) Finalize() {
 	postedRequestsId, ok := o.objects[KeyPostedRequests]
 	if ok {
-		postedRequests := o.vm.FindObject(postedRequestsId).(*ScPostedRequests)
+		postedRequests := o.vm.FindObject(postedRequestsId).(*ScCalls)
 		postedRequests.Send()
 	}
 
@@ -108,7 +108,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyContract:       func() WaspObject { return &ScContract{} },
 		KeyExports:        func() WaspObject { return &ScExports{} },
 		KeyLogs:           func() WaspObject { return &ScLogs{} },
-		KeyPostedRequests: func() WaspObject { return &ScPostedRequests{} },
+		KeyPostedRequests: func() WaspObject { return &ScCalls{} },
 		KeyRequest:        func() WaspObject { return &ScRequest{} },
 		KeyState:          func() WaspObject { return &ScState{} },
 		KeyTransfers:      func() WaspObject { return &ScTransfers{} },
