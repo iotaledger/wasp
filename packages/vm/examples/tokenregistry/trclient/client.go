@@ -2,22 +2,24 @@ package trclient
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/client/chainclient"
 	"sort"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 )
 
 type TokenRegistryClient struct {
 	*chainclient.Client
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *chainclient.Client) *TokenRegistryClient {
-	return &TokenRegistryClient{scClient}
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *TokenRegistryClient {
+	return &TokenRegistryClient{scClient, contractHname}
 }
 
 type MintAndRegisterParams struct {
@@ -40,6 +42,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 		args[tokenregistry.VarReqUserDefinedMetadata] = par.UserDefinedData
 	}
 	return trc.PostRequest(
+		trc.contractHname,
 		tokenregistry.RequestMintSupply,
 		map[address.Address]int64{par.MintTarget: par.Supply},
 		nil,
@@ -91,7 +94,7 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 	return status, nil
 }
 
-func decodeRegistry(result *statequery.DictResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
+func decodeRegistry(result *statequery.MapResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
 	registry := make(map[balance.Color]*tokenregistry.TokenMetadata)
 	for _, e := range result.Entries {
 		color, _, err := balance.ColorFromBytes(e.Key)

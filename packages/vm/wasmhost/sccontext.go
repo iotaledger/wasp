@@ -1,34 +1,37 @@
 package wasmhost
 
 const (
-	KeyAccount        = KeyUserDefined
-	KeyAgent          = KeyAccount - 1
-	KeyAmount         = KeyAgent - 1
-	KeyBalance        = KeyAmount - 1
-	KeyBase58         = KeyBalance - 1
-	KeyColor          = KeyBase58 - 1
-	KeyColors         = KeyColor - 1
-	KeyContract       = KeyColors - 1
-	KeyData           = KeyContract - 1
-	KeyDelay          = KeyData - 1
-	KeyDescription    = KeyDelay - 1
-	KeyExports        = KeyDescription - 1
-	KeyFunction       = KeyExports - 1
-	KeyHash           = KeyFunction - 1
-	KeyId             = KeyHash - 1
-	KeyIota           = KeyId - 1
-	KeyLogs           = KeyIota - 1
-	KeyName           = KeyLogs - 1
-	KeyOwner          = KeyName - 1
-	KeyParams         = KeyOwner - 1
-	KeyPostedRequests = KeyParams - 1
-	KeyRandom         = KeyPostedRequests - 1
-	KeyRequest        = KeyRandom - 1
-	KeySender         = KeyRequest - 1
-	KeyState          = KeySender - 1
-	KeyTimestamp      = KeyState - 1
-	KeyTransfers      = KeyTimestamp - 1
-	KeyUtility        = KeyTransfers - 1
+	KeyAccount     = KeyUserDefined
+	KeyAgent       = KeyAccount - 1
+	KeyAmount      = KeyAgent - 1
+	KeyBalance     = KeyAmount - 1
+	KeyBase58      = KeyBalance - 1
+	KeyCalls       = KeyBase58 - 1
+	KeyColor       = KeyCalls - 1
+	KeyColors      = KeyColor - 1
+	KeyContract    = KeyColors - 1
+	KeyData        = KeyContract - 1
+	KeyDelay       = KeyData - 1
+	KeyDescription = KeyDelay - 1
+	KeyExports     = KeyDescription - 1
+	KeyFunction    = KeyExports - 1
+	KeyHash        = KeyFunction - 1
+	KeyId          = KeyHash - 1
+	KeyIota        = KeyId - 1
+	KeyLogs        = KeyIota - 1
+	KeyName        = KeyLogs - 1
+	KeyOwner       = KeyName - 1
+	KeyParams      = KeyOwner - 1
+	KeyPosts       = KeyParams - 1
+	KeyRandom      = KeyPosts - 1
+	KeyRequest     = KeyRandom - 1
+	KeyResults     = KeyRequest - 1
+	KeySender      = KeyResults - 1
+	KeyState       = KeySender - 1
+	KeyTimestamp   = KeyState - 1
+	KeyTransfers   = KeyTimestamp - 1
+	KeyUtility     = KeyTransfers - 1
+	KeyViews       = KeyUtility - 1
 )
 
 var keyMap = map[string]int32{
@@ -41,34 +44,37 @@ var keyMap = map[string]int32{
 	"warning":   KeyWarning,
 
 	// user-defined keys
-	"account":        KeyAccount,
-	"agent":          KeyAgent,
-	"amount":         KeyAmount,
-	"balance":        KeyBalance,
-	"base58":         KeyBase58,
-	"color":          KeyColor,
-	"colors":         KeyColors,
-	"contract":       KeyContract,
-	"data":           KeyData,
-	"delay":          KeyDelay,
-	"description":    KeyDescription,
-	"exports":        KeyExports,
-	"function":       KeyFunction,
-	"hash":           KeyHash,
-	"id":             KeyId,
-	"iota":           KeyIota,
-	"logs":           KeyLogs,
-	"name":           KeyName,
-	"owner":          KeyOwner,
-	"params":         KeyParams,
-	"postedRequests": KeyPostedRequests,
-	"random":         KeyRandom,
-	"request":        KeyRequest,
-	"sender":         KeySender,
-	"state":          KeyState,
-	"timestamp":      KeyTimestamp,
-	"transfers":      KeyTransfers,
-	"utility":        KeyUtility,
+	"account":     KeyAccount,
+	"agent":       KeyAgent,
+	"amount":      KeyAmount,
+	"balance":     KeyBalance,
+	"base58":      KeyBase58,
+	"calls":       KeyCalls,
+	"color":       KeyColor,
+	"colors":      KeyColors,
+	"contract":    KeyContract,
+	"data":        KeyData,
+	"delay":       KeyDelay,
+	"description": KeyDescription,
+	"exports":     KeyExports,
+	"function":    KeyFunction,
+	"hash":        KeyHash,
+	"id":          KeyId,
+	"iota":        KeyIota,
+	"logs":        KeyLogs,
+	"name":        KeyName,
+	"owner":       KeyOwner,
+	"params":      KeyParams,
+	"posts":       KeyPosts,
+	"random":      KeyRandom,
+	"request":     KeyRequest,
+	"results":     KeyResults,
+	"sender":      KeySender,
+	"state":       KeyState,
+	"timestamp":   KeyTimestamp,
+	"transfers":   KeyTransfers,
+	"utility":     KeyUtility,
+	"views":       KeyViews,
 }
 
 type ScContext struct {
@@ -87,10 +93,10 @@ func (o *ScContext) Exists(keyId int32) bool {
 }
 
 func (o *ScContext) Finalize() {
-	postedRequestsId, ok := o.objects[KeyPostedRequests]
+	postsId, ok := o.objects[KeyPosts]
 	if ok {
-		postedRequests := o.vm.FindObject(postedRequestsId).(*ScCalls)
-		postedRequests.Send()
+		posts := o.vm.FindObject(postsId).(*ScPosts)
+		posts.Send()
 	}
 
 	o.objects = make(map[int32]int32)
@@ -104,15 +110,17 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	}
 
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyAccount:        func() WaspObject { return &ScAccount{} },
-		KeyContract:       func() WaspObject { return &ScContract{} },
-		KeyExports:        func() WaspObject { return &ScExports{} },
-		KeyLogs:           func() WaspObject { return &ScLogs{} },
-		KeyPostedRequests: func() WaspObject { return &ScCalls{} },
-		KeyRequest:        func() WaspObject { return &ScRequest{} },
-		KeyState:          func() WaspObject { return &ScState{} },
-		KeyTransfers:      func() WaspObject { return &ScTransfers{} },
-		KeyUtility:        func() WaspObject { return &ScUtility{} },
+		KeyAccount:   func() WaspObject { return &ScAccount{} },
+		KeyCalls:     func() WaspObject { return &ScPosts{} },
+		KeyContract:  func() WaspObject { return &ScContract{} },
+		KeyExports:   func() WaspObject { return &ScExports{} },
+		KeyLogs:      func() WaspObject { return &ScLogs{} },
+		KeyPosts:     func() WaspObject { return &ScPosts{} },
+		KeyRequest:   func() WaspObject { return &ScRequest{} },
+		KeyState:     func() WaspObject { return &ScState{} },
+		KeyTransfers: func() WaspObject { return &ScTransfers{} },
+		KeyUtility:   func() WaspObject { return &ScUtility{} },
+		KeyViews:     func() WaspObject { return &ScPosts{} },
 	})
 }
 
@@ -120,13 +128,15 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyAccount:
 		return OBJTYPE_MAP
+	case KeyCalls:
+		return OBJTYPE_MAP_ARRAY
 	case KeyContract:
 		return OBJTYPE_MAP
 	case KeyExports:
 		return OBJTYPE_STRING_ARRAY
 	case KeyLogs:
 		return OBJTYPE_MAP
-	case KeyPostedRequests:
+	case KeyPosts:
 		return OBJTYPE_MAP_ARRAY
 	case KeyRequest:
 		return OBJTYPE_MAP
@@ -136,6 +146,8 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return OBJTYPE_MAP_ARRAY
 	case KeyUtility:
 		return OBJTYPE_MAP
+	case KeyViews:
+		return OBJTYPE_MAP_ARRAY
 	}
 	return -1
 }
