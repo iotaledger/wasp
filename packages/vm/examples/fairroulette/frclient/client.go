@@ -2,13 +2,13 @@ package frclient
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
@@ -16,13 +16,13 @@ import (
 
 type FairRouletteClient struct {
 	*chainclient.Client
-	contractIndex coretypes.Uint16
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractIndex coretypes.Uint16) *FairRouletteClient {
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *FairRouletteClient {
 	return &FairRouletteClient{
 		Client:        scClient,
-		contractIndex: contractIndex,
+		contractHname: contractHname,
 	}
 }
 
@@ -132,7 +132,7 @@ func decodeWinsPerColor(result *statequery.ArrayResult) ([]uint32, error) {
 	return ret, nil
 }
 
-func decodePlayerStats(result *statequery.DictResult) (map[address.Address]*fairroulette.PlayerStats, error) {
+func decodePlayerStats(result *statequery.MapResult) (map[address.Address]*fairroulette.PlayerStats, error) {
 	playerStats := make(map[address.Address]*fairroulette.PlayerStats)
 	for _, e := range result.Entries {
 		if len(e.Key) != address.Length {
@@ -153,7 +153,7 @@ func decodePlayerStats(result *statequery.DictResult) (map[address.Address]*fair
 
 func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transaction, error) {
 	return frc.PostRequest(
-		frc.contractIndex,
+		frc.contractHname,
 		fairroulette.RequestPlaceBet,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
@@ -163,7 +163,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transa
 
 func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transaction, error) {
 	return frc.PostRequest(
-		frc.contractIndex,
+		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,
 		nil,
 		nil,
