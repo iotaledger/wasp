@@ -8,20 +8,27 @@ import (
 	"go.uber.org/atomic"
 )
 
-// PluginName is the name of the database plugin.
-const PluginName = "Peering"
+const (
+	pluginName = "Peering"
+)
 
 var (
 	log         *logger.Logger
 	initialized atomic.Bool
 )
 
+// Init is an entry point for this plugin.
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, node.Enabled, configure, run)
+}
+
+// DefaultNetworkProvider returns the default network provider implementation.
+func DefaultNetworkProvider() NetworkProvider {
+	return nil // TODO
 }
 
 func configure(_ *node.Plugin) {
-	log = logger.NewLogger(PluginName)
+	log = logger.NewLogger(pluginName)
 	if err := checkMyNetworkID(); err != nil {
 		// can't continue because netid parameter is not correct
 		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)

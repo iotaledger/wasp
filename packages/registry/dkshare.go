@@ -1,5 +1,8 @@
 package registry
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"bytes"
 	"fmt"
@@ -70,17 +73,9 @@ func LoadDKShare(addr *address.Address, maskPrivate bool) (*tcrypto.DKShare, err
 	return ret, nil
 }
 
-// Impl is just a placeholder to implement all interfaces needed by different components.
+//
 // TODO: It should be used instead of the above after migration is complete.
 //
-type Impl struct {
-	suite kyber.Group
-}
-
-// New creates new instance of the registry implementation.
-func New(suite kyber.Group) *Impl {
-	return &Impl{suite: suite}
-}
 
 // SaveDKShare implements dkg.RegistryProvider.
 func (r *Impl) SaveDKShare(dkShare *dks.DKShare) error {
@@ -108,7 +103,7 @@ func (r *Impl) LoadDKShare(chainID *coretypes.ChainID) (*dks.DKShare, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dks.DKShareFromBytes(data, r.suite)
+	return dks.DKShareFromBytes(data, r.groupSuite)
 }
 
 func dbKeyForDKShare(chainID *coretypes.ChainID) []byte {

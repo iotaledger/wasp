@@ -38,7 +38,7 @@ func Init() *node.Plugin {
 	return Plugin
 }
 
-func WaitUntilIsUp() {
+func WaitUntilIsUp() { // TODO: Not used?
 	initWG.Wait()
 }
 
