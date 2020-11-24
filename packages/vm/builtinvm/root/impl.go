@@ -166,3 +166,35 @@ func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	ret.Set(ParamData, bin)
 	return ret, nil
 }
+
+func changeChainOwner(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ctx.Eventf("root.changeChainOwner.begin")
+
+	state := ctx.State()
+
+	currentOwner, _ := state.GetAgentID(VarChainOwnerID)
+	if *currentOwner != ctx.Caller() {
+		ctx.Eventf("root.changeChainOwner.fail: not authorized")
+		return nil, fmt.Errorf("not authorized")
+	}
+	newOwnerID, ok, err := ctx.Params().GetAgentID(ParamChainOwner)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, fmt.Errorf("wrong parameter")
+	}
+	state.SetAgentID(VarChainOwnerID, newOwnerID)
+	ctx.Eventf("root.changeChainOwner.success: owner changed from %s -> %s", currentOwner.String(), newOwnerID.String())
+	return nil, nil
+}
+
+func getInfo(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	d := dict.New()
+	c := codec.NewMustCodec(d)
+	chainID, _ := ctx.State().GetChainID(VarChainID)
+	c.SetChainID(VarChainID, chainID)
+	chainOwner, _ := ctx.State().GetAgentID(VarChainOwnerID)
+	c.SetAgentID(VarChainOwnerID, chainOwner)
+	return codec.NewCodec(d), nil
+}

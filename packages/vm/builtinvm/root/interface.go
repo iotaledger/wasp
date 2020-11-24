@@ -29,6 +29,8 @@ var (
 			contract.Func(FuncDeployContract, deployContract),
 			contract.ViewFunc(FuncFindContract, findContract),
 			contract.ViewFunc(FuncGetBinary, getBinary),
+			contract.Func(FuncChangeChainOwner, changeChainOwner),
+			contract.ViewFunc(FuncGetInfo, getInfo),
 		}),
 	}
 
@@ -49,6 +51,7 @@ const (
 // param variables
 const (
 	ParamChainID       = "$$chainid$$"
+	ParamChainOwner    = "$$owner$$"
 	ParamVMType        = "$$vmtype$$"
 	ParamProgramBinary = "$$programBinary$$"
 	ParamDescription   = "$$description$$"
@@ -60,9 +63,11 @@ const (
 
 // function names
 const (
-	FuncDeployContract = "deployContract"
-	FuncFindContract   = "findContract"
-	FuncGetBinary      = "getBinary"
+	FuncDeployContract   = "deployContract"
+	FuncFindContract     = "findContract"
+	FuncGetBinary        = "getBinary"
+	FuncGetInfo          = "getInfo"
+	FuncChangeChainOwner = "changeChainOwner"
 )
 
 func GetProcessor() vmtypes.Processor {
