@@ -1,5 +1,7 @@
 call t_all_account.bat
 pause
+call t_all_transfer.bat
+pause
 go test -buildmode=exe -run TestDeployChain %1
 pause
 go test -buildmode=exe -run TestDeployContractOnly %1

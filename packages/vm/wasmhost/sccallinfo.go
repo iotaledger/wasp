@@ -7,24 +7,25 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-type ScCallInfo struct {
+type ScPostInfo struct {
 	MapObject
 	contract string
 	delay    int64
 	function string
 }
 
-func (o *ScCallInfo) Exists(keyId int32) bool {
+func (o *ScPostInfo) Exists(keyId int32) bool {
 	return o.GetTypeId(keyId) >= 0
 }
 
-func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
+func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
 		KeyParams: func() WaspObject { return &ScCallParams{} },
+		KeyResults: func() WaspObject { return &ScCallParams{} },
 	})
 }
 
-func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
+func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyContract:
 		return OBJTYPE_STRING
@@ -34,11 +35,13 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 		return OBJTYPE_STRING
 	case KeyParams:
 		return OBJTYPE_MAP
+	case KeyResults:
+		return OBJTYPE_MAP
 	}
 	return -1
 }
 
-func (o *ScCallInfo) Send() {
+func (o *ScPostInfo) Send() {
 	o.vm.Trace("REQUEST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
 	if o.contract != "" {
 		//TODO handle external contract
@@ -64,7 +67,7 @@ func (o *ScCallInfo) Send() {
 	}
 }
 
-func (o *ScCallInfo) SetInt(keyId int32, value int64) {
+func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		o.contract = ""
@@ -77,7 +80,7 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 	}
 }
 
-func (o *ScCallInfo) SetString(keyId int32, value string) {
+func (o *ScPostInfo) SetString(keyId int32, value string) {
 	switch keyId {
 	case KeyContract:
 		o.contract = value
@@ -90,33 +93,33 @@ func (o *ScCallInfo) SetString(keyId int32, value string) {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-type ScCalls struct {
+type ScPosts struct {
 	ArrayObject
 }
 
-func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
+func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		callInfo := &ScCallInfo{}
-		callInfo.name = "call"
-		return callInfo
+		postInfo := &ScPostInfo{}
+		postInfo.name = "post"
+		return postInfo
 	})
 }
 
-func (a *ScCalls) GetTypeId(keyId int32) int32 {
+func (a *ScPosts) GetTypeId(keyId int32) int32 {
 	if a.Exists(keyId) {
 		return OBJTYPE_MAP
 	}
 	return -1
 }
 
-func (a *ScCalls) Send() {
+func (a *ScPosts) Send() {
 	for i := 0; i < len(a.objects); i++ {
-		request := a.vm.FindObject(a.objects[i]).(*ScCallInfo)
+		request := a.vm.FindObject(a.objects[i]).(*ScPostInfo)
 		request.Send()
 	}
 }
 
-func (a *ScCalls) SetInt(keyId int32, value int64) {
+func (a *ScPosts) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		a.objects = nil
