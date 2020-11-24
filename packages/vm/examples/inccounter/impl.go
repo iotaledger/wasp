@@ -63,7 +63,7 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	err := ep(ctx)
 	if err != nil {
-		ctx.Eventf("error %v", err)
+		ctx.Eventf("inccounter error %v", err)
 	}
 	return nil, err
 }
@@ -79,7 +79,7 @@ func (ep incEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec,
 }
 
 func initialize(ctx vmtypes.Sandbox) error {
-	ctx.Eventf("inccounter.init")
+	ctx.Eventf("inccounter.init in %s", ctx.MyContractID().Hname().String())
 	params := ctx.Params()
 	val, _, err := params.GetInt64(VarCounter)
 	if err != nil {
@@ -91,10 +91,10 @@ func initialize(ctx vmtypes.Sandbox) error {
 }
 
 func incCounter(ctx vmtypes.Sandbox) error {
-	ctx.Eventf("inccounter.incCounter")
+	ctx.Eventf("inccounter.incCounter in %s", ctx.MyContractID().Hname().String())
 	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
-	ctx.Event(fmt.Sprintf("'increasing counter value: %d'", val))
+	ctx.Eventf("'increasing counter value: %d' in %s", val, ctx.MyContractID().Hname().String())
 	state.SetInt64(VarCounter, val+1)
 	return nil
 }

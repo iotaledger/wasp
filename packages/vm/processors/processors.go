@@ -30,16 +30,15 @@ func MustNew() *ProcessorCache {
 }
 
 // NewProcessor deploys new processor in the cache or return existing
-func (cps *ProcessorCache) NewProcessor(programCode []byte, vmtype string) (*hashing.HashValue, error) {
+func (cps *ProcessorCache) NewProcessor(programCode []byte, vmtype string) (hashing.HashValue, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
 	return cps.newProcessor(programCode, vmtype)
 }
 
-func (cps *ProcessorCache) newProcessor(programCode []byte, vmtype string) (*hashing.HashValue, error) {
+func (cps *ProcessorCache) newProcessor(programCode []byte, vmtype string) (deploymentHash hashing.HashValue, err error) {
 	var proc vmtypes.Processor
-	var err error
 	var ok bool
 	var programHash hashing.HashValue
 
@@ -47,40 +46,47 @@ func (cps *ProcessorCache) newProcessor(programCode []byte, vmtype string) (*has
 	case builtinvm.VMType:
 		programHash, err = hashing.HashValueFromBytes(programCode)
 		if err != nil {
-			return nil, fmt.Errorf("NewProcessor: %v", err)
+			err = fmt.Errorf("NewProcessor: %v", err)
+			return
 		}
 		if cps.ExistsProcessor(&programHash) {
-			return &programHash, nil
+			deploymentHash = programHash
+			return
 		}
 		proc, err = builtinvm.GetProcessor(programHash)
 		if err != nil {
-			return nil, err
+			return
 		}
 
 	case examples.VMType:
 		programHash, err = hashing.HashValueFromBytes(programCode)
 		if err != nil {
-			return nil, fmt.Errorf("NewProcessor: %v", err)
+			err = fmt.Errorf("NewProcessor: %v", err)
+			return
 		}
 		if cps.ExistsProcessor(&programHash) {
-			return &programHash, nil
+			deploymentHash = programHash
+			return
 		}
 		if proc, ok = examples.GetExampleProcessor(programHash.String()); !ok {
-			return nil, fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
+			err = fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
+			return
 		}
 
 	default:
-		programHash = deploymentHash(programCode, vmtype)
+		programHash = getDeploymentHash(programCode, vmtype)
 		if cps.ExistsProcessor(&programHash) {
-			return &programHash, nil
+			deploymentHash = programHash
+			return
 		}
 		proc, err = NewProcessorFromBinary(vmtype, programCode)
 		if err != nil {
-			return nil, err
+			return
 		}
 	}
 	cps.processors[programHash] = proc
-	return &programHash, nil
+	deploymentHash = programHash
+	return
 }
 
 func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
@@ -103,7 +109,7 @@ func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBin
 	if err != nil {
 		return nil, err
 	}
-	if *deploymentHash != rec.DeploymentHash {
+	if deploymentHash != rec.DeploymentHash {
 		return nil, fmt.Errorf("internal error: *deploymentHash != deploymentHash")
 	}
 	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
@@ -120,6 +126,6 @@ func (cps *ProcessorCache) RemoveProcessor(h *hashing.HashValue) {
 }
 
 // deploymentHash helper function to calculate hash of the cache
-func deploymentHash(programCode []byte, vmtype string) hashing.HashValue {
+func getDeploymentHash(programCode []byte, vmtype string) hashing.HashValue {
 	return *hashing.HashData(programCode, []byte(vmtype))
 }

@@ -48,14 +48,14 @@ const (
 
 // param variables
 const (
-	ParamChainID       = "chainid"
-	ParamVMType        = "vmtype"
-	ParamProgramBinary = "programBinary"
-	ParamDescription   = "description"
-	ParamHname         = "hname"
-	ParamName          = "name"
-	ParamHash          = "hash"
-	ParamData          = "data"
+	ParamChainID       = "$$chainid$$"
+	ParamVMType        = "$$vmtype$$"
+	ParamProgramBinary = "$$programBinary$$"
+	ParamDescription   = "$$description$$"
+	ParamHname         = "$$hname$$"
+	ParamName          = "$$name$$"
+	ParamHash          = "$$hash$$"
+	ParamData          = "$$data$$"
 )
 
 // function names

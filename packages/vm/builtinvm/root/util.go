@@ -30,3 +30,17 @@ func GetBinary(state codec.ImmutableMustCodec, deploymentHash hashing.HashValue)
 	}
 	return nil, fmt.Errorf("binary not found")
 }
+
+func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord, programBinary []byte) error {
+	binRegistry := state.GetMap(VarRegistryOfBinaries)
+	if !binRegistry.HasAt(rec.DeploymentHash[:]) {
+		binRegistry.SetAt(rec.DeploymentHash[:], programBinary)
+	}
+	hname := coretypes.Hn(rec.Name)
+	contractRegistry := state.GetMap(VarContractRegistry)
+	if contractRegistry.HasAt(hname.Bytes()) {
+		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), rec.Name)
+	}
+	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
+	return nil
+}
