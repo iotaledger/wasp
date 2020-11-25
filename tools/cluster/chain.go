@@ -77,7 +77,7 @@ func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.
 	return chainclient.New(
 		ch.Cluster.NodeClient,
 		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
-		&ch.ChainID,
+		ch.ChainID,
 		sigScheme,
 	)
 }

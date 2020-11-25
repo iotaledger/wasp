@@ -9,10 +9,11 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/tools/wwallet/chain"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/spf13/viper"
 )
@@ -25,17 +26,13 @@ type Config struct {
 	chainRecord *registry.ChainRecord
 }
 
-func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.SCClient {
+func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
 	var timeout time.Duration
-	if config.WaitForCompletion {
-		timeout = 1 * time.Minute
-	}
 	client := chainclient.New(
 		config.GoshimmerClient(),
 		client.NewWaspClient(config.WaspApi()),
-		c.Address(),
+		chain.GetCurrentChainID(),
 		sigScheme,
-		timeout,
 	)
 	return client
 }

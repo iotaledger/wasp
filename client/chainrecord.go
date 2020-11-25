@@ -23,7 +23,7 @@ func (c *WaspClient) PutChainRecord(bd *registry.ChainRecord) error {
 }
 
 // GetChainRecord calls node to get ChainRecord record by address
-func (c *WaspClient) GetChainRecord(chainid *coretypes.ChainID) (*registry.ChainRecord, error) {
+func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry.ChainRecord, error) {
 	res := &jsonable.ChainRecord{}
 	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+GetChainRecordRoute(chainid.String()), nil, res); err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (c *WaspClient) GetChainRecord(chainid *coretypes.ChainID) (*registry.Chain
 // gets list of all SCs from the node
 func (c *WaspClient) GetChainRecordList() ([]*registry.ChainRecord, error) {
 	var res []*jsonable.ChainRecord
-	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+GetChainRecordListRoute, nil, res); err != nil {
+	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+GetChainRecordListRoute, nil, &res); err != nil {
 		return nil, err
 	}
 	list := make([]*registry.ChainRecord, len(res))
