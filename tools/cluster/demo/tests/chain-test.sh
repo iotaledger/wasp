@@ -8,8 +8,14 @@ alias="chain1"
 wwallet init
 wwallet request-funds
 
+r=$(wwallet address)
+echo "$r"
+[[ "$r" =~ Address:[[:space:]]+([[:alnum:]]+)$ ]]
+owneraddr=${BASH_REMATCH[1]}
+
 [[ $(wwallet chain list | wc -l) == "0" ]]
 
+# deploy a chain
 wwallet chain deploy --chain=$alias --committee='0,1,2,3' --quorum=3
 chainid=$(cat wwallet.json | jq .chains.$alias -r)
 
@@ -19,13 +25,27 @@ chainid=$(cat wwallet.json | jq .chains.$alias -r)
 # unnecessary, since it is the latest deployed chain
 wwallet set chain $alias
 
+# test chain info command
 r=$(wwallet chain info)
 echo "$r"
+# test that the chainid is shown
 [[ "$r" =~ "$chainid" ]]
 
+# test the list-contracts command
 r=$(wwallet chain list-contracts)
 echo "$r"
-# root + accountsc
+# check that root + accountsc contracts are listed
 [[ $(echo "$r" | wc -l) == "2" ]]
+
+# test the list-accounts command
+r=$(wwallet chain list-accounts)
+echo "$r"
+# check that the owner is listed
+echo "$r" | grep -q "$owneraddr"
+
+r=$(wwallet chain balance "$owneraddr")
+echo "$r"
+# check that the chain balance of owner is 1 IOTA
+[[ "$r" == "IOTA: 1" ]]
 
 echo "PASS"
