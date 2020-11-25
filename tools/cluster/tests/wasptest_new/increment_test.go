@@ -2,8 +2,6 @@ package wasptest
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
@@ -212,11 +210,7 @@ func TestIncPostIncrement(t *testing.T) {
 	check(err, t)
 
 	entryPoint := coretypes.Hn("incrementPostIncrement")
-	transfer := map[balance.Color]int64{
-		balance.ColorIOTA: 1,
-	}
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), &chain.ChainID, scOwner.SigScheme())
-	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, nil)
+	tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, nil)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)
