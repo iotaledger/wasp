@@ -92,6 +92,7 @@ func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 		TestMode = true
 	}
 
+	//TODO replace resetMemory() with a stack mechanism
 	vm.LogText("Calling " + vm.function)
 	err := vm.RunScFunction(vm.function)
 	if err != nil {

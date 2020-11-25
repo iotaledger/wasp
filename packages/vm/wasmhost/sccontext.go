@@ -107,7 +107,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
 		KeyAccount:   func() WaspObject { return &ScAccount{} },
-		KeyCalls:     func() WaspObject { return &ScPosts{} },
+		KeyCalls:     func() WaspObject { return &ScCalls{} },
 		KeyContract:  func() WaspObject { return &ScContract{} },
 		KeyExports:   func() WaspObject { return &ScExports{} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
@@ -116,7 +116,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
-		KeyViews:     func() WaspObject { return &ScPosts{} },
+		KeyViews:     func() WaspObject { return &ScViews{} },
 	})
 }
 
