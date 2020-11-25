@@ -28,10 +28,6 @@ func (b coloredBalances) Balance(col balance.Color) int64 {
 	return ret
 }
 
-func (b coloredBalances) AsMap() map[balance.Color]int64 {
-	return b
-}
-
 func (b coloredBalances) String() string {
 	if b == nil {
 		return ""
