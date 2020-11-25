@@ -65,8 +65,6 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	}
 
 	// call contract from request context
-	fmt.Printf("------ before call from request: contract: %s ep: %s remaining: %s\n",
-		vmctx.reqHname.String(), req.EntryPointCode().String(), remaining.String())
 	_, err = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
 
 	switch err {
