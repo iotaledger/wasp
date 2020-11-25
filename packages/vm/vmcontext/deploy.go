@@ -28,7 +28,7 @@ func (vmctx *VMContext) DeployContract(vmtype string, programBinary []byte, name
 			return err
 		}
 		// calling constructor
-		_, err = vmctx.CallContract(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
+		_, err = vmctx.Call(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
 		if err != nil {
 			vmctx.log.Warnf("sandbox.DeployContract. Error while calling init function: %v", err)
 		}
@@ -49,6 +49,6 @@ func (vmctx *VMContext) DeployContract(vmtype string, programBinary []byte, name
 	par.Set(root.ParamProgramBinary, programBinary)
 	par.SetString(root.ParamName, name)
 	par.SetString(root.ParamDescription, description)
-	_, err = vmctx.CallContract(root.Hname, coretypes.Hn(root.FuncDeployContract), par, nil)
+	_, err = vmctx.Call(root.Hname, coretypes.Hn(root.FuncDeployContract), par, nil)
 	return err
 }

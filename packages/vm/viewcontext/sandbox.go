@@ -48,7 +48,7 @@ func (s *sandboxview) MyBalances() coretypes.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 
-func (s *sandboxview) CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 

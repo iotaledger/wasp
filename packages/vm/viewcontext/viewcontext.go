@@ -61,10 +61,6 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 	return ep.CallView(newSandboxView(v, coretypes.NewContractID(v.chainID, contractHname), params))
 }
 
-//func (v *viewcontext) getBinary(deploymentHash *hashing.HashValue) ([]byte, error) {
-//	return root.GetBinary(codec.NewMustCodec(v.state), *deploymentHash)
-//}
-
 func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) codec.ImmutableMustCodec {
 	return codec.NewMustCodec(subrealm.New(state, kv.Key(contractHname.Bytes())))
 }

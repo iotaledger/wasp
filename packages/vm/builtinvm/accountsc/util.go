@@ -14,6 +14,8 @@ import (
 // CreditToAccount brings new funds to the on chain ledger.
 // Alone it is called when new funds arrive with the request, otherwise it called from MoveBetweenAccounts
 func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+	//fmt.Printf("CreditToAccount: %s -- %s\n", agentID.String(), cbalances.Str(transfer))
+
 	if agentID == TotalAssetsAccountID {
 		// wrong account IDs
 		return
@@ -44,6 +46,8 @@ func creditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, tr
 // DebitFromAccount removes funds from the chain ledger.
 // Alone it is called when posting a request, otherwise it called from MoveBetweenAccounts
 func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	//fmt.Printf("DebitFromAccount: %s -- %s\n", agentID.String(), cbalances.Str(transfer))
+
 	if agentID == TotalAssetsAccountID {
 		// wrong account IDs
 		return false
@@ -96,6 +100,8 @@ func debitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 }
 
 func MoveBetweenAccounts(state codec.MutableMustCodec, fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	//fmt.Printf("MoveBetweenAccounts: %s -> %s -- %s\n", fromAgentID.String(), toAgentID.String(), cbalances.Str(transfer))
+
 	if fromAgentID == toAgentID {
 		// no need to move
 		return true

@@ -11,7 +11,7 @@ type SandboxView interface {
 	State() codec.ImmutableMustCodec
 	MyBalances() coretypes.ColoredBalances
 	// only calls view entry points
-	CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 
 	MyContractID() coretypes.ContractID
 	Event(msg string)

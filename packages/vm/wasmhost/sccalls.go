@@ -251,7 +251,7 @@ func (o *ScViewInfo) Invoke() {
 			return true
 		})
 	}
-	results, err := o.vm.ctx.CallView(contractCode, functionCode, codec.NewCodec(params))
+	results, err := o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), nil)
 	if err != nil {
 		o.Error("failed to invoke view: %v", err)
 	}

@@ -31,8 +31,8 @@ func (s sandboxView) MyBalances() coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 
-func (s sandboxView) CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	return s.vmctx.CallView(contractHname, entryPoint, params)
+func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
 func (s sandboxView) MyContractID() coretypes.ContractID {

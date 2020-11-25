@@ -15,8 +15,8 @@ type Sandbox interface {
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
 	// only calls view entry points
-	// FIXME no need for two calls. Refactor
-	CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+	//// FIXME no need for two calls. Refactor
+	//CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 
 	// general
 	ChainID() coretypes.ChainID

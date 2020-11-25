@@ -17,8 +17,8 @@ var (
 	ErrWrongRequestToken  = errors.New("wrong request token")
 )
 
-// CallContract
-func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+// Call
+func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByHname(contract)
@@ -34,45 +34,21 @@ func (vmctx *VMContext) CallContract(contract coretypes.Hname, epCode coretypes.
 		return nil, ErrEntryPointNotFound
 	}
 
+	// distinguishing between two types of entry points. Passing different types of sandboxes
+	if ep.IsView() {
+		// passing nil as transfer: calling to view should not have effect on accounts ledger
+		if err := vmctx.pushCallContextWithTransfer(contract, params, nil); err != nil {
+			return nil, err
+		}
+		defer vmctx.popCallContext()
+
+		return ep.CallView(NewSandboxView(vmctx))
+	}
 	if err := vmctx.pushCallContextWithTransfer(contract, params, transfer); err != nil {
 		return nil, err
 	}
 	defer vmctx.popCallContext()
-
-	// distinguishing between two types of entry points. Passing different types of sandboxes
-	if ep.IsView() {
-		return ep.CallView(NewSandboxView(vmctx))
-	}
 	return ep.Call(NewSandbox(vmctx))
-}
-
-func (vmctx *VMContext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	vmctx.log.Debugw("CallView", "contract", contractHname, "epCode", epCode.String())
-
-	rec, ok := vmctx.findContractByHname(contractHname)
-	if !ok {
-		return nil, fmt.Errorf("failed to find contract with index %d", contractHname)
-	}
-
-	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
-	if err != nil {
-		return nil, err
-	}
-
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		return nil, fmt.Errorf("can't find entry point for entry point '%s'", epCode.String())
-	}
-
-	if err := vmctx.pushCallContextWithTransfer(contractHname, params, nil); err != nil {
-		return nil, err
-	}
-	defer vmctx.popCallContext()
-
-	if !ep.IsView() {
-		return nil, fmt.Errorf("only view entry point can be called in this context")
-	}
-	return ep.CallView(NewSandboxView(vmctx))
 }
 
 // mustCallFromRequest is called for each request from the VM loop
@@ -89,7 +65,9 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	}
 
 	// call contract from request context
-	_, err = vmctx.CallContract(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
+	fmt.Printf("------ before call from request: contract: %s ep: %s remaining: %s\n",
+		vmctx.reqHname.String(), req.EntryPointCode().String(), remaining.String())
+	_, err = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
 
 	switch err {
 	case nil:

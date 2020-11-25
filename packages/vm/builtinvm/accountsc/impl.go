@@ -46,6 +46,7 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	for col, bal := range retMap {
 		ret.SetInt64(kv.Key(col[:]), bal)
 	}
+	ctx.Eventf("getBalance for %s. balance = %s\n", aid.String(), cbalances.NewFromMap(retMap).String())
 	return ret, nil
 }
 
@@ -62,7 +63,7 @@ func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	MustCheckLedger(state, "accountsc.deposit.begin")
 	defer MustCheckLedger(state, "accountsc.deposit.exit")
 
-	ctx.Eventf("accountsc.deposit.begin")
+	ctx.Eventf("accountsc.deposit.begin -- %s", cbalances.Str(ctx.Accounts().Incoming()))
 	targetAgentID := ctx.Caller()
 	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {

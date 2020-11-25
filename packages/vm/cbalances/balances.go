@@ -13,6 +13,13 @@ import (
 
 type coloredBalances map[balance.Color]int64
 
+func Str(b coretypes.ColoredBalances) string {
+	if b == nil {
+		return "[]"
+	}
+	return b.String()
+}
+
 func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	if m == nil {
 		m = make(map[balance.Color]int64)
