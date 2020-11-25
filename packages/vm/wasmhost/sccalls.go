@@ -5,13 +5,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type ScCallInfo struct {
 	MapObject
 	contract string
 	function string
-	results codec.ImmutableCodec
 }
 
 func (o *ScCallInfo) Exists(keyId int32) bool {
@@ -20,8 +21,8 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyParams: func() WaspObject { return &ScCallParams{} },
-		KeyResults: func() WaspObject { return &ScCallParams{} },
+		KeyParams:  func() WaspObject { return &ScCallParams{} },
+		KeyResults: func() WaspObject { return &ScCallResults{} },
 	})
 }
 
@@ -48,20 +49,18 @@ func (o *ScCallInfo) Invoke() {
 		contractCode = coretypes.Hn(o.contract)
 	}
 	functionCode := coretypes.Hn(o.function)
-	params := dict.New()
-	paramsId, ok := o.objects[KeyParams]
-	if ok {
-		params = o.vm.FindObject(paramsId).(*ScCallParams).Params
-		params.ForEach(func(key kv.Key, value []byte) bool {
-			o.vm.Trace("  PARAM '%s'", key)
-			return true
-		})
-	}
+	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
+	params := o.vm.FindObject(paramsId).(*ScCallParams).Params
+	params.ForEach(func(key kv.Key, value []byte) bool {
+		o.vm.Trace("  PARAM '%s'", key)
+		return true
+	})
 	results, err := o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), nil)
 	if err != nil {
-		o.Error("failed to invoke view: %v", err)
+		o.Error("failed to invoke call: %v", err)
 	}
-	o.results = results
+	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
+	o.vm.FindObject(resultsId).(*ScCallResults).Results = results
 }
 
 func (o *ScCallInfo) SetInt(keyId int32, value int64) {
@@ -69,7 +68,6 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 	case KeyLength:
 		o.contract = ""
 		o.function = ""
-		o.results = nil
 	case KeyDelay:
 		if value != -1 {
 			o.Error("Unexpected value for delay: %d", value)
@@ -95,8 +93,9 @@ func (o *ScCallInfo) SetString(keyId int32, value string) {
 
 type ScPostInfo struct {
 	MapObject
+	chainId  *coretypes.ChainID
 	contract string
-	delay    int64
+	delay    uint32
 	function string
 }
 
@@ -112,6 +111,8 @@ func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 
 func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
+	case KeyChain:
+		return OBJTYPE_BYTES
 	case KeyContract:
 		return OBJTYPE_STRING
 	case KeyDelay:
@@ -126,10 +127,14 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScPostInfo) Invoke() {
 	o.vm.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
-	//contractCode := o.vm.ctx.MyContractID().Hname()
-	//if o.contract != "" {
-	//	contractCode = coretypes.Hn(o.contract)
-	//}
+	chainId := o.vm.ctx.ChainID()
+	if o.chainId != nil {
+		chainId = *o.chainId
+	}
+	contractCode := o.vm.ctx.MyContractID().Hname()
+	if o.contract != "" {
+		contractCode = coretypes.Hn(o.contract)
+	}
 	functionCode := coretypes.Hn(o.function)
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
@@ -140,14 +145,36 @@ func (o *ScPostInfo) Invoke() {
 			return true
 		})
 	}
-	if !o.vm.ctx.PostRequestToSelfWithDelay(functionCode, params, uint32(o.delay)) {
-		o.vm.Trace("  FAILED to send")
+	o.vm.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
+	if !o.vm.ctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: coretypes.NewContractID(chainId, contractCode),
+		EntryPoint:       functionCode,
+		Params:           params,
+		Timelock:         util.NanoSecToUnixSec(o.vm.ctx.GetTimestamp()) + o.delay,
+		//Transfer:         nil,
+	}) {
+		o.Error("failed to invoke post")
+	}
+}
+
+func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
+	switch keyId {
+	case KeyChain:
+		chainId, err := coretypes.NewChainIDFromBytes(value)
+		if err != nil {
+			o.Error(err.Error())
+			return
+		}
+		o.chainId = &chainId
+	default:
+		o.MapObject.SetBytes(keyId, value)
 	}
 }
 
 func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
+		o.chainId = nil
 		o.contract = ""
 		o.delay = 0
 		o.function = ""
@@ -155,7 +182,7 @@ func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 		if value < 0 {
 			o.Error("Unexpected value for delay: %d", value)
 		}
-		o.delay = value
+		o.delay = uint32(value)
 		o.Invoke()
 	default:
 		o.MapObject.SetInt(keyId, value)
@@ -179,7 +206,6 @@ type ScViewInfo struct {
 	MapObject
 	contract string
 	function string
-	results codec.ImmutableCodec
 }
 
 func (o *ScViewInfo) Exists(keyId int32) bool {
@@ -188,8 +214,8 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyParams: func() WaspObject { return &ScCallParams{} },
-		KeyResults: func() WaspObject { return &ScCallParams{} },
+		KeyParams:  func() WaspObject { return &ScCallParams{} },
+		KeyResults: func() WaspObject { return &ScCallResults{} },
 	})
 }
 
@@ -229,7 +255,8 @@ func (o *ScViewInfo) Invoke() {
 	if err != nil {
 		o.Error("failed to invoke view: %v", err)
 	}
-	o.results = results
+	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
+	o.vm.FindObject(resultsId).(*ScCallResults).Results = results
 }
 
 func (o *ScViewInfo) SetInt(keyId int32, value int64) {
@@ -237,7 +264,6 @@ func (o *ScViewInfo) SetInt(keyId int32, value int64) {
 	case KeyLength:
 		o.contract = ""
 		o.function = ""
-		o.results = nil
 	case KeyDelay:
 		if value != -2 {
 			o.Error("Unexpected value for delay: %d", value)
@@ -424,4 +450,57 @@ func (o *ScCallParams) SetInt(keyId int32, value int64) {
 func (o *ScCallParams) SetString(keyId int32, value string) {
 	key := o.vm.GetKey(keyId)
 	o.Params.Set(key, codec.EncodeString(value))
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScCallResults struct {
+	MapObject
+	Results codec.ImmutableCodec
+}
+
+func (o *ScCallResults) InitVM(vm *wasmProcessor, keyId int32) {
+	o.MapObject.InitVM(vm, keyId)
+}
+
+func (o *ScCallResults) Exists(keyId int32) bool {
+	key := o.vm.GetKey(keyId)
+	exists, _ := o.Results.Has(key)
+	return exists
+}
+
+func (o *ScCallResults) GetBytes(keyId int32) []byte {
+	key := o.vm.GetKey(keyId)
+	value, _ := o.Results.Get(key)
+	return value
+}
+
+func (o *ScCallResults) GetInt(keyId int32) int64 {
+	key := o.vm.GetKey(keyId)
+	bytes, err := o.Results.Get(key)
+	if err == nil {
+		value, err := codec.DecodeInt64(bytes)
+		if err == nil {
+			return value
+		}
+	}
+	return o.MapObject.GetInt(keyId)
+}
+
+func (o *ScCallResults) GetObjectId(keyId int32, typeId int32) int32 {
+	return o.MapObject.GetObjectId(keyId, typeId)
+}
+
+func (o *ScCallResults) GetString(keyId int32) string {
+	key := o.vm.GetKey(keyId)
+	bytes, err := o.Results.Get(key)
+	if err == nil {
+		return codec.DecodeString(bytes)
+	}
+	return o.MapObject.GetString(keyId)
+}
+
+//TODO keep track of field types
+func (o *ScCallResults) GetTypeId(keyId int32) int32 {
+	return o.MapObject.GetTypeId(keyId)
 }

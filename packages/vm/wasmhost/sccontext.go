@@ -7,7 +7,8 @@ const (
 	KeyBalance     = KeyAmount - 1
 	KeyBase58      = KeyBalance - 1
 	KeyCalls       = KeyBase58 - 1
-	KeyColor       = KeyCalls - 1
+	KeyChain       = KeyCalls - 1
+	KeyColor       = KeyChain - 1
 	KeyColors      = KeyColor - 1
 	KeyContract    = KeyColors - 1
 	KeyData        = KeyContract - 1
@@ -50,6 +51,7 @@ var keyMap = map[string]int32{
 	"balance":     KeyBalance,
 	"base58":      KeyBase58,
 	"calls":       KeyCalls,
+	"chain":       KeyChain,
 	"color":       KeyColor,
 	"colors":      KeyColors,
 	"contract":    KeyContract,
