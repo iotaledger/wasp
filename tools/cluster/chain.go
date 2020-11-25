@@ -39,9 +39,8 @@ func (ch *Chain) ChainAddress() *address.Address {
 	return &r
 }
 
-func (ch *Chain) ContractID(contractHname coretypes.Hname) *coretypes.ContractID {
-	cid := coretypes.NewContractID(ch.ChainID, contractHname)
-	return &cid
+func (ch *Chain) ContractID(contractHname coretypes.Hname) coretypes.ContractID {
+	return coretypes.NewContractID(ch.ChainID, contractHname)
 }
 
 func (ch *Chain) AllNodes() []int {
