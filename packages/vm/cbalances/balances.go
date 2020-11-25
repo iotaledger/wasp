@@ -72,6 +72,12 @@ func (b coloredBalances) Len() uint16 {
 }
 
 func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
+	if b == nil && b1 == nil {
+		return true
+	}
+	if (b == nil) != (b1 == nil) {
+		return false
+	}
 	if b.Len() != b1.Len() {
 		return false
 	}
@@ -115,10 +121,14 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 }
 
 func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
-	if err := util.WriteUint16(w, b.Len()); err != nil {
+	l := uint16(0)
+	if b != nil {
+		l = b.Len()
+	}
+	if err := util.WriteUint16(w, l); err != nil {
 		return err
 	}
-	if b.Len() == 0 {
+	if l == 0 {
 		return nil
 	}
 	var err error

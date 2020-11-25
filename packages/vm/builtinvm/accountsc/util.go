@@ -24,7 +24,7 @@ func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, tr
 
 // creditToAccount internal
 func creditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
-	if transfer.Len() == 0 {
+	if transfer == nil || transfer.Len() == 0 {
 		return
 	}
 	account := state.GetMap(kv.Key(agentID[:]))
@@ -59,7 +59,7 @@ func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 
 // debitFromAccount internal
 func debitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
-	if transfer.Len() == 0 {
+	if transfer == nil || transfer.Len() == 0 {
 		return true
 	}
 	account := state.GetMap(kv.Key(agentID[:]))
