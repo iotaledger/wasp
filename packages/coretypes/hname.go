@@ -8,21 +8,24 @@ import (
 	"strconv"
 )
 
+// Hname is 4 bytes of blake2b hash of any string. Ensured is not 0 and not ^0
 type Hname uint32
 
 const HnameLength = 4
 
+// FuncInit is a name of the init function for any smart contract
 const FuncInit = "init"
 
+// EntryPointInit is a hashed name of the init function
 var EntryPointInit = Hn(FuncInit)
 
+// NewHnameFromBytes constructur, unmarshalling
 func NewHnameFromBytes(data []byte) (ret Hname, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
 }
 
 // Hn beware collisions: hash is only 4 bytes!
-// must always be checked against the whole table for collisions and adjusted
 func Hn(funname string) (ret Hname) {
 	h := hashing.HashStrings(funname)
 	_ = ret.Read(bytes.NewReader(h[:HnameLength]))
