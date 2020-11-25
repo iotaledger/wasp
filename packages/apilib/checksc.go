@@ -19,7 +19,7 @@ const prefix = "[checkSC] "
 // it loads the chainrecord from the first node in the list and uses CommitteeNodes from that
 // chainrecord to check the whole committee
 //goland:noinspection ALL
-func CheckDeployment(apiHosts []string, chainid *coretypes.ChainID, textout ...io.Writer) bool {
+func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {
@@ -53,7 +53,7 @@ func CheckDeployment(apiHosts []string, chainid *coretypes.ChainID, textout ...i
 			missing = true
 			continue
 		}
-		if bdRecords[i].ChainID != *chainid {
+		if bdRecords[i].ChainID != chainid {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the chainrecord. Expected %s, got %s\n",
 				i, host, chainid.String(), bdRecords[i].ChainID.String())
 			ret = false
@@ -85,7 +85,7 @@ func CheckDeployment(apiHosts []string, chainid *coretypes.ChainID, textout ...i
 			ret = false
 			continue
 		}
-		if bd.ChainID != *chainid {
+		if bd.ChainID != chainid {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the chain record\n",
 				i, host, bd.ChainID.String())
 			ret = false
@@ -102,7 +102,7 @@ func CheckDeployment(apiHosts []string, chainid *coretypes.ChainID, textout ...i
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	scAddr := (address.Address)(*chainid)
+	scAddr := (address.Address)(chainid)
 	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(&scAddr)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())

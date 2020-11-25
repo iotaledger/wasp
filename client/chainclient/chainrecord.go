@@ -5,5 +5,5 @@ import (
 )
 
 func (c *Client) GetChainRecord() (*registry.ChainRecord, error) {
-	return c.WaspClient.GetChainRecord(&c.ChainID)
+	return c.WaspClient.GetChainRecord(c.ChainID)
 }

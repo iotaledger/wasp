@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -16,7 +17,6 @@ var configPath string
 var Verbose bool
 var WaitForCompletion bool
 var Utxodb bool
-var SCAlias string
 
 const (
 	hostKindApi     = "api"
@@ -30,9 +30,8 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 	fs := pflag.NewFlagSet("config", pflag.ExitOnError)
 	fs.StringVarP(&configPath, "config", "c", "wwallet.json", "path to wwallet.json")
 	fs.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
-	fs.BoolVarP(&WaitForCompletion, "wait", "w", false, "wait for confirmation")
+	fs.BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for completion")
 	fs.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
-	fs.StringVarP(&SCAlias, "sc", "s", "", "smart contract alias")
 	flags.AddFlagSet(fs)
 }
 
@@ -66,6 +65,10 @@ func GoshimmerClient() nodeclient.NodeClient {
 		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
 	}
 	return goshimmer.NewGoshimmerClient(GoshimmerApi())
+}
+
+func WaspClient() *client.WaspClient {
+	return client.NewWaspClient(WaspApi())
 }
 
 func WaspApi() string {
@@ -144,10 +147,6 @@ func defaultWaspPort(kind string, i int) int {
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
 	check(viper.WriteConfig())
-}
-
-func SetSCAddress(scAlias string, address string) {
-	Set("sc."+scAlias+".address", address)
 }
 
 func TrySCAddress(scAlias string) *address.Address {
