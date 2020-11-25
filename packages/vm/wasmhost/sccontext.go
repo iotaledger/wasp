@@ -93,12 +93,6 @@ func (o *ScContext) Exists(keyId int32) bool {
 }
 
 func (o *ScContext) Finalize() {
-	postsId, ok := o.objects[KeyPosts]
-	if ok {
-		posts := o.vm.FindObject(postsId).(*ScPosts)
-		posts.Send()
-	}
-
 	o.objects = make(map[int32]int32)
 	o.vm.objIdToObj = o.vm.objIdToObj[:2]
 }

@@ -16,3 +16,7 @@ func (s *sandbox) DeployContract(vmtype string, programBinary []byte, name strin
 func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
 	return s.vmctx.CallContract(contractHname, entryPoint, params, transfer)
 }
+
+func (s *sandbox) CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+	return s.vmctx.CallView(contractHname, entryPoint, params)
+}

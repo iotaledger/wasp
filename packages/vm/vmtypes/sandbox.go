@@ -14,6 +14,8 @@ import (
 type Sandbox interface {
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
+	// only calls view entry points
+	CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 
 	// general
 	ChainID() coretypes.ChainID
@@ -50,7 +52,7 @@ type Sandbox interface {
 
 	// PostRequest sends cross chain request
 	PostRequest(par NewRequestParams) bool
-	// PostRequestToSelf sendd cross chain request to the caller contract on the same chain
+	// PostRequestToSelf send cross chain request to the caller contract on the same chain
 	PostRequestToSelf(entryPoint coretypes.Hname, args dict.Dict) bool
 	// PostRequestToSelfWithDelay sends request to itself with timelock for some seconds after the current timestamp
 	PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, deferForSec uint32) bool
