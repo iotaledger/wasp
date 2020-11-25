@@ -2,6 +2,8 @@ package wasptest
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
@@ -209,9 +211,18 @@ func TestIncPostIncrement(t *testing.T) {
 	err := requestFunds(clu, scOwnerAddr, "originator")
 	check(err, t)
 
+	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+
 	entryPoint := coretypes.Hn("incrementPostIncrement")
-	tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, nil)
+	transfer := map[balance.Color]int64{
+		balance.ColorIOTA: 42,
+	}
+	// here we post request 'incrementPostIncrement' to the inccounter SC which then in turn will post 'increment' request to itself
+	// so it needs one iota to create the tx but the log shows the following error:
+	// ERROR   consensus/action.go:188 checking result tx properties: sc transaction must contain exactly one chain token output
+	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, nil)
 	check(err, t)
+
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)
 
@@ -230,7 +241,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
 	clu, chain := setupAndLoad(t, incName, incDescription, 2, nil)
 
-	//TODO transfer 5i
+	//TODO transfer 5i to contract
 	entryPoint := coretypes.Hn("incrementRepeatMany")
 	tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, map[string]interface{}{
 		inccounter.VarNumRepeats: numRepeats,
