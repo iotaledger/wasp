@@ -86,7 +86,7 @@ Each pair is an account with its colored balances.
 In other words, any smart contract and any ordinary address on the network can have account on 
 any chain with _colored balances_.
 
-The ISCP ensures the tokens on the account on any chain may be moved to another location only but the entity, 
+The ISCP ensures the tokens on the account on any chain may be moved to another location only by the entity, 
 represented by the corresponding _agent ID_: be it _address_ or _contract ID_. 
 The system require cryptographically secure authorisation to move funds between on-chain accounts.
 
