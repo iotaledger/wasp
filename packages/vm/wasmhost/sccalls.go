@@ -126,10 +126,10 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScPostInfo) Invoke() {
 	o.vm.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
-	contractCode := o.vm.ctx.MyContractID().Hname()
-	if o.contract != "" {
-		contractCode = coretypes.Hn(o.contract)
-	}
+	//contractCode := o.vm.ctx.MyContractID().Hname()
+	//if o.contract != "" {
+	//	contractCode = coretypes.Hn(o.contract)
+	//}
 	functionCode := coretypes.Hn(o.function)
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
