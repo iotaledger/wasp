@@ -100,7 +100,7 @@ func TestDeployContractOnly(t *testing.T) {
 	})
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain.Cluster.WaspClient(0).StateView(
+	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(root.Hname),
 		root.FuncFindContract,
 		dict.FromGoMap(map[kv.Key][]byte{

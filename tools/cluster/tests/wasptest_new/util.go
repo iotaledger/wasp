@@ -69,7 +69,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 }
 
 func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color) int64 {
-	ret, err := chain.Cluster.WaspClient(0).StateView(
+	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(accountsc.Hname),
 		accountsc.FuncBalance,
 		dict.FromGoMap(map[kv.Key][]byte{
@@ -91,7 +91,7 @@ func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.A
 }
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID {
-	r, err := chain.Cluster.WaspClient(0).StateView(
+	r, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(accountsc.Hname),
 		accountsc.FuncAccounts,
 		nil,
@@ -116,7 +116,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 	ret := make(map[coretypes.AgentID]map[balance.Color]int64)
 	accounts := getAccountsOnChain(t, chain)
 	for _, agentID := range accounts {
-		r, err := chain.Cluster.WaspClient(0).StateView(
+		r, err := chain.Cluster.WaspClient(0).CallView(
 			chain.ContractID(accountsc.Hname),
 			accountsc.FuncBalance,
 			dict.FromGoMap(map[kv.Key][]byte{

@@ -192,9 +192,19 @@ func changeChainOwner(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 func getInfo(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	d := dict.New()
 	c := codec.NewMustCodec(d)
+
 	chainID, _ := ctx.State().GetChainID(VarChainID)
 	c.SetChainID(VarChainID, chainID)
+
 	chainOwner, _ := ctx.State().GetAgentID(VarChainOwnerID)
 	c.SetAgentID(VarChainOwnerID, chainOwner)
+
+	cr := ctx.State().GetMap(VarContractRegistry)
+	cr2 := c.GetMap(VarContractRegistry)
+	cr.Iterate(func(elemKey []byte, value []byte) bool {
+		cr2.SetAt(elemKey, value)
+		return true
+	})
+
 	return codec.NewCodec(d), nil
 }

@@ -23,4 +23,9 @@ r=$(wwallet chain info)
 echo "$r"
 [[ "$r" =~ "$chainid" ]]
 
+r=$(wwallet chain list-contracts)
+echo "$r"
+# root + accountsc
+[[ $(echo "$r" | wc -l) == "2" ]]
+
 echo "PASS"

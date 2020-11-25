@@ -16,10 +16,10 @@ import (
 
 func AddEndpoints(server *echo.Echo) {
 	addStateQueryEndpoint(server)
-	server.GET("/"+client.StateViewRoute(":contractID", ":fname"), handleStateView)
+	server.GET("/"+client.CallViewRoute(":contractID", ":fname"), handleCallView)
 }
 
-func handleStateView(c echo.Context) error {
+func handleCallView(c echo.Context) error {
 	contractID, err := coretypes.NewContractIDFromBase58(c.Param("contractID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractID")))
