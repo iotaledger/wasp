@@ -172,8 +172,9 @@ func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBa
 
 func checkLedger(t *testing.T, chain *cluster.Chain) {
 	diff := diffBalancesOnChain(t, chain)
-	if diff.Len() > 0 {
-		fmt.Printf("\ninconsistent ledger %s\n", diff.String())
+	if diff == nil || diff.Len() == 0 {
+		return
 	}
+	fmt.Printf("\ninconsistent ledger %s\n", diff.String())
 	require.EqualValues(t, 0, diff.Len())
 }

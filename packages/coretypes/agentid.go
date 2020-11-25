@@ -10,22 +10,22 @@ const AgentIDLength = ChainIDLength + HnameLength
 
 // AgentID assumes:
 // - ChainID is MustAddress
-// - AgentID is never used for contract with index 0  TODO ???
+// - AgentID is never used for contract with index 0
 type AgentID [AgentIDLength]byte
 
+// NewAgentIDFromAddress a constructor
 func NewAgentIDFromAddress(addr address.Address) (ret AgentID) {
 	copy(ret[HnameLength:], addr[:])
 	return
 }
 
+// NewAgentIDFromContractID a constructor
 func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
-	//if id.Hname() == 0 {
-	//	panic("can't be 0 contract hname")
-	//}
 	copy(ret[:], id[:])
 	return
 }
 
+// NewAgentIDFromBytes a constructor
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	if len(data) != AgentIDLength {
 		err = ErrWrongDataLength
@@ -35,11 +35,12 @@ func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	return
 }
 
-// IsAddress 0 index means it is the address
+// IsAddress checks if agentID represents address. 0 index means it is the address
 func (a AgentID) IsAddress() bool {
 	return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0
 }
 
+// MustAddress takes address or panic if not address
 func (a AgentID) MustAddress() (ret address.Address) {
 	if !a.IsAddress() {
 		panic("not an address")
@@ -48,6 +49,7 @@ func (a AgentID) MustAddress() (ret address.Address) {
 	return
 }
 
+// MustContractID takes contract ID or panics if not a contract ID
 func (a AgentID) MustContractID() (ret ContractID) {
 	if a.IsAddress() {
 		panic("not a contract")
@@ -56,10 +58,12 @@ func (a AgentID) MustContractID() (ret ContractID) {
 	return
 }
 
+// Bytes marshals to bytes
 func (a AgentID) Bytes() []byte {
 	return a[:]
 }
 
+// String human readable string
 func (a AgentID) String() string {
 	if a.IsAddress() {
 		return "A-" + a.MustAddress().String()
@@ -67,6 +71,7 @@ func (a AgentID) String() string {
 	return "C-" + a.MustContractID().String()
 }
 
+// ReadAgentID reading/unmarshaling
 func ReadAgentID(r io.Reader, agentID *AgentID) error {
 	n, err := r.Read(agentID[:])
 	if err != nil {

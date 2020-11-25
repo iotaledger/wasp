@@ -21,15 +21,17 @@ func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 }
 
 func (b coloredBalances) Balance(col balance.Color) int64 {
+	if b == nil {
+		return 0
+	}
 	ret, _ := b[col]
 	return ret
 }
 
-func (b coloredBalances) AsMap() map[balance.Color]int64 {
-	return b
-}
-
 func (b coloredBalances) String() string {
+	if b == nil {
+		return ""
+	}
 	ret := ""
 	b.IterateDeterministic(func(col balance.Color, bal int64) bool {
 		ret += fmt.Sprintf("       %s: %d\n", col.String(), bal)
@@ -72,6 +74,12 @@ func (b coloredBalances) Len() uint16 {
 }
 
 func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
+	if b == nil && b1 == nil {
+		return true
+	}
+	if (b == nil) != (b1 == nil) {
+		return false
+	}
 	if b.Len() != b1.Len() {
 		return false
 	}
@@ -86,8 +94,12 @@ func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 	return ret
 }
 
+// Diff return difference between the two
 func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
 	ret := make(map[balance.Color]int64)
+	if b == nil && b1 == nil {
+		return NewFromMap(ret)
+	}
 	allColors := make(map[balance.Color]bool)
 	for c := range b {
 		allColors[c] = true
@@ -115,10 +127,14 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 }
 
 func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
-	if err := util.WriteUint16(w, b.Len()); err != nil {
+	l := uint16(0)
+	if b != nil {
+		l = b.Len()
+	}
+	if err := util.WriteUint16(w, l); err != nil {
 		return err
 	}
-	if b.Len() == 0 {
+	if l == 0 {
 		return nil
 	}
 	var err error

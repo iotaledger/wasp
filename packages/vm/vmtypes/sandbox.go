@@ -15,6 +15,7 @@ type Sandbox interface {
 	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
 	// only calls view entry points
+	// FIXME no need for two calls. Refactor
 	CallView(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 
 	// general
@@ -69,14 +70,6 @@ type NewRequestParams struct {
 	Timelock         uint32
 	Params           dict.Dict
 	Transfer         coretypes.ColoredBalances
-}
-
-// To be removed
-// Deprecated
-type RequestAccess interface {
-	// TODO MustSender to be removed and refactored. Use Caller() instead
-	// Deprecated
-	MustSender() coretypes.AgentID
 }
 
 // Accounts is an interface to access all functions with tokens
