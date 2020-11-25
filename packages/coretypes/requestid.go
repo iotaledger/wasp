@@ -12,14 +12,17 @@ import (
 
 const RequestIDLength = valuetransaction.IDLength + 2
 
+// RequestID is a global ID of any request. It is a concatenation of trasaction ID and 2 bytes of index of the section
 type RequestID [RequestIDLength]byte
 
+// NewRequestID a constructor
 func NewRequestID(txid valuetransaction.ID, index uint16) (ret RequestID) {
 	copy(ret[:valuetransaction.IDLength], txid.Bytes())
 	copy(ret[valuetransaction.IDLength:], util.Uint16To2Bytes(index))
 	return
 }
 
+// NewRequestIDFromBase58 a constructor
 func NewRequestIDFromBase58(str58 string) (ret RequestID, err error) {
 	data, err := base58.Decode(str58)
 	if err != nil {
@@ -29,6 +32,7 @@ func NewRequestIDFromBase58(str58 string) (ret RequestID, err error) {
 	return
 }
 
+// NewRequestIDFromBytes a constructor
 func NewRequestIDFromBytes(data []byte) (ret RequestID, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
@@ -38,12 +42,14 @@ func (rid *RequestID) Bytes() []byte {
 	return rid[:]
 }
 
+// TransactionID of the request ID
 func (rid *RequestID) TransactionID() *valuetransaction.ID {
 	var ret valuetransaction.ID
 	copy(ret[:], rid[:valuetransaction.IDLength])
 	return &ret
 }
 
+// Index of the request ID
 func (rid *RequestID) Index() uint16 {
 	return util.MustUint16From2Bytes(rid[valuetransaction.IDLength:])
 }

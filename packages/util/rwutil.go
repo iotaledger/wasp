@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/binary"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -220,15 +219,6 @@ func ReadBoolByte(r io.Reader, cond *bool) error {
 	return nil
 }
 
-func Uint16InList(v uint16, lst []uint16) bool {
-	for _, vl := range lst {
-		if v == vl {
-			return true
-		}
-	}
-	return false
-}
-
 func WriteTime(w io.Writer, ts time.Time) error {
 	return WriteUint64(w, uint64(ts.UnixNano()))
 }
@@ -292,17 +282,6 @@ func ReadTransactionId(r io.Reader, txid *transaction.ID) error {
 	}
 	if n != transaction.IDLength {
 		return errors.New("error while reading txid")
-	}
-	return nil
-}
-
-func ReadAddress(r io.Reader, addr *address.Address) error {
-	n, err := r.Read(addr[:])
-	if err != nil {
-		return err
-	}
-	if n != address.Length {
-		return errors.New("error while reading address")
 	}
 	return nil
 }
