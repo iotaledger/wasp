@@ -2,9 +2,11 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 )
 
 func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*ContractRecord, error) {
@@ -43,4 +45,26 @@ func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord, programB
 	}
 	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
 	return nil
+}
+
+func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coretypes.Hname]*ContractRecord, error) {
+	ret := make(map[coretypes.Hname]*ContractRecord)
+	var err error
+	contractRegistry.Iterate(func(k []byte, v []byte) bool {
+		var deploymentHash coretypes.Hname
+		deploymentHash, err = coretypes.NewHnameFromBytes(k)
+		if err != nil {
+			return false
+		}
+
+		var cr *ContractRecord
+		cr, err = DecodeContractRecord(v)
+		if err != nil {
+			return false
+		}
+
+		ret[deploymentHash] = cr
+		return true
+	})
+	return ret, err
 }

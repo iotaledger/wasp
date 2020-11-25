@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"

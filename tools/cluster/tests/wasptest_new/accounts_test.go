@@ -87,7 +87,7 @@ func TestBasicAccounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := int64(42)
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), &chain.ChainID, scOwner.SigScheme())
+	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
 	reqTx, err := chClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
 		balance.ColorIOTA: transferIotas,
 	}, nil)
@@ -203,7 +203,7 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := int64(42)
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), &chain.ChainID, scOwner.SigScheme())
+	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
 	reqTx, err := chClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
 		balance.ColorIOTA: transferIotas,
 	}, nil)
@@ -255,7 +255,7 @@ func TestBasic2Accounts(t *testing.T) {
 	printAccounts(t, chain, "withdraw before")
 
 	// withdraw back 2 iotas to originator address
-	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), &chain.ChainID, chain.OriginatorSigScheme())
+	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, chain.OriginatorSigScheme())
 	reqTx2, err := originatorClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
 	check(err, t)
 

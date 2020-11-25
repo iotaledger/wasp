@@ -39,9 +39,8 @@ func (ch *Chain) ChainAddress() *address.Address {
 	return &r
 }
 
-func (ch *Chain) ContractID(contractHname coretypes.Hname) *coretypes.ContractID {
-	cid := coretypes.NewContractID(ch.ChainID, contractHname)
-	return &cid
+func (ch *Chain) ContractID(contractHname coretypes.Hname) coretypes.ContractID {
+	return coretypes.NewContractID(ch.ChainID, contractHname)
 }
 
 func (ch *Chain) AllNodes() []int {
@@ -77,7 +76,7 @@ func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.
 	return chainclient.New(
 		ch.Cluster.NodeClient,
 		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
-		&ch.ChainID,
+		ch.ChainID,
 		sigScheme,
 	)
 }
