@@ -3,22 +3,20 @@ DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/common.sh"
 
-wwallet -c owner.json init
-wwallet -c owner.json request-funds
-
-wwallet --sc=tr -c owner.json sc deploy '0,1,2,3' 3 '8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p' 'TokenRegistry'
-scaddress=$(cat owner.json | jq .sc.tr.address -r)
-
-wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
-
 wwallet init
 wwallet request-funds
-wwallet tr set address $scaddress
+wwallet chain deploy --chain=chain1 --committee='0,1,2,3' --quorum=3
 
-r=$(wwallet tr mint "My first coin" 10)
+vmtype=wasmtimevm
+name=increment
+description="increment SC"
+file="$DIR/../../tests/wasptest_new/wasm/increment_bg.wasm"
+
+wwallet chain deploy-contract "$vmtype" "$name" "$description" "$file"
+
+# check that new contract is listed
+r=$(wwallet chain list-contracts)
 echo "$r"
-[[ "$r" =~ of[[:space:]]color[[:space:]]([[:alnum:]]+) ]]
-color=${BASH_REMATCH[1]}
+[[ $(echo "$r" | wc -l) == "3" ]]
 
-# verify
-wwallet tr query "$color" | tee >(cat >&2) | grep -q 'Supply: 10$'
+echo "PASS"

@@ -18,12 +18,13 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 }
 
 var subcmds = map[string]func([]string){
-	"list":           listCmd,
-	"deploy":         deployCmd,
-	"info":           infoCmd,
-	"list-contracts": listContractsCmd,
-	"list-accounts":  listAccountsCmd,
-	"balance":        balanceCmd,
+	"list":            listCmd,
+	"deploy":          deployCmd,
+	"info":            infoCmd,
+	"list-contracts":  listContractsCmd,
+	"deploy-contract": deployContractCmd,
+	"list-accounts":   listAccountsCmd,
+	"balance":         balanceCmd,
 }
 
 func chainCmd(args []string) {
