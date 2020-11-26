@@ -2,8 +2,10 @@ package coretypes
 
 import (
 	"errors"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"io"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/mr-tron/base58"
 )
 
 const AgentIDLength = ChainIDLength + HnameLength
@@ -81,4 +83,16 @@ func ReadAgentID(r io.Reader, agentID *AgentID) error {
 		return errors.New("error while reading agent ID")
 	}
 	return nil
+}
+
+func (a AgentID) Base58() string {
+	return base58.Encode(a[:])
+}
+
+func AgentIDFromBase58(s string) (ret AgentID, err error) {
+	var data []byte
+	if data, err = base58.Decode(s); err != nil {
+		return
+	}
+	return NewAgentIDFromBytes(data)
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -22,18 +21,14 @@ func listAccountsCmd(args []string) {
 		if err != nil {
 			panic(err.Error())
 		}
-		if agentId.IsAddress() {
-			fmt.Printf("%s\n", agentId.MustAddress())
-		} else {
-			fmt.Printf("%s\n", agentId.MustContractID().Hname())
-		}
+		fmt.Printf("%s (%s)\n", agentId.Base58(), agentId.String())
 		return true
 	})
 }
 
 func balanceCmd(args []string) {
 	if len(args) != 1 {
-		fmt.Printf("Usage: %s chain balance <address|hname>\n", os.Args[0])
+		fmt.Printf("Usage: %s chain balance <agentid>\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -54,11 +49,7 @@ func balanceCmd(args []string) {
 }
 
 func parseAgentID(s string) coretypes.AgentID {
-	hname, err := coretypes.HnameFromString(s)
-	if err == nil {
-		return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(GetCurrentChainID(), hname))
-	}
-	address, err := address.FromBase58(s)
+	agentid, err := coretypes.AgentIDFromBase58(s)
 	check(err)
-	return coretypes.NewAgentIDFromAddress(address)
+	return agentid
 }
