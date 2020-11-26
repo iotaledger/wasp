@@ -113,6 +113,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
 		KeyRequest:   func() WaspObject { return &ScRequest{} },
+		KeyResults:   func() WaspObject { return &ScCallResults{} },
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
@@ -135,6 +136,8 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyPosts:
 		return OBJTYPE_MAP_ARRAY
 	case KeyRequest:
+		return OBJTYPE_MAP
+	case KeyResults:
 		return OBJTYPE_MAP
 	case KeyState:
 		return OBJTYPE_MAP

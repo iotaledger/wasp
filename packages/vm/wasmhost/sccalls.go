@@ -23,8 +23,8 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyParams:  func() WaspObject { return &ScCallParams{} },
-		KeyResults: func() WaspObject { return &ScCallResults{} },
+		KeyParams:    func() WaspObject { return &ScCallParams{} },
+		KeyResults:   func() WaspObject { return &ScCallResults{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
@@ -119,7 +119,7 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyParams: func() WaspObject { return &ScCallParams{} },
+		KeyParams:    func() WaspObject { return &ScCallParams{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
@@ -539,7 +539,7 @@ func (o *ScCallTransfers) InitVM(vm *wasmProcessor, keyId int32) {
 
 func (o *ScCallTransfers) Exists(keyId int32) bool {
 	var color balance.Color = [32]byte{}
-    copy(color[:], o.vm.getKey(keyId))
+	copy(color[:], o.vm.getKey(keyId))
 	return o.Transfers[color] != 0
 }
 

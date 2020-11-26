@@ -96,11 +96,11 @@ func deployContract(chain *cluster.Chain, wasmName string, scDescription string,
 	}
 
 	if !*useWasp {
-		wasm, err := ioutil.ReadFile("../wasmtest/wasm/" + wasmPath)
+		wasm, err := ioutil.ReadFile("wasm/" + wasmPath)
 		if err != nil {
 			return err
 		}
-		_, err = chain.DeployExternalContract(wasmtimevm.PluginName, wasmName, scDescription, wasm, initParams)
+		_, err = chain.DeployExternalContract(wasmtimevm.VMType, wasmName, scDescription, wasm, initParams)
 		return err
 	}
 	panic("example contract disabled")

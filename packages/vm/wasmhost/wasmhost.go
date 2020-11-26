@@ -271,6 +271,16 @@ func (host *WasmHost) HasError() bool {
 	return false
 }
 
+func (host *WasmHost) initMemory() {
+	if host.memoryDirty {
+		// clear memory and restore initialized data range
+		ptr := host.vm.UnsafeMemory()
+		copy(ptr, make([]byte, len(ptr)))
+		copy(ptr[host.memoryNonZero:], host.memoryCopy)
+	}
+	host.memoryDirty = true
+}
+
 func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	err := host.vm.LoadWasm(wasmData)
 	if err != nil {
@@ -306,19 +316,17 @@ func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	return nil
 }
 
-func (host *WasmHost) resetMemory() {
-	if host.memoryDirty {
-		// clear memory and restore initialized data range
-		ptr := host.vm.UnsafeMemory()
-		copy(ptr, make([]byte, len(ptr)))
-		copy(ptr[host.memoryNonZero:], host.memoryCopy)
-	}
-	host.memoryDirty = true
-}
-
 func (host *WasmHost) RunFunction(functionName string) error {
-	host.resetMemory()
-	return host.vm.RunFunction(functionName)
+	ptr := host.vm.UnsafeMemory()
+	save := make([]byte, len(ptr))
+	copy(save, ptr)
+
+	host.initMemory()
+	err := host.vm.RunFunction(functionName)
+
+	ptr = host.vm.UnsafeMemory()
+	copy(ptr, save)
+	return err
 }
 
 func (host *WasmHost) RunScFunction(functionName string) error {
@@ -326,8 +334,17 @@ func (host *WasmHost) RunScFunction(functionName string) error {
 	if !ok {
 		return errors.New("unknown SC function name: " + functionName)
 	}
-	host.resetMemory()
-	return host.vm.RunScFunction(index)
+
+	ptr := host.vm.UnsafeMemory()
+	save := make([]byte, len(ptr))
+	copy(save, ptr)
+
+	host.initMemory()
+	err := host.vm.RunScFunction(index)
+
+	ptr = host.vm.UnsafeMemory()
+	copy(ptr, save)
+	return err
 }
 
 func (host *WasmHost) SetBytes(objId int32, keyId int32, stringRef int32, size int32) {
