@@ -24,7 +24,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 		vmctx.log.Debugw("runTheRequest OUT",
 			"reqId", vmctx.reqRef.RequestID().Short(),
 			"entry point", vmctx.reqRef.RequestSection().EntryPointCode().String(),
-			"state update", vmctx.stateUpdate.String(),
+			//"state update", vmctx.stateUpdate.String(),
 		)
 	}()
 
@@ -75,6 +75,7 @@ func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash 
 		return nil, err
 	}
 	// create result transaction
+	//vmctx.log.Debugf("-- before building the tx:\n%s\n", vmctx.txBuilder.Dump(true))
 	tx, err := vmctx.txBuilder.Build()
 	if err != nil {
 		return nil, err

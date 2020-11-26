@@ -25,6 +25,8 @@ type Properties struct {
 	isOrigin bool
 	// if isState == true: chainID
 	chainID coretypes.ChainID
+	// chainAddress == chainID
+	chainAddress address.Address
 	// if isState == true: smart contract color
 	stateColor      balance.Color
 	numMintedTokens int64
@@ -74,8 +76,6 @@ func (prop *Properties) analyzeSender(tx *Transaction) error {
 	return err
 }
 
-var ErrWrongChainToken = errors.New("sc transaction must contain exactly one chain token output")
-
 func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 	stateSection, ok := tx.State()
 	prop.isState = ok
@@ -93,20 +93,20 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 
 	// must contain exactly one output with sectionColor. It can be NewColor for origin
 	var v int64
+	err = fmt.Errorf("can't find chain token output of color %s", sectionColor.String())
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
 		v += txutil.BalanceOfColor(bals, sectionColor)
 		if v > 1 {
-			err = ErrWrongChainToken
+			err = fmt.Errorf("can't be more than one chain token output of color %s", sectionColor.String())
 			return false
 		}
 		if v == 1 {
 			prop.chainID = coretypes.ChainID(addr)
+			prop.chainAddress = addr
+			err = nil
 		}
 		return true
 	})
-	if v != 1 {
-		return ErrWrongChainToken
-	}
 	if err != nil {
 		return err
 	}
@@ -144,20 +144,40 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 		numMinted, _ := m[balance.ColorNew]
 		m[balance.ColorNew] = numMinted + 1
 	}
-	// check if transfers from requests equal to transfers by output address
-	for chainid, m := range reqTransfersByTargetChain {
-		bals, ok := tx.OutputBalancesByAddress(address.Address(chainid))
+	var err error
+	// validate all outputs w.r.t. request transfers
+	tx.Transaction.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
+		m, ok := reqTransfersByTargetChain[coretypes.ChainID(addr)]
 		if !ok {
-			return errors.New("can't find outputs for request section")
+			// do not check outputs to outside addresses
+			return true
 		}
-		txBals := cbalances.NewFromMap(txutil.BalancesToMap(bals))
-		reqBals := cbalances.NewFromMap(m)
-		if !txBals.Equal(reqBals) {
-			return errors.New("mismatch between transfer data in request section and tx outputs")
+		outBalances := cbalances.NewFromBalances(bals)
+		reqBalances := cbalances.NewFromMap(m)
+		if addr != prop.chainAddress {
+			// output to another chain
+			// outputs and requests must be equal
+			if !outBalances.Equal(reqBalances) {
+				err = fmt.Errorf("mismatch between transfer data in request section and tx outputs")
+				return false
+			}
 		}
-	}
+		// output to the same chain
+		// the request transfer must be subset of outputs and number of minted
+		// request tokens must be equal to number of requests
+		if outBalances.Balance(balance.ColorNew) != reqBalances.Balance(balance.ColorNew) {
+			err = fmt.Errorf("wrong number of minted tokens in the output to the chain address")
+			return false
+		}
+		// request balances must be contained in the chain balances
+		if !outBalances.Includes(reqBalances) {
+			err = fmt.Errorf("inconsisteny among request to self")
+			return false
+		}
+		return true
+	})
+	return err
 	// TODO free minted tokens
-	return nil
 }
 
 func (prop *Properties) SenderAddress() *address.Address {
@@ -205,6 +225,7 @@ func (prop *Properties) String() string {
 	ret += fmt.Sprintf("   requests: %d\n", prop.numRequests)
 	ret += fmt.Sprintf("   senderAddress: %s\n", prop.senderAddress.String())
 	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
+	ret += fmt.Sprintf("   chainAddress: %s\n", prop.chainAddress.String())
 	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
 	ret += fmt.Sprintf("   numMinted: %d\n", prop.numMintedTokens)
 	ret += fmt.Sprintf("   data payload size: %d\n", prop.dataPayloadSize)

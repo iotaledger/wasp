@@ -27,6 +27,15 @@ func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	return coloredBalances(m)
 }
 
+func NewFromBalances(bals []*balance.Balance) coretypes.ColoredBalances {
+	ret := make(map[balance.Color]int64, len(bals))
+	for _, b := range bals {
+		s, _ := ret[b.Color]
+		ret[b.Color] = s + b.Value
+	}
+	return NewFromMap(ret)
+}
+
 func (b coloredBalances) Balance(col balance.Color) int64 {
 	if b == nil {
 		return 0
@@ -101,7 +110,7 @@ func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 	return ret
 }
 
-// Diff return difference between the two
+// Diff return difference between the two: b - b1
 func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
 	ret := make(map[balance.Color]int64)
 	if b == nil && b1 == nil {
@@ -123,6 +132,23 @@ func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBal
 		}
 	}
 	return NewFromMap(ret)
+}
+
+// Includes b >= b1
+func (b coloredBalances) Includes(b1 coretypes.ColoredBalances) bool {
+	diff := b.Diff(b1)
+	if diff == nil || diff.Len() == 0 {
+		return true
+	}
+	ret := true
+	diff.Iterate(func(col balance.Color, bal int64) bool {
+		if bal < 0 {
+			ret = false
+			return false
+		}
+		return true
+	})
+	return ret
 }
 
 func (b coloredBalances) AddToMap(m map[balance.Color]int64) {

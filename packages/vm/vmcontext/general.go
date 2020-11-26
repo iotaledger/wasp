@@ -94,21 +94,32 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 // PostRequest creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
 func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
+	vmctx.log.Debugw("-- PostRequest",
+		"target", par.TargetContractID.String(),
+		"ep", par.EntryPoint.String(),
+		"transfer", cbalances.Str(par.Transfer),
+	)
+
 	state := codec.NewMustCodec(vmctx)
 	toAgentID := vmctx.MyAgentID()
 	if !accountsc.DebitFromAccount(state, toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
+		vmctx.log.Debugf("-- PostRequest: exit 1")
 		return false
 	}
 	if !accountsc.DebitFromAccount(state, toAgentID, par.Transfer) {
+		vmctx.log.Debugf("-- PostRequest: exit 2")
 		return false
 	}
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
 		WithTimelock(par.Timelock).
 		WithTransfer(par.Transfer).
 		WithArgs(par.Params)
-	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
+	succ := vmctx.txBuilder.AddRequestSection(reqSection) == nil
+	//vmctx.log.Debugf("-- PostRequest: success = %v", succ)
+	//vmctx.log.Debugf("-- PostRequest exit: state tx builder: \n%s\n", vmctx.txBuilder.Dump(true))
+	return succ
 }
 
 func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {

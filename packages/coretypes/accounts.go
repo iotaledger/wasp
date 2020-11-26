@@ -19,6 +19,8 @@ type ColoredBalances interface {
 	Equal(b1 ColoredBalances) bool
 	// Diff return difference between receiver and parameter color by color
 	Diff(b1 ColoredBalances) ColoredBalances
+	// Includes is when Diff all elements >= 0
+	Includes(b1 ColoredBalances) bool
 	// AddToMap adds balances to the map color by color
 	AddToMap(m map[balance.Color]int64)
 	// String human readable representation of the map

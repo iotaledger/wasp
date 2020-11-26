@@ -105,9 +105,6 @@ func copyCompressAndSortBalances(bals []*balance.Balance) ([]*balance.Balance, e
 	}
 	bmap := make(map[balance.Color]int64)
 	for _, bal := range bals {
-		if bal.Color == balance.ColorNew {
-			return nil, errorWrongColor
-		}
 		if _, ok := bmap[bal.Color]; !ok {
 			bmap[bal.Color] = 0
 		}
@@ -257,12 +254,17 @@ func (vtxb *vtxBuilder) build() *valuetransaction.Transaction {
 			}
 			outmap[addr] = append(outmap[addr], balance.New(col, b))
 		}
-		outmap[addr], _ = copyCompressAndSortBalances(outmap[addr])
+		var err error
+		outmap[addr], err = copyCompressAndSortBalances(outmap[addr])
+		if err != nil {
+			panic(err)
+		}
 	}
-	return valuetransaction.New(
-		valuetransaction.NewInputs(inps...),
-		valuetransaction.NewOutputs(outmap),
-	)
+	inputs := valuetransaction.NewInputs(inps...)
+	outputs := valuetransaction.NewOutputs(outmap)
+	//fmt.Printf("-- building: inputs %s\n", inputs.String())
+	//fmt.Printf("-- building: outputs %s\n", outputs.String())
+	return valuetransaction.New(inputs, outputs)
 }
 
 func (vtxb *vtxBuilder) Dump() string {

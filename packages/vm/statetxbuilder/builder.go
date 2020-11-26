@@ -3,6 +3,7 @@ package statetxbuilder
 
 import (
 	"errors"
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -95,4 +96,16 @@ func (txb *Builder) Build() (*sctransaction.Transaction, error) {
 		txb.stateSection,
 		txb.requestSections,
 	)
+}
+
+func (txb *Builder) Dump(dumpVtxb bool) string {
+	ret := fmt.Sprintf("     State section: %s\n", txb.stateSection.String())
+	for i, r := range txb.requestSections {
+		ret += fmt.Sprintf("     Req section #%d: %s\n", i, r.String())
+	}
+	if dumpVtxb {
+		ret += "        Value tx builder:\n"
+		ret += txb.vtxb.Dump()
+	}
+	return ret
 }
