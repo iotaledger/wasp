@@ -275,11 +275,8 @@ func TestIncPostIncrement(t *testing.T) {
 
 	entryPoint := coretypes.Hn("incrementPostIncrement")
 	transfer := map[balance.Color]int64{
-		balance.ColorIOTA: 42,
+		balance.ColorIOTA: 1,
 	}
-	// here we post request 'incrementPostIncrement' to the inccounter SC which then in turn will post 'increment' request to itself
-	// so it needs one iota to create the tx but the log shows the following error:
-	// ERROR   consensus/action.go:188 checking result tx properties: sc transaction must contain exactly one chain token output
 	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, nil)
 	check(err, t)
 
@@ -299,14 +296,21 @@ func TestIncPostIncrement(t *testing.T) {
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	clu, chain := setupAndLoad(t, incName, incDescription, 2, nil)
+	clu, chain := setupAndLoad(t, incName, incDescription, numRepeats+1, nil)
 
-	//TODO transfer 5i to contract
+	err := requestFunds(clu, scOwnerAddr, "originator")
+	check(err, t)
+
+	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+
 	entryPoint := coretypes.Hn("incrementRepeatMany")
-	tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, map[string]interface{}{
+	transfer := map[balance.Color]int64{
+		balance.ColorIOTA: 5,
+	}
+	params := map[string]interface{}{
 		inccounter.VarNumRepeats: numRepeats,
-	})
-
+	}
+	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, params)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)
