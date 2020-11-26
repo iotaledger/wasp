@@ -1,11 +1,13 @@
 package wasmhost
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -23,6 +25,7 @@ func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
 		KeyParams:  func() WaspObject { return &ScCallParams{} },
 		KeyResults: func() WaspObject { return &ScCallResults{} },
+		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
 
@@ -37,6 +40,8 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	case KeyParams:
 		return OBJTYPE_MAP
 	case KeyResults:
+		return OBJTYPE_MAP
+	case KeyTransfers:
 		return OBJTYPE_MAP
 	}
 	return -1
@@ -55,7 +60,16 @@ func (o *ScCallInfo) Invoke() {
 		o.vm.Trace("  PARAM '%s'", key)
 		return true
 	})
-	results, err := o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), nil)
+	transfersId := o.GetObjectId(KeyTransfers, OBJTYPE_MAP)
+	transfers := o.vm.FindObject(transfersId).(*ScCallTransfers).Transfers
+	balances := cbalances.NewFromMap(transfers)
+	var err error
+	var results codec.ImmutableCodec
+	if o.vm.ctx != nil {
+		results, err = o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), balances)
+	} else {
+		results, err = o.vm.ctxView.Call(contractCode, functionCode, codec.NewCodec(params))
+	}
 	if err != nil {
 		o.Error("failed to invoke call: %v", err)
 	}
@@ -106,6 +120,7 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
 		KeyParams: func() WaspObject { return &ScCallParams{} },
+		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
 
@@ -120,6 +135,8 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	case KeyFunction:
 		return OBJTYPE_STRING
 	case KeyParams:
+		return OBJTYPE_MAP
+	case KeyTransfers:
 		return OBJTYPE_MAP
 	}
 	return -1
@@ -145,13 +162,15 @@ func (o *ScPostInfo) Invoke() {
 			return true
 		})
 	}
-	o.vm.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
+	transfersId := o.GetObjectId(KeyTransfers, OBJTYPE_MAP)
+	transfers := o.vm.FindObject(transfersId).(*ScCallTransfers).Transfers
+	balances := cbalances.NewFromMap(transfers)
 	if !o.vm.ctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: coretypes.NewContractID(chainId, contractCode),
 		EntryPoint:       functionCode,
 		Params:           params,
 		Timelock:         util.NanoSecToUnixSec(o.vm.ctx.GetTimestamp()) + o.delay,
-		//Transfer:         nil,
+		Transfer:         balances,
 	}) {
 		o.Error("failed to invoke post")
 	}
@@ -461,6 +480,7 @@ type ScCallResults struct {
 
 func (o *ScCallResults) InitVM(vm *wasmProcessor, keyId int32) {
 	o.MapObject.InitVM(vm, keyId)
+	o.Results = codec.NewCodec(dict.New())
 }
 
 func (o *ScCallResults) Exists(keyId int32) bool {
@@ -503,4 +523,37 @@ func (o *ScCallResults) GetString(keyId int32) string {
 //TODO keep track of field types
 func (o *ScCallResults) GetTypeId(keyId int32) int32 {
 	return o.MapObject.GetTypeId(keyId)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScCallTransfers struct {
+	MapObject
+	Transfers map[balance.Color]int64
+}
+
+func (o *ScCallTransfers) InitVM(vm *wasmProcessor, keyId int32) {
+	o.MapObject.InitVM(vm, keyId)
+	o.Transfers = make(map[balance.Color]int64)
+}
+
+func (o *ScCallTransfers) Exists(keyId int32) bool {
+	var color balance.Color = [32]byte{}
+    copy(color[:], o.vm.getKey(keyId))
+	return o.Transfers[color] != 0
+}
+
+func (o *ScCallTransfers) GetTypeId(keyId int32) int32 {
+	return OBJTYPE_INT
+}
+
+func (o *ScCallTransfers) SetInt(keyId int32, value int64) {
+	switch keyId {
+	case KeyLength:
+		o.Transfers = make(map[balance.Color]int64)
+	default:
+		var color balance.Color = [32]byte{}
+		copy(color[:], o.vm.getKey(keyId))
+		o.Transfers[color] = value
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -178,6 +179,65 @@ func testIncrement(t *testing.T, numRequests int) {
 	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, numRequests, counterValue)
+		return true
+	})
+}
+
+func TestIncrementWithTransfer(t *testing.T) {
+	clu, chain := setupAndLoad(t, incName, incDescription, 1, nil)
+
+	if !clu.VerifyAddressBalances(&chain.Address, 3, map[balance.Color]int64{
+		balance.ColorIOTA: 2,
+		chain.Color:       1,
+	}, "chain after deployment") {
+		t.Fail()
+	}
+
+	err := requestFunds(clu, scOwnerAddr, "originator")
+	check(err, t)
+
+	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+
+	entryPoint := coretypes.Hn("increment")
+	transfer := map[balance.Color]int64{
+		balance.ColorIOTA: 42,
+	}
+	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, nil)
+	check(err, t)
+
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	check(err, t)
+
+	if !clu.WaitUntilExpectationsMet() {
+		t.Fail()
+	}
+
+	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-42, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 42,
+	}, "owner after") {
+		t.Fail()
+	}
+	if !clu.VerifyAddressBalances(&chain.Address, 4+42, map[balance.Color]int64{
+		balance.ColorIOTA: 3 + 42,
+		chain.Color:       1,
+	}, "chain after") {
+		t.Fail()
+	}
+	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, incHname))
+	actual := getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
+	require.EqualValues(t, 42, actual)
+
+	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
+	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
+	require.EqualValues(t, 1, actual) // 1 request sent
+
+	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
+	require.EqualValues(t, 2, actual) // 1 request sent
+
+	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, 1, counterValue)
 		return true
 	})
 }
