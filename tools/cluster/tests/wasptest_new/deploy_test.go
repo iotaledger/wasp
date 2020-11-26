@@ -17,7 +17,7 @@ import (
 )
 
 func TestDeployChain(t *testing.T) {
-	clu := setup(t, "test_cluster")
+	setup(t, "test_cluster")
 
 	err := clu.ListenToMessages(map[string]int{
 		"chainrec":            2,
@@ -46,7 +46,7 @@ func TestDeployChain(t *testing.T) {
 }
 
 func TestDeployContractOnly(t *testing.T) {
-	clu := setup(t, "test_cluster")
+	setup(t, "test_cluster")
 
 	err := clu.ListenToMessages(map[string]int{
 		"chainrec":            2,
@@ -116,7 +116,7 @@ func TestDeployContractOnly(t *testing.T) {
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
-	clu := setup(t, "test_cluster")
+	setup(t, "test_cluster")
 
 	err := clu.ListenToMessages(map[string]int{
 		"chainrec":            2,

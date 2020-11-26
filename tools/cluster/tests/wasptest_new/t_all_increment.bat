@@ -13,3 +13,9 @@ pause
 go test -buildmode=exe -run TestIncPostIncrement %1
 pause
 go test -buildmode=exe -run TestIncRepeatManyIncrement %1
+pause
+go test -buildmode=exe -run TestIncLocalStateInternalCall %1
+pause
+go test -buildmode=exe -run TestIncLocalStateSandboxCall %1
+pause
+go test -buildmode=exe -run TestIncLocalStatePost %1

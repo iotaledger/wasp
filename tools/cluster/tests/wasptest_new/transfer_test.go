@@ -11,7 +11,7 @@ import (
 )
 
 func TestDepositWithdraw(t *testing.T) {
-	clu := setup(t, "test_cluster")
+	setup(t, "test_cluster")
 
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)

@@ -3,7 +3,6 @@ package wasptest
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -22,7 +21,7 @@ const incDescription = "Increment, a PoC smart contract"
 var incHname = coretypes.Hn(incName)
 
 func TestIncDeployment(t *testing.T) {
-	clu, chain := setupAndLoad(t, incName, incDescription, 0, nil)
+	setupAndLoad(t, incName, incDescription, 0, nil)
 
 	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
@@ -74,11 +73,11 @@ func TestInc5xNothing(t *testing.T) {
 }
 
 func testNothing(t *testing.T, numRequests int) {
-	clu, chain := setupAndLoad(t, incName, incDescription, numRequests, nil)
+	setupAndLoad(t, incName, incDescription, numRequests, nil)
 
 	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, nil)
+		tx, err := client.PostRequest(incHname, entryPoint, nil, nil, nil)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -133,11 +132,11 @@ func TestInc5xIncrement(t *testing.T) {
 }
 
 func testIncrement(t *testing.T, numRequests int) {
-	clu, chain := setupAndLoad(t, incName, incDescription, numRequests, nil)
+	setupAndLoad(t, incName, incDescription, numRequests, nil)
 
 	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, nil)
+		tx, err := client.PostRequest(incHname, entryPoint, nil, nil, nil)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -184,7 +183,7 @@ func testIncrement(t *testing.T, numRequests int) {
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
-	clu, chain := setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1, nil)
 
 	if !clu.VerifyAddressBalances(&chain.Address, 3, map[balance.Color]int64{
 		balance.ColorIOTA: 2,
@@ -193,24 +192,8 @@ func TestIncrementWithTransfer(t *testing.T) {
 		t.Fail()
 	}
 
-	err := requestFunds(clu, scOwnerAddr, "originator")
-	check(err, t)
-
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
-
 	entryPoint := coretypes.Hn("increment")
-	transfer := map[balance.Color]int64{
-		balance.ColorIOTA: 42,
-	}
-	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, nil)
-	check(err, t)
-
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
-	check(err, t)
-
-	if !clu.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
+	postRequest(t, incHname, entryPoint, 42, nil)
 
 	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-42, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 42,
@@ -243,20 +226,10 @@ func TestIncrementWithTransfer(t *testing.T) {
 }
 
 func TestIncCallIncrement(t *testing.T) {
-	clu, chain := setupAndLoad(t, incName, incDescription, 1, nil)
-
-	err := requestFunds(clu, scOwnerAddr, "originator")
-	check(err, t)
+	setupAndLoad(t, incName, incDescription, 1, nil)
 
 	entryPoint := coretypes.Hn("incrementCallIncrement")
-	tx, err := chain.OriginatorClient().PostRequest(incHname, entryPoint, nil, nil, nil)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
-	check(err, t)
-
-	if !clu.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
+	postRequest(t, incHname, entryPoint, 0, nil)
 
 	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
@@ -266,26 +239,10 @@ func TestIncCallIncrement(t *testing.T) {
 }
 
 func TestIncPostIncrement(t *testing.T) {
-	clu, chain := setupAndLoad(t, incName, incDescription, 2, nil)
-
-	err := requestFunds(clu, scOwnerAddr, "originator")
-	check(err, t)
-
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	setupAndLoad(t, incName, incDescription, 2, nil)
 
 	entryPoint := coretypes.Hn("incrementPostIncrement")
-	transfer := map[balance.Color]int64{
-		balance.ColorIOTA: 1,
-	}
-	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, nil)
-	check(err, t)
-
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
-	check(err, t)
-
-	if !clu.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
+	postRequest(t, incHname, entryPoint, 1, nil)
 
 	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
@@ -296,34 +253,57 @@ func TestIncPostIncrement(t *testing.T) {
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	clu, chain := setupAndLoad(t, incName, incDescription, numRepeats+1, nil)
-
-	err := requestFunds(clu, scOwnerAddr, "originator")
-	check(err, t)
-
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	setupAndLoad(t, incName, incDescription, numRepeats+1, nil)
 
 	entryPoint := coretypes.Hn("incrementRepeatMany")
-	transfer := map[balance.Color]int64{
-		balance.ColorIOTA: 5,
-	}
-	params := map[string]interface{}{
+	postRequest(t, incHname, entryPoint, numRepeats, map[string]interface{}{
 		inccounter.VarNumRepeats: numRepeats,
-	}
-	tx, err := chClient.PostRequest(incHname, entryPoint, nil, transfer, params)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
-	check(err, t)
-
-	if !clu.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
+	})
 
 	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, numRepeats+1, counterValue)
 		repeats, _ := state.GetInt64(inccounter.VarNumRepeats)
 		require.EqualValues(t, 0, repeats)
+		return true
+	})
+}
+
+func TestIncLocalStateInternalCall(t *testing.T) {
+	setupAndLoad(t, incName, incDescription, 1, nil)
+
+	entryPoint := coretypes.Hn("incrementLocalStateInternalCall")
+	postRequest(t, incHname, entryPoint, 0, nil)
+
+	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, 2, counterValue)
+		return true
+	})
+}
+
+func TestIncLocalStateSandboxCall(t *testing.T) {
+	setupAndLoad(t, incName, incDescription, 1, nil)
+
+	entryPoint := coretypes.Hn("incrementLocalStateSandboxCall")
+	postRequest(t, incHname, entryPoint, 0, nil)
+
+	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, 0, counterValue)
+		return true
+	})
+}
+
+func TestIncLocalStatePost(t *testing.T) {
+	setupAndLoad(t, incName, incDescription, 4, nil)
+
+	entryPoint := coretypes.Hn("incrementLocalStatePost")
+	postRequest(t, incHname, entryPoint, 3, nil)
+
+	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, 0, counterValue)
 		return true
 	})
 }

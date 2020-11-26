@@ -18,7 +18,7 @@ import (
 )
 
 func TestBasicAccounts(t *testing.T) {
-	clu := setup(t, "test_cluster")
+	setup(t, "test_cluster")
 
 	err := clu.ListenToMessages(map[string]int{
 		"chainrec":            2,
@@ -127,7 +127,7 @@ func TestBasicAccounts(t *testing.T) {
 }
 
 func TestBasic2Accounts(t *testing.T) {
-	clu := setup(t, "test_cluster")
+	setup(t, "test_cluster")
 
 	err := clu.ListenToMessages(map[string]int{
 		"chainrec":            2,
