@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	cbalances "github.com/iotaledger/wasp/packages/vm/cbalances"
+	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"

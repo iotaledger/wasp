@@ -20,6 +20,14 @@ const incDescription = "Increment, a PoC smart contract"
 
 var incHname = coretypes.Hn(incName)
 
+func checkCounter(t *testing.T, expected int) bool {
+	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+		require.EqualValues(t, expected, counterValue)
+		return true
+	})
+}
+
 func TestIncDeployment(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 0, nil)
 
@@ -57,11 +65,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, 0, cr.NodeFee)
 		return true
 	})
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 0, counterValue)
-		return true
-	})
+	checkCounter(t, 0)
 }
 
 func TestIncNothing(t *testing.T) {
@@ -116,11 +120,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, 0, cr.NodeFee)
 		return true
 	})
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 0, counterValue)
-		return true
-	})
+	checkCounter(t, 0)
 }
 
 func TestIncIncrement(t *testing.T) {
@@ -175,11 +175,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, 0, cr.NodeFee)
 		return true
 	})
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, numRequests, counterValue)
-		return true
-	})
+	checkCounter(t, numRequests)
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
@@ -218,11 +214,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 2, actual) // 1 request sent
 
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 1, counterValue)
-		return true
-	})
+	checkCounter(t, 1)
 }
 
 func TestIncCallIncrement(t *testing.T) {
@@ -231,11 +223,7 @@ func TestIncCallIncrement(t *testing.T) {
 	entryPoint := coretypes.Hn("incrementCallIncrement")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 2, counterValue)
-		return true
-	})
+	checkCounter(t, 2)
 }
 
 func TestIncPostIncrement(t *testing.T) {
@@ -244,11 +232,7 @@ func TestIncPostIncrement(t *testing.T) {
 	entryPoint := coretypes.Hn("incrementPostIncrement")
 	postRequest(t, incHname, entryPoint, 1, nil)
 
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 2, counterValue)
-		return true
-	})
+	checkCounter(t, 2)
 }
 
 func TestIncRepeatManyIncrement(t *testing.T) {
@@ -271,39 +255,21 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 func TestIncLocalStateInternalCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-
 	entryPoint := coretypes.Hn("incrementLocalStateInternalCall")
 	postRequest(t, incHname, entryPoint, 0, nil)
-
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 2, counterValue)
-		return true
-	})
+	checkCounter(t, 2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-
 	entryPoint := coretypes.Hn("incrementLocalStateSandboxCall")
 	postRequest(t, incHname, entryPoint, 0, nil)
-
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 0, counterValue)
-		return true
-	})
+	checkCounter(t, 0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 4, nil)
-
 	entryPoint := coretypes.Hn("incrementLocalStatePost")
 	postRequest(t, incHname, entryPoint, 3, nil)
-
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
-		require.EqualValues(t, 0, counterValue)
-		return true
-	})
+	checkCounter(t, 0)
 }
