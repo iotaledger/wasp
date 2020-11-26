@@ -25,6 +25,8 @@ var subcmds = map[string]func([]string){
 	"deploy-contract": deployContractCmd,
 	"list-accounts":   listAccountsCmd,
 	"balance":         balanceCmd,
+	"post-request":    postRequestCmd,
+	"call-view":       callViewCmd,
 }
 
 func chainCmd(args []string) {

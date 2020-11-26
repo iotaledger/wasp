@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wwallet/chain"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
+	"github.com/iotaledger/wasp/tools/wwallet/decode"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 	"github.com/spf13/pflag"
 )
@@ -36,6 +37,7 @@ func main() {
 	config.InitCommands(commands, flags)
 	wallet.InitCommands(commands, flags)
 	chain.InitCommands(commands, flags)
+	decode.InitCommands(commands, flags)
 
 	check(flags.Parse(os.Args[1:]))
 
