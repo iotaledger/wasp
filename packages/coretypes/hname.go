@@ -3,9 +3,11 @@ package coretypes
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"io"
 	"strconv"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/pkg/errors"
 )
 
 // Hname is 4 bytes of blake2b hash of any string. Ensured is not 0 and not ^0
@@ -44,6 +46,14 @@ func (hn Hname) Bytes() []byte {
 
 func (hn Hname) String() string {
 	return strconv.Itoa((int)(hn))
+}
+
+func HnameFromString(s string) (Hname, error) {
+	n, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		return 0, errors.Wrap(err, "cannot parse hname")
+	}
+	return Hname(n), nil
 }
 
 func (hn *Hname) Write(w io.Writer) error {
