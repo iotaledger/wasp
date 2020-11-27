@@ -3,7 +3,7 @@ package apilib
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
