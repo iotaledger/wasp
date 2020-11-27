@@ -13,6 +13,8 @@ import (
 
 type coloredBalances map[balance.Color]int64
 
+var Nil = coretypes.ColoredBalances(coloredBalances(make(map[balance.Color]int64)))
+
 func Str(b coretypes.ColoredBalances) string {
 	if b == nil {
 		return "[]"
@@ -22,12 +24,21 @@ func Str(b coretypes.ColoredBalances) string {
 
 func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	if m == nil {
-		m = make(map[balance.Color]int64)
+		return Nil
 	}
-	return coloredBalances(m)
+	ret := make(map[balance.Color]int64)
+	for c, b := range m {
+		if b != 0 {
+			ret[c] = b
+		}
+	}
+	return coloredBalances(ret)
 }
 
 func NewFromBalances(bals []*balance.Balance) coretypes.ColoredBalances {
+	if bals == nil {
+		return Nil
+	}
 	ret := make(map[balance.Color]int64, len(bals))
 	for _, b := range bals {
 		s, _ := ret[b.Color]
@@ -114,7 +125,7 @@ func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
 	ret := make(map[balance.Color]int64)
 	if b == nil && b1 == nil {
-		return NewFromMap(ret)
+		return Nil
 	}
 	allColors := make(map[balance.Color]bool)
 	for c := range b {

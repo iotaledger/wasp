@@ -32,6 +32,7 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params codec.I
 	} else {
 		caller = coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
 	}
+	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
 		caller:           caller,

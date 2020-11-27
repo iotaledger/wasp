@@ -156,6 +156,13 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 		"state hash", vh.String(),
 	)
 
+	//prop, err := msg.Transaction.Properties()
+	//if err != nil{
+	//	sm.log.Errorf("EventStateTransactionMsg: %v", err)
+	//	return
+	//}
+	//sm.log.Debugf("EventStateTransactionMsg:\n%s", prop.String())
+
 	sm.EvidenceStateIndex(stateBlock.BlockIndex())
 
 	if sm.solidStateValid {

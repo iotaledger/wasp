@@ -38,6 +38,12 @@ func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	return
 }
 
+func NewRandomAgentID() AgentID {
+	chainID := NewRandomChainID()
+	hname := Hn("testFunction")
+	return NewAgentIDFromContractID(NewContractID(chainID, hname))
+}
+
 // IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 func (a AgentID) IsAddress() bool {
 	t := a[ChainIDLength : ChainIDLength+HnameLength]
@@ -50,7 +56,7 @@ func (a AgentID) MustAddress() (ret address.Address) {
 	if !a.IsAddress() {
 		panic("not an address")
 	}
-	copy(ret[:], a[HnameLength:])
+	copy(ret[:], a[:ChainIDLength])
 	return
 }
 

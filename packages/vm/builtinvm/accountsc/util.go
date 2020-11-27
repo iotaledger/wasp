@@ -163,7 +163,7 @@ func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentI
 func GetTotalAssets(state codec.ImmutableMustCodec) coretypes.ColoredBalances {
 	bals, ok := GetAccountBalances(state, TotalAssetsAccountID)
 	if !ok {
-		return nil
+		return cbalances.Nil
 	}
 	return cbalances.NewFromMap(bals)
 }

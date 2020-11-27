@@ -190,6 +190,6 @@ func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
 	}
 	// sent to address
-	ctx.Eventf("accountsc.withdraw.success. Sent to address %s", addr.String())
+	ctx.Eventf("accountsc.withdraw.success. Sent to address %s -- %s", addr.String(), send.String())
 	return nil, nil
 }
