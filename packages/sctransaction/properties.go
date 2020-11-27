@@ -5,7 +5,8 @@ import (
 	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -28,7 +29,11 @@ type Properties struct {
 	// chainAddress == chainID
 	chainAddress address.Address
 	// if isState == true: smart contract color
-	stateColor      balance.Color
+	stateColor balance.Color
+	// timestamp from state section
+	timestamp int64
+	// stateHash from state section
+	stateHash       hashing.HashValue
 	numMintedTokens int64
 	// number of requests
 	numRequests int
@@ -83,6 +88,9 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 		return nil
 	}
 
+	prop.timestamp = stateSection.timestamp
+	prop.stateHash = stateSection.stateHash
+
 	var err error
 
 	prop.isOrigin = stateSection.Color() == balance.ColorNew
@@ -100,7 +108,7 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 			err = fmt.Errorf("can't be more than one chain token output of color %s", sectionColor.String())
 			return false
 		}
-		if v == 1 {
+		if err != nil && v == 1 {
 			prop.chainID = coretypes.ChainID(addr)
 			prop.chainAddress = addr
 			err = nil
@@ -192,6 +200,10 @@ func (prop *Properties) IsOrigin() bool {
 	return prop.isState
 }
 
+func (prop *Properties) ChainAddress() address.Address {
+	return prop.chainAddress
+}
+
 func (prop *Properties) MustChainID() *coretypes.ChainID {
 	if !prop.isState {
 		panic("MustChainID: must be a state transaction")
@@ -227,6 +239,7 @@ func (prop *Properties) String() string {
 	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
 	ret += fmt.Sprintf("   chainAddress: %s\n", prop.chainAddress.String())
 	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
+	ret += fmt.Sprintf("   timestamp: %d\n    stateHash: %s\n", prop.timestamp, prop.stateHash.String())
 	ret += fmt.Sprintf("   numMinted: %d\n", prop.numMintedTokens)
 	ret += fmt.Sprintf("   data payload size: %d\n", prop.dataPayloadSize)
 	return ret

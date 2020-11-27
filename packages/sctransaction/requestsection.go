@@ -2,7 +2,7 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"io"
 	"time"
 

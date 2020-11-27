@@ -46,11 +46,6 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		// wrong addressee
 		return
 	}
-	//if _, ok := balances[tx.ID()]; !ok {
-	//	// violation of the protocol
-	//	log.Errorf("violation of the protocol: transaction %s is not among provided outputs. Ignored", tx.ID().String())
-	//	return
-	//}
 	log.Debugf("received tx with balances: %s", tx.ID().String())
 
 	// update balances before state and requests
@@ -64,6 +59,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 		cmt.ReceiveMessage(&chain.StateTransactionMsg{
 			Transaction: tx,
 		})
+		log.Debugf("state tx msg posted: %s", tx.ID().String())
 	}
 
 	// send all requests to addr

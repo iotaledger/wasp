@@ -48,6 +48,7 @@ type ImmutableCodec interface {
 	GetColor(key kv.Key) (*balance.Color, bool, error)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
+	Keys() ([]kv.Key, error)
 }
 
 // ImmutableMustCodec is an ImmutableCodec that automatically panics on error
@@ -67,7 +68,7 @@ type ImmutableMustCodec interface {
 	GetColor(key kv.Key) (*balance.Color, bool)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
-
+	Keys() []kv.Key
 	GetArray(kv.Key) *datatypes.MustArray
 	GetMap(kv.Key) *datatypes.MustMap
 	GetTimestampedLog(kv.Key) *datatypes.MustTimestampedLog
@@ -170,6 +171,26 @@ func (c mustcodec) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (c codec) Keys() ([]kv.Key, error) {
+	ret := make([]kv.Key, 0)
+	err := c.IterateKeys("", func(key kv.Key) bool {
+		ret = append(ret, key)
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (c mustcodec) Keys() []kv.Key {
+	ret, err := c.codec.Keys()
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (c mustcodec) Has(key kv.Key) bool {

@@ -192,19 +192,25 @@ func TestBasic2Accounts(t *testing.T) {
 		t.Fail()
 	}
 
-	if !clu.VerifyAddressBalances(chain.OriginatorAddress(), testutil.RequestFundsAmount-3, map[balance.Color]int64{
+	originatorSigScheme := chain.OriginatorSigScheme()
+	originatorAddress := chain.OriginatorAddress()
+
+	if !clu.VerifyAddressBalances(originatorAddress, testutil.RequestFundsAmount-3, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 3, // 1 for chain, 1 init, 1 inccounter
 	}, "originator after deployment") {
 		t.Fail()
 	}
 	checkLedger(t, chain)
 
-	err = requestFunds(clu, scOwnerAddr, "originator")
+	myWallet := wallet.WithIndex(3)
+	myWalletAddr := myWallet.Address()
+
+	err = requestFunds(clu, myWalletAddr, "myWalletAddress")
 	check(err, t)
 
 	transferIotas := int64(42)
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
-	reqTx, err := chClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
+	myWalletClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
+	reqTx, err := myWalletClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
 		balance.ColorIOTA: transferIotas,
 	}, nil)
 	check(err, t)
@@ -218,15 +224,14 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, 43, counterValue)
 		return true
 	})
-	// verify address balances
-	if !clu.VerifyAddressBalances(chain.OriginatorAddress(), testutil.RequestFundsAmount-3, map[balance.Color]int64{
+	if !clu.VerifyAddressBalances(originatorAddress, testutil.RequestFundsAmount-3, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 3, // 1 for chain, 1 init, 1 inccounter
 	}, "originator after") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-transferIotas, map[balance.Color]int64{
+	if !clu.VerifyAddressBalances(myWalletAddr, testutil.RequestFundsAmount-1-transferIotas, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - transferIotas,
-	}, "owner after") {
+	}, "myWalletAddr after") {
 		t.Fail()
 	}
 	if !clu.VerifyAddressBalances(&chain.Address, 4+transferIotas, map[balance.Color]int64{
@@ -242,12 +247,12 @@ func TestBasic2Accounts(t *testing.T) {
 	actual := getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
-	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
+	agentID = coretypes.NewAgentIDFromAddress(*myWalletAddr)
 	s += fmt.Sprintf("scOwner: %s\n", agentID.String())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
-	require.EqualValues(t, 1, actual) // 1 request sent
+	require.EqualValues(t, 1, actual) // 1 request sent, 1 iota from request
 
-	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	agentID = coretypes.NewAgentIDFromAddress(*originatorAddress)
 	s += fmt.Sprintf("originator: %s\n\n", agentID.String())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 2, actual) // 1 request + 1 chain
@@ -255,25 +260,26 @@ func TestBasic2Accounts(t *testing.T) {
 	printAccounts(t, chain, "withdraw before")
 
 	// withdraw back 2 iotas to originator address
-	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, chain.OriginatorSigScheme())
+	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
+	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	reqTx2, err := originatorClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)
 	check(err, t)
 
+	checkLedger(t, chain)
+
 	printAccounts(t, chain, "withdraw after")
 
-	if !clu.VerifyAddressBalances(chain.OriginatorAddress(), testutil.RequestFundsAmount-1, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
-	}, "originator after withdraw") {
-		t.Fail()
-	}
-
 	// must remain 0 on chain
-	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	agentID = coretypes.NewAgentIDFromAddress(*originatorAddress)
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 
-	checkLedger(t, chain)
+	if !clu.VerifyAddressBalances(originatorAddress, testutil.RequestFundsAmount-1, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
+	}, "originator after withdraw: "+originatorAddress.String()) {
+		t.Fail()
+	}
 }

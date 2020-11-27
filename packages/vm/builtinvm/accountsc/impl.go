@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -190,6 +190,6 @@ func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
 	}
 	// sent to address
-	ctx.Eventf("accountsc.withdraw.success. Sent to address %s", addr.String())
+	ctx.Eventf("accountsc.withdraw.success. Sent to address %s -- %s", addr.String(), send.String())
 	return nil, nil
 }

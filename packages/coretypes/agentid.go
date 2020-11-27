@@ -1,6 +1,7 @@
 package coretypes
 
 import (
+	"bytes"
 	"errors"
 	"io"
 
@@ -15,16 +16,16 @@ const AgentIDLength = ChainIDLength + HnameLength
 // - AgentID is never used for contract with index 0
 type AgentID [AgentIDLength]byte
 
-// NewAgentIDFromAddress a constructor
-func NewAgentIDFromAddress(addr address.Address) (ret AgentID) {
-	copy(ret[HnameLength:], addr[:])
-	return
-}
-
 // NewAgentIDFromContractID a constructor
 func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
 	copy(ret[:], id[:])
 	return
+}
+
+// NewAgentIDFromAddress a constructor
+func NewAgentIDFromAddress(addr address.Address) AgentID {
+	// 0 is a reserved hname
+	return NewAgentIDFromContractID(NewContractID(ChainID(addr), 0))
 }
 
 // NewAgentIDFromBytes a constructor
@@ -37,9 +38,17 @@ func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	return
 }
 
-// IsAddress checks if agentID represents address. 0 index means it is the address
+func NewRandomAgentID() AgentID {
+	chainID := NewRandomChainID()
+	hname := Hn("testFunction")
+	return NewAgentIDFromContractID(NewContractID(chainID, hname))
+}
+
+// IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 func (a AgentID) IsAddress() bool {
-	return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0
+	t := a[ChainIDLength : ChainIDLength+HnameLength]
+	var z [4]byte
+	return bytes.Equal(t, z[:])
 }
 
 // MustAddress takes address or panic if not address
@@ -47,7 +56,7 @@ func (a AgentID) MustAddress() (ret address.Address) {
 	if !a.IsAddress() {
 		panic("not an address")
 	}
-	copy(ret[:], a[HnameLength:])
+	copy(ret[:], a[:ChainIDLength])
 	return
 }
 

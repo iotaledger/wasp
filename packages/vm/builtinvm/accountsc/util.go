@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
 )
 
 // CreditToAccount brings new funds to the on chain ledger.
@@ -163,7 +163,7 @@ func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentI
 func GetTotalAssets(state codec.ImmutableMustCodec) coretypes.ColoredBalances {
 	bals, ok := GetAccountBalances(state, TotalAssetsAccountID)
 	if !ok {
-		return nil
+		return cbalances.Nil
 	}
 	return cbalances.NewFromMap(bals)
 }
