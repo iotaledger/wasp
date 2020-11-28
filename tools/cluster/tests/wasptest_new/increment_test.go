@@ -226,6 +226,15 @@ func TestIncCallIncrement(t *testing.T) {
 	checkCounter(t, 2)
 }
 
+func TestIncCallIncrementRecurse5x(t *testing.T) {
+	setupAndLoad(t, incName, incDescription, 1, nil)
+
+	entryPoint := coretypes.Hn("incrementCallIncrementRecurse5x")
+	postRequest(t, incHname, entryPoint, 0, nil)
+
+	checkCounter(t, 6)
+}
+
 func TestIncPostIncrement(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 2, nil)
 
@@ -272,4 +281,22 @@ func TestIncLocalStatePost(t *testing.T) {
 	entryPoint := coretypes.Hn("incrementLocalStatePost")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)
+}
+
+func TestIncViewCounter(t *testing.T) {
+	setupAndLoad(t, incName, incDescription, 1, nil)
+	entryPoint := coretypes.Hn("increment")
+	postRequest(t, incHname, entryPoint, 0, nil)
+	checkCounter(t, 1)
+	ret, err := chain.Cluster.WaspClient(0).CallView(
+		chain.ContractID(coretypes.Hn(incName)),
+		"incrementViewCounter",
+		nil,
+	)
+	check(err, t)
+
+	c := codec.NewCodec(ret)
+	counter, _, err := c.GetInt64("counter")
+	check(err, t)
+	require.EqualValues(t, 1, counter)
 }

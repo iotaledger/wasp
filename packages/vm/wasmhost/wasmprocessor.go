@@ -31,18 +31,21 @@ func NewWasmProcessor() (*wasmProcessor, error) {
 }
 
 func (vm *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	//if vm.IsView() { vm.LogText("call is view") }
+	//if ctx == nil { vm.LogText("ctx is nil") }
+	//if ctxView == nil { vm.LogText("ctxView is nil") }
 	saveCtx := vm.ctx
 	saveCtxView := vm.ctxView
 
 	vm.ctx = ctx
 	vm.ctxView = ctxView
-	vm.params = ctx.Params()
+	vm.params = ctxView.Params()
 
 	defer func() {
+		vm.LogText("Finalizing call")
 		vm.ctx = saveCtx
 		vm.ctxView = saveCtxView
 		vm.params = nil
-		vm.LogText("Finalizing call")
 		vm.scContext.Finalize()
 	}()
 
@@ -149,6 +152,10 @@ func (vm *wasmProcessor) Log(logLevel int32, text string) {
 func (vm *wasmProcessor) LogText(text string) {
 	if vm.ctx != nil {
 		vm.ctx.Event(text)
+		return
+	}
+	if vm.ctxView != nil {
+		vm.ctxView.Event(text)
 		return
 	}
 	// fallback logging
