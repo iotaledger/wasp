@@ -40,7 +40,7 @@ func TestDeployChain(t *testing.T) {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 2, contractRegistry.Len())
+		require.EqualValues(t, 3, contractRegistry.Len())
 		return true
 	})
 }
@@ -149,7 +149,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
@@ -186,7 +186,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(accountsc.Hname.Bytes())
 		require.NotNil(t, crBytes)

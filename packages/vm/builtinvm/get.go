@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/dummyprocessor"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -25,6 +26,9 @@ func GetProcessor(programHash hashing.HashValue) (vmtypes.Processor, error) {
 
 	case accountsc.ProgramHash:
 		return accountsc.GetProcessor(), nil
+
+	case blob.ProgramHash:
+		return blob.GetProcessor(), nil
 
 	case *dummyprocessor.ProgramHash:
 		return dummyprocessor.GetProcessor(), nil

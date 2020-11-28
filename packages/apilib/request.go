@@ -9,10 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
@@ -60,7 +57,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 			WithTimelock(sectPar.Timelock).
 			WithTransfer(cbalances.NewFromMap(sectPar.Transfer))
 
-		args := convertArgs(sectPar.Vars)
+		args := codec.EncodeDictFromMap(sectPar.Vars)
 		if args == nil {
 			return nil, errors.New("wrong arguments")
 		}
@@ -102,49 +99,4 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		return nil, err
 	}
 	return tx, nil
-}
-
-func convertArgs(vars map[string]interface{}) dict.Dict {
-	ret := dict.New()
-	args := codec.NewCodec(ret)
-	for k, v := range vars {
-		key := kv.Key(k)
-		switch vt := v.(type) {
-		case int:
-			args.SetInt64(key, int64(vt))
-		case byte:
-			args.SetInt64(key, int64(vt))
-		case int16:
-			args.SetInt64(key, int64(vt))
-		case int32:
-			args.SetInt64(key, int64(vt))
-		case int64:
-			args.SetInt64(key, vt)
-		case uint16:
-			args.SetInt64(key, int64(vt))
-		case uint32:
-			args.SetInt64(key, int64(vt))
-		case uint64:
-			args.SetInt64(key, int64(vt))
-		case string:
-			args.SetString(key, vt)
-		case []byte:
-			args.Set(key, vt)
-		case *hashing.HashValue:
-			args.SetHashValue(key, vt)
-		case *address.Address:
-			args.Set(key, vt.Bytes())
-		case *balance.Color:
-			args.SetColor(key, vt)
-		case *coretypes.ChainID:
-			args.SetChainID(key, vt)
-		case *coretypes.ContractID:
-			args.SetContractID(key, vt)
-		case *coretypes.AgentID:
-			args.SetAgentID(key, vt)
-		default:
-			return nil
-		}
-	}
-	return ret
 }

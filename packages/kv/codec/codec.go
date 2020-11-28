@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"sort"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -49,6 +51,7 @@ type ImmutableCodec interface {
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
 	Keys() ([]kv.Key, error)
+	KeysSorted() ([]kv.Key, error)
 }
 
 // ImmutableMustCodec is an ImmutableCodec that automatically panics on error
@@ -69,6 +72,7 @@ type ImmutableMustCodec interface {
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
 	Keys() []kv.Key
+	KeysSorted() []kv.Key
 	GetArray(kv.Key) *datatypes.MustArray
 	GetMap(kv.Key) *datatypes.MustMap
 	GetTimestampedLog(kv.Key) *datatypes.MustTimestampedLog
@@ -187,6 +191,25 @@ func (c codec) Keys() ([]kv.Key, error) {
 
 func (c mustcodec) Keys() []kv.Key {
 	ret, err := c.codec.Keys()
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func (c codec) KeysSorted() ([]kv.Key, error) {
+	k, err := c.Keys()
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(k, func(i, j int) bool {
+		return k[i] < k[j]
+	})
+	return k, nil
+}
+
+func (c mustcodec) KeysSorted() []kv.Key {
+	ret, err := c.codec.KeysSorted()
 	if err != nil {
 		panic(err)
 	}
@@ -444,4 +467,49 @@ func (c codec) Append(from ImmutableCodec) error {
 		c.Set(key, value)
 		return true
 	})
+}
+
+func EncodeDictFromMap(vars map[string]interface{}) dict.Dict {
+	ret := dict.New()
+	c := NewCodec(ret)
+	for k, v := range vars {
+		key := kv.Key(k)
+		switch vt := v.(type) {
+		case int:
+			c.SetInt64(key, int64(vt))
+		case byte:
+			c.SetInt64(key, int64(vt))
+		case int16:
+			c.SetInt64(key, int64(vt))
+		case int32:
+			c.SetInt64(key, int64(vt))
+		case int64:
+			c.SetInt64(key, vt)
+		case uint16:
+			c.SetInt64(key, int64(vt))
+		case uint32:
+			c.SetInt64(key, int64(vt))
+		case uint64:
+			c.SetInt64(key, int64(vt))
+		case string:
+			c.SetString(key, vt)
+		case []byte:
+			c.Set(key, vt)
+		case *hashing.HashValue:
+			c.SetHashValue(key, vt)
+		case *address.Address:
+			c.Set(key, vt.Bytes())
+		case *balance.Color:
+			c.SetColor(key, vt)
+		case *coretypes.ChainID:
+			c.SetChainID(key, vt)
+		case *coretypes.ContractID:
+			c.SetContractID(key, vt)
+		case *coretypes.AgentID:
+			c.SetAgentID(key, vt)
+		default:
+			return nil
+		}
+	}
+	return ret
 }

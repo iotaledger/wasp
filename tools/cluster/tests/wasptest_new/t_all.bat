@@ -5,3 +5,5 @@ pause
 call t_all_transfer.bat
 pause
 call t_all_increment.bat %1
+pause
+call t_all_blob.bat %1
