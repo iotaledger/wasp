@@ -44,11 +44,18 @@ func NewRandomAgentID() AgentID {
 	return NewAgentIDFromContractID(NewContractID(chainID, hname))
 }
 
+func (a *AgentID) chainIDField() []byte {
+	return a[:ChainIDLength]
+}
+
+func (a *AgentID) hnameField() []byte {
+	return a[ChainIDLength : ChainIDLength+HnameLength]
+}
+
 // IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 func (a AgentID) IsAddress() bool {
-	t := a[ChainIDLength : ChainIDLength+HnameLength]
 	var z [4]byte
-	return bytes.Equal(t, z[:])
+	return bytes.Equal(a.hnameField(), z[:])
 }
 
 // MustAddress takes address or panic if not address
@@ -56,7 +63,7 @@ func (a AgentID) MustAddress() (ret address.Address) {
 	if !a.IsAddress() {
 		panic("not an address")
 	}
-	copy(ret[:], a[:ChainIDLength])
+	copy(ret[:], a.chainIDField())
 	return
 }
 
