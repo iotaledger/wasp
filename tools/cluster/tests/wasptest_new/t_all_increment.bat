@@ -10,9 +10,9 @@ go test -buildmode=exe -run TestInc5xIncrement %1
 pause
 go test -buildmode=exe -run TestIncrementWithTransfer %1
 pause
-go test -buildmode=exe -run TestIncCallIncrement %1
+go test -buildmode=exe -run TestIncCallIncrement1 %1
 pause
-go test -buildmode=exe -run TestIncCallIncrementRecurse5x %1
+go test -buildmode=exe -run TestIncCallIncrement2Recurse5x %1
 pause
 go test -buildmode=exe -run TestIncPostIncrement %1
 pause

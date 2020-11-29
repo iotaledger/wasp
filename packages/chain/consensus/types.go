@@ -142,7 +142,7 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 func (op *operator) getFeeDestination() coretypes.AgentID {
 	// TODO
 	// temporary to the chain owner's account
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accountsc.Hname))
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accountsc.Interface.Hname()))
 }
 
 func (op *operator) getMinimumReward() int64 {

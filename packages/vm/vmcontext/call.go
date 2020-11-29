@@ -27,7 +27,7 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 	}
 	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
 	if err != nil {
-		return nil, ErrProcessorNotFound
+		return nil, err
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
@@ -36,7 +36,7 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
-		// passing nil as transfer: calling to view should not have effect on accounts ledger
+		// passing nil as transfer: calling to view should not have effect on chain ledger
 		if err := vmctx.pushCallContextWithTransfer(contract, params, nil); err != nil {
 			return nil, err
 		}

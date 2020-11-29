@@ -1,6 +1,7 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
 
@@ -8,10 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +35,7 @@ func TestDeployChain(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
 		contractRegistry := state.GetMap(root.VarContractRegistry)
@@ -64,8 +63,10 @@ func TestDeployContractOnly(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	check(err, t)
 
-	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})
@@ -75,7 +76,7 @@ func TestDeployContractOnly(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
@@ -85,7 +86,7 @@ func TestDeployContractOnly(t *testing.T) {
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, examples.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
 		require.EqualValues(t, cr.Name, name)
@@ -101,7 +102,7 @@ func TestDeployContractOnly(t *testing.T) {
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(root.Hname),
+		chain.ContractID(root.Interface.Hname()),
 		root.FuncFindContract,
 		dict.FromGoMap(map[kv.Key][]byte{
 			root.ParamHname: hname.Bytes(),
@@ -134,8 +135,10 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	description := "testing contract deployment with inccounter"
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	check(err, t)
 
-	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 	})
 	check(err, t)
@@ -144,7 +147,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
@@ -155,7 +158,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, examples.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
 		require.EqualValues(t, cr.Name, name)
@@ -181,28 +184,28 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 3, blockIndex)
 		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
-		crBytes := contractRegistry.GetAt(accountsc.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(accountsc.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
-		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.Description, cr.Description)
+		require.EqualValues(t, accountsc.Interface.ProgramHash, cr.ProgramHash)
+		require.EqualValues(t, accountsc.Interface.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.FullName, cr.Name)
+		require.EqualValues(t, accountsc.Interface.Name, cr.Name)
 
 		//--
 		crBytes = contractRegistry.GetAt(hnameNew.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)
-		require.EqualValues(t, examples.VMType, cr.VMType)
+		// TODO check program hash
 		require.EqualValues(t, dscrNew, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
 		require.EqualValues(t, nameNew, cr.Name)

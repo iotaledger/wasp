@@ -2,7 +2,6 @@ package viewcontext
 
 import (
 	"fmt"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,7 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/hardcoded"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -37,13 +38,16 @@ func New(chain chain.Chain) (*viewcontext, error) {
 }
 
 func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
-	rec, err := root.FindContract(contractStateSubpartition(v.state, root.Hname), contractHname)
+	rec, err := root.FindContract(contractStateSubpartition(v.state, root.Interface.Hname()), contractHname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
 	}
 
-	proc, err := v.processors.GetOrCreateProcessor(rec, func(deploymentHash *hashing.HashValue) ([]byte, error) {
-		return root.GetBinary(contractStateSubpartition(v.state, contractHname), *deploymentHash)
+	proc, err := v.processors.GetOrCreateProcessor(rec, func(programHash hashing.HashValue) (string, []byte, error) {
+		if vmtype, ok := hardcoded.LocateHardcodedProgram(programHash); ok {
+			return vmtype, nil, nil
+		}
+		return blob.LocateProgram(contractStateSubpartition(v.state, blob.Interface.Hname()), programHash)
 	})
 	if err != nil {
 		return nil, err

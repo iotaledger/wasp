@@ -181,7 +181,7 @@ func spawn(ctx vmtypes.Sandbox) error {
 	}
 	par := codec.NewCodec(dict.New())
 	par.SetInt64(VarCounter, val+1)
-	err = ctx.DeployContract("examplevm", hashBin[:], name, dscr, par)
+	err = ctx.CreateContract(hashBin, name, dscr, par)
 	if err != nil {
 		return err
 	}

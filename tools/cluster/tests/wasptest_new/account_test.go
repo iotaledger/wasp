@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
 )
@@ -36,8 +36,10 @@ func TestBasicAccounts(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	check(err, t)
 
-	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})
@@ -47,10 +49,10 @@ func TestBasicAccounts(t *testing.T) {
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.Name, root.Hname.String())
-	t.Logf("   %s: %s", accountsc.Name, accountsc.Hname.String())
+	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
+	t.Logf("   %s: %s", accountsc.Name, accountsc.Interface.Hname().String())
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
@@ -62,7 +64,7 @@ func TestBasicAccounts(t *testing.T) {
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, examples.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
 		require.EqualValues(t, name, cr.Name)
@@ -145,8 +147,10 @@ func TestBasic2Accounts(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
+	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	check(err, t)
 
-	_, err = chain.DeployBuiltinContract(name, examples.VMType, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})
@@ -156,10 +160,10 @@ func TestBasic2Accounts(t *testing.T) {
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.Name, root.Hname.String())
-	t.Logf("   %s: %s", accountsc.Name, accountsc.Hname.String())
+	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
+	t.Logf("   %s: %s", accountsc.Name, accountsc.Interface.Hname().String())
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
@@ -171,7 +175,7 @@ func TestBasic2Accounts(t *testing.T) {
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, examples.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
 		require.EqualValues(t, name, cr.Name)
@@ -262,7 +266,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
 	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
+	reqTx2, err := originatorClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)

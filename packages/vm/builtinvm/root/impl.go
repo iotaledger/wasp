@@ -4,13 +4,12 @@ package root
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -48,30 +47,18 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state.SetChainID(VarChainID, chainID)
 	state.SetAgentID(VarChainOwnerID, &sender) // chain owner is whoever sends init request
 	state.SetString(VarDescription, chainDescription)
-	contractRegistry.SetAt(Hname.Bytes(), EncodeContractRecord(&RootContractRecord))
+	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&RootContractRecord))
 
-	err = ctx.DeployContract(
-		"builtinvm",
-		accountsc.ProgramHash[:],
-		accountsc.FullName,
-		accountsc.Description,
-		nil,
-	)
+	err = ctx.CreateContract(blob.Interface.ProgramHash, blob.Interface.Name, blob.Interface.Description, nil)
 	if err != nil {
 		return nil, err
 	}
-	err = ctx.DeployContract(
-		"builtinvm",
-		blob.ProgramHash[:],
-		blob.FullName,
-		blob.Description,
-		nil,
-	)
+	err = ctx.CreateContract(accountsc.Interface.ProgramHash, accountsc.Interface.Name, accountsc.Interface.Description, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx.Eventf("root.initialize.success hname = %s", Hname.String())
+	ctx.Eventf("root.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
@@ -83,22 +70,13 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 	params := ctx.Params()
 
-	vmtype, ok, err := params.GetString(ParamVMType)
+	proghash, ok, err := params.GetHashValue(ParamProgramHash)
 	if err != nil {
 		ctx.Eventf("root.deployContract.error 1: %v", err)
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("root.deployContract.error: VMType undefined")
-	}
-
-	programBinary, err := params.Get(ParamProgramBinary)
-	if err != nil {
-		ctx.Eventf("root.deployContract.error 2: %v", err)
-		return nil, err
-	}
-	if len(programBinary) == 0 {
-		return nil, fmt.Errorf("root.deployContract.begin: programBinary undefined")
+		return nil, fmt.Errorf("root.deployContract.error: ProgramHash undefined")
 	}
 	description, ok, err := params.GetString(ParamDescription)
 	if err != nil {
@@ -106,7 +84,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("root.deployContract.begin: description undefined")
+		description = "N/A"
 	}
 	name, ok, err := params.GetString(ParamName)
 	if err != nil {
@@ -119,12 +97,12 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	// pass to init function all params not consumed so far
 	initParams := codec.NewCodec(dict.New())
 	err = params.Iterate("", func(key kv.Key, value []byte) bool {
-		if key != ParamVMType && key != ParamProgramBinary && key != ParamDescription {
+		if key != ParamProgramHash && key != ParamName && key != ParamDescription {
 			initParams.Set(key, value)
 		}
 		return true
 	})
-	err = ctx.DeployContract(vmtype, programBinary, name, description, initParams)
+	err = ctx.CreateContract(*proghash, name, description, initParams)
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract: %v", err)
 	}
@@ -153,29 +131,6 @@ func findContract(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	retBin := EncodeContractRecord(rec)
 	ret := codec.NewCodec(dict.New())
 	ret.Set(ParamData, retBin)
-	return ret, nil
-}
-
-// getBinary is
-func getBinary(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	if ctx.State().Get(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("root.initialize.fail: not_initialized")
-	}
-	params := ctx.Params()
-	deploymentHash, ok, err := params.GetHashValue(ParamHash)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'hash' undefined")
-	}
-
-	bin, err := GetBinary(ctx.State(), *deploymentHash)
-	if err != nil {
-		return nil, err
-	}
-	ret := codec.NewCodec(dict.New())
-	ret.Set(ParamData, bin)
 	return ret, nil
 }
 

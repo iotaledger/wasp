@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -35,8 +34,8 @@ func TestIncDeployment(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, 2, blockIndex)
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		require.EqualValues(t, 3, blockIndex)
 
 		chid, _ := state.GetChainID(root.VarChainID)
 		require.EqualValues(t, &chain.ChainID, chid)
@@ -50,7 +49,7 @@ func TestIncDeployment(t *testing.T) {
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 		//--
@@ -59,7 +58,7 @@ func TestIncDeployment(t *testing.T) {
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, wasmtimevm.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
@@ -91,8 +90,8 @@ func testNothing(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, numRequests+2, blockIndex)
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		require.EqualValues(t, numRequests+3, blockIndex)
 
 		chid, _ := state.GetChainID(root.VarChainID)
 		require.EqualValues(t, &chain.ChainID, chid)
@@ -106,7 +105,7 @@ func testNothing(t *testing.T, numRequests int) {
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 		//--
@@ -114,7 +113,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
-		require.EqualValues(t, wasmtimevm.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
@@ -146,8 +145,8 @@ func testIncrement(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, numRequests+2, blockIndex)
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+		require.EqualValues(t, numRequests+3, blockIndex)
 
 		chid, _ := state.GetChainID(root.VarChainID)
 		require.EqualValues(t, &chain.ChainID, chid)
@@ -161,7 +160,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 		//--
@@ -169,7 +168,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
-		require.EqualValues(t, wasmtimevm.VMType, cr.VMType)
+		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
@@ -181,8 +180,8 @@ func testIncrement(t *testing.T, numRequests int) {
 func TestIncrementWithTransfer(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	if !clu.VerifyAddressBalances(&chain.Address, 3, map[balance.Color]int64{
-		balance.ColorIOTA: 2,
+	if !clu.VerifyAddressBalances(&chain.Address, 4, map[balance.Color]int64{
+		balance.ColorIOTA: 3,
 		chain.Color:       1,
 	}, "chain after deployment") {
 		t.Fail()
@@ -196,8 +195,8 @@ func TestIncrementWithTransfer(t *testing.T) {
 	}, "owner after") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(&chain.Address, 4+42, map[balance.Color]int64{
-		balance.ColorIOTA: 3 + 42,
+	if !clu.VerifyAddressBalances(&chain.Address, 5+42, map[balance.Color]int64{
+		balance.ColorIOTA: 4 + 42,
 		chain.Color:       1,
 	}, "chain after") {
 		t.Fail()
@@ -212,12 +211,12 @@ func TestIncrementWithTransfer(t *testing.T) {
 
 	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
-	require.EqualValues(t, 2, actual) // 1 request sent
+	require.EqualValues(t, 3, actual) // 2 requests sent
 
 	checkCounter(t, 1)
 }
 
-func TestIncCallIncrement(t *testing.T) {
+func TestIncCallIncrement1(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
 	entryPoint := coretypes.Hn("incrementCallIncrement")
@@ -226,7 +225,7 @@ func TestIncCallIncrement(t *testing.T) {
 	checkCounter(t, 2)
 }
 
-func TestIncCallIncrementRecurse5x(t *testing.T) {
+func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
 	entryPoint := coretypes.Hn("incrementCallIncrementRecurse5x")

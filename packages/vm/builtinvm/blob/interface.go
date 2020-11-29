@@ -1,7 +1,7 @@
 package blob
 
 import (
-	builtinutil "github.com/iotaledger/wasp/packages/vm/builtinvm/util"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -9,52 +9,48 @@ import (
 const (
 	Name        = "blob"
 	Version     = "0.1"
-	Description = "Blob Contract"
+	fullName    = Name + "-" + Version
+	description = "Blob Contract"
 )
 
 var (
-	Interface = contract.ContractInterface{
-		Name:        Name,
-		Version:     Version,
-		Description: Description,
-		VMType:      "builtin",
-		Functions: contract.Funcs(initialize, []contract.ContractFunctionInterface{
-			contract.Func(FuncStoreBlob, storeBlob),
-			contract.ViewFunc(FuncGetBlobInfo, getBlobInfo),
-			contract.ViewFunc(FuncGetBlobField, getBlobField),
-		}),
+	Interface = &contract.ContractInterface{
+		Name:        fullName,
+		Description: description,
+		ProgramHash: *hashing.HashStrings(fullName),
 	}
+)
 
-	ProgramHash = builtinutil.BuiltinProgramHash(Name, Version)
-	Hname       = builtinutil.BuiltinHname(Name, Version)
-	FullName    = builtinutil.BuiltinFullName(Name, Version)
+func init() {
+	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
+		contract.Func(FuncStoreBlob, storeBlob),
+		contract.ViewFunc(FuncGetBlobInfo, getBlobInfo),
+		contract.ViewFunc(FuncGetBlobField, getBlobField),
+	})
+}
+
+const (
+	// state variables
+	VarStateInitialized = "i"
+
+	// request parameters
+	ParamHash  = "hash"
+	ParamField = "field"
+	ParamBytes = "bytes"
 
 	// variable names of standard blob's field
 	// user-defined field must be different
 	VarFieldProgramBinary      = "p"
+	VarFieldVMType             = "v"
 	VarFieldProgramDescription = "d"
 	VarFieldProgramSource      = "s"
-)
 
-// state variables
-const (
-	VarStateInitialized = "i"
-)
-
-// param/return variables
-const (
-	ParamHash  = "hash"
-	ParamField = "field"
-	ParamBytes = "bytes"
-)
-
-// function names
-const (
+	// function names
 	FuncGetBlobInfo  = "getBlobInfo"
 	FuncGetBlobField = "getBlobField"
 	FuncStoreBlob    = "storeBlob"
 )
 
 func GetProcessor() vmtypes.Processor {
-	return &Interface
+	return Interface
 }

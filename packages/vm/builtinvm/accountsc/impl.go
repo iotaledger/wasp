@@ -20,7 +20,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("accountsc.initialize.fail: already_initialized")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
-	ctx.Eventf("accountsc.initialize.success hname = %s", Hname.String())
+	ctx.Eventf("accountsc.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
@@ -162,7 +162,7 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	parCodec := codec.NewMustCodec(par)
 	parCodec.SetAgentID(ParamAgentID, moveTo)
 	if !ctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChain, Hname),
+		TargetContractID: coretypes.NewContractID(targetChain, Interface.Hname()),
 		EntryPoint:       coretypes.Hn(FuncDeposit),
 		Params:           par,
 		Transfer:         cbalances.NewFromMap(tokensToMove),

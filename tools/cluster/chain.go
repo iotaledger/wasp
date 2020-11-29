@@ -1,7 +1,12 @@
 package cluster
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
@@ -108,22 +113,21 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 	return pass
 }
 
-func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
+func (ch *Chain) DeployContract(name string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
 	}
 
 	params := map[string]interface{}{
-		root.ParamName:          name,
-		root.ParamVMType:        vmtype,
-		root.ParamDescription:   description,
-		root.ParamProgramBinary: programHash[:],
+		root.ParamName:        name,
+		root.ParamProgramHash: programHash,
+		root.ParamDescription: description,
 	}
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Hname, coretypes.Hn(root.FuncDeployContract), nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), nil, nil, params)
 	if err != nil {
 		return nil, err
 	}
@@ -136,25 +140,68 @@ func (ch *Chain) DeployBuiltinContract(name string, vmtype string, progHashStr s
 	return tx, nil
 }
 
-func (ch *Chain) DeployExternalContract(vmtype string, name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
-	params := map[string]interface{}{
-		root.ParamVMType:        vmtype,
-		root.ParamName:          name,
-		root.ParamDescription:   description,
-		root.ParamProgramBinary: progBinary,
+func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, hashing.HashValue, error) {
+	// upload binary to the chain
+	blobFieldValues := map[string]interface{}{
+		blob.VarFieldVMType:             wasmtimevm.VMType,
+		blob.VarFieldProgramBinary:      progBinary,
+		blob.VarFieldProgramDescription: description,
 	}
+	programHash := blob.MustGetBlobHash(codec.NewCodec(codec.EncodeDictFromMap(blobFieldValues)))
+
+	reqTx, err := ch.OriginatorClient().PostRequest(blob.Interface.Hname(), coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
+	if err != nil {
+		return nil, *hashing.NilHash, err
+	}
+	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
+	if err != nil {
+		return nil, *hashing.NilHash, err
+	}
+	if !bytes.Equal(progBinary, progBinaryBack) {
+		return nil, *hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
+	}
+	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
+
+	params := make(map[string]interface{})
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Hname, coretypes.Hn(root.FuncDeployContract), nil, nil, params)
+	params[root.ParamName] = name
+	params[root.ParamProgramHash] = programHash
+	params[root.ParamDescription] = description
+
+	tx, err := ch.OriginatorClient().PostRequest(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), nil, nil, params)
 	if err != nil {
-		return nil, err
+		return nil, *hashing.NilHash, err
 	}
 
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	if err != nil {
-		return nil, err
+		return nil, *hashing.NilHash, err
 	}
 
-	return tx, nil
+	return tx, programHash, nil
+}
+
+func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
+	v, err := ch.Cluster.WaspClient(0).CallView(
+		ch.ContractID(blob.Interface.Hname()),
+		blob.FuncGetBlobField,
+		dict.FromGoMap(map[kv.Key][]byte{
+			blob.ParamHash:  blobHash[:],
+			blob.ParamField: []byte(field),
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if v.IsEmpty() {
+		return nil, nil
+	}
+	ret, err := v.Get(blob.ParamBytes)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

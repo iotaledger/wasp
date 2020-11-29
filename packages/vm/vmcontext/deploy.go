@@ -2,28 +2,33 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
-func (vmctx *VMContext) DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error {
-	vmctx.log.Debugf("vmcontext.DeployContract")
+// CreateContract deploys contract by its program hash
+func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name string, description string, initParams codec.ImmutableCodec) error {
+	vmctx.log.Debugf("vmcontext.DeployContract: %s, name: %s, dscr: '%s'", programHash.String(), name, description)
 
-	if vmctx.CurrentContractHname() == root.Hname {
+	vmtype, programBinary, err := vmctx.getBinary(programHash)
+	if err != nil {
+		return err
+	}
+	if vmctx.CurrentContractHname() == root.Interface.Hname() {
 		// from root contract calling VMContext directly
-		deploymentHash, err := vmctx.processors.NewProcessor(programBinary, vmtype)
+		err := vmctx.processors.NewProcessor(programHash, programBinary, vmtype)
 		if err != nil {
 			return err
 		}
 		// storing contract in the registry
 		err = root.StoreContract(codec.NewMustCodec(vmctx), &root.ContractRecord{
-			VMType:         vmtype,
-			DeploymentHash: deploymentHash,
-			Description:    description,
-			Name:           name,
-		}, programBinary)
+			ProgramHash: programHash,
+			Description: description,
+			Name:        name,
+		})
 		if err != nil {
 			return err
 		}
@@ -38,17 +43,17 @@ func (vmctx *VMContext) DeployContract(vmtype string, programBinary []byte, name
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
 	par := codec.NewCodec(dict.New())
-	err := initParams.Iterate("", func(key kv.Key, value []byte) bool {
+	err = initParams.Iterate("", func(key kv.Key, value []byte) bool {
 		par.Set(key, value)
 		return true
 	})
 	if err != nil {
 		return err
 	}
-	par.SetString(root.ParamVMType, vmtype)
-	par.Set(root.ParamProgramBinary, programBinary)
+	par.SetHashValue(root.ParamProgramHash, &programHash)
 	par.SetString(root.ParamName, name)
 	par.SetString(root.ParamDescription, description)
-	_, err = vmctx.Call(root.Hname, coretypes.Hn(root.FuncDeployContract), par, nil)
+	_, err = vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), par, nil)
 	return err
+
 }

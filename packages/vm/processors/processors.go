@@ -22,71 +22,49 @@ func MustNew() *ProcessorCache {
 		processors: make(map[hashing.HashValue]vmtypes.Processor),
 	}
 	// default builtin processor has root contract hash
-	_, err := ret.NewProcessor(root.ProgramHash[:], builtinvm.VMType)
+	err := ret.NewProcessor(root.Interface.ProgramHash, nil, builtinvm.VMType)
 	if err != nil {
 		panic(err)
 	}
 	return ret
 }
 
-// NewProcessor deploys new processor in the cache or return existing
-func (cps *ProcessorCache) NewProcessor(programCode []byte, vmtype string) (hashing.HashValue, error) {
+// NewProcessor deploys new processor in the cache
+func (cps *ProcessorCache) NewProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
 	cps.Lock()
 	defer cps.Unlock()
 
-	return cps.newProcessor(programCode, vmtype)
+	return cps.newProcessor(programHash, programCode, vmtype)
 }
 
-func (cps *ProcessorCache) newProcessor(programCode []byte, vmtype string) (deploymentHash hashing.HashValue, err error) {
+func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
 	var proc vmtypes.Processor
 	var ok bool
-	var programHash hashing.HashValue
+	var err error
 
+	if cps.ExistsProcessor(&programHash) {
+		return nil
+	}
 	switch vmtype {
 	case builtinvm.VMType:
-		programHash, err = hashing.HashValueFromBytes(programCode)
-		if err != nil {
-			err = fmt.Errorf("NewProcessor: %v", err)
-			return
-		}
-		if cps.ExistsProcessor(&programHash) {
-			deploymentHash = programHash
-			return
-		}
 		proc, err = builtinvm.GetProcessor(programHash)
 		if err != nil {
-			return
+			return err
 		}
 
 	case examples.VMType:
-		programHash, err = hashing.HashValueFromBytes(programCode)
-		if err != nil {
-			err = fmt.Errorf("NewProcessor: %v", err)
-			return
-		}
-		if cps.ExistsProcessor(&programHash) {
-			deploymentHash = programHash
-			return
-		}
 		if proc, ok = examples.GetExampleProcessor(programHash.String()); !ok {
-			err = fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
-			return
+			return fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
 		}
 
 	default:
-		programHash = getDeploymentHash(programCode, vmtype)
-		if cps.ExistsProcessor(&programHash) {
-			deploymentHash = programHash
-			return
-		}
 		proc, err = NewProcessorFromBinary(vmtype, programCode)
 		if err != nil {
-			return
+			return err
 		}
 	}
 	cps.processors[programHash] = proc
-	deploymentHash = programHash
-	return
+	return nil
 }
 
 func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
@@ -94,25 +72,21 @@ func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
 	return ok
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(*hashing.HashValue) ([]byte, error)) (vmtypes.Processor, error) {
+func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
+	if proc, ok := cps.processors[rec.ProgramHash]; ok {
 		return proc, nil
 	}
-	binary, err := getBinary(&rec.DeploymentHash)
+	vmtype, binary, err := getBinary(rec.ProgramHash)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
 	}
-	deploymentHash, err := cps.newProcessor(binary, rec.VMType)
-	if err != nil {
+	if err = cps.newProcessor(rec.ProgramHash, binary, vmtype); err != nil {
 		return nil, err
 	}
-	if deploymentHash != rec.DeploymentHash {
-		return nil, fmt.Errorf("internal error: *deploymentHash != deploymentHash")
-	}
-	if proc, ok := cps.processors[rec.DeploymentHash]; ok {
+	if proc, ok := cps.processors[rec.ProgramHash]; ok {
 		return proc, nil
 	}
 	return nil, fmt.Errorf("internal error: can't get the deployed processor")
@@ -123,9 +97,4 @@ func (cps *ProcessorCache) RemoveProcessor(h *hashing.HashValue) {
 	cps.Lock()
 	defer cps.Unlock()
 	delete(cps.processors, *h)
-}
-
-// deploymentHash helper function to calculate hash of the cache
-func getDeploymentHash(programCode []byte, vmtype string) hashing.HashValue {
-	return *hashing.HashData(programCode, []byte(vmtype))
 }

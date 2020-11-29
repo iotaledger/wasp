@@ -17,7 +17,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("blob.initialize.fail: already_initialized")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
-	ctx.Eventf("blob.initialize.success hname = %s", Hname.String())
+	ctx.Eventf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
@@ -104,7 +104,7 @@ func getBlobField(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	if field == nil {
 		return nil, fmt.Errorf("paremeter 'blob field' not found")
 	}
-	value := blb.GetAt(field)
+	value := GetBlobField(state, *blobHash, field)
 	if value == nil {
 		return nil, fmt.Errorf("'blob field %s value not found", string(field))
 	}

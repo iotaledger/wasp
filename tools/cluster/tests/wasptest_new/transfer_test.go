@@ -50,7 +50,7 @@ func TestDepositWithdraw(t *testing.T) {
 	// deposit some iotas to the chain
 	depositIotas := int64(42)
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncDeposit), nil,
+	reqTx, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncDeposit), nil,
 		map[balance.Color]int64{
 			balance.ColorIOTA: depositIotas,
 		},
@@ -71,7 +71,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// move 1 iota to another account on chain
 	colorIota := balance.ColorIOTA
-	reqTx2, err := chClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncMove), nil, nil,
+	reqTx2, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncMove), nil, nil,
 		map[string]interface{}{
 			accountsc.ParamAgentID: &origAgentId,
 			accountsc.ParamColor:   &colorIota,
@@ -88,7 +88,7 @@ func TestDepositWithdraw(t *testing.T) {
 	checkBalanceOnChain(t, chain, origAgentId, balance.ColorIOTA, 2)
 
 	// withdraw iotas back
-	reqTx3, err := chClient.PostRequest(accountsc.Hname, coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
+	reqTx3, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx3, 30*time.Second)
 	check(err, t)

@@ -58,7 +58,7 @@ func (vmctx *VMContext) Log() *logger.Logger {
 }
 
 func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
-	privileged := vmctx.CurrentContractHname() == accountsc.Hname
+	privileged := vmctx.CurrentContractHname() == accountsc.Interface.Hname()
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
 	if !privileged {
 		// if caller is accoutsc, it must debit from account by itself
@@ -84,7 +84,7 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 	pari := codec.NewCodec(par)
 	pari.SetAgentID(accountsc.ParamAgentID, &targetAgentID)
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Hname),
+		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Interface.Hname()),
 		EntryPoint:       coretypes.Hn(accountsc.FuncDeposit),
 		Params:           par,
 		Transfer:         transfer,

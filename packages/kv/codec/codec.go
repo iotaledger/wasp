@@ -497,6 +497,8 @@ func EncodeDictFromMap(vars map[string]interface{}) dict.Dict {
 			c.Set(key, vt)
 		case *hashing.HashValue:
 			c.SetHashValue(key, vt)
+		case hashing.HashValue:
+			c.SetHashValue(key, &vt)
 		case *address.Address:
 			c.Set(key, vt.Bytes())
 		case *balance.Color:

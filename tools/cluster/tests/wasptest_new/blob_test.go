@@ -32,7 +32,7 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
 		contractRegistry := state.GetMap(root.VarContractRegistry)
@@ -53,7 +53,7 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 
 func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) dict.Dict {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(blob.Hname),
+		chain.ContractID(blob.Interface.Hname()),
 		blob.FuncGetBlobInfo,
 		dict.FromGoMap(map[kv.Key][]byte{
 			blob.ParamHash: hash[:],
@@ -65,7 +65,7 @@ func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) dic
 
 func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.HashValue, field string) []byte {
 	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(blob.Hname),
+		chain.ContractID(blob.Interface.Hname()),
 		blob.FuncGetBlobField,
 		dict.FromGoMap(map[kv.Key][]byte{
 			blob.ParamHash:  blobHash[:],
@@ -99,7 +99,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(blob.Hname, coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
+	reqTx, err := chClient.PostRequest(blob.Interface.Hname(), coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
@@ -137,7 +137,7 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(blob.Hname, coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
+	reqTx, err := chClient.PostRequest(blob.Interface.Hname(), coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)

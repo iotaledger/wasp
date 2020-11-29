@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -23,7 +22,7 @@ import (
 )
 
 func checkRoots(t *testing.T, chain *cluster.Chain) {
-	chain.WithSCState(root.Hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
 
 		chid, _ := state.GetChainID(root.VarChainID)
@@ -37,29 +36,29 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
 
-		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
+		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 
-		crBytes = contractRegistry.GetAt(blob.Hname.Bytes())
+		crBytes = contractRegistry.GetAt(blob.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, blob.Description, cr.Description)
+		require.EqualValues(t, blob.Interface.ProgramHash, cr.ProgramHash)
+		require.EqualValues(t, blob.Interface.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, blob.FullName, cr.Name)
+		require.EqualValues(t, blob.Interface.Name, cr.Name)
 
-		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
+		crBytes = contractRegistry.GetAt(accountsc.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, builtinvm.VMType, cr.VMType)
-		require.EqualValues(t, accountsc.Description, cr.Description)
+		require.EqualValues(t, accountsc.Interface.ProgramHash, cr.ProgramHash)
+		require.EqualValues(t, accountsc.Interface.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, accountsc.FullName, cr.Name)
+		require.EqualValues(t, accountsc.Interface.Name, cr.Name)
 		return true
 	})
 }
@@ -79,7 +78,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 
 func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(accountsc.Hname),
+		chain.ContractID(accountsc.Interface.Hname()),
 		accountsc.FuncBalance,
 		dict.FromGoMap(map[kv.Key][]byte{
 			accountsc.ParamAgentID: agentID[:],
@@ -101,7 +100,7 @@ func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.A
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(accountsc.Hname),
+		chain.ContractID(accountsc.Interface.Hname()),
 		accountsc.FuncAccounts,
 		nil,
 	)
@@ -126,7 +125,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 	accounts := getAccountsOnChain(t, chain)
 	for _, agentID := range accounts {
 		r, err := chain.Cluster.WaspClient(0).CallView(
-			chain.ContractID(accountsc.Hname),
+			chain.ContractID(accountsc.Interface.Hname()),
 			accountsc.FuncBalance,
 			dict.FromGoMap(map[kv.Key][]byte{
 				accountsc.ParamAgentID: agentID[:],

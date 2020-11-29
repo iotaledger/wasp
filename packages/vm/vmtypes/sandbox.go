@@ -12,7 +12,7 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
-	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
+	CreateContract(programHash hashing.HashValue, name string, description string, initParams codec.ImmutableCodec) error
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
 
 	// general

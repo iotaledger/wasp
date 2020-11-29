@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -27,6 +27,7 @@ var (
 	chain       *cluster.Chain
 	clu         *cluster.Cluster
 	client      *chainclient.Client
+	programHash hashing.HashValue
 	err         error
 )
 
@@ -60,7 +61,9 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 		if err != nil {
 			return err
 		}
-		_, err = chain.DeployExternalContract(wasmtimevm.VMType, wasmName, scDescription, wasm, initParams)
+		_, ph, err := chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+		programHash = ph
+		fmt.Printf("--- deployContract err = %v proghash = %s\n", err, programHash.String())
 		return err
 	}
 	panic("example contract disabled")
@@ -72,7 +75,7 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 	//}
 
 	// TODO detached example contract code
-	//_, err := chain.DeployBuiltinContract(wasmName, examples.VMType, hash, scDescription, initParams)
+	//_, err := chain.DeployContract(wasmName, examples.VMType, hash, scDescription, initParams)
 	//return err
 	return nil
 }
@@ -120,12 +123,12 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		//"state":               3 + nrOfRequests,
-		"request_in":  2 + nrOfRequests,
-		"request_out": 3 + nrOfRequests,
+		"request_in": 2 + nrOfRequests,
+		//"request_out": 3 + nrOfRequests,   // not clear
 	}
-	if nrOfRequests == 1 {
-		expectations["state"] = 4
-	}
+	//if nrOfRequests == 1 {
+	//	expectations["state"] = 4
+	//}
 	for k, v := range expectedMessages {
 		expectations[k] = v
 	}
