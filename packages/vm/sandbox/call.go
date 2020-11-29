@@ -15,6 +15,7 @@ func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, des
 	return s.vmctx.CreateContract(programHash, name, description, initParams)
 }
 
+// Call calls an entry point of contact, passes parameters and funds
 func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }
