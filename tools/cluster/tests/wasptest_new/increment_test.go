@@ -235,7 +235,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 }
 
 func TestIncPostIncrement(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 2, nil)
+	setupAndLoad(t, incName, incDescription, 3, nil)
 
 	entryPoint := coretypes.Hn("incrementPostIncrement")
 	postRequest(t, incHname, entryPoint, 1, nil)
@@ -245,7 +245,7 @@ func TestIncPostIncrement(t *testing.T) {
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	setupAndLoad(t, incName, incDescription, numRepeats+1, nil)
+	setupAndLoad(t, incName, incDescription, numRepeats+2, nil)
 
 	entryPoint := coretypes.Hn("incrementRepeatMany")
 	postRequest(t, incHname, entryPoint, numRepeats, map[string]interface{}{
@@ -276,7 +276,7 @@ func TestIncLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncLocalStatePost(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 4, nil)
+	setupAndLoad(t, incName, incDescription, 5, nil)
 	entryPoint := coretypes.Hn("incrementLocalStatePost")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)
