@@ -2,7 +2,6 @@ package wasmhost
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 type ScColors struct {
@@ -46,12 +45,12 @@ func (a *ScColors) loadColors() {
 	if a.colors != nil {
 		return
 	}
-	accounts := a.vm.ctx.Accounts()
-	var balances coretypes.ColoredBalances
+	balances := a.vm.MyBalances()
 	if a.requestOnly {
-		balances = accounts.Incoming()
-	} else {
-		balances = accounts.MyBalances()
+		if a.vm.ctx == nil {
+			return
+		}
+		balances = a.vm.ctx.Accounts().Incoming()
 	}
 	balances.IterateDeterministic(func(color balance.Color, amount int64) bool {
 		a.colors = append(a.colors, color)

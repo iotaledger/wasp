@@ -4,6 +4,7 @@ package root
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -59,6 +60,17 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = ctx.DeployContract(
+		"builtinvm",
+		blob.ProgramHash[:],
+		blob.FullName,
+		blob.Description,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	ctx.Eventf("root.initialize.success hname = %s", Hname.String())
 	return nil, nil
 }

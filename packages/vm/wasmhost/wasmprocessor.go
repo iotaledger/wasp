@@ -31,15 +31,21 @@ func NewWasmProcessor() (*wasmProcessor, error) {
 }
 
 func (vm *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	//if vm.IsView() { vm.LogText("call is view") }
-	//if ctx == nil { vm.LogText("ctx is nil") }
-	//if ctxView == nil { vm.LogText("ctxView is nil") }
+	if vm.IsView() {
+		vm.LogText("call is view")
+	}
+	if ctx == nil {
+		vm.LogText("ctx is nil")
+	}
+	if ctxView == nil {
+		vm.LogText("ctxView is nil")
+	}
 	saveCtx := vm.ctx
 	saveCtxView := vm.ctxView
 
 	vm.ctx = ctx
 	vm.ctxView = ctxView
-	vm.params = ctxView.Params()
+	vm.params = vm.Params()
 
 	defer func() {
 		vm.LogText("Finalizing call")
@@ -66,8 +72,8 @@ func (vm *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) 
 	}
 
 	resultsId := vm.scContext.GetObjectId(KeyResults, OBJTYPE_MAP)
-	results := vm.FindObject(resultsId).(*ScCallResults).Results
-	return results, nil
+	results := vm.FindObject(resultsId).(*ScCallParams).Params
+	return codec.NewCodec(results), nil
 }
 
 func (vm *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
@@ -137,7 +143,7 @@ func (vm *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (vm *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		vm.LogText(text)
+		//vm.LogText(text)
 	case KeyTrace:
 		vm.LogText(text)
 	case KeyLog:
@@ -160,4 +166,32 @@ func (vm *wasmProcessor) LogText(text string) {
 	}
 	// fallback logging
 	fmt.Println(text)
+}
+
+func (vm *wasmProcessor) MyBalances() coretypes.ColoredBalances {
+	if vm.ctx != nil {
+		return vm.ctx.Accounts().MyBalances()
+	}
+	return vm.ctxView.MyBalances()
+}
+
+func (vm *wasmProcessor) MyContractID() coretypes.ContractID {
+	if vm.ctx != nil {
+		return vm.ctx.MyContractID()
+	}
+	return vm.ctxView.MyContractID()
+}
+
+func (vm *wasmProcessor) Params() codec.ImmutableCodec {
+	if vm.ctx != nil {
+		return vm.ctx.Params()
+	}
+	return vm.ctxView.Params()
+}
+
+func (vm *wasmProcessor) State() codec.ImmutableMustCodec {
+	if vm.ctx != nil {
+		return vm.ctx.State()
+	}
+	return vm.ctxView.State()
 }

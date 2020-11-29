@@ -89,7 +89,7 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 
 func (o *ScContext) Exists(keyId int32) bool {
 	if keyId == KeyExports {
-		return o.vm.ctx == nil
+		return o.vm.ctx == nil && o.vm.ctxView == nil
 	}
 	return o.GetTypeId(keyId) >= 0
 }
@@ -100,7 +100,7 @@ func (o *ScContext) Finalize() {
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
-	if keyId == KeyExports && o.vm.ctx != nil {
+	if keyId == KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (onLoad) this cannot be called any more
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
@@ -113,7 +113,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
 		KeyRequest:   func() WaspObject { return &ScRequest{} },
-		KeyResults:   func() WaspObject { return &ScCallResults{} },
+		KeyResults:   func() WaspObject { return &ScCallParams{} },
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },

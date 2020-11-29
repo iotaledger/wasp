@@ -28,6 +28,9 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 // Params:
 // - ParamAgentID
 func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	if ctx.State().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.getBalance.fail: not_initialized")
+	}
 	ctx.Eventf("getBalance")
 	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {
@@ -52,6 +55,9 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
 func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	if ctx.State().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.getAccounts.fail: not_initialized")
+	}
 	return GetAccounts(ctx.State()), nil
 }
 
@@ -60,6 +66,9 @@ func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 // - ParamAgentID. default is ctx.Caller()
 func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.deposit.fail: not_initialized")
+	}
 	MustCheckLedger(state, "accountsc.deposit.begin")
 	defer MustCheckLedger(state, "accountsc.deposit.exit")
 
@@ -90,6 +99,9 @@ func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 //   and node fee for this request)
 func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.move.fail: not_initialized")
+	}
 	MustCheckLedger(state, "accountsc.move.begin")
 	defer MustCheckLedger(state, "accountsc.move.exit")
 
@@ -166,11 +178,11 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 // different process for addresses and contracts as a caller
 func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: not_initialized")
+	}
 	MustCheckLedger(state, "accountsc.withdraw.begin")
 	defer MustCheckLedger(state, "accountsc.withdraw.exit")
-	if state.Get(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.initialize.fail: not_initialized")
-	}
 	caller := ctx.Caller()
 	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.MyContractID().String())
 

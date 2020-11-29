@@ -49,7 +49,7 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScCallInfo) Invoke() {
 	o.vm.Trace("CALL c'%s' f'%s'", o.contract, o.function)
-	contractCode := o.vm.ctx.MyContractID().Hname()
+	contractCode := o.vm.MyContractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
 	}
@@ -148,7 +148,7 @@ func (o *ScPostInfo) Invoke() {
 	if o.chainId != nil {
 		chainId = *o.chainId
 	}
-	contractCode := o.vm.ctx.MyContractID().Hname()
+	contractCode := o.vm.MyContractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
 	}
@@ -256,7 +256,7 @@ func (o *ScViewInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScViewInfo) Invoke() {
 	o.vm.Trace("VIEW c'%s' f'%s'", o.contract, o.function)
-	contractCode := o.vm.ctx.MyContractID().Hname()
+	contractCode := o.vm.MyContractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
 	}
@@ -270,7 +270,13 @@ func (o *ScViewInfo) Invoke() {
 			return true
 		})
 	}
-	results, err := o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), nil)
+	var err error
+	var results codec.ImmutableCodec
+	if o.vm.ctx != nil {
+		results, err = o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), nil)
+	} else {
+		results, err = o.vm.ctxView.Call(contractCode, functionCode, codec.NewCodec(params))
+	}
 	if err != nil {
 		o.Error("failed to invoke view: %v", err)
 	}

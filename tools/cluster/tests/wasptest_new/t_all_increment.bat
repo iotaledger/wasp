@@ -23,3 +23,5 @@ pause
 go test -buildmode=exe -run TestIncLocalStateSandboxCall %1
 pause
 go test -buildmode=exe -run TestIncLocalStatePost %1
+pause
+go test -buildmode=exe -run TestIncViewCounter %1

@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	builtinutil "github.com/iotaledger/wasp/packages/vm/builtinvm/util"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -41,15 +41,25 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 		require.NotNil(t, crBytes)
 		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
 
-		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
+		crBytes = contractRegistry.GetAt(blob.Hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
 
 		require.EqualValues(t, builtinvm.VMType, cr.VMType)
+		require.EqualValues(t, blob.Description, cr.Description)
+		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, blob.FullName, cr.Name)
+
+		crBytes = contractRegistry.GetAt(accountsc.Hname.Bytes())
+		require.NotNil(t, crBytes)
+		cr, err = root.DecodeContractRecord(crBytes)
+		check(err, t)
+
+		require.EqualValues(t, builtinvm.VMType, cr.VMType)
 		require.EqualValues(t, accountsc.Description, cr.Description)
 		require.EqualValues(t, 0, cr.NodeFee)
-		require.EqualValues(t, builtinutil.BuiltinFullName(accountsc.Name, accountsc.Version), cr.Name)
+		require.EqualValues(t, accountsc.FullName, cr.Name)
 		return true
 	})
 }

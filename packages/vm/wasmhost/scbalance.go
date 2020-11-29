@@ -21,11 +21,15 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 		return 0
 	}
 
-	accounts := o.vm.ctx.Accounts()
+	balances := o.vm.MyBalances()
 	if o.requestOnly {
-		return accounts.Incoming().Balance(color)
+		if o.vm.ctx == nil {
+			return 0
+		}
+		balances = o.vm.ctx.Accounts().Incoming()
 	}
-	return accounts.Balance(color)
+
+	return balances.Balance(color)
 }
 
 func (o *ScBalance) GetTypeId(keyId int32) int32 {

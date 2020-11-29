@@ -20,7 +20,7 @@ func (o *ScState) InitVM(vm *wasmProcessor, keyId int32) {
 
 func (o *ScState) Exists(keyId int32) bool {
 	key := o.vm.GetKey(keyId)
-	return o.vm.ctx.State().Has(key)
+	return o.vm.State().Has(key)
 }
 
 func (o *ScState) GetBytes(keyId int32) []byte {
@@ -28,7 +28,7 @@ func (o *ScState) GetBytes(keyId int32) []byte {
 		return []byte(nil)
 	}
 	key := o.vm.GetKey(keyId)
-	return o.vm.ctx.State().Get(key)
+	return o.vm.State().Get(key)
 }
 
 func (o *ScState) GetInt(keyId int32) int64 {
@@ -36,7 +36,7 @@ func (o *ScState) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := o.vm.GetKey(keyId)
-	value, _ := o.vm.ctx.State().GetInt64(key)
+	value, _ := o.vm.State().GetInt64(key)
 	return value
 }
 
@@ -65,7 +65,7 @@ func (o *ScState) GetString(keyId int32) string {
 		return ""
 	}
 	key := o.vm.GetKey(keyId)
-	value, _ := o.vm.ctx.State().GetString(key)
+	value, _ := o.vm.State().GetString(key)
 	return value
 }
 
@@ -126,7 +126,7 @@ func (a *ScStateArray) InitVM(vm *wasmProcessor, keyId int32) {
 	a.ArrayObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
 	a.name = "state.array." + string(key)
-	a.items = vm.ctx.State().GetArray(key)
+	a.items = vm.State().GetArray(key)
 }
 
 func (a *ScStateArray) Exists(keyId int32) bool {
@@ -231,7 +231,7 @@ func (m *ScStateMap) InitVM(vm *wasmProcessor, keyId int32) {
 	m.MapObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
 	m.name = "state.map." + string(key)
-	m.items = vm.ctx.State().GetMap(key)
+	m.items = vm.State().GetMap(key)
 	m.types = make(map[int32]int32)
 }
 

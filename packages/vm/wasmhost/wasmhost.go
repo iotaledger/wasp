@@ -125,6 +125,7 @@ func (host *WasmHost) FindObject(objId int32) HostObject {
 }
 
 func (host *WasmHost) GetBytes(objId int32, keyId int32, stringRef int32, size int32) int32 {
+	host.TraceHost("GetBytes(o%d,k%d)", objId, keyId)
 	// get error string takes precedence over returning error code
 	if keyId == KeyError && objId == -1 {
 		host.Trace("GetString o%d k%d = '%s'", -objId, keyId, host.error)
@@ -160,6 +161,7 @@ func (host *WasmHost) GetBytes(objId int32, keyId int32, stringRef int32, size i
 }
 
 func (host *WasmHost) GetInt(objId int32, keyId int32) int64 {
+	host.TraceHost("GetInt(o%d,k%d)", objId, keyId)
 	if keyId == KeyError && objId == 1 {
 		if host.HasError() {
 			return 1
@@ -175,6 +177,7 @@ func (host *WasmHost) GetInt(objId int32, keyId int32) int64 {
 }
 
 func (host *WasmHost) GetKey(keyId int32) []byte {
+	host.TraceHost("GetKey(k%d)", keyId)
 	key := host.getKey(keyId)
 	if key[len(key)-1] != 0 {
 		// originally a string key
@@ -202,6 +205,7 @@ func (host *WasmHost) getKey(keyId int32) []byte {
 }
 
 func (host *WasmHost) GetKeyId(keyRef int32, size int32) int32 {
+	host.TraceHost("GetKeyId(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
 		key := host.vmGetBytes(keyRef, size)
@@ -255,6 +259,7 @@ func (host *WasmHost) GetKeyIdFromBytes(key []byte) int32 {
 }
 
 func (host *WasmHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
+	host.TraceHost("GetObjectId(o%d,k%d)", objId, keyId)
 	if host.HasError() {
 		return 0
 	}
@@ -348,6 +353,7 @@ func (host *WasmHost) RunScFunction(functionName string) error {
 }
 
 func (host *WasmHost) SetBytes(objId int32, keyId int32, stringRef int32, size int32) {
+	host.TraceHost("SetBytes(o%d,k%d)", objId, keyId)
 	bytes := host.vmGetBytes(stringRef, size)
 	if objId == -1 {
 		// intercept logging keys to prevent final logging of SetBytes itself
@@ -384,6 +390,7 @@ func (host *WasmHost) SetError(text string) {
 }
 
 func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {
+	host.TraceHost("SetInt(o%d,k%d)", objId, keyId)
 	if host.HasError() {
 		return
 	}
@@ -393,6 +400,10 @@ func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {
 
 func (host *WasmHost) Trace(format string, a ...interface{}) {
 	host.logger.Log(KeyTrace, fmt.Sprintf(format, a...))
+}
+
+func (host *WasmHost) TraceHost(format string, a ...interface{}) {
+	host.logger.Log(KeyTraceHost, fmt.Sprintf(format, a...))
 }
 
 func (host *WasmHost) TrackObject(obj HostObject) int32 {

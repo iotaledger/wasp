@@ -48,7 +48,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -104,7 +104,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -159,7 +159,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Hname.Bytes())
 		require.NotNil(t, crBytes)

@@ -55,7 +55,7 @@ func TestBasicAccounts(t *testing.T) {
 		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -164,7 +164,7 @@ func TestBasic2Accounts(t *testing.T) {
 		checkRoots(t, chain)
 
 		contractRegistry := state.GetMap(root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
