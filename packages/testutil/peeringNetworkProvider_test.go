@@ -22,7 +22,7 @@ func TestFakeNetwork(t *testing.T) {
 	var netProviders []peering.NetworkProvider = network.NetworkProviders()
 	//
 	// Node "a" listens for chain1 messages.
-	netProviders[0].Attach(chain1, func(from peering.PeerSender, msg *peering.PeerMessage) {
+	netProviders[0].Attach(&chain1, func(recv *peering.RecvEvent) {
 		doneCh <- true
 	})
 	//

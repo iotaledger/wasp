@@ -29,9 +29,9 @@ type RegistryProvider interface {
 // a node as a result of the DKG procedure.
 type DKShare struct {
 	ChainID      *coretypes.ChainID
-	Index        uint32
-	N            uint32
-	T            uint32
+	Index        uint16
+	N            uint16
+	T            uint16
 	SharedPublic kyber.Point
 	PublicShare  kyber.Point
 	PrivateShare kyber.Scalar
@@ -40,9 +40,9 @@ type DKShare struct {
 
 // NewDKShare creates new share of the key.
 func NewDKShare(
-	index uint32,
-	n uint32,
-	t uint32,
+	index uint16,
+	n uint16,
+	t uint16,
 	sharedPublic kyber.Point,
 	publicShare kyber.Point,
 	privateShare kyber.Scalar,
@@ -108,13 +108,13 @@ func (s *DKShare) Write(w io.Writer) error {
 	if err = s.ChainID.Write(w); err != nil {
 		return err
 	}
-	if err = util.WriteUint32(w, s.Index); err != nil {
+	if err = util.WriteUint16(w, s.Index); err != nil {
 		return err
 	}
-	if err = util.WriteUint32(w, s.N); err != nil {
+	if err = util.WriteUint16(w, s.N); err != nil {
 		return err
 	}
-	if err = util.WriteUint32(w, s.T); err != nil {
+	if err = util.WriteUint16(w, s.T); err != nil {
 		return err
 	}
 	if err = util.WriteMarshaled(w, s.SharedPublic); err != nil {
@@ -134,13 +134,13 @@ func (s *DKShare) Read(r io.Reader) error {
 	if err = s.ChainID.Read(r); err != nil {
 		return err
 	}
-	if err = util.ReadUint32(r, &s.Index); err != nil {
+	if err = util.ReadUint16(r, &s.Index); err != nil {
 		return err
 	}
-	if err = util.ReadUint32(r, &s.N); err != nil {
+	if err = util.ReadUint16(r, &s.N); err != nil {
 		return err
 	}
-	if err = util.ReadUint32(r, &s.T); err != nil {
+	if err = util.ReadUint16(r, &s.T); err != nil {
 		return err
 	}
 	s.SharedPublic = s.suite.Point()

@@ -3,11 +3,20 @@ package dkg
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//
+// This file contains message types, exchanged between the DKG nodes
+// via the peering network.
+//
+
 import (
 	"bytes"
+	"errors"
 	"io"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -15,12 +24,24 @@ import (
 )
 
 const (
-	rabinDealMsgType               byte = 1
-	rabinResponseMsgType           byte = 2
-	rabinJustificationMsgType      byte = 3
-	rabinSecretCommitsMsgType      byte = 4
-	rabinComplaintCommitsMsgType   byte = 5
-	rabinReconstructCommitsMsgType byte = 6
+	//
+	// Initiator <-> Peer communication.
+	//
+	// NOTE: initiatorInitMsgType must be unique across all the uses of peering package,
+	// because it is used to start new chain, thus chainID is not used for message recognition.
+	initiatorInitMsgType     byte = 250 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
+	initiatorStepMsgType     byte = 1   // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
+	initiatorDoneMsgType     byte = 2   // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
+	initiatorPubShareMsgType byte = 3   // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
+	initiatorStatusMsgType   byte = 4   // Peer -> Initiator; in the case of error or void ack.
+	//
+	// Peer <-> Peer communication for the Rabin protocol.
+	rabinDealMsgType               byte = 11
+	rabinResponseMsgType           byte = 12
+	rabinJustificationMsgType      byte = 13
+	rabinSecretCommitsMsgType      byte = 14
+	rabinComplaintCommitsMsgType   byte = 15
+	rabinReconstructCommitsMsgType byte = 16
 )
 
 // All the messages exchanged via the Peering subsystem will implement this.
@@ -30,10 +51,391 @@ type msgByteCoder interface {
 	Read(io.Reader) error
 }
 
+func makePeerMessage(chainID *coretypes.ChainID, msg msgByteCoder) *peering.PeerMessage {
+	return &peering.PeerMessage{
+		ChainID:     *chainID,
+		SenderIndex: 0, // This is resolved on the receiving side.
+		Timestamp:   0, // We do not use it in the DKG.
+		MsgType:     msg.MsgType(),
+		MsgData:     util.MustBytes(msg),
+	}
+}
+
+type initiatorMsg interface {
+	msgByteCoder
+	Step() byte
+	Error() error
+	IsResponse() bool
+}
+
+func readInitiatorMsg(peerMessage *peering.PeerMessage, suite kyber.Group) (bool, initiatorMsg, error) {
+	switch peerMessage.MsgType {
+	case initiatorInitMsgType:
+		msg := initiatorInitMsg{}
+		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+			return true, nil, err
+		}
+		return true, &msg, nil
+	case initiatorStepMsgType:
+		msg := initiatorStepMsg{}
+		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+			return true, nil, err
+		}
+		return true, &msg, nil
+	case initiatorDoneMsgType:
+		msg := initiatorDoneMsg{}
+		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+			return true, nil, err
+		}
+		return true, &msg, nil
+	case initiatorPubShareMsgType:
+		msg := initiatorPubShareMsg{}
+		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+			return true, nil, err
+		}
+		return true, &msg, nil
+	case initiatorStatusMsgType:
+		msg := initiatorStatusMsg{}
+		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+			return true, nil, err
+		}
+		return true, &msg, nil
+	default:
+		return false, nil, nil
+	}
+}
+
 //
-// This file contains message types, exchanged between the DKG nodes
-// via the peering network.
+// initiatorInitMsg
 //
+// This is a message sent by the initiator to all the peers to
+// initiate the DKG process.
+//
+type initiatorInitMsg struct {
+	step         byte
+	peerLocs     []string
+	peerPubs     []kyber.Point
+	initiatorPub kyber.Point
+	threshold    uint16
+	version      address.Version
+	timeoutMS    uint32
+	suite        kyber.Group // Transient, for un-marshaling only.
+}
+
+func (m *initiatorInitMsg) MsgType() byte {
+	return initiatorInitMsgType
+}
+func (m *initiatorInitMsg) Write(w io.Writer) error {
+	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	if err = util.WriteStrings16(w, m.peerLocs); err != nil {
+		return err
+	}
+	if err = util.WriteUint16(w, uint16(len(m.peerPubs))); err != nil {
+		return err
+	}
+	for i := range m.peerPubs {
+		if err = util.WriteMarshaled(w, m.peerPubs[i]); err != nil {
+			return err
+		}
+	}
+	if err = util.WriteMarshaled(w, m.initiatorPub); err != nil {
+		return err
+	}
+	if err = util.WriteUint16(w, m.threshold); err != nil {
+		return err
+	}
+	if err = util.WriteByte(w, m.version); err != nil {
+		return err
+	}
+	if err = util.WriteUint32(w, m.timeoutMS); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorInitMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	if m.peerLocs, err = util.ReadStrings16(r); err != nil {
+		return err
+	}
+	var arrLen uint16
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	m.peerPubs = make([]kyber.Point, arrLen)
+	for i := range m.peerPubs {
+		m.peerPubs[i] = m.suite.Point()
+		if err = util.ReadMarshaled(r, m.peerPubs[i]); err != nil {
+			return err
+		}
+	}
+	m.initiatorPub = m.suite.Point()
+	if err = util.ReadMarshaled(r, m.initiatorPub); err != nil {
+		return err
+	}
+	if err = util.ReadUint16(r, &m.threshold); err != nil {
+		return err
+	}
+	if m.version, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	if err = util.ReadUint32(r, &m.timeoutMS); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorInitMsg) fromBytes(buf []byte, group kyber.Group) error {
+	r := bytes.NewReader(buf)
+	m.suite = group
+	return m.Read(r)
+}
+func (m *initiatorInitMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorInitMsg) Error() error {
+	return nil
+}
+func (m *initiatorInitMsg) IsResponse() bool {
+	return false
+}
+
+//
+// initiatorStepMsg
+//
+// This is a message used to synchronize the DKG procedure by
+// ensuring the lock-step, as required by the DKG algorithm
+// assumptions (Rabin as well as Pedersen).
+//
+type initiatorStepMsg struct {
+	step byte
+}
+
+func (m *initiatorStepMsg) MsgType() byte {
+	return initiatorStepMsgType
+}
+func (m *initiatorStepMsg) Write(w io.Writer) error {
+	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorStepMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorStepMsg) fromBytes(buf []byte, group kyber.Group) error {
+	r := bytes.NewReader(buf)
+	return m.Read(r)
+}
+func (m *initiatorStepMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorStepMsg) Error() error {
+	return nil
+}
+func (m *initiatorStepMsg) IsResponse() bool {
+	return false
+}
+
+//
+// initiatorDoneMsg
+//
+type initiatorDoneMsg struct {
+	step      byte
+	pubShares []kyber.Point
+	suite     kyber.Group // Transient, for un-marshaling only.
+}
+
+func (m *initiatorDoneMsg) MsgType() byte {
+	return initiatorDoneMsgType
+}
+func (m *initiatorDoneMsg) Write(w io.Writer) error {
+	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	if err = util.WriteUint16(w, uint16(len(m.pubShares))); err != nil {
+		return err
+	}
+	for i := range m.pubShares {
+		if err = util.WriteMarshaled(w, m.pubShares[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (m *initiatorDoneMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	var arrLen uint16
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	m.pubShares = make([]kyber.Point, arrLen)
+	for i := range m.pubShares {
+		m.pubShares[i] = m.suite.Point()
+		if err = util.ReadMarshaled(r, m.pubShares[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (m *initiatorDoneMsg) fromBytes(buf []byte, suite kyber.Group) error {
+	r := bytes.NewReader(buf)
+	m.suite = suite
+	return m.Read(r)
+}
+func (m *initiatorDoneMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorDoneMsg) Error() error {
+	return nil
+}
+func (m *initiatorDoneMsg) IsResponse() bool {
+	return false
+}
+
+//
+// initiatorPubShareMsg
+//
+// This is a message responded to the initiator
+// by the DKG peers returning the shared public key.
+// All the nodes must return the same public key.
+//
+type initiatorPubShareMsg struct {
+	step         byte
+	chainID      *coretypes.ChainID
+	sharedPublic kyber.Point
+	publicShare  kyber.Point
+	signature    []byte
+	suite        kyber.Group // Transient, for un-marshaling only.
+}
+
+func (m *initiatorPubShareMsg) MsgType() byte {
+	return initiatorPubShareMsgType
+}
+func (m *initiatorPubShareMsg) Write(w io.Writer) error {
+	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	if err = util.WriteAddress(w, (*address.Address)(m.chainID)); err != nil {
+		return err
+	}
+	if err = util.WriteMarshaled(w, m.sharedPublic); err != nil {
+		return err
+	}
+	if err = util.WriteMarshaled(w, m.publicShare); err != nil {
+		return err
+	}
+	if err = util.WriteBytes16(w, m.signature); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorPubShareMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	newChainID := coretypes.NilChainID // Make a copy.
+	m.chainID = &newChainID
+	if err = util.ReadAddress(r, (*address.Address)(m.chainID)); err != nil {
+		return err
+	}
+	m.sharedPublic = m.suite.Point()
+	if err = util.ReadMarshaled(r, m.sharedPublic); err != nil {
+		return err
+	}
+	m.publicShare = m.suite.Point()
+	if err = util.ReadMarshaled(r, m.publicShare); err != nil {
+		return err
+	}
+	if m.signature, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorPubShareMsg) fromBytes(buf []byte, suite kyber.Group) error {
+	r := bytes.NewReader(buf)
+	m.suite = suite
+	return m.Read(r)
+}
+func (m *initiatorPubShareMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorPubShareMsg) Error() error {
+	return nil
+}
+func (m *initiatorPubShareMsg) IsResponse() bool {
+	return true
+}
+
+//
+// initiatorStatusMsg
+//
+type initiatorStatusMsg struct {
+	step  byte
+	error error
+}
+
+func (m *initiatorStatusMsg) MsgType() byte {
+	return initiatorStatusMsgType
+}
+func (m *initiatorStatusMsg) Write(w io.Writer) error {
+	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	var errMsg string
+	if m.error != nil {
+		errMsg = m.error.Error()
+	}
+	if err = util.WriteString16(w, errMsg); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *initiatorStatusMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	var errMsg string
+	if errMsg, err = util.ReadString16(r); err != nil {
+		return err
+	}
+	if errMsg != "" {
+		m.error = errors.New(errMsg)
+	} else {
+		m.error = nil
+	}
+	return nil
+}
+func (m *initiatorStatusMsg) fromBytes(buf []byte, group kyber.Group) error {
+	r := bytes.NewReader(buf)
+	return m.Read(r)
+}
+func (m *initiatorStatusMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorStatusMsg) Error() error {
+	return m.error
+}
+func (m *initiatorStatusMsg) IsResponse() bool {
+	return true
+}
 
 //
 //	rabin_dkg.Deal

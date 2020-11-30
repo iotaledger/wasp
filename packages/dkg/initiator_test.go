@@ -26,7 +26,7 @@ func TestEd25519(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	var timeout = 100 * time.Second
-	var threshold uint32 = 10
+	var threshold uint16 = 10
 	var peerCount = 10
 	var peerLocs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
@@ -44,10 +44,10 @@ func TestEd25519(t *testing.T) {
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	var dkgNodes []dkg.NodeProvider = make([]dkg.NodeProvider, len(peerLocs))
+	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerLocs))
 	for i := range peerLocs {
 		registry := testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.InitNode(
+		dkgNodes[i] = dkg.Init(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
 			log.With("loc", peerLocs[i]),
 		)
@@ -56,10 +56,6 @@ func TestEd25519(t *testing.T) {
 	// Initiate the key generation from some client node.
 	var initiatorKey = suite.Scalar().Pick(suite.RandomStream())
 	var initiatorPub = suite.Point().Mul(initiatorKey, nil)
-	var initiatorNodeProvider dkg.NodeProvider = testutil.NewDkgNodeProvider(
-		dkgNodes,
-		timeout, // Single call timeout.
-	)
 	sharedAddr, sharedPub, err := dkg.GenerateDistributedKey(&dkg.GenerateDistributedKeyParams{
 		InitiatorPub: initiatorPub,
 		PeerLocs:     peerLocs,
@@ -68,7 +64,7 @@ func TestEd25519(t *testing.T) {
 		Version:      address.VersionED25519,
 		Timeout:      timeout,
 		Suite:        suite,
-		NodeProvider: initiatorNodeProvider,
+		NetProvider:  networkProviders[0],
 		Logger:       log.Named("initiator"),
 	})
 	require.Nil(t, err)
@@ -82,8 +78,8 @@ func TestBn256(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	var timeout = 100 * time.Second
-	var threshold uint32 = 10
-	var peerCount = 10
+	var threshold uint16 = 10
+	var peerCount uint16 = 10
 	var peerLocs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerLocs))
@@ -101,10 +97,10 @@ func TestBn256(t *testing.T) {
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	var dkgNodes []dkg.NodeProvider = make([]dkg.NodeProvider, len(peerLocs))
+	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerLocs))
 	for i := range peerLocs {
 		registry := testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.InitNode(
+		dkgNodes[i] = dkg.Init(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
 			log.With("loc", peerLocs[i]),
 		)
@@ -112,10 +108,6 @@ func TestBn256(t *testing.T) {
 	//
 	// Initiate the key generation from some client node.
 	var initiatorPair = key.NewKeyPair(suite)
-	var initiatorNodeProvider dkg.NodeProvider = testutil.NewDkgNodeProvider(
-		dkgNodes,
-		timeout, // Single call timeout.
-	)
 	sharedAddr, sharedPub, err := dkg.GenerateDistributedKey(&dkg.GenerateDistributedKeyParams{
 		InitiatorPub: initiatorPair.Public,
 		PeerLocs:     peerLocs,
@@ -124,7 +116,7 @@ func TestBn256(t *testing.T) {
 		Version:      address.VersionED25519,
 		Timeout:      timeout,
 		Suite:        suite,
-		NodeProvider: initiatorNodeProvider,
+		NetProvider:  networkProviders[0],
 		Logger:       log.Named("initiator"),
 	})
 	require.Nil(t, err)

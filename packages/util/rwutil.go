@@ -309,6 +309,13 @@ func ReadAddress(r io.Reader, addr *address.Address) error {
 	return nil
 }
 
+func WriteAddress(w io.Writer, addr *address.Address) error {
+	if _, err := w.Write(addr[:]); err != nil {
+		return err
+	}
+	return nil
+}
+
 func ReadColor(r io.Reader, color *balance.Color) error {
 	n, err := r.Read(color[:])
 	if err != nil {

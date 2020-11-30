@@ -4,8 +4,6 @@ package dkg
 // SPDX-License-Identifier: Apache-2.0
 
 import (
-	"errors"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -13,34 +11,31 @@ import (
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 )
 
-// In a normal execution mode, there will be exactly one node registered
-// in this registry. Multiple nodes are used in the unit tests.
-var nodes []*node = []*node{}
-
 // Node represents a node, that can participate in a DKG procedure.
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
-type node struct {
+type Node struct {
 	secKey      kyber.Scalar
 	pubKey      kyber.Point
-	suite       rabin_dkg.Suite
-	netProvider peering.NetworkProvider
-	registry    dks.RegistryProvider
-	processes   map[string]*proc
+	suite       rabin_dkg.Suite         // Cryptography to use.
+	netProvider peering.NetworkProvider // Network to communicate through.
+	registry    dks.RegistryProvider    // Where to store the generated keys.
+	processes   map[string]*proc        // Only for introspection.
+	attachID    int                     // Peering attach ID
 	log         *logger.Logger
 }
 
-// InitNode creates new node, that can participate in the DKG procedure.
+// Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
-func InitNode(
+func Init(
 	secKey kyber.Scalar,
 	pubKey kyber.Point,
 	suite rabin_dkg.Suite,
 	netProvider peering.NetworkProvider,
 	registry dks.RegistryProvider,
 	log *logger.Logger,
-) NodeProvider {
-	n := node{
+) *Node {
+	n := Node{
 		secKey:      secKey,
 		pubKey:      pubKey,
 		suite:       suite,
@@ -49,51 +44,36 @@ func InitNode(
 		processes:   make(map[string]*proc),
 		log:         log,
 	}
-	nodes = append(nodes, &n)
+	n.attachID = netProvider.Attach(nil, n.onInitMsg)
 	return &n
 }
 
-func (n *node) dropProcess(p *proc) bool {
-	if found := n.processes[p.dkgID]; found != nil {
-		delete(n.processes, p.dkgID)
+// onInitMsg is a callback to handle the DKG initialization messages.
+func (n *Node) onInitMsg(recv *peering.RecvEvent) {
+	if recv.Msg.MsgType != initiatorInitMsgType {
+		return
+	}
+	var err error
+	var p *proc
+	req := initiatorInitMsg{}
+	if err = req.fromBytes(recv.Msg.MsgData, n.suite); err != nil {
+		n.log.Warnf("Dropping unknown message: %v", recv)
+	}
+	if p, err = onInitiatorInit(&recv.Msg.ChainID, &req, n); err == nil {
+		n.processes[p.stringID()] = p
+	}
+	recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, &initiatorStatusMsg{
+		step:  req.step,
+		error: err,
+	}))
+}
+
+// Called by the DKG process on termination.
+func (n *Node) dropProcess(p *proc) bool {
+	procID := p.stringID()
+	if found := n.processes[procID]; found != nil {
+		delete(n.processes, procID)
 		return true
 	}
 	return false
-}
-
-// DkgInit implements NodeProvider.
-// peerAddrs here is always a slice of a single element equal to our node.
-func (n *node) DkgInit(peerAddrs []string, dkgID string, msg *InitReq) error {
-	n.log.Debugf("DkgInit, dkgID=%v, msg.PeerLocs=%v", dkgID, msg.PeerLocs)
-	var err error
-	var p *proc
-	if p, err = onInitiatorInit(dkgID, msg, n); err != nil {
-		return err
-	}
-	n.processes[dkgID] = p
-	return nil
-
-}
-
-// DkgStep implements NodeProvider.
-func (n *node) DkgStep(peerAddrs []string, dkgID string, msg *StepReq) error {
-	if p := n.processes[dkgID]; p != nil {
-		p.log.Debugf("DkgStep, msg.Step=%v", msg.Step)
-		return p.onInitiatorStep(msg)
-	}
-	return errors.New("dkgID_not_found")
-}
-
-// DkgPubKey implements NodeProvider.
-func (n *node) DkgPubKey(peerAddrs []string, dkgID string) ([]*PubKeyResp, error) {
-	var err error
-	if p := n.processes[dkgID]; p != nil {
-		var resp *PubKeyResp
-		if resp, err = p.onInitiatorPubKey(); err != nil {
-			return nil, err
-		}
-		return []*PubKeyResp{resp}, nil
-	}
-	// TODO: Handle the case, when the key is taken from the registry.
-	return nil, errors.New("dkgID_not_found")
 }
