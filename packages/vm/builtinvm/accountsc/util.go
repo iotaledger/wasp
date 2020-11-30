@@ -69,27 +69,37 @@ func debitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 	account := state.GetMap(kv.Key(agentID[:]))
 	defer touchAccount(state, agentID)
 
-	bals := make(map[balance.Color]int64)
-	success := true
+	var err error
+	var col balance.Color
+	var bal int64
+	current := make(map[balance.Color]int64)
 	account.Iterate(func(elemKey []byte, value []byte) bool {
-		col, _, err := balance.ColorFromBytes(elemKey)
-		if err != nil {
-			success = false
+		if col, _, err = balance.ColorFromBytes(elemKey); err != nil {
 			return false
 		}
-		bal, _ := util.Int64From8Bytes(value)
-		b := transfer.Balance(col)
-		if bal < b {
-			success = false
+		if bal, err = util.Int64From8Bytes(value); err != nil {
 			return false
 		}
-		bals[col] = bal - b
+		current[col] = bal
 		return true
 	})
-	if !success {
+	if err != nil {
 		return false
 	}
-	for col, rem := range bals {
+	succ := true
+	transfer.Iterate(func(col balance.Color, bal int64) bool {
+		cur, _ := current[col]
+		if cur < bal {
+			succ = false
+			return false
+		}
+		current[col] = cur - bal
+		return true
+	})
+	if !succ {
+		return false
+	}
+	for col, rem := range current {
 		if rem > 0 {
 			account.SetAt(col[:], util.Uint64To8Bytes(uint64(rem)))
 		} else {

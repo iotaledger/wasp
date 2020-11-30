@@ -285,3 +285,27 @@ func TestCreditDebit6(t *testing.T) {
 	require.True(t, ok)
 	require.True(t, total.Equal(cbalances.NewFromMap(bal2)))
 }
+
+func TestCreditDebit7(t *testing.T) {
+	curTest = "TestCreditDebit7"
+	state := codec.NewMustCodec(kv.KVStore(dict.New()))
+	total := checkLedger(t, state, "cp0")
+	require.EqualValues(t, 0, total.Len())
+
+	agentID1 := coretypes.NewRandomAgentID()
+	transfer := cbalances.NewFromMap(map[balance.Color]int64{
+		color: 2,
+	})
+	CreditToAccount(state, agentID1, transfer)
+	total = checkLedger(t, state, "cp1")
+
+	debitTransfer := cbalances.NewFromMap(map[balance.Color]int64{
+		balance.ColorIOTA: 1,
+	})
+	// debit must fail
+	ok := DebitFromAccount(state, agentID1, debitTransfer)
+	require.False(t, ok)
+
+	total = checkLedger(t, state, "cp1")
+	require.True(t, transfer.Equal(total))
+}

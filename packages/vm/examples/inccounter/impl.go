@@ -26,7 +26,7 @@ var (
 	EntryPointIncAndRepeatOnceAfter5s = coretypes.Hn("incAndRepeatOnceAfter5s")
 	EntryPointIncAndRepeatMany        = coretypes.Hn("incAndRepeatMany")
 	EntryPointSpawn                   = coretypes.Hn("spawn")
-	EntryGetCounter                   = coretypes.Hn("getCounter")
+	EntryPointGetCounter              = coretypes.Hn("getCounter")
 
 	ProgramHash, _ = hashing.HashValueFromBase58(ProgramHashStr)
 )
@@ -37,7 +37,7 @@ var entryPoints = incCounterProcessor{
 	EntryPointIncAndRepeatOnceAfter5s: epFunc(incCounterAndRepeatOnce),
 	EntryPointIncAndRepeatMany:        epFunc(incCounterAndRepeatMany),
 	EntryPointSpawn:                   epFunc(spawn),
-	EntryGetCounter:                   epView(getCounter),
+	EntryPointGetCounter:              epView(getCounter),
 }
 
 type incEntryPoint struct {
@@ -160,7 +160,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	if ctx.PostRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 3) {
+	if ctx.PostRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 1) {
 		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
 		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)

@@ -99,27 +99,22 @@ func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
 		"ep", par.EntryPoint.String(),
 		"transfer", cbalances.Str(par.Transfer),
 	)
-
-	state := codec.NewMustCodec(vmctx)
 	toAgentID := vmctx.MyAgentID()
-	if !accountsc.DebitFromAccount(state, toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
+	if !vmctx.debitFromAccount(toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
-		vmctx.log.Debugf("-- PostRequest: exit 1")
+		vmctx.log.Debugf("-- PostRequest: not enough funds for request token")
 		return false
 	}
-	if !accountsc.DebitFromAccount(state, toAgentID, par.Transfer) {
-		vmctx.log.Debugf("-- PostRequest: exit 2")
+	if !vmctx.debitFromAccount(toAgentID, par.Transfer) {
+		vmctx.log.Debugf("-- PostRequest: not enough funds")
 		return false
 	}
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
 		WithTimelock(par.Timelock).
 		WithTransfer(par.Transfer).
 		WithArgs(par.Params)
-	succ := vmctx.txBuilder.AddRequestSection(reqSection) == nil
-	//vmctx.log.Debugf("-- PostRequest: success = %v", succ)
-	//vmctx.log.Debugf("-- PostRequest exit: state tx builder: \n%s\n", vmctx.txBuilder.Dump(true))
-	return succ
+	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 }
 
 func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
