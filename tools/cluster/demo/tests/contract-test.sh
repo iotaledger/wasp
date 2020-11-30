@@ -17,6 +17,6 @@ wwallet chain deploy-contract "$vmtype" "$name" "$description" "$file"
 # check that new contract is listed
 r=$(wwallet chain list-contracts)
 echo "$r"
-[[ $(echo "$r" | wc -l) == "3" ]]
+[[ $(echo "$r" | wc -l) == "4" ]]
 
 echo "PASS"

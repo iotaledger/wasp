@@ -34,8 +34,8 @@ echo "$r"
 # test the list-contracts command
 r=$(wwallet chain list-contracts)
 echo "$r"
-# check that root + accountsc contracts are listed
-[[ $(echo "$r" | wc -l) == "2" ]]
+# check that root + accountsc + blob contracts are listed
+[[ $(echo "$r" | wc -l) == "3" ]]
 
 # test the list-accounts command
 r=$(wwallet chain list-accounts)

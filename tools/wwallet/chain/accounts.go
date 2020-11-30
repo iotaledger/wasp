@@ -14,7 +14,7 @@ import (
 )
 
 func listAccountsCmd(args []string) {
-	ret, err := SCClient(accountsc.Hname).CallView(accountsc.FuncAccounts, nil)
+	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncAccounts, nil)
 	check(err)
 	codec.NewMustCodec(ret).Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
 		agentId, err := coretypes.NewAgentIDFromBytes([]byte(k))
@@ -34,7 +34,7 @@ func balanceCmd(args []string) {
 
 	agentID := parseAgentID(args[0])
 
-	ret, err := SCClient(accountsc.Hname).CallView(accountsc.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
+	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
 		accountsc.ParamAgentID: agentID.Bytes(),
 	}))
 	check(err)
