@@ -25,8 +25,8 @@ func balanceCmd(args []string) {
 	outs, err := config.GoshimmerClient().GetConfirmedAccountOutputs(&address)
 	check(err)
 
-	fmt.Printf("Address index %d\n", addressIndex)
-	fmt.Printf("  Address: %s\n", address)
+	fmt.Printf("Target index %d\n", addressIndex)
+	fmt.Printf("  Target: %s\n", address)
 	fmt.Printf("  Balance:\n")
 	var total int64
 	if config.Verbose {

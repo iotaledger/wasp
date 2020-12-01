@@ -4,23 +4,29 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 )
 
 type DWFClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *scclient.SCClient) *DWFClient {
-	return &DWFClient{scClient}
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *DWFClient {
+	return &DWFClient{
+		Client:        scClient,
+		contractHname: contractHname,
+	}
 }
 
 func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Transaction, error) {
 	return dwf.PostRequest(
+		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amount},
@@ -30,6 +36,7 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Tran
 
 func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error) {
 	return dwf.PostRequest(
+		dwf.contractHname,
 		donatewithfeedback.RequestWithdraw,
 		nil,
 		nil,
@@ -38,7 +45,7 @@ func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error)
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	NumRecords      uint32
 	FirstDonated    time.Time
@@ -94,7 +101,7 @@ func (dwf *DWFClient) FetchStatus() (*Status, error) {
 func decodeRecords(sliceData *statequery.TLogSliceDataResult) ([]*donatewithfeedback.DonationInfo, error) {
 	ret := make([]*donatewithfeedback.DonationInfo, len(sliceData.Values))
 	for i, data := range sliceData.Values {
-		lr, err := kv.ParseRawLogRecord(data)
+		lr, err := datatypes.ParseRawLogRecord(data)
 		if err != nil {
 			return nil, err
 		}

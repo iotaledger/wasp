@@ -23,7 +23,7 @@ func getPeerStatus() []*PeerStatus {
 	r := make([]*PeerStatus, 0)
 	iteratePeers(func(peer *Peer) {
 		r = append(r, &PeerStatus{
-			RemoteLocation: peer.remoteLocation,
+			RemoteLocation: peer.remoteNetid,
 			IsInbound:      peer.isInbound(),
 			IsAlive:        peer.IsAlive(),
 			NumUsers:       peer.NumUsers(),

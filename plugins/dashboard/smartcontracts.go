@@ -3,12 +3,12 @@ package dashboard
 import (
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo"
 )
 
@@ -45,23 +45,22 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 	})
 
 	e.GET(scRoute, func(c echo.Context) error {
-		addr, err := address.FromBase58(c.Param("address"))
+		cid, err := coretypes.NewContractIDFromBase58(c.Param("address"))
 		if err != nil {
 			return err
 		}
 
 		result := &ScTemplateParams{
 			BaseTemplateParams: BaseParams(c, scListRoute),
-			Address:            &addr,
 		}
-
-		br, err := registry.GetBootupData(&addr)
+		chainID := cid.ChainID()
+		br, err := registry.GetChainRecord(&chainID)
 		if err != nil {
 			return err
 		}
 		if br != nil {
-			result.BootupRecord = br
-			state, batch, _, err := state.LoadSolidState(&addr)
+			result.ChainRecord = br
+			state, batch, _, err := state.LoadSolidState(&chainID)
 			if err != nil {
 				return err
 			}
@@ -69,7 +68,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 			result.Batch = batch
 			if state != nil {
 				codec := state.Variables().Codec()
-				result.ProgramHash, _, err = codec.GetHashValue(vmconst.VarNameProgramHash)
+				result.ProgramHash, _, err = codec.GetHashValue(vmconst.VarNameProgramData)
 				if err != nil {
 					return err
 				}
@@ -82,7 +81,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 					return err
 				}
 			}
-			result.Committee = committees.GetStatus(&br.Address)
+			result.Committee = chains.GetStatus(&br.ChainID)
 		}
 
 		return c.Render(http.StatusOK, scTplName, result)
@@ -91,7 +90,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 
 func fetchSmartContracts() ([]*SmartContractOverview, error) {
 	r := make([]*SmartContractOverview, 0)
-	brs, err := registry.GetBootupRecords()
+	brs, err := registry.GetChainRecords()
 	if err != nil {
 		return nil, err
 	}
@@ -102,15 +101,16 @@ func fetchSmartContracts() ([]*SmartContractOverview, error) {
 			return nil, err
 		}
 		r = append(r, &SmartContractOverview{
-			BootupRecord: br,
-			Description:  desc,
+			ChainRecord: br,
+			Description: desc,
 		})
 	}
 	return r, nil
 }
 
-func fetchDescription(br *registry.BootupData) (string, error) {
-	state, _, _, err := state.LoadSolidState(&br.Address)
+func fetchDescription(br *registry.ChainRecord) (string, error) {
+	chainID := br.ChainID
+	state, _, _, err := state.LoadSolidState(&chainID)
 	if err != nil || state == nil {
 		return "", err
 	}
@@ -124,8 +124,8 @@ type ScListTemplateParams struct {
 }
 
 type SmartContractOverview struct {
-	BootupRecord *registry.BootupData
-	Description  string
+	ChainRecord *registry.ChainRecord
+	Description string
 }
 
 const tplScList = `
@@ -136,7 +136,7 @@ const tplScList = `
 	<table>
 		<thead>
 			<tr>
-				<th>Address / Description</th>
+				<th>Target / Description</th>
 				<th>Status</th>
 				<th></th>
 			</tr>
@@ -144,9 +144,9 @@ const tplScList = `
 		<tbody>
 		{{range $_, $sc := .SmartContracts}}
 			<tr>
-				<td><code>{{$sc.BootupRecord.Address}}</code><br/>{{$sc.Description}}</td>
-				<td>{{if $sc.BootupRecord.Active}}active{{else}}inactive{{end}}</td>
-				<td><a href="/smart-contracts/{{$sc.BootupRecord.Address}}">Details</a></td>
+				<td><code>{{$sc.ChainRecord.Target}}</code><br/>{{$sc.Description}}</td>
+				<td>{{if $sc.ChainRecord.Active}}active{{else}}inactive{{end}}</td>
+				<td><a href="/smart-contracts/{{$sc.ChainRecord.Target}}">Details</a></td>
 			</tr>
 		{{end}}
 		</tbody>
@@ -156,14 +156,13 @@ const tplScList = `
 
 type ScTemplateParams struct {
 	BaseTemplateParams
-	Address       *address.Address
-	BootupRecord  *registry.BootupData
+	ChainRecord   *registry.ChainRecord
 	State         state.VirtualState
-	Batch         state.Batch
+	Batch         state.Block
 	ProgramHash   *hashing.HashValue
 	Description   string
 	MinimumReward int64
-	Committee     *committees.CommittteeStatus
+	Committee     *chains.ChainStatus
 }
 
 const tplSc = `
@@ -172,24 +171,24 @@ const tplSc = `
 {{define "body"}}
 	<h2>Smart Contract details</h2>
 
-	{{if .BootupRecord}}
+	{{if .ChainRecord}}
 		<div>
-			<h3>Bootup record</h3>
-			<p>Address: {{template "address" .BootupRecord.Address}}</p>
-			<p>Owner address:   {{template "address" .BootupRecord.OwnerAddress}}</p>
-			<p>Color:           <code>{{.BootupRecord.Color}}</code></p>
-			<p>Committee Nodes: <code>{{.BootupRecord.CommitteeNodes}}</code></p>
-			<p>Access Nodes:    <code>{{.BootupRecord.AccessNodes}}</code></p>
-			<p>Active:          <code>{{.BootupRecord.Active}}</code></p>
+			<h3>Chain record</h3>
+			<p>Target: {{template "address" .ChainRecord.Target}}</p>
+			<p>Owner address:   {{template "address" .ChainRecord.OriginatorAddress}}</p>
+			<p>Color:           <code>{{.ChainRecord.Color}}</code></p>
+			<p>Committee Nodes: <code>{{.ChainRecord.CommitteeNodes}}</code></p>
+			<p>Access Nodes:    <code>{{.ChainRecord.AccessNodes}}</code></p>
+			<p>Active:          <code>{{.ChainRecord.Active}}</code></p>
 		</div>
 	{{else}}
-		<p>No bootup record for address {{template "address" .Address}}</p>
+		<p>No chain record for address {{template "address" .Target}}</p>
 	{{end}}
 	<hr/>
 	{{if .State}}
 		<div>
 			<h3>State</h3>
-			<p>State index: <code>{{.State.StateIndex}}</code></p>
+			<p>State index: <code>{{.State.BlockIndex}}</code></p>
 			<p>Timestamp: <code>{{formatTimestamp .State.Timestamp}}</code></p>
 			<p>State Hash: <code>{{.State.Hash}}</code></p>
 			<p>SC Program Hash: <code>{{.ProgramHash}}</code></p>
@@ -200,23 +199,23 @@ const tplSc = `
 		<p>State is empty.</p>
 	{{end}}
 	<hr/>
-	{{if .Batch}}
+	{{if .Block}}
 		<div>
-			<h3>Batch</h3>
-			<p>State Transaction ID: <code>{{.Batch.StateTransactionId}}</code></p>
-			<p>Timestamp: <code>{{formatTimestamp .Batch.Timestamp}}</code></p>
-			<p>Essence Hash: <code>{{.Batch.EssenceHash}}</code></p>
+			<h3>Block</h3>
+			<p>State Transaction ID: <code>{{.Block.AnchorTransactionID}}</code></p>
+			<p>Timestamp: <code>{{formatTimestamp .Block.Timestamp}}</code></p>
+			<p>Essence Hash: <code>{{.Block.EssenceHash}}</code></p>
 			<div>
-				<p>Requests: (<code>{{.Batch.Size}}</code> total)</p>
+				<p>Requests: (<code>{{.Block.Size}}</code> total)</p>
 				<ul>
-				{{range $_, $reqId := .Batch.RequestIds}}
+				{{range $_, $reqId := .Block.RequestIDs}}
 					<li><code>{{$reqId}}</code></li>
 				{{end}}
 				</ul>
 			</div>
 		</div>
 	{{else}}
-		<p>Batch is empty.</p>
+		<p>Block is empty.</p>
 	{{end}}
 	<hr/>
 	{{if .Committee}}

@@ -25,7 +25,7 @@ func TestTRMint1Token(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scTokenRegistryNum]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -95,7 +95,7 @@ func TestTRMint1Token(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables(sc, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress:      scOwnerAddr.Bytes(),
-		vmconst.VarNameProgramHash:       progHash.Bytes(),
+		vmconst.VarNameProgramData:       progHash.Bytes(),
 		tokenregistry.VarStateListColors: []byte(mintedColor.String()),
 	}) {
 		t.Fail()

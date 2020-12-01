@@ -67,7 +67,7 @@ func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription st
 	programHash = *hashing.NilHash
 	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
 		var err error
-		hashValue, err := w.PutProgram(wasmtimevm.PluginName, scDescription, wasm)
+		hashValue, err := w.PutProgram(wasmtimevm.VMType, scDescription, wasm)
 		if err != nil {
 			return err
 		}
@@ -107,13 +107,13 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 	} else {
 		scProgramHash = programHash.String()
 	}
-	scAddr, scColor, err := apilib.CreateSC(apilib.CreateSCParams{
+	scAddr, scColor, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  wasps.NodeClient,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
 		N:                     4,
 		T:                     3,
-		OwnerSigScheme:        scOwner.SigScheme(),
+		OriginatorSigScheme:   scOwner.SigScheme(),
 		ProgramHash:           programHash,
 		Description:           scDescription,
 		Textout:               os.Stdout,
@@ -123,8 +123,8 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		return nil, nil, err
 	}
 
-	err = apilib.ActivateSCMulti(apilib.ActivateSCParams{
-		Addresses:         []*address.Address{scAddr},
+	err = apilib.ActivateChain(apilib.ActivateChainParams{
+		ChainID:           []*address.Address{scAddr},
 		ApiHosts:          wasps.ApiHosts(),
 		WaitForCompletion: true,
 		PublisherHosts:    wasps.PublisherHosts(),

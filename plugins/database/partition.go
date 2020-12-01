@@ -2,19 +2,20 @@ package database
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"sync"
+
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"sync"
 )
 
-// database is structured with 34 byte long prefixes 'address' || 'object type byte
-// '
+// each key in DB is prefixed with `chainID` | `SC index` | `object type byte`
+
 const (
 	ObjectTypeDBSchemaVersion byte = iota
-	ObjectTypeBootupData
+	ObjectTypeChainRecord
 	ObjectTypeDistributedKeyData
 	ObjectTypeSolidState
 	ObjectTypeStateUpdateBatch
@@ -32,7 +33,7 @@ type Partition struct {
 
 var (
 	// to be able to work with MapsDB
-	partitions      = make(map[address.Address]*Partition)
+	partitions      = make(map[coretypes.ChainID]*Partition)
 	partitionsMutex sync.RWMutex
 )
 
@@ -47,12 +48,10 @@ func storeRealm(realm kvstore.Realm) kvstore.KVStore {
 	return storeInstance().WithRealm(realm)
 }
 
-// Partition returns store prefixed with the smart contract address
-// Wasp ledger is partitioned by smart contract addresses
-// cached to be able to work with MapsDB TODO
-func GetPartition(addr *address.Address) *Partition {
+// GetPartition returns a Partition, which is a KVStore prefixed with the chain ID.
+func GetPartition(chainID *coretypes.ChainID) *Partition {
 	partitionsMutex.RLock()
-	ret, ok := partitions[*addr]
+	ret, ok := partitions[*chainID]
 	if ok {
 		defer partitionsMutex.RUnlock()
 		return ret
@@ -62,15 +61,15 @@ func GetPartition(addr *address.Address) *Partition {
 	partitionsMutex.Lock()
 	defer partitionsMutex.Unlock()
 
-	partitions[*addr] = &Partition{
-		KVStore: storeRealm(addr[:]),
+	partitions[*chainID] = &Partition{
+		KVStore: storeRealm(chainID[:]),
 		mut:     &sync.RWMutex{},
 	}
-	return partitions[*addr]
+	return partitions[*chainID]
 }
 
 func GetRegistryPartition() kvstore.KVStore {
-	var niladdr address.Address
+	var niladdr coretypes.ChainID
 	return GetPartition(&niladdr)
 }
 

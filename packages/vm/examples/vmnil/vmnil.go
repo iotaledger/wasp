@@ -3,7 +3,8 @@
 package vmnil
 
 import (
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -16,7 +17,7 @@ func GetProcessor() vmtypes.Processor {
 	return nilProcessor{}
 }
 
-func (v nilProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (v nilProcessor) GetEntryPoint(_ coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	return v, true
 }
 
@@ -25,14 +26,24 @@ func (v nilProcessor) GetDescription() string {
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Run(ctx vmtypes.Sandbox) {
-	reqId := ctx.AccessRequest().ID()
-	ctx.GetWaspLog().Debugw("run nilProcessor",
-		"request code", ctx.AccessRequest().Code(),
-		"addr", ctx.GetSCAddress().String(),
-		"ts", ctx.GetTimestamp(),
-		"req", reqId.String(),
+func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	reqId := ctx.RequestID()
+	ctx.Eventf("run nilProcessor. Contract ID: %s, ts: %d, reqid: %s",
+		ctx.MyContractID().String(),
+		ctx.GetTimestamp(),
+		reqId.String(),
 	)
+	return nil, nil
+}
+
+// TODO
+func (ep nilProcessor) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep nilProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
 }
 
 func (v nilProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {

@@ -6,23 +6,28 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 )
 
 type FairRouletteClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *scclient.SCClient) *FairRouletteClient {
-	return &FairRouletteClient{scClient}
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *FairRouletteClient {
+	return &FairRouletteClient{
+		Client:        scClient,
+		contractHname: contractHname,
+	}
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	CurrentBetsAmount uint16
 	CurrentBets       []*fairroulette.BetInfo
@@ -58,7 +63,7 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 		query.AddScalar(fairroulette.StateVarLastWinningColor)
 		query.AddScalar(fairroulette.ReqVarPlayPeriodSec)
 		query.AddScalar(fairroulette.StateVarNextPlayTimestamp)
-		query.AddDictionary(fairroulette.StateVarPlayerStats, 100)
+		query.AddMap(fairroulette.StateVarPlayerStats, 100)
 		query.AddArray(fairroulette.StateArrayWinsPerColor, 0, fairroulette.NumColors)
 	})
 	if err != nil {
@@ -79,7 +84,7 @@ func (frc *FairRouletteClient) FetchStatus() (*Status, error) {
 	nextPlayTimestamp, _ := results.Get(fairroulette.StateVarNextPlayTimestamp).MustInt64()
 	status.NextPlayTimestamp = time.Unix(0, nextPlayTimestamp).UTC()
 
-	status.PlayerStats, err = decodePlayerStats(results.Get(fairroulette.StateVarPlayerStats).MustDictionaryResult())
+	status.PlayerStats, err = decodePlayerStats(results.Get(fairroulette.StateVarPlayerStats).MustMapResult())
 	if err != nil {
 		return nil, err
 	}
@@ -120,14 +125,14 @@ func decodeWinsPerColor(result *statequery.ArrayResult) ([]uint32, error) {
 	for _, b := range result.Values {
 		var n uint32
 		if b != nil {
-			n = util.Uint32From4Bytes(b)
+			n = util.MustUint32From4Bytes(b)
 		}
 		ret = append(ret, n)
 	}
 	return ret, nil
 }
 
-func decodePlayerStats(result *statequery.DictResult) (map[address.Address]*fairroulette.PlayerStats, error) {
+func decodePlayerStats(result *statequery.MapResult) (map[address.Address]*fairroulette.PlayerStats, error) {
 	playerStats := make(map[address.Address]*fairroulette.PlayerStats)
 	for _, e := range result.Entries {
 		if len(e.Key) != address.Length {
@@ -148,6 +153,7 @@ func decodePlayerStats(result *statequery.DictResult) (map[address.Address]*fair
 
 func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transaction, error) {
 	return frc.PostRequest(
+		frc.contractHname,
 		fairroulette.RequestPlaceBet,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
@@ -157,6 +163,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transa
 
 func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transaction, error) {
 	return frc.PostRequest(
+		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,
 		nil,
 		nil,

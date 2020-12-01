@@ -2,11 +2,11 @@ package wasmtest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
@@ -27,8 +27,9 @@ func TestDwfDeploy(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
+	_ = scChain
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -46,7 +47,7 @@ func TestDwfDeploy(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfDescription,
 	}) {
 		t.Fail()
@@ -69,15 +70,16 @@ func TestDwfDonateOnce(t *testing.T) {
 	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfClient := dwfclient.NewClient(scclient.New(
+	dwfClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		donor.SigScheme(),
-	))
+		15*time.Second,
+	), 0)
 
 	for i := 0; i < numDonations; i++ {
 		_, err = dwfClient.Donate(42, fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i))
@@ -134,7 +136,7 @@ func TestDwfDonateOnce(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
-		vmconst.VarNameProgramHash:                programHash[:],
+		vmconst.VarNameProgramData:                programHash[:],
 		vmconst.VarNameDescription:                dwfDescription,
 		donatewithfeedback.VarStateMaxDonation:    42,
 		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
@@ -143,10 +145,10 @@ func TestDwfDonateOnce(t *testing.T) {
 	}
 }
 
-func TestDwfDonate5Times(t *testing.T) {
+func TestDwfDonateNTimes(t *testing.T) {
 	const numDonations = 5
 
-	wasps := setup(t, "TestDwfDonate5Times")
+	wasps := setup(t, "TestDwfDonateNTimes")
 
 	err := loadWasmIntoWasps(wasps, dwfWasmPath, dwfDescription)
 	check(err, t)
@@ -159,15 +161,16 @@ func TestDwfDonate5Times(t *testing.T) {
 	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfClient := dwfclient.NewClient(scclient.New(
+	dwfClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		donor.SigScheme(),
-	))
+		15*time.Second,
+	), 0)
 
 	for i := 0; i < numDonations; i++ {
 		_, err = dwfClient.Donate(42, fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i))
@@ -224,7 +227,7 @@ func TestDwfDonate5Times(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
-		vmconst.VarNameProgramHash:                programHash[:],
+		vmconst.VarNameProgramData:                programHash[:],
 		vmconst.VarNameDescription:                dwfDescription,
 		donatewithfeedback.VarStateMaxDonation:    42,
 		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
@@ -247,16 +250,16 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfDonorClient := dwfclient.NewClient(scclient.New(
+	dwfDonorClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		donor.SigScheme(),
 		15*time.Second,
-	))
+	), 0)
 	_, err = dwfDonorClient.Donate(42, "well done, I give you 42i")
 	check(err, t)
 	checkSuccess(err, t, "donated 42")
@@ -280,13 +283,13 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	dwfOwnerClient := dwfclient.NewClient(scclient.New(
+	dwfOwnerClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		scOwner.SigScheme(),
 		15*time.Second,
-	))
+	), 0)
 	_, err = dwfOwnerClient.Withdraw(40)
 	check(err, t)
 	checkSuccess(err, t, "harvested 40")
@@ -312,7 +315,7 @@ func TestDwfDonateWithdrawAuthorised(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfDescription,
 	}) {
 		t.Fail()
@@ -333,16 +336,16 @@ func TestDwfDonateWithdrawNotAuthorised(t *testing.T) {
 	err = requestFunds(wasps, donorAddr, "donor")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfDonorClient := dwfclient.NewClient(scclient.New(
+	dwfDonorClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scAddr,
+		scChain,
 		donor.SigScheme(),
 		15*time.Second,
-	))
+	), 0)
 	_, err = dwfDonorClient.Donate(42, "well done, I give you 42i")
 	check(err, t)
 	checkSuccess(err, t, "donated 42")
@@ -392,7 +395,7 @@ func TestDwfDonateWithdrawNotAuthorised(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfDescription,
 	}) {
 		t.Fail()

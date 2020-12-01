@@ -3,22 +3,23 @@ package logsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
-const (
-	RequestCodeAddLog = sctransaction.RequestCode(0)
+var (
+	RequestCodeAddLog = coretypes.Hn("codeAddLog")
 )
 
 type logscEntryPoint func(ctx vmtypes.Sandbox)
 
-type logscProcessor map[sctransaction.RequestCode]logscEntryPoint
+type logscProcessor map[coretypes.Hname]logscEntryPoint
 
 var entryPoints = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
@@ -28,7 +29,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (p logscProcessor) GetEntryPoint(code sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (p logscProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	ep, ok := p[code]
 	return ep, ok
 }
@@ -37,8 +38,19 @@ func (v logscProcessor) GetDescription() string {
 	return "LogSc hard coded smart contract processor"
 }
 
-func (ep logscEntryPoint) Run(ctx vmtypes.Sandbox) {
+func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	ep(ctx)
+	return nil, nil
+}
+
+// TODO
+func (ep logscEntryPoint) IsView() bool {
+	return false
+}
+
+// TODO
+func (ep logscEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	panic("implement me")
 }
 
 func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
@@ -48,17 +60,17 @@ func (v logscEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
 const logArrayKey = kv.Key("log")
 
 func handleAddLogRequest(ctx vmtypes.Sandbox) {
-	msg, ok, _ := ctx.AccessRequest().Args().GetString("message")
+	params := ctx.Params()
+	msg, ok, _ := params.GetString("message")
 	if !ok {
 		fmt.Printf("[logsc] invalid request: missing message argument")
 		return
 	}
 
-	// TODO: implement using tlog
-	length, _ := ctx.AccessState().GetInt64(logArrayKey)
+	length, _ := ctx.State().GetInt64(logArrayKey)
 	length += 1
-	ctx.AccessState().SetInt64(logArrayKey, length)
-	ctx.AccessState().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
+	ctx.State().SetInt64(logArrayKey, length)
+	ctx.State().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

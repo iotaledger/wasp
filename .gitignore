@@ -1,5 +1,8 @@
 wasp.log
+wasp
 waspdb/
 cluster-data/
 dist/
 .idea/
+.vscode/
+*.bak

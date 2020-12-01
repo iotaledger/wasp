@@ -20,7 +20,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -33,7 +33,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNum9]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -47,8 +47,8 @@ func TestSC9Requests5Sec1(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: vmconst.RequestCodeNOP,
+			TargetContract: scAddress,
+			RequestCode:    vmconst.RequestCodeNOP,
 		})
 		check(err, t)
 		time.Sleep(1 * time.Second)
@@ -75,7 +75,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  []byte(sc9.ProgramHash),
+		vmconst.VarNameProgramData:  []byte(sc9.ProgramHash),
 	}) {
 		t.Fail()
 	}

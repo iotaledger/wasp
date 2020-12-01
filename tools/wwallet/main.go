@@ -5,14 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/iotaledger/wasp/tools/wwallet/chain"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
-	"github.com/iotaledger/wasp/tools/wwallet/dashboard/dashboardcmd"
-	"github.com/iotaledger/wasp/tools/wwallet/program"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/dwf/dwfcmd"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/fa/facmd"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/fr/frcmd"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/sccmd"
-	"github.com/iotaledger/wasp/tools/wwallet/sc/tr/trcmd"
+	"github.com/iotaledger/wasp/tools/wwallet/decode"
 	"github.com/iotaledger/wasp/tools/wwallet/wallet"
 	"github.com/spf13/pflag"
 )
@@ -41,13 +36,9 @@ func main() {
 
 	config.InitCommands(commands, flags)
 	wallet.InitCommands(commands, flags)
-	frcmd.InitCommands(commands)
-	facmd.InitCommands(commands)
-	trcmd.InitCommands(commands)
-	dwfcmd.InitCommands(commands)
-	dashboardcmd.InitCommands(commands, flags)
-	sccmd.InitCommands(commands, flags)
-	program.InitCommands(commands, flags)
+	chain.InitCommands(commands, flags)
+	decode.InitCommands(commands, flags)
+
 	check(flags.Parse(os.Args[1:]))
 
 	config.Read()

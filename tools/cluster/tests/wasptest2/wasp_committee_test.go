@@ -20,7 +20,7 @@ func TestKillNode(t *testing.T) {
 	err := requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, inccounter.Description)
+	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, inccounter.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	wasps.StopNode(3)
@@ -29,10 +29,10 @@ func TestKillNode(t *testing.T) {
 		_, err = waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
 			NodeClient:      wasps.NodeClient,
 			SenderSigScheme: scOwner.SigScheme(),
-			BlockParams: []waspapi.RequestBlockParams{
+			RequestSectionParams: []waspapi.RequestSectionParams{
 				{
-					TargetSCAddress: scAddr,
-					RequestCode:     inccounter.RequestInc,
+					TargetContractID: scAddr,
+					EntryPointCode:   inccounter.RequestInc,
 				},
 			},
 			Post:                true,
@@ -61,7 +61,7 @@ func TestKillNode(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		inccounter.VarCounter:       noRequests,
 	}) {
 		t.Fail()

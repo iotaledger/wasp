@@ -2,12 +2,14 @@ package runvm
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/txutil"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
 // RunComputationsAsync runs computations for the batch of requests in the background
@@ -16,11 +18,9 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 		return fmt.Errorf("must be at least 1 request")
 	}
 
-	// create txbuilder for the task. It will accumulate all token movements produced
-	// by the SC program during batch run. In the end it will produce finalized transaction
-	txb, err := txbuilder.NewFromAddressBalances(&ctx.Address, ctx.Balances)
+	txb, err := statetxbuilder.New(address.Address(ctx.ChainID), ctx.Color, ctx.Balances)
 	if err != nil {
-		ctx.Log.Debugf("txbuilder.NewFromAddressBalances: %v\n%s", err, txutil.BalancesToString(ctx.Balances))
+		ctx.Log.Debugf("statetxbuilder.New: %v", err)
 		return err
 	}
 
@@ -33,87 +33,70 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 }
 
 // runTask runs batch of requests on VM
-func runTask(ctx *vm.VMTask, txb *txbuilder.Builder) {
-	ctx.Log.Debugw("runTask IN",
-		"addr", ctx.Address.String(),
-		"timestamp", ctx.Timestamp,
-		"state index", ctx.VirtualState.StateIndex(),
-		"num req", len(ctx.Requests),
-		"leader", ctx.LeaderPeerIndex,
+func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
+	task.Log.Debugw("runTask IN",
+		"chainID", task.ChainID.String(),
+		"timestamp", task.Timestamp,
+		"state index", task.VirtualState.BlockIndex(),
+		"num req", len(task.Requests),
+		"leader", task.LeaderPeerIndex,
 	)
 
-	// create VM context, including state block, move smart contract token and request tokens
-	vmctx, err := createVMContext(ctx, txb)
+	vmctx, err := vmcontext.NewVMContext(task, txb)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
+		task.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
 		return
 	}
-	stateUpdates := make([]state.StateUpdate, 0, len(ctx.Requests))
-	for _, reqRef := range ctx.Requests {
+	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
+	timestamp := task.Timestamp
+	for _, reqRef := range task.Requests {
+		stateUpdate := vmctx.RunTheRequest(reqRef, timestamp)
 
-		vmctx.RequestRef = reqRef
-		vmctx.StateUpdate = state.NewStateUpdate(reqRef.RequestId()).WithTimestamp(vmctx.Timestamp)
-
-		runTheRequest(vmctx)
-
-		stateUpdates = append(stateUpdates, vmctx.StateUpdate)
+		stateUpdates = append(stateUpdates, stateUpdate)
 		// update state
-		vmctx.VirtualState.ApplyStateUpdate(vmctx.StateUpdate)
-		if vmctx.Timestamp != 0 {
+		if timestamp != 0 {
 			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
-			vmctx.Timestamp += 1
+			timestamp += 1
 		}
-		// mutate entropy
-		vmctx.Entropy = *hashing.HashData(vmctx.Entropy[:])
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
-		ctx.OnFinish(fmt.Errorf("RunVM: no state updates were produced"))
+		task.OnFinish(fmt.Errorf("RunVM: no state updates were produced"))
 		return
 	}
 
-	// create batch from state updates.
-	ctx.ResultBatch, err = state.NewBatch(stateUpdates)
+	// create block from state updates.
+	task.ResultBlock, err = state.NewBlock(stateUpdates)
 	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.NewBatch: %v", err))
+		task.OnFinish(fmt.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
-	ctx.ResultBatch.WithStateIndex(ctx.VirtualState.StateIndex() + 1)
+	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
 	// calculate resulting state hash
-	vsClone := ctx.VirtualState.Clone()
-	if err = vsClone.ApplyBatch(ctx.ResultBatch); err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
+	vsClone := task.VirtualState.Clone()
+	if err = vsClone.ApplyBatch(task.ResultBlock); err != nil {
+		task.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
-
-	// add state block
-	err = vmctx.TxBuilder.SetStateParams(ctx.VirtualState.StateIndex()+1, stateHash, vsClone.Timestamp())
-	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.SetStateParams: %v", err))
-		return
-	}
-	// create result transaction
-	ctx.ResultTransaction, err = vmctx.TxBuilder.Build(false)
-	if err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Build: %v", err))
-		return
-	}
-	// check semantic just in case
-	if _, err := ctx.ResultTransaction.Properties(); err != nil {
-		ctx.OnFinish(fmt.Errorf("RunVM.txbuilder.Properties: %v", err))
-		return
-	}
-
-	ctx.Log.Debugw("runTask OUT",
-		"result batch size", ctx.ResultBatch.Size(),
-		"result batch state index", ctx.ResultBatch.StateIndex(),
-		"result variable state hash", stateHash.String(),
-		"result essence hash", hashing.HashData(ctx.ResultTransaction.EssenceBytes()).String(),
-		"result tx finalTimestamp", time.Unix(0, ctx.ResultTransaction.MustState().Timestamp()),
+	task.ResultTransaction, err = vmctx.FinalizeTransactionEssence(
+		task.VirtualState.BlockIndex()+1,
+		stateHash,
+		vsClone.Timestamp(),
 	)
-	// call back
-	ctx.OnFinish(nil)
+	if err != nil {
+		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
+		return
+	}
+	// Note: can't take tx ID!!
+	task.Log.Debugw("runTask OUT",
+		"result batch size", task.ResultBlock.Size(),
+		"result batch state index", task.ResultBlock.StateIndex(),
+		"result variable state hash", stateHash.String(),
+		"result essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
+		"result tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
+	)
+	task.OnFinish(nil)
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -42,7 +42,7 @@ func TestTRTest(t *testing.T) {
 		return
 	}
 
-	tc := trclient.NewClient(scclient.New(
+	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -87,7 +87,7 @@ func TestTRTest(t *testing.T) {
 	}
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:      scOwnerAddr[:],
-		vmconst.VarNameProgramHash:       programHash[:],
+		vmconst.VarNameProgramData:       programHash[:],
 		tokenregistry.VarStateListColors: []byte(mintedColor1.String()),
 		vmconst.VarNameDescription:       tokenregistry.Description,
 	}) {

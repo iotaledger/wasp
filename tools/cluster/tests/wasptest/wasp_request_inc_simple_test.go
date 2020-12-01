@@ -16,7 +16,7 @@ func TestSend1ReqIncSimple(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -27,7 +27,7 @@ func TestSend1ReqIncSimple(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -39,8 +39,8 @@ func TestSend1ReqIncSimple(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: inccounter.RequestInc,
+		TargetContract: scAddress,
+		RequestCode:    inccounter.RequestInc,
 	})
 	check(err, t)
 
@@ -67,7 +67,7 @@ func TestSend5ReqInc0SecSimple(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5ReqInc0SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -79,7 +79,7 @@ func TestSend5ReqInc0SecSimple(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -93,8 +93,8 @@ func TestSend5ReqInc0SecSimple(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: inccounter.RequestInc,
+			TargetContract: scAddress,
+			RequestCode:    inccounter.RequestInc,
 		})
 		check(err, t)
 	}
@@ -124,7 +124,7 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend10ReqIncrease0SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          11,
@@ -136,7 +136,7 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -149,8 +149,8 @@ func TestSend10ReqIncrease0SecSimple(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: inccounter.RequestInc,
+			TargetContract: scAddress,
+			RequestCode:    inccounter.RequestInc,
 		})
 		check(err, t)
 	}
@@ -179,7 +179,7 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend60ReqIncrease500msecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
@@ -191,7 +191,7 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -204,8 +204,8 @@ func TestSend60ReqIncrease500msecSimple(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: inccounter.RequestInc,
+			TargetContract: scAddress,
+			RequestCode:    inccounter.RequestInc,
 		})
 		check(err, t)
 		time.Sleep(500 * time.Millisecond)
@@ -234,7 +234,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend60ReqInc0SecSimple")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          61,
@@ -246,7 +246,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -259,8 +259,8 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: inccounter.RequestInc,
+			TargetContract: scAddress,
+			RequestCode:    inccounter.RequestInc,
 		})
 		check(err, t)
 	}
@@ -278,7 +278,7 @@ func TestSend60ReqInc0SecSimple(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(60)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}

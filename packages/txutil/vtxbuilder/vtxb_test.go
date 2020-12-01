@@ -23,7 +23,7 @@ func TestBasic(t *testing.T) {
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.MoveToAddress(targetAddress, balance.ColorIOTA, 1)
+	err = txb.MoveTokensToAddress(targetAddress, balance.ColorIOTA, 1)
 	assert.NoError(t, err)
 
 	tx := txb.Build(false)

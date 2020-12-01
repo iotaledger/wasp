@@ -4,25 +4,29 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/scclient"
-	"github.com/iotaledger/wasp/client/statequery"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 )
 
 type FairAuctionClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *scclient.SCClient) *FairAuctionClient {
-	return &FairAuctionClient{scClient}
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *FairAuctionClient {
+	return &FairAuctionClient{
+		Client:        scClient,
+		contractHname: contractHname,
+	}
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	OwnerMarginPromille int64
 	AuctionsLen         uint32
@@ -32,7 +36,7 @@ type Status struct {
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	scStatus, results, err := fc.FetchSCStatus(func(query *statequery.Request) {
 		query.AddScalar(fairauction.VarStateOwnerMarginPromille)
-		query.AddDictionary(fairauction.VarStateAuctions, 100)
+		query.AddMap(fairauction.VarStateAuctions, 100)
 	})
 	if err != nil {
 		return nil, err
@@ -43,7 +47,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	ownerMargin, ok := results.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
 	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok)
 
-	auctions := results.Get(fairauction.VarStateAuctions).MustDictionaryResult()
+	auctions := results.Get(fairauction.VarStateAuctions).MustMapResult()
 	status.AuctionsLen = auctions.Len
 	status.Auctions = make(map[balance.Color]*fairauction.AuctionInfo)
 	for _, entry := range auctions.Entries {
@@ -59,6 +63,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 
 func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transaction, error) {
 	return fc.PostRequest(
+		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
 		nil,
 		nil,
@@ -95,6 +100,7 @@ func (fc *FairAuctionClient) StartAuction(
 		return nil, fmt.Errorf("GetFeeAmount failed: %v", err)
 	}
 	return fc.PostRequest(
+		fc.contractHname,
 		fairauction.RequestStartAuction,
 		nil,
 		map[balance.Color]int64{
@@ -102,7 +108,7 @@ func (fc *FairAuctionClient) StartAuction(
 			*color:            tokensForSale,
 		},
 		map[string]interface{}{
-			fairauction.VarReqAuctionColor:                color,
+			fairauction.VarReqAuctionColor:                color.String(),
 			fairauction.VarReqStartAuctionDescription:     description,
 			fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
 			fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
@@ -112,9 +118,10 @@ func (fc *FairAuctionClient) StartAuction(
 
 func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction.Transaction, error) {
 	return fc.PostRequest(
+		fc.contractHname,
 		fairauction.RequestPlaceBid,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-		map[string]interface{}{fairauction.VarReqAuctionColor: color},
+		map[string]interface{}{fairauction.VarReqAuctionColor: color.String()},
 	)
 }

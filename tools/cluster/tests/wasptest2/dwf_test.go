@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
@@ -40,7 +40,7 @@ func TestDeployDWF(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
@@ -63,7 +63,7 @@ func TestDWFDonateNTimes(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfClient := dwfclient.NewClient(scclient.New(
+	dwfClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -122,7 +122,7 @@ func TestDWFDonateNTimes(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress:               scOwnerAddr[:],
-		vmconst.VarNameProgramHash:                programHash[:],
+		vmconst.VarNameProgramData:                programHash[:],
 		vmconst.VarNameDescription:                dwfimpl.Description,
 		donatewithfeedback.VarStateMaxDonation:    42,
 		donatewithfeedback.VarStateTotalDonations: 42 * numDonations,
@@ -145,7 +145,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfDonorClient := dwfclient.NewClient(scclient.New(
+	dwfDonorClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -175,7 +175,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 		t.Fail()
 	}
 
-	dwfOwnerClient := dwfclient.NewClient(scclient.New(
+	dwfOwnerClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -207,7 +207,7 @@ func TestDWFDonateWithdrawAuthorised(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()
@@ -228,7 +228,7 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 	scAddr, scColor, err := startSmartContract(wasps, dwfimpl.ProgramHash, dwfimpl.Description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
-	dwfDonorClient := dwfclient.NewClient(scclient.New(
+	dwfDonorClient := dwfclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
 		scAddr,
@@ -284,7 +284,7 @@ func TestDWFDonateWithdrawNotAuthorised(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  dwfimpl.Description,
 	}) {
 		t.Fail()

@@ -13,7 +13,7 @@ import (
 //  -- if MsgType == 1 (handshake)
 // MsgData (a string of peer network location) --> end of message
 //  -- if MsgType >= FirstCommitteeMsgCode
-// Addresses 32 bytes
+// ChainID 32 bytes
 // SenderIndex 2 bytes
 // MsgData variable bytes to the end
 //  -- otherwise panic wrong MsgType
@@ -28,11 +28,9 @@ func encodeMessage(msg *PeerMessage, ts int64) []byte {
 	switch {
 	case msg == nil:
 		panic("MsgTypeReserved")
-		//buf.WriteByte(MsgTypeReserved)
 
 	case msg.MsgType == MsgTypeReserved:
 		panic("MsgTypeReserved")
-		//buf.WriteByte(MsgTypeReserved)
 
 	case msg.MsgType == MsgTypeHandshake:
 		buf.WriteByte(MsgTypeHandshake)
@@ -44,9 +42,9 @@ func encodeMessage(msg *PeerMessage, ts int64) []byte {
 
 	case msg.MsgType >= FirstCommitteeMsgCode:
 		buf.WriteByte(msg.MsgType)
-		buf.Write(msg.Address.Bytes())
-		_ = util.WriteUint16(&buf, msg.SenderIndex)
-		_ = util.WriteBytes32(&buf, msg.MsgData)
+		msg.ChainID.Write(&buf)
+		util.WriteUint16(&buf, msg.SenderIndex)
+		util.WriteBytes32(&buf, msg.MsgData)
 
 	default:
 		log.Panicf("wrong msg type %d", msg.MsgType)
@@ -82,7 +80,7 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 
 	case ret.MsgType >= FirstCommitteeMsgCode:
 		// committee message
-		if err = util.ReadAddress(rdr, &ret.Address); err != nil {
+		if err = ret.ChainID.Read(rdr); err != nil {
 			return nil, err
 		}
 		if err = util.ReadUint16(rdr, &ret.SenderIndex); err != nil {

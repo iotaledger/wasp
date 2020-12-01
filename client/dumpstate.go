@@ -3,22 +3,22 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type SCStateDump struct {
-	Index     uint32            `json:"index"`
-	Variables map[kv.Key][]byte `json:"variables"`
+	Index     uint32    `json:"index"`
+	Variables dict.Dict `json:"variables"`
 }
 
-func DumpSCStateRoute(address string) string {
-	return "sc/" + address + "/dumpstate"
+func DumpSCStateRoute(scid string) string {
+	return "sc/" + scid + "/dumpstate"
 }
 
-func (c *WaspClient) DumpSCState(addr *address.Address) (*SCStateDump, error) {
+func (c *WaspClient) DumpSCState(scid *coretypes.ContractID) (*SCStateDump, error) {
 	res := &SCStateDump{}
-	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DumpSCStateRoute(addr.String()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DumpSCStateRoute(scid.Base58()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil

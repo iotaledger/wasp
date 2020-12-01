@@ -4,19 +4,19 @@ package donatewithfeedback
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
 )
 
 // main external constants
+var (
+	RequestDonate   = coretypes.Hn("donate")
+	RequestWithdraw = coretypes.Hn("withdraw")
+)
+
 const (
-	// code of the 'donate' request
-	RequestDonate = sctransaction.RequestCode(1)
-	// code of the 'withdraw' request. It is protected (checks authorisation at the protocol level)
-	RequestWithdraw = sctransaction.RequestCode(2 | sctransaction.RequestCodeProtected)
 
 	// state vars
 	// name of the feedback message log
@@ -37,10 +37,10 @@ const (
 // it is marshalled to the deterministic binary form and saves as one entry in the state
 type DonationInfo struct {
 	Seq      int64
-	Id       *sctransaction.RequestId
+	Id       coretypes.RequestID
 	When     time.Time // not marshaled, filled in from timestamp
 	Amount   int64
-	Sender   address.Address
+	Sender   coretypes.AgentID
 	Feedback string // max 16 bit length
 	Error    string
 }
@@ -51,7 +51,7 @@ func (di *DonationInfo) Write(w io.Writer) error {
 	if err := util.WriteInt64(w, di.Seq); err != nil {
 		return err
 	}
-	if _, err := w.Write(di.Id[:]); err != nil {
+	if err := di.Id.Write(w); err != nil {
 		return err
 	}
 	if err := util.WriteInt64(w, di.Amount); err != nil {
@@ -74,14 +74,13 @@ func (di *DonationInfo) Read(r io.Reader) error {
 	if err := util.ReadInt64(r, &di.Seq); err != nil {
 		return err
 	}
-	di.Id = new(sctransaction.RequestId)
-	if err := sctransaction.ReadRequestId(r, di.Id); err != nil {
+	if err := di.Id.Read(r); err != nil {
 		return err
 	}
 	if err = util.ReadInt64(r, &di.Amount); err != nil {
 		return err
 	}
-	if err = util.ReadAddress(r, &di.Sender); err != nil {
+	if err = coretypes.ReadAgentID(r, &di.Sender); err != nil {
 		return err
 	}
 	if di.Feedback, err = util.ReadString16(r); err != nil {

@@ -1,7 +1,6 @@
 package wasmhost
 
 import (
-	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 )
 
@@ -15,22 +14,27 @@ func (o *ScBalance) Exists(keyId int32) bool {
 }
 
 func (o *ScBalance) GetInt(keyId int32) int64 {
-	key := o.vm.WasmHost.GetKey(keyId)
-	if o.requestOnly {
-		request := o.vm.ctx.AccessRequest()
-		reqId := request.ID()
-		if bytes.Equal(key, reqId.TransactionId().Bytes()) {
-			return request.NumFreeMintedTokens()
-		}
-	}
+	key := o.vm.WasmHost.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
-		o.error(err.Error())
+		o.Error(err.Error())
 		return 0
 	}
-	account := o.vm.ctx.AccessSCAccount()
+
+	balances := o.vm.MyBalances()
 	if o.requestOnly {
-		return account.AvailableBalanceFromRequest(&color)
+		if o.vm.ctx == nil {
+			return 0
+		}
+		balances = o.vm.ctx.Accounts().Incoming()
 	}
-	return account.AvailableBalance(&color)
+
+	return balances.Balance(color)
+}
+
+func (o *ScBalance) GetTypeId(keyId int32) int32 {
+	if o.Exists(keyId) {
+		return OBJTYPE_INT
+	}
+	return -1
 }

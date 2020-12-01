@@ -4,26 +4,26 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type stateUpdate struct {
 	batchIndex uint16
-	requestId  sctransaction.RequestId
+	requestID  coretypes.RequestID
 	timestamp  int64
-	mutations  kv.MutationSequence
+	mutations  buffered.MutationSequence
 }
 
-func NewStateUpdate(reqid *sctransaction.RequestId) StateUpdate {
-	var req sctransaction.RequestId
+func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
+	var req coretypes.RequestID
 	if reqid != nil {
 		req = *reqid
 	}
 	return &stateUpdate{
-		requestId: req,
-		mutations: kv.NewMutationSequence(),
+		requestID: req,
+		mutations: buffered.NewMutationSequence(),
 	}
 }
 
@@ -35,11 +35,11 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 // StateUpdate
 
 func (su *stateUpdate) Clear() {
-	su.mutations = kv.NewMutationSequence()
+	su.mutations = buffered.NewMutationSequence()
 }
 
 func (su *stateUpdate) String() string {
-	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestId.String(), su.Timestamp(), su.mutations)
+	ret := fmt.Sprintf("reqid: %s, ts: %d, muts: [%s]", su.requestID.String(), su.Timestamp(), su.mutations)
 	return ret
 }
 
@@ -52,16 +52,16 @@ func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
 	return su
 }
 
-func (su *stateUpdate) RequestId() *sctransaction.RequestId {
-	return &su.requestId
+func (su *stateUpdate) RequestID() *coretypes.RequestID {
+	return &su.requestID
 }
 
-func (su *stateUpdate) Mutations() kv.MutationSequence {
+func (su *stateUpdate) Mutations() buffered.MutationSequence {
 	return su.mutations
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
-	if _, err := w.Write(su.requestId[:]); err != nil {
+	if err := su.requestID.Write(w); err != nil {
 		return err
 	}
 	if err := su.mutations.Write(w); err != nil {
@@ -71,7 +71,7 @@ func (su *stateUpdate) Write(w io.Writer) error {
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
-	if _, err := r.Read(su.requestId[:]); err != nil {
+	if err := su.requestID.Read(r); err != nil {
 		return err
 	}
 	if err := su.mutations.Read(r); err != nil {

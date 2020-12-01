@@ -3,42 +3,44 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
-	"io"
 )
 
 type virtualState struct {
-	scAddress  address.Address
+	chainID    coretypes.ChainID
 	db         kvstore.KVStore
-	stateIndex uint32
+	blockIndex uint32
 	timestamp  int64
 	empty      bool
 	stateHash  hashing.HashValue
-	variables  kv.BufferedKVStore
+	variables  buffered.BufferedKVStore
 }
 
-func NewVirtualState(db kvstore.KVStore, scAddress *address.Address) *virtualState {
+func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	return &virtualState{
-		scAddress: *scAddress,
+		chainID:   *chainID,
 		db:        db,
-		variables: kv.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
+		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
 		empty:     true,
 	}
 }
 
-func NewEmptyVirtualState(scAddress *address.Address) *virtualState {
-	return NewVirtualState(getSCPartition(scAddress), scAddress)
+func NewEmptyVirtualState(chainID *coretypes.ChainID) *virtualState {
+	return NewVirtualState(getSCPartition(chainID), chainID)
 }
 
-func getSCPartition(scAddress *address.Address) kvstore.KVStore {
-	return database.GetPartition(scAddress)
+func getSCPartition(chainID *coretypes.ChainID) kvstore.KVStore {
+	return database.GetPartition(chainID)
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -50,9 +52,9 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	return &virtualState{
-		scAddress:  vs.scAddress,
+		chainID:    vs.chainID,
 		db:         vs.db,
-		stateIndex: vs.stateIndex,
+		blockIndex: vs.blockIndex,
 		timestamp:  vs.timestamp,
 		empty:      vs.empty,
 		stateHash:  vs.stateHash,
@@ -70,49 +72,49 @@ func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
 
 func (vs *virtualState) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %d, hash, %s\n%s",
-		vs.stateIndex,
+		vs.blockIndex,
 		vs.timestamp,
 		vs.stateHash.String(),
 		vs.Variables().DangerouslyDumpToString(),
 	)
 }
 
-func (vs *virtualState) Variables() kv.BufferedKVStore {
+func (vs *virtualState) Variables() buffered.BufferedKVStore {
 	return vs.variables
 }
 
-func (vs *virtualState) StateIndex() uint32 {
-	return vs.stateIndex
+func (vs *virtualState) BlockIndex() uint32 {
+	return vs.blockIndex
 }
 
-func (vs *virtualState) ApplyStateIndex(stateIndex uint32) {
+func (vs *virtualState) ApplyBlockIndex(blockIndex uint32) {
 	vh := vs.Hash()
-	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(stateIndex))
+	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(blockIndex))
 	vs.empty = false
-	vs.stateIndex = stateIndex
+	vs.blockIndex = blockIndex
 }
 
 func (vs *virtualState) Timestamp() int64 {
 	return vs.timestamp
 }
 
-// applies batch of state updates. Increases state index
-func (vs *virtualState) ApplyBatch(batch Batch) error {
+// applies block of state updates. Increases state index
+func (vs *virtualState) ApplyBatch(batch Block) error {
 	if !vs.empty {
-		if batch.StateIndex() != vs.stateIndex+1 {
-			return fmt.Errorf("ApplyBatch: batch state index #%d can't be applied to the state #%d",
-				batch.StateIndex(), vs.stateIndex)
+		if batch.StateIndex() != vs.blockIndex+1 {
+			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the state #%d",
+				batch.StateIndex(), vs.blockIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
-			return fmt.Errorf("ApplyBatch: batch state index #%d can't be applied to the empty state", batch.StateIndex())
+			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
 	batch.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
 		vs.ApplyStateUpdate(stateUpd)
 		return true
 	})
-	vs.ApplyStateIndex(batch.StateIndex())
+	vs.ApplyBlockIndex(batch.StateIndex())
 	return nil
 }
 
@@ -131,7 +133,7 @@ func (vs *virtualState) Hash() *hashing.HashValue {
 }
 
 func (vs *virtualState) Write(w io.Writer) error {
-	if _, err := w.Write(util.Uint32To4Bytes(vs.stateIndex)); err != nil {
+	if _, err := w.Write(util.Uint32To4Bytes(vs.blockIndex)); err != nil {
 		return err
 	}
 	if err := util.WriteUint64(w, uint64(vs.timestamp)); err != nil {
@@ -144,7 +146,7 @@ func (vs *virtualState) Write(w io.Writer) error {
 }
 
 func (vs *virtualState) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &vs.stateIndex); err != nil {
+	if err := util.ReadUint32(r, &vs.blockIndex); err != nil {
 		return err
 	}
 	var ts uint64
@@ -160,8 +162,8 @@ func (vs *virtualState) Read(r io.Reader) error {
 	return nil
 }
 
-// saves variable state to db atomically with the batch of state updates and records of processed requests
-func (vs *virtualState) CommitToDb(b Batch) error {
+// saves variable state to db atomically with the block of state updates and records of processed requests
+func (vs *virtualState) CommitToDb(b Block) error {
 	batchData, err := util.Bytes(b)
 	if err != nil {
 		return err
@@ -174,20 +176,20 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	}
 	varStateDbkey := database.MakeKey(database.ObjectTypeSolidState)
 
-	solidStateValue := util.Uint32To4Bytes(vs.StateIndex())
+	solidStateValue := util.Uint32To4Bytes(vs.BlockIndex())
 	solidStateKey := database.MakeKey(database.ObjectTypeSolidStateIndex)
 
 	keys := [][]byte{varStateDbkey, batchDbKey, solidStateKey}
 	values := [][]byte{varStateData, batchData, solidStateValue}
 
 	// store processed request IDs
-	for _, rid := range b.RequestIds() {
+	for _, rid := range b.RequestIDs() {
 		keys = append(keys, dbkeyRequest(rid))
 		values = append(values, []byte{0})
 	}
 
 	// store uncommitted mutations
-	vs.variables.Mutations().IterateLatest(func(k kv.Key, mut kv.Mutation) bool {
+	vs.variables.Mutations().IterateLatest(func(k kv.Key, mut buffered.Mutation) bool {
 		keys = append(keys, dbkeyStateVariable(k))
 
 		// if mutation is MutationDel, mut.Value() = nil and the key is deleted
@@ -203,11 +205,11 @@ func (vs *virtualState) CommitToDb(b Batch) error {
 	return nil
 }
 
-func LoadSolidState(scAddress *address.Address) (VirtualState, Batch, bool, error) {
-	return loadSolidState(getSCPartition(scAddress), scAddress)
+func LoadSolidState(chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
+	return loadSolidState(getSCPartition(chainID), chainID)
 }
 
-func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualState, Batch, bool, error) {
+func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
@@ -217,22 +219,22 @@ func loadSolidState(db kvstore.KVStore, scAddress *address.Address) (VirtualStat
 	}
 	values, err := util.DbGetMulti(db, [][]byte{
 		database.MakeKey(database.ObjectTypeSolidState),
-		dbkeyBatch(util.Uint32From4Bytes(stateIndexBin)),
+		dbkeyBatch(util.MustUint32From4Bytes(stateIndexBin)),
 	})
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	vs := NewVirtualState(db, scAddress)
+	vs := NewVirtualState(db, chainID)
 	if err = vs.Read(bytes.NewReader(values[0])); err != nil {
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
 
-	batch, err := BatchFromBytes(values[1])
+	batch, err := NewBlockFromBytes(values[1])
 	if err != nil {
-		return nil, nil, false, fmt.Errorf("loading batch: %v", err)
+		return nil, nil, false, fmt.Errorf("loading block: %v", err)
 	}
-	if vs.StateIndex() != batch.StateIndex() {
+	if vs.BlockIndex() != batch.StateIndex() {
 		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")
 	}
 	return vs, batch, true, nil
@@ -242,10 +244,10 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return database.MakeKey(database.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid *sctransaction.RequestId) []byte {
+func dbkeyRequest(reqid *coretypes.RequestID) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *address.Address, reqid *sctransaction.RequestId) (bool, error) {
+func IsRequestCompleted(addr *coretypes.ChainID, reqid *coretypes.RequestID) (bool, error) {
 	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

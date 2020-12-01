@@ -15,7 +15,7 @@ import (
 
 // FIXME move log tests to the same keys.json file with other tests
 
-func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.SmartContractFinalConfig) {
+func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.Chain) {
 	clu := setup(t, "logsc_cluster", "TestLogsc")
 
 	err := clu.ListenToMessages(expectations)
@@ -23,7 +23,7 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 
 	sc := &clu.SmartContractConfig[0]
 
-	_, err = PutBootupRecord(clu, sc)
+	_, err = PutChainRecord(clu, sc)
 	check(err, t)
 
 	err = Activate1SC(clu, sc)
@@ -37,7 +37,7 @@ func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *c
 
 func TestLogsc1(t *testing.T) {
 	clu, sc := startLogSC(t, map[string]int{
-		"bootuprec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -46,14 +46,14 @@ func TestLogsc1(t *testing.T) {
 		"logsc-addlog":        -1,
 	})
 
-	reqs := []*waspapi.RequestBlockJson{{
+	reqs := []*waspapi.RequestSectionParams{{
 		Address:     sc.Address,
 		RequestCode: logsc.RequestCodeAddLog,
 		Vars: map[string]interface{}{
 			"message": "message 0",
 		},
 	}}
-	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
+	err := SendRequestsNTimes(clu, sc.OriginatorSigScheme(), 1, reqs)
 	check(err, t)
 
 	if !clu.WaitUntilExpectationsMet() {
@@ -70,7 +70,7 @@ func TestLogsc1(t *testing.T) {
 
 func TestLogsc5(t *testing.T) {
 	clu, sc := startLogSC(t, map[string]int{
-		"bootuprec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,
@@ -88,14 +88,14 @@ func TestLogsc5(t *testing.T) {
 			},
 		}
 	})
-	err := SendRequestsNTimes(clu, sc.OwnerSigScheme(), 1, reqs)
+	err := SendRequestsNTimes(clu, sc.OriginatorSigScheme(), 1, reqs)
 	check(err, t)
 
 	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
-	clu.WithSCState(sc, func(host string, stateIndex uint32, state kv.Map) bool {
+	clu.WithSCState(sc, func(host string, stateIndex uint32, state dict.Dict) bool {
 		{
 			state := state.ToGoMap()
 			assert.EqualValues(t, 8, len(state)) // 5 log items + log length + program_hash + owner address

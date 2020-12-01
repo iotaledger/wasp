@@ -10,27 +10,6 @@ import (
 const DKSNewRoute = "dks/new"
 const DKSAggregateRoute = "dks/aggregate"
 const DKSCommitRoute = "dks/commit"
-const DKSImportRoute = "dks/import"
-
-func DKSExportRoute(address string) string {
-	return "dks/export/" + address
-}
-
-type DKShare struct {
-	Blob []byte `json:"blob"`
-}
-
-func (c *WaspClient) ExportDKShare(addr *address.Address) ([]byte, error) {
-	res := &DKShare{}
-	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DKSExportRoute(addr.String()), nil, res); err != nil {
-		return nil, err
-	}
-	return res.Blob, nil
-}
-
-func (c *WaspClient) ImportDKShare(blob []byte) error {
-	return c.do(http.MethodPost, AdminRoutePrefix+"/"+DKSImportRoute, &DKShare{Blob: blob}, nil)
-}
 
 type NewDKSRequest struct {
 	TmpId int    `json:"tmpId"`

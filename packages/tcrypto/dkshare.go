@@ -29,7 +29,7 @@ type DKShare struct {
 	Index uint16
 	// BLS address represented by the set of shares. It is used as a key to find the DKShare
 	// all nodes in the committee have DKShare records with same address
-	// Addresses is blake2 hash of master public key prefixed with one byte of signature type
+	// ChainID is blake2 hash of master public key prefixed with one byte of signature type
 	Address *address.Address
 	// partial public keys of all committee nodes for this DKS
 	// may be used to identify and authenticate individual committee node
@@ -216,7 +216,7 @@ func (ks *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signat
 	finalSignature := signaturescheme.NewBLSSignature(pubKeyBin, recoveredSignature)
 
 	if finalSignature.Address() != *ks.Address {
-		panic("finalSignature.Addresses() != op.dkshare.Addresses")
+		panic("finalSignature.ChainID() != op.dkshare.ChainID")
 	}
 	return finalSignature, nil
 }

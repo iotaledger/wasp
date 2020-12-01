@@ -4,9 +4,10 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/committee"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 )
 
 func dispatchState(tx *sctransaction.Transaction) {
@@ -15,62 +16,58 @@ func dispatchState(tx *sctransaction.Transaction) {
 		// not state transaction
 		return
 	}
-	cmt := committees.CommitteeByAddress(*txProp.MustStateAddress())
+	cmt := chains.GetChain(*txProp.MustChainID())
 	if cmt == nil {
 		return
 	}
 	log.Debugw("dispatchState",
 		"txid", tx.ID().String(),
-		"addr", cmt.Address().String(),
+		"chainid", cmt.ID().String(),
 	)
 
-	cmt.ReceiveMessage(&committee.StateTransactionMsg{
+	cmt.ReceiveMessage(&chain.StateTransactionMsg{
 		Transaction: tx,
 	})
 }
 
 func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*balance.Balance) {
 	// pass to the committee by address
-	if cmt := committees.CommitteeByAddress(addr); cmt != nil {
-		cmt.ReceiveMessage(committee.BalancesMsg{Balances: bals})
+	if cmt := chains.GetChain((coretypes.ChainID)(addr)); cmt != nil {
+		cmt.ReceiveMessage(chain.BalancesMsg{Balances: bals})
 	}
 }
 
 func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
 	log.Debugw("dispatchAddressUpdate", "addr", addr.String())
 
-	cmt := committees.CommitteeByAddress(addr)
+	cmt := chains.GetChain((coretypes.ChainID)(addr))
 	if cmt == nil {
 		log.Debugw("committee not found", "addr", addr.String())
 		// wrong addressee
 		return
 	}
-	//if _, ok := balances[tx.ID()]; !ok {
-	//	// violation of the protocol
-	//	log.Errorf("violation of the protocol: transaction %s is not among provided outputs. Ignored", tx.ID().String())
-	//	return
-	//}
 	log.Debugf("received tx with balances: %s", tx.ID().String())
 
 	// update balances before state and requests
-	cmt.ReceiveMessage(committee.BalancesMsg{
+	cmt.ReceiveMessage(chain.BalancesMsg{
 		Balances: balances,
 	})
 
 	txProp := tx.MustProperties() // was parsed before
-	if txProp.IsState() && *txProp.MustStateAddress() == addr {
+	if txProp.IsState() && *txProp.MustChainID() == (coretypes.ChainID)(addr) {
 		// it is a state update to addr. Send it
-		cmt.ReceiveMessage(&committee.StateTransactionMsg{
+		cmt.ReceiveMessage(&chain.StateTransactionMsg{
 			Transaction: tx,
 		})
+		log.Debugf("state tx msg posted: %s", tx.ID().String())
 	}
 
 	// send all requests to addr
 	for i, reqBlk := range tx.Requests() {
-		if reqBlk.Address() == addr {
-			cmt.ReceiveMessage(&committee.RequestMsg{
+		if reqBlk.Target().ChainID() == (coretypes.ChainID)(addr) {
+			cmt.ReceiveMessage(&chain.RequestMsg{
 				Transaction: tx,
-				Index:       uint16(i),
+				Index:       (uint16)(i),
 			})
 		}
 	}
@@ -78,11 +75,11 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 
 func dispatchTxInclusionLevel(level byte, txid *valuetransaction.ID, addrs []address.Address) {
 	for _, addr := range addrs {
-		cmt := committees.CommitteeByAddress(addr)
+		cmt := chains.GetChain((coretypes.ChainID)(addr))
 		if cmt == nil {
 			continue
 		}
-		cmt.ReceiveMessage(&committee.TransactionInclusionLevelMsg{
+		cmt.ReceiveMessage(&chain.TransactionInclusionLevelMsg{
 			TxId:  txid,
 			Level: level,
 		})

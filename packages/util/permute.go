@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// deterministic permutation of integers from 0 to size-1
+// Permutation16 deterministic permutation of integers from 0 to size-1
 type Permutation16 struct {
 	size        uint16
 	permutation []uint16

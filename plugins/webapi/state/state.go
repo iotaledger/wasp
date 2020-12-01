@@ -6,24 +6,23 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
 
-func AddEndpoints(server *echo.Echo) {
-	server.GET("/"+client.StateQueryRoute(":scAddr"), handleStateQuery)
+func addStateQueryEndpoint(server *echo.Echo) {
+	server.GET("/"+client.StateQueryRoute(":chainID"), handleStateQuery)
 }
 
 func handleStateQuery(c echo.Context) error {
-	scAddr, err := address.FromBase58(c.Param("scAddr"))
+	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %+v", c.Param("scAddr")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
 
 	var req statequery.Request
@@ -32,25 +31,25 @@ func handleStateQuery(c echo.Context) error {
 	}
 
 	// TODO serialize access to solid state
-	state, batch, exist, err := state.LoadSolidState(&scAddr)
+	state, batch, exist, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}
 	if !exist {
-		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", scAddr.String()))
+		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", chainID.String()))
 	}
-	txid := batch.StateTransactionId()
+	txid := batch.StateTransactionID()
 	ret := &statequery.Results{
 		KeyQueryResults: make([]*statequery.QueryResult, len(req.KeyQueries)),
 
-		StateIndex: state.StateIndex(),
+		StateIndex: state.BlockIndex(),
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  jsonable.NewValueTxID(&txid),
-		Requests:   make([]*sctransaction.RequestId, len(batch.RequestIds())),
+		Requests:   make([]*coretypes.RequestID, len(batch.RequestIDs())),
 	}
-	copy(ret.Requests, batch.RequestIds())
-	vars := state.Variables()
+	copy(ret.Requests, batch.RequestIDs())
+	vars := state.Variables().Codec()
 	for i, q := range req.KeyQueries {
 		result, err := q.Execute(vars)
 		if err != nil {

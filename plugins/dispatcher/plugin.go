@@ -6,11 +6,11 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	_ "github.com/iotaledger/wasp/packages/committee/commiteeimpl" // activate init
+	_ "github.com/iotaledger/wasp/packages/chain/chainimpl" // activate init
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/committees"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
@@ -40,7 +40,7 @@ func run(_ *node.Plugin) {
 		})
 
 		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
-			if committee := committees.CommitteeByAddress(msg.Address); committee != nil {
+			if committee := chains.GetChain(msg.ChainID); committee != nil {
 				committee.ReceiveMessage(msg)
 			}
 		})

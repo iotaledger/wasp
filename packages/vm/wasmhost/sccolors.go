@@ -1,6 +1,8 @@
 package wasmhost
 
-import "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+)
 
 type ScColors struct {
 	ArrayObject
@@ -9,11 +11,11 @@ type ScColors struct {
 }
 
 func (a *ScColors) Exists(keyId int32) bool {
-	return keyId >= 0 && keyId < a.GetLength()
+	return uint32(keyId) < uint32(a.GetLength())
 }
 
 func (a *ScColors) GetBytes(keyId int32) []byte {
-	if keyId >= 0 && keyId < a.GetLength() {
+	if a.Exists(keyId) {
 		return a.colors[keyId].Bytes()
 	}
 	return a.ArrayObject.GetBytes(keyId)
@@ -32,9 +34,26 @@ func (a *ScColors) GetLength() int32 {
 	return int32(len(a.colors))
 }
 
+func (a *ScColors) GetTypeId(keyId int32) int32 {
+	if a.Exists(keyId) {
+		return OBJTYPE_BYTES
+	}
+	return -1
+}
+
 func (a *ScColors) loadColors() {
 	if a.colors != nil {
 		return
 	}
-	//TODO determine valid colors for account or request and add them base58-encoded to colors array
+	balances := a.vm.MyBalances()
+	if a.requestOnly {
+		if a.vm.ctx == nil {
+			return
+		}
+		balances = a.vm.ctx.Accounts().Incoming()
+	}
+	balances.IterateDeterministic(func(color balance.Color, amount int64) bool {
+		a.colors = append(a.colors, color)
+		return true
+	})
 }

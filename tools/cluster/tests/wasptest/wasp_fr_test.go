@@ -18,7 +18,7 @@ func TestSend1Bet(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Bet")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -29,7 +29,7 @@ func TestSend1Bet(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[3]
 
-	scColor, err := PutBootupRecord(wasps, sc)
+	scColor, err := PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -49,8 +49,8 @@ func TestSend1Bet(t *testing.T) {
 	}
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
-		RequestCode: fairroulette.RequestPlaceBet,
+		TargetContract: &scAddress,
+		RequestCode:    fairroulette.RequestPlaceBet,
 		Vars: map[string]interface{}{
 			fairroulette.ReqVarColor: 3,
 		},
@@ -88,7 +88,7 @@ func TestSend5Bets(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5Bets")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          7,
@@ -99,7 +99,7 @@ func TestSend5Bets(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[3]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -120,8 +120,8 @@ func TestSend5Bets(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: fairroulette.RequestPlaceBet,
+			TargetContract: scAddress,
+			RequestCode:    fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
 				fairroulette.ReqVarColor: i,
 			},
@@ -157,7 +157,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSendBetsAndPlay")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          10,
@@ -168,7 +168,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[3]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -182,8 +182,8 @@ func TestSendBetsAndPlay(t *testing.T) {
 
 	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
+		TargetContract: scAddress,
+		RequestCode:    vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
 		},
@@ -198,8 +198,8 @@ func TestSendBetsAndPlay(t *testing.T) {
 	}
 	// SetPlayPeriod must be processed first
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairroulette.RequestSetPlayPeriod,
+		TargetContract: scAddress,
+		RequestCode:    fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
 			fairroulette.ReqVarPlayPeriodSec: 10,
 		},
@@ -210,8 +210,8 @@ func TestSendBetsAndPlay(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: fairroulette.RequestPlaceBet,
+			TargetContract: scAddress,
+			RequestCode:    fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
 				fairroulette.ReqVarColor: i,
 			},
@@ -246,7 +246,7 @@ func TestFRStatus(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFRStatus")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          10,
@@ -257,7 +257,7 @@ func TestFRStatus(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[3]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -273,8 +273,8 @@ func TestFRStatus(t *testing.T) {
 
 	// send 1i to the SC address. It is needed to send the request to self ("operating capital")
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
+		TargetContract: &scAddress,
+		RequestCode:    vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
 		},
@@ -289,8 +289,8 @@ func TestFRStatus(t *testing.T) {
 	}
 	// SetPlayPeriod must be processed first
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   &scAddress,
-		RequestCode: fairroulette.RequestSetPlayPeriod,
+		TargetContract: &scAddress,
+		RequestCode:    fairroulette.RequestSetPlayPeriod,
 		Vars: map[string]interface{}{
 			fairroulette.ReqVarPlayPeriodSec: 10,
 		},
@@ -301,8 +301,8 @@ func TestFRStatus(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   &scAddress,
-			RequestCode: fairroulette.RequestPlaceBet,
+			TargetContract: &scAddress,
+			RequestCode:    fairroulette.RequestPlaceBet,
 			Vars: map[string]interface{}{
 				fairroulette.ReqVarColor: i,
 			},

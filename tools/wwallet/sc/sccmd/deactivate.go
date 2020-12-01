@@ -18,7 +18,7 @@ func deactivateCmd(args []string) {
 	check(err)
 	committee := parseIntList(args[1])
 
-	check(multiclient.New(config.CommitteeApi(committee)).DeactivateSC(&scAddress))
+	check(multiclient.New(config.CommitteeApi(committee)).DeactivateChain(&scAddress))
 }
 
 func deactivateUsage() {

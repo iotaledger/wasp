@@ -1,40 +1,35 @@
 package apilib
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/subscribe"
-	"strconv"
-	"time"
 )
 
-type RequestBlockParams struct {
-	TargetSCAddress *address.Address
-	RequestCode     sctransaction.RequestCode
-	Timelock        uint32
-	Transfer        map[balance.Color]int64 // should not not include request token. It is added automatically
-	Vars            map[string]interface{}  ` `
+type RequestSectionParams struct {
+	TargetContractID coretypes.ContractID
+	EntryPointCode   coretypes.Hname
+	Timelock         uint32
+	Transfer         map[balance.Color]int64 // should not not include request token. It is added automatically
+	Vars             dict.Dict
 }
 
 type CreateRequestTransactionParams struct {
-	NodeClient          nodeclient.NodeClient
-	SenderSigScheme     signaturescheme.SignatureScheme
-	BlockParams         []RequestBlockParams
-	Mint                map[address.Address]int64
-	Post                bool
-	WaitForConfirmation bool
-	WaitForCompletion   bool
-	PublisherHosts      []string
-	PublisherQuorum     int
-	Timeout             time.Duration
+	NodeClient           nodeclient.NodeClient
+	SenderSigScheme      signaturescheme.SignatureScheme
+	RequestSectionParams []RequestSectionParams
+	Mint                 map[address.Address]int64
+	Post                 bool
+	WaitForConfirmation  bool
 }
 
 func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.Transaction, error) {
@@ -57,22 +52,18 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		}
 	}
 
-	for _, blockPar := range par.BlockParams {
-		reqBlk := sctransaction.NewRequestBlock(*blockPar.TargetSCAddress, blockPar.RequestCode).
-			WithTimelock(blockPar.Timelock)
+	for _, sectPar := range par.RequestSectionParams {
+		reqSect := sctransaction.NewRequestSectionByWallet(sectPar.TargetContractID, sectPar.EntryPointCode).
+			WithTimelock(sectPar.Timelock).
+			WithTransfer(cbalances.NewFromMap(sectPar.Transfer))
 
-		args := convertArgs(blockPar.Vars)
-		if args == nil {
-			return nil, errors.New("wrong arguments")
-		}
-		reqBlk.SetArgs(args)
+		reqSect.WithArgs(sectPar.Vars)
 
-		err = txb.AddRequestBlockWithTransfer(reqBlk, blockPar.TargetSCAddress, blockPar.Transfer)
+		err = txb.AddRequestSection(reqSect)
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	tx, err := txb.Build(false)
 
 	//dump := txb.Dump()
@@ -91,74 +82,17 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	if !par.Post {
 		return tx, nil
 	}
+
 	if !par.WaitForConfirmation {
 		if err = par.NodeClient.PostTransaction(tx.Transaction); err != nil {
 			return nil, err
 		}
 		return tx, nil
 	}
-	var subs *subscribe.Subscription
-	if par.WaitForCompletion {
-		// post and wait for completion
-		subs, err = subscribe.SubscribeMulti(par.PublisherHosts, "request_out", par.PublisherQuorum)
-		if err != nil {
-			return nil, err
-		}
-		defer subs.Close()
-	}
 
 	err = par.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
-	if par.WaitForCompletion {
-		patterns := make([][]string, len(par.BlockParams))
-		for i := range patterns {
-			patterns[i] = []string{"request_out", par.BlockParams[i].TargetSCAddress.String(), tx.ID().String(), strconv.Itoa(i)}
-		}
-		if !subs.WaitForPatterns(patterns, par.Timeout, par.PublisherQuorum) {
-			return nil, fmt.Errorf("didn't receive completion message after %v", par.Timeout)
-		}
-	}
-
 	return tx, nil
-}
-
-func convertArgs(vars map[string]interface{}) kv.Map {
-	args := kv.NewMap()
-	codec := args.Codec()
-	for k, v := range vars {
-		key := kv.Key(k)
-		switch vt := v.(type) {
-		case int:
-			codec.SetInt64(key, int64(vt))
-		case byte:
-			codec.SetInt64(key, int64(vt))
-		case int16:
-			codec.SetInt64(key, int64(vt))
-		case int32:
-			codec.SetInt64(key, int64(vt))
-		case int64:
-			codec.SetInt64(key, vt)
-		case uint16:
-			codec.SetInt64(key, int64(vt))
-		case uint32:
-			codec.SetInt64(key, int64(vt))
-		case uint64:
-			codec.SetInt64(key, int64(vt))
-		case string:
-			codec.SetString(key, vt)
-		case []byte:
-			codec.Set(key, vt)
-		case *hashing.HashValue:
-			args.Codec().SetHashValue(key, vt)
-		case *address.Address:
-			args.Codec().Set(key, vt.Bytes())
-		case *balance.Color:
-			args.Codec().Set(key, vt.Bytes())
-		default:
-			return nil
-		}
-	}
-	return args
 }

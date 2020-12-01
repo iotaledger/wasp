@@ -2,41 +2,63 @@ package inccounter
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type incCounterProcessor map[sctransaction.RequestCode]incEntryPoint
+type incCounterProcessor map[coretypes.Hname]incEntryPoint
 
 const (
-	ProgramHash = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
-	Description = "Increment, a PoC smart contract"
+	ProgramHashStr = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
+	Description    = "Increment counter, a PoC smart contract"
 
-	RequestInc                     = sctransaction.RequestCode(1)
-	RequestIncAndRepeatOnceAfter5s = sctransaction.RequestCode(2)
-	RequestIncAndRepeatMany        = sctransaction.RequestCode(3)
-	RequestIncTest                 = sctransaction.RequestCode(4)
-	RequestIncDoNothing            = sctransaction.RequestCode(5)
+	VarNumRepeats  = "numRepeats"
+	VarCounter     = "counter"
+	VarName        = "name"
+	VarDescription = "dscr"
+)
 
-	ArgNumRepeats = "numRepeats"
-	VarNumRepeats = "numRepeats"
-	VarCounter    = "counter"
+var (
+	EntryPointIncCounter              = coretypes.Hn("incCounter")
+	EntryPointIncAndRepeatOnceAfter5s = coretypes.Hn("incAndRepeatOnceAfter5s")
+	EntryPointIncAndRepeatMany        = coretypes.Hn("incAndRepeatMany")
+	EntryPointSpawn                   = coretypes.Hn("spawn")
+	EntryPointGetCounter              = coretypes.Hn("getCounter")
+
+	ProgramHash, _ = hashing.HashValueFromBase58(ProgramHashStr)
 )
 
 var entryPoints = incCounterProcessor{
-	RequestInc:                     incCounter,
-	RequestIncAndRepeatOnceAfter5s: incCounterAndRepeatOnce,
-	RequestIncAndRepeatMany:        incCounterAndRepeatMany,
-	RequestIncDoNothing:            incDoNothing,
+	coretypes.EntryPointInit:          epFunc(initialize),
+	EntryPointIncCounter:              epFunc(incCounter),
+	EntryPointIncAndRepeatOnceAfter5s: epFunc(incCounterAndRepeatOnce),
+	EntryPointIncAndRepeatMany:        epFunc(incCounterAndRepeatMany),
+	EntryPointSpawn:                   epFunc(spawn),
+	EntryPointGetCounter:              epView(getCounter),
 }
 
-type incEntryPoint func(ctx vmtypes.Sandbox)
+type incEntryPoint struct {
+	view    bool
+	funFull func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
+	funView func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
+}
+
+func epFunc(fun func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)) incEntryPoint {
+	return incEntryPoint{funFull: fun}
+}
+
+func epView(fun func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)) incEntryPoint {
+	return incEntryPoint{funView: fun, view: true}
+}
 
 func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (proc incCounterProcessor) GetEntryPoint(rc sctransaction.RequestCode) (vmtypes.EntryPoint, bool) {
+func (proc incCounterProcessor) GetEntryPoint(rc coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := proc[rc]
 	if !ok {
 		return nil, false
@@ -52,41 +74,74 @@ func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
 	return ep
 }
 
-func (ep incEntryPoint) Run(ctx vmtypes.Sandbox) {
-	ep(ctx)
+func (ep incEntryPoint) IsView() bool {
+	return ep.view
 }
 
-func incCounter(ctx vmtypes.Sandbox) {
-	state := ctx.AccessState()
+func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	if ep.IsView() {
+		panic("wrong call of the view")
+	}
+	return ep.funFull(ctx)
+}
+
+func (ep incEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	if !ep.IsView() {
+		panic("wrong call of the full entry point")
+	}
+	return ep.funView(ctx)
+}
+
+func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ctx.Eventf("inccounter.init in %s", ctx.MyContractID().Hname().String())
+	params := ctx.Params()
+	val, _, err := params.GetInt64(VarCounter)
+	if err != nil {
+		return nil, fmt.Errorf("incCounter: %v", err)
+	}
+	ctx.State().SetInt64(VarCounter, val)
+	ctx.Eventf("inccounter.init.success. counter = %d", val)
+	return nil, nil
+}
+
+func incCounter(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ctx.Eventf("inccounter.incCounter in %s", ctx.MyContractID().Hname().String())
+	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
-	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
+	ctx.Eventf("'increasing counter value: %d' in %s", val, ctx.MyContractID().Hname().String())
 	state.SetInt64(VarCounter, val+1)
+	return nil, nil
 }
 
-func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) {
-	state := ctx.AccessState()
+func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ctx.Eventf("inccounter.incCounterAndRepeatOnce")
+	state := ctx.State()
 	val, _ := state.GetInt64(VarCounter)
 
-	ctx.Publish(fmt.Sprintf("increasing counter value: %d", val))
+	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
 
-		if ctx.SendRequestToSelfWithDelay(RequestInc, nil, 5) {
-			ctx.Publish("SendRequestToSelfWithDelay RequestInc 5 sec")
+		if ctx.PostRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
+			ctx.Event("PostRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
-			ctx.Publish("failed to SendRequestToSelfWithDelay RequestInc 5 sec")
+			ctx.Event("failed to PostRequestToSelfWithDelay RequestInc 5 sec")
 		}
 	}
+	return nil, nil
 }
 
-func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
-	state := ctx.AccessState()
+func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ctx.Eventf("inccounter.incCounterAndRepeatMany")
+
+	state := ctx.State()
+	params := ctx.Params()
 
 	val, _ := state.GetInt64(VarCounter)
 	state.SetInt64(VarCounter, val+1)
-	ctx.Publish(fmt.Sprintf("'increasing counter value: %d'", val))
+	ctx.Eventf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
-	numRepeats, ok, err := ctx.AccessRequest().Args().GetInt64(ArgNumRepeats)
+	numRepeats, ok, err := params.GetInt64(VarNumRepeats)
 	if err != nil {
 		ctx.Panic(err)
 	}
@@ -97,21 +152,68 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) {
 		}
 	}
 	if numRepeats == 0 {
-		ctx.GetWaspLog().Infof("finished chain of requests")
-		return
+		ctx.Eventf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
+		return nil, nil
 	}
 
-	ctx.Publishf("chain of %d requests ahead", numRepeats)
+	ctx.Eventf("chain of %d requests ahead", numRepeats)
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	if ctx.SendRequestToSelfWithDelay(RequestIncAndRepeatMany, nil, 3) {
-		ctx.Publishf("SendRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+	if ctx.PostRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 1) {
+		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
-		ctx.Publishf("SendRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
+	return nil, nil
 }
 
-func incDoNothing(ctx vmtypes.Sandbox) {
-	ctx.Publish("Doing nothing as requested. Oh, wait...")
+// spawn deploys new contract and calls it
+func spawn(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	ctx.Eventf("inccounter.spawn")
+	state := ctx.State()
+
+	val, _ := state.GetInt64(VarCounter)
+
+	hashBin, err := hashing.HashValueFromBase58(ProgramHashStr)
+	if err != nil {
+		ctx.Panic(err)
+	}
+	name, ok, err := ctx.Params().GetString(VarName)
+	if err != nil {
+		ctx.Panic(err)
+	}
+	if !ok {
+		return nil, fmt.Errorf("parameter 'name' wasnt found")
+	}
+	dscr, ok, err := ctx.Params().GetString(VarDescription)
+	if err != nil {
+		ctx.Panic(err)
+	}
+	if !ok {
+		dscr = "N/A"
+	}
+	par := codec.NewCodec(dict.New())
+	par.SetInt64(VarCounter, val+1)
+	err = ctx.CreateContract(hashBin, name, dscr, par)
+	if err != nil {
+		return nil, err
+	}
+
+	// increase counter in newly spawned contract
+	hname := coretypes.Hn(name)
+	_, err = ctx.Call(hname, EntryPointIncCounter, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx.Eventf("inccounter.spawn: new contract name = %s hname = %s", name, hname.String())
+	return nil, nil
+}
+
+func getCounter(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	val, _ := ctx.State().GetInt64(VarCounter)
+	ret := codec.NewCodec(dict.New())
+	ret.SetInt64(VarCounter, val)
+	return ret, nil
 }

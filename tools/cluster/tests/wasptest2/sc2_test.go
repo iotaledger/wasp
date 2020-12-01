@@ -2,10 +2,11 @@ package wasptest2
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/stretchr/testify/assert"
 
@@ -35,16 +36,18 @@ func Test2SC(t *testing.T) {
 	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
-	succ := waspapi.CheckSC(wasps.ApiHosts(), scTRAddr)
+	chidTR := (coretypes.ChainID)(*scTRAddr)
+	succ := waspapi.CheckDeployment(wasps.ApiHosts(), &chidTR)
 	assert.True(t, succ)
 
-	succ = waspapi.CheckSC(wasps.ApiHosts(), scFAAddr)
+	chidFA := (coretypes.ChainID)(*scFAAddr)
+	succ = waspapi.CheckDeployment(wasps.ApiHosts(), &chidFA)
 	assert.True(t, succ)
 
-	tc := trclient.NewClient(scclient.New(
+	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scTRAddr,
+		&chidTR,
 		auctionOwner.SigScheme(),
 		20*time.Second,
 	))
@@ -110,14 +113,16 @@ func TestPlus2SC(t *testing.T) {
 
 	scTRAddr, scTRColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "TokenRegistry has been created and activated")
+	chidTR := (coretypes.ChainID)(*scTRAddr)
 
 	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
 	checkSuccess(err, t, "FairAuction has been created and activated")
+	chidFA := (coretypes.ChainID)(*scFAAddr)
 
-	tc := trclient.NewClient(scclient.New(
+	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scTRAddr,
+		&chidTR,
 		auctionOwner.SigScheme(),
 		20*time.Second,
 	))
@@ -170,10 +175,10 @@ func TestPlus2SC(t *testing.T) {
 		return
 	}
 
-	faclientOwner := faclient.NewClient(scclient.New(
+	faclientOwner := faclient.NewClient(chainclient.New(
 		wasps.NodeClient,
 		wasps.WaspClient(0),
-		scFAAddr,
+		&chidFA,
 		auctionOwner.SigScheme(),
 		20*time.Second,
 	))
@@ -181,8 +186,18 @@ func TestPlus2SC(t *testing.T) {
 	_, err = faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction created")
 
-	faclientBidder1 := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder1.SigScheme()))
-	faclientBidder2 := faclient.NewClient(scclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAAddr, bidder2.SigScheme()))
+	faclientBidder1 := faclient.NewClient(chainclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		&chidFA,
+		bidder1.SigScheme(),
+	))
+	faclientBidder2 := faclient.NewClient(chainclient.New(
+		wasps.NodeClient,
+		wasps.WaspClient(0),
+		&chidFA,
+		bidder2.SigScheme(),
+	))
 
 	subs, err := subscribe.SubscribeMulti(wasps.PublisherHosts(), "request_out")
 	check(err, t)

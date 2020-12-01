@@ -16,7 +16,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -27,7 +27,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -39,9 +39,9 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: inccounter.RequestInc,
-		Timelock:    util.UnixAfterSec(3),
+		TargetContract: scAddress,
+		RequestCode:    inccounter.RequestInc,
+		Timelock:       util.UnixAfterSec(3),
 	})
 	check(err, t)
 
@@ -59,7 +59,7 @@ func TestSend1ReqIncTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -70,7 +70,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatFailTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          2,
@@ -81,7 +81,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -93,8 +93,8 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	scAddress := sc.SCAddress()
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: inccounter.RequestIncAndRepeatOnceAfter5s,
+		TargetContract: scAddress,
+		RequestCode:    inccounter.EntryPointIncAndRepeatOnceAfter5s,
 	})
 	check(err, t)
 
@@ -111,7 +111,7 @@ func TestSend1ReqIncRepeatFailTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -122,7 +122,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1ReqIncRepeatSuccessTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -133,7 +133,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -146,8 +146,8 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 
 	// send 1i to the SC address. It is needed to send the request to self
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
+		TargetContract: scAddress,
+		RequestCode:    vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
 		},
@@ -156,8 +156,8 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: inccounter.RequestIncAndRepeatOnceAfter5s,
+		TargetContract: scAddress,
+		RequestCode:    inccounter.EntryPointIncAndRepeatOnceAfter5s,
 	})
 	check(err, t)
 
@@ -174,7 +174,7 @@ func TestSend1ReqIncRepeatSuccessTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(2)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 	}) {
 		t.Fail()
 	}
@@ -187,7 +187,7 @@ func TestChainIncTimelock(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestChainIncTimelock")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          chainOfRequestsLength + 3,
@@ -198,7 +198,7 @@ func TestChainIncTimelock(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[2]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -211,8 +211,8 @@ func TestChainIncTimelock(t *testing.T) {
 
 	// send 5i to the SC address. It is needed to send 5 requests to self at once
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: vmconst.RequestCodeNOP,
+		TargetContract: scAddress,
+		RequestCode:    vmconst.RequestCodeNOP,
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 5,
 		},
@@ -221,8 +221,8 @@ func TestChainIncTimelock(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: inccounter.RequestIncAndRepeatMany,
+		TargetContract: scAddress,
+		RequestCode:    inccounter.EntryPointIncAndRepeatMany,
 		Vars: map[string]interface{}{
 			inccounter.ArgNumRepeats: chainOfRequestsLength,
 		},
@@ -242,7 +242,7 @@ func TestChainIncTimelock(t *testing.T) {
 	if !wasps.VerifySCState(sc, 0, map[kv.Key][]byte{
 		"counter":                   util.Uint64To8Bytes(uint64(chainOfRequestsLength + 1)),
 		vmconst.VarNameOwnerAddress: sc.GetColor().Bytes(),
-		vmconst.VarNameProgramHash:  sc.GetProgramHash().Bytes(),
+		vmconst.VarNameProgramData:  sc.GetProgramHash().Bytes(),
 		inccounter.VarNumRepeats:    util.Uint64To8Bytes(0),
 	}) {
 		t.Fail()

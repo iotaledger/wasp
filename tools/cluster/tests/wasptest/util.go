@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig) error {
+func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.Chain) error {
 	//fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
 	tx, err := sc.CreateOrigin(clu.NodeClient)
@@ -21,7 +21,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.SmartContractFinalConfig)
 
 	fmt.Printf("++++++++++ created origin tx:\n%s\n", tx.String())
 
-	ownerAddr := sc.OwnerAddress()
+	ownerAddr := sc.OriginatorAddress()
 	sh := tx.MustState().StateHash()
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
@@ -61,7 +61,7 @@ func MakeRequests(n int, constr func(int) *waspapi.RequestBlockJson) []*waspapi.
 	return ret
 }
 
-func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []*waspapi.RequestBlockJson) error {
+func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, n int, reqs []waspapi.RequestSectionParams) error {
 	for i := 0; i < n; i++ {
 		err := SendRequests(clu, sigScheme, reqs)
 		if err != nil {
@@ -71,28 +71,34 @@ func SendRequestsNTimes(clu *cluster.Cluster, sigScheme signaturescheme.Signatur
 	return nil
 }
 
-func SendSimpleRequest(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams waspapi.CreateSimpleRequestParamsOld) error {
-	tx, err := waspapi.CreateSimpleRequestOld(clu.NodeClient, sigScheme, reqParams)
+func SendSimpleRequest(
+	clu *cluster.Cluster,
+	sigScheme signaturescheme.SignatureScheme,
+	reqParams waspapi.RequestSectionParams) error {
+
+	tx, err := waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
+		NodeClient:           clu.NodeClient,
+		SenderSigScheme:      sigScheme,
+		RequestSectionParams: []waspapi.RequestSectionParams{reqParams},
+		Post:                 true,
+	})
 	if err != nil {
 		return err
 	}
 	fmt.Printf("[cluster] posting request tx %s\n", tx.ID().String())
-	return clu.PostTransaction(tx)
+	return nil
 }
 
-func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.CreateSimpleRequestParamsOld) error {
-	tx, err := waspapi.CreateSimpleRequestMultiOld(clu.NodeClient, sigScheme, reqParams)
+func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.RequestSectionParams) error {
+	tx, err := waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
+		NodeClient:           clu.NodeClient,
+		SenderSigScheme:      sigScheme,
+		RequestSectionParams: reqParams,
+		Post:                 true,
+	})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("[cluster] posting tx with %d requests: %s\n", len(reqParams), tx.ID().String())
-	return clu.PostTransaction(tx)
-}
-
-func SendRequests(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqs []*waspapi.RequestBlockJson) error {
-	tx, err := waspapi.CreateRequestTransactionOld(clu.NodeClient, sigScheme, reqs)
-	if err != nil {
-		return err
-	}
-	return clu.PostTransaction(tx)
+	fmt.Printf("[cluster] posting request tx %s\n", tx.ID().String())
+	return nil
 }

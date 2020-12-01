@@ -5,27 +5,18 @@ type ScContract struct {
 }
 
 func (o *ScContract) Exists(keyId int32) bool {
-	switch keyId {
-	case KeyAddress:
-	case KeyColor:
-	case KeyDescription:
-	case KeyId:
-	case KeyName:
-	case KeyOwner:
-	default:
-		return false
-	}
-	return true
+	return o.GetTypeId(keyId) >= 0
 }
 
 func (o *ScContract) GetBytes(keyId int32) []byte {
 	switch keyId {
-	case KeyAddress:
-		return o.vm.ctx.GetSCAddress().Bytes()
 	case KeyColor: //TODO
-	case KeyId: //TODO
+	case KeyId:
+		id := o.vm.MyContractID()
+		return id[:]
 	case KeyOwner:
-		return o.vm.ctx.GetOwnerAddress().Bytes()
+		id := o.vm.ctx.ChainOwnerID()
+		return id[:]
 	}
 	return o.MapObject.GetBytes(keyId)
 }
@@ -37,4 +28,20 @@ func (o *ScContract) GetString(keyId int32) string {
 	case KeyName: //TODO
 	}
 	return o.MapObject.GetString(keyId)
+}
+
+func (o *ScContract) GetTypeId(keyId int32) int32 {
+	switch keyId {
+	case KeyColor:
+		return OBJTYPE_BYTES
+	case KeyDescription:
+		return OBJTYPE_STRING
+	case KeyId:
+		return OBJTYPE_STRING
+	case KeyName:
+		return OBJTYPE_STRING
+	case KeyOwner:
+		return OBJTYPE_BYTES
+	}
+	return -1
 }

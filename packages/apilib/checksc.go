@@ -2,6 +2,7 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,11 +15,11 @@ import (
 
 const prefix = "[checkSC] "
 
-// CheckSC checks and reports deployment data of SC in the given list of node
-// it loads bootuo data from the first node in the list and uses CommitteeNodes from that
-// bootup data to check the whole committee
+// CheckDeployment checks and reports deployment data of a chain in the given list of nodes
+// it loads the chainrecord from the first node in the list and uses CommitteeNodes from that
+// chainrecord to check the whole committee
 //goland:noinspection ALL
-func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) bool {
+func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {
@@ -30,16 +31,16 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			out = ioutil.Discard
 		}
 	}
-	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", scAddr.String())
+	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", chainid.String())
 	var err error
 	var missing bool
-	fmt.Fprintf(out, prefix+"loading bootup record from hosts %+v\n", apiHosts)
-	var first *registry.BootupData
+	fmt.Fprintf(out, prefix+"loading chainrecord record from hosts %+v\n", apiHosts)
+	var first *registry.ChainRecord
 	var firstHost string
 
-	bdRecords := make([]*registry.BootupData, len(apiHosts))
+	bdRecords := make([]*registry.ChainRecord, len(apiHosts))
 	for i, host := range apiHosts {
-		bdRecords[i], err = client.NewWaspClient(host).GetBootupData(scAddr)
+		bdRecords[i], err = client.NewWaspClient(host).GetChainRecord(chainid)
 		if err != nil {
 			fmt.Fprintf(out, prefix+"%2d: %s -> %v\n", i, host, err)
 			ret = false
@@ -47,14 +48,14 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			continue
 		}
 		if client.IsNotFound(err) {
-			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data for %s does not exist\n", i, host, scAddr.String())
+			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord for %s does not exist\n", i, host, chainid.String())
 			ret = false
 			missing = true
 			continue
 		}
-		if bdRecords[i].Address != *scAddr {
-			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the bootup record. Expected %s, got %s\n",
-				i, host, scAddr.String(), bdRecords[i].Address.String())
+		if bdRecords[i].ChainID != chainid {
+			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the chainrecord. Expected %s, got %s\n",
+				i, host, chainid.String(), bdRecords[i].ChainID.String())
 			ret = false
 			missing = true
 			continue
@@ -66,16 +67,16 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 	}
 	if missing {
 		if first == nil {
-			fmt.Fprintf(out, prefix+"failed to load bootup data. Exit\n")
+			fmt.Fprintf(out, prefix+"failed to load chainrecord. Exit\n")
 			return false
 		} else {
-			fmt.Fprintf(out, prefix+"some bootup records failed to load\n")
+			fmt.Fprintf(out, prefix+"some chain records failed to load\n")
 		}
 	} else {
-		fmt.Fprintf(out, prefix+"bootup records has been loaded from %d nodes\n", len(apiHosts))
+		fmt.Fprintf(out, prefix+"chain records have been loaded from %d nodes\n", len(apiHosts))
 	}
 	if first != nil {
-		fmt.Fprintf(out, prefix+"example bootup record was loaded from %s:\n%s\n", firstHost, first.String())
+		fmt.Fprintf(out, prefix+"example chain record was loaded from %s:\n%s\n", firstHost, first.String())
 	}
 	for i, bd := range bdRecords {
 		host := apiHosts[i]
@@ -84,16 +85,16 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 			ret = false
 			continue
 		}
-		if bd.Address != *scAddr {
-			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the bootupo data record\n",
-				i, host, bd.Address.String())
+		if bd.ChainID != chainid {
+			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the chain record\n",
+				i, host, bd.ChainID.String())
 			ret = false
 			continue
 		}
-		if consistentBootupRecords(first, bdRecords[i]) {
-			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data OK\n", i, host)
+		if consistentChainRecords(first, bdRecords[i]) {
+			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord OK\n", i, host)
 		} else {
-			fmt.Fprintf(out, prefix+"%2d: %s -> bootup data is WRONG. Expected equal to example, got %s\n",
+			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord is WRONG. Expected equal to example, got %s\n",
 				i, host, bdRecords[i].String())
 			ret = false
 		}
@@ -101,7 +102,8 @@ func CheckSC(apiHosts []string, scAddr *address.Address, textout ...io.Writer) b
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(scAddr)
+	scAddr := (address.Address)(chainid)
+	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(&scAddr)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())
 		return false
@@ -164,11 +166,8 @@ func publicKeyInfoToString(pki *client.PubKeyInfo) string {
 	return ret
 }
 
-func consistentBootupRecords(bd1, bd2 *registry.BootupData) bool {
-	if bd1.Address != bd2.Address {
-		return false
-	}
-	if bd1.OwnerAddress != bd2.OwnerAddress {
+func consistentChainRecords(bd1, bd2 *registry.ChainRecord) bool {
+	if bd1.ChainID != bd2.ChainID {
 		return false
 	}
 	if bd1.Color != bd2.Color {

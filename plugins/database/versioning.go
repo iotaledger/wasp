@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -26,8 +27,7 @@ var (
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
-	var niladdr address.Address
-	db := GetPartition(&niladdr)
+	db := GetPartition(&coretypes.NilChainID)
 	ver, err := db.Get(MakeKey(ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte

@@ -1,15 +1,17 @@
 package txbuilder
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBasic(t *testing.T) {
@@ -18,14 +20,15 @@ func TestBasic(t *testing.T) {
 	ownerAddress := ownerSigSheme.Address()
 	scSigSheme := signaturescheme.RandBLS()
 	scAddress := scSigSheme.Address()
-	u.RequestFunds(ownerAddress)
+	_, err := u.RequestFunds(ownerAddress)
+	assert.NoError(t, err)
 
 	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -51,17 +54,18 @@ func TestWithRequest(t *testing.T) {
 	ownerAddress := ownerSigSheme.Address()
 	scSigSheme := signaturescheme.RandBLS()
 	scAddress := scSigSheme.Address()
-	u.RequestFunds(ownerAddress)
+	_, err := u.RequestFunds(ownerAddress)
+	assert.NoError(t, err)
 
 	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -87,20 +91,21 @@ func TestNextState(t *testing.T) {
 	ownerAddress := ownerSigSheme.Address()
 	scSigSheme := signaturescheme.RandBLS()
 	scAddress := scSigSheme.Address()
-	u.RequestFunds(ownerAddress)
+	_, err := u.RequestFunds(ownerAddress)
+	assert.NoError(t, err)
 
 	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
-	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 5)
+	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 5)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -151,7 +156,7 @@ func TestNextState(t *testing.T) {
 	txb, err = NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
 	tx, err = txb.Build(false)
@@ -185,17 +190,18 @@ func TestClone(t *testing.T) {
 	ownerAddress := ownerSigSheme.Address()
 	scSigSheme := signaturescheme.RandBLS()
 	scAddress := scSigSheme.Address()
-	u.RequestFunds(ownerAddress)
+	_, err := u.RequestFunds(ownerAddress)
+	assert.NoError(t, err)
 
 	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
@@ -221,33 +227,35 @@ func TestDeterminism(t *testing.T) {
 	ownerAddress := ownerSigSheme.Address()
 	scSigSheme := signaturescheme.RandBLS()
 	scAddress := scSigSheme.Address()
-	u.RequestFunds(ownerAddress)
+	_, err := u.RequestFunds(ownerAddress)
+	assert.NoError(t, err)
 
 	outs := u.GetAddressOutputs(ownerAddress)
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
 	sh := hashing.RandomHash(nil)
-	err = txb.CreateOriginStateBlock(sh, &scAddress)
+	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 50)
+	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
+	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeInit))
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeInit))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
 
-	err = txb.MoveToAddress(scAddress, balance.ColorIOTA, 50)
+	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
-	err = txbClone.AddRequestBlock(sctransaction.NewRequestBlock(scAddress, vmconst.RequestCodeNOP))
+	err = txbClone.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), vmconst.RequestCodeNOP))
 	assert.NoError(t, err)
 
-	err = txbClone.MoveToAddress(scAddress, balance.ColorIOTA, 50)
+	err = txbClone.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)

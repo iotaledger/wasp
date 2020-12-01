@@ -6,18 +6,20 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 )
 
 type TokenRegistryClient struct {
-	*scclient.SCClient
+	*chainclient.Client
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *scclient.SCClient) *TokenRegistryClient {
-	return &TokenRegistryClient{scClient}
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *TokenRegistryClient {
+	return &TokenRegistryClient{scClient, contractHname}
 }
 
 type MintAndRegisterParams struct {
@@ -40,6 +42,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 		args[tokenregistry.VarReqUserDefinedMetadata] = par.UserDefinedData
 	}
 	return trc.PostRequest(
+		trc.contractHname,
 		tokenregistry.RequestMintSupply,
 		map[address.Address]int64{par.MintTarget: par.Supply},
 		nil,
@@ -48,7 +51,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 }
 
 type Status struct {
-	*scclient.SCStatus
+	*chainclient.SCStatus
 
 	Registry                     map[balance.Color]*tokenregistry.TokenMetadata
 	RegistrySortedByMintTimeDesc []*TokenMetadataWithColor // may be nil
@@ -61,7 +64,7 @@ type TokenMetadataWithColor struct {
 
 func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error) {
 	scStatus, results, err := trc.FetchSCStatus(func(query *statequery.Request) {
-		query.AddDictionary(tokenregistry.VarStateTheRegistry, 100)
+		query.AddMap(tokenregistry.VarStateTheRegistry, 100)
 	})
 	if err != nil {
 		return nil, err
@@ -69,7 +72,7 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 
 	status := &Status{SCStatus: scStatus}
 
-	status.Registry, err = decodeRegistry(results.Get(tokenregistry.VarStateTheRegistry).MustDictionaryResult())
+	status.Registry, err = decodeRegistry(results.Get(tokenregistry.VarStateTheRegistry).MustMapResult())
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +94,7 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 	return status, nil
 }
 
-func decodeRegistry(result *statequery.DictResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
+func decodeRegistry(result *statequery.MapResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
 	registry := make(map[balance.Color]*tokenregistry.TokenMetadata)
 	for _, e := range result.Entries {
 		color, _, err := balance.ColorFromBytes(e.Key)
@@ -109,14 +112,14 @@ func decodeRegistry(result *statequery.DictResult) (map[balance.Color]*tokenregi
 
 func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.TokenMetadata, error) {
 	query := statequery.NewRequest()
-	query.AddDictionaryElement(tokenregistry.VarStateTheRegistry, color.Bytes())
+	query.AddMapElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 
 	res, err := trc.StateQuery(query)
 	if err != nil {
 		return nil, err
 	}
 
-	value := res.Get(tokenregistry.VarStateTheRegistry).MustDictionaryElementResult()
+	value := res.Get(tokenregistry.VarStateTheRegistry).MustMapElementResult()
 	if value == nil {
 		// not found
 		return nil, nil

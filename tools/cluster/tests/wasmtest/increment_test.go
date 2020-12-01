@@ -3,8 +3,8 @@ package wasmtest
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	incCodeIncrement           = sctransaction.RequestCode(1)
-	incCodeIncrementRepeat1    = sctransaction.RequestCode(2)
-	incCodeIncrementRepeatMany = sctransaction.RequestCode(3)
-	incCodeTest                = sctransaction.RequestCode(4)
-	incCodeNothing             = sctransaction.RequestCode(5)
+	incCodeIncrement           = coretypes.Hname(1)
+	incCodeIncrementRepeat1    = coretypes.Hname(2)
+	incCodeIncrementRepeatMany = coretypes.Hname(3)
+	incCodeTest                = coretypes.Hname(4)
+	incCodeNothing             = coretypes.Hname(5)
 )
 
 const incWasmPath = "wasm/increment"
@@ -33,8 +33,9 @@ func TestIncDeployment(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
+	_ = scChain
 
 	if !wasps.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1, map[balance.Color]int64{
 		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
@@ -52,7 +53,7 @@ func TestIncDeployment(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 	}) {
 		t.Fail()
@@ -60,11 +61,11 @@ func TestIncDeployment(t *testing.T) {
 }
 
 func TestIncNothing(t *testing.T) {
-	testNothing(t, "TestIncNothing", inccounter.ProgramHash, incWasmPath, incDescription, 1)
+	testNothing(t, "TestIncNothing", inccounter.ProgramHashStr, incWasmPath, incDescription, 1)
 }
 
 func TestInc5xNothing(t *testing.T) {
-	testNothing(t, "TestInc5xNothing", inccounter.ProgramHash, incWasmPath, incDescription, 5)
+	testNothing(t, "TestInc5xNothing", inccounter.ProgramHashStr, incWasmPath, incDescription, 5)
 }
 
 func testNothing(t *testing.T, testName string, hash string, wasmPath string, description string, numRequests int) {
@@ -77,7 +78,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + numRequests,
@@ -87,13 +88,13 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, hash, description)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, hash, description)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	for i := 0; i < numRequests; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: incCodeNothing,
+			TargetContract: coretypes.NewContractID(*scChain, 0),
+			RequestCode:    incCodeNothing,
 		})
 		check(err, t)
 	}
@@ -119,7 +120,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  description,
 	}) {
 		t.Fail()
@@ -144,7 +145,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + increments,
@@ -154,13 +155,13 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	for i := 0; i < increments; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddr,
-			RequestCode: incCodeIncrement,
+			TargetContract: coretypes.NewContractID(*scChain, 0),
+			RequestCode:    incCodeIncrement,
 		})
 		check(err, t)
 	}
@@ -186,7 +187,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 		"counter":                   util.Uint64To8Bytes(uint64(increments)),
 	}) {
@@ -204,7 +205,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 2,
@@ -214,12 +215,12 @@ func TestIncRepeatIncrement(t *testing.T) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: incCodeIncrementRepeat1,
+		TargetContract: coretypes.NewContractID(*scChain, 0),
+		RequestCode:    incCodeIncrementRepeat1,
 		// also send 1i to the SC address to use as request token
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -248,7 +249,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 		"counter":                   util.Uint64To8Bytes(uint64(2)),
 	}) {
@@ -268,7 +269,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	check(err, t)
 
 	err = wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          1 + 1 + numRepeats,
@@ -278,12 +279,12 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	})
 	check(err, t)
 
-	scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHash, incDescription)
+	scChain, scAddr, scColor, err := startSmartContract(wasps, inccounter.ProgramHashStr, incDescription)
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: incCodeIncrementRepeatMany,
+		TargetContract: coretypes.NewContractID(*scChain, 0),
+		RequestCode:    incCodeIncrementRepeatMany,
 		Vars: map[string]interface{}{
 			"numRepeats": numRepeats,
 		},
@@ -315,7 +316,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 	if !wasps.VerifySCStateVariables2(scAddr, map[kv.Key]interface{}{
 		vmconst.VarNameOwnerAddress: scOwnerAddr[:],
-		vmconst.VarNameProgramHash:  programHash[:],
+		vmconst.VarNameProgramData:  programHash[:],
 		vmconst.VarNameDescription:  incDescription,
 		"counter":                   util.Uint64To8Bytes(uint64(numRepeats + 1)),
 		"numRepeats":                util.Uint64To8Bytes(0),

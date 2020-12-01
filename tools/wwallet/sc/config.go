@@ -9,10 +9,11 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/client/chainclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/tools/wwallet/chain"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/spf13/viper"
 )
@@ -22,20 +23,16 @@ type Config struct {
 	Name        string
 	ProgramHash string
 
-	bootupData *registry.BootupData
+	chainRecord *registry.ChainRecord
 }
 
-func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
+func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
 	var timeout time.Duration
-	if config.WaitForCompletion {
-		timeout = 1 * time.Minute
-	}
-	client := scclient.New(
+	client := chainclient.New(
 		config.GoshimmerClient(),
 		client.NewWaspClient(config.WaspApi()),
-		c.Address(),
+		chain.GetCurrentChainID(),
 		sigScheme,
-		timeout,
 	)
 	return client
 }
@@ -150,14 +147,14 @@ type DeployParams struct {
 }
 
 func Deploy(params *DeployParams) (*address.Address, error) {
-	scAddress, _, err := waspapi.CreateSC(waspapi.CreateSCParams{
+	scAddress, _, err := waspapi.DeployChain(waspapi.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
 		AccessNodes:           []string{},
 		N:                     uint16(len(params.Committee)),
 		T:                     uint16(params.Quorum),
-		OwnerSigScheme:        params.SigScheme,
+		OriginatorSigScheme:   params.SigScheme,
 		ProgramHash:           params.progHash(),
 		Description:           params.Description,
 		Textout:               os.Stdout,
@@ -166,8 +163,8 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = waspapi.ActivateSCMulti(waspapi.ActivateSCParams{
-		Addresses:         []*address.Address{scAddress},
+	err = waspapi.ActivateChain(waspapi.ActivateChainParams{
+		ChainID:           []*address.Address{scAddress},
 		ApiHosts:          config.CommitteeApi(params.Committee),
 		PublisherHosts:    config.CommitteeNanomsg(params.Committee),
 		WaitForCompletion: config.WaitForCompletion,
@@ -177,7 +174,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		return nil, err
 	}
 	fmt.Printf("Initialized %s smart contract\n", params.Description)
-	fmt.Printf("SC Address: %s\n", scAddress)
+	fmt.Printf("SC Target: %s\n", scAddress)
 
 	if config.SCAlias != "" {
 		c := Config{
@@ -199,15 +196,15 @@ func (p *DeployParams) progHash() hashing.HashValue {
 	return hash
 }
 
-func (c *Config) BootupData() *registry.BootupData {
-	if c.bootupData != nil {
-		return c.bootupData
+func (c *Config) ChainRecord() *registry.ChainRecord {
+	if c.chainRecord != nil {
+		return c.chainRecord
 	}
-	d, err := c.MakeClient(nil).GetBootupData()
+	d, err := c.MakeClient(nil).GetChainRecord()
 	if err != nil {
-		panic(fmt.Sprintf("GetBootupData failed: host = %s, addr = %s err = %v\n",
+		panic(fmt.Sprintf("GetChainRecord failed: host = %s, addr = %s err = %v\n",
 			config.WaspApi(), c.Address(), err))
 	}
-	c.bootupData = d
-	return c.bootupData
+	c.chainRecord = d
+	return c.chainRecord
 }

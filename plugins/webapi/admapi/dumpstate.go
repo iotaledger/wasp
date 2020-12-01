@@ -4,33 +4,45 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 )
 
 func addStateEndpoints(adm *echo.Group) {
-	adm.GET("/"+client.DumpSCStateRoute(":address"), handleDumpSCState)
+	adm.GET("/"+client.DumpSCStateRoute(":scid"), handleDumpSCState)
 }
 
 func handleDumpSCState(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("address"))
+	scid, err := coretypes.NewContractIDFromBase58(c.Param("scid"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("scAddr")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("scid")))
 	}
 
-	virtualState, _, ok, err := state.LoadSolidState(&scAddress)
+	chainID := scid.ChainID()
+	virtualState, _, ok, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", scAddress.String()))
+		return httperrors.NotFound(fmt.Sprintf("State not found for contract %s", scid.String()))
+	}
+
+	vars, err := dict.FromKVStore(subrealm.New(
+		virtualState.Variables().DangerouslyDumpToDict(),
+		kv.Key(scid.Hname().Bytes()),
+	))
+	if err != nil {
+		return err
 	}
 
 	return c.JSON(http.StatusOK, &client.SCStateDump{
-		Index:     virtualState.StateIndex(),
-		Variables: virtualState.Variables().DangerouslyDumpToMap().ToGoMap(),
+		Index:     virtualState.BlockIndex(),
+		Variables: vars,
 	})
 }

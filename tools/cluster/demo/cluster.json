@@ -7,7 +7,5 @@
   ],
   "goshimmer": {
     "api_port": 8080
-  },
-  "smart_contracts": [
-  ]
+  }
 }

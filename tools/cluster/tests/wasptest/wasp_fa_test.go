@@ -19,7 +19,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFASetOwnerMargin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          -1,
@@ -31,7 +31,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -72,8 +72,8 @@ func TestFASetOwnerMargin(t *testing.T) {
 
 	// send request SetOwnerMargin
 	err = SendSimpleRequest(wasps, sc.OwnerSigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddr,
-		RequestCode: fairauction.RequestSetOwnerMargin,
+		TargetContract: scAddr,
+		RequestCode:    fairauction.RequestSetOwnerMargin,
 		Vars: map[string]interface{}{
 			fairauction.VarReqOwnerMargin: 100, // 10%
 		},
@@ -121,7 +121,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color0Bids")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -134,7 +134,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -182,8 +182,8 @@ func TestFA1Color0Bids(t *testing.T) {
 
 	// send request StartAuction from the auction owner
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestStartAuction,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
@@ -228,7 +228,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          5,
@@ -241,7 +241,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -294,8 +294,8 @@ func TestFA2Color0Bids(t *testing.T) {
 
 	// send request StartAuction for color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestStartAuction,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
@@ -312,8 +312,8 @@ func TestFA2Color0Bids(t *testing.T) {
 
 	// send request StartAuction for color2
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestStartAuction,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color2,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
@@ -359,7 +359,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -371,7 +371,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -430,8 +430,8 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestStartAuction,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
@@ -447,8 +447,8 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestPlaceBid,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestPlaceBid,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor: color1,
 		},
@@ -493,7 +493,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color1Bidder5WinningBids")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2, // wasps.NumSmartContracts(),
+		"chainrec":           2, // wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          8,
@@ -505,7 +505,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -565,8 +565,8 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestStartAuction,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
@@ -581,8 +581,8 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: fairauction.RequestPlaceBid,
+			TargetContract: scAddress,
+			RequestCode:    fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,
 			},
@@ -631,7 +631,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color2Bidders")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"bootuprec":           2,
+		"chainrec":           2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          13,
@@ -644,7 +644,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	// number 5 is "Wasm VM PoC program" in cluster.json
 	sc := &wasps.SmartContractConfig[scNumFairAuction]
 
-	_, err = PutBootupRecord(wasps, sc)
+	_, err = PutChainRecord(wasps, sc)
 	check(err, t)
 
 	err = Activate1SC(wasps, sc)
@@ -713,8 +713,8 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	// send request StartAuction. Selling 1 token of color1
 	err = SendSimpleRequest(wasps, auctionOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		SCAddress:   scAddress,
-		RequestCode: fairauction.RequestStartAuction,
+		TargetContract: scAddress,
+		RequestCode:    fairauction.RequestStartAuction,
 		Vars: map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color1,
 			fairauction.VarReqStartAuctionMinimumBid:      100,
@@ -730,8 +730,8 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err = SendSimpleRequest(wasps, bidder1.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: fairauction.RequestPlaceBid,
+			TargetContract: scAddress,
+			RequestCode:    fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,
 			},
@@ -742,8 +742,8 @@ func TestFA1Color2Bidders(t *testing.T) {
 		check(err, t)
 
 		err = SendSimpleRequest(wasps, bidder2.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			SCAddress:   scAddress,
-			RequestCode: fairauction.RequestPlaceBid,
+			TargetContract: scAddress,
+			RequestCode:    fairauction.RequestPlaceBid,
 			Vars: map[string]interface{}{
 				fairauction.VarReqAuctionColor: color1,
 			},

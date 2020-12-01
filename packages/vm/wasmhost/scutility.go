@@ -59,8 +59,8 @@ func (o *ScUtility) GetInt(keyId int32) int64 {
 		if o.random == nil {
 			// need to initialize pseudo-random generator with
 			// a sufficiently random, yet deterministic, value
-			id := o.vm.ctx.AccessRequest().ID()
-			o.random = id.TransactionId().Bytes()
+			id := o.vm.ctx.RequestID()
+			o.random = id.TransactionID().Bytes()
 		}
 		i := o.nextRandom
 		if i+8 > len(o.random) {
@@ -80,6 +80,16 @@ func (o *ScUtility) GetString(keyId int32) string {
 		return o.base58Encoded
 	}
 	return o.MapObject.GetString(keyId)
+}
+
+func (o *ScUtility) GetTypeId(keyId int32) int32 {
+	switch keyId {
+	case KeyHash:
+		return OBJTYPE_BYTES
+	case KeyRandom:
+		return OBJTYPE_INT
+	}
+	return -1
 }
 
 func (o *ScUtility) SetBytes(keyId int32, value []byte) {

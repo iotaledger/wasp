@@ -24,9 +24,9 @@ func AddEndpoints(e *echo.Echo, adminWhitelist []net.IP) {
 
 	addShutdownEndpoint(adm)
 	addPublicKeyEndpoint(adm)
-	addBootupEndpoints(adm)
+	addChainRecordEndpoints(adm)
 	addProgramEndpoints(adm)
-	addSCEndpoints(adm)
+	addChainEndpoints(adm)
 	addStateEndpoints(adm)
 	dkg.AddEndpoints(adm)
 }
