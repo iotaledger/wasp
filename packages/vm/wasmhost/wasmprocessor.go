@@ -22,6 +22,7 @@ type wasmProcessor struct {
 
 func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
+	host.vm = vm
 	host.scContext = NewScContext(host)
 	host.Init(NewNullObject(host), host.scContext, &keyMap, host)
 	err := host.InitVM(vm)
