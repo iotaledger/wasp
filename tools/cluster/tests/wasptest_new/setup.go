@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -44,10 +44,7 @@ var (
 
 func check(err error, t *testing.T) {
 	t.Helper()
-	assert.NoError(t, err)
-	if err != nil {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 }
 
 func deployContract(wasmName string, scDescription string, initParams map[string]interface{}) error {
