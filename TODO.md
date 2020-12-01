@@ -20,13 +20,13 @@ Done
 - [x] wasp node dashboard: show structure of committee, which SCs are running, etc
 - [x] rename in codec and sandbox Dictionary to Map
 - [x] refactor in sandbox Publish to Event 
-- [ ] discuss and introduce "view" entry points. Special read only sandbox 
-- [ ] discuss AgentID/sender structure. 
-- [ ] refactor "contract index" to uint6(hash(name)[:4]) ????
+- [x] discuss and introduce "view" entry points. Special read only sandbox 
+- [x] discuss AgentID/sender structure. 
+- [x] refactor "contract index" to uint6(hash(name)[:4]) ????
 
 Pending
 - [ ] change params to MustCodec
-- [ ] discuss system of builtin contracts: factory, accounts, on-contract logging
+- [ ] discuss system of builtin contracts: factory, accounts, on-contract logging, governance
 - [ ] move all general interfaces from vmtypes, kv and similar to coretypes
 - [ ] refactor "variable name" to uint6(hash(name)[:4]) ???? NO
 - [ ] wwallet: separate binaries for admin/client operations
@@ -35,7 +35,7 @@ Pending
       the BufferedKVStore lifetime)
 - [ ] serialize access to solid state (ie, guarantee that state loaded with LoadSolidState does not
       change until released).
-- [ ] Add authentication to web api calls
+- [ ] Add authentication to web api calls. Done ??
 - [ ] discuss market for iota/colored coins + trustless oracle for every chain
 
 To discuss/RFC
