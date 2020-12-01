@@ -36,7 +36,7 @@ var (
 //	"donatewithfeedback": dwfimpl.ProgramHash,
 //	"fairauction":        fairauction.ProgramHash,
 //	"fairroulette":       fairroulette.ProgramHash,
-//	"increment":          inccounter.ProgramHash,
+//	"inccounter":         inccounter.ProgramHash,
 //	"tokenregistry":      tokenregistry.ProgramHash,
 //}
 
