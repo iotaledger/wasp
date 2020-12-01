@@ -149,9 +149,9 @@ func TestPost3Recursive(t *testing.T) {
 		map[balance.Color]int64{
 			balance.ColorIOTA: 1, // needs 1 iota for recursive calls
 		},
-		map[string]interface{}{
+		codec.EncodeDictFromMap(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
-		},
+		}),
 	)
 	check(err, t)
 

@@ -1,13 +1,15 @@
 package wasptest
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
-	"testing"
-	"time"
 )
 
 func TestDepositWithdraw(t *testing.T) {
@@ -72,11 +74,11 @@ func TestDepositWithdraw(t *testing.T) {
 	// move 1 iota to another account on chain
 	colorIota := balance.ColorIOTA
 	reqTx2, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncMove), nil, nil,
-		map[string]interface{}{
+		codec.EncodeDictFromMap(map[string]interface{}{
 			accountsc.ParamAgentID: &origAgentId,
 			accountsc.ParamColor:   &colorIota,
 			accountsc.ParamAmount:  1,
-		},
+		}),
 	)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)

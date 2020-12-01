@@ -35,7 +35,7 @@ func deployContractCmd(args []string) {
 			coretypes.Hn(blob.FuncStoreBlob),
 			nil,
 			nil,
-			blobFieldValues,
+			codec.EncodeDictFromMap(blobFieldValues),
 		)
 	})
 
@@ -47,11 +47,11 @@ func deployContractCmd(args []string) {
 			coretypes.Hn(root.FuncDeployContract),
 			nil,
 			nil,
-			map[string]interface{}{
+			codec.EncodeDictFromMap(map[string]interface{}{
 				root.ParamName:        name,
 				root.ParamDescription: description,
 				root.ParamProgramHash: progHash,
-			},
+			}),
 		)
 	})
 }
