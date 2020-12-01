@@ -99,7 +99,13 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(blob.Interface.Hname(), coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
+	reqTx, err := chClient.PostRequest(
+		blob.Interface.Hname(),
+		coretypes.Hn(blob.FuncStoreBlob),
+		nil,
+		nil,
+		codec.EncodeDictFromMap(blobFieldValues),
+	)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
@@ -137,7 +143,13 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(blob.Interface.Hname(), coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
+	reqTx, err := chClient.PostRequest(
+		blob.Interface.Hname(),
+		coretypes.Hn(blob.FuncStoreBlob),
+		nil,
+		nil,
+		codec.EncodeDictFromMap(blobFieldValues),
+	)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)

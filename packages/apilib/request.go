@@ -1,15 +1,15 @@
 package apilib
 
 import (
-	"errors"
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
@@ -20,7 +20,7 @@ type RequestSectionParams struct {
 	EntryPointCode   coretypes.Hname
 	Timelock         uint32
 	Transfer         map[balance.Color]int64 // should not not include request token. It is added automatically
-	Vars             map[string]interface{}  ` `
+	Vars             dict.Dict
 }
 
 type CreateRequestTransactionParams struct {
@@ -57,11 +57,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 			WithTimelock(sectPar.Timelock).
 			WithTransfer(cbalances.NewFromMap(sectPar.Transfer))
 
-		args := codec.EncodeDictFromMap(sectPar.Vars)
-		if args == nil {
-			return nil, errors.New("wrong arguments")
-		}
-		reqSect.WithArgs(args)
+		reqSect.WithArgs(sectPar.Vars)
 
 		err = txb.AddRequestSection(reqSect)
 		if err != nil {

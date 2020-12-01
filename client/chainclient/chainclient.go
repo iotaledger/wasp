@@ -2,6 +2,7 @@ package chainclient
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -38,7 +39,7 @@ func (c *Client) PostRequest(
 	entryPoint coretypes.Hname,
 	mint map[address.Address]int64, // TODO
 	transfer map[balance.Color]int64,
-	vars map[string]interface{},
+	vars dict.Dict,
 ) (*sctransaction.Transaction, error) {
 	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
 		NodeClient:      c.NodeClient,

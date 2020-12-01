@@ -127,7 +127,13 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 	for k, v := range initParams {
 		params[k] = v
 	}
-	tx, err := ch.OriginatorClient().PostRequest(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(
+		root.Interface.Hname(),
+		coretypes.Hn(root.FuncDeployContract),
+		nil,
+		nil,
+		codec.EncodeDictFromMap(params),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +155,13 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	}
 	programHash := blob.MustGetBlobHash(codec.NewCodec(codec.EncodeDictFromMap(blobFieldValues)))
 
-	reqTx, err := ch.OriginatorClient().PostRequest(blob.Interface.Hname(), coretypes.Hn(blob.FuncStoreBlob), nil, nil, blobFieldValues)
+	reqTx, err := ch.OriginatorClient().PostRequest(
+		blob.Interface.Hname(),
+		coretypes.Hn(blob.FuncStoreBlob),
+		nil,
+		nil,
+		codec.EncodeDictFromMap(blobFieldValues),
+	)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	if err != nil {
 		return nil, *hashing.NilHash, err
@@ -171,7 +183,13 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	params[root.ParamProgramHash] = programHash
 	params[root.ParamDescription] = description
 
-	tx, err := ch.OriginatorClient().PostRequest(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), nil, nil, params)
+	tx, err := ch.OriginatorClient().PostRequest(
+		root.Interface.Hname(),
+		coretypes.Hn(root.FuncDeployContract),
+		nil,
+		nil,
+		codec.EncodeDictFromMap(params),
+	)
 	if err != nil {
 		return nil, *hashing.NilHash, err
 	}
