@@ -127,6 +127,43 @@ func TestPost1Request(t *testing.T) {
 	expectCounter(t, contractID.Hname(), 43)
 }
 
+func TestPost3Recursive(t *testing.T) {
+	setup(t, "test_cluster")
+
+	chain, err = clu.DeployDefaultChain()
+	check(err, t)
+
+	name := "inc"
+	contractID := deployInccounter42(t, name, 42)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
+
+	testOwner := wallet.WithIndex(1)
+	mySigScheme := testOwner.SigScheme()
+	myAddress := testOwner.Address()
+	err = requestFunds(clu, myAddress, "myAddress")
+	check(err, t)
+
+	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+
+	tx, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncAndRepeatMany, nil,
+		map[balance.Color]int64{
+			balance.ColorIOTA: 1, // needs 1 iota for recursive calls
+		},
+		map[string]interface{}{
+			inccounter.VarNumRepeats: 3,
+		},
+	)
+	check(err, t)
+
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	check(err, t)
+
+	// must wait for recursion to complete
+	time.Sleep(10 * time.Second)
+
+	expectCounter(t, contractID.Hname(), 43+3)
+}
+
 func TestPost5Requests(t *testing.T) {
 	setup(t, "test_cluster")
 
@@ -182,7 +219,7 @@ func TestPost5Requests(t *testing.T) {
 	checkLedger(t, chain)
 }
 
-func TestPost3Recursive(t *testing.T) {
+func TestPost5AsyncRequests(t *testing.T) {
 	setup(t, "test_cluster")
 
 	chain, err = clu.DeployDefaultChain()
@@ -195,26 +232,41 @@ func TestPost3Recursive(t *testing.T) {
 	testOwner := wallet.WithIndex(1)
 	mySigScheme := testOwner.SigScheme()
 	myAddress := testOwner.Address()
+	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
 	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
 
-	tx, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncAndRepeatMany, nil,
-		map[balance.Color]int64{
-			balance.ColorIOTA: 1, // needs 1 iota for recursive calls
-		},
-		map[string]interface{}{
-			inccounter.VarNumRepeats: 3,
-		},
-	)
+	tx1, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
+	check(err, t)
+	tx2, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
+	check(err, t)
+	tx3, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
+	check(err, t)
+	tx4, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
+	check(err, t)
+	tx5, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
-	check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx1, 30*time.Second)
+	//check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx2, 30*time.Second)
+	//check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx3, 30*time.Second)
+	//check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx4, 30*time.Second)
+	//check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx5, 30*time.Second)
+	//check(err, t)
 
-	// must wait for recursion to complete
-	time.Sleep(10 * time.Second)
+	expectCounter(t, contractID.Hname(), 42+5)
+	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)
 
-	expectCounter(t, contractID.Hname(), 43+3)
+	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-5, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount - 5,
+	}, "myAddress in the end") {
+		t.Fail()
+	}
+	checkLedger(t, chain)
 }

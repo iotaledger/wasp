@@ -5,3 +5,5 @@ pause
 go test -buildmode=exe -run TestPost5Requests %1
 pause
 go test -buildmode=exe -run TestPost3Recursive %1
+pause
+TestPost5AsyncRequests
