@@ -13,14 +13,17 @@ func mustGetBlobHash(fields codec.ImmutableCodec) (hashing.HashValue, []kv.Key, 
 		panic(err)
 	}
 	values := make([][]byte, 0, len(kSorted))
+	all := make([][]byte, 0, 2*len(kSorted))
 	for _, k := range kSorted {
 		v, err := fields.Get(k)
 		if err != nil {
 			panic(err)
 		}
 		values = append(values, v)
+		all = append(all, v)
+		all = append(all, []byte(k))
 	}
-	return *hashing.HashData(values...), kSorted, values
+	return *hashing.HashData(all...), kSorted, values
 }
 
 // MustGetBlobHash deterministically hashes map of binary values

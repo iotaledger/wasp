@@ -108,7 +108,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	require.False(t, ret.IsEmpty())
 
 	c := codec.NewCodec(ret)
-	v, ok, err := c.GetInt64(kv.Key(blob.VarFieldProgramDescription))
+	v, ok, err := c.GetInt64(blob.VarFieldProgramDescription)
 	require.NoError(t, err)
 	require.True(t, ok)
 	require.EqualValues(t, len(description), v)
