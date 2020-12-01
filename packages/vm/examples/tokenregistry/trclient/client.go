@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 )
@@ -46,7 +47,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 		tokenregistry.RequestMintSupply,
 		map[address.Address]int64{par.MintTarget: par.Supply},
 		nil,
-		args,
+		codec.EncodeDictFromMap(args),
 	)
 }
 

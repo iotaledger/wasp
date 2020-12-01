@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 )
@@ -67,7 +68,7 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 		fairauction.RequestSetOwnerMargin,
 		nil,
 		nil,
-		map[string]interface{}{fairauction.VarReqOwnerMargin: margin},
+		codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
 	)
 }
 
@@ -107,12 +108,12 @@ func (fc *FairAuctionClient) StartAuction(
 			balance.ColorIOTA: fee,
 			*color:            tokensForSale,
 		},
-		map[string]interface{}{
+		codec.EncodeDictFromMap(map[string]interface{}{
 			fairauction.VarReqAuctionColor:                color.String(),
 			fairauction.VarReqStartAuctionDescription:     description,
 			fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
 			fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
-		},
+		}),
 	)
 }
 
@@ -122,6 +123,6 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 		fairauction.RequestPlaceBid,
 		nil,
 		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-		map[string]interface{}{fairauction.VarReqAuctionColor: color.String()},
+		codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
 	)
 }
