@@ -185,7 +185,8 @@ func (op *operator) checkQuorum() bool {
 
 	prop, err := op.leaderStatus.resultTx.Properties()
 	if err != nil {
-		op.log.Errorf("checking result tx properties: %v", err)
+		op.log.Errorf("checking result tx properties: %v\ndump tx: %s\ndump vtx: %s\n", err,
+			op.leaderStatus.resultTx.String(), op.leaderStatus.resultTx.Transaction.String())
 		return false
 	}
 	op.log.Debugf("checking result tx properties: %s", prop.String())

@@ -9,7 +9,6 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 )
 
@@ -22,17 +21,6 @@ type Builder struct {
 var (
 	errorWrongScToken = errors.New("wrong or nonexistent smart contract token in inputs")
 )
-
-func NewFromAddressBalances(scAddress *address.Address, addressBalances map[valuetransaction.ID][]*balance.Balance) (*Builder, error) {
-	vtxb, err := vtxbuilder.NewFromAddressBalances(scAddress, addressBalances)
-	if err != nil {
-		return nil, err
-	}
-	return &Builder{
-		Builder:       vtxb,
-		requestBlocks: make([]*sctransaction.RequestSection, 0),
-	}, nil
-}
 
 func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balance.Balance) (*Builder, error) {
 	vtxb, err := vtxbuilder.NewFromOutputBalances(outputBalances)
@@ -55,43 +43,6 @@ func (txb *Builder) Clone() *Builder {
 		ret.requestBlocks[i] = txb.requestBlocks[i].Clone()
 	}
 	return ret
-}
-
-// CreateStateSection assumes txb contain balances of the smart contract with 'color'.
-// It adds state block and moves smart contract token to the same address.
-// State block will have 0 state index, 0 timestamp, nil stateHash
-// The function is used by VM wrapper to create new state transaction
-func (txb *Builder) CreateStateSection(color balance.Color) error {
-	if txb.stateBlock != nil {
-		return errors.New("can't set state block twice")
-	}
-	if color == balance.ColorNew {
-		return errors.New("can't use 'ColorNew'")
-	}
-
-	if txb.GetInputBalance(color) == 0 {
-		return fmt.Errorf("non existent smart contract token with color %s", color.String())
-	}
-	foundAddress := false
-	var scAddress address.Address
-	txb.ForEachInputBalance(func(oid *valuetransaction.OutputID, bals []*balance.Balance) bool {
-		if txutil.BalanceOfColor(bals, color) > 0 {
-			scAddress = oid.Address()
-			foundAddress = true
-			return false
-		}
-		return true
-	})
-	if !foundAddress {
-		return errorWrongScToken
-	}
-	if err := txb.MoveTokensToAddress(scAddress, color, 1); err != nil {
-		return err
-	}
-	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
-		Color: color,
-	})
-	return nil
 }
 
 // CreateOriginStateSection

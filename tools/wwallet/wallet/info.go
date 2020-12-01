@@ -12,10 +12,10 @@ import (
 func addressCmd(args []string) {
 	wallet := Load()
 	kp := wallet.KeyPair()
-	fmt.Printf("Target index %d\n", addressIndex)
+	fmt.Printf("Address index %d\n", addressIndex)
 	fmt.Printf("  Private key: %s\n", kp.PrivateKey)
 	fmt.Printf("  Public key:  %s\n", kp.PublicKey)
-	fmt.Printf("  Target:     %s\n", wallet.Address())
+	fmt.Printf("  Address:     %s\n", wallet.Address())
 }
 
 func balanceCmd(args []string) {

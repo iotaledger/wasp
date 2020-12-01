@@ -9,7 +9,7 @@ import (
 )
 
 func TestWriteRead(t *testing.T) {
-	cid := coretypes.NewContractID(coretypes.ChainID{}, root.Hname)
+	cid := coretypes.NewContractID(coretypes.ChainID{}, root.Interface.Hname())
 	rsec := NewRequestSectionByWallet(cid, coretypes.EntryPointInit).WithTransfer(nil)
 	var buf, buf1 bytes.Buffer
 	err := rsec.Write(&buf)

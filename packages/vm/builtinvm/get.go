@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/dummyprocessor"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -13,18 +14,21 @@ const VMType = "builtinvm"
 
 func init() {
 	fmt.Printf("--------------- core contracts ------------------\n")
-	fmt.Printf("    %s: '%s'  \n", root.Hname.String(), root.Interface.Name)
-	fmt.Printf("    %s: '%s'  \n", accountsc.Hname.String(), accountsc.Interface.Name)
+	fmt.Printf("    %s: '%s'  \n", root.Interface.Hname().String(), root.Interface.Name)
+	fmt.Printf("    %s: '%s'  \n", accountsc.Interface.Hname().String(), accountsc.Interface.Name)
 	fmt.Printf("--------------- core contracts ------------------\n")
 }
 
 func GetProcessor(programHash hashing.HashValue) (vmtypes.Processor, error) {
 	switch programHash {
-	case root.ProgramHash:
+	case root.Interface.ProgramHash:
 		return root.GetProcessor(), nil
 
-	case accountsc.ProgramHash:
+	case accountsc.Interface.ProgramHash:
 		return accountsc.GetProcessor(), nil
+
+	case blob.Interface.ProgramHash:
+		return blob.GetProcessor(), nil
 
 	case *dummyprocessor.ProgramHash:
 		return dummyprocessor.GetProcessor(), nil

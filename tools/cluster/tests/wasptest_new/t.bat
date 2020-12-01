@@ -1,1 +1,1 @@
-go test -buildmode=exe -run %1 %2
+go test -v -buildmode=exe -run %1 %2

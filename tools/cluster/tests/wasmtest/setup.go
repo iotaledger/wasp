@@ -68,7 +68,7 @@ func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription st
 	programHash = *hashing.NilHash
 	return wasps.MultiClient().Do(func(i int, w *client.WaspClient) error {
 		var err error
-		hashValue, err := w.PutProgram(wasmtimevm.PluginName, scDescription, wasm)
+		hashValue, err := w.PutProgram(wasmtimevm.VMType, scDescription, wasm)
 		if err != nil {
 			return err
 		}

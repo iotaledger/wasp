@@ -13,23 +13,22 @@ import (
 )
 
 type Client struct {
-	NodeClient          nodeclient.NodeClient
-	WaspClient          *client.WaspClient
-	ChainID             coretypes.ChainID
-	SigScheme           signaturescheme.SignatureScheme
-	WaitForConfirmation bool
+	NodeClient nodeclient.NodeClient
+	WaspClient *client.WaspClient
+	ChainID    coretypes.ChainID
+	SigScheme  signaturescheme.SignatureScheme
 }
 
 func New(
 	nodeClient nodeclient.NodeClient,
 	waspClient *client.WaspClient,
-	chainID *coretypes.ChainID,
+	chainID coretypes.ChainID,
 	sigScheme signaturescheme.SignatureScheme,
 ) *Client {
 	return &Client{
 		NodeClient: nodeClient,
 		WaspClient: waspClient,
-		ChainID:    *chainID,
+		ChainID:    chainID,
 		SigScheme:  sigScheme,
 	}
 }
@@ -51,7 +50,6 @@ func (c *Client) PostRequest(
 			Transfer:         transfer,
 			Vars:             vars,
 		}},
-		Post:                true,
-		WaitForConfirmation: c.WaitForConfirmation,
+		Post: true,
 	})
 }

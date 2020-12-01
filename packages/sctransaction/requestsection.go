@@ -2,7 +2,7 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"io"
 	"time"
 
@@ -22,7 +22,7 @@ import (
 
 type RequestSection struct {
 	// senderAddress contract index
-	// - if state block present, it is index of the sending contract in the chain of which state transaction it is
+	// - if state block present, it is hname of the sending contract in the chain of which state transaction it is
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
 	senderContractHname coretypes.Hname
 	// ID of the target smart contract
@@ -63,7 +63,7 @@ func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCo
 }
 
 func (req *RequestSection) String() string {
-	return fmt.Sprintf("[[senderAddress: %s, target: %s, entry point: '%s', args: %s]]",
+	return fmt.Sprintf("[[sender contract: %s, target: %s, entry point: '%s', args: %s]]",
 		req.senderContractHname.String(), req.targetContractID.String(), req.entryPoint.String(), req.args.String())
 }
 

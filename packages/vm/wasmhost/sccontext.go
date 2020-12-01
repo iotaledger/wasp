@@ -7,7 +7,8 @@ const (
 	KeyBalance     = KeyAmount - 1
 	KeyBase58      = KeyBalance - 1
 	KeyCalls       = KeyBase58 - 1
-	KeyColor       = KeyCalls - 1
+	KeyChain       = KeyCalls - 1
+	KeyColor       = KeyChain - 1
 	KeyColors      = KeyColor - 1
 	KeyContract    = KeyColors - 1
 	KeyData        = KeyContract - 1
@@ -50,6 +51,7 @@ var keyMap = map[string]int32{
 	"balance":     KeyBalance,
 	"base58":      KeyBase58,
 	"calls":       KeyCalls,
+	"chain":       KeyChain,
 	"color":       KeyColor,
 	"colors":      KeyColors,
 	"contract":    KeyContract,
@@ -87,40 +89,35 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 
 func (o *ScContext) Exists(keyId int32) bool {
 	if keyId == KeyExports {
-		return o.vm.ctx == nil
+		return o.vm.ctx == nil && o.vm.ctxView == nil
 	}
 	return o.GetTypeId(keyId) >= 0
 }
 
 func (o *ScContext) Finalize() {
-	postsId, ok := o.objects[KeyPosts]
-	if ok {
-		posts := o.vm.FindObject(postsId).(*ScPosts)
-		posts.Send()
-	}
-
 	o.objects = make(map[int32]int32)
 	o.vm.objIdToObj = o.vm.objIdToObj[:2]
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
-	if keyId == KeyExports && o.vm.ctx != nil {
+	if keyId == KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (onLoad) this cannot be called any more
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
 
 	return GetMapObjectId(o, keyId, typeId, MapFactories{
 		KeyAccount:   func() WaspObject { return &ScAccount{} },
-		KeyCalls:     func() WaspObject { return &ScPosts{} },
+		KeyCalls:     func() WaspObject { return &ScCalls{} },
 		KeyContract:  func() WaspObject { return &ScContract{} },
 		KeyExports:   func() WaspObject { return &ScExports{} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
 		KeyRequest:   func() WaspObject { return &ScRequest{} },
+		KeyResults:   func() WaspObject { return &ScCallParams{} },
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
-		KeyViews:     func() WaspObject { return &ScPosts{} },
+		KeyViews:     func() WaspObject { return &ScViews{} },
 	})
 }
 
@@ -139,6 +136,8 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyPosts:
 		return OBJTYPE_MAP_ARRAY
 	case KeyRequest:
+		return OBJTYPE_MAP
+	case KeyResults:
 		return OBJTYPE_MAP
 	case KeyState:
 		return OBJTYPE_MAP

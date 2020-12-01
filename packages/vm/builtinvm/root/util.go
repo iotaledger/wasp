@@ -2,13 +2,14 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 )
 
 func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*ContractRecord, error) {
-	if hname == Hname {
+	if hname == Interface.Hname() {
 		return &RootContractRecord, nil
 	}
 	contractRegistry := state.GetMap(VarContractRegistry)
@@ -23,19 +24,7 @@ func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*Contr
 	return ret, nil
 }
 
-func GetBinary(state codec.ImmutableMustCodec, deploymentHash hashing.HashValue) ([]byte, error) {
-	contractRegistry := state.GetMap(VarRegistryOfBinaries)
-	if ret := contractRegistry.GetAt(deploymentHash[:]); ret != nil {
-		return ret, nil
-	}
-	return nil, fmt.Errorf("binary not found")
-}
-
-func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord, programBinary []byte) error {
-	binRegistry := state.GetMap(VarRegistryOfBinaries)
-	if !binRegistry.HasAt(rec.DeploymentHash[:]) {
-		binRegistry.SetAt(rec.DeploymentHash[:], programBinary)
-	}
+func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord) error {
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := state.GetMap(VarContractRegistry)
 	if contractRegistry.HasAt(hname.Bytes()) {
@@ -43,4 +32,26 @@ func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord, programB
 	}
 	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
 	return nil
+}
+
+func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coretypes.Hname]*ContractRecord, error) {
+	ret := make(map[coretypes.Hname]*ContractRecord)
+	var err error
+	contractRegistry.Iterate(func(k []byte, v []byte) bool {
+		var deploymentHash coretypes.Hname
+		deploymentHash, err = coretypes.NewHnameFromBytes(k)
+		if err != nil {
+			return false
+		}
+
+		var cr *ContractRecord
+		cr, err = DecodeContractRecord(v)
+		if err != nil {
+			return false
+		}
+
+		ret[deploymentHash] = cr
+		return true
+	})
+	return ret, err
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -58,7 +58,7 @@ func (vmctx *VMContext) Log() *logger.Logger {
 }
 
 func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
-	privileged := vmctx.CurrentContractHname() == accountsc.Hname
+	privileged := vmctx.CurrentContractHname() == accountsc.Interface.Hname()
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
 	if !privileged {
 		// if caller is accoutsc, it must debit from account by itself
@@ -84,7 +84,7 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 	pari := codec.NewCodec(par)
 	pari.SetAgentID(accountsc.ParamAgentID, &targetAgentID)
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Hname),
+		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Interface.Hname()),
 		EntryPoint:       coretypes.Hn(accountsc.FuncDeposit),
 		Params:           par,
 		Transfer:         transfer,
@@ -94,14 +94,20 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 // PostRequest creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
 func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
-	state := codec.NewMustCodec(vmctx)
+	vmctx.log.Debugw("-- PostRequest",
+		"target", par.TargetContractID.String(),
+		"ep", par.EntryPoint.String(),
+		"transfer", cbalances.Str(par.Transfer),
+	)
 	toAgentID := vmctx.MyAgentID()
-	if !accountsc.DebitFromAccount(state, toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
+	if !vmctx.debitFromAccount(toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
+		vmctx.log.Debugf("-- PostRequest: not enough funds for request token")
 		return false
 	}
-	if !accountsc.DebitFromAccount(state, toAgentID, par.Transfer) {
+	if !vmctx.debitFromAccount(toAgentID, par.Transfer) {
+		vmctx.log.Debugf("-- PostRequest: not enough funds")
 		return false
 	}
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).

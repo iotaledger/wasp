@@ -40,7 +40,7 @@ type GenerateDistributedKeyParams struct {
 func GenerateDistributedKey(params *GenerateDistributedKeyParams) (*coretypes.ChainID, *kyber.Point, error) {
 	var log = params.Logger
 	var err error
-	dkgID := coretypes.RandomChainID()
+	dkgID := coretypes.NewRandomChainID()
 	var netGroup peering.GroupProvider
 	if netGroup, err = params.NetProvider.Group(params.PeerLocs); err != nil {
 		return nil, nil, err

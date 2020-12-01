@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	builtinutil "github.com/iotaledger/wasp/packages/vm/builtinvm/util"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -14,81 +13,76 @@ import (
 const (
 	Name        = "root"
 	Version     = "0.1"
-	Description = "Root Contract"
+	fullName    = Name + "-" + Version
+	description = "Root Contract"
 )
 
 var (
-	RootContractRecord = NewBuiltinContractRecord(Name, Version, Description)
-
-	Interface = contract.ContractInterface{
-		Name:        Name,
-		Version:     Version,
-		Description: Description,
-		VMType:      RootContractRecord.VMType,
-		Functions: contract.Funcs(initialize, []contract.ContractFunctionInterface{
-			contract.Func(FuncDeployContract, deployContract),
-			contract.ViewFunc(FuncFindContract, findContract),
-			contract.ViewFunc(FuncGetBinary, getBinary),
-			contract.Func(FuncChangeChainOwner, changeChainOwner),
-			contract.ViewFunc(FuncGetInfo, getInfo),
-		}),
+	Interface = &contract.ContractInterface{
+		Name:        fullName,
+		Description: description,
+		ProgramHash: *hashing.HashStrings(fullName),
 	}
-
-	ProgramHash = builtinutil.BuiltinProgramHash(Name, Version)
-	Hname       = builtinutil.BuiltinHname(Name, Version)
+	RootContractRecord = ContractRecord{
+		ProgramHash: Interface.ProgramHash,
+		Name:        Interface.Name,
+		Description: Interface.Description,
+	}
 )
+
+func init() {
+	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
+		contract.Func(FuncDeployContract, deployContract),
+		contract.ViewFunc(FuncFindContract, findContract),
+		contract.Func(FuncChangeChainOwner, changeChainOwner),
+		contract.ViewFunc(FuncGetInfo, getInfo),
+	})
+}
 
 // state variables
 const (
-	VarStateInitialized   = "i"
-	VarChainID            = "c"
-	VarChainOwnerID       = "o"
-	VarRegistryOfBinaries = "b"
-	VarContractRegistry   = "r"
-	VarDescription        = "d"
+	VarStateInitialized = "i"
+	VarChainID          = "c"
+	VarChainOwnerID     = "o"
+	VarContractRegistry = "r"
+	VarDescription      = "d"
 )
 
 // param variables
 const (
-	ParamChainID       = "$$chainid$$"
-	ParamChainOwner    = "$$owner$$"
-	ParamVMType        = "$$vmtype$$"
-	ParamProgramBinary = "$$programBinary$$"
-	ParamDescription   = "$$description$$"
-	ParamHname         = "$$hname$$"
-	ParamName          = "$$name$$"
-	ParamHash          = "$$hash$$"
-	ParamData          = "$$data$$"
+	ParamChainID     = "$$chainid$$"
+	ParamChainOwner  = "$$owner$$"
+	ParamProgramHash = "$$proghash$$"
+	ParamDescription = "$$description$$"
+	ParamHname       = "$$hname$$"
+	ParamName        = "$$name$$"
+	ParamHash        = "$$hash$$"
+	ParamData        = "$$data$$"
 )
 
 // function names
 const (
 	FuncDeployContract   = "deployContract"
 	FuncFindContract     = "findContract"
-	FuncGetBinary        = "getBinary"
 	FuncGetInfo          = "getInfo"
 	FuncChangeChainOwner = "changeChainOwner"
 )
 
 func GetProcessor() vmtypes.Processor {
-	return &Interface
+	return Interface
 }
 
 // ContractRecord is a structure which contains metadata for a deployed contract
 type ContractRecord struct {
-	VMType         string
-	DeploymentHash hashing.HashValue // hash(VMType, program binary)
-	Description    string
-	Name           string
-	NodeFee        int64 // minimum node fee
+	ProgramHash hashing.HashValue
+	Description string
+	Name        string
+	NodeFee     int64 // minimum node fee
 }
 
 // serde
 func (p *ContractRecord) Write(w io.Writer) error {
-	if err := util.WriteString16(w, p.VMType); err != nil {
-		return err
-	}
-	if _, err := w.Write(p.DeploymentHash[:]); err != nil {
+	if _, err := w.Write(p.ProgramHash[:]); err != nil {
 		return err
 	}
 	if err := util.WriteString16(w, p.Description); err != nil {
@@ -105,10 +99,7 @@ func (p *ContractRecord) Write(w io.Writer) error {
 
 func (p *ContractRecord) Read(r io.Reader) error {
 	var err error
-	if p.VMType, err = util.ReadString16(r); err != nil {
-		return err
-	}
-	if err := util.ReadHashValue(r, &p.DeploymentHash); err != nil {
+	if err := util.ReadHashValue(r, &p.ProgramHash); err != nil {
 		return err
 	}
 	if p.Description, err = util.ReadString16(r); err != nil {
@@ -133,11 +124,10 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-func NewBuiltinContractRecord(name string, version string, description string) ContractRecord {
+func NewBuiltinContractRecord(programHash hashing.HashValue, name string, description string) ContractRecord {
 	return ContractRecord{
-		VMType:         "builtin",
-		DeploymentHash: builtinutil.BuiltinProgramHash(name, version),
-		Description:    description,
-		Name:           name,
+		ProgramHash: programHash,
+		Description: description,
+		Name:        name,
 	}
 }

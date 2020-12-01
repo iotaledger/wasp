@@ -12,7 +12,7 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
-	DeployContract(vmtype string, programBinary []byte, name string, description string, initParams codec.ImmutableCodec) error
+	CreateContract(programHash hashing.HashValue, name string, description string, initParams codec.ImmutableCodec) error
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
 
 	// general
@@ -50,7 +50,7 @@ type Sandbox interface {
 
 	// PostRequest sends cross chain request
 	PostRequest(par NewRequestParams) bool
-	// PostRequestToSelf sendd cross chain request to the caller contract on the same chain
+	// PostRequestToSelf send cross chain request to the caller contract on the same chain
 	PostRequestToSelf(entryPoint coretypes.Hname, args dict.Dict) bool
 	// PostRequestToSelfWithDelay sends request to itself with timelock for some seconds after the current timestamp
 	PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, deferForSec uint32) bool
@@ -67,14 +67,6 @@ type NewRequestParams struct {
 	Timelock         uint32
 	Params           dict.Dict
 	Transfer         coretypes.ColoredBalances
-}
-
-// To be removed
-// Deprecated
-type RequestAccess interface {
-	// TODO MustSender to be removed and refactored. Use Caller() instead
-	// Deprecated
-	MustSender() coretypes.AgentID
 }
 
 // Accounts is an interface to access all functions with tokens

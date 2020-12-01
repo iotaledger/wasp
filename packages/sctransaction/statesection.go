@@ -52,6 +52,10 @@ func (sb *StateSection) Clone() *StateSection {
 	})
 }
 
+func (sb *StateSection) String() string {
+	return fmt.Sprintf("[[color: %s block #: %d]]", sb.color.String(), sb.blockIndex)
+}
+
 func (sb *StateSection) Color() balance.Color {
 	return sb.color
 }

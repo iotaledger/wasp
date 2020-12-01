@@ -2,6 +2,7 @@ package contract
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -9,10 +10,10 @@ import (
 )
 
 type ContractInterface struct {
-	VMType      string
 	Name        string
+	hname       coretypes.Hname
 	Description string
-	Version     string
+	ProgramHash hashing.HashValue
 	Functions   map[coretypes.Hname]ContractFunctionInterface
 }
 
@@ -64,6 +65,10 @@ func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
 type Handler func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
 type ViewHandler func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
 
+func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunctionInterface) {
+	i.Functions = Funcs(init, funcs)
+}
+
 func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface, bool) {
 	f, ok := i.Functions[coretypes.Hn(name)]
 	return &f, ok
@@ -76,6 +81,13 @@ func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPo
 
 func (i *ContractInterface) GetDescription() string {
 	return i.Description
+}
+
+func (i *ContractInterface) Hname() coretypes.Hname {
+	if i.hname == 0 {
+		i.hname = coretypes.Hn(i.Name)
+	}
+	return i.hname
 }
 
 func (f *ContractFunctionInterface) Hname() coretypes.Hname {

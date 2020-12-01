@@ -23,9 +23,11 @@ func TestBase(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	scid := NewContractID(chid, 5)
+	name := "test contract name"
+	hname := Hn(name)
+	scid := NewContractID(chid, hname)
 	scid58 := scid.Base58()
-	t.Logf("scid58 = %s", scid58)
+	t.Logf("scname = '%s' schname = %s scid58 = %s", name, hname, scid58)
 	scidstr := scid.String()
 	t.Logf("scidstr = %s", scidstr)
 
@@ -81,12 +83,16 @@ func TestAgentID(t *testing.T) {
 	aid := NewAgentIDFromAddress(addr)
 	require.True(t, aid.IsAddress())
 
-	contrId := NewContractID(chid, 22)
+	contrId := NewContractID(chid, Hn("22"))
 	aid1 := NewAgentIDFromContractID(contrId)
 	require.True(t, !aid1.IsAddress())
 
 	contrIdBack := aid1.MustContractID()
 	require.EqualValues(t, contrId, contrIdBack)
+
+	t.Logf("addr agent ID = %s", aid.String())
+	t.Logf("contract agent ID = %s", aid1.String())
+
 }
 
 func TestHname(t *testing.T) {

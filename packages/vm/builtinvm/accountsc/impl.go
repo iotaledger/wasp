@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -20,7 +20,7 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("accountsc.initialize.fail: already_initialized")
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
-	ctx.Eventf("accountsc.initialize.success hname = %s", Hname.String())
+	ctx.Eventf("accountsc.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
@@ -28,6 +28,9 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 // Params:
 // - ParamAgentID
 func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	if ctx.State().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.getBalance.fail: not_initialized")
+	}
 	ctx.Eventf("getBalance")
 	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {
@@ -46,11 +49,15 @@ func getBalance(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	for col, bal := range retMap {
 		ret.SetInt64(kv.Key(col[:]), bal)
 	}
+	ctx.Eventf("getBalance for %s. balance = %s\n", aid.String(), cbalances.NewFromMap(retMap).String())
 	return ret, nil
 }
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
 func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+	if ctx.State().Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.getAccounts.fail: not_initialized")
+	}
 	return GetAccounts(ctx.State()), nil
 }
 
@@ -59,10 +66,13 @@ func getAccounts(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 // - ParamAgentID. default is ctx.Caller()
 func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.deposit.fail: not_initialized")
+	}
 	MustCheckLedger(state, "accountsc.deposit.begin")
 	defer MustCheckLedger(state, "accountsc.deposit.exit")
 
-	ctx.Eventf("accountsc.deposit.begin")
+	ctx.Eventf("accountsc.deposit.begin -- %s", cbalances.Str(ctx.Accounts().Incoming()))
 	targetAgentID := ctx.Caller()
 	aid, ok, err := ctx.Params().GetAgentID(ParamAgentID)
 	if err != nil {
@@ -89,6 +99,9 @@ func deposit(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 //   and node fee for this request)
 func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.move.fail: not_initialized")
+	}
 	MustCheckLedger(state, "accountsc.move.begin")
 	defer MustCheckLedger(state, "accountsc.move.exit")
 
@@ -149,7 +162,7 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	parCodec := codec.NewMustCodec(par)
 	parCodec.SetAgentID(ParamAgentID, moveTo)
 	if !ctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChain, Hname),
+		TargetContractID: coretypes.NewContractID(targetChain, Interface.Hname()),
 		EntryPoint:       coretypes.Hn(FuncDeposit),
 		Params:           par,
 		Transfer:         cbalances.NewFromMap(tokensToMove),
@@ -165,11 +178,11 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 // different process for addresses and contracts as a caller
 func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.withdraw.fail: not_initialized")
+	}
 	MustCheckLedger(state, "accountsc.withdraw.begin")
 	defer MustCheckLedger(state, "accountsc.withdraw.exit")
-	if state.Get(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.initialize.fail: not_initialized")
-	}
 	caller := ctx.Caller()
 	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.MyContractID().String())
 
@@ -189,6 +202,6 @@ func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
 	}
 	// sent to address
-	ctx.Eventf("accountsc.withdraw.success. Sent to address %s", addr.String())
+	ctx.Eventf("accountsc.withdraw.success. Sent to address %s -- %s", addr.String(), send.String())
 	return nil, nil
 }

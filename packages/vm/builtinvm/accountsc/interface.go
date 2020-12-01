@@ -3,7 +3,7 @@ package accountsc
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/util"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -11,29 +11,28 @@ import (
 const (
 	Name        = "accounts"
 	Version     = "0.1"
-	Description = "Chain account ledger contract"
+	description = "Chain account ledger contract"
+	fullName    = Name + "-" + Version
 )
 
 var (
-	Interface = contract.ContractInterface{
-		Name:        Name,
-		Version:     Version,
-		Description: Description,
-		VMType:      "builtin",
-		Functions: contract.Funcs(initialize, []contract.ContractFunctionInterface{
-			contract.ViewFunc(FuncBalance, getBalance),
-			contract.ViewFunc(FuncAccounts, getAccounts),
-			contract.Func(FuncDeposit, deposit),
-			contract.Func(FuncMove, move),
-			contract.Func(FuncWithdraw, withdraw),
-		}),
+	Interface = &contract.ContractInterface{
+		Name:        fullName,
+		Description: description,
+		ProgramHash: *hashing.HashStrings(fullName),
 	}
-
-	ProgramHash          = util.BuiltinProgramHash(Name, Version)
-	Hname                = util.BuiltinHname(Name, Version)
-	FullName             = util.BuiltinFullName(Name, Version)
-	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Hname))
+	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Interface.Hname()))
 )
+
+func init() {
+	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
+		contract.ViewFunc(FuncBalance, getBalance),
+		contract.ViewFunc(FuncAccounts, getAccounts),
+		contract.Func(FuncDeposit, deposit),
+		contract.Func(FuncMove, move),
+		contract.Func(FuncWithdraw, withdraw),
+	})
+}
 
 const (
 	FuncBalance  = "balance"
@@ -56,9 +55,9 @@ var (
 )
 
 func GetProcessor() vmtypes.Processor {
-	return &Interface
+	return Interface
 }
 
 func ChainOwnerAgentID(chainID coretypes.ChainID) coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, Hname))
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, Interface.Hname()))
 }

@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -14,7 +15,7 @@ func TestBasic(t *testing.T) {
 
 	rootproc, err := p.GetOrCreateProcessor(
 		&root.RootContractRecord,
-		func(*hashing.HashValue) ([]byte, error) { return root.ProgramHash[:], nil },
+		func(hashing.HashValue) (string, []byte, error) { return builtinvm.VMType, nil, nil },
 	)
 	assert.NoError(t, err)
 

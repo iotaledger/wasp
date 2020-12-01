@@ -330,7 +330,7 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteAddress(w, (*address.Address)(m.chainID)); err != nil {
+	if err = m.chainID.Write(w); err != nil {
 		return err
 	}
 	if err = util.WriteMarshaled(w, m.sharedPublic); err != nil {
@@ -351,7 +351,7 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	}
 	newChainID := coretypes.NilChainID // Make a copy.
 	m.chainID = &newChainID
-	if err = util.ReadAddress(r, (*address.Address)(m.chainID)); err != nil {
+	if err = m.chainID.Read(r); err != nil {
 		return err
 	}
 	m.sharedPublic = m.suite.Point()

@@ -31,7 +31,7 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 func (o *ScTransfer) Send() {
 	o.vm.Trace("TRANSFER #%d c'%s' a'%s'", o.amount, o.color.String(), o.agent.String())
 	if !o.vm.ctx.Accounts().MoveBalance(o.agent, o.color, o.amount) {
-		o.vm.ctx.Panic("Failed to move tokens")
+		panic("Failed to move tokens")
 	}
 }
 
@@ -41,12 +41,12 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 	case KeyAgent:
 		o.agent, err = coretypes.NewAgentIDFromBytes(value)
 		if err != nil {
-			o.vm.ctx.Panic("Invalid agent")
+			panic("Invalid agent: " + err.Error())
 		}
 	case KeyColor:
 		o.color, _, err = balance.ColorFromBytes(value)
 		if err != nil {
-			o.vm.ctx.Panic("Invalid color")
+			panic("Invalid color: " + err.Error())
 		}
 	default:
 		o.MapObject.SetBytes(keyId, value)

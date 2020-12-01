@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/cbalances"
 )
 
 // CreditToAccount brings new funds to the on chain ledger.
 // Alone it is called when new funds arrive with the request, otherwise it called from MoveBetweenAccounts
 func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+	//fmt.Printf("CreditToAccount: %s -- %s\n", agentID.String(), cbalances.Str(transfer))
+
 	if agentID == TotalAssetsAccountID {
 		// wrong account IDs
 		return
@@ -24,7 +26,7 @@ func CreditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, tr
 
 // creditToAccount internal
 func creditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
-	if transfer.Len() == 0 {
+	if transfer == nil || transfer.Len() == 0 {
 		return
 	}
 	account := state.GetMap(kv.Key(agentID[:]))
@@ -44,6 +46,8 @@ func creditToAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, tr
 // DebitFromAccount removes funds from the chain ledger.
 // Alone it is called when posting a request, otherwise it called from MoveBetweenAccounts
 func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	//fmt.Printf("DebitFromAccount: %s -- %s\n", agentID.String(), cbalances.Str(transfer))
+
 	if agentID == TotalAssetsAccountID {
 		// wrong account IDs
 		return false
@@ -59,33 +63,43 @@ func DebitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 
 // debitFromAccount internal
 func debitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
-	if transfer.Len() == 0 {
+	if transfer == nil || transfer.Len() == 0 {
 		return true
 	}
 	account := state.GetMap(kv.Key(agentID[:]))
 	defer touchAccount(state, agentID)
 
-	bals := make(map[balance.Color]int64)
-	success := true
+	var err error
+	var col balance.Color
+	var bal int64
+	current := make(map[balance.Color]int64)
 	account.Iterate(func(elemKey []byte, value []byte) bool {
-		col, _, err := balance.ColorFromBytes(elemKey)
-		if err != nil {
-			success = false
+		if col, _, err = balance.ColorFromBytes(elemKey); err != nil {
 			return false
 		}
-		bal, _ := util.Int64From8Bytes(value)
-		b := transfer.Balance(col)
-		if bal < b {
-			success = false
+		if bal, err = util.Int64From8Bytes(value); err != nil {
 			return false
 		}
-		bals[col] = bal - b
+		current[col] = bal
 		return true
 	})
-	if !success {
+	if err != nil {
 		return false
 	}
-	for col, rem := range bals {
+	succ := true
+	transfer.Iterate(func(col balance.Color, bal int64) bool {
+		cur, _ := current[col]
+		if cur < bal {
+			succ = false
+			return false
+		}
+		current[col] = cur - bal
+		return true
+	})
+	if !succ {
+		return false
+	}
+	for col, rem := range current {
 		if rem > 0 {
 			account.SetAt(col[:], util.Uint64To8Bytes(uint64(rem)))
 		} else {
@@ -96,6 +110,8 @@ func debitFromAccount(state codec.MutableMustCodec, agentID coretypes.AgentID, t
 }
 
 func MoveBetweenAccounts(state codec.MutableMustCodec, fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+	//fmt.Printf("MoveBetweenAccounts: %s -> %s -- %s\n", fromAgentID.String(), toAgentID.String(), cbalances.Str(transfer))
+
 	if fromAgentID == toAgentID {
 		// no need to move
 		return true
@@ -157,7 +173,7 @@ func GetAccountBalances(state codec.ImmutableMustCodec, agentID coretypes.AgentI
 func GetTotalAssets(state codec.ImmutableMustCodec) coretypes.ColoredBalances {
 	bals, ok := GetAccountBalances(state, TotalAssetsAccountID)
 	if !ok {
-		return nil
+		return cbalances.Nil
 	}
 	return cbalances.NewFromMap(bals)
 }
