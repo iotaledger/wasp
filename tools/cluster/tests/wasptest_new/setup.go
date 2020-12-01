@@ -123,7 +123,7 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		//"state":               3 + nrOfRequests,
-		"request_in": 2 + nrOfRequests,
+		"request_in":  2 + nrOfRequests,
 		"request_out": 3 + nrOfRequests,
 	}
 	if nrOfRequests == 1 {
