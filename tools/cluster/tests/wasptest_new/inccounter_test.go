@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-const incName = "increment"
-const incDescription = "Increment, a PoC smart contract"
+const incName = "inccounter"
+const incDescription = "IncCounter, a PoC smart contract"
 
 var incHname = coretypes.Hn(incName)
 

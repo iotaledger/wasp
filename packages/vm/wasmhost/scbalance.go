@@ -14,7 +14,7 @@ func (o *ScBalance) Exists(keyId int32) bool {
 }
 
 func (o *ScBalance) GetInt(keyId int32) int64 {
-	key := o.vm.WasmHost.GetKey(keyId)
+	key := o.vm.WasmHost.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
 		o.Error(err.Error())

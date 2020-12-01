@@ -545,7 +545,7 @@ func (o *ScCallTransfers) InitVM(vm *wasmProcessor, keyId int32) {
 
 func (o *ScCallTransfers) Exists(keyId int32) bool {
 	var color balance.Color = [32]byte{}
-	copy(color[:], o.vm.getKey(keyId))
+	copy(color[:], o.vm.getKeyFromId(keyId))
 	return o.Transfers[color] != 0
 }
 
@@ -559,7 +559,7 @@ func (o *ScCallTransfers) SetInt(keyId int32, value int64) {
 		o.Transfers = make(map[balance.Color]int64)
 	default:
 		var color balance.Color = [32]byte{}
-		copy(color[:], o.vm.getKey(keyId))
+		copy(color[:], o.vm.getKeyFromId(keyId))
 		o.Transfers[color] = value
 	}
 }
