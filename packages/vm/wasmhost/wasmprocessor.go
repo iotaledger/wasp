@@ -1,5 +1,6 @@
-// nil processor takes any request and dos nothing, i.e. produces empty state update
-// it is useful for testing
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
