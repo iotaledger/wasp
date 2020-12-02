@@ -90,7 +90,7 @@ func TestBasicAccounts(t *testing.T) {
 
 	transferIotas := int64(42)
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
-	reqTx, err := chClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
+	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), nil, map[balance.Color]int64{
 		balance.ColorIOTA: transferIotas,
 	}, nil)
 	check(err, t)
@@ -214,7 +214,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	transferIotas := int64(42)
 	myWalletClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
-	reqTx, err := myWalletClient.PostRequest(hname, inccounter.EntryPointIncCounter, nil, map[balance.Color]int64{
+	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), nil, map[balance.Color]int64{
 		balance.ColorIOTA: transferIotas,
 	}, nil)
 	check(err, t)

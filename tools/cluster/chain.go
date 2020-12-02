@@ -3,11 +3,12 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
-	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -16,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -84,6 +86,10 @@ func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.
 		ch.ChainID,
 		sigScheme,
 	)
+}
+
+func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
+	return scclient.New(ch.Client(sigScheme), contractHname)
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
