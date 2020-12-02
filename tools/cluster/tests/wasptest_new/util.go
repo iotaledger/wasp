@@ -186,3 +186,22 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	fmt.Printf("\ninconsistent ledger %s\n", diff.String())
 	require.EqualValues(t, 0, diff.Len())
 }
+
+func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {
+	ret, err := chain.Cluster.WaspClient(0).CallView(
+		chain.ContractID(root.Interface.Hname()),
+		root.FuncGetInfo,
+		nil,
+	)
+	check(err, t)
+
+	c := codec.NewCodec(ret)
+	chainID, ok, err := c.GetChainID(root.VarChainID)
+	check(err, t)
+	require.True(t, ok)
+
+	ownerID, ok, err := c.GetAgentID(root.VarChainOwnerID)
+	check(err, t)
+	require.True(t, ok)
+	return *chainID, *ownerID
+}

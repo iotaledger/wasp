@@ -1,4 +1,5 @@
-// package present processor interface. It must be implemented by VM
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package vmtypes
 
 import (
@@ -6,6 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
+
+// package present processor interface. It must be implemented by VM
 
 // Processor is a abstract interface to the VM processor instance.
 type Processor interface {

@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package sandbox
 
 import (
@@ -24,38 +26,50 @@ func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
 	}
 }
 
-// Sandbox interface
-
-func (s *sandbox) Panic(v interface{}) {
-	panic(v)
+// CreateContract deploys contract by the binary hash
+// and calls "init" endpoint (constructor) with provided parameters
+func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, description string, initParams codec.ImmutableCodec) error {
+	return s.vmctx.CreateContract(programHash, name, description, initParams)
 }
 
-func (s *sandbox) Rollback() {
-	s.vmctx.Rollback()
+// Call calls an entry point of contact, passes parameters and funds
+func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }
 
-func (s *sandbox) MyContractID() coretypes.ContractID {
-	return s.vmctx.CurrentContractID()
-}
-
-func (s *sandbox) Caller() coretypes.AgentID {
-	return s.vmctx.Caller()
-}
-
-func (s *sandbox) MyAgentID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
-}
-
-func (s *sandbox) IsRequestContext() bool {
-	return s.vmctx.IsRequestContext()
-}
-
+// general
 func (s *sandbox) ChainID() coretypes.ChainID {
 	return s.vmctx.ChainID()
 }
 
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {
 	return s.vmctx.ChainOwnerID()
+}
+
+func (s *sandbox) State() codec.MutableMustCodec {
+	return s.vmctx.State()
+}
+
+func (s *sandbox) RequestID() coretypes.RequestID {
+	return *s.vmctx.Request().RequestID()
+}
+
+// call context
+
+func (s *sandbox) Params() codec.ImmutableCodec {
+	return s.vmctx.Params()
+}
+
+func (s *sandbox) Caller() coretypes.AgentID {
+	return s.vmctx.Caller()
+}
+
+func (s *sandbox) MyContractID() coretypes.ContractID {
+	return s.vmctx.CurrentContractID()
+}
+
+func (s *sandbox) MyAgentID() coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
 }
 
 func (s *sandbox) GetTimestamp() int64 {
@@ -66,8 +80,12 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) State() codec.MutableMustCodec {
-	return s.vmctx.State()
+func (s *sandbox) Panic(v interface{}) {
+	panic(v)
+}
+
+func (s *sandbox) Rollback() {
+	s.vmctx.Rollback()
 }
 
 func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {

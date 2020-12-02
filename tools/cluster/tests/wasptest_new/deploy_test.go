@@ -36,6 +36,11 @@ func TestDeployChain(t *testing.T) {
 	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
+	chainID, chainOwnerID := getChainInfo(t, chain)
+	require.EqualValues(t, chainID, chain.ChainID)
+	require.EqualValues(t, chainOwnerID, coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress()))
+	t.Logf("--- chainID: %s", chainID.String())
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		require.EqualValues(t, 1, blockIndex)
