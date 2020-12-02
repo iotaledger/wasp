@@ -47,17 +47,29 @@ func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state.SetChainID(VarChainID, chainID)
 	state.SetAgentID(VarChainOwnerID, &sender) // chain owner is whoever sends init request
 	state.SetString(VarDescription, chainDescription)
+
+	// record for root
 	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&RootContractRecord))
-
-	err = ctx.CreateContract(blob.Interface.ProgramHash, blob.Interface.Name, blob.Interface.Description, nil)
+	// deploy blob
+	err = storeAndInitContract(ctx, &ContractRecord{
+		ProgramHash: blob.Interface.ProgramHash,
+		Description: blob.Interface.Description,
+		Name:        blob.Interface.Name,
+		Originator:  ctx.Caller(),
+	}, nil)
 	if err != nil {
 		return nil, err
 	}
-	err = ctx.CreateContract(accountsc.Interface.ProgramHash, accountsc.Interface.Name, accountsc.Interface.Description, nil)
+	// deploy accountsc
+	err = storeAndInitContract(ctx, &ContractRecord{
+		ProgramHash: accountsc.Interface.ProgramHash,
+		Description: accountsc.Interface.Description,
+		Name:        accountsc.Interface.Name,
+		Originator:  ctx.Caller(),
+	}, nil)
 	if err != nil {
 		return nil, err
 	}
-
 	ctx.Eventf("root.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -102,9 +114,20 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		}
 		return true
 	})
-	err = ctx.CreateContract(*proghash, name, description, initParams)
+	// only loads VM
+	err = ctx.CreateContract(*proghash, "", "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("root.deployContract: %v", err)
+		return nil, err
+	}
+	// VM loaded successfully. Storing contract in the registry and calling constructor
+	err = storeAndInitContract(ctx, &ContractRecord{
+		ProgramHash: *proghash,
+		Description: description,
+		Name:        name,
+		Originator:  ctx.Caller(),
+	}, initParams)
+	if err != nil {
+		return nil, err
 	}
 	ctx.Eventf("root.deployContract.success. Deployed contract hname = %s, name = '%s'", coret.Hn(name).String(), name)
 	return nil, nil
@@ -173,4 +196,18 @@ func getInfo(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 	})
 
 	return codec.NewCodec(d), nil
+}
+
+func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams codec.ImmutableCodec) error {
+	hname := coret.Hn(rec.Name)
+	contractRegistry := ctx.State().GetMap(VarContractRegistry)
+	if contractRegistry.HasAt(hname.Bytes()) {
+		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), rec.Name)
+	}
+	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
+	// calling constructor
+	if _, err := ctx.Call(coret.Hn(rec.Name), coret.EntryPointInit, initParams, nil); err != nil {
+		ctx.Eventf("root.deployContract.success. Calling 'init' function: %v", err)
+	}
+	return nil
 }

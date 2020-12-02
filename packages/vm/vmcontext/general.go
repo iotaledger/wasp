@@ -52,6 +52,14 @@ func (vmctx *VMContext) ChainOwnerID() coret.AgentID {
 	return ret
 }
 
+func (vmctx *VMContext) ContractOriginator() coret.AgentID {
+	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
+	if !ok {
+		vmctx.log.Panicf("can't find current contract")
+	}
+	return rec.Originator
+}
+
 func (vmctx *VMContext) CurrentContractHname() coret.Hname {
 	return vmctx.getCallContext().contract
 }

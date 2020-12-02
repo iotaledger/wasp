@@ -49,6 +49,7 @@ func TestDeployChain(t *testing.T) {
 		require.EqualValues(t, 3, contractRegistry.Len())
 		return true
 	})
+	checkRootsOutside(t, chain)
 }
 
 func TestDeployContractOnly(t *testing.T) {

@@ -24,16 +24,6 @@ func FindContract(state codec.ImmutableMustCodec, hname coret.Hname) (*ContractR
 	return ret, nil
 }
 
-func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord) error {
-	hname := coret.Hn(rec.Name)
-	contractRegistry := state.GetMap(VarContractRegistry)
-	if contractRegistry.HasAt(hname.Bytes()) {
-		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), rec.Name)
-	}
-	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
-	return nil
-}
-
 func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coret.Hname]*ContractRecord, error) {
 	ret := make(map[coret.Hname]*ContractRecord)
 	var err error

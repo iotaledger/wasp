@@ -46,6 +46,10 @@ func (s *sandbox) ChainOwnerID() coret.AgentID {
 	return s.vmctx.ChainOwnerID()
 }
 
+func (s *sandbox) ContractOriginator() coret.AgentID {
+	return s.vmctx.ContractOriginator()
+}
+
 func (s *sandbox) State() codec.MutableMustCodec {
 	return s.vmctx.State()
 }
