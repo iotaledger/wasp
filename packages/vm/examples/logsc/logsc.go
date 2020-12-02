@@ -4,7 +4,7 @@ package logsc
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -14,12 +14,12 @@ import (
 const ProgramHash = "4YguJ8NyyN7RtRy56XXBABY79cYMoKup7sm3YxoNB755"
 
 var (
-	RequestCodeAddLog = coret.Hn("codeAddLog")
+	RequestCodeAddLog = coretypes.Hn("codeAddLog")
 )
 
 type logscEntryPoint func(ctx vmtypes.Sandbox)
 
-type logscProcessor map[coret.Hname]logscEntryPoint
+type logscProcessor map[coretypes.Hname]logscEntryPoint
 
 var entryPoints = logscProcessor{
 	RequestCodeAddLog: handleAddLogRequest,
@@ -29,7 +29,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (p logscProcessor) GetEntryPoint(code coret.Hname) (vmtypes.EntryPoint, bool) {
+func (p logscProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	ep, ok := p[code]
 	return ep, ok
 }

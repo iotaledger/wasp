@@ -2,8 +2,8 @@ package accountsc
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
-	"github.com/iotaledger/wasp/packages/coret/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -24,7 +24,7 @@ func TestBasic(t *testing.T) {
 
 var color = balance.Color(*hashing.HashStrings("dummy string"))
 
-func checkLedger(t *testing.T, state codec.MutableMustCodec, cp string) coret.ColoredBalances {
+func checkLedger(t *testing.T, state codec.MutableMustCodec, cp string) coretypes.ColoredBalances {
 	total := GetTotalAssets(state)
 	t.Logf("checkpoint '%s.%s':\n%s", curTest, cp, total.String())
 	require.NotPanics(t, func() {
@@ -42,7 +42,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 42,
 		color:             2,
@@ -83,7 +83,7 @@ func TestCreditDebit2(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 42,
 		color:             2,
@@ -118,7 +118,7 @@ func TestCreditDebit3(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 42,
 		color:             2,
@@ -151,7 +151,7 @@ func TestCreditDebit4(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 42,
 		color:             2,
@@ -167,7 +167,7 @@ func TestCreditDebit4(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 2, len(keys))
 
-	agentID2 := coret.NewRandomAgentID()
+	agentID2 := coretypes.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = cbalances.NewFromMap(map[balance.Color]int64{
@@ -209,7 +209,7 @@ func TestCreditDebit5(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 42,
 		color:             2,
@@ -225,7 +225,7 @@ func TestCreditDebit5(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 2, len(keys))
 
-	agentID2 := coret.NewRandomAgentID()
+	agentID2 := coretypes.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = cbalances.NewFromMap(map[balance.Color]int64{
@@ -259,7 +259,7 @@ func TestCreditDebit6(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 42,
 		color:             2,
@@ -267,7 +267,7 @@ func TestCreditDebit6(t *testing.T) {
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
-	agentID2 := coret.NewRandomAgentID()
+	agentID2 := coretypes.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer)
@@ -292,7 +292,7 @@ func TestCreditDebit7(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Len())
 
-	agentID1 := coret.NewRandomAgentID()
+	agentID1 := coretypes.NewRandomAgentID()
 	transfer := cbalances.NewFromMap(map[balance.Color]int64{
 		color: 2,
 	})

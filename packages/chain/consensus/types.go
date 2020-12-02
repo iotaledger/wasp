@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"sync"
@@ -38,7 +38,7 @@ type operator struct {
 	notificationsBacklog []*chain.NotifyReqMsg
 
 	// backlog of requests with all information
-	requests map[coret.RequestID]*request
+	requests map[coretypes.RequestID]*request
 
 	peerPermutation *util.Permutation16
 
@@ -53,7 +53,7 @@ type operator struct {
 
 	// data for concurrent access, from APIs mostly
 	concurrentAccessMutex sync.RWMutex
-	requestIdsProtected   map[coret.RequestID]bool
+	requestIdsProtected   map[coretypes.RequestID]bool
 }
 
 type leaderStatus struct {
@@ -75,7 +75,7 @@ type signedResult struct {
 // keeps stateTx of the request
 type request struct {
 	// id of the hash of request tx id and request block index
-	reqId coret.RequestID
+	reqId coretypes.RequestID
 	// from request message. nil if request message wasn't received yet
 	reqTx *sctransaction.Transaction
 	// time when request message was received by the operator
@@ -92,8 +92,8 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 	ret := &operator{
 		chain:               committee,
 		dkshare:             dkshare,
-		requests:            make(map[coret.RequestID]*request),
-		requestIdsProtected: make(map[coret.RequestID]bool),
+		requests:            make(map[coretypes.RequestID]*request),
+		requestIdsProtected: make(map[coretypes.RequestID]bool),
 		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
 		log:                 log.Named("c"),
 	}
@@ -139,10 +139,10 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	return h, true
 }
 
-func (op *operator) getFeeDestination() coret.AgentID {
+func (op *operator) getFeeDestination() coretypes.AgentID {
 	// TODO
 	// temporary to the chain owner's account
-	return coret.NewAgentIDFromContractID(coret.NewContractID(*op.chain.ID(), accountsc.Interface.Hname()))
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accountsc.Interface.Hname()))
 }
 
 func (op *operator) getMinimumReward() int64 {

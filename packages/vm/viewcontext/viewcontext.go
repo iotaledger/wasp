@@ -3,7 +3,7 @@ package viewcontext
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -19,7 +19,7 @@ import (
 type viewcontext struct {
 	processors *processors.ProcessorCache
 	state      buffered.BufferedKVStore
-	chainID    coret.ChainID
+	chainID    coretypes.ChainID
 }
 
 func New(chain chain.Chain) (*viewcontext, error) {
@@ -37,7 +37,7 @@ func New(chain chain.Chain) (*viewcontext, error) {
 	}, nil
 }
 
-func (v *viewcontext) CallView(contractHname coret.Hname, epCode coret.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	rec, err := root.FindContract(contractStateSubpartition(v.state, root.Interface.Hname()), contractHname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
@@ -62,9 +62,9 @@ func (v *viewcontext) CallView(contractHname coret.Hname, epCode coret.Hname, pa
 		return nil, fmt.Errorf("only view entry point can be called in this context")
 	}
 
-	return ep.CallView(newSandboxView(v, coret.NewContractID(v.chainID, contractHname), params))
+	return ep.CallView(newSandboxView(v, coretypes.NewContractID(v.chainID, contractHname), params))
 }
 
-func contractStateSubpartition(state kv.KVStore, contractHname coret.Hname) codec.ImmutableMustCodec {
+func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) codec.ImmutableMustCodec {
 	return codec.NewMustCodec(subrealm.New(state, kv.Key(contractHname.Bytes())))
 }

@@ -1,7 +1,7 @@
 package tokenregistry
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 )
@@ -10,10 +10,10 @@ func (tm *TokenMetadata) Read(r io.Reader) error {
 	if err := util.ReadInt64(r, &tm.Supply); err != nil {
 		return err
 	}
-	if err := coret.ReadAgentID(r, &tm.MintedBy); err != nil {
+	if err := coretypes.ReadAgentID(r, &tm.MintedBy); err != nil {
 		return err
 	}
-	if err := coret.ReadAgentID(r, &tm.Owner); err != nil {
+	if err := coretypes.ReadAgentID(r, &tm.Owner); err != nil {
 		return err
 	}
 	if err := util.ReadInt64(r, &tm.Created); err != nil {

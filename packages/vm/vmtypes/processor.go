@@ -4,7 +4,7 @@ package vmtypes
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -12,7 +12,7 @@ import (
 
 // Processor is a abstract interface to the VM processor instance.
 type Processor interface {
-	GetEntryPoint(code coret.Hname) (EntryPoint, bool)
+	GetEntryPoint(code coretypes.Hname) (EntryPoint, bool)
 	GetDescription() string
 }
 

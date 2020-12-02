@@ -3,7 +3,7 @@ package wasmtest
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
 	"time"
 
@@ -50,11 +50,11 @@ func TestLoadTrAndFaAndThenRunTrMint(t *testing.T) {
 	checkSuccess(err, t, "FairAuction has been created and activated")
 	_ = scFAChain
 
-	chidTR := (coret.ChainID)(*scTRAddr)
+	chidTR := (coretypes.ChainID)(*scTRAddr)
 	succ := waspapi.CheckDeployment(wasps.ApiHosts(), &chidTR)
 	assert.True(t, succ)
 
-	chidFA := (coret.ChainID)(*scFAAddr)
+	chidFA := (coretypes.ChainID)(*scFAAddr)
 	succ = waspapi.CheckDeployment(wasps.ApiHosts(), &chidFA)
 	assert.True(t, succ)
 

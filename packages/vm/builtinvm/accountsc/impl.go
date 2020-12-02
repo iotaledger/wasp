@@ -3,8 +3,8 @@ package accountsc
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
-	"github.com/iotaledger/wasp/packages/coret/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -163,8 +163,8 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	parCodec := codec.NewMustCodec(par)
 	parCodec.SetAgentID(ParamAgentID, moveTo)
 	if !ctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coret.NewContractID(targetChain, Interface.Hname()),
-		EntryPoint:       coret.Hn(FuncDeposit),
+		TargetContractID: coretypes.NewContractID(targetChain, Interface.Hname()),
+		EntryPoint:       coretypes.Hn(FuncDeposit),
 		Params:           par,
 		Transfer:         cbalances.NewFromMap(tokensToMove),
 	}) {

@@ -3,7 +3,7 @@ package chain
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
@@ -25,8 +25,8 @@ type RequestMsg struct {
 	Index uint16
 }
 
-func (reqMsg *RequestMsg) RequestId() *coret.RequestID {
-	ret := coret.NewRequestID(reqMsg.Transaction.ID(), reqMsg.Index)
+func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {
+	ret := coretypes.NewRequestID(reqMsg.Transaction.ID(), reqMsg.Index)
 	return &ret
 }
 

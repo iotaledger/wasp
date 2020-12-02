@@ -2,7 +2,7 @@ package jsonable
 
 import (
 	"encoding/json"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 )
@@ -12,7 +12,7 @@ type Address struct {
 }
 
 type ChainID struct {
-	chainID coret.ChainID
+	chainID coretypes.ChainID
 }
 
 func NewAddress(address *address.Address) *Address {
@@ -37,7 +37,7 @@ func (a Address) Address() *address.Address {
 	return &a.address
 }
 
-func NewChainID(chainID *coret.ChainID) *ChainID {
+func NewChainID(chainID *coretypes.ChainID) *ChainID {
 	return &ChainID{chainID: *chainID}
 }
 
@@ -50,11 +50,11 @@ func (a *ChainID) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	chainID, err := coret.NewChainIDFromBase58(s)
+	chainID, err := coretypes.NewChainIDFromBase58(s)
 	a.chainID = chainID
 	return err
 }
 
-func (a ChainID) ChainID() *coret.ChainID {
+func (a ChainID) ChainID() *coretypes.ChainID {
 	return &a.chainID
 }

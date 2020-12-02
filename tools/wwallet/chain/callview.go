@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -16,7 +16,7 @@ func callViewCmd(args []string) {
 	if len(args) < 2 {
 		check(fmt.Errorf("Usage: %s chain call-view <name> <funcname> [params]", os.Args[0]))
 	}
-	r, err := SCClient(coret.Hn(args[0])).CallView(args[1], encodeParams(args[2:]))
+	r, err := SCClient(coretypes.Hn(args[0])).CallView(args[1], encodeParams(args[2:]))
 	check(err)
 	check(json.NewEncoder(os.Stdout).Encode(r))
 }

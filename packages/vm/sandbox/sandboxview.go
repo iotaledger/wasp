@@ -3,7 +3,7 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -29,15 +29,15 @@ func (s sandboxView) State() codec.ImmutableMustCodec {
 	return codec.NewMustCodec(s.vmctx)
 }
 
-func (s sandboxView) MyBalances() coret.ColoredBalances {
+func (s sandboxView) MyBalances() coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 
-func (s sandboxView) Call(contractHname coret.Hname, entryPoint coret.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) MyContractID() coret.ContractID {
+func (s sandboxView) MyContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 

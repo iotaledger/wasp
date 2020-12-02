@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
-	"github.com/iotaledger/wasp/packages/coret/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
@@ -19,11 +19,11 @@ var (
 )
 
 // Call
-func (vmctx *VMContext) Call(contract coret.Hname, epCode coret.Hname, params codec.ImmutableCodec, transfer coret.ColoredBalances) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == coret.EntryPointInit &&
+	if epCode == coretypes.EntryPointInit &&
 		contract != root.Interface.Hname() &&
 		vmctx.CurrentContractHname() != root.Interface.Hname() {
 		return nil, fmt.Errorf("attempt to call init not from root contract")
@@ -91,7 +91,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 // mustDefaultHandleTokens:
 // - handles request token
 // - handles node fee, including fallback if not enough
-func (vmctx *VMContext) mustDefaultHandleTokens() (coret.ColoredBalances, error) {
+func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, error) {
 	transfer := vmctx.reqRef.RequestSection().Transfer()
 	reqColor := balance.Color(vmctx.reqRef.Tx.ID())
 

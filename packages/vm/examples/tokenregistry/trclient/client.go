@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
@@ -16,10 +16,10 @@ import (
 
 type TokenRegistryClient struct {
 	*chainclient.Client
-	contractHname coret.Hname
+	contractHname coretypes.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractHname coret.Hname) *TokenRegistryClient {
+func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *TokenRegistryClient {
 	return &TokenRegistryClient{scClient, contractHname}
 }
 

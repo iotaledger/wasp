@@ -3,7 +3,7 @@ package chain
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -51,7 +51,7 @@ func (msg *NotifyReqMsg) Read(r io.Reader) error {
 	if arrLen == 0 {
 		return nil
 	}
-	msg.RequestIDs = make([]coret.RequestID, arrLen)
+	msg.RequestIDs = make([]coretypes.RequestID, arrLen)
 	for i := range msg.RequestIDs {
 		_, err = r.Read(msg.RequestIDs[i][:])
 		if err != nil {
@@ -111,13 +111,13 @@ func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	msg.RequestIds = make([]coret.RequestID, size)
+	msg.RequestIds = make([]coretypes.RequestID, size)
 	for i := range msg.RequestIds {
 		if err := msg.RequestIds[i].Read(r); err != nil {
 			return err
 		}
 	}
-	if err := coret.ReadAgentID(r, &msg.FeeDestination); err != nil {
+	if err := coretypes.ReadAgentID(r, &msg.FeeDestination); err != nil {
 		return err
 	}
 	var err error

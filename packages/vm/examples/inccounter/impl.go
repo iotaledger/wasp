@@ -3,7 +3,7 @@ package inccounter
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -90,7 +90,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
-		if ctx.PostRequestToSelfWithDelay(coret.Hn(FuncIncCounter), nil, 5) {
+		if ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncCounter), nil, 5) {
 			ctx.Event("PostRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
 			ctx.Event("failed to PostRequestToSelfWithDelay RequestInc 5 sec")
@@ -125,7 +125,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	if ctx.PostRequestToSelfWithDelay(coret.Hn(FuncIncAndRepeatMany), nil, 1) {
+	if ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncAndRepeatMany), nil, 1) {
 		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
 		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
@@ -166,8 +166,8 @@ func spawn(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 
 	// increase counter in newly spawned contract
-	hname := coret.Hn(name)
-	_, err = ctx.Call(hname, coret.Hn(FuncIncCounter), nil, nil)
+	hname := coretypes.Hn(name)
+	_, err = ctx.Call(hname, coretypes.Hn(FuncIncCounter), nil, nil)
 	if err != nil {
 		return nil, err
 	}

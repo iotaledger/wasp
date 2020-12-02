@@ -1,7 +1,7 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -16,14 +16,14 @@ import (
 type Client struct {
 	NodeClient nodeclient.NodeClient
 	WaspClient *client.WaspClient
-	ChainID    coret.ChainID
+	ChainID    coretypes.ChainID
 	SigScheme  signaturescheme.SignatureScheme
 }
 
 func New(
 	nodeClient nodeclient.NodeClient,
 	waspClient *client.WaspClient,
-	chainID coret.ChainID,
+	chainID coretypes.ChainID,
 	sigScheme signaturescheme.SignatureScheme,
 ) *Client {
 	return &Client{
@@ -41,8 +41,8 @@ type PostRequestParams struct {
 }
 
 func (c *Client) PostRequest(
-	contractHname coret.Hname,
-	entryPoint coret.Hname,
+	contractHname coretypes.Hname,
+	entryPoint coretypes.Hname,
 	params ...PostRequestParams,
 ) (*sctransaction.Transaction, error) {
 	par := PostRequestParams{}
@@ -55,7 +55,7 @@ func (c *Client) PostRequest(
 		SenderSigScheme: c.SigScheme,
 		Mint:            par.Mint,
 		RequestSectionParams: []apilib.RequestSectionParams{{
-			TargetContractID: coret.NewContractID(c.ChainID, contractHname),
+			TargetContractID: coretypes.NewContractID(c.ChainID, contractHname),
 			EntryPointCode:   entryPoint,
 			Transfer:         par.Transfer,
 			Vars:             par.Args,

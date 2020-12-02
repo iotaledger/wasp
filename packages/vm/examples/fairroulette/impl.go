@@ -25,14 +25,14 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // implement Processor and EntryPoint interfaces
-type fairRouletteProcessor map[coret.Hname]fairRouletteEntryPoint
+type fairRouletteProcessor map[coretypes.Hname]fairRouletteEntryPoint
 
 type fairRouletteEntryPoint func(ctx vmtypes.Sandbox) error
 
@@ -42,14 +42,14 @@ const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 // constants for request codes
 var (
 	// request to place the bet
-	RequestPlaceBet = coret.Hn("placeBet")
+	RequestPlaceBet = coretypes.Hn("placeBet")
 	// request to lock the bets
-	RequestLockBets = coret.Hn("lockBets")
+	RequestLockBets = coretypes.Hn("lockBets")
 	// request to play and distribute
-	RequestPlayAndDistribute = coret.Hn("playAndDistribute")
+	RequestPlayAndDistribute = coretypes.Hn("playAndDistribute")
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
-	RequestSetPlayPeriod = coret.Hn("setPlayPeriod")
+	RequestSetPlayPeriod = coretypes.Hn("setPlayPeriod")
 )
 
 // the processor is a map of entry points
@@ -94,8 +94,8 @@ const (
 
 // BetInfo contains data of the bet
 type BetInfo struct {
-	Player coret.AgentID
-	reqId  coret.RequestID
+	Player coretypes.AgentID
+	reqId  coretypes.RequestID
 	Sum    int64
 	Color  byte
 }
@@ -111,7 +111,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (f fairRouletteProcessor) GetEntryPoint(code coret.Hname) (vmtypes.EntryPoint, bool) {
+func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	ep, ok := entryPoints[code]
 	return ep, ok
 }
@@ -253,7 +253,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := coret.NewAgentIDFromContractID(ctx.MyContractID())
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
 	if ctx.Caller() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
@@ -280,7 +280,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := coret.NewAgentIDFromContractID(ctx.MyContractID())
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
 	if ctx.Caller() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
@@ -349,7 +349,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		agent := coret.NewAgentIDFromContractID(ctx.MyContractID())
+		agent := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
 		if !ctx.Accounts().MoveBalance(agent, balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
@@ -391,7 +391,7 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
 func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
-	sumsByPlayers := make(map[coret.AgentID]int64)
+	sumsByPlayers := make(map[coretypes.AgentID]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
 		if _, ok := sumsByPlayers[bet.Player]; !ok {
@@ -409,7 +409,7 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	}
 
 	// make deterministic sequence by sorting. Eliminate possible rounding effects
-	seqPlayers := make([]coret.AgentID, 0, len(sumsByPlayers))
+	seqPlayers := make([]coretypes.AgentID, 0, len(sumsByPlayers))
 	resultSum := int64(0)
 	for player, sum := range sumsByPlayers {
 		seqPlayers = append(seqPlayers, player)
@@ -478,7 +478,7 @@ func (bi *BetInfo) Write(w io.Writer) error {
 
 func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
-	if err = coret.ReadAgentID(r, &bi.Player); err != nil {
+	if err = coretypes.ReadAgentID(r, &bi.Player); err != nil {
 		return err
 	}
 	if err = bi.reqId.Read(r); err != nil {
@@ -537,7 +537,7 @@ func (ps *PlayerStats) String() string {
 	return fmt.Sprintf("[bets: %d - wins: %d]", ps.Bets, ps.Wins)
 }
 
-func withPlayerStats(ctx vmtypes.Sandbox, player *coret.AgentID, f func(ps *PlayerStats)) error {
+func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
 	statsDict := ctx.State().GetMap(StateVarPlayerStats)
 	b := statsDict.GetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)

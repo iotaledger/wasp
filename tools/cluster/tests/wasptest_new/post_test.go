@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func deployInccounter42(t *testing.T, name string, counter int64) coret.ContractID {
-	hname := coret.Hn(name)
+func deployInccounter42(t *testing.T, name string, counter int64) coretypes.ContractID {
+	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash = inccounter.ProgramHash
 
@@ -68,15 +68,15 @@ func deployInccounter42(t *testing.T, name string, counter int64) coret.Contract
 	require.EqualValues(t, description, rec.Description)
 
 	expectCounter(t, hname, counter)
-	return coret.NewContractID(chain.ChainID, hname)
+	return coretypes.NewContractID(chain.ChainID, hname)
 }
 
-func expectCounter(t *testing.T, hname coret.Hname, counter int64) {
+func expectCounter(t *testing.T, hname coretypes.Hname, counter int64) {
 	c := getCounter(t, hname)
 	require.EqualValues(t, counter, c)
 }
 
-func getCounter(t *testing.T, hname coret.Hname) int64 {
+func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(hname),
 		"getCounter",
@@ -179,7 +179,7 @@ func TestPost5Requests(t *testing.T) {
 	testOwner := wallet.WithIndex(1)
 	mySigScheme := testOwner.SigScheme()
 	myAddress := testOwner.Address()
-	myAgentID := coret.NewAgentIDFromAddress(*myAddress)
+	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
@@ -216,7 +216,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	testOwner := wallet.WithIndex(1)
 	mySigScheme := testOwner.SigScheme()
 	myAddress := testOwner.Address()
-	myAgentID := coret.NewAgentIDFromAddress(*myAddress)
+	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
@@ -20,7 +20,7 @@ func addStateQueryEndpoint(server *echo.Echo) {
 }
 
 func handleStateQuery(c echo.Context) error {
-	chainID, err := coret.NewChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
@@ -46,7 +46,7 @@ func handleStateQuery(c echo.Context) error {
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  jsonable.NewValueTxID(&txid),
-		Requests:   make([]*coret.RequestID, len(batch.RequestIDs())),
+		Requests:   make([]*coretypes.RequestID, len(batch.RequestIDs())),
 	}
 	copy(ret.Requests, batch.RequestIDs())
 	vars := state.Variables().Codec()

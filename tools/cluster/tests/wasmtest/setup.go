@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -96,7 +96,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	return nil
 }
 
-func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*coret.ChainID, *address.Address, *balance.Color, error) {
+func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescription string) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
 	var err error
 	if *useWasp || !wasmLoaded {
 		fmt.Println("Using Wasp built-in instead of Rust Wasm")

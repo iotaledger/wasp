@@ -8,7 +8,7 @@ import (
 	"sort"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
@@ -41,12 +41,12 @@ type ImmutableCodec interface {
 	Get(key kv.Key) ([]byte, error)
 	GetString(key kv.Key) (string, bool, error)
 	GetInt64(key kv.Key) (int64, bool, error)
-	GetHname(key kv.Key) (coret.Hname, bool, error)
+	GetHname(key kv.Key) (coretypes.Hname, bool, error)
 	GetAddress(key kv.Key) (*address.Address, bool, error)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool, error)
-	GetChainID(key kv.Key) (*coret.ChainID, bool, error)
-	GetAgentID(key kv.Key) (*coret.AgentID, bool, error)
-	GetContractID(key kv.Key) (*coret.ContractID, bool, error)
+	GetChainID(key kv.Key) (*coretypes.ChainID, bool, error)
+	GetAgentID(key kv.Key) (*coretypes.AgentID, bool, error)
+	GetContractID(key kv.Key) (*coretypes.ContractID, bool, error)
 	GetColor(key kv.Key) (*balance.Color, bool, error)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error
@@ -62,12 +62,12 @@ type ImmutableMustCodec interface {
 	Get(key kv.Key) []byte
 	GetString(key kv.Key) (string, bool)
 	GetInt64(key kv.Key) (int64, bool)
-	GetHname(key kv.Key) (coret.Hname, bool)
+	GetHname(key kv.Key) (coretypes.Hname, bool)
 	GetAddress(key kv.Key) (*address.Address, bool)
 	GetHashValue(key kv.Key) (*hashing.HashValue, bool)
-	GetChainID(key kv.Key) (*coret.ChainID, bool)
-	GetAgentID(key kv.Key) (*coret.AgentID, bool)
-	GetContractID(key kv.Key) (*coret.ContractID, bool)
+	GetChainID(key kv.Key) (*coretypes.ChainID, bool)
+	GetAgentID(key kv.Key) (*coretypes.AgentID, bool)
+	GetContractID(key kv.Key) (*coretypes.ContractID, bool)
 	GetColor(key kv.Key) (*balance.Color, bool)
 	Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool)
 	IterateKeys(prefix kv.Key, f func(key kv.Key) bool)
@@ -85,12 +85,12 @@ type wCodec interface {
 	Set(key kv.Key, value []byte)
 	SetString(key kv.Key, value string)
 	SetInt64(key kv.Key, value int64)
-	SetHname(key kv.Key, value coret.Hname)
+	SetHname(key kv.Key, value coretypes.Hname)
 	SetAddress(key kv.Key, value *address.Address)
 	SetHashValue(key kv.Key, value *hashing.HashValue)
-	SetChainID(key kv.Key, value *coret.ChainID)
-	SetAgentID(key kv.Key, value *coret.AgentID)
-	SetContractID(key kv.Key, value *coret.ContractID)
+	SetChainID(key kv.Key, value *coretypes.ChainID)
+	SetAgentID(key kv.Key, value *coretypes.AgentID)
+	SetContractID(key kv.Key, value *coretypes.ContractID)
 	SetColor(key kv.Key, value *balance.Color)
 	Append(from ImmutableCodec) error
 }
@@ -300,19 +300,19 @@ func (c mustcodec) GetInt64(key kv.Key) (int64, bool) {
 	return ret, ok
 }
 
-func (c codec) GetHname(key kv.Key) (coret.Hname, bool, error) {
+func (c codec) GetHname(key kv.Key) (coretypes.Hname, bool, error) {
 	b, err := c.Get(key)
 	if err != nil || b == nil {
 		return 0, false, err
 	}
-	ret, err := coret.NewHnameFromBytes(b)
+	ret, err := coretypes.NewHnameFromBytes(b)
 	if err != nil {
 		return 0, false, err
 	}
 	return ret, true, nil
 }
 
-func (c mustcodec) GetHname(key kv.Key) (coret.Hname, bool) {
+func (c mustcodec) GetHname(key kv.Key) (coretypes.Hname, bool) {
 	ret, ok, err := c.codec.GetHname(key)
 	if err != nil {
 		panic(err)
@@ -324,7 +324,7 @@ func (c codec) SetInt64(key kv.Key, value int64) {
 	c.kv.Set(key, util.Uint64To8Bytes(uint64(value)))
 }
 
-func (c codec) SetHname(key kv.Key, value coret.Hname) {
+func (c codec) SetHname(key kv.Key, value coretypes.Hname) {
 	c.kv.Set(key, value.Bytes())
 }
 
@@ -374,17 +374,17 @@ func (c codec) SetHashValue(key kv.Key, h *hashing.HashValue) {
 	c.kv.Set(key, h[:])
 }
 
-func (c codec) GetChainID(key kv.Key) (*coret.ChainID, bool, error) {
+func (c codec) GetChainID(key kv.Key) (*coretypes.ChainID, bool, error) {
 	var b []byte
 	b, err := c.kv.Get(key)
 	if err != nil || b == nil {
 		return nil, false, err
 	}
-	ret, err := coret.NewChainIDFromBytes(b)
+	ret, err := coretypes.NewChainIDFromBytes(b)
 	return &ret, err == nil, err
 }
 
-func (c mustcodec) GetChainID(key kv.Key) (*coret.ChainID, bool) {
+func (c mustcodec) GetChainID(key kv.Key) (*coretypes.ChainID, bool) {
 	ret, ok, err := c.codec.GetChainID(key)
 	if err != nil {
 		panic(err)
@@ -392,21 +392,21 @@ func (c mustcodec) GetChainID(key kv.Key) (*coret.ChainID, bool) {
 	return ret, ok
 }
 
-func (c codec) SetChainID(key kv.Key, chid *coret.ChainID) {
+func (c codec) SetChainID(key kv.Key, chid *coretypes.ChainID) {
 	c.kv.Set(key, chid[:])
 }
 
-func (c codec) GetAgentID(key kv.Key) (*coret.AgentID, bool, error) {
+func (c codec) GetAgentID(key kv.Key) (*coretypes.AgentID, bool, error) {
 	var b []byte
 	b, err := c.kv.Get(key)
 	if err != nil || b == nil {
 		return nil, false, err
 	}
-	ret, err := coret.NewAgentIDFromBytes(b)
+	ret, err := coretypes.NewAgentIDFromBytes(b)
 	return &ret, err == nil, err
 }
 
-func (c mustcodec) GetAgentID(key kv.Key) (*coret.AgentID, bool) {
+func (c mustcodec) GetAgentID(key kv.Key) (*coretypes.AgentID, bool) {
 	ret, ok, err := c.codec.GetAgentID(key)
 	if err != nil {
 		panic(err)
@@ -414,21 +414,21 @@ func (c mustcodec) GetAgentID(key kv.Key) (*coret.AgentID, bool) {
 	return ret, ok
 }
 
-func (c codec) SetAgentID(key kv.Key, aid *coret.AgentID) {
+func (c codec) SetAgentID(key kv.Key, aid *coretypes.AgentID) {
 	c.kv.Set(key, aid[:])
 }
 
-func (c codec) GetContractID(key kv.Key) (*coret.ContractID, bool, error) {
+func (c codec) GetContractID(key kv.Key) (*coretypes.ContractID, bool, error) {
 	var b []byte
 	b, err := c.kv.Get(key)
 	if err != nil || b == nil {
 		return nil, false, err
 	}
-	ret, err := coret.NewContractIDFromBytes(b)
+	ret, err := coretypes.NewContractIDFromBytes(b)
 	return &ret, err == nil, err
 }
 
-func (c mustcodec) GetContractID(key kv.Key) (*coret.ContractID, bool) {
+func (c mustcodec) GetContractID(key kv.Key) (*coretypes.ContractID, bool) {
 	ret, ok, err := c.codec.GetContractID(key)
 	if err != nil {
 		panic(err)
@@ -436,7 +436,7 @@ func (c mustcodec) GetContractID(key kv.Key) (*coret.ContractID, bool) {
 	return ret, ok
 }
 
-func (c codec) SetContractID(key kv.Key, cid *coret.ContractID) {
+func (c codec) SetContractID(key kv.Key, cid *coretypes.ContractID) {
 	c.kv.Set(key, cid[:])
 }
 
@@ -503,11 +503,11 @@ func EncodeDictFromMap(vars map[string]interface{}) dict.Dict {
 			c.Set(key, vt.Bytes())
 		case *balance.Color:
 			c.SetColor(key, vt)
-		case *coret.ChainID:
+		case *coretypes.ChainID:
 			c.SetChainID(key, vt)
-		case *coret.ContractID:
+		case *coretypes.ContractID:
 			c.SetContractID(key, vt)
-		case *coret.AgentID:
+		case *coretypes.AgentID:
 			c.SetAgentID(key, vt)
 		default:
 			return nil

@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/tools/wwallet/config"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -32,8 +32,8 @@ func AddChainAlias(chainAlias string, id string) {
 	SetCurrentChain(chainAlias)
 }
 
-func GetCurrentChainID() coret.ChainID {
-	chid, err := coret.NewChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
+func GetCurrentChainID() coretypes.ChainID {
+	chid, err := coretypes.NewChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
 	check(err)
 	return chid
 }

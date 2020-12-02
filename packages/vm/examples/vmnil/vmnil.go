@@ -3,7 +3,7 @@
 package vmnil
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -17,7 +17,7 @@ func GetProcessor() vmtypes.Processor {
 	return nilProcessor{}
 }
 
-func (v nilProcessor) GetEntryPoint(_ coret.Hname) (vmtypes.EntryPoint, bool) {
+func (v nilProcessor) GetEntryPoint(_ coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	return v, true
 }
 

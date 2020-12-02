@@ -2,7 +2,7 @@ package accountsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -21,7 +21,7 @@ var (
 		Description: description,
 		ProgramHash: *hashing.HashStrings(fullName),
 	}
-	TotalAssetsAccountID = coret.NewAgentIDFromContractID(coret.NewContractID(coret.ChainID{}, Interface.Hname()))
+	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Interface.Hname()))
 )
 
 func init() {
@@ -61,6 +61,6 @@ func GetProcessor() vmtypes.Processor {
 	return Interface
 }
 
-func ChainOwnerAgentID(chainID coret.ChainID) coret.AgentID {
-	return coret.NewAgentIDFromContractID(coret.NewContractID(chainID, Interface.Hname()))
+func ChainOwnerAgentID(chainID coretypes.ChainID) coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, Interface.Hname()))
 }

@@ -6,7 +6,7 @@ package wasmhost
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -90,7 +90,7 @@ func (host *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (host *wasmProcessor) GetEntryPoint(code coret.Hname) (vmtypes.EntryPoint, bool) {
+func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	function, ok := host.codeToFunc[uint32(code)]
 	if !ok {
 		return nil, false
@@ -125,7 +125,7 @@ func (host *wasmProcessor) SetExport(index int32, functionName string) {
 		host.SetError("SetExport: duplicate function name")
 		return
 	}
-	hn := coret.Hn(functionName)
+	hn := coretypes.Hn(functionName)
 	host.LogText(functionName + " = " + hn.String())
 	hashedName := uint32(hn)
 	_, ok = host.codeToFunc[hashedName]
@@ -170,14 +170,14 @@ func (host *wasmProcessor) LogText(text string) {
 	fmt.Println(text)
 }
 
-func (host *wasmProcessor) MyBalances() coret.ColoredBalances {
+func (host *wasmProcessor) MyBalances() coretypes.ColoredBalances {
 	if host.ctx != nil {
 		return host.ctx.Accounts().MyBalances()
 	}
 	return host.ctxView.MyBalances()
 }
 
-func (host *wasmProcessor) MyContractID() coret.ContractID {
+func (host *wasmProcessor) MyContractID() coretypes.ContractID {
 	if host.ctx != nil {
 		return host.ctx.MyContractID()
 	}

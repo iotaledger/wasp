@@ -3,12 +3,12 @@ package apilib
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coret/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -16,8 +16,8 @@ import (
 )
 
 type RequestSectionParams struct {
-	TargetContractID coret.ContractID
-	EntryPointCode   coret.Hname
+	TargetContractID coretypes.ContractID
+	EntryPointCode   coretypes.Hname
 	Timelock         uint32
 	Transfer         map[balance.Color]int64 // should not not include request token. It is added automatically
 	Vars             dict.Dict

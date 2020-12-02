@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
@@ -33,7 +33,7 @@ func deployContractCmd(args []string) {
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return Client().PostRequest(
 			blob.Interface.Hname(),
-			coret.Hn(blob.FuncStoreBlob),
+			coretypes.Hn(blob.FuncStoreBlob),
 			chainclient.PostRequestParams{
 				Args: codec.EncodeDictFromMap(blobFieldValues),
 			},
@@ -45,7 +45,7 @@ func deployContractCmd(args []string) {
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return Client().PostRequest(
 			root.Interface.Hname(),
-			coret.Hn(root.FuncDeployContract),
+			coretypes.Hn(root.FuncDeployContract),
 			chainclient.PostRequestParams{
 				Args: codec.EncodeDictFromMap(map[string]interface{}{
 					root.ParamName:        name,

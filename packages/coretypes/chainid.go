@@ -1,4 +1,4 @@
-package coret
+package coretypes
 
 import (
 	"bytes"

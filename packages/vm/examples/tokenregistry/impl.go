@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -19,9 +19,9 @@ const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
 var (
-	RequestMintSupply        = coret.Hn("mintSupply")
-	RequestUpdateMetadata    = coret.Hn("updateMetadata")
-	RequestTransferOwnership = coret.Hn("transferOwnership")
+	RequestMintSupply        = coretypes.Hn("mintSupply")
+	RequestUpdateMetadata    = coretypes.Hn("updateMetadata")
+	RequestTransferOwnership = coretypes.Hn("transferOwnership")
 )
 
 const (
@@ -37,7 +37,7 @@ const (
 
 // implement Processor and EntryPoint interfaces
 
-type tokenRegistryProcessor map[coret.Hname]tokenRegistryEntryPoint
+type tokenRegistryProcessor map[coretypes.Hname]tokenRegistryEntryPoint
 
 type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox) error
 
@@ -51,12 +51,12 @@ var entryPoints = tokenRegistryProcessor{
 // TokenMetadata is a structure for one supply
 type TokenMetadata struct {
 	Supply      int64
-	MintedBy    coret.AgentID // originator
-	Owner       coret.AgentID // who can update metadata
-	Created     int64         // when created record
-	Updated     int64         // when recordt last updated
-	Description string        // any text
-	UserDefined []byte        // any other data (marshalled json etc)
+	MintedBy    coretypes.AgentID // originator
+	Owner       coretypes.AgentID // who can update metadata
+	Created     int64             // when created record
+	Updated     int64             // when recordt last updated
+	Description string            // any text
+	UserDefined []byte            // any other data (marshalled json etc)
 }
 
 // Point to link statically with the Wasp
@@ -64,7 +64,7 @@ func GetProcessor() vmtypes.Processor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code coret.Hname) (vmtypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }

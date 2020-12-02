@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/txutil"
 )
 
@@ -51,11 +51,11 @@ func (tx *Transaction) validateStateBlock(addr *address.Address) (bool, error) {
 
 // check correctness of the request tokens
 func (tx *Transaction) validateRequests(isOrigin bool) error {
-	newByTargetChain := make(map[coret.ChainID]int64)
+	newByTargetChain := make(map[coretypes.ChainID]int64)
 	tx.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
 		s := txutil.BalanceOfColor(bals, balance.ColorNew)
 		if s != 0 {
-			newByTargetChain[(coret.ChainID)(addr)] = s
+			newByTargetChain[(coretypes.ChainID)(addr)] = s
 		}
 		return true
 	})

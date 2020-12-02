@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 
 	"github.com/iotaledger/wasp/client/jsonable"
@@ -23,7 +23,7 @@ func (c *WaspClient) PutChainRecord(bd *registry.ChainRecord) error {
 }
 
 // GetChainRecord calls node to get ChainRecord record by address
-func (c *WaspClient) GetChainRecord(chainid coret.ChainID) (*registry.ChainRecord, error) {
+func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry.ChainRecord, error) {
 	res := &jsonable.ChainRecord{}
 	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+GetChainRecordRoute(chainid.String()), nil, res); err != nil {
 		return nil, err

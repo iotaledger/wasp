@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -19,7 +19,7 @@ func addStateEndpoints(adm *echo.Group) {
 }
 
 func handleDumpSCState(c echo.Context) error {
-	scid, err := coret.NewContractIDFromBase58(c.Param("scid"))
+	scid, err := coretypes.NewContractIDFromBase58(c.Param("scid"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("scid")))
 	}

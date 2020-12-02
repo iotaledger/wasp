@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -30,7 +30,7 @@ func GenerateDistributedKey(
 	timeout time.Duration,
 	suite kyber.Group,
 	netProvider CoordNodeProvider,
-) (*coret.ChainID, *kyber.Point, error) {
+) (*coretypes.ChainID, *kyber.Point, error) {
 	var err error
 	var dkgID string = address.Random().String()
 	//
@@ -117,8 +117,8 @@ func GenerateDistributedKey(
 		}
 		signatures = append(signatures, pubKeyResponses[i].Signature)
 	}
-	var generatedChainID coret.ChainID
-	if generatedChainID, err = coret.NewChainIDFromBytes(chainIDBytes); err != nil {
+	var generatedChainID coretypes.ChainID
+	if generatedChainID, err = coretypes.NewChainIDFromBytes(chainIDBytes); err != nil {
 		return nil, nil, err
 	}
 	sharedPublic := suite.Point()

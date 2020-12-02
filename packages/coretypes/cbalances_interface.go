@@ -1,4 +1,4 @@
-package coret
+package coretypes
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"

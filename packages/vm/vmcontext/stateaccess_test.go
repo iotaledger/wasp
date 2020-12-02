@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/assert"
@@ -13,11 +13,11 @@ import (
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	chainID := coret.ChainID{1, 3, 3, 7}
+	chainID := coretypes.ChainID{1, 3, 3, 7}
 
 	virtualState := state.NewVirtualState(db, &chainID)
 	stateUpdate := state.NewStateUpdate(nil)
-	hname := coret.Hn("test")
+	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)
 
@@ -62,11 +62,11 @@ func TestSetThenGet(t *testing.T) {
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	chainID := coret.ChainID{1, 3, 3, 7}
+	chainID := coretypes.ChainID{1, 3, 3, 7}
 
 	virtualState := state.NewVirtualState(db, &chainID)
 	stateUpdate := state.NewStateUpdate(nil)
-	hname := coret.Hn("test")
+	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)
 

@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -30,7 +30,7 @@ type chainObj struct {
 	dismissOnce                  sync.Once
 	onActivation                 func()
 	//
-	chainID         coret.ChainID
+	chainID         coretypes.ChainID
 	procset         *processors.ProcessorCache
 	color           balance.Color
 	peers           []*peering.Peer
@@ -83,7 +83,7 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation
 		peers:        make([]*peering.Peer, 0),
 		onActivation: onActivation,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ coret.RequestID))(params[0].(coret.RequestID))
+			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
 		log: log.Named(util.Short(chr.ChainID.String())),
 	}

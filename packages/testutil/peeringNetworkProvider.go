@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
@@ -87,7 +87,7 @@ type peeringMsg struct {
 type peeringCb struct {
 	callback func(from peering.PeerSender, msg *peering.PeerMessage) // Receive callback.
 	destNP   *peeringNetworkProvider                                 // Destination node.
-	chainID  coret.ChainID                                           // Only listen for specific chain msgs.
+	chainID  coretypes.ChainID                                       // Only listen for specific chain msgs.
 }
 
 func newPeeringNode(location string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
@@ -170,7 +170,7 @@ func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvide
 
 // Attach implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Attach(
-	chainID coret.ChainID,
+	chainID coretypes.ChainID,
 	callback func(from peering.PeerSender, msg *peering.PeerMessage),
 ) {
 	p.self.recvCbs = append(p.self.recvCbs, &peeringCb{

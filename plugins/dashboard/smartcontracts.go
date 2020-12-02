@@ -3,7 +3,7 @@ package dashboard
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -45,7 +45,7 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 	})
 
 	e.GET(scRoute, func(c echo.Context) error {
-		cid, err := coret.NewContractIDFromBase58(c.Param("address"))
+		cid, err := coretypes.NewContractIDFromBase58(c.Param("address"))
 		if err != nil {
 			return err
 		}

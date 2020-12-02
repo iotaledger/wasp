@@ -4,16 +4,16 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 type ContractEventPublisher struct {
-	contractID coret.ContractID
+	contractID coretypes.ContractID
 	log        *logger.Logger
 }
 
-func NewContractEventPublisher(contractID coret.ContractID, log *logger.Logger) ContractEventPublisher {
+func NewContractEventPublisher(contractID coretypes.ContractID, log *logger.Logger) ContractEventPublisher {
 	return ContractEventPublisher{
 		contractID: contractID,
 		log:        log,

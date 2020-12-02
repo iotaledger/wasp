@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"go.dedis.ch/kyber/v3"
@@ -23,12 +23,12 @@ import (
 // Stands for a DKG procedure instance on a particular node.
 //
 type proc struct {
-	dkgID                    string        // DKG procedure ID we are participating in.
-	chainID                  coret.ChainID // Same as dkgID, just parsed.
-	dkShare                  *DKShare      // This will be generated as a result of this procedure.
-	step                     string        // The current step.
-	node                     *node         // DKG node we are running in.
-	nodeIndex                int           // Index of this node.
+	dkgID                    string            // DKG procedure ID we are participating in.
+	chainID                  coretypes.ChainID // Same as dkgID, just parsed.
+	dkShare                  *DKShare          // This will be generated as a result of this procedure.
+	step                     string            // The current step.
+	node                     *node             // DKG node we are running in.
+	nodeIndex                int               // Index of this node.
 	nodeLoc                  string
 	peerLocs                 []string
 	peerPubs                 []kyber.Point
@@ -61,8 +61,8 @@ type peerMsgCh struct { // Only for communicating with the main thread.
 
 func onCoordInit(dkgID string, msg *InitReq, node *node) (*proc, error) {
 	var err error
-	var chainID coret.ChainID
-	if chainID, err = coret.NewChainIDFromBase58(dkgID); err != nil {
+	var chainID coretypes.ChainID
+	if chainID, err = coretypes.NewChainIDFromBase58(dkgID); err != nil {
 		return nil, err
 	}
 	var peerPubs []kyber.Point

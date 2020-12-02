@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
@@ -15,7 +15,7 @@ func postRequestCmd(args []string) {
 		check(fmt.Errorf("Usage: %s chain post-request <name> <funcname> [params]", os.Args[0]))
 	}
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
-		return SCClient(coret.Hn(args[0])).PostRequest(
+		return SCClient(coretypes.Hn(args[0])).PostRequest(
 			args[1],
 			chainclient.PostRequestParams{
 				Args: encodeParams(args[2:]),

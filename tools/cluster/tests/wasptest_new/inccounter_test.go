@@ -3,7 +3,7 @@ package wasptest
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -17,7 +17,7 @@ import (
 const incName = "inccounter"
 const incDescription = "IncCounter, a PoC smart contract"
 
-var incHname = coret.Hn(incName)
+var incHname = coretypes.Hn(incName)
 
 func checkCounter(t *testing.T, expected int) bool {
 	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
@@ -78,7 +78,7 @@ func TestInc5xNothing(t *testing.T) {
 func testNothing(t *testing.T, numRequests int) {
 	setupAndLoad(t, incName, incDescription, numRequests, nil)
 
-	entryPoint := coret.Hn("nothing")
+	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
 		tx, err := client.PostRequest(incHname, entryPoint)
 		check(err, t)
@@ -133,7 +133,7 @@ func TestInc5xIncrement(t *testing.T) {
 func testIncrement(t *testing.T, numRequests int) {
 	setupAndLoad(t, incName, incDescription, numRequests, nil)
 
-	entryPoint := coret.Hn("increment")
+	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
 		tx, err := client.PostRequest(incHname, entryPoint)
 		check(err, t)
@@ -187,7 +187,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 		t.Fail()
 	}
 
-	entryPoint := coret.Hn("increment")
+	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 42, nil)
 
 	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-42, map[balance.Color]int64{
@@ -201,15 +201,15 @@ func TestIncrementWithTransfer(t *testing.T) {
 	}, "chain after") {
 		t.Fail()
 	}
-	agentID := coret.NewAgentIDFromContractID(coret.NewContractID(chain.ChainID, incHname))
+	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, incHname))
 	actual := getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
-	agentID = coret.NewAgentIDFromAddress(*scOwnerAddr)
+	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 1, actual) // 1 request sent
 
-	agentID = coret.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 3, actual) // 2 requests sent
 
@@ -219,7 +219,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 func TestIncCallIncrement1(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coret.Hn("incrementCallIncrement")
+	entryPoint := coretypes.Hn("incrementCallIncrement")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 2)
@@ -228,7 +228,7 @@ func TestIncCallIncrement1(t *testing.T) {
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coret.Hn("incrementCallIncrementRecurse5x")
+	entryPoint := coretypes.Hn("incrementCallIncrementRecurse5x")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 6)
@@ -237,7 +237,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 func TestIncPostIncrement(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 3, nil)
 
-	entryPoint := coret.Hn("incrementPostIncrement")
+	entryPoint := coretypes.Hn("incrementPostIncrement")
 	postRequest(t, incHname, entryPoint, 1, nil)
 
 	checkCounter(t, 2)
@@ -247,7 +247,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
 	setupAndLoad(t, incName, incDescription, numRepeats+2, nil)
 
-	entryPoint := coret.Hn("incrementRepeatMany")
+	entryPoint := coretypes.Hn("incrementRepeatMany")
 	postRequest(t, incHname, entryPoint, numRepeats, map[string]interface{}{
 		inccounter.VarNumRepeats: numRepeats,
 	})
@@ -263,32 +263,32 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 func TestIncLocalStateInternalCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coret.Hn("incrementLocalStateInternalCall")
+	entryPoint := coretypes.Hn("incrementLocalStateInternalCall")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coret.Hn("incrementLocalStateSandboxCall")
+	entryPoint := coretypes.Hn("incrementLocalStateSandboxCall")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 5, nil)
-	entryPoint := coret.Hn("incrementLocalStatePost")
+	entryPoint := coretypes.Hn("incrementLocalStatePost")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)
 }
 
 func TestIncViewCounter(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coret.Hn("increment")
+	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 1)
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(coret.Hn(incName)),
+		chain.ContractID(coretypes.Hn(incName)),
 		"incrementViewCounter",
 		nil,
 	)

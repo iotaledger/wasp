@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type ContractInterface struct {
 	Name        string
-	hname       coret.Hname
+	hname       coretypes.Hname
 	Description string
 	ProgramHash hashing.HashValue
-	Functions   map[coret.Hname]ContractFunctionInterface
+	Functions   map[coretypes.Hname]ContractFunctionInterface
 }
 
 type ContractFunctionInterface struct {
@@ -23,9 +23,9 @@ type ContractFunctionInterface struct {
 	ViewHandler ViewHandler
 }
 
-func Funcs(init Handler, fns []ContractFunctionInterface) map[coret.Hname]ContractFunctionInterface {
-	ret := map[coret.Hname]ContractFunctionInterface{
-		coret.EntryPointInit: Func("init", init),
+func Funcs(init Handler, fns []ContractFunctionInterface) map[coretypes.Hname]ContractFunctionInterface {
+	ret := map[coretypes.Hname]ContractFunctionInterface{
+		coretypes.EntryPointInit: Func("init", init),
 	}
 	for _, f := range fns {
 		if _, ok := ret[f.Hname()]; ok {
@@ -70,11 +70,11 @@ func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunction
 }
 
 func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface, bool) {
-	f, ok := i.Functions[coret.Hn(name)]
+	f, ok := i.Functions[coretypes.Hn(name)]
 	return &f, ok
 }
 
-func (i *ContractInterface) GetEntryPoint(code coret.Hname) (vmtypes.EntryPoint, bool) {
+func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := i.Functions[code]
 	return &f, ok
 }
@@ -83,15 +83,15 @@ func (i *ContractInterface) GetDescription() string {
 	return i.Description
 }
 
-func (i *ContractInterface) Hname() coret.Hname {
+func (i *ContractInterface) Hname() coretypes.Hname {
 	if i.hname == 0 {
-		i.hname = coret.Hn(i.Name)
+		i.hname = coretypes.Hn(i.Name)
 	}
 	return i.hname
 }
 
-func (f *ContractFunctionInterface) Hname() coret.Hname {
-	return coret.Hn(f.Name)
+func (f *ContractFunctionInterface) Hname() coretypes.Hname {
+	return coretypes.Hn(f.Name)
 }
 
 func (f *ContractFunctionInterface) WithGasLimit(_ int) vmtypes.EntryPoint {

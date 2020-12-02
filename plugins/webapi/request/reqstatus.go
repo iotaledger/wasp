@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
@@ -58,7 +58,7 @@ func handleWaitRequestProcessed(c echo.Context) error {
 
 	// subscribe to event
 	requestProcessed := make(chan bool)
-	handler := events.NewClosure(func(rid coret.RequestID) {
+	handler := events.NewClosure(func(rid coretypes.RequestID) {
 		if rid == *reqId {
 			requestProcessed <- true
 		}
@@ -78,8 +78,8 @@ func handleWaitRequestProcessed(c echo.Context) error {
 	}
 }
 
-func parseParams(c echo.Context) (chain.Chain, *coret.RequestID, error) {
-	chainId, err := coret.NewChainIDFromBase58(c.Param("chainId"))
+func parseParams(c echo.Context) (chain.Chain, *coretypes.RequestID, error) {
+	chainId, err := coretypes.NewChainIDFromBase58(c.Param("chainId"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid chain ID %+v: %s", c.Param("chainId"), err.Error()))
 	}
@@ -87,7 +87,7 @@ func parseParams(c echo.Context) (chain.Chain, *coret.RequestID, error) {
 	if chain == nil {
 		return nil, nil, httperrors.NotFound(fmt.Sprintf("Chain not found: %+v", chainId.String()))
 	}
-	reqId, err := coret.NewRequestIDFromBase58(c.Param("reqId"))
+	reqId, err := coretypes.NewRequestIDFromBase58(c.Param("reqId"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqId"), err.Error()))
 	}

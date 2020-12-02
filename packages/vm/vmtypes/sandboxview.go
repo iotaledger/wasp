@@ -3,7 +3,7 @@
 package vmtypes
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -11,11 +11,11 @@ import (
 type SandboxView interface {
 	Params() codec.ImmutableCodec
 	State() codec.ImmutableMustCodec
-	MyBalances() coret.ColoredBalances
+	MyBalances() coretypes.ColoredBalances
 	// only calls view entry points
-	Call(contractHname coret.Hname, entryPoint coret.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
+	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error)
 
-	MyContractID() coret.ContractID
+	MyContractID() coretypes.ContractID
 	Event(msg string)
 	Eventf(format string, args ...interface{})
 }

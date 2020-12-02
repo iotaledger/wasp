@@ -5,12 +5,12 @@ package wasmhost
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 type ScTransfer struct {
 	MapObject
-	agent  coret.AgentID
+	agent  coretypes.AgentID
 	amount int64
 	color  balance.Color
 }
@@ -42,7 +42,7 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 	var err error
 	switch keyId {
 	case KeyAgent:
-		o.agent, err = coret.NewAgentIDFromBytes(value)
+		o.agent, err = coretypes.NewAgentIDFromBytes(value)
 		if err != nil {
 			panic("Invalid agent: " + err.Error())
 		}
@@ -59,7 +59,7 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 func (o *ScTransfer) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		o.agent = coret.AgentID{}
+		o.agent = coretypes.AgentID{}
 		o.color = balance.ColorIOTA
 		o.amount = 0
 	case KeyAmount:

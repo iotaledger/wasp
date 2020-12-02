@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -79,7 +79,7 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 	return nil
 }
 
-func postRequest(t *testing.T, contract coret.Hname, entryPoint coret.Hname, tokens int, params map[string]interface{}) {
+func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, tokens int, params map[string]interface{}) {
 	var transfer map[balance.Color]int64
 	if tokens != 0 {
 		transfer = map[balance.Color]int64{
@@ -89,7 +89,7 @@ func postRequest(t *testing.T, contract coret.Hname, entryPoint coret.Hname, tok
 	postRequestFull(t, contract, entryPoint, transfer, params)
 }
 
-func postRequestFull(t *testing.T, contract coret.Hname, entryPoint coret.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
+func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
 	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
 		Transfer: transfer,
 		Args:     codec.EncodeDictFromMap(params),

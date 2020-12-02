@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
-func (m *MultiClient) WaitUntilRequestProcessed(chainId *coret.ChainID, reqId *coret.RequestID, timeout time.Duration) error {
+func (m *MultiClient) WaitUntilRequestProcessed(chainId *coretypes.ChainID, reqId *coretypes.RequestID, timeout time.Duration) error {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 

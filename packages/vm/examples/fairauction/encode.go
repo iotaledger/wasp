@@ -1,7 +1,7 @@
 package fairauction
 
 import (
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 )
@@ -67,7 +67,7 @@ func (ai *AuctionInfo) Read(r io.Reader) error {
 	if err = util.ReadInt64(r, &ai.DurationMinutes); err != nil {
 		return err
 	}
-	if err = coret.ReadAgentID(r, &ai.AuctionOwner); err != nil {
+	if err = coretypes.ReadAgentID(r, &ai.AuctionOwner); err != nil {
 		return err
 	}
 	if err = util.ReadInt64(r, &ai.TotalDeposit); err != nil {
@@ -107,7 +107,7 @@ func (bi *BidInfo) Read(r io.Reader) error {
 	if err := util.ReadInt64(r, &bi.Total); err != nil {
 		return err
 	}
-	if err := coret.ReadAgentID(r, &bi.Bidder); err != nil {
+	if err := coretypes.ReadAgentID(r, &bi.Bidder); err != nil {
 		return err
 	}
 	if err := util.ReadInt64(r, &bi.When); err != nil {

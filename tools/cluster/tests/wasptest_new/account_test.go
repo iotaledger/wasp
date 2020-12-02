@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
@@ -34,7 +34,7 @@ func TestBasicAccounts(t *testing.T) {
 	check(err, t)
 
 	name := "inncounter1"
-	hname := coret.Hn(name)
+	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
 	check(err, t)
@@ -90,7 +90,7 @@ func TestBasicAccounts(t *testing.T) {
 
 	transferIotas := int64(42)
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
-	reqTx, err := chClient.PostRequest(hname, coret.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
+	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: map[balance.Color]int64{balance.ColorIOTA: transferIotas},
 	})
 	check(err, t)
@@ -115,15 +115,15 @@ func TestBasicAccounts(t *testing.T) {
 	}, "chain after") {
 		t.Fail()
 	}
-	agentID := coret.NewAgentIDFromContractID(coret.NewContractID(chain.ChainID, hname))
+	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, hname))
 	actual := getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
-	agentID = coret.NewAgentIDFromAddress(*scOwnerAddr)
+	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 1, actual) // 1 request sent
 
-	agentID = coret.NewAgentIDFromAddress(*chain.OriginatorAddress())
+	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 2, actual) // 1 request sent
 }
@@ -145,7 +145,7 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 
 	name := "inncounter1"
-	hname := coret.Hn(name)
+	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
 	check(err, t)
@@ -214,7 +214,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	transferIotas := int64(42)
 	myWalletClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
-	reqTx, err := myWalletClient.PostRequest(hname, coret.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
+	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: map[balance.Color]int64{balance.ColorIOTA: transferIotas},
 	})
 	check(err, t)
@@ -246,17 +246,17 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 	// verify and print chain accounts
 	s := "\n"
-	agentID := coret.NewAgentIDFromContractID(coret.NewContractID(chain.ChainID, hname))
+	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, hname))
 	s += fmt.Sprintf("contract: %s\n", agentID.String())
 	actual := getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
-	agentID = coret.NewAgentIDFromAddress(*myWalletAddr)
+	agentID = coretypes.NewAgentIDFromAddress(*myWalletAddr)
 	s += fmt.Sprintf("scOwner: %s\n", agentID.String())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 1, actual) // 1 request sent, 1 iota from request
 
-	agentID = coret.NewAgentIDFromAddress(*originatorAddress)
+	agentID = coretypes.NewAgentIDFromAddress(*originatorAddress)
 	s += fmt.Sprintf("originator: %s\n\n", agentID.String())
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 2, actual) // 1 request + 1 chain
@@ -266,7 +266,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
 	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.PostRequest(accountsc.Interface.Hname(), coret.Hn(accountsc.FuncWithdraw))
+	reqTx2, err := originatorClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw))
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)
@@ -277,7 +277,7 @@ func TestBasic2Accounts(t *testing.T) {
 	printAccounts(t, chain, "withdraw after")
 
 	// must remain 0 on chain
-	agentID = coret.NewAgentIDFromAddress(*originatorAddress)
+	agentID = coretypes.NewAgentIDFromAddress(*originatorAddress)
 	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 

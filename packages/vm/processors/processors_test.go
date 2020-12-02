@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +22,6 @@ func TestBasic(t *testing.T) {
 	_, exists := rootproc.GetEntryPoint(0)
 	assert.False(t, exists)
 
-	_, exists = rootproc.GetEntryPoint(coret.Hn(root.FuncDeployContract))
+	_, exists = rootproc.GetEntryPoint(coretypes.Hn(root.FuncDeployContract))
 	assert.True(t, exists)
 }

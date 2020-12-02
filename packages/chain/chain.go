@@ -3,7 +3,7 @@ package chain
 import (
 	"fmt"
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -13,7 +13,7 @@ import (
 )
 
 type Chain interface {
-	ID() *coret.ChainID
+	ID() *coretypes.ChainID
 	Color() *balance.Color
 	Size() uint16
 	Quorum() uint16
@@ -32,7 +32,7 @@ type Chain interface {
 	Dismiss()
 	IsDismissed() bool
 	// requests
-	GetRequestProcessingStatus(*coret.RequestID) RequestProcessingStatus
+	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
 	// chain processors
 	Processors() *processors.ProcessorCache
@@ -80,7 +80,7 @@ type Operator interface {
 	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)
 	EventTimerMsg(TimerTick)
 	//
-	IsRequestInBacklog(*coret.RequestID) bool
+	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
 var ConstructorNew func(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) Chain

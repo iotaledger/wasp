@@ -2,17 +2,17 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract coret.Hname, params codec.ImmutableCodec, transfer coret.ColoredBalances) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) error {
 	if transfer != nil {
-		agentID := coret.NewAgentIDFromContractID(coret.NewContractID(vmctx.ChainID(), contract))
+		agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), contract))
 		if len(vmctx.callStack) == 0 {
 			vmctx.creditToAccount(agentID, transfer)
 		} else {
-			fromAgentID := coret.NewAgentIDFromContractID(coret.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname()))
+			fromAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname()))
 			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
 				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
 			}
@@ -22,15 +22,15 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coret.Hname, params
 	return nil
 }
 
-func (vmctx *VMContext) pushCallContext(contract coret.Hname, params codec.ImmutableCodec, transfer coret.ColoredBalances) {
+func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) {
 	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
-	var caller coret.AgentID
+	var caller coretypes.AgentID
 	isRequestContext := len(vmctx.callStack) == 0
 	if isRequestContext {
 		// request context
 		caller = vmctx.reqRef.SenderAgentID()
 	} else {
-		caller = coret.NewAgentIDFromContractID(vmctx.CurrentContractID())
+		caller = coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
 	}
 	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	vmctx.callStack = append(vmctx.callStack, &callContext{

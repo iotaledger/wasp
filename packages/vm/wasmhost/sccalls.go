@@ -5,8 +5,8 @@ package wasmhost
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
-	"github.com/iotaledger/wasp/packages/coret/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -54,9 +54,9 @@ func (o *ScCallInfo) Invoke() {
 	o.vm.Trace("CALL c'%s' f'%s'", o.contract, o.function)
 	contractCode := o.vm.MyContractID().Hname()
 	if o.contract != "" {
-		contractCode = coret.Hn(o.contract)
+		contractCode = coretypes.Hn(o.contract)
 	}
-	functionCode := coret.Hn(o.function)
+	functionCode := coretypes.Hn(o.function)
 	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
 	params := o.vm.FindObject(paramsId).(*ScCallParams).Params
 	params.ForEach(func(key kv.Key, value []byte) bool {
@@ -110,7 +110,7 @@ func (o *ScCallInfo) SetString(keyId int32, value string) {
 
 type ScPostInfo struct {
 	MapObject
-	chainId  *coret.ChainID
+	chainId  *coretypes.ChainID
 	contract string
 	delay    uint32
 	function string
@@ -153,9 +153,9 @@ func (o *ScPostInfo) Invoke() {
 	}
 	contractCode := o.vm.MyContractID().Hname()
 	if o.contract != "" {
-		contractCode = coret.Hn(o.contract)
+		contractCode = coretypes.Hn(o.contract)
 	}
-	functionCode := coret.Hn(o.function)
+	functionCode := coretypes.Hn(o.function)
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
@@ -169,7 +169,7 @@ func (o *ScPostInfo) Invoke() {
 	transfers := o.vm.FindObject(transfersId).(*ScCallTransfers).Transfers
 	balances := cbalances.NewFromMap(transfers)
 	if !o.vm.ctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coret.NewContractID(chainId, contractCode),
+		TargetContractID: coretypes.NewContractID(chainId, contractCode),
 		EntryPoint:       functionCode,
 		Params:           params,
 		Timelock:         util.NanoSecToUnixSec(o.vm.ctx.GetTimestamp()) + o.delay,
@@ -182,7 +182,7 @@ func (o *ScPostInfo) Invoke() {
 func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case KeyChain:
-		chainId, err := coret.NewChainIDFromBytes(value)
+		chainId, err := coretypes.NewChainIDFromBytes(value)
 		if err != nil {
 			o.Error(err.Error())
 			return
@@ -261,9 +261,9 @@ func (o *ScViewInfo) Invoke() {
 	o.vm.Trace("VIEW c'%s' f'%s'", o.contract, o.function)
 	contractCode := o.vm.MyContractID().Hname()
 	if o.contract != "" {
-		contractCode = coret.Hn(o.contract)
+		contractCode = coretypes.Hn(o.contract)
 	}
-	functionCode := coret.Hn(o.function)
+	functionCode := coretypes.Hn(o.function)
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {

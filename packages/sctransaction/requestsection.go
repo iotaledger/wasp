@@ -2,13 +2,13 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coret/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"io"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -24,11 +24,11 @@ type RequestSection struct {
 	// senderAddress contract index
 	// - if state block present, it is hname of the sending contract in the chain of which state transaction it is
 	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
-	senderContractHname coret.Hname
+	senderContractHname coretypes.Hname
 	// ID of the target smart contract
-	targetContractID coret.ContractID
+	targetContractID coretypes.ContractID
 	// entry point code
-	entryPoint coret.Hname
+	entryPoint coretypes.Hname
 	// timelock in Unix seconds.
 	// Request will only be processed when time reaches
 	// specified moment. It is guaranteed that timestamp of the state transaction which
@@ -38,7 +38,7 @@ type RequestSection struct {
 	// input arguments in the form of variable/value pairs
 	args dict.Dict
 	// all tokens transferred with the request EXCEPT the 1 minted request token
-	transfer coret.ColoredBalances
+	transfer coretypes.ColoredBalances
 }
 
 type RequestRef struct {
@@ -47,7 +47,7 @@ type RequestRef struct {
 }
 
 // RequestSection creates new request block
-func NewRequestSection(senderContractHname coret.Hname, targetContract coret.ContractID, entryPointCode coret.Hname) *RequestSection {
+func NewRequestSection(senderContractHname coretypes.Hname, targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
 	return &RequestSection{
 		senderContractHname: senderContractHname,
 		targetContractID:    targetContract,
@@ -58,7 +58,7 @@ func NewRequestSection(senderContractHname coret.Hname, targetContract coret.Con
 }
 
 // NewRequestSectionByWallet same as NewRequestSection but assumes senderAddress index is 0
-func NewRequestSectionByWallet(targetContract coret.ContractID, entryPointCode coret.Hname) *RequestSection {
+func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
 	return NewRequestSection(0, targetContract, entryPointCode)
 }
 
@@ -78,11 +78,11 @@ func (req *RequestSection) Clone() *RequestSection {
 	return ret
 }
 
-func (req *RequestSection) SenderContractHname() coret.Hname {
+func (req *RequestSection) SenderContractHname() coretypes.Hname {
 	return req.senderContractHname
 }
 
-func (req *RequestSection) Target() coret.ContractID {
+func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
@@ -97,7 +97,7 @@ func (req *RequestSection) Args() codec.ImmutableCodec {
 	return codec.NewCodec(req.args)
 }
 
-func (req *RequestSection) EntryPointCode() coret.Hname {
+func (req *RequestSection) EntryPointCode() coretypes.Hname {
 	return req.entryPoint
 }
 
@@ -105,7 +105,7 @@ func (req *RequestSection) Timelock() uint32 {
 	return req.timelock
 }
 
-func (req *RequestSection) Transfer() coret.ColoredBalances {
+func (req *RequestSection) Transfer() coretypes.ColoredBalances {
 	return req.transfer
 }
 
@@ -114,7 +114,7 @@ func (req *RequestSection) WithTimelock(tl uint32) *RequestSection {
 	return req
 }
 
-func (req *RequestSection) WithTransfer(transfer coret.ColoredBalances) *RequestSection {
+func (req *RequestSection) WithTransfer(transfer coretypes.ColoredBalances) *RequestSection {
 	if transfer == nil {
 		transfer = cbalances.NewFromMap(nil)
 	}
@@ -180,8 +180,8 @@ func (ref *RequestRef) RequestSection() *RequestSection {
 	return ref.Tx.Requests()[ref.Index]
 }
 
-func (ref *RequestRef) RequestID() *coret.RequestID {
-	ret := coret.NewRequestID(ref.Tx.ID(), ref.Index)
+func (ref *RequestRef) RequestID() *coretypes.RequestID {
+	ret := coretypes.NewRequestID(ref.Tx.ID(), ref.Index)
 	return &ret
 }
 
@@ -203,7 +203,7 @@ func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
 	return auth
 }
 
-func (ref *RequestRef) SenderContractHname() coret.Hname {
+func (ref *RequestRef) SenderContractHname() coretypes.Hname {
 	return ref.RequestSection().senderContractHname
 }
 
@@ -211,18 +211,18 @@ func (ref *RequestRef) SenderAddress() *address.Address {
 	return ref.Tx.MustProperties().SenderAddress()
 }
 
-func (ref *RequestRef) SenderContractID() (ret coret.ContractID, err error) {
+func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) {
 	if _, ok := ref.Tx.State(); !ok {
 		err = fmt.Errorf("request not sent by the smart contract: %s", ref.RequestID().String())
 		return
 	}
-	ret = coret.NewContractID((coret.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())
+	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())
 	return
 }
 
-func (ref *RequestRef) SenderAgentID() coret.AgentID {
+func (ref *RequestRef) SenderAgentID() coretypes.AgentID {
 	if contractID, err := ref.SenderContractID(); err == nil {
-		return coret.NewAgentIDFromContractID(contractID)
+		return coretypes.NewAgentIDFromContractID(contractID)
 	}
-	return coret.NewAgentIDFromAddress(*ref.SenderAddress())
+	return coretypes.NewAgentIDFromAddress(*ref.SenderAddress())
 }

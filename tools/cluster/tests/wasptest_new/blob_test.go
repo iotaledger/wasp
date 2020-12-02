@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -101,7 +101,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
-		coret.Hn(blob.FuncStoreBlob),
+		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
 			Args: codec.EncodeDictFromMap(blobFieldValues),
 		},
@@ -145,7 +145,7 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
-		coret.Hn(blob.FuncStoreBlob),
+		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
 			Args: codec.EncodeDictFromMap(blobFieldValues),
 		},

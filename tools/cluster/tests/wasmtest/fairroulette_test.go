@@ -3,7 +3,7 @@ package wasmtest
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	frCodePlaceBet   = coret.Hname(1)
-	frCodeLockBets   = coret.Hname(2)
-	frCodePayWinners = coret.Hname(3)
-	frCodePlayPeriod = coret.Hname(4)
-	frCodeNothing    = coret.Hname(5)
+	frCodePlaceBet   = coretypes.Hname(1)
+	frCodeLockBets   = coretypes.Hname(2)
+	frCodePayWinners = coretypes.Hname(3)
+	frCodePlayPeriod = coretypes.Hname(4)
+	frCodeNothing    = coretypes.Hname(5)
 )
 
 const frWasmPath = "wasm/fairroulette"
@@ -56,7 +56,7 @@ func TestFrPlaceBet(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		TargetContract: coret.NewContractID(*scChain, 0),
+		TargetContract: coretypes.NewContractID(*scChain, 0),
 		RequestCode:    frCodePlaceBet,
 		Vars: map[string]interface{}{
 			"color": 3,
@@ -127,7 +127,7 @@ func testFrPlaceBetsAndPlay(t *testing.T, nrOfBets int, wasps *cluster.Cluster) 
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-		TargetContract: coret.NewContractID(*scChain, 0),
+		TargetContract: coretypes.NewContractID(*scChain, 0),
 		RequestCode:    frCodePlayPeriod,
 		Vars: map[string]interface{}{
 			"playPeriod": 10,
@@ -141,7 +141,7 @@ func testFrPlaceBetsAndPlay(t *testing.T, nrOfBets int, wasps *cluster.Cluster) 
 
 	for i := 0; i < nrOfBets; i++ {
 		err = wasptest.SendSimpleRequest(wasps, scOwner.SigScheme(), waspapi.CreateSimpleRequestParamsOld{
-			TargetContract: coret.NewContractID(*scChain, 0),
+			TargetContract: coretypes.NewContractID(*scChain, 0),
 			RequestCode:    frCodePlaceBet,
 			Vars: map[string]interface{}{
 				"color": (1+i)%5 + 1,

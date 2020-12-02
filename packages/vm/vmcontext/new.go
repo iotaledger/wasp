@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -18,9 +18,9 @@ import (
 // context for one request
 type VMContext struct {
 	// same for the block
-	chainID       coret.ChainID
+	chainID       coretypes.ChainID
 	processors    *processors.ProcessorCache
-	accrueFeesTo  coret.AgentID
+	accrueFeesTo  coretypes.AgentID
 	balances      map[valuetransaction.ID][]*balance.Balance
 	txBuilder     *statetxbuilder.Builder // mutated
 	saveTxBuilder *statetxbuilder.Builder // for rollback
@@ -29,7 +29,7 @@ type VMContext struct {
 	// request context
 	entropy        hashing.HashValue // mutates with each request
 	reqRef         sctransaction.RequestRef
-	reqHname       coret.Hname
+	reqHname       coretypes.Hname
 	contractRecord *root.ContractRecord
 	timestamp      int64
 	stateUpdate    state.StateUpdate // mutated
@@ -37,11 +37,11 @@ type VMContext struct {
 }
 
 type callContext struct {
-	isRequestContext bool                  // is called from the request (true) or from another SC (false)
-	caller           coret.AgentID         // calling agent
-	contract         coret.Hname           // called contract
-	params           codec.ImmutableCodec  // params passed
-	transfer         coret.ColoredBalances // transfer passed
+	isRequestContext bool                      // is called from the request (true) or from another SC (false)
+	caller           coretypes.AgentID         // calling agent
+	contract         coretypes.Hname           // called contract
+	params           codec.ImmutableCodec      // params passed
+	transfer         coretypes.ColoredBalances // transfer passed
 }
 
 // NewVMContext:

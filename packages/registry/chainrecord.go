@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/publisher"
@@ -16,18 +16,18 @@ import (
 // ChainRecord is a minimum data needed to load a committee for the chain
 // it is up to the node (not smart contract) to check authorisations to create/update this record
 type ChainRecord struct {
-	ChainID        coret.ChainID
+	ChainID        coretypes.ChainID
 	Color          balance.Color // origin tx hash
 	CommitteeNodes []string      // "host_addr:port"
 	Active         bool
 }
 
-func dbkeyChainRecord(chainID *coret.ChainID) []byte {
+func dbkeyChainRecord(chainID *coretypes.ChainID) []byte {
 	return database.MakeKey(database.ObjectTypeChainRecord, chainID[:])
 }
 
 func SaveChainRecord(bd *ChainRecord) error {
-	if bd.ChainID == coret.NilChainID {
+	if bd.ChainID == coretypes.NilChainID {
 		return fmt.Errorf("can be empty chain id")
 	}
 	if bd.Color == balance.ColorNew || bd.Color == balance.ColorIOTA {
@@ -44,7 +44,7 @@ func SaveChainRecord(bd *ChainRecord) error {
 	return nil
 }
 
-func GetChainRecord(chainID *coret.ChainID) (*ChainRecord, error) {
+func GetChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
 	data, err := database.GetRegistryPartition().Get(dbkeyChainRecord(chainID))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
@@ -59,7 +59,7 @@ func GetChainRecord(chainID *coret.ChainID) (*ChainRecord, error) {
 	return ret, nil
 }
 
-func UpdateChainRecord(chainID *coret.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
+func UpdateChainRecord(chainID *coretypes.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
 	bd, err := GetChainRecord(chainID)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func UpdateChainRecord(chainID *coret.ChainID, f func(*ChainRecord) bool) (*Chai
 	return bd, nil
 }
 
-func ActivateChainRecord(chainID *coret.ChainID) (*ChainRecord, error) {
+func ActivateChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
 	return UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if bd.Active {
 			return false
@@ -86,7 +86,7 @@ func ActivateChainRecord(chainID *coret.ChainID) (*ChainRecord, error) {
 	})
 }
 
-func DeactivateChainRecord(chainID *coret.ChainID) (*ChainRecord, error) {
+func DeactivateChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
 	return UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if !bd.Active {
 			return false

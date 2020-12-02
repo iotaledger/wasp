@@ -4,7 +4,7 @@ package root
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -129,7 +129,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx.Eventf("root.deployContract.success. Deployed contract hname = %s, name = '%s'", coret.Hn(name).String(), name)
+	ctx.Eventf("root.deployContract.success. Deployed contract hname = %s, name = '%s'", coretypes.Hn(name).String(), name)
 	return nil, nil
 }
 
@@ -199,14 +199,14 @@ func getInfo(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
 }
 
 func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams codec.ImmutableCodec) error {
-	hname := coret.Hn(rec.Name)
+	hname := coretypes.Hn(rec.Name)
 	contractRegistry := ctx.State().GetMap(VarContractRegistry)
 	if contractRegistry.HasAt(hname.Bytes()) {
 		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), rec.Name)
 	}
 	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
 	// calling constructor
-	if _, err := ctx.Call(coret.Hn(rec.Name), coret.EntryPointInit, initParams, nil); err != nil {
+	if _, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil); err != nil {
 		ctx.Eventf("root.deployContract.success. Calling 'init' function: %v", err)
 	}
 	return nil

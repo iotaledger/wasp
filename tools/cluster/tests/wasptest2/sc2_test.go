@@ -3,7 +3,7 @@ package wasptest2
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"testing"
 	"time"
 
@@ -36,11 +36,11 @@ func Test2SC(t *testing.T) {
 	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
-	chidTR := (coret.ChainID)(*scTRAddr)
+	chidTR := (coretypes.ChainID)(*scTRAddr)
 	succ := waspapi.CheckDeployment(wasps.ApiHosts(), &chidTR)
 	assert.True(t, succ)
 
-	chidFA := (coret.ChainID)(*scFAAddr)
+	chidFA := (coretypes.ChainID)(*scFAAddr)
 	succ = waspapi.CheckDeployment(wasps.ApiHosts(), &chidFA)
 	assert.True(t, succ)
 
@@ -113,11 +113,11 @@ func TestPlus2SC(t *testing.T) {
 
 	scTRAddr, scTRColor, err := startSmartContract(wasps, tokenregistry.ProgramHash, tokenregistry.Description)
 	checkSuccess(err, t, "TokenRegistry has been created and activated")
-	chidTR := (coret.ChainID)(*scTRAddr)
+	chidTR := (coretypes.ChainID)(*scTRAddr)
 
 	scFAAddr, scFAColor, err := startSmartContract(wasps, fairauction.ProgramHash, fairauction.Description)
 	checkSuccess(err, t, "FairAuction has been created and activated")
-	chidFA := (coret.ChainID)(*scFAAddr)
+	chidFA := (coretypes.ChainID)(*scFAAddr)
 
 	tc := trclient.NewClient(chainclient.New(
 		wasps.NodeClient,

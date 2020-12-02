@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -17,7 +17,7 @@ import (
 )
 
 type virtualState struct {
-	chainID    coret.ChainID
+	chainID    coretypes.ChainID
 	db         kvstore.KVStore
 	blockIndex uint32
 	timestamp  int64
@@ -26,7 +26,7 @@ type virtualState struct {
 	variables  buffered.BufferedKVStore
 }
 
-func NewVirtualState(db kvstore.KVStore, chainID *coret.ChainID) *virtualState {
+func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	return &virtualState{
 		chainID:   *chainID,
 		db:        db,
@@ -35,11 +35,11 @@ func NewVirtualState(db kvstore.KVStore, chainID *coret.ChainID) *virtualState {
 	}
 }
 
-func NewEmptyVirtualState(chainID *coret.ChainID) *virtualState {
+func NewEmptyVirtualState(chainID *coretypes.ChainID) *virtualState {
 	return NewVirtualState(getSCPartition(chainID), chainID)
 }
 
-func getSCPartition(chainID *coret.ChainID) kvstore.KVStore {
+func getSCPartition(chainID *coretypes.ChainID) kvstore.KVStore {
 	return database.GetPartition(chainID)
 }
 
@@ -205,11 +205,11 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	return nil
 }
 
-func LoadSolidState(chainID *coret.ChainID) (VirtualState, Block, bool, error) {
+func LoadSolidState(chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
 	return loadSolidState(getSCPartition(chainID), chainID)
 }
 
-func loadSolidState(db kvstore.KVStore, chainID *coret.ChainID) (VirtualState, Block, bool, error) {
+func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
 	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
@@ -244,10 +244,10 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return database.MakeKey(database.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid *coret.RequestID) []byte {
+func dbkeyRequest(reqid *coretypes.RequestID) []byte {
 	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *coret.ChainID, reqid *coret.RequestID) (bool, error) {
+func IsRequestCompleted(addr *coretypes.ChainID, reqid *coretypes.RequestID) (bool, error) {
 	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

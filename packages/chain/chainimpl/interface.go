@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -136,7 +136,7 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *chainObj) ID() *coret.ChainID {
+func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
@@ -186,7 +186,7 @@ func (c *chainObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte)
 
 func (c *chainObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
-		ChainID:     (coret.ChainID)(c.chainID),
+		ChainID:     (coretypes.ChainID)(c.chainID),
 		SenderIndex: c.ownIndex,
 		MsgType:     msgType,
 		MsgData:     msgData,
@@ -278,7 +278,7 @@ func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *chainObj) GetRequestProcessingStatus(reqId *coret.RequestID) chain.RequestProcessingStatus {
+func (c *chainObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) chain.RequestProcessingStatus {
 	if c.IsDismissed() {
 		return chain.RequestProcessingStatusUnknown
 	}

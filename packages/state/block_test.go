@@ -3,7 +3,7 @@ package state
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -14,13 +14,13 @@ import (
 
 func TestBatches(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := coret.NewRequestID(txid1, 5)
+	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	assert.EqualValues(t, *su1.RequestID(), reqid1)
 
 	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
-	reqid2 := coret.NewRequestID(txid2, 2)
+	reqid2 := coretypes.NewRequestID(txid2, 2)
 	su2 := NewStateUpdate(&reqid2)
 
 	assert.EqualValues(t, *su2.RequestID(), reqid2)
@@ -51,8 +51,8 @@ func TestBatches(t *testing.T) {
 
 func TestBatchMarshaling(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := coret.NewRequestID(txid1, 0)
-	reqid2 := coret.NewRequestID(txid1, 2)
+	reqid1 := coretypes.NewRequestID(txid1, 0)
+	reqid2 := coretypes.NewRequestID(txid1, 2)
 	su1 := NewStateUpdate(&reqid1)
 	su1.Mutations().Add(buffered.NewMutationSet("k", []byte{1}))
 	su2 := NewStateUpdate(&reqid2)

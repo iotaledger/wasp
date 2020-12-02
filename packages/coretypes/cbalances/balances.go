@@ -1,11 +1,11 @@
-// implements coret.ColoredBalances interface
+// implements coretypes.ColoredBalances interface
 package cbalances
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"sort"
@@ -13,16 +13,16 @@ import (
 
 type coloredBalances map[balance.Color]int64
 
-var Nil = coret.ColoredBalances(coloredBalances(make(map[balance.Color]int64)))
+var Nil = coretypes.ColoredBalances(coloredBalances(make(map[balance.Color]int64)))
 
-func Str(b coret.ColoredBalances) string {
+func Str(b coretypes.ColoredBalances) string {
 	if b == nil {
 		return "[]"
 	}
 	return b.String()
 }
 
-func NewFromMap(m map[balance.Color]int64) coret.ColoredBalances {
+func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	if m == nil {
 		return Nil
 	}
@@ -35,7 +35,7 @@ func NewFromMap(m map[balance.Color]int64) coret.ColoredBalances {
 	return coloredBalances(ret)
 }
 
-func NewFromBalances(bals []*balance.Balance) coret.ColoredBalances {
+func NewFromBalances(bals []*balance.Balance) coretypes.ColoredBalances {
 	if bals == nil {
 		return Nil
 	}
@@ -100,7 +100,7 @@ func (b coloredBalances) Len() uint16 {
 	return uint16(len(b))
 }
 
-func (b coloredBalances) Equal(b1 coret.ColoredBalances) bool {
+func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 	if b == nil && b1 == nil {
 		return true
 	}
@@ -122,7 +122,7 @@ func (b coloredBalances) Equal(b1 coret.ColoredBalances) bool {
 }
 
 // Diff return difference between the two: b - b1
-func (b coloredBalances) Diff(b1 coret.ColoredBalances) coret.ColoredBalances {
+func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
 	ret := make(map[balance.Color]int64)
 	if b == nil && b1 == nil {
 		return Nil
@@ -146,7 +146,7 @@ func (b coloredBalances) Diff(b1 coret.ColoredBalances) coret.ColoredBalances {
 }
 
 // Includes b >= b1
-func (b coloredBalances) Includes(b1 coret.ColoredBalances) bool {
+func (b coloredBalances) Includes(b1 coretypes.ColoredBalances) bool {
 	diff := b.Diff(b1)
 	if diff == nil || diff.Len() == 0 {
 		return true
@@ -170,7 +170,7 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	})
 }
 
-func WriteColoredBalances(w io.Writer, b coret.ColoredBalances) error {
+func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
 	l := uint16(0)
 	if b != nil {
 		l = b.Len()
@@ -196,7 +196,7 @@ func WriteColoredBalances(w io.Writer, b coret.ColoredBalances) error {
 	return err
 }
 
-func ReadColoredBalance(r io.Reader) (coret.ColoredBalances, error) {
+func ReadColoredBalance(r io.Reader) (coretypes.ColoredBalances, error) {
 	var size uint16
 	if err := util.ReadUint16(r, &size); err != nil {
 		return nil, err

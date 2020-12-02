@@ -3,7 +3,7 @@ package chains
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"sync"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -19,7 +19,7 @@ const PluginName = "Chains"
 var (
 	log *logger.Logger
 
-	chains      = make(map[coret.ChainID]chain.Chain)
+	chains      = make(map[coretypes.ChainID]chain.Chain)
 	chainsMutex = &sync.RWMutex{}
 )
 
@@ -118,7 +118,7 @@ func DeactivateChain(chr *registry.ChainRecord) error {
 }
 
 // GetChain returns active chain object or nil if it doesn't exist
-func GetChain(chainID coret.ChainID) chain.Chain {
+func GetChain(chainID coretypes.ChainID) chain.Chain {
 	chainsMutex.RLock()
 	defer chainsMutex.RUnlock()
 

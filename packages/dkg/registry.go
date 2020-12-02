@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 )
@@ -18,13 +18,13 @@ import (
 // It should be implemented by registry.impl
 type RegistryProvider interface {
 	SaveDKShare(dkShare *DKShare) error
-	LoadDKShare(chainID *coret.ChainID) (*DKShare, error)
+	LoadDKShare(chainID *coretypes.ChainID) (*DKShare, error)
 }
 
 // DKShare stands for the information stored on
 // a node as a result of the DKG procedure.
 type DKShare struct {
-	ChainID      coret.ChainID
+	ChainID      coretypes.ChainID
 	Index        uint32
 	N            uint32
 	T            uint32
@@ -63,8 +63,8 @@ func NewDKShare(
 	case address.VersionBLS:
 		sharedAddress = address.FromBLSPubKey(pubBytes)
 	}
-	var chainID coret.ChainID
-	if chainID, err = coret.NewChainIDFromBytes(sharedAddress.Bytes()); err != nil {
+	var chainID coretypes.ChainID
+	if chainID, err = coretypes.NewChainIDFromBytes(sharedAddress.Bytes()); err != nil {
 		return nil, err
 	}
 	//

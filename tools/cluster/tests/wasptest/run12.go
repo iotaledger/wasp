@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"time"
 )
@@ -53,7 +53,7 @@ func activate(sc *cluster.Chain, clu *cluster.Cluster) error {
 		return err
 	}
 	return waspapi.ActivateChain(waspapi.ActivateChainParams{
-		ChainID:  (coret.ChainID)(addr),
+		ChainID:  (coretypes.ChainID)(addr),
 		ApiHosts: allNodesApi,
 	})
 }
@@ -66,7 +66,7 @@ func deactivate(sc *cluster.Chain, clu *cluster.Cluster) error {
 		return err
 	}
 	return waspapi.DeactivateChain(waspapi.ActivateChainParams{
-		ChainID:  (coret.ChainID)(addr),
+		ChainID:  (coretypes.ChainID)(addr),
 		ApiHosts: allNodesApi,
 	})
 }
