@@ -93,6 +93,22 @@ func (o *ScLogEntry) Exists(keyId int32) bool {
 	return true
 }
 
+func (o *ScLogEntry) GetBytes(keyId int32) []byte {
+	//switch keyId {
+	//case KeyData:
+	//	ts := o.lines.TakeTimeSlice(o.lines.Earliest(), o.lines.Latest())
+	//}
+	return o.MapObject.GetBytes(keyId)
+}
+
+func (o *ScLogEntry) GetInt(keyId int32) int64 {
+	//switch keyId {
+	//case KeyTimestamp:
+	//	return o.lines.Latest()
+	//}
+	return o.MapObject.GetInt(keyId)
+}
+
 func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyData:

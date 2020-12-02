@@ -288,7 +288,7 @@ func TestIncViewCounter(t *testing.T) {
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 1)
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(coretypes.Hn(incName)),
+		chain.ContractID(incHname),
 		"incrementViewCounter",
 		nil,
 	)
