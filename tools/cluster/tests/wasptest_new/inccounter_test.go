@@ -80,7 +80,7 @@ func testNothing(t *testing.T, numRequests int) {
 
 	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := client.PostRequest(incHname, entryPoint, nil, nil, nil)
+		tx, err := client.PostRequest(incHname, entryPoint)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -135,7 +135,7 @@ func testIncrement(t *testing.T, numRequests int) {
 
 	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := client.PostRequest(incHname, entryPoint, nil, nil, nil)
+		tx, err := client.PostRequest(incHname, entryPoint)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)

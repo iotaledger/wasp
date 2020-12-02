@@ -90,9 +90,9 @@ func TestBasicAccounts(t *testing.T) {
 
 	transferIotas := int64(42)
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
-	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), nil, map[balance.Color]int64{
-		balance.ColorIOTA: transferIotas,
-	}, nil)
+	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
+		Transfer: map[balance.Color]int64{balance.ColorIOTA: transferIotas},
+	})
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
@@ -214,9 +214,9 @@ func TestBasic2Accounts(t *testing.T) {
 
 	transferIotas := int64(42)
 	myWalletClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
-	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), nil, map[balance.Color]int64{
-		balance.ColorIOTA: transferIotas,
-	}, nil)
+	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
+		Transfer: map[balance.Color]int64{balance.ColorIOTA: transferIotas},
+	})
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
@@ -266,7 +266,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
 	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw), nil, nil, nil)
+	reqTx2, err := originatorClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw))
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)

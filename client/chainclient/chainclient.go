@@ -34,22 +34,31 @@ func New(
 	}
 }
 
+type PostRequestParams struct {
+	Mint     map[address.Address]int64 // TODO
+	Transfer map[balance.Color]int64
+	Args     dict.Dict
+}
+
 func (c *Client) PostRequest(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
-	mint map[address.Address]int64, // TODO
-	transfer map[balance.Color]int64,
-	vars dict.Dict,
+	params ...PostRequestParams,
 ) (*sctransaction.Transaction, error) {
+	par := PostRequestParams{}
+	if len(params) > 0 {
+		par = params[0]
+	}
+
 	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
 		NodeClient:      c.NodeClient,
 		SenderSigScheme: c.SigScheme,
-		Mint:            mint,
+		Mint:            par.Mint,
 		RequestSectionParams: []apilib.RequestSectionParams{{
 			TargetContractID: coretypes.NewContractID(c.ChainID, contractHname),
 			EntryPointCode:   entryPoint,
-			Transfer:         transfer,
-			Vars:             vars,
+			Transfer:         par.Transfer,
+			Vars:             par.Args,
 		}},
 		Post: true,
 	})

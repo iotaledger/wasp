@@ -66,9 +66,9 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
-		nil,
-		nil,
-		codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
+		},
 	)
 }
 
@@ -103,17 +103,18 @@ func (fc *FairAuctionClient) StartAuction(
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestStartAuction,
-		nil,
-		map[balance.Color]int64{
-			balance.ColorIOTA: fee,
-			*color:            tokensForSale,
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{
+				balance.ColorIOTA: fee,
+				*color:            tokensForSale,
+			},
+			Args: codec.EncodeDictFromMap(map[string]interface{}{
+				fairauction.VarReqAuctionColor:                color.String(),
+				fairauction.VarReqStartAuctionDescription:     description,
+				fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
+				fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
+			}),
 		},
-		codec.EncodeDictFromMap(map[string]interface{}{
-			fairauction.VarReqAuctionColor:                color.String(),
-			fairauction.VarReqStartAuctionDescription:     description,
-			fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
-			fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
-		}),
 	)
 }
 
@@ -121,8 +122,9 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestPlaceBid,
-		nil,
-		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-		codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{balance.ColorIOTA: amountIotas},
+			Args:     codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
+		},
 	)
 }

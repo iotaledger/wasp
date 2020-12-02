@@ -1,9 +1,11 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -175,10 +177,12 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), nil, nil, codec.EncodeDictFromMap(map[string]interface{}{
-		inccounter.VarName:        nameNew,
-		inccounter.VarDescription: dscrNew,
-	}))
+	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
+		Args: codec.EncodeDictFromMap(map[string]interface{}{
+			inccounter.VarName:        nameNew,
+			inccounter.VarDescription: dscrNew,
+		}),
+	})
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)

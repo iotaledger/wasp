@@ -118,9 +118,9 @@ func TestPost1Request(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx, err := myClient.PostRequest(contractID.Hname(), coretypes.Hn(inccounter.FuncIncCounter), nil, nil, nil)
+	tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
@@ -145,16 +145,16 @@ func TestPost3Recursive(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx, err := myClient.PostRequest(contractID.Hname(), coretypes.Hn(inccounter.FuncIncAndRepeatMany), nil,
-		map[balance.Color]int64{
+	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
+		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1, // needs 1 iota for recursive calls
 		},
-		codec.EncodeDictFromMap(map[string]interface{}{
+		Args: codec.EncodeDictFromMap(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
-	)
+	})
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
@@ -183,10 +183,10 @@ func TestPost5Requests(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
 	for i := 0; i < 5; i++ {
-		tx, err := myClient.PostRequest(contractID.Hname(), coretypes.Hn(inccounter.FuncIncCounter), nil, nil, nil)
+		tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 		check(err, t)
@@ -226,7 +226,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	var err error
 
 	for i := 0; i < 5; i++ {
-		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter, nil, nil, nil)
+		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter)
 		check(err, t)
 	}
 

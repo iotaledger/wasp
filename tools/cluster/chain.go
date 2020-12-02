@@ -136,9 +136,9 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 	tx, err := ch.OriginatorClient().PostRequest(
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(params),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(params),
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -164,9 +164,9 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	reqTx, err := ch.OriginatorClient().PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(blobFieldValues),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(blobFieldValues),
+		},
 	)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	if err != nil {
@@ -192,9 +192,9 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	tx, err := ch.OriginatorClient().PostRequest(
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(params),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(params),
+		},
 	)
 	if err != nil {
 		return nil, *hashing.NilHash, err
