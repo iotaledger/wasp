@@ -3,7 +3,7 @@ package wasmtest
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"testing"
 	"time"
 
@@ -66,7 +66,7 @@ func TestTrMintSupply(t *testing.T) {
 	for {
 		// the sleep 1 second is usually enough
 		time.Sleep(time.Second)
-		reqId := coretypes.NewRequestID(tx1.ID(), 0)
+		reqId := coret.NewRequestID(tx1.ID(), 0)
 		r, err := wasps.WaspClient(0).RequestStatus(scAddr, &reqId)
 		check(err, t)
 		if r.IsProcessed {

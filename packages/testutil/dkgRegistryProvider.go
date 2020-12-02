@@ -3,7 +3,7 @@ package testutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"go.dedis.ch/kyber/v3"
 )
@@ -34,7 +34,7 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *dkg.DKShare) error {
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*dkg.DKShare, error) {
+func (p *DkgRegistryProvider) LoadDKShare(chainID *coret.ChainID) (*dkg.DKShare, error) {
 	var dkShareBytes = p.DB[chainID.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", chainID)

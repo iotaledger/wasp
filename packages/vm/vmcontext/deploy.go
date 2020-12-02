@@ -1,7 +1,7 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -33,7 +33,7 @@ func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name strin
 			return err
 		}
 		// calling constructor
-		_, err = vmctx.Call(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
+		_, err = vmctx.Call(coret.Hn(name), coret.EntryPointInit, initParams, nil)
 		if err != nil {
 			vmctx.log.Warnf("sandbox.DeployContract. Error while calling init function: %v", err)
 		}
@@ -53,7 +53,7 @@ func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name strin
 	par.SetHashValue(root.ParamProgramHash, &programHash)
 	par.SetString(root.ParamName, name)
 	par.SetString(root.ParamDescription, description)
-	_, err = vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), par, nil)
+	_, err = vmctx.Call(root.Interface.Hname(), coret.Hn(root.FuncDeployContract), par, nil)
 	return err
 
 }

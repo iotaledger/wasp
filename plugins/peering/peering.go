@@ -1,7 +1,7 @@
 package peering
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -10,7 +10,7 @@ import (
 type NetworkProvider interface {
 	Self() PeerSender
 	Group(peerAddrs []string) (GroupProvider, error)
-	Attach(chainID coretypes.ChainID, callback func(from PeerSender, msg *PeerMessage))
+	Attach(chainID coret.ChainID, callback func(from PeerSender, msg *PeerMessage))
 	SendByLocation(peerLoc string, msg *PeerMessage)
 }
 

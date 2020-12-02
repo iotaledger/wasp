@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -16,7 +16,7 @@ type runCalculationsParams struct {
 	requests        []*request
 	leaderPeerIndex uint16
 	balances        map[valuetransaction.ID][]*balance.Balance
-	accrueFeesTo    coretypes.AgentID
+	accrueFeesTo    coret.AgentID
 	timestamp       int64
 }
 
@@ -71,7 +71,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		return
 	}
 
-	reqids := make([]coretypes.RequestID, len(result.Requests))
+	reqids := make([]coret.RequestID, len(result.Requests))
 	for i := range reqids {
 		reqids[i] = *result.Requests[i].RequestID()
 	}
@@ -118,7 +118,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		return
 	}
 
-	reqids := make([]coretypes.RequestID, len(result.Requests))
+	reqids := make([]coret.RequestID, len(result.Requests))
 	for i := range reqids {
 		reqids[i] = *result.Requests[i].RequestID()
 	}

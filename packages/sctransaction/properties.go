@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coret/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -25,7 +25,7 @@ type Properties struct {
 	// if isState == true: it states if it is the origin transaction
 	isOrigin bool
 	// if isState == true: chainID
-	chainID coretypes.ChainID
+	chainID coret.ChainID
 	// chainAddress == chainID
 	chainAddress address.Address
 	// if isState == true: smart contract color
@@ -109,7 +109,7 @@ func (prop *Properties) analyzeStateBlock(tx *Transaction) error {
 			return false
 		}
 		if err != nil && v == 1 {
-			prop.chainID = coretypes.ChainID(addr)
+			prop.chainID = coret.ChainID(addr)
 			prop.chainAddress = addr
 			err = nil
 		}
@@ -139,7 +139,7 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	prop.numRequests = len(tx.Requests())
 
 	// sum up transfers of requests by target chain
-	reqTransfersByTargetChain := make(map[coretypes.ChainID]map[balance.Color]int64)
+	reqTransfersByTargetChain := make(map[coret.ChainID]map[balance.Color]int64)
 	for _, req := range tx.Requests() {
 		chainid := req.targetContractID.ChainID()
 		m, ok := reqTransfersByTargetChain[chainid]
@@ -155,7 +155,7 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	var err error
 	// validate all outputs w.r.t. request transfers
 	tx.Transaction.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		m, ok := reqTransfersByTargetChain[coretypes.ChainID(addr)]
+		m, ok := reqTransfersByTargetChain[coret.ChainID(addr)]
 		if !ok {
 			// do not check outputs to outside addresses
 			return true
@@ -204,7 +204,7 @@ func (prop *Properties) ChainAddress() address.Address {
 	return prop.chainAddress
 }
 
-func (prop *Properties) MustChainID() *coretypes.ChainID {
+func (prop *Properties) MustChainID() *coret.ChainID {
 	if !prop.isState {
 		panic("MustChainID: must be a state transaction")
 	}

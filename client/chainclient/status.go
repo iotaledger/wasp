@@ -1,7 +1,7 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -18,7 +18,7 @@ type SCStatus struct {
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
 	StateTxId  *valuetransaction.ID
-	Requests   []*coretypes.RequestID
+	Requests   []*coret.RequestID
 
 	ProgramHash   *hashing.HashValue
 	Description   string

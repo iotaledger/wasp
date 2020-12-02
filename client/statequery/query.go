@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -28,7 +28,7 @@ type Results struct {
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
 	StateTxId  *jsonable.ValueTxID
-	Requests   []*coretypes.RequestID
+	Requests   []*coret.RequestID
 }
 
 type KeyQuery struct {

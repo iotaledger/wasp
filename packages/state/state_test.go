@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -15,7 +15,7 @@ import (
 )
 
 func TestVariableStateBasic(t *testing.T) {
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coret.ChainID{1, 3, 3, 7}
 	vs1 := NewVirtualState(mapdb.NewMapDB(), &chainID)
 	h1 := vs1.Hash()
 	assert.EqualValues(t, *hashing.NilHash, *h1)
@@ -44,13 +44,13 @@ func TestVariableStateBasic(t *testing.T) {
 
 func TestApply(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 5)
+	reqid1 := coret.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	assert.EqualValues(t, *su1.RequestID(), reqid1)
 
 	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
-	reqid2 := coretypes.NewRequestID(txid2, 2)
+	reqid2 := coret.NewRequestID(txid2, 2)
 	su2 := NewStateUpdate(&reqid2)
 	suwrong := NewStateUpdate(&reqid2)
 
@@ -83,7 +83,7 @@ func TestApply(t *testing.T) {
 
 	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
 
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coret.ChainID{1, 3, 3, 7}
 	db := mapdb.NewMapDB()
 	vs1 := NewVirtualState(db, &chainID)
 	vs2 := NewVirtualState(db, &chainID)
@@ -97,15 +97,15 @@ func TestApply(t *testing.T) {
 
 func TestApply2(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 0)
-	reqid2 := coretypes.NewRequestID(txid1, 2)
-	reqid3 := coretypes.NewRequestID(txid1, 5)
+	reqid1 := coret.NewRequestID(txid1, 0)
+	reqid2 := coret.NewRequestID(txid1, 2)
+	reqid3 := coret.NewRequestID(txid1, 5)
 
 	su1 := NewStateUpdate(&reqid1)
 	su2 := NewStateUpdate(&reqid2)
 	su3 := NewStateUpdate(&reqid3)
 
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coret.ChainID{1, 3, 3, 7}
 	db := mapdb.NewMapDB()
 	vs1 := NewVirtualState(db, &chainID)
 	vs2 := NewVirtualState(db, &chainID)
@@ -134,13 +134,13 @@ func TestApply2(t *testing.T) {
 
 func TestApply3(t *testing.T) {
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 0)
-	reqid2 := coretypes.NewRequestID(txid1, 2)
+	reqid1 := coret.NewRequestID(txid1, 0)
+	reqid2 := coret.NewRequestID(txid1, 2)
 
 	su1 := NewStateUpdate(&reqid1)
 	su2 := NewStateUpdate(&reqid2)
 
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coret.ChainID{1, 3, 3, 7}
 	db := mapdb.NewMapDB()
 	vs1 := NewVirtualState(db, &chainID)
 	vs2 := NewVirtualState(db, &chainID)
@@ -164,7 +164,7 @@ func TestCommit(t *testing.T) {
 	partition := db.WithRealm([]byte("2"))
 
 	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 5)
+	reqid1 := coret.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	su1.Mutations().Add(buffered.NewMutationSet("x", []byte{1}))
@@ -172,7 +172,7 @@ func TestCommit(t *testing.T) {
 	batch1, err := NewBlock([]StateUpdate{su1})
 	assert.NoError(t, err)
 
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coret.ChainID{1, 3, 3, 7}
 	vs1 := NewVirtualState(partition, &chainID)
 	err = vs1.ApplyBatch(batch1)
 	assert.NoError(t, err)
@@ -202,7 +202,7 @@ func TestCommit(t *testing.T) {
 	assert.Equal(t, []byte{1}, v)
 
 	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
-	reqid2 := coretypes.NewRequestID(txid2, 6)
+	reqid2 := coret.NewRequestID(txid2, 6)
 	su2 := NewStateUpdate(&reqid2)
 
 	su2.Mutations().Add(buffered.NewMutationDel("x"))
@@ -210,7 +210,7 @@ func TestCommit(t *testing.T) {
 	batch2, err := NewBlock([]StateUpdate{su2})
 	assert.NoError(t, err)
 
-	chainID = coretypes.ChainID{1, 3, 3, 8}
+	chainID = coret.ChainID{1, 3, 3, 8}
 	vs2 := NewVirtualState(partition, &chainID)
 	err = vs2.ApplyBatch(batch2)
 	assert.NoError(t, err)

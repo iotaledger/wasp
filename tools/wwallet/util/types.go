@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -15,7 +15,7 @@ func ValueFromString(vtype string, s string) []byte {
 		check(err)
 		return col.Bytes()
 	case "agentid":
-		agentid, err := coretypes.AgentIDFromBase58(s)
+		agentid, err := coret.AgentIDFromBase58(s)
 		check(err)
 		return agentid.Bytes()
 	case "string":

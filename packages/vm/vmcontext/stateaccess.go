@@ -1,7 +1,7 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -9,13 +9,13 @@ import (
 )
 
 type stateWrapper struct {
-	contractHname              coretypes.Hname
+	contractHname              coret.Hname
 	contractSubPartitionPrefix kv.Key
 	virtualState               state.VirtualState
 	stateUpdate                state.StateUpdate
 }
 
-func newStateWrapper(contractHname coretypes.Hname, virtualState state.VirtualState, stateUpdate state.StateUpdate) stateWrapper {
+func newStateWrapper(contractHname coret.Hname, virtualState state.VirtualState, stateUpdate state.StateUpdate) stateWrapper {
 	return stateWrapper{
 		contractHname:              contractHname,
 		contractSubPartitionPrefix: kv.Key(contractHname.Bytes()),

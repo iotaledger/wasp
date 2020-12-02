@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
@@ -33,7 +33,7 @@ type CreateChainParams struct {
 }
 
 type ActivateChainParams struct {
-	ChainID           coretypes.ChainID
+	ChainID           coret.ChainID
 	ApiHosts          []string
 	WaitForCompletion bool
 	PublisherHosts    []string
@@ -103,7 +103,7 @@ func DeactivateChain(par ActivateChainParams) error {
 
 // DeployChain performs all actions needed to deploy the chain
 // noinspection ALL
-func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
+func DeployChain(par CreateChainParams) (*coret.ChainID, *address.Address, *balance.Color, error) {
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
@@ -165,7 +165,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	committee := multiclient.New(par.CommitteeApiHosts)
 
-	chainid := (coretypes.ChainID)(*chainAddr) // using address as chain id
+	chainid := (coret.ChainID)(*chainAddr) // using address as chain id
 
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&registry.ChainRecord{

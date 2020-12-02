@@ -4,15 +4,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 func TestFakeNetwork(t *testing.T) {
 	doneCh := make(chan bool)
-	chain1 := coretypes.NewRandomChainID()
-	chain2 := coretypes.NewRandomChainID()
+	chain1 := coret.NewRandomChainID()
+	chain2 := coret.NewRandomChainID()
 	network := testutil.NewPeeringNetworkForLocs([]string{"a", "b", "c"}, 100)
 	var netProviders []peering.NetworkProvider = network.NetworkProviders()
 	//

@@ -4,7 +4,7 @@ package sandbox
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,16 +33,16 @@ func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, des
 }
 
 // Call calls an entry point of contact, passes parameters and funds
-func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+func (s *sandbox) Call(contractHname coret.Hname, entryPoint coret.Hname, params codec.ImmutableCodec, transfer coret.ColoredBalances) (codec.ImmutableCodec, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }
 
 // general
-func (s *sandbox) ChainID() coretypes.ChainID {
+func (s *sandbox) ChainID() coret.ChainID {
 	return s.vmctx.ChainID()
 }
 
-func (s *sandbox) ChainOwnerID() coretypes.AgentID {
+func (s *sandbox) ChainOwnerID() coret.AgentID {
 	return s.vmctx.ChainOwnerID()
 }
 
@@ -50,7 +50,7 @@ func (s *sandbox) State() codec.MutableMustCodec {
 	return s.vmctx.State()
 }
 
-func (s *sandbox) RequestID() coretypes.RequestID {
+func (s *sandbox) RequestID() coret.RequestID {
 	return *s.vmctx.Request().RequestID()
 }
 
@@ -60,16 +60,16 @@ func (s *sandbox) Params() codec.ImmutableCodec {
 	return s.vmctx.Params()
 }
 
-func (s *sandbox) Caller() coretypes.AgentID {
+func (s *sandbox) Caller() coret.AgentID {
 	return s.vmctx.Caller()
 }
 
-func (s *sandbox) MyContractID() coretypes.ContractID {
+func (s *sandbox) MyContractID() coret.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 
-func (s *sandbox) MyAgentID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
+func (s *sandbox) MyAgentID() coret.AgentID {
+	return coret.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
 }
 
 func (s *sandbox) GetTimestamp() int64 {
@@ -88,11 +88,11 @@ func (s *sandbox) Rollback() {
 	s.vmctx.Rollback()
 }
 
-func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coret.ColoredBalances) bool {
 	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
 
-func (s *sandbox) TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool {
+func (s *sandbox) TransferCrossChain(targetAgentID coret.AgentID, targetChainID coret.ChainID, transfer coret.ColoredBalances) bool {
 	return s.vmctx.TransferCrossChain(targetAgentID, targetChainID, transfer)
 }
 
@@ -100,11 +100,11 @@ func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
+func (s *sandbox) PostRequestToSelf(reqCode coret.Hname, args dict.Dict) bool {
 	return s.vmctx.PostRequestToSelf(reqCode, args)
 }
 
-func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
+func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coret.Hname, args dict.Dict, delaySec uint32) bool {
 	return s.vmctx.PostRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
 

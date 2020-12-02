@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -20,7 +20,7 @@ func AddEndpoints(server *echo.Echo) {
 }
 
 func handleCallView(c echo.Context) error {
-	contractID, err := coretypes.NewContractIDFromBase58(c.Param("contractID"))
+	contractID, err := coret.NewContractIDFromBase58(c.Param("contractID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractID")))
 	}
@@ -42,7 +42,7 @@ func handleCallView(c echo.Context) error {
 		return fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
 	}
 
-	ret, err := vctx.CallView(contractID.Hname(), coretypes.Hn(fname), codec.NewCodec(params))
+	ret, err := vctx.CallView(contractID.Hname(), coret.Hn(fname), codec.NewCodec(params))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}

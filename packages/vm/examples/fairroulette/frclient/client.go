@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -17,10 +17,10 @@ import (
 
 type FairRouletteClient struct {
 	*chainclient.Client
-	contractHname coretypes.Hname
+	contractHname coret.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *FairRouletteClient {
+func NewClient(scClient *chainclient.Client, contractHname coret.Hname) *FairRouletteClient {
 	return &FairRouletteClient{
 		Client:        scClient,
 		contractHname: contractHname,

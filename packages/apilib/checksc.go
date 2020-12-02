@@ -2,7 +2,7 @@ package apilib
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"io"
 	"io/ioutil"
 	"os"
@@ -19,7 +19,7 @@ const prefix = "[checkSC] "
 // it loads the chainrecord from the first node in the list and uses CommitteeNodes from that
 // chainrecord to check the whole committee
 //goland:noinspection ALL
-func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io.Writer) bool {
+func CheckDeployment(apiHosts []string, chainid coret.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {

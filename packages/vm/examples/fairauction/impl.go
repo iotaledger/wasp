@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -24,15 +24,15 @@ const Description = "FairAuction, a PoC smart contract"
 
 // implement Processor and EntryPoint interfaces
 
-type fairAuctionProcessor map[coretypes.Hname]fairAuctionEntryPoint
+type fairAuctionProcessor map[coret.Hname]fairAuctionEntryPoint
 
 type fairAuctionEntryPoint func(ctx vmtypes.Sandbox) error
 
 var (
-	RequestStartAuction    = coretypes.Hn("startAuction")
-	RequestFinalizeAuction = coretypes.Hn("finalizeAuction")
-	RequestPlaceBid        = coretypes.Hn("placeBid")
-	RequestSetOwnerMargin  = coretypes.Hn("setOwnerMargin")
+	RequestStartAuction    = coret.Hn("startAuction")
+	RequestFinalizeAuction = coret.Hn("finalizeAuction")
+	RequestPlaceBid        = coret.Hn("placeBid")
+	RequestSetOwnerMargin  = coret.Hn("setOwnerMargin")
 )
 
 // the processor is a map of entry points
@@ -92,7 +92,7 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code coret.Hname) (vmtypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -135,7 +135,7 @@ type AuctionInfo struct {
 	// duration of the auctions in minutes. Should be >= MinAuctionDurationMinutes
 	DurationMinutes int64
 	// address which issued StartAuction transaction
-	AuctionOwner coretypes.AgentID
+	AuctionOwner coret.AgentID
 	// total deposit by the auction owner. Iotas sent by the auction owner together with the tokens for sale in the same
 	// transaction.
 	TotalDeposit int64
@@ -151,7 +151,7 @@ type BidInfo struct {
 	// the total is a cumulative sum of all bids from the same bidder
 	Total int64
 	// originator of the bid
-	Bidder coretypes.AgentID
+	Bidder coret.AgentID
 	// timestamp Unix nano
 	When int64
 }
@@ -456,7 +456,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	scAddr := coret.NewAgentIDFromContractID(ctx.MyContractID())
 	if ctx.Caller() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")

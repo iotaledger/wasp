@@ -21,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
@@ -615,7 +615,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpect
 }
 
 func verifySCStateVariables2(host string, addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
-	contractID := coretypes.NewContractID((coretypes.ChainID)(*addr), 0)
+	contractID := coret.NewContractID((coret.ChainID)(*addr), 0)
 	actual, err := client.NewWaspClient(host).DumpSCState(&contractID)
 	if client.IsNotFound(err) {
 		fmt.Printf("              state does not exist: FAIL\n")

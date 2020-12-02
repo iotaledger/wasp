@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
@@ -42,7 +42,7 @@ type VirtualState interface {
 // ResultBlock is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
-	RequestID() *coretypes.RequestID
+	RequestID() *coret.RequestID
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
@@ -62,7 +62,7 @@ type Block interface {
 	WithStateTransaction(valuetransaction.ID) Block
 	Timestamp() int64
 	Size() uint16
-	RequestIDs() []*coretypes.RequestID
+	RequestIDs() []*coret.RequestID
 	EssenceHash() *hashing.HashValue // except state transaction id
 	String() string
 	Write(io.Writer) error

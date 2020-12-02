@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -34,7 +34,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	// - take empty state
 	// - apply to it an empty batch
 	// - take the hash. Note: hash of the state do not depend on the address
-	var dummyChainID coretypes.ChainID
+	var dummyChainID coret.ChainID
 	originState := state.NewVirtualState(nil, &dummyChainID)
 	if err := originState.ApplyBatch(state.MustNewOriginBlock(nil)); err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 }
 
 type NewRootInitRequestTransactionParams struct {
-	ChainID              coretypes.ChainID
+	ChainID              coret.ChainID
 	Description          string
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
@@ -68,8 +68,8 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	if err != nil {
 		return nil, err
 	}
-	rootContractID := coretypes.NewContractID(par.ChainID, root.Interface.Hname())
-	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointInit)
+	rootContractID := coret.NewContractID(par.ChainID, root.Interface.Hname())
+	initRequest := sctransaction.NewRequestSection(0, rootContractID, coret.EntryPointInit)
 	args := dict.New()
 	c := codec.NewCodec(args)
 	c.SetChainID(root.ParamChainID, &par.ChainID)

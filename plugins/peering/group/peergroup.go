@@ -3,20 +3,20 @@ package group
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 type PeerGroup struct {
 	ownIndex      uint16
-	chainID       coretypes.ChainID
+	chainID       coret.ChainID
 	peers         []*peering.Peer
 	iAmInTheGroup bool
 }
 
 // NewPeerGroup creates new group of peers. The chainid serves as prefix for messages
-func NewPeerGroup(chainid coretypes.ChainID, netids []string) (*PeerGroup, error) {
+func NewPeerGroup(chainid coret.ChainID, netids []string) (*PeerGroup, error) {
 	if util.ContainsDuplicates(netids) {
 		return nil, fmt.Errorf("NewPeerGroup: contains netid duplicates")
 	}

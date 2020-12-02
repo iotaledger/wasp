@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
@@ -70,7 +70,7 @@ func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
 	return nil
 }
 
-func (txb *Builder) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) error {
+func (txb *Builder) TransferToAddress(targetAddr address.Address, transfer coret.ColoredBalances) error {
 	var err error
 	transfer.Iterate(func(col balance.Color, bal int64) bool {
 		err = txb.vtxb.MoveTokens(targetAddr, col, bal)

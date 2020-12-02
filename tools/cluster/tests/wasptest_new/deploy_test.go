@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -38,7 +38,7 @@ func TestDeployChain(t *testing.T) {
 	}
 	chainID, chainOwnerID := getChainInfo(t, chain)
 	require.EqualValues(t, chainID, chain.ChainID)
-	require.EqualValues(t, chainOwnerID, coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress()))
+	require.EqualValues(t, chainOwnerID, coret.NewAgentIDFromAddress(*chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
@@ -68,7 +68,7 @@ func TestDeployContractOnly(t *testing.T) {
 	check(err, t)
 
 	name := "inncounter1"
-	hname := coretypes.Hn(name)
+	hname := coret.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
 	check(err, t)
@@ -141,7 +141,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	description := "testing contract deployment with inccounter"
 	name := "inncounter1"
-	hname := coretypes.Hn(name)
+	hname := coret.Hn(name)
 	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
 	check(err, t)
 
@@ -180,9 +180,9 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
-	hnameNew := coretypes.Hn(nameNew)
+	hnameNew := coret.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
+	tx, err := chain.OriginatorClient().PostRequest(hname, coret.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
 		Args: codec.EncodeDictFromMap(map[string]interface{}{
 			inccounter.VarName:        nameNew,
 			inccounter.VarDescription: dscrNew,
@@ -225,7 +225,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
-	chain.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(coret.Hn(nameNew), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
 		counterValue, _ := state.GetInt64(inccounter.VarCounter)
 		require.EqualValues(t, 44, counterValue)
 		return true

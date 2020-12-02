@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type stateUpdate struct {
 	batchIndex uint16
-	requestID  coretypes.RequestID
+	requestID  coret.RequestID
 	timestamp  int64
 	mutations  buffered.MutationSequence
 }
 
-func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
-	var req coretypes.RequestID
+func NewStateUpdate(reqid *coret.RequestID) StateUpdate {
+	var req coret.RequestID
 	if reqid != nil {
 		req = *reqid
 	}
@@ -52,7 +52,7 @@ func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
 	return su
 }
 
-func (su *stateUpdate) RequestID() *coretypes.RequestID {
+func (su *stateUpdate) RequestID() *coret.RequestID {
 	return &su.requestID
 }
 

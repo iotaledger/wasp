@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -33,7 +33,7 @@ type Partition struct {
 
 var (
 	// to be able to work with MapsDB
-	partitions      = make(map[coretypes.ChainID]*Partition)
+	partitions      = make(map[coret.ChainID]*Partition)
 	partitionsMutex sync.RWMutex
 )
 
@@ -49,7 +49,7 @@ func storeRealm(realm kvstore.Realm) kvstore.KVStore {
 }
 
 // GetPartition returns a Partition, which is a KVStore prefixed with the chain ID.
-func GetPartition(chainID *coretypes.ChainID) *Partition {
+func GetPartition(chainID *coret.ChainID) *Partition {
 	partitionsMutex.RLock()
 	ret, ok := partitions[*chainID]
 	if ok {
@@ -69,7 +69,7 @@ func GetPartition(chainID *coretypes.ChainID) *Partition {
 }
 
 func GetRegistryPartition() kvstore.KVStore {
-	var niladdr coretypes.ChainID
+	var niladdr coret.ChainID
 	return GetPartition(&niladdr)
 }
 

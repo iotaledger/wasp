@@ -3,7 +3,7 @@ package consensus
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (op *operator) newRequest(reqId coretypes.RequestID) *request {
+func (op *operator) newRequest(reqId coret.RequestID) *request {
 	reqLog := op.log.Named(reqId.Short())
 	ret := &request{
 		reqId:         reqId,
@@ -23,7 +23,7 @@ func (op *operator) newRequest(reqId coretypes.RequestID) *request {
 
 // request record is retrieved by request id.
 // If it doesn't exist and is not in the list of processed requests, it is created
-func (op *operator) requestFromId(reqId coretypes.RequestID) (*request, bool) {
+func (op *operator) requestFromId(reqId coret.RequestID) (*request, bool) {
 	if op.isRequestProcessed(&reqId) {
 		return nil, false
 	}
@@ -79,7 +79,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	return ret, msgFirstTime
 }
 
-func (req *request) requestCode() coretypes.Hname {
+func (req *request) requestCode() coret.Hname {
 	return req.reqTx.Requests()[req.reqId.Index()].EntryPointCode()
 }
 
@@ -91,7 +91,7 @@ func (req *request) isTimelocked(nowis time.Time) bool {
 	return req.timelock() > uint32(nowis.Unix())
 }
 
-func (op *operator) isRequestProcessed(reqid *coretypes.RequestID) bool {
+func (op *operator) isRequestProcessed(reqid *coret.RequestID) bool {
 	processed, err := state.IsRequestCompleted(op.chain.ID(), reqid)
 	if err != nil {
 		panic(err)
@@ -101,7 +101,7 @@ func (op *operator) isRequestProcessed(reqid *coretypes.RequestID) bool {
 
 // deleteCompletedRequests deletes requests which were successfully processed or failed more than maximum retry limit
 func (op *operator) deleteCompletedRequests() error {
-	toDelete := make([]*coretypes.RequestID, 0)
+	toDelete := make([]*coret.RequestID, 0)
 
 	for _, req := range op.requests {
 		if completed, err := state.IsRequestCompleted(op.chain.ID(), &req.reqId); err != nil {
@@ -120,7 +120,7 @@ func (op *operator) deleteCompletedRequests() error {
 	return nil
 }
 
-func idsShortStr(ids []coretypes.RequestID) []string {
+func idsShortStr(ids []coret.RequestID) []string {
 	ret := make([]string, len(ids))
 	for i := range ret {
 		ret[i] = ids[i].Short()
@@ -128,7 +128,7 @@ func idsShortStr(ids []coretypes.RequestID) []string {
 	return ret
 }
 
-func (op *operator) takeFromIds(reqIds []coretypes.RequestID) []*request {
+func (op *operator) takeFromIds(reqIds []coret.RequestID) []*request {
 	ret := make([]*request, 0, len(reqIds))
 	for _, reqId := range reqIds {
 		req, _ := op.requestFromId(reqId)
@@ -140,8 +140,8 @@ func (op *operator) takeFromIds(reqIds []coretypes.RequestID) []*request {
 	return ret
 }
 
-func takeIds(reqs []*request) []coretypes.RequestID {
-	ret := make([]coretypes.RequestID, len(reqs))
+func takeIds(reqs []*request) []coret.RequestID {
+	ret := make([]coret.RequestID, len(reqs))
 	for i := range ret {
 		ret[i] = reqs[i].reqId
 	}
@@ -159,21 +159,21 @@ func takeRefs(reqs []*request) []sctransaction.RequestRef {
 	return ret
 }
 
-func (op *operator) addRequestIdConcurrent(reqId *coretypes.RequestID) {
+func (op *operator) addRequestIdConcurrent(reqId *coret.RequestID) {
 	op.concurrentAccessMutex.Lock()
 	defer op.concurrentAccessMutex.Unlock()
 
 	op.requestIdsProtected[*reqId] = true
 }
 
-func (op *operator) removeRequestIdConcurrent(reqId *coretypes.RequestID) {
+func (op *operator) removeRequestIdConcurrent(reqId *coret.RequestID) {
 	op.concurrentAccessMutex.Lock()
 	defer op.concurrentAccessMutex.Unlock()
 
 	delete(op.requestIdsProtected, *reqId)
 }
 
-func (op *operator) hasRequestIdConcurrent(reqId *coretypes.RequestID) bool {
+func (op *operator) hasRequestIdConcurrent(reqId *coret.RequestID) bool {
 	op.concurrentAccessMutex.RLock()
 	defer op.concurrentAccessMutex.RUnlock()
 
@@ -181,6 +181,6 @@ func (op *operator) hasRequestIdConcurrent(reqId *coretypes.RequestID) bool {
 	return ok
 }
 
-func (op *operator) IsRequestInBacklog(reqId *coretypes.RequestID) bool {
+func (op *operator) IsRequestInBacklog(reqId *coret.RequestID) bool {
 	return op.hasRequestIdConcurrent(reqId)
 }

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coret/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 // Call
-func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) Call(contract coret.Hname, epCode coret.Hname, params codec.ImmutableCodec, transfer coret.ColoredBalances) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByHname(contract)
@@ -83,7 +83,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 // mustDefaultHandleTokens:
 // - handles request token
 // - handles node fee, including fallback if not enough
-func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, error) {
+func (vmctx *VMContext) mustDefaultHandleTokens() (coret.ColoredBalances, error) {
 	transfer := vmctx.reqRef.RequestSection().Transfer()
 	reqColor := balance.Color(vmctx.reqRef.Tx.ID())
 

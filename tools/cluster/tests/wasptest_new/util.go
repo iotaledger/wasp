@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coret"
+	"github.com/iotaledger/wasp/packages/coret/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -76,7 +76,7 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 	return nil
 }
 
-func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color) int64 {
+func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coret.AgentID, color balance.Color) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(accountsc.Interface.Hname()),
 		accountsc.FuncBalance,
@@ -93,12 +93,12 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretype
 	return actual
 }
 
-func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color, expected int64) {
+func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coret.AgentID, color balance.Color, expected int64) {
 	actual := getAgentBalanceOnChain(t, chain, agentID, color)
 	require.EqualValues(t, expected, actual)
 }
 
-func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID {
+func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coret.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(accountsc.Interface.Hname()),
 		accountsc.FuncAccounts,
@@ -106,10 +106,10 @@ func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID 
 	)
 	check(err, t)
 
-	ret := make([]coretypes.AgentID, 0)
+	ret := make([]coret.AgentID, 0)
 	c := codec.NewCodec(r)
 	err = c.Iterate("", func(key kv.Key, value []byte) bool {
-		aid, err := coretypes.NewAgentIDFromBytes([]byte(key))
+		aid, err := coret.NewAgentIDFromBytes([]byte(key))
 		check(err, t)
 
 		ret = append(ret, aid)
@@ -120,8 +120,8 @@ func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID 
 	return ret
 }
 
-func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentID]map[balance.Color]int64 {
-	ret := make(map[coretypes.AgentID]map[balance.Color]int64)
+func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coret.AgentID]map[balance.Color]int64 {
+	ret := make(map[coret.AgentID]map[balance.Color]int64)
 	accounts := getAccountsOnChain(t, chain)
 	for _, agentID := range accounts {
 		r, err := chain.Cluster.WaspClient(0).CallView(
@@ -159,7 +159,7 @@ func printAccounts(t *testing.T, chain *cluster.Chain, title string) {
 	fmt.Println(s)
 }
 
-func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBalances {
+func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coret.ColoredBalances {
 	balances := getBalancesOnChain(t, chain)
 	totalAssets, ok := balances[accountsc.TotalAssetsAccountID]
 	require.True(t, ok)
@@ -187,7 +187,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, 0, diff.Len())
 }
 
-func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {
+func getChainInfo(t *testing.T, chain *cluster.Chain) (coret.ChainID, coret.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(root.Interface.Hname()),
 		root.FuncGetInfo,

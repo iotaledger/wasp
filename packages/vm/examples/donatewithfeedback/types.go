@@ -4,7 +4,7 @@ package donatewithfeedback
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
@@ -12,8 +12,8 @@ import (
 
 // main external constants
 var (
-	RequestDonate   = coretypes.Hn("donate")
-	RequestWithdraw = coretypes.Hn("withdraw")
+	RequestDonate   = coret.Hn("donate")
+	RequestWithdraw = coret.Hn("withdraw")
 )
 
 const (
@@ -37,10 +37,10 @@ const (
 // it is marshalled to the deterministic binary form and saves as one entry in the state
 type DonationInfo struct {
 	Seq      int64
-	Id       coretypes.RequestID
+	Id       coret.RequestID
 	When     time.Time // not marshaled, filled in from timestamp
 	Amount   int64
-	Sender   coretypes.AgentID
+	Sender   coret.AgentID
 	Feedback string // max 16 bit length
 	Error    string
 }
@@ -80,7 +80,7 @@ func (di *DonationInfo) Read(r io.Reader) error {
 	if err = util.ReadInt64(r, &di.Amount); err != nil {
 		return err
 	}
-	if err = coretypes.ReadAgentID(r, &di.Sender); err != nil {
+	if err = coret.ReadAgentID(r, &di.Sender); err != nil {
 		return err
 	}
 	if di.Feedback, err = util.ReadString16(r); err != nil {

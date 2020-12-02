@@ -2,7 +2,7 @@ package admapi
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"net/http"
 
 	"github.com/iotaledger/wasp/client"
@@ -45,7 +45,7 @@ func handlePutChainRecord(c echo.Context) error {
 }
 
 func handleGetChainRecord(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coret.NewChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

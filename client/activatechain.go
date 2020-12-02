@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"net/http"
 )
 
@@ -13,10 +13,10 @@ func DeactivateChainRoute(chainid string) string {
 	return "chain/" + chainid + "/deactivate"
 }
 
-func (c *WaspClient) ActivateChain(chainid *coretypes.ChainID) error {
+func (c *WaspClient) ActivateChain(chainid *coret.ChainID) error {
 	return c.do(http.MethodPost, AdminRoutePrefix+"/"+ActivateChainRoute(chainid.String()), nil, nil)
 }
 
-func (c *WaspClient) DeactivateChain(chainid *coretypes.ChainID) error {
+func (c *WaspClient) DeactivateChain(chainid *coret.ChainID) error {
 	return c.do(http.MethodPost, AdminRoutePrefix+"/"+DeactivateChainRoute(chainid.String()), nil, nil)
 }

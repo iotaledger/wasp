@@ -2,15 +2,15 @@ package sctransaction
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestWriteRead(t *testing.T) {
-	cid := coretypes.NewContractID(coretypes.ChainID{}, root.Interface.Hname())
-	rsec := NewRequestSectionByWallet(cid, coretypes.EntryPointInit).WithTransfer(nil)
+	cid := coret.NewContractID(coret.ChainID{}, root.Interface.Hname())
+	rsec := NewRequestSectionByWallet(cid, coret.EntryPointInit).WithTransfer(nil)
 	var buf, buf1 bytes.Buffer
 	err := rsec.Write(&buf)
 	require.NoError(t, err)

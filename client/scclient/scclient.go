@@ -2,17 +2,17 @@ package scclient
 
 import (
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 )
 
 type SCClient struct {
 	ChainClient   *chainclient.Client
-	ContractHname coretypes.Hname
+	ContractHname coret.Hname
 }
 
 func New(
 	chainClient *chainclient.Client,
-	contractHname coretypes.Hname,
+	contractHname coret.Hname,
 ) *SCClient {
 	return &SCClient{
 		ChainClient:   chainClient,

@@ -4,7 +4,7 @@ package root
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -107,7 +107,7 @@ func deployContract(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 		return nil, fmt.Errorf("root.deployContract: %v", err)
 	}
 	ctx.Eventf("root.deployContract.success. Deployed contract hname = %s, name = '%s'",
-		coretypes.Hn(name).String(), name)
+		coret.Hn(name).String(), name)
 	return nil, nil
 }
 

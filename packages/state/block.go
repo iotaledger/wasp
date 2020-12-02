@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -106,8 +106,8 @@ func (b *block) Size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 
-func (b *block) RequestIDs() []*coretypes.RequestID {
-	ret := make([]*coretypes.RequestID, b.Size())
+func (b *block) RequestIDs() []*coret.RequestID {
+	ret := make([]*coret.RequestID, b.Size())
 	for i, su := range b.stateUpdates {
 		ret[i] = su.RequestID()
 	}
@@ -181,7 +181,7 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func LoadBlock(chainID *coretypes.ChainID, stateIndex uint32) (Block, error) {
+func LoadBlock(chainID *coret.ChainID, stateIndex uint32) (Block, error) {
 	data, err := database.GetPartition(chainID).Get(dbkeyBatch(stateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil

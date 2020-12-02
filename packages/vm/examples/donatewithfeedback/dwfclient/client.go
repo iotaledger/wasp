@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -15,10 +15,10 @@ import (
 
 type DWFClient struct {
 	*chainclient.Client
-	contractHname coretypes.Hname
+	contractHname coret.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *DWFClient {
+func NewClient(scClient *chainclient.Client, contractHname coret.Hname) *DWFClient {
 	return &DWFClient{
 		Client:        scClient,
 		contractHname: contractHname,

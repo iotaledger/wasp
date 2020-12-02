@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
@@ -24,7 +24,7 @@ type RequestStatusResponse struct {
 	IsProcessed bool
 }
 
-func (c *WaspClient) RequestStatus(chainId *coretypes.ChainID, reqId *coretypes.RequestID) (*RequestStatusResponse, error) {
+func (c *WaspClient) RequestStatus(chainId *coret.ChainID, reqId *coret.RequestID) (*RequestStatusResponse, error) {
 	res := &RequestStatusResponse{}
 	if err := c.do(http.MethodGet, RequestStatusRoute(chainId.String(), reqId.Base58()), nil, res); err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (c *WaspClient) RequestStatus(chainId *coretypes.ChainID, reqId *coretypes.
 
 const WaitRequestProcessedDefaultTimeout = 30 * time.Second
 
-func (c *WaspClient) WaitUntilRequestProcessed(chainId *coretypes.ChainID, reqId *coretypes.RequestID, timeout time.Duration) error {
+func (c *WaspClient) WaitUntilRequestProcessed(chainId *coret.ChainID, reqId *coret.RequestID, timeout time.Duration) error {
 	if timeout == 0 {
 		timeout = WaitRequestProcessedDefaultTimeout
 	}
@@ -52,7 +52,7 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainId *coretypes.ChainID, reqId
 func (c *WaspClient) WaitUntilAllRequestsProcessed(tx *sctransaction.Transaction, timeout time.Duration) error {
 	for i, req := range tx.Requests() {
 		chainId := req.Target().ChainID()
-		reqId := coretypes.NewRequestID(tx.ID(), uint16(i))
+		reqId := coret.NewRequestID(tx.ID(), uint16(i))
 		if err := c.WaitUntilRequestProcessed(&chainId, &reqId, timeout); err != nil {
 			return err
 		}

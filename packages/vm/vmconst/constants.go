@@ -1,14 +1,14 @@
 package vmconst
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coret"
 )
 
 // built in request codes: the requests processed by any smart contract
 // all of them are 'reserved' and 'protected'
 const (
-	RequestCodeNOP  = coretypes.Hname(10000)
-	RequestCodeInit = coretypes.Hname(10001)
+	RequestCodeNOP  = coret.Hname(10000)
+	RequestCodeInit = coret.Hname(10001)
 )
 
 const (
