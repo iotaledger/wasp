@@ -43,11 +43,6 @@ type Sandbox interface {
 	GetTimestamp() int64
 	// entropy base on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
-	// Same as panic(), but added as a Sandbox method to emphasize that it's ok to panic from a SC.
-	// A panic will be recovered, and Rollback() will be automatically called after.
-	Panic(v interface{})
-	// clear all updates, restore same context as in the beginning of the VM call
-	Rollback()
 
 	// TransferToAddress send tokens to ledger address (not contract)
 	TransferToAddress(addr address.Address, transfer coret.ColoredBalances) bool
@@ -66,6 +61,11 @@ type Sandbox interface {
 	// Event and Eventf publish "vmmsg" message through Publisher on nanomsg
 	Event(msg string)
 	Eventf(format string, args ...interface{})
+	// Same as panic(), but added as a Sandbox method to emphasize that it's ok to panic from a SC.
+	// A panic will be recovered, and Rollback() will be automatically called after.
+	Panic(v interface{})
+	// clear all updates, restore same context as in the beginning of the VM call
+	Rollback()
 }
 
 type NewRequestParams struct {

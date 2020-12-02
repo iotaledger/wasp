@@ -35,7 +35,7 @@ func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name strin
 		// calling constructor
 		_, err = vmctx.Call(coret.Hn(name), coret.EntryPointInit, initParams, nil)
 		if err != nil {
-			vmctx.log.Warnf("sandbox.DeployContract. Error while calling init function: %v", err)
+			vmctx.log.Warnf("sandbox.CreateContract: calling init function: %v", err)
 		}
 		// ignoring error because init method may not exist
 		return nil
