@@ -56,7 +56,11 @@ func NewTimestampedLog(kv kv.KVStore, name kv.Key) (*TimestampedLog, error) {
 	return ret, nil
 }
 
-func NewMustTimestampedLog(tlog *TimestampedLog) *MustTimestampedLog {
+func NewMustTimestampedLog(kv kv.KVStore, name kv.Key) *MustTimestampedLog {
+	tlog, err := NewTimestampedLog(kv, name)
+	if err != nil {
+		panic(err)
+	}
 	return &MustTimestampedLog{*tlog}
 }
 

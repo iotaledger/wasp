@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 	"github.com/spf13/pflag"
@@ -20,18 +19,15 @@ func decodeCmd(args []string) {
 	var d dict.Dict
 	check(json.NewDecoder(os.Stdin).Decode(&d))
 
-	c := codec.NewMustCodec(d)
-
 	if len(args) == 2 {
 		ktype := args[0]
 		vtype := args[1]
 
-		c.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+		for key, value := range d {
 			skey := util.ValueToString(ktype, []byte(key))
 			sval := util.ValueToString(vtype, value)
 			fmt.Printf("%s: %s\n", skey, sval)
-			return true
-		})
+		}
 		return
 	}
 
@@ -45,7 +41,7 @@ func decodeCmd(args []string) {
 		vtype := args[i*2+2]
 
 		key := kv.Key(util.ValueFromString(ktype, skey))
-		val := c.Get(key)
+		val := d.MustGet(key)
 		if val == nil {
 			fmt.Printf("%s: <nil>\n", skey)
 		} else {

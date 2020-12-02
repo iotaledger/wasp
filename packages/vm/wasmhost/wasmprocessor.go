@@ -6,9 +6,10 @@ package wasmhost
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -17,7 +18,7 @@ type wasmProcessor struct {
 	ctx       vmtypes.Sandbox
 	ctxView   vmtypes.SandboxView
 	function  string
-	params    codec.ImmutableCodec
+	params    dict.Dict
 	scContext *ScContext
 }
 
@@ -33,7 +34,7 @@ func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
 	return host, nil
 }
 
-func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (dict.Dict, error) {
 	if host.IsView() {
 		host.LogText("call is view")
 	}
@@ -75,14 +76,14 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	}
 
 	results := host.FindSubObject(nil, "results", OBJTYPE_MAP).(*ScCallParams).Params
-	return codec.NewCodec(results), nil
+	return results, nil
 }
 
-func (host *wasmProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (host *wasmProcessor) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return host.call(ctx, nil)
 }
 
-func (host *wasmProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (host *wasmProcessor) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return host.call(nil, ctx)
 }
 
@@ -184,14 +185,14 @@ func (host *wasmProcessor) MyContractID() coretypes.ContractID {
 	return host.ctxView.MyContractID()
 }
 
-func (host *wasmProcessor) Params() codec.ImmutableCodec {
+func (host *wasmProcessor) Params() dict.Dict {
 	if host.ctx != nil {
 		return host.ctx.Params()
 	}
 	return host.ctxView.Params()
 }
 
-func (host *wasmProcessor) State() codec.ImmutableMustCodec {
+func (host *wasmProcessor) State() kv.KVStore {
 	if host.ctx != nil {
 		return host.ctx.State()
 	}

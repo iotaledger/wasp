@@ -35,19 +35,19 @@ func deployContractCmd(args []string) {
 			blob.Interface.Hname(),
 			coretypes.Hn(blob.FuncStoreBlob),
 			chainclient.PostRequestParams{
-				Args: codec.EncodeDictFromMap(blobFieldValues),
+				Args: codec.MakeDict(blobFieldValues),
 			},
 		)
 	})
 
-	progHash := blob.MustGetBlobHash(codec.NewCodec(codec.EncodeDictFromMap(blobFieldValues)))
+	progHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return Client().PostRequest(
 			root.Interface.Hname(),
 			coretypes.Hn(root.FuncDeployContract),
 			chainclient.PostRequestParams{
-				Args: codec.EncodeDictFromMap(map[string]interface{}{
+				Args: codec.MakeDict(map[string]interface{}{
 					root.ParamName:        name,
 					root.ParamDescription: description,
 					root.ParamProgramHash: progHash,

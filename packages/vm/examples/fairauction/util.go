@@ -1,6 +1,9 @@
 package fairauction
 
-func GetOwnerMarginPromille(ownerMargin int64, ok bool) int64 {
+func GetOwnerMarginPromille(ownerMargin int64, ok bool, err error) int64 {
+	if err != nil {
+		panic(err)
+	}
 	if !ok {
 		return OwnerMarginDefault
 	}

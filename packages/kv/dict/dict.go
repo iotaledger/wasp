@@ -15,6 +15,22 @@ import (
 // Dict is a KVStore backed by an in-memory map
 type Dict map[kv.Key][]byte
 
+func (d Dict) MustGet(key kv.Key) []byte {
+	return kv.MustGet(d, key)
+}
+
+func (d Dict) MustHas(key kv.Key) bool {
+	return kv.MustHas(d, key)
+}
+
+func (d Dict) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterate(d, prefix, f)
+}
+
+func (d Dict) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeys(d, prefix, f)
+}
+
 // create/clone
 func New() Dict {
 	return make(Dict)
@@ -33,9 +49,17 @@ func FromGoMap(d map[kv.Key][]byte) Dict {
 	return Dict(d)
 }
 
-func FromKVStore(kvs kv.KVStore) (Dict, error) {
+func Clone(other Dict) (Dict, error) {
 	d := make(Dict)
-	err := kvs.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
+	for k, v := range other {
+		d[k] = v
+	}
+	return d, nil
+}
+
+func FromKVStore(s kv.KVStore) (Dict, error) {
+	d := make(Dict)
+	err := s.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
 		d[k] = v
 		return true
 	})
@@ -182,6 +206,28 @@ func (d Dict) Read(r io.Reader) error {
 		d.Set(kv.Key(k), v)
 	}
 	return nil
+}
+
+func (d Dict) Keys() []kv.Key {
+	ret := make([]kv.Key, 0)
+	for key := range d {
+		ret = append(ret, key)
+	}
+	return ret
+}
+
+func (d Dict) KeysSorted() []kv.Key {
+	k := d.Keys()
+	sort.Slice(k, func(i, j int) bool {
+		return k[i] < k[j]
+	})
+	return k
+}
+
+func (d Dict) Extend(from Dict) {
+	for key, value := range from {
+		d.Set(key, value)
+	}
 }
 
 type jsonItem struct {

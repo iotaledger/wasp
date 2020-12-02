@@ -1,6 +1,8 @@
 package subrealm
 
-import "github.com/iotaledger/wasp/packages/kv"
+import (
+	"github.com/iotaledger/wasp/packages/kv"
+)
 
 type subrealm struct {
 	kv     kv.KVStore
@@ -38,4 +40,20 @@ func (s *subrealm) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return s.kv.IterateKeys(s.prefix+prefix, func(key kv.Key) bool {
 		return f(key[len(s.prefix):])
 	})
+}
+
+func (s *subrealm) MustGet(key kv.Key) []byte {
+	return kv.MustGet(s, key)
+}
+
+func (s *subrealm) MustHas(key kv.Key) bool {
+	return kv.MustHas(s, key)
+}
+
+func (s *subrealm) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterate(s, prefix, f)
+}
+
+func (s *subrealm) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeys(s, prefix, f)
 }

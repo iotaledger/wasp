@@ -96,7 +96,7 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeApi())
 }
 
-func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool) bool {
+func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
 	pass := true
 	for i, host := range ch.CommitteeApi() {
 		if !ch.Cluster.Config.Nodes[i].IsUp() {
@@ -112,7 +112,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 		if err != nil {
 			panic(err)
 		}
-		if !f(host, actual.Index, codec.NewMustCodec(actual.Variables)) {
+		if !f(host, actual.Index, actual.Variables) {
 			pass = false
 		}
 	}
@@ -137,7 +137,7 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
-			Args: codec.EncodeDictFromMap(params),
+			Args: codec.MakeDict(params),
 		},
 	)
 	if err != nil {
@@ -159,13 +159,13 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 		blob.VarFieldProgramBinary:      progBinary,
 		blob.VarFieldProgramDescription: description,
 	}
-	programHash := blob.MustGetBlobHash(codec.NewCodec(codec.EncodeDictFromMap(blobFieldValues)))
+	programHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 
 	reqTx, err := ch.OriginatorClient().PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
-			Args: codec.EncodeDictFromMap(blobFieldValues),
+			Args: codec.MakeDict(blobFieldValues),
 		},
 	)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
@@ -193,7 +193,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
-			Args: codec.EncodeDictFromMap(params),
+			Args: codec.MakeDict(params),
 		},
 	)
 	if err != nil {

@@ -92,7 +92,7 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
 	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
 		Transfer: transfer,
-		Args:     codec.EncodeDictFromMap(params),
+		Args:     codec.MakeDict(params),
 	})
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)

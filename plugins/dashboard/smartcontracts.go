@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
@@ -67,16 +68,16 @@ func (n *scNavPage) AddEndpoints(e *echo.Echo) {
 			result.State = state
 			result.Batch = batch
 			if state != nil {
-				codec := state.Variables().Codec()
-				result.ProgramHash, _, err = codec.GetHashValue(vmconst.VarNameProgramData)
+				vars := state.Variables()
+				result.ProgramHash, _, err = codec.DecodeHashValue(vars.MustGet(vmconst.VarNameProgramData))
 				if err != nil {
 					return err
 				}
-				result.Description, _, err = codec.GetString(vmconst.VarNameDescription)
+				result.Description, _, err = codec.DecodeString(vars.MustGet(vmconst.VarNameDescription))
 				if err != nil {
 					return err
 				}
-				result.MinimumReward, _, err = codec.GetInt64(vmconst.VarNameMinimumReward)
+				result.MinimumReward, _, err = codec.DecodeInt64(vars.MustGet(vmconst.VarNameMinimumReward))
 				if err != nil {
 					return err
 				}
@@ -114,7 +115,7 @@ func fetchDescription(br *registry.ChainRecord) (string, error) {
 	if err != nil || state == nil {
 		return "", err
 	}
-	d, _, err := state.Variables().Codec().GetString(vmconst.VarNameDescription)
+	d, _, err := codec.DecodeString(state.Variables().MustGet(vmconst.VarNameDescription))
 	return d, err
 }
 

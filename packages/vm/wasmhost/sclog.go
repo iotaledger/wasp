@@ -39,7 +39,7 @@ func (a *ScLog) InitVM(vm *wasmProcessor, keyId int32) {
 	a.ModelObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
 	a.name = "log." + string(key)
-	a.lines = vm.State().GetTimestampedLog(key)
+	a.lines = datatypes.NewMustTimestampedLog(vm.State(), key)
 	a.logEntry = &ScLogEntry{lines: a.lines}
 	a.logEntryId = a.vm.TrackObject(a.logEntry)
 }
