@@ -3,27 +3,27 @@ DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/common.sh"
 
-wwallet -c owner.json init
-wwallet -c owner.json request-funds
-wwallet -c owner.json fa admin deploy
+wasp-cli -c owner.json init
+wasp-cli -c owner.json request-funds
+wasp-cli -c owner.json fa admin deploy
 scaddress=$(cat owner.json | jq .sc.fa.address -r)
-wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
+wasp-cli -c owner.json send-funds $scaddress IOTA 100 # operating capital
 
-wwallet init
-wwallet request-funds
-wwallet fa set address $scaddress
+wasp-cli init
+wasp-cli request-funds
+wasp-cli fa set address $scaddress
 
-r=$(wwallet mint 10)
+r=$(wasp-cli mint 10)
 echo "$r"
 [[ "$r" =~ of[[:space:]]color[[:space:]]([[:alnum:]]+)$ ]]
 color=${BASH_REMATCH[1]}
 
-wwallet fa start-auction "My first auction" "$color" 10 100 10
+wasp-cli fa start-auction "My first auction" "$color" 10 100 10
 
 # check that start-auction request has been executed
-wwallet fa status | tee >(cat >&2) | grep -q -- "- color: $color\$"
+wasp-cli fa status | tee >(cat >&2) | grep -q -- "- color: $color\$"
 
-wwallet fa place-bid "$color" 110
+wasp-cli fa place-bid "$color" 110
 
 # check that place-bid request has been executed
-wwallet fa status | tee >(cat >&2) | grep -q "bidder:"
+wasp-cli fa status | tee >(cat >&2) | grep -q "bidder:"

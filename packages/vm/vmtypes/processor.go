@@ -4,8 +4,9 @@ package vmtypes
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // package present processor interface. It must be implemented by VM
@@ -20,9 +21,9 @@ type Processor interface {
 // the Sandbox interface
 type EntryPoint interface {
 	WithGasLimit(int) EntryPoint
-	Call(ctx Sandbox) (codec.ImmutableCodec, error)
+	Call(ctx Sandbox) (dict.Dict, error)
 	IsView() bool
-	CallView(ctx SandboxView) (codec.ImmutableCodec, error)
+	CallView(ctx SandboxView) (dict.Dict, error)
 }
 
 var ErrWrongTypeEntryPoint = fmt.Errorf("wrong type of entry point")

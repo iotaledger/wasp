@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -47,7 +49,7 @@ func (v dwfProcessor) GetDescription() string {
 }
 
 // Run calls the function wrapped into the EntryPoint
-func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ret := ep(ctx)
 	if ret != nil {
 		ctx.Eventf("error %v", ret)
@@ -61,7 +63,7 @@ func (ep dwfEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep dwfEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (ep dwfEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
@@ -82,11 +84,11 @@ func donate(ctx vmtypes.Sandbox) error {
 	// only iotas are considered donation. Other colors are ignored
 	donated := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
 	// take feedback text contained in the request
-	feedback, ok, err := params.GetString(donatewithfeedback.VarReqFeedback)
+	feedback, ok, err := codec.DecodeString(params.MustGet(donatewithfeedback.VarReqFeedback))
 	feedback = util.GentleTruncate(feedback, maxComment)
 
 	stateAccess := ctx.State()
-	tlog := stateAccess.GetTimestampedLog(donatewithfeedback.VarStateTheLog)
+	tlog := datatypes.NewMustTimestampedLog(stateAccess, donatewithfeedback.VarStateTheLog)
 
 	sender := ctx.Caller()
 	// determine sender of the request
@@ -116,12 +118,12 @@ func donate(ctx vmtypes.Sandbox) error {
 	tlog.Append(ctx.GetTimestamp(), di.Bytes())
 
 	// save total and maximum donations
-	maxd, _ := stateAccess.GetInt64(donatewithfeedback.VarStateMaxDonation)
-	total, _ := stateAccess.GetInt64(donatewithfeedback.VarStateTotalDonations)
+	maxd, _, _ := codec.DecodeInt64(stateAccess.MustGet(donatewithfeedback.VarStateMaxDonation))
+	total, _, _ := codec.DecodeInt64(stateAccess.MustGet(donatewithfeedback.VarStateTotalDonations))
 	if di.Amount > maxd {
-		stateAccess.SetInt64(donatewithfeedback.VarStateMaxDonation, di.Amount)
+		stateAccess.Set(donatewithfeedback.VarStateMaxDonation, codec.EncodeInt64(di.Amount))
 	}
-	stateAccess.SetInt64(donatewithfeedback.VarStateTotalDonations, total+di.Amount)
+	stateAccess.Set(donatewithfeedback.VarStateTotalDonations, codec.EncodeInt64(total+di.Amount))
 
 	// publish message for tracing
 	ctx.Eventf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
@@ -146,7 +148,7 @@ func withdraw(ctx vmtypes.Sandbox) error {
 	//}
 	// take argument value coming with the request
 	bal := ctx.Accounts().Balance(balance.ColorIOTA)
-	withdrawSum, amountGiven, err := params.GetInt64(donatewithfeedback.VarReqWithdrawSum)
+	withdrawSum, amountGiven, err := codec.DecodeInt64(params.MustGet(donatewithfeedback.VarReqWithdrawSum))
 	if err != nil {
 		// the error from GetInt64 means binary data sent as a value of the variable
 		// cannot be interpreted as int64

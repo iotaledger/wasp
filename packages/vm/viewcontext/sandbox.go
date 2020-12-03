@@ -5,7 +5,8 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -19,13 +20,13 @@ func initLogger() {
 
 type sandboxview struct {
 	vctx       *viewcontext
-	params     codec.ImmutableCodec
-	state      codec.ImmutableMustCodec
+	params     dict.Dict
+	state      kv.KVStore
 	contractID coretypes.ContractID
 	events     vm.ContractEventPublisher
 }
 
-func newSandboxView(vctx *viewcontext, contractID coretypes.ContractID, params codec.ImmutableCodec) *sandboxview {
+func newSandboxView(vctx *viewcontext, contractID coretypes.ContractID, params dict.Dict) *sandboxview {
 	logOnce.Do(initLogger)
 	return &sandboxview{
 		vctx:       vctx,
@@ -36,11 +37,11 @@ func newSandboxView(vctx *viewcontext, contractID coretypes.ContractID, params c
 	}
 }
 
-func (s *sandboxview) Params() codec.ImmutableCodec {
+func (s *sandboxview) Params() dict.Dict {
 	return s.params
 }
 
-func (s *sandboxview) State() codec.ImmutableMustCodec {
+func (s *sandboxview) State() kv.KVStore {
 	return s.state
 }
 
@@ -48,7 +49,7 @@ func (s *sandboxview) MyBalances() coretypes.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 
-func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -97,7 +98,7 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.Entry
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
 		ctx.Eventf("error %v", err)
@@ -111,7 +112,7 @@ func (ep fairAuctionEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep fairAuctionEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (ep fairAuctionEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
@@ -219,10 +220,10 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// take current setting of the smart contract owner margin
-	ownerMargin := GetOwnerMarginPromille(ctx.State().GetInt64(VarStateOwnerMarginPromille))
+	ownerMargin := GetOwnerMarginPromille(codec.DecodeInt64(ctx.State().MustGet(VarStateOwnerMarginPromille)))
 
 	// determine color of the token for sale
-	colh, ok, err := params.GetString(VarReqAuctionColor)
+	colh, ok, err := codec.DecodeString(params.MustGet(VarReqAuctionColor))
 	if err != nil || !ok {
 		// incorrect request arguments, colore for sale is not determined
 		// refund half of the deposit in iotas
@@ -256,7 +257,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine minimum bid
-	minimumBid, _, err := params.GetInt64(VarReqStartAuctionMinimumBid)
+	minimumBid, _, err := codec.DecodeInt64(params.MustGet(VarReqStartAuctionMinimumBid))
 	if err != nil {
 		// wrong argument. Hard reject, no refund
 
@@ -284,7 +285,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine duration of the auction. Take default if no set in request and ensure minimum
-	duration, ok, err := params.GetInt64(VarReqStartAuctionDurationMinutes)
+	duration, ok, err := codec.DecodeInt64(params.MustGet(VarReqStartAuctionDurationMinutes))
 	if err != nil {
 		// fatal error
 		return fmt.Errorf("!!! internal error")
@@ -300,7 +301,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// read description text from the request
-	description, ok, err := params.GetString(VarReqStartAuctionDescription)
+	description, ok, err := codec.DecodeString(params.MustGet(VarReqStartAuctionDescription))
 	if err != nil {
 		return fmt.Errorf("!!! internal error")
 	}
@@ -310,7 +311,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	description = util.GentleTruncate(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
-	auctions := ctx.State().GetMap(VarStateAuctions)
+	auctions := datatypes.NewMustMap(ctx.State(), VarStateAuctions)
 	if b := auctions.GetAt(colorForSale.Bytes()); b != nil {
 		// auction already exists. Ignore sale auction.
 		// refund iotas less fee
@@ -373,7 +374,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine color of the bid
-	colh, ok, err := params.GetString(VarReqAuctionColor)
+	colh, ok, err := codec.DecodeString(params.MustGet(VarReqAuctionColor))
 	if err != nil {
 		// inconsistency. return all?
 		return fmt.Errorf("placeBid: exit 1")
@@ -399,7 +400,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	}
 
 	// find the auction
-	auctions := ctx.State().GetMap(VarStateAuctions)
+	auctions := datatypes.NewMustMap(ctx.State(), VarStateAuctions)
 	data := auctions.GetAt(col.Bytes())
 	if data == nil {
 		// no such auction. refund everything
@@ -463,7 +464,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine color of the auction to finalize
-	colh, ok, err := params.GetString(VarReqAuctionColor)
+	colh, ok, err := codec.DecodeString(params.MustGet(VarReqAuctionColor))
 	if err != nil || !ok {
 		// wrong request arguments
 		// internal error. Refund completely?
@@ -483,7 +484,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// find the record of the auction by color
-	auctDict := ctx.State().GetMap(VarStateAuctions)
+	auctDict := datatypes.NewMustMap(ctx.State(), VarStateAuctions)
 	data := auctDict.GetAt(col.Bytes())
 	if data == nil {
 		// auction with this color does not exist. Inconsistency
@@ -607,7 +608,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	//	// not authorized
 	//	return fmt.Errorf("setOwnerMargin: not authorized")
 	//}
-	margin, ok, err := params.GetInt64(VarReqOwnerMargin)
+	margin, ok, err := codec.DecodeInt64(params.MustGet(VarReqOwnerMargin))
 	if err != nil || !ok {
 		return fmt.Errorf("setOwnerMargin: exit 1")
 	}
@@ -616,7 +617,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 	} else if margin > OwnerMarginMax {
 		margin = OwnerMarginMax
 	}
-	ctx.State().SetInt64(VarStateOwnerMarginPromille, margin)
+	ctx.State().Set(VarStateOwnerMarginPromille, codec.EncodeInt64(margin))
 	ctx.Eventf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
 	return nil
 }

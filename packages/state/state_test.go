@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,13 +27,13 @@ func TestVariableStateBasic(t *testing.T) {
 	assert.EqualValues(t, h1, h2)
 	assert.EqualValues(t, vs1.BlockIndex(), vs1.BlockIndex())
 
-	vs1.Variables().Codec().SetInt64("num", int64(123))
-	vs1.Variables().Codec().SetString("kuku", "A")
-	vs1.Variables().Codec().SetString("mumu", "B")
+	vs1.Variables().Set("num", codec.EncodeInt64(int64(123)))
+	vs1.Variables().Set("kuku", codec.EncodeString("A"))
+	vs1.Variables().Set("mumu", codec.EncodeString("B"))
 
-	vs2.Variables().Codec().SetString("mumu", "B")
-	vs2.Variables().Codec().SetString("kuku", "A")
-	vs2.Variables().Codec().SetInt64("num", int64(123))
+	vs2.Variables().Set("mumu", codec.EncodeString("B"))
+	vs2.Variables().Set("kuku", codec.EncodeString("A"))
+	vs2.Variables().Set("num", codec.EncodeInt64(int64(123)))
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
 

@@ -32,7 +32,11 @@ func NewArray(kv kv.KVStore, name string) (*Array, error) {
 	return ret, nil
 }
 
-func NewMustArray(array *Array) *MustArray {
+func NewMustArray(kv kv.KVStore, name string) *MustArray {
+	array, err := NewArray(kv, name)
+	if err != nil {
+		panic(err)
+	}
 	return &MustArray{*array}
 }
 

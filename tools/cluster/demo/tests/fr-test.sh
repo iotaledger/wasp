@@ -3,21 +3,21 @@ DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/common.sh"
 
-wwallet -c owner.json init
-wwallet -c owner.json request-funds
-wwallet -c owner.json fr admin deploy
-wwallet -c owner.json fr admin set-period 10
+wasp-cli -c owner.json init
+wasp-cli -c owner.json request-funds
+wasp-cli -c owner.json fr admin deploy
+wasp-cli -c owner.json fr admin set-period 10
 scaddress=$(cat owner.json | jq .sc.fr.address -r)
-wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
+wasp-cli -c owner.json send-funds $scaddress IOTA 100 # operating capital
 
 # check that set-period request has been executed
-wwallet -c owner.json fr status | tee >(cat >&2) | grep -q 'play period.*: 10$'
+wasp-cli -c owner.json fr status | tee >(cat >&2) | grep -q 'play period.*: 10$'
 
-wwallet init
-wwallet request-funds
-wwallet fr set address $scaddress
+wasp-cli init
+wasp-cli request-funds
+wasp-cli fr set address $scaddress
 
-wwallet fr bet 2 100
+wasp-cli fr bet 2 100
 
 # check that bet request has been executed
-wwallet fr status | tee >(cat >&2) | grep -q 'bets for next play: 1$'
+wasp-cli fr status | tee >(cat >&2) | grep -q 'bets for next play: 1$'

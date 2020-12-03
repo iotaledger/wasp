@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -18,23 +21,22 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func checkRoots(t *testing.T, chain *cluster.Chain) {
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		require.EqualValues(t, []byte{0xFF}, state.Get(root.VarStateInitialized))
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+		require.EqualValues(t, []byte{0xFF}, state.MustGet(root.VarStateInitialized))
 
-		chid, _ := state.GetChainID(root.VarChainID)
-		require.EqualValues(t, &chain.ChainID, chid)
+		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
+		require.EqualValues(t, chain.ChainID, chid)
 
-		aid, _ := state.GetAgentID(root.VarChainOwnerID)
-		require.EqualValues(t, *chain.OriginatorID(), *aid)
+		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
+		require.EqualValues(t, *chain.OriginatorID(), aid)
 
-		desc, _ := state.GetString(root.VarDescription)
+		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
 		require.EqualValues(t, chain.Description, desc)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -114,8 +116,7 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretype
 	)
 	check(err, t)
 
-	c := codec.NewCodec(ret)
-	actual, _, err := c.GetInt64(kv.Key(color[:]))
+	actual, _, err := codec.DecodeInt64(ret.MustGet(kv.Key(color[:])))
 	check(err, t)
 
 	return actual
@@ -135,14 +136,12 @@ func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID 
 	check(err, t)
 
 	ret := make([]coretypes.AgentID, 0)
-	c := codec.NewCodec(r)
-	err = c.Iterate("", func(key kv.Key, value []byte) bool {
+	for key := range r {
 		aid, err := coretypes.NewAgentIDFromBytes([]byte(key))
 		check(err, t)
 
 		ret = append(ret, aid)
-		return true
-	})
+	}
 	check(err, t)
 
 	return ret
@@ -160,16 +159,14 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 			}),
 		)
 		check(err, t)
-		c := codec.NewCodec(r)
 		ret[agentID] = make(map[balance.Color]int64)
-		err = c.Iterate("", func(key kv.Key, value []byte) bool {
+		for key, value := range r {
 			col, _, err := balance.ColorFromBytes([]byte(key))
 			check(err, t)
 			v, err := util.Int64From8Bytes(value)
 			check(err, t)
 			ret[agentID][col] = v
-			return true
-		})
+		}
 		check(err, t)
 	}
 	return ret
@@ -223,21 +220,20 @@ func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, corety
 	)
 	check(err, t)
 
-	c := codec.NewCodec(ret)
-	chainID, ok, err := c.GetChainID(root.VarChainID)
+	chainID, ok, err := codec.DecodeChainID(ret.MustGet(root.VarChainID))
 	check(err, t)
 	require.True(t, ok)
 
-	ownerID, ok, err := c.GetAgentID(root.VarChainOwnerID)
+	ownerID, ok, err := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
 	check(err, t)
 	require.True(t, ok)
-	return *chainID, *ownerID
+	return chainID, ownerID
 }
 
 func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, error) {
 	hname := coretypes.Hn(name)
 	d := dict.New()
-	codec.NewCodec(d).SetHname(root.ParamHname, hname)
+	d.Set(root.ParamHname, codec.EncodeHname(hname))
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(root.Interface.Hname()),
 		root.FuncFindContract,
@@ -246,8 +242,7 @@ func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	c := codec.NewCodec(ret)
-	recBin, err := c.Get(root.ParamData)
+	recBin, err := ret.Get(root.ParamData)
 	if err != nil {
 		return nil, err
 	}

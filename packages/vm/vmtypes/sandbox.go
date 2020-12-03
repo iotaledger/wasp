@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -19,11 +19,11 @@ type Sandbox interface {
 	// ChainOwnerID AgentID of the current owner of the chain
 	ChainOwnerID() coretypes.AgentID
 	// State is base level interface to access the key/value pairs in the virtual state
-	State() codec.MutableMustCodec
+	State() kv.KVStore
 	// Accounts provide access to on-chain accounts and to the current transfer
 	Accounts() Accounts
 	// Params access to parameters of the call
-	Params() codec.ImmutableCodec
+	Params() dict.Dict
 	// Caller is the agentID of the caller of the SC function
 	Caller() coretypes.AgentID
 	// MyContractID is the ID of the current contract
@@ -32,11 +32,11 @@ type Sandbox interface {
 	MyAgentID() coretypes.AgentID
 
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	CreateContract(programHash hashing.HashValue, name string, description string, initParams codec.ImmutableCodec) error
+	CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and target contract's accounts (if enough)
 	// If the entry point if view, 'transfer' has no effect
-	Call(target coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error)
+	Call(target coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error)
 	// ID of the request in the context of which is the current call
 	RequestID() coretypes.RequestID
 	// current timestamp

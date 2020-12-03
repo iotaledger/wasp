@@ -3,20 +3,20 @@ DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/common.sh"
 
-wwallet -c owner.json init
-wwallet -c owner.json request-funds
-wwallet -c owner.json tr admin deploy
+wasp-cli -c owner.json init
+wasp-cli -c owner.json request-funds
+wasp-cli -c owner.json tr admin deploy
 scaddress=$(cat owner.json | jq .sc.tr.address -r)
-wwallet -c owner.json send-funds $scaddress IOTA 100 # operating capital
+wasp-cli -c owner.json send-funds $scaddress IOTA 100 # operating capital
 
-wwallet init
-wwallet request-funds
-wwallet tr set address $scaddress
+wasp-cli init
+wasp-cli request-funds
+wasp-cli tr set address $scaddress
 
-r=$(wwallet tr mint "My first coin" 10)
+r=$(wasp-cli tr mint "My first coin" 10)
 echo "$r"
 [[ "$r" =~ of[[:space:]]color[[:space:]]([[:alnum:]]+) ]]
 color=${BASH_REMATCH[1]}
 
 # verify
-wwallet tr query "$color" | tee >(cat >&2) | grep -q 'Supply: 10$'
+wasp-cli tr query "$color" | tee >(cat >&2) | grep -q 'Supply: 10$'

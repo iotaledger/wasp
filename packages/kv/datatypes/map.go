@@ -36,7 +36,11 @@ func NewMap(kv kv.KVStore, name string) (*Map, error) {
 	return ret, nil
 }
 
-func NewMustMap(m *Map) *MustMap {
+func NewMustMap(kv kv.KVStore, name string) *MustMap {
+	m, err := NewMap(kv, name)
+	if err != nil {
+		panic(err)
+	}
 	return &MustMap{*m}
 }
 

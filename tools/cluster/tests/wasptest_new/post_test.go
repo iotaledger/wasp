@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -28,11 +29,11 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 	})
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
@@ -46,8 +47,8 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 		return true
 	})
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
@@ -84,8 +85,7 @@ func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 	)
 	check(err, t)
 
-	c := codec.NewMustCodec(ret)
-	counter, _ := c.GetInt64(inccounter.VarCounter)
+	counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	check(err, t)
 
 	return counter
@@ -151,7 +151,7 @@ func TestPost3Recursive(t *testing.T) {
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1, // needs 1 iota for recursive calls
 		},
-		Args: codec.EncodeDictFromMap(map[string]interface{}{
+		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
 	})

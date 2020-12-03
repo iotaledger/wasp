@@ -73,7 +73,7 @@ func TestDepositWithdraw(t *testing.T) {
 	// move 1 iota to another account on chain
 	colorIota := balance.ColorIOTA
 	reqTx2, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncMove), chainclient.PostRequestParams{
-		Args: codec.EncodeDictFromMap(map[string]interface{}{
+		Args: codec.MakeDict(map[string]interface{}{
 			accountsc.ParamAgentID: &origAgentId,
 			accountsc.ParamColor:   &colorIota,
 			accountsc.ParamAmount:  1,

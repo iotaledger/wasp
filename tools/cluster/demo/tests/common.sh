@@ -8,9 +8,9 @@ trap 'err_report $LINENO' ERR
 
 ARGS="$*"
 
-function wwallet() {
-	(PS4=; set -x; : wwallet -w $ARGS "$@")
-    command wwallet -w $ARGS "$@"
+function wasp-cli() {
+	(PS4=; set -x; : wasp-cli -w $ARGS "$@")
+    command wasp-cli -w $ARGS "$@"
 }
 
-rm -f wwallet.json owner.json
+rm -f wasp-cli.json owner.json

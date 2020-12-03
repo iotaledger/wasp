@@ -46,7 +46,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	status := &Status{SCStatus: scStatus}
 
 	ownerMargin, ok := results.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
-	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok)
+	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok, nil)
 
 	auctions := results.Get(fairauction.VarStateAuctions).MustMapResult()
 	status.AuctionsLen = auctions.Len
@@ -67,7 +67,7 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
 		chainclient.PostRequestParams{
-			Args: codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
+			Args: codec.MakeDict(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
 		},
 	)
 }
@@ -84,7 +84,7 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 		}
 		ownerMarginState, ok = res.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
 	}
-	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok)
+	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok, nil)
 	fee := fairauction.GetExpectedDeposit(minimumBid, ownerMargin)
 	return fee, nil
 }
@@ -108,7 +108,7 @@ func (fc *FairAuctionClient) StartAuction(
 				balance.ColorIOTA: fee,
 				*color:            tokensForSale,
 			},
-			Args: codec.EncodeDictFromMap(map[string]interface{}{
+			Args: codec.MakeDict(map[string]interface{}{
 				fairauction.VarReqAuctionColor:                color.String(),
 				fairauction.VarReqStartAuctionDescription:     description,
 				fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
@@ -124,7 +124,7 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 		fairauction.RequestPlaceBid,
 		chainclient.PostRequestParams{
 			Transfer: map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-			Args:     codec.EncodeDictFromMap(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
+			Args:     codec.MakeDict(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
 		},
 	)
 }

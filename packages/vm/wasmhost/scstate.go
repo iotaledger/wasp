@@ -23,7 +23,7 @@ func (o *ScState) InitVM(vm *wasmProcessor, keyId int32) {
 
 func (o *ScState) Exists(keyId int32) bool {
 	key := o.vm.GetKey(keyId)
-	return o.vm.State().Has(key)
+	return o.vm.State().MustHas(key)
 }
 
 func (o *ScState) GetBytes(keyId int32) []byte {
@@ -31,7 +31,7 @@ func (o *ScState) GetBytes(keyId int32) []byte {
 		return []byte(nil)
 	}
 	key := o.vm.GetKey(keyId)
-	return o.vm.State().Get(key)
+	return o.vm.State().MustGet(key)
 }
 
 func (o *ScState) GetInt(keyId int32) int64 {
@@ -39,7 +39,10 @@ func (o *ScState) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := o.vm.GetKey(keyId)
-	value, _ := o.vm.State().GetInt64(key)
+	value, _, err := codec.DecodeInt64(o.vm.State().MustGet(key))
+	if err != nil {
+		panic(err)
+	}
 	return value
 }
 
@@ -68,7 +71,7 @@ func (o *ScState) GetString(keyId int32) string {
 		return ""
 	}
 	key := o.vm.GetKey(keyId)
-	value, _ := o.vm.State().GetString(key)
+	value, _, _ := codec.DecodeString(o.vm.State().MustGet(key))
 	return value
 }
 
@@ -93,7 +96,7 @@ func (o *ScState) SetInt(keyId int32, value int64) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().SetInt64(key, value)
+	o.vm.ctx.State().Set(key, codec.EncodeInt64(value))
 }
 
 func (o *ScState) SetString(keyId int32, value string) {
@@ -101,7 +104,7 @@ func (o *ScState) SetString(keyId int32, value string) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().SetString(key, value)
+	o.vm.ctx.State().Set(key, codec.EncodeString(value))
 }
 
 func (o *ScState) valid(keyId int32, typeId int32) bool {
@@ -129,7 +132,7 @@ func (a *ScStateArray) InitVM(vm *wasmProcessor, keyId int32) {
 	a.ArrayObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
 	a.name = "state.array." + string(key)
-	a.items = vm.State().GetArray(key)
+	a.items = datatypes.NewMustArray(vm.State(), string(key))
 }
 
 func (a *ScStateArray) Exists(keyId int32) bool {
@@ -152,7 +155,10 @@ func (a *ScStateArray) GetInt(keyId int32) int64 {
 	if !a.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
-	value, _ := codec.DecodeInt64(a.items.GetAt(uint16(keyId)))
+	value, _, err := codec.DecodeInt64(a.items.GetAt(uint16(keyId)))
+	if err != nil {
+		panic(err)
+	}
 	return value
 }
 
@@ -234,7 +240,7 @@ func (m *ScStateMap) InitVM(vm *wasmProcessor, keyId int32) {
 	m.MapObject.InitVM(vm, 0)
 	key := vm.GetKey(keyId)
 	m.name = "state.map." + string(key)
-	m.items = vm.State().GetMap(key)
+	m.items = datatypes.NewMustMap(vm.State(), string(key))
 	m.types = make(map[int32]int32)
 }
 
@@ -256,7 +262,10 @@ func (m *ScStateMap) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := []byte(m.vm.GetKey(keyId))
-	value, _ := codec.DecodeInt64(m.items.GetAt(key))
+	value, _, err := codec.DecodeInt64(m.items.GetAt(key))
+	if err != nil {
+		panic(err)
+	}
 	return value
 }
 

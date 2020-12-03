@@ -2,12 +2,17 @@ package wasptest
 
 import (
 	"fmt"
+	"io/ioutil"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -15,9 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"testing"
-	"time"
 )
 
 var (
@@ -32,10 +34,10 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 3, contractRegistry.Len())
 		return true
 	})
@@ -95,7 +97,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	blobFieldValues := map[string]interface{}{
 		blob.VarFieldProgramDescription: []byte(description),
 	}
-	expectedHash := blob.MustGetBlobHash(codec.NewCodec(codec.EncodeDictFromMap(blobFieldValues)))
+	expectedHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
@@ -103,7 +105,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
-			Args: codec.EncodeDictFromMap(blobFieldValues),
+			Args: codec.MakeDict(blobFieldValues),
 		},
 	)
 	check(err, t)
@@ -113,8 +115,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	ret := getBlobInfo(t, chain, expectedHash)
 	require.False(t, ret.IsEmpty())
 
-	c := codec.NewCodec(ret)
-	v, ok, err := c.GetInt64(blob.VarFieldProgramDescription)
+	v, ok, err := codec.DecodeInt64(ret.MustGet(blob.VarFieldProgramDescription))
 	require.NoError(t, err)
 	require.True(t, ok)
 	require.EqualValues(t, len(description), v)
@@ -139,7 +140,7 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 		blobFieldValues[fn] = blobs[i]
 	}
 
-	expectedHash := blob.MustGetBlobHash(codec.NewCodec(codec.EncodeDictFromMap(blobFieldValues)))
+	expectedHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
@@ -147,7 +148,7 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
-			Args: codec.EncodeDictFromMap(blobFieldValues),
+			Args: codec.MakeDict(blobFieldValues),
 		},
 	)
 	check(err, t)
