@@ -2,14 +2,13 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"io"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -93,8 +92,8 @@ func (req *RequestSection) WithArgs(args dict.Dict) *RequestSection {
 	return req
 }
 
-func (req *RequestSection) Args() codec.ImmutableCodec {
-	return codec.NewCodec(req.args)
+func (req *RequestSection) Args() dict.Dict {
+	return req.args
 }
 
 func (req *RequestSection) EntryPointCode() coretypes.Hname {

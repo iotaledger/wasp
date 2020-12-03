@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -28,12 +28,12 @@ func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
 
 // CreateContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, description string, initParams codec.ImmutableCodec) error {
+func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
 	return s.vmctx.CreateContract(programHash, name, description, initParams)
 }
 
 // Call calls an entry point of contact, passes parameters and funds
-func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }
 
@@ -50,7 +50,7 @@ func (s *sandbox) ContractOriginator() coretypes.AgentID {
 	return s.vmctx.ContractOriginator()
 }
 
-func (s *sandbox) State() codec.MutableMustCodec {
+func (s *sandbox) State() kv.KVStore {
 	return s.vmctx.State()
 }
 
@@ -60,7 +60,7 @@ func (s *sandbox) RequestID() coretypes.RequestID {
 
 // call context
 
-func (s *sandbox) Params() codec.ImmutableCodec {
+func (s *sandbox) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 

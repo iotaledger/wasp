@@ -3,10 +3,11 @@ package vmcontext
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
@@ -19,7 +20,7 @@ var (
 )
 
 // Call
-func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
 	// prevent calling 'init' not from root contract or not while initializing root
@@ -136,6 +137,6 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	return cbalances.NewFromMap(remaining), nil
 }
 
-func (vmctx *VMContext) Params() codec.ImmutableCodec {
+func (vmctx *VMContext) Params() dict.Dict {
 	return vmctx.getCallContext().params
 }

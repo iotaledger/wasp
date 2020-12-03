@@ -1,9 +1,6 @@
 package consensus
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"sync"
 	"time"
 
@@ -11,11 +8,15 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -132,8 +133,11 @@ func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
 	if op.currentState == nil {
 		return nil, false
 	}
-	h, ok, err := op.currentState.Variables().Codec().GetHashValue(vmconst.VarNameProgramData)
-	if !ok || err != nil {
+	h, ok, err := codec.DecodeHashValue(op.currentState.Variables().MustGet(vmconst.VarNameProgramData))
+	if err != nil {
+		panic(err)
+	}
+	if !ok {
 		return nil, false
 	}
 	return h, true
@@ -149,7 +153,7 @@ func (op *operator) getMinimumReward() int64 {
 	if _, ok := op.blockIndex(); !ok {
 		return 0
 	}
-	vt, ok, err := op.currentState.Variables().Codec().GetInt64(vmconst.VarNameMinimumReward)
+	vt, ok, err := codec.DecodeInt64(op.currentState.Variables().MustGet(vmconst.VarNameMinimumReward))
 	if err != nil {
 		panic(err)
 	}

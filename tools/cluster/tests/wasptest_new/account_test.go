@@ -2,14 +2,16 @@ package wasptest
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -52,11 +54,11 @@ func TestBasicAccounts(t *testing.T) {
 	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
 	t.Logf("   %s: %s", accountsc.Name, accountsc.Interface.Hname().String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 
 		crBytes := contractRegistry.GetAt(hname.Bytes())
@@ -72,8 +74,8 @@ func TestBasicAccounts(t *testing.T) {
 		return true
 	})
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
@@ -98,8 +100,8 @@ func TestBasicAccounts(t *testing.T) {
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 43, counterValue)
 		return true
 	})
@@ -163,11 +165,11 @@ func TestBasic2Accounts(t *testing.T) {
 	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
 	t.Logf("   %s: %s", accountsc.Name, accountsc.Interface.Hname().String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 
 		crBytes := contractRegistry.GetAt(hname.Bytes())
@@ -183,8 +185,8 @@ func TestBasic2Accounts(t *testing.T) {
 		return true
 	})
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
@@ -223,8 +225,8 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 	checkLedger(t, chain)
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 43, counterValue)
 		return true
 	})

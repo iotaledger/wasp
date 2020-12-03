@@ -71,9 +71,8 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	rootContractID := coretypes.NewContractID(par.ChainID, root.Interface.Hname())
 	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointInit)
 	args := dict.New()
-	c := codec.NewCodec(args)
-	c.SetChainID(root.ParamChainID, &par.ChainID)
-	c.SetString(root.ParamDescription, par.Description)
+	args.Set(root.ParamChainID, codec.EncodeChainID(par.ChainID))
+	args.Set(root.ParamDescription, codec.EncodeString(par.Description))
 	initRequest.WithArgs(args)
 
 	if err := txb.AddRequestSection(initRequest); err != nil {

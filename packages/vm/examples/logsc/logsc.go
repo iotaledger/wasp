@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
@@ -38,7 +39,7 @@ func (v logscProcessor) GetDescription() string {
 	return "LogSc hard coded smart contract processor"
 }
 
-func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (ep logscEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ep(ctx)
 	return nil, nil
 }
@@ -49,7 +50,7 @@ func (ep logscEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep logscEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (ep logscEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
@@ -61,16 +62,16 @@ const logArrayKey = kv.Key("log")
 
 func handleAddLogRequest(ctx vmtypes.Sandbox) {
 	params := ctx.Params()
-	msg, ok, _ := params.GetString("message")
-	if !ok {
+	msg, _, _ := codec.DecodeString(params.MustGet("message"))
+	if msg == "" {
 		fmt.Printf("[logsc] invalid request: missing message argument")
 		return
 	}
 
-	length, _ := ctx.State().GetInt64(logArrayKey)
+	length, _, _ := codec.DecodeInt64(ctx.State().MustGet(logArrayKey))
 	length += 1
-	ctx.State().SetInt64(logArrayKey, length)
-	ctx.State().SetString(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), msg)
+	ctx.State().Set(logArrayKey, codec.EncodeInt64(length))
+	ctx.State().Set(kv.Key(fmt.Sprintf("%s:%d", logArrayKey, length-1)), codec.EncodeString(msg))
 
 	publisher.Publish("logsc-addlog", fmt.Sprintf("length=%d", length), fmt.Sprintf("msg=[%s]", msg))
 }

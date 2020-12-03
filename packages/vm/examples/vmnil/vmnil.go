@@ -4,7 +4,7 @@ package vmnil
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -26,7 +26,7 @@ func (v nilProcessor) GetDescription() string {
 }
 
 // does nothing, i.e. resulting state update is empty
-func (v nilProcessor) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (v nilProcessor) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	reqId := ctx.RequestID()
 	ctx.Eventf("run nilProcessor. Contract ID: %s, ts: %d, reqid: %s",
 		ctx.MyContractID().String(),
@@ -42,7 +42,7 @@ func (ep nilProcessor) IsView() bool {
 }
 
 // TODO
-func (ep nilProcessor) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (ep nilProcessor) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 

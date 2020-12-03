@@ -46,6 +46,6 @@ func TestBasicArray(t *testing.T) {
 	assert.EqualValues(t, arr.Len()+1, arr2.Len())
 
 	assert.Panics(t, func() {
-		NewMustArray(arr2).GetAt(arr2.Len())
+		NewMustArray(arr2.kv, arr2.name).GetAt(arr2.Len())
 	})
 }

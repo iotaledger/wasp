@@ -67,11 +67,11 @@ func (o *ScCallInfo) Invoke() {
 	transfers := o.vm.FindObject(transfersId).(*ScCallTransfers).Transfers
 	balances := cbalances.NewFromMap(transfers)
 	var err error
-	var results codec.ImmutableCodec
+	var results dict.Dict
 	if o.vm.ctx != nil {
-		results, err = o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), balances)
+		results, err = o.vm.ctx.Call(contractCode, functionCode, params, balances)
 	} else {
-		results, err = o.vm.ctxView.Call(contractCode, functionCode, codec.NewCodec(params))
+		results, err = o.vm.ctxView.Call(contractCode, functionCode, params)
 	}
 	if err != nil {
 		o.Error("failed to invoke call: %v", err)
@@ -274,11 +274,11 @@ func (o *ScViewInfo) Invoke() {
 		})
 	}
 	var err error
-	var results codec.ImmutableCodec
+	var results dict.Dict
 	if o.vm.ctx != nil {
-		results, err = o.vm.ctx.Call(contractCode, functionCode, codec.NewCodec(params), nil)
+		results, err = o.vm.ctx.Call(contractCode, functionCode, params, nil)
 	} else {
-		results, err = o.vm.ctxView.Call(contractCode, functionCode, codec.NewCodec(params))
+		results, err = o.vm.ctxView.Call(contractCode, functionCode, params)
 	}
 	if err != nil {
 		o.Error("failed to invoke view: %v", err)
@@ -434,7 +434,7 @@ func (o *ScCallParams) GetInt(keyId int32) int64 {
 	key := o.vm.GetKey(keyId)
 	bytes, err := o.Params.Get(key)
 	if err == nil {
-		value, err := codec.DecodeInt64(bytes)
+		value, _, err := codec.DecodeInt64(bytes)
 		if err == nil {
 			return value
 		}
@@ -450,7 +450,8 @@ func (o *ScCallParams) GetString(keyId int32) string {
 	key := o.vm.GetKey(keyId)
 	bytes, err := o.Params.Get(key)
 	if err == nil {
-		return codec.DecodeString(bytes)
+		value, _, _ := codec.DecodeString(bytes)
+		return value
 	}
 	return o.MapObject.GetString(keyId)
 }
@@ -484,12 +485,12 @@ func (o *ScCallParams) SetString(keyId int32, value string) {
 
 type ScCallResults struct {
 	MapObject
-	Results codec.ImmutableCodec
+	Results dict.Dict
 }
 
 func (o *ScCallResults) InitVM(vm *wasmProcessor, keyId int32) {
 	o.MapObject.InitVM(vm, keyId)
-	o.Results = codec.NewCodec(dict.New())
+	o.Results = dict.New()
 }
 
 func (o *ScCallResults) Exists(keyId int32) bool {
@@ -508,7 +509,7 @@ func (o *ScCallResults) GetInt(keyId int32) int64 {
 	key := o.vm.GetKey(keyId)
 	bytes, err := o.Results.Get(key)
 	if err == nil {
-		value, err := codec.DecodeInt64(bytes)
+		value, _, err := codec.DecodeInt64(bytes)
 		if err == nil {
 			return value
 		}
@@ -524,7 +525,8 @@ func (o *ScCallResults) GetString(keyId int32) string {
 	key := o.vm.GetKey(keyId)
 	bytes, err := o.Results.Get(key)
 	if err == nil {
-		return codec.DecodeString(bytes)
+		value, _, _ := codec.DecodeString(bytes)
+		return value
 	}
 	return o.MapObject.GetString(keyId)
 }

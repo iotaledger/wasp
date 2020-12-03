@@ -3,6 +3,8 @@
 
 package wasmhost
 
+import "github.com/iotaledger/wasp/packages/kv/codec"
+
 type ScRequest struct {
 	MapObject
 }
@@ -82,13 +84,13 @@ func (o *ScRequestParams) GetBytes(keyId int32) []byte {
 
 func (o *ScRequestParams) GetInt(keyId int32) int64 {
 	key := o.vm.GetKey(keyId)
-	value, _, _ := o.vm.params.GetInt64(key)
+	value, _, _ := codec.DecodeInt64(o.vm.params.MustGet(key))
 	return value
 }
 
 func (o *ScRequestParams) GetString(keyId int32) string {
 	key := o.vm.GetKey(keyId)
-	value, _, _ := o.vm.params.GetString(key)
+	value, _, _ := codec.DecodeString(o.vm.params.MustGet(key))
 	return value
 }
 

@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -98,34 +97,24 @@ func (s stateWrapper) Set(name kv.Key, value []byte) {
 	s.stateUpdate.Mutations().Add(buffered.NewMutationSet(name, value))
 }
 
-// ------------------------ VMContext kvstore implementation
-
-func (vmctx *VMContext) Set(name kv.Key, value []byte) {
-	vmctx.stateWrapper().Set(name, value)
-}
-
-func (vmctx *VMContext) Has(name kv.Key) (bool, error) {
-	return vmctx.stateWrapper().Has(name)
-}
-
-func (vmctx *VMContext) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	return vmctx.stateWrapper().Iterate(prefix, f)
-}
-
-func (vmctx *VMContext) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	return vmctx.stateWrapper().IterateKeys(prefix, f)
-}
-
-func (vmctx *VMContext) Get(name kv.Key) ([]byte, error) {
-	return vmctx.stateWrapper().Get(name)
-}
-
-func (vmctx *VMContext) Del(name kv.Key) {
-	vmctx.stateWrapper().Del(name)
-}
-
-func (vmctx *VMContext) State() codec.MutableMustCodec {
+func (vmctx *VMContext) State() kv.KVStore {
 	w := vmctx.stateWrapper()
 	vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
-	return codec.NewMustCodec(w)
+	return w
+}
+
+func (s stateWrapper) MustGet(key kv.Key) []byte {
+	return kv.MustGet(s, key)
+}
+
+func (s stateWrapper) MustHas(key kv.Key) bool {
+	return kv.MustHas(s, key)
+}
+
+func (s stateWrapper) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterate(s, prefix, f)
+}
+
+func (s stateWrapper) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeys(s, prefix, f)
 }

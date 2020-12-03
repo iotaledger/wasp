@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -63,7 +64,7 @@ func (vs *virtualState) Clone() VirtualState {
 }
 
 func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
-	addr, ok, err := vs.Variables().Codec().GetAddress(vmconst.VarNameOwnerAddress)
+	addr, ok, err := codec.DecodeAddress(vs.Variables().MustGet(vmconst.VarNameOwnerAddress))
 	if !ok || err != nil {
 		return false
 	}

@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/wwallet/util"
 )
@@ -23,7 +22,6 @@ func callViewCmd(args []string) {
 
 func encodeParams(params []string) dict.Dict {
 	d := dict.New()
-	c := codec.NewMustCodec(d)
 	if len(params)%4 != 0 {
 		check(fmt.Errorf("Params format: <type> <key> <type> <value> ..."))
 	}
@@ -35,7 +33,7 @@ func encodeParams(params []string) dict.Dict {
 
 		key := kv.Key(util.ValueFromString(ktype, k))
 		val := util.ValueFromString(vtype, v)
-		c.Set(key, val)
+		d.Set(key, val)
 	}
 	return d
 }
