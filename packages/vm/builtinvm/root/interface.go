@@ -2,6 +2,7 @@ package root
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -78,6 +79,7 @@ type ContractRecord struct {
 	Description string
 	Name        string
 	NodeFee     int64 // minimum node fee
+	Originator  coretypes.AgentID
 }
 
 // serde
@@ -92,6 +94,9 @@ func (p *ContractRecord) Write(w io.Writer) error {
 		return err
 	}
 	if err := util.WriteInt64(w, p.NodeFee); err != nil {
+		return err
+	}
+	if _, err := w.Write(p.Originator[:]); err != nil {
 		return err
 	}
 	return nil
@@ -109,6 +114,9 @@ func (p *ContractRecord) Read(r io.Reader) error {
 		return err
 	}
 	if err := util.ReadInt64(r, &p.NodeFee); err != nil {
+		return err
+	}
+	if err := coretypes.ReadAgentID(r, &p.Originator); err != nil {
 		return err
 	}
 	return nil

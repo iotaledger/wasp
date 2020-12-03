@@ -102,9 +102,9 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(blobFieldValues),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(blobFieldValues),
+		},
 	)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
@@ -146,9 +146,9 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(blobFieldValues),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(blobFieldValues),
+		},
 	)
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)

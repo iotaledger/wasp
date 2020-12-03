@@ -63,6 +63,34 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 	})
 }
 
+func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
+	recRoot, err := findContract(chain, root.Interface.Name)
+	check(err, t)
+	require.NotNil(t, recRoot)
+	require.EqualValues(t, root.Interface.Name, recRoot.Name)
+	require.EqualValues(t, root.Interface.ProgramHash, recRoot.ProgramHash)
+	require.EqualValues(t, root.Interface.Description, recRoot.Description)
+	require.EqualValues(t, coretypes.AgentID{}, recRoot.Originator)
+
+	origAgentID := coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
+
+	recBlob, err := findContract(chain, blob.Interface.Name)
+	check(err, t)
+	require.NotNil(t, recBlob)
+	require.EqualValues(t, blob.Interface.Name, recBlob.Name)
+	require.EqualValues(t, blob.Interface.ProgramHash, recBlob.ProgramHash)
+	require.EqualValues(t, blob.Interface.Description, recBlob.Description)
+	require.EqualValues(t, origAgentID, recBlob.Originator)
+
+	recAccounts, err := findContract(chain, accountsc.Interface.Name)
+	check(err, t)
+	require.NotNil(t, recAccounts)
+	require.EqualValues(t, accountsc.Interface.Name, recAccounts.Name)
+	require.EqualValues(t, accountsc.Interface.ProgramHash, recAccounts.ProgramHash)
+	require.EqualValues(t, accountsc.Interface.Description, recAccounts.Description)
+	require.EqualValues(t, origAgentID, recAccounts.Originator)
+}
+
 func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {
 	err := wasps.NodeClient.RequestFunds(addr)
 	if err != nil {
@@ -185,4 +213,43 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	}
 	fmt.Printf("\ninconsistent ledger %s\n", diff.String())
 	require.EqualValues(t, 0, diff.Len())
+}
+
+func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {
+	ret, err := chain.Cluster.WaspClient(0).CallView(
+		chain.ContractID(root.Interface.Hname()),
+		root.FuncGetInfo,
+		nil,
+	)
+	check(err, t)
+
+	c := codec.NewCodec(ret)
+	chainID, ok, err := c.GetChainID(root.VarChainID)
+	check(err, t)
+	require.True(t, ok)
+
+	ownerID, ok, err := c.GetAgentID(root.VarChainOwnerID)
+	check(err, t)
+	require.True(t, ok)
+	return *chainID, *ownerID
+}
+
+func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, error) {
+	hname := coretypes.Hn(name)
+	d := dict.New()
+	codec.NewCodec(d).SetHname(root.ParamHname, hname)
+	ret, err := chain.Cluster.WaspClient(0).CallView(
+		chain.ContractID(root.Interface.Hname()),
+		root.FuncFindContract,
+		d,
+	)
+	if err != nil {
+		return nil, err
+	}
+	c := codec.NewCodec(ret)
+	recBin, err := c.Get(root.ParamData)
+	if err != nil {
+		return nil, err
+	}
+	return root.DecodeContractRecord(recBin)
 }

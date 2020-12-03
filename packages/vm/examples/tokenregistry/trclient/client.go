@@ -45,9 +45,10 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 	return trc.PostRequest(
 		trc.contractHname,
 		tokenregistry.RequestMintSupply,
-		map[address.Address]int64{par.MintTarget: par.Supply},
-		nil,
-		codec.EncodeDictFromMap(args),
+		chainclient.PostRequestParams{
+			Mint: map[address.Address]int64{par.MintTarget: par.Supply},
+			Args: codec.EncodeDictFromMap(args),
+		},
 	)
 }
 

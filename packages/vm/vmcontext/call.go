@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
 var (
@@ -20,6 +21,13 @@ var (
 // Call
 func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
+
+	// prevent calling 'init' not from root contract or not while initializing root
+	if epCode == coretypes.EntryPointInit &&
+		contract != root.Interface.Hname() &&
+		vmctx.CurrentContractHname() != root.Interface.Hname() {
+		return nil, fmt.Errorf("attempt to call init not from root contract")
+	}
 
 	rec, ok := vmctx.findContractByHname(contract)
 	if !ok {

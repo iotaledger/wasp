@@ -29,9 +29,10 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Tran
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
-		nil,
-		map[balance.Color]int64{balance.ColorIOTA: amount},
-		codec.EncodeDictFromMap(map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback}),
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{balance.ColorIOTA: amount},
+			Args:     codec.EncodeDictFromMap(map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback}),
+		},
 	)
 }
 
@@ -39,9 +40,9 @@ func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error)
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestWithdraw,
-		nil,
-		nil,
-		codec.EncodeDictFromMap(map[string]interface{}{donatewithfeedback.VarReqWithdrawSum: amount}),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(map[string]interface{}{donatewithfeedback.VarReqWithdrawSum: amount}),
+		},
 	)
 }
 

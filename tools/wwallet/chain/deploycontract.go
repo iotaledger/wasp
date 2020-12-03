@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -33,9 +34,9 @@ func deployContractCmd(args []string) {
 		return Client().PostRequest(
 			blob.Interface.Hname(),
 			coretypes.Hn(blob.FuncStoreBlob),
-			nil,
-			nil,
-			codec.EncodeDictFromMap(blobFieldValues),
+			chainclient.PostRequestParams{
+				Args: codec.EncodeDictFromMap(blobFieldValues),
+			},
 		)
 	})
 
@@ -45,13 +46,13 @@ func deployContractCmd(args []string) {
 		return Client().PostRequest(
 			root.Interface.Hname(),
 			coretypes.Hn(root.FuncDeployContract),
-			nil,
-			nil,
-			codec.EncodeDictFromMap(map[string]interface{}{
-				root.ParamName:        name,
-				root.ParamDescription: description,
-				root.ParamProgramHash: progHash,
-			}),
+			chainclient.PostRequestParams{
+				Args: codec.EncodeDictFromMap(map[string]interface{}{
+					root.ParamName:        name,
+					root.ParamDescription: description,
+					root.ParamProgramHash: progHash,
+				}),
+			},
 		)
 	})
 }

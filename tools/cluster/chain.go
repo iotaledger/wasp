@@ -3,11 +3,12 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
-	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -16,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -86,6 +88,10 @@ func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.
 	)
 }
 
+func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme signaturescheme.SignatureScheme) *scclient.SCClient {
+	return scclient.New(ch.Client(sigScheme), contractHname)
+}
+
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeApi())
 }
@@ -130,9 +136,9 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 	tx, err := ch.OriginatorClient().PostRequest(
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(params),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(params),
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -158,9 +164,9 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	reqTx, err := ch.OriginatorClient().PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(blobFieldValues),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(blobFieldValues),
+		},
 	)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	if err != nil {
@@ -186,9 +192,9 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	tx, err := ch.OriginatorClient().PostRequest(
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
-		nil,
-		nil,
-		codec.EncodeDictFromMap(params),
+		chainclient.PostRequestParams{
+			Args: codec.EncodeDictFromMap(params),
+		},
 	)
 	if err != nil {
 		return nil, *hashing.NilHash, err

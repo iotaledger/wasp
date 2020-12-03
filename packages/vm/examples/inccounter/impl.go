@@ -2,18 +2,50 @@ package inccounter
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type incCounterProcessor map[coretypes.Hname]incEntryPoint
+const (
+	Name        = "inccounter"
+	Version     = "0.1"
+	fullName    = Name + "-" + Version
+	description = "Increment counter, a PoC smart contract"
+)
+
+var (
+	Interface = &contract.ContractInterface{
+		Name:        fullName,
+		Description: description,
+		ProgramHash: *hashing.HashStrings(fullName),
+	}
+)
+
+func init() {
+	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
+		contract.Func(FuncIncCounter, incCounter),
+		contract.Func(FuncIncAndRepeatOnceAfter5s, incCounterAndRepeatOnce),
+		contract.Func(FuncIncAndRepeatMany, incCounterAndRepeatMany),
+		contract.Func(FuncSpawn, spawn),
+		contract.ViewFunc(FuncGetCounter, getCounter),
+	})
+}
+
+const (
+	FuncIncCounter              = "incCounter"
+	FuncIncAndRepeatOnceAfter5s = "incAndRepeatOnceAfter5s"
+	FuncIncAndRepeatMany        = "incAndRepeatMany"
+	FuncSpawn                   = "spawn"
+	FuncGetCounter              = "getCounter"
+)
 
 const (
 	ProgramHashStr = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
-	Description    = "Increment counter, a PoC smart contract"
 
 	VarNumRepeats  = "numRepeats"
 	VarCounter     = "counter"
@@ -22,74 +54,11 @@ const (
 )
 
 var (
-	EntryPointIncCounter              = coretypes.Hn("incCounter")
-	EntryPointIncAndRepeatOnceAfter5s = coretypes.Hn("incAndRepeatOnceAfter5s")
-	EntryPointIncAndRepeatMany        = coretypes.Hn("incAndRepeatMany")
-	EntryPointSpawn                   = coretypes.Hn("spawn")
-	EntryPointGetCounter              = coretypes.Hn("getCounter")
-
 	ProgramHash, _ = hashing.HashValueFromBase58(ProgramHashStr)
 )
 
-var entryPoints = incCounterProcessor{
-	coretypes.EntryPointInit:          epFunc(initialize),
-	EntryPointIncCounter:              epFunc(incCounter),
-	EntryPointIncAndRepeatOnceAfter5s: epFunc(incCounterAndRepeatOnce),
-	EntryPointIncAndRepeatMany:        epFunc(incCounterAndRepeatMany),
-	EntryPointSpawn:                   epFunc(spawn),
-	EntryPointGetCounter:              epView(getCounter),
-}
-
-type incEntryPoint struct {
-	view    bool
-	funFull func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
-	funView func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
-}
-
-func epFunc(fun func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)) incEntryPoint {
-	return incEntryPoint{funFull: fun}
-}
-
-func epView(fun func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)) incEntryPoint {
-	return incEntryPoint{funView: fun, view: true}
-}
-
 func GetProcessor() vmtypes.Processor {
-	return entryPoints
-}
-
-func (proc incCounterProcessor) GetEntryPoint(rc coretypes.Hname) (vmtypes.EntryPoint, bool) {
-	f, ok := proc[rc]
-	if !ok {
-		return nil, false
-	}
-	return f, true
-}
-
-func (v incCounterProcessor) GetDescription() string {
-	return "IncrementCounter hard coded smart contract processor"
-}
-
-func (ep incEntryPoint) WithGasLimit(gas int) vmtypes.EntryPoint {
-	return ep
-}
-
-func (ep incEntryPoint) IsView() bool {
-	return ep.view
-}
-
-func (ep incEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
-	if ep.IsView() {
-		panic("wrong call of the view")
-	}
-	return ep.funFull(ctx)
-}
-
-func (ep incEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
-	if !ep.IsView() {
-		panic("wrong call of the full entry point")
-	}
-	return ep.funView(ctx)
+	return Interface
 }
 
 func initialize(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
@@ -121,8 +90,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
 	state.SetInt64(VarCounter, val+1)
 	if val == 0 {
-
-		if ctx.PostRequestToSelfWithDelay(EntryPointIncCounter, nil, 5) {
+		if ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncCounter), nil, 5) {
 			ctx.Event("PostRequestToSelfWithDelay RequestInc 5 sec")
 		} else {
 			ctx.Event("failed to PostRequestToSelfWithDelay RequestInc 5 sec")
@@ -146,10 +114,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 		ctx.Panic(err)
 	}
 	if !ok {
-		numRepeats, ok = state.GetInt64(VarNumRepeats)
-		if err != nil {
-			ctx.Panic(err)
-		}
+		numRepeats, _ = state.GetInt64(VarNumRepeats)
 	}
 	if numRepeats == 0 {
 		ctx.Eventf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
@@ -160,7 +125,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) 
 
 	state.SetInt64(VarNumRepeats, numRepeats-1)
 
-	if ctx.PostRequestToSelfWithDelay(EntryPointIncAndRepeatMany, nil, 1) {
+	if ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncAndRepeatMany), nil, 1) {
 		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
 		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
@@ -202,7 +167,7 @@ func spawn(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 	// increase counter in newly spawned contract
 	hname := coretypes.Hn(name)
-	_, err = ctx.Call(hname, EntryPointIncCounter, nil, nil)
+	_, err = ctx.Call(hname, coretypes.Hn(FuncIncCounter), nil, nil)
 	if err != nil {
 		return nil, err
 	}
