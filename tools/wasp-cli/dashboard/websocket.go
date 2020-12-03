@@ -22,7 +22,7 @@ func startNanomsgForwarder(logger echo.Logger, availableSCs map[string]*sc.Confi
 	done := make(chan bool)
 	incomingStateMessages := make(chan []string)
 	err := subscribe.Subscribe(config.WaspNanomsg(), incomingStateMessages, done, false, "state")
-	check(err)
+	log.Check(err)
 	logger.Infof("[Nanomsg] connected")
 
 	go func() {

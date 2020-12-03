@@ -77,14 +77,13 @@ func (c *Config) Quorum() uint16 {
 	return uint16(3)
 }
 
-func (c *Config) PrintUsage(s string) {
-	fmt.Printf("Usage: %s %s %s\n", os.Args[0], c.ShortName, s)
+func (c *Config) usage(s string) {
+	fmt.Usage("%s %s %s\n", os.Args[0], c.ShortName, s)
 }
 
 func (c *Config) HandleSetCmd(args []string) {
 	if len(args) != 2 {
-		c.PrintUsage("set <key> <value>")
-		os.Exit(1)
+		c.usage("set <key> <value>")
 	}
 	config.Set("sc."+c.Alias()+"."+args[0], args[1])
 }
@@ -95,8 +94,7 @@ func (c *Config) usage(commands map[string]func([]string)) {
 		cmdNames = append(cmdNames, k)
 	}
 
-	c.PrintUsage(fmt.Sprintf("[options] [%s]", strings.Join(cmdNames, "|")))
-	os.Exit(1)
+	c.usage(fmt.Sprintf("[options] [%s]", strings.Join(cmdNames, "|")))
 }
 
 func (c *Config) HandleCmd(args []string, commands map[string]func([]string)) {

@@ -22,10 +22,3 @@ var subcmds = map[string]func([]string){
 func cmd(args []string) {
 	tr.Config.HandleCmd(args, subcmds)
 }
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
-}

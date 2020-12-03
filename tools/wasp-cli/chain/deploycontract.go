@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -11,12 +10,13 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
 func deployContractCmd(args []string) {
 	if len(args) != 4 {
-		check(fmt.Errorf("Usage: %s chain deploy-contract <vmtype> <name> <description> <filename>", os.Args[0]))
+		log.Fatal("Usage: %s chain deploy-contract <vmtype> <name> <description> <filename>", os.Args[0])
 	}
 
 	vmtype := args[0]
@@ -59,6 +59,6 @@ func deployContractCmd(args []string) {
 
 func readBinary(fname string) []byte {
 	b, err := ioutil.ReadFile(fname)
-	check(err)
+	log.Check(err)
 	return b
 }

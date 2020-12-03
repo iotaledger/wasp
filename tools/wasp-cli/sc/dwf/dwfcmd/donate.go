@@ -15,11 +15,11 @@ func donateCmd(args []string) {
 	}
 
 	amount, err := strconv.Atoi(args[0])
-	check(err)
+	log.Check(err)
 
 	feedback := args[1]
 
 	tx, err := dwf.Client().Donate(int64(amount), feedback)
-	check(err)
+	log.Check(err)
 	fmt.Printf("success. Request transaction id: %s\n", tx.ID().String())
 }

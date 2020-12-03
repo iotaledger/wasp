@@ -10,7 +10,7 @@ import (
 
 func statusCmd(args []string) {
 	status, err := fr.Client().FetchStatus()
-	check(err)
+	log.Check(err)
 
 	util.DumpSCStatus(fr.Config, status.SCStatus)
 	fmt.Printf("  play period (s): %d\n", status.PlayPeriodSeconds)

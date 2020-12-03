@@ -16,7 +16,7 @@ func adminCmd(args []string) {
 
 	switch args[0] {
 	case "deploy":
-		check(fr.Config.Deploy(wallet.Load().SignatureScheme()))
+		log.Check(fr.Config.Deploy(wallet.Load().SignatureScheme()))
 
 	case "set-period":
 		if len(args) != 2 {
@@ -24,10 +24,10 @@ func adminCmd(args []string) {
 			os.Exit(1)
 		}
 		s, err := strconv.Atoi(args[1])
-		check(err)
+		log.Check(err)
 
 		_, err = fr.Client().SetPeriod(s)
-		check(err)
+		log.Check(err)
 
 	default:
 		adminUsage()

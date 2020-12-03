@@ -15,7 +15,7 @@ func adminCmd(args []string) {
 
 	switch args[0] {
 	case "deploy":
-		check(dwf.Config.Deploy(wallet.Load().SignatureScheme()))
+		log.Check(dwf.Config.Deploy(wallet.Load().SignatureScheme()))
 
 	default:
 		adminUsage()

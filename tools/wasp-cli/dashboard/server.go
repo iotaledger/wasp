@@ -46,9 +46,3 @@ func StartServer(listenAddr string, scs []SCDashboard) {
 
 	e.Logger.Fatal(e.Start(listenAddr))
 }
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}

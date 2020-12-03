@@ -10,7 +10,7 @@ import (
 
 func statusCmd(args []string) {
 	status, err := dwf.Client().FetchStatus()
-	check(err)
+	log.Check(err)
 
 	util.DumpSCStatus(dwf.Config, status.SCStatus)
 	fmt.Printf("  amount of records: %d\n", status.NumRecords)

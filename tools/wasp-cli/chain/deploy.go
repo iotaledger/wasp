@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 	"github.com/spf13/pflag"
 )
@@ -20,6 +21,8 @@ func initDeployFlags(flags *pflag.FlagSet) {
 }
 
 func deployCmd(args []string) {
+	alias := GetChainAlias()
+
 	chainid, _, _, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(committee),
@@ -32,7 +35,7 @@ func deployCmd(args []string) {
 		Textout:               os.Stdout,
 		Prefix:                "",
 	})
-	check(err)
+	log.Check(err)
 
-	AddChainAlias(GetChainAlias(), chainid.String())
+	AddChainAlias(alias, chainid.String())
 }

@@ -16,10 +16,10 @@ func queryCmd(args []string) {
 	}
 
 	color, err := util.ColorFromString(args[0])
-	check(err)
+	log.Check(err)
 
 	tm, err := tr.Client().Query(&color)
-	check(err)
+	log.Check(err)
 
 	fmt.Printf("Color: %s\n", color)
 	fmt.Printf("Supply: %d\n", tm.Supply)

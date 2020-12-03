@@ -2,11 +2,11 @@ package decode
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/pflag"
 )
@@ -17,7 +17,7 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 
 func decodeCmd(args []string) {
 	var d dict.Dict
-	check(json.NewDecoder(os.Stdin).Decode(&d))
+	log.Check(json.NewDecoder(os.Stdin).Decode(&d))
 
 	if len(args) == 2 {
 		ktype := args[0]
@@ -26,13 +26,13 @@ func decodeCmd(args []string) {
 		for key, value := range d {
 			skey := util.ValueToString(ktype, []byte(key))
 			sval := util.ValueToString(vtype, value)
-			fmt.Printf("%s: %s\n", skey, sval)
+			log.Printf("%s: %s\n", skey, sval)
 		}
 		return
 	}
 
 	if len(args) < 3 || len(args)%3 != 0 {
-		usage()
+		log.Usage("%s decode <type> <key> <type> [...]\n", os.Args[0])
 	}
 
 	for i := 0; i < len(args)/2; i++ {
@@ -43,21 +43,9 @@ func decodeCmd(args []string) {
 		key := kv.Key(util.ValueFromString(ktype, skey))
 		val := d.MustGet(key)
 		if val == nil {
-			fmt.Printf("%s: <nil>\n", skey)
+			log.Printf("%s: <nil>\n", skey)
 		} else {
-			fmt.Printf("%s: %s\n", skey, util.ValueToString(vtype, val))
+			log.Printf("%s: %s\n", skey, util.ValueToString(vtype, val))
 		}
-	}
-}
-
-func usage() {
-	fmt.Printf("Usage: %s decode <type> <key> <type> [...]\n", os.Args[0])
-	os.Exit(1)
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
 	}
 }

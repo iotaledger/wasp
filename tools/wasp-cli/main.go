@@ -8,16 +8,10 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 	"github.com/spf13/pflag"
 )
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
-}
 
 func usage(commands map[string]func([]string), flags *pflag.FlagSet) {
 	cmdNames := make([]string, 0)
@@ -34,12 +28,13 @@ func main() {
 	commands := map[string]func([]string){}
 	flags := pflag.NewFlagSet("global flags", pflag.ExitOnError)
 
+	log.InitCommands(commands, flags)
 	config.InitCommands(commands, flags)
 	wallet.InitCommands(commands, flags)
 	chain.InitCommands(commands, flags)
 	decode.InitCommands(commands, flags)
 
-	check(flags.Parse(os.Args[1:]))
+	log.Check(flags.Parse(os.Args[1:]))
 
 	config.Read()
 

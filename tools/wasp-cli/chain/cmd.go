@@ -1,10 +1,10 @@
 package chain
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/pflag"
 )
 
@@ -46,13 +46,5 @@ func usage() {
 		cmdNames = append(cmdNames, k)
 	}
 
-	fmt.Printf("Usage: %s chain [%s]\n", os.Args[0], strings.Join(cmdNames, "|"))
-	os.Exit(1)
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	log.Usage("%s chain [%s]\n", os.Args[0], strings.Join(cmdNames, "|"))
 }

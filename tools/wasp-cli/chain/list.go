@@ -2,12 +2,13 @@ package chain
 
 import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func listCmd(args []string) {
-	chains, err := config.WaspClient().GetChainRecordList()
-	check(err)
-	for _, chain := range chains {
-		showChainInfo(chain)
-	}
+	client := config.WaspClient()
+	chains, err := client.GetChainRecordList()
+	log.Check(err)
+	log.Printf("Total %d chains in wasp node %s\n", len(chains), client.BaseURL())
+	showChainInfo(chains)
 }

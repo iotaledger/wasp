@@ -19,7 +19,7 @@ func mintCmd(args []string) {
 	description := args[0]
 
 	amount, err := strconv.Atoi(args[1])
-	check(err)
+	log.Check(err)
 
 	client := tr.Client()
 	tx, err := client.MintAndRegister(trclient.MintAndRegisterParams{

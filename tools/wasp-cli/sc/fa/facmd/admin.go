@@ -16,7 +16,7 @@ func adminCmd(args []string) {
 
 	switch args[0] {
 	case "deploy":
-		check(fa.Config.Deploy(wallet.Load().SignatureScheme()))
+		log.Check(fa.Config.Deploy(wallet.Load().SignatureScheme()))
 
 	case "set-owner-margin":
 		if len(args) != 2 {
@@ -24,9 +24,9 @@ func adminCmd(args []string) {
 			os.Exit(1)
 		}
 		p, err := strconv.Atoi(args[1])
-		check(err)
+		log.Check(err)
 		_, err = fa.Client().SetOwnerMargin(int64(p))
-		check(err)
+		log.Check(err)
 
 	default:
 		adminUsage()

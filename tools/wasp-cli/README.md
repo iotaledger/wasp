@@ -1,148 +1,92 @@
 # Wasp Client tool
 
-Wasp Client is a CLI tool for interacting with Goshimmer and Wasp, allowing to:
+`wasp-cli` is a command line tool for interacting with Wasp and its smart contracts.
 
-* Manipulate a Goshimmer wallet
-* Interact with the FairRoulette smart contract
+Flags common to all subcommands:
 
-## Wallet
+* `-w`: Wait for requests to complete before returning
+* `-v`: Be verbose
+* `-c <filename>`: Use given config file. Default: `wasp-cli.json`
 
-* Create a new wallet (creates `wasp-cli.json` which stores the seed):
+## Configuring wasp & goshimmer nodes
 
-```
-wasp-cli init
-```
+`wasp-cli` expects a Goshimmer node and a cluster of wasp nodes to be
+accessible.
 
-* Show private key + public key + account address for index 0 (index optional, default 0):
-
-```
-wasp-cli address -i 0
-```
-
-* Query Goshimmer for account balance:
+Default values for node locations:
 
 ```
-wasp-cli balance [-i index]
+goshimmer.api: 127.0.0.1:8080
+
+wasp.0.api: 127.0.0.1:9090
+wasp.0.nanomsg: 127.0.0.1:5550
+wasp.0.peering: 127.0.0.1:4000
+
+wasp.1.api: 127.0.0.1:9091
+wasp.1.nanomsg: 127.0.0.1:5551
+wasp.1.peering: 127.0.0.1:4001
+
+...etc
 ```
 
-* Use Testnet Faucet to transfer some funds into the wallet address at index n:
+All commands that need to contact a single wasp node use `wasp.0`.
+
+To change the configuration (saved in `wasp-cli.json`): `wasp-cli set <name> <value>`
+
+Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
+
+*Note:* If the cluster is using Utxodb: `wasp-cli set utxodb true`
+
+## IOTA wallet
+
+`wasp-cli` provides the following commands for manipulating an IOTA wallet:
+
+* Create a new wallet seed (creates `wasp-cli.json` which stores the seed): `wasp-cli init`
+
+* Show private key + public key + account address for index 0 (index optional, default 0): `wasp-cli address [-i index]`
+
+* Query Goshimmer for account balance: `wasp-cli balance [-i index]`
+
+* Use Testnet Faucet to transfer some funds into the wallet address at index n: `wasp-cli request-funds [-i index]`
+
+## Working with chains
+
+* List the currently deployed chains: `wasp-cli chain list`
+
+* Deploy a chain: `wasp-cli chain deploy --chain=<alias> --committee=<node indices> --quorum=<T>`
+
+Example:
 
 ```
-wasp-cli request-funds [-i index]
+wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3
 ```
 
-## FairRoulette (a.k.a "fr") Smart Contract
+* Set the chain alias for future commands (automatically done after deploying a chain): `wasp-cli set chain <alias>`
 
-Steps:
+* List all contracts in the chain: `wasp-cli chain list-contracts`
 
-1. Create a new wallet for the owner account:
+* List all accounts in the chain: `wasp-cli chain list-accounts`
 
-```
-wasp-cli -c owner.json init
-```
+* Display the in-chain balance of an agentid: `wasp-cli chain balance <agentid (base58 format)>`
 
-This will create the file `owner.json` with the admin user's wallet.
+## Working with contracts
 
-2. Transfer some funds to the owner address: `wasp-cli -c owner.json request-funds`.
+* Deploy a contract: `wasp-cli chain deploy-contract <vmtype> <sc-name> <description> <wasm-file>`
 
-3. Initialize the FairRoulette smart contract, and transfer some operating
-   capital to it:
+Example: `wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" inccounter.wasm`
 
-```
-$ wasp-cli -c owner.json fr admin deploy
-Initialized FairRoulette smart contract
-SC Address: mUbfBM...
-$ wasp-cli -c owner.json send-funds mUbfBM... IOTA 100
-```
+* Post a request: `wasp-cli chain post-request <sc-name> <func-name> [args...]`
 
-Copy the generated SC address. (It is also saved in `owner.json`)
+Example: `wasp-cli chain post-request inccounter increment`
 
-4. Initialize a wallet for the client account:
+* Call a view: `wasp-cli chain call-view <sc-name> <func-name> [args...]`
 
-```
-wasp-cli init
-```
+Example: `wasp-cli chain call-view inccounter incrementViewCounter`
 
-This creates `wasp-cli.json` (can be changed with `-c`).
+This command returns a json-encoded representation of the return value, but it
+is currently not human-readable (since keys and values are uninterpreted byte
+arrays).
 
-5. Transfer some funds to your wallet: `wasp-cli request-funds`.
+* Decode view return value given a schema: `wasp-cli decode <schema>`
 
-6. Query your balance:
-
-```
-$ wasp-cli balance
-Index 0
-  Address: WKos8N...
-  Balances:
-    10000 IOTA
-```
-
-7. Configure the SC address in `wasp-cli.json` (obtained in step 7):
-
-```
-wasp-cli fr set address mUbfBM...
-```
-
-8. Make a bet: `wasp-cli fr bet 2 100`
-
-`2` is the color to bet.
-
-`100` is the amount of IOTAs to bet.
-
-9. Query the SC state: `wasp-cli fr status`
-
-Also try `wasp-cli dashboard`!
-
-10. Change the play period (as admin): `wasp-cli fr admin set-period 10 -c owner.json`
-
-## FairAuction (a.k.a "fa") Smart Contract
-
-Steps:
-
-1. Initialize wallets for the owner and client account, as needed (see the
-   relevant steps in FairRoulette section.
-
-2. Initialize the FairAuction smart contract, and transfer some operating
-   capital to it:
-
-```
-$ wasp-cli -c owner.json fa admin deploy
-Initialized FairAuction smart contract
-SC Address: mUbfBM...
-$ wasp-cli -c owner.json send-funds mUbfBM... IOTA 100
-```
-
-Copy the generated SC address. (It is also saved in `owner.json`)
-
-3. Configure the SC address in `wasp-cli.json` (obtained in step 2):
-
-```
-wasp-cli fa set address mUbfBM...
-```
-
-4. Mint some tokens:
-
-```
-$ wasp-cli mint 10
-Minted 10 tokens of color y72kGq...
-```
-
-Copy the color ID.
-
-5. Start an auction for those tokens:
-
-```
-$ wasp-cli fa start-auction "My first auction" y72kGq... 10 100 1
-```
-
-Arguments are:  `start-auction <description> <color> <amount> <minimum-bid> <duration-in-minutes>`
-
-6. Place a bid for an auction:
-
-```
-$ wasp-cli fa place-bid y72kGq... 110
-```
-
-7. Query the SC state: `wasp-cli fa status`
-
-Also try `wasp-cli dashboard`!
+Example: `wasp-cli chain call-view inccounter incrementViewCounter | wasp-cli decode string counter int`

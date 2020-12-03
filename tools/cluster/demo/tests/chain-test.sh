@@ -13,14 +13,15 @@ echo "$r"
 [[ "$r" =~ Address:[[:space:]]+([[:alnum:]]+)$ ]]
 owneraddr=${BASH_REMATCH[1]}
 
-[[ $(wasp-cli chain list | wc -l) == "0" ]]
+[[ $(wasp-cli chain list | tail -n +5 | wc -l) == "0" ]]
 
 # deploy a chain
 wasp-cli chain deploy --chain=$alias --committee='0,1,2,3' --quorum=3
 chainid=$(cat wasp-cli.json | jq .chains.$alias -r)
 
-[[ $(wasp-cli chain list | wc -l) == "1" ]]
-[[ $(wasp-cli chain list) =~ "$chainid" ]]
+r=$(wasp-cli chain list)
+[[ $(echo "$r" | tail -n +5 | wc -l) == "1" ]]
+[[ "$r" =~ "$chainid" ]]
 
 # unnecessary, since it is the latest deployed chain
 wasp-cli set chain $alias
@@ -35,7 +36,7 @@ echo "$r"
 r=$(wasp-cli chain list-contracts)
 echo "$r"
 # check that root + accountsc + blob contracts are listed
-[[ $(echo "$r" | wc -l) == "3" ]]
+[[ $(echo "$r" | tail -n +5 | wc -l) == "3" ]]
 
 # test the list-accounts command
 r=$(wasp-cli chain list-accounts)
@@ -48,7 +49,7 @@ agentid=$(echo "$r" | grep "$owneraddr" | sed 's/[:[:space:]].*$//')
 r=$(wasp-cli chain balance "$agentid")
 echo "$r"
 # check that the chain balance of owner is 1 IOTA
-[[ "$r" == "IOTA: 1" ]]
+[[ $(echo "$r" | tail -n +4) =~ IOTA\ +1\ *$ ]]
 
 # same test, this time calling the view function manually
 r=$(wasp-cli chain call-view accounts-0.1 balance string a agentid "$agentid" | wasp-cli decode color int)

@@ -9,14 +9,13 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
-var configPath string
-var Verbose bool
+var ConfigPath string
 var WaitForCompletion bool
-var Utxodb bool
 
 const (
 	hostKindApi     = "api"
@@ -28,23 +27,28 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 	commands["set"] = setCmd
 
 	fs := pflag.NewFlagSet("config", pflag.ExitOnError)
-	fs.StringVarP(&configPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
-	fs.BoolVarP(&Verbose, "verbose", "v", false, "verbose")
-	fs.BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for completion")
-	fs.BoolVarP(&Utxodb, "utxodb", "u", false, "use utxodb")
+	fs.StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
+	fs.BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
 	flags.AddFlagSet(fs)
 }
 
 func setCmd(args []string) {
 	if len(args) != 2 {
-		fmt.Printf("Usage: %s set <key> <value>\n", os.Args[0])
-		os.Exit(1)
+		log.Usage("%s set <key> <value>\n", os.Args[0])
 	}
-	Set(args[0], args[1])
+	v := args[1]
+	switch v {
+	case "true":
+		Set(args[0], true)
+	case "false":
+		Set(args[0], true)
+	default:
+		Set(args[0], v)
+	}
 }
 
 func Read() {
-	viper.SetConfigFile(configPath)
+	viper.SetConfigFile(ConfigPath)
 	_ = viper.ReadInConfig()
 }
 
@@ -60,8 +64,12 @@ func GoshimmerApi() string {
 	return "127.0.0.1:8080"
 }
 
+func Utxodb() bool {
+	return viper.GetBool("utxodb")
+}
+
 func GoshimmerClient() nodeclient.NodeClient {
-	if Utxodb {
+	if Utxodb() {
 		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
 	}
 	return goshimmer.NewGoshimmerClient(GoshimmerApi())
@@ -146,7 +154,7 @@ func defaultWaspPort(kind string, i int) int {
 
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
-	check(viper.WriteConfig())
+	log.Check(viper.WriteConfig())
 }
 
 func TrySCAddress(scAlias string) *address.Address {
@@ -155,22 +163,14 @@ func TrySCAddress(scAlias string) *address.Address {
 		return nil
 	}
 	address, err := address.FromBase58(b58)
-	check(err)
+	log.Check(err)
 	return &address
 }
 
 func GetSCAddress(scAlias string) *address.Address {
 	address := TrySCAddress(scAlias)
 	if address == nil {
-		check(fmt.Errorf("call `%s set sc.%s.address` or `%s --sc=%s sc admin deploy` first",
-			os.Args[0], scAlias, os.Args[0], scAlias))
+		log.Fatal("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
 	}
 	return address
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
 }

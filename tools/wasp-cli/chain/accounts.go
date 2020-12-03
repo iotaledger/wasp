@@ -10,24 +10,32 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func listAccountsCmd(args []string) {
 	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncAccounts, nil)
-	check(err)
+	log.Check(err)
+
+	log.Printf("Total %d accounts in chain %s\n", len(ret), GetCurrentChainID())
+
+	header := []string{"agentid (b58)", "agentid (string)"}
+	rows := make([][]string, len(ret))
+	i := 0
 	for k := range ret {
 		agentId, err := coretypes.NewAgentIDFromBytes([]byte(k))
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Printf("%s (%s)\n", agentId.Base58(), agentId.String())
+		rows[i] = []string{agentId.Base58(), agentId.String()}
+		i++
 	}
+	log.PrintTable(header, rows)
 }
 
 func balanceCmd(args []string) {
 	if len(args) != 1 {
-		fmt.Printf("Usage: %s chain balance <agentid>\n", os.Args[0])
-		os.Exit(1)
+		log.Usage("%s chain balance <agentid>\n", os.Args[0])
 	}
 
 	agentID := parseAgentID(args[0])
@@ -35,18 +43,25 @@ func balanceCmd(args []string) {
 	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
 		accountsc.ParamAgentID: agentID.Bytes(),
 	}))
-	check(err)
+	log.Check(err)
+
+	header := []string{"color", "amount"}
+	rows := make([][]string, len(ret))
+	i := 0
 	for k, v := range ret {
 		color, _, err := balance.ColorFromBytes([]byte(k))
-		check(err)
+		log.Check(err)
 		bal, err := util.Uint64From8Bytes(v)
-		check(err)
-		fmt.Printf("%s: %d\n", color, bal)
+		log.Check(err)
+
+		rows[i] = []string{color.String(), fmt.Sprintf("%d", bal)}
+		i++
 	}
+	log.PrintTable(header, rows)
 }
 
 func parseAgentID(s string) coretypes.AgentID {
 	agentid, err := coretypes.AgentIDFromBase58(s)
-	check(err)
+	log.Check(err)
 	return agentid
 }

@@ -1,21 +1,20 @@
 package wallet
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func addressCmd(args []string) {
 	wallet := Load()
 	kp := wallet.KeyPair()
-	fmt.Printf("Address index %d\n", addressIndex)
-	fmt.Printf("  Private key: %s\n", kp.PrivateKey)
-	fmt.Printf("  Public key:  %s\n", kp.PublicKey)
-	fmt.Printf("  Address:     %s\n", wallet.Address())
+	log.Printf("Address index %d\n", addressIndex)
+	log.Verbose("  Private key: %s\n", kp.PrivateKey)
+	log.Verbose("  Public key:  %s\n", kp.PublicKey)
+	log.Printf("  Address:     %s\n", wallet.Address())
 }
 
 func balanceCmd(args []string) {
@@ -23,25 +22,25 @@ func balanceCmd(args []string) {
 	address := wallet.Address()
 
 	outs, err := config.GoshimmerClient().GetConfirmedAccountOutputs(&address)
-	check(err)
+	log.Check(err)
 
-	fmt.Printf("Target index %d\n", addressIndex)
-	fmt.Printf("  Target: %s\n", address)
-	fmt.Printf("  Balance:\n")
+	log.Printf("Address index %d\n", addressIndex)
+	log.Printf("  Address: %s\n", address)
+	log.Printf("  Balance:\n")
 	var total int64
-	if config.Verbose {
+	if log.VerboseFlag {
 		total = byOutputId(outs)
 	} else {
 		total = byColor(outs)
 	}
-	fmt.Printf("    ------\n")
-	fmt.Printf("    Total: %d\n", total)
+	log.Printf("    ------\n")
+	log.Printf("    Total: %d\n", total)
 }
 
 func byColor(outs map[valuetransaction.OutputID][]*balance.Balance) int64 {
 	byColor, total := txutil.OutputBalancesByColor(outs)
 	for color, value := range byColor {
-		fmt.Printf("    %s: %d\n", color.String(), value)
+		log.Printf("    %s: %d\n", color.String(), value)
 	}
 	return total
 }
@@ -49,9 +48,9 @@ func byColor(outs map[valuetransaction.OutputID][]*balance.Balance) int64 {
 func byOutputId(outs map[valuetransaction.OutputID][]*balance.Balance) int64 {
 	var total int64
 	for outputID, bals := range outs {
-		fmt.Printf("    output ID %s:\n", outputID)
+		log.Printf("    output ID %s:\n", outputID)
 		for _, bal := range bals {
-			fmt.Printf("      %s: %d\n", bal.Color.String(), bal.Value)
+			log.Printf("      %s: %d\n", bal.Color.String(), bal.Value)
 		}
 	}
 	return total

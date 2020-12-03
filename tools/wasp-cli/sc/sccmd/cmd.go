@@ -44,15 +44,8 @@ func parseIntList(s string) []int {
 	committee := make([]int, 0)
 	for _, ns := range strings.Split(s, ",") {
 		n, err := strconv.Atoi(ns)
-		check(err)
+		log.Check(err)
 		committee = append(committee, n)
 	}
 	return committee
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
 }

@@ -3,6 +3,7 @@ package chain
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -14,7 +15,7 @@ func GetChainAlias() string {
 		chainAlias = viper.GetString("chain")
 	}
 	if chainAlias == "" {
-		panic("No current chain. Call `chain deploy` or `set chain <id>`")
+		log.Fatal("No current chain. Call `chain deploy` or `set chain <id>`")
 	}
 	return chainAlias
 }
@@ -34,6 +35,6 @@ func AddChainAlias(chainAlias string, id string) {
 
 func GetCurrentChainID() coretypes.ChainID {
 	chid, err := coretypes.NewChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
-	check(err)
+	log.Check(err)
 	return chid
 }

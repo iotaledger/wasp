@@ -17,7 +17,7 @@ func deployCmd(args []string) {
 
 	committee := parseIntList(args[0])
 	quorum, err := strconv.Atoi(args[1])
-	check(err)
+	log.Check(err)
 	progHash := args[2]
 	description := args[3]
 
@@ -28,7 +28,7 @@ func deployCmd(args []string) {
 		Committee:   committee,
 		SigScheme:   wallet.Load().SignatureScheme(),
 	})
-	check(err)
+	log.Check(err)
 }
 
 func deployUsage() {

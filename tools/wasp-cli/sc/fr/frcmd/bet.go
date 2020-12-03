@@ -15,17 +15,10 @@ func betCmd(args []string) {
 	}
 
 	color, err := strconv.Atoi(args[0])
-	check(err)
+	log.Check(err)
 	amount, err := strconv.Atoi(args[1])
-	check(err)
+	log.Check(err)
 
 	_, err = fr.Client().Bet(color, amount)
-	check(err)
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	log.Check(err)
 }

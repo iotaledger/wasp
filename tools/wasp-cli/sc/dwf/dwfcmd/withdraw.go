@@ -15,8 +15,8 @@ func withdrawCmd(args []string) {
 	}
 
 	amount, err := strconv.Atoi(args[0])
-	check(err)
+	log.Check(err)
 
 	_, err = dwf.Client().Withdraw(int64(amount))
-	check(err)
+	log.Check(err)
 }

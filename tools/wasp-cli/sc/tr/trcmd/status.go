@@ -10,7 +10,7 @@ import (
 
 func statusCmd(args []string) {
 	status, err := tr.Client().FetchStatus(true)
-	check(err)
+	log.Check(err)
 
 	util.DumpSCStatus(tr.Config, status.SCStatus)
 	fmt.Printf("  Registry (latest first):\n")

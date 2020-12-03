@@ -1,9 +1,6 @@
 package wallet
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/pflag"
 )
 
@@ -18,11 +15,4 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 	fs := pflag.NewFlagSet("wallet", pflag.ExitOnError)
 	fs.IntVarP(&addressIndex, "address-index", "i", 0, "address index")
 	flags.AddFlagSet(fs)
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
 }

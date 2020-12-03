@@ -1,13 +1,12 @@
 package util
 
 import (
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func PostTransaction(tx *transaction.Transaction) {
@@ -16,27 +15,24 @@ func PostTransaction(tx *transaction.Transaction) {
 	})
 }
 
-func WithTransaction(f func() (*transaction.Transaction, error)) {
+func WithTransaction(f func() (*transaction.Transaction, error)) *transaction.Transaction {
 	tx, err := f()
-	check(err)
+	log.Check(err)
 
 	if config.WaitForCompletion {
-		check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
+		log.Check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
 	}
+
+	return tx
 }
 
-func WithSCTransaction(f func() (*sctransaction.Transaction, error)) {
+func WithSCTransaction(f func() (*sctransaction.Transaction, error)) *sctransaction.Transaction {
 	tx, err := f()
-	check(err)
+	log.Check(err)
 
 	if config.WaitForCompletion {
-		check(config.WaspClient().WaitUntilAllRequestsProcessed(tx, 1*time.Minute))
+		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(tx, 1*time.Minute))
 	}
-}
 
-func check(err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	return tx
 }

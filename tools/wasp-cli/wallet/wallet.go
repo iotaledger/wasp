@@ -1,12 +1,12 @@
 package wallet
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
 	"github.com/spf13/viper"
 )
@@ -20,18 +20,21 @@ type Wallet struct {
 }
 
 func initCmd(args []string) {
-	seed := seed.NewSeed().Bytes()
-	viper.Set("wallet.seed", base58.Encode(seed))
-	check(viper.WriteConfig())
+	seed := base58.Encode(seed.NewSeed().Bytes())
+	viper.Set("wallet.seed", seed)
+	log.Check(viper.WriteConfig())
+
+	log.Printf("Initialized wallet seed in %s\n", config.ConfigPath)
+	log.Verbose("Seed: %s\n", seed)
 }
 
 func Load() *Wallet {
 	seedb58 := viper.GetString("wallet.seed")
 	if len(seedb58) == 0 {
-		check(fmt.Errorf("call `init` first"))
+		log.Fatal("call `init` first")
 	}
 	seedBytes, err := base58.Decode(seedb58)
-	check(err)
+	log.Check(err)
 	return &Wallet{seed.NewSeed(seedBytes)}
 }
 

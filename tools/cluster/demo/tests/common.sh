@@ -6,11 +6,13 @@ err_report() {
 
 trap 'err_report $LINENO' ERR
 
-ARGS="$*"
-
 function wasp-cli() {
-	(PS4=; set -x; : wasp-cli -w $ARGS "$@")
-    command wasp-cli -w $ARGS "$@"
+	(PS4=; set -x; : wasp-cli -w -d "$@")
+    command wasp-cli -w -d "$@"
 }
 
 rm -f wasp-cli.json owner.json
+
+if [ "$*" = "-u" ]; then
+	wasp-cli set utxodb true
+fi
