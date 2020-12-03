@@ -77,15 +77,15 @@ We have to provide the following input to the deployment process:
 - the sorted list of committee nodes
 
 ## Deploy a new instance of _DonateWithFeedback_
-We will deploy _DonateWithFeedback_ using `wwallet` program. 
+We will deploy _DonateWithFeedback_ using `wasp-cli` program. 
 
 For the _DonateWithFeedback_ the program hash is equal to `5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X`. 
 It points to the code statically linked with the Wasp node.
-In the particular case of PoC smart contracts the `wwallet` knows and derives the program hash from the `dwf` keyword
+In the particular case of PoC smart contracts the `wasp-cli` knows and derives the program hash from the `dwf` keyword
 in the command line.  
 
-The list of committee nodes must be listed in the respective `dwf` section of `wwallet.json`, in the current directory. 
-Download example of `wwallet.json` via link in the demo dashboard.
+The list of committee nodes must be listed in the respective `dwf` section of `wasp-cli.json`, in the current directory. 
+Download example of `wasp-cli.json` via link in the demo dashboard.
 
 The balance of the wallet must have at least 2 iotas in order to deploy smart contract. One of these iotas will be
 minted (colored) to a new non-fungible token transferred to the smart contract address. 
@@ -93,9 +93,9 @@ It will remain there for its lifetime. Another iota will be returned back to the
 SC instance will be fully intialized.
 
 The following command will deploy an instance of _DonateWithFeedback_ smart contact on the committee 
-specified in the `wwallet.json`:
+specified in the `wasp-cli.json`:
 
-`wwallet dwf admin deploy` 
+`wasp-cli dwf admin deploy` 
 
 If successful, the program will print the address of the newly deployed instance among other things. 
 From now on anyone can send `donate` requests to that address. 

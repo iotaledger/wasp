@@ -10,11 +10,11 @@ Done
 - [x] Integration tests: end test when a specific message is published (instead
       of waiting for an arbitrary amount of seconds).
 - [x] adjust WaspConn etc APIs to real Goshimmer APIs.
-- [x] Extend wwallet with `FairAuction` and `FairRoulette`
+- [x] Extend wasp-cli with `FairAuction` and `FairRoulette`
 - [x] dwf dashboard
 - [x] dashboard: display SC hash/description/address/owner-address
-- [x] `wwallet wallet init` -> `wwallet init`
-- [x] wwallet: deploy generic SC from proghash + committee
+- [x] `wasp-cli wallet init` -> `wasp-cli init`
+- [x] wasp-cli: deploy generic SC from proghash + committee
 - [x] deploy Wasp in Pollen testnet
 - [x] deactivate/activate smart contract in the node
 - [x] wasp node dashboard: show structure of committee, which SCs are running, etc
@@ -29,7 +29,7 @@ Pending
 - [ ] discuss system of builtin contracts: factory, accounts, on-contract logging, governance
 - [ ] move all general interfaces from vmtypes, kv and similar to coretypes
 - [ ] refactor "variable name" to uint6(hash(name)[:4]) ???? NO
-- [ ] wwallet: separate binaries for admin/client operations
+- [ ] wasp-cli: separate binaries for admin/client operations
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
       the BufferedKVStore lifetime)
