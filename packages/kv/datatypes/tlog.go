@@ -255,6 +255,7 @@ func (l *TimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32, descending bool) 
 // Any other pair of indices i1<fistId and/or i2>lastIdx does not satisfy the condition.
 // In other words, returned slice contains all possible indices with timestamps between the two given
 // Returned slice may be empty
+// The algorithm uses binary search with logarithmic complexity.
 func (l *TimestampedLog) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
 	if l.Len() == 0 {
 		// empty slice
@@ -421,7 +422,7 @@ func (l *TimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, 
 	return l.findUpperIdx(ts, fromIdx, middleIdx)
 }
 
-// TODO not finished fith Erase
+// TODO not finished with Erase
 
 func (l *TimestampedLog) Erase() {
 	panic("implement me")
