@@ -5,9 +5,9 @@ import (
 )
 
 func DecodeInt64(b []byte) (int64, bool, error) {
-	//if b == nil {
-	//	return 0, false, nil
-	//}
+	if b == nil {
+		return 0, false, nil
+	}
 	//if len(b) != 8 {
 	//	return 0, false, fmt.Errorf("value %s is not an int64", hex.EncodeToString(b))
 	//}
