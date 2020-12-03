@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -33,17 +34,15 @@ func TestDwfDonateOnce(t *testing.T) {
 	)
 	check(err, t)
 
-	c := codec.NewCodec(ret)
-	largest, _, err := c.GetInt64("largest")
+	largest, _, err := codec.DecodeInt64(ret.MustGet("largest"))
 	check(err, t)
 	require.EqualValues(t, 42, largest)
-	total, _, err := c.GetInt64("total")
+	total, _, err := codec.DecodeInt64(ret.MustGet("total"))
 	check(err, t)
 	require.EqualValues(t, 42*numDonations, total)
-    donations, err := c.GetArray("donations")
-	check(err, t)
+    donations := datatypes.NewMustArray(ret,"donations")
     for i:=uint16(0); i < donations.Len(); i++ {
-    	donation,err := donations.GetAt(i)
+    	donation := donations.GetAt(i)
     	_ = donation
 		check(err, t)
 	}
