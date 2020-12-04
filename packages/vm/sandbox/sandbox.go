@@ -68,11 +68,11 @@ func (s *sandbox) Caller() coretypes.AgentID {
 	return s.vmctx.Caller()
 }
 
-func (s *sandbox) MyContractID() coretypes.ContractID {
+func (s *sandbox) ContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 
-func (s *sandbox) MyAgentID() coretypes.AgentID {
+func (s *sandbox) AgentID() coretypes.AgentID {
 	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
 }
 

@@ -171,7 +171,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
-	sum := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
+	sum := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return fmt.Errorf("placeBet: sum == 0: nothing to bet")
@@ -255,7 +255,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 func lockBets(ctx vmtypes.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
 	if ctx.Caller() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
@@ -282,7 +282,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
 	if ctx.Caller() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
@@ -351,7 +351,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		agent := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+		agent := coretypes.NewAgentIDFromContractID(ctx.ContractID())
 		if !ctx.Accounts().MoveBalance(agent, balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")

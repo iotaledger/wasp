@@ -12,11 +12,11 @@ import (
 type SandboxView interface {
 	Params() dict.Dict
 	State() kv.KVStore
-	MyBalances() coretypes.ColoredBalances
+	Balances() coretypes.ColoredBalances
 	// only calls view entry points
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error)
 
-	MyContractID() coretypes.ContractID
+	ContractID() coretypes.ContractID
 	Event(msg string)
 	Eventf(format string, args ...interface{})
 }

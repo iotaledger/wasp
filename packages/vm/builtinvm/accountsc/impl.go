@@ -75,7 +75,7 @@ func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	MustCheckLedger(state, "accountsc.deposit.begin")
 	defer MustCheckLedger(state, "accountsc.deposit.exit")
 
-	ctx.Eventf("accountsc.deposit.begin -- %s", cbalances.Str(ctx.Accounts().Incoming()))
+	ctx.Eventf("accountsc.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
 	targetAgentID := ctx.Caller()
 	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
 	if err != nil {
@@ -85,7 +85,7 @@ func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		targetAgentID = aid
 	}
 	// funds currently are at the disposition of accountsc, they are moved to the target
-	if !MoveBetweenAccounts(state, ctx.MyAgentID(), targetAgentID, ctx.Accounts().Incoming()) {
+	if !MoveBetweenAccounts(state, ctx.AgentID(), targetAgentID, ctx.IncomingTransfer()) {
 		return nil, fmt.Errorf("failed to deposit to %s", ctx.Caller().String())
 	}
 	ctx.Eventf("accountsc.deposit.success")
@@ -154,11 +154,11 @@ func move(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	// move to another chain
 	// move all tokens to accountsc
-	if !MoveBetweenAccounts(state, caller, ctx.MyAgentID(), cbalances.NewFromMap(tokensToMove)) {
+	if !MoveBetweenAccounts(state, caller, ctx.AgentID(), cbalances.NewFromMap(tokensToMove)) {
 		return nil, fmt.Errorf("accountsc.move.fail: not enough balance")
 	}
 	// add all incoming tokens from transfer: it must cointain request token + node fee
-	ctx.Accounts().Incoming().AddToMap(tokensToMove)
+	ctx.IncomingTransfer().AddToMap(tokensToMove)
 	// post a 'deposit' request to the accountsc on the target chain
 	if !ctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: coretypes.NewContractID(targetChain, Interface.Hname()),
@@ -183,7 +183,7 @@ func withdraw(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	MustCheckLedger(state, "accountsc.withdraw.begin")
 	defer MustCheckLedger(state, "accountsc.withdraw.exit")
 	caller := ctx.Caller()
-	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.MyContractID().String())
+	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.ContractID().String())
 
 	if !caller.IsAddress() {
 		return nil, fmt.Errorf("accountsc.initialize.fail: caller must be an address")

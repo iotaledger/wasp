@@ -53,7 +53,7 @@ func (a *ScColors) loadColors() {
 		if a.vm.ctx == nil {
 			return
 		}
-		balances = a.vm.ctx.Accounts().Incoming()
+		balances = a.vm.ctx.IncomingTransfer()
 	}
 	balances.IterateDeterministic(func(color balance.Color, amount int64) bool {
 		a.colors = append(a.colors, color)
