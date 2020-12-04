@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
+	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
@@ -44,14 +45,14 @@ var Env *Environment
 func InitEnvironment(t *testing.T) {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
-	chainID := coretypes.NewRandomChainID()
-	Env := &Environment{
+	chainID := coretypes.ChainID(chSig.Address())
+	Env = &Environment{
 		T:                   t,
 		ChainSigscheme:      chSig,
 		OriginatorSigscheme: orSig,
 		ChainAddress:        chSig.Address(),
 		OriginatorAddress:   orSig.Address(),
-		ChainID:             coretypes.ChainID(chSig.Address()),
+		ChainID:             chainID,
 		UtxoDB:              utxodb.New(),
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
@@ -70,9 +71,9 @@ func InitEnvironment(t *testing.T) {
 	require.NotNil(t, origTx)
 	err = Env.UtxoDB.AddTransaction(origTx.Transaction)
 	require.NoError(t, err)
-	prop, err := origTx.Properties()
-	require.NoError(t, err)
-	Env.Infof("origin transaction:\n%s", prop.String())
+	//prop, err := origTx.Properties()
+	//require.NoError(t, err)
+	//Env.Infof("origin transaction:\n%s", prop.String())
 
 	Env.ChainColor = balance.Color(origTx.ID())
 
@@ -92,21 +93,16 @@ func InitEnvironment(t *testing.T) {
 	require.NotNil(t, initTx)
 	err = Env.UtxoDB.AddTransaction(initTx.Transaction)
 	require.NoError(t, err)
-	prop, err = initTx.Properties()
-	require.NoError(t, err)
-	Env.Infof("init transaction:\n%s", prop.String())
+	//prop, err = initTx.Properties()
+	//require.NoError(t, err)
+	//Env.Infof("init transaction:\n%s", prop.String())
 
-	outs := Env.UtxoDB.GetAddressOutputs(Env.ChainAddress)
-	bc, _ := waspconn.OutputBalancesByColor(outs)
-	Env.Infof("chain address colored balances:\n%s", waspconn.BalancesByColorToString(bc))
-
-	balances := waspconn.OutputsToBalances(outs)
 	task := &vm.VMTask{
 		Processors:   Env.Proc,
 		ChainID:      Env.ChainID,
 		Color:        Env.ChainColor,
 		Entropy:      *hashing.RandomHash(nil),
-		Balances:     balances,
+		Balances:     waspconn.OutputsToBalances(Env.UtxoDB.GetAddressOutputs(Env.ChainAddress)),
 		Requests:     []sctransaction.RequestRef{{Tx: initTx}},
 		Timestamp:    origTx.MustState().Timestamp(),
 		VirtualState: Env.State,
