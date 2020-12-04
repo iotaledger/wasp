@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
+	"time"
 )
 
 type Environment struct {
@@ -35,6 +36,7 @@ type Environment struct {
 	ChainColor          balance.Color
 	OriginatorAddress   address.Address
 	UtxoDB              *utxodb.UtxoDB
+	StateTx             *sctransaction.Transaction
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
 	Log                 *logger.Logger
@@ -62,20 +64,17 @@ func InitEnvironment(t *testing.T) {
 	require.NoError(t, err)
 	Env.CheckBalance(Env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
-	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+	Env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:             Env.ChainAddress,
 		OriginatorSignatureScheme: Env.OriginatorSigscheme,
 		AllInputs:                 Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
 	})
 	require.NoError(t, err)
-	require.NotNil(t, origTx)
-	err = Env.UtxoDB.AddTransaction(origTx.Transaction)
+	require.NotNil(t, Env.StateTx)
+	err = Env.UtxoDB.AddTransaction(Env.StateTx.Transaction)
 	require.NoError(t, err)
-	//prop, err := origTx.Properties()
-	//require.NoError(t, err)
-	//Env.Infof("origin transaction:\n%s", prop.String())
 
-	Env.ChainColor = balance.Color(origTx.ID())
+	Env.ChainColor = balance.Color(Env.StateTx.ID())
 
 	originBlock := state.MustNewOriginBlock(&Env.ChainColor)
 	err = Env.State.ApplyBlock(originBlock)
@@ -91,11 +90,13 @@ func InitEnvironment(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
-	err = Env.UtxoDB.AddTransaction(initTx.Transaction)
-	require.NoError(t, err)
-	//prop, err = initTx.Properties()
-	//require.NoError(t, err)
-	//Env.Infof("init transaction:\n%s", prop.String())
+
+	Env.RunRequest(initTx)
+}
+
+func (e *Environment) RunRequest(reqTx *sctransaction.Transaction) {
+	err := Env.UtxoDB.AddTransaction(reqTx.Transaction)
+	require.NoError(Env.T, err)
 
 	task := &vm.VMTask{
 		Processors:   Env.Proc,
@@ -103,25 +104,35 @@ func InitEnvironment(t *testing.T) {
 		Color:        Env.ChainColor,
 		Entropy:      *hashing.RandomHash(nil),
 		Balances:     waspconn.OutputsToBalances(Env.UtxoDB.GetAddressOutputs(Env.ChainAddress)),
-		Requests:     []sctransaction.RequestRef{{Tx: initTx}},
-		Timestamp:    origTx.MustState().Timestamp(),
+		Requests:     []sctransaction.RequestRef{{Tx: reqTx}},
+		Timestamp:    time.Now().UnixNano() + 1,
 		VirtualState: Env.State,
 		Log:          Env.Log,
 	}
 
 	var wg sync.WaitGroup
 	task.OnFinish = func(err error) {
-		require.NoError(t, err)
-
-		Env.Infof("root.init:\nResult tx: %s Result block essence hash: %s",
-			task.ResultTransaction.ID().String(), task.ResultBlock.EssenceHash().String())
+		require.NoError(Env.T, err)
+		//
+		//Env.Infof("root.init:\nResult tx: %s Result block essence hash: %s",
+		//	task.ResultTransaction.ID().String(), task.ResultBlock.EssenceHash().String())
 		wg.Done()
 	}
 
 	wg.Add(1)
 	err = runvm.RunComputationsAsync(task)
-	require.NoError(t, err)
+	require.NoError(Env.T, err)
+
 	wg.Wait()
+	prevBlockIndex := Env.StateTx.MustState().BlockIndex()
+
+	task.ResultTransaction.Sign(Env.ChainSigscheme)
+	err = Env.UtxoDB.AddTransaction(task.ResultTransaction.Transaction)
+	require.NoError(Env.T, err)
+
+	Env.StateTx = task.ResultTransaction
+	newBlockIndex := Env.StateTx.MustState().BlockIndex()
+	Env.Infof("state transition #%d --> #%d", prevBlockIndex, newBlockIndex)
 }
 
 //goland:noinspection ALL
