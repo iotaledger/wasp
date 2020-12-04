@@ -321,9 +321,7 @@ type ScCalls struct {
 
 func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		callInfo := &ScCallInfo{}
-		callInfo.name = "call"
-		return callInfo
+		return &ScCallInfo{}
 	})
 }
 
@@ -352,9 +350,7 @@ type ScPosts struct {
 
 func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		postInfo := &ScPostInfo{}
-		postInfo.name = "post"
-		return postInfo
+		return &ScPostInfo{}
 	})
 }
 
@@ -383,9 +379,7 @@ type ScViews struct {
 
 func (a *ScViews) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		viewInfo := &ScViewInfo{}
-		viewInfo.name = "view"
-		return viewInfo
+		return &ScViewInfo{}
 	})
 }
 

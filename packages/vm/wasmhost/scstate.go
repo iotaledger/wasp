@@ -131,7 +131,6 @@ type ScStateArray struct {
 func (a *ScStateArray) InitObj(id int32, keyId int32, owner *ModelObject) {
 	a.ArrayObject.InitObj(id, keyId, owner)
 	key := a.vm.GetKey(keyId)
-	a.name = "state.array." + string(key)
 	a.items = datatypes.NewMustArray(a.vm.State(), string(key))
 }
 
@@ -239,7 +238,6 @@ type ScStateMap struct {
 func (m *ScStateMap) InitObj(id int32, keyId int32, owner *ModelObject) {
 	m.MapObject.InitObj(id, keyId, owner)
 	key := m.vm.GetKey(keyId)
-	m.name = "state.map." + string(key)
 	m.items = datatypes.NewMustMap(m.vm.State(), string(key))
 	m.types = make(map[int32]int32)
 }

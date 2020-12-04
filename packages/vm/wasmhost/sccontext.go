@@ -87,7 +87,7 @@ type ScContext struct {
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
-	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root", id: 1}, objects: make(map[int32]int32)}}
+	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, id: 1}, objects: make(map[int32]int32)}}
 }
 
 func (o *ScContext) Exists(keyId int32) bool {

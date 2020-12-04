@@ -78,9 +78,7 @@ type ScTransfers struct {
 
 func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		transfer := &ScTransfer{}
-		transfer.name = "transfer"
-		return transfer
+		return &ScTransfer{}
 	})
 }
 
