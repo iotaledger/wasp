@@ -20,8 +20,8 @@ type ScUtility struct {
 	nextRandom    int
 }
 
-func (o *ScUtility) InitVM(vm *wasmProcessor, keyId int32) {
-	o.MapObject.InitVM(vm, keyId)
+func (o *ScUtility) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.MapObject.InitObj(id, keyId, owner)
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values

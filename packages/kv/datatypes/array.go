@@ -2,7 +2,6 @@ package datatypes
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -106,9 +105,6 @@ func (l *Array) len() (uint16, error) {
 	}
 	if v == nil {
 		return 0, nil
-	}
-	if len(v) != 2 {
-		return 0, errors.New(fmt.Sprintf("corrupted data: %v", v))
 	}
 	return util.MustUint16From2Bytes(v), nil
 }

@@ -25,7 +25,7 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyParams:    func() WaspObject { return &ScCallParams{} },
 		KeyResults:   func() WaspObject { return &ScCallResults{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
@@ -121,7 +121,7 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyParams:    func() WaspObject { return &ScCallParams{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
@@ -235,7 +235,7 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyParams:  func() WaspObject { return &ScCallParams{} },
 		KeyResults: func() WaspObject { return &ScCallResults{} },
 	})
@@ -413,8 +413,8 @@ type ScCallParams struct {
 	Params dict.Dict
 }
 
-func (o *ScCallParams) InitVM(vm *wasmProcessor, keyId int32) {
-	o.MapObject.InitVM(vm, keyId)
+func (o *ScCallParams) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.MapObject.InitObj(id, keyId, owner)
 	o.Params = dict.New()
 }
 
@@ -488,8 +488,8 @@ type ScCallResults struct {
 	Results dict.Dict
 }
 
-func (o *ScCallResults) InitVM(vm *wasmProcessor, keyId int32) {
-	o.MapObject.InitVM(vm, keyId)
+func (o *ScCallResults) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.MapObject.InitObj(id, keyId, owner)
 	o.Results = dict.New()
 }
 
@@ -543,8 +543,8 @@ type ScCallTransfers struct {
 	Transfers map[balance.Color]int64
 }
 
-func (o *ScCallTransfers) InitVM(vm *wasmProcessor, keyId int32) {
-	o.MapObject.InitVM(vm, keyId)
+func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.MapObject.InitObj(id, keyId, owner)
 	o.Transfers = make(map[balance.Color]int64)
 }
 

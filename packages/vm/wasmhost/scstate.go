@@ -15,8 +15,8 @@ type ScState struct {
 	types  map[int32]int32
 }
 
-func (o *ScState) InitVM(vm *wasmProcessor, keyId int32) {
-	o.MapObject.InitVM(vm, keyId)
+func (o *ScState) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.MapObject.InitObj(id, keyId, owner)
 	o.fields = make(map[int32]int32)
 	o.types = make(map[int32]int32)
 }
@@ -50,7 +50,7 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	if !o.valid(keyId, typeId) {
 		return 0
 	}
-	var factory MapFactory
+	var factory ObjFactory
 	switch typeId {
 	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_STRING_ARRAY:
 		//note that type of array elements can be found by decrementing typeId
@@ -61,7 +61,7 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 		o.Error("GetObjectId: Invalid type")
 		return 0
 	}
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: factory,
 	})
 }
@@ -128,11 +128,11 @@ type ScStateArray struct {
 	typeId int32
 }
 
-func (a *ScStateArray) InitVM(vm *wasmProcessor, keyId int32) {
-	a.ArrayObject.InitVM(vm, 0)
-	key := vm.GetKey(keyId)
+func (a *ScStateArray) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ArrayObject.InitObj(id, keyId, owner)
+	key := a.vm.GetKey(keyId)
 	a.name = "state.array." + string(key)
-	a.items = datatypes.NewMustArray(vm.State(), string(key))
+	a.items = datatypes.NewMustArray(a.vm.State(), string(key))
 }
 
 func (a *ScStateArray) Exists(keyId int32) bool {
@@ -236,11 +236,11 @@ type ScStateMap struct {
 	types map[int32]int32
 }
 
-func (m *ScStateMap) InitVM(vm *wasmProcessor, keyId int32) {
-	m.MapObject.InitVM(vm, 0)
-	key := vm.GetKey(keyId)
+func (m *ScStateMap) InitObj(id int32, keyId int32, owner *ModelObject) {
+	m.MapObject.InitObj(id, keyId, owner)
+	key := m.vm.GetKey(keyId)
 	m.name = "state.map." + string(key)
-	m.items = datatypes.NewMustMap(vm.State(), string(key))
+	m.items = datatypes.NewMustMap(m.vm.State(), string(key))
 	m.types = make(map[int32]int32)
 }
 

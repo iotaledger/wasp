@@ -87,7 +87,7 @@ type ScContext struct {
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
-	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root"}, objects: make(map[int32]int32)}}
+	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root", id: 1}, objects: make(map[int32]int32)}}
 }
 
 func (o *ScContext) Exists(keyId int32) bool {
@@ -108,7 +108,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
 
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyAccount:   func() WaspObject { return &ScAccount{} },
 		KeyCalls:     func() WaspObject { return &ScCalls{} },
 		KeyContract:  func() WaspObject { return &ScContract{} },

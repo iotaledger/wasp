@@ -12,7 +12,7 @@ func (o *ScAccount) Exists(keyId int32) bool {
 }
 
 func (o *ScAccount) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyBalance: func() WaspObject { return &ScBalance{} },
 		KeyColors:  func() WaspObject { return &ScColors{} },
 	})

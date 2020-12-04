@@ -7,17 +7,17 @@ import (
 	"fmt"
 )
 
-type MapFactory func() WaspObject
-type MapFactories map[int32]MapFactory
+type ObjFactory func() WaspObject
+type ObjFactories map[int32]ObjFactory
 
 type WaspObject interface {
 	HostObject
-	InitVM(vm *wasmProcessor, keyId int32)
+	InitObj(id int32, keyId int32, owner *ModelObject)
 	Error(format string, args ...interface{})
-	FindOrMakeObjectId(keyId int32, factory MapFactory) int32
+	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
 }
 
-func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory MapFactory) int32 {
+func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
 	if !arrayObj.Exists(index) {
 		arrayObj.Error("GetArrayObjectId: Invalid index")
 		return 0
@@ -29,7 +29,7 @@ func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory Ma
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
 
-func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories MapFactories) int32 {
+func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyId]
 	if !ok {
 		mapObj.Error("GetMapObjectId: Invalid key")
@@ -45,24 +45,27 @@ func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories MapF
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ModelObject struct {
-	vm    *wasmProcessor
-	keyId int32
-	name  string
+	vm      *wasmProcessor
+	id      int32
+	keyId   int32
+	name    string
+	ownerId int32
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
 	return &ModelObject{vm: vm, name: "null"}
 }
 
-func (o *ModelObject) InitVM(vm *wasmProcessor, keyId int32) {
-	o.vm = vm
+func (o *ModelObject) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.id = id
 	o.keyId = keyId
+	o.ownerId = owner.id
+	o.vm = owner.vm
 }
 
 func (o *ModelObject) Error(format string, args ...interface{}) {
-	if o.keyId != 0 {
+	if o.name == "" {
 		o.name = string(o.vm.GetKey(o.keyId))
-		o.keyId = 0
 	}
 	o.vm.SetError(o.name + "." + fmt.Sprintf(format, args...))
 }
@@ -72,7 +75,7 @@ func (o *ModelObject) Exists(keyId int32) bool {
 	return false
 }
 
-func (o *ModelObject) FindOrMakeObjectId(keyId int32, factory MapFactory) int32 {
+func (o *ModelObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	panic("implement me")
 }
 
@@ -120,19 +123,19 @@ type MapObject struct {
 	objects map[int32]int32
 }
 
-func (o *MapObject) InitVM(vm *wasmProcessor, keyId int32) {
-	o.ModelObject.InitVM(vm, keyId)
+func (o *MapObject) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.ModelObject.InitObj(id, keyId, owner)
 	o.objects = make(map[int32]int32)
 }
 
-func (o *MapObject) FindOrMakeObjectId(keyId int32, factory MapFactory) int32 {
+func (o *MapObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	objId, ok := o.objects[keyId]
 	if ok {
 		return objId
 	}
 	newObject := factory()
-	newObject.InitVM(o.vm, keyId)
 	objId = o.vm.TrackObject(newObject)
+	newObject.InitObj(objId, keyId, &o.ModelObject)
 	o.objects[keyId] = objId
 	return objId
 }
@@ -148,13 +151,13 @@ func (a *ArrayObject) Exists(keyId int32) bool {
 	return uint32(keyId) <= uint32(len(a.objects))
 }
 
-func (a *ArrayObject) FindOrMakeObjectId(keyId int32, factory MapFactory) int32 {
+func (a *ArrayObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	if keyId < int32(len(a.objects)) {
 		return a.objects[keyId]
 	}
 	newObject := factory()
-	newObject.InitVM(a.vm, 0)
 	objId := a.vm.TrackObject(newObject)
+	newObject.InitObj(objId, 0, &a.ModelObject)
 	a.objects = append(a.objects, objId)
 	return objId
 }

@@ -37,7 +37,7 @@ func (o *ScRequest) GetInt(keyId int32) int64 {
 }
 
 func (o *ScRequest) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyColors:  func() WaspObject { return &ScColors{requestOnly: true} },
 		KeyBalance: func() WaspObject { return &ScBalance{requestOnly: true} },
 		KeyParams:  func() WaspObject { return &ScRequestParams{} },
