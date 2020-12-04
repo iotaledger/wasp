@@ -89,10 +89,10 @@ func TestApply(t *testing.T) {
 	vs1 := NewVirtualState(db, &chainID)
 	vs2 := NewVirtualState(db, &chainID)
 
-	err = vs1.ApplyBatch(batch1)
+	err = vs1.ApplyBlock(batch1)
 	assert.NoError(t, err)
 
-	err = vs2.ApplyBatch(batch2)
+	err = vs2.ApplyBlock(batch2)
 	assert.NoError(t, err)
 }
 
@@ -120,12 +120,12 @@ func TestApply2(t *testing.T) {
 	batch3.WithBlockIndex(1)
 
 	vs1.ApplyStateUpdate(su1)
-	err = vs1.ApplyBatch(batch23)
+	err = vs1.ApplyBlock(batch23)
 	assert.NoError(t, err)
 
 	vs2.ApplyStateUpdate(su1)
 	vs2.ApplyStateUpdate(su2)
-	err = vs2.ApplyBatch(batch3)
+	err = vs2.ApplyBlock(batch3)
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
@@ -152,7 +152,7 @@ func TestApply3(t *testing.T) {
 
 	batch, err := NewBlock([]StateUpdate{su1, su2})
 	assert.NoError(t, err)
-	err = vs2.ApplyBatch(batch)
+	err = vs2.ApplyBlock(batch)
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
@@ -175,7 +175,7 @@ func TestCommit(t *testing.T) {
 
 	chainID := coretypes.ChainID{1, 3, 3, 7}
 	vs1 := NewVirtualState(partition, &chainID)
-	err = vs1.ApplyBatch(batch1)
+	err = vs1.ApplyBlock(batch1)
 	assert.NoError(t, err)
 
 	v, _ := vs1.Variables().Get(kv.Key([]byte("x")))
@@ -213,7 +213,7 @@ func TestCommit(t *testing.T) {
 
 	chainID = coretypes.ChainID{1, 3, 3, 8}
 	vs2 := NewVirtualState(partition, &chainID)
-	err = vs2.ApplyBatch(batch2)
+	err = vs2.ApplyBlock(batch2)
 	assert.NoError(t, err)
 
 	v, _ = vs2.Variables().Get(kv.Key([]byte("x")))

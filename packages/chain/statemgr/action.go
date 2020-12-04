@@ -263,7 +263,7 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 	if sm.solidStateValid || sm.solidState == nil {
 		// we need to approve the solidState.
 		// In case of origin, the next state is origin block applied to the empty state
-		if err := stateToApprove.ApplyBatch(block); err != nil {
+		if err := stateToApprove.ApplyBlock(block); err != nil {
 			sm.log.Errorw("can't apply update to the current state",
 				"cur state index", sm.solidState.BlockIndex(),
 				"err", err,

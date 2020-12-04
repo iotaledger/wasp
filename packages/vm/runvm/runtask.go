@@ -74,8 +74,8 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 
 	// calculate resulting state hash
 	vsClone := task.VirtualState.Clone()
-	if err = vsClone.ApplyBatch(task.ResultBlock); err != nil {
-		task.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
+	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
+		task.OnFinish(fmt.Errorf("RunVM.ApplyBlock: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
