@@ -18,6 +18,7 @@ type wasmProcessor struct {
 	ctx       vmtypes.Sandbox
 	ctxView   vmtypes.SandboxView
 	function  string
+	nesting   int
 	params    dict.Dict
 	scContext *ScContext
 }
@@ -49,14 +50,18 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 
 	host.ctx = ctx
 	host.ctxView = ctxView
+	host.nesting++
 	host.params = host.Params()
 
 	defer func() {
-		host.LogText("Finalizing call")
+		host.nesting--
+		if host.nesting == 0 {
+			host.LogText("Finalizing calls")
+			host.scContext.Finalize()
+		}
 		host.ctx = saveCtx
 		host.ctxView = saveCtxView
 		host.params = nil
-		host.scContext.Finalize()
 	}()
 
 	testMode, _ := host.params.Has("testMode")
