@@ -49,7 +49,7 @@ type Sandbox interface {
 	IncomingTransfer() coretypes.ColoredBalances
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col balance.Color) int64
-	// MoveTokens moves specified colored tokens to the target account
+	// MoveTokens moves specified colored tokens to the target account on the same chain
 	MoveTokens(target coretypes.AgentID, col balance.Color, amount int64) bool
 
 	// Moving tokens outside of the current chain
