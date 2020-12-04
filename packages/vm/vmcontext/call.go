@@ -74,9 +74,9 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	}
 
 	// call contract from request context
-	_, err = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
+	vmctx.lastResult, vmctx.lastError = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
 
-	switch err {
+	switch vmctx.lastError {
 	case nil:
 		return
 	case ErrContractNotFound, ErrEntryPointNotFound, ErrProcessorNotFound:

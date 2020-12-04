@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -28,7 +29,7 @@ type VMTask struct {
 	VirtualState state.VirtualState // input immutable
 	Log          *logger.Logger
 	// call when finished
-	OnFinish func(error)
+	OnFinish func(callResult dict.Dict, callError error, vmError error)
 	// outputs
 	ResultTransaction *sctransaction.Transaction
 	ResultBlock       state.Block

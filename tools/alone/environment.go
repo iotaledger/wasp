@@ -12,19 +12,14 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/stretchr/testify/require"
-	"sync"
 	"testing"
-	"time"
 )
 
 type Environment struct {
@@ -91,48 +86,7 @@ func InitEnvironment(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
 
-	Env.RunRequest(initTx)
-}
-
-func (e *Environment) RunRequest(reqTx *sctransaction.Transaction) {
-	err := Env.UtxoDB.AddTransaction(reqTx.Transaction)
-	require.NoError(Env.T, err)
-
-	task := &vm.VMTask{
-		Processors:   Env.Proc,
-		ChainID:      Env.ChainID,
-		Color:        Env.ChainColor,
-		Entropy:      *hashing.RandomHash(nil),
-		Balances:     waspconn.OutputsToBalances(Env.UtxoDB.GetAddressOutputs(Env.ChainAddress)),
-		Requests:     []sctransaction.RequestRef{{Tx: reqTx}},
-		Timestamp:    time.Now().UnixNano() + 1,
-		VirtualState: Env.State,
-		Log:          Env.Log,
-	}
-
-	var wg sync.WaitGroup
-	task.OnFinish = func(err error) {
-		require.NoError(Env.T, err)
-		//
-		//Env.Infof("root.init:\nResult tx: %s Result block essence hash: %s",
-		//	task.ResultTransaction.ID().String(), task.ResultBlock.EssenceHash().String())
-		wg.Done()
-	}
-
-	wg.Add(1)
-	err = runvm.RunComputationsAsync(task)
-	require.NoError(Env.T, err)
-
-	wg.Wait()
-	prevBlockIndex := Env.StateTx.MustState().BlockIndex()
-
-	task.ResultTransaction.Sign(Env.ChainSigscheme)
-	err = Env.UtxoDB.AddTransaction(task.ResultTransaction.Transaction)
-	require.NoError(Env.T, err)
-
-	Env.StateTx = task.ResultTransaction
-	newBlockIndex := Env.StateTx.MustState().BlockIndex()
-	Env.Infof("state transition #%d --> #%d", prevBlockIndex, newBlockIndex)
+	_, _ = Env.runRequest(initTx)
 }
 
 //goland:noinspection ALL

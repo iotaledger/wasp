@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -38,9 +39,9 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		VirtualState: op.currentState,
 		Log:          op.log,
 	}
-	ctx.OnFinish = func(err error) {
-		if err != nil {
-			op.log.Errorf("VM task failed: %v", err)
+	ctx.OnFinish = func(_ dict.Dict, _ error, vmError error) {
+		if vmError != nil {
+			op.log.Errorf("VM task failed: %v", vmError)
 			return
 		}
 		op.chain.ReceiveMessage(&chain.VMResultMsg{
