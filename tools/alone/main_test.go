@@ -5,7 +5,7 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	env := NewEnvironment(t)
+	InitEnvironment(t)
 	//t.Logf("\n%s", env.String())
-	env.Infof("\n%s\n", env.String())
+	Env.Infof("\n%s\n", Env.String())
 }

@@ -39,74 +39,85 @@ type Environment struct {
 	Log                 *logger.Logger
 }
 
-func NewEnvironment(t *testing.T) *Environment {
-	ch := signaturescheme.ED25519(ed25519.GenerateKeyPair())
-	or := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+var Env *Environment
+
+func InitEnvironment(t *testing.T) {
+	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.NewRandomChainID()
-	ret := &Environment{
+	Env := &Environment{
 		T:                   t,
-		ChainSigscheme:      ch,
-		OriginatorSigscheme: or,
-		ChainAddress:        ch.Address(),
-		OriginatorAddress:   or.Address(),
-		ChainID:             coretypes.ChainID(ch.Address()),
+		ChainSigscheme:      chSig,
+		OriginatorSigscheme: orSig,
+		ChainAddress:        chSig.Address(),
+		OriginatorAddress:   orSig.Address(),
+		ChainID:             coretypes.ChainID(chSig.Address()),
 		UtxoDB:              utxodb.New(),
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
 		Log:                 testutil.NewLogger(t),
 	}
-	_, err := ret.UtxoDB.RequestFunds(ret.OriginatorAddress)
+	_, err := Env.UtxoDB.RequestFunds(Env.OriginatorAddress)
 	require.NoError(t, err)
-	ret.CheckBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	Env.CheckBalance(Env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
 	origTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:             ret.ChainAddress,
-		OriginatorSignatureScheme: ret.OriginatorSigscheme,
-		AllInputs:                 ret.UtxoDB.GetAddressOutputs(ret.OriginatorAddress),
+		OriginAddress:             Env.ChainAddress,
+		OriginatorSignatureScheme: Env.OriginatorSigscheme,
+		AllInputs:                 Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
 	})
 	require.NoError(t, err)
 	require.NotNil(t, origTx)
-	err = ret.UtxoDB.AddTransaction(origTx.Transaction)
+	err = Env.UtxoDB.AddTransaction(origTx.Transaction)
 	require.NoError(t, err)
-	ret.ChainColor = balance.Color(origTx.ID())
+	prop, err := origTx.Properties()
+	require.NoError(t, err)
+	Env.Infof("origin transaction:\n%s", prop.String())
 
-	originBlock := state.MustNewOriginBlock(&ret.ChainColor)
-	err = ret.State.ApplyBlock(originBlock)
-	require.NoError(t, err)
-	err = ret.State.CommitToDb(originBlock)
-	require.NoError(t, err)
+	Env.ChainColor = balance.Color(origTx.ID())
 
-	ret.Infof("Origin transaction: %s", origTx.ID().String())
+	originBlock := state.MustNewOriginBlock(&Env.ChainColor)
+	err = Env.State.ApplyBlock(originBlock)
+	require.NoError(t, err)
+	err = Env.State.CommitToDb(originBlock)
+	require.NoError(t, err)
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		Description:          "'alone' testing chain",
-		OwnerSignatureScheme: ret.OriginatorSigscheme,
-		AllInputs:            ret.UtxoDB.GetAddressOutputs(ret.OriginatorAddress),
+		OwnerSignatureScheme: Env.OriginatorSigscheme,
+		AllInputs:            Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
 	})
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
-	err = ret.UtxoDB.AddTransaction(initTx.Transaction)
+	err = Env.UtxoDB.AddTransaction(initTx.Transaction)
 	require.NoError(t, err)
-	ret.Infof("Init transaction: %s", initTx.ID().String())
+	prop, err = initTx.Properties()
+	require.NoError(t, err)
+	Env.Infof("init transaction:\n%s", prop.String())
 
+	outs := Env.UtxoDB.GetAddressOutputs(Env.ChainAddress)
+	bc, _ := waspconn.OutputBalancesByColor(outs)
+	Env.Infof("chain address colored balances:\n%s", waspconn.BalancesByColorToString(bc))
+
+	balances := waspconn.OutputsToBalances(outs)
 	task := &vm.VMTask{
-		Processors:   ret.Proc,
-		ChainID:      ret.ChainID,
-		Color:        ret.ChainColor,
+		Processors:   Env.Proc,
+		ChainID:      Env.ChainID,
+		Color:        Env.ChainColor,
 		Entropy:      *hashing.RandomHash(nil),
-		Balances:     waspconn.OutputsToBalances(ret.UtxoDB.GetAddressOutputs(ret.ChainAddress)),
+		Balances:     balances,
 		Requests:     []sctransaction.RequestRef{{Tx: initTx}},
 		Timestamp:    origTx.MustState().Timestamp(),
-		VirtualState: ret.State,
-		Log:          ret.Log,
+		VirtualState: Env.State,
+		Log:          Env.Log,
 	}
 
 	var wg sync.WaitGroup
 	task.OnFinish = func(err error) {
 		require.NoError(t, err)
 
-		ret.Infof("root.init:\nResult tx: %s Result block essence hash: %s",
+		Env.Infof("root.init:\nResult tx: %s Result block essence hash: %s",
 			task.ResultTransaction.ID().String(), task.ResultBlock.EssenceHash().String())
 		wg.Done()
 	}
@@ -115,8 +126,6 @@ func NewEnvironment(t *testing.T) *Environment {
 	err = runvm.RunComputationsAsync(task)
 	require.NoError(t, err)
 	wg.Wait()
-
-	return ret
 }
 
 //goland:noinspection ALL
