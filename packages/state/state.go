@@ -184,6 +184,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	values := [][]byte{varStateData, batchData, solidStateValue}
 
 	// store processed request IDs
+	// TODO store request IDs in the 'log' contract
 	for _, rid := range b.RequestIDs() {
 		keys = append(keys, dbkeyRequest(rid))
 		values = append(values, []byte{0})

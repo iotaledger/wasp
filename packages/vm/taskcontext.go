@@ -17,10 +17,8 @@ import (
 type VMTask struct {
 	Processors *processors.ProcessorCache
 	// inputs (immutable)
-	LeaderPeerIndex uint16
-	ProgramHash     hashing.HashValue
-	ChainID         coretypes.ChainID
-	Color           balance.Color
+	ChainID coretypes.ChainID
+	Color   balance.Color
 	// deterministic source of entropy
 	Entropy      hashing.HashValue
 	Balances     map[valuetransaction.ID][]*balance.Balance

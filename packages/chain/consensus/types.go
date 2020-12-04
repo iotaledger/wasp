@@ -129,20 +129,6 @@ func (op *operator) mustStateIndex() uint32 {
 	return ret
 }
 
-func (op *operator) getProgramHash() (*hashing.HashValue, bool) {
-	if op.currentState == nil {
-		return nil, false
-	}
-	h, ok, err := codec.DecodeHashValue(op.currentState.Variables().MustGet(vmconst.VarNameProgramData))
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		return nil, false
-	}
-	return h, true
-}
-
 func (op *operator) getFeeDestination() coretypes.AgentID {
 	// TODO
 	// temporary to the chain owner's account

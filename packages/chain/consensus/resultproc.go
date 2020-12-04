@@ -26,38 +26,34 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		op.log.Debugf("runCalculationsAsync: variable currentState is not known")
 		return
 	}
-	var progHash hashing.HashValue
-	if ph, ok := op.getProgramHash(); ok {
-		// may not be needed if ready requests are only built-in
-		progHash = *ph
-	}
 	ctx := &vm.VMTask{
-		Processors:      op.chain.Processors(),
-		LeaderPeerIndex: par.leaderPeerIndex,
-		ProgramHash:     progHash,
-		ChainID:         *op.chain.ID(),
-		Color:           *op.chain.Color(),
-		Entropy:         (hashing.HashValue)(op.stateTx.ID()),
-		Balances:        par.balances,
-		AccrueFeesTo:    par.accrueFeesTo,
-		Requests:        takeRefs(par.requests),
-		Timestamp:       par.timestamp,
-		VirtualState:    op.currentState,
-		Log:             op.log,
+		Processors:   op.chain.Processors(),
+		ChainID:      *op.chain.ID(),
+		Color:        *op.chain.Color(),
+		Entropy:      (hashing.HashValue)(op.stateTx.ID()),
+		Balances:     par.balances,
+		AccrueFeesTo: par.accrueFeesTo,
+		Requests:     takeRefs(par.requests),
+		Timestamp:    par.timestamp,
+		VirtualState: op.currentState,
+		Log:          op.log,
 	}
 	ctx.OnFinish = func(err error) {
 		if err != nil {
 			op.log.Errorf("VM task failed: %v", err)
 			return
 		}
-		op.chain.ReceiveMessage(ctx)
+		op.chain.ReceiveMessage(&chain.VMResultMsg{
+			Task:   ctx,
+			Leader: par.leaderPeerIndex,
+		})
 	}
 	if err := runvm.RunComputationsAsync(ctx); err != nil {
 		op.log.Errorf("RunComputationsAsync: %v", err)
 	}
 }
 
-func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
+func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 	op.log.Debugw("sendResultToTheLeader")
 	if op.consensusStage != consensusStageSubCalculationsStarted {
 		op.log.Debugf("calculation result on SUB dismissed because stage changed from '%s' to '%s'",
@@ -77,10 +73,10 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.EssenceBytes())
-	batchHash := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)
+	batchHash := vm.BatchHash(reqids, result.Timestamp, leader)
 
 	op.log.Debugw("sendResultToTheLeader",
-		"leader", result.LeaderPeerIndex,
+		"leader", leader,
 		"batchHash", batchHash.String(),
 		"essenceHash", essenceHash.String(),
 		"ts", result.Timestamp,
@@ -96,12 +92,12 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask) {
 		SigShare:      sigShare,
 	})
 
-	if err := op.chain.SendMsg(result.LeaderPeerIndex, chain.MsgSignedHash, msgData); err != nil {
+	if err := op.chain.SendMsg(leader, chain.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
 		return
 	}
 	op.sentResultToLeader = result.ResultTransaction
-	op.sentResultToLeaderIndex = result.LeaderPeerIndex
+	op.sentResultToLeaderIndex = leader
 
 	op.setNextConsensusStage(consensusStageSubCalculationsFinished)
 }
@@ -123,7 +119,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		reqids[i] = *result.Requests[i].RequestID()
 	}
 
-	bh := vm.BatchHash(reqids, result.Timestamp, result.LeaderPeerIndex)
+	bh := vm.BatchHash(reqids, result.Timestamp, op.chain.OwnPeerIndex())
 	if bh != op.leaderStatus.batchHash {
 		panic("bh != op.leaderStatus.batchHash")
 	}

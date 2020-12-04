@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/vm"
 )
 
 type Chain interface {
@@ -74,7 +73,7 @@ type Operator interface {
 	EventRequestMsg(*RequestMsg)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
-	EventResultCalculated(*vm.VMTask)
+	EventResultCalculated(msg *VMResultMsg)
 	EventSignedHashMsg(*SignedHashMsg)
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
 	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)

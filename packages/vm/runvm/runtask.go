@@ -39,9 +39,7 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		"timestamp", task.Timestamp,
 		"state index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
-		"leader", task.LeaderPeerIndex,
 	)
-
 	vmctx, err := vmcontext.NewVMContext(task, txb)
 	if err != nil {
 		task.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
