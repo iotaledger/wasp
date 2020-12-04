@@ -26,7 +26,7 @@ type Sandbox interface {
 	Caller() coretypes.AgentID
 	// ContractID is the ID of the current contract
 	ContractID() coretypes.ContractID
-	// MyAgentID is the AgentID representation of the ContractID
+	// AgentID is the AgentID representation of the ContractID
 	AgentID() coretypes.AgentID
 
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
@@ -35,11 +35,11 @@ type Sandbox interface {
 	// If the entry point is full entry point, transfer tokens are moved between caller's and target contract's accounts (if enough)
 	// If the entry point if view, 'transfer' has no effect
 	Call(target coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error)
-	// ID of the request in the context of which is the current call
+	// RequestID of the request in the context of which is the current call
 	RequestID() coretypes.RequestID
-	// current timestamp
+	// GetTimestamp return current timestamp of the context
 	GetTimestamp() int64
-	// entropy base on the hash of the current state transaction
+	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 
 	// Access to balances and tokens
