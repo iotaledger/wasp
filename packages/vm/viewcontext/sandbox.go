@@ -45,7 +45,7 @@ func (s *sandboxview) State() kv.KVStore {
 	return s.state
 }
 
-func (s *sandboxview) MyBalances() coretypes.ColoredBalances {
+func (s *sandboxview) Balances() coretypes.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -53,7 +53,7 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 
-func (s *sandboxview) MyContractID() coretypes.ContractID {
+func (s *sandboxview) ContractID() coretypes.ContractID {
 	return s.contractID
 }
 

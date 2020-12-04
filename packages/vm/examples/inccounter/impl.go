@@ -62,7 +62,7 @@ func GetProcessor() vmtypes.Processor {
 }
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.init in %s", ctx.MyContractID().Hname().String())
+	ctx.Eventf("inccounter.init in %s", ctx.ContractID().Hname().String())
 	params := ctx.Params()
 	val, _, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -74,10 +74,10 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 func incCounter(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.incCounter in %s", ctx.MyContractID().Hname().String())
+	ctx.Eventf("inccounter.incCounter in %s", ctx.ContractID().Hname().String())
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Eventf("'increasing counter value: %d' in %s", val, ctx.MyContractID().Hname().String())
+	ctx.Eventf("'increasing counter value: %d' in %s", val, ctx.ContractID().Hname().String())
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	return nil, nil
 }

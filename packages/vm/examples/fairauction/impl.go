@@ -209,7 +209,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	accounts := ctx.Accounts()
 
 	// check how many iotas the request contains
-	totalDeposit := accounts.Incoming().Balance(balance.ColorIOTA)
+	totalDeposit := accounts.IncomingTransfer().Balance(balance.ColorIOTA)
 	if totalDeposit < 1 {
 		// it is expected at least 1 iota in deposit
 		// this 1 iota is needed as a "operating capital for the time locked request to itself"
@@ -248,7 +248,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine amount of colored tokens for sale. They must be in the outputs of the request transaction
-	tokensForSale := accounts.Incoming().Balance(colorForSale)
+	tokensForSale := accounts.IncomingTransfer().Balance(colorForSale)
 	if tokensForSale == 0 {
 		// no tokens transferred. Refund half of deposit
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
@@ -367,7 +367,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
 	// it also means several bids can't be placed in the same transaction <-- TODO generic solution for it
-	bidAmount := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
+	bidAmount := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
 	if bidAmount == 0 {
 		// no iotas sent
 		return fmt.Errorf("placeBid: exit 0")
@@ -457,7 +457,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.MyContractID())
+	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
 	if ctx.Caller() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")

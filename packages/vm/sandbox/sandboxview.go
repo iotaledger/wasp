@@ -30,7 +30,7 @@ func (s sandboxView) State() kv.KVStore {
 	return s.vmctx.State()
 }
 
-func (s sandboxView) MyBalances() coretypes.ColoredBalances {
+func (s sandboxView) Balances() coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 
@@ -38,7 +38,7 @@ func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hn
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) MyContractID() coretypes.ContractID {
+func (s sandboxView) ContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 

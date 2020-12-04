@@ -29,7 +29,7 @@ func (v nilProcessor) GetDescription() string {
 func (v nilProcessor) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	reqId := ctx.RequestID()
 	ctx.Eventf("run nilProcessor. Contract ID: %s, ts: %d, reqid: %s",
-		ctx.MyContractID().String(),
+		ctx.ContractID().String(),
 		ctx.GetTimestamp(),
 		reqId.String(),
 	)

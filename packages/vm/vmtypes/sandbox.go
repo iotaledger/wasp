@@ -20,16 +20,14 @@ type Sandbox interface {
 	ChainOwnerID() coretypes.AgentID
 	// State is base level interface to access the key/value pairs in the virtual state
 	State() kv.KVStore
-	// Accounts provide access to on-chain accounts and to the current transfer
-	Accounts() Accounts
 	// Params access to parameters of the call
 	Params() dict.Dict
 	// Caller is the agentID of the caller of the SC function
 	Caller() coretypes.AgentID
-	// MyContractID is the ID of the current contract
-	MyContractID() coretypes.ContractID
-	// MyAgentID is the AgentID representation of the MyContractID
-	MyAgentID() coretypes.AgentID
+	// ContractID is the ID of the current contract
+	ContractID() coretypes.ContractID
+	// AgentID is the AgentID representation of the ContractID
+	AgentID() coretypes.AgentID
 
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
@@ -37,20 +35,31 @@ type Sandbox interface {
 	// If the entry point is full entry point, transfer tokens are moved between caller's and target contract's accounts (if enough)
 	// If the entry point if view, 'transfer' has no effect
 	Call(target coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error)
-	// ID of the request in the context of which is the current call
+	// RequestID of the request in the context of which is the current call
 	RequestID() coretypes.RequestID
-	// current timestamp
+	// GetTimestamp return current timestamp of the context
 	GetTimestamp() int64
-	// entropy base on the hash of the current state transaction
+	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 
+	// Access to balances and tokens
+	// Balances returns colored balances owned by the smart contract
+	Balances() coretypes.ColoredBalances
+	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
+	IncomingTransfer() coretypes.ColoredBalances
+	// Balance return number of tokens of specific color in the balance of the smart contract
+	Balance(col balance.Color) int64
+	// MoveTokens moves specified colored tokens to the target account on the same chain
+	MoveTokens(target coretypes.AgentID, col balance.Color, amount int64) bool
+
+	// Moving tokens outside of the current chain
 	// TransferToAddress send tokens to ledger address (not contract)
 	TransferToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
 	// TransferCrossChain send funds to the targetAgentID account cross chain
 	// to move own funds to own account use MyAgentID() as a targetAgentID
 	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
 
-	// PostRequest sends cross chain request
+	// PostRequest sends cross-chain request
 	PostRequest(par NewRequestParams) bool
 	// PostRequestToSelf send cross chain request to the caller contract on the same chain
 	PostRequestToSelf(entryPoint coretypes.Hname, args dict.Dict) bool
@@ -74,13 +83,4 @@ type NewRequestParams struct {
 	Timelock         uint32
 	Params           dict.Dict
 	Transfer         coretypes.ColoredBalances
-}
-
-// Accounts is an interface to access all functions with tokens
-// in the local context of the call to a smart contract
-type Accounts interface {
-	MyBalances() coretypes.ColoredBalances
-	Incoming() coretypes.ColoredBalances
-	Balance(col balance.Color) int64
-	MoveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool
 }

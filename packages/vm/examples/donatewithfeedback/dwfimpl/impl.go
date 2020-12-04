@@ -82,7 +82,7 @@ func donate(ctx vmtypes.Sandbox) error {
 
 	// how many iotas are sent by the request.
 	// only iotas are considered donation. Other colors are ignored
-	donated := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
+	donated := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
 	// take feedback text contained in the request
 	feedback, ok, err := codec.DecodeString(params.MustGet(donatewithfeedback.VarReqFeedback))
 	feedback = util.GentleTruncate(feedback, maxComment)
@@ -154,7 +154,7 @@ func withdraw(ctx vmtypes.Sandbox) error {
 		// cannot be interpreted as int64
 		// return everything TODO RefundAll function ?
 		sender := ctx.Caller()
-		sent := ctx.Accounts().Incoming().Balance(balance.ColorIOTA)
+		sent := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
 		ctx.Accounts().MoveBalance(sender, balance.ColorIOTA, sent)
 		return fmt.Errorf("DonateWithFeedback: withdraw wrong argument %v", err)
 	}

@@ -29,7 +29,7 @@ func (o *ScBalance) GetInt(keyId int32) int64 {
 		if o.vm.ctx == nil {
 			return 0
 		}
-		balances = o.vm.ctx.Accounts().Incoming()
+		balances = o.vm.ctx.IncomingTransfer()
 	}
 
 	return balances.Balance(color)

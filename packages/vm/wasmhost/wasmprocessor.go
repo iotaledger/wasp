@@ -178,16 +178,16 @@ func (host *wasmProcessor) LogText(text string) {
 
 func (host *wasmProcessor) MyBalances() coretypes.ColoredBalances {
 	if host.ctx != nil {
-		return host.ctx.Accounts().MyBalances()
+		return host.ctx.Balances()
 	}
-	return host.ctxView.MyBalances()
+	return host.ctxView.Balances()
 }
 
 func (host *wasmProcessor) MyContractID() coretypes.ContractID {
 	if host.ctx != nil {
-		return host.ctx.MyContractID()
+		return host.ctx.ContractID()
 	}
-	return host.ctxView.MyContractID()
+	return host.ctxView.ContractID()
 }
 
 func (host *wasmProcessor) Params() dict.Dict {
