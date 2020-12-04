@@ -6,12 +6,16 @@ import (
 
 func DecodeInt64(b []byte) (int64, bool, error) {
 	if b == nil {
+		// special behavior for backward compatibility: nil value is treated as the absence of a value, not an error
 		return 0, false, nil
 	}
+
 	//if len(b) != 8 {
 	//	return 0, false, fmt.Errorf("value %s is not an int64", hex.EncodeToString(b))
 	//}
-	// 3 Dec, 20202 not needed, Uint64From8Bytes does it all
+	// 3 Dec, 2020 not needed, Uint64From8Bytes does it all
+	// 4 Dec, 2020 WRONG, see above
+
 	r, err := util.Uint64From8Bytes(b)
 	return int64(r), err == nil, err
 }

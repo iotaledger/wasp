@@ -36,7 +36,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 	// - take the hash. Note: hash of the state do not depend on the address
 	var dummyChainID coretypes.ChainID
 	originState := state.NewVirtualState(nil, &dummyChainID)
-	if err := originState.ApplyBatch(state.MustNewOriginBlock(nil)); err != nil {
+	if err := originState.ApplyBlock(state.MustNewOriginBlock(nil)); err != nil {
 		return nil, err
 	}
 	originHash := originState.Hash()

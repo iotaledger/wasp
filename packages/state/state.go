@@ -100,15 +100,15 @@ func (vs *virtualState) Timestamp() int64 {
 }
 
 // applies block of state updates. Increases state index
-func (vs *virtualState) ApplyBatch(batch Block) error {
+func (vs *virtualState) ApplyBlock(batch Block) error {
 	if !vs.empty {
 		if batch.StateIndex() != vs.blockIndex+1 {
-			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the state #%d",
+			return fmt.Errorf("ApplyBlock: block state index #%d can't be applied to the state #%d",
 				batch.StateIndex(), vs.blockIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
-			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the empty state", batch.StateIndex())
+			return fmt.Errorf("ApplyBlock: block state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
 	batch.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
@@ -184,6 +184,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	values := [][]byte{varStateData, batchData, solidStateValue}
 
 	// store processed request IDs
+	// TODO store request IDs in the 'log' contract
 	for _, rid := range b.RequestIDs() {
 		keys = append(keys, dbkeyRequest(rid))
 		values = append(values, []byte{0})

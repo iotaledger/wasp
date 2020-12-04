@@ -50,7 +50,6 @@ func (tx *Transaction) calcProperties() (*Properties, error) {
 	if tx.SignaturesValid() {
 		ret.numSignatures = len(tx.Signatures())
 	}
-
 	if err := ret.analyzeSender(tx); err != nil {
 		return nil, err
 	}
@@ -60,7 +59,16 @@ func (tx *Transaction) calcProperties() (*Properties, error) {
 	if err := ret.analyzeRequestBlocks(tx); err != nil {
 		return nil, err
 	}
+	ret.calcNumMinted(tx)
 	return ret, nil
+}
+
+func (prop *Properties) calcNumMinted(tx *Transaction) {
+	prop.numMintedTokens = 0
+	tx.Transaction.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
+		prop.numMintedTokens += txutil.BalanceOfColor(bals, balance.ColorNew)
+		return true
+	})
 }
 
 func (prop *Properties) analyzeSender(tx *Transaction) error {

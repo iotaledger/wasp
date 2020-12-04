@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
 
@@ -144,4 +145,10 @@ type PendingBlockMsg struct {
 type StateTransactionEvidenced struct {
 	TxId      valuetransaction.ID
 	StateHash hashing.HashValue
+}
+
+// VMResultMsg is the message sent by the async VM task to the chan object upon success full finish
+type VMResultMsg struct {
+	Task   *vm.VMTask
+	Leader uint16
 }
