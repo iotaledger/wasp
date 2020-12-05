@@ -7,10 +7,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -30,6 +32,15 @@ func (e *aloneEnvironment) String() string {
 
 func (e *aloneEnvironment) Infof(format string, args ...interface{}) {
 	e.Log.Infof(format, args...)
+}
+
+// NewSigScheme generates new ed25519 sigscheme and requests funds from the faucet
+func (e *aloneEnvironment) NewSigScheme() signaturescheme.SignatureScheme {
+	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	_, err := e.UtxoDB.RequestFunds(ret.Address())
+	require.NoError(e.T, err)
+	e.CheckBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	return ret
 }
 
 func (e *aloneEnvironment) GetBalance(addr address.Address, col balance.Color) int64 {
