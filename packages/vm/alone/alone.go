@@ -8,6 +8,7 @@
 // modules of the system.
 // It does not use Wasp plugins, consensus, state manager, database, peer and node communications.
 // It uses in-memory DB for virtual state and UTXODB to mock the ledger.
+// It deploys default chain and all builtin contracts
 package alone
 
 import (
