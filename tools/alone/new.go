@@ -42,7 +42,7 @@ type aloneEnvironment struct {
 var regOnce sync.Once
 
 func New(t *testing.T, debug bool) *aloneEnvironment {
-	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.ChainID(chSig.Address())
 	log := testutil.NewLogger(t)
@@ -100,6 +100,7 @@ func New(t *testing.T, debug bool) *aloneEnvironment {
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
 
-	_, _ = env.runRequest(initTx)
+	_, err = env.runRequest(initTx)
+	require.NoError(t, err)
 	return env
 }
