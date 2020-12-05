@@ -22,7 +22,7 @@ type Sandbox interface {
 	State() kv.KVStore
 	// Params access to parameters of the call
 	Params() dict.Dict
-	// Caller is the agentID of the caller of the SC function
+	// Caller is the agentID of the caller of he SC function
 	Caller() coretypes.AgentID
 	// ContractID is the ID of the current contract
 	ContractID() coretypes.ContractID

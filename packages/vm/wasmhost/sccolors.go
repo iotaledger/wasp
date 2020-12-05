@@ -48,7 +48,7 @@ func (a *ScColors) loadColors() {
 	if a.colors != nil {
 		return
 	}
-	balances := a.vm.MyBalances()
+	balances := a.vm.Balances()
 	if a.requestOnly {
 		if a.vm.ctx == nil {
 			return

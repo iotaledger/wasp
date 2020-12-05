@@ -4,6 +4,7 @@
 package wasmhost
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/util"
@@ -13,17 +14,19 @@ type ScState struct {
 	MapObject
 	fields map[int32]int32
 	types  map[int32]int32
+	state  kv.KVStore
 }
 
 func (o *ScState) InitObj(id int32, keyId int32, owner *ModelObject) {
 	o.MapObject.InitObj(id, keyId, owner)
 	o.fields = make(map[int32]int32)
 	o.types = make(map[int32]int32)
+	o.state = o.vm.State()
 }
 
 func (o *ScState) Exists(keyId int32) bool {
 	key := o.vm.GetKey(keyId)
-	return o.vm.State().MustHas(key)
+	return o.state.MustHas(key)
 }
 
 func (o *ScState) GetBytes(keyId int32) []byte {
@@ -31,7 +34,7 @@ func (o *ScState) GetBytes(keyId int32) []byte {
 		return []byte(nil)
 	}
 	key := o.vm.GetKey(keyId)
-	return o.vm.State().MustGet(key)
+	return o.state.MustGet(key)
 }
 
 func (o *ScState) GetInt(keyId int32) int64 {
@@ -39,7 +42,7 @@ func (o *ScState) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := o.vm.GetKey(keyId)
-	value, _, err := codec.DecodeInt64(o.vm.State().MustGet(key))
+	value, _, err := codec.DecodeInt64(o.state.MustGet(key))
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +74,7 @@ func (o *ScState) GetString(keyId int32) string {
 		return ""
 	}
 	key := o.vm.GetKey(keyId)
-	value, _, _ := codec.DecodeString(o.vm.State().MustGet(key))
+	value, _, _ := codec.DecodeString(o.state.MustGet(key))
 	return value
 }
 
@@ -88,7 +91,7 @@ func (o *ScState) SetBytes(keyId int32, value []byte) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().Set(key, value)
+	o.state.Set(key, value)
 }
 
 func (o *ScState) SetInt(keyId int32, value int64) {
@@ -96,7 +99,7 @@ func (o *ScState) SetInt(keyId int32, value int64) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().Set(key, codec.EncodeInt64(value))
+	o.state.Set(key, codec.EncodeInt64(value))
 }
 
 func (o *ScState) SetString(keyId int32, value string) {
@@ -104,7 +107,7 @@ func (o *ScState) SetString(keyId int32, value string) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().Set(key, codec.EncodeString(value))
+	o.state.Set(key, codec.EncodeString(value))
 }
 
 func (o *ScState) valid(keyId int32, typeId int32) bool {

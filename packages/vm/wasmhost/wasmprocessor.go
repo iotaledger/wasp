@@ -19,7 +19,6 @@ type wasmProcessor struct {
 	ctxView   vmtypes.SandboxView
 	function  string
 	nesting   int
-	params    dict.Dict
 	scContext *ScContext
 }
 
@@ -36,22 +35,12 @@ func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
 }
 
 func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (dict.Dict, error) {
-	if host.IsView() {
-		host.LogText("call is view")
-	}
-	if ctx == nil {
-		host.LogText("ctx is nil")
-	}
-	if ctxView == nil {
-		host.LogText("ctxView is nil")
-	}
 	saveCtx := host.ctx
 	saveCtxView := host.ctxView
 
 	host.ctx = ctx
 	host.ctxView = ctxView
 	host.nesting++
-	host.params = host.Params()
 
 	defer func() {
 		host.nesting--
@@ -61,10 +50,9 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		}
 		host.ctx = saveCtx
 		host.ctxView = saveCtxView
-		host.params = nil
 	}()
 
-	testMode, _ := host.params.Has("testMode")
+	testMode, _ := host.Params().Has("testMode")
 	if testMode {
 		host.LogText("TEST MODE")
 		TestMode = true
@@ -80,7 +68,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		return nil, errors.New(host.WasmHost.error)
 	}
 
-	results := host.FindSubObject(nil, "results", OBJTYPE_MAP).(*ScCallParams).Params
+	results := host.FindSubObject(nil, "results", OBJTYPE_MAP).(*ScMutableDict).Dict
 	return results, nil
 }
 
@@ -176,14 +164,14 @@ func (host *wasmProcessor) LogText(text string) {
 	fmt.Println(text)
 }
 
-func (host *wasmProcessor) MyBalances() coretypes.ColoredBalances {
+func (host *wasmProcessor) Balances() coretypes.ColoredBalances {
 	if host.ctx != nil {
 		return host.ctx.Balances()
 	}
 	return host.ctxView.Balances()
 }
 
-func (host *wasmProcessor) MyContractID() coretypes.ContractID {
+func (host *wasmProcessor) ContractID() coretypes.ContractID {
 	if host.ctx != nil {
 		return host.ctx.ContractID()
 	}
