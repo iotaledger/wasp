@@ -197,6 +197,7 @@ func getInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return d, nil
 }
 
+//------------------------------ utility function
 func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := datatypes.NewMustMap(ctx.State(), VarContractRegistry)

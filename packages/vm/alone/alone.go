@@ -1,3 +1,13 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// 'alone' is a package to write unit tests for ISCP contracts in Go
+// Running the smart contract on 'alone' does not require the Wasp node. Th smart contract code is run syncronously
+// on one process.
+// The smart contract is running in exactly the same code of the VM wrapper, virtual state access and some other
+// modules of the system.
+// It does not use Wasp plugins, consensus, state manager, database, peer and node communications.
+// It uses in-memory DB for virtual state and UTXODB to mock the ledger.
 package alone
 
 import (
@@ -41,13 +51,13 @@ type aloneEnvironment struct {
 
 var regOnce sync.Once
 
-func New(t *testing.T, debug bool) *aloneEnvironment {
+func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.ChainID(chSig.Address())
 	log := testutil.NewLogger(t)
 	if !debug {
-		log = testutil.WithLevel(log, zapcore.InfoLevel)
+		log = testutil.WithLevel(log, zapcore.InfoLevel, printStackTrace)
 	}
 	regOnce.Do(func() {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmhost.GetProcessor)

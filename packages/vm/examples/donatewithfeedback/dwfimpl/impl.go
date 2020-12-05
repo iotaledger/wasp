@@ -82,7 +82,7 @@ func donate(ctx vmtypes.Sandbox) error {
 
 	// how many iotas are sent by the request.
 	// only iotas are considered donation. Other colors are ignored
-	donated := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
+	donated := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
 	// take feedback text contained in the request
 	feedback, ok, err := codec.DecodeString(params.MustGet(donatewithfeedback.VarReqFeedback))
 	feedback = util.GentleTruncate(feedback, maxComment)
@@ -111,7 +111,7 @@ func donate(ctx vmtypes.Sandbox) error {
 	if len(di.Error) != 0 && donated > 0 {
 		// if error occurred, return all donated tokens back to the sender
 		// in this case error message will be recorded in the donation record
-		ctx.Accounts().MoveBalance(sender, balance.ColorIOTA, donated)
+		ctx.MoveTokens(sender, balance.ColorIOTA, donated)
 		di.Amount = 0
 	}
 	// store donation info record in the state (append to the timestamped log)
@@ -147,15 +147,15 @@ func withdraw(ctx vmtypes.Sandbox) error {
 	//	return fmt.Errorf("withdraw: not authorized")
 	//}
 	// take argument value coming with the request
-	bal := ctx.Accounts().Balance(balance.ColorIOTA)
+	bal := ctx.Balance(balance.ColorIOTA)
 	withdrawSum, amountGiven, err := codec.DecodeInt64(params.MustGet(donatewithfeedback.VarReqWithdrawSum))
 	if err != nil {
 		// the error from GetInt64 means binary data sent as a value of the variable
 		// cannot be interpreted as int64
 		// return everything TODO RefundAll function ?
 		sender := ctx.Caller()
-		sent := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
-		ctx.Accounts().MoveBalance(sender, balance.ColorIOTA, sent)
+		sent := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
+		ctx.MoveTokens(sender, balance.ColorIOTA, sent)
 		return fmt.Errorf("DonateWithFeedback: withdraw wrong argument %v", err)
 	}
 	// determine how much we can withdraw

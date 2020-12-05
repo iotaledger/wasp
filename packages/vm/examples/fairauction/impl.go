@@ -206,10 +206,9 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 
 	sender := ctx.Caller()
-	accounts := ctx.Accounts()
 
 	// check how many iotas the request contains
-	totalDeposit := accounts.IncomingTransfer().Balance(balance.ColorIOTA)
+	totalDeposit := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
 	if totalDeposit < 1 {
 		// it is expected at least 1 iota in deposit
 		// this 1 iota is needed as a "operating capital for the time locked request to itself"
@@ -248,7 +247,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// determine amount of colored tokens for sale. They must be in the outputs of the request transaction
-	tokensForSale := accounts.IncomingTransfer().Balance(colorForSale)
+	tokensForSale := ctx.IncomingTransfer().Balance(colorForSale)
 	if tokensForSale == 0 {
 		// no tokens transferred. Refund half of deposit
 		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
@@ -367,7 +366,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
 	// it also means several bids can't be placed in the same transaction <-- TODO generic solution for it
-	bidAmount := ctx.Accounts().IncomingTransfer().Balance(balance.ColorIOTA)
+	bidAmount := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
 	if bidAmount == 0 {
 		// no iotas sent
 		return fmt.Errorf("placeBid: exit 0")
@@ -498,8 +497,6 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("finalizeAuction: exit 4")
 	}
 
-	accounts := ctx.Accounts()
-
 	// find the winning amount and determine respective ownerFee
 	winningAmount := int64(0)
 	for _, bi := range ai.Bids {
@@ -551,14 +548,14 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 
 	if winner != nil {
 		// send sold tokens to the winner
-		accounts.MoveBalance(ai.Bids[winnerIndex].Bidder, ai.Color, ai.NumTokens)
+		ctx.MoveTokens(ai.Bids[winnerIndex].Bidder, ai.Color, ai.NumTokens)
 		// send winning amount and return deposit sum less fees to the owner of the auction
-		accounts.MoveBalance(ai.AuctionOwner, balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
+		ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
 
 		for i, bi := range ai.Bids {
 			if i != winnerIndex {
 				// return staked sum to the non-winner
-				accounts.MoveBalance(bi.Bidder, balance.ColorIOTA, bi.Total)
+				ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total)
 			}
 		}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. Winning bid: %di", col.String(), winner.Total))
@@ -566,21 +563,21 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 		ctx.Eventf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
 	} else {
 		// return unsold tokens to auction owner
-		if accounts.MoveBalance(ai.AuctionOwner, ai.Color, ai.NumTokens) {
+		if ctx.MoveTokens(ai.AuctionOwner, ai.Color, ai.NumTokens) {
 			ctx.Eventf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens)
 		}
 
 		// return deposit less fees less 1 iota
-		if accounts.MoveBalance(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
+		if ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
 			ctx.Eventf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee)
 		}
 
 		// return bids to bidders
 		for _, bi := range ai.Bids {
-			if accounts.MoveBalance(bi.Bidder, balance.ColorIOTA, bi.Total) {
+			if ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total) {
 				ctx.Eventf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String())
 			} else {
-				avail := accounts.Balance(balance.ColorIOTA)
+				avail := ctx.Balance(balance.ColorIOTA)
 				ctx.Eventf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail)
 			}
 		}

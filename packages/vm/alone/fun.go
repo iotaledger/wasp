@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
@@ -156,4 +157,22 @@ func (e *aloneEnvironment) DeployWasmContract(sigScheme signaturescheme.Signatur
 		return err
 	}
 	return e.DeployContract(sigScheme, name, hprog)
+}
+
+func (e *aloneEnvironment) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
+	req := NewCall(root.Interface.Name, root.FuncGetInfo)
+	res, err := e.CallView(req)
+	require.NoError(e.T, err)
+
+	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
+	require.NoError(e.T, err)
+	require.True(e.T, ok)
+
+	chainOwnerID, ok, err := codec.DecodeAgentID(res.MustGet(root.VarChainOwnerID))
+	require.NoError(e.T, err)
+	require.True(e.T, ok)
+
+	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(res, root.VarContractRegistry))
+	require.NoError(e.T, err)
+	return chainID, chainOwnerID, contracts
 }

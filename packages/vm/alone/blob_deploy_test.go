@@ -5,14 +5,8 @@ import (
 	"testing"
 )
 
-func TestBasic(t *testing.T) {
-	al := New(t, false)
-	al.CheckBase()
-	al.Infof("\n%s\n", al.String())
-}
-
 func TestBlob(t *testing.T) {
-	al := New(t, false)
+	al := New(t, false, true)
 	binary := []byte("supposed to be wasm")
 	hwasm, err := al.UploadWasm(nil, binary)
 	require.NoError(t, err)
@@ -23,10 +17,10 @@ func TestBlob(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-const wasmFile = "../cluster/tests/wasptest_new/wasm/inccounter_bg.wasm"
+const wasmFile = "../../../tools/cluster/tests/wasptest_new/wasm/inccounter_bg.wasm"
 
 func TestDeploy(t *testing.T) {
-	al := New(t, false)
+	al := New(t, false, true)
 	hwasm, err := al.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
@@ -35,7 +29,7 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestDeployWasm(t *testing.T) {
-	al := New(t, false)
+	al := New(t, false, true)
 	err := al.DeployWasmContract(nil, "testInccounter", wasmFile)
 	require.NoError(t, err)
 }

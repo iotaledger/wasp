@@ -85,7 +85,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 		// TODO more sophisticated policy
 		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), remaining)
 	default:
-		vmctx.log.Errorf("mustCallFromRequest: %v reqid: %s", err, vmctx.reqRef.RequestID().String())
+		vmctx.log.Errorf("mustCallFromRequest.error: %v reqid: %s", vmctx.lastError, vmctx.reqRef.RequestID().String())
 	}
 }
 
