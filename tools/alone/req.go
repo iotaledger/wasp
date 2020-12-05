@@ -37,14 +37,15 @@ func (r *callParams) WithTransfer(transfer map[balance.Color]int64) *callParams 
 	r.transfer = cbalances.NewFromMap(transfer)
 	return r
 }
-func (r *callParams) WithParams(params ...interface{}) *callParams {
+
+func toMap(params ...interface{}) map[string]interface{} {
+	par := make(map[string]interface{})
 	if len(params) == 0 {
-		return r
+		return par
 	}
 	if len(params)%2 != 0 {
 		panic("WithParams: len(params) % 2 != 0")
 	}
-	par := make(map[string]interface{})
 	for i := 0; i < len(params)/2; i++ {
 		key, ok := params[2*i].(string)
 		if !ok {
@@ -52,7 +53,11 @@ func (r *callParams) WithParams(params ...interface{}) *callParams {
 		}
 		par[key] = params[2*i+1]
 	}
-	r.params = codec.MakeDict(par)
+	return par
+}
+
+func (r *callParams) WithParams(params ...interface{}) *callParams {
+	r.params = codec.MakeDict(toMap(params...))
 	return r
 }
 
@@ -110,6 +115,9 @@ func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Di
 }
 
 func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+	if sigScheme == nil {
+		sigScheme = e.OriginatorSigscheme
+	}
 	allOuts := e.UtxoDB.GetAddressOutputs(sigScheme.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
 	require.NoError(e.T, err)
