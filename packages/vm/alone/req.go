@@ -95,7 +95,7 @@ func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Di
 	wg.Wait()
 	prevBlockIndex := e.StateTx.MustState().BlockIndex()
 
-	task.ResultTransaction.Sign(e.ChainSigscheme)
+	task.ResultTransaction.Sign(e.ChainSigScheme)
 	err = e.UtxoDB.AddTransaction(task.ResultTransaction.Transaction)
 	require.NoError(e.T, err)
 
@@ -116,7 +116,7 @@ func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Di
 
 func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
-		sigScheme = e.OriginatorSigscheme
+		sigScheme = e.OriginatorSigScheme
 	}
 	allOuts := e.UtxoDB.GetAddressOutputs(sigScheme.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)

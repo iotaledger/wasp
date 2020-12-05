@@ -36,8 +36,8 @@ import (
 
 type aloneEnvironment struct {
 	T                   *testing.T
-	ChainSigscheme      signaturescheme.SignatureScheme
-	OriginatorSigscheme signaturescheme.SignatureScheme
+	ChainSigScheme      signaturescheme.SignatureScheme
+	OriginatorSigScheme signaturescheme.SignatureScheme
 	ChainID             coretypes.ChainID
 	ChainAddress        address.Address
 	ChainColor          balance.Color
@@ -69,8 +69,8 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 
 	env := &aloneEnvironment{
 		T:                   t,
-		ChainSigscheme:      chSig,
-		OriginatorSigscheme: orSig,
+		ChainSigScheme:      chSig,
+		OriginatorSigScheme: orSig,
 		ChainAddress:        chSig.Address(),
 		OriginatorAddress:   orSig.Address(),
 		OriginatorAgentID:   coretypes.NewAgentIDFromAddress(orSig.Address()),
@@ -86,7 +86,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 
 	env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:             env.ChainAddress,
-		OriginatorSignatureScheme: env.OriginatorSigscheme,
+		OriginatorSignatureScheme: env.OriginatorSigScheme,
 		AllInputs:                 env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
 	})
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		Description:          "'alone' testing chain",
-		OwnerSignatureScheme: env.OriginatorSigscheme,
+		OwnerSignatureScheme: env.OriginatorSigScheme,
 		AllInputs:            env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
 	})
 	require.NoError(t, err)
