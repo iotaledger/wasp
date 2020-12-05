@@ -63,7 +63,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 	regOnce.Do(func() {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmhost.GetProcessor)
 		if err != nil {
-			log.Panicf("%v: %v", wasmtimevm.VMType, err)
+			log.Panicf("%s: %v", wasmtimevm.VMType, err)
 		}
 	})
 
