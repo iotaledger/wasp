@@ -45,6 +45,9 @@ func Encode(v interface{}) []byte {
 		return EncodeContractID(*vt)
 	case *coretypes.AgentID:
 		return EncodeAgentID(*vt)
+	case coretypes.Hname:
+		return vt.Bytes()
+
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))
 	}

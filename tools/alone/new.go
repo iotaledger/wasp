@@ -1,13 +1,10 @@
 package alone
 
 import (
-	"bytes"
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -18,11 +15,15 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
+	"sync"
 	"testing"
 )
 
-type Environment struct {
+type aloneEnvironment struct {
 	T                   *testing.T
 	ChainSigscheme      signaturescheme.SignatureScheme
 	OriginatorSigscheme signaturescheme.SignatureScheme
@@ -30,6 +31,7 @@ type Environment struct {
 	ChainAddress        address.Address
 	ChainColor          balance.Color
 	OriginatorAddress   address.Address
+	OriginatorAgentID   coretypes.AgentID
 	UtxoDB              *utxodb.UtxoDB
 	StateTx             *sctransaction.Transaction
 	State               state.VirtualState
@@ -37,84 +39,68 @@ type Environment struct {
 	Log                 *logger.Logger
 }
 
-var Env *Environment
+var regOnce sync.Once
 
-func InitEnvironment(t *testing.T) {
-	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+func New(t *testing.T, debug bool) *aloneEnvironment {
+	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.ChainID(chSig.Address())
-	Env = &Environment{
+	log := testutil.NewLogger(t)
+	if !debug {
+		log = testutil.WithLevel(log, zapcore.InfoLevel)
+	}
+	regOnce.Do(func() {
+		err := processors.RegisterVMType(wasmtimevm.VMType, wasmhost.GetProcessor)
+		if err != nil {
+			log.Panicf("%v: %v", wasmtimevm.VMType, err)
+		}
+	})
+
+	env := &aloneEnvironment{
 		T:                   t,
 		ChainSigscheme:      chSig,
 		OriginatorSigscheme: orSig,
 		ChainAddress:        chSig.Address(),
 		OriginatorAddress:   orSig.Address(),
+		OriginatorAgentID:   coretypes.NewAgentIDFromAddress(orSig.Address()),
 		ChainID:             chainID,
 		UtxoDB:              utxodb.New(),
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
-		Log:                 testutil.NewLogger(t),
+		Log:                 log,
 	}
-	_, err := Env.UtxoDB.RequestFunds(Env.OriginatorAddress)
+	_, err := env.UtxoDB.RequestFunds(env.OriginatorAddress)
 	require.NoError(t, err)
-	Env.CheckBalance(Env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.CheckBalance(env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
-	Env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:             Env.ChainAddress,
-		OriginatorSignatureScheme: Env.OriginatorSigscheme,
-		AllInputs:                 Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
+	env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+		OriginAddress:             env.ChainAddress,
+		OriginatorSignatureScheme: env.OriginatorSigscheme,
+		AllInputs:                 env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
 	})
 	require.NoError(t, err)
-	require.NotNil(t, Env.StateTx)
-	err = Env.UtxoDB.AddTransaction(Env.StateTx.Transaction)
+	require.NotNil(t, env.StateTx)
+	err = env.UtxoDB.AddTransaction(env.StateTx.Transaction)
 	require.NoError(t, err)
 
-	Env.ChainColor = balance.Color(Env.StateTx.ID())
+	env.ChainColor = balance.Color(env.StateTx.ID())
 
-	originBlock := state.MustNewOriginBlock(&Env.ChainColor)
-	err = Env.State.ApplyBlock(originBlock)
+	originBlock := state.MustNewOriginBlock(&env.ChainColor)
+	err = env.State.ApplyBlock(originBlock)
 	require.NoError(t, err)
-	err = Env.State.CommitToDb(originBlock)
+	err = env.State.CommitToDb(originBlock)
 	require.NoError(t, err)
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		Description:          "'alone' testing chain",
-		OwnerSignatureScheme: Env.OriginatorSigscheme,
-		AllInputs:            Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
+		OwnerSignatureScheme: env.OriginatorSigscheme,
+		AllInputs:            env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
 	})
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
 
-	_, _ = Env.runRequest(initTx)
-}
-
-//goland:noinspection ALL
-func (e *Environment) String() string {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Chain ID: %s\n", e.ChainID.String())
-	fmt.Fprintf(&buf, "Chain address: %s\n", e.ChainAddress.String())
-	fmt.Fprintf(&buf, "State hash: %s\n", e.State.Hash().String())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", e.UtxoDB.GetGenesisAddress().String())
-	return string(buf.Bytes())
-}
-
-func (e *Environment) Infof(format string, args ...interface{}) {
-	e.Log.Infof(format, args...)
-}
-
-func (e *Environment) CheckBalance(addr address.Address, col balance.Color, expected int64) {
-	require.EqualValues(e.T, expected, e.GetBalance(addr, col))
-}
-
-func (e *Environment) GetBalance(addr address.Address, col balance.Color) int64 {
-	bals := e.GetColoredBalances(addr)
-	ret, _ := bals[col]
-	return ret
-}
-
-func (e *Environment) GetColoredBalances(addr address.Address) map[balance.Color]int64 {
-	outs := e.UtxoDB.GetAddressOutputs(addr)
-	ret, _ := waspconn.OutputBalancesByColor(outs)
-	return ret
+	_, err = env.runRequest(initTx)
+	require.NoError(t, err)
+	return env
 }

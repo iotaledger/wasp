@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"io"
 	"sort"
 
@@ -228,6 +229,17 @@ func (d Dict) Extend(from Dict) {
 	for key, value := range from {
 		d.Set(key, value)
 	}
+}
+
+func (d Dict) Hash() hashing.HashValue {
+	keys := d.KeysSorted()
+	data := make([][]byte, 0, 2*len(d))
+	for _, k := range keys {
+		data = append(data, []byte(k))
+		v, _ := d.Get(k)
+		data = append(data, v)
+	}
+	return *hashing.HashData(data...)
 }
 
 type jsonItem struct {
