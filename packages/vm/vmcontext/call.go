@@ -105,7 +105,7 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
 	if vmctx.contractRecord.NodeFee == 0 {
-		fmt.Printf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
+		vmctx.log.Debugf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
 		// if no fees enabled, accrue the token to the caller
 		fee := map[balance.Color]int64{
 			balance.ColorIOTA: 1,

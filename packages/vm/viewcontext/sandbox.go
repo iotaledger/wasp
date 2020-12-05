@@ -10,12 +10,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-var log *logger.Logger
-
-var logOnce sync.Once
+var (
+	log         *logger.Logger
+	logOnce     sync.Once
+	logProvided *logger.Logger
+)
 
 func initLogger() {
-	log = logger.NewLogger("viewcontext")
+	if logProvided != nil {
+		log = logProvided
+	} else {
+		log = logger.NewLogger("viewcontext")
+	}
 }
 
 type sandboxview struct {

@@ -16,6 +16,7 @@ func init() {
 	fmt.Printf("--------------- core contracts ------------------\n")
 	fmt.Printf("    %s: '%s'  \n", root.Interface.Hname().String(), root.Interface.Name)
 	fmt.Printf("    %s: '%s'  \n", accountsc.Interface.Hname().String(), accountsc.Interface.Name)
+	fmt.Printf("    %s: '%s'  \n", blob.Interface.Hname().String(), blob.Interface.Name)
 	fmt.Printf("--------------- core contracts ------------------\n")
 }
 

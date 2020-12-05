@@ -16,13 +16,15 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"testing"
 )
 
-type Environment struct {
+type aloneEnvironment struct {
 	T                   *testing.T
 	ChainSigscheme      signaturescheme.SignatureScheme
 	OriginatorSigscheme signaturescheme.SignatureScheme
@@ -37,13 +39,15 @@ type Environment struct {
 	Log                 *logger.Logger
 }
 
-var Env *Environment
-
-func InitEnvironment(t *testing.T) {
+func New(t *testing.T, debug bool) *aloneEnvironment {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.ChainID(chSig.Address())
-	Env = &Environment{
+	log := testutil.NewLogger(t)
+	if !debug {
+		log = testutil.WithLevel(log, zapcore.InfoLevel)
+	}
+	env := &aloneEnvironment{
 		T:                   t,
 		ChainSigscheme:      chSig,
 		OriginatorSigscheme: orSig,
@@ -53,44 +57,45 @@ func InitEnvironment(t *testing.T) {
 		UtxoDB:              utxodb.New(),
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
-		Log:                 testutil.NewLogger(t),
+		Log:                 log,
 	}
-	_, err := Env.UtxoDB.RequestFunds(Env.OriginatorAddress)
+	_, err := env.UtxoDB.RequestFunds(env.OriginatorAddress)
 	require.NoError(t, err)
-	Env.CheckBalance(Env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.CheckBalance(env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
-	Env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:             Env.ChainAddress,
-		OriginatorSignatureScheme: Env.OriginatorSigscheme,
-		AllInputs:                 Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
+	env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+		OriginAddress:             env.ChainAddress,
+		OriginatorSignatureScheme: env.OriginatorSigscheme,
+		AllInputs:                 env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
 	})
 	require.NoError(t, err)
-	require.NotNil(t, Env.StateTx)
-	err = Env.UtxoDB.AddTransaction(Env.StateTx.Transaction)
+	require.NotNil(t, env.StateTx)
+	err = env.UtxoDB.AddTransaction(env.StateTx.Transaction)
 	require.NoError(t, err)
 
-	Env.ChainColor = balance.Color(Env.StateTx.ID())
+	env.ChainColor = balance.Color(env.StateTx.ID())
 
-	originBlock := state.MustNewOriginBlock(&Env.ChainColor)
-	err = Env.State.ApplyBlock(originBlock)
+	originBlock := state.MustNewOriginBlock(&env.ChainColor)
+	err = env.State.ApplyBlock(originBlock)
 	require.NoError(t, err)
-	err = Env.State.CommitToDb(originBlock)
+	err = env.State.CommitToDb(originBlock)
 	require.NoError(t, err)
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		Description:          "'alone' testing chain",
-		OwnerSignatureScheme: Env.OriginatorSigscheme,
-		AllInputs:            Env.UtxoDB.GetAddressOutputs(Env.OriginatorAddress),
+		OwnerSignatureScheme: env.OriginatorSigscheme,
+		AllInputs:            env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
 	})
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
 
-	_, _ = Env.runRequest(initTx)
+	_, _ = env.runRequest(initTx)
+	return env
 }
 
 //goland:noinspection ALL
-func (e *Environment) String() string {
+func (e *aloneEnvironment) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", e.ChainID.String())
 	fmt.Fprintf(&buf, "Chain address: %s\n", e.ChainAddress.String())
@@ -99,22 +104,33 @@ func (e *Environment) String() string {
 	return string(buf.Bytes())
 }
 
-func (e *Environment) Infof(format string, args ...interface{}) {
+func (e *aloneEnvironment) Infof(format string, args ...interface{}) {
 	e.Log.Infof(format, args...)
 }
 
-func (e *Environment) CheckBalance(addr address.Address, col balance.Color, expected int64) {
+func (e *aloneEnvironment) CheckBalance(addr address.Address, col balance.Color, expected int64) {
 	require.EqualValues(e.T, expected, e.GetBalance(addr, col))
 }
 
-func (e *Environment) GetBalance(addr address.Address, col balance.Color) int64 {
+func (e *aloneEnvironment) GetBalance(addr address.Address, col balance.Color) int64 {
 	bals := e.GetColoredBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
-func (e *Environment) GetColoredBalances(addr address.Address) map[balance.Color]int64 {
+func (e *aloneEnvironment) GetColoredBalances(addr address.Address) map[balance.Color]int64 {
 	outs := e.UtxoDB.GetAddressOutputs(addr)
 	ret, _ := waspconn.OutputBalancesByColor(outs)
 	return ret
+}
+
+func (e *aloneEnvironment) CheckBase() {
+	req := NewCall(root.Interface.Name, root.FuncGetInfo)
+	res1, err := e.PostRequest(req, e.OriginatorSigscheme)
+	require.NoError(e.T, err)
+
+	res2, err := e.CallView(req)
+	require.NoError(e.T, err)
+
+	require.EqualValues(e.T, res1.Hash(), res2.Hash())
 }
