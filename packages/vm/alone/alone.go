@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // 'alone' is a package to write unit tests for ISCP contracts in Go
-// Running the smart contract on 'alone' does not require the Wasp node. Th smart contract code is run syncronously
-// on one process.
-// The smart contract is running in exactly the same code of the VM wrapper, virtual state access and some other
-// modules of the system.
-// It does not use Wasp plugins, consensus, state manager, database, peer and node communications.
+// Running the smart contract on 'alone' does not require the Wasp node.
+// The smart contract code is run synchronously on one process.
+// The smart contract is running in exactly the same code of the VM wrapper,
+// virtual state access and some other modules of the system.
+// It does not use Wasp plugins, committees, consensus, state manager, database, peer and node communications.
 // It uses in-memory DB for virtual state and UTXODB to mock the ledger.
 // It deploys default chain and all builtin contracts
 package alone
