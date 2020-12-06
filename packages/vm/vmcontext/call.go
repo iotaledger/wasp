@@ -3,12 +3,12 @@ package vmcontext
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
 var (
@@ -22,13 +22,6 @@ var (
 // Call
 func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
-
-	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == coretypes.EntryPointInit &&
-		contract != root.Interface.Hname() &&
-		vmctx.CurrentContractHname() != root.Interface.Hname() {
-		return nil, fmt.Errorf("attempt to call init not from root contract")
-	}
 
 	rec, ok := vmctx.findContractByHname(contract)
 	if !ok {
@@ -45,6 +38,9 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
+		if epCode == coretypes.EntryPointInit {
+			return nil, fmt.Errorf("'init' entry point can't be a view")
+		}
 		// passing nil as transfer: calling to view should not have effect on chain ledger
 		if err := vmctx.pushCallContextWithTransfer(contract, params, nil); err != nil {
 			return nil, err
@@ -57,7 +53,22 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 		return nil, err
 	}
 	defer vmctx.popCallContext()
+
+	// prevent calling 'init' not from root contract or not while initializing root
+	if epCode == coretypes.EntryPointInit && contract != root.Interface.Hname() {
+		if !vmctx.callerIsRoot() {
+			return nil, fmt.Errorf("attempt to call init not from root contract")
+		}
+	}
 	return ep.Call(NewSandbox(vmctx))
+}
+
+func (vmctx *VMContext) callerIsRoot() bool {
+	caller := vmctx.Caller()
+	if caller.IsAddress() {
+		return false
+	}
+	return caller.MustContractID().Hname() == root.Interface.Hname()
 }
 
 // mustCallFromRequest is called for each request from the VM loop

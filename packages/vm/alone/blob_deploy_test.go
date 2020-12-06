@@ -1,9 +1,17 @@
 package alone
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
+func TestBlobRepeatInit(t *testing.T) {
+	e := New(t, false, false)
+	req := NewCall(blob.Interface.Name, "init")
+	_, err := e.PostRequest(req, nil)
+	require.Error(t, err)
+}
 
 func TestBlob(t *testing.T) {
 	al := New(t, false, true)

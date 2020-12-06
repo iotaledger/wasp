@@ -16,7 +16,7 @@ func TestRootBasic(t *testing.T) {
 	e.Infof("\n%s\n", e.String())
 }
 
-func TestRepeatInit(t *testing.T) {
+func TestRootRepeatInit(t *testing.T) {
 	e := New(t, false, false)
 	req := NewCall(root.Interface.Name, "init")
 	_, err := e.PostRequest(req, nil)

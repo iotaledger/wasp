@@ -2,6 +2,7 @@ package publisher
 
 import (
 	"fmt"
+	"go.uber.org/atomic"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -17,9 +18,10 @@ import (
 const PluginName = "Publisher"
 
 var (
-	log      *logger.Logger
-	socket   mangos.Socket
-	messages = make(chan []byte, 100)
+	log         *logger.Logger
+	socket      mangos.Socket
+	messages    = make(chan []byte, 100)
+	initialized atomic.Bool
 )
 
 func Init() *node.Plugin {
@@ -28,6 +30,7 @@ func Init() *node.Plugin {
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
+	initialized.Store(true)
 }
 
 func run(_ *node.Plugin) {
@@ -79,6 +82,9 @@ func openSocket(port int) error {
 }
 
 func Publish(msgType string, parts ...string) {
+	if !initialized.Load() {
+		return
+	}
 	msg := msgType
 	for _, s := range parts {
 		msg = msg + " " + s

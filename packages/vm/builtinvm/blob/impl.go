@@ -2,7 +2,6 @@ package blob
 
 import (
 	"fmt"
-
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
@@ -13,12 +12,7 @@ import (
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("blob.initialize.begin")
-	state := ctx.State()
-	if state.MustGet(VarStateInitialized) != nil {
-		// can't be initialized twice
-		return nil, fmt.Errorf("blob.initialize.fail: already_initialized")
-	}
-	state.Set(VarStateInitialized, []byte{0xFF})
+	ctx.State().Set(VarStateInitialized, []byte{0xFF})
 	ctx.Eventf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }

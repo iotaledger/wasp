@@ -59,8 +59,10 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		Originator:  ctx.Caller(),
 	}, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("root.init.fail: %v", err)
 	}
+	ctx.Eventf("root.initialize: deployed '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname().String())
+
 	// deploy accountsc
 	err = storeAndInitContract(ctx, &ContractRecord{
 		ProgramHash: accountsc.Interface.ProgramHash,
@@ -69,9 +71,10 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		Originator:  ctx.Caller(),
 	}, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("root.init.fail: %v", err)
 	}
-	ctx.Eventf("root.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Eventf("root.initialize: deployed '%s', hname = %s", accountsc.Interface.Name, accountsc.Interface.Hname().String())
+	ctx.Eventf("root.initialize.success: name: %s, hname: %s", Interface.Name, Interface.Hname().String())
 	return nil, nil
 }
 
@@ -207,7 +210,7 @@ func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams d
 	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
 	// calling constructor
 	if _, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil); err != nil {
-		ctx.Eventf("root.deployContract.success. Calling 'init' function: %v", err)
+		ctx.Eventf("root.deployContract.fail. Calling 'init' function for '%s': %v", rec.Name, err)
 	}
 	return nil
 }
