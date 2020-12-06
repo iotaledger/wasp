@@ -72,7 +72,7 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, root.Interface.Name, recRoot.Name)
 	require.EqualValues(t, root.Interface.ProgramHash, recRoot.ProgramHash)
 	require.EqualValues(t, root.Interface.Description, recRoot.Description)
-	require.EqualValues(t, coretypes.AgentID{}, recRoot.Originator)
+	require.EqualValues(t, coretypes.AgentID{}, recRoot.Creator)
 
 	origAgentID := coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
 
@@ -82,7 +82,7 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, blob.Interface.Name, recBlob.Name)
 	require.EqualValues(t, blob.Interface.ProgramHash, recBlob.ProgramHash)
 	require.EqualValues(t, blob.Interface.Description, recBlob.Description)
-	require.EqualValues(t, origAgentID, recBlob.Originator)
+	require.EqualValues(t, origAgentID, recBlob.Creator)
 
 	recAccounts, err := findContract(chain, accountsc.Interface.Name)
 	check(err, t)
@@ -90,7 +90,7 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, accountsc.Interface.Name, recAccounts.Name)
 	require.EqualValues(t, accountsc.Interface.ProgramHash, recAccounts.ProgramHash)
 	require.EqualValues(t, accountsc.Interface.Description, recAccounts.Description)
-	require.EqualValues(t, origAgentID, recAccounts.Originator)
+	require.EqualValues(t, origAgentID, recAccounts.Creator)
 }
 
 func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {

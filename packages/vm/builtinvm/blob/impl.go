@@ -95,7 +95,7 @@ func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	}
 	field := ctx.Params().MustGet(ParamField)
 	if field == nil {
-		return nil, fmt.Errorf("paremeter 'blob field' not found")
+		return nil, fmt.Errorf("parameter 'blob field' not found")
 	}
 	value := GetBlobField(state, *blobHash, field)
 	if value == nil {

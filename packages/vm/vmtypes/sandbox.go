@@ -28,6 +28,8 @@ type Sandbox interface {
 	ContractID() coretypes.ContractID
 	// AgentID is the AgentID representation of the ContractID
 	AgentID() coretypes.AgentID
+	// ContractCreator agentID which deployed contract
+	ContractCreator() coretypes.AgentID
 
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error

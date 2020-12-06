@@ -46,8 +46,8 @@ func (s *sandbox) ChainOwnerID() coretypes.AgentID {
 	return s.vmctx.ChainOwnerID()
 }
 
-func (s *sandbox) ContractOriginator() coretypes.AgentID {
-	return s.vmctx.ContractOriginator()
+func (s *sandbox) ContractCreator() coretypes.AgentID {
+	return s.vmctx.ContractCreator()
 }
 
 func (s *sandbox) State() kv.KVStore {

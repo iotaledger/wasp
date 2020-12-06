@@ -37,14 +37,24 @@ func Encode(v interface{}) []byte {
 		return EncodeHashValue(&vt)
 	case *address.Address:
 		return EncodeAddress(vt)
+	case address.Address:
+		return EncodeAddress(&vt)
 	case *balance.Color:
 		return EncodeColor(vt)
+	case balance.Color:
+		return EncodeColor(&vt)
 	case *coretypes.ChainID:
 		return EncodeChainID(*vt)
+	case coretypes.ChainID:
+		return EncodeChainID(vt)
 	case *coretypes.ContractID:
 		return EncodeContractID(*vt)
+	case coretypes.ContractID:
+		return EncodeContractID(vt)
 	case *coretypes.AgentID:
 		return EncodeAgentID(*vt)
+	case coretypes.AgentID:
+		return EncodeAgentID(vt)
 	case coretypes.Hname:
 		return vt.Bytes()
 

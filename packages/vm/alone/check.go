@@ -32,12 +32,12 @@ func (e *aloneEnvironment) CheckBase() {
 	require.EqualValues(e.T, accountsc.Interface.Name, accountsRec.Name)
 	require.EqualValues(e.T, accountsc.Interface.Description, accountsRec.Description)
 	require.EqualValues(e.T, accountsc.Interface.ProgramHash, accountsRec.ProgramHash)
-	require.EqualValues(e.T, e.OriginatorAgentID, accountsRec.Originator)
+	require.EqualValues(e.T, e.OriginatorAgentID, accountsRec.Creator)
 
 	blobRec, err := e.FindContract(blob.Interface.Name)
 	require.NoError(e.T, err)
 	require.EqualValues(e.T, blob.Interface.Name, blobRec.Name)
 	require.EqualValues(e.T, blob.Interface.Description, blobRec.Description)
 	require.EqualValues(e.T, blob.Interface.ProgramHash, blobRec.ProgramHash)
-	require.EqualValues(e.T, e.OriginatorAgentID, blobRec.Originator)
+	require.EqualValues(e.T, e.OriginatorAgentID, blobRec.Creator)
 }

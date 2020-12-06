@@ -53,12 +53,12 @@ func (vmctx *VMContext) ChainOwnerID() coretypes.AgentID {
 	return ret
 }
 
-func (vmctx *VMContext) ContractOriginator() coretypes.AgentID {
+func (vmctx *VMContext) ContractCreator() coretypes.AgentID {
 	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
 	if !ok {
 		vmctx.log.Panicf("can't find current contract")
 	}
-	return rec.Originator
+	return rec.Creator
 }
 
 func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {

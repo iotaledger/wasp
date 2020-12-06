@@ -68,7 +68,7 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.NodeFee)
-	require.EqualValues(t, e.OriginatorAgentID, rec.Originator)
+	require.EqualValues(t, e.OriginatorAgentID, rec.Creator)
 	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
 
 	recFind, err := e.FindContract(name)
@@ -104,6 +104,39 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.NodeFee)
-	require.EqualValues(t, e.OriginatorAgentID, rec.Originator)
+	require.EqualValues(t, e.OriginatorAgentID, rec.Creator)
 	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
+}
+
+func TestChangeOwnerAuthorized(t *testing.T) {
+	e := New(t, false, true)
+	newOwner := e.NewSigScheme()
+	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
+	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
+		WithParams(root.ParamChainOwner, newOwnerAgentID)
+	_, err := e.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	_, ownerBack, _ := e.GetInfo()
+	require.EqualValues(t, e.OriginatorAgentID, ownerBack)
+
+	req = NewCall(root.Interface.Name, root.FuncChangeChainOwner)
+	_, err = e.PostRequest(req, newOwner)
+	require.NoError(t, err)
+
+	_, ownerBack, _ = e.GetInfo()
+	require.EqualValues(t, newOwnerAgentID, ownerBack)
+}
+
+func TestChangeOwnerUnauthorized(t *testing.T) {
+	e := New(t, false, true)
+	newOwner := e.NewSigScheme()
+	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
+	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
+		WithParams(root.ParamChainOwner, newOwnerAgentID)
+	_, err := e.PostRequest(req, newOwner)
+	require.Error(t, err)
+
+	_, ownerBack, _ := e.GetInfo()
+	require.EqualValues(t, e.OriginatorAgentID, ownerBack)
 }
