@@ -17,12 +17,6 @@ import (
 // initialize the init call
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("accountsc.initialize.begin")
-	state := ctx.State()
-	if state.MustGet(VarStateInitialized) != nil {
-		// can't be initialized twice
-		return nil, fmt.Errorf("accountsc.initialize.fail: already_initialized")
-	}
-	state.Set(VarStateInitialized, []byte{0xFF})
 	ctx.Eventf("accountsc.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -31,9 +25,6 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamAgentID
 func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	if ctx.State().MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.getBalance.fail: not_initialized")
-	}
 	ctx.Eventf("getBalance")
 	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
 	if err != nil {
@@ -58,9 +49,6 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
 func getAccounts(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	if ctx.State().MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.getAccounts.fail: not_initialized")
-	}
 	return GetAccounts(ctx.State()), nil
 }
 
@@ -69,9 +57,6 @@ func getAccounts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller()
 func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.deposit.fail: not_initialized")
-	}
 	MustCheckLedger(state, "accountsc.deposit.begin")
 	defer MustCheckLedger(state, "accountsc.deposit.exit")
 
@@ -102,9 +87,6 @@ func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
 //   and node fee for this request)
 func move(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.move.fail: not_initialized")
-	}
 	MustCheckLedger(state, "accountsc.move.begin")
 	defer MustCheckLedger(state, "accountsc.move.exit")
 
@@ -177,9 +159,6 @@ func move(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // TODO not tested
 func withdraw(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.withdraw.fail: not_initialized")
-	}
 	MustCheckLedger(state, "accountsc.withdraw.begin")
 	defer MustCheckLedger(state, "accountsc.withdraw.exit")
 	caller := ctx.Caller()
@@ -209,9 +188,6 @@ func withdraw(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // TODO not testes
 func allow(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("accountsc.allow.fail: not_initialized")
-	}
 	MustCheckLedger(state, "accountsc.allow.begin")
 	defer MustCheckLedger(state, "accountsc.allow.exit")
 

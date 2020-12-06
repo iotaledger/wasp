@@ -9,11 +9,14 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -40,19 +43,7 @@ func (e *aloneEnvironment) NewSigScheme() signaturescheme.SignatureScheme {
 	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	_, err := e.UtxoDB.RequestFunds(ret.Address())
 	require.NoError(e.T, err)
-	e.CheckBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
-	return ret
-}
-
-func (e *aloneEnvironment) GetBalance(addr address.Address, col balance.Color) int64 {
-	bals := e.GetColoredBalances(addr)
-	ret, _ := bals[col]
-	return ret
-}
-
-func (e *aloneEnvironment) GetColoredBalances(addr address.Address) map[balance.Color]int64 {
-	outs := e.UtxoDB.GetAddressOutputs(addr)
-	ret, _ := waspconn.OutputBalancesByColor(outs)
+	e.CheckUtxodbBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 	return ret
 }
 
@@ -175,4 +166,59 @@ func (e *aloneEnvironment) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[
 	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(res, root.VarContractRegistry))
 	require.NoError(e.T, err)
 	return chainID, chainOwnerID, contracts
+}
+
+func (e *aloneEnvironment) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
+	bals := e.GetUtxodbBalances(addr)
+	ret, _ := bals[col]
+	return ret
+}
+
+func (e *aloneEnvironment) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
+	outs := e.UtxoDB.GetAddressOutputs(addr)
+	ret, _ := waspconn.OutputBalancesByColor(outs)
+	return ret
+}
+
+func (e *aloneEnvironment) GetAccounts() []coretypes.AgentID {
+	req := NewCall(accountsc.Interface.Name, accountsc.FuncAccounts)
+	d, err := e.CallView(req)
+	require.NoError(e.T, err)
+	keys := d.KeysSorted()
+	ret := make([]coretypes.AgentID, 0, len(keys)-1)
+	for _, key := range keys {
+		aid, ok, err := codec.DecodeAgentID([]byte(key))
+		require.NoError(e.T, err)
+		require.True(e.T, ok)
+		if aid == accountsc.TotalAssetsAccountID {
+			continue
+		}
+		ret = append(ret, aid)
+	}
+	return ret
+}
+
+func (e *aloneEnvironment) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
+	req := NewCall(accountsc.Interface.Name, accountsc.FuncBalance).
+		WithParams(accountsc.ParamAgentID, agentID)
+	d, err := e.CallView(req)
+	require.NoError(e.T, err)
+	if d.IsEmpty() {
+		return cbalances.Nil
+	}
+	ret := make(map[balance.Color]int64)
+	err = d.Iterate("", func(key kv.Key, value []byte) bool {
+		col, _, err := codec.DecodeColor([]byte(key))
+		require.NoError(e.T, err)
+		val, _, err := codec.DecodeInt64(value)
+		require.NoError(e.T, err)
+		ret[*col] = val
+		return true
+	})
+	require.NoError(e.T, err)
+	return cbalances.NewFromMap(ret)
+}
+
+func (e *aloneEnvironment) GetTotalAssets() coretypes.ColoredBalances {
+	return e.GetAccountBalance(accountsc.TotalAssetsAccountID)
 }

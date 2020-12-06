@@ -11,8 +11,6 @@ import (
 )
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("blob.initialize.begin")
-	ctx.State().Set(VarStateInitialized, []byte{0xFF})
 	ctx.Eventf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -23,9 +21,6 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("blob.storeBlob.begin")
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("blob.storeBlob.fail: not initalized")
-	}
 	params := ctx.Params()
 	// calculate a deterministic hash of all blob fields
 	blobHash, kSorted, values := mustGetBlobHash(params)
@@ -53,9 +48,6 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Eventf("blob.getBlobInfo.begin")
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("blob.getBlobInfo.fail: not initalized")
-	}
 	blobHash, ok, err := codec.DecodeHashValue(ctx.Params().MustGet(ParamHash))
 	if err != nil {
 		return nil, err
@@ -79,9 +71,6 @@ func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Eventf("blob.getBlobField.begin")
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) == nil {
-		return nil, fmt.Errorf("blob.getBlobField.fail: not initalized")
-	}
 	blobHash, ok, err := codec.DecodeHashValue(ctx.Params().MustGet(ParamHash))
 	if err != nil {
 		return nil, err

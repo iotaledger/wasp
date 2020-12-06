@@ -82,7 +82,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 	}
 	_, err := env.UtxoDB.RequestFunds(env.OriginatorAddress)
 	require.NoError(t, err)
-	env.CheckBalance(env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.CheckUtxodbBalance(env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
 	env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:             env.ChainAddress,

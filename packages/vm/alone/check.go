@@ -3,14 +3,16 @@ package alone
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
 )
 
-func (e *aloneEnvironment) CheckBalance(addr address.Address, col balance.Color, expected int64) {
-	require.EqualValues(e.T, expected, e.GetBalance(addr, col))
+func (e *aloneEnvironment) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+	require.EqualValues(e.T, expected, e.GetUtxodbBalance(addr, col))
 }
 
 func (e *aloneEnvironment) CheckBase() {
@@ -40,4 +42,18 @@ func (e *aloneEnvironment) CheckBase() {
 	require.EqualValues(e.T, blob.Interface.Description, blobRec.Description)
 	require.EqualValues(e.T, blob.Interface.ProgramHash, blobRec.ProgramHash)
 	require.EqualValues(e.T, e.OriginatorAgentID, blobRec.Creator)
+}
+
+func (e *aloneEnvironment) CheckAccountLedger() {
+	total := e.GetTotalAssets()
+	accounts := e.GetAccounts()
+	sum := make(map[balance.Color]int64)
+	for _, acc := range accounts {
+		e.GetAccountBalance(acc).AddToMap(sum)
+	}
+	require.True(e.T, total.Equal(cbalances.NewFromMap(sum)))
+}
+
+func (e *aloneEnvironment) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
+	require.EqualValues(e.T, bal, e.GetAccountBalance(agentID).Balance(col))
 }

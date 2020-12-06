@@ -129,7 +129,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	e := New(t, false, true)
+	e := New(t, false, false)
 	newOwner := e.NewSigScheme()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
