@@ -49,7 +49,7 @@ type Env struct {
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
 	Log                 *logger.Logger
-	//
+	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	chPosted     sync.WaitGroup
 	chInRequest  chan sctransaction.RequestRef
