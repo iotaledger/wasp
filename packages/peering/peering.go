@@ -32,6 +32,7 @@ type NetworkProvider interface {
 	Detach(attachID interface{})
 	PeerByLocation(peerLoc string) (PeerSender, error)
 	PeerByPubKey(peerPub kyber.Point) (PeerSender, error)
+	PeerStatus() []PeerStatusProvider
 }
 
 // GroupProvider stands for a subset of a peer-to-peer network
@@ -58,6 +59,18 @@ type PeerSender interface {
 	SendMsg(msg *PeerMessage)
 	IsAlive() bool
 	Close()
+}
+
+// PeerStatusProvider is used to access the current state of the network peer
+// withouth allocating it (increading usage counters, etc). This interface
+// overlaps with the PeerSender, and most probably they both will be implemented
+// by the same object.
+type PeerStatusProvider interface {
+	Location() string
+	PubKey() kyber.Point
+	IsInbound() bool
+	IsAlive() bool
+	NumUsers() int
 }
 
 // RecvEvent stands for a received message along with

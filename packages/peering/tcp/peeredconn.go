@@ -127,7 +127,7 @@ func (c *peeredConnection) processHandShakeInbound(msg *peering.PeerMessage) {
 	peer, ok := c.net.peers[peeringID]
 	c.net.peersMutex.RUnlock()
 
-	if !ok || !peer.isInbound() {
+	if !ok || !peer.IsInbound() {
 		log.Debugf("inbound connection from unexpected peer id %s. Closing..", peeringID)
 		_ = c.Close()
 		return

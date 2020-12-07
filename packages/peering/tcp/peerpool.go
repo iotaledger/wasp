@@ -98,7 +98,7 @@ func (n *NetImpl) countConnectionsLoop() {
 		for _, c := range n.peers {
 			totalNum++
 			isConn, isHandshaken := c.connStatus()
-			if c.isInbound() {
+			if c.IsInbound() {
 				inboundNum++
 				if isConn {
 					inConnectedNum++

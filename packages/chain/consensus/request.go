@@ -1,14 +1,18 @@
 package consensus
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"time"
 )
 
 func (op *operator) newRequest(reqId coretypes.RequestID) *request {

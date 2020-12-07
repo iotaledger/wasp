@@ -1,5 +1,8 @@
 package consensus
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 func (op *operator) currentLeader() (uint16, bool) {
 	_, ok := op.blockIndex()
 	return op.peerPermutation.Current(), ok

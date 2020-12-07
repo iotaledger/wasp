@@ -1,12 +1,16 @@
 package chain
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 )
 
 func (msg *StateIndexPingPongMsg) Write(w io.Writer) error {

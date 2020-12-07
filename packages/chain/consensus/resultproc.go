@@ -1,7 +1,11 @@
 package consensus
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/chain"

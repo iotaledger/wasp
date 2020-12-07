@@ -1,5 +1,8 @@
 package dashboard
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"net/http"
 
@@ -28,7 +31,7 @@ func (n *peeringNavPage) AddEndpoints(e *echo.Echo) {
 	e.GET(peeringRoute, func(c echo.Context) error {
 		return c.Render(http.StatusOK, peeringTplName, &PeeringTemplateParams{
 			BaseTemplateParams: BaseParams(c, peeringRoute),
-			Status:             peering.DefaultNetworkProvider(), // TODO: Check it.
+			NetworkProvider:    peering.DefaultNetworkProvider(),
 		})
 	})
 }
@@ -36,7 +39,7 @@ func (n *peeringNavPage) AddEndpoints(e *echo.Echo) {
 // PeeringTemplateParams holts template params.
 type PeeringTemplateParams struct {
 	BaseTemplateParams
-	Status peering_pkg.NetworkProvider
+	NetworkProvider peering_pkg.NetworkProvider
 }
 
 const tplPeering = `
@@ -54,12 +57,12 @@ const tplPeering = `
 			</tr>
 		</thead>
 		<tbody>
-		{{range $_, $peer := .Status.Peers}}
+		{{range $_, $ps := .NetworkProvider.PeerStatus}}
 			<tr>
-				<td><code>{{$peer.RemoteLocation}}</code></td>
-				<td>{{if $peer.IsInbound}}inbound{{else}}outbound{{end}}</td>
-				<td>{{if $peer.IsAlive}}up{{else}}down{{end}}</td>
-				<td>{{$peer.NumUsers}}</td>
+				<td><code>{{$ps.Location}}</code></td>
+				<td>{{if $ps.IsInbound}}inbound{{else}}outbound{{end}}</td>
+				<td>{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
+				<td>{{$ps.NumUsers}}</td>
 			</tr>
 		{{end}}
 		</tbody>

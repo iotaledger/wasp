@@ -1,9 +1,13 @@
 package consensus
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
+	"time"
+
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
-	"time"
 )
 
 const (

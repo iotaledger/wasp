@@ -19,6 +19,9 @@ import (
 	"go.uber.org/atomic"
 )
 
+// retry net.Dial once, on fail after 0.5s
+var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetries(dialRetries)) // TODO: Global variables.
+
 // peer represents point-to-point TCP connection between two nodes and another
 // it is used as transport for message exchange
 // Another end is always using the same connection
@@ -50,14 +53,14 @@ func newPeer(remoteNetID string, net *NetImpl) *peer {
 	}
 }
 
-// Location implements peering.PeerSender interface for the remote peers.
+// Location implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 func (p *peer) Location() string {
 	return p.remoteNetID
 }
 
-// PubKey implements peering.PeerSender interface for the remote peers.
+// PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 func (p *peer) PubKey() kyber.Point {
-	return nil // TODO: Get it on handshake.
+	return nil // TODO: [KP] Get it on handshake.
 }
 
 // SendMsg implements peering.PeerSender interface for the remote peers.
@@ -68,7 +71,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	}
 }
 
-// IsAlive implements peering.PeerSender interface for the remote peers.
+// IsAlive implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 // Return true if is alive and average latencyRingBuf in nanosec.
 func (p *peer) IsAlive() bool {
 	p.RLock()
@@ -76,27 +79,27 @@ func (p *peer) IsAlive() bool {
 	return p.peerconn != nil && p.handshakeOk
 }
 
+// IsInbound implements peering.PeerStatusProvider.
+// It is used in the dashboard.
+func (p *peer) IsInbound() bool {
+	return p.net.isInbound(p.remoteNetID)
+}
+
+// IsInbound implements peering.PeerStatusProvider.
+// It is used in the dashboard.
+func (p *peer) NumUsers() int {
+	p.RLock()
+	defer p.RUnlock()
+	return p.numUsers
+}
+
 // SendMsg implements peering.PeerSender interface for the remote peers.
 func (p *peer) Close() {
 	p.net.stopUsingPeer(p.remoteNetID)
 }
 
-// retry net.Dial once, on fail after 0.5s
-var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetries(dialRetries)) // TODO: Global variables.
-
-func (p *peer) isInbound() bool {
-	return p.net.isInbound(p.remoteNetID)
-}
-
 func (p *peer) peeringID() string {
 	return p.net.peeringID(p.remoteNetID)
-}
-
-// NumUsers is used in the dashboard.
-func (p *peer) NumUsers() int {
-	p.RLock()
-	defer p.RUnlock()
-	return p.numUsers
 }
 
 func (p *peer) connStatus() (bool, bool) {
@@ -126,7 +129,7 @@ func (p *peer) runOutbound() {
 	if p.isDismissed.Load() {
 		return
 	}
-	if p.isInbound() {
+	if p.IsInbound() {
 		return
 	}
 	if p.peerconn != nil {

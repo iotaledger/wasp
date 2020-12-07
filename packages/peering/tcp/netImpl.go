@@ -123,6 +123,15 @@ func (n *NetImpl) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) 
 	return nil, errors.New("known peer not found by pubKey")
 }
 
+// PeerStatus implements peering.NetworkProvider.
+func (n *NetImpl) PeerStatus() []peering.PeerStatusProvider {
+	peerStatus := make([]peering.PeerStatusProvider, 0)
+	for i := range n.peers {
+		peerStatus = append(peerStatus, n.peers[i])
+	}
+	return peerStatus
+}
+
 // Location implements peering.PeerSender for the Self() node.
 func (n *NetImpl) Location() string {
 	return n.myNetID
@@ -185,7 +194,7 @@ func (n *NetImpl) usePeer(netID string) *peer {
 	// new peer
 	ret := newPeer(netID, n)
 	n.peers[ret.peeringID()] = ret
-	n.log.Debugf("added new peer id %s inbound = %v", ret.peeringID(), ret.isInbound())
+	n.log.Debugf("added new peer id %s inbound = %v", ret.peeringID(), ret.IsInbound())
 	return ret
 }
 

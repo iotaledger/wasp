@@ -225,6 +225,15 @@ func (p *peeringNetworkProvider) PeerByPubKey(peerPub kyber.Point) (peering.Peer
 	return nil, errors.New("peer not found by pubKey")
 }
 
+// PeerStatus implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) PeerStatus() []peering.PeerStatusProvider {
+	peerStatus := make([]peering.PeerStatusProvider, len(p.senders))
+	for i := range peerStatus {
+		peerStatus[i] = p.senders[i]
+	}
+	return peerStatus
+}
+
 func (p *peeringNetworkProvider) senderByLocation(peerLoc string) *peeringSender {
 	for i := range p.senders {
 		if p.senders[i].node.location == peerLoc {
@@ -268,6 +277,16 @@ func (p *peeringSender) SendMsg(msg *peering.PeerMessage) {
 // IsAlive implements peering.PeerSender.
 func (p *peeringSender) IsAlive() bool {
 	return true // Not needed in tests.
+}
+
+// IsInbound implements peering.PeerStatusProvider.
+func (p *peeringSender) IsInbound() bool {
+	return true // Not needed in tests.
+}
+
+// NumUsers implements peering.PeerStatusProvider.
+func (p *peeringSender) NumUsers() int {
+	return 0 // Not needed in tests.
 }
 
 // Send implements peering.PeerSender.

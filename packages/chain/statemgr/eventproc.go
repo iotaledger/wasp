@@ -1,5 +1,8 @@
 package statemgr
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/state"
