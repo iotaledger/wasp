@@ -2,9 +2,10 @@ package chainimpl
 
 import (
 	"bytes"
+
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 func (c *chainObj) dispatchMessage(msg interface{}) {

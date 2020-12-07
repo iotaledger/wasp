@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 func TestFakeNetwork(t *testing.T) {
@@ -27,9 +27,12 @@ func TestFakeNetwork(t *testing.T) {
 	})
 	//
 	// Node "b" sends some messages.
-	netProviders[1].SendByLocation("a", &peering.PeerMessage{ChainID: chain1, MsgType: 1}) // Will be delivered.
-	netProviders[1].SendByLocation("a", &peering.PeerMessage{ChainID: chain2, MsgType: 2}) // Will be dropped.
-	netProviders[1].SendByLocation("c", &peering.PeerMessage{ChainID: chain1, MsgType: 3}) // Will be dropped.
+	var a, c peering.PeerSender
+	a, _ = netProviders[1].PeerByLocation("a")
+	c, _ = netProviders[1].PeerByLocation("c")
+	a.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 1}) // Will be delivered.
+	a.SendMsg(&peering.PeerMessage{ChainID: chain2, MsgType: 2}) // Will be dropped.
+	c.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 3}) // Will be dropped.
 	//
 	// Wait for the result.
 	select {

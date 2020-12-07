@@ -2,10 +2,10 @@ package consensus
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"strings"
 	"time"
 
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"

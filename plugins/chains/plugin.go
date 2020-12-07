@@ -2,9 +2,10 @@ package chains
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"sync"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
+	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 const PluginName = "Chains"
@@ -90,7 +92,7 @@ func ActivateChain(chr *registry.ChainRecord) error {
 		return nil
 	}
 	// create new chain object
-	c := chain.New(chr, log, func() {
+	c := chain.New(chr, log, peering.DefaultNetworkProvider(), func() {
 		nodeconn.Subscribe((address.Address)(chr.ChainID), chr.Color)
 	})
 	if c != nil {

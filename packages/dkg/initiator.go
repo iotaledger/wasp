@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -187,7 +187,7 @@ func GenerateDistributedKey(params *GenerateDistributedKeyParams) (*coretypes.Ch
 }
 
 func broadcastToGroup(netGroup peering.GroupProvider, chainID *coretypes.ChainID, msg msgByteCoder) {
-	netGroup.Broadcast(makePeerMessage(chainID, msg))
+	netGroup.Broadcast(makePeerMessage(chainID, msg), true)
 }
 
 func waitForInitiatorAcks(

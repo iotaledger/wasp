@@ -1,31 +1,32 @@
-package peering
+package tcp
+
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 
 import (
 	"fmt"
 	"net"
 	"strconv"
-
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // check if network location from the committee list represents current node
-func checkMyNetworkID() error {
-	shost, sport, err := net.SplitHostPort(MyNetworkId())
+func checkMyNetID(myNetID string, configPort int) error {
+	sHost, sPort, err := net.SplitHostPort(myNetID)
 	if err != nil {
 		return err
 	}
-	port, err := strconv.Atoi(sport)
+	port, err := strconv.Atoi(sPort)
 	if err != nil {
 		return err
 	}
-	if port != parameters.GetInt(parameters.PeeringPort) {
-		return fmt.Errorf("wrong own network port in %s", MyNetworkId())
+	if port != configPort {
+		return fmt.Errorf("wrong own network port in %s", myNetID)
 	}
 	myIPs, err := myIPs()
 	if err != nil {
 		return err
 	}
-	ips, err := net.LookupIP(shost)
+	ips, err := net.LookupIP(sHost)
 	if err != nil {
 		return err
 	}
@@ -33,13 +34,13 @@ func checkMyNetworkID() error {
 		if ip.IsLoopback() {
 			return nil
 		}
-		for _, myIp := range myIPs {
-			if ip.String() == myIp {
+		for _, myIP := range myIPs {
+			if ip.String() == myIP {
 				return nil
 			}
 		}
 	}
-	return fmt.Errorf("network location %s doesn't represent current node", MyNetworkId())
+	return fmt.Errorf("network location %s doesn't represent current node", myNetID)
 }
 
 func myIPs() ([]string, error) {

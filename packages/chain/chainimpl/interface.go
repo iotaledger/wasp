@@ -2,16 +2,17 @@ package chainimpl
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
@@ -121,12 +122,7 @@ func (c *chainObj) Dismiss() {
 		c.dismissed.Store(true)
 
 		close(c.chMsg)
-
-		for _, pa := range c.peers {
-			if pa != nil {
-				peering.StopUsingPeer(pa.PeeringId())
-			}
-		}
+		c.peers.Close()
 	})
 
 	publisher.Publish("dismissed_committee", c.chainID.String())
@@ -166,32 +162,31 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-// sends message to peer by index. It can be both committee peer or access peer
+// SendMsg sends message to peer by index. It can be both committee peer or access peer.
+// TODO: [KP] Maybe we can use a broadcast instead of this?
 func (c *chainObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-	if int(targetPeerIndex) >= len(c.peers) {
-		return fmt.Errorf("SendMsg: wrong peer index")
+	if peer, ok := c.peers.OtherNodes()[targetPeerIndex]; ok {
+		peer.SendMsg(&peering.PeerMessage{
+			ChainID:     c.chainID,
+			SenderIndex: c.ownIndex,
+			MsgType:     msgType,
+			MsgData:     msgData,
+		})
+		return nil
 	}
-	peer := c.peers[targetPeerIndex]
-	if peer == nil {
-		return fmt.Errorf("SendMsg: wrong peer")
-	}
-	msg := &peering.PeerMessage{
-		ChainID:     c.chainID,
-		SenderIndex: c.ownIndex,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	}
-	return peer.SendMsg(msg)
+	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
 func (c *chainObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
 		ChainID:     (coretypes.ChainID)(c.chainID),
 		SenderIndex: c.ownIndex,
+		Timestamp:   ts,
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	return peering.SendMsgToPeers(msg, ts, c.committeePeers()...)
+	c.peers.Broadcast(msg, false)
+	return uint16(len(c.peers.OtherNodes())) // TODO: [KP] Reconsider this, we cannot guaranty if they are actually sent.
 }
 
 // sends message to the peer seq[seqIndex]. If receives error, seqIndex = (seqIndex+1) % size and repeats
@@ -217,16 +212,17 @@ func (c *chainObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint
 
 // returns true if peer is alive. Used by the operator to determine current leader
 func (c *chainObj) IsAlivePeer(peerIndex uint16) bool {
-	if int(peerIndex) >= len(c.peers) {
+	allNodes := c.peers.AllNodes()
+	if int(peerIndex) >= len(allNodes) {
 		return false
 	}
 	if peerIndex == c.ownIndex {
 		return true
 	}
-	if c.peers[peerIndex] == nil {
+	if allNodes[peerIndex] == nil {
 		c.log.Panicf("c.peers[peerIndex] == nil. peerIndex: %d, ownIndex: %d", peerIndex, c.ownIndex)
 	}
-	return c.peers[peerIndex].IsAlive()
+	return allNodes[peerIndex].IsAlive()
 }
 
 func (c *chainObj) OwnPeerIndex() uint16 {
@@ -234,12 +230,12 @@ func (c *chainObj) OwnPeerIndex() uint16 {
 }
 
 func (c *chainObj) NumPeers() uint16 {
-	return uint16(len(c.peers))
+	return uint16(len(c.peers.AllNodes()))
 }
 
 // first N peers are committee peers, the rest are access peers in any
-func (c *chainObj) committeePeers() []*peering.Peer {
-	return c.peers[:c.size]
+func (c *chainObj) committeePeers() map[uint16]peering.PeerSender {
+	return c.peers.AllNodes()
 }
 
 func (c *chainObj) HasQuorum() bool {
@@ -263,14 +259,14 @@ func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.committeePeers() {
 		status := &chain.PeerStatus{
-			Index:  i,
+			Index:  int(i),
 			IsSelf: peer == nil,
 		}
 		if status.IsSelf {
-			status.PeeringID = peering.MyNetworkId()
+			status.PeeringID = c.netProvider.Self().Location()
 			status.Connected = true
 		} else {
-			status.PeeringID = peer.PeeringId()
+			status.PeeringID = peer.Location()
 			status.Connected = peer.IsAlive()
 		}
 		ret = append(ret, status)
@@ -278,7 +274,7 @@ func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *chainObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) chain.RequestProcessingStatus {
+func (c *chainObj) GetRequestProcessingStatus(reqID *coretypes.RequestID) chain.RequestProcessingStatus {
 	if c.IsDismissed() {
 		return chain.RequestProcessingStatusUnknown
 	}
@@ -286,11 +282,11 @@ func (c *chainObj) GetRequestProcessingStatus(reqId *coretypes.RequestID) chain.
 		if c.IsDismissed() {
 			return chain.RequestProcessingStatusUnknown
 		}
-		if c.operator.IsRequestInBacklog(reqId) {
+		if c.operator.IsRequestInBacklog(reqID) {
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.ID(), reqId)
+	processed, err := state.IsRequestCompleted(c.ID(), reqID)
 	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}

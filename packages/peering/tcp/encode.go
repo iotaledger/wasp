@@ -1,8 +1,14 @@
-package peering
+package tcp
+
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 
 import (
 	"bytes"
 	"fmt"
+	"log"
+
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -21,26 +27,26 @@ import (
 const chunkMessageOverhead = 8 + 1
 
 // always puts timestamp into first 8 bytes and 1 byte msg type
-func encodeMessage(msg *PeerMessage, ts int64) []byte {
+func encodeMessage(msg *peering.PeerMessage, ts int64) []byte {
 	var buf bytes.Buffer
 	// puts timestamp first
 	_ = util.WriteUint64(&buf, uint64(ts))
 	switch {
 	case msg == nil:
-		panic("MsgTypeReserved")
+		panic("msgTypeReserved")
 
-	case msg.MsgType == MsgTypeReserved:
-		panic("MsgTypeReserved")
+	case msg.MsgType == msgTypeReserved:
+		panic("msgTypeReserved")
 
-	case msg.MsgType == MsgTypeHandshake:
-		buf.WriteByte(MsgTypeHandshake)
+	case msg.MsgType == msgTypeHandshake:
+		buf.WriteByte(msgTypeHandshake)
 		buf.Write(msg.MsgData)
 
-	case msg.MsgType == MsgTypeMsgChunk:
-		buf.WriteByte(MsgTypeMsgChunk)
+	case msg.MsgType == msgTypeMsgChunk:
+		buf.WriteByte(msgTypeMsgChunk)
 		buf.Write(msg.MsgData)
 
-	case msg.MsgType >= FirstCommitteeMsgCode:
+	case msg.MsgType >= peering.FirstCommitteeMsgCode: // TODO: Why committee specific is here?
 		buf.WriteByte(msg.MsgType)
 		msg.ChainID.Write(&buf)
 		util.WriteUint16(&buf, msg.SenderIndex)
@@ -52,7 +58,7 @@ func encodeMessage(msg *PeerMessage, ts int64) []byte {
 	return buf.Bytes()
 }
 
-func decodeMessage(data []byte) (*PeerMessage, error) {
+func decodeMessage(data []byte) (*peering.PeerMessage, error) {
 	if len(data) < 9 {
 		return nil, fmt.Errorf("too short message")
 	}
@@ -62,7 +68,7 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := &PeerMessage{
+	ret := &peering.PeerMessage{
 		Timestamp: int64(uts),
 	}
 	ret.MsgType, err = util.ReadByte(rdr)
@@ -70,15 +76,15 @@ func decodeMessage(data []byte) (*PeerMessage, error) {
 		return nil, err
 	}
 	switch {
-	case ret.MsgType == MsgTypeHandshake:
+	case ret.MsgType == msgTypeHandshake:
 		ret.MsgData = rdr.Bytes()
 		return ret, nil
 
-	case ret.MsgType == MsgTypeMsgChunk:
+	case ret.MsgType == msgTypeMsgChunk:
 		ret.MsgData = rdr.Bytes()
 		return ret, nil
 
-	case ret.MsgType >= FirstCommitteeMsgCode:
+	case ret.MsgType >= peering.FirstCommitteeMsgCode: // TODO: Why committee specific is here?
 		// committee message
 		if err = ret.ChainID.Read(rdr); err != nil {
 			return nil, err

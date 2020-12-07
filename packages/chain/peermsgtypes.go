@@ -5,14 +5,15 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
+// Message types for the committee communications.
 const (
-	MsgStateIndexPingPong      = 0 + peering.FirstCommitteeMsgCode
+	MsgStateIndexPingPong      = 0 + peering.FirstCommitteeMsgCode // TODO: Rename the constant (static vs dynamic allocation).
 	MsgNotifyRequests          = 1 + peering.FirstCommitteeMsgCode
 	MsgNotifyFinalResultPosted = 2 + peering.FirstCommitteeMsgCode
 	MsgStartProcessingRequest  = 3 + peering.FirstCommitteeMsgCode

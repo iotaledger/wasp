@@ -21,7 +21,7 @@ func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
 	return BaseTemplateParams{
 		NavPages:    navPages,
 		ActivePage:  activePage,
-		MyNetworkId: peering.MyNetworkId(),
+		MyNetworkId: peering.DefaultNetworkProvider().Self().Location(),
 	}
 }
 

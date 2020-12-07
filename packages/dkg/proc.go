@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dks"
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -46,7 +46,7 @@ type proc struct {
 	stepTimeout  time.Duration
 	netGroup     peering.GroupProvider
 	dkgImpl      *rabin_dkg.DistKeyGenerator
-	attachID     int
+	attachID     interface{}
 	peerMsgCh    chan *peering.RecvEvent                  // A buffer for the received peer messages.
 	log          *logger.Logger                           // A logger to use.
 	recvMsgs     map[byte]map[uint16]*peering.PeerMessage // Messages received in particular step ([Step][Peer]).

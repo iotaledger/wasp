@@ -70,3 +70,8 @@ func (chid *ChainID) Read(r io.Reader) error {
 	}
 	return nil
 }
+
+// Equal does what it should.
+func (chid *ChainID) Equal(other *ChainID) bool {
+	return other != nil && bytes.Equal(chid.Bytes(), other.Bytes())
+}

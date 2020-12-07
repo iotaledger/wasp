@@ -72,7 +72,7 @@ func nodeConnect() {
 	}))
 
 	if err := SendWaspIdToNode(); err == nil {
-		log.Debugf("sent own wasp id to node: %s", peering.MyNetworkId())
+		log.Debugf("sent own wasp id to node: %s", peering.DefaultNetworkProvider().Self().Location())
 	} else {
 		log.Errorf("failed to send wasp id to node: %v", err)
 	}

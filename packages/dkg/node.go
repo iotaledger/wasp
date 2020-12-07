@@ -6,7 +6,7 @@ package dkg
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dks"
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 )
@@ -21,7 +21,7 @@ type Node struct {
 	netProvider peering.NetworkProvider // Network to communicate through.
 	registry    dks.RegistryProvider    // Where to store the generated keys.
 	processes   map[string]*proc        // Only for introspection.
-	attachID    int                     // Peering attach ID
+	attachID    interface{}             // Peering attach ID
 	log         *logger.Logger
 }
 

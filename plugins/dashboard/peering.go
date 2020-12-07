@@ -3,6 +3,7 @@ package dashboard
 import (
 	"net/http"
 
+	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo"
 )
@@ -27,14 +28,15 @@ func (n *peeringNavPage) AddEndpoints(e *echo.Echo) {
 	e.GET(peeringRoute, func(c echo.Context) error {
 		return c.Render(http.StatusOK, peeringTplName, &PeeringTemplateParams{
 			BaseTemplateParams: BaseParams(c, peeringRoute),
-			Status:             peering.GetStatus(),
+			Status:             peering.DefaultNetworkProvider(), // TODO: Check it.
 		})
 	})
 }
 
+// PeeringTemplateParams holts template params.
 type PeeringTemplateParams struct {
 	BaseTemplateParams
-	Status *peering.Status
+	Status peering_pkg.NetworkProvider
 }
 
 const tplPeering = `

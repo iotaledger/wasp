@@ -1,11 +1,16 @@
 package peering
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"go.uber.org/atomic"
+	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	peering_tcp "github.com/iotaledger/wasp/packages/peering/tcp"
+	"github.com/labstack/gommon/log"
 )
 
 const (
@@ -13,8 +18,7 @@ const (
 )
 
 var (
-	log         *logger.Logger
-	initialized atomic.Bool
+	defaultNetworkProvider *peering_tcp.NetImpl // A singleton instance.
 )
 
 // Init is an entry point for this plugin.
@@ -23,36 +27,33 @@ func Init() *node.Plugin {
 }
 
 // DefaultNetworkProvider returns the default network provider implementation.
-func DefaultNetworkProvider() NetworkProvider {
-	return nil // TODO
+func DefaultNetworkProvider() peering_pkg.NetworkProvider {
+	return defaultNetworkProvider
 }
 
 func configure(_ *node.Plugin) {
-	log = logger.NewLogger(pluginName)
-	if err := checkMyNetworkID(); err != nil {
-		// can't continue because netid parameter is not correct
-		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
-		return
+	var err error
+	defaultNetworkProvider, err = peering_tcp.NewNetworkProvider(
+		parameters.GetString(parameters.PeeringMyNetId),
+		parameters.GetInt(parameters.PeeringPort),
+		logger.NewLogger(pluginName),
+	)
+	if err != nil {
+		panic(err)
 	}
-	log.Infof("--------------------------------- netid is %s -----------------------------------", MyNetworkId())
-	initialized.Store(true)
+	log.Infof(
+		"--------------------------------- NetID is %s -----------------------------------",
+		defaultNetworkProvider.Self().Location(),
+	)
 }
 
 func run(_ *node.Plugin) {
-	if !initialized.Load() {
-		return
-	}
-	if err := daemon.BackgroundWorker("WaspPeering", func(shutdownSignal <-chan struct{}) {
-
-		go connectOutboundLoop()
-		go connectInboundLoop()
-
-		<-shutdownSignal
-
-		log.Info("Closing all connections with peers...")
-		closeAll()
-		log.Info("Closing all connections with peers... done")
-	}, parameters.PriorityPeering); err != nil {
+	err := daemon.BackgroundWorker(
+		"WaspPeering",
+		defaultNetworkProvider.Run,
+		parameters.PriorityPeering,
+	)
+	if err != nil {
 		panic(err)
 	}
 }
