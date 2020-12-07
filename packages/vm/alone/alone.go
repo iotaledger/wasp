@@ -9,6 +9,7 @@
 // It does not use Wasp plugins, committees, consensus, state manager, database, peer and node communications.
 // It uses in-memory DB for virtual state and UTXODB to mock the ledger.
 // It deploys default chain and all builtin contracts
+// It allows self-posting of requests, with or without time locks, however only supports one chain
 package alone
 
 import (
