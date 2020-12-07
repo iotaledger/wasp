@@ -3,18 +3,20 @@ package wasptest
 import (
 	"flag"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"path"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -42,10 +44,7 @@ var (
 
 func check(err error, t *testing.T) {
 	t.Helper()
-	assert.NoError(t, err)
-	if err != nil {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 }
 
 func deployContract(wasmName string, scDescription string, initParams map[string]interface{}) error {
@@ -91,7 +90,7 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 }
 
 func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
-	tx, err := client.PostRequest(contract, entryPoint, nil, transfer, params)
+	tx, err := client.PostRequest(contract, entryPoint, nil, transfer, codec.EncodeDictFromMap(params))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)

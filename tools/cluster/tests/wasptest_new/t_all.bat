@@ -7,3 +7,5 @@ pause
 call t_all_inccounter.bat %1
 pause
 call t_all_blob.bat %1
+pause
+call t_all_post.bat %1

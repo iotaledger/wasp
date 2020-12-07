@@ -53,7 +53,7 @@ func (c *WaspClient) WaitUntilAllRequestsProcessed(tx *sctransaction.Transaction
 	for i, req := range tx.Requests() {
 		chainId := req.Target().ChainID()
 		reqId := coretypes.NewRequestID(tx.ID(), uint16(i))
-		if err := c.WaitUntilRequestProcessed(&chainId, &reqId, 30*time.Second); err != nil {
+		if err := c.WaitUntilRequestProcessed(&chainId, &reqId, timeout); err != nil {
 			return err
 		}
 	}

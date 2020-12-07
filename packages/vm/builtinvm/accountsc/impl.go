@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -175,7 +176,7 @@ func move(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 
 // withdraw sends caller's funds to the caller
 // The caller must be an address
-// different process for addresses and contracts as a caller
+// TODO not tested
 func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	state := ctx.State()
 	if state.Get(VarStateInitialized) == nil {
@@ -203,5 +204,40 @@ func withdraw(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
 	}
 	// sent to address
 	ctx.Eventf("accountsc.withdraw.success. Sent to address %s -- %s", addr.String(), send.String())
+	return nil, nil
+}
+
+// allow is similar to the ERC-20 allow function.
+// TODO not testes
+func allow(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+	state := ctx.State()
+	if state.Get(VarStateInitialized) == nil {
+		return nil, fmt.Errorf("accountsc.allow.fail: not_initialized")
+	}
+	MustCheckLedger(state, "accountsc.allow.begin")
+	defer MustCheckLedger(state, "accountsc.allow.exit")
+
+	agentID, ok, err := ctx.Params().GetAgentID(ParamAgentID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrParamWrongOrNotFound
+	}
+	amount, ok, err := ctx.Params().GetInt64(ParamAgentID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrParamWrongOrNotFound
+	}
+	allowances := state.GetMap(VarStateAllowances)
+	if amount <= 0 {
+		allowances.DelAt(agentID[:])
+		ctx.Eventf("accountsc.allow.success. %s is not allowed to withdraw funds", agentID.String())
+	} else {
+		allowances.SetAt(agentID[:], util.Uint64To8Bytes(uint64(amount)))
+		ctx.Eventf("accountsc.allow.success. Allow %s to withdraw uo to %d", agentID.String(), amount)
+	}
 	return nil, nil
 }

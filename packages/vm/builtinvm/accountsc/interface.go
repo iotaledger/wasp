@@ -30,6 +30,7 @@ func init() {
 		contract.ViewFunc(FuncAccounts, getAccounts),
 		contract.Func(FuncDeposit, deposit),
 		contract.Func(FuncMove, move),
+		contract.Func(FuncAllow, allow),
 		contract.Func(FuncWithdraw, withdraw),
 	})
 }
@@ -38,11 +39,13 @@ const (
 	FuncBalance  = "balance"
 	FuncDeposit  = "deposit"
 	FuncMove     = "move"
+	FuncAllow    = "allow"
 	FuncWithdraw = "withdraw"
 	FuncAccounts = "accounts"
 
 	VarStateInitialized = "i"
 	VarStateAllAccounts = "a"
+	VarStateAllowances  = "l"
 
 	ParamAgentID = "a"
 	ParamColor   = "c"
