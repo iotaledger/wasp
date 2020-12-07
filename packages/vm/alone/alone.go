@@ -35,7 +35,7 @@ import (
 	"time"
 )
 
-type AloneEnvironment struct {
+type Env struct {
 	T                   *testing.T
 	ChainSigScheme      signaturescheme.SignatureScheme
 	OriginatorSigScheme signaturescheme.SignatureScheme
@@ -61,7 +61,7 @@ type AloneEnvironment struct {
 
 var regOnce sync.Once
 
-func New(t *testing.T, debug bool, printStackTrace bool) *AloneEnvironment {
+func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.ChainID(chSig.Address())
@@ -76,7 +76,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *AloneEnvironment {
 		}
 	})
 
-	env := &AloneEnvironment{
+	env := &Env{
 		T:                   t,
 		ChainSigScheme:      chSig,
 		OriginatorSigScheme: orSig,
@@ -138,7 +138,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *AloneEnvironment {
 	return env
 }
 
-func (e *AloneEnvironment) readRequestsLoop() {
+func (e *Env) readRequestsLoop() {
 	for r := range e.chInRequest {
 		e.backlogMutex.Lock()
 		e.backlog = append(e.backlog, r)
@@ -149,7 +149,7 @@ func (e *AloneEnvironment) readRequestsLoop() {
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (e *AloneEnvironment) collateBatch() []sctransaction.RequestRef {
+func (e *Env) collateBatch() []sctransaction.RequestRef {
 	e.backlogMutex.Lock()
 	defer e.backlogMutex.Unlock()
 
@@ -167,7 +167,7 @@ func (e *AloneEnvironment) collateBatch() []sctransaction.RequestRef {
 	return ret
 }
 
-func (e *AloneEnvironment) runBatchLoop() {
+func (e *Env) runBatchLoop() {
 	for {
 		batch := e.collateBatch()
 		//e.Log.Infof("collateBatch. batch: %d remainsTimeLocked: %v", len(batch), remainsTimelocked)
@@ -183,28 +183,35 @@ func (e *AloneEnvironment) runBatchLoop() {
 	}
 }
 
-func (e *AloneEnvironment) backlogLen() int {
+func (e *Env) backlogLen() int {
 	e.chPosted.Wait()
 	e.backlogMutex.Lock()
 	defer e.backlogMutex.Unlock()
 	return len(e.backlog)
 }
 
-func (e *AloneEnvironment) WaitEmptyBacklog(maxWait ...time.Duration) {
+func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {
 	maxDurationSet := len(maxWait) > 0
 	var deadline time.Time
 	if maxDurationSet {
 		deadline = time.Now().Add(maxWait[0])
 	}
 	counter := 0
-	for e.backlogLen() > 0 {
+	for {
 		if counter%40 == 0 {
 			e.Log.Infof("backlog length = %d", e.backlogLen())
 		}
 		counter++
-		time.Sleep(50 * time.Millisecond)
-		if maxDurationSet && deadline.Before(time.Now()) {
-			e.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+		if e.backlogLen() > 0 {
+			time.Sleep(50 * time.Millisecond)
+			if maxDurationSet && deadline.Before(time.Now()) {
+				e.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+			}
+		} else {
+			time.Sleep(10 * time.Millisecond)
+			if e.backlogLen() == 0 {
+				break
+			}
 		}
 	}
 }

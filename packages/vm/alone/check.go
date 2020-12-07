@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (e *AloneEnvironment) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+func (e *Env) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
 	require.EqualValues(e.T, expected, e.GetUtxodbBalance(addr, col))
 }
 
-func (e *AloneEnvironment) CheckBase() {
+func (e *Env) CheckBase() {
 	req := NewCall(root.Interface.Name, root.FuncGetInfo)
 	res1, err := e.PostRequest(req, nil)
 	require.NoError(e.T, err)
@@ -44,7 +44,7 @@ func (e *AloneEnvironment) CheckBase() {
 	require.EqualValues(e.T, e.OriginatorAgentID, blobRec.Creator)
 }
 
-func (e *AloneEnvironment) CheckAccountLedger() {
+func (e *Env) CheckAccountLedger() {
 	total := e.GetTotalAssets()
 	accounts := e.GetAccounts()
 	sum := make(map[balance.Color]int64)
@@ -54,6 +54,6 @@ func (e *AloneEnvironment) CheckAccountLedger() {
 	require.True(e.T, total.Equal(cbalances.NewFromMap(sum)))
 }
 
-func (e *AloneEnvironment) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
+func (e *Env) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
 	require.EqualValues(e.T, bal, e.GetAccountBalance(agentID).Balance(col))
 }

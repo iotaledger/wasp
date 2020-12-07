@@ -22,7 +22,9 @@ import (
 )
 
 type callParams struct {
+	targetName string
 	target     coretypes.Hname
+	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
 	params     dict.Dict
@@ -30,7 +32,9 @@ type callParams struct {
 
 func NewCall(target, ep string, params ...interface{}) *callParams {
 	ret := &callParams{
+		targetName: target,
 		target:     coretypes.Hn(target),
+		epName:     ep,
 		entryPoint: coretypes.Hn(ep),
 	}
 	ret.withParams(params...)
@@ -65,7 +69,7 @@ func (r *callParams) withParams(params ...interface{}) *callParams {
 	return r
 }
 
-func (e *AloneEnvironment) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
+func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
 	e.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
 	e.runVMMutex.Lock()
 	defer e.runVMMutex.Unlock()
@@ -135,7 +139,7 @@ func batchShortStr(batch []sctransaction.RequestRef) string {
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }
 
-func (e *AloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+func (e *Env) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
 		sigScheme = e.OriginatorSigScheme
 	}
@@ -160,7 +164,7 @@ func (e *AloneEnvironment) PostRequest(req *callParams, sigScheme signatureschem
 	return e.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (e *AloneEnvironment) CallView(req *callParams) (dict.Dict, error) {
+func (e *Env) CallView(req *callParams) (dict.Dict, error) {
 	e.runVMMutex.Lock()
 	defer e.runVMMutex.Unlock()
 
