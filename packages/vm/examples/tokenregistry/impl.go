@@ -10,6 +10,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -74,7 +76,7 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
 		ctx.Eventf("error %v", err)
@@ -88,7 +90,7 @@ func (ep tokenRegistryEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep tokenRegistryEntryPoint) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (ep tokenRegistryEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
@@ -107,7 +109,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	reqId := ctx.RequestID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
-	registry := ctx.State().GetMap(VarStateTheRegistry)
+	registry := datatypes.NewMustMap(ctx.State(), VarStateTheRegistry)
 	// check for duplicated colors
 	if registry.GetAt(colorOfTheSupply[:]) != nil {
 		// already exist
@@ -122,7 +124,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 
 	}
 	// get the description of the supply form the request argument
-	description, ok, err := params.GetString(VarReqDescription)
+	description, ok, err := codec.DecodeString(params.MustGet(VarReqDescription))
 	if err != nil {
 		return fmt.Errorf("TokenRegistry: inconsistency 1")
 	}
@@ -158,13 +160,13 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	// only used for assertion in tests
 	// TODO not finished
 	stateAccess := ctx.State()
-	lst, ok := stateAccess.GetString(VarStateListColors)
+	lst, ok, _ := codec.DecodeString(stateAccess.MustGet(VarStateListColors))
 	if !ok {
 		lst = colorOfTheSupply.String()
 	} else {
 		lst += ", " + colorOfTheSupply.String()
 	}
-	stateAccess.SetString(VarStateListColors, lst)
+	stateAccess.Set(VarStateListColors, codec.EncodeString(lst))
 
 	ctx.Eventf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
 		colorOfTheSupply.String(), rec.Owner.String(), rec.Description, string(rec.UserDefined))

@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/vm"
 )
 
 func (c *chainObj) dispatchMessage(msg interface{}) {
@@ -51,11 +50,12 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 			c.operator.EventBalancesMsg(msgt)
 		}
 
-	case *vm.VMTask:
+	case *chain.VMResultMsg:
 		// VM finished working
 		if c.operator != nil {
 			c.operator.EventResultCalculated(msgt)
 		}
+
 	case chain.TimerTick:
 
 		if msgt%2 == 0 {

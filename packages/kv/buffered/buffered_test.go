@@ -10,7 +10,7 @@ import (
 
 func TestBufferedKVStore(t *testing.T) {
 	db := mapdb.NewMapDB()
-	db.Set([]byte("abcd"), []byte("v1"))
+	_ = db.Set([]byte("abcd"), []byte("v1"))
 
 	realm := db.WithRealm([]byte("ab"))
 
@@ -24,8 +24,8 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	m := kv.ToGoMap(b.DangerouslyDumpToDict())
-	assert.Equal(
+	m := b.DangerouslyDumpToDict()
+	assert.EqualValues(
 		t,
 		map[kv.Key][]byte{
 			kv.Key([]byte("cd")): []byte("v1"),
@@ -34,7 +34,7 @@ func TestBufferedKVStore(t *testing.T) {
 	)
 
 	n := 0
-	b.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+	b.MustIterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
 		assert.Equal(t, kv.Key([]byte("cd")), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
@@ -43,7 +43,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.Equal(t, 1, n)
 
 	n = 0
-	b.Iterate(kv.Key("c"), func(key kv.Key, value []byte) bool {
+	b.MustIterate(kv.Key("c"), func(key kv.Key, value []byte) bool {
 		assert.Equal(t, kv.Key([]byte("cd")), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
@@ -52,7 +52,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.Equal(t, 1, n)
 
 	n = 0
-	b.IterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
+	b.MustIterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
 		assert.Equal(t, kv.Key([]byte("cd")), key)
 		n++
 		return true
@@ -70,8 +70,8 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v2"), v)
 
-	m = kv.ToGoMap(b.DangerouslyDumpToDict())
-	assert.Equal(
+	m = b.DangerouslyDumpToDict()
+	assert.EqualValues(
 		t,
 		map[kv.Key][]byte{
 			kv.Key([]byte("cd")): []byte("v2"),

@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
@@ -14,15 +15,50 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
+
+func (vmctx *VMContext) chainInfo() (coretypes.ChainID, coretypes.AgentID) {
+	info, err := vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetInfo), nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	chainID, ok, err := codec.DecodeChainID(info.MustGet(root.VarChainID))
+	if err != nil {
+		panic(err)
+	}
+	if !ok {
+		panic("inconsistency in the root 1")
+	}
+	if vmctx.chainID != chainID {
+		panic("inconsistency in the root 2: vmctx.chainID != *chainID")
+	}
+	owner, ok, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
+	if err != nil {
+		panic(err)
+	}
+	if !ok {
+		panic("inconsistency in the root 3")
+	}
+	return chainID, owner
+}
 
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
 	return vmctx.chainID
 }
 
 func (vmctx *VMContext) ChainOwnerID() coretypes.AgentID {
-	return accountsc.ChainOwnerAgentID(vmctx.ChainID())
+	_, ret := vmctx.chainInfo()
+	return ret
+}
+
+func (vmctx *VMContext) ContractCreator() coretypes.AgentID {
+	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
+	if !ok {
+		vmctx.log.Panicf("can't find current contract")
+	}
+	return rec.Creator
 }
 
 func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
@@ -62,7 +98,7 @@ func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer c
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
 	if !privileged {
 		// if caller is accoutsc, it must debit from account by itself
-		if !accountsc.DebitFromAccount(codec.NewMustCodec(vmctx), vmctx.MyAgentID(), transfer) {
+		if !accountsc.DebitFromAccount(vmctx.State(), vmctx.MyAgentID(), transfer) {
 			return false
 		}
 	}
@@ -81,8 +117,7 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 	// the transfer is performed by the accountsc contract on another chain
 	// it deposits received funds to the target on behalf of the caller
 	par := dict.New()
-	pari := codec.NewCodec(par)
-	pari.SetAgentID(accountsc.ParamAgentID, &targetAgentID)
+	par.Set(accountsc.ParamAgentID, codec.EncodeAgentID(targetAgentID))
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Interface.Hname()),
 		EntryPoint:       coretypes.Hn(accountsc.FuncDeposit),

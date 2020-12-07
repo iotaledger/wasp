@@ -40,7 +40,7 @@ func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 
 // NewRandomChainID constructor creates a random chain ID.
 func NewRandomChainID() ChainID {
-	return ChainID(address.Random())
+	return ChainID(address.RandomOfType(address.VersionBLS))
 }
 
 // Bytes returns a serialized version of this ChainID.

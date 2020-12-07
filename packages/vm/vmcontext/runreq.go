@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -31,7 +32,9 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				vmctx.log.Errorf("Recovered from panic in VM: %v", r)
+				vmctx.lastResult = nil
+				vmctx.lastError = fmt.Errorf("recovered from panic in VM: %v", r)
+				vmctx.log.Error(vmctx.lastError)
 				debug.PrintStack()
 				if _, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB

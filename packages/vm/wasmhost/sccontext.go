@@ -1,16 +1,18 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 const (
-	KeyAccount     = KeyUserDefined
-	KeyAgent       = KeyAccount - 1
+	KeyAgent       = KeyUserDefined
 	KeyAmount      = KeyAgent - 1
-	KeyBalance     = KeyAmount - 1
-	KeyBase58      = KeyBalance - 1
-	KeyCalls       = KeyBase58 - 1
+	KeyBalances    = KeyAmount - 1
+	KeyBase58      = KeyBalances - 1
+	KeyCaller      = KeyBase58 - 1
+	KeyCalls       = KeyCaller - 1
 	KeyChain       = KeyCalls - 1
 	KeyColor       = KeyChain - 1
-	KeyColors      = KeyColor - 1
-	KeyContract    = KeyColors - 1
+	KeyContract    = KeyColor - 1
 	KeyData        = KeyContract - 1
 	KeyDelay       = KeyData - 1
 	KeyDescription = KeyDelay - 1
@@ -18,17 +20,16 @@ const (
 	KeyFunction    = KeyExports - 1
 	KeyHash        = KeyFunction - 1
 	KeyId          = KeyHash - 1
-	KeyIota        = KeyId - 1
+	KeyIncoming    = KeyId - 1
+	KeyIota        = KeyIncoming - 1
 	KeyLogs        = KeyIota - 1
 	KeyName        = KeyLogs - 1
 	KeyOwner       = KeyName - 1
 	KeyParams      = KeyOwner - 1
 	KeyPosts       = KeyParams - 1
 	KeyRandom      = KeyPosts - 1
-	KeyRequest     = KeyRandom - 1
-	KeyResults     = KeyRequest - 1
-	KeySender      = KeyResults - 1
-	KeyState       = KeySender - 1
+	KeyResults     = KeyRandom - 1
+	KeyState       = KeyResults - 1
 	KeyTimestamp   = KeyState - 1
 	KeyTransfers   = KeyTimestamp - 1
 	KeyUtility     = KeyTransfers - 1
@@ -45,15 +46,14 @@ var keyMap = map[string]int32{
 	"warning":   KeyWarning,
 
 	// user-defined keys
-	"account":     KeyAccount,
 	"agent":       KeyAgent,
 	"amount":      KeyAmount,
-	"balance":     KeyBalance,
+	"balances":    KeyBalances,
 	"base58":      KeyBase58,
+	"caller":      KeyCaller,
 	"calls":       KeyCalls,
 	"chain":       KeyChain,
 	"color":       KeyColor,
-	"colors":      KeyColors,
 	"contract":    KeyContract,
 	"data":        KeyData,
 	"delay":       KeyDelay,
@@ -62,6 +62,7 @@ var keyMap = map[string]int32{
 	"function":    KeyFunction,
 	"hash":        KeyHash,
 	"id":          KeyId,
+	"incoming":    KeyIncoming,
 	"iota":        KeyIota,
 	"logs":        KeyLogs,
 	"name":        KeyName,
@@ -69,9 +70,7 @@ var keyMap = map[string]int32{
 	"params":      KeyParams,
 	"posts":       KeyPosts,
 	"random":      KeyRandom,
-	"request":     KeyRequest,
 	"results":     KeyResults,
-	"sender":      KeySender,
 	"state":       KeyState,
 	"timestamp":   KeyTimestamp,
 	"transfers":   KeyTransfers,
@@ -84,7 +83,7 @@ type ScContext struct {
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
-	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, name: "Root"}, objects: make(map[int32]int32)}}
+	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, id: 1}, objects: make(map[int32]int32)}}
 }
 
 func (o *ScContext) Exists(keyId int32) bool {
@@ -99,21 +98,39 @@ func (o *ScContext) Finalize() {
 	o.vm.objIdToObj = o.vm.objIdToObj[:2]
 }
 
+func (o *ScContext) GetBytes(keyId int32) []byte {
+	switch keyId {
+	case KeyCaller:
+		id := o.vm.ctx.Caller()
+		return id.Bytes()
+	}
+	return o.MapObject.GetBytes(keyId)
+}
+
+func (o *ScContext) GetInt(keyId int32) int64 {
+	switch keyId {
+	case KeyTimestamp:
+		return o.vm.ctx.GetTimestamp()
+	}
+	return o.MapObject.GetInt(keyId)
+}
+
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	if keyId == KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (onLoad) this cannot be called any more
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
 
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
-		KeyAccount:   func() WaspObject { return &ScAccount{} },
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+		KeyBalances:  func() WaspObject { return &ScBalances{} },
 		KeyCalls:     func() WaspObject { return &ScCalls{} },
 		KeyContract:  func() WaspObject { return &ScContract{} },
 		KeyExports:   func() WaspObject { return &ScExports{} },
+		KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
+		KeyParams:    func() WaspObject { return &ScImmutableDict{Dict: o.vm.Params()} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
-		KeyRequest:   func() WaspObject { return &ScRequest{} },
-		KeyResults:   func() WaspObject { return &ScCallParams{} },
+		KeyResults:   func() WaspObject { return &ScMutableDict{} },
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
@@ -123,7 +140,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 
 func (o *ScContext) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyAccount:
+	case KeyBalances:
 		return OBJTYPE_MAP
 	case KeyCalls:
 		return OBJTYPE_MAP_ARRAY
@@ -131,16 +148,22 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return OBJTYPE_MAP
 	case KeyExports:
 		return OBJTYPE_STRING_ARRAY
+	case KeyIncoming:
+		return OBJTYPE_MAP
 	case KeyLogs:
+		return OBJTYPE_MAP
+	case KeyParams:
 		return OBJTYPE_MAP
 	case KeyPosts:
 		return OBJTYPE_MAP_ARRAY
-	case KeyRequest:
-		return OBJTYPE_MAP
 	case KeyResults:
 		return OBJTYPE_MAP
+	case KeyCaller:
+		return OBJTYPE_BYTES
 	case KeyState:
 		return OBJTYPE_MAP
+	case KeyTimestamp:
+		return OBJTYPE_INT
 	case KeyTransfers:
 		return OBJTYPE_MAP_ARRAY
 	case KeyUtility:

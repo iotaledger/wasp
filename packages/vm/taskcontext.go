@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -17,10 +18,8 @@ import (
 type VMTask struct {
 	Processors *processors.ProcessorCache
 	// inputs (immutable)
-	LeaderPeerIndex uint16
-	ProgramHash     hashing.HashValue
-	ChainID         coretypes.ChainID
-	Color           balance.Color
+	ChainID coretypes.ChainID
+	Color   balance.Color
 	// deterministic source of entropy
 	Entropy      hashing.HashValue
 	Balances     map[valuetransaction.ID][]*balance.Balance
@@ -30,7 +29,7 @@ type VMTask struct {
 	VirtualState state.VirtualState // input immutable
 	Log          *logger.Logger
 	// call when finished
-	OnFinish func(error)
+	OnFinish func(callResult dict.Dict, callError error, vmError error)
 	// outputs
 	ResultTransaction *sctransaction.Transaction
 	ResultBlock       state.Block

@@ -1,8 +1,11 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package sandbox
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -19,23 +22,23 @@ func newView(vmctx *vmcontext.VMContext) vmtypes.SandboxView {
 	return sandboxView{vmctx}
 }
 
-func (s sandboxView) Params() codec.ImmutableCodec {
+func (s sandboxView) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
-func (s sandboxView) State() codec.ImmutableMustCodec {
-	return codec.NewMustCodec(s.vmctx)
+func (s sandboxView) State() kv.KVStore {
+	return s.vmctx.State()
 }
 
-func (s sandboxView) MyBalances() coretypes.ColoredBalances {
+func (s sandboxView) Balances() coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 
-func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) MyContractID() coretypes.ContractID {
+func (s sandboxView) ContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 

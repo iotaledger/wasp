@@ -30,9 +30,6 @@ func init() {
 }
 
 const (
-	// state variables
-	VarStateInitialized = "i"
-
 	// request parameters
 	ParamHash  = "hash"
 	ParamField = "field"

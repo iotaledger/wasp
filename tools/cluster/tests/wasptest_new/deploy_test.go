@@ -1,13 +1,16 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -34,14 +37,20 @@ func TestDeployChain(t *testing.T) {
 	if !clu.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
+	chainID, chainOwnerID := getChainInfo(t, chain)
+	require.Equal(t, chainID, chain.ChainID)
+	require.Equal(t, chainOwnerID, coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress()))
+	t.Logf("--- chainID: %s", chainID.String())
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 3, contractRegistry.Len())
 		return true
 	})
+	checkRootsOutside(t, chain)
 }
 
 func TestDeployContractOnly(t *testing.T) {
@@ -76,11 +85,11 @@ func TestDeployContractOnly(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
@@ -94,8 +103,8 @@ func TestDeployContractOnly(t *testing.T) {
 		return true
 	})
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
@@ -147,11 +156,11 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.Len())
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
@@ -165,8 +174,8 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 		return true
 	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
@@ -175,20 +184,22 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().PostRequest(hname, inccounter.EntryPointSpawn, nil, nil, codec.EncodeDictFromMap(map[string]interface{}{
-		inccounter.VarName:        nameNew,
-		inccounter.VarDescription: dscrNew,
-	}))
+	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
+		Args: codec.MakeDict(map[string]interface{}{
+			inccounter.VarName:        nameNew,
+			inccounter.VarDescription: dscrNew,
+		}),
+	})
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 3, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(accountsc.Interface.Hname().Bytes())
@@ -211,13 +222,13 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, nameNew, cr.Name)
 		return true
 	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
-	chain.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 44, counterValue)
 		return true
 	})

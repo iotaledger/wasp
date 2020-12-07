@@ -2,7 +2,6 @@ package datatypes
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -32,7 +31,11 @@ func NewArray(kv kv.KVStore, name string) (*Array, error) {
 	return ret, nil
 }
 
-func NewMustArray(array *Array) *MustArray {
+func NewMustArray(kv kv.KVStore, name string) *MustArray {
+	array, err := NewArray(kv, name)
+	if err != nil {
+		panic(err)
+	}
 	return &MustArray{*array}
 }
 
@@ -102,9 +105,6 @@ func (l *Array) len() (uint16, error) {
 	}
 	if v == nil {
 		return 0, nil
-	}
-	if len(v) != 2 {
-		return 0, errors.New(fmt.Sprintf("corrupted data: %v", v))
 	}
 	return util.MustUint16From2Bytes(v), nil
 }

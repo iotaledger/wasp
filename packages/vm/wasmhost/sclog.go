@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
@@ -14,7 +17,7 @@ func (o *ScLogs) Exists(keyId int32) bool {
 }
 
 func (o *ScLogs) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: func() WaspObject { return &ScLog{} },
 	})
 }
@@ -32,11 +35,10 @@ type ScLog struct {
 	logEntryId int32
 }
 
-func (a *ScLog) InitVM(vm *wasmProcessor, keyId int32) {
-	a.ModelObject.InitVM(vm, 0)
-	key := vm.GetKey(keyId)
-	a.name = "log." + string(key)
-	a.lines = vm.State().GetTimestampedLog(key)
+func (a *ScLog) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ModelObject.InitObj(id, keyId, owner)
+	key := a.vm.GetKey(keyId)
+	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), key)
 	a.logEntry = &ScLogEntry{lines: a.lines}
 	a.logEntryId = a.vm.TrackObject(a.logEntry)
 }
@@ -88,6 +90,22 @@ func (o *ScLogEntry) Exists(keyId int32) bool {
 		return false
 	}
 	return true
+}
+
+func (o *ScLogEntry) GetBytes(keyId int32) []byte {
+	//switch keyId {
+	//case KeyData:
+	//	ts := o.lines.TakeTimeSlice(o.lines.Earliest(), o.lines.Latest())
+	//}
+	return o.MapObject.GetBytes(keyId)
+}
+
+func (o *ScLogEntry) GetInt(keyId int32) int64 {
+	//switch keyId {
+	//case KeyTimestamp:
+	//	return o.lines.Latest()
+	//}
+	return o.MapObject.GetInt(keyId)
 }
 
 func (o *ScLogEntry) GetTypeId(keyId int32) int32 {

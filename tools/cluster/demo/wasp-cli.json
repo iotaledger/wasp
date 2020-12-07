@@ -1,0 +1,10 @@
+{
+  "chain": "chain1",
+  "chains": {
+    "chain1": "kc1GooJ95saGJVsDSNXtGFo9fLqmLMB6nPNhmqDHRRFi"
+  },
+  "utxodb": true,
+  "wallet": {
+    "seed": "BJhHGksxhNSASpginpRPChaAADj4dgiBi1QPU4xtEMKC"
+  }
+}

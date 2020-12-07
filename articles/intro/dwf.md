@@ -170,20 +170,20 @@ For example, you may try the two types of requests implemented by the _DonateWit
 - The `withdraw` request allows the owner to take the iotas out from the smart contract account. 
 
 Let’s say address of our donation smart contract is `pxsUocho2dJQ8EX5PxHUHY7e4qfVmcu7K4dGRrrFrwaG`.
-Here are full sequence of commands to `wwallet` to donate some iotas to our project:
+Here are full sequence of commands to `wasp-cli` to donate some iotas to our project:
 
 Initialize your demo wallet.
 It will create the _wwallet.json_ file in the current directory with the private and public keys of the the address:
 
-`wwallet init`
+`wasp-cli init`
 
 Request some demo iotas from the Goshimmer’s faucet: 
 
-`wwallet request-funds`
+`wasp-cli request-funds`
 
 Check balance of your newly created wallet:
 
-`wwallet balance`
+`wasp-cli balance`
 
 It will display something like:
 ```
@@ -198,11 +198,11 @@ Now let the wallet know the specific address of our demo _DonateWithFeedback_
 smart contract instance (_dwf_ here stands for _DonateWithFeedback_, the command below associates 
 it with the specific address):
 
-`wwallet dwf set address pxsUocho2dJQ8EX5PxHUHY7e4qfVmcu7K4dGRrrFrwaG`
+`wasp-cli dwf set address pxsUocho2dJQ8EX5PxHUHY7e4qfVmcu7K4dGRrrFrwaG`
 
 Now we can send a `donate` request to the demo `DonateWithFeedback` smart contract instance:
 
-`wwallet dwf donate 42 “This is my first donation to the IOTA Smart Contract Project`  
+`wasp-cli dwf donate 42 “This is my first donation to the IOTA Smart Contract Project`  
 
 In approximately 15-20 seconds the dashboard of _DonateWithFeedback_ will show you the new state 
 of the smart contract: with 42 iotas more in the balance and your message in the log.
@@ -212,7 +212,7 @@ of the smart contract: with 42 iotas more in the balance and your message in the
 What is going on when the we send the request like the one aboveto the smart contract address? 
 Let's look at it step-by-step:
 
-1. The `wwallet` command creates a value transaction containing the smart contract request. 
+1. The `wasp-cli` command creates a value transaction containing the smart contract request. 
 It takes 42 iotas from the address of the wallet, signs the transaction with the private key of the wallet. 
 Then it posts it to the value tangle, i.e to Goshimmer node, running on the Pollen network. 
 (there's a bit more of a token manipulation behind scenes but we skip it here)

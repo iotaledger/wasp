@@ -2,10 +2,10 @@ package contract
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -62,8 +62,8 @@ func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
 	}
 }
 
-type Handler func(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error)
-type ViewHandler func(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error)
+type Handler func(ctx vmtypes.Sandbox) (dict.Dict, error)
+type ViewHandler func(ctx vmtypes.SandboxView) (dict.Dict, error)
 
 func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunctionInterface) {
 	i.Functions = Funcs(init, funcs)
@@ -98,7 +98,7 @@ func (f *ContractFunctionInterface) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return f
 }
 
-func (f *ContractFunctionInterface) Call(ctx vmtypes.Sandbox) (codec.ImmutableCodec, error) {
+func (f *ContractFunctionInterface) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if f.IsView() {
 		return nil, vmtypes.ErrWrongTypeEntryPoint
 	}
@@ -109,7 +109,7 @@ func (f *ContractFunctionInterface) Call(ctx vmtypes.Sandbox) (codec.ImmutableCo
 	return ret, err
 }
 
-func (f *ContractFunctionInterface) CallView(ctx vmtypes.SandboxView) (codec.ImmutableCodec, error) {
+func (f *ContractFunctionInterface) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !f.IsView() {
 		return nil, vmtypes.ErrWrongTypeEntryPoint
 	}

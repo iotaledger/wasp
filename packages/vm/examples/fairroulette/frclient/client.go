@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
@@ -155,9 +156,10 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transa
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestPlaceBet,
-		nil,
-		map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
-		map[string]interface{}{fairroulette.ReqVarColor: int64(color)},
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
+			Args:     codec.MakeDict(map[string]interface{}{fairroulette.ReqVarColor: int64(color)}),
+		},
 	)
 }
 
@@ -165,8 +167,8 @@ func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transactio
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,
-		nil,
-		nil,
-		map[string]interface{}{fairroulette.ReqVarPlayPeriodSec: int64(seconds)},
+		chainclient.PostRequestParams{
+			Args: codec.MakeDict(map[string]interface{}{fairroulette.ReqVarPlayPeriodSec: int64(seconds)}),
+		},
 	)
 }

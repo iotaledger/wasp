@@ -39,7 +39,7 @@ func TestEd25519(t *testing.T) {
 	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerLocs, peerPubs, peerSecs, 10000,
-		testutil.WithLevel(log, logger.LevelWarn),
+		testutil.WithLevel(log, logger.LevelWarn, true),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
@@ -92,7 +92,7 @@ func TestBn256(t *testing.T) {
 	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerLocs, peerPubs, peerSecs, 10000,
-		testutil.WithLevel(log, logger.LevelWarn),
+		testutil.WithLevel(log, logger.LevelWarn, true),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//

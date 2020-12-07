@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client/jsonable"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 )
 
 type Request struct {
@@ -196,47 +197,32 @@ func (r *QueryResult) MustBytes() []byte {
 }
 
 func (r *QueryResult) MustInt64() (int64, bool) {
-	b := r.MustBytes()
-	if b == nil {
-		return 0, false
-	}
-	n, err := codec.DecodeInt64(b)
+	n, ok, err := codec.DecodeInt64(r.MustBytes())
 	if err != nil {
 		panic(err)
 	}
-	return n, true
+	return n, ok
 }
 
 func (r *QueryResult) MustString() (string, bool) {
-	b := r.MustBytes()
-	if b == nil {
-		return "", false
-	}
-	return string(b), true
+	s, ok, _ := codec.DecodeString(r.MustBytes())
+	return s, ok
 }
 
 func (r *QueryResult) MustAddress() *address.Address {
-	b := r.MustBytes()
-	if b == nil {
-		return nil
-	}
-	addr, _, err := address.FromBytes(b)
+	v, _, err := codec.DecodeAddress(r.MustBytes())
 	if err != nil {
 		panic(err)
 	}
-	return &addr
+	return v
 }
 
 func (r *QueryResult) MustHashValue() *hashing.HashValue {
-	b := r.MustBytes()
-	if b == nil {
-		return nil
-	}
-	h, err := hashing.HashValueFromBytes(b)
+	v, _, err := codec.DecodeHashValue(r.MustBytes())
 	if err != nil {
 		panic(err)
 	}
-	return &h
+	return v
 }
 
 func (r *QueryResult) MustArrayResult() *ArrayResult {
@@ -297,7 +283,7 @@ func (r *Results) Get(key kv.Key) *QueryResult {
 	return r.byKey[key]
 }
 
-func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
+func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) {
 	key := kv.Key(q.Key)
 	switch q.Type {
 	case ValueTypeScalar:
@@ -314,7 +300,7 @@ func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
 			return nil, err
 		}
 
-		arr, err := vars.GetArray(key)
+		arr, err := datatypes.NewArray(vars, string(key))
 		if err != nil {
 			return nil, err
 		}
@@ -337,7 +323,7 @@ func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
 			return nil, err
 		}
 
-		m, err := vars.GetMap(key)
+		m, err := datatypes.NewMap(vars, string(key))
 		if err != nil {
 			return nil, err
 		}
@@ -359,7 +345,7 @@ func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
 			return nil, err
 		}
 
-		m, err := vars.GetMap(key)
+		m, err := datatypes.NewMap(vars, string(key))
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +366,7 @@ func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
 			return nil, err
 		}
 
-		tlog, err := vars.GetTimestampedLog(key)
+		tlog, err := datatypes.NewTimestampedLog(vars, key)
 		if err != nil {
 			return nil, err
 		}
@@ -407,7 +393,7 @@ func (q *KeyQuery) Execute(vars codec.MutableCodec) (*QueryResult, error) {
 			return nil, err
 		}
 
-		tlog, err := vars.GetTimestampedLog(key)
+		tlog, err := datatypes.NewTimestampedLog(vars, key)
 		if err != nil {
 			return nil, err
 		}

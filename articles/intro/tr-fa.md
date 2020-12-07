@@ -20,9 +20,9 @@ can be found [in repository](https://github.com/iotaledger/wasp/blob/develop/pac
 
 The following command mints 3 tokens into the same address of the wallet.
  
-`wwallet fa mint "My first 3 coins" 3`
+`wasp-cli fa mint "My first 3 coins" 3`
 
-With `fa` tag `wwallet` derives we are dealing with the `TokenRegistry`.
+With `fa` tag `wasp-cli` derives we are dealing with the `TokenRegistry`.
 The  command creates a transaction which contains wor things in it:
 - "minting" itself, assigning the new tag to 3 iotas asn sending them to the same address
 - the `mint` request to the _TokenRegistry_.
@@ -64,7 +64,7 @@ distributed marketplace where you can sell and buy tagged tokens for iotas in an
 
 In order to sell one of 3 tokens we minted above we can use the following command:
 
-`wwallet fa start-auction "my first auction" Fu5UEJ2SiJZdTUbS72NkQ9uyQPQtqMDJW4SodDdr5G1w 1 100 60` 
+`wasp-cli fa start-auction "my first auction" Fu5UEJ2SiJZdTUbS72NkQ9uyQPQtqMDJW4SodDdr5G1w 1 100 60` 
 
 The command will send request to the smart contract instance and it will start auction for 1 token of
 color `Fu5UEJ2SiJZdTUbS72NkQ9uyQPQtqMDJW4SodDdr5G1w` with minimum bid of 100 iotas and duration of 60 minutes.
@@ -78,7 +78,7 @@ auction closing time is over.
 
 Next 60 minutes anyone can place bids in the auction with commands like this:
 
-`wwallet fa place-bid Fu5UEJ2SiJZdTUbS72NkQ9uyQPQtqMDJW4SodDdr5G1w 120`
+`wasp-cli fa place-bid Fu5UEJ2SiJZdTUbS72NkQ9uyQPQtqMDJW4SodDdr5G1w 120`
 
 Upon expiration of the duration of the auction, the time-locked request will be unlocked and 
 auction will be closed by selecting first bidder with the highest bid as a winner. 

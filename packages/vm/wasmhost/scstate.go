@@ -1,6 +1,10 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/util"
@@ -10,17 +14,19 @@ type ScState struct {
 	MapObject
 	fields map[int32]int32
 	types  map[int32]int32
+	state  kv.KVStore
 }
 
-func (o *ScState) InitVM(vm *wasmProcessor, keyId int32) {
-	o.MapObject.InitVM(vm, keyId)
+func (o *ScState) InitObj(id int32, keyId int32, owner *ModelObject) {
+	o.MapObject.InitObj(id, keyId, owner)
 	o.fields = make(map[int32]int32)
 	o.types = make(map[int32]int32)
+	o.state = o.vm.State()
 }
 
 func (o *ScState) Exists(keyId int32) bool {
 	key := o.vm.GetKey(keyId)
-	return o.vm.State().Has(key)
+	return o.state.MustHas(key)
 }
 
 func (o *ScState) GetBytes(keyId int32) []byte {
@@ -28,7 +34,7 @@ func (o *ScState) GetBytes(keyId int32) []byte {
 		return []byte(nil)
 	}
 	key := o.vm.GetKey(keyId)
-	return o.vm.State().Get(key)
+	return o.state.MustGet(key)
 }
 
 func (o *ScState) GetInt(keyId int32) int64 {
@@ -36,7 +42,10 @@ func (o *ScState) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := o.vm.GetKey(keyId)
-	value, _ := o.vm.State().GetInt64(key)
+	value, _, err := codec.DecodeInt64(o.state.MustGet(key))
+	if err != nil {
+		panic(err)
+	}
 	return value
 }
 
@@ -44,7 +53,7 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	if !o.valid(keyId, typeId) {
 		return 0
 	}
-	var factory MapFactory
+	var factory ObjFactory
 	switch typeId {
 	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_STRING_ARRAY:
 		//note that type of array elements can be found by decrementing typeId
@@ -55,7 +64,7 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 		o.Error("GetObjectId: Invalid type")
 		return 0
 	}
-	return GetMapObjectId(o, keyId, typeId, MapFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: factory,
 	})
 }
@@ -65,7 +74,7 @@ func (o *ScState) GetString(keyId int32) string {
 		return ""
 	}
 	key := o.vm.GetKey(keyId)
-	value, _ := o.vm.State().GetString(key)
+	value, _, _ := codec.DecodeString(o.state.MustGet(key))
 	return value
 }
 
@@ -82,7 +91,7 @@ func (o *ScState) SetBytes(keyId int32, value []byte) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().Set(key, value)
+	o.state.Set(key, value)
 }
 
 func (o *ScState) SetInt(keyId int32, value int64) {
@@ -90,7 +99,7 @@ func (o *ScState) SetInt(keyId int32, value int64) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().SetInt64(key, value)
+	o.state.Set(key, codec.EncodeInt64(value))
 }
 
 func (o *ScState) SetString(keyId int32, value string) {
@@ -98,7 +107,7 @@ func (o *ScState) SetString(keyId int32, value string) {
 		return
 	}
 	key := o.vm.GetKey(keyId)
-	o.vm.ctx.State().SetString(key, value)
+	o.state.Set(key, codec.EncodeString(value))
 }
 
 func (o *ScState) valid(keyId int32, typeId int32) bool {
@@ -122,11 +131,10 @@ type ScStateArray struct {
 	typeId int32
 }
 
-func (a *ScStateArray) InitVM(vm *wasmProcessor, keyId int32) {
-	a.ArrayObject.InitVM(vm, 0)
-	key := vm.GetKey(keyId)
-	a.name = "state.array." + string(key)
-	a.items = vm.State().GetArray(key)
+func (a *ScStateArray) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ArrayObject.InitObj(id, keyId, owner)
+	key := a.vm.GetKey(keyId)
+	a.items = datatypes.NewMustArray(a.vm.State(), string(key))
 }
 
 func (a *ScStateArray) Exists(keyId int32) bool {
@@ -149,7 +157,10 @@ func (a *ScStateArray) GetInt(keyId int32) int64 {
 	if !a.valid(keyId, OBJTYPE_INT) {
 		return 0
 	}
-	value, _ := codec.DecodeInt64(a.items.GetAt(uint16(keyId)))
+	value, _, err := codec.DecodeInt64(a.items.GetAt(uint16(keyId)))
+	if err != nil {
+		panic(err)
+	}
 	return value
 }
 
@@ -227,11 +238,10 @@ type ScStateMap struct {
 	types map[int32]int32
 }
 
-func (m *ScStateMap) InitVM(vm *wasmProcessor, keyId int32) {
-	m.MapObject.InitVM(vm, 0)
-	key := vm.GetKey(keyId)
-	m.name = "state.map." + string(key)
-	m.items = vm.State().GetMap(key)
+func (m *ScStateMap) InitObj(id int32, keyId int32, owner *ModelObject) {
+	m.MapObject.InitObj(id, keyId, owner)
+	key := m.vm.GetKey(keyId)
+	m.items = datatypes.NewMustMap(m.vm.State(), string(key))
 	m.types = make(map[int32]int32)
 }
 
@@ -253,7 +263,10 @@ func (m *ScStateMap) GetInt(keyId int32) int64 {
 		return 0
 	}
 	key := []byte(m.vm.GetKey(keyId))
-	value, _ := codec.DecodeInt64(m.items.GetAt(key))
+	value, _, err := codec.DecodeInt64(m.items.GetAt(key))
+	if err != nil {
+		panic(err)
+	}
 	return value
 }
 

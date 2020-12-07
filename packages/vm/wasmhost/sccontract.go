@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 type ScContract struct {
@@ -10,9 +13,8 @@ func (o *ScContract) Exists(keyId int32) bool {
 
 func (o *ScContract) GetBytes(keyId int32) []byte {
 	switch keyId {
-	case KeyColor: //TODO
 	case KeyId:
-		id := o.vm.MyContractID()
+		id := o.vm.ContractID()
 		return id[:]
 	case KeyOwner:
 		id := o.vm.ctx.ChainOwnerID()
@@ -32,8 +34,6 @@ func (o *ScContract) GetString(keyId int32) string {
 
 func (o *ScContract) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyColor:
-		return OBJTYPE_BYTES
 	case KeyDescription:
 		return OBJTYPE_STRING
 	case KeyId:

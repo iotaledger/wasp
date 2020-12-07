@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 )
 
-func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*ContractRecord, error) {
+func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, error) {
 	if hname == Interface.Hname() {
 		return &RootContractRecord, nil
 	}
-	contractRegistry := state.GetMap(VarContractRegistry)
+	contractRegistry := datatypes.NewMustMap(state, VarContractRegistry)
 	retBin := contractRegistry.GetAt(hname.Bytes())
 	if retBin == nil {
 		return nil, fmt.Errorf("root: contract %s not found", hname)
@@ -22,16 +22,6 @@ func FindContract(state codec.ImmutableMustCodec, hname coretypes.Hname) (*Contr
 		return nil, fmt.Errorf("root: %v", err)
 	}
 	return ret, nil
-}
-
-func StoreContract(state codec.ImmutableMustCodec, rec *ContractRecord) error {
-	hname := coretypes.Hn(rec.Name)
-	contractRegistry := state.GetMap(VarContractRegistry)
-	if contractRegistry.HasAt(hname.Bytes()) {
-		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), rec.Name)
-	}
-	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
-	return nil
 }
 
 func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coretypes.Hname]*ContractRecord, error) {

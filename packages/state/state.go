@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
@@ -63,7 +64,7 @@ func (vs *virtualState) Clone() VirtualState {
 }
 
 func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
-	addr, ok, err := vs.Variables().Codec().GetAddress(vmconst.VarNameOwnerAddress)
+	addr, ok, err := codec.DecodeAddress(vs.Variables().MustGet(vmconst.VarNameOwnerAddress))
 	if !ok || err != nil {
 		return false
 	}
@@ -99,15 +100,15 @@ func (vs *virtualState) Timestamp() int64 {
 }
 
 // applies block of state updates. Increases state index
-func (vs *virtualState) ApplyBatch(batch Block) error {
+func (vs *virtualState) ApplyBlock(batch Block) error {
 	if !vs.empty {
 		if batch.StateIndex() != vs.blockIndex+1 {
-			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the state #%d",
+			return fmt.Errorf("ApplyBlock: block state index #%d can't be applied to the state #%d",
 				batch.StateIndex(), vs.blockIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
-			return fmt.Errorf("ApplyBatch: block state index #%d can't be applied to the empty state", batch.StateIndex())
+			return fmt.Errorf("ApplyBlock: block state index #%d can't be applied to the empty state", batch.StateIndex())
 		}
 	}
 	batch.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
@@ -183,6 +184,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	values := [][]byte{varStateData, batchData, solidStateValue}
 
 	// store processed request IDs
+	// TODO store request IDs in the 'log' contract
 	for _, rid := range b.RequestIDs() {
 		keys = append(keys, dbkeyRequest(rid))
 		values = append(values, []byte{0})

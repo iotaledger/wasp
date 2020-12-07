@@ -39,12 +39,10 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		"timestamp", task.Timestamp,
 		"state index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
-		"leader", task.LeaderPeerIndex,
 	)
-
 	vmctx, err := vmcontext.NewVMContext(task, txb)
 	if err != nil {
-		task.OnFinish(fmt.Errorf("runTask.createVMContext: %v", err))
+		task.OnFinish(nil, nil, fmt.Errorf("runTask.createVMContext: %v", err))
 		return
 	}
 	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
@@ -62,22 +60,22 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 	}
 	if len(stateUpdates) == 0 {
 		// should not happen
-		task.OnFinish(fmt.Errorf("RunVM: no state updates were produced"))
+		task.OnFinish(nil, nil, fmt.Errorf("RunVM: no state updates were produced"))
 		return
 	}
 
 	// create block from state updates.
 	task.ResultBlock, err = state.NewBlock(stateUpdates)
 	if err != nil {
-		task.OnFinish(fmt.Errorf("RunVM.NewBlock: %v", err))
+		task.OnFinish(nil, nil, fmt.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
 	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
 	// calculate resulting state hash
 	vsClone := task.VirtualState.Clone()
-	if err = vsClone.ApplyBatch(task.ResultBlock); err != nil {
-		task.OnFinish(fmt.Errorf("RunVM.ApplyBatch: %v", err))
+	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
+		task.OnFinish(nil, nil, fmt.Errorf("RunVM.ApplyBlock: %v", err))
 		return
 	}
 	stateHash := vsClone.Hash()
@@ -87,7 +85,7 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		vsClone.Timestamp(),
 	)
 	if err != nil {
-		task.OnFinish(fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
+		task.OnFinish(nil, nil, fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
 		return
 	}
 	// Note: can't take tx ID!!
@@ -98,5 +96,6 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		"result essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
 		"result tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
 	)
-	task.OnFinish(nil)
+	lastResult, lastErr := vmctx.LastCallResult()
+	task.OnFinish(lastResult, lastErr, nil)
 }

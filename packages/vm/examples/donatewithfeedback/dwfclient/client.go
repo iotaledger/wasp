@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
@@ -28,9 +29,10 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Tran
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
-		nil,
-		map[balance.Color]int64{balance.ColorIOTA: amount},
-		map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback},
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{balance.ColorIOTA: amount},
+			Args:     codec.MakeDict(map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback}),
+		},
 	)
 }
 
@@ -38,9 +40,9 @@ func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error)
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestWithdraw,
-		nil,
-		nil,
-		map[string]interface{}{donatewithfeedback.VarReqWithdrawSum: amount},
+		chainclient.PostRequestParams{
+			Args: codec.MakeDict(map[string]interface{}{donatewithfeedback.VarReqWithdrawSum: amount}),
+		},
 	)
 }
 

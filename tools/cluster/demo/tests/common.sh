@@ -6,11 +6,13 @@ err_report() {
 
 trap 'err_report $LINENO' ERR
 
-ARGS="$*"
-
-function wwallet() {
-	(PS4=; set -x; : wwallet -w $ARGS "$@")
-    command wwallet -w $ARGS "$@"
+function wasp-cli() {
+	(PS4=; set -x; : wasp-cli -w -d "$@")
+    command wasp-cli -w -d "$@"
 }
 
-rm -f wwallet.json owner.json
+rm -f wasp-cli.json owner.json
+
+if [ "$*" = "-u" ]; then
+	wasp-cli set utxodb true
+fi

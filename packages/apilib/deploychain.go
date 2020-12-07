@@ -2,6 +2,7 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"io"
 	"io/ioutil"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 )

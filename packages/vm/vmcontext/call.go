@@ -3,10 +3,12 @@ package vmcontext
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 var (
@@ -18,7 +20,7 @@ var (
 )
 
 // Call
-func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec, transfer coretypes.ColoredBalances) (codec.ImmutableCodec, error) {
+func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
 
 	rec, ok := vmctx.findContractByHname(contract)
@@ -36,6 +38,9 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
+		if epCode == coretypes.EntryPointInit {
+			return nil, fmt.Errorf("'init' entry point can't be a view")
+		}
 		// passing nil as transfer: calling to view should not have effect on chain ledger
 		if err := vmctx.pushCallContextWithTransfer(contract, params, nil); err != nil {
 			return nil, err
@@ -48,7 +53,22 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 		return nil, err
 	}
 	defer vmctx.popCallContext()
+
+	// prevent calling 'init' not from root contract or not while initializing root
+	if epCode == coretypes.EntryPointInit && contract != root.Interface.Hname() {
+		if !vmctx.callerIsRoot() {
+			return nil, fmt.Errorf("attempt to call init not from root contract")
+		}
+	}
 	return ep.Call(NewSandbox(vmctx))
+}
+
+func (vmctx *VMContext) callerIsRoot() bool {
+	caller := vmctx.Caller()
+	if caller.IsAddress() {
+		return false
+	}
+	return caller.MustContractID().Hname() == root.Interface.Hname()
 }
 
 // mustCallFromRequest is called for each request from the VM loop
@@ -65,9 +85,9 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	}
 
 	// call contract from request context
-	_, err = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
+	vmctx.lastResult, vmctx.lastError = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
 
-	switch err {
+	switch vmctx.lastError {
 	case nil:
 		return
 	case ErrContractNotFound, ErrEntryPointNotFound, ErrProcessorNotFound:
@@ -76,7 +96,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 		// TODO more sophisticated policy
 		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), remaining)
 	default:
-		vmctx.log.Errorf("mustCallFromRequest: %v reqid: %s", err, vmctx.reqRef.RequestID().String())
+		vmctx.log.Errorf("mustCallFromRequest.error: %v reqid: %s", vmctx.lastError, vmctx.reqRef.RequestID().String())
 	}
 }
 
@@ -96,7 +116,7 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
 	if vmctx.contractRecord.NodeFee == 0 {
-		fmt.Printf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
+		vmctx.log.Debugf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
 		// if no fees enabled, accrue the token to the caller
 		fee := map[balance.Color]int64{
 			balance.ColorIOTA: 1,
@@ -128,6 +148,6 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	return cbalances.NewFromMap(remaining), nil
 }
 
-func (vmctx *VMContext) Params() codec.ImmutableCodec {
+func (vmctx *VMContext) Params() dict.Dict {
 	return vmctx.getCallContext().params
 }

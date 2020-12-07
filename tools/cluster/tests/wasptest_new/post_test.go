@@ -1,18 +1,21 @@
 package wasptest
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func deployInccounter42(t *testing.T, name string, counter int64) coretypes.ContractID {
@@ -26,11 +29,11 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 	})
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
+	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := state.GetMap(root.VarContractRegistry)
+		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		crBytes := contractRegistry.GetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
@@ -44,8 +47,8 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 		return true
 	})
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state codec.ImmutableMustCodec) bool {
-		counterValue, _ := state.GetInt64(inccounter.VarCounter)
+	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
@@ -82,8 +85,7 @@ func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 	)
 	check(err, t)
 
-	c := codec.NewMustCodec(ret)
-	counter, _ := c.GetInt64(inccounter.VarCounter)
+	counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	check(err, t)
 
 	return counter
@@ -116,9 +118,9 @@ func TestPost1Request(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
+	tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
@@ -143,16 +145,16 @@ func TestPost3Recursive(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncAndRepeatMany, nil,
-		map[balance.Color]int64{
+	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
+		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: 1, // needs 1 iota for recursive calls
 		},
-		codec.EncodeDictFromMap(map[string]interface{}{
+		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
-	)
+	})
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
@@ -181,32 +183,14 @@ func TestPost5Requests(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx1, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx1, 30*time.Second)
-	check(err, t)
-
-	tx2, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx2, 30*time.Second)
-	check(err, t)
-
-	tx3, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx3, 30*time.Second)
-	check(err, t)
-
-	tx4, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx4, 30*time.Second)
-	check(err, t)
-
-	tx5, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx5, 30*time.Second)
-	check(err, t)
+	for i := 0; i < 5; i++ {
+		tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
+		check(err, t)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		check(err, t)
+	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
 	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)
@@ -236,29 +220,20 @@ func TestPost5AsyncRequests(t *testing.T) {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx1, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	tx2, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	tx3, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	tx4, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
-	tx5, err := myClient.PostRequest(contractID.Hname(), inccounter.EntryPointIncCounter, nil, nil, nil)
-	check(err, t)
+	tx := [5]*sctransaction.Transaction{}
+	var err error
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx1, 30*time.Second)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx2, 30*time.Second)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx3, 30*time.Second)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx4, 30*time.Second)
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx5, 30*time.Second)
-	check(err, t)
+	for i := 0; i < 5; i++ {
+		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter)
+		check(err, t)
+	}
+
+	for i := 0; i < 5; i++ {
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx[i], 30*time.Second)
+		check(err, t)
+	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
 	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)

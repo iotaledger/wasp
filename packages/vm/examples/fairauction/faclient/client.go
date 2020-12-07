@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 )
@@ -45,7 +46,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	status := &Status{SCStatus: scStatus}
 
 	ownerMargin, ok := results.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
-	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok)
+	status.OwnerMarginPromille = fairauction.GetOwnerMarginPromille(ownerMargin, ok, nil)
 
 	auctions := results.Get(fairauction.VarStateAuctions).MustMapResult()
 	status.AuctionsLen = auctions.Len
@@ -65,9 +66,9 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
-		nil,
-		nil,
-		map[string]interface{}{fairauction.VarReqOwnerMargin: margin},
+		chainclient.PostRequestParams{
+			Args: codec.MakeDict(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
+		},
 	)
 }
 
@@ -83,7 +84,7 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 		}
 		ownerMarginState, ok = res.Get(fairauction.VarStateOwnerMarginPromille).MustInt64()
 	}
-	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok)
+	ownerMargin := fairauction.GetOwnerMarginPromille(ownerMarginState, ok, nil)
 	fee := fairauction.GetExpectedDeposit(minimumBid, ownerMargin)
 	return fee, nil
 }
@@ -102,16 +103,17 @@ func (fc *FairAuctionClient) StartAuction(
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestStartAuction,
-		nil,
-		map[balance.Color]int64{
-			balance.ColorIOTA: fee,
-			*color:            tokensForSale,
-		},
-		map[string]interface{}{
-			fairauction.VarReqAuctionColor:                color.String(),
-			fairauction.VarReqStartAuctionDescription:     description,
-			fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
-			fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{
+				balance.ColorIOTA: fee,
+				*color:            tokensForSale,
+			},
+			Args: codec.MakeDict(map[string]interface{}{
+				fairauction.VarReqAuctionColor:                color.String(),
+				fairauction.VarReqStartAuctionDescription:     description,
+				fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
+				fairauction.VarReqStartAuctionDurationMinutes: durationMinutes,
+			}),
 		},
 	)
 }
@@ -120,8 +122,9 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestPlaceBid,
-		nil,
-		map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-		map[string]interface{}{fairauction.VarReqAuctionColor: color.String()},
+		chainclient.PostRequestParams{
+			Transfer: map[balance.Color]int64{balance.ColorIOTA: amountIotas},
+			Args:     codec.MakeDict(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
+		},
 	)
 }

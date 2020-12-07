@@ -2,6 +2,7 @@ package root
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -35,6 +36,7 @@ func init() {
 		contract.Func(FuncDeployContract, deployContract),
 		contract.ViewFunc(FuncFindContract, findContract),
 		contract.Func(FuncChangeChainOwner, changeChainOwner),
+		contract.Func(FuncAllowChangeChainOwner, allowChangeChainOwner),
 		contract.ViewFunc(FuncGetInfo, getInfo),
 	})
 }
@@ -44,6 +46,7 @@ const (
 	VarStateInitialized = "i"
 	VarChainID          = "c"
 	VarChainOwnerID     = "o"
+	VarChainOwnerIDNext = "n"
 	VarContractRegistry = "r"
 	VarDescription      = "d"
 )
@@ -56,16 +59,16 @@ const (
 	ParamDescription = "$$description$$"
 	ParamHname       = "$$hname$$"
 	ParamName        = "$$name$$"
-	ParamHash        = "$$hash$$"
 	ParamData        = "$$data$$"
 )
 
 // function names
 const (
-	FuncDeployContract   = "deployContract"
-	FuncFindContract     = "findContract"
-	FuncGetInfo          = "getInfo"
-	FuncChangeChainOwner = "changeChainOwner"
+	FuncDeployContract        = "deployContract"
+	FuncFindContract          = "findContract"
+	FuncGetInfo               = "getInfo"
+	FuncAllowChangeChainOwner = "allowChangeChainOwner"
+	FuncChangeChainOwner      = "changeChainOwner"
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -78,6 +81,7 @@ type ContractRecord struct {
 	Description string
 	Name        string
 	NodeFee     int64 // minimum node fee
+	Creator     coretypes.AgentID
 }
 
 // serde
@@ -92,6 +96,9 @@ func (p *ContractRecord) Write(w io.Writer) error {
 		return err
 	}
 	if err := util.WriteInt64(w, p.NodeFee); err != nil {
+		return err
+	}
+	if _, err := w.Write(p.Creator[:]); err != nil {
 		return err
 	}
 	return nil
@@ -109,6 +116,9 @@ func (p *ContractRecord) Read(r io.Reader) error {
 		return err
 	}
 	if err := util.ReadInt64(r, &p.NodeFee); err != nil {
+		return err
+	}
+	if err := coretypes.ReadAgentID(r, &p.Creator); err != nil {
 		return err
 	}
 	return nil

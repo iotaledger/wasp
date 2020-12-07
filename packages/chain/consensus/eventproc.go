@@ -147,31 +147,31 @@ func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 
 // EventResultCalculated VM goroutine finished run and posted this message
 // the action is to send the result to the leader
-func (op *operator) EventResultCalculated(ctx *vm.VMTask) {
+func (op *operator) EventResultCalculated(ctx *chain.VMResultMsg) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
-	if ctx.ResultBlock.StateIndex() != op.mustStateIndex()+1 {
+	if ctx.Task.ResultBlock.StateIndex() != op.mustStateIndex()+1 {
 		// out of context. ignore
 		return
 	}
 	op.log.Debugw("eventResultCalculated",
-		"batch size", ctx.ResultBlock.Size(),
+		"batch size", ctx.Task.ResultBlock.Size(),
 		"blockIndex", op.mustStateIndex(),
 	)
 
 	// inform state manager about new result batch
 	go func() {
 		op.chain.ReceiveMessage(chain.PendingBlockMsg{
-			Block: ctx.ResultBlock,
+			Block: ctx.Task.ResultBlock,
 		})
 	}()
 
 	// save own result or send to the leader
-	if ctx.LeaderPeerIndex == op.chain.OwnPeerIndex() {
-		op.saveOwnResult(ctx)
+	if ctx.Leader == op.chain.OwnPeerIndex() {
+		op.saveOwnResult(ctx.Task)
 	} else {
-		op.sendResultToTheLeader(ctx)
+		op.sendResultToTheLeader(ctx.Task, ctx.Leader)
 	}
 	op.takeAction()
 }

@@ -2,12 +2,12 @@ package viewcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
@@ -18,26 +18,31 @@ import (
 
 type viewcontext struct {
 	processors *processors.ProcessorCache
-	state      buffered.BufferedKVStore
+	state      kv.KVStore //buffered.BufferedKVStore
 	chainID    coretypes.ChainID
 }
 
-func New(chain chain.Chain) (*viewcontext, error) {
-	state, _, ok, err := state.LoadSolidState(chain.ID())
+func NewFromDB(chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
+	state_, _, ok, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("State not found for chain %s", chain.ID())
+		return nil, fmt.Errorf("solid state not found for chain %s", chainID.String())
 	}
-	return &viewcontext{
-		processors: chain.Processors(),
-		state:      state.Variables(),
-		chainID:    *chain.ID(),
-	}, nil
+	return New(chainID, state_.Variables(), proc, nil), nil
 }
 
-func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params codec.ImmutableCodec) (codec.ImmutableCodec, error) {
+func New(chainID coretypes.ChainID, state kv.KVStore, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
+	logProvided = logSet
+	return &viewcontext{
+		processors: proc,
+		state:      state,
+		chainID:    chainID,
+	}
+}
+
+func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	rec, err := root.FindContract(contractStateSubpartition(v.state, root.Interface.Hname()), contractHname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
@@ -65,6 +70,6 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 	return ep.CallView(newSandboxView(v, coretypes.NewContractID(v.chainID, contractHname), params))
 }
 
-func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) codec.ImmutableMustCodec {
-	return codec.NewMustCodec(subrealm.New(state, kv.Key(contractHname.Bytes())))
+func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStore {
+	return subrealm.New(state, kv.Key(contractHname.Bytes()))
 }

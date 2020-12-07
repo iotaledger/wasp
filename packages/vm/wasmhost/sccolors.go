@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
@@ -45,12 +48,12 @@ func (a *ScColors) loadColors() {
 	if a.colors != nil {
 		return
 	}
-	balances := a.vm.MyBalances()
+	balances := a.vm.Balances()
 	if a.requestOnly {
 		if a.vm.ctx == nil {
 			return
 		}
-		balances = a.vm.ctx.Accounts().Incoming()
+		balances = a.vm.ctx.IncomingTransfer()
 	}
 	balances.IterateDeterministic(func(color balance.Color, amount int64) bool {
 		a.colors = append(a.colors, color)

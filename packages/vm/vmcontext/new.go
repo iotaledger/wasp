@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -33,6 +33,8 @@ type VMContext struct {
 	contractRecord *root.ContractRecord
 	timestamp      int64
 	stateUpdate    state.StateUpdate // mutated
+	lastError      error             // mutated
+	lastResult     dict.Dict         // mutated. Used only by 'alone'
 	callStack      []*callContext
 }
 
@@ -40,7 +42,7 @@ type callContext struct {
 	isRequestContext bool                      // is called from the request (true) or from another SC (false)
 	caller           coretypes.AgentID         // calling agent
 	contract         coretypes.Hname           // called contract
-	params           codec.ImmutableCodec      // params passed
+	params           dict.Dict                 // params passed
 	transfer         coretypes.ColoredBalances // transfer passed
 }
 
@@ -61,4 +63,8 @@ func NewVMContext(task *vm.VMTask, txb *statetxbuilder.Builder) (*VMContext, err
 		callStack:    make([]*callContext, 0),
 	}
 	return ret, nil
+}
+
+func (vmctx *VMContext) LastCallResult() (dict.Dict, error) {
+	return vmctx.lastResult, vmctx.lastError
 }
