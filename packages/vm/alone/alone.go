@@ -111,7 +111,9 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
 
-	_, err = env.runRequest(initTx)
+	err = env.UtxoDB.AddTransaction(initTx.Transaction)
+	require.NoError(t, err)
+	_, err = env.runRequest([]sctransaction.RequestRef{{Tx: initTx, Index: 0}})
 	require.NoError(t, err)
 	return env
 }

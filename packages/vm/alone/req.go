@@ -1,6 +1,7 @@
 package alone
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"sync"
 	"time"
 )
@@ -61,23 +63,19 @@ func (r *callParams) WithParams(params ...interface{}) *callParams {
 	return r
 }
 
-func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Dict, error) {
-	err := e.UtxoDB.AddTransaction(reqTx.Transaction)
-	require.NoError(e.T, err)
-
-	reqRef := sctransaction.RequestRef{Tx: reqTx}
+func (e *aloneEnvironment) runRequest(batch []sctransaction.RequestRef) (dict.Dict, error) {
 	task := &vm.VMTask{
 		Processors:   e.Proc,
 		ChainID:      e.ChainID,
 		Color:        e.ChainColor,
 		Entropy:      *hashing.RandomHash(nil),
 		Balances:     waspconn.OutputsToBalances(e.UtxoDB.GetAddressOutputs(e.ChainAddress)),
-		Requests:     []sctransaction.RequestRef{reqRef},
+		Requests:     batch,
 		Timestamp:    time.Now().UnixNano() + 1,
 		VirtualState: e.State.Clone(),
 		Log:          e.Log,
 	}
-
+	var err error
 	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
@@ -109,9 +107,17 @@ func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Di
 	e.State = task.VirtualState
 
 	newBlockIndex := e.State.BlockIndex()
-	e.Infof("state transition #%d --> #%d. Req: %s", prevBlockIndex, newBlockIndex, reqRef.RequestID().String())
 
+	e.Infof("state transition #%d --> #%d. Batch: %s", prevBlockIndex, newBlockIndex, batchShortStr(batch))
 	return callRes, callErr
+}
+
+func batchShortStr(batch []sctransaction.RequestRef) string {
+	ret := make([]string, len(batch))
+	for i, r := range batch {
+		ret[i] = r.RequestID().Short()
+	}
+	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }
 
 func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
@@ -132,7 +138,11 @@ func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signatureschem
 	require.NoError(e.T, err)
 
 	tx.Sign(sigScheme)
-	return e.runRequest(tx)
+	err = e.UtxoDB.AddTransaction(tx.Transaction)
+	if err != nil {
+		return nil, err
+	}
+	return e.runRequest([]sctransaction.RequestRef{{Tx: tx, Index: 0}})
 }
 
 func (e *aloneEnvironment) CallView(req *callParams) (dict.Dict, error) {
