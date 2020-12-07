@@ -23,8 +23,12 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 	return nil
 }
 
+const traceStack = false
+
 func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) {
-	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
+	if traceStack {
+		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
+	}
 	var caller coretypes.AgentID
 	isRequestContext := len(vmctx.callStack) == 0
 	if isRequestContext {
@@ -33,7 +37,9 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Di
 	} else {
 		caller = coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
 	}
-	vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
+	if traceStack {
+		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
+	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
 		caller:           caller,
@@ -44,7 +50,9 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Di
 }
 
 func (vmctx *VMContext) popCallContext() {
-	vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
+	if traceStack {
+		vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
+	}
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
 }
 

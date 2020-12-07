@@ -28,11 +28,13 @@ type callParams struct {
 	params     dict.Dict
 }
 
-func NewCall(target, ep string) *callParams {
-	return &callParams{
+func NewCall(target, ep string, params ...interface{}) *callParams {
+	ret := &callParams{
 		target:     coretypes.Hn(target),
 		entryPoint: coretypes.Hn(ep),
 	}
+	ret.withParams(params...)
+	return ret
 }
 
 func (r *callParams) WithTransfer(transfer map[balance.Color]int64) *callParams {
@@ -58,12 +60,16 @@ func toMap(params ...interface{}) map[string]interface{} {
 	return par
 }
 
-func (r *callParams) WithParams(params ...interface{}) *callParams {
+func (r *callParams) withParams(params ...interface{}) *callParams {
 	r.params = codec.MakeDict(toMap(params...))
 	return r
 }
 
-func (e *aloneEnvironment) runRequest(batch []sctransaction.RequestRef) (dict.Dict, error) {
+func (e *AloneEnvironment) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
+	e.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
+	e.runVMMutex.Lock()
+	defer e.runVMMutex.Unlock()
+
 	task := &vm.VMTask{
 		Processors:   e.Proc,
 		ChainID:      e.ChainID,
@@ -108,7 +114,16 @@ func (e *aloneEnvironment) runRequest(batch []sctransaction.RequestRef) (dict.Di
 
 	newBlockIndex := e.State.BlockIndex()
 
-	e.Infof("state transition #%d --> #%d. Batch: %s", prevBlockIndex, newBlockIndex, batchShortStr(batch))
+	e.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
+		prevBlockIndex, newBlockIndex, batchShortStr(batch), len(e.StateTx.Requests()))
+
+	e.chPosted.Add(len(e.StateTx.Requests()))
+	for i := range e.StateTx.Requests() {
+		e.chInRequest <- sctransaction.RequestRef{
+			Tx:    task.ResultTransaction,
+			Index: uint16(i),
+		}
+	}
 	return callRes, callErr
 }
 
@@ -120,7 +135,7 @@ func batchShortStr(batch []sctransaction.RequestRef) string {
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }
 
-func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+func (e *AloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
 		sigScheme = e.OriginatorSigScheme
 	}
@@ -142,10 +157,13 @@ func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signatureschem
 	if err != nil {
 		return nil, err
 	}
-	return e.runRequest([]sctransaction.RequestRef{{Tx: tx, Index: 0}})
+	return e.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (e *aloneEnvironment) CallView(req *callParams) (dict.Dict, error) {
+func (e *AloneEnvironment) CallView(req *callParams) (dict.Dict, error) {
+	e.runVMMutex.Lock()
+	defer e.runVMMutex.Unlock()
+
 	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.Proc, e.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
