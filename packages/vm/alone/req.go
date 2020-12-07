@@ -173,3 +173,29 @@ func (e *Env) CallView(req *callParams) (dict.Dict, error) {
 	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.Proc, e.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
+
+func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {
+	maxDurationSet := len(maxWait) > 0
+	var deadline time.Time
+	if maxDurationSet {
+		deadline = time.Now().Add(maxWait[0])
+	}
+	counter := 0
+	for {
+		if counter%40 == 0 {
+			e.Log.Infof("backlog length = %d", e.backlogLen())
+		}
+		counter++
+		if e.backlogLen() > 0 {
+			time.Sleep(50 * time.Millisecond)
+			if maxDurationSet && deadline.Before(time.Now()) {
+				e.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+			}
+		} else {
+			time.Sleep(10 * time.Millisecond)
+			if e.backlogLen() == 0 {
+				break
+			}
+		}
+	}
+}

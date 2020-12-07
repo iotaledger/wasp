@@ -171,8 +171,6 @@ func (e *Env) collateBatch() []sctransaction.RequestRef {
 func (e *Env) runBatchLoop() {
 	for {
 		batch := e.collateBatch()
-		//e.Log.Infof("collateBatch. batch: %d remainsTimeLocked: %v", len(batch), remainsTimelocked)
-
 		if len(batch) > 0 {
 			_, err := e.runBatch(batch, "runBatchLoop")
 			if err != nil {
@@ -189,30 +187,4 @@ func (e *Env) backlogLen() int {
 	e.backlogMutex.Lock()
 	defer e.backlogMutex.Unlock()
 	return len(e.backlog)
-}
-
-func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {
-	maxDurationSet := len(maxWait) > 0
-	var deadline time.Time
-	if maxDurationSet {
-		deadline = time.Now().Add(maxWait[0])
-	}
-	counter := 0
-	for {
-		if counter%40 == 0 {
-			e.Log.Infof("backlog length = %d", e.backlogLen())
-		}
-		counter++
-		if e.backlogLen() > 0 {
-			time.Sleep(50 * time.Millisecond)
-			if maxDurationSet && deadline.Before(time.Now()) {
-				e.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
-			}
-		} else {
-			time.Sleep(10 * time.Millisecond)
-			if e.backlogLen() == 0 {
-				break
-			}
-		}
-	}
 }
