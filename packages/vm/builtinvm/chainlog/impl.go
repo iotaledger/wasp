@@ -25,6 +25,8 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	log.Append(ctx.GetTimestamp(), logData)
 
+	ctx.Eventf("---------------------------")
+
 	return nil, nil
 }
 
