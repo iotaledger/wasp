@@ -2,7 +2,7 @@ package registry
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/packages/parameters"
 	flag "github.com/spf13/pflag"
 )
 
@@ -17,7 +17,7 @@ func InitFlags() {
 
 func GetFeeDestination(scaddr *address.Address) address.Address {
 	//TODO
-	ret, err := address.FromBase58(config.Node.GetString(CfgRewardAddress))
+	ret, err := address.FromBase58(parameters.GetString(CfgRewardAddress))
 	if err != nil {
 		ret = address.Address{}
 	}

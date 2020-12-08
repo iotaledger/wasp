@@ -4,27 +4,34 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/hive.go/parameter"
 	flag "github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 // PluginName is the name of the config plugin.
 const PluginName = "Config"
 
+const (
+	// CfgDisablePlugins contains the name of the parameter that allows to manually disable node plugins.
+	CfgDisablePlugins = "node.disablePlugins"
+
+	// CfgEnablePlugins contains the name of the parameter that allows to manually enable node plugins.
+	CfgEnablePlugins = "node.enablePlugins"
+)
+
 var (
 	Plugin *node.Plugin
 
 	// Node is viper
-	Node *viper.Viper
+	Node *configuration.Configuration
 )
 
 func Init() *node.Plugin {
 	Plugin = node.NewPlugin(PluginName, node.Enabled)
 	// set the default logger config
-	Node = viper.New()
+	Node = configuration.New()
 
 	Plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
 		if skipConfigAvailable, err := fetch(false); err != nil {
@@ -49,35 +56,41 @@ func Init() *node.Plugin {
 // and ending with: .json, .toml, .yaml or .yml (in this sequence).
 func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) (bool, error) {
 	// flags
-	configName := flag.StringP("config", "c", "config", "Filename of the config file without the file extension")
-	configDirPath := flag.StringP("config-dir", "d", ".", "Path to the directory containing the config file")
+	configFilePath := flag.StringP("config", "c", "config.json", "File path of the config file")
 	skipConfigAvailable := flag.Bool("skip-config", false, "Skip config file availability check")
 
 	flag.Parse()
 
-	err := parameter.LoadConfigFile(Node, *configDirPath, *configName, true, *skipConfigAvailable)
+	err := Node.LoadFile(*configFilePath)
 	if err != nil {
 		return *skipConfigAvailable, err
 	}
 
-	if printConfig {
-		parameter.PrintConfig(Node, ignoreSettingsAtPrint...)
+	if err := Node.LoadFlagSet(flag.CommandLine); err != nil {
+		return *skipConfigAvailable, err
 	}
 
-	for _, pluginName := range Node.GetStringSlice(node.CFG_DISABLE_PLUGINS) {
+	// read in ENV variables
+	// load the env vars after default values from flags were set (otherwise the env vars are not added because the keys don't exist)
+	if err := Node.LoadEnvironmentVars(""); err != nil {
+		return *skipConfigAvailable, err
+	}
+
+	// load the flags again to overwrite env vars that were also set via command line
+	if err := Node.LoadFlagSet(flag.CommandLine); err != nil {
+		return *skipConfigAvailable, err
+	}
+
+	if printConfig {
+		Node.Print(ignoreSettingsAtPrint...)
+	}
+
+	for _, pluginName := range Node.Strings(CfgDisablePlugins) {
 		node.DisabledPlugins[node.GetPluginIdentifier(pluginName)] = true
 	}
-	for _, pluginName := range Node.GetStringSlice(node.CFG_ENABLE_PLUGINS) {
+	for _, pluginName := range Node.Strings(CfgEnablePlugins) {
 		node.EnabledPlugins[node.GetPluginIdentifier(pluginName)] = true
 	}
 
 	return *skipConfigAvailable, nil
-}
-
-func Dump() map[string]interface{} {
-	r := make(map[string]interface{})
-	for _, k := range Node.AllKeys() {
-		r[k] = Node.Get(k)
-	}
-	return r
 }
