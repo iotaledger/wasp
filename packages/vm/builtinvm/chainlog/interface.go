@@ -3,6 +3,7 @@ package log
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
+	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -26,6 +27,8 @@ func init() {
 		contract.Func(FuncStoreLog, storeLog),
 		contract.ViewFunc(FuncGetLog, getLogInfo),
 	})
+	examples.AddProcessor(Interface.ProgramHash, Interface)
+
 }
 
 const (
@@ -42,7 +45,7 @@ const (
 	FuncGetLog   = "getLogInfo"
 	FuncStoreLog = "storeLog"
 
-	LogName = "logs"
+	VarLogName = "logs"
 )
 
 func GetProcessor() vmtypes.Processor {
