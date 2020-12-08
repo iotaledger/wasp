@@ -64,7 +64,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		return nil, err
 	}
 
-	results := host.FindSubObject(nil, "results", OBJTYPE_MAP).(*ScMutableDict).Dict
+	results := host.FindSubObject(nil, KeyResults, OBJTYPE_MAP).(*ScMutableDict).Dict
 	return results, nil
 }
 
