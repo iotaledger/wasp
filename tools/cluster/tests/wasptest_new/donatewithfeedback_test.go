@@ -40,10 +40,10 @@ func TestDwfDonateOnce(t *testing.T) {
 	total, _, err := codec.DecodeInt64(ret.MustGet("total"))
 	check(err, t)
 	require.EqualValues(t, 42*numDonations, total)
-    donations := datatypes.NewMustArray(ret,"donations")
-    for i:=uint16(0); i < donations.Len(); i++ {
-    	donation := donations.GetAt(i)
-    	_ = donation
+	donations := datatypes.NewMustArray(ret, "donations")
+	for i := uint16(0); i < donations.Len(); i++ {
+		donation := donations.GetAt(i)
+		_ = donation
 		check(err, t)
 	}
 	////TODO make sure record encoding is the same
@@ -102,6 +102,7 @@ func TestDwfDonateOnce(t *testing.T) {
 	//	t.Fail()
 	//}
 }
+
 //
 //func TestDwfDonateNTimes(t *testing.T) {
 //	const numDonations = 5

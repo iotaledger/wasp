@@ -13,6 +13,9 @@ func (o *ScContract) Exists(keyId int32) bool {
 
 func (o *ScContract) GetBytes(keyId int32) []byte {
 	switch keyId {
+	case KeyChain:
+		id := o.vm.ctx.ChainID()
+		return id[:]
 	case KeyId:
 		id := o.vm.ContractID()
 		return id[:]
@@ -34,10 +37,12 @@ func (o *ScContract) GetString(keyId int32) string {
 
 func (o *ScContract) GetTypeId(keyId int32) int32 {
 	switch keyId {
+	case KeyChain:
+		return OBJTYPE_BYTES
 	case KeyDescription:
 		return OBJTYPE_STRING
 	case KeyId:
-		return OBJTYPE_STRING
+		return OBJTYPE_BYTES
 	case KeyName:
 		return OBJTYPE_STRING
 	case KeyOwner:

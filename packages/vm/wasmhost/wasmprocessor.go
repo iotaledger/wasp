@@ -6,6 +6,7 @@ package wasmhost
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -26,7 +27,7 @@ func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
 	host.vm = vm
 	host.scContext = NewScContext(host)
-	host.Init(NewNullObject(host), host.scContext, &keyMap, host)
+	host.Init(NewNullObject(host), host.scContext, host)
 	err := host.InitVM(vm)
 	if err != nil {
 		return nil, err
@@ -114,6 +115,13 @@ func (host *wasmProcessor) IsView() bool {
 }
 
 func (host *wasmProcessor) SetExport(index int32, functionName string) {
+	if index < 0 {
+		host.LogText(functionName + " = " + strconv.Itoa(int(index)))
+		if index != KeyZzzzzzz {
+			host.SetError("SetExport: predefined key value mismatch")
+		}
+		return
+	}
 	_, ok := host.funcToCode[functionName]
 	if ok {
 		host.SetError("SetExport: duplicate function name")
