@@ -32,7 +32,6 @@ func TestFail(t *testing.T) {
 }
 
 func TestFailRepeat(t *testing.T) {
-	t.SkipNow()
 	e := alone.New(t, false, false)
 	err := e.DeployWasmContract(nil, contractName, fileName,
 		"failParam", 1,

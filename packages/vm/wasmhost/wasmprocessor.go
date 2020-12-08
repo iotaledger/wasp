@@ -4,7 +4,6 @@
 package wasmhost
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -63,10 +62,6 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	err := host.RunScFunction(host.function)
 	if err != nil {
 		return nil, err
-	}
-
-	if host.HasError() {
-		return nil, errors.New(host.WasmHost.error)
 	}
 
 	results := host.FindSubObject(nil, "results", OBJTYPE_MAP).(*ScMutableDict).Dict
