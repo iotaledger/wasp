@@ -50,7 +50,6 @@ func check(err error, t *testing.T) {
 func deployContract(wasmName string, scDescription string, initParams map[string]interface{}) error {
 	wasmPath := wasmName + "_bg.wasm"
 	if *useGo {
-		fmt.Println("Using Go Wasm SC instead of Rust Wasm SC")
 		time.Sleep(time.Second)
 		wasmPath = wasmName + "_go.wasm"
 	}
