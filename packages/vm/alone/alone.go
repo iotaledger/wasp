@@ -9,6 +9,7 @@
 // It does not use Wasp plugins, committees, consensus, state manager, database, peer and node communications.
 // It uses in-memory DB for virtual state and UTXODB to mock the ledger.
 // It deploys default chain and all builtin contracts
+// It allows self-posting of requests, with or without time locks, however only supports one chain
 package alone
 
 import (
@@ -32,9 +33,10 @@ import (
 	"go.uber.org/zap/zapcore"
 	"sync"
 	"testing"
+	"time"
 )
 
-type aloneEnvironment struct {
+type Env struct {
 	T                   *testing.T
 	ChainSigScheme      signaturescheme.SignatureScheme
 	OriginatorSigScheme signaturescheme.SignatureScheme
@@ -48,11 +50,19 @@ type aloneEnvironment struct {
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
 	Log                 *logger.Logger
+	// related to asynchronous backlog processing
+	runVMMutex   *sync.Mutex
+	chPosted     sync.WaitGroup
+	chInRequest  chan sctransaction.RequestRef
+	backlog      []sctransaction.RequestRef
+	backlogMutex *sync.Mutex
+	batch        []*sctransaction.RequestRef
+	batchMutex   *sync.Mutex
 }
 
 var regOnce sync.Once
 
-func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
+func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chainID := coretypes.ChainID(chSig.Address())
@@ -67,7 +77,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 		}
 	})
 
-	env := &aloneEnvironment{
+	env := &Env{
 		T:                   t,
 		ChainSigScheme:      chSig,
 		OriginatorSigScheme: orSig,
@@ -79,6 +89,13 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
 		Log:                 log,
+		//
+		runVMMutex:   &sync.Mutex{},
+		chInRequest:  make(chan sctransaction.RequestRef),
+		backlog:      make([]sctransaction.RequestRef, 0),
+		backlogMutex: &sync.Mutex{},
+		batch:        nil,
+		batchMutex:   &sync.Mutex{},
 	}
 	_, err := env.UtxoDB.RequestFunds(env.OriginatorAddress)
 	require.NoError(t, err)
@@ -111,7 +128,63 @@ func New(t *testing.T, debug bool, printStackTrace bool) *aloneEnvironment {
 	require.NoError(t, err)
 	require.NotNil(t, initTx)
 
-	_, err = env.runRequest(initTx)
+	err = env.UtxoDB.AddTransaction(initTx.Transaction)
 	require.NoError(t, err)
+	_, err = env.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
+	require.NoError(t, err)
+
+	go env.readRequestsLoop()
+	go env.runBatchLoop()
+
 	return env
+}
+
+func (e *Env) readRequestsLoop() {
+	for r := range e.chInRequest {
+		e.backlogMutex.Lock()
+		e.backlog = append(e.backlog, r)
+		e.backlogMutex.Unlock()
+		e.chPosted.Done()
+	}
+}
+
+// collateBatch selects requests which are not time locked
+// returns batch and and 'remains unprocessed' flag
+func (e *Env) collateBatch() []sctransaction.RequestRef {
+	e.backlogMutex.Lock()
+	defer e.backlogMutex.Unlock()
+
+	ret := make([]sctransaction.RequestRef, 0)
+	remain := e.backlog[:0]
+	nowis := time.Now().Unix()
+	for _, ref := range e.backlog {
+		if int64(ref.RequestSection().Timelock()) <= nowis {
+			ret = append(ret, ref)
+		} else {
+			remain = append(remain, ref)
+		}
+	}
+	e.backlog = remain
+	return ret
+}
+
+func (e *Env) runBatchLoop() {
+	for {
+		batch := e.collateBatch()
+		if len(batch) > 0 {
+			_, err := e.runBatch(batch, "runBatchLoop")
+			if err != nil {
+				e.Log.Errorf("runBatch: %v", err)
+			}
+			continue
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+func (e *Env) backlogLen() int {
+	e.chPosted.Wait()
+	e.backlogMutex.Lock()
+	defer e.backlogMutex.Unlock()
+	return len(e.backlog)
 }

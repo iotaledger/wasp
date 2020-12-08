@@ -1,6 +1,9 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
@@ -15,22 +18,29 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"sync"
 	"time"
 )
 
 type callParams struct {
+	targetName string
 	target     coretypes.Hname
+	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
 	params     dict.Dict
 }
 
-func NewCall(target, ep string) *callParams {
-	return &callParams{
+func NewCall(target, ep string, params ...interface{}) *callParams {
+	ret := &callParams{
+		targetName: target,
 		target:     coretypes.Hn(target),
+		epName:     ep,
 		entryPoint: coretypes.Hn(ep),
 	}
+	ret.withParams(params...)
+	return ret
 }
 
 func (r *callParams) WithTransfer(transfer map[balance.Color]int64) *callParams {
@@ -56,28 +66,28 @@ func toMap(params ...interface{}) map[string]interface{} {
 	return par
 }
 
-func (r *callParams) WithParams(params ...interface{}) *callParams {
+func (r *callParams) withParams(params ...interface{}) *callParams {
 	r.params = codec.MakeDict(toMap(params...))
 	return r
 }
 
-func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Dict, error) {
-	err := e.UtxoDB.AddTransaction(reqTx.Transaction)
-	require.NoError(e.T, err)
+func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
+	e.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
+	e.runVMMutex.Lock()
+	defer e.runVMMutex.Unlock()
 
-	reqRef := sctransaction.RequestRef{Tx: reqTx}
 	task := &vm.VMTask{
 		Processors:   e.Proc,
 		ChainID:      e.ChainID,
 		Color:        e.ChainColor,
 		Entropy:      *hashing.RandomHash(nil),
 		Balances:     waspconn.OutputsToBalances(e.UtxoDB.GetAddressOutputs(e.ChainAddress)),
-		Requests:     []sctransaction.RequestRef{reqRef},
+		Requests:     batch,
 		Timestamp:    time.Now().UnixNano() + 1,
 		VirtualState: e.State.Clone(),
 		Log:          e.Log,
 	}
-
+	var err error
 	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
@@ -109,12 +119,29 @@ func (e *aloneEnvironment) runRequest(reqTx *sctransaction.Transaction) (dict.Di
 	e.State = task.VirtualState
 
 	newBlockIndex := e.State.BlockIndex()
-	e.Infof("state transition #%d --> #%d. Req: %s", prevBlockIndex, newBlockIndex, reqRef.RequestID().String())
 
+	e.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
+		prevBlockIndex, newBlockIndex, batchShortStr(batch), len(e.StateTx.Requests()))
+
+	e.chPosted.Add(len(e.StateTx.Requests()))
+	for i := range e.StateTx.Requests() {
+		e.chInRequest <- sctransaction.RequestRef{
+			Tx:    task.ResultTransaction,
+			Index: uint16(i),
+		}
+	}
 	return callRes, callErr
 }
 
-func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+func batchShortStr(batch []sctransaction.RequestRef) string {
+	ret := make([]string, len(batch))
+	for i, r := range batch {
+		ret[i] = r.RequestID().Short()
+	}
+	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
+}
+
+func (e *Env) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
 		sigScheme = e.OriginatorSigScheme
 	}
@@ -132,10 +159,43 @@ func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signatureschem
 	require.NoError(e.T, err)
 
 	tx.Sign(sigScheme)
-	return e.runRequest(tx)
+	err = e.UtxoDB.AddTransaction(tx.Transaction)
+	if err != nil {
+		return nil, err
+	}
+	return e.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (e *aloneEnvironment) CallView(req *callParams) (dict.Dict, error) {
+func (e *Env) CallView(req *callParams) (dict.Dict, error) {
+	e.runVMMutex.Lock()
+	defer e.runVMMutex.Unlock()
+
 	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.Proc, e.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
+}
+
+func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {
+	maxDurationSet := len(maxWait) > 0
+	var deadline time.Time
+	if maxDurationSet {
+		deadline = time.Now().Add(maxWait[0])
+	}
+	counter := 0
+	for {
+		if counter%40 == 0 {
+			e.Log.Infof("backlog length = %d", e.backlogLen())
+		}
+		counter++
+		if e.backlogLen() > 0 {
+			time.Sleep(50 * time.Millisecond)
+			if maxDurationSet && deadline.Before(time.Now()) {
+				e.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+			}
+		} else {
+			time.Sleep(10 * time.Millisecond)
+			if e.backlogLen() == 0 {
+				break
+			}
+		}
+	}
 }

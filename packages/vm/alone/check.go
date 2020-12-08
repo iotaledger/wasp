@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
@@ -11,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (e *aloneEnvironment) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+func (e *Env) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
 	require.EqualValues(e.T, expected, e.GetUtxodbBalance(addr, col))
 }
 
-func (e *aloneEnvironment) CheckBase() {
+func (e *Env) CheckBase() {
 	req := NewCall(root.Interface.Name, root.FuncGetInfo)
 	res1, err := e.PostRequest(req, nil)
 	require.NoError(e.T, err)
@@ -44,7 +46,7 @@ func (e *aloneEnvironment) CheckBase() {
 	require.EqualValues(e.T, e.OriginatorAgentID, blobRec.Creator)
 }
 
-func (e *aloneEnvironment) CheckAccountLedger() {
+func (e *Env) CheckAccountLedger() {
 	total := e.GetTotalAssets()
 	accounts := e.GetAccounts()
 	sum := make(map[balance.Color]int64)
@@ -54,6 +56,6 @@ func (e *aloneEnvironment) CheckAccountLedger() {
 	require.True(e.T, total.Equal(cbalances.NewFromMap(sum)))
 }
 
-func (e *aloneEnvironment) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
+func (e *Env) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
 	require.EqualValues(e.T, bal, e.GetAccountBalance(agentID).Balance(col))
 }

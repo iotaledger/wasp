@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
@@ -25,7 +27,7 @@ import (
 )
 
 //goland:noinspection ALL
-func (e *aloneEnvironment) String() string {
+func (e *Env) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", e.ChainID.String())
 	fmt.Fprintf(&buf, "Chain address: %s\n", e.ChainAddress.String())
@@ -34,12 +36,12 @@ func (e *aloneEnvironment) String() string {
 	return string(buf.Bytes())
 }
 
-func (e *aloneEnvironment) Infof(format string, args ...interface{}) {
+func (e *Env) Infof(format string, args ...interface{}) {
 	e.Log.Infof(format, args...)
 }
 
 // NewSigScheme generates new ed25519 sigscheme and requests funds from the faucet
-func (e *aloneEnvironment) NewSigScheme() signaturescheme.SignatureScheme {
+func (e *Env) NewSigScheme() signaturescheme.SignatureScheme {
 	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	_, err := e.UtxoDB.RequestFunds(ret.Address())
 	require.NoError(e.T, err)
@@ -47,9 +49,8 @@ func (e *aloneEnvironment) NewSigScheme() signaturescheme.SignatureScheme {
 	return ret
 }
 
-func (e *aloneEnvironment) FindContract(name string) (*root.ContractRecord, error) {
-	req := NewCall(root.Interface.Name, root.FuncFindContract).
-		WithParams(root.ParamHname, coretypes.Hn(name))
+func (e *Env) FindContract(name string) (*root.ContractRecord, error) {
+	req := NewCall(root.Interface.Name, root.FuncFindContract, root.ParamHname, coretypes.Hn(name))
 	retDict, err := e.CallView(req)
 	if err != nil {
 		return nil, err
@@ -64,11 +65,11 @@ func (e *aloneEnvironment) FindContract(name string) (*root.ContractRecord, erro
 	return root.DecodeContractRecord(retBin)
 }
 
-func (e *aloneEnvironment) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
+func (e *Env) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
 	par := toMap(params...)
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
 
-	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob).WithParams(params...)
+	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...)
 	var res dict.Dict
 	var resBin []byte
 	res, err = e.PostRequest(req, sigScheme)
@@ -91,14 +92,14 @@ func (e *aloneEnvironment) UploadBlob(sigScheme signaturescheme.SignatureScheme,
 	return
 }
 
-func (e *aloneEnvironment) UploadWasm(sigScheme signaturescheme.SignatureScheme, binaryCode []byte) (ret hashing.HashValue, err error) {
+func (e *Env) UploadWasm(sigScheme signaturescheme.SignatureScheme, binaryCode []byte) (ret hashing.HashValue, err error) {
 	return e.UploadBlob(sigScheme,
 		blob.VarFieldVMType, wasmtimevm.VMType,
 		blob.VarFieldProgramBinary, binaryCode,
 	)
 }
 
-func (e *aloneEnvironment) UploadWasmFromFile(sigScheme signaturescheme.SignatureScheme, fname string) (ret hashing.HashValue, err error) {
+func (e *Env) UploadWasmFromFile(sigScheme signaturescheme.SignatureScheme, fname string) (ret hashing.HashValue, err error) {
 	var binary []byte
 	binary, err = ioutil.ReadFile(fname)
 	if err != nil {
@@ -107,23 +108,21 @@ func (e *aloneEnvironment) UploadWasmFromFile(sigScheme signaturescheme.Signatur
 	return e.UploadWasm(sigScheme, binary)
 }
 
-func (e *aloneEnvironment) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
-	reqVmtype := NewCall(blob.Interface.Name, blob.FuncGetBlobField).
-		WithParams(
-			blob.ParamHash, progHash,
-			blob.ParamField, blob.VarFieldVMType,
-		)
+func (e *Env) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
+	reqVmtype := NewCall(blob.Interface.Name, blob.FuncGetBlobField,
+		blob.ParamHash, progHash,
+		blob.ParamField, blob.VarFieldVMType,
+	)
 	res, err := e.CallView(reqVmtype)
 	if err != nil {
 		return nil, err
 	}
 	require.EqualValues(e.T, wasmtimevm.VMType, string(res.MustGet(blob.ParamBytes)))
 
-	reqBin := NewCall(blob.Interface.Name, blob.FuncGetBlobField).
-		WithParams(
-			blob.ParamHash, progHash,
-			blob.ParamField, blob.VarFieldProgramBinary,
-		)
+	reqBin := NewCall(blob.Interface.Name, blob.FuncGetBlobField,
+		blob.ParamHash, progHash,
+		blob.ParamField, blob.VarFieldProgramBinary,
+	)
 	res, err = e.CallView(reqBin)
 	if err != nil {
 		return nil, err
@@ -132,25 +131,23 @@ func (e *aloneEnvironment) GetWasmBinary(progHash hashing.HashValue) ([]byte, er
 	return binary, nil
 }
 
-func (e *aloneEnvironment) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, progHash hashing.HashValue) error {
-	req := NewCall(root.Interface.Name, root.FuncDeployContract).
-		WithParams(
-			root.ParamProgramHash, progHash,
-			root.ParamName, name,
-		)
+func (e *Env) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, progHash hashing.HashValue, params ...interface{}) error {
+	par := []interface{}{root.ParamProgramHash, progHash, root.ParamName, name}
+	par = append(par, params...)
+	req := NewCall(root.Interface.Name, root.FuncDeployContract, par...)
 	_, err := e.PostRequest(req, sigScheme)
 	return err
 }
 
-func (e *aloneEnvironment) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, name string, fname string) error {
+func (e *Env) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, name string, fname string, params ...interface{}) error {
 	hprog, err := e.UploadWasmFromFile(sigScheme, fname)
 	if err != nil {
 		return err
 	}
-	return e.DeployContract(sigScheme, name, hprog)
+	return e.DeployContract(sigScheme, name, hprog, params...)
 }
 
-func (e *aloneEnvironment) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
+func (e *Env) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
 	req := NewCall(root.Interface.Name, root.FuncGetInfo)
 	res, err := e.CallView(req)
 	require.NoError(e.T, err)
@@ -168,19 +165,19 @@ func (e *aloneEnvironment) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[
 	return chainID, chainOwnerID, contracts
 }
 
-func (e *aloneEnvironment) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
+func (e *Env) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
 	bals := e.GetUtxodbBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
-func (e *aloneEnvironment) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
+func (e *Env) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
 	outs := e.UtxoDB.GetAddressOutputs(addr)
 	ret, _ := waspconn.OutputBalancesByColor(outs)
 	return ret
 }
 
-func (e *aloneEnvironment) GetAccounts() []coretypes.AgentID {
+func (e *Env) GetAccounts() []coretypes.AgentID {
 	req := NewCall(accountsc.Interface.Name, accountsc.FuncAccounts)
 	d, err := e.CallView(req)
 	require.NoError(e.T, err)
@@ -198,9 +195,8 @@ func (e *aloneEnvironment) GetAccounts() []coretypes.AgentID {
 	return ret
 }
 
-func (e *aloneEnvironment) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
-	req := NewCall(accountsc.Interface.Name, accountsc.FuncBalance).
-		WithParams(accountsc.ParamAgentID, agentID)
+func (e *Env) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
+	req := NewCall(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID)
 	d, err := e.CallView(req)
 	require.NoError(e.T, err)
 	if d.IsEmpty() {
@@ -219,6 +215,6 @@ func (e *aloneEnvironment) GetAccountBalance(agentID coretypes.AgentID) coretype
 	return cbalances.NewFromMap(ret)
 }
 
-func (e *aloneEnvironment) GetTotalAssets() coretypes.ColoredBalances {
+func (e *Env) GetTotalAssets() coretypes.ColoredBalances {
 	return e.GetAccountBalance(accountsc.TotalAssetsAccountID)
 }

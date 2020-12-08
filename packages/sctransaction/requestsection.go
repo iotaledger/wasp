@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -182,24 +181,6 @@ func (ref *RequestRef) RequestSection() *RequestSection {
 func (ref *RequestRef) RequestID() *coretypes.RequestID {
 	ret := coretypes.NewRequestID(ref.Tx.ID(), ref.Index)
 	return &ret
-}
-
-// request block is authorised if the containing transaction's inputs contain owner's address
-func (ref *RequestRef) IsAuthorised(ownerAddr *address.Address) bool {
-	// would be better to have something like tx.IsSignedBy(addr)
-
-	if !ref.Tx.Transaction.SignaturesValid() {
-		return false // not needed, just in case
-	}
-	auth := false
-	ref.Tx.Transaction.Inputs().ForEach(func(oid valuetransaction.OutputID) bool {
-		if oid.Address() == *ownerAddr {
-			auth = true
-			return false
-		}
-		return true
-	})
-	return auth
 }
 
 func (ref *RequestRef) SenderContractHname() coretypes.Hname {

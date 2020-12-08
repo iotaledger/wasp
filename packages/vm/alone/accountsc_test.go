@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
@@ -29,8 +31,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	newOwner := e.NewSigScheme()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
-		WithParams(root.ParamChainOwner, newOwnerAgentID)
+	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
 	_, err := e.PostRequest(req, nil)
 	require.NoError(t, err)
 

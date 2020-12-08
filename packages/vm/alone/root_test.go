@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
@@ -12,12 +14,16 @@ import (
 
 func TestRootBasic(t *testing.T) {
 	e := New(t, false, false)
+	defer e.WaitEmptyBacklog()
+
 	e.CheckBase()
 	e.Infof("\n%s\n", e.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {
 	e := New(t, false, false)
+	defer e.WaitEmptyBacklog()
+
 	req := NewCall(root.Interface.Name, "init")
 	_, err := e.PostRequest(req, nil)
 	require.Error(t, err)
@@ -25,6 +31,8 @@ func TestRootRepeatInit(t *testing.T) {
 
 func TestGetInfo(t *testing.T) {
 	e := New(t, false, false)
+	defer e.WaitEmptyBacklog()
+
 	chainID, chainOwnerID, contracts := e.GetInfo()
 
 	require.EqualValues(t, e.ChainID, chainID)
@@ -46,6 +54,8 @@ func TestGetInfo(t *testing.T) {
 func TestDeployExample(t *testing.T) {
 	name := "testInc"
 	e := New(t, false, false)
+	defer e.WaitEmptyBacklog()
+
 	err := e.DeployContract(nil, name, inccounter.ProgramHash)
 	require.NoError(t, err)
 
@@ -79,6 +89,8 @@ func TestDeployExample(t *testing.T) {
 func TestDeployDouble(t *testing.T) {
 	name := "testInc"
 	e := New(t, false, false)
+	defer e.WaitEmptyBacklog()
+
 	err := e.DeployContract(nil, name, inccounter.ProgramHash)
 	require.NoError(t, err)
 
@@ -110,10 +122,11 @@ func TestDeployDouble(t *testing.T) {
 
 func TestChangeOwnerAuthorized(t *testing.T) {
 	e := New(t, false, true)
+	defer e.WaitEmptyBacklog()
+
 	newOwner := e.NewSigScheme()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
-		WithParams(root.ParamChainOwner, newOwnerAgentID)
+	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
 	_, err := e.PostRequest(req, nil)
 	require.NoError(t, err)
 
@@ -130,10 +143,11 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
 	e := New(t, false, false)
+	defer e.WaitEmptyBacklog()
+
 	newOwner := e.NewSigScheme()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
-		WithParams(root.ParamChainOwner, newOwnerAgentID)
+	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
 	_, err := e.PostRequest(req, newOwner)
 	require.Error(t, err)
 
