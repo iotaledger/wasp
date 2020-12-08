@@ -60,21 +60,21 @@ func InitFlags() {
 }
 
 func GetBool(name string) bool {
-	return config.Node.GetBool(name)
+	return config.Node.Bool(name)
 }
 
 func GetString(name string) string {
-	return config.Node.GetString(name)
+	return config.Node.String(name)
 }
 
 func GetStringSlice(name string) []string {
-	return config.Node.GetStringSlice(name)
+	return config.Node.Strings(name)
 }
 
 func GetInt(name string) int {
-	return config.Node.GetInt(name)
+	return config.Node.Int(name)
 }
 
 func GetStringToString(name string) map[string]string {
-	return config.Node.GetStringMapString(name)
+	return config.Node.StringMap(name)
 }
