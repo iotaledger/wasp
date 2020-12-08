@@ -21,7 +21,7 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	state := ctx.State()
 
-	log := datatypes.NewMustTimestampedLog(state, LogName)
+	log := datatypes.NewMustTimestampedLog(state, VarLogName)
 
 	log.Append(ctx.GetTimestamp(), logData)
 
@@ -33,9 +33,9 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	state := ctx.State()
-	log := datatypes.NewMustTimestampedLog(state, LogName)
+	log := datatypes.NewMustTimestampedLog(state, VarLogName)
 	ret := dict.New()
-	ret.Set(LogName, codec.EncodeInt64(int64(log.Len())))
+	ret.Set(VarLogName, codec.EncodeInt64(int64(log.Len())))
 
 	return ret, nil
 }
