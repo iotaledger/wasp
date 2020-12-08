@@ -3,13 +3,14 @@ package peering
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
-	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
-	"github.com/iotaledger/hive.go/backoff"
-	"go.uber.org/atomic"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/packages/tangle"
+	"github.com/iotaledger/hive.go/backoff"
+	"go.uber.org/atomic"
 )
 
 // represents point-to-point TCP connection between two qnodes and another
@@ -157,7 +158,7 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 	}
 	data := encodeMessage(msg, time.Now().UnixNano())
 
-	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
+	choppedData, chopped := chopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
 
 	peer.RLock()
 	defer peer.RUnlock()
@@ -191,7 +192,7 @@ func SendMsgToPeers(msg *PeerMessage, ts int64, peers ...*Peer) uint16 {
 	}
 	// timestamped here, once
 	data := encodeMessage(msg, ts)
-	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
+	choppedData, chopped := chopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
 
 	numSent := uint16(0)
 	for _, peer := range peers {
