@@ -39,3 +39,41 @@ func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	return ret, nil
 }
+
+func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
+
+	state := ctx.State()
+	l, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamLog))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		l = 0
+	}
+	log, err := datatypes.NewTimestampedLog(state, VarLogName)
+
+	if err != nil || log.Len() < uint32(l) {
+		return nil, err
+	}
+
+	tts, _ := log.TakeTimeSlice(log.Earliest(), log.Latest())
+	_, last := tts.FromToIndices()
+	total := tts.NumPoints()
+	data, erraw := log.LoadRecordsRaw(total-uint32(l), last, false)
+	//fmt.Println("RAW DATA: ", data)
+
+	if erraw != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	a, err := datatypes.NewArray(ret, VarLogName)
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range data {
+		a.Push(s)
+	}
+
+	return ret, nil
+}

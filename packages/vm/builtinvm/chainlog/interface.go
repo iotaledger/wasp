@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Name        = "log"
+	Name        = "chainlog"
 	Version     = "0.1"
 	fullName    = Name + "-" + Version
 	description = "Log Contract"
@@ -26,6 +26,7 @@ func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.Func(FuncStoreLog, storeLog),
 		contract.ViewFunc(FuncGetLog, getLogInfo),
+		contract.ViewFunc(FuncGetLasts, getLasts),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
 
@@ -39,10 +40,12 @@ const (
 	ParamHash  = "hash"
 	ParamField = "field"
 	ParamBytes = "bytes"
-	ParamLog   = "logData"
+	ParamLog   = "dataParam"
+	ParamLasts = "lastsParam"
 
 	// function names
 	FuncGetLog   = "getLogInfo"
+	FuncGetLasts = "getLasts"
 	FuncStoreLog = "storeLog"
 
 	VarLogName = "logs"
