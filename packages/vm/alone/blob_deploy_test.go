@@ -30,13 +30,15 @@ func TestBlobUpload(t *testing.T) {
 func TestBlobUploadTwice(t *testing.T) {
 	al := New(t, false, false)
 	binary := []byte("supposed to be wasm")
-	hwasm, err := al.UploadWasm(nil, binary)
+	hwasm1, err := al.UploadWasm(nil, binary)
 	require.NoError(t, err)
 
-	_, err = al.UploadWasm(nil, binary)
-	require.Error(t, err)
+	hwasm2, err := al.UploadWasm(nil, binary)
+	require.NoError(t, err)
 
-	binBack, err := al.GetWasmBinary(hwasm)
+	require.EqualValues(t, hwasm1, hwasm2)
+
+	binBack, err := al.GetWasmBinary(hwasm1)
 	require.NoError(t, err)
 
 	require.EqualValues(t, binary, binBack)

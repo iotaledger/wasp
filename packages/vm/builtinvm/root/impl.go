@@ -225,14 +225,14 @@ func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams d
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
 	if contractRegistry.HasAt(hname.Bytes()) {
-		return fmt.Errorf("contract with hname %s (name = %s) already exist", hname.String(), rec.Name)
+		return fmt.Errorf("contract '%s'/%s already exist", rec.Name, hname.String())
 	}
 	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
 	_, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil)
 	if err != nil {
 		// call to 'init' failed: delete record
 		contractRegistry.DelAt(hname.Bytes())
-		err = fmt.Errorf("contract with hname %s (name = %s). Call 'init'failed: %v", hname.String(), rec.Name, err)
+		err = fmt.Errorf("contract '%s'/%s: calling 'init': %v", rec.Name, hname.String(), err)
 	}
 	return err
 }

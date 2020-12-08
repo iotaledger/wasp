@@ -65,18 +65,34 @@ func (e *Env) FindContract(name string) (*root.ContractRecord, error) {
 	return root.DecodeContractRecord(retBin)
 }
 
+func (e *Env) GetBlobInfo(blobHash hashing.HashValue) (map[string]int, bool) {
+	res, err := e.CallView(NewCall(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash))
+	require.NoError(e.T, err)
+	if res.IsEmpty() {
+		return nil, false
+	}
+	ret := make(map[string]int)
+	res.ForEach(func(key kv.Key, value []byte) bool {
+		v, ok, err := codec.DecodeInt64(value)
+		require.NoError(e.T, err)
+		require.True(e.T, ok)
+		ret[string(key)] = int(v)
+		return true
+	})
+	return ret, true
+}
+
 func (e *Env) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
 	par := toMap(params...)
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
-
-	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...)
-	var res dict.Dict
-	var resBin []byte
-	res, err = e.PostRequest(req, sigScheme)
-	if err != nil {
-		return
+	if _, ok := e.GetBlobInfo(expectedHash); ok {
+		// blob exists, return hash of existing
+		return expectedHash, nil
 	}
-	resBin = res.MustGet(blob.ParamHash)
+	var res dict.Dict
+	res, err = e.PostRequest(NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...), sigScheme)
+	require.NoError(e.T, err)
+	resBin := res.MustGet(blob.ParamHash)
 	var r *hashing.HashValue
 	var ok bool
 	r, ok, err = codec.DecodeHashValue(resBin)

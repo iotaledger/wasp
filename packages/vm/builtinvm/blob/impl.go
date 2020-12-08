@@ -44,7 +44,7 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return ret, nil
 }
 
-// getBlobInfo return lenghts of all fields in the blob
+// getBlobInfo return lengths of all fields in the blob
 func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Eventf("blob.getBlobInfo.begin")
 	state := ctx.State()
