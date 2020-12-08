@@ -15,6 +15,7 @@ const dwfDescription = "Donate with feedback, a PoC smart contract"
 var dwfHname = coretypes.Hn(dwfName)
 
 func TestDwfDonateOnce(t *testing.T) {
+	t.SkipNow()
 	const numDonations = 1
 	setupAndLoad(t, dwfName, dwfDescription, 1, nil)
 
