@@ -1,3 +1,5 @@
+// +build ignore
+
 package wasptest
 
 import (
@@ -20,7 +22,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          6,

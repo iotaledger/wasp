@@ -1,3 +1,5 @@
+// +build ignore
+
 package wasptest
 
 import (
@@ -19,7 +21,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFASetOwnerMargin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          -1,
@@ -121,7 +123,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color0Bids")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          3,
@@ -228,7 +230,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          5,
@@ -359,7 +361,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          4,
@@ -493,7 +495,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color1Bidder5WinningBids")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2, // wasps.NumSmartContracts(),
+		"chainrec":            2, // wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          8,
@@ -631,7 +633,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFA1Color2Bidders")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          13,

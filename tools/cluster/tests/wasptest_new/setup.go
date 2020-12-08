@@ -103,6 +103,10 @@ func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretype
 }
 
 func setup(t *testing.T, configPath string) {
+	if testing.Short() {
+		t.Skip("Skipping cluster test in short mode")
+	}
+
 	_, filename, _, _ := runtime.Caller(0)
 
 	clu, err = cluster.New(path.Join(path.Dir(filename), "..", configPath), "cluster-data")
