@@ -21,7 +21,7 @@ func TestSuccess(t *testing.T) {
 	require.EqualValues(t, 4, len(rec))
 }
 
-func TestFail1(t *testing.T) {
+func TestFail(t *testing.T) {
 	e := alone.New(t, false, false)
 	err := e.DeployWasmContract(nil, contractName, fileName,
 		"failParam", 1,

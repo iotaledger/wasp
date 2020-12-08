@@ -6,19 +6,19 @@ import (
 	"testing"
 )
 
-func TestInitDummy1(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	e := alone.New(t, false, false)
 	err := e.DeployContract(nil, "dummy", ProgramHash)
 	require.NoError(t, err)
 }
 
-func TestFailInitDummy2(t *testing.T) {
+func TestFail(t *testing.T) {
 	e := alone.New(t, false, false)
 	err := e.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
 	require.Error(t, err)
 }
 
-func TestFailInitDummy3(t *testing.T) {
+func TestFailRepeat(t *testing.T) {
 	e := alone.New(t, true, false)
 	err := e.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
 	require.Error(t, err)
