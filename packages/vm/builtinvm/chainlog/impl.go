@@ -67,6 +67,69 @@ func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	}
 
 	ret := dict.New()
+
+	a, err := datatypes.NewArray(ret, VarLogName)
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range data {
+		a.Push(s)
+	}
+
+	return ret, nil
+}
+
+// Gets logs between timestamp interval and last N number of records
+//
+// Parameters:
+//  - ParamFromTs From interval
+//  - ParamToTs To Interval
+//  - ParamLastsRecords Amount of records that you want to return
+func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
+
+	state := ctx.State()
+	fromTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamFromTs))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		fromTs = 0
+	}
+	toTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamToTs))
+
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		toTs = ctx.GetTimestamp()
+	}
+
+	l, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamLastsRecords))
+
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		l = 0
+	}
+
+	log, err := datatypes.NewTimestampedLog(state, VarLogName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tts, _ := log.TakeTimeSlice(fromTs, toTs)
+	_, last := tts.FromToIndices()
+	total := tts.NumPoints()
+	data, erraw := log.LoadRecordsRaw(total-uint32(l), last, false)
+
+	if erraw != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+
 	a, err := datatypes.NewArray(ret, VarLogName)
 	if err != nil {
 		return nil, err

@@ -27,6 +27,7 @@ func init() {
 		contract.Func(FuncStoreLog, storeLog),
 		contract.ViewFunc(FuncGetLog, getLogInfo),
 		contract.ViewFunc(FuncGetLasts, getLasts),
+		contract.ViewFunc(FuncGetLogsBetweenTs, getLogsBetweenTs),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
 
@@ -37,16 +38,20 @@ const (
 	VarStateInitialized = "i"
 
 	// request parameters
-	ParamHash  = "hash"
-	ParamField = "field"
-	ParamBytes = "bytes"
-	ParamLog   = "dataParam"
-	ParamLasts = "lastsParam"
+	ParamHash         = "hash"
+	ParamField        = "field"
+	ParamBytes        = "bytes"
+	ParamLog          = "dataParam"
+	ParamLasts        = "lastsParam"
+	ParamFromTs       = "fromTs"
+	ParamToTs         = "toTs"
+	ParamLastsRecords = "lastRecords"
 
 	// function names
-	FuncGetLog   = "getLogInfo"
-	FuncGetLasts = "getLasts"
-	FuncStoreLog = "storeLog"
+	FuncGetLog           = "getLogInfo"
+	FuncGetLasts         = "getLasts"
+	FuncGetLogsBetweenTs = "getLogsBetweenTs"
+	FuncStoreLog         = "storeLog"
 
 	VarLogName = "logs"
 )
