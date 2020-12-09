@@ -65,14 +65,12 @@ func worker(shutdownSignal <-chan struct{}) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
-
 		bindAddr := parameters.GetString(parameters.DashboardBindAddress)
+		log.Infof("%s started, bind address=%s", PluginName, bindAddr)
 		if err := Server.Start(bindAddr); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				log.Errorf("Error serving: %s", err)
 			}
-		} else {
-			log.Infof("%s started, bind address=%s", PluginName, bindAddr)
 		}
 	}()
 

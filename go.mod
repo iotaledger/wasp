@@ -8,6 +8,7 @@ require (
 	github.com/iotaledger/goshimmer v0.3.1-0.20201208193646-4ba3e1441340
 	github.com/iotaledger/hive.go v0.0.0-20201203130604-bd82d648670e
 	github.com/iotaledger/iota.go v1.0.0-beta.15 // indirect
+	github.com/knadh/koanf v0.14.0
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
 	github.com/mr-tron/base58 v1.2.0

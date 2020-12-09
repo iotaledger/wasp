@@ -3,6 +3,7 @@ package dashboard
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/labstack/echo"
 )
 
@@ -26,7 +27,7 @@ func (n *configNavPage) AddEndpoints(e *echo.Echo) {
 	e.GET(configRoute, func(c echo.Context) error {
 		return c.Render(http.StatusOK, configTplName, &ConfigTemplateParams{
 			BaseTemplateParams: BaseParams(c, configRoute),
-			Configuration:      map[string]interface{}{}, // TODO: config.Dump(),
+			Configuration:      config.Dump(),
 		})
 	})
 }

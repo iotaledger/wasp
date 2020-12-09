@@ -3,10 +3,13 @@ package config
 import (
 	"fmt"
 	"os"
+	"reflect"
+	"unsafe"
 
 	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/knadh/koanf"
 	flag "github.com/spf13/pflag"
 )
 
@@ -93,4 +96,26 @@ func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) (bool, error) {
 	}
 
 	return *skipConfigAvailable, nil
+}
+
+func Dump() map[string]interface{} {
+	// hack to access private member Node.config
+	rf := reflect.ValueOf(Node).Elem().FieldByName("config")
+	rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
+	tree := rf.Interface().(*koanf.Koanf).Raw()
+
+	m := map[string]interface{}{}
+	flatten(m, tree, "")
+	return m
+}
+
+func flatten(dst map[string]interface{}, src map[string]interface{}, path string) {
+	for k, v := range src {
+		switch vt := v.(type) {
+		case map[string]interface{}:
+			flatten(dst, vt, path+k+".")
+		default:
+			dst[path+k] = v
+		}
+	}
 }
