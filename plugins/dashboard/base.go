@@ -40,6 +40,7 @@ func MakeTemplate(parts ...string) *template.Template {
 	})
 	t = template.Must(t.Parse(tplBase))
 	t = template.Must(t.Parse(dashboard.TplExploreAddress))
+	t = template.Must(t.Parse(dashboard.TplExploreAgentID))
 	for _, part := range parts {
 		t = template.Must(t.Parse(part))
 	}
@@ -87,8 +88,10 @@ const tplBase = `
 				{{end}}
 			</nav>
 		</header>
-		<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
 		{{template "body" .}}
+		<footer>
+		<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
+		</footer>
 	</body>
 	</html>
 {{end}}`

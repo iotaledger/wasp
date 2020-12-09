@@ -51,7 +51,7 @@ func configure(*node.Plugin) {
 
 	addNavPage(initConfig())
 	addNavPage(initPeering())
-	addNavPage(initSc())
+	addNavPage(initChains())
 }
 
 func run(_ *node.Plugin) {

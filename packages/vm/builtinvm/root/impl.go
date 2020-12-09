@@ -202,22 +202,25 @@ func allowChangeChainOwner(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 func getInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	d := dict.New()
+	ret := dict.New()
 
 	chainID, _, _ := codec.DecodeChainID(ctx.State().MustGet(VarChainID))
-	d.Set(VarChainID, codec.EncodeChainID(chainID))
+	ret.Set(VarChainID, codec.EncodeChainID(chainID))
 
 	chainOwner, _, _ := codec.DecodeAgentID(ctx.State().MustGet(VarChainOwnerID))
-	d.Set(VarChainOwnerID, codec.EncodeAgentID(chainOwner))
+	ret.Set(VarChainOwnerID, codec.EncodeAgentID(chainOwner))
 
-	cr := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
-	cr2 := datatypes.NewMustMap(d, VarContractRegistry)
-	cr.Iterate(func(elemKey []byte, value []byte) bool {
-		cr2.SetAt(elemKey, value)
+	description, _, _ := codec.DecodeString(ctx.State().MustGet(VarDescription))
+	ret.Set(VarDescription, codec.EncodeString(description))
+
+	src := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
+	dst := datatypes.NewMustMap(ret, VarContractRegistry)
+	src.Iterate(func(elemKey []byte, value []byte) bool {
+		dst.SetAt(elemKey, value)
 		return true
 	})
 
-	return d, nil
+	return ret, nil
 }
 
 //------------------------------ utility function
