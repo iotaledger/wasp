@@ -1,9 +1,10 @@
 package log
 
 import (
+	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/alone"
 	"github.com/stretchr/testify/require"
@@ -56,13 +57,12 @@ func TestGetLasts3(t *testing.T) {
 	res, err := e.CallView(Interface.Name, FuncGetLasts, ParamLog, 3)
 	require.NoError(t, err)
 
-	count := 0
-	res.MustIterate(VarLogName, func(k kv.Key, v []byte) bool {
-		//fmt.Println(string(v))
-		count++
-		return true
-	})
+	fmt.Printf("return %s\n", res.String())
+
+	array, err := datatypes.NewArray(res, VarLogName)
+	require.NoError(t, err)
 
 	//For some reason i'm getting always 1 more, i will continue tomorrow
-	require.EqualValues(t, 3, count-1)
+	require.EqualValues(t, 3, array.Len())
+
 }
