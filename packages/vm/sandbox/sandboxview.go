@@ -38,6 +38,14 @@ func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hn
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
+func (s sandboxView) ChainID() coretypes.ChainID {
+	return s.vmctx.ChainID()
+}
+
+func (s sandboxView) GetTimestamp() int64 {
+	return s.vmctx.Timestamp()
+}
+
 func (s sandboxView) ContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }

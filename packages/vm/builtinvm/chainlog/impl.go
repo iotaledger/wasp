@@ -67,7 +67,6 @@ func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	}
 
 	ret := dict.New()
-
 	a, err := datatypes.NewArray(ret, VarLogName)
 	if err != nil {
 		return nil, err

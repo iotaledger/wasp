@@ -170,7 +170,7 @@ func (e *Env) CallViewFull(req *callParams) (dict.Dict, error) {
 	e.runVMMutex.Lock()
 	defer e.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.Proc, e.Log)
+	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.State.Timestamp(), e.Proc, e.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
 

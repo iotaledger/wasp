@@ -70,3 +70,11 @@ func (s *sandboxview) Event(msg string) {
 func (s *sandboxview) Eventf(format string, args ...interface{}) {
 	s.events.Publishf(format, args...)
 }
+
+func (s *sandboxview) ChainID() coretypes.ChainID {
+	return s.vctx.chainID
+}
+
+func (s *sandboxview) GetTimestamp() int64 {
+	return s.vctx.timestamp
+}
