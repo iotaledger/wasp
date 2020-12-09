@@ -22,7 +22,7 @@ func (e *Env) CheckBase() {
 	res1, err := e.PostRequest(req, nil)
 	require.NoError(e.T, err)
 
-	res2, err := e.CallView(req)
+	res2, err := e.CallViewFull(req)
 	require.NoError(e.T, err)
 
 	require.EqualValues(e.T, res1.Hash(), res2.Hash())

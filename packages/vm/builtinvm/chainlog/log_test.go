@@ -29,7 +29,7 @@ func TestStore(t *testing.T) {
 	_, err = e.PostRequest(req, nil)
 
 	require.NoError(t, err)
-	res, err := e.CallView(alone.NewCall(Interface.Name, FuncGetLog))
+	res, err := e.CallView(Interface.Name, FuncGetLog)
 	require.NoError(t, err)
 
 	v, ok, err := codec.DecodeInt64(res.MustGet(VarLogName))
@@ -53,7 +53,7 @@ func TestGetLasts3(t *testing.T) {
 	req3 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number THREE"))
 	_, err = e.PostRequest(req3, nil)
 
-	res, err := e.CallView(alone.NewCall(Interface.Name, FuncGetLasts, ParamLog, 3))
+	res, err := e.CallView(Interface.Name, FuncGetLasts, ParamLog, 3)
 	require.NoError(t, err)
 
 	count := 0

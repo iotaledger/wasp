@@ -11,8 +11,7 @@ import (
 const incName = "incTest"
 
 func checkCounter(e *alone.Env, expected int64) {
-	req := alone.NewCall(incName, FuncGetCounter)
-	ret, err := e.CallView(req)
+	ret, err := e.CallView(incName, FuncGetCounter)
 	require.NoError(e.T, err)
 	c, ok, err := codec.DecodeInt64(ret.MustGet(VarCounter))
 	require.NoError(e.T, err)

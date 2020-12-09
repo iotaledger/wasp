@@ -166,12 +166,16 @@ func (e *Env) PostRequest(req *callParams, sigScheme signaturescheme.SignatureSc
 	return e.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (e *Env) CallView(req *callParams) (dict.Dict, error) {
+func (e *Env) CallViewFull(req *callParams) (dict.Dict, error) {
 	e.runVMMutex.Lock()
 	defer e.runVMMutex.Unlock()
 
 	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.Proc, e.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
+}
+
+func (e *Env) CallView(fun string, ep string, params ...interface{}) (dict.Dict, error) {
+	return e.CallViewFull(NewCall(fun, ep, params...))
 }
 
 func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {

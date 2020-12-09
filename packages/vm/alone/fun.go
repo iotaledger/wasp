@@ -50,8 +50,7 @@ func (e *Env) NewSigScheme() signaturescheme.SignatureScheme {
 }
 
 func (e *Env) FindContract(name string) (*root.ContractRecord, error) {
-	req := NewCall(root.Interface.Name, root.FuncFindContract, root.ParamHname, coretypes.Hn(name))
-	retDict, err := e.CallView(req)
+	retDict, err := e.CallView(root.Interface.Name, root.FuncFindContract, root.ParamHname, coretypes.Hn(name))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func (e *Env) FindContract(name string) (*root.ContractRecord, error) {
 }
 
 func (e *Env) GetBlobInfo(blobHash hashing.HashValue) (map[string]int, bool) {
-	res, err := e.CallView(NewCall(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash))
+	res, err := e.CallView(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash)
 	require.NoError(e.T, err)
 	if res.IsEmpty() {
 		return nil, false
@@ -125,21 +124,19 @@ func (e *Env) UploadWasmFromFile(sigScheme signaturescheme.SignatureScheme, fnam
 }
 
 func (e *Env) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
-	reqVmtype := NewCall(blob.Interface.Name, blob.FuncGetBlobField,
+	res, err := e.CallView(blob.Interface.Name, blob.FuncGetBlobField,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldVMType,
 	)
-	res, err := e.CallView(reqVmtype)
 	if err != nil {
 		return nil, err
 	}
 	require.EqualValues(e.T, wasmtimevm.VMType, string(res.MustGet(blob.ParamBytes)))
 
-	reqBin := NewCall(blob.Interface.Name, blob.FuncGetBlobField,
+	res, err = e.CallView(blob.Interface.Name, blob.FuncGetBlobField,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldProgramBinary,
 	)
-	res, err = e.CallView(reqBin)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +161,7 @@ func (e *Env) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, name
 }
 
 func (e *Env) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
-	req := NewCall(root.Interface.Name, root.FuncGetInfo)
-	res, err := e.CallView(req)
+	res, err := e.CallView(root.Interface.Name, root.FuncGetInfo)
 	require.NoError(e.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
@@ -194,8 +190,7 @@ func (e *Env) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
 }
 
 func (e *Env) GetAccounts() []coretypes.AgentID {
-	req := NewCall(accountsc.Interface.Name, accountsc.FuncAccounts)
-	d, err := e.CallView(req)
+	d, err := e.CallView(accountsc.Interface.Name, accountsc.FuncAccounts)
 	require.NoError(e.T, err)
 	keys := d.KeysSorted()
 	ret := make([]coretypes.AgentID, 0, len(keys)-1)
@@ -212,8 +207,7 @@ func (e *Env) GetAccounts() []coretypes.AgentID {
 }
 
 func (e *Env) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
-	req := NewCall(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID)
-	d, err := e.CallView(req)
+	d, err := e.CallView(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID)
 	require.NoError(e.T, err)
 	if d.IsEmpty() {
 		return cbalances.Nil
