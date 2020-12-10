@@ -58,8 +58,7 @@ func TestGetLasts3(t *testing.T) {
 	res, err := e.CallView(Interface.Name, FuncGetLasts, ParamLog, 3)
 	require.NoError(t, err)
 
-	array, err := datatypes.NewArray(res, VarLogName)
-	require.NoError(t, err)
+	array := datatypes.NewMustArray(res, VarLogName)
 
 	//For some reason i'm getting always 1 more, i will continue tomorrow
 	require.EqualValues(t, 3, array.Len())
@@ -96,7 +95,7 @@ func TestGetBetweenTs(t *testing.T) {
 		ParamLastsRecords, 2)
 	require.NoError(t, err)
 
-	array, err := datatypes.NewArray(res, VarLogName)
+	array := datatypes.NewMustArray(res, VarLogName)
 
 	//Expected to have the second and third record
 	// var i uint16 = 0
@@ -104,7 +103,6 @@ func TestGetBetweenTs(t *testing.T) {
 	// 	data, _ := array.GetAt(i)
 	// 	fmt.Println(string(data))
 	// }
-	require.NoError(t, err)
 
 	require.EqualValues(t, 2, array.Len())
 }

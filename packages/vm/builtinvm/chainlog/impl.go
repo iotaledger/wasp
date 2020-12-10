@@ -68,10 +68,7 @@ func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 
-	a, err := datatypes.NewArray(ret, VarLogName)
-	if err != nil {
-		return nil, err
-	}
+	a := datatypes.NewMustArray(ret, VarLogName)
 	for _, s := range data {
 		a.Push(s)
 	}
@@ -140,10 +137,7 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	}
 
 	ret := dict.New()
-	a, err := datatypes.NewArray(ret, VarLogName)
-	if err != nil {
-		return nil, err
-	}
+	a := datatypes.NewMustArray(ret, VarLogName)
 	for _, s := range data {
 		a.Push(s)
 	}

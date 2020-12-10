@@ -300,12 +300,12 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		arr, err := datatypes.NewArray(vars, string(key))
+		arr := datatypes.NewArray(vars, string(key))
+
+		size, err := arr.Len()
 		if err != nil {
 			return nil, err
 		}
-
-		size := arr.Len()
 		values := make([][]byte, 0)
 		for i := params.From; i < size && i < params.To; i++ {
 			v, err := arr.GetAt(i)

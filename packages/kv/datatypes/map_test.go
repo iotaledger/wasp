@@ -101,7 +101,7 @@ func TestIterate(t *testing.T) {
 	})
 }
 
-func TestConcurrentAccess(t *testing.T) {
+func TestMapConcurrentAccess(t *testing.T) {
 	vars := dict.New()
 	m1 := NewMustMap(vars, "testMap")
 	m2 := NewMustMap(vars, "testMap")
