@@ -10,8 +10,7 @@ import (
 
 func TestBasicMap(t *testing.T) {
 	vars := dict.New()
-	m, err := NewMap(vars, "testMap")
-	assert.NoError(t, err)
+	m := NewMustMap(vars, "testMap")
 
 	assert.Zero(t, m.Len())
 
@@ -23,99 +22,95 @@ func TestBasicMap(t *testing.T) {
 	v3 := []byte("datum3")
 
 	m.SetAt(k1, v1)
-	ok, err := m.HasAt(k1)
+	ok := m.HasAt(k1)
 	assert.True(t, ok)
-	assert.NoError(t, err)
 
-	ok, err = m.HasAt(k2)
+	ok = m.HasAt(k2)
 	assert.False(t, ok)
-	assert.NoError(t, err)
 
-	ok, err = m.HasAt(k3)
+	ok = m.HasAt(k3)
 	assert.False(t, ok)
-	assert.NoError(t, err)
 	assert.EqualValues(t, 1, m.Len())
 
-	v, err := m.GetAt(k1)
+	v := m.GetAt(k1)
 	assert.EqualValues(t, v1, v)
 
-	v, err = m.GetAt(k2)
-	assert.NoError(t, err)
+	v = m.GetAt(k2)
 	assert.Nil(t, v)
 
 	m.SetAt(k2, v2)
 	m.SetAt(k3, v3)
 
-	ok, err = m.HasAt(k1)
-	assert.NoError(t, err)
+	ok = m.HasAt(k1)
 	assert.True(t, ok)
 
-	ok, err = m.HasAt(k2)
-	assert.NoError(t, err)
+	ok = m.HasAt(k2)
 	assert.True(t, ok)
 
-	ok, err = m.HasAt(k3)
-	assert.NoError(t, err)
+	ok = m.HasAt(k3)
 	assert.True(t, ok)
 
 	assert.EqualValues(t, 3, m.Len())
 
-	v, err = m.GetAt(k2)
-	assert.NoError(t, err)
+	v = m.GetAt(k2)
 	assert.EqualValues(t, v2, v)
 
-	v, err = m.GetAt(k3)
-	assert.NoError(t, err)
+	v = m.GetAt(k3)
 	assert.EqualValues(t, v3, v)
 
-	err = m.DelAt(k2)
-	assert.NoError(t, err)
+	m.DelAt(k2)
 
-	ok, err = m.HasAt(k1)
-	assert.NoError(t, err)
+	ok = m.HasAt(k1)
 	assert.True(t, ok)
 
-	ok, err = m.HasAt(k2)
-	assert.NoError(t, err)
+	ok = m.HasAt(k2)
 	assert.False(t, ok)
 
-	ok, err = m.HasAt(k3)
-	assert.NoError(t, err)
+	ok = m.HasAt(k3)
 	assert.True(t, ok)
 
 	assert.EqualValues(t, 2, m.Len())
 
-	v, err = m.GetAt(k2)
-	assert.NoError(t, err)
+	v = m.GetAt(k2)
 	assert.Nil(t, v)
 
-	v, err = m.GetAt(k3)
-	assert.NoError(t, err)
+	v = m.GetAt(k3)
 	assert.EqualValues(t, v3, v)
 }
 
 func TestIterate(t *testing.T) {
 	vars := dict.New()
-	m, err := NewMap(vars, "testMap")
-	assert.NoError(t, err)
+	m := NewMustMap(vars, "testMap")
 
 	assert.Zero(t, m.Len())
 
 	keys := []string{"k1", "k2", "k3"}
 	values := []string{"v1", "v2", "v3"}
 	for i, key := range keys {
-		err := m.SetAt([]byte(key), []byte(values[i]))
-		require.NoError(t, err)
+		m.SetAt([]byte(key), []byte(values[i]))
 	}
 	m.Iterate(func(elemKey []byte, value []byte) bool {
 		t.Logf("key '%s' value '%s'", string(elemKey), string(value))
 		return true
 	})
 	t.Logf("---------------------")
-	err = m.SetAt([]byte("k4"), []byte("v4"))
-	require.NoError(t, err)
+	m.SetAt([]byte("k4"), []byte("v4"))
 	m.Iterate(func(elemKey []byte, value []byte) bool {
 		t.Logf("key '%s' value '%s'", string(elemKey), string(value))
 		return true
 	})
+}
+
+func TestConcurrentAccess(t *testing.T) {
+	vars := dict.New()
+	m1 := NewMustMap(vars, "testMap")
+	m2 := NewMustMap(vars, "testMap")
+
+	m1.SetAt([]byte{1}, []byte{1})
+	require.EqualValues(t, m1.Len(), 1)
+	require.EqualValues(t, m2.Len(), 1)
+
+	m2.DelAt([]byte{1})
+	require.EqualValues(t, m1.Len(), 0)
+	require.EqualValues(t, m2.Len(), 0)
 }
