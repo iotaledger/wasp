@@ -120,7 +120,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	numRepeats, ok, err := codec.DecodeInt64(params.MustGet(VarNumRepeats))
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%s", err)
 	}
 	if !ok {
 		numRepeats, _, _ = codec.DecodeInt64(state.MustGet(VarNumRepeats))
@@ -151,18 +151,18 @@ func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	hashBin, err := hashing.HashValueFromBase58(ProgramHashStr)
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	name, ok, err := codec.DecodeString(ctx.Params().MustGet(VarName))
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	if !ok {
 		return nil, fmt.Errorf("parameter 'name' wasnt found")
 	}
 	dscr, ok, err := codec.DecodeString(ctx.Params().MustGet(VarDescription))
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	if !ok {
 		dscr = "N/A"

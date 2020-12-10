@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -89,10 +88,6 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-func (vmctx *VMContext) Log() *logger.Logger {
-	return vmctx.log
-}
-
 func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
 	privileged := vmctx.CurrentContractHname() == accountsc.Interface.Hname()
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
@@ -172,7 +167,7 @@ func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, a
 }
 
 func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
-	return vm.NewContractEventPublisher(vmctx.CurrentContractID(), vmctx.Log())
+	return vm.NewContractEventPublisher(vmctx.CurrentContractID(), vmctx.log)
 }
 
 func (vmctx *VMContext) Request() *sctransaction.RequestRef {

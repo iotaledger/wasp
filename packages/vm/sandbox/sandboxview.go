@@ -50,10 +50,10 @@ func (s sandboxView) ContractID() coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 
-func (s sandboxView) Event(msg string) {
-	s.vmctx.EventPublisher().Publish(msg)
-}
-
 func (s sandboxView) Eventf(format string, args ...interface{}) {
 	s.vmctx.EventPublisher().Publishf(format, args...)
+}
+
+func (s sandboxView) Log() vmtypes.LogInterface {
+	return s.vmctx
 }

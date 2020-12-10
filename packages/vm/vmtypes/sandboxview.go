@@ -25,7 +25,6 @@ type SandboxView interface {
 	// Call calls another contract. Only calls view entry points
 	Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error)
 
-	// publisher events
-	Event(msg string)
-	Eventf(format string, args ...interface{})
+	// Log interface provides local logging on the machine
+	Log() LogInterface
 }

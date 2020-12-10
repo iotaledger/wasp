@@ -104,7 +104,7 @@ func (f *ContractFunctionInterface) Call(ctx vmtypes.Sandbox) (dict.Dict, error)
 	}
 	ret, err := f.Handler(ctx)
 	if err != nil {
-		ctx.Eventf("error occurred: '%v'", err)
+		ctx.Log().Debugf("error occurred: '%v'", err)
 	}
 	return ret, err
 }
@@ -115,7 +115,7 @@ func (f *ContractFunctionInterface) CallView(ctx vmtypes.SandboxView) (dict.Dict
 	}
 	ret, err := f.ViewHandler(ctx)
 	if err != nil {
-		ctx.Eventf("error occurred: '%v'", err)
+		ctx.Log().Debugf("error occurred: '%v'", err)
 	}
 	return ret, err
 }

@@ -17,7 +17,7 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("logsc.storeLog.begin")
 	logData, err := ctx.Params().Get(ParamLog)
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	state := ctx.State()
 
