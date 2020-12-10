@@ -36,6 +36,8 @@ import (
 	"time"
 )
 
+const DefaultTimeStep = 1 * time.Millisecond
+
 type Env struct {
 	T                   *testing.T
 	ChainSigScheme      signaturescheme.SignatureScheme
@@ -50,6 +52,8 @@ type Env struct {
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
 	Log                 *logger.Logger
+	timestamp           time.Time
+	timeStep            time.Duration
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	chPosted     sync.WaitGroup
@@ -89,6 +93,8 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
 		Log:                 log,
+		timestamp:           time.Now(),
+		timeStep:            DefaultTimeStep,
 		//
 		runVMMutex:   &sync.Mutex{},
 		chInRequest:  make(chan sctransaction.RequestRef),
@@ -137,6 +143,21 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 	go env.runBatchLoop()
 
 	return env
+}
+
+func (e *Env) AdvanceClockTo(ts time.Time) {
+	if !e.timestamp.Before(ts) {
+		panic("can't advance clock to the past")
+	}
+	e.timestamp = ts
+}
+
+func (e *Env) AdvanceClockBy(step time.Duration) {
+	e.AdvanceClockTo(e.timestamp.Add(step))
+}
+
+func (e *Env) SetTimeStep(step time.Duration) {
+	e.timeStep = step
 }
 
 func (e *Env) readRequestsLoop() {

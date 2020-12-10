@@ -83,10 +83,12 @@ func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dic
 		Entropy:      *hashing.RandomHash(nil),
 		Balances:     waspconn.OutputsToBalances(e.UtxoDB.GetAddressOutputs(e.ChainAddress)),
 		Requests:     batch,
-		Timestamp:    time.Now().UnixNano() + 1,
+		Timestamp:    e.timestamp.UnixNano(),
 		VirtualState: e.State.Clone(),
 		Log:          e.Log,
 	}
+	e.AdvanceClockBy(e.timeStep)
+
 	var err error
 	var wg sync.WaitGroup
 	var callRes dict.Dict

@@ -110,7 +110,7 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		return nil, err
 	}
 	if !ok {
-		l = 0
+		l = 0 // 0 means all
 	}
 
 	log, err := datatypes.NewTimestampedLog(state, VarLogName)
@@ -119,17 +119,26 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		return nil, err
 	}
 
-	tts, _ := log.TakeTimeSlice(fromTs, toTs)
-	_, last := tts.FromToIndices()
-	total := tts.NumPoints()
-	data, erraw := log.LoadRecordsRaw(total-uint32(l), last, false)
+	tts, err := log.TakeTimeSlice(fromTs, toTs) // returns nil if empty
+	if err != nil {
+		return nil, err
+	}
+	if tts.IsEmpty() {
+		// empty time slice
+		return nil, nil
+	}
+	first, last := tts.FromToIndices()
+	from := first
+	if l != 0 && tts.NumPoints() > uint32(l) {
+		from = last - uint32(l)
+	}
+	data, err := log.LoadRecordsRaw(from, last, false)
 
-	if erraw != nil {
+	if err != nil {
 		return nil, err
 	}
 
 	ret := dict.New()
-
 	a, err := datatypes.NewArray(ret, VarLogName)
 	if err != nil {
 		return nil, err
