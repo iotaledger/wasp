@@ -129,11 +129,12 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	}
 	first, last := tts.FromToIndices()
 	from := first
-	if l != 0 && tts.NumPoints() > uint32(l) {
-		from = last - uint32(l)
+	nPoints := tts.NumPoints()
+	if l != 0 && nPoints > uint32(l) {
+		from = nPoints - uint32(l)
 	}
-	data, err := log.LoadRecordsRaw(from, last, false)
 
+	data, err := log.LoadRecordsRaw(from, last, false)
 	if err != nil {
 		return nil, err
 	}
