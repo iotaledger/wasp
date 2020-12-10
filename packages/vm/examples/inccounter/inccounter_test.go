@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/alone"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 const incName = "incTest"
@@ -77,6 +78,8 @@ func TestIncWith1Post(t *testing.T) {
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = e.PostRequest(req, nil)
 	require.NoError(t, err)
+	// advance logical clock to unlock that timelocked request
+	e.AdvanceClockBy(6 * time.Second)
 
 	e.WaitEmptyBacklog()
 	checkCounter(e, 19)

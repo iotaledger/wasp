@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -87,8 +88,6 @@ func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dic
 		VirtualState: e.State.Clone(),
 		Log:          e.Log,
 	}
-	e.AdvanceClockBy(e.timeStep)
-
 	var err error
 	var wg sync.WaitGroup
 	var callRes dict.Dict
@@ -105,34 +104,37 @@ func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dic
 	require.NoError(e.T, err)
 
 	wg.Wait()
+	task.ResultTransaction.Sign(e.ChainSigScheme)
 	prevBlockIndex := e.StateTx.MustState().BlockIndex()
 
-	task.ResultTransaction.Sign(e.ChainSigScheme)
-	err = e.UtxoDB.AddTransaction(task.ResultTransaction.Transaction)
-	require.NoError(e.T, err)
-
-	err = task.VirtualState.ApplyBlock(task.ResultBlock)
-	require.NoError(e.T, err)
-
-	err = task.VirtualState.CommitToDb(task.ResultBlock)
-	require.NoError(e.T, err)
-
-	e.StateTx = task.ResultTransaction
-	e.State = task.VirtualState
-
-	newBlockIndex := e.State.BlockIndex()
+	e.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
 
 	e.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
-		prevBlockIndex, newBlockIndex, batchShortStr(batch), len(e.StateTx.Requests()))
+		prevBlockIndex, e.State.BlockIndex(), batchShortStr(batch), len(e.StateTx.Requests()))
+	return callRes, callErr
+}
+
+func (e *Env) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
+	err := e.UtxoDB.AddTransaction(stateTx.Transaction)
+	require.NoError(e.T, err)
+
+	err = newState.ApplyBlock(block)
+	require.NoError(e.T, err)
+
+	err = newState.CommitToDb(block)
+	require.NoError(e.T, err)
+
+	e.StateTx = stateTx
+	e.State = newState
+	e.AdvanceClockBy(e.timeStep)
 
 	e.chPosted.Add(len(e.StateTx.Requests()))
 	for i := range e.StateTx.Requests() {
 		e.chInRequest <- sctransaction.RequestRef{
-			Tx:    task.ResultTransaction,
+			Tx:    stateTx,
 			Index: uint16(i),
 		}
 	}
-	return callRes, callErr
 }
 
 func batchShortStr(batch []sctransaction.RequestRef) string {
