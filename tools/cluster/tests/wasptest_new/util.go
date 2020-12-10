@@ -159,15 +159,29 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 			}),
 		)
 		check(err, t)
-		ret[agentID] = make(map[balance.Color]int64)
-		for key, value := range r {
-			col, _, err := balance.ColorFromBytes([]byte(key))
-			check(err, t)
-			v, err := util.Int64From8Bytes(value)
-			check(err, t)
-			ret[agentID][col] = v
-		}
+		ret[agentID] = balancesDictToMap(t, r)
+	}
+	return ret
+}
+
+func getTotalBalance(t *testing.T, chain *cluster.Chain) map[balance.Color]int64 {
+	r, err := chain.Cluster.WaspClient(0).CallView(
+		chain.ContractID(accountsc.Interface.Hname()),
+		accountsc.FuncTotalBalance,
+		nil,
+	)
+	check(err, t)
+	return balancesDictToMap(t, r)
+}
+
+func balancesDictToMap(t *testing.T, d dict.Dict) map[balance.Color]int64 {
+	ret := make(map[balance.Color]int64)
+	for key, value := range d {
+		col, _, err := balance.ColorFromBytes([]byte(key))
 		check(err, t)
+		v, err := util.Int64From8Bytes(value)
+		check(err, t)
+		ret[col] = v
 	}
 	return ret
 }
@@ -186,21 +200,16 @@ func printAccounts(t *testing.T, chain *cluster.Chain, title string) {
 
 func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBalances {
 	balances := getBalancesOnChain(t, chain)
-	totalAssets, ok := balances[accountsc.TotalAssetsAccountID]
-	require.True(t, ok)
 	sum := make(map[balance.Color]int64)
-	for aid, bal := range balances {
-		if aid == accountsc.TotalAssetsAccountID {
-			continue
-		}
+	for _, bal := range balances {
 		for col, b := range bal {
 			s, _ := sum[col]
 			sum[col] = s + b
 		}
 	}
-	sum1 := cbalances.NewFromMap(sum)
-	total := cbalances.NewFromMap(totalAssets)
-	return sum1.Diff(total)
+
+	total := cbalances.NewFromMap(getTotalBalance(t, chain))
+	return cbalances.NewFromMap(sum).Diff(total)
 }
 
 func checkLedger(t *testing.T, chain *cluster.Chain) {
