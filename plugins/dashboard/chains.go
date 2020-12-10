@@ -8,8 +8,10 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
@@ -81,6 +83,11 @@ func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
 			if err != nil {
 				return err
 			}
+
+			result.Accounts, err = fetchAccounts(chain)
+			if err != nil {
+				return err
+			}
 		}
 
 		return c.Render(http.StatusOK, chainTplName, result)
@@ -106,14 +113,22 @@ func fetchChains() ([]*ChainOverview, error) {
 	return r, nil
 }
 
-func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
+func callView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
 	vctx, err := viewcontext.NewFromDB(*chain.ID(), chain.Processors())
 	if err != nil {
-		err = fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-		return
+		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
 	}
 
-	info, err := vctx.CallView(root.Interface.Hname(), coretypes.Hn(root.FuncGetInfo), nil)
+	ret, err := vctx.CallView(hname, coretypes.Hn(fname), nil)
+	if err != nil {
+		return nil, fmt.Errorf("root view call failed: %v", err)
+	}
+	return ret, nil
+
+}
+
+func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
+	info, err := callView(chain, root.Interface.Hname(), root.FuncGetInfo, nil)
 	if err != nil {
 		err = fmt.Errorf("root view call failed: %v", err)
 		return
@@ -127,8 +142,24 @@ func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
 
 	ret.OwnerID, _, _ = codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
 	ret.Description, _, _ = codec.DecodeString(info.MustGet(root.VarDescription))
-
 	return
+}
+
+func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
+	accounts, err := callView(chain, accountsc.Interface.Hname(), accountsc.FuncAccounts, nil)
+	if err != nil {
+		return nil, fmt.Errorf("accountsc view call failed: %v", err)
+	}
+
+	ret := make([]coretypes.AgentID, 0)
+	for k := range accounts {
+		agentid, _, err := codec.DecodeAgentID([]byte(k))
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, agentid)
+	}
+	return ret, nil
 }
 
 type ChainListTemplateParams struct {
@@ -187,6 +218,7 @@ type ChainTemplateParams struct {
 	ChainRecord *registry.ChainRecord
 	Block       state.Block
 	RootInfo    RootInfo
+	Accounts    []coretypes.AgentID
 	Committee   struct {
 		Size       uint16
 		Quorum     uint16
@@ -200,25 +232,23 @@ const tplChain = `
 {{define "title"}}Chain details{{end}}
 
 {{define "body"}}
-	<h2>Chain details</h2>
+	<h2>Chain <tt>{{printf "%.8s" .ChainID}}…</tt></h2>
 
 	{{if .ChainRecord}}
 		<div>
-			<h3>Chain record</h3>
 			<p>ChainID: <code>{{.ChainRecord.ChainID}}</code></p>
-			<p>Address: {{template "address" .ChainRecord.ChainID.Address}}</p>
-			<p>Color:           <code>{{.ChainRecord.Color}}</code></p>
-			<p>Committee Nodes: <code>{{.ChainRecord.CommitteeNodes}}</code></p>
-			<p>Active:          <code>{{.ChainRecord.Active}}</code></p>
+			<p>Chain Address: {{template "address" .ChainRecord.ChainID.Address}}</p>
+			<p>Chain Color: <code>{{.ChainRecord.Color}}</code></p>
+			<p>Active: <code>{{.ChainRecord.Active}}</code></p>
+			{{if .ChainRecord.Active}}
+				<p>Owner ID: {{template "agentid" .RootInfo.OwnerID}}</p>
+				<p>Description: <code>{{.RootInfo.Description}}</code></p>
+			{{end}}
 		</div>
 		{{if .ChainRecord.Active}}
 			<hr/>
 			<div>
-				<h3>Root contract</h3>
-				<p>Owner ID: {{template "agentid" .RootInfo.OwnerID}}</p>
-				<p>Description: <code>{{.RootInfo.Description}}</code></p>
-
-				<h4>Contracts</h4>
+				<h3>Contracts</h3>
 				<table>
 					<thead>
 						<tr>
@@ -241,18 +271,46 @@ const tplChain = `
 
 			<hr/>
 			<div>
+				<h3>Accounts</h3>
+				<table>
+					<thead>
+						<tr>
+							<th>AgentID</th>
+						</tr>
+					</thead>
+					<tbody>
+					{{range $_, $agentid := .Accounts}}
+						<tr>
+							<td>{{template "agentid" $agentid}}</td>
+						</tr>
+					{{end}}
+					</tbody>
+				</table>
+			</div>
+
+			<hr/>
+			<div>
 				<h3>Block</h3>
 				<p>State index: <code>{{.Block.StateIndex}}</code></p>
 				<p>State Transaction ID: <code>{{.Block.StateTransactionID}}</code></p>
 				<p>Timestamp: <code>{{formatTimestamp .Block.Timestamp}}</code></p>
 				<p>Essence Hash: <code>{{.Block.EssenceHash}}</code></p>
 				<div>
-					<p>Requests: (<code>{{.Block.Size}}</code> total)</p>
-					<ul>
-					{{range $_, $reqId := .Block.RequestIDs}}
-						<li><code>{{$reqId}}</code></li>
-					{{end}}
-					</ul>
+					<table>
+						<caption>Requests</caption>
+						<thead>
+							<tr>
+								<th>RequestID</th>
+							</tr>
+						</thead>
+						<tbody>
+						{{range $_, $reqId := .Block.RequestIDs}}
+							<tr>
+								<td><code>{{$reqId}}</code></td>
+							</tr>
+						{{end}}
+						</tbody>
+					</table>
 				</div>
 			</div>
 
