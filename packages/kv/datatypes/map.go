@@ -44,6 +44,14 @@ func NewMustMap(kv kv.KVStore, name string) *MustMap {
 	return &MustMap{*m}
 }
 
+func (m *Map) Name() string {
+	return m.name
+}
+
+func (m *MustMap) Name() string {
+	return m.m.name
+}
+
 func (m *Map) getSizeKey() kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(m.name))
@@ -169,8 +177,24 @@ func (d *Map) Iterate(f func(elemKey []byte, value []byte) bool) error {
 }
 
 // Iterate non-deterministic
+func (d *Map) IterateKeys(f func(elemKey []byte) bool) error {
+	prefix := d.getElemKey(nil)
+	return d.kv.IterateKeys(prefix, func(key kv.Key) bool {
+		return f([]byte(key)[len(prefix):])
+	})
+}
+
+// Iterate non-deterministic
 func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) {
 	err := d.m.Iterate(f)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// Iterate non-deterministic
+func (d *MustMap) IterateKeys(f func(elemKey []byte) bool) {
+	err := d.m.IterateKeys(f)
 	if err != nil {
 		panic(err)
 	}
