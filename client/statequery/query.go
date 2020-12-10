@@ -364,10 +364,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		tlog, err := datatypes.NewTimestampedLog(vars, key)
-		if err != nil {
-			return nil, err
-		}
+		tlog := datatypes.NewTimestampedLog(vars, key)
 
 		tsl, err := tlog.TakeTimeSlice(params.FromTs, params.ToTs)
 		if err != nil {
@@ -391,10 +388,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		tlog, err := datatypes.NewTimestampedLog(vars, key)
-		if err != nil {
-			return nil, err
-		}
+		tlog := datatypes.NewTimestampedLog(vars, key)
 
 		ret := TLogSliceDataResult{}
 		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex, params.Descending)
