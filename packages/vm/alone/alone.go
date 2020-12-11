@@ -157,8 +157,6 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 
 	err = glb.utxoDB.AddTransaction(initTx.Transaction)
 	require.NoError(glb.T, err)
-	_, err = ret.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
-	require.NoError(glb.T, err)
 
 	glb.glbMutex.Lock()
 	glb.chains[chainID] = ret
@@ -166,6 +164,9 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 
 	go ret.readRequestsLoop()
 	go ret.runBatchLoop()
+
+	_, err = ret.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
+	require.NoError(glb.T, err)
 
 	return ret
 }
