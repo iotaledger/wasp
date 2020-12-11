@@ -11,76 +11,88 @@ import (
 
 const incName = "incTest"
 
-func checkCounter(e *alone.Env, expected int64) {
+func checkCounter(e *alone.Chain, expected int64) {
 	ret, err := e.CallView(incName, FuncGetCounter)
-	require.NoError(e.T, err)
+	require.NoError(e.Glb.T, err)
 	c, ok, err := codec.DecodeInt64(ret.MustGet(VarCounter))
-	require.NoError(e.T, err)
-	require.True(e.T, ok)
-	require.EqualValues(e.T, expected, c)
+	require.NoError(e.Glb.T, err)
+	require.True(e.Glb.T, ok)
+	require.EqualValues(e.Glb.T, expected, c)
 }
 
 func TestDeployInc(t *testing.T) {
-	e := alone.New(t, false, false)
-	defer e.WaitEmptyBacklog()
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
 
-	err := e.DeployContract(nil, incName, ProgramHash)
+	err := chain.DeployContract(nil, incName, ProgramHash)
 	require.NoError(t, err)
-	e.CheckBase()
-	_, _, contracts := e.GetInfo()
+	chain.CheckBase()
+	_, _, contracts := chain.GetInfo()
 	require.EqualValues(t, 4, len(contracts))
-	checkCounter(e, 0)
+	checkCounter(chain, 0)
+	chain.CheckAccountLedger()
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	e := alone.New(t, false, false)
-	defer e.WaitEmptyBacklog()
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
 
-	err := e.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
-	checkCounter(e, 17)
+	checkCounter(chain, 17)
+	chain.CheckAccountLedger()
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	e := alone.New(t, false, false)
-	defer e.WaitEmptyBacklog()
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
 
-	err := e.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
-	checkCounter(e, 17)
+	checkCounter(chain, 17)
 
-	_, err = e.PostRequest(alone.NewCall(incName, FuncIncCounter), nil)
+	_, err = chain.PostRequest(alone.NewCall(incName, FuncIncCounter), nil)
 	require.NoError(t, err)
-	checkCounter(e, 18)
+	checkCounter(chain, 18)
+	chain.CheckAccountLedger()
 }
 
 func TestIncParam(t *testing.T) {
-	e := alone.New(t, false, false)
-	defer e.WaitEmptyBacklog()
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
 
-	err := e.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
-	checkCounter(e, 17)
+	checkCounter(chain, 17)
 
-	_, err = e.PostRequest(alone.NewCall(incName, FuncIncCounter, VarCounter, 3), nil)
+	_, err = chain.PostRequest(alone.NewCall(incName, FuncIncCounter, VarCounter, 3), nil)
 	require.NoError(t, err)
-	checkCounter(e, 20)
+	checkCounter(chain, 20)
+
+	chain.CheckAccountLedger()
 }
 
 func TestIncWith1Post(t *testing.T) {
-	e := alone.New(t, true, false)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
 
-	err := e.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
-	checkCounter(e, 17)
+	checkCounter(chain, 17)
 
 	req := alone.NewCall(incName, FuncIncAndRepeatOnceAfter5s).
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
-	_, err = e.PostRequest(req, nil)
+	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	// advance logical clock to unlock that timelocked request
-	e.AdvanceClockBy(6 * time.Second)
+	glb.AdvanceClockBy(6 * time.Second)
 
-	e.WaitEmptyBacklog()
-	checkCounter(e, 19)
+	chain.WaitEmptyBacklog()
+	checkCounter(chain, 19)
+
+	chain.CheckAccountLedger()
 }

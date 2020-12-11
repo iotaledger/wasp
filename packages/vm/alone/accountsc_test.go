@@ -13,59 +13,63 @@ import (
 )
 
 func TestAccountsBase(t *testing.T) {
-	e := New(t, false, false)
-	e.CheckAccountLedger()
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	chain.CheckAccountLedger()
 }
 
 func TestAccountsRepeatInit(t *testing.T) {
-	e := New(t, false, false)
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
 	req := NewCall(accountsc.Interface.Name, "init")
-	_, err := e.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
-	e.CheckAccountLedger()
+	chain.CheckAccountLedger()
 }
 
 func TestAccountsBase1(t *testing.T) {
-	e := New(t, false, false)
-	e.CheckAccountLedger()
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	chain.CheckAccountLedger()
 
-	newOwner := e.NewSigScheme()
+	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
-	_, err := e.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	e.CheckAccountBalance(e.OriginatorAgentID, balance.ColorIOTA, 2)
-	e.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
-	e.CheckAccountLedger()
+	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
+	chain.CheckAccountLedger()
 
 	req = NewCall(root.Interface.Name, root.FuncChangeChainOwner)
-	_, err = e.PostRequest(req, newOwner)
+	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
-	e.CheckAccountBalance(e.OriginatorAgentID, balance.ColorIOTA, 2)
-	e.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 1)
-	e.CheckAccountLedger()
+	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 1)
+	chain.CheckAccountLedger()
 }
 
 func TestAccountsDepositWithdraw(t *testing.T) {
-	e := New(t, false, false)
-	e.CheckAccountLedger()
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	chain.CheckAccountLedger()
 
-	newOwner := e.NewSigScheme()
+	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := NewCall(accountsc.Interface.Name, accountsc.FuncDeposit).
 		WithTransfer(map[balance.Color]int64{
 			balance.ColorIOTA: 42,
 		})
-	_, err := e.PostRequest(req, newOwner)
+	_, err := chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
-	e.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
+	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
 
 	req = NewCall(accountsc.Interface.Name, accountsc.FuncWithdraw)
-	_, err = e.PostRequest(req, newOwner)
+	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
-	e.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
-	e.CheckUtxodbBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
+	glb.CheckUtxodbBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 }

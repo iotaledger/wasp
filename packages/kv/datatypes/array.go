@@ -9,40 +9,33 @@ import (
 )
 
 type Array struct {
-	kv        kv.KVStore
-	name      string
-	cachedLen uint16
+	kv   kv.KVStore
+	name string
 }
 
 type MustArray struct {
 	array Array
 }
 
-func NewArray(kv kv.KVStore, name string) (*Array, error) {
-	ret := &Array{
+func NewArray(kv kv.KVStore, name string) *Array {
+	return &Array{
 		kv:   kv,
 		name: name,
 	}
-	var err error
-	ret.cachedLen, err = ret.len()
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 func NewMustArray(kv kv.KVStore, name string) *MustArray {
-	array, err := NewArray(kv, name)
-	if err != nil {
-		panic(err)
-	}
-	return &MustArray{*array}
+	return NewArray(kv, name).Must()
 }
 
 const (
 	arraySizeKeyCode = byte(0)
 	arrayElemKeyCode = byte(1)
 )
+
+func (a *Array) Must() *MustArray {
+	return &MustArray{*a}
+}
 
 func (l *Array) getSizeKey() kv.Key {
 	return ArraySizeKey(l.name)
@@ -79,26 +72,25 @@ func ArrayRangeKeys(name string, length uint16, from uint16, to uint16) []kv.Key
 	return keys
 }
 
-func (l *Array) setSize(size uint16) {
-	if size == 0 {
-		l.kv.Del(l.getSizeKey())
-		l.cachedLen = 0
-		return
+func (a *Array) setSize(n uint16) {
+	if n == 0 {
+		a.kv.Del(a.getSizeKey())
+	} else {
+		a.kv.Set(a.getSizeKey(), util.Uint16To2Bytes(n))
 	}
-	l.cachedLen = size
-	l.kv.Set(l.getSizeKey(), util.Uint16To2Bytes(size))
+}
+
+func (a *Array) addToSize(amount int) (uint16, error) {
+	prevSize, err := a.Len()
+	if err != nil {
+		return 0, err
+	}
+	a.setSize(uint16(int(prevSize) + amount))
+	return prevSize, nil
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (l *Array) Len() uint16 {
-	return l.cachedLen
-}
-
-func (a *MustArray) Len() uint16 {
-	return a.array.Len()
-}
-
-func (l *Array) len() (uint16, error) {
+func (l *Array) Len() (uint16, error) {
 	v, err := l.kv.Get(l.getSizeKey())
 	if err != nil {
 		return 0, err
@@ -109,23 +101,45 @@ func (l *Array) len() (uint16, error) {
 	return util.MustUint16From2Bytes(v), nil
 }
 
+func (a *MustArray) Len() uint16 {
+	n, err := a.array.Len()
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
 // adds to the end of the list
-func (l *Array) Push(value []byte) {
-	size := l.Len()
-	k := l.getElemKey(size)
+func (l *Array) Push(value []byte) error {
+	prevSize, err := l.addToSize(1)
+	if err != nil {
+		return err
+	}
+	k := l.getElemKey(prevSize)
 	l.kv.Set(k, value)
-	l.setSize(size + 1)
+	return nil
 }
 
 func (a *MustArray) Push(value []byte) {
-	a.array.Push(value)
+	err := a.array.Push(value)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (l *Array) Extend(other *Array) {
-	for i := uint16(0); i < other.Len(); i++ {
-		v, _ := other.GetAt(i)
-		l.Push(v)
+func (l *Array) Extend(other *Array) error {
+	otherLen, err := other.Len()
+	if err != nil {
+		return err
 	}
+	for i := uint16(0); i < otherLen; i++ {
+		v, _ := other.GetAt(i)
+		err = l.Push(v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *MustArray) Extend(other *MustArray) {
@@ -133,11 +147,16 @@ func (a *MustArray) Extend(other *MustArray) {
 }
 
 // TODO implement with DelPrefix
-func (l *Array) Erase() {
-	for i := uint16(0); i < l.Len(); i++ {
+func (l *Array) Erase() error {
+	n, err := l.Len()
+	if err != nil {
+		return err
+	}
+	for i := uint16(0); i < n; i++ {
 		l.kv.Del(l.getElemKey(i))
 	}
 	l.setSize(0)
+	return nil
 }
 
 func (a *MustArray) Erase() {
@@ -145,8 +164,12 @@ func (a *MustArray) Erase() {
 }
 
 func (l *Array) GetAt(idx uint16) ([]byte, error) {
-	if idx >= l.Len() {
-		return nil, fmt.Errorf("index %d out of range for array of len %d", idx, l.Len())
+	n, err := l.Len()
+	if err != nil {
+		return nil, err
+	}
+	if idx >= n {
+		return nil, fmt.Errorf("index %d out of range for array of len %d", idx, n)
 	}
 	ret, err := l.kv.Get(l.getElemKey(idx))
 	if err != nil {
@@ -163,14 +186,18 @@ func (a *MustArray) GetAt(idx uint16) []byte {
 	return ret
 }
 
-func (l *Array) SetAt(idx uint16, value []byte) bool {
-	if idx >= l.Len() {
-		return false
+func (l *Array) SetAt(idx uint16, value []byte) error {
+	n, err := l.Len()
+	if err != nil {
+		return err
+	}
+	if idx >= n {
+		return fmt.Errorf("index %d out of range for array of len %d", idx, n)
 	}
 	l.kv.Set(l.getElemKey(idx), value)
-	return true
+	return nil
 }
 
-func (a *MustArray) SetAt(idx uint16, value []byte) bool {
+func (a *MustArray) SetAt(idx uint16, value []byte) error {
 	return a.array.SetAt(idx, value)
 }
