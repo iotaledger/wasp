@@ -57,8 +57,8 @@ func (o *ScCallInfo) Invoke() {
 	}
 	functionCode := coretypes.Hn(o.function)
 	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
-	params := o.vm.FindObject(paramsId).(*ScMutableDict).Dict
-	params.ForEach(func(key kv.Key, value []byte) bool {
+	params := o.vm.FindObject(paramsId).(*ScMutableDict).Dict.(dict.Dict)
+	params.MustIterate("", func(key kv.Key, value []byte) bool {
 		o.vm.Trace("  PARAM '%s'", key)
 		return true
 	})
@@ -73,7 +73,7 @@ func (o *ScCallInfo) Invoke() {
 		results, err = o.vm.ctxView.Call(contractCode, functionCode, params)
 	}
 	if err != nil {
-		o.Error("failed to invoke call: %v", err)
+		o.Panic("failed to invoke call: %v", err)
 	}
 	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
 	o.vm.FindObject(resultsId).(*ScImmutableDict).Dict = results
@@ -86,7 +86,7 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 		o.function = ""
 	case KeyDelay:
 		if value != -1 {
-			o.Error("Unexpected value for delay: %d", value)
+			o.Panic("Unexpected value for delay: %d", value)
 		}
 		o.Invoke()
 	default:
@@ -158,8 +158,8 @@ func (o *ScPostInfo) Invoke() {
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
-		params = o.vm.FindObject(paramsId).(*ScMutableDict).Dict
-		params.ForEach(func(key kv.Key, value []byte) bool {
+		params = o.vm.FindObject(paramsId).(*ScMutableDict).Dict.(dict.Dict)
+		params.MustIterate("", func(key kv.Key, value []byte) bool {
 			o.vm.Trace("  PARAM '%s'", key)
 			return true
 		})
@@ -174,7 +174,7 @@ func (o *ScPostInfo) Invoke() {
 		Timelock:         util.NanoSecToUnixSec(o.vm.ctx.GetTimestamp()) + o.delay,
 		Transfer:         balances,
 	}) {
-		o.Error("failed to invoke post")
+		o.Panic("failed to invoke post")
 	}
 }
 
@@ -183,8 +183,7 @@ func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
 	case KeyChain:
 		chainId, err := coretypes.NewChainIDFromBytes(value)
 		if err != nil {
-			o.Error(err.Error())
-			return
+			o.Panic(err.Error())
 		}
 		o.chainId = &chainId
 	default:
@@ -201,7 +200,7 @@ func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 		o.function = ""
 	case KeyDelay:
 		if value < 0 {
-			o.Error("Unexpected value for delay: %d", value)
+			o.Panic("Unexpected value for delay: %d", value)
 		}
 		o.delay = uint32(value)
 		o.Invoke()
@@ -266,8 +265,8 @@ func (o *ScViewInfo) Invoke() {
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
-		params = o.vm.FindObject(paramsId).(*ScMutableDict).Dict
-		params.ForEach(func(key kv.Key, value []byte) bool {
+		params = o.vm.FindObject(paramsId).(*ScMutableDict).Dict.(dict.Dict)
+		params.MustIterate("", func(key kv.Key, value []byte) bool {
 			o.vm.Trace("  PARAM '%s'", key)
 			return true
 		})
@@ -280,7 +279,7 @@ func (o *ScViewInfo) Invoke() {
 		results, err = o.vm.ctxView.Call(contractCode, functionCode, params)
 	}
 	if err != nil {
-		o.Error("failed to invoke view: %v", err)
+		o.Panic("failed to invoke view: %v", err)
 	}
 	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
 	o.vm.FindObject(resultsId).(*ScImmutableDict).Dict = results
@@ -293,7 +292,7 @@ func (o *ScViewInfo) SetInt(keyId int32, value int64) {
 		o.function = ""
 	case KeyDelay:
 		if value != -2 {
-			o.Error("Unexpected value for delay: %d", value)
+			o.Panic("Unexpected value for delay: %d", value)
 		}
 		o.Invoke()
 	default:
@@ -324,13 +323,6 @@ func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScCalls) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
-		return OBJTYPE_MAP
-	}
-	return -1
-}
-
 func (a *ScCalls) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
@@ -353,13 +345,6 @@ func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScPosts) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
-		return OBJTYPE_MAP
-	}
-	return -1
-}
-
 func (a *ScPosts) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
@@ -380,13 +365,6 @@ func (a *ScViews) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScViewInfo{}
 	})
-}
-
-func (a *ScViews) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
-		return OBJTYPE_MAP
-	}
-	return -1
 }
 
 func (a *ScViews) SetInt(keyId int32, value int64) {

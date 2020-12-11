@@ -64,7 +64,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		return nil, err
 	}
 
-	results := host.FindSubObject(nil, KeyResults, OBJTYPE_MAP).(*ScMutableDict).Dict
+	results := host.FindSubObject(nil, KeyResults, OBJTYPE_MAP).(*ScMutableDict).Dict.(dict.Dict)
 	return results, nil
 }
 
@@ -90,7 +90,7 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 }
 
 func (host *wasmProcessor) GetKey(keyId int32) kv.Key {
-	return kv.Key(host.WasmHost.GetKeyFromId(keyId))
+	return kv.Key(host.GetKeyFromId(keyId))
 }
 
 func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {

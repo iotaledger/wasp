@@ -67,22 +67,15 @@ func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScTransfers) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
-		return OBJTYPE_MAP
-	}
-	return -1
-}
-
 func (a *ScTransfers) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		a.objects = nil
 	default:
-		a.Error("SetInt: Invalid access")
+		a.Panic("SetInt: Invalid access")
 	}
 }
 
 func (a *ScTransfers) SetString(keyId int32, value string) {
-	a.Error("SetString: Invalid access")
+	a.Panic("SetString: Invalid access")
 }

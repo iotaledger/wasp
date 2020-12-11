@@ -57,8 +57,7 @@ func (a *ScLog) GetInt(keyId int32) int64 {
 
 func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 	if typeId != OBJTYPE_MAP {
-		a.Error("GetObjectId: Invalid type")
-		return 0
+		a.Panic("GetObjectId: Invalid type")
 	}
 	//TODO can only access new entries for now
 	if uint32(keyId) == a.lines.Len() {
@@ -83,13 +82,7 @@ type ScLogEntry struct {
 }
 
 func (o *ScLogEntry) Exists(keyId int32) bool {
-	switch keyId {
-	case KeyData:
-	case KeyTimestamp:
-	default:
-		return false
-	}
-	return true
+	return o.GetTypeId(keyId) >= 0
 }
 
 func (o *ScLogEntry) GetBytes(keyId int32) []byte {
@@ -124,7 +117,7 @@ func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {
 		o.lines.Append(o.timestamp, value)
 		return
 	}
-	o.Error("SetBytes: Invalid key")
+	o.Panic("SetBytes: Invalid key")
 }
 
 func (o *ScLogEntry) SetInt(keyId int32, value int64) {
@@ -133,5 +126,5 @@ func (o *ScLogEntry) SetInt(keyId int32, value int64) {
 		o.timestamp = value
 		return
 	}
-	o.Error("SetInt: Invalid key")
+	o.Panic("SetInt: Invalid key")
 }
