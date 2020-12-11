@@ -11,8 +11,10 @@ import (
 
 type ScImmutableDict struct {
 	MapObject
-	Dict  kv.KVStore
-	types map[int32]int32
+	Dict   kv.KVStore
+	nested bool
+	typeId int32
+	types  map[int32]int32
 }
 
 func (o *ScImmutableDict) InitObj(id int32, keyId int32, owner *ModelObject) {
@@ -20,12 +22,13 @@ func (o *ScImmutableDict) InitObj(id int32, keyId int32, owner *ModelObject) {
 	if o.Dict == nil {
 		o.Dict = dict.New()
 	}
+	o.typeId = -1
 	o.types = make(map[int32]int32)
 }
 
 func (o *ScImmutableDict) Exists(keyId int32) bool {
-	key := o.vm.GetKey(keyId)
-	return o.Dict.MustHas(key)
+	key := o.Name() + o.Suffix(keyId)
+	return o.Dict.MustHas(kv.Key(key))
 }
 
 func (o *ScImmutableDict) GetBytes(keyId int32) []byte {
@@ -52,12 +55,20 @@ func (o *ScImmutableDict) GetString(keyId int32) string {
 
 func (o *ScImmutableDict) GetTypedBytes(keyId int32, typeId int32) []byte {
 	o.validate(keyId, typeId)
-	key := o.vm.GetKey(keyId)
-	return o.Dict.MustGet(key)
+	suffix := o.Suffix(keyId)
+	key := o.Name() + suffix
+	o.vm.Trace("GetTypedBytes: %s", key)
+	if !o.nested {
+		key = suffix[1:]
+	}
+	return o.Dict.MustGet(kv.Key(key))
 }
 
-//TODO incomplete, only contains used field types
 func (o *ScImmutableDict) GetTypeId(keyId int32) int32 {
+	if o.typeId >= 0 {
+		return o.typeId
+	}
+	//TODO incomplete, currently only contains used field types
 	typeId, ok := o.types[keyId]
 	if ok {
 		return typeId
@@ -66,6 +77,10 @@ func (o *ScImmutableDict) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScImmutableDict) validate(keyId int32, typeId int32) {
+	if o.typeId >= 0 && o.typeId != typeId {
+		// actually array
+		o.Panic("validate: Invalid type")
+	}
 	fieldType, ok := o.types[keyId]
 	if !ok {
 		// first encounter of this key id, register type to make
@@ -74,7 +89,7 @@ func (o *ScImmutableDict) validate(keyId int32, typeId int32) {
 		return
 	}
 	if fieldType != typeId {
-		o.Panic("valid: Invalid access")
+		o.Panic("validate: Invalid access")
 	}
 }
 
@@ -103,6 +118,7 @@ func (o *ScMutableDict) SetString(keyId int32, value string) {
 
 func (o *ScMutableDict) SetTypedBytes(keyId int32, typeId int32, value []byte) {
 	o.validate(keyId, typeId)
-	key := o.vm.GetKey(keyId)
-	o.Dict.Set(key, value)
+	key := o.Name() + o.Suffix(keyId)
+	o.vm.Trace("SetTypedBytes: %s", key)
+	o.Dict.Set(kv.Key(key), value)
 }

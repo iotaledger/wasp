@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/vm/alone"
 	"testing"
 	"time"
 
@@ -300,4 +301,13 @@ func TestIncViewCounter(t *testing.T) {
 	counter, _, err := codec.DecodeInt64(ret.MustGet("counter"))
 	check(err, t)
 	require.EqualValues(t, 1, counter)
+}
+
+func TestIncAlone(t *testing.T) {
+	al := alone.New(t, false, true)
+	err := al.DeployWasmContract(nil, "testInccounter", "wasm/inccounter_bg.wasm")
+	require.NoError(t, err)
+	req := alone.NewCall("testInccounter", "incrementRepeatMany", "numRepeats", 2)
+	_, err = al.PostRequest(req, nil)
+	require.NoError(t, err)
 }

@@ -142,7 +142,7 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (host *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		//host.LogText(text)
+		host.LogText(text)
 	case KeyTrace:
 		host.LogText(text)
 	case KeyLog:
