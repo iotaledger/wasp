@@ -193,21 +193,17 @@ func (e *Env) GetAccounts() []coretypes.AgentID {
 	d, err := e.CallView(accountsc.Interface.Name, accountsc.FuncAccounts)
 	require.NoError(e.T, err)
 	keys := d.KeysSorted()
-	ret := make([]coretypes.AgentID, 0, len(keys)-1)
+	ret := make([]coretypes.AgentID, 0, len(keys))
 	for _, key := range keys {
 		aid, ok, err := codec.DecodeAgentID([]byte(key))
 		require.NoError(e.T, err)
 		require.True(e.T, ok)
-		if aid == accountsc.TotalAssetsAccountID {
-			continue
-		}
 		ret = append(ret, aid)
 	}
 	return ret
 }
 
-func (e *Env) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
-	d, err := e.CallView(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID)
+func (e *Env) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalances {
 	require.NoError(e.T, err)
 	if d.IsEmpty() {
 		return cbalances.Nil
@@ -225,6 +221,14 @@ func (e *Env) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBala
 	return cbalances.NewFromMap(ret)
 }
 
+func (e *Env) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
+	return e.getAccountBalance(
+		e.CallView(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID),
+	)
+}
+
 func (e *Env) GetTotalAssets() coretypes.ColoredBalances {
-	return e.GetAccountBalance(accountsc.TotalAssetsAccountID)
+	return e.getAccountBalance(
+		e.CallView(accountsc.Interface.Name, accountsc.FuncTotalBalance),
+	)
 }

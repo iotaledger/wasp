@@ -300,12 +300,12 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		arr, err := datatypes.NewArray(vars, string(key))
+		arr := datatypes.NewArray(vars, string(key))
+
+		size, err := arr.Len()
 		if err != nil {
 			return nil, err
 		}
-
-		size := arr.Len()
 		values := make([][]byte, 0)
 		for i := params.From; i < size && i < params.To; i++ {
 			v, err := arr.GetAt(i)
@@ -323,10 +323,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		m, err := datatypes.NewMap(vars, string(key))
-		if err != nil {
-			return nil, err
-		}
+		m := datatypes.NewMap(vars, string(key))
 
 		entries := make([]KeyValuePair, 0)
 		err = m.Iterate(func(elemKey []byte, value []byte) bool {
@@ -336,7 +333,11 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 		if err != nil {
 			return nil, err
 		}
-		return q.makeResult(MapResult{Len: m.Len(), Entries: entries})
+		n, err := m.Len()
+		if err != nil {
+			return nil, err
+		}
+		return q.makeResult(MapResult{Len: n, Entries: entries})
 
 	case ValueTypeMapElement:
 		var params MapElementQueryParams
@@ -345,10 +346,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		m, err := datatypes.NewMap(vars, string(key))
-		if err != nil {
-			return nil, err
-		}
+		m := datatypes.NewMap(vars, string(key))
 
 		v, err := m.GetAt(params.Key)
 		if err != nil {
@@ -366,10 +364,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		tlog, err := datatypes.NewTimestampedLog(vars, key)
-		if err != nil {
-			return nil, err
-		}
+		tlog := datatypes.NewTimestampedLog(vars, key)
 
 		tsl, err := tlog.TakeTimeSlice(params.FromTs, params.ToTs)
 		if err != nil {
@@ -393,10 +388,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		tlog, err := datatypes.NewTimestampedLog(vars, key)
-		if err != nil {
-			return nil, err
-		}
+		tlog := datatypes.NewTimestampedLog(vars, key)
 
 		ret := TLogSliceDataResult{}
 		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex, params.Descending)

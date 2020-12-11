@@ -89,6 +89,7 @@ const tplBase = `
 			</nav>
 		</header>
 		{{template "body" .}}
+		<hr/>
 		<footer>
 		<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
 		</footer>

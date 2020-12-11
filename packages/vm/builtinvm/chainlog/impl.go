@@ -50,28 +50,21 @@ func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		l = 0
 	}
-	log, err := datatypes.NewTimestampedLog(state, VarLogName)
+	log := datatypes.NewMustTimestampedLog(state, VarLogName)
 
 	if err != nil || log.Len() < uint32(l) {
 		return nil, err
 	}
 
-	tts, _ := log.TakeTimeSlice(log.Earliest(), log.Latest())
+	tts := log.TakeTimeSlice(log.Earliest(), log.Latest())
 	_, last := tts.FromToIndices()
 	total := tts.NumPoints()
-	data, erraw := log.LoadRecordsRaw(total-uint32(l), last, false)
+	data := log.LoadRecordsRaw(total-uint32(l), last, false)
 	//fmt.Println("RAW DATA: ", data)
-
-	if erraw != nil {
-		return nil, err
-	}
 
 	ret := dict.New()
 
-	a, err := datatypes.NewArray(ret, VarLogName)
-	if err != nil {
-		return nil, err
-	}
+	a := datatypes.NewMustArray(ret, VarLogName)
 	for _, s := range data {
 		a.Push(s)
 	}
@@ -113,16 +106,9 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		l = 0 // 0 means all
 	}
 
-	log, err := datatypes.NewTimestampedLog(state, VarLogName)
+	log := datatypes.NewMustTimestampedLog(state, VarLogName)
 
-	if err != nil {
-		return nil, err
-	}
-
-	tts, err := log.TakeTimeSlice(fromTs, toTs) // returns nil if empty
-	if err != nil {
-		return nil, err
-	}
+	tts := log.TakeTimeSlice(fromTs, toTs) // returns nil if empty
 	if tts.IsEmpty() {
 		// empty time slice
 		return nil, nil
@@ -134,16 +120,10 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		from = nPoints - uint32(l)
 	}
 
-	data, err := log.LoadRecordsRaw(from, last, false)
-	if err != nil {
-		return nil, err
-	}
+	data := log.LoadRecordsRaw(from, last, false)
 
 	ret := dict.New()
-	a, err := datatypes.NewArray(ret, VarLogName)
-	if err != nil {
-		return nil, err
-	}
+	a := datatypes.NewMustArray(ret, VarLogName)
 	for _, s := range data {
 		a.Push(s)
 	}

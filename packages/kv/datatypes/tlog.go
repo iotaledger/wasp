@@ -14,11 +14,8 @@ import (
 // sequence of timestamps is considered consistent if for any indices i<j, Ti<=Tj,
 // i.e. non-decreasing
 type TimestampedLog struct {
-	kv             kv.KVStore
-	name           kv.Key
-	cachedLen      uint32
-	cachedLatest   int64
-	cachedEarliest int64
+	kv   kv.KVStore
+	name kv.Key
 }
 
 type MustTimestampedLog struct {
@@ -38,36 +35,25 @@ type TimeSlice struct {
 	latest   int64
 }
 
-func NewTimestampedLog(kv kv.KVStore, name kv.Key) (*TimestampedLog, error) {
-	ret := &TimestampedLog{
+func NewTimestampedLog(kv kv.KVStore, name kv.Key) *TimestampedLog {
+	return &TimestampedLog{
 		kv:   kv,
 		name: name,
 	}
-	var err error
-	if ret.cachedLen, err = ret.len(); err != nil {
-		return nil, err
-	}
-	if ret.cachedLatest, err = ret.latest(); err != nil {
-		return nil, err
-	}
-	if ret.cachedEarliest, err = ret.earliest(); err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 func NewMustTimestampedLog(kv kv.KVStore, name kv.Key) *MustTimestampedLog {
-	tlog, err := NewTimestampedLog(kv, name)
-	if err != nil {
-		panic(err)
-	}
-	return &MustTimestampedLog{*tlog}
+	return NewTimestampedLog(kv, name).Must()
 }
 
 const (
 	tslSizeKeyCode = byte(iota)
 	tslElemKeyCode
 )
+
+func (l *TimestampedLog) Must() *MustTimestampedLog {
+	return &MustTimestampedLog{*l}
+}
 
 func (l *TimestampedLog) getSizeKey() kv.Key {
 	var buf bytes.Buffer
@@ -86,15 +72,22 @@ func (l *TimestampedLog) getElemKey(idx uint32) kv.Key {
 
 func (l *TimestampedLog) setSize(size uint32) {
 	if size == 0 {
-		panic("implement me")
-		// l.kv.Del(l.getSizeKey())
+		l.kv.Del(l.getSizeKey())
 	} else {
 		l.kv.Set(l.getSizeKey(), util.Uint32To4Bytes(size))
 	}
-	l.cachedLen = size
 }
 
-func (l *TimestampedLog) len() (uint32, error) {
+func (l *TimestampedLog) addToSize(amount int) (uint32, error) {
+	prevSize, err := l.Len()
+	if err != nil {
+		return 0, err
+	}
+	l.setSize(uint32(int(prevSize) + amount))
+	return prevSize, nil
+}
+
+func (l *TimestampedLog) Len() (uint32, error) {
 	v, err := l.kv.Get(l.getSizeKey())
 	if err != nil {
 		return 0, err
@@ -108,32 +101,34 @@ func (l *TimestampedLog) len() (uint32, error) {
 	return util.MustUint32From4Bytes(v), nil
 }
 
-// Len == 0/empty/non-existent are equivalent
-func (l *TimestampedLog) Len() uint32 {
-	return l.cachedLen
-}
-
 func (l *MustTimestampedLog) Len() uint32 {
-	return l.tlog.Len()
+	n, err := l.tlog.Len()
+	if err != nil {
+		panic(err)
+	}
+	return n
 }
 
 // Append appends data with timestamp to the end of the log.
 // Returns error if timestamp is inconsistent, i.e. less than the latest timestamp
 func (l *TimestampedLog) Append(ts int64, data []byte) error {
-	if ts < l.cachedLatest {
+	latest, err := l.latest()
+	if err != nil {
+		return err
+	}
+	if ts < latest {
 		return errors.New("TimestampedLog.append: wrong timestamp")
 	}
-	idx := l.cachedLen
+
+	idx, err := l.addToSize(1)
+	if err != nil {
+		return err
+	}
 
 	var buf bytes.Buffer
 	buf.Write(util.Uint64To8Bytes(uint64(ts)))
 	buf.Write(data)
 	l.kv.Set(l.getElemKey(idx), buf.Bytes())
-	l.setSize(idx + 1)
-	l.cachedLatest = ts
-	if idx == 0 {
-		l.cachedEarliest = ts
-	}
 	return nil
 }
 
@@ -145,17 +140,24 @@ func (l *MustTimestampedLog) Append(ts int64, data []byte) {
 }
 
 // Latest returns latest timestamp in the log
-func (l *TimestampedLog) Latest() int64 {
-	return l.cachedLatest
+func (l *TimestampedLog) Latest() (int64, error) {
+	return l.latest()
 }
 
 func (l *MustTimestampedLog) Latest() int64 {
-	return l.tlog.Latest()
+	ts, err := l.tlog.Latest()
+	if err != nil {
+		panic(err)
+	}
+	return ts
 }
 
 // latest loads latest timestamp from the DB
 func (l *TimestampedLog) latest() (int64, error) {
-	idx := l.Len()
+	idx, err := l.Len()
+	if err != nil {
+		return 0, err
+	}
 	if idx == 0 {
 		return 0, nil
 	}
@@ -170,16 +172,24 @@ func (l *TimestampedLog) latest() (int64, error) {
 }
 
 // Earliest returns timestamp of the first record in the log, if any, or otherwise it is 0
-func (l *TimestampedLog) Earliest() int64 {
-	return l.cachedEarliest
+func (l *TimestampedLog) Earliest() (int64, error) {
+	return l.earliest()
 }
 
 func (l *MustTimestampedLog) Earliest() int64 {
-	return l.tlog.Earliest()
+	ts, err := l.tlog.Earliest()
+	if err != nil {
+		panic(err)
+	}
+	return ts
 }
 
 func (l *TimestampedLog) earliest() (int64, error) {
-	if l.Len() == 0 {
+	n, err := l.Len()
+	if err != nil {
+		return 0, err
+	}
+	if n == 0 {
 		return 0, nil
 	}
 	data, err := l.kv.Get(l.getElemKey(0))
@@ -193,7 +203,11 @@ func (l *TimestampedLog) earliest() (int64, error) {
 }
 
 func (l *TimestampedLog) getRawRecordAtIndex(idx uint32) ([]byte, error) {
-	if idx >= l.cachedLen {
+	n, err := l.Len()
+	if err != nil {
+		return nil, err
+	}
+	if idx >= n {
 		return nil, nil
 	}
 	v, err := l.kv.Get(l.getElemKey(idx))
@@ -249,6 +263,14 @@ func (l *TimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32, descending bool) 
 	return ret, nil
 }
 
+func (l *MustTimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32, descending bool) [][]byte {
+	ret, err := l.tlog.LoadRecordsRaw(fromIdx, toIdx, descending)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // TakeTimeSlice returns a slice structure, which contains existing indices
 // firstIdx and lastIdx.
 // Timestamps of all records between indices (inclusive) satisfy the condition >= T(firstIdx) and <=T(lastIdx)
@@ -257,29 +279,39 @@ func (l *TimestampedLog) LoadRecordsRaw(fromIdx, toIdx uint32, descending bool) 
 // Returned slice may be empty
 // The algorithm uses binary search with logarithmic complexity.
 func (l *TimestampedLog) TakeTimeSlice(fromTs, toTs int64) (*TimeSlice, error) {
-	if l.Len() == 0 {
+	n, err := l.Len()
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
 		// empty slice
 		return nil, nil
 	}
 	if fromTs == 0 {
 		// 0 means earliest
-		fromTs = l.Earliest()
+		fromTs, err = l.Earliest()
+		if err != nil {
+			return nil, err
+		}
 	}
 	if toTs == 0 {
 		// 0 means latest
-		toTs = l.Latest()
+		toTs, err = l.Latest()
+		if err != nil {
+			return nil, err
+		}
 	}
 	if fromTs > toTs {
 		return nil, nil
 	}
-	lowerIdx, ok, err := l.findLowerIdx(fromTs, 0, l.Len()-1)
+	lowerIdx, ok, err := l.findLowerIdx(fromTs, 0, n-1)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, nil
 	}
-	upperIdx, ok, err := l.findUpperIdx(toTs, 0, l.Len()-1)
+	upperIdx, ok, err := l.findUpperIdx(toTs, 0, n-1)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +353,11 @@ func (l *TimestampedLog) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, 
 	if fromIdx > toIdx {
 		return 0, false, nil
 	}
-	if fromIdx >= l.Len() || toIdx >= l.Len() {
+	n, err := l.Len()
+	if err != nil {
+		return 0, false, err
+	}
+	if fromIdx >= n || toIdx >= n {
 		return 0, false, fmt.Errorf("TimestampedLog.findLowerIdx: wrong arguments: %d, %d, %d", ts, fromIdx, toIdx)
 	}
 	r, err := l.getRecordAtIndex(fromIdx)
@@ -373,7 +409,11 @@ func (l *TimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, 
 	if fromIdx > toIdx {
 		return 0, false, nil
 	}
-	if fromIdx >= l.Len() || toIdx >= l.Len() {
+	n, err := l.Len()
+	if err != nil {
+		return 0, false, err
+	}
+	if fromIdx >= n || toIdx >= n {
 		panic(fmt.Errorf("TimestampedLog.findLowerIdx: assertion failed: fromIdx >= l.Len() || toIdx >= l.Len(): args: %d, %d, %d", ts, fromIdx, toIdx))
 	}
 	r, err := l.getRecordAtIndex(toIdx)

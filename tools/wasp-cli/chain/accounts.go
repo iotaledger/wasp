@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
@@ -23,7 +24,7 @@ func listAccountsCmd(args []string) {
 	rows := make([][]string, len(ret))
 	i := 0
 	for k := range ret {
-		agentId, err := coretypes.NewAgentIDFromBytes([]byte(k))
+		agentId, _, err := codec.DecodeAgentID([]byte(k))
 		if err != nil {
 			panic(err.Error())
 		}
