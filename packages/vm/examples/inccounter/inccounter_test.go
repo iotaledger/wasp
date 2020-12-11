@@ -31,6 +31,7 @@ func TestDeployInc(t *testing.T) {
 	_, _, contracts := chain.GetInfo()
 	require.EqualValues(t, 4, len(contracts))
 	checkCounter(chain, 0)
+	chain.CheckAccountLedger()
 }
 
 func TestDeployIncInitParams(t *testing.T) {
@@ -41,6 +42,7 @@ func TestDeployIncInitParams(t *testing.T) {
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
+	chain.CheckAccountLedger()
 }
 
 func TestIncDefaultParam(t *testing.T) {
@@ -55,6 +57,7 @@ func TestIncDefaultParam(t *testing.T) {
 	_, err = chain.PostRequest(alone.NewCall(incName, FuncIncCounter), nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
+	chain.CheckAccountLedger()
 }
 
 func TestIncParam(t *testing.T) {
@@ -69,6 +72,8 @@ func TestIncParam(t *testing.T) {
 	_, err = chain.PostRequest(alone.NewCall(incName, FuncIncCounter, VarCounter, 3), nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
+
+	chain.CheckAccountLedger()
 }
 
 func TestIncWith1Post(t *testing.T) {
@@ -88,4 +93,6 @@ func TestIncWith1Post(t *testing.T) {
 
 	chain.WaitEmptyBacklog()
 	checkCounter(chain, 19)
+
+	chain.CheckAccountLedger()
 }

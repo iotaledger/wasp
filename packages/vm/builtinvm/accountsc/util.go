@@ -38,6 +38,7 @@ func CreditToAccount(state kv.KVStore, agentID coretypes.AgentID, transfer coret
 	//fmt.Printf("CreditToAccount: %s -- %s\n", agentID.String(), cbalances.Str(transfer))
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
+	MustCheckLedger(state, "CreditToAccount")
 }
 
 // creditToAccount internal
@@ -69,6 +70,7 @@ func DebitFromAccount(state kv.KVStore, agentID coretypes.AgentID, transfer core
 	if !debitFromAccount(state, getTotalAssetsAccount(state), transfer) {
 		panic("debitFromAccount: inconsistent accounts ledger state")
 	}
+	MustCheckLedger(state, "DebitFromAccount")
 	return true
 }
 
