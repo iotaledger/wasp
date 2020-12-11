@@ -305,9 +305,12 @@ func TestIncViewCounter(t *testing.T) {
 
 func TestIncAlone(t *testing.T) {
 	al := alone.New(t, false, true)
-	err := al.DeployWasmContract(nil, "testInccounter", "wasm/inccounter_bg.wasm")
+	chain := al.NewChain(nil, "chain1")
+	err := chain.DeployWasmContract(nil, "testInccounter", "wasm/inccounter_bg.wasm")
 	require.NoError(t, err)
-	req := alone.NewCall("testInccounter", "incrementRepeatMany", "numRepeats", 2)
-	_, err = al.PostRequest(req, nil)
+	req := alone.NewCall("testInccounter", "incrementRepeatMany", "numRepeats", 2).
+		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
+	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
+	chain.WaitEmptyBacklog()
 }
