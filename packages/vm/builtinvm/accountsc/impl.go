@@ -25,7 +25,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamAgentID
 func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	ctx.Eventf("getBalance")
+	ctx.Log().Debugf("getBalance")
 	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, ErrParamWrongOrNotFound
 	}
-	ctx.Eventf("getBalance for %s", aid.String())
+	ctx.Log().Debugf("getBalance for %s", aid.String())
 
 	retMap, ok := GetAccountBalances(ctx.State(), aid)
 	ret := dict.New()
@@ -43,7 +43,7 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	for col, bal := range retMap {
 		ret.Set(kv.Key(col[:]), codec.EncodeInt64(bal))
 	}
-	ctx.Eventf("getBalance for %s. balance = %s\n", aid.String(), cbalances.NewFromMap(retMap).String())
+	ctx.Log().Debugf("getBalance for %s. balance = %s\n", aid.String(), cbalances.NewFromMap(retMap).String())
 	return ret, nil
 }
 

@@ -1,27 +1,20 @@
 package viewcontext
 
 import (
-	"sync"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 var (
-	log         *logger.Logger
-	logOnce     sync.Once
-	logProvided *logger.Logger
+	logDefault *logger.Logger
 )
 
-func initLogger() {
-	if logProvided != nil {
-		log = logProvided
-	} else {
-		log = logger.NewLogger("viewcontext")
-	}
+func InitLogger() {
+	logDefault = logger.NewLogger("view")
 }
 
 type sandboxview struct {
@@ -33,13 +26,12 @@ type sandboxview struct {
 }
 
 func newSandboxView(vctx *viewcontext, contractID coretypes.ContractID, params dict.Dict) *sandboxview {
-	logOnce.Do(initLogger)
 	return &sandboxview{
 		vctx:       vctx,
 		params:     params,
 		state:      contractStateSubpartition(vctx.state, contractID.Hname()),
 		contractID: contractID,
-		events:     vm.NewContractEventPublisher(contractID, log),
+		events:     vm.NewContractEventPublisher(contractID, vctx.log),
 	}
 }
 
@@ -63,12 +55,8 @@ func (s *sandboxview) ContractID() coretypes.ContractID {
 	return s.contractID
 }
 
-func (s *sandboxview) Event(msg string) {
-	s.events.Publish(msg)
-}
-
-func (s *sandboxview) Eventf(format string, args ...interface{}) {
-	s.events.Publishf(format, args...)
+func (s *sandboxview) Log() vmtypes.LogInterface {
+	return s.vctx
 }
 
 func (s *sandboxview) ChainID() coretypes.ChainID {

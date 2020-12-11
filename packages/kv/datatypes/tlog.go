@@ -429,6 +429,9 @@ func (l *TimestampedLog) Erase() {
 }
 
 func (sl *TimeSlice) FromToIndices() (uint32, uint32) {
+	if sl.IsEmpty() {
+		return 0, 0
+	}
 	return sl.firstIdx, sl.lastIdx
 }
 

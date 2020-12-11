@@ -21,6 +21,7 @@ type viewcontext struct {
 	state      kv.KVStore //buffered.BufferedKVStore
 	chainID    coretypes.ChainID
 	timestamp  int64
+	log        *logger.Logger
 }
 
 func NewFromDB(chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
@@ -36,12 +37,17 @@ func NewFromDB(chainID coretypes.ChainID, proc *processors.ProcessorCache) (*vie
 }
 
 func New(chainID coretypes.ChainID, state kv.KVStore, ts int64, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
-	logProvided = logSet
+	if logSet == nil {
+		logSet = logDefault
+	} else {
+		logSet = logSet.Named("view")
+	}
 	return &viewcontext{
 		processors: proc,
 		state:      state,
 		chainID:    chainID,
 		timestamp:  ts,
+		log:        logSet,
 	}
 }
 
@@ -75,4 +81,16 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 
 func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStore {
 	return subrealm.New(state, kv.Key(contractHname.Bytes()))
+}
+
+func (v *viewcontext) Infof(format string, params ...interface{}) {
+	v.log.Infof(format, params...)
+}
+
+func (v *viewcontext) Debugf(format string, params ...interface{}) {
+	v.log.Debugf(format, params...)
+}
+
+func (v *viewcontext) Panicf(format string, params ...interface{}) {
+	v.log.Panicf(format, params...)
 }

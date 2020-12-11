@@ -1,20 +1,22 @@
 // ony needed to link packages with examples
-package examples
+package globals
 
 import (
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/vm/examples/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
 // PluginName is the name of the banner plugin.
-const PluginName = "Examples"
+const PluginName = "Globals"
 
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)
 }
 
-func configure(ctx *node.Plugin) {
+func configure(_ *node.Plugin) {
+	viewcontext.InitLogger()
 }
 
-func run(ctx *node.Plugin) {
+func run(_ *node.Plugin) {
 }

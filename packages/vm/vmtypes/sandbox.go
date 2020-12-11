@@ -64,17 +64,20 @@ type Sandbox interface {
 	// PostRequest sends cross-chain request
 	PostRequest(par NewRequestParams) bool
 	// PostRequestToSelf send cross chain request to the caller contract on the same chain
+	// Deprecated: just a syntactical sugar for PostRequest
 	PostRequestToSelf(entryPoint coretypes.Hname, args dict.Dict) bool
 	// PostRequestToSelfWithDelay sends request to itself with timelock for some seconds after the current timestamp
+	// Deprecated: just a syntactical sugar for PostRequest
 	PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, deferForSec uint32) bool
 
-	// for testing
+	// Log interface provides local logging on the machine
+	Log() LogInterface
+
 	// Event and Eventf publish "vmmsg" message through Publisher on nanomsg
+	// it also logs locally, but it is not the same thing
 	Event(msg string)
 	Eventf(format string, args ...interface{})
-	// Same as panic(), but added as a Sandbox method to emphasize that it's ok to panic from a SC.
-	// A panic will be recovered, and Rollback() will be automatically called after.
-	Panic(v interface{})
+
 	// clear all updates, restore same context as in the beginning of the VM call
 	Rollback()
 }
@@ -85,4 +88,10 @@ type NewRequestParams struct {
 	Timelock         uint32
 	Params           dict.Dict
 	Transfer         coretypes.ColoredBalances
+}
+
+type LogInterface interface {
+	Infof(format string, param ...interface{})
+	Debugf(format string, param ...interface{})
+	Panicf(format string, param ...interface{})
 }

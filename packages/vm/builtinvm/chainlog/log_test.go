@@ -67,33 +67,32 @@ func TestGetLasts3(t *testing.T) {
 }
 
 func TestGetBetweenTs(t *testing.T) {
+	//t.SkipNow()
+
 	e := alone.New(t, false, false)
+	e.SetTimeStep(500 * time.Millisecond)
+
 	err := e.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
 	req1 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number ONE"))
 	_, err = e.PostRequest(req1, nil)
-	time.Sleep(500 * time.Millisecond)
 
 	req2 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number TWO"))
 	_, err = e.PostRequest(req2, nil)
-	time.Sleep(500 * time.Millisecond)
 
 	req3 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number THREE"))
 	_, err = e.PostRequest(req3, nil)
-	time.Sleep(500 * time.Millisecond)
 
 	req4 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number FOUR"))
 	_, err = e.PostRequest(req4, nil)
-	time.Sleep(500 * time.Millisecond)
 
 	req5 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number FIVE"))
 	_, err = e.PostRequest(req5, nil)
-	time.Sleep(1000 * time.Millisecond)
 
 	res, err := e.CallView(Interface.Name, FuncGetLogsBetweenTs,
 		ParamFromTs, 0,
-		ParamToTs, time.Now().UnixNano()-2*time.Second.Nanoseconds(),
+		ParamToTs, e.State.Timestamp()-int64(1000*time.Millisecond),
 		ParamLastsRecords, 2)
 	require.NoError(t, err)
 
@@ -108,5 +107,4 @@ func TestGetBetweenTs(t *testing.T) {
 	require.NoError(t, err)
 
 	require.EqualValues(t, 2, array.Len())
-
 }

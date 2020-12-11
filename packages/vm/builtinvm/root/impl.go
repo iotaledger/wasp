@@ -29,19 +29,19 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	// -- chain ID
 	chainID, ok, err := codec.DecodeChainID(params.MustGet(ParamChainID))
 	if !ok || err != nil {
-		ctx.Panic(fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainID, err))
+		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainID, err)
 	}
 	// -- description
 	chainDescription, ok, err := codec.DecodeString(params.MustGet(ParamDescription))
 	if err != nil {
-		ctx.Panic(fmt.Errorf("root.initialize.fail: can't read expected request argument '%s': %s", ParamDescription, err))
+		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamDescription, err)
 	}
 	if !ok {
 		chainDescription = "M/A"
 	}
 	contractRegistry := datatypes.NewMustMap(state, VarContractRegistry)
 	if contractRegistry.Len() != 0 {
-		ctx.Panic(fmt.Errorf("root.initialize.fail: registry not empty"))
+		ctx.Log().Panicf("root.initialize.fail: registry not empty")
 	}
 	// record for root
 	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&RootContractRecord))
@@ -53,7 +53,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		Creator:     ctx.Caller(),
 	}, nil)
 	if err != nil {
-		ctx.Panic(fmt.Errorf("root.init.fail: %v", err))
+		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
 	// deploy accountsc
 	err = storeAndInitContract(ctx, &ContractRecord{
@@ -63,7 +63,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		Creator:     ctx.Caller(),
 	}, nil)
 	if err != nil {
-		ctx.Panic(fmt.Errorf("root.init.fail: %v", err))
+		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
 
 	state.Set(VarStateInitialized, []byte{0xFF})

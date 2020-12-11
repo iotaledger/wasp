@@ -36,6 +36,8 @@ import (
 	"time"
 )
 
+const DefaultTimeStep = 1 * time.Millisecond
+
 type Env struct {
 	T                   *testing.T
 	ChainSigScheme      signaturescheme.SignatureScheme
@@ -50,6 +52,8 @@ type Env struct {
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
 	Log                 *logger.Logger
+	timestamp           time.Time
+	timeStep            time.Duration
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	chPosted     sync.WaitGroup
@@ -89,6 +93,8 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
 		Log:                 log,
+		timestamp:           time.Now(),
+		timeStep:            DefaultTimeStep,
 		//
 		runVMMutex:   &sync.Mutex{},
 		chInRequest:  make(chan sctransaction.RequestRef),
@@ -139,6 +145,35 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 	return env
 }
 
+func (e *Env) AdvanceClockTo(ts time.Time) {
+	e.backlogMutex.Lock()
+	defer e.backlogMutex.Unlock()
+
+	e.advanceClockTo(ts)
+}
+
+func (e *Env) advanceClockTo(ts time.Time) {
+	if !e.timestamp.Before(ts) {
+		panic("can't advance clock to the past")
+	}
+	e.timestamp = ts
+}
+
+func (e *Env) AdvanceClockBy(step time.Duration) {
+	e.backlogMutex.Lock()
+	defer e.backlogMutex.Unlock()
+
+	e.advanceClockTo(e.timestamp.Add(step))
+	e.Log.Infof("logical clock advanced by %v ahead", step)
+}
+
+func (e *Env) SetTimeStep(step time.Duration) {
+	e.backlogMutex.Lock()
+	defer e.backlogMutex.Unlock()
+
+	e.timeStep = step
+}
+
 func (e *Env) readRequestsLoop() {
 	for r := range e.chInRequest {
 		e.backlogMutex.Lock()
@@ -156,9 +191,12 @@ func (e *Env) collateBatch() []sctransaction.RequestRef {
 
 	ret := make([]sctransaction.RequestRef, 0)
 	remain := e.backlog[:0]
-	nowis := time.Now().Unix()
 	for _, ref := range e.backlog {
-		if int64(ref.RequestSection().Timelock()) <= nowis {
+		// using logical clock
+		if int64(ref.RequestSection().Timelock()) <= e.timestamp.Unix() {
+			if ref.RequestSection().Timelock() != 0 {
+				e.Log.Infof("unlocked time-locked request %s", ref.RequestID().String())
+			}
 			ret = append(ret, ref)
 		} else {
 			remain = append(remain, ref)

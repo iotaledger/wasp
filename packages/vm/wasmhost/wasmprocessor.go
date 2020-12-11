@@ -154,13 +154,17 @@ func (host *wasmProcessor) Log(logLevel int32, text string) {
 	}
 }
 
+// TODO there's a need to distinguish between logging and events
+// Also, logging has levels
 func (host *wasmProcessor) LogText(text string) {
 	if host.ctx != nil {
-		host.ctx.Event(text)
+		//host.ctx.Event(text)
+		host.ctx.Log().Infof(text)
 		return
 	}
 	if host.ctxView != nil {
-		host.ctxView.Event(text)
+		//host.ctxView.Event(text)
+		host.ctxView.Log().Infof(text)
 		return
 	}
 	// fallback logging
