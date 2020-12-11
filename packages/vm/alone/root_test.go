@@ -26,6 +26,8 @@ func TestRootRepeatInit(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
+	chain.CheckBase()
+
 	req := NewCall(root.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
