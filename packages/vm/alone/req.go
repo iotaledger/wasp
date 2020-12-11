@@ -72,28 +72,28 @@ func (r *callParams) withParams(params ...interface{}) *callParams {
 	return r
 }
 
-func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
-	e.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
-	e.runVMMutex.Lock()
-	defer e.runVMMutex.Unlock()
+func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
+	ch.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
 
 	task := &vm.VMTask{
-		Processors:   e.Proc,
-		ChainID:      e.ChainID,
-		Color:        e.ChainColor,
+		Processors:   ch.Proc,
+		ChainID:      ch.ChainID,
+		Color:        ch.ChainColor,
 		Entropy:      *hashing.RandomHash(nil),
-		Balances:     waspconn.OutputsToBalances(e.UtxoDB.GetAddressOutputs(e.ChainAddress)),
+		Balances:     waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
 		Requests:     batch,
-		Timestamp:    e.timestamp.UnixNano(),
-		VirtualState: e.State.Clone(),
-		Log:          e.Log,
+		Timestamp:    ch.Glb.LogicalTime().UnixNano(),
+		VirtualState: ch.State.Clone(),
+		Log:          ch.Log,
 	}
 	var err error
 	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(e.T, err)
+		require.NoError(ch.Glb.T, err)
 		callRes = callResult
 		callErr = callError
 		wg.Done()
@@ -101,38 +101,58 @@ func (e *Env) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dic
 
 	wg.Add(1)
 	err = runvm.RunComputationsAsync(task)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	wg.Wait()
-	task.ResultTransaction.Sign(e.ChainSigScheme)
-	prevBlockIndex := e.StateTx.MustState().BlockIndex()
+	task.ResultTransaction.Sign(ch.ChainSigScheme)
+	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
 
-	e.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
+	ch.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
 
-	e.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
-		prevBlockIndex, e.State.BlockIndex(), batchShortStr(batch), len(e.StateTx.Requests()))
+	ch.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
+		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(batch), len(ch.StateTx.Requests()))
 	return callRes, callErr
 }
 
-func (e *Env) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
-	err := e.UtxoDB.AddTransaction(stateTx.Transaction)
-	require.NoError(e.T, err)
+func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
+	err := ch.Glb.utxoDB.AddTransaction(stateTx.Transaction)
+	require.NoError(ch.Glb.T, err)
 
 	err = newState.ApplyBlock(block)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	err = newState.CommitToDb(block)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
-	e.StateTx = stateTx
-	e.State = newState
-	e.AdvanceClockBy(e.timeStep)
+	ch.StateTx = stateTx
+	ch.State = newState
+	ch.Glb.ClockStep()
 
-	e.chPosted.Add(len(e.StateTx.Requests()))
-	for i := range e.StateTx.Requests() {
-		e.chInRequest <- sctransaction.RequestRef{
+	// dispatch requests among chains
+	ch.Glb.glbMutex.Lock()
+	defer ch.Glb.glbMutex.Unlock()
+
+	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
+	for i, rsect := range ch.StateTx.Requests() {
+		chid := rsect.Target().ChainID()
+		_, ok := reqRefByChain[chid]
+		if !ok {
+			reqRefByChain[chid] = make([]sctransaction.RequestRef, 0)
+		}
+		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction.RequestRef{
 			Tx:    stateTx,
 			Index: uint16(i),
+		})
+	}
+	for chid, reqs := range reqRefByChain {
+		chain, ok := ch.Glb.chains[chid]
+		if !ok {
+			ch.Infof("dispatching requests. Unknown chain: %s", chid.String())
+			continue
+		}
+		chain.chPosted.Add(len(reqs))
+		for _, reqRef := range reqs {
+			chain.chInRequest <- reqRef
 		}
 	}
 }
@@ -145,44 +165,44 @@ func batchShortStr(batch []sctransaction.RequestRef) string {
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }
 
-func (e *Env) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
-		sigScheme = e.OriginatorSigScheme
+		sigScheme = ch.OriginatorSigScheme
 	}
-	allOuts := e.UtxoDB.GetAddressOutputs(sigScheme.Address())
+	allOuts := ch.Glb.utxoDB.GetAddressOutputs(sigScheme.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
-	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(e.ChainID, req.target), req.entryPoint).
+	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
 		WithTransfer(req.transfer).
 		WithArgs(req.params)
 	err = txb.AddRequestSection(reqSect)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	tx, err := txb.Build(false)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	tx.Sign(sigScheme)
-	err = e.UtxoDB.AddTransaction(tx.Transaction)
+	err = ch.Glb.utxoDB.AddTransaction(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
-	return e.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
+	return ch.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (e *Env) CallViewFull(req *callParams) (dict.Dict, error) {
-	e.runVMMutex.Lock()
-	defer e.runVMMutex.Unlock()
+func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.State.Timestamp(), e.Proc, e.Log)
+	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.Proc, ch.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
 
-func (e *Env) CallView(fun string, ep string, params ...interface{}) (dict.Dict, error) {
-	return e.CallViewFull(NewCall(fun, ep, params...))
+func (ch *Chain) CallView(fun string, ep string, params ...interface{}) (dict.Dict, error) {
+	return ch.CallViewFull(NewCall(fun, ep, params...))
 }
 
-func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {
+func (ch *Chain) WaitEmptyBacklog(maxWait ...time.Duration) {
 	maxDurationSet := len(maxWait) > 0
 	var deadline time.Time
 	if maxDurationSet {
@@ -191,17 +211,17 @@ func (e *Env) WaitEmptyBacklog(maxWait ...time.Duration) {
 	counter := 0
 	for {
 		if counter%40 == 0 {
-			e.Log.Infof("backlog length = %d", e.backlogLen())
+			ch.Log.Infof("backlog length = %d", ch.backlogLen())
 		}
 		counter++
-		if e.backlogLen() > 0 {
+		if ch.backlogLen() > 0 {
 			time.Sleep(50 * time.Millisecond)
 			if maxDurationSet && deadline.Before(time.Now()) {
-				e.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+				ch.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
 			}
 		} else {
 			time.Sleep(10 * time.Millisecond)
-			if e.backlogLen() == 0 {
+			if ch.backlogLen() == 0 {
 				break
 			}
 		}

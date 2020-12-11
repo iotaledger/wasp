@@ -38,8 +38,22 @@ import (
 
 const DefaultTimeStep = 1 * time.Millisecond
 
-type Env struct {
-	T                   *testing.T
+// Glb global structure
+type Glb struct {
+	T           *testing.T
+	logger      *logger.Logger
+	utxoDB      *utxodb.UtxoDB
+	glbMutex    *sync.Mutex
+	logicalTime time.Time
+	timeStep    time.Duration
+	chains      map[coretypes.ChainID]*Chain
+	doOnce      sync.Once
+}
+
+// Chain represents individual chain
+type Chain struct {
+	Glb                 *Glb
+	Name                string
 	ChainSigScheme      signaturescheme.SignatureScheme
 	OriginatorSigScheme signaturescheme.SignatureScheme
 	ChainID             coretypes.ChainID
@@ -47,13 +61,10 @@ type Env struct {
 	ChainColor          balance.Color
 	OriginatorAddress   address.Address
 	OriginatorAgentID   coretypes.AgentID
-	UtxoDB              *utxodb.UtxoDB
 	StateTx             *sctransaction.Transaction
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
 	Log                 *logger.Logger
-	timestamp           time.Time
-	timeStep            time.Duration
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	chPosted     sync.WaitGroup
@@ -64,37 +75,49 @@ type Env struct {
 	batchMutex   *sync.Mutex
 }
 
-var regOnce sync.Once
+var doOnce = sync.Once{}
 
-func New(t *testing.T, debug bool, printStackTrace bool) *Env {
-	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
-	orSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
-	chainID := coretypes.ChainID(chSig.Address())
-	log := testutil.NewLogger(t)
-	if !debug {
-		log = testutil.WithLevel(log, zapcore.InfoLevel, printStackTrace)
-	}
-	regOnce.Do(func() {
+func New(t *testing.T, debug bool, printStackTrace bool) *Glb {
+	doOnce.Do(func() {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmhost.GetProcessor)
-		if err != nil {
-			log.Panicf("%s: %v", wasmtimevm.VMType, err)
-		}
+		require.NoError(t, err)
 	})
+	ret := &Glb{
+		T:           t,
+		logger:      testutil.NewLogger(t),
+		utxoDB:      utxodb.New(),
+		glbMutex:    &sync.Mutex{},
+		logicalTime: time.Now(),
+		timeStep:    DefaultTimeStep,
+		chains:      make(map[coretypes.ChainID]*Chain),
+	}
+	if !debug {
+		ret.logger = testutil.WithLevel(ret.logger, zapcore.InfoLevel, printStackTrace)
+	}
+	return ret
+}
 
-	env := &Env{
-		T:                   t,
+func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name string) *Chain {
+	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
+	if chainOriginator == nil {
+		chainOriginator = signaturescheme.ED25519(ed25519.GenerateKeyPair())
+		_, err := glb.utxoDB.RequestFunds(chainOriginator.Address())
+		require.NoError(glb.T, err)
+	}
+	chainID := coretypes.ChainID(chSig.Address())
+
+	ret := &Chain{
+		Glb:                 glb,
+		Name:                name,
 		ChainSigScheme:      chSig,
-		OriginatorSigScheme: orSig,
+		OriginatorSigScheme: chainOriginator,
 		ChainAddress:        chSig.Address(),
-		OriginatorAddress:   orSig.Address(),
-		OriginatorAgentID:   coretypes.NewAgentIDFromAddress(orSig.Address()),
+		OriginatorAddress:   chainOriginator.Address(),
+		OriginatorAgentID:   coretypes.NewAgentIDFromAddress(chainOriginator.Address()),
 		ChainID:             chainID,
-		UtxoDB:              utxodb.New(),
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
-		Log:                 log,
-		timestamp:           time.Now(),
-		timeStep:            DefaultTimeStep,
+		Log:                 glb.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
 		chInRequest:  make(chan sctransaction.RequestRef),
@@ -103,116 +126,89 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Env {
 		batch:        nil,
 		batchMutex:   &sync.Mutex{},
 	}
-	_, err := env.UtxoDB.RequestFunds(env.OriginatorAddress)
-	require.NoError(t, err)
-	env.CheckUtxodbBalance(env.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
-
-	env.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:             env.ChainAddress,
-		OriginatorSignatureScheme: env.OriginatorSigScheme,
-		AllInputs:                 env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
+	glb.CheckUtxodbBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	var err error
+	ret.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+		OriginAddress:             ret.ChainAddress,
+		OriginatorSignatureScheme: ret.OriginatorSigScheme,
+		AllInputs:                 glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
 	})
-	require.NoError(t, err)
-	require.NotNil(t, env.StateTx)
-	err = env.UtxoDB.AddTransaction(env.StateTx.Transaction)
-	require.NoError(t, err)
+	require.NoError(glb.T, err)
+	require.NotNil(glb.T, ret.StateTx)
+	err = glb.utxoDB.AddTransaction(ret.StateTx.Transaction)
+	require.NoError(glb.T, err)
 
-	env.ChainColor = balance.Color(env.StateTx.ID())
+	ret.ChainColor = balance.Color(ret.StateTx.ID())
 
-	originBlock := state.MustNewOriginBlock(&env.ChainColor)
-	err = env.State.ApplyBlock(originBlock)
-	require.NoError(t, err)
-	err = env.State.CommitToDb(originBlock)
-	require.NoError(t, err)
+	originBlock := state.MustNewOriginBlock(&ret.ChainColor)
+	err = ret.State.ApplyBlock(originBlock)
+	require.NoError(glb.T, err)
+	err = ret.State.CommitToDb(originBlock)
+	require.NoError(glb.T, err)
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		Description:          "'alone' testing chain",
-		OwnerSignatureScheme: env.OriginatorSigScheme,
-		AllInputs:            env.UtxoDB.GetAddressOutputs(env.OriginatorAddress),
+		OwnerSignatureScheme: ret.OriginatorSigScheme,
+		AllInputs:            glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
 	})
-	require.NoError(t, err)
-	require.NotNil(t, initTx)
+	require.NoError(glb.T, err)
+	require.NotNil(glb.T, initTx)
 
-	err = env.UtxoDB.AddTransaction(initTx.Transaction)
-	require.NoError(t, err)
-	_, err = env.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
-	require.NoError(t, err)
+	err = glb.utxoDB.AddTransaction(initTx.Transaction)
+	require.NoError(glb.T, err)
+	_, err = ret.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
+	require.NoError(glb.T, err)
 
-	go env.readRequestsLoop()
-	go env.runBatchLoop()
+	glb.glbMutex.Lock()
+	glb.chains[chainID] = ret
+	glb.glbMutex.Unlock()
 
-	return env
+	go ret.readRequestsLoop()
+	go ret.runBatchLoop()
+
+	return ret
 }
 
-func (e *Env) AdvanceClockTo(ts time.Time) {
-	e.backlogMutex.Lock()
-	defer e.backlogMutex.Unlock()
-
-	e.advanceClockTo(ts)
-}
-
-func (e *Env) advanceClockTo(ts time.Time) {
-	if !e.timestamp.Before(ts) {
-		panic("can't advance clock to the past")
-	}
-	e.timestamp = ts
-}
-
-func (e *Env) AdvanceClockBy(step time.Duration) {
-	e.backlogMutex.Lock()
-	defer e.backlogMutex.Unlock()
-
-	e.advanceClockTo(e.timestamp.Add(step))
-	e.Log.Infof("logical clock advanced by %v ahead", step)
-}
-
-func (e *Env) SetTimeStep(step time.Duration) {
-	e.backlogMutex.Lock()
-	defer e.backlogMutex.Unlock()
-
-	e.timeStep = step
-}
-
-func (e *Env) readRequestsLoop() {
-	for r := range e.chInRequest {
-		e.backlogMutex.Lock()
-		e.backlog = append(e.backlog, r)
-		e.backlogMutex.Unlock()
-		e.chPosted.Done()
+func (ch *Chain) readRequestsLoop() {
+	for r := range ch.chInRequest {
+		ch.backlogMutex.Lock()
+		ch.backlog = append(ch.backlog, r)
+		ch.backlogMutex.Unlock()
+		ch.chPosted.Done()
 	}
 }
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (e *Env) collateBatch() []sctransaction.RequestRef {
-	e.backlogMutex.Lock()
-	defer e.backlogMutex.Unlock()
+func (ch *Chain) collateBatch() []sctransaction.RequestRef {
+	ch.backlogMutex.Lock()
+	defer ch.backlogMutex.Unlock()
 
 	ret := make([]sctransaction.RequestRef, 0)
-	remain := e.backlog[:0]
-	for _, ref := range e.backlog {
+	remain := ch.backlog[:0]
+	for _, ref := range ch.backlog {
 		// using logical clock
-		if int64(ref.RequestSection().Timelock()) <= e.timestamp.Unix() {
+		if int64(ref.RequestSection().Timelock()) <= ch.Glb.LogicalTime().Unix() {
 			if ref.RequestSection().Timelock() != 0 {
-				e.Log.Infof("unlocked time-locked request %s", ref.RequestID().String())
+				ch.Log.Infof("unlocked time-locked request %s", ref.RequestID().String())
 			}
 			ret = append(ret, ref)
 		} else {
 			remain = append(remain, ref)
 		}
 	}
-	e.backlog = remain
+	ch.backlog = remain
 	return ret
 }
 
-func (e *Env) runBatchLoop() {
+func (ch *Chain) runBatchLoop() {
 	for {
-		batch := e.collateBatch()
+		batch := ch.collateBatch()
 		if len(batch) > 0 {
-			_, err := e.runBatch(batch, "runBatchLoop")
+			_, err := ch.runBatch(batch, "runBatchLoop")
 			if err != nil {
-				e.Log.Errorf("runBatch: %v", err)
+				ch.Log.Errorf("runBatch: %v", err)
 			}
 			continue
 		}
@@ -220,9 +216,20 @@ func (e *Env) runBatchLoop() {
 	}
 }
 
-func (e *Env) backlogLen() int {
-	e.chPosted.Wait()
-	e.backlogMutex.Lock()
-	defer e.backlogMutex.Unlock()
-	return len(e.backlog)
+func (ch *Chain) backlogLen() int {
+	ch.chPosted.Wait()
+	ch.backlogMutex.Lock()
+	defer ch.backlogMutex.Unlock()
+	return len(ch.backlog)
+}
+
+// NewSigSchemeWithFunds generates new ed25519 sigscheme and requests funds from the faucet
+func (glb *Glb) NewSigSchemeWithFunds() signaturescheme.SignatureScheme {
+	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	_, err := glb.utxoDB.RequestFunds(ret.Address())
+	if err != nil {
+		glb.logger.Panicf("NewSigSchemeWithFunds: %v", err)
+	}
+	glb.CheckUtxodbBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	return ret
 }

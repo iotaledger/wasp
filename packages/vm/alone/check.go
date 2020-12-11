@@ -13,49 +13,49 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (e *Env) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
-	require.EqualValues(e.T, expected, e.GetUtxodbBalance(addr, col))
+func (glb *Glb) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+	require.EqualValues(glb.T, expected, glb.GetUtxodbBalance(addr, col))
 }
 
-func (e *Env) CheckBase() {
+func (ch *Chain) CheckBase() {
 	req := NewCall(root.Interface.Name, root.FuncGetInfo)
-	res1, err := e.PostRequest(req, nil)
-	require.NoError(e.T, err)
+	res1, err := ch.PostRequest(req, nil)
+	require.NoError(ch.Glb.T, err)
 
-	res2, err := e.CallViewFull(req)
-	require.NoError(e.T, err)
+	res2, err := ch.CallViewFull(req)
+	require.NoError(ch.Glb.T, err)
 
-	require.EqualValues(e.T, res1.Hash(), res2.Hash())
+	require.EqualValues(ch.Glb.T, res1.Hash(), res2.Hash())
 
-	rootRec, err := e.FindContract(root.Interface.Name)
-	require.NoError(e.T, err)
-	require.EqualValues(e.T, root.EncodeContractRecord(&root.RootContractRecord), root.EncodeContractRecord(rootRec))
+	rootRec, err := ch.FindContract(root.Interface.Name)
+	require.NoError(ch.Glb.T, err)
+	require.EqualValues(ch.Glb.T, root.EncodeContractRecord(&root.RootContractRecord), root.EncodeContractRecord(rootRec))
 
-	accountsRec, err := e.FindContract(accountsc.Interface.Name)
-	require.NoError(e.T, err)
-	require.EqualValues(e.T, accountsc.Interface.Name, accountsRec.Name)
-	require.EqualValues(e.T, accountsc.Interface.Description, accountsRec.Description)
-	require.EqualValues(e.T, accountsc.Interface.ProgramHash, accountsRec.ProgramHash)
-	require.EqualValues(e.T, e.OriginatorAgentID, accountsRec.Creator)
+	accountsRec, err := ch.FindContract(accountsc.Interface.Name)
+	require.NoError(ch.Glb.T, err)
+	require.EqualValues(ch.Glb.T, accountsc.Interface.Name, accountsRec.Name)
+	require.EqualValues(ch.Glb.T, accountsc.Interface.Description, accountsRec.Description)
+	require.EqualValues(ch.Glb.T, accountsc.Interface.ProgramHash, accountsRec.ProgramHash)
+	require.EqualValues(ch.Glb.T, ch.OriginatorAgentID, accountsRec.Creator)
 
-	blobRec, err := e.FindContract(blob.Interface.Name)
-	require.NoError(e.T, err)
-	require.EqualValues(e.T, blob.Interface.Name, blobRec.Name)
-	require.EqualValues(e.T, blob.Interface.Description, blobRec.Description)
-	require.EqualValues(e.T, blob.Interface.ProgramHash, blobRec.ProgramHash)
-	require.EqualValues(e.T, e.OriginatorAgentID, blobRec.Creator)
+	blobRec, err := ch.FindContract(blob.Interface.Name)
+	require.NoError(ch.Glb.T, err)
+	require.EqualValues(ch.Glb.T, blob.Interface.Name, blobRec.Name)
+	require.EqualValues(ch.Glb.T, blob.Interface.Description, blobRec.Description)
+	require.EqualValues(ch.Glb.T, blob.Interface.ProgramHash, blobRec.ProgramHash)
+	require.EqualValues(ch.Glb.T, ch.OriginatorAgentID, blobRec.Creator)
 }
 
-func (e *Env) CheckAccountLedger() {
-	total := e.GetTotalAssets()
-	accounts := e.GetAccounts()
+func (ch *Chain) CheckAccountLedger() {
+	total := ch.GetTotalAssets()
+	accounts := ch.GetAccounts()
 	sum := make(map[balance.Color]int64)
 	for _, acc := range accounts {
-		e.GetAccountBalance(acc).AddToMap(sum)
+		ch.GetAccountBalance(acc).AddToMap(sum)
 	}
-	require.True(e.T, total.Equal(cbalances.NewFromMap(sum)))
+	require.True(ch.Glb.T, total.Equal(cbalances.NewFromMap(sum)))
 }
 
-func (e *Env) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
-	require.EqualValues(e.T, bal, e.GetAccountBalance(agentID).Balance(col))
+func (ch *Chain) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
+	require.EqualValues(ch.Glb.T, bal, ch.GetAccountBalance(agentID).Balance(col))
 }

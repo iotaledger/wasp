@@ -7,27 +7,30 @@ import (
 )
 
 func TestSuccess(t *testing.T) {
-	e := alone.New(t, false, false)
-	err := e.DeployContract(nil, "dummy", ProgramHash)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	err := chain.DeployContract(nil, "dummy", ProgramHash)
 	require.NoError(t, err)
 }
 
 func TestFail(t *testing.T) {
-	e := alone.New(t, false, false)
-	err := e.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	err := chain.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
 	require.Error(t, err)
 }
 
 func TestFailRepeat(t *testing.T) {
-	e := alone.New(t, true, false)
-	err := e.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	err := chain.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
 	require.Error(t, err)
-	_, _, rec := e.GetInfo()
+	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, 3, len(rec))
 
 	// repeat must succeed
-	err = e.DeployContract(nil, "dummy", ProgramHash)
+	err = chain.DeployContract(nil, "dummy", ProgramHash)
 	require.NoError(t, err)
-	_, _, rec = e.GetInfo()
+	_, _, rec = chain.GetInfo()
 	require.EqualValues(t, 4, len(rec))
 }

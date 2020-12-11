@@ -12,26 +12,28 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	e := alone.New(t, false, false)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
 
-	e.CheckBase()
+	chain.CheckBase()
 
-	err := e.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 
 	require.NoError(t, err)
 }
 
 func TestStore(t *testing.T) {
-	e := alone.New(t, false, false)
-	err := e.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
 	req := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("some test text"))
 
-	_, err = e.PostRequest(req, nil)
+	_, err = chain.PostRequest(req, nil)
 
 	require.NoError(t, err)
-	res, err := e.CallView(Interface.Name, FuncGetLog)
+	res, err := chain.CallView(Interface.Name, FuncGetLog)
 	require.NoError(t, err)
 
 	v, ok, err := codec.DecodeInt64(res.MustGet(VarLogName))
@@ -42,20 +44,21 @@ func TestStore(t *testing.T) {
 }
 
 func TestGetLasts3(t *testing.T) {
-	e := alone.New(t, false, false)
-	err := e.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
 	req := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number ONE"))
-	_, err = e.PostRequest(req, nil)
+	_, err = chain.PostRequest(req, nil)
 
 	req2 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number TWO"))
-	_, err = e.PostRequest(req2, nil)
+	_, err = chain.PostRequest(req2, nil)
 
 	req3 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number THREE"))
-	_, err = e.PostRequest(req3, nil)
+	_, err = chain.PostRequest(req3, nil)
 
-	res, err := e.CallView(Interface.Name, FuncGetLasts, ParamLog, 3)
+	res, err := chain.CallView(Interface.Name, FuncGetLasts, ParamLog, 3)
 	require.NoError(t, err)
 
 	array := datatypes.NewMustArray(res, VarLogName)
@@ -68,30 +71,31 @@ func TestGetLasts3(t *testing.T) {
 func TestGetBetweenTs(t *testing.T) {
 	//t.SkipNow()
 
-	e := alone.New(t, false, false)
-	e.SetTimeStep(500 * time.Millisecond)
+	glb := alone.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	glb.SetTimeStep(500 * time.Millisecond)
 
-	err := e.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
 	req1 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number ONE"))
-	_, err = e.PostRequest(req1, nil)
+	_, err = chain.PostRequest(req1, nil)
 
 	req2 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number TWO"))
-	_, err = e.PostRequest(req2, nil)
+	_, err = chain.PostRequest(req2, nil)
 
 	req3 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number THREE"))
-	_, err = e.PostRequest(req3, nil)
+	_, err = chain.PostRequest(req3, nil)
 
 	req4 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number FOUR"))
-	_, err = e.PostRequest(req4, nil)
+	_, err = chain.PostRequest(req4, nil)
 
 	req5 := alone.NewCall(Interface.Name, FuncStoreLog, ParamLog, []byte("PostRequest Number FIVE"))
-	_, err = e.PostRequest(req5, nil)
+	_, err = chain.PostRequest(req5, nil)
 
-	res, err := e.CallView(Interface.Name, FuncGetLogsBetweenTs,
+	res, err := chain.CallView(Interface.Name, FuncGetLogsBetweenTs,
 		ParamFromTs, 0,
-		ParamToTs, e.State.Timestamp()-int64(1000*time.Millisecond),
+		ParamToTs, chain.State.Timestamp()-int64(1000*time.Millisecond),
 		ParamLastsRecords, 2)
 	require.NoError(t, err)
 

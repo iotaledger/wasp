@@ -11,11 +11,12 @@ import (
 // a very simple test using 'alone' tool
 
 func TestNew(t *testing.T) {
-	e := New(t, false, false)
-	e.CheckBase()
-	e.Infof("\n%s\n", e.String())
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	chain.CheckBase()
+	chain.Infof("\n%s\n", chain.String())
 
 	req := NewCall(blob.Interface.Name, "init")
-	_, err := e.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
