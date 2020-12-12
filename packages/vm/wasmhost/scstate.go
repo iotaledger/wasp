@@ -5,7 +5,7 @@ package wasmhost
 
 type ScState struct {
 	ScMutableDict
-	isArray bool
+	isArray     bool
 	arrayTypeId int32
 }
 
@@ -21,14 +21,14 @@ func (o *ScState) InitObj(id int32, keyId int32, owner *ModelObject) {
 func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
 	var factory ObjFactory
-	switch typeId {
-	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_MAP_ARRAY, OBJTYPE_STRING_ARRAY:
-		//note that type of array elements can be found by decrementing typeId
-		factory = func() WaspObject { return &ScState{ isArray: true, arrayTypeId:typeId - 1} }
-	case OBJTYPE_MAP:
+	if typeId == OBJTYPE_MAP {
 		factory = func() WaspObject { return &ScState{} }
-	default:
-		o.Panic("GetObjectId: Invalid type")
+	} else {
+		if (typeId & OBJTYPE_ARRAY) != 0 {
+			factory = func() WaspObject { return &ScState{isArray: true, arrayTypeId: typeId & ^OBJTYPE_ARRAY} }
+		} else {
+			o.Panic("GetObjectId: Invalid type")
+		}
 	}
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: factory,

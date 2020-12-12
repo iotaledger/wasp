@@ -35,9 +35,9 @@ func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
 }
 
 func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (dict.Dict, error) {
-    if host.function == "" {
-    	// init function was missing, do nothing
-    	return dict.New(), nil
+	if host.function == "" {
+		// init function was missing, do nothing
+		return dict.New(), nil
 	}
 
 	saveCtx := host.ctx

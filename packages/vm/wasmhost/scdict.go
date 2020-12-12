@@ -52,14 +52,15 @@ func (o *ScImmutableDict) GetInt(keyId int32) int64 {
 func (o *ScImmutableDict) GetObjectId(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
 	var factory ObjFactory
-	switch typeId {
-	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_MAP_ARRAY, OBJTYPE_STRING_ARRAY:
-		//note that type of array elements can be found by decrementing typeId
-		factory = func() WaspObject { return &ScMutableDict{ } }
-	case OBJTYPE_MAP:
+	if typeId == OBJTYPE_MAP {
 		factory = func() WaspObject { return &ScMutableDict{} }
-	default:
-		o.Panic("GetObjectId: Invalid type")
+	} else {
+		if (typeId & OBJTYPE_ARRAY) != 0 {
+			// isArray: true, arrayTypeId: typeId & ^OBJTYPE_ARRAY
+			factory = func() WaspObject { return &ScMutableDict{} }
+		} else {
+			o.Panic("GetObjectId: Invalid type")
+		}
 	}
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: factory,

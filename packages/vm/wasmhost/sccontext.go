@@ -72,11 +72,11 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyBalances:
 		return OBJTYPE_MAP
 	case KeyCalls:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	case KeyContract:
 		return OBJTYPE_MAP
 	case KeyExports:
-		return OBJTYPE_STRING_ARRAY
+		return OBJTYPE_STRING | OBJTYPE_ARRAY
 	case KeyIncoming:
 		return OBJTYPE_MAP
 	case KeyLogs:
@@ -84,7 +84,7 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyParams:
 		return OBJTYPE_MAP
 	case KeyPosts:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	case KeyResults:
 		return OBJTYPE_MAP
 	case KeyCaller:
@@ -94,11 +94,11 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyTimestamp:
 		return OBJTYPE_INT
 	case KeyTransfers:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	case KeyUtility:
 		return OBJTYPE_MAP
 	case KeyViews:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	}
 	return -1
 }
