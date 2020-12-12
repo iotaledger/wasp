@@ -276,7 +276,6 @@ func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // Input:
 // - ParamHname coretypes.Hname contract id
 // Output:
-// - nil if fees are not set for the chain nor for contract
 // - ParamFeeColor balance.Color color of tokens accepted for fees
 // - ParamContractFee int64 minimum fee for contract
 func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
