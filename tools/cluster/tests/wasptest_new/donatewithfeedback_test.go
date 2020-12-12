@@ -2,39 +2,38 @@ package wasptest
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/vm/alone"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const dwfName = "donatewithfeedback"
+const dwfFile = "wasm/donatewithfeedback_bg.wasm"
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 
 var dwfHname = coretypes.Hn(dwfName)
 
 func TestDwfDonateOnce(t *testing.T) {
-	t.SkipNow()
 	const numDonations = 1
-	setupAndLoad(t, dwfName, dwfDescription, 1, nil)
-
-	entryPoint := coretypes.Hn("donate")
+	al := alone.New(t, false, true)
+	chain := al.NewChain(nil, "chain1")
+	err := chain.DeployWasmContract(nil, dwfName, dwfFile)
+	require.NoError(t, err)
 
 	for i := 0; i < numDonations; i++ {
 		feedback := fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i)
-		postRequest(t, dwfHname, entryPoint, 42, map[string]interface{}{
-			"f": feedback,
-		})
+		req := alone.NewCall(dwfName, "donate", "feedback", feedback).
+			WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 42})
+		_, err = chain.PostRequest(req, nil)
+		require.NoError(t, err)
 	}
 
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(dwfHname),
-		"viewDonations",
-		nil,
-	)
-	check(err, t)
-
+	ret, err := chain.CallView(dwfName, "viewDonations")
+	require.NoError(t, err)
 	largest, _, err := codec.DecodeInt64(ret.MustGet("largest"))
 	check(err, t)
 	require.EqualValues(t, 42, largest)

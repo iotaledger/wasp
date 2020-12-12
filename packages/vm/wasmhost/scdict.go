@@ -27,7 +27,12 @@ func (o *ScImmutableDict) InitObj(id int32, keyId int32, owner *ModelObject) {
 }
 
 func (o *ScImmutableDict) Exists(keyId int32) bool {
-	key := o.Name() + o.Suffix(keyId)
+	suffix := o.Suffix(keyId)
+	key := o.Name() + suffix
+	o.vm.Trace("Exists: %s", key)
+	if !o.nested {
+		key = suffix[1:]
+	}
 	return o.Dict.MustHas(kv.Key(key))
 }
 
@@ -42,6 +47,23 @@ func (o *ScImmutableDict) GetInt(keyId int32) int64 {
 		o.Panic("GetInt: %v", err)
 	}
 	return value
+}
+
+func (o *ScImmutableDict) GetObjectId(keyId int32, typeId int32) int32 {
+	o.validate(keyId, typeId)
+	var factory ObjFactory
+	switch typeId {
+	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_MAP_ARRAY, OBJTYPE_STRING_ARRAY:
+		//note that type of array elements can be found by decrementing typeId
+		factory = func() WaspObject { return &ScMutableDict{ } }
+	case OBJTYPE_MAP:
+		factory = func() WaspObject { return &ScMutableDict{} }
+	default:
+		o.Panic("GetObjectId: Invalid type")
+	}
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+		keyId: factory,
+	})
 }
 
 func (o *ScImmutableDict) GetString(keyId int32) string {
@@ -118,7 +140,11 @@ func (o *ScMutableDict) SetString(keyId int32, value string) {
 
 func (o *ScMutableDict) SetTypedBytes(keyId int32, typeId int32, value []byte) {
 	o.validate(keyId, typeId)
-	key := o.Name() + o.Suffix(keyId)
+	suffix := o.Suffix(keyId)
+	key := o.Name() + suffix
 	o.vm.Trace("SetTypedBytes: %s", key)
+	if !o.nested {
+		key = suffix[1:]
+	}
 	o.Dict.Set(kv.Key(key), value)
 }

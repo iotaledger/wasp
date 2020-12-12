@@ -8,7 +8,11 @@ type ScContext struct {
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
-	return &ScContext{MapObject{ModelObject: ModelObject{vm: vm, id: 1}, objects: make(map[int32]int32)}}
+	o := &ScContext{}
+	o.id = 1
+	o.vm = vm
+	o.objects = make(map[int32]int32)
+	return o
 }
 
 func (o *ScContext) Exists(keyId int32) bool {
@@ -55,7 +59,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
 		KeyParams:    func() WaspObject { return &ScImmutableDict{Dict: o.vm.Params()} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
-		KeyResults:   func() WaspObject { return &ScMutableDict{ScImmutableDict{nested: true}} },
+		KeyResults:   func() WaspObject { return &ScMutableDict{} },
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },

@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"fmt"
+	"github.com/mr-tron/base58"
 )
 
 type ObjFactory func() WaspObject
@@ -138,7 +139,11 @@ func (o *ModelObject) SetString(keyId int32, value string) {
 }
 
 func (o *ModelObject) Suffix(keyId int32) string {
-	return "." + string(o.vm.getKeyFromId(keyId))
+	bytes := o.vm.getKeyFromId(keyId)
+	if (keyId & KeyFromString) != 0 {
+		return "." + string(bytes)
+	}
+	return "." + base58.Encode(bytes)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

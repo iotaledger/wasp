@@ -22,7 +22,7 @@ func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
 	var factory ObjFactory
 	switch typeId {
-	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_STRING_ARRAY:
+	case OBJTYPE_BYTES_ARRAY, OBJTYPE_INT_ARRAY, OBJTYPE_MAP_ARRAY, OBJTYPE_STRING_ARRAY:
 		//note that type of array elements can be found by decrementing typeId
 		factory = func() WaspObject { return &ScState{ isArray: true, arrayTypeId:typeId - 1} }
 	case OBJTYPE_MAP:
