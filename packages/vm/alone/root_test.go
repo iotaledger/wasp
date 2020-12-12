@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
@@ -11,24 +13,35 @@ import (
 )
 
 func TestRootBasic(t *testing.T) {
-	e := New(t, false, false)
-	e.CheckBase()
-	e.Infof("\n%s\n", e.String())
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
+
+	chain.CheckBase()
+	chain.Infof("\n%s\n", chain.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	e := New(t, false, false)
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
+
+	chain.CheckBase()
+
 	req := NewCall(root.Interface.Name, "init")
-	_, err := e.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
 
 func TestGetInfo(t *testing.T) {
-	e := New(t, false, false)
-	chainID, chainOwnerID, contracts := e.GetInfo()
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
 
-	require.EqualValues(t, e.ChainID, chainID)
-	require.EqualValues(t, e.OriginatorAgentID, chainOwnerID)
+	chainID, chainOwnerID, contracts := chain.GetInfo()
+
+	require.EqualValues(t, chain.ChainID, chainID)
+	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
 	require.EqualValues(t, 3, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
@@ -38,21 +51,24 @@ func TestGetInfo(t *testing.T) {
 	_, ok = contracts[accountsc.Interface.Hname()]
 	require.True(t, ok)
 
-	rec, err := e.FindContract(blob.Interface.Name)
+	rec, err := chain.FindContract(blob.Interface.Name)
 	require.NoError(t, err)
 	require.EqualValues(t, root.EncodeContractRecord(recBlob), root.EncodeContractRecord(rec))
 }
 
 func TestDeployExample(t *testing.T) {
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
+
 	name := "testInc"
-	e := New(t, false, false)
-	err := e.DeployContract(nil, name, inccounter.ProgramHash)
+	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
 	require.NoError(t, err)
 
-	chainID, chainOwnerID, contracts := e.GetInfo()
+	chainID, chainOwnerID, contracts := chain.GetInfo()
 
-	require.EqualValues(t, e.ChainID, chainID)
-	require.EqualValues(t, e.OriginatorAgentID, chainOwnerID)
+	require.EqualValues(t, chain.ChainID, chainID)
+	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
 	require.EqualValues(t, 4, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
@@ -67,28 +83,31 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
-	require.EqualValues(t, 0, rec.NodeFee)
-	require.EqualValues(t, e.OriginatorAgentID, rec.Creator)
+	require.EqualValues(t, 0, rec.Fee)
+	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
 	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
 
-	recFind, err := e.FindContract(name)
+	recFind, err := chain.FindContract(name)
 	require.NoError(t, err)
 	require.EqualValues(t, root.EncodeContractRecord(recFind), root.EncodeContractRecord(rec))
 }
 
 func TestDeployDouble(t *testing.T) {
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
+
 	name := "testInc"
-	e := New(t, false, false)
-	err := e.DeployContract(nil, name, inccounter.ProgramHash)
+	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
 	require.NoError(t, err)
 
-	err = e.DeployContract(nil, name, inccounter.ProgramHash)
+	err = chain.DeployContract(nil, name, inccounter.ProgramHash)
 	require.Error(t, err)
 
-	chainID, chainOwnerID, contracts := e.GetInfo()
+	chainID, chainOwnerID, contracts := chain.GetInfo()
 
-	require.EqualValues(t, e.ChainID, chainID)
-	require.EqualValues(t, e.OriginatorAgentID, chainOwnerID)
+	require.EqualValues(t, chain.ChainID, chainID)
+	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
 	require.EqualValues(t, 4, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
@@ -103,40 +122,44 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
-	require.EqualValues(t, 0, rec.NodeFee)
-	require.EqualValues(t, e.OriginatorAgentID, rec.Creator)
+	require.EqualValues(t, 0, rec.Fee)
+	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
 	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	e := New(t, false, true)
-	newOwner := e.NewSigScheme()
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
+
+	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
-		WithParams(root.ParamChainOwner, newOwnerAgentID)
-	_, err := e.PostRequest(req, nil)
+	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	_, ownerBack, _ := e.GetInfo()
-	require.EqualValues(t, e.OriginatorAgentID, ownerBack)
+	_, ownerBack, _ := chain.GetInfo()
+	require.EqualValues(t, chain.OriginatorAgentID, ownerBack)
 
-	req = NewCall(root.Interface.Name, root.FuncChangeChainOwner)
-	_, err = e.PostRequest(req, newOwner)
+	req = NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
+	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
-	_, ownerBack, _ = e.GetInfo()
+	_, ownerBack, _ = chain.GetInfo()
 	require.EqualValues(t, newOwnerAgentID, ownerBack)
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	e := New(t, false, false)
-	newOwner := e.NewSigScheme()
+	glb := New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	defer chain.WaitEmptyBacklog()
+
+	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner).
-		WithParams(root.ParamChainOwner, newOwnerAgentID)
-	_, err := e.PostRequest(req, newOwner)
+	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	_, err := chain.PostRequest(req, newOwner)
 	require.Error(t, err)
 
-	_, ownerBack, _ := e.GetInfo()
-	require.EqualValues(t, e.OriginatorAgentID, ownerBack)
+	_, ownerBack, _ := chain.GetInfo()
+	require.EqualValues(t, chain.OriginatorAgentID, ownerBack)
 }

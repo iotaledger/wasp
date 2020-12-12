@@ -1,3 +1,5 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 package alone
 
 import (
@@ -12,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -22,17 +25,23 @@ import (
 )
 
 type callParams struct {
+	targetName string
 	target     coretypes.Hname
+	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
 	params     dict.Dict
 }
 
-func NewCall(target, ep string) *callParams {
-	return &callParams{
-		target:     coretypes.Hn(target),
-		entryPoint: coretypes.Hn(ep),
+func NewCall(sc, fun string, params ...interface{}) *callParams {
+	ret := &callParams{
+		targetName: sc,
+		target:     coretypes.Hn(sc),
+		epName:     fun,
+		entryPoint: coretypes.Hn(fun),
 	}
+	ret.withParams(params...)
+	return ret
 }
 
 func (r *callParams) WithTransfer(transfer map[balance.Color]int64) *callParams {
@@ -58,29 +67,34 @@ func toMap(params ...interface{}) map[string]interface{} {
 	return par
 }
 
-func (r *callParams) WithParams(params ...interface{}) *callParams {
+func (r *callParams) withParams(params ...interface{}) *callParams {
 	r.params = codec.MakeDict(toMap(params...))
 	return r
 }
 
-func (e *aloneEnvironment) runRequest(batch []sctransaction.RequestRef) (dict.Dict, error) {
+func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
+	ch.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
 	task := &vm.VMTask{
-		Processors:   e.Proc,
-		ChainID:      e.ChainID,
-		Color:        e.ChainColor,
-		Entropy:      *hashing.RandomHash(nil),
-		Balances:     waspconn.OutputsToBalances(e.UtxoDB.GetAddressOutputs(e.ChainAddress)),
-		Requests:     batch,
-		Timestamp:    time.Now().UnixNano() + 1,
-		VirtualState: e.State.Clone(),
-		Log:          e.Log,
+		Processors:         ch.Proc,
+		ChainID:            ch.ChainID,
+		Color:              ch.ChainColor,
+		Entropy:            *hashing.RandomHash(nil),
+		ValidatorFeeTarget: ch.ValidatorFeeTarget,
+		Balances:           waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
+		Requests:           batch,
+		Timestamp:          ch.Glb.LogicalTime().UnixNano(),
+		VirtualState:       ch.State.Clone(),
+		Log:                ch.Log,
 	}
 	var err error
 	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(e.T, err)
+		require.NoError(ch.Glb.T, err)
 		callRes = callResult
 		callErr = callError
 		wg.Done()
@@ -88,28 +102,60 @@ func (e *aloneEnvironment) runRequest(batch []sctransaction.RequestRef) (dict.Di
 
 	wg.Add(1)
 	err = runvm.RunComputationsAsync(task)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	wg.Wait()
-	prevBlockIndex := e.StateTx.MustState().BlockIndex()
+	task.ResultTransaction.Sign(ch.ChainSigScheme)
+	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
 
-	task.ResultTransaction.Sign(e.ChainSigScheme)
-	err = e.UtxoDB.AddTransaction(task.ResultTransaction.Transaction)
-	require.NoError(e.T, err)
+	ch.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
 
-	err = task.VirtualState.ApplyBlock(task.ResultBlock)
-	require.NoError(e.T, err)
-
-	err = task.VirtualState.CommitToDb(task.ResultBlock)
-	require.NoError(e.T, err)
-
-	e.StateTx = task.ResultTransaction
-	e.State = task.VirtualState
-
-	newBlockIndex := e.State.BlockIndex()
-
-	e.Infof("state transition #%d --> #%d. Batch: %s", prevBlockIndex, newBlockIndex, batchShortStr(batch))
+	ch.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
+		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(batch), len(ch.StateTx.Requests()))
 	return callRes, callErr
+}
+
+func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
+	err := ch.Glb.utxoDB.AddTransaction(stateTx.Transaction)
+	require.NoError(ch.Glb.T, err)
+
+	err = newState.ApplyBlock(block)
+	require.NoError(ch.Glb.T, err)
+
+	err = newState.CommitToDb(block)
+	require.NoError(ch.Glb.T, err)
+
+	ch.StateTx = stateTx
+	ch.State = newState
+	ch.Glb.ClockStep()
+
+	// dispatch requests among chains
+	ch.Glb.glbMutex.Lock()
+	defer ch.Glb.glbMutex.Unlock()
+
+	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
+	for i, rsect := range ch.StateTx.Requests() {
+		chid := rsect.Target().ChainID()
+		_, ok := reqRefByChain[chid]
+		if !ok {
+			reqRefByChain[chid] = make([]sctransaction.RequestRef, 0)
+		}
+		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction.RequestRef{
+			Tx:    stateTx,
+			Index: uint16(i),
+		})
+	}
+	for chid, reqs := range reqRefByChain {
+		chain, ok := ch.Glb.chains[chid]
+		if !ok {
+			ch.Infof("dispatching requests. Unknown chain: %s", chid.String())
+			continue
+		}
+		chain.chPosted.Add(len(reqs))
+		for _, reqRef := range reqs {
+			chain.chInRequest <- reqRef
+		}
+	}
 }
 
 func batchShortStr(batch []sctransaction.RequestRef) string {
@@ -120,32 +166,65 @@ func batchShortStr(batch []sctransaction.RequestRef) string {
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }
 
-func (e *aloneEnvironment) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
-		sigScheme = e.OriginatorSigScheme
+		sigScheme = ch.OriginatorSigScheme
 	}
-	allOuts := e.UtxoDB.GetAddressOutputs(sigScheme.Address())
+	allOuts := ch.Glb.utxoDB.GetAddressOutputs(sigScheme.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
-	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(e.ChainID, req.target), req.entryPoint).
+	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
 		WithTransfer(req.transfer).
 		WithArgs(req.params)
 	err = txb.AddRequestSection(reqSect)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	tx, err := txb.Build(false)
-	require.NoError(e.T, err)
+	require.NoError(ch.Glb.T, err)
 
 	tx.Sign(sigScheme)
-	err = e.UtxoDB.AddTransaction(tx.Transaction)
+	err = ch.Glb.utxoDB.AddTransaction(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
-	return e.runRequest([]sctransaction.RequestRef{{Tx: tx, Index: 0}})
+	return ch.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (e *aloneEnvironment) CallView(req *callParams) (dict.Dict, error) {
-	vctx := viewcontext.New(e.ChainID, e.State.Variables(), e.Proc, e.Log)
+func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.Proc, ch.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
+}
+
+func (ch *Chain) CallView(sc string, fun string, params ...interface{}) (dict.Dict, error) {
+	return ch.CallViewFull(NewCall(sc, fun, params...))
+}
+
+func (ch *Chain) WaitEmptyBacklog(maxWait ...time.Duration) {
+	maxDurationSet := len(maxWait) > 0
+	var deadline time.Time
+	if maxDurationSet {
+		deadline = time.Now().Add(maxWait[0])
+	}
+	counter := 0
+	for {
+		if counter%40 == 0 {
+			ch.Log.Infof("backlog length = %d", ch.backlogLen())
+		}
+		counter++
+		if ch.backlogLen() > 0 {
+			time.Sleep(50 * time.Millisecond)
+			if maxDurationSet && deadline.Before(time.Now()) {
+				ch.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+			}
+		} else {
+			time.Sleep(10 * time.Millisecond)
+			if ch.backlogLen() == 0 {
+				break
+			}
+		}
+	}
 }

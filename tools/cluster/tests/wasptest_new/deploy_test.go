@@ -97,7 +97,7 @@ func TestDeployContractOnly(t *testing.T) {
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, cr.Name, name)
 
 		return true
@@ -169,7 +169,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, cr.Name, name)
 
 		return true
@@ -208,7 +208,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		check(err, t)
 		require.EqualValues(t, accountsc.Interface.ProgramHash, cr.ProgramHash)
 		require.EqualValues(t, accountsc.Interface.Description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, accountsc.Interface.Name, cr.Name)
 
 		//--
@@ -218,7 +218,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		check(err, t)
 		// TODO check program hash
 		require.EqualValues(t, dscrNew, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, nameNew, cr.Name)
 		return true
 	})

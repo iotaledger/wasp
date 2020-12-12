@@ -10,7 +10,7 @@ func LocateHardcodedProgram(programHash hashing.HashValue) (string, bool) {
 	if _, err := builtinvm.GetProcessor(programHash); err == nil {
 		return builtinvm.VMType, true
 	}
-	if _, ok := examples.GetExampleProcessor(programHash.String()); ok {
+	if _, ok := examples.GetExampleProcessor(programHash); ok {
 		return examples.VMType, true
 	}
 	return "", false

@@ -2,12 +2,12 @@ package inccounter
 
 import (
 	"fmt"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/contract"
+	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -57,6 +57,10 @@ var (
 	ProgramHash, _ = hashing.HashValueFromBase58(ProgramHashStr)
 )
 
+func init() {
+	examples.AddProcessor(ProgramHash, Interface)
+}
+
 func GetProcessor() vmtypes.Processor {
 	return Interface
 }
@@ -75,10 +79,18 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 func incCounter(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("inccounter.incCounter in %s", ctx.ContractID().Hname().String())
+	params := ctx.Params()
+	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		inc = 1
+	}
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Eventf("'increasing counter value: %d' in %s", val, ctx.ContractID().Hname().String())
-	state.Set(VarCounter, codec.EncodeInt64(val+1))
+	ctx.Eventf("incCounter: increasing counter value %d by %d", val, inc)
+	state.Set(VarCounter, codec.EncodeInt64(val+inc))
 	return nil, nil
 }
 
@@ -87,15 +99,12 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 
-	ctx.Event(fmt.Sprintf("increasing counter value: %d", val))
+	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	if val == 0 {
-		if ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncCounter), nil, 5) {
-			ctx.Event("PostRequestToSelfWithDelay RequestInc 5 sec")
-		} else {
-			ctx.Event("failed to PostRequestToSelfWithDelay RequestInc 5 sec")
-		}
+	if !ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncCounter), nil, 5) {
+		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
 	}
+	ctx.Event("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
 	return nil, nil
 }
 
@@ -111,7 +120,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	numRepeats, ok, err := codec.DecodeInt64(params.MustGet(VarNumRepeats))
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%s", err)
 	}
 	if !ok {
 		numRepeats, _, _ = codec.DecodeInt64(state.MustGet(VarNumRepeats))
@@ -142,18 +151,18 @@ func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	hashBin, err := hashing.HashValueFromBase58(ProgramHashStr)
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	name, ok, err := codec.DecodeString(ctx.Params().MustGet(VarName))
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	if !ok {
 		return nil, fmt.Errorf("parameter 'name' wasnt found")
 	}
 	dscr, ok, err := codec.DecodeString(ctx.Params().MustGet(VarDescription))
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 	if !ok {
 		dscr = "N/A"

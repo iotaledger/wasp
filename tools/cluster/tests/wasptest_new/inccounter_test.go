@@ -64,7 +64,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		return true
 	})
 	checkCounter(t, 0)
@@ -119,7 +119,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		return true
 	})
 	checkCounter(t, 0)
@@ -174,7 +174,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		return true
 	})
 	checkCounter(t, numRequests)

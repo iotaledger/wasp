@@ -5,7 +5,7 @@ if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 
 wasp-cli init
 wasp-cli request-funds
-wasp-cli chain deploy --chain=chain1 --committee='0,1,2,3' --quorum=3
+wasp-cli chain deploy --chain=chain1 --committee='0,1,2,3' --quorum=3 --description="Test chain"
 
 vmtype=wasmtimevm
 name=inccounter

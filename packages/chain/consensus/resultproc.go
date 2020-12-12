@@ -32,16 +32,16 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		return
 	}
 	ctx := &vm.VMTask{
-		Processors:   op.chain.Processors(),
-		ChainID:      *op.chain.ID(),
-		Color:        *op.chain.Color(),
-		Entropy:      (hashing.HashValue)(op.stateTx.ID()),
-		Balances:     par.balances,
-		AccrueFeesTo: par.accrueFeesTo,
-		Requests:     takeRefs(par.requests),
-		Timestamp:    par.timestamp,
-		VirtualState: op.currentState,
-		Log:          op.log,
+		Processors:         op.chain.Processors(),
+		ChainID:            *op.chain.ID(),
+		Color:              *op.chain.Color(),
+		Entropy:            (hashing.HashValue)(op.stateTx.ID()),
+		Balances:           par.balances,
+		ValidatorFeeTarget: par.accrueFeesTo,
+		Requests:           takeRefs(par.requests),
+		Timestamp:          par.timestamp,
+		VirtualState:       op.currentState,
+		Log:                op.log,
 	}
 	ctx.OnFinish = func(_ dict.Dict, _ error, vmError error) {
 		if vmError != nil {

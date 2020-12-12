@@ -138,6 +138,9 @@ func (cluster *Cluster) JoinConfigPath(s string) string {
 	return path.Join(cluster.ConfigPath, s)
 }
 
+func (cluster *Cluster) GoshimmerSnapshotBinPath() string {
+	return cluster.JoinConfigPath("snapshot.bin")
+}
 func (cluster *Cluster) GoshimmerConfigTemplatePath() string {
 	return cluster.JoinConfigPath("goshimmer-config-template.json")
 }
@@ -195,6 +198,10 @@ func (cluster *Cluster) Init(resetDataPath bool, name string) error {
 		if err != nil {
 			return err
 		}
+		err = cluster.copySnapshotBin()
+		if err != nil {
+			return err
+		}
 	}
 	for i, waspParams := range cluster.Config.Nodes {
 		err = cluster.initDataPath(
@@ -229,6 +236,23 @@ func (cluster *Cluster) initDataPath(dataPath string, configTemplatePath string,
 	defer f.Close()
 
 	return configTmpl.Execute(f, params)
+}
+
+func (cluster *Cluster) copySnapshotBin() error {
+	snapshotSrc, err := os.Open(cluster.GoshimmerSnapshotBinPath())
+	if err != nil {
+		return err
+	}
+	defer snapshotSrc.Close()
+
+	snapshotDest, err := os.Create(path.Join(cluster.GoshimmerDataPath(), "snapshot.bin"))
+	if err != nil {
+		return err
+	}
+	defer snapshotDest.Close()
+
+	_, err = io.Copy(snapshotDest, snapshotSrc)
+	return err
 }
 
 // Start launches all wasp nodes in the cluster, each running in its own directory

@@ -45,12 +45,16 @@ func NewRandomChainID() ChainID {
 
 // Bytes returns a serialized version of this ChainID.
 func (chid ChainID) Bytes() []byte {
-	return address.Address(chid).Bytes()
+	return chid.Address().Bytes()
 }
 
 // String human readable form
 func (chid ChainID) String() string {
-	return address.Address(chid).String()
+	return chid.Address().String()
+}
+
+func (chid ChainID) Address() address.Address {
+	return address.Address(chid)
 }
 
 // Write marshal

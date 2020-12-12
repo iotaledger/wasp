@@ -13,7 +13,7 @@ type ObjFactories map[int32]ObjFactory
 type WaspObject interface {
 	HostObject
 	InitObj(id int32, keyId int32, owner *ModelObject)
-	Error(format string, args ...interface{})
+	Panic(format string, args ...interface{})
 	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
 	Name() string
 	Suffix(keyId int32) string
@@ -21,12 +21,10 @@ type WaspObject interface {
 
 func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
 	if !arrayObj.Exists(index) {
-		arrayObj.Error("GetArrayObjectId: Invalid index")
-		return 0
+		arrayObj.Panic("GetArrayObjectId: Invalid index")
 	}
 	if typeId != arrayObj.GetTypeId(index) {
-		arrayObj.Error("GetArrayObjectId: Invalid type")
-		return 0
+		arrayObj.Panic("GetArrayObjectId: Invalid type")
 	}
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
@@ -34,12 +32,10 @@ func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory Ob
 func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyId]
 	if !ok {
-		mapObj.Error("GetMapObjectId: Invalid key")
-		return 0
+		mapObj.Panic("GetMapObjectId: Invalid key")
 	}
 	if typeId != mapObj.GetTypeId(keyId) {
-		mapObj.Error("GetMapObjectId: Invalid type")
-		return 0
+		mapObj.Panic("GetMapObjectId: Invalid type")
 	}
 	return mapObj.FindOrMakeObjectId(keyId, factory)
 }
@@ -65,8 +61,10 @@ func (o *ModelObject) InitObj(id int32, keyId int32, owner *ModelObject) {
 	o.vm.Trace("InitObj %s", o.Name())
 }
 
-func (o *ModelObject) Error(format string, args ...interface{}) {
-	o.vm.SetError(o.Name() + "." + fmt.Sprintf(format, args...))
+func (o *ModelObject) Panic(format string, args ...interface{}) {
+	err := o.Name() + "." + fmt.Sprintf(format, args...)
+	o.vm.LogText(err)
+	panic(err)
 }
 
 func (o *ModelObject) Exists(keyId int32) bool {
@@ -75,32 +73,40 @@ func (o *ModelObject) Exists(keyId int32) bool {
 }
 
 func (o *ModelObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
-	panic("implement me")
+	o.Panic("implement me")
+	return 0
 }
 
 func (o *ModelObject) GetBytes(keyId int32) []byte {
-	o.Error("GetBytes: Invalid key")
+	o.Panic("GetBytes: Invalid key")
 	return []byte(nil)
 }
 
 func (o *ModelObject) GetInt(keyId int32) int64 {
-	o.Error("GetInt: Invalid key")
+	o.Panic("GetInt: Invalid key")
 	return 0
 }
 
 func (o *ModelObject) GetObjectId(keyId int32, typeId int32) int32 {
-	o.Error("GetObjectId: Invalid key")
+	o.Panic("GetObjectId: Invalid key")
 	return 0
 }
 
 func (o *ModelObject) GetString(keyId int32) string {
-	o.Error("GetString: Invalid key")
+	o.Panic("GetString: Invalid key")
 	return ""
 }
 
 func (o *ModelObject) GetTypeId(keyId int32) int32 {
-	o.Error("GetTypeId: Invalid key")
+	o.Panic("GetTypeId: Invalid key")
 	return -1
+}
+
+func (o *ModelObject) MakeObjectId(keyId int32, factory ObjFactory) int32 {
+	newObject := factory()
+	objId := o.vm.TrackObject(newObject)
+	newObject.InitObj(objId, keyId, o)
+	return objId
 }
 
 func (o *ModelObject) Name() string {
@@ -120,15 +126,15 @@ func (o *ModelObject) Name() string {
 }
 
 func (o *ModelObject) SetBytes(keyId int32, value []byte) {
-	o.Error("SetBytes: Immutable")
+	o.Panic("SetBytes: Immutable")
 }
 
 func (o *ModelObject) SetInt(keyId int32, value int64) {
-	o.Error("SetInt: Immutable")
+	o.Panic("SetInt: Immutable")
 }
 
 func (o *ModelObject) SetString(keyId int32, value string) {
-	o.Error("SetString: Immutable")
+	o.Panic("SetString: Immutable")
 }
 
 func (o *ModelObject) Suffix(keyId int32) string {
@@ -152,9 +158,7 @@ func (o *MapObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	if ok {
 		return objId
 	}
-	newObject := factory()
-	objId = o.vm.TrackObject(newObject)
-	newObject.InitObj(objId, keyId, &o.ModelObject)
+	objId = o.MakeObjectId(keyId, factory)
 	o.objects[keyId] = objId
 	return objId
 }
@@ -174,15 +178,13 @@ func (a *ArrayObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 
 	if keyId < int32(len(a.objects)) {
 		return a.objects[keyId]
 	}
-	newObject := factory()
-	objId := a.vm.TrackObject(newObject)
-	newObject.InitObj(objId, keyId, &a.ModelObject)
+	objId := a.MakeObjectId(keyId, factory)
 	a.objects = append(a.objects, objId)
 	return objId
 }
 
 func (a *ArrayObject) GetBytes(keyId int32) []byte {
-	a.Error("GetBytes: Invalid access")
+	a.Panic("GetBytes: Invalid access")
 	return []byte(nil)
 }
 
@@ -191,18 +193,25 @@ func (a *ArrayObject) GetInt(keyId int32) int64 {
 	case KeyLength:
 		return int64(len(a.objects))
 	}
-	a.Error("GetInt: Invalid access")
+	a.Panic("GetInt: Invalid access")
 	return 0
 }
 
 func (a *ArrayObject) GetObjectId(keyId int32, typeId int32) int32 {
-	a.Error("GetObjectId: Invalid access")
+	a.Panic("GetObjectId: Invalid access")
 	return 0
 }
 
 func (a *ArrayObject) GetString(keyId int32) string {
-	a.Error("GetString: Invalid access")
+	a.Panic("GetString: Invalid access")
 	return ""
+}
+
+func (a *ArrayObject) GetTypeId(keyId int32) int32 {
+	if a.Exists(keyId) {
+		return OBJTYPE_MAP
+	}
+	return -1
 }
 
 func (a *ArrayObject) Suffix(keyId int32) string {

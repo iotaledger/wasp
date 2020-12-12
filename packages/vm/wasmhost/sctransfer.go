@@ -10,9 +10,7 @@ import (
 
 type ScTransfer struct {
 	MapObject
-	agent  coretypes.AgentID
-	amount int64
-	color  balance.Color
+	agent coretypes.AgentID
 }
 
 func (o *ScTransfer) Exists(keyId int32) bool {
@@ -23,19 +21,8 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyAgent:
 		return OBJTYPE_BYTES
-	case KeyColor:
-		return OBJTYPE_BYTES
-	case KeyAmount:
-		return OBJTYPE_INT
 	}
-	return -1
-}
-
-func (o *ScTransfer) Send() {
-	o.vm.Trace("TRANSFER #%d c'%s' a'%s'", o.amount, o.color.String(), o.agent.String())
-	if !o.vm.ctx.MoveTokens(o.agent, o.color, o.amount) {
-		panic("Failed to move tokens")
-	}
+	return OBJTYPE_INT
 }
 
 func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
@@ -46,11 +33,6 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 		if err != nil {
 			panic("Invalid agent: " + err.Error())
 		}
-	case KeyColor:
-		o.color, _, err = balance.ColorFromBytes(value)
-		if err != nil {
-			panic("Invalid color: " + err.Error())
-		}
 	default:
 		o.MapObject.SetBytes(keyId, value)
 	}
@@ -60,13 +42,16 @@ func (o *ScTransfer) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		o.agent = coretypes.AgentID{}
-		o.color = balance.ColorIOTA
-		o.amount = 0
-	case KeyAmount:
-		o.amount = value
-		o.Send()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		key := o.vm.GetKeyFromId(keyId)
+		color, _, err := balance.ColorFromBytes(key)
+		if err != nil {
+			panic("Invalid color: " + err.Error())
+		}
+		o.vm.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.agent.String())
+		if !o.vm.ctx.MoveTokens(o.agent, color, value) {
+			panic("Failed to move tokens")
+		}
 	}
 }
 
@@ -82,22 +67,15 @@ func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScTransfers) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
-		return OBJTYPE_MAP
-	}
-	return -1
-}
-
 func (a *ScTransfers) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
 		a.objects = nil
 	default:
-		a.Error("SetInt: Invalid access")
+		a.Panic("SetInt: Invalid access")
 	}
 }
 
 func (a *ScTransfers) SetString(keyId int32, value string) {
-	a.Error("SetString: Invalid access")
+	a.Panic("SetString: Invalid access")
 }

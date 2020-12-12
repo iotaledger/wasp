@@ -36,5 +36,9 @@ of critical data is involved._
 - [Short intoduction to UTXO ledger and digital assets](articles/intro/utxo.md)
 
 ## Instructions, docs
+
+- Compile: `go build ./...`
+- Run all tests (including `tools/cluster` tests which may take several minutes): `go test ./...`
+- Run only unit tests: `go test -short ./...`
 - [How to run a Wasp node](articles/docs/runwasp.md)
 - [Wasp Publisher](articles/docs/publisher.md)

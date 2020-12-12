@@ -4,8 +4,8 @@
 package wasmhost
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -26,7 +26,7 @@ func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
 	host.vm = vm
 	host.scContext = NewScContext(host)
-	host.Init(NewNullObject(host), host.scContext, &keyMap, host)
+	host.Init(NewNullObject(host), host.scContext, host)
 	err := host.InitVM(vm)
 	if err != nil {
 		return nil, err
@@ -64,11 +64,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		return nil, err
 	}
 
-	if host.HasError() {
-		return nil, errors.New(host.WasmHost.error)
-	}
-
-	results := host.FindSubObject(nil, "results", OBJTYPE_MAP).(*ScMutableDict).Dict
+	results := host.FindSubObject(nil, KeyResults, OBJTYPE_MAP).(*ScMutableDict).Dict.(dict.Dict)
 	return results, nil
 }
 
@@ -94,7 +90,7 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 }
 
 func (host *wasmProcessor) GetKey(keyId int32) kv.Key {
-	return kv.Key(host.WasmHost.GetKeyFromId(keyId))
+	return kv.Key(host.GetKeyFromId(keyId))
 }
 
 func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
@@ -114,6 +110,13 @@ func (host *wasmProcessor) IsView() bool {
 }
 
 func (host *wasmProcessor) SetExport(index int32, functionName string) {
+	if index < 0 {
+		host.LogText(functionName + " = " + strconv.Itoa(int(index)))
+		if index != KeyZzzzzzz {
+			host.SetError("SetExport: predefined key value mismatch")
+		}
+		return
+	}
 	_, ok := host.funcToCode[functionName]
 	if ok {
 		host.SetError("SetExport: duplicate function name")
@@ -139,7 +142,7 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (host *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		//host.LogText(text)
+		host.LogText(text)
 	case KeyTrace:
 		host.LogText(text)
 	case KeyLog:
@@ -151,13 +154,17 @@ func (host *wasmProcessor) Log(logLevel int32, text string) {
 	}
 }
 
+// TODO there's a need to distinguish between logging and events
+// Also, logging has levels
 func (host *wasmProcessor) LogText(text string) {
 	if host.ctx != nil {
-		host.ctx.Event(text)
+		//host.ctx.Event(text)
+		host.ctx.Log().Infof(text)
 		return
 	}
 	if host.ctxView != nil {
-		host.ctxView.Event(text)
+		//host.ctxView.Event(text)
+		host.ctxView.Log().Infof(text)
 		return
 	}
 	// fallback logging

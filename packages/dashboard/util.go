@@ -37,4 +37,14 @@ func ExploreAddressUrlFromGoshimmerUri(uri string) string {
 	return url
 }
 
-const TplExploreAddress = `{{define "address"}}<code>{{.}}</code> <a href="{{exploreAddressUrl .}}">[+]</a>{{end}}`
+const TplExploreAddress = `
+{{define "address"}}
+	<code>{{.}}</code> <a href="{{exploreAddressUrl .}}">[+]</a>
+{{end}}`
+
+const TplExploreAgentID = `
+{{define "agentid"}}
+	{{if .IsAddress}}{{template "address" .MustAddress}}
+	{{else}}<code>{{.}}</code>
+	{{end}}
+{{end}}`

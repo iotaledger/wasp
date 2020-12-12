@@ -21,13 +21,13 @@ type VMTask struct {
 	ChainID coretypes.ChainID
 	Color   balance.Color
 	// deterministic source of entropy
-	Entropy      hashing.HashValue
-	Balances     map[valuetransaction.ID][]*balance.Balance
-	AccrueFeesTo coretypes.AgentID
-	Requests     []sctransaction.RequestRef
-	Timestamp    int64
-	VirtualState state.VirtualState // input immutable
-	Log          *logger.Logger
+	Entropy            hashing.HashValue
+	Balances           map[valuetransaction.ID][]*balance.Balance
+	ValidatorFeeTarget coretypes.AgentID
+	Requests           []sctransaction.RequestRef
+	Timestamp          int64
+	VirtualState       state.VirtualState // input immutable
+	Log                *logger.Logger
 	// call when finished
 	OnFinish func(callResult dict.Dict, callError error, vmError error)
 	// outputs

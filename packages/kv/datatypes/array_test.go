@@ -9,8 +9,7 @@ import (
 
 func TestBasicArray(t *testing.T) {
 	vars := dict.New()
-	arr, err := NewArray(vars, "testArray")
-	assert.NoError(t, err)
+	arr := NewMustArray(vars, "testArray")
 
 	d1 := []byte("datum1")
 	d2 := []byte("datum2")
@@ -19,12 +18,11 @@ func TestBasicArray(t *testing.T) {
 
 	arr.Push(d1)
 	assert.EqualValues(t, 1, arr.Len())
-	v, err := arr.GetAt(0)
-	assert.NoError(t, err)
+	v := arr.GetAt(0)
 	assert.EqualValues(t, d1, v)
-	v, err = arr.GetAt(1)
-	assert.Error(t, err)
-	assert.Nil(t, v)
+	assert.Panics(t, func() {
+		arr.GetAt(1)
+	})
 
 	arr.Push(d2)
 	assert.EqualValues(t, 2, arr.Len())
@@ -35,8 +33,7 @@ func TestBasicArray(t *testing.T) {
 	arr.Push(d4)
 	assert.EqualValues(t, 4, arr.Len())
 
-	arr2, err := NewArray(vars, "testArray2")
-	assert.NoError(t, err)
+	arr2 := NewMustArray(vars, "testArray2")
 	assert.EqualValues(t, 0, arr2.Len())
 
 	arr2.Extend(arr)
@@ -44,8 +41,14 @@ func TestBasicArray(t *testing.T) {
 
 	arr2.Push(d4)
 	assert.EqualValues(t, arr.Len()+1, arr2.Len())
+}
 
-	assert.Panics(t, func() {
-		NewMustArray(arr2.kv, arr2.name).GetAt(arr2.Len())
-	})
+func TestConcurrentAccess(t *testing.T) {
+	vars := dict.New()
+	a1 := NewMustArray(vars, "test")
+	a2 := NewMustArray(vars, "test")
+
+	a1.Push([]byte{1})
+	assert.EqualValues(t, a1.Len(), 1)
+	assert.EqualValues(t, a2.Len(), 1)
 }

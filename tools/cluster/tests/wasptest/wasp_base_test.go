@@ -1,3 +1,5 @@
+// +build ignore
+
 package wasptest
 
 import (
@@ -12,7 +14,7 @@ func TestPutChainRecord(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestPutChainRecord")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           1,
+		"chainrec":            1,
 		"active_committee":    0,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -35,7 +37,7 @@ func TestActivate1SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -62,7 +64,7 @@ func TestActivateAllSC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestActivateAllSC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           wasps.NumSmartContracts() * 2,
+		"chainrec":            wasps.NumSmartContracts() * 2,
 		"active_committee":    wasps.NumSmartContracts(),
 		"dismissed_committee": 0,
 		"request_in":          0,
@@ -90,7 +92,7 @@ func TestCreateOrigin(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestCreateOrigin")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           2,
+		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
@@ -125,7 +127,7 @@ func TestDeactivate1SC(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestDeactivate1SC")
 
 	err := wasps.ListenToMessages(map[string]int{
-		"chainrec":           3,
+		"chainrec":            3,
 		"active_committee":    1,
 		"dismissed_committee": 1,
 		"request_in":          0,

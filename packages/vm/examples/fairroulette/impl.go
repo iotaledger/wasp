@@ -200,7 +200,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 		ps.Bets += 1
 	})
 	if err != nil {
-		ctx.Panic(err)
+		ctx.Log().Panicf("%v", err)
 	}
 
 	// if it is the first bet in the array, send time locked 'LockBets' request to itself.
@@ -355,14 +355,14 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		if !ctx.MoveTokens(agent, balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
 			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
-			ctx.Panic("MoveTokens failed")
+			ctx.Log().Panicf("MoveTokens failed")
 		}
 	}
 
 	// distribute total staked amount to players
 	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
 		ctx.Eventf("$$$$$$$$$$ something went wrong 2")
-		ctx.Panic("distributeLockedAmount failed")
+		ctx.Log().Panicf("distributeLockedAmount failed")
 	}
 
 	for _, betInfo := range winningBets {
@@ -370,7 +370,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 			ps.Wins += 1
 		})
 		if err != nil {
-			ctx.Panic(err)
+			ctx.Log().Panicf("%v", err)
 		}
 	}
 	return nil

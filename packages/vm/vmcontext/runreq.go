@@ -58,11 +58,12 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
-	contractRec, ok := vmctx.findContractByHname(reqHname)
+	feeColor, fee, ok := vmctx.getFeeInfo(reqHname)
 	if !ok {
 		return false
 	}
-	vmctx.contractRecord = contractRec
+	vmctx.feeColor = feeColor
+	vmctx.fee = fee
 	return true
 }
 

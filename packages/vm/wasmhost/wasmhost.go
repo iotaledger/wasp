@@ -20,15 +20,7 @@ const (
 	OBJTYPE_STRING_ARRAY int32 = 7
 )
 
-const (
-	KeyError       = int32(-1)
-	KeyLength      = KeyError - 1
-	KeyLog         = KeyLength - 1
-	KeyTrace       = KeyLog - 1
-	KeyTraceHost   = KeyTrace - 1
-	KeyWarning     = KeyTraceHost - 1
-	KeyUserDefined = KeyWarning - 1
-)
+const KeyFromString int32 = 0x4000
 
 type HostObject interface {
 	Exists(keyId int32) bool
@@ -46,15 +38,6 @@ type LogInterface interface {
 	Log(logLevel int32, text string)
 }
 
-var baseKeyMap = map[string]int32{
-	"error":     KeyError,
-	"length":    KeyLength,
-	"log":       KeyLog,
-	"trace":     KeyTrace,
-	"traceHost": KeyTraceHost,
-	"warning":   KeyWarning,
-}
-
 // implements client.ScHost interface
 type WasmHost struct {
 	vm            WasmVM
@@ -64,22 +47,13 @@ type WasmHost struct {
 	funcToIndex   map[string]int32
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
-	keyMapToKeyId *map[string]int32
 	keyToKeyId    map[string]int32
 	logger        LogInterface
 	objIdToObj    []HostObject
 	useBase58Keys bool
 }
 
-func (host *WasmHost) Exists(objId int32, keyId int32) bool {
-	return host.FindObject(objId).Exists(keyId)
-}
-
-func (host *WasmHost) Init(null HostObject, root HostObject, keyMap *map[string]int32, logger LogInterface) {
-	if keyMap == nil {
-		keyMap = &baseKeyMap
-	}
-	elements := len(*keyMap) + 1
+func (host *WasmHost) Init(null HostObject, root HostObject, logger LogInterface) {
 	host.codeToFunc = make(map[uint32]string)
 	host.error = ""
 	host.funcToCode = make(map[string]uint32)
@@ -87,10 +61,9 @@ func (host *WasmHost) Init(null HostObject, root HostObject, keyMap *map[string]
 	host.logger = logger
 	host.objIdToObj = nil
 	host.keyIdToKey = [][]byte{[]byte("<null>")}
-	host.keyMapToKeyId = keyMap
 	host.keyToKeyId = make(map[string]int32)
-	host.keyIdToKeyMap = make([][]byte, elements)
-	for k, v := range *keyMap {
+	host.keyIdToKeyMap = make([][]byte, len(keyMap)+1)
+	for k, v := range keyMap {
 		host.keyIdToKeyMap[-v] = []byte(k)
 	}
 	host.TrackObject(null)
@@ -101,6 +74,10 @@ func (host *WasmHost) InitVM(vm WasmVM) error {
 	return vm.LinkHost(host)
 }
 
+func (host *WasmHost) Exists(objId int32, keyId int32) bool {
+	return host.FindObject(objId).Exists(keyId)
+}
+
 func (host *WasmHost) FindObject(objId int32) HostObject {
 	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
 		host.SetError("Invalid objId")
@@ -109,12 +86,12 @@ func (host *WasmHost) FindObject(objId int32) HostObject {
 	return host.objIdToObj[objId]
 }
 
-func (host *WasmHost) FindSubObject(obj HostObject, key string, typeId int32) HostObject {
+func (host *WasmHost) FindSubObject(obj HostObject, keyId int32, typeId int32) HostObject {
 	if obj == nil {
 		// use root object
 		obj = host.FindObject(1)
 	}
-	return host.FindObject(obj.GetObjectId(host.GetKeyId(key), typeId))
+	return host.FindObject(obj.GetObjectId(keyId, typeId))
 }
 
 func (host *WasmHost) GetBytes(objId int32, keyId int32) []byte {
@@ -147,24 +124,23 @@ func (host *WasmHost) GetInt(objId int32, keyId int32) int64 {
 	return value
 }
 
-func (host *WasmHost) GetKey(bytes []byte) int32 {
+func (host *WasmHost) GetKeyIdFromBytes(bytes []byte) int32 {
 	encoded := base58.Encode(bytes)
 	if host.useBase58Keys {
 		// transform byte slice key into base58 string
 		// now all keys are byte slices from strings
-		return host.GetKeyId(encoded)
+		bytes = []byte(encoded)
 	}
 
-	// use byte slice key as is
-	keyId := host.getKeyId(bytes)
-	host.Trace("GetKey '%s'=k%d", encoded, keyId)
+	keyId := host.getKeyId(bytes, false)
+	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyId)
 	return keyId
 }
 
 func (host *WasmHost) GetKeyFromId(keyId int32) []byte {
 	host.TraceHost("GetKeyFromId(k%d)", keyId)
 	key := host.getKeyFromId(keyId)
-	if key[len(key)-1] == 0 {
+	if (keyId & KeyFromString) == 0 {
 		// originally a byte slice key
 		host.Trace("GetKeyFromId k%d='%s'", keyId, base58.Encode(key))
 		return key
@@ -181,28 +157,23 @@ func (host *WasmHost) getKeyFromId(keyId int32) []byte {
 	}
 
 	// find user-defined key
-	if keyId < int32(len(host.keyIdToKey)) {
-		return host.keyIdToKey[keyId]
-	}
-
-	// unknown key
-	return nil
+	return host.keyIdToKey[keyId & ^KeyFromString]
 }
 
-func (host *WasmHost) GetKeyId(key string) int32 {
-	keyId := host.getKeyId([]byte(key))
-	host.Trace("GetKeyId '%s'=k%d", key, keyId)
+func (host *WasmHost) GetKeyIdFromString(key string) int32 {
+	keyId := host.getKeyId([]byte(key), true)
+	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyId)
 	return keyId
 }
 
-func (host *WasmHost) getKeyId(key []byte) int32 {
+func (host *WasmHost) getKeyId(key []byte, fromString bool) int32 {
 	// cannot use []byte as key in maps
 	// so we will convert to (non-utf8) string
 	// most will have started out as string anyway
 	keyString := string(key)
 
 	// first check predefined key map
-	keyId, ok := (*host.keyMapToKeyId)[keyString]
+	keyId, ok := keyMap[keyString]
 	if ok {
 		return keyId
 	}
@@ -215,6 +186,9 @@ func (host *WasmHost) getKeyId(key []byte) int32 {
 
 	// unknown key, add it to user-defined key map
 	keyId = int32(len(host.keyIdToKey))
+	if fromString {
+		keyId |= KeyFromString
+	}
 	host.keyToKeyId[keyString] = keyId
 	host.keyIdToKey = append(host.keyIdToKey, key)
 	return keyId
@@ -287,7 +261,12 @@ func (host *WasmHost) RunScFunction(functionName string) error {
 	if !ok {
 		return errors.New("unknown SC function name: " + functionName)
 	}
-	return host.vm.RunScFunction(index)
+	err := host.vm.RunScFunction(index)
+	if err == nil && host.error != "" {
+		err = errors.New(host.error)
+	}
+	host.error = ""
+	return err
 }
 
 func (host *WasmHost) SetBytes(objId int32, keyId int32, bytes []byte) {

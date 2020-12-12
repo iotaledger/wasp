@@ -84,10 +84,6 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) Panic(v interface{}) {
-	panic(v)
-}
-
 func (s *sandbox) Rollback() {
 	s.vmctx.Rollback()
 }
@@ -110,6 +106,10 @@ func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) boo
 
 func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	return s.vmctx.PostRequestToSelfWithDelay(entryPoint, args, delaySec)
+}
+
+func (s *sandbox) Log() vmtypes.LogInterface {
+	return s.vmctx
 }
 
 func (s *sandbox) Event(msg string) {

@@ -20,25 +20,34 @@ type viewcontext struct {
 	processors *processors.ProcessorCache
 	state      kv.KVStore //buffered.BufferedKVStore
 	chainID    coretypes.ChainID
+	timestamp  int64
+	log        *logger.Logger
 }
 
 func NewFromDB(chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
 	state_, _, ok, err := state.LoadSolidState(&chainID)
+
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, fmt.Errorf("solid state not found for chain %s", chainID.String())
 	}
-	return New(chainID, state_.Variables(), proc, nil), nil
+	return New(chainID, state_.Variables(), state_.Timestamp(), proc, nil), nil
 }
 
-func New(chainID coretypes.ChainID, state kv.KVStore, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
-	logProvided = logSet
+func New(chainID coretypes.ChainID, state kv.KVStore, ts int64, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
+	if logSet == nil {
+		logSet = logDefault
+	} else {
+		logSet = logSet.Named("view")
+	}
 	return &viewcontext{
 		processors: proc,
 		state:      state,
 		chainID:    chainID,
+		timestamp:  ts,
+		log:        logSet,
 	}
 }
 
@@ -72,4 +81,16 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 
 func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStore {
 	return subrealm.New(state, kv.Key(contractHname.Bytes()))
+}
+
+func (v *viewcontext) Infof(format string, params ...interface{}) {
+	v.log.Infof(format, params...)
+}
+
+func (v *viewcontext) Debugf(format string, params ...interface{}) {
+	v.log.Debugf(format, params...)
+}
+
+func (v *viewcontext) Panicf(format string, params ...interface{}) {
+	v.log.Panicf(format, params...)
 }

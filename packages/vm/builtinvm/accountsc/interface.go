@@ -21,12 +21,12 @@ var (
 		Description: description,
 		ProgramHash: *hashing.HashStrings(fullName),
 	}
-	TotalAssetsAccountID = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(coretypes.ChainID{}, Interface.Hname()))
 )
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.ViewFunc(FuncBalance, getBalance),
+		contract.ViewFunc(FuncTotalBalance, getTotalBalance),
 		contract.ViewFunc(FuncAccounts, getAccounts),
 		contract.Func(FuncDeposit, deposit),
 		contract.Func(FuncMove, move),
@@ -36,16 +36,13 @@ func init() {
 }
 
 const (
-	FuncBalance  = "balance"
-	FuncDeposit  = "deposit"
-	FuncMove     = "move"
-	FuncAllow    = "allow"
-	FuncWithdraw = "withdraw"
-	FuncAccounts = "accounts"
-
-	VarStateInitialized = "i"
-	VarStateAllAccounts = "a"
-	VarStateAllowances  = "l"
+	FuncBalance      = "balance"
+	FuncTotalBalance = "totalBalance"
+	FuncDeposit      = "deposit"
+	FuncMove         = "move"
+	FuncAllow        = "allow"
+	FuncWithdraw     = "withdraw"
+	FuncAccounts     = "accounts"
 
 	ParamAgentID = "a"
 	ParamColor   = "c"

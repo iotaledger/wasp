@@ -53,7 +53,7 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 		}
 
 	case examples.VMType:
-		if proc, ok = examples.GetExampleProcessor(programHash.String()); !ok {
+		if proc, ok = examples.GetExampleProcessor(programHash); !ok {
 			return fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
 		}
 

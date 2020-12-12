@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dispatcher"
 	"github.com/iotaledger/wasp/plugins/dkg"
+	"github.com/iotaledger/wasp/plugins/globals"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
@@ -47,6 +48,7 @@ func main() {
 		publisher.Init(),
 		dashboard.Init(),
 		wasmtimevm.Init(),
+		globals.Init(),
 	)
 
 	testPlugins := node.Plugins(

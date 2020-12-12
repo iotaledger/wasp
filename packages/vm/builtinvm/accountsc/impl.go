@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -25,7 +24,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamAgentID
 func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	ctx.Eventf("getBalance")
+	ctx.Log().Debugf("getBalance")
 	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
 	if err != nil {
 		return nil, err
@@ -33,18 +32,14 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, ErrParamWrongOrNotFound
 	}
-	ctx.Eventf("getBalance for %s", aid.String())
 
-	retMap, ok := GetAccountBalances(ctx.State(), aid)
-	ret := dict.New()
-	if !ok {
-		return ret, nil
-	}
-	for col, bal := range retMap {
-		ret.Set(kv.Key(col[:]), codec.EncodeInt64(bal))
-	}
-	ctx.Eventf("getBalance for %s. balance = %s\n", aid.String(), cbalances.NewFromMap(retMap).String())
-	return ret, nil
+	return getAccountBalanceDict(ctx, getAccount(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
+}
+
+// getTotalBalance returns total colored balances controlled by the chain
+func getTotalBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("getTotalBalance")
+	return getAccountBalanceDict(ctx, getTotalAssetsAccount(ctx.State()), "getTotalBalance"), nil
 }
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
@@ -165,16 +160,16 @@ func withdraw(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.ContractID().String())
 
 	if !caller.IsAddress() {
-		return nil, fmt.Errorf("accountsc.initialize.fail: caller must be an address")
+		return nil, fmt.Errorf("accountsc.withdraw.fail: caller must be an address")
 	}
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
-		return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 1, empty account")
+		return nil, fmt.Errorf("accountsc.withdraw.fail. Inconsistency 1, empty account")
 	}
 	send := cbalances.NewFromMap(bals)
 	addr := caller.MustAddress()
 	if !DebitFromAccount(state, caller, send) {
-		return nil, fmt.Errorf("accountsc.withdraw.success. Inconsistency 2, DebitFromAccount failed")
+		return nil, fmt.Errorf("accountsc.withdraw.fail. Inconsistency 2: DebitFromAccount failed")
 	}
 	if !ctx.TransferToAddress(addr, send) {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")

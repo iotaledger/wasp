@@ -41,7 +41,7 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, cr.Name, name)
 
 		return true

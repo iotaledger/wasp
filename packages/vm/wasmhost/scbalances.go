@@ -17,10 +17,10 @@ func (o *ScBalances) Exists(keyId int32) bool {
 }
 
 func (o *ScBalances) GetBytes(keyId int32) []byte {
-	key := o.vm.WasmHost.GetKeyFromId(keyId)
+	key := o.vm.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
-		o.Error(err.Error())
+		o.Panic(err.Error())
 		return balance.ColorNew[:]
 	}
 	if color == balance.ColorNew {
@@ -32,10 +32,10 @@ func (o *ScBalances) GetBytes(keyId int32) []byte {
 }
 
 func (o *ScBalances) GetInt(keyId int32) int64 {
-	key := o.vm.WasmHost.GetKeyFromId(keyId)
+	key := o.vm.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
-		o.Error(err.Error())
+		o.Panic(err.Error())
 		return 0
 	}
 

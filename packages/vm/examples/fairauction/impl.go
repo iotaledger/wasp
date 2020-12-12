@@ -518,7 +518,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	// minimum bid is always positive, at least 1 iota per colored token
 	if winningAmount >= ai.MinimumBid {
 		// there's winner. Select it.
-		// NodeFee is re-calculated according to the winning sum
+		// Fee is re-calculated according to the winning sum
 		ownerFee = (winningAmount * ai.OwnerMargin) / 1000
 		if ownerFee < 1 {
 			ownerFee = 1

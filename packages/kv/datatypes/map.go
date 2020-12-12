@@ -9,9 +9,8 @@ import (
 )
 
 type Map struct {
-	kv         kv.KVStore
-	name       string
-	cachedsize uint32
+	kv   kv.KVStore
+	name string
 }
 
 type MustMap struct {
@@ -23,25 +22,27 @@ const (
 	mapElemKeyCode = byte(1)
 )
 
-func NewMap(kv kv.KVStore, name string) (*Map, error) {
-	ret := &Map{
+func NewMap(kv kv.KVStore, name string) *Map {
+	return &Map{
 		kv:   kv,
 		name: name,
 	}
-	var err error
-	ret.cachedsize, err = ret.len()
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 func NewMustMap(kv kv.KVStore, name string) *MustMap {
-	m, err := NewMap(kv, name)
-	if err != nil {
-		panic(err)
-	}
+	return NewMap(kv, name).Must()
+}
+
+func (m *Map) Must() *MustMap {
 	return &MustMap{*m}
+}
+
+func (m *Map) Name() string {
+	return m.name
+}
+
+func (m *MustMap) Name() string {
+	return m.m.name
 }
 
 func (m *Map) getSizeKey() kv.Key {
@@ -59,13 +60,18 @@ func (m *Map) getElemKey(key []byte) kv.Key {
 	return kv.Key(buf.Bytes())
 }
 
-func (m *Map) setSize(size uint32) {
-	if size == 0 {
-		m.kv.Del(m.getSizeKey())
-		return
+func (m *Map) addToSize(amount int) error {
+	n, err := m.Len()
+	if err != nil {
+		return err
 	}
-	m.cachedsize = size
-	m.kv.Set(m.getSizeKey(), util.Uint32To4Bytes(size))
+	n = uint32(int(n) + amount)
+	if n == 0 {
+		m.kv.Del(m.getSizeKey())
+	} else {
+		m.kv.Set(m.getSizeKey(), util.Uint32To4Bytes(n))
+	}
+	return nil
 }
 
 func (d *Map) GetAt(key []byte) ([]byte, error) {
@@ -85,15 +91,14 @@ func (d *MustMap) GetAt(key []byte) []byte {
 }
 
 func (d *Map) SetAt(key []byte, value []byte) error {
-	if d.Len() == 0 {
-		d.setSize(1)
-	} else {
-		ok, err := d.HasAt(key)
+	ok, err := d.HasAt(key)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		err = d.addToSize(1)
 		if err != nil {
 			return err
-		}
-		if !ok {
-			d.setSize(d.Len() + 1)
 		}
 	}
 	d.kv.Set(d.getElemKey(key), value)
@@ -110,7 +115,10 @@ func (d *Map) DelAt(key []byte) error {
 		return err
 	}
 	if ok {
-		d.setSize(d.Len() - 1)
+		err = d.addToSize(-1)
+		if err != nil {
+			return err
+		}
 	}
 	d.kv.Del(d.getElemKey(key))
 	return nil
@@ -132,15 +140,15 @@ func (d *MustMap) HasAt(key []byte) bool {
 	return ret
 }
 
-func (d *Map) Len() uint32 {
-	return d.cachedsize
-}
-
 func (d *MustMap) Len() uint32 {
-	return d.m.cachedsize
+	n, err := d.m.Len()
+	if err != nil {
+		panic(err)
+	}
+	return n
 }
 
-func (d *Map) len() (uint32, error) {
+func (d *Map) Len() (uint32, error) {
 	v, err := d.kv.Get(d.getSizeKey())
 	if err != nil {
 		return 0, err
@@ -169,8 +177,24 @@ func (d *Map) Iterate(f func(elemKey []byte, value []byte) bool) error {
 }
 
 // Iterate non-deterministic
+func (d *Map) IterateKeys(f func(elemKey []byte) bool) error {
+	prefix := d.getElemKey(nil)
+	return d.kv.IterateKeys(prefix, func(key kv.Key) bool {
+		return f([]byte(key)[len(prefix):])
+	})
+}
+
+// Iterate non-deterministic
 func (d *MustMap) Iterate(f func(elemKey []byte, value []byte) bool) {
 	err := d.m.Iterate(f)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// Iterate non-deterministic
+func (d *MustMap) IterateKeys(f func(elemKey []byte) bool) {
+	err := d.m.IterateKeys(f)
 	if err != nil {
 		panic(err)
 	}
