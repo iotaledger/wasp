@@ -33,8 +33,6 @@ type nilEntryPoint bool
 
 // NilEntryPointFull represents full entry point
 // NilEntryPointView represents view entry point
-// It is not view so that it could be used in any context
-
 var (
 	NilEntryPointFull = nilEntryPoint(false)
 	NilEntryPointView = nilEntryPoint(true)
