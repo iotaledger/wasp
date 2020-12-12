@@ -9,6 +9,8 @@ import (
 )
 
 // CreateContract deploys contract by its program hash
+// - if called from 'root' contract only loads VM from binary
+// - otherwise calls 'root' contract 'DeployContract' entry point to do the job.
 func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
 	vmtype, programBinary, err := vmctx.getBinary(programHash)
 	if err != nil {
@@ -24,9 +26,6 @@ func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name strin
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
 	par := initParams.Clone()
-	if err != nil {
-		return err
-	}
 	par.Set(root.ParamProgramHash, codec.EncodeHashValue(&programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
 	par.Set(root.ParamDescription, codec.EncodeString(description))

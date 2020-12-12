@@ -31,10 +31,10 @@ var ErrWrongTypeEntryPoint = fmt.Errorf("wrong type of entry point")
 // nilEntryPoint is the entry point implementation which does nothing when called
 type nilEntryPoint bool
 
-// NilEntryPointFull represents full entry point
-// NilEntryPointView represents view entry point
 var (
+	// NilEntryPointFull represents empty full entry point
 	NilEntryPointFull = nilEntryPoint(false)
+	// NilEntryPointView represents empty view entry point
 	NilEntryPointView = nilEntryPoint(true)
 )
 

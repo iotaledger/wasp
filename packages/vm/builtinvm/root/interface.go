@@ -35,20 +35,20 @@ func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.Func(FuncDeployContract, deployContract),
 		contract.ViewFunc(FuncFindContract, findContract),
-		contract.Func(FuncChangeChainOwner, changeChainOwner),
-		contract.Func(FuncAllowChangeChainOwner, allowChangeChainOwner),
+		contract.Func(FuncClaimChainOwnership, claimChainOwnership),
+		contract.Func(FuncDelegateChainOwnership, delegateChainOwnership),
 		contract.ViewFunc(FuncGetInfo, getInfo),
 	})
 }
 
 // state variables
 const (
-	VarStateInitialized = "i"
-	VarChainID          = "c"
-	VarChainOwnerID     = "o"
-	VarChainOwnerIDNext = "n"
-	VarContractRegistry = "r"
-	VarDescription      = "d"
+	VarStateInitialized      = "i"
+	VarChainID               = "c"
+	VarChainOwnerID          = "o"
+	VarChainOwnerIDDelegated = "n"
+	VarContractRegistry      = "r"
+	VarDescription           = "d"
 )
 
 // param variables
@@ -64,11 +64,11 @@ const (
 
 // function names
 const (
-	FuncDeployContract        = "deployContract"
-	FuncFindContract          = "findContract"
-	FuncGetInfo               = "getInfo"
-	FuncAllowChangeChainOwner = "allowChangeChainOwner"
-	FuncChangeChainOwner      = "changeChainOwner"
+	FuncDeployContract         = "deployContract"
+	FuncFindContract           = "findContract"
+	FuncGetInfo                = "getInfo"
+	FuncDelegateChainOwnership = "delegateChainOwnership"
+	FuncClaimChainOwnership    = "claimChainOwnership"
 )
 
 func GetProcessor() vmtypes.Processor {

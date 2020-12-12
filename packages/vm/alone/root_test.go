@@ -134,14 +134,14 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
+	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	_, ownerBack, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerBack)
 
-	req = NewCall(root.Interface.Name, root.FuncChangeChainOwner)
+	req = NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
@@ -156,7 +156,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
+	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, newOwner)
 	require.Error(t, err)
 

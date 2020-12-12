@@ -8,6 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 )
 
+// FindContract is an internal utility function which finds a contract in the KVStore
+// It is called from within the 'root' contract as well as VMContext and viewcontext objects
+// It is not exposed to the sandbix
 func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, error) {
 	if hname == Interface.Hname() {
 		return &RootContractRecord, nil
@@ -24,6 +27,8 @@ func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, err
 	return ret, nil
 }
 
+// DecodeContractRegistry encodes the whole contract registry in the MustMap in the kvstor to the
+// Go map.
 func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coretypes.Hname]*ContractRecord, error) {
 	ret := make(map[coretypes.Hname]*ContractRecord)
 	var err error

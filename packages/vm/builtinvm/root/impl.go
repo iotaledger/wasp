@@ -1,5 +1,8 @@
-// factory implement processor which is always present at the index 0
-// it initializes and operates contract registry: creates contracts and provides search
+// 'root' a core contract on the chain. It is responsible for:
+// - initial setup of the chain during chain deployment
+// - maintaining of core parameters of the chain
+// - maintaining (setting, delegating) chain owner ID
+// - deployment of smart contracts on the chain and maintenance of contract registry
 package root
 
 import (
@@ -14,9 +17,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-// initialize is a handler for the "init" request. This is the first call to the chain
-// if it fails, chain is not initialized
-// It stores chain ID in the state and creates record for root contract in the contract registry
+// initialize handles constructor, the "init" request. This is the first call to the chain
+// if it fails, chain is not initialized. Does the following:
+// - stores chain ID and chain description in the state
+// - sets state ownership to the caller
+// - creates record in the registry for the 'root' itself
+// - deploys other core contracts: 'accountsc', 'blob' by creating records in the registry and calling cpnstructors
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("root.initialize.begin")
 	params := ctx.Params()
@@ -37,7 +43,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamDescription, err)
 	}
 	if !ok {
-		chainDescription = "M/A"
+		chainDescription = "N/A"
 	}
 	contractRegistry := datatypes.NewMustMap(state, VarContractRegistry)
 	if contractRegistry.Len() != 0 {
@@ -78,6 +84,14 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+// deployContract deploys contract and calls its 'init' constructor.
+// If call to the constructor returns an error or an other error occurs,
+// removes smart contract form the registry as if it was never attempted to deploy
+// Inputs:
+// - ParamName string, the unique name of the contract in the chain. Latter used as a hname
+// - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
+//     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
+// - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Eventf("root.deployContract.begin")
 	params := ctx.Params()
@@ -113,7 +127,7 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 			initParams.Set(key, value)
 		}
 	}
-	// only loads VM
+	// calls to loads VM from binary to check if it loads successfully
 	err = ctx.CreateContract(*proghash, "", "", nil)
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
@@ -132,7 +146,11 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// findContract is a view
+// findContract view finds and returns encoded record of the contract
+// Input:
+// - ParamHname
+// Output:
+// - ParamData
 func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	params := ctx.Params()
 	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
@@ -152,55 +170,14 @@ func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-// changeChainOwner changes the chain owner to another agentID
-// checks authorisation
-func changeChainOwner(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("root.allowChangeChainOwner.begin")
-	state := ctx.State()
-	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
-	nextOwner, ok, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerIDNext))
-	if err != nil || !ok {
-		return nil, fmt.Errorf("root.changeChainOwner: unknown next owner ID")
-	}
-	if nextOwner == currentOwner {
-		// no need to change
-		return nil, nil
-	}
-	if nextOwner != ctx.Caller() {
-		// can be changed only  by the caller if it is equal to the nextOwner
-		ctx.Eventf("root.changeChainOwner.fail: not authorized")
-		return nil, fmt.Errorf("root.allowChangeChainOwner: not authorized")
-	}
-	state.Set(VarChainOwnerID, codec.EncodeAgentID(nextOwner))
-	ctx.Eventf("root.chainChainOwner.success: chain owner changed: %s --> %s",
-		currentOwner.String(), nextOwner.String())
-	return nil, nil
-}
-
-// allowChangeChainOwner stores next possible chain owner to another agentID
-// checks authorisation
-// two step process allow/change is in order to avoid mistakes
-func allowChangeChainOwner(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("root.allowChangeChainOwner.begin")
-	state := ctx.State()
-	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
-	if currentOwner != ctx.Caller() {
-		ctx.Eventf("root.allowChangeChainOwner.fail: not authorized")
-		return nil, fmt.Errorf("root.allowChangeChainOwner: not authorized")
-	}
-	newOwnerID, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamChainOwner))
-	if err != nil {
-		return nil, fmt.Errorf("root.allowChangeChainOwner: wrong parameter: %v", err)
-	}
-	if !ok {
-		return nil, fmt.Errorf("root.allowChangeChainOwner.fail: wrong parameter")
-	}
-	state.Set(VarChainOwnerIDNext, codec.EncodeAgentID(newOwnerID))
-	ctx.Eventf("root.allowChangeChainOwner.success: next owner stored: current %s --> next %s",
-		currentOwner.String(), newOwnerID.String())
-	return nil, nil
-}
-
+// getInfo view returns general info about the chain: chain ID, chain owner ID,
+// description and the whole contract registry
+// Input: none
+// Output:
+// - VarChainID - ChainID
+// - VarChainOwnerID - AgentID
+// - VarDescription - string
+// - VarContractRegistry: a map of contract registry
 func getInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 
@@ -223,7 +200,59 @@ func getInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-//------------------------------ utility function
+// delegateChainOwnership stores next possible (delegated) chain owner to another agentID
+// checks authorisation by the current owner
+// Two step process allow/change is in order to avoid mistakes
+func delegateChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Eventf("root.delegateChainOwnership.begin")
+	state := ctx.State()
+	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	if currentOwner != ctx.Caller() {
+		// check authorisation
+		ctx.Eventf("root.delegateChainOwnership.fail: not authorized")
+		return nil, fmt.Errorf("root.delegateChainOwnership: not authorized")
+	}
+	newOwnerID, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamChainOwner))
+	if err != nil {
+		return nil, fmt.Errorf("root.delegateChainOwnership: wrong parameter: %v", err)
+	}
+	if !ok {
+		return nil, fmt.Errorf("root.delegateChainOwnership.fail: wrong parameter")
+	}
+	state.Set(VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
+	ctx.Eventf("root.delegateChainOwnership.success: next owner stored: current %s --> next %s",
+		currentOwner.String(), newOwnerID.String())
+	return nil, nil
+}
+
+// claimChainOwnership changes the chain owner to the delegated agentID (if any)
+// Checks authorisation if the caller is the one to which the ownership is delegated
+// Note that ownership is only changed by the successful call to  claimChainOwnership
+func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Eventf("root.delegateChainOwnership.begin")
+	state := ctx.State()
+	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	nextOwner, ok, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerIDDelegated))
+	if err != nil || !ok {
+		return nil, fmt.Errorf("root.claimChainOwnership: not delegated to another chain owner")
+	}
+	if nextOwner == currentOwner {
+		// no need to change
+		return nil, nil
+	}
+	if nextOwner != ctx.Caller() {
+		// can be changed only by the caller to which ownership is delegated
+		ctx.Eventf("root.claimChainOwnership.fail: not authorized")
+		return nil, fmt.Errorf("root.delegateChainOwnership: not authorized")
+	}
+	state.Set(VarChainOwnerID, codec.EncodeAgentID(nextOwner))
+	state.Del(VarChainOwnerIDDelegated)
+	ctx.Eventf("root.chainChainOwner.success: chain owner changed: %s --> %s",
+		currentOwner.String(), nextOwner.String())
+	return nil, nil
+}
+
+// storeAndInitContract internal utility function
 func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
