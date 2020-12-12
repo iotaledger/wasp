@@ -68,7 +68,7 @@ func TestBasicAccounts(t *testing.T) {
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, name, cr.Name)
 
 		return true
@@ -179,7 +179,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, name, cr.Name)
 
 		return true

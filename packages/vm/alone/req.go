@@ -33,12 +33,12 @@ type callParams struct {
 	params     dict.Dict
 }
 
-func NewCall(target, ep string, params ...interface{}) *callParams {
+func NewCall(sc, fun string, params ...interface{}) *callParams {
 	ret := &callParams{
-		targetName: target,
-		target:     coretypes.Hn(target),
-		epName:     ep,
-		entryPoint: coretypes.Hn(ep),
+		targetName: sc,
+		target:     coretypes.Hn(sc),
+		epName:     fun,
+		entryPoint: coretypes.Hn(fun),
 	}
 	ret.withParams(params...)
 	return ret
@@ -78,15 +78,16 @@ func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.
 	defer ch.runVMMutex.Unlock()
 
 	task := &vm.VMTask{
-		Processors:   ch.Proc,
-		ChainID:      ch.ChainID,
-		Color:        ch.ChainColor,
-		Entropy:      *hashing.RandomHash(nil),
-		Balances:     waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
-		Requests:     batch,
-		Timestamp:    ch.Glb.LogicalTime().UnixNano(),
-		VirtualState: ch.State.Clone(),
-		Log:          ch.Log,
+		Processors:         ch.Proc,
+		ChainID:            ch.ChainID,
+		Color:              ch.ChainColor,
+		Entropy:            *hashing.RandomHash(nil),
+		ValidatorFeeTarget: ch.ValidatorFeeTarget,
+		Balances:           waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
+		Requests:           batch,
+		Timestamp:          ch.Glb.LogicalTime().UnixNano(),
+		VirtualState:       ch.State.Clone(),
+		Log:                ch.Log,
 	}
 	var err error
 	var wg sync.WaitGroup
@@ -198,8 +199,8 @@ func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
 
-func (ch *Chain) CallView(fun string, ep string, params ...interface{}) (dict.Dict, error) {
-	return ch.CallViewFull(NewCall(fun, ep, params...))
+func (ch *Chain) CallView(sc string, fun string, params ...interface{}) (dict.Dict, error) {
+	return ch.CallViewFull(NewCall(sc, fun, params...))
 }
 
 func (ch *Chain) WaitEmptyBacklog(maxWait ...time.Duration) {

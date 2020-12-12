@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
 )
@@ -20,22 +19,24 @@ type VMContext struct {
 	// same for the block
 	chainID       coretypes.ChainID
 	processors    *processors.ProcessorCache
-	accrueFeesTo  coretypes.AgentID
 	balances      map[valuetransaction.ID][]*balance.Balance
 	txBuilder     *statetxbuilder.Builder // mutated
 	saveTxBuilder *statetxbuilder.Builder // for rollback
 	virtualState  state.VirtualState      // mutated
 	log           *logger.Logger
+	// fee related
+	validatorFeeTarget coretypes.AgentID // provided by validator
+	feeColor           balance.Color
+	fee                int64
 	// request context
-	entropy        hashing.HashValue // mutates with each request
-	reqRef         sctransaction.RequestRef
-	reqHname       coretypes.Hname
-	contractRecord *root.ContractRecord
-	timestamp      int64
-	stateUpdate    state.StateUpdate // mutated
-	lastError      error             // mutated
-	lastResult     dict.Dict         // mutated. Used only by 'alone'
-	callStack      []*callContext
+	entropy     hashing.HashValue // mutates with each request
+	reqRef      sctransaction.RequestRef
+	reqHname    coretypes.Hname
+	timestamp   int64
+	stateUpdate state.StateUpdate // mutated
+	lastError   error             // mutated
+	lastResult  dict.Dict         // mutated. Used only by 'alone'
+	callStack   []*callContext
 }
 
 type callContext struct {

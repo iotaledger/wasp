@@ -13,7 +13,7 @@ import (
 )
 
 func TestAccountsBase(t *testing.T) {
-	glb := New(t, false, false)
+	glb := New(t, true, false)
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 }
@@ -34,7 +34,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncAllowChangeChainOwner, root.ParamChainOwner, newOwnerAgentID)
+	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
@@ -42,7 +42,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
 	chain.CheckAccountLedger()
 
-	req = NewCall(root.Interface.Name, root.FuncChangeChainOwner)
+	req = NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 

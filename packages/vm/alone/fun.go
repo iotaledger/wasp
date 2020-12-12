@@ -221,3 +221,21 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalBalance),
 	)
 }
+
+func (ch *Chain) GetFeeInfo(hname coretypes.Hname) (balance.Color, int64) {
+	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
+	require.NoError(ch.Glb.T, err)
+	require.NotEqualValues(ch.Glb.T, 0, len(ret))
+
+	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.ParamFeeColor))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+	require.NotNil(ch.Glb.T, feeColor)
+
+	fee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamContractFee))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+	require.True(ch.Glb.T, fee >= 0)
+
+	return *feeColor, fee
+}
