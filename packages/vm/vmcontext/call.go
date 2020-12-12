@@ -115,7 +115,7 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	if !vmctx.txBuilder.Erase1TokenToChain(reqColor) {
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
-	if vmctx.contractRecord.Fee == 0 {
+	if vmctx.fee == 0 {
 		vmctx.log.Debugf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
 		// if no fees enabled, accrue the token to the caller
 		fee := map[balance.Color]int64{
@@ -126,7 +126,7 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	}
 
 	// handle fees
-	if vmctx.contractRecord.Fee-1 > transfer.Balance(balance.ColorIOTA) {
+	if vmctx.fee-1 > transfer.Balance(vmctx.feeColor) {
 		// fallback: not enough fees
 		// accrue everything to the sender
 		sender := vmctx.reqRef.SenderAgentID()
@@ -137,12 +137,13 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	}
 	// enough fees
 	// accrue everything (including request token) to the chain owner
+	// TODO -- split fee between validator and chain owner
 	fee := map[balance.Color]int64{
-		balance.ColorIOTA: vmctx.contractRecord.Fee,
+		vmctx.feeColor: vmctx.fee,
 	}
 	vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(fee))
 	remaining := map[balance.Color]int64{
-		balance.ColorIOTA: -vmctx.contractRecord.Fee + 1,
+		vmctx.feeColor: -vmctx.fee + 1,
 	}
 	transfer.AddToMap(remaining)
 	return cbalances.NewFromMap(remaining), nil

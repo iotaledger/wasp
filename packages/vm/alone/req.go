@@ -78,15 +78,16 @@ func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.
 	defer ch.runVMMutex.Unlock()
 
 	task := &vm.VMTask{
-		Processors:   ch.Proc,
-		ChainID:      ch.ChainID,
-		Color:        ch.ChainColor,
-		Entropy:      *hashing.RandomHash(nil),
-		Balances:     waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
-		Requests:     batch,
-		Timestamp:    ch.Glb.LogicalTime().UnixNano(),
-		VirtualState: ch.State.Clone(),
-		Log:          ch.Log,
+		Processors:         ch.Proc,
+		ChainID:            ch.ChainID,
+		Color:              ch.ChainColor,
+		Entropy:            *hashing.RandomHash(nil),
+		ValidatorFeeTarget: ch.ValidatorFeeTarget,
+		Balances:           waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
+		Requests:           batch,
+		Timestamp:          ch.Glb.LogicalTime().UnixNano(),
+		VirtualState:       ch.State.Clone(),
+		Log:                ch.Log,
 	}
 	var err error
 	var wg sync.WaitGroup

@@ -61,6 +61,7 @@ type Chain struct {
 	ChainColor          balance.Color
 	OriginatorAddress   address.Address
 	OriginatorAgentID   coretypes.AgentID
+	ValidatorFeeTarget  coretypes.AgentID
 	StateTx             *sctransaction.Transaction
 	State               state.VirtualState
 	Proc                *processors.ProcessorCache
@@ -97,7 +98,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Glb {
 	return ret
 }
 
-func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name string) *Chain {
+func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	if chainOriginator == nil {
 		chainOriginator = signaturescheme.ED25519(ed25519.GenerateKeyPair())
@@ -105,6 +106,11 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 		require.NoError(glb.T, err)
 	}
 	chainID := coretypes.ChainID(chSig.Address())
+	originatorAgentID := coretypes.NewAgentIDFromAddress(chainOriginator.Address())
+	feeTarget := originatorAgentID
+	if len(validatorFeeTarget) > 0 {
+		feeTarget = validatorFeeTarget[0]
+	}
 
 	ret := &Chain{
 		Glb:                 glb,
@@ -113,7 +119,8 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 		OriginatorSigScheme: chainOriginator,
 		ChainAddress:        chSig.Address(),
 		OriginatorAddress:   chainOriginator.Address(),
-		OriginatorAgentID:   coretypes.NewAgentIDFromAddress(chainOriginator.Address()),
+		OriginatorAgentID:   originatorAgentID,
+		ValidatorFeeTarget:  feeTarget,
 		ChainID:             chainID,
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		Proc:                processors.MustNew(),
