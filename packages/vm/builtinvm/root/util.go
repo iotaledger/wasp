@@ -10,7 +10,7 @@ import (
 
 // FindContract is an internal utility function which finds a contract in the KVStore
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
-// It is not exposed to the sandbix
+// It is not exposed to the sandbox
 func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, error) {
 	if hname == Interface.Hname() {
 		return &RootContractRecord, nil
