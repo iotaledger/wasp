@@ -49,7 +49,7 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		require.EqualValues(t, blob.Interface.ProgramHash, cr.ProgramHash)
 		require.EqualValues(t, blob.Interface.Description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, blob.Interface.Name, cr.Name)
 
 		crBytes = contractRegistry.GetAt(accountsc.Interface.Hname().Bytes())
@@ -59,7 +59,7 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		require.EqualValues(t, accountsc.Interface.ProgramHash, cr.ProgramHash)
 		require.EqualValues(t, accountsc.Interface.Description, cr.Description)
-		require.EqualValues(t, 0, cr.NodeFee)
+		require.EqualValues(t, 0, cr.Fee)
 		require.EqualValues(t, accountsc.Interface.Name, cr.Name)
 		return true
 	})

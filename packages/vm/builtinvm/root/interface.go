@@ -38,6 +38,9 @@ func init() {
 		contract.Func(FuncClaimChainOwnership, claimChainOwnership),
 		contract.Func(FuncDelegateChainOwnership, delegateChainOwnership),
 		contract.ViewFunc(FuncGetInfo, getInfo),
+		contract.ViewFunc(FuncGetFeeInfo, getFeeInfo),
+		contract.Func(FuncSetDefaultFee, setDefaultFee),
+		contract.Func(FuncSetFee, setFee),
 	})
 }
 
@@ -46,6 +49,8 @@ const (
 	VarStateInitialized      = "i"
 	VarChainID               = "c"
 	VarChainOwnerID          = "o"
+	VarFeeColor              = "f"
+	VarDefaultFee            = "e"
 	VarChainOwnerIDDelegated = "n"
 	VarContractRegistry      = "r"
 	VarDescription           = "d"
@@ -60,6 +65,9 @@ const (
 	ParamHname       = "$$hname$$"
 	ParamName        = "$$name$$"
 	ParamData        = "$$data$$"
+	ParamFeeColor    = "$$feecolor$$"
+	ParamDefaultFee  = "$$defaultfee$$"
+	ParamContractFee = "$$scFee$$"
 )
 
 // function names
@@ -69,6 +77,9 @@ const (
 	FuncGetInfo                = "getInfo"
 	FuncDelegateChainOwnership = "delegateChainOwnership"
 	FuncClaimChainOwnership    = "claimChainOwnership"
+	FuncGetFeeInfo             = "getFeeInfo"
+	FuncSetDefaultFee          = "setDefaultFee"
+	FuncSetFee                 = "setFee"
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -80,7 +91,7 @@ type ContractRecord struct {
 	ProgramHash hashing.HashValue
 	Description string
 	Name        string
-	NodeFee     int64 // minimum node fee
+	Fee         int64 // minimum node fee
 	Creator     coretypes.AgentID
 }
 
@@ -95,7 +106,7 @@ func (p *ContractRecord) Write(w io.Writer) error {
 	if err := util.WriteString16(w, p.Name); err != nil {
 		return err
 	}
-	if err := util.WriteInt64(w, p.NodeFee); err != nil {
+	if err := util.WriteInt64(w, p.Fee); err != nil {
 		return err
 	}
 	if _, err := w.Write(p.Creator[:]); err != nil {
@@ -115,7 +126,7 @@ func (p *ContractRecord) Read(r io.Reader) error {
 	if p.Name, err = util.ReadString16(r); err != nil {
 		return err
 	}
-	if err := util.ReadInt64(r, &p.NodeFee); err != nil {
+	if err := util.ReadInt64(r, &p.Fee); err != nil {
 		return err
 	}
 	if err := coretypes.ReadAgentID(r, &p.Creator); err != nil {

@@ -83,7 +83,7 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
-	require.EqualValues(t, 0, rec.NodeFee)
+	require.EqualValues(t, 0, rec.Fee)
 	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
 	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
 
@@ -122,7 +122,7 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
-	require.EqualValues(t, 0, rec.NodeFee)
+	require.EqualValues(t, 0, rec.Fee)
 	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
 	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
 }
