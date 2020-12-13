@@ -40,7 +40,7 @@ func init() {
 		contract.ViewFunc(FuncGetInfo, getInfo),
 		contract.ViewFunc(FuncGetFeeInfo, getFeeInfo),
 		contract.Func(FuncSetDefaultFee, setDefaultFee),
-		contract.Func(FuncSetFee, setFee),
+		contract.Func(FuncSetContractFee, setContractFee),
 	})
 }
 
@@ -50,7 +50,8 @@ const (
 	VarChainID               = "c"
 	VarChainOwnerID          = "o"
 	VarFeeColor              = "f"
-	VarDefaultFee            = "e"
+	VarDefaultOwnerFee       = "do"
+	VarDefaultValidatorFee   = "dv"
 	VarChainOwnerIDDelegated = "n"
 	VarContractRegistry      = "r"
 	VarDescription           = "d"
@@ -58,16 +59,16 @@ const (
 
 // param variables
 const (
-	ParamChainID     = "$$chainid$$"
-	ParamChainOwner  = "$$owner$$"
-	ParamProgramHash = "$$proghash$$"
-	ParamDescription = "$$description$$"
-	ParamHname       = "$$hname$$"
-	ParamName        = "$$name$$"
-	ParamData        = "$$data$$"
-	ParamFeeColor    = "$$feecolor$$"
-	ParamDefaultFee  = "$$defaultfee$$"
-	ParamContractFee = "$$scFee$$"
+	ParamChainID      = "$$chainid$$"
+	ParamChainOwner   = "$$owner$$"
+	ParamProgramHash  = "$$proghash$$"
+	ParamDescription  = "$$description$$"
+	ParamHname        = "$$hname$$"
+	ParamName         = "$$name$$"
+	ParamData         = "$$data$$"
+	ParamFeeColor     = "$$feecolor$$"
+	ParamOwnerFee     = "$$ownerfee$$"
+	ParamValidatorFee = "$$validatorfee$$"
 )
 
 // function names
@@ -79,7 +80,7 @@ const (
 	FuncClaimChainOwnership    = "claimChainOwnership"
 	FuncGetFeeInfo             = "getFeeInfo"
 	FuncSetDefaultFee          = "setDefaultFee"
-	FuncSetFee                 = "setFee"
+	FuncSetContractFee         = "setContractFee"
 )
 
 func GetProcessor() vmtypes.Processor {
@@ -88,11 +89,12 @@ func GetProcessor() vmtypes.Processor {
 
 // ContractRecord is a structure which contains metadata for a deployed contract
 type ContractRecord struct {
-	ProgramHash hashing.HashValue
-	Description string
-	Name        string
-	Fee         int64 // minimum node fee
-	Creator     coretypes.AgentID
+	ProgramHash  hashing.HashValue
+	Description  string
+	Name         string
+	OwnerFee     int64 // owner part of the fee
+	ValidatorFee int64 // validator part of the fee
+	Creator      coretypes.AgentID
 }
 
 // serde
@@ -106,7 +108,10 @@ func (p *ContractRecord) Write(w io.Writer) error {
 	if err := util.WriteString16(w, p.Name); err != nil {
 		return err
 	}
-	if err := util.WriteInt64(w, p.Fee); err != nil {
+	if err := util.WriteInt64(w, p.OwnerFee); err != nil {
+		return err
+	}
+	if err := util.WriteInt64(w, p.ValidatorFee); err != nil {
 		return err
 	}
 	if _, err := w.Write(p.Creator[:]); err != nil {
@@ -126,7 +131,10 @@ func (p *ContractRecord) Read(r io.Reader) error {
 	if p.Name, err = util.ReadString16(r); err != nil {
 		return err
 	}
-	if err := util.ReadInt64(r, &p.Fee); err != nil {
+	if err := util.ReadInt64(r, &p.OwnerFee); err != nil {
+		return err
+	}
+	if err := util.ReadInt64(r, &p.ValidatorFee); err != nil {
 		return err
 	}
 	if err := coretypes.ReadAgentID(r, &p.Creator); err != nil {

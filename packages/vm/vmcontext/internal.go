@@ -55,15 +55,15 @@ func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*roo
 	return ret, true
 }
 
-func (vmctx *VMContext) getFeeInfo(contractHname coretypes.Hname) (balance.Color, int64, bool) {
+func (vmctx *VMContext) getFeeInfo(contractHname coretypes.Hname) (balance.Color, int64, int64, bool) {
 	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	col, fee, err := root.GetFeeInfo(vmctx.State(), contractHname)
+	col, ownerFee, validatorFee, err := root.GetFeeInfo(vmctx.State(), contractHname)
 	if err != nil {
-		return balance.Color{}, 0, false
+		return balance.Color{}, 0, 0, false
 	}
-	return *col, fee, true
+	return *col, ownerFee, validatorFee, true
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
