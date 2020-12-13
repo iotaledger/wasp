@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/vm/alone"
 	"testing"
 	"time"
@@ -26,6 +27,9 @@ const varNumRepeats = "num_repeats"
 
 func checkCounter(t *testing.T, expected int) bool {
 	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
+		for k,v := range state {
+			fmt.Printf("%s: %v\n", string(k), v)
+		}
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(varCounter))
 		require.EqualValues(t, expected, counterValue)
 		return true
@@ -304,7 +308,23 @@ func TestIncViewCounter(t *testing.T) {
 	require.EqualValues(t, 1, counter)
 }
 
-func TestIncAlone(t *testing.T) {
+func TestIncAloneInc(t *testing.T) {
+	al := alone.New(t, false, true)
+	chain := al.NewChain(nil, "chain1")
+	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
+	require.NoError(t, err)
+	req := alone.NewCall(incName, "increment").
+		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+	ret, err := chain.CallView(incName, "increment_view_counter")
+	require.NoError(t, err)
+	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	check(err, t)
+	require.EqualValues(t, 1, counter)
+}
+
+func TestIncAloneRepeatMany(t *testing.T) {
 	al := alone.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
@@ -314,4 +334,9 @@ func TestIncAlone(t *testing.T) {
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	chain.WaitEmptyBacklog()
+	ret, err := chain.CallView(incName, "increment_view_counter")
+	require.NoError(t, err)
+	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	check(err, t)
+	require.EqualValues(t, 3, counter)
 }

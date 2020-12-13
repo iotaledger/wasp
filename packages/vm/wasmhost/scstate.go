@@ -15,7 +15,7 @@ func (o *ScState) InitObj(id int32, keyId int32, owner *ModelObject) {
 	if o.isArray {
 		o.typeId = o.arrayTypeId
 	}
-	o.nested = true
+	o.nested = false
 }
 
 func (o *ScState) GetObjectId(keyId int32, typeId int32) int32 {
