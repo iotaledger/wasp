@@ -17,15 +17,15 @@ import (
 
 // Message types for the committee communications.
 const (
-	MsgStateIndexPingPong      = 0 + peering.FirstCommitteeMsgCode // TODO: Rename the constant (static vs dynamic allocation).
-	MsgNotifyRequests          = 1 + peering.FirstCommitteeMsgCode
-	MsgNotifyFinalResultPosted = 2 + peering.FirstCommitteeMsgCode
-	MsgStartProcessingRequest  = 3 + peering.FirstCommitteeMsgCode
-	MsgSignedHash              = 4 + peering.FirstCommitteeMsgCode
-	MsgGetBatch                = 5 + peering.FirstCommitteeMsgCode
-	MsgStateUpdate             = 6 + peering.FirstCommitteeMsgCode
-	MsgBatchHeader             = 7 + peering.FirstCommitteeMsgCode
-	MsgTestTrace               = 8 + peering.FirstCommitteeMsgCode
+	MsgStateIndexPingPong      = 0 + peering.FirstUserMsgCode
+	MsgNotifyRequests          = 1 + peering.FirstUserMsgCode
+	MsgNotifyFinalResultPosted = 2 + peering.FirstUserMsgCode
+	MsgStartProcessingRequest  = 3 + peering.FirstUserMsgCode
+	MsgSignedHash              = 4 + peering.FirstUserMsgCode
+	MsgGetBatch                = 5 + peering.FirstUserMsgCode
+	MsgStateUpdate             = 6 + peering.FirstUserMsgCode
+	MsgBatchHeader             = 7 + peering.FirstUserMsgCode
+	MsgTestTrace               = 8 + peering.FirstUserMsgCode
 )
 
 type TimerTick int

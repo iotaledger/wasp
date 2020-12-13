@@ -8,20 +8,19 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dks"
-	"go.dedis.ch/kyber/v3"
 )
 
 // DkgRegistryProvider stands for a mock for dkg.RegistryProvider.
 type DkgRegistryProvider struct {
 	DB    map[string][]byte
-	Group kyber.Group
+	Suite dks.Suite
 }
 
 // NewDkgRegistryProvider creates new mocked DKG registry provider.
-func NewDkgRegistryProvider(group kyber.Group) *DkgRegistryProvider {
+func NewDkgRegistryProvider(suite dks.Suite) *DkgRegistryProvider {
 	return &DkgRegistryProvider{
 		DB:    map[string][]byte{},
-		Group: group,
+		Suite: suite,
 	}
 }
 
@@ -42,5 +41,5 @@ func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*dks.DKSh
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", chainID)
 	}
-	return dks.DKShareFromBytes(dkShareBytes, p.Group)
+	return dks.DKShareFromBytes(dkShareBytes, p.Suite)
 }

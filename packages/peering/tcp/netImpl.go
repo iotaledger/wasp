@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/group"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // NetImpl implements a peering.NetworkProvider interface.
@@ -24,23 +25,27 @@ type NetImpl struct {
 	peersMutex *sync.RWMutex
 	events     *events.Event
 
-	log *logger.Logger
+	nodeKeyPair *key.Pair
+	suite       kyber.Group
+	log         *logger.Logger
 }
 
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
-func NewNetworkProvider(myNetID string, port int, log *logger.Logger) (*NetImpl, error) {
-	if err := checkMyNetID(myNetID, port); err != nil {
+func NewNetworkProvider(myNetID string, port int, nodeKeyPair *key.Pair, suite kyber.Group, log *logger.Logger) (*NetImpl, error) {
+	if err := peering.CheckMyNetID(myNetID, port); err != nil {
 		// can't continue because NetID parameter is not correct
 		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
 		return nil, err
 	}
 	n := NetImpl{
-		myNetID:    myNetID,
-		port:       port,
-		peers:      make(map[string]*peer),
-		peersMutex: &sync.RWMutex{},
-		log:        log,
+		myNetID:     myNetID,
+		port:        port,
+		peers:       make(map[string]*peer),
+		peersMutex:  &sync.RWMutex{},
+		nodeKeyPair: nodeKeyPair,
+		suite:       suite,
+		log:         log,
 	}
 	n.events = events.NewEvent(n.eventHandler)
 	return &n, nil
@@ -75,11 +80,11 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 	var err error
 	peers := make([]peering.PeerSender, len(peerNetIDs))
 	for i := range peerNetIDs {
-		if peers[i], err = n.PeerByLocation(peerNetIDs[i]); err != nil {
+		if peers[i], err = n.PeerByNetID(peerNetIDs[i]); err != nil {
 			return nil, err
 		}
 	}
-	return group.NewPeeringGroupProvider(n, peers), nil
+	return group.NewPeeringGroupProvider(n, peers, n.log), nil
 }
 
 // Attach implements peering.NetworkProvider.
@@ -103,9 +108,9 @@ func (n *NetImpl) Detach(attachID interface{}) {
 	}
 }
 
-// PeerByLocation implements peering.NetworkProvider.
-func (n *NetImpl) PeerByLocation(peerLoc string) (peering.PeerSender, error) {
-	if p := n.usePeer(peerLoc); p != nil {
+// PeerByNetID implements peering.NetworkProvider.
+func (n *NetImpl) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
+	if p := n.usePeer(peerNetID); p != nil {
 		return p, nil
 	}
 	return n, nil // Self
@@ -117,7 +122,7 @@ func (n *NetImpl) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) 
 	for i := range n.peers {
 		pk := n.peers[i].PubKey()
 		if pk != nil && pk.Equal(peerPub) {
-			return n.PeerByLocation(n.peers[i].Location())
+			return n.PeerByNetID(n.peers[i].NetID())
 		}
 	}
 	return nil, errors.New("known peer not found by pubKey")
@@ -132,14 +137,14 @@ func (n *NetImpl) PeerStatus() []peering.PeerStatusProvider {
 	return peerStatus
 }
 
-// Location implements peering.PeerSender for the Self() node.
-func (n *NetImpl) Location() string {
+// NetID implements peering.PeerSender for the Self() node.
+func (n *NetImpl) NetID() string {
 	return n.myNetID
 }
 
 // PubKey implements peering.PeerSender for the Self() node.
 func (n *NetImpl) PubKey() kyber.Point {
-	return nil // TODO
+	return n.nodeKeyPair.Public
 }
 
 // SendMsg implements peering.PeerSender for the Self() node.
@@ -161,17 +166,19 @@ func (n *NetImpl) Close() {
 	// We will con close the connection of the own node.
 }
 
-func (n *NetImpl) isInbound(remoteLocation string) bool {
-	// if remoteLocation == n.myNetID {	// TODO: [KP] Do we need this?
-	// 	panic("remoteNetID == myLocation")
+func (n *NetImpl) isInbound(remoteNetID string) bool {
+	// if remoteNetID == n.myNetID {	// TODO: [KP] Do we need this?
+	// 	panic("remoteNetID == myNetID")
 	// }
-	return remoteLocation < n.myNetID
+	return remoteNetID < n.myNetID
 }
-func (n *NetImpl) peeringID(remoteLocation string) string {
-	if n.isInbound(remoteLocation) {
-		return remoteLocation + "<" + n.myNetID
+
+// That's a name of the pairing, equal on both ends.
+func (n *NetImpl) peeringID(remoteNetID string) string {
+	if n.isInbound(remoteNetID) {
+		return remoteNetID + "<" + n.myNetID
 	}
-	return n.myNetID + "<" + remoteLocation
+	return n.myNetID + "<" + remoteNetID
 }
 
 // usePeer adds new connection to the peer pool
@@ -181,7 +188,7 @@ func (n *NetImpl) peeringID(remoteLocation string) string {
 func (n *NetImpl) usePeer(netID string) *peer {
 	if netID == n.myNetID {
 		// nil for itself
-		return nil
+		return nil // TODO: [KP] return self
 	}
 	n.peersMutex.Lock()
 	defer n.peersMutex.Unlock()

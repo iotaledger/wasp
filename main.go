@@ -22,11 +22,11 @@ import (
 	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func main() {
-	suite := bn256.NewSuite() // Single suite should be used in all the places.
+	suite := pairing.NewSuiteBn256() // TODO: [KP] Single suite should be used in all the places.
 
 	registry.InitFlags()
 	parameters.InitFlags()
@@ -39,8 +39,8 @@ func main() {
 		webapi.Init(),
 		cli.Init(),
 		database.Init(),
-		registry.Init(suite, suite),
-		peering.Init(),
+		registry.Init(suite),
+		peering.Init(suite),
 		dkg.Init(suite),
 		nodeconn.Init(),
 		dispatcher.Init(),

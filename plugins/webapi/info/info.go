@@ -17,7 +17,7 @@ func AddEndpoints(server *echo.Echo) {
 func handleInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, client.InfoResponse{
 		Version:       banner.AppVersion,
-		NetworkId:     peering.DefaultNetworkProvider().Self().Location(),
+		NetworkId:     peering.DefaultNetworkProvider().Self().NetID(),
 		PublisherPort: parameters.GetInt(parameters.NanomsgPublisherPort),
 	})
 }

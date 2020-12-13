@@ -12,11 +12,11 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
@@ -26,7 +26,7 @@ import (
 type operator struct {
 	chain chain.Chain
 
-	dkshare *tcrypto.DKShare
+	dkshare *dks.DKShare
 	//currentState
 	currentState state.VirtualState
 	stateTx      *sctransaction.Transaction
@@ -90,7 +90,7 @@ type request struct {
 	log *logger.Logger
 }
 
-func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
+func NewOperator(committee chain.Chain, dkshare *dks.DKShare, log *logger.Logger) *operator {
 	defer committee.SetReadyConsensus()
 
 	ret := &operator{
@@ -106,7 +106,7 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 }
 
 func (op *operator) peerIndex() uint16 {
-	return op.dkshare.Index
+	return *op.dkshare.Index
 }
 
 func (op *operator) quorum() uint16 {

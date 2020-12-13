@@ -25,15 +25,15 @@ type PeeringNetwork struct {
 }
 
 // NewPeeringNetworkForLocs creates a test network with new keys, etc.
-func NewPeeringNetworkForLocs(peerLocs []string, bufSize int, log *logger.Logger) *PeeringNetwork {
+func NewPeeringNetworkForLocs(peerNetIDs []string, bufSize int, log *logger.Logger) *PeeringNetwork {
 	var suite = edwards25519.NewBlakeSHA256Ed25519() //bn256.NewSuite()
-	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
-	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerLocs))
-	for i := range peerLocs {
+	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
+	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+	for i := range peerNetIDs {
 		peerSecs[i] = suite.Scalar().Pick(suite.RandomStream())
 		peerPubs[i] = suite.Point().Mul(peerSecs[i], nil)
 	}
-	return NewPeeringNetwork(peerLocs, peerPubs, peerSecs, bufSize, log)
+	return NewPeeringNetwork(peerNetIDs, peerPubs, peerSecs, bufSize, log)
 }
 
 // NewPeeringNetwork creates new test network, it can then be used to create network nodes.
@@ -70,9 +70,9 @@ func (p *PeeringNetwork) NetworkProviders() []peering.NetworkProvider {
 	return copy
 }
 
-func (p *PeeringNetwork) nodeByLocation(nodeLoc string) *peeringNode {
+func (p *PeeringNetwork) nodeByNetID(nodeNetID string) *peeringNode {
 	for i := range p.nodes {
-		if p.nodes[i].location == nodeLoc {
+		if p.nodes[i].netID == nodeNetID {
 			return p.nodes[i]
 		}
 	}
@@ -85,13 +85,13 @@ func (p *PeeringNetwork) nodeByLocation(nodeLoc string) *peeringNode {
 // node should be known for the sender.
 //
 type peeringNode struct {
-	location string
-	pubKey   kyber.Point
-	secKey   kyber.Scalar
-	recvCh   chan peeringMsg
-	recvCbs  []*peeringCb
-	network  *PeeringNetwork
-	log      *logger.Logger
+	netID   string
+	pubKey  kyber.Point
+	secKey  kyber.Scalar
+	recvCh  chan peeringMsg
+	recvCbs []*peeringCb
+	network *PeeringNetwork
+	log     *logger.Logger
 }
 type peeringMsg struct {
 	from *peeringNode
@@ -103,30 +103,30 @@ type peeringCb struct {
 	chainID  *coretypes.ChainID            // Only listen for specific chain msgs.
 }
 
-func newPeeringNode(location string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
+func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
 	recvCh := make(chan peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
 	node := peeringNode{
-		location: location,
-		pubKey:   pubKey,
-		secKey:   secKey,
-		recvCh:   recvCh,
-		recvCbs:  recvCbs,
-		network:  network,
-		log:      network.log.With("loc", location),
+		netID:   netID,
+		pubKey:  pubKey,
+		secKey:  secKey,
+		recvCh:  recvCh,
+		recvCbs: recvCbs,
+		network: network,
+		log:     network.log.With("loc", netID),
 	}
 	go func() { // Receive loop.
 		for {
 			var pm peeringMsg = <-recvCh
 			node.log.Debugf(
 				"received msgType=%v from=%v, chainID=%v",
-				pm.msg.MsgType, pm.from.location, pm.msg.ChainID,
+				pm.msg.MsgType, pm.from.netID, pm.msg.ChainID,
 			)
 			msgChainID := pm.msg.ChainID.String()
 			for _, cb := range node.recvCbs {
 				if cb.chainID == nil || cb.chainID.String() == msgChainID {
 					cb.callback(&peering.RecvEvent{
-						From: cb.destNP.senderByLocation(pm.from.location),
+						From: cb.destNP.senderByNetID(pm.from.netID),
 						Msg:  &pm.msg,
 					})
 				}
@@ -180,13 +180,13 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvider, error) {
 	peers := make([]peering.PeerSender, len(peerAddrs))
 	for i := range peerAddrs {
-		n := p.network.nodeByLocation(peerAddrs[i])
+		n := p.network.nodeByNetID(peerAddrs[i])
 		if n == nil {
 			return nil, errors.New("unknown_node_location")
 		}
 		peers[i] = p.senders[i]
 	}
-	return group.NewPeeringGroupProvider(p, peers), nil
+	return group.NewPeeringGroupProvider(p, peers, p.network.log), nil
 }
 
 // Attach implements peering.NetworkProvider.
@@ -207,15 +207,15 @@ func (p *peeringNetworkProvider) Detach(attachID interface{}) {
 	// Detach is not important in tests.
 }
 
-// PeerByLocation implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) PeerByLocation(peerLoc string) (peering.PeerSender, error) {
-	if s := p.senderByLocation(peerLoc); s != nil {
+// PeerByNetID implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
+	if s := p.senderByNetID(peerNetID); s != nil {
 		return s, nil
 	}
-	return nil, errors.New("peer not found by location")
+	return nil, errors.New("peer not found by NetID")
 }
 
-// PeerByLocation implements peering.NetworkProvider.
+// PeerByNetID implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) {
 	for i := range p.senders {
 		if p.senders[i].node.pubKey.Equal(peerPub) {
@@ -234,9 +234,9 @@ func (p *peeringNetworkProvider) PeerStatus() []peering.PeerStatusProvider {
 	return peerStatus
 }
 
-func (p *peeringNetworkProvider) senderByLocation(peerLoc string) *peeringSender {
+func (p *peeringNetworkProvider) senderByNetID(peerNetID string) *peeringSender {
 	for i := range p.senders {
-		if p.senders[i].node.location == peerLoc {
+		if p.senders[i].node.netID == peerNetID {
 			return p.senders[i]
 		}
 	}
@@ -259,9 +259,9 @@ func newPeeringSender(node *peeringNode, netProvider *peeringNetworkProvider) *p
 	}
 }
 
-// Location implements peering.PeerSender.
-func (p *peeringSender) Location() string {
-	return p.node.location
+// NetID implements peering.PeerSender.
+func (p *peeringSender) NetID() string {
+	return p.node.netID
 }
 
 // PubKey implements peering.PeerSender.

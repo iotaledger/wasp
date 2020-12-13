@@ -10,8 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
-	"github.com/iotaledger/goshimmer/packages/binary/messagelayer/payload"
+	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -34,33 +33,40 @@ type peer struct {
 	peerconn    *peeredConnection // nil means not connected
 	handshakeOk bool
 
-	remoteNetID string // network locations as taken from the SC data
+	remoteNetID  string // network locations as taken from the SC data
+	remotePubKey kyber.Point
 
 	startOnce *sync.Once
+	waitReady *sync.WaitGroup
 	numUsers  int
 	net       *NetImpl
 	log       *logger.Logger
 }
 
 func newPeer(remoteNetID string, net *NetImpl) *peer {
+	var waitReady sync.WaitGroup
+	waitReady.Add(1)
 	return &peer{
 		RWMutex:     &sync.RWMutex{},
 		remoteNetID: remoteNetID,
 		startOnce:   &sync.Once{},
+		waitReady:   &waitReady,
 		numUsers:    1,
 		net:         net,
 		log:         net.log,
 	}
 }
 
-// Location implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
-func (p *peer) Location() string {
+// NetID implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
+func (p *peer) NetID() string {
 	return p.remoteNetID
 }
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 func (p *peer) PubKey() kyber.Point {
-	return nil // TODO: [KP] Get it on handshake.
+	p.log.Infof("Waiting for connection to become ready to get %v peer's public key, inbound=%v.", p.remoteNetID, p.IsInbound())
+	p.waitReady.Wait()
+	return p.remotePubKey
 }
 
 // SendMsg implements peering.PeerSender interface for the remote peers.
@@ -168,25 +174,35 @@ func (p *peer) runOutbound() {
 		log.Errorf("error during sendHandshake: %v", err)
 		return
 	}
-	log.Debugf("starting reading outbound %s", p.remoteNetID)
+	log.Infof("starting reading outbound %s", p.remoteNetID)
 	err := p.peerconn.Read()
-	log.Debugw("stopped reading outbound. Closing", "remote", p.remoteNetID, "err", err)
+	log.Errorw("stopped reading outbound. Closing", "remote", p.remoteNetID, "err", err)
 	p.closeConn()
 }
 
-// sends handshake message. It contains myLocation
+// sends handshake message. It contains myNetID
 func (p *peer) sendHandshake() error {
+	var err error
+	msg := handshakeMsg{
+		peeringID: p.peeringID(),
+		srcNetID:  p.net.Self().NetID(),
+		pubKey:    p.net.nodeKeyPair.Public,
+	}
+	var msgData []byte
+	if msgData, err = msg.bytes(); err != nil {
+		return err
+	}
 	data := encodeMessage(&peering.PeerMessage{
 		MsgType: msgTypeHandshake,
-		MsgData: []byte(p.peeringID()),
+		MsgData: msgData,
 	}, time.Now().UnixNano())
-	_, err := p.peerconn.Write(data)
+	_, err = p.peerconn.Write(data)
 	p.net.log.Debugf("sendHandshake '%s' --> '%s', id = %s", p.net.myNetID, p.remoteNetID, p.peeringID())
 	return err
 }
 
 func (p *peer) doSendMsg(msg *peering.PeerMessage) error {
-	if msg.MsgType < peering.FirstCommitteeMsgCode {
+	if msg.MsgType < peering.FirstUserMsgCode {
 		return errors.New("reserved message code")
 	}
 	ts := msg.Timestamp
@@ -195,7 +211,7 @@ func (p *peer) doSendMsg(msg *peering.PeerMessage) error {
 	}
 	data := encodeMessage(msg, ts)
 
-	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
+	choppedData, chopped := p.peerconn.msgChopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
 
 	p.RLock()
 	defer p.RUnlock()
@@ -224,12 +240,11 @@ func (p *peer) sendChunks(chopped [][]byte) error {
 // with the same timestamp
 // return number of successfully sent messages and timestamp
 func SendMsgToPeers(msg *peering.PeerMessage, ts int64, peers ...*peer) uint16 { // TODO: [KP] Remove, unused.
-	if msg.MsgType < peering.FirstCommitteeMsgCode {
+	if msg.MsgType < peering.FirstUserMsgCode {
 		return 0
 	}
 	// timestamped here, once
 	data := encodeMessage(msg, ts)
-	choppedData, chopped := chopper.ChopData(data, payload.MaxMessageSize-chunkMessageOverhead)
 
 	numSent := uint16(0)
 	for _, peer := range peers {
@@ -237,6 +252,7 @@ func SendMsgToPeers(msg *peering.PeerMessage, ts int64, peers ...*peer) uint16 {
 			continue
 		}
 		peer.RLock()
+		choppedData, chopped := peer.peerconn.msgChopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
 		if !chopped {
 			if err := peer.sendData(data); err == nil {
 				numSent++

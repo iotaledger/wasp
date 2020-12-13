@@ -1,11 +1,15 @@
 package apilib
 
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"

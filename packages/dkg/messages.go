@@ -29,19 +29,19 @@ const (
 	//
 	// NOTE: initiatorInitMsgType must be unique across all the uses of peering package,
 	// because it is used to start new chain, thus chainID is not used for message recognition.
-	initiatorInitMsgType     byte = 250 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
-	initiatorStepMsgType     byte = 1   // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
-	initiatorDoneMsgType     byte = 2   // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
-	initiatorPubShareMsgType byte = 3   // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
-	initiatorStatusMsgType   byte = 4   // Peer -> Initiator; in the case of error or void ack.
+	initiatorInitMsgType     byte = peering.FirstUserMsgCode + 200 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
+	initiatorStepMsgType     byte = peering.FirstUserMsgCode + 1   // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
+	initiatorDoneMsgType     byte = peering.FirstUserMsgCode + 2   // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
+	initiatorPubShareMsgType byte = peering.FirstUserMsgCode + 3   // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
+	initiatorStatusMsgType   byte = peering.FirstUserMsgCode + 4   // Peer -> Initiator; in the case of error or void ack.
 	//
 	// Peer <-> Peer communication for the Rabin protocol.
-	rabinDealMsgType               byte = 11
-	rabinResponseMsgType           byte = 12
-	rabinJustificationMsgType      byte = 13
-	rabinSecretCommitsMsgType      byte = 14
-	rabinComplaintCommitsMsgType   byte = 15
-	rabinReconstructCommitsMsgType byte = 16
+	rabinDealMsgType               byte = peering.FirstUserMsgCode + 11
+	rabinResponseMsgType           byte = peering.FirstUserMsgCode + 12
+	rabinJustificationMsgType      byte = peering.FirstUserMsgCode + 13
+	rabinSecretCommitsMsgType      byte = peering.FirstUserMsgCode + 14
+	rabinComplaintCommitsMsgType   byte = peering.FirstUserMsgCode + 15
+	rabinReconstructCommitsMsgType byte = peering.FirstUserMsgCode + 16
 )
 
 // All the messages exchanged via the Peering subsystem will implement this.
@@ -113,11 +113,11 @@ func readInitiatorMsg(peerMessage *peering.PeerMessage, suite kyber.Group) (bool
 //
 type initiatorInitMsg struct {
 	step         byte
-	peerLocs     []string
+	dkgRef       string // Some unique string to identify duplicate initialization.
+	peerNetIDs   []string
 	peerPubs     []kyber.Point
 	initiatorPub kyber.Point
 	threshold    uint16
-	version      address.Version
 	timeoutMS    uint32
 	suite        kyber.Group // Transient, for un-marshaling only.
 }
@@ -130,7 +130,10 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteStrings16(w, m.peerLocs); err != nil {
+	if err = util.WriteString16(w, m.dkgRef); err != nil {
+		return err
+	}
+	if err = util.WriteStrings16(w, m.peerNetIDs); err != nil {
 		return err
 	}
 	if err = util.WriteUint16(w, uint16(len(m.peerPubs))); err != nil {
@@ -147,9 +150,6 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 	if err = util.WriteUint16(w, m.threshold); err != nil {
 		return err
 	}
-	if err = util.WriteByte(w, m.version); err != nil {
-		return err
-	}
 	if err = util.WriteUint32(w, m.timeoutMS); err != nil {
 		return err
 	}
@@ -160,7 +160,10 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
-	if m.peerLocs, err = util.ReadStrings16(r); err != nil {
+	if m.dkgRef, err = util.ReadString16(r); err != nil {
+		return err
+	}
+	if m.peerNetIDs, err = util.ReadStrings16(r); err != nil {
 		return err
 	}
 	var arrLen uint16
@@ -179,9 +182,6 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 		return err
 	}
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
-		return err
-	}
-	if m.version, err = util.ReadByte(r); err != nil {
 		return err
 	}
 	if err = util.ReadUint32(r, &m.timeoutMS); err != nil {
@@ -314,12 +314,13 @@ func (m *initiatorDoneMsg) IsResponse() bool {
 // All the nodes must return the same public key.
 //
 type initiatorPubShareMsg struct {
-	step         byte
-	chainID      *coretypes.ChainID
-	sharedPublic kyber.Point
-	publicShare  kyber.Point
-	signature    []byte
-	suite        kyber.Group // Transient, for un-marshaling only.
+	step          byte
+	chainID       *coretypes.ChainID
+	sharedAddress *address.Address
+	sharedPublic  kyber.Point
+	publicShare   kyber.Point
+	signature     []byte
+	suite         kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorPubShareMsg) MsgType() byte {
@@ -331,6 +332,9 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 		return err
 	}
 	if err = m.chainID.Write(w); err != nil {
+		return err
+	}
+	if err = util.WriteBytes16(w, m.sharedAddress.Bytes()); err != nil {
 		return err
 	}
 	if err = util.WriteMarshaled(w, m.sharedPublic); err != nil {
@@ -354,6 +358,15 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if err = m.chainID.Read(r); err != nil {
 		return err
 	}
+	var sharedAddressBin []byte
+	var sharedAddress address.Address
+	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	if sharedAddress, _, err = address.FromBytes(sharedAddressBin); err != nil {
+		return err
+	}
+	m.sharedAddress = &sharedAddress
 	m.sharedPublic = m.suite.Point()
 	if err = util.ReadMarshaled(r, m.sharedPublic); err != nil {
 		return err

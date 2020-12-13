@@ -9,7 +9,7 @@ import (
 
 func SendWaspIdToNode() error {
 	data, err := waspconn.EncodeMsg(&waspconn.WaspToNodeSetIdMsg{
-		Waspid: peering.DefaultNetworkProvider().Self().Location(),
+		Waspid: peering.DefaultNetworkProvider().Self().NetID(),
 	})
 	if err != nil {
 		return err

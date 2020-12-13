@@ -9,7 +9,7 @@ import (
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/peering"
-	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 const pluginName = "DKG"
@@ -19,14 +19,19 @@ var (
 )
 
 // Init is an entry point for the plugin.
-func Init(suite rabin_dkg.Suite) *hive_node.Plugin {
+func Init(suite dkg_pkg.Suite) *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
 		logger := logger.NewLogger(pluginName)
 		registry := registry.DefaultRegistry()
 		peeringProvider := peering.DefaultNetworkProvider()
-		defaultNode = dkg_pkg.Init(
-			nil, // TODO: SecKey
-			nil, // TODO: PubKey
+		var err error
+		var keyPair *key.Pair
+		if keyPair, err = registry.GetNodeIdentity(); err != nil {
+			panic("cannot get the node key")
+		}
+		defaultNode = dkg_pkg.NewNode(
+			keyPair.Private,
+			keyPair.Public,
 			suite,
 			peeringProvider,
 			registry,

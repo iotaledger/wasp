@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
@@ -26,7 +27,7 @@ type Chain interface {
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16
 	IsAlivePeer(peerIndex uint16) bool
-	ReceiveMessage(msg interface{}) // TODO: [KP] Not needed anymore, after changes in peering.
+	ReceiveMessage(msg interface{})
 	InitTestRound()
 	HasQuorum() bool
 	PeerStatus() []*PeerStatus
@@ -87,8 +88,20 @@ type Operator interface {
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
-var ConstructorNew func(chr *registry.ChainRecord, log *logger.Logger, netProvider peering.NetworkProvider, onActivation func()) Chain
+var ConstructorNew func(
+	chr *registry.ChainRecord,
+	log *logger.Logger,
+	netProvider peering.NetworkProvider,
+	dksProvider dks.RegistryProvider,
+	onActivation func(),
+) Chain
 
-func New(chr *registry.ChainRecord, log *logger.Logger, netProvider peering.NetworkProvider, onActivation func()) Chain {
-	return ConstructorNew(chr, log, netProvider, onActivation)
+func New(
+	chr *registry.ChainRecord,
+	log *logger.Logger,
+	netProvider peering.NetworkProvider,
+	dksProvider dks.RegistryProvider,
+	onActivation func(),
+) Chain {
+	return ConstructorNew(chr, log, netProvider, dksProvider, onActivation)
 }

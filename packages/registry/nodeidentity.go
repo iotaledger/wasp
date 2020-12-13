@@ -29,7 +29,7 @@ func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
 	partition := database.GetRegistryPartition()
 	exists, err = partition.Has(dbKey)
 	if !exists {
-		pair = key.NewKeyPair(r.keySuite)
+		pair = key.NewKeyPair(r.suite)
 		if data, err = keyPairToBytes(pair); err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
 	if data, err = partition.Get(dbKey); err != nil {
 		return nil, err
 	}
-	if pair, err = keyPairFromBytes(data); err != nil {
+	if pair, err = keyPairFromBytes(data, r.suite); err != nil {
 		return nil, err
 	}
 	return pair, nil
@@ -72,10 +72,13 @@ func keyPairToBytes(pair *key.Pair) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func keyPairFromBytes(buf []byte) (*key.Pair, error) {
+func keyPairFromBytes(buf []byte, suite kyber.Group) (*key.Pair, error) {
 	var err error
 	r := bytes.NewReader(buf)
-	pair := key.Pair{}
+	pair := key.Pair{
+		Public:  suite.Point(),
+		Private: suite.Scalar(),
+	}
 	if err = util.ReadMarshaled(r, pair.Private); err != nil {
 		return nil, err
 	}

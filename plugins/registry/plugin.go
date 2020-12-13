@@ -6,17 +6,16 @@ package registry
 import (
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
+	dks_pkg "github.com/iotaledger/wasp/packages/dks"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 const pluginName = "Registry"
 
 // Init is an entry point for the plugin.
-func Init(groupSuite kyber.Group, keySuite key.Suite) *hive_node.Plugin {
+func Init(suite dks_pkg.Suite) *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
-		registry_pkg.Init(groupSuite, keySuite, logger.NewLogger(pluginName))
+		registry_pkg.Init(suite, logger.NewLogger(pluginName))
 	}
 	run := func(_ *hive_node.Plugin) {
 		// Nothing to run here.

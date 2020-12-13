@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/plugins/webapi/admapi/dkg"
 	"github.com/labstack/echo"
 )
 
@@ -28,7 +27,7 @@ func AddEndpoints(e *echo.Echo, adminWhitelist []net.IP) {
 	addProgramEndpoints(adm)
 	addChainEndpoints(adm)
 	addStateEndpoints(adm)
-	dkg.AddEndpoints(adm)
+	addDKShareEndpoints(adm)
 }
 
 // allow only if the remote address is private or in whitelist

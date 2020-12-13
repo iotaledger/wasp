@@ -5,8 +5,7 @@ package registry
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
+	"github.com/iotaledger/wasp/packages/dks"
 )
 
 var (
@@ -14,8 +13,8 @@ var (
 )
 
 // Init initializes this package.
-func Init(groupSuite kyber.Group, keySuite key.Suite, log *logger.Logger) {
-	impl = New(groupSuite, keySuite, log)
+func Init(suite dks.Suite, log *logger.Logger) {
+	impl = New(suite, log)
 }
 
 // DefaultRegistry returns an initialized default registry.
@@ -26,16 +25,14 @@ func DefaultRegistry() *Impl {
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	groupSuite kyber.Group
-	keySuite   key.Suite
-	log        *logger.Logger
+	suite dks.Suite
+	log   *logger.Logger
 }
 
 // New creates new instance of the registry implementation.
-func New(groupSuite kyber.Group, keySuite key.Suite, log *logger.Logger) *Impl {
+func New(suite dks.Suite, log *logger.Logger) *Impl {
 	return &Impl{
-		groupSuite: groupSuite,
-		keySuite:   keySuite,
-		log:        log,
+		suite: suite,
+		log:   log,
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
+	"go.dedis.ch/kyber/v3"
 )
 
 // structure of the encoded PeerMessage:
@@ -17,8 +18,8 @@ import (
 // MsgType type    1 byte
 //  -- if MsgType == 0 (heartbeat) --> the end of message
 //  -- if MsgType == 1 (handshake)
-// MsgData (a string of peer network location) --> end of message
-//  -- if MsgType >= FirstCommitteeMsgCode
+// MsgData (handshakeMsg) --> end of message
+//  -- if MsgType >= FirstUserMsgCode
 // ChainID 32 bytes
 // SenderIndex 2 bytes
 // MsgData variable bytes to the end
@@ -46,7 +47,7 @@ func encodeMessage(msg *peering.PeerMessage, ts int64) []byte {
 		buf.WriteByte(msgTypeMsgChunk)
 		buf.Write(msg.MsgData)
 
-	case msg.MsgType >= peering.FirstCommitteeMsgCode: // TODO: Why committee specific is here?
+	case msg.MsgType >= peering.FirstUserMsgCode:
 		buf.WriteByte(msg.MsgType)
 		msg.ChainID.Write(&buf)
 		util.WriteUint16(&buf, msg.SenderIndex)
@@ -84,7 +85,7 @@ func decodeMessage(data []byte) (*peering.PeerMessage, error) {
 		ret.MsgData = rdr.Bytes()
 		return ret, nil
 
-	case ret.MsgType >= peering.FirstCommitteeMsgCode: // TODO: Why committee specific is here?
+	case ret.MsgType >= peering.FirstUserMsgCode:
 		// committee message
 		if err = ret.ChainID.Read(rdr); err != nil {
 			return nil, err
@@ -100,4 +101,41 @@ func decodeMessage(data []byte) (*peering.PeerMessage, error) {
 	default:
 		return nil, fmt.Errorf("peering.decodeMessage.wrong message type: %d", ret.MsgType)
 	}
+}
+
+type handshakeMsg struct {
+	peeringID string      // Pair of peer NetIDs
+	srcNetID  string      // Their NetID
+	pubKey    kyber.Point // Our PubKey.
+}
+
+func (m *handshakeMsg) bytes() ([]byte, error) {
+	var err error
+	var buf bytes.Buffer
+	if err = util.WriteString16(&buf, m.peeringID); err != nil {
+		return nil, err
+	}
+	if err = util.WriteString16(&buf, m.srcNetID); err != nil {
+		return nil, err
+	}
+	if err = util.WriteMarshaled(&buf, m.pubKey); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+func handshakeMsgFromBytes(buf []byte, suite kyber.Group) (*handshakeMsg, error) {
+	var err error
+	r := bytes.NewReader(buf)
+	m := handshakeMsg{}
+	if m.peeringID, err = util.ReadString16(r); err != nil {
+		return nil, err
+	}
+	if m.srcNetID, err = util.ReadString16(r); err != nil {
+		return nil, err
+	}
+	m.pubKey = suite.Point()
+	if err = util.ReadMarshaled(r, m.pubKey); err != nil {
+		return nil, err
+	}
+	return &m, nil
 }

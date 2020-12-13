@@ -125,6 +125,7 @@ func (c *chainObj) Dismiss() {
 		c.dismissed.Store(true)
 
 		close(c.chMsg)
+		c.peers.Detach(c.peersAttachRef)
 		c.peers.Close()
 	})
 
@@ -263,13 +264,13 @@ func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 	for i, peer := range c.committeePeers() {
 		status := &chain.PeerStatus{
 			Index:  int(i),
-			IsSelf: peer == nil,
+			IsSelf: peer == nil || peer.NetID() == c.netProvider.Self().NetID(),
 		}
 		if status.IsSelf {
-			status.PeeringID = c.netProvider.Self().Location()
+			status.PeeringID = c.netProvider.Self().NetID()
 			status.Connected = true
 		} else {
-			status.PeeringID = peer.Location()
+			status.PeeringID = peer.NetID()
 			status.Connected = peer.IsAlive()
 		}
 		ret = append(ret, status)

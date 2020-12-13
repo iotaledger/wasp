@@ -1,4 +1,4 @@
-package tcp
+package peering
 
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-// check if network location from the committee list represents current node
-func checkMyNetID(myNetID string, configPort int) error {
+// CheckMyNetID checks if NetID from the committee list represents current node.
+func CheckMyNetID(myNetID string, configPort int) error {
 	sHost, sPort, err := net.SplitHostPort(myNetID)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func checkMyNetID(myNetID string, configPort int) error {
 			}
 		}
 	}
-	return fmt.Errorf("network location %s doesn't represent current node", myNetID)
+	return fmt.Errorf("NetID %s doesn't represent current node", myNetID)
 }
 
 func myIPs() ([]string, error) {

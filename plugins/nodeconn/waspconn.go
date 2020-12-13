@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/backoff"
@@ -72,7 +71,7 @@ func nodeConnect() {
 	}))
 
 	if err := SendWaspIdToNode(); err == nil {
-		log.Debugf("sent own wasp id to node: %s", peering.DefaultNetworkProvider().Self().Location())
+		log.Debugf("sent own wasp id to node: %s", peering.DefaultNetworkProvider().Self().NetID())
 	} else {
 		log.Errorf("failed to send wasp id to node: %v", err)
 	}
@@ -102,7 +101,7 @@ func retryNodeConnect() {
 }
 
 func SendDataToNode(data []byte) error {
-	choppedData, chopped := chopper.ChopData(data, tangle.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
+	choppedData, chopped := msgChopper.ChopData(data, tangle.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
 
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()

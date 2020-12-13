@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -49,14 +49,21 @@ type chainObj struct {
 	eventRequestProcessed *events.Event
 	log                   *logger.Logger
 	netProvider           peering.NetworkProvider
-	netAttachRef          interface{}
+	peersAttachRef        interface{}
+	dksProvider           dks.RegistryProvider
 }
 
 func requestIDCaller(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])
 }
 
-func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, netProvider peering.NetworkProvider, onActivation func()) chain.Chain {
+func newCommitteeObj(
+	chr *registry.ChainRecord,
+	log *logger.Logger,
+	netProvider peering.NetworkProvider,
+	dksProvider dks.RegistryProvider,
+	onActivation func(),
+) chain.Chain {
 	var err error
 	log.Debugw("creating committee", "addr", chr.ChainID.String())
 
@@ -66,21 +73,15 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, netProvider 
 			addr.String(), chr.CommitteeNodes)
 		return nil
 	}
-	a := (address.Address)(chr.ChainID)
-	dkshare, keyExists, err := registry.GetDKShare(&a)
+	dkshare, err := dksProvider.LoadDKShare(&chr.ChainID)
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-
-	if !keyExists {
-		log.Errorf("private key wasn't found. Can't continue as committee node. Chain ID: %s", chr.ChainID.String())
-		return nil
-	}
-	if !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, dkshare.Index, netProvider) {
+	if dkshare.Index == nil || !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, *dkshare.Index, netProvider) {
 		log.Errorf(
 			"chain record inconsistency: the own node %s is not in the committee for %s: %+v",
-			netProvider.Self().Location(), addr.String(), chr.CommitteeNodes,
+			netProvider.Self().NetID(), addr.String(), chr.CommitteeNodes,
 		)
 		return nil
 	}
@@ -88,10 +89,11 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, netProvider 
 	if peers, err = netProvider.Group(chr.CommitteeNodes); err != nil {
 		log.Errorf(
 			"node %s failed to setup committee communication with %+v, reason=%+v",
-			netProvider.Self().Location(), chr.CommitteeNodes, err,
+			netProvider.Self().NetID(), chr.CommitteeNodes, err,
 		)
 		return nil
 	}
+	chainLog := log.Named(util.Short(chr.ChainID.String()))
 	ret := &chainObj{
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
@@ -102,39 +104,21 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, netProvider 
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
-		log:         log.Named(util.Short(chr.ChainID.String())),
+		log:         chainLog,
 		netProvider: netProvider,
+		dksProvider: dksProvider,
 	}
-	ret.netAttachRef = netProvider.Attach(&ret.chainID, func(recv *peering.RecvEvent) {
+	ret.peersAttachRef = peers.Attach(&ret.chainID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)
-	}) // TODO: [KP] Detach somewhere.
-	if keyExists {
-		ret.ownIndex = dkshare.Index
-		ret.size = dkshare.N
-		ret.quorum = dkshare.T
+	})
 
-		// numNil := 0  // TODO: [KP] Check, if this is still needed.
-		// for _, remoteLocation := range chr.CommitteeNodes {
-		// 	peer := peering.UsePeer(remoteLocation)
-		// 	if peer == nil {
-		// 		numNil++
-		// 	}
-		// 	ret.peers = append(ret.peers, peer)
-		// }
-		// if numNil != 1 || ret.peers[dkshare.Index] != nil {
-		// 	// at this point must be exactly 1 element in ret.peers == to nil,
-		// 	// the one with the index in the committee
-		// 	ret.log.Panicf("failed to initialize peers of the committee. committeePeers: %+v. myId: %s", chr.CommitteeNodes, peering.MyNetworkId())
-		// }
-	}
+	ret.ownIndex = *dkshare.Index
+	ret.size = dkshare.N
+	ret.quorum = dkshare.T
 
 	ret.stateMgr = statemgr.New(ret, ret.log)
-	if keyExists {
-		ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
-		ret.isCommitteeNode.Store(true)
-	} else {
-		ret.isCommitteeNode.Store(false)
-	}
+	ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
+	ret.isCommitteeNode.Store(true)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -159,10 +143,10 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, netProvider 
 	return ret
 }
 
-// iAmInTheCommittee checks if netLocations makes sense
+// iAmInTheCommittee checks if NetIDs makes sense
 func iAmInTheCommittee(committeeNodes []string, n, index uint16, netProvider peering.NetworkProvider) bool {
 	if len(committeeNodes) != int(n) {
 		return false
 	}
-	return committeeNodes[index] == netProvider.Self().Location()
+	return committeeNodes[index] == netProvider.Self().NetID()
 }

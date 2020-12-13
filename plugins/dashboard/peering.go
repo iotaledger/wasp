@@ -50,7 +50,7 @@ const tplPeering = `
 	<table>
 		<thead>
 			<tr>
-				<th>Location</th>
+				<th>NetID</th>
 				<th>Type</th>
 				<th>Status</th>
 				<th>#Users</th>
@@ -59,7 +59,7 @@ const tplPeering = `
 		<tbody>
 		{{range $_, $ps := .NetworkProvider.PeerStatus}}
 			<tr>
-				<td><code>{{$ps.Location}}</code></td>
+				<td><code>{{$ps.NetID}}</code></td>
 				<td>{{if $ps.IsInbound}}inbound{{else}}outbound{{end}}</td>
 				<td>{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
 				<td>{{$ps.NumUsers}}</td>
