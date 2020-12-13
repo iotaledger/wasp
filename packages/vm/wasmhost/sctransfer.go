@@ -20,7 +20,7 @@ func (o *ScTransfer) Exists(keyId int32) bool {
 func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyAgent:
-		return OBJTYPE_BYTES
+		return OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	}
 	return OBJTYPE_INT
 }

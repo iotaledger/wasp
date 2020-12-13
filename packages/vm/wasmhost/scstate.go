@@ -4,13 +4,13 @@
 package wasmhost
 
 type ScState struct {
-	ScMutableDict
+	ScDict
 	isArray     bool
 	arrayTypeId int32
 }
 
 func (o *ScState) InitObj(id int32, keyId int32, owner *ModelObject) {
-	o.ScMutableDict.InitObj(id, keyId, owner)
+	o.ScDict.InitObj(id, keyId, owner)
 	o.Dict = o.vm.State()
 	if o.isArray {
 		o.typeId = o.arrayTypeId
@@ -41,6 +41,6 @@ func (o *ScState) SetInt(keyId int32, value int64) {
 		//TODO how to clear state?
 		o.Panic("SetInt: Clear state")
 	default:
-		o.ScMutableDict.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
