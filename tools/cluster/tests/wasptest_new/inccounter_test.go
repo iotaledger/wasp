@@ -21,6 +21,7 @@ const incName = "inccounter"
 const incDescription = "IncCounter, a PoC smart contract"
 
 var incHname = coretypes.Hn(incName)
+
 const varCounter = "counter"
 const varNumRepeats = "num_repeats"
 
@@ -66,7 +67,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.Fee)
+		require.EqualValues(t, 0, cr.OwnerFee)
 		return true
 	})
 	checkCounter(t, 0)
@@ -121,7 +122,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.Fee)
+		require.EqualValues(t, 0, cr.OwnerFee)
 		return true
 	})
 	checkCounter(t, 0)
@@ -176,7 +177,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.Fee)
+		require.EqualValues(t, 0, cr.OwnerFee)
 		return true
 	})
 	checkCounter(t, numRequests)

@@ -27,7 +27,7 @@ import (
 // - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
 // - ParamDescription string defaults to "N/A"
 // - ParamFeeColor balance.Color fee color code. Defaults to IOTA color. It cannot be changed
-// - ParamDefaultFee int64 globally set default fee value. Defaults to 0
+// - ParamOwnerFee int64 globally set default fee value. Defaults to 0
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("root.initialize.begin")
 	params := ctx.Params()
@@ -54,9 +54,9 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamFeeColor, err)
 	}
-	defaultFee, defaultFeeSet, err := codec.DecodeInt64(params.MustGet(ParamDefaultFee))
+	defaultFee, defaultFeeSet, err := codec.DecodeInt64(params.MustGet(ParamOwnerFee))
 	if err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamDefaultFee, err)
+		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamOwnerFee, err)
 	}
 	contractRegistry := datatypes.NewMustMap(state, VarContractRegistry)
 	if contractRegistry.Len() != 0 {
@@ -96,7 +96,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 			defaultFee = 0
 		}
 		if defaultFee > 0 {
-			state.Set(VarDefaultFee, codec.EncodeInt64(defaultFee))
+			state.Set(VarDefaultOwnerFee, codec.EncodeInt64(defaultFee))
 		}
 	}
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname().String())
@@ -277,7 +277,7 @@ func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamHname coretypes.Hname contract id
 // Output:
 // - ParamFeeColor balance.Color color of tokens accepted for fees
-// - ParamContractFee int64 minimum fee for contract
+// - ParamValidatorFee int64 minimum fee for contract
 func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	params := ctx.Params()
 	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
@@ -287,38 +287,68 @@ func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
-	feeColor, fee, err := GetFeeInfo(ctx.State(), hname)
+	feeColor, ownerFee, validatorFee, err := GetFeeInfo(ctx.State(), hname)
+	if err != nil {
+		return nil, fmt.Errorf("GetFeeInfo: %v", err)
+
+	}
 	ret := dict.New()
 	ret.Set(ParamFeeColor, codec.EncodeColor(feeColor))
-	ret.Set(ParamContractFee, codec.EncodeInt64(fee))
+	ret.Set(ParamOwnerFee, codec.EncodeInt64(ownerFee))
+	ret.Set(ParamValidatorFee, codec.EncodeInt64(validatorFee))
 	return ret, nil
 }
 
-// setDefaultFee sets default fee for the chain
+// setDefaultFee sets default fee values for the chain
 // Input:
-// - ParamDefaultFee int64 positive value of the default fee
+// - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
+// - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setDefaultFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorization(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.setDefaultFee: not authorized")
 	}
-	defaultFee, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamDefaultFee))
+	ownerFee, ownerFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamOwnerFee))
 	if err != nil {
 		return nil, err
 	}
-	if !ok || defaultFee < 0 {
-		return nil, fmt.Errorf("parameter 'default fee' is invalid")
+	if ownerFeeOk && ownerFee < 0 {
+		return nil, fmt.Errorf("parameter 'owner fee' is invalid")
 	}
-	ctx.State().Set(VarDefaultFee, codec.EncodeInt64(defaultFee))
+	validatorFee, validatorFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamValidatorFee))
+	if err != nil {
+		return nil, err
+	}
+	if validatorFeeOk && validatorFee < 0 {
+		return nil, fmt.Errorf("parameter 'validator fee' is invalid")
+	}
+	if !ownerFeeOk && !validatorFeeOk {
+		return nil, fmt.Errorf("missing parameters")
+	}
+	if ownerFeeOk {
+		if ownerFee > 0 {
+			ctx.State().Set(VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
+		} else {
+			ctx.State().Del(VarDefaultOwnerFee)
+		}
+	}
+	if validatorFeeOk {
+		if validatorFee > 0 {
+			ctx.State().Set(VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
+		} else {
+			ctx.State().Del(VarDefaultValidatorFee)
+		}
+	}
 	return nil, nil
 }
 
-// setFee sets fee for the particular smart contract
+// setContractFee sets fee for the particular smart contract
 // Input:
 // - ParamHname coretypes.Hname smart contract ID
-// - ParamContractFee int64 non-negative fee value
-func setFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
+// - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
+// - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
+func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorization(ctx.State(), ctx.Caller()) {
-		return nil, fmt.Errorf("root.setFee: not authorized")
+		return nil, fmt.Errorf("root.setContractFee: not authorized")
 	}
 	hname, ok, err := codec.DecodeHname(ctx.Params().MustGet(ParamHname))
 	if err != nil {
@@ -332,14 +362,25 @@ func setFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		// contract not found
 		return nil, err
 	}
-	fee, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamContractFee))
+	ownerFee, ownerFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamOwnerFee))
 	if err != nil {
 		return nil, err
 	}
-	if !ok || fee < 0 {
-		return nil, fmt.Errorf("parameter 'contract fee' is invalid")
+	if ownerFeeOk && ownerFee < 0 {
+		return nil, fmt.Errorf("parameter 'owner fee' is invalid")
 	}
-	rec.Fee = fee
+	rec.OwnerFee = ownerFee
+	validatorFee, validatorFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamValidatorFee))
+	if err != nil {
+		return nil, err
+	}
+	if validatorFeeOk && validatorFee < 0 {
+		return nil, fmt.Errorf("parameter 'validator fee' is invalid")
+	}
+	if !ownerFeeOk && !validatorFeeOk {
+		return nil, fmt.Errorf("missing parameters")
+	}
+	rec.ValidatorFee = validatorFee
 	datatypes.NewMustMap(ctx.State(), VarContractRegistry).SetAt(hname.Bytes(), EncodeContractRecord(rec))
 	return nil, nil
 }

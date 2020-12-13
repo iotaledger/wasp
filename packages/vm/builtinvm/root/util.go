@@ -32,25 +32,33 @@ func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, err
 // GetFeeInfo is an internal utility function which return fee info for the contract
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
-func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (*balance.Color, int64, error) {
+func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (*balance.Color, int64, int64, error) {
 	rec, err := FindContract(state, hname)
 	if err != nil {
 		// contract not found
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
 	if !ok {
 		feeColor = &balance.ColorIOTA
 	}
-	fee := rec.Fee
-	if fee == 0 {
-		// look up for default fee on chain
-		defaultFee, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultFee))
+	ownerFee := rec.OwnerFee
+	if ownerFee == 0 {
+		// look up for default ownerFee on chain
+		f, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
 		if ok {
-			fee = defaultFee
+			ownerFee = f
 		}
 	}
-	return feeColor, fee, nil
+	validatorFee := rec.ValidatorFee
+	if validatorFee == 0 {
+		// look up for default ownerFee on chain
+		f, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
+		if ok {
+			validatorFee = f
+		}
+	}
+	return feeColor, ownerFee, validatorFee, nil
 }
 
 // DecodeContractRegistry encodes the whole contract registry in the MustMap in the kvstor to the

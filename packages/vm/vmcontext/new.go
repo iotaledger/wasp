@@ -27,7 +27,8 @@ type VMContext struct {
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
 	feeColor           balance.Color
-	fee                int64
+	ownerFee           int64
+	validatorFee       int64
 	// request context
 	entropy     hashing.HashValue // mutates with each request
 	reqRef      sctransaction.RequestRef

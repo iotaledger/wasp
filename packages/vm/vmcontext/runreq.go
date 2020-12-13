@@ -58,12 +58,13 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
-	feeColor, fee, ok := vmctx.getFeeInfo(reqHname)
+	feeColor, ownerFee, validatorFee, ok := vmctx.getFeeInfo(reqHname)
 	if !ok {
 		return false
 	}
 	vmctx.feeColor = feeColor
-	vmctx.fee = fee
+	vmctx.ownerFee = ownerFee
+	vmctx.validatorFee = validatorFee
 	return true
 }
 
