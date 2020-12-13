@@ -46,7 +46,7 @@ func (o *ScContext) GetInt(keyId int32) int64 {
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	if keyId == KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
-		// once map has entries (onLoad) this cannot be called any more
+		// once map has entries (after on_load) this cannot be called any more
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
 
