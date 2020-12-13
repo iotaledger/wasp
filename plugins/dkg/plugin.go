@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/registry"
 	"go.dedis.ch/kyber/v3/util/key"
 )
 

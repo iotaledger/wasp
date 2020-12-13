@@ -8,20 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/dks"
 )
 
-var (
-	impl *Impl // A singleton.
-)
-
-// Init initializes this package.
-func Init(suite dks.Suite, log *logger.Logger) {
-	impl = New(suite, log)
-}
-
-// DefaultRegistry returns an initialized default registry.
-func DefaultRegistry() *Impl {
-	return impl
-}
-
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
@@ -30,7 +16,7 @@ type Impl struct {
 }
 
 // New creates new instance of the registry implementation.
-func New(suite dks.Suite, log *logger.Logger) *Impl {
+func NewRegistry(suite dks.Suite, log *logger.Logger) *Impl {
 	return &Impl{
 		suite: suite,
 		log:   log,

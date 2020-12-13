@@ -11,9 +11,10 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/registry"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/registry"
 )
 
 const PluginName = "Chains"
@@ -35,7 +36,7 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		chainRecords, err := registry.GetChainRecords()
+		chainRecords, err := registry_pkg.GetChainRecords()
 		if err != nil {
 			log.Error("failed to load chain records from registry: %v", err)
 			return
@@ -78,7 +79,7 @@ func run(_ *node.Plugin) {
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func ActivateChain(chr *registry.ChainRecord) error {
+func ActivateChain(chr *registry_pkg.ChainRecord) error {
 	chainsMutex.Lock()
 	defer chainsMutex.Unlock()
 
@@ -105,7 +106,7 @@ func ActivateChain(chr *registry.ChainRecord) error {
 }
 
 // DeactivateChain deactivates chain in the node
-func DeactivateChain(chr *registry.ChainRecord) error {
+func DeactivateChain(chr *registry_pkg.ChainRecord) error {
 	chainsMutex.Lock()
 	defer chainsMutex.Unlock()
 

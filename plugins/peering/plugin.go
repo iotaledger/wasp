@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/gommon/log"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/util/key"

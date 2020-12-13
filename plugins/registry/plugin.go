@@ -12,10 +12,19 @@ import (
 
 const pluginName = "Registry"
 
+var (
+	defaultRegistry *registry_pkg.Impl // A singleton.
+)
+
+// DefaultRegistry returns an initialized default registry.
+func DefaultRegistry() *registry_pkg.Impl {
+	return defaultRegistry
+}
+
 // Init is an entry point for the plugin.
 func Init(suite dks_pkg.Suite) *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
-		registry_pkg.Init(suite, logger.NewLogger(pluginName))
+		defaultRegistry = registry_pkg.NewRegistry(suite, logger.NewLogger(pluginName))
 	}
 	run := func(_ *hive_node.Plugin) {
 		// Nothing to run here.

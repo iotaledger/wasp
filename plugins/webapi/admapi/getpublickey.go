@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry" // TODO: [KP] It should be in the Plugins, not packages.
+	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo"
 	"github.com/mr-tron/base58"
