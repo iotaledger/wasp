@@ -1,6 +1,7 @@
 package peering
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 )
@@ -31,10 +32,11 @@ func UsePeer(netid string) *Peer {
 	}
 	// new peer
 	ret := &Peer{
-		RWMutex:     &sync.RWMutex{},
-		remoteNetid: netid,
-		startOnce:   &sync.Once{},
-		numUsers:    1,
+		RWMutex:        &sync.RWMutex{},
+		remoteNetid:    netid,
+		startOnce:      &sync.Once{},
+		numUsers:       1,
+		messageChopper: chopper.NewChopper(),
 	}
 	peers[ret.PeeringId()] = ret
 	log.Debugf("added new peer id %s inbound = %v", ret.PeeringId(), ret.isInbound())
@@ -53,6 +55,7 @@ func StopUsingPeer(peerId string) {
 		peer.numUsers--
 		if peer.numUsers == 0 {
 			peer.isDismissed.Store(true)
+			peer.messageChopper.Close()
 
 			go func() {
 				peersMutex.Lock()

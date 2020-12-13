@@ -3,7 +3,6 @@ package peering
 import (
 	"net"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
@@ -41,6 +40,7 @@ func newPeeredConnection(conn net.Conn, peer *Peer) *peeredConnection {
 }
 
 // receive data handler for peered connection
+//goland:noinspection GoUnhandledErrorResult
 func (bconn *peeredConnection) receiveData(data []byte) {
 	msg, err := decodeMessage(data)
 	if err != nil {
@@ -49,8 +49,8 @@ func (bconn *peeredConnection) receiveData(data []byte) {
 		bconn.Close()
 		return
 	}
-	if msg.MsgType == MsgTypeMsgChunk {
-		finalMsg, err := chopper.IncomingChunk(msg.MsgData, tangle.MaxMessageSize-chunkMessageOverhead)
+	if msg.MsgType == MsgTypeMsgChunk && bconn.peer != nil {
+		finalMsg, err := bconn.peer.messageChopper.IncomingChunk(msg.MsgData, tangle.MaxMessageSize, chunkMessageOverhead)
 		if err != nil {
 			log.Errorf("peeredConnection.receiveData: %v", err)
 			return

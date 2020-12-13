@@ -27,8 +27,9 @@ type Peer struct {
 	// network locations as taken from the SC data
 	remoteNetid string
 
-	startOnce *sync.Once
-	numUsers  int
+	messageChopper *chopper.Chopper
+	startOnce      *sync.Once
+	numUsers       int
 }
 
 // retry net.Dial once, on fail after 0.5s
@@ -158,8 +159,10 @@ func (peer *Peer) SendMsg(msg *PeerMessage) error {
 	}
 	data := encodeMessage(msg, time.Now().UnixNano())
 
-	choppedData, chopped := chopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
-
+	choppedData, chopped, err := peer.messageChopper.ChopData(data, tangle.MaxMessageSize, chunkMessageOverhead)
+	if err != nil {
+		return err
+	}
 	peer.RLock()
 	defer peer.RUnlock()
 
@@ -192,7 +195,6 @@ func SendMsgToPeers(msg *PeerMessage, ts int64, peers ...*Peer) uint16 {
 	}
 	// timestamped here, once
 	data := encodeMessage(msg, ts)
-	choppedData, chopped := chopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
 
 	numSent := uint16(0)
 	for _, peer := range peers {
@@ -200,6 +202,13 @@ func SendMsgToPeers(msg *PeerMessage, ts int64, peers ...*Peer) uint16 {
 			continue
 		}
 		peer.RLock()
+		// TODO not nice chopping for each message
+		choppedData, chopped, err := peer.messageChopper.ChopData(data, tangle.MaxMessageSize, chunkMessageOverhead)
+		if err != nil {
+			peer.RUnlock()
+			log.Errorf("ChopData returned: %v", err)
+			continue
+		}
 		if !chopped {
 			if err := peer.sendData(data); err == nil {
 				numSent++
