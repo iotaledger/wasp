@@ -53,10 +53,12 @@ type ModelObject struct {
 	ownerId int32
 	typeId  int32
 	Dict    kv.KVStore
+	objects map[int32]int32
+	types   map[int32]int32
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
-	return &ModelObject{vm: vm, id: 0}
+	return &ModelObject{vm: vm, id: 0, isRoot: true}
 }
 
 func (o *ModelObject) InitObj(id int32, keyId int32, owner *ModelObject) {
@@ -155,7 +157,7 @@ func (o *ModelObject) SetString(keyId int32, value string) {
 }
 
 func (o *ModelObject) Suffix(keyId int32) string {
-	if (o.typeId&OBJTYPE_ARRAY) != 0 {
+	if (o.typeId & OBJTYPE_ARRAY) != 0 {
 		return fmt.Sprintf("#%d", keyId)
 	}
 	bytes := o.vm.getKeyFromId(keyId)
@@ -163,55 +165,4 @@ func (o *ModelObject) Suffix(keyId int32) string {
 		return "." + string(bytes)
 	}
 	return "." + base58.Encode(bytes)
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-type ArrayObject struct {
-	ModelObject
-	objects []int32
-}
-
-func (a *ArrayObject) Exists(keyId int32) bool {
-	return uint32(keyId) <= uint32(len(a.objects))
-}
-
-func (a *ArrayObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
-	if keyId < int32(len(a.objects)) {
-		return a.objects[keyId]
-	}
-	objId := a.MakeObjectId(keyId, factory)
-	a.objects = append(a.objects, objId)
-	return objId
-}
-
-func (a *ArrayObject) GetBytes(keyId int32) []byte {
-	a.Panic("GetBytes: Invalid access")
-	return []byte(nil)
-}
-
-func (a *ArrayObject) GetInt(keyId int32) int64 {
-	switch keyId {
-	case KeyLength:
-		return int64(len(a.objects))
-	}
-	a.Panic("GetInt: Invalid access")
-	return 0
-}
-
-func (a *ArrayObject) GetObjectId(keyId int32, typeId int32) int32 {
-	a.Panic("GetObjectId: Invalid access")
-	return 0
-}
-
-func (a *ArrayObject) GetString(keyId int32) string {
-	a.Panic("GetString: Invalid access")
-	return ""
-}
-
-func (a *ArrayObject) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
-		return OBJTYPE_MAP
-	}
-	return -1
 }

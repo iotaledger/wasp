@@ -29,14 +29,15 @@ func (o *ScLogs) GetTypeId(keyId int32) int32 {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScLog struct {
-	ArrayObject
+	ScDict
 	lines      *datatypes.MustTimestampedLog
 	logEntry   *ScLogEntry
 	logEntryId int32
 }
 
 func (a *ScLog) InitObj(id int32, keyId int32, owner *ModelObject) {
-	a.ModelObject.InitObj(id, keyId, owner)
+	a.ScDict.InitObj(id, keyId, owner)
+	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 	key := a.vm.GetKey(keyId)
 	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), key)
 	a.logEntry = &ScLogEntry{lines: a.lines}
@@ -52,7 +53,7 @@ func (a *ScLog) GetInt(keyId int32) int64 {
 	case KeyLength:
 		return int64(a.lines.Len())
 	}
-	return a.ModelObject.GetInt(keyId)
+	return a.ScDict.GetInt(keyId)
 }
 
 func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
@@ -63,7 +64,7 @@ func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 	if uint32(keyId) == a.lines.Len() {
 		return a.logEntryId
 	}
-	return a.ArrayObject.GetObjectId(keyId, typeId)
+	return a.ScDict.GetObjectId(keyId, typeId)
 }
 
 func (a *ScLog) GetTypeId(keyId int32) int32 {

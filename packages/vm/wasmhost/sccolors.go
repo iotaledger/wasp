@@ -8,20 +8,21 @@ import (
 )
 
 type ScColors struct {
-	ArrayObject
+	ScDict
 	requestOnly bool
 	colors      []balance.Color
 }
 
-func (a *ScColors) Exists(keyId int32) bool {
-	return uint32(keyId) < uint32(a.GetLength())
+func (a *ScColors) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ScDict.InitObj(id, keyId, owner)
+	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 }
 
 func (a *ScColors) GetBytes(keyId int32) []byte {
 	if a.Exists(keyId) {
 		return a.colors[keyId].Bytes()
 	}
-	return a.ArrayObject.GetBytes(keyId)
+	return a.ScDict.GetBytes(keyId)
 }
 
 func (a *ScColors) GetInt(keyId int32) int64 {
@@ -29,7 +30,7 @@ func (a *ScColors) GetInt(keyId int32) int64 {
 	case KeyLength:
 		return int64(a.GetLength())
 	}
-	return a.ArrayObject.GetInt(keyId)
+	return a.ScDict.GetInt(keyId)
 }
 
 func (a *ScColors) GetLength() int32 {

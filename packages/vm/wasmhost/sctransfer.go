@@ -58,22 +58,18 @@ func (o *ScTransfer) SetInt(keyId int32, value int64) {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScTransfers struct {
-	ArrayObject
+	ScDict
+}
+
+func (a *ScTransfers) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ScDict.InitObj(id, keyId, owner)
+	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 }
 
 func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScTransfer{}
 	})
-}
-
-func (a *ScTransfers) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-	default:
-		a.Panic("SetInt: Invalid access")
-	}
 }
 
 func (a *ScTransfers) SetString(keyId int32, value string) {

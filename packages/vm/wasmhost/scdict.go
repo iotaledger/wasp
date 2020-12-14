@@ -11,8 +11,6 @@ import (
 
 type ScDict struct {
 	ModelObject
-	objects map[int32]int32
-	types map[int32]int32
 }
 
 func NewScDict(dict kv.KVStore, typeId int32) *ScDict {
@@ -35,6 +33,9 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ModelObject) {
 }
 
 func (o *ScDict) Exists(keyId int32) bool {
+	if (o.typeId & OBJTYPE_ARRAY) != 0 {
+		return uint32(keyId) <= uint32(len(o.objects))
+	}
 	suffix := o.Suffix(keyId)
 	key := o.NestedKey() + suffix
 	o.vm.Trace("Exists:%s, key %s", o.Name()+suffix, key)
@@ -57,6 +58,9 @@ func (o *ScDict) GetBytes(keyId int32) []byte {
 }
 
 func (o *ScDict) GetInt(keyId int32) int64 {
+	if (o.typeId&OBJTYPE_ARRAY) != 0 && keyId == KeyLength {
+		return int64(len(o.objects))
+	}
 	bytes := o.GetTypedBytes(keyId, OBJTYPE_INT)
 	value, _, err := codec.DecodeInt64(bytes)
 	if err != nil {
@@ -112,7 +116,9 @@ func (o *ScDict) SetBytes(keyId int32, value []byte) {
 func (o *ScDict) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
+		//TODO
 		o.Dict = dict.New()
+		o.objects = make(map[int32]int32)
 	default:
 		o.SetTypedBytes(keyId, OBJTYPE_INT, codec.EncodeInt64(value))
 	}

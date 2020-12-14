@@ -314,7 +314,12 @@ func (o *ScViewInfo) SetString(keyId int32, value string) {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScCalls struct {
-	ArrayObject
+	ScDict
+}
+
+func (a *ScCalls) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ScDict.InitObj(id, keyId, owner)
+	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 }
 
 func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
@@ -323,20 +328,15 @@ func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScCalls) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScPosts struct {
-	ArrayObject
+	ScDict
+}
+
+func (a *ScPosts) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ScDict.InitObj(id, keyId, owner)
+	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 }
 
 func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
@@ -345,36 +345,21 @@ func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScPosts) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScViews struct {
-	ArrayObject
+	ScDict
+}
+
+func (a *ScViews) InitObj(id int32, keyId int32, owner *ModelObject) {
+	a.ScDict.InitObj(id, keyId, owner)
+	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 }
 
 func (a *ScViews) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScViewInfo{}
 	})
-}
-
-func (a *ScViews) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
