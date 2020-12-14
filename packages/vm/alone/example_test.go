@@ -1,11 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
 package alone
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // a very simple test using 'alone' tool

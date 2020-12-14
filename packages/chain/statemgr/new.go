@@ -1,9 +1,9 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // statemgr package implements object which is responsible for the smart contract
 // ledger state to be synchronized and validated
 package statemgr
-
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
 
 import (
 	"time"

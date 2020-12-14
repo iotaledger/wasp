@@ -1,7 +1,7 @@
-package admapi
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+package admapi
 
 // Endpoints for creating and getting Distributed key shares.
 

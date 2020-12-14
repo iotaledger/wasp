@@ -1,7 +1,7 @@
-package client
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+package client
 
 // This API is used to maintain the distributed key shares.
 // The Golang API in this file tries to follow the REST conventions.

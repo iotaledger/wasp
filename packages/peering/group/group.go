@@ -1,8 +1,8 @@
-// Package group implements a generic peering.GroupProvider.
-package group
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+// Package group implements a generic peering.GroupProvider.
+package group
 
 import (
 	"errors"

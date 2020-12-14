@@ -1,7 +1,7 @@
-package testutil_test
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+package testutil_test
 
 import (
 	"testing"

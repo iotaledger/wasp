@@ -1,9 +1,9 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // Package dispatcher router goshimmer node messages to the corresponding
 // components in the wasp node.
 package dispatcher
-
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"

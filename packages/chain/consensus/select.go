@@ -1,8 +1,8 @@
-// the file contains functions responsible for the request batch selection logic
-package consensus
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+// the file contains functions responsible for the request batch selection logic
+package consensus
 
 import (
 	"fmt"

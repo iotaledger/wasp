@@ -1,8 +1,8 @@
-// Package udp implements a UDP based peering.NetworkProvider.
-package udp
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+// Package udp implements a UDP based peering.NetworkProvider.
+package udp
 
 import (
 	"errors"

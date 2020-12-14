@@ -1,7 +1,7 @@
-package dkg_test
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+package dkg_test
 
 // TODO: Test with unreliable network.
 
