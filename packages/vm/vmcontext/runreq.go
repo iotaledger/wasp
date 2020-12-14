@@ -58,15 +58,16 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
 
-	if !isInitChainRequest(reqRef) {
-		info := vmctx.getChainInfo()
-		if info.ChainID != vmctx.chainID {
-			// major inconsistency TODO
-			vmctx.log.Errorf("setRequestContext: major inconsistency of chainID")
-			return false
-		}
-		vmctx.chainOwnerID = info.ChainOwnerID
+	if isInitChainRequest(reqRef) {
+		return true
 	}
+	// ordinary request, only makes sense when chain is already deployed
+	info := vmctx.getChainInfo()
+	if info.ChainID != vmctx.chainID {
+		vmctx.log.Errorf("setRequestContext: major inconsistency of chainID")
+		return false
+	}
+	vmctx.chainOwnerID = info.ChainOwnerID
 	feeColor, ownerFee, validatorFee, ok := vmctx.getFeeInfo(reqHname)
 	if !ok {
 		vmctx.log.Errorf("not found contract '%s', request %s",
