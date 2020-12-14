@@ -211,7 +211,10 @@ func (p *peer) doSendMsg(msg *peering.PeerMessage) error {
 	}
 	data := encodeMessage(msg, ts)
 
-	choppedData, chopped := p.peerconn.msgChopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
+	choppedData, chopped, err := p.peerconn.msgChopper.ChopData(data, tangle.MaxMessageSize, chunkMessageOverhead)
+	if err != nil {
+		return err
+	}
 
 	p.RLock()
 	defer p.RUnlock()
@@ -252,7 +255,10 @@ func SendMsgToPeers(msg *peering.PeerMessage, ts int64, peers ...*peer) uint16 {
 			continue
 		}
 		peer.RLock()
-		choppedData, chopped := peer.peerconn.msgChopper.ChopData(data, tangle.MaxMessageSize-chunkMessageOverhead)
+		choppedData, chopped, err := peer.peerconn.msgChopper.ChopData(data, tangle.MaxMessageSize, chunkMessageOverhead)
+		if err != nil {
+			return 0
+		}
 		if !chopped {
 			if err := peer.sendData(data); err == nil {
 				numSent++

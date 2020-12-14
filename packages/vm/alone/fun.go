@@ -222,7 +222,7 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	)
 }
 
-func (ch *Chain) GetFeeInfo(hname coretypes.Hname) (balance.Color, int64) {
+func (ch *Chain) GetFeeInfo(hname coretypes.Hname) (balance.Color, int64, int64) {
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Glb.T, err)
 	require.NotEqualValues(ch.Glb.T, 0, len(ret))
@@ -232,10 +232,15 @@ func (ch *Chain) GetFeeInfo(hname coretypes.Hname) (balance.Color, int64) {
 	require.True(ch.Glb.T, ok)
 	require.NotNil(ch.Glb.T, feeColor)
 
-	fee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamContractFee))
+	validatorFee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamValidatorFee))
 	require.NoError(ch.Glb.T, err)
 	require.True(ch.Glb.T, ok)
-	require.True(ch.Glb.T, fee >= 0)
+	require.True(ch.Glb.T, validatorFee >= 0)
 
-	return *feeColor, fee
+	ownerFee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamOwnerFee))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+	require.True(ch.Glb.T, ownerFee >= 0)
+
+	return *feeColor, ownerFee, validatorFee
 }

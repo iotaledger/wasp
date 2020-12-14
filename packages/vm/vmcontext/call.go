@@ -115,7 +115,8 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	if !vmctx.txBuilder.Erase1TokenToChain(reqColor) {
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
-	if vmctx.fee == 0 {
+	totalFee := vmctx.ownerFee + vmctx.validatorFee
+	if totalFee == 0 {
 		vmctx.log.Debugf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
 		// if no fees enabled, accrue the token to the caller
 		fee := map[balance.Color]int64{
@@ -124,26 +125,31 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), cbalances.NewFromMap(fee))
 		return transfer, nil
 	}
-
 	// handle fees
-	if vmctx.fee-1 > transfer.Balance(vmctx.feeColor) {
+	if totalFee-1 > transfer.Balance(vmctx.feeColor) {
 		// fallback: not enough fees
 		// accrue everything to the sender
 		sender := vmctx.reqRef.SenderAgentID()
 		vmctx.creditToAccount(sender, transfer)
-
 		return cbalances.NewFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
 			vmctx.reqRef.RequestID().Short(), sender.String())
 	}
 	// enough fees
-	// accrue everything (including request token) to the chain owner
-	// TODO -- split fee between validator and chain owner
-	fee := map[balance.Color]int64{
-		vmctx.feeColor: vmctx.fee,
+	// split between owner and validator
+	if vmctx.ownerFee > 0 {
+		of := map[balance.Color]int64{
+			vmctx.feeColor: vmctx.ownerFee,
+		}
+		vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(of))
 	}
-	vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(fee))
+	if vmctx.validatorFee > 0 {
+		vf := map[balance.Color]int64{
+			vmctx.feeColor: vmctx.validatorFee,
+		}
+		vmctx.creditToAccount(vmctx.validatorFeeTarget, cbalances.NewFromMap(vf))
+	}
 	remaining := map[balance.Color]int64{
-		vmctx.feeColor: -vmctx.fee + 1,
+		vmctx.feeColor: -totalFee + 1,
 	}
 	transfer.AddToMap(remaining)
 	return cbalances.NewFromMap(remaining), nil

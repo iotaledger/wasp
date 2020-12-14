@@ -25,7 +25,7 @@ func msgDataToEvent(data []byte) {
 
 	switch msgt := msg.(type) {
 	case *waspconn.WaspMsgChunk:
-		finalData, err := msgChopper.IncomingChunk(msgt.Data, tangle.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
+		finalData, err := msgChopper.IncomingChunk(msgt.Data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
 		if err != nil {
 			log.Errorf("receiving message chunk: %v", err)
 			return

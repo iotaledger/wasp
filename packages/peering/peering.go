@@ -150,7 +150,7 @@ func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chopper.Chopper) (*PeerMessage, error) {
 	var err error
 	var msgBytes []byte
-	if msgBytes, err = msgChopper.IncomingChunk(chunkBytes, uint16(chunkSize-chunkMessageOverhead)); err != nil {
+	if msgBytes, err = msgChopper.IncomingChunk(chunkBytes, chunkSize, chunkMessageOverhead); err != nil {
 		return nil, err
 	}
 	if msgBytes == nil {
@@ -198,7 +198,13 @@ func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper) (
 	if msgBytes, err = m.Bytes(); err != nil {
 		return nil, err
 	}
-	if choppedBytes, chopped := msgChopper.ChopData(msgBytes, uint16(chunkSize-chunkMessageOverhead)); chopped {
+	var choppedBytes [][]byte
+	var chopped bool
+	choppedBytes, chopped, err = msgChopper.ChopData(msgBytes, chunkSize, chunkMessageOverhead)
+	if err != nil {
+		return nil, err
+	}
+	if chopped {
 		msgs := make([][]byte, len(choppedBytes))
 		for i := range choppedBytes {
 			chunkMsg := PeerMessage{

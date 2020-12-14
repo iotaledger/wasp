@@ -8,7 +8,12 @@ type ScContext struct {
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
-	return &ScContext{MapObject: MapObject{ModelObject: ModelObject{vm: vm, id: 1}, objects: make(map[int32]int32)}}
+	o := &ScContext{}
+	o.id = 1
+	o.root = true
+	o.vm = vm
+	o.objects = make(map[int32]int32)
+	return o
 }
 
 func (o *ScContext) Exists(keyId int32) bool {
@@ -42,7 +47,7 @@ func (o *ScContext) GetInt(keyId int32) int64 {
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	if keyId == KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
-		// once map has entries (onLoad) this cannot be called any more
+		// once map has entries (after on_load) this cannot be called any more
 		return o.MapObject.GetObjectId(keyId, typeId)
 	}
 
@@ -53,9 +58,9 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyExports:   func() WaspObject { return &ScExports{} },
 		KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
-		KeyParams:    func() WaspObject { return &ScImmutableDict{Dict: o.vm.Params()} },
+		KeyParams:    func() WaspObject { return &ScDict{Dict: o.vm.Params()} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
-		KeyResults:   func() WaspObject { return &ScMutableDict{} },
+		KeyResults:   func() WaspObject { return &ScDict{} },
 		KeyState:     func() WaspObject { return &ScState{} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
@@ -68,11 +73,11 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyBalances:
 		return OBJTYPE_MAP
 	case KeyCalls:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	case KeyContract:
 		return OBJTYPE_MAP
 	case KeyExports:
-		return OBJTYPE_STRING_ARRAY
+		return OBJTYPE_STRING | OBJTYPE_ARRAY
 	case KeyIncoming:
 		return OBJTYPE_MAP
 	case KeyLogs:
@@ -80,21 +85,21 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyParams:
 		return OBJTYPE_MAP
 	case KeyPosts:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	case KeyResults:
 		return OBJTYPE_MAP
 	case KeyCaller:
-		return OBJTYPE_BYTES
+		return OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	case KeyState:
 		return OBJTYPE_MAP
 	case KeyTimestamp:
 		return OBJTYPE_INT
 	case KeyTransfers:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	case KeyUtility:
 		return OBJTYPE_MAP
 	case KeyViews:
-		return OBJTYPE_MAP_ARRAY
+		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	}
 	return -1
 }

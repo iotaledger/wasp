@@ -38,7 +38,7 @@ func (o *ScContract) GetString(keyId int32) string {
 func (o *ScContract) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyChain:
-		return OBJTYPE_BYTES
+		return OBJTYPE_BYTES //TODO OBJTYPE_ADDRESS
 	case KeyDescription:
 		return OBJTYPE_STRING
 	case KeyId:
@@ -46,7 +46,7 @@ func (o *ScContract) GetTypeId(keyId int32) int32 {
 	case KeyName:
 		return OBJTYPE_STRING
 	case KeyOwner:
-		return OBJTYPE_BYTES
+		return OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	}
 	return -1
 }

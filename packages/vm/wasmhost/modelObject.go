@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"fmt"
+	"github.com/mr-tron/base58"
 )
 
 type ObjFactory func() WaspObject
@@ -16,6 +17,7 @@ type WaspObject interface {
 	Panic(format string, args ...interface{})
 	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
 	Name() string
+	NestedKey() string
 	Suffix(keyId int32) string
 }
 
@@ -47,6 +49,7 @@ type ModelObject struct {
 	id      int32
 	keyId   int32
 	ownerId int32
+	root    bool
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
@@ -57,6 +60,9 @@ func (o *ModelObject) InitObj(id int32, keyId int32, owner *ModelObject) {
 	o.id = id
 	o.keyId = keyId
 	o.ownerId = owner.id
+	if owner.id == 1 {
+		o.root = true
+	}
 	o.vm = owner.vm
 	o.vm.Trace("InitObj %s", o.Name())
 }
@@ -125,6 +131,12 @@ func (o *ModelObject) Name() string {
 	}
 }
 
+func (o *ModelObject) NestedKey() string {
+    if o.root { return "" }
+	owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
+	return owner.NestedKey() + owner.Suffix(o.keyId)
+}
+
 func (o *ModelObject) SetBytes(keyId int32, value []byte) {
 	o.Panic("SetBytes: Immutable")
 }
@@ -138,7 +150,11 @@ func (o *ModelObject) SetString(keyId int32, value string) {
 }
 
 func (o *ModelObject) Suffix(keyId int32) string {
-	return "." + string(o.vm.getKeyFromId(keyId))
+	bytes := o.vm.getKeyFromId(keyId)
+	if (keyId & KeyFromString) != 0 {
+		return "." + string(bytes)
+	}
+	return "." + base58.Encode(bytes)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

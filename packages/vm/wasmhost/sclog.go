@@ -23,7 +23,7 @@ func (o *ScLogs) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScLogs) GetTypeId(keyId int32) int32 {
-	return OBJTYPE_MAP_ARRAY
+	return OBJTYPE_MAP | OBJTYPE_ARRAY
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

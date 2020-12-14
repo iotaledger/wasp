@@ -87,6 +87,8 @@ func (o *ScUtility) GetString(keyId int32) string {
 
 func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	switch keyId {
+	case KeyBase58:
+		return OBJTYPE_BYTES
 	case KeyHash:
 		return OBJTYPE_BYTES
 	case KeyRandom:

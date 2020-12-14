@@ -25,8 +25,8 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyParams:    func() WaspObject { return &ScMutableDict{} },
-		KeyResults:   func() WaspObject { return &ScImmutableDict{} },
+		KeyParams:    func() WaspObject { return &ScDict{} },
+		KeyResults:   func() WaspObject { return &ScDict{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
@@ -57,7 +57,7 @@ func (o *ScCallInfo) Invoke() {
 	}
 	functionCode := coretypes.Hn(o.function)
 	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
-	params := o.vm.FindObject(paramsId).(*ScMutableDict).Dict.(dict.Dict)
+	params := o.vm.FindObject(paramsId).(*ScDict).Dict.(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
 		o.vm.Trace("  PARAM '%s'", key)
 		return true
@@ -76,7 +76,7 @@ func (o *ScCallInfo) Invoke() {
 		o.Panic("failed to invoke call: %v", err)
 	}
 	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
-	o.vm.FindObject(resultsId).(*ScImmutableDict).Dict = results
+	o.vm.FindObject(resultsId).(*ScDict).Dict = results
 }
 
 func (o *ScCallInfo) SetInt(keyId int32, value int64) {
@@ -121,7 +121,7 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyParams:    func() WaspObject { return &ScMutableDict{} },
+		KeyParams:    func() WaspObject { return &ScDict{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
@@ -129,7 +129,7 @@ func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case KeyChain:
-		return OBJTYPE_BYTES
+		return OBJTYPE_BYTES //TODO OBJTYPE_ADDRESS
 	case KeyContract:
 		return OBJTYPE_STRING
 	case KeyDelay:
@@ -158,7 +158,7 @@ func (o *ScPostInfo) Invoke() {
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
-		params = o.vm.FindObject(paramsId).(*ScMutableDict).Dict.(dict.Dict)
+		params = o.vm.FindObject(paramsId).(*ScDict).Dict.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
 			o.vm.Trace("  PARAM '%s'", key)
 			return true
@@ -234,8 +234,8 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyParams:  func() WaspObject { return &ScMutableDict{} },
-		KeyResults: func() WaspObject { return &ScImmutableDict{} },
+		KeyParams:  func() WaspObject { return &ScDict{} },
+		KeyResults: func() WaspObject { return &ScDict{} },
 	})
 }
 
@@ -265,7 +265,7 @@ func (o *ScViewInfo) Invoke() {
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
-		params = o.vm.FindObject(paramsId).(*ScMutableDict).Dict.(dict.Dict)
+		params = o.vm.FindObject(paramsId).(*ScDict).Dict.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
 			o.vm.Trace("  PARAM '%s'", key)
 			return true
@@ -282,7 +282,7 @@ func (o *ScViewInfo) Invoke() {
 		o.Panic("failed to invoke view: %v", err)
 	}
 	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
-	o.vm.FindObject(resultsId).(*ScImmutableDict).Dict = results
+	o.vm.FindObject(resultsId).(*ScDict).Dict = results
 }
 
 func (o *ScViewInfo) SetInt(keyId int32, value int64) {

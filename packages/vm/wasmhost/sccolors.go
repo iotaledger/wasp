@@ -39,7 +39,7 @@ func (a *ScColors) GetLength() int32 {
 
 func (a *ScColors) GetTypeId(keyId int32) int32 {
 	if a.Exists(keyId) {
-		return OBJTYPE_BYTES
+		return OBJTYPE_BYTES //TODO OBJTYPE_COLOR
 	}
 	return -1
 }

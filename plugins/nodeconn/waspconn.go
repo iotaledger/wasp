@@ -101,15 +101,16 @@ func retryNodeConnect() {
 }
 
 func SendDataToNode(data []byte) error {
-	choppedData, chopped := msgChopper.ChopData(data, tangle.MaxMessageSize-waspconn.ChunkMessageHeaderSize)
-
+	choppedData, chopped, err := msgChopper.ChopData(data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
+	if err != nil {
+		return err
+	}
 	bconnMutex.Lock()
 	defer bconnMutex.Unlock()
 
 	if bconn == nil {
 		return fmt.Errorf("SendDataToNode: not connected to node")
 	}
-	var err error
 	if !chopped {
 		_, err = bconn.Write(data)
 	} else {

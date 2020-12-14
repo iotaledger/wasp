@@ -58,7 +58,7 @@ func (c *peeredConnection) receiveData(data []byte) {
 		return
 	}
 	if msg.MsgType == peering.MsgTypeMsgChunk {
-		finalMsg, err := c.msgChopper.IncomingChunk(msg.MsgData, tangle.MaxMessageSize-chunkMessageOverhead)
+		finalMsg, err := c.msgChopper.IncomingChunk(msg.MsgData, tangle.MaxMessageSize, chunkMessageOverhead)
 		if err != nil {
 			c.net.log.Errorf("peeredConnection.receiveData: %v", err)
 			return

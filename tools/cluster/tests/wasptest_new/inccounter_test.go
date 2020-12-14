@@ -2,6 +2,8 @@ package wasptest
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/alone"
 	"testing"
 	"time"
 
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,9 +23,15 @@ const incDescription = "IncCounter, a PoC smart contract"
 
 var incHname = coretypes.Hn(incName)
 
+const varCounter = "counter"
+const varNumRepeats = "num_repeats"
+
 func checkCounter(t *testing.T, expected int) bool {
 	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+		for k,v := range state {
+			fmt.Printf("%s: %v\n", string(k), v)
+		}
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(varCounter))
 		require.EqualValues(t, expected, counterValue)
 		return true
 	})
@@ -64,7 +71,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.Fee)
+		require.EqualValues(t, 0, cr.OwnerFee)
 		return true
 	})
 	checkCounter(t, 0)
@@ -119,7 +126,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.Fee)
+		require.EqualValues(t, 0, cr.OwnerFee)
 		return true
 	})
 	checkCounter(t, 0)
@@ -174,7 +181,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.Fee)
+		require.EqualValues(t, 0, cr.OwnerFee)
 		return true
 	})
 	checkCounter(t, numRequests)
@@ -222,7 +229,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 func TestIncCallIncrement1(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coretypes.Hn("incrementCallIncrement")
+	entryPoint := coretypes.Hn("increment_call_increment")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 2)
@@ -231,7 +238,7 @@ func TestIncCallIncrement1(t *testing.T) {
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coretypes.Hn("incrementCallIncrementRecurse5x")
+	entryPoint := coretypes.Hn("increment_call_increment_recurse5x")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 6)
@@ -240,7 +247,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 func TestIncPostIncrement(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 3, nil)
 
-	entryPoint := coretypes.Hn("incrementPostIncrement")
+	entryPoint := coretypes.Hn("increment_post_increment")
 	postRequest(t, incHname, entryPoint, 1, nil)
 
 	checkCounter(t, 2)
@@ -250,15 +257,15 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
 	setupAndLoad(t, incName, incDescription, numRepeats+2, nil)
 
-	entryPoint := coretypes.Hn("incrementRepeatMany")
+	entryPoint := coretypes.Hn("increment_repeat_many")
 	postRequest(t, incHname, entryPoint, numRepeats, map[string]interface{}{
-		inccounter.VarNumRepeats: numRepeats,
+		varNumRepeats: numRepeats,
 	})
 
 	chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+		counterValue, _, _ := codec.DecodeInt64(state.MustGet(varCounter))
 		require.EqualValues(t, numRepeats+1, counterValue)
-		repeats, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarNumRepeats))
+		repeats, _, _ := codec.DecodeInt64(state.MustGet(varNumRepeats))
 		require.EqualValues(t, 0, repeats)
 		return true
 	})
@@ -266,21 +273,21 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 func TestIncLocalStateInternalCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coretypes.Hn("incrementLocalStateInternalCall")
+	entryPoint := coretypes.Hn("increment_local_state_internal_call")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coretypes.Hn("incrementLocalStateSandboxCall")
+	entryPoint := coretypes.Hn("increment_local_state_sandbox_call")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 5, nil)
-	entryPoint := coretypes.Hn("incrementLocalStatePost")
+	entryPoint := coretypes.Hn("increment_local_state_post")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)
 }
@@ -292,12 +299,45 @@ func TestIncViewCounter(t *testing.T) {
 	checkCounter(t, 1)
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(incHname),
-		"incrementViewCounter",
+		"increment_view_counter",
 		nil,
 	)
 	check(err, t)
 
-	counter, _, err := codec.DecodeInt64(ret.MustGet("counter"))
+	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	check(err, t)
 	require.EqualValues(t, 1, counter)
+}
+
+func TestIncAloneInc(t *testing.T) {
+	al := alone.New(t, false, true)
+	chain := al.NewChain(nil, "chain1")
+	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
+	require.NoError(t, err)
+	req := alone.NewCall(incName, "increment").
+		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+	ret, err := chain.CallView(incName, "increment_view_counter")
+	require.NoError(t, err)
+	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	check(err, t)
+	require.EqualValues(t, 1, counter)
+}
+
+func TestIncAloneRepeatMany(t *testing.T) {
+	al := alone.New(t, false, true)
+	chain := al.NewChain(nil, "chain1")
+	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
+	require.NoError(t, err)
+	req := alone.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
+		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+	chain.WaitEmptyBacklog()
+	ret, err := chain.CallView(incName, "increment_view_counter")
+	require.NoError(t, err)
+	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	check(err, t)
+	require.EqualValues(t, 3, counter)
 }
