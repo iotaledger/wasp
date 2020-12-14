@@ -17,6 +17,7 @@ type WaspObject interface {
 	Panic(format string, args ...interface{})
 	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
 	Name() string
+	NestedKey() string
 	Suffix(keyId int32) string
 }
 
@@ -48,6 +49,7 @@ type ModelObject struct {
 	id      int32
 	keyId   int32
 	ownerId int32
+	root    bool
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
@@ -58,6 +60,9 @@ func (o *ModelObject) InitObj(id int32, keyId int32, owner *ModelObject) {
 	o.id = id
 	o.keyId = keyId
 	o.ownerId = owner.id
+	if owner.id == 1 {
+		o.root = true
+	}
 	o.vm = owner.vm
 	o.vm.Trace("InitObj %s", o.Name())
 }
@@ -124,6 +129,12 @@ func (o *ModelObject) Name() string {
 		}
 		return owner.Name() + owner.Suffix(o.keyId)
 	}
+}
+
+func (o *ModelObject) NestedKey() string {
+    if o.root { return "" }
+	owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
+	return owner.NestedKey() + owner.Suffix(o.keyId)
 }
 
 func (o *ModelObject) SetBytes(keyId int32, value []byte) {

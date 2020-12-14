@@ -10,6 +10,7 @@ type ScContext struct {
 func NewScContext(vm *wasmProcessor) *ScContext {
 	o := &ScContext{}
 	o.id = 1
+	o.root = true
 	o.vm = vm
 	o.objects = make(map[int32]int32)
 	return o

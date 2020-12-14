@@ -12,7 +12,6 @@ import (
 type ScDict struct {
 	MapObject
 	Dict   kv.KVStore
-	nested bool
 	typeId int32
 	types  map[int32]int32
 }
@@ -28,12 +27,9 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ModelObject) {
 
 func (o *ScDict) Exists(keyId int32) bool {
 	suffix := o.Suffix(keyId)
-	key := o.Name() + suffix
-	o.vm.Trace("Exists: %s", key)
-	if !o.nested {
-		key = suffix[1:]
-	}
-	return o.Dict.MustHas(kv.Key(key))
+	key := o.NestedKey() + suffix
+	o.vm.Trace("Exists:%s, key %s", o.Name() +suffix, key)
+	return o.Dict.MustHas(kv.Key(key[1:]))
 }
 
 func (o *ScDict) GetBytes(keyId int32) []byte {
@@ -80,12 +76,9 @@ func (o *ScDict) GetString(keyId int32) string {
 func (o *ScDict) GetTypedBytes(keyId int32, typeId int32) []byte {
 	o.validate(keyId, typeId)
 	suffix := o.Suffix(keyId)
-	key := o.Name() + suffix
-	o.vm.Trace("GetTypedBytes: %s", key)
-	if !o.nested {
-		key = suffix[1:]
-	}
-	return o.Dict.MustGet(kv.Key(key))
+	key := o.NestedKey() + suffix
+	o.vm.Trace("GetTypedBytes: %s, key %s", o.Name() +suffix, key)
+	return o.Dict.MustGet(kv.Key(key[1:]))
 }
 
 func (o *ScDict) GetTypeId(keyId int32) int32 {
@@ -121,12 +114,9 @@ func (o *ScDict) SetString(keyId int32, value string) {
 func (o *ScDict) SetTypedBytes(keyId int32, typeId int32, value []byte) {
 	o.validate(keyId, typeId)
 	suffix := o.Suffix(keyId)
-	key := o.Name() + suffix
-	o.vm.Trace("SetTypedBytes: %s", key)
-	if !o.nested {
-		key = suffix[1:]
-	}
-	o.Dict.Set(kv.Key(key), value)
+	key := o.NestedKey() + suffix
+	o.vm.Trace("SetTypedBytes: %s, key %s", o.Name() +suffix, key)
+	o.Dict.Set(kv.Key(key[1:]), value)
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {
