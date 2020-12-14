@@ -17,7 +17,7 @@ func (o *ScLogs) Exists(keyId int32) bool {
 }
 
 func (o *ScLogs) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetScDictId(o, keyId, typeId, ObjFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: func() WaspObject { return &ScLog{} },
 	})
 }
@@ -35,9 +35,8 @@ type ScLog struct {
 	logEntryId int32
 }
 
-func (a *ScLog) InitObj(id int32, keyId int32, owner *ModelObject) {
+func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
 	a.ScDict.InitObj(id, keyId, owner)
-	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 	key := a.vm.GetKey(keyId)
 	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), key)
 	a.logEntry = &ScLogEntry{lines: a.lines}
@@ -71,7 +70,7 @@ func (a *ScLog) GetTypeId(keyId int32) int32 {
 	if a.Exists(keyId) {
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -109,7 +108,7 @@ func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
 	case KeyTimestamp:
 		return OBJTYPE_INT
 	}
-	return -1
+	return 0
 }
 
 func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {

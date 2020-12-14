@@ -20,7 +20,7 @@ type ScUtility struct {
 	nextRandom    int
 }
 
-func (o *ScUtility) InitObj(id int32, keyId int32, owner *ModelObject) {
+func (o *ScUtility) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.ScDict.InitObj(id, keyId, owner)
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
@@ -94,7 +94,7 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	case KeyRandom:
 		return OBJTYPE_INT
 	}
-	return -1
+	return 0
 }
 
 func (o *ScUtility) SetBytes(keyId int32, value []byte) {

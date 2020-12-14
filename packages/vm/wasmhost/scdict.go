@@ -4,29 +4,79 @@
 package wasmhost
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/mr-tron/base58"
 )
 
+type ObjFactory func() WaspObject
+type ObjFactories map[int32]ObjFactory
+
+type WaspObject interface {
+	HostObject
+	InitObj(id int32, keyId int32, owner *ScDict)
+	Panic(format string, args ...interface{})
+	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
+	Name() string
+	NestedKey() string
+	Suffix(keyId int32) string
+}
+
+func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
+	if !arrayObj.Exists(index) {
+		arrayObj.Panic("GetArrayObjectId: Invalid index")
+	}
+	if typeId != arrayObj.GetTypeId(index) {
+		arrayObj.Panic("GetArrayObjectId: Invalid type")
+	}
+	return arrayObj.FindOrMakeObjectId(index, factory)
+}
+
+func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
+	factory, ok := factories[keyId]
+	if !ok {
+		mapObj.Panic("GetMapObjectId: Invalid key")
+	}
+	if typeId != mapObj.GetTypeId(keyId) {
+		mapObj.Panic("GetMapObjectId: Invalid type")
+	}
+	return mapObj.FindOrMakeObjectId(keyId, factory)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type ScDict struct {
-	ModelObject
+	vm      *wasmProcessor
+	id      int32
+	isRoot  bool
+	keyId   int32
+	ownerId int32
+	typeId  int32
+	Dict    kv.KVStore
+	objects map[int32]int32
+	types   map[int32]int32
 }
 
-func NewScDict(dict kv.KVStore, typeId int32) *ScDict {
-	o := &ScDict{}
-	o.Dict = dict
-	o.typeId = typeId
-	return o
+func NewNullObject(vm *wasmProcessor) WaspObject {
+	return &ScDict{vm: vm, id: 0, isRoot: true}
 }
 
-func (o *ScDict) InitObj(id int32, keyId int32, owner *ModelObject) {
-	o.ModelObject.InitObj(id, keyId, owner)
+func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
+	o.id = id
+	o.keyId = keyId
+	o.ownerId = owner.id
+	if owner.id == 1 {
+		o.isRoot = true
+	}
+	o.vm = owner.vm
+	o.vm.Trace("InitObj %s", o.Name())
 	if o.Dict == nil {
 		o.Dict = dict.New()
 	}
 	if o.typeId == 0 {
-		o.typeId = OBJTYPE_MAP
+		o.typeId = o.vm.FindObject(owner.id).GetTypeId(keyId)
 	}
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
@@ -71,11 +121,11 @@ func (o *ScDict) GetInt(keyId int32) int64 {
 
 func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
-	if typeId != OBJTYPE_MAP && (typeId&OBJTYPE_ARRAY) == 0 {
+	if (typeId&OBJTYPE_ARRAY) == 0 && typeId != OBJTYPE_MAP {
 		o.Panic("GetObjectId: Invalid type")
 	}
-	return GetScDictId(o, keyId, typeId, ObjFactories{
-		keyId: func() WaspObject { return NewScDict(o.Dict, typeId) },
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+		keyId: func() WaspObject { return &ScDict{Dict: o.Dict} },
 	})
 }
 
@@ -105,7 +155,44 @@ func (o *ScDict) GetTypeId(keyId int32) int32 {
 	if ok {
 		return typeId
 	}
-	return -1
+	return 0
+}
+
+func (o *ScDict) MakeObjectId(keyId int32, factory ObjFactory) int32 {
+	newObject := factory()
+	objId := o.vm.TrackObject(newObject)
+	newObject.InitObj(objId, keyId, o)
+	return objId
+}
+
+func (o *ScDict) Name() string {
+	switch o.id {
+	case 0:
+		return "null"
+	case 1:
+		return "root"
+	default:
+		owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
+		if o.ownerId == 1 {
+			// root sub object, skip the "root." prefix
+			return string(o.vm.getKeyFromId(o.keyId))
+		}
+		return owner.Name() + owner.Suffix(o.keyId)
+	}
+}
+
+func (o *ScDict) NestedKey() string {
+	if o.isRoot {
+		return ""
+	}
+	owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
+	return owner.NestedKey() + owner.Suffix(o.keyId)
+}
+
+func (o *ScDict) Panic(format string, args ...interface{}) {
+	err := o.Name() + "." + fmt.Sprintf(format, args...)
+	o.vm.LogText(err)
+	panic(err)
 }
 
 func (o *ScDict) SetBytes(keyId int32, value []byte) {
@@ -134,6 +221,17 @@ func (o *ScDict) SetTypedBytes(keyId int32, typeId int32, value []byte) {
 	key := o.NestedKey() + suffix
 	o.vm.Trace("SetTypedBytes: %s, key %s", o.Name()+suffix, key)
 	o.Dict.Set(kv.Key(key[1:]), value)
+}
+
+func (o *ScDict) Suffix(keyId int32) string {
+	if (o.typeId & OBJTYPE_ARRAY) != 0 {
+		return fmt.Sprintf("#%d", keyId)
+	}
+	bytes := o.vm.getKeyFromId(keyId)
+	if (keyId & KeyFromString) != 0 {
+		return "." + string(bytes)
+	}
+	return "." + base58.Encode(bytes)
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {

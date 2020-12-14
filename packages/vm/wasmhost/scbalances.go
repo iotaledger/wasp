@@ -54,5 +54,5 @@ func (o *ScBalances) GetTypeId(keyId int32) int32 {
 	if o.Exists(keyId) {
 		return OBJTYPE_INT
 	}
-	return -1
+	return 0
 }

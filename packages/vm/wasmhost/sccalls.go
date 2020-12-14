@@ -24,7 +24,7 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetScDictId(o, keyId, typeId, ObjFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyParams:    func() WaspObject { return &ScDict{} },
 		KeyResults:   func() WaspObject { return &ScDict{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
@@ -46,7 +46,7 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	case KeyTransfers:
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 func (o *ScCallInfo) Invoke() {
@@ -120,7 +120,7 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetScDictId(o, keyId, typeId, ObjFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyParams:    func() WaspObject { return &ScDict{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
@@ -141,7 +141,7 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	case KeyTransfers:
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 func (o *ScPostInfo) Invoke() {
@@ -233,7 +233,7 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetScDictId(o, keyId, typeId, ObjFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyParams:  func() WaspObject { return &ScDict{} },
 		KeyResults: func() WaspObject { return &ScDict{} },
 	})
@@ -252,7 +252,7 @@ func (o *ScViewInfo) GetTypeId(keyId int32) int32 {
 	case KeyResults:
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 func (o *ScViewInfo) Invoke() {
@@ -317,11 +317,6 @@ type ScCalls struct {
 	ScDict
 }
 
-func (a *ScCalls) InitObj(id int32, keyId int32, owner *ModelObject) {
-	a.ScDict.InitObj(id, keyId, owner)
-	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
-}
-
 func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScCallInfo{}
@@ -334,11 +329,6 @@ type ScPosts struct {
 	ScDict
 }
 
-func (a *ScPosts) InitObj(id int32, keyId int32, owner *ModelObject) {
-	a.ScDict.InitObj(id, keyId, owner)
-	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
-}
-
 func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScPostInfo{}
@@ -349,11 +339,6 @@ func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 
 type ScViews struct {
 	ScDict
-}
-
-func (a *ScViews) InitObj(id int32, keyId int32, owner *ModelObject) {
-	a.ScDict.InitObj(id, keyId, owner)
-	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
 }
 
 func (a *ScViews) GetObjectId(keyId int32, typeId int32) int32 {
@@ -369,7 +354,7 @@ type ScCallTransfers struct {
 	Transfers map[balance.Color]int64
 }
 
-func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ModelObject) {
+func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.ScDict.InitObj(id, keyId, owner)
 	o.Transfers = make(map[balance.Color]int64)
 }

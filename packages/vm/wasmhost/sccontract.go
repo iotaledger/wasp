@@ -48,5 +48,5 @@ func (o *ScContract) GetTypeId(keyId int32) int32 {
 	case KeyOwner:
 		return OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	}
-	return -1
+	return 0
 }

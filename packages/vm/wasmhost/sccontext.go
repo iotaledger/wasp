@@ -51,17 +51,17 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		return o.ScDict.GetObjectId(keyId, typeId)
 	}
 
-	return GetScDictId(o, keyId, typeId, ObjFactories{
+	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		KeyBalances:  func() WaspObject { return &ScBalances{} },
 		KeyCalls:     func() WaspObject { return &ScCalls{} },
 		KeyContract:  func() WaspObject { return &ScContract{} },
 		KeyExports:   func() WaspObject { return &ScExports{} },
 		KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
-		KeyParams:    func() WaspObject { return NewScDict(o.vm.Params(), 0) },
+		KeyParams:    func() WaspObject { return &ScDict{Dict: o.vm.Params()} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
 		KeyResults:   func() WaspObject { return &ScDict{} },
-		KeyState:     func() WaspObject { return NewScDict(o.vm.State(), 0) },
+		KeyState:     func() WaspObject { return &ScDict{Dict: o.vm.State()} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
 		KeyViews:     func() WaspObject { return &ScViews{} },
@@ -101,5 +101,5 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	case KeyViews:
 		return OBJTYPE_MAP | OBJTYPE_ARRAY
 	}
-	return -1
+	return 0
 }

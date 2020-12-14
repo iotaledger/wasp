@@ -61,11 +61,6 @@ type ScTransfers struct {
 	ScDict
 }
 
-func (a *ScTransfers) InitObj(id int32, keyId int32, owner *ModelObject) {
-	a.ScDict.InitObj(id, keyId, owner)
-	a.typeId = OBJTYPE_ARRAY | OBJTYPE_MAP
-}
-
 func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScTransfer{}
