@@ -2,6 +2,7 @@ package root
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
@@ -24,11 +25,6 @@ var (
 		Description: description,
 		ProgramHash: *hashing.HashStrings(fullName),
 	}
-	RootContractRecord = ContractRecord{
-		ProgramHash: Interface.ProgramHash,
-		Name:        Interface.Name,
-		Description: Interface.Description,
-	}
 )
 
 func init() {
@@ -37,7 +33,7 @@ func init() {
 		contract.ViewFunc(FuncFindContract, findContract),
 		contract.Func(FuncClaimChainOwnership, claimChainOwnership),
 		contract.Func(FuncDelegateChainOwnership, delegateChainOwnership),
-		contract.ViewFunc(FuncGetInfo, getInfo),
+		contract.ViewFunc(FuncGetChainInfo, getChainInfo),
 		contract.ViewFunc(FuncGetFeeInfo, getFeeInfo),
 		contract.Func(FuncSetDefaultFee, setDefaultFee),
 		contract.Func(FuncSetContractFee, setContractFee),
@@ -75,7 +71,7 @@ const (
 const (
 	FuncDeployContract         = "deployContract"
 	FuncFindContract           = "findContract"
-	FuncGetInfo                = "getInfo"
+	FuncGetChainInfo           = "getChainInfo"
 	FuncDelegateChainOwnership = "delegateChainOwnership"
 	FuncClaimChainOwnership    = "claimChainOwnership"
 	FuncGetFeeInfo             = "getFeeInfo"
@@ -95,6 +91,15 @@ type ContractRecord struct {
 	OwnerFee     int64 // owner part of the fee
 	ValidatorFee int64 // validator part of the fee
 	Creator      coretypes.AgentID
+}
+
+type ChainInfo struct {
+	ChainID             coretypes.ChainID
+	ChainOwnerID        coretypes.AgentID
+	Description         string
+	FeeColor            balance.Color
+	DefaultOwnerFee     int64
+	DefaultValidatorFee int64
 }
 
 // serde
@@ -153,10 +158,12 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-func NewBuiltinContractRecord(programHash hashing.HashValue, name string, description string) ContractRecord {
-	return ContractRecord{
-		ProgramHash: programHash,
-		Description: description,
-		Name:        name,
+func NewContractRecord(itf *contract.ContractInterface, creator coretypes.AgentID) (ret ContractRecord) {
+	ret = ContractRecord{
+		ProgramHash: itf.ProgramHash,
+		Description: itf.Description,
+		Name:        itf.Name,
+		Creator:     creator,
 	}
+	return
 }

@@ -38,14 +38,13 @@ const (
 	VarStateInitialized = "i"
 
 	// request parameters
-	ParamHash         = "hash"
-	ParamField        = "field"
-	ParamBytes        = "bytes"
-	ParamLog          = "dataParam"
-	ParamLasts        = "lastsParam"
-	ParamFromTs       = "fromTs"
-	ParamToTs         = "toTs"
-	ParamLastsRecords = "lastRecords"
+	ParamLog           = "dataParam"
+	ParamContractHname = "contractHname"
+	ParamLasts         = "lastsParam"
+	ParamFromTs        = "fromTs"
+	ParamToTs          = "toTs"
+	ParamLastsRecords  = "lastRecords"
+	ParamType          = "ParamTypeOfRecords"
 
 	// function names
 	FuncGetLog           = "getLogInfo"
@@ -53,7 +52,12 @@ const (
 	FuncGetLogsBetweenTs = "getLogsBetweenTs"
 	FuncStoreLog         = "storeLog"
 
-	VarLogName = "logs"
+	//Type of records
+	_DEPLOY         = 1
+	_TOKEN_TRANSFER = 2
+	_VIEWCALL       = 3
+	_REQUEST_FUNC   = 4
+	_GENERIC_DATA   = 5
 )
 
 func GetProcessor() vmtypes.Processor {

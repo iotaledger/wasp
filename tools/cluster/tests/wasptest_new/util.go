@@ -40,7 +40,8 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
+		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
 
 		crBytes = contractRegistry.GetAt(blob.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -224,7 +225,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(root.Interface.Hname()),
-		root.FuncGetInfo,
+		root.FuncGetChainInfo,
 		nil,
 	)
 	check(err, t)

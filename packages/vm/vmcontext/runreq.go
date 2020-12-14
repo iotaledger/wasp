@@ -2,10 +2,12 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"runtime/debug"
 )
 
@@ -14,11 +16,8 @@ import (
 // - processes reward logic
 func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp int64) state.StateUpdate {
 	if !vmctx.setRequestContext(reqRef, timestamp) {
-		vmctx.log.Errorf("not found contract '%s' in %s",
-			reqRef.RequestSection().Target().Hname().String(), vmctx.reqRef.RequestID().Short())
 		return state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	}
-
 	defer func() {
 		vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
@@ -58,14 +57,32 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
+
+	if isInitChainRequest(reqRef) {
+		return true
+	}
+	// ordinary request, only makes sense when chain is already deployed
+	info := vmctx.getChainInfo()
+	if info.ChainID != vmctx.chainID {
+		vmctx.log.Errorf("setRequestContext: major inconsistency of chainID")
+		return false
+	}
+	vmctx.chainOwnerID = info.ChainOwnerID
 	feeColor, ownerFee, validatorFee, ok := vmctx.getFeeInfo(reqHname)
 	if !ok {
+		vmctx.log.Errorf("not found contract '%s', request %s",
+			reqRef.RequestSection().Target().Hname().String(), vmctx.reqRef.RequestID().Short())
 		return false
 	}
 	vmctx.feeColor = feeColor
 	vmctx.ownerFee = ownerFee
 	vmctx.validatorFee = validatorFee
 	return true
+}
+
+func isInitChainRequest(reqRef sctransaction.RequestRef) bool {
+	s := reqRef.RequestSection()
+	return s.Target().Hname() == root.Interface.Hname() && s.EntryPointCode() == coretypes.EntryPointInit
 }
 
 func (vmctx *VMContext) Rollback() {

@@ -7,7 +7,6 @@ package root
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
@@ -63,24 +62,17 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("root.initialize.fail: registry not empty")
 	}
 	// record for root
-	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&RootContractRecord))
+	rec := NewContractRecord(Interface, coretypes.AgentID{})
+	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
 	// deploy blob
-	err = storeAndInitContract(ctx, &ContractRecord{
-		ProgramHash: blob.Interface.ProgramHash,
-		Description: blob.Interface.Description,
-		Name:        blob.Interface.Name,
-		Creator:     ctx.Caller(),
-	}, nil)
+	rec = NewContractRecord(blob.Interface, ctx.Caller())
+	err = storeAndInitContract(ctx, &rec, nil)
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
 	// deploy accountsc
-	err = storeAndInitContract(ctx, &ContractRecord{
-		ProgramHash: accountsc.Interface.ProgramHash,
-		Description: accountsc.Interface.Description,
-		Name:        accountsc.Interface.Name,
-		Creator:     ctx.Caller(),
-	}, nil)
+	rec = NewContractRecord(accountsc.Interface, ctx.Caller())
+	err = storeAndInitContract(ctx, &rec, nil)
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
@@ -189,7 +181,7 @@ func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-// getInfo view returns general info about the chain: chain ID, chain owner ID,
+// getChainInfo view returns general info about the chain: chain ID, chain owner ID,
 // description and the whole contract registry
 // Input: none
 // Output:
@@ -197,24 +189,15 @@ func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // - VarChainOwnerID - AgentID
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
-func getInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	info := GetChainInfo(ctx.State())
 	ret := dict.New()
-
-	chainID, _, _ := codec.DecodeChainID(ctx.State().MustGet(VarChainID))
-	ret.Set(VarChainID, codec.EncodeChainID(chainID))
-
-	chainOwner, _, _ := codec.DecodeAgentID(ctx.State().MustGet(VarChainOwnerID))
-	ret.Set(VarChainOwnerID, codec.EncodeAgentID(chainOwner))
-
-	description, _, _ := codec.DecodeString(ctx.State().MustGet(VarDescription))
-	ret.Set(VarDescription, codec.EncodeString(description))
-
-	feeColor, ok, _ := codec.DecodeColor(ctx.State().MustGet(VarFeeColor))
-	if ok {
-		ret.Set(VarFeeColor, codec.EncodeColor(feeColor))
-	} else {
-		ret.Set(VarFeeColor, balance.ColorIOTA[:])
-	}
+	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
+	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
+	ret.Set(VarDescription, codec.EncodeString(info.Description))
+	ret.Set(VarFeeColor, codec.EncodeColor(&info.FeeColor))
+	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
+	ret.Set(VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
 
 	src := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
 	dst := datatypes.NewMustMap(ret, VarContractRegistry)
@@ -222,7 +205,6 @@ func getInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		dst.SetAt(elemKey, value)
 		return true
 	})
-
 	return ret, nil
 }
 

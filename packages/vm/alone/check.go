@@ -18,7 +18,7 @@ func (glb *Glb) CheckUtxodbBalance(addr address.Address, col balance.Color, expe
 }
 
 func (ch *Chain) CheckBase() {
-	req := NewCall(root.Interface.Name, root.FuncGetInfo)
+	req := NewCall(root.Interface.Name, root.FuncGetChainInfo)
 	res1, err := ch.PostRequest(req, nil)
 	require.NoError(ch.Glb.T, err)
 
@@ -29,7 +29,8 @@ func (ch *Chain) CheckBase() {
 
 	rootRec, err := ch.FindContract(root.Interface.Name)
 	require.NoError(ch.Glb.T, err)
-	require.EqualValues(ch.Glb.T, root.EncodeContractRecord(&root.RootContractRecord), root.EncodeContractRecord(rootRec))
+	emptyRootRecord := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+	require.EqualValues(ch.Glb.T, root.EncodeContractRecord(&emptyRootRecord), root.EncodeContractRecord(rootRec))
 
 	accountsRec, err := ch.FindContract(accountsc.Interface.Name)
 	require.NoError(ch.Glb.T, err)
