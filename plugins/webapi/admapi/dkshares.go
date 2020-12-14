@@ -12,7 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dks"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
@@ -20,7 +20,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
-func addDKShareEndpoints(adm *echo.Group) {
+func addDKSharesEndpoints(adm *echo.Group) {
 	adm.POST("/"+client.DKSharesPostRoute(), handleDKSharesPost)
 	adm.GET("/"+client.DKSharesGetRoute(":chainID"), handleDKSharesGet)
 }
@@ -50,7 +50,7 @@ func handleDKSharesPost(c echo.Context) error {
 		}
 	}
 
-	var dkShare *dks.DKShare
+	var dkShare *tcrypto.DKShare
 	dkShare, err = dkg.DefaultNode().GenerateDistributedKey(
 		req.PeerNetIDs,
 		peerPubKeys,
@@ -70,7 +70,7 @@ func handleDKSharesPost(c echo.Context) error {
 
 func handleDKSharesGet(c echo.Context) error {
 	var err error
-	var dkShare *dks.DKShare
+	var dkShare *tcrypto.DKShare
 	var chainID coretypes.ChainID
 	if chainID, err = coretypes.NewChainIDFromBase58(c.Param("chainID")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
@@ -85,7 +85,7 @@ func handleDKSharesGet(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func makeDKSharesInfo(dkShare *dks.DKShare) (*client.DKSharesInfo, error) {
+func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*client.DKSharesInfo, error) {
 	var err error
 
 	var sharedPubKeyBin []byte

@@ -7,12 +7,12 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dks"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/database"
 )
 
 // SaveDKShare implements dkg.RegistryProvider.
-func (r *Impl) SaveDKShare(dkShare *dks.DKShare) error {
+func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	var err error
 	var exists bool
 	dbKey := dbKeyForDKShare(dkShare.ChainID)
@@ -32,12 +32,12 @@ func (r *Impl) SaveDKShare(dkShare *dks.DKShare) error {
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (r *Impl) LoadDKShare(chainID *coretypes.ChainID) (*dks.DKShare, error) {
+func (r *Impl) LoadDKShare(chainID *coretypes.ChainID) (*tcrypto.DKShare, error) {
 	data, err := database.GetRegistryPartition().Get(dbKeyForDKShare(chainID))
 	if err != nil {
 		return nil, err
 	}
-	return dks.DKShareFromBytes(data, r.suite)
+	return tcrypto.DKShareFromBytes(data, r.suite)
 }
 
 func dbKeyForDKShare(chainID *coretypes.ChainID) []byte {

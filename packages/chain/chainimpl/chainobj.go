@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/dks"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -50,7 +50,7 @@ type chainObj struct {
 	log                   *logger.Logger
 	netProvider           peering.NetworkProvider
 	peersAttachRef        interface{}
-	dksProvider           dks.RegistryProvider
+	dksProvider           tcrypto.RegistryProvider
 }
 
 func requestIDCaller(handler interface{}, params ...interface{}) {
@@ -61,7 +61,7 @@ func newCommitteeObj(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
-	dksProvider dks.RegistryProvider,
+	dksProvider tcrypto.RegistryProvider,
 	onActivation func(),
 ) chain.Chain {
 	var err error

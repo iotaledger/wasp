@@ -11,8 +11,8 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 )
@@ -23,14 +23,14 @@ import (
 type Node struct {
 	secKey      kyber.Scalar
 	pubKey      kyber.Point
-	suite       Suite                   // Cryptography to use.
-	netProvider peering.NetworkProvider // Network to communicate through.
-	registry    dks.RegistryProvider    // Where to store the generated keys.
-	processes   map[string]*proc        // Only for introspection.
-	procLock    *sync.RWMutex           // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent // Incoming events processed async.
-	recvStopCh  chan bool
-	attachID    interface{} // Peering attach ID
+	suite       Suite                    // Cryptography to use.
+	netProvider peering.NetworkProvider  // Network to communicate through.
+	registry    tcrypto.RegistryProvider // Where to store the generated keys.
+	processes   map[string]*proc         // Only for introspection.
+	procLock    *sync.RWMutex            // To guard access to the process pool.
+	recvQueue   chan *peering.RecvEvent  // Incoming events processed async.
+	recvStopCh  chan bool                // To coordinate shutdown.
+	attachID    interface{}              // Peering attach ID
 	log         *logger.Logger
 }
 
@@ -41,7 +41,7 @@ func NewNode(
 	pubKey kyber.Point,
 	suite Suite,
 	netProvider peering.NetworkProvider,
-	registry dks.RegistryProvider,
+	registry tcrypto.RegistryProvider,
 	log *logger.Logger,
 ) *Node {
 	n := Node{
@@ -76,16 +76,29 @@ func (n *Node) GenerateDistributedKey(
 	peerPubs []kyber.Point,
 	threshold uint16,
 	timeout time.Duration,
-) (*dks.DKShare, error) {
+) (*tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerNetIDs)
 	var err error
+	var peerCount = uint16(len(peerNetIDs))
+	//
+	// Some validationfor the parameters.
+	if peerCount < 2 || threshold < 1 || threshold > peerCount {
+		return nil, fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold)
+	}
+	if threshold < peerCount/2+1 {
+		// Quorum t must be larger than half size in order to avoid more than one valid quorum in committee.
+		// For the DKG itself it is enough to have t >= 2
+		return nil, fmt.Errorf("wrong DKG parameters: for N = %d value T must be at least %d", peerCount, peerCount/2+1)
+	}
+	//
+	// Setup network connections.
 	var netGroup peering.GroupProvider
 	if netGroup, err = n.netProvider.Group(peerNetIDs); err != nil {
 		return nil, err
 	}
 	defer netGroup.Close()
 	dkgID := coretypes.NewRandomChainID()
-	recvCh := make(chan *peering.RecvEvent, len(peerNetIDs)*2)
+	recvCh := make(chan *peering.RecvEvent, peerCount*2)
 	attachID := n.netProvider.Attach(&dkgID, func(recv *peering.RecvEvent) {
 		recvCh <- recv
 	})
@@ -94,7 +107,7 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]kyber.Point, len(peerNetIDs))
+		peerPubs = make([]kyber.Point, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			peerPubs[i] = n.PubKey()
 		}
@@ -158,7 +171,7 @@ func (n *Node) GenerateDistributedKey(
 	chainID := pubShareResponses[0].chainID
 	sharedAddress := pubShareResponses[0].sharedAddress
 	sharedPublic := pubShareResponses[0].sharedPublic
-	publicShares := make([]kyber.Point, len(peerNetIDs))
+	publicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
 		if !chainID.Equal(pubShareResponses[i].chainID) {
 			return nil, fmt.Errorf("nodes generated different addresses")
@@ -196,10 +209,10 @@ func (n *Node) GenerateDistributedKey(
 	); err != nil {
 		return nil, err
 	}
-	dkShare := dks.DKShare{
+	dkShare := tcrypto.DKShare{
 		ChainID:       chainID,
 		Address:       sharedAddress,
-		N:             uint16(len(peerNetIDs)),
+		N:             peerCount,
 		T:             threshold,
 		Index:         nil, // Not meaningful in this case.
 		SharedPublic:  sharedPublic,

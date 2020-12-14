@@ -22,12 +22,11 @@ func AddEndpoints(e *echo.Echo, adminWhitelist []net.IP) {
 	adm.Use(protected(adminWhitelist))
 
 	addShutdownEndpoint(adm)
-	addPublicKeyEndpoint(adm)
 	addChainRecordEndpoints(adm)
 	addProgramEndpoints(adm)
 	addChainEndpoints(adm)
 	addStateEndpoints(adm)
-	addDKShareEndpoints(adm)
+	addDKSharesEndpoints(adm)
 }
 
 // allow only if the remote address is private or in whitelist

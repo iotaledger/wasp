@@ -1,8 +1,4 @@
-// Package dks provides functions to operate on distributed key shares.
-// Distributed key shares are usually generated using a DKG procedure.
-// See the `dkg` package for the generation part. This package provides
-// a way to use them.
-package dks
+package tcrypto
 
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
@@ -17,24 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
-	"go.dedis.ch/kyber/v3/util/key"
 )
-
-type Suite interface {
-	kyber.Group
-	pairing.Suite
-	key.Suite
-}
-
-// RegistryProvider stands for a partial registry interface, needed for this package.
-// It should be implemented by registry.impl
-type RegistryProvider interface {
-	SaveDKShare(dkShare *DKShare) error
-	LoadDKShare(chainID *coretypes.ChainID) (*DKShare, error)
-}
 
 // DKShare stands for the information stored on
 // a node as a result of the DKG procedure.
@@ -212,7 +193,23 @@ func (s *DKShare) VerifySigShare(data []byte, sigshare tbdn.SigShare) error {
 	if err != nil || idx >= int(s.N) || idx < 0 {
 		return err
 	}
-	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare.Value())
+	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare.Value()) // TODO: [KP] Why not `tbdn`.
+}
+
+// VerifyOwnSigShare is only used for assertions
+// NOTE: Not used.
+func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbdn.SigShare) error {
+	idx, err := sigshare.Index()
+	if err != nil || uint16(idx) != *s.Index {
+		return err
+	}
+	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare[2:]) // TODO: [KP] Why not `tbdn`.
+}
+
+// VerifyMasterSignature checks signature against master public key
+// NOTE: Not used.
+func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
+	return bdn.Verify(s.suite, s.SharedPublic, data, signature) // TODO: [KP] Why not `tbdn`.
 }
 
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.

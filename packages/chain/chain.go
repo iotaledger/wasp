@@ -8,8 +8,8 @@ import (
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -92,7 +92,7 @@ var ConstructorNew func(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
-	dksProvider dks.RegistryProvider,
+	dksProvider tcrypto.RegistryProvider,
 	onActivation func(),
 ) Chain
 
@@ -100,7 +100,7 @@ func New(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
-	dksProvider dks.RegistryProvider,
+	dksProvider tcrypto.RegistryProvider,
 	onActivation func(),
 ) Chain {
 	return ConstructorNew(chr, log, netProvider, dksProvider, onActivation)

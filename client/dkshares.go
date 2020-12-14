@@ -8,6 +8,8 @@ package client
 
 import (
 	"net/http"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 // CreateDKSharesRoute is relative to the AdminRoutePrefix.
@@ -23,7 +25,7 @@ func DKSharesGetRoute(address string) string {
 // DKSharesPostRequest is a POST request for creating new DKShare.
 type DKSharesPostRequest struct {
 	PeerNetIDs  []string `json:"peerNetIDs"`  // NetIDs of the nodes sharing the key.
-	PeerPubKeys [][]byte `json:"peerPubKeys"` // Optional, base58 encoded public ketys.
+	PeerPubKeys [][]byte `json:"peerPubKeys"` // Optional, base58 encoded public keys of the peers generating the DKS.
 	Threshold   uint16   `json:"threshold"`   // Should be =< len(PeerPubKeys)
 	TimeoutMS   uint16   `json:"timeoutMS"`   // Timeout in milliseconds.
 }
@@ -46,8 +48,9 @@ func (c *WaspClient) DKSharesPost(request *DKSharesPostRequest) (*DKSharesInfo, 
 }
 
 // DKSharesGet retrieves representation of an existing DKShare.
-func (c *WaspClient) DKSharesGet(chainID string) (*DKSharesInfo, error) {
+func (c *WaspClient) DKSharesGet(chainID *coretypes.ChainID) (*DKSharesInfo, error) {
+	var chainIDStr = chainID.String()
 	var response DKSharesInfo
-	err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DKSharesGetRoute(chainID), nil, &response)
+	err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DKSharesGetRoute(chainIDStr), nil, &response)
 	return &response, err
 }

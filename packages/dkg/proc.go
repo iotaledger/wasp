@@ -10,8 +10,8 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dks"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -37,7 +37,7 @@ const (
 type proc struct {
 	dkgRef       string             // User supplied unique ID for this instance.
 	dkgID        *coretypes.ChainID // DKG procedure ID we are participating in.
-	dkShare      *dks.DKShare       // This will be generated as a result of this procedure.
+	dkShare      *tcrypto.DKShare   // This will be generated as a result of this procedure.
 	step         string             // The current step.
 	node         *Node              // DKG node we are running in.
 	nodeIndex    uint16             // Index of this node.
@@ -502,7 +502,7 @@ func (p *proc) doInitiatorStepSendReconstructCommits(acceptPeerMsgCh chan *peeri
 	ownIndex := uint16(distKeyShare.PriShare().I)
 	publicShares := make([]kyber.Point, groupSize)
 	publicShares[ownIndex] = p.node.suite.Point().Mul(distKeyShare.PriShare().V, nil)
-	p.dkShare, err = dks.NewDKShare(
+	p.dkShare, err = tcrypto.NewDKShare(
 		ownIndex,                  // Index
 		groupSize,                 // N
 		p.threshold,               // T

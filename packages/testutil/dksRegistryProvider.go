@@ -7,17 +7,17 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dks"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 // DkgRegistryProvider stands for a mock for dkg.RegistryProvider.
 type DkgRegistryProvider struct {
 	DB    map[string][]byte
-	Suite dks.Suite
+	Suite tcrypto.Suite
 }
 
 // NewDkgRegistryProvider creates new mocked DKG registry provider.
-func NewDkgRegistryProvider(suite dks.Suite) *DkgRegistryProvider {
+func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider {
 	return &DkgRegistryProvider{
 		DB:    map[string][]byte{},
 		Suite: suite,
@@ -25,7 +25,7 @@ func NewDkgRegistryProvider(suite dks.Suite) *DkgRegistryProvider {
 }
 
 // SaveDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) SaveDKShare(dkShare *dks.DKShare) error {
+func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	var err error
 	var dkShareBytes []byte
 	if dkShareBytes, err = dkShare.Bytes(); err != nil {
@@ -36,10 +36,10 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *dks.DKShare) error {
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*dks.DKShare, error) {
+func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*tcrypto.DKShare, error) {
 	var dkShareBytes = p.DB[chainID.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", chainID)
 	}
-	return dks.DKShareFromBytes(dkShareBytes, p.Suite)
+	return tcrypto.DKShareFromBytes(dkShareBytes, p.Suite)
 }

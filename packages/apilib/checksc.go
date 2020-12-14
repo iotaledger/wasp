@@ -4,6 +4,7 @@ package apilib
 // SPDX-License-Identifier: Apache-2.0
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -23,7 +23,7 @@ const prefix = "[checkSC] "
 // it loads the chainrecord from the first node in the list and uses CommitteeNodes from that
 // chainrecord to check the whole committee
 //goland:noinspection ALL
-func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io.Writer) bool {
+func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {
@@ -35,7 +35,7 @@ func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io
 			out = ioutil.Discard
 		}
 	}
-	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", chainid.String())
+	fmt.Fprintf(out, prefix+"checking deployment of smart contract at address %s\n", chainID.String())
 	var err error
 	var missing bool
 	fmt.Fprintf(out, prefix+"loading chainrecord record from hosts %+v\n", apiHosts)
@@ -44,7 +44,7 @@ func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io
 
 	bdRecords := make([]*registry.ChainRecord, len(apiHosts))
 	for i, host := range apiHosts {
-		bdRecords[i], err = client.NewWaspClient(host).GetChainRecord(chainid)
+		bdRecords[i], err = client.NewWaspClient(host).GetChainRecord(chainID)
 		if err != nil {
 			fmt.Fprintf(out, prefix+"%2d: %s -> %v\n", i, host, err)
 			ret = false
@@ -52,14 +52,14 @@ func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io
 			continue
 		}
 		if client.IsNotFound(err) {
-			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord for %s does not exist\n", i, host, chainid.String())
+			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord for %s does not exist\n", i, host, chainID.String())
 			ret = false
 			missing = true
 			continue
 		}
-		if bdRecords[i].ChainID != chainid {
+		if bdRecords[i].ChainID != chainID {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the chainrecord. Expected %s, got %s\n",
-				i, host, chainid.String(), bdRecords[i].ChainID.String())
+				i, host, chainID.String(), bdRecords[i].ChainID.String())
 			ret = false
 			missing = true
 			continue
@@ -89,7 +89,7 @@ func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io
 			ret = false
 			continue
 		}
-		if bd.ChainID != chainid {
+		if bd.ChainID != chainID {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the chain record\n",
 				i, host, bd.ChainID.String())
 			ret = false
@@ -106,29 +106,28 @@ func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	scAddr := (address.Address)(chainid)
-	resps, err := multiclient.New(apiHosts).GetPublicKeyInfo(&scAddr)
+	dkShares, err := multiclient.New(apiHosts).DKSharesGet(&chainID)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())
 		return false
 	}
 
-	var keyExample *client.PubKeyInfo
-	for i := range resps {
-		keyExample = resps[i]
+	var keyExample *client.DKSharesInfo
+	for i := range dkShares {
+		keyExample = dkShares[i]
 		fmt.Fprintf(out, prefix+"public key info example was taken from %s:\n%s\n", apiHosts[i], publicKeyInfoToString(keyExample))
 		break
 	}
-	for i, resp := range resps {
+	for i, dkShare := range dkShares {
 		host := apiHosts[i]
-		if !consistentPublicKeyInfo(keyExample, resp) {
+		if !consistentPublicKeyInfo(keyExample, dkShare) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key info. Expected consistent with example, got \n%v\n",
-				i, host, resp)
+				i, host, dkShare)
 			ret = false
 			continue
 		}
-		if i != int(resp.Index) {
-			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key index. Expected %d, got %d\n", i, host, i, resps[i].Index)
+		if dkShare.PeerIndex == nil || i != int(*dkShare.PeerIndex) {
+			fmt.Fprintf(out, prefix+"%2d: %s -> wrong key index. Expected %d, got %d\n", i, host, i, dkShares[i].PeerIndex)
 			ret = false
 			continue
 		}
@@ -138,35 +137,35 @@ func CheckDeployment(apiHosts []string, chainid coretypes.ChainID, textout ...io
 	return ret
 }
 
-func consistentPublicKeyInfo(pki1, pki2 *client.PubKeyInfo) bool {
-	if *pki1.Address.Address() != *pki2.Address.Address() {
+func consistentPublicKeyInfo(pki1, pki2 *client.DKSharesInfo) bool {
+	if pki1.ChainID != pki2.ChainID {
 		return false
 	}
-	if pki1.PubKeyMaster != pki2.PubKeyMaster {
+	if pki1.Address != pki2.Address {
 		return false
 	}
-	if pki1.N != pki2.N {
+	if !bytes.Equal(pki1.SharedPubKey, pki2.SharedPubKey) {
 		return false
 	}
-	if pki1.T != pki2.T {
+	if pki1.Threshold != pki2.Threshold {
 		return false
 	}
-	if len(pki1.PubKeys) != len(pki2.PubKeys) {
+	if len(pki1.PubKeyShares) != len(pki2.PubKeyShares) {
 		return false
 	}
-	for i := range pki1.PubKeys {
-		if pki1.PubKeys[i] != pki2.PubKeys[i] {
+	for i := range pki1.PubKeyShares {
+		if !bytes.Equal(pki1.PubKeyShares[i], pki2.PubKeyShares[i]) {
 			return false
 		}
 	}
 	return true
 }
 
-func publicKeyInfoToString(pki *client.PubKeyInfo) string {
-	ret := fmt.Sprintf("    Master public key: %s\n", pki.PubKeyMaster)
-	ret += fmt.Sprintf("    N: %d\n", pki.N)
-	ret += fmt.Sprintf("    T: %d\n", pki.T)
-	ret += fmt.Sprintf("    Public keys: %+v\n", pki.PubKeys)
+func publicKeyInfoToString(pki *client.DKSharesInfo) string {
+	ret := fmt.Sprintf("    Master public key: %s\n", pki.SharedPubKey)
+	ret += fmt.Sprintf("    N: %d\n", len(pki.PubKeyShares))
+	ret += fmt.Sprintf("    T: %d\n", pki.Threshold)
+	ret += fmt.Sprintf("    Public keys: %+v\n", pki.PubKeyShares)
 	return ret
 }
 
