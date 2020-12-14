@@ -11,7 +11,6 @@ import (
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"github.com/labstack/gommon/log"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/util/key"
 )
@@ -28,6 +27,7 @@ var (
 func Init(suite *pairing.SuiteBn256) *node.Plugin {
 	configure := func(_ *node.Plugin) {
 		var err error
+		var log = logger.NewLogger(pluginName)
 		var nodeKeyPair *key.Pair
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
 			panic(err)
@@ -37,7 +37,7 @@ func Init(suite *pairing.SuiteBn256) *node.Plugin {
 			parameters.GetInt(parameters.PeeringPort),
 			nodeKeyPair,
 			suite,
-			logger.NewLogger(pluginName),
+			log,
 		)
 		if err != nil {
 			panic(err)
