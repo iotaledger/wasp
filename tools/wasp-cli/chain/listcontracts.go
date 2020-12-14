@@ -7,7 +7,7 @@ import (
 )
 
 func listContractsCmd(args []string) {
-	ret, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetInfo, nil)
+	ret, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo, nil)
 	log.Check(err)
 	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(ret, root.VarContractRegistry))
 	log.Check(err)

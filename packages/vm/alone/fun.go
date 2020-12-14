@@ -150,7 +150,7 @@ func (ch *Chain) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, n
 }
 
 func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(root.Interface.Name, root.FuncGetInfo)
+	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Glb.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))

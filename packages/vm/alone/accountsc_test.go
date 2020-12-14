@@ -13,7 +13,7 @@ import (
 )
 
 func TestAccountsBase(t *testing.T) {
-	glb := New(t, true, false)
+	glb := New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 }

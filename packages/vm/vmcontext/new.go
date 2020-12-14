@@ -18,6 +18,7 @@ import (
 type VMContext struct {
 	// same for the block
 	chainID       coretypes.ChainID
+	chainOwnerID  coretypes.AgentID
 	processors    *processors.ProcessorCache
 	balances      map[valuetransaction.ID][]*balance.Balance
 	txBuilder     *statetxbuilder.Builder // mutated

@@ -128,7 +128,7 @@ func callView(chain chain.Chain, hname coretypes.Hname, fname string, params dic
 }
 
 func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
-	info, err := callView(chain, root.Interface.Hname(), root.FuncGetInfo, nil)
+	info, err := callView(chain, root.Interface.Hname(), root.FuncGetChainInfo, nil)
 	if err != nil {
 		err = fmt.Errorf("root view call failed: %v", err)
 		return
