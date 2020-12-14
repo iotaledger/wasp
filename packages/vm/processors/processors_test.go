@@ -13,8 +13,9 @@ import (
 func TestBasic(t *testing.T) {
 	p := MustNew()
 
+	rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
 	rootproc, err := p.GetOrCreateProcessor(
-		root.NewContractRecord(root.Interface, coretypes.AgentID{}),
+		&rec,
 		func(hashing.HashValue) (string, []byte, error) { return builtinvm.VMType, nil, nil },
 	)
 	assert.NoError(t, err)

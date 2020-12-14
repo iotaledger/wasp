@@ -30,7 +30,7 @@ func (ch *Chain) CheckBase() {
 	rootRec, err := ch.FindContract(root.Interface.Name)
 	require.NoError(ch.Glb.T, err)
 	emptyRootRecord := root.NewContractRecord(root.Interface, coretypes.AgentID{})
-	require.EqualValues(ch.Glb.T, root.EncodeContractRecord(emptyRootRecord), root.EncodeContractRecord(rootRec))
+	require.EqualValues(ch.Glb.T, root.EncodeContractRecord(&emptyRootRecord), root.EncodeContractRecord(rootRec))
 
 	accountsRec, err := ch.FindContract(accountsc.Interface.Name)
 	require.NoError(ch.Glb.T, err)

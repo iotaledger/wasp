@@ -62,14 +62,17 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("root.initialize.fail: registry not empty")
 	}
 	// record for root
-	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(NewContractRecord(Interface, coretypes.AgentID{})))
+	rec := NewContractRecord(Interface, coretypes.AgentID{})
+	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
 	// deploy blob
-	err = storeAndInitContract(ctx, NewContractRecord(blob.Interface, ctx.Caller()), nil)
+	rec = NewContractRecord(blob.Interface, ctx.Caller())
+	err = storeAndInitContract(ctx, &rec, nil)
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
 	// deploy accountsc
-	err = storeAndInitContract(ctx, NewContractRecord(accountsc.Interface, ctx.Caller()), nil)
+	rec = NewContractRecord(accountsc.Interface, ctx.Caller())
+	err = storeAndInitContract(ctx, &rec, nil)
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}

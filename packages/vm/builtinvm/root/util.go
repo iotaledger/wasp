@@ -18,7 +18,8 @@ func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, err
 	if retBin == nil {
 		if hname == Interface.Hname() {
 			// if not found and it is root, it means it is chain init --> return empty root record
-			return NewContractRecord(Interface, coretypes.AgentID{}), nil
+			rec := NewContractRecord(Interface, coretypes.AgentID{})
+			return &rec, nil
 		}
 		return nil, fmt.Errorf("root: contract %s not found", hname)
 	}

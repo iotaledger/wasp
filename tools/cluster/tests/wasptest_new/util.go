@@ -40,7 +40,8 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(root.NewContractRecord(root.Interface, coretypes.AgentID{}))))
+		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
 
 		crBytes = contractRegistry.GetAt(blob.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
