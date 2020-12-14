@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/mr-tron/base58"
 )
 
@@ -31,13 +32,13 @@ func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory Ob
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
 
-func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
+func GetScDictId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyId]
 	if !ok {
-		mapObj.Panic("GetMapObjectId: Invalid key")
+		mapObj.Panic("GetScDictId: Invalid key")
 	}
 	if typeId != mapObj.GetTypeId(keyId) {
-		mapObj.Panic("GetMapObjectId: Invalid type")
+		mapObj.Panic("GetScDictId: Invalid type")
 	}
 	return mapObj.FindOrMakeObjectId(keyId, factory)
 }
@@ -47,9 +48,11 @@ func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjF
 type ModelObject struct {
 	vm      *wasmProcessor
 	id      int32
+	isRoot  bool
 	keyId   int32
 	ownerId int32
-	root    bool
+	typeId  int32
+	Dict    kv.KVStore
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
@@ -61,16 +64,10 @@ func (o *ModelObject) InitObj(id int32, keyId int32, owner *ModelObject) {
 	o.keyId = keyId
 	o.ownerId = owner.id
 	if owner.id == 1 {
-		o.root = true
+		o.isRoot = true
 	}
 	o.vm = owner.vm
 	o.vm.Trace("InitObj %s", o.Name())
-}
-
-func (o *ModelObject) Panic(format string, args ...interface{}) {
-	err := o.Name() + "." + fmt.Sprintf(format, args...)
-	o.vm.LogText(err)
-	panic(err)
 }
 
 func (o *ModelObject) Exists(keyId int32) bool {
@@ -132,9 +129,17 @@ func (o *ModelObject) Name() string {
 }
 
 func (o *ModelObject) NestedKey() string {
-    if o.root { return "" }
+	if o.isRoot {
+		return ""
+	}
 	owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
 	return owner.NestedKey() + owner.Suffix(o.keyId)
+}
+
+func (o *ModelObject) Panic(format string, args ...interface{}) {
+	err := o.Name() + "." + fmt.Sprintf(format, args...)
+	o.vm.LogText(err)
+	panic(err)
 }
 
 func (o *ModelObject) SetBytes(keyId int32, value []byte) {
@@ -150,33 +155,14 @@ func (o *ModelObject) SetString(keyId int32, value string) {
 }
 
 func (o *ModelObject) Suffix(keyId int32) string {
+	if (o.typeId&OBJTYPE_ARRAY) != 0 {
+		return fmt.Sprintf("#%d", keyId)
+	}
 	bytes := o.vm.getKeyFromId(keyId)
 	if (keyId & KeyFromString) != 0 {
 		return "." + string(bytes)
 	}
 	return "." + base58.Encode(bytes)
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-type MapObject struct {
-	ModelObject
-	objects map[int32]int32
-}
-
-func (o *MapObject) InitObj(id int32, keyId int32, owner *ModelObject) {
-	o.ModelObject.InitObj(id, keyId, owner)
-	o.objects = make(map[int32]int32)
-}
-
-func (o *MapObject) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
-	objId, ok := o.objects[keyId]
-	if ok {
-		return objId
-	}
-	objId = o.MakeObjectId(keyId, factory)
-	o.objects[keyId] = objId
-	return objId
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -228,8 +214,4 @@ func (a *ArrayObject) GetTypeId(keyId int32) int32 {
 		return OBJTYPE_MAP
 	}
 	return -1
-}
-
-func (a *ArrayObject) Suffix(keyId int32) string {
-	return fmt.Sprintf("[%d]", keyId)
 }

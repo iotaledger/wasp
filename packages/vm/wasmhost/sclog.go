@@ -8,7 +8,7 @@ import (
 )
 
 type ScLogs struct {
-	MapObject
+	ScDict
 }
 
 func (o *ScLogs) Exists(keyId int32) bool {
@@ -17,7 +17,7 @@ func (o *ScLogs) Exists(keyId int32) bool {
 }
 
 func (o *ScLogs) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+	return GetScDictId(o, keyId, typeId, ObjFactories{
 		keyId: func() WaspObject { return &ScLog{} },
 	})
 }
@@ -76,7 +76,7 @@ func (a *ScLog) GetTypeId(keyId int32) int32 {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScLogEntry struct {
-	MapObject
+	ScDict
 	lines     *datatypes.MustTimestampedLog
 	timestamp int64
 }
@@ -90,7 +90,7 @@ func (o *ScLogEntry) GetBytes(keyId int32) []byte {
 	//case KeyData:
 	//	ts := o.lines.TakeTimeSlice(o.lines.Earliest(), o.lines.Latest())
 	//}
-	return o.MapObject.GetBytes(keyId)
+	return o.ScDict.GetBytes(keyId)
 }
 
 func (o *ScLogEntry) GetInt(keyId int32) int64 {
@@ -98,7 +98,7 @@ func (o *ScLogEntry) GetInt(keyId int32) int64 {
 	//case KeyTimestamp:
 	//	return o.lines.Latest()
 	//}
-	return o.MapObject.GetInt(keyId)
+	return o.ScDict.GetInt(keyId)
 }
 
 func (o *ScLogEntry) GetTypeId(keyId int32) int32 {

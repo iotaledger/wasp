@@ -8,7 +8,7 @@ import (
 )
 
 type ScBalances struct {
-	MapObject
+	ScDict
 	incoming bool
 }
 
@@ -27,7 +27,7 @@ func (o *ScBalances) GetBytes(keyId int32) []byte {
 		id := o.vm.ctx.RequestID()
 		return id[:32]
 	}
-	o.MapObject.GetBytes(keyId)
+	o.ScDict.GetBytes(keyId)
 	return balance.ColorNew[:]
 }
 

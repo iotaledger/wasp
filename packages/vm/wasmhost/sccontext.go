@@ -4,13 +4,13 @@
 package wasmhost
 
 type ScContext struct {
-	MapObject
+	ScDict
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
 	o := &ScContext{}
 	o.id = 1
-	o.root = true
+	o.isRoot = true
 	o.vm = vm
 	o.objects = make(map[int32]int32)
 	return o
@@ -34,7 +34,7 @@ func (o *ScContext) GetBytes(keyId int32) []byte {
 		id := o.vm.ctx.Caller()
 		return id.Bytes()
 	}
-	return o.MapObject.GetBytes(keyId)
+	return o.ScDict.GetBytes(keyId)
 }
 
 func (o *ScContext) GetInt(keyId int32) int64 {
@@ -42,26 +42,26 @@ func (o *ScContext) GetInt(keyId int32) int64 {
 	case KeyTimestamp:
 		return o.vm.ctx.GetTimestamp()
 	}
-	return o.MapObject.GetInt(keyId)
+	return o.ScDict.GetInt(keyId)
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	if keyId == KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (after on_load) this cannot be called any more
-		return o.MapObject.GetObjectId(keyId, typeId)
+		return o.ScDict.GetObjectId(keyId, typeId)
 	}
 
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+	return GetScDictId(o, keyId, typeId, ObjFactories{
 		KeyBalances:  func() WaspObject { return &ScBalances{} },
 		KeyCalls:     func() WaspObject { return &ScCalls{} },
 		KeyContract:  func() WaspObject { return &ScContract{} },
 		KeyExports:   func() WaspObject { return &ScExports{} },
 		KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
-		KeyParams:    func() WaspObject { return &ScDict{Dict: o.vm.Params()} },
+		KeyParams:    func() WaspObject { return NewScDict(o.vm.Params(), 0) },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
 		KeyResults:   func() WaspObject { return &ScDict{} },
-		KeyState:     func() WaspObject { return &ScState{} },
+		KeyState:     func() WaspObject { return NewScDict(o.vm.State(), 0) },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
 		KeyViews:     func() WaspObject { return &ScViews{} },

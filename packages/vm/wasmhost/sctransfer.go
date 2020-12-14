@@ -9,7 +9,7 @@ import (
 )
 
 type ScTransfer struct {
-	MapObject
+	ScDict
 	agent coretypes.AgentID
 }
 
@@ -34,7 +34,7 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 			panic("Invalid agent: " + err.Error())
 		}
 	default:
-		o.MapObject.SetBytes(keyId, value)
+		o.ScDict.SetBytes(keyId, value)
 	}
 }
 

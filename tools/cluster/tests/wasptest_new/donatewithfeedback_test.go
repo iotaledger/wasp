@@ -18,7 +18,7 @@ const dwfDescription = "Donate with feedback, a PoC smart contract"
 var dwfHname = coretypes.Hn(dwfName)
 
 func TestDwfDonateOnce(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	const numDonations = 1
 	al := alone.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")

@@ -14,7 +14,7 @@ import (
 )
 
 type ScCallInfo struct {
-	MapObject
+	ScDict
 	contract string
 	function string
 }
@@ -24,7 +24,7 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+	return GetScDictId(o, keyId, typeId, ObjFactories{
 		KeyParams:    func() WaspObject { return &ScDict{} },
 		KeyResults:   func() WaspObject { return &ScDict{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
@@ -90,7 +90,7 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 		}
 		o.Invoke()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
 
@@ -101,14 +101,14 @@ func (o *ScCallInfo) SetString(keyId int32, value string) {
 	case KeyFunction:
 		o.function = value
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScPostInfo struct {
-	MapObject
+	ScDict
 	chainId  *coretypes.ChainID
 	contract string
 	delay    uint32
@@ -120,7 +120,7 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+	return GetScDictId(o, keyId, typeId, ObjFactories{
 		KeyParams:    func() WaspObject { return &ScDict{} },
 		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
@@ -187,7 +187,7 @@ func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
 		}
 		o.chainId = &chainId
 	default:
-		o.MapObject.SetBytes(keyId, value)
+		o.ScDict.SetBytes(keyId, value)
 	}
 }
 
@@ -205,7 +205,7 @@ func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 		o.delay = uint32(value)
 		o.Invoke()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
 
@@ -216,14 +216,14 @@ func (o *ScPostInfo) SetString(keyId int32, value string) {
 	case KeyFunction:
 		o.function = value
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScViewInfo struct {
-	MapObject
+	ScDict
 	contract string
 	function string
 }
@@ -233,7 +233,7 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 }
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
+	return GetScDictId(o, keyId, typeId, ObjFactories{
 		KeyParams:  func() WaspObject { return &ScDict{} },
 		KeyResults: func() WaspObject { return &ScDict{} },
 	})
@@ -296,7 +296,7 @@ func (o *ScViewInfo) SetInt(keyId int32, value int64) {
 		}
 		o.Invoke()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
 
@@ -307,7 +307,7 @@ func (o *ScViewInfo) SetString(keyId int32, value string) {
 	case KeyFunction:
 		o.function = value
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }
 
@@ -380,12 +380,12 @@ func (a *ScViews) SetInt(keyId int32, value int64) {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScCallTransfers struct {
-	MapObject
+	ScDict
 	Transfers map[balance.Color]int64
 }
 
 func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ModelObject) {
-	o.MapObject.InitObj(id, keyId, owner)
+	o.ScDict.InitObj(id, keyId, owner)
 	o.Transfers = make(map[balance.Color]int64)
 }
 
