@@ -9,7 +9,7 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 )
 
 // CreateDKSharesRoute is relative to the AdminRoutePrefix.
@@ -18,8 +18,8 @@ func DKSharesPostRoute() string {
 }
 
 // GetDKSharesRoute is relative to the AdminRoutePrefix.
-func DKSharesGetRoute(address string) string {
-	return "dks/" + address
+func DKSharesGetRoute(sharedAddress string) string {
+	return "dks/" + sharedAddress
 }
 
 // DKSharesPostRequest is a POST request for creating new DKShare.
@@ -32,7 +32,6 @@ type DKSharesPostRequest struct {
 
 // DKSharesInfo stands for the DKShare representation, returned by the GET and POST methods.
 type DKSharesInfo struct {
-	ChainID      string   `json:"chainID"`      // The generated ChainID.
 	Address      string   `json:"address"`      // New generated shared address.
 	SharedPubKey []byte   `json:"sharedPubKey"` // Shared public key.
 	PubKeyShares [][]byte `json:"pubKeyShares"` // Public key shares for all the peers.
@@ -48,9 +47,9 @@ func (c *WaspClient) DKSharesPost(request *DKSharesPostRequest) (*DKSharesInfo, 
 }
 
 // DKSharesGet retrieves representation of an existing DKShare.
-func (c *WaspClient) DKSharesGet(chainID *coretypes.ChainID) (*DKSharesInfo, error) {
-	var chainIDStr = chainID.String()
+func (c *WaspClient) DKSharesGet(sharedAddress *address.Address) (*DKSharesInfo, error) {
+	var sharedAddressStr = sharedAddress.String()
 	var response DKSharesInfo
-	err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DKSharesGetRoute(chainIDStr), nil, &response)
+	err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DKSharesGetRoute(sharedAddressStr), nil, &response)
 	return &response, err
 }

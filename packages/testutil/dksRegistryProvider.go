@@ -6,7 +6,7 @@ package testutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
@@ -31,15 +31,15 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	if dkShareBytes, err = dkShare.Bytes(); err != nil {
 		return err
 	}
-	p.DB[dkShare.ChainID.String()] = dkShareBytes
+	p.DB[dkShare.Address.String()] = dkShareBytes
 	return nil
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(chainID *coretypes.ChainID) (*tcrypto.DKShare, error) {
-	var dkShareBytes = p.DB[chainID.String()]
+func (p *DkgRegistryProvider) LoadDKShare(sharedAddress *address.Address) (*tcrypto.DKShare, error) {
+	var dkShareBytes = p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {
-		return nil, fmt.Errorf("DKShare not found for %v", chainID)
+		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress)
 	}
 	return tcrypto.DKShareFromBytes(dkShareBytes, p.Suite)
 }

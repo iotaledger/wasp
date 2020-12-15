@@ -142,10 +142,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	if chainAddr, err = address.FromBase58(dkShares.Address); err != nil {
 		return nil, nil, nil, err
 	}
-	var chainID coretypes.ChainID
-	if chainID, err = coretypes.NewChainIDFromBase58(dkShares.ChainID); err != nil {
-		return nil, nil, nil, err
-	}
+	var chainID coretypes.ChainID = coretypes.ChainID(chainAddr) // That's temporary, a color should be used later.
 
 	// ----------- request owner address' outputs from the ledger
 	allOuts, err := par.Node.GetConfirmedAccountOutputs(&originatorAddr)

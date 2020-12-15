@@ -67,13 +67,13 @@ func newCommitteeObj(
 	var err error
 	log.Debugw("creating committee", "addr", chr.ChainID.String())
 
-	addr := chr.ChainID
+	addr := chr.ChainID.Address()
 	if util.ContainsDuplicates(chr.CommitteeNodes) {
 		log.Errorf("can't create chain object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
 			addr.String(), chr.CommitteeNodes)
 		return nil
 	}
-	dkshare, err := dksProvider.LoadDKShare(&chr.ChainID)
+	dkshare, err := dksProvider.LoadDKShare(&addr)
 	if err != nil {
 		log.Error(err)
 		return nil

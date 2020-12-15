@@ -6,7 +6,7 @@ package registry
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/database"
 )
@@ -15,7 +15,7 @@ import (
 func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	var err error
 	var exists bool
-	dbKey := dbKeyForDKShare(dkShare.ChainID)
+	dbKey := dbKeyForDKShare(dkShare.Address)
 	kvStore := database.GetRegistryPartition()
 	if exists, err = kvStore.Has(dbKey); err != nil {
 		return err
@@ -32,14 +32,14 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (r *Impl) LoadDKShare(chainID *coretypes.ChainID) (*tcrypto.DKShare, error) {
-	data, err := database.GetRegistryPartition().Get(dbKeyForDKShare(chainID))
+func (r *Impl) LoadDKShare(sharedAddress *address.Address) (*tcrypto.DKShare, error) {
+	data, err := database.GetRegistryPartition().Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		return nil, err
 	}
 	return tcrypto.DKShareFromBytes(data, r.suite)
 }
 
-func dbKeyForDKShare(chainID *coretypes.ChainID) []byte {
-	return database.MakeKey(database.ObjectTypeDistributedKeyData, chainID.Bytes())
+func dbKeyForDKShare(sharedAddress *address.Address) []byte {
+	return database.MakeKey(database.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
 }

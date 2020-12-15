@@ -168,12 +168,11 @@ func (n *Node) GenerateDistributedKey(
 	); err != nil {
 		return nil, err
 	}
-	chainID := pubShareResponses[0].chainID
 	sharedAddress := pubShareResponses[0].sharedAddress
 	sharedPublic := pubShareResponses[0].sharedPublic
 	publicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if !chainID.Equal(pubShareResponses[i].chainID) {
+		if *sharedAddress != *pubShareResponses[i].sharedAddress {
 			return nil, fmt.Errorf("nodes generated different addresses")
 		}
 		if !sharedPublic.Equal(pubShareResponses[i].sharedPublic) {
@@ -196,7 +195,7 @@ func (n *Node) GenerateDistributedKey(
 			}
 		}
 	}
-	n.log.Debugf("Generated ChainID=%v, shared public key: %v", chainID, sharedPublic)
+	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, sharedPublic)
 	//
 	// Commit the keys to persistent storage.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
@@ -210,7 +209,6 @@ func (n *Node) GenerateDistributedKey(
 		return nil, err
 	}
 	dkShare := tcrypto.DKShare{
-		ChainID:       chainID,
 		Address:       sharedAddress,
 		N:             peerCount,
 		T:             threshold,

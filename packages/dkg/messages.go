@@ -315,7 +315,6 @@ func (m *initiatorDoneMsg) IsResponse() bool {
 //
 type initiatorPubShareMsg struct {
 	step          byte
-	chainID       *coretypes.ChainID
 	sharedAddress *address.Address
 	sharedPublic  kyber.Point
 	publicShare   kyber.Point
@@ -329,9 +328,6 @@ func (m *initiatorPubShareMsg) MsgType() byte {
 func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
-		return err
-	}
-	if err = m.chainID.Write(w); err != nil {
 		return err
 	}
 	if err = util.WriteBytes16(w, m.sharedAddress.Bytes()); err != nil {
@@ -351,11 +347,6 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	newChainID := coretypes.NilChainID // Make a copy.
-	m.chainID = &newChainID
-	if err = m.chainID.Read(r); err != nil {
 		return err
 	}
 	var sharedAddressBin []byte

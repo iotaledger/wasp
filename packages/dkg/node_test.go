@@ -64,7 +64,6 @@ func TestBn256(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.ChainID)
 	require.NotNil(t, dkShare.Address)
 	require.NotNil(t, dkShare.SharedPublic)
 }
@@ -113,7 +112,6 @@ func TestBn256NoPubs(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.ChainID)
 	require.NotNil(t, dkShare.Address)
 	require.NotNil(t, dkShare.SharedPublic)
 }

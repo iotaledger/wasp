@@ -565,7 +565,6 @@ func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error
 	}
 	return &initiatorPubShareMsg{
 		step:          step,
-		chainID:       p.dkShare.ChainID,
 		sharedAddress: p.dkShare.Address,
 		sharedPublic:  p.dkShare.SharedPublic,
 		publicShare:   p.dkShare.PublicShares[*p.dkShare.Index],

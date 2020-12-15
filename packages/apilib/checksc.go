@@ -106,7 +106,8 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	dkShares, err := multiclient.New(apiHosts).DKSharesGet(&chainID)
+	chainAddr := chainID.Address()
+	dkShares, err := multiclient.New(apiHosts).DKSharesGet(&chainAddr)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())
 		return false
@@ -138,9 +139,6 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 }
 
 func consistentPublicKeyInfo(pki1, pki2 *client.DKSharesInfo) bool {
-	if pki1.ChainID != pki2.ChainID {
-		return false
-	}
 	if pki1.Address != pki2.Address {
 		return false
 	}

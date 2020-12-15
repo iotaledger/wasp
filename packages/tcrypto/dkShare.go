@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -20,7 +19,6 @@ import (
 // DKShare stands for the information stored on
 // a node as a result of the DKG procedure.
 type DKShare struct {
-	ChainID       *coretypes.ChainID
 	Address       *address.Address
 	Index         *uint16 // nil, if the current node is not a member of a group sharing the key.
 	N             uint16
@@ -50,14 +48,9 @@ func NewDKShare(
 		return nil, err
 	}
 	var sharedAddress = address.FromBLSPubKey(pubBytes)
-	var chainID coretypes.ChainID
-	if chainID, err = coretypes.NewChainIDFromBytes(sharedAddress.Bytes()); err != nil {
-		return nil, err
-	}
 	//
 	// Construct the DKShare.
 	dkShare := DKShare{
-		ChainID:       &chainID,
 		Address:       &sharedAddress,
 		Index:         &index,
 		N:             n,
@@ -91,9 +84,6 @@ func (s *DKShare) Bytes() ([]byte, error) {
 // Write returns byte representation of this struct.
 func (s *DKShare) Write(w io.Writer) error {
 	var err error
-	if err = s.ChainID.Write(w); err != nil {
-		return err
-	}
 	if err = util.WriteBytes16(w, s.Address.Bytes()); err != nil {
 		return err
 	}
@@ -127,11 +117,6 @@ func (s *DKShare) Write(w io.Writer) error {
 
 func (s *DKShare) Read(r io.Reader) error {
 	var err error
-	chainID := coretypes.NilChainID // Make a copy.
-	if err = chainID.Read(r); err != nil {
-		return err
-	}
-	s.ChainID = &chainID
 	var addr address.Address
 	var addrBytes []byte
 	if addrBytes, err = util.ReadBytes16(r); err != nil {

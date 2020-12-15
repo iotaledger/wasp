@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -22,7 +22,7 @@ import (
 
 func addDKSharesEndpoints(adm *echo.Group) {
 	adm.POST("/"+client.DKSharesPostRoute(), handleDKSharesPost)
-	adm.GET("/"+client.DKSharesGetRoute(":chainID"), handleDKSharesGet)
+	adm.GET("/"+client.DKSharesGetRoute(":sharedAddress"), handleDKSharesGet)
 }
 
 func handleDKSharesPost(c echo.Context) error {
@@ -71,11 +71,11 @@ func handleDKSharesPost(c echo.Context) error {
 func handleDKSharesGet(c echo.Context) error {
 	var err error
 	var dkShare *tcrypto.DKShare
-	var chainID coretypes.ChainID
-	if chainID, err = coretypes.NewChainIDFromBase58(c.Param("chainID")); err != nil {
+	var sharedAddress address.Address
+	if sharedAddress, err = address.FromBase58(c.Param("sharedAddress")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
-	if dkShare, err = registry.DefaultRegistry().LoadDKShare(&chainID); err != nil {
+	if dkShare, err = registry.DefaultRegistry().LoadDKShare(&sharedAddress); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	var response *client.DKSharesInfo
@@ -101,7 +101,6 @@ func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*client.DKSharesInfo, error) {
 	}
 
 	return &client.DKSharesInfo{
-		ChainID:      dkShare.ChainID.String(),
 		Address:      dkShare.Address.String(),
 		SharedPubKey: sharedPubKeyBin,
 		PubKeyShares: pubKeySharesBin,
