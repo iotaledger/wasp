@@ -14,7 +14,7 @@ type ScTransfer struct {
 }
 
 func (o *ScTransfer) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScTransfer) GetTypeId(keyId int32) int32 {

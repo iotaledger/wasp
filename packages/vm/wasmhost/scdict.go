@@ -48,15 +48,15 @@ func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjF
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDict struct {
-	vm      *wasmProcessor
 	id      int32
 	isRoot  bool
 	keyId   int32
+	kvStore kv.KVStore
+	objects map[int32]int32
 	ownerId int32
 	typeId  int32
-	Dict    kv.KVStore
-	objects map[int32]int32
 	types   map[int32]int32
+	vm      *wasmProcessor
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
@@ -67,17 +67,13 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.id = id
 	o.keyId = keyId
 	o.ownerId = owner.id
-	if owner.id == 1 {
-		o.isRoot = true
-	}
+	o.isRoot = owner.id == 1
 	o.vm = owner.vm
 	o.vm.Trace("InitObj %s", o.Name())
-	if o.Dict == nil {
-		o.Dict = dict.New()
+	if o.kvStore == nil {
+		o.kvStore = dict.New()
 	}
-	if o.typeId == 0 {
-		o.typeId = o.vm.FindObject(owner.id).GetTypeId(keyId)
-	}
+	o.typeId = o.vm.FindObject(owner.id).GetTypeId(keyId)
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
 }
@@ -86,10 +82,7 @@ func (o *ScDict) Exists(keyId int32) bool {
 	if (o.typeId & OBJTYPE_ARRAY) != 0 {
 		return uint32(keyId) <= uint32(len(o.objects))
 	}
-	suffix := o.Suffix(keyId)
-	key := o.NestedKey() + suffix
-	o.vm.Trace("Exists:%s, key %s", o.Name()+suffix, key)
-	return o.Dict.MustHas(kv.Key(key[1:]))
+	return o.kvStore.MustHas(o.key(keyId, -1))
 }
 
 func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
@@ -97,21 +90,23 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	if ok {
 		return objId
 	}
-	objId = o.MakeObjectId(keyId, factory)
+	newObject := factory()
+	objId = o.vm.TrackObject(newObject)
+	newObject.InitObj(objId, keyId, o)
 	o.objects[keyId] = objId
 	return objId
 }
 
 func (o *ScDict) GetBytes(keyId int32) []byte {
 	//TODO what about AGENT/ADDRESS/COLOR?
-	return o.GetTypedBytes(keyId, OBJTYPE_BYTES)
+	return o.kvStore.MustGet(o.key(keyId, OBJTYPE_BYTES))
 }
 
 func (o *ScDict) GetInt(keyId int32) int64 {
 	if (o.typeId&OBJTYPE_ARRAY) != 0 && keyId == KeyLength {
 		return int64(len(o.objects))
 	}
-	bytes := o.GetTypedBytes(keyId, OBJTYPE_INT)
+	bytes := o.kvStore.MustGet(o.key(keyId, OBJTYPE_INT))
 	value, _, err := codec.DecodeInt64(bytes)
 	if err != nil {
 		o.Panic("GetInt: %v", err)
@@ -125,25 +120,17 @@ func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 		o.Panic("GetObjectId: Invalid type")
 	}
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		keyId: func() WaspObject { return &ScDict{Dict: o.Dict} },
+		keyId: func() WaspObject { return &ScDict{kvStore: o.kvStore} },
 	})
 }
 
 func (o *ScDict) GetString(keyId int32) string {
-	bytes := o.GetTypedBytes(keyId, OBJTYPE_STRING)
+	bytes := o.kvStore.MustGet(o.key(keyId, OBJTYPE_STRING))
 	value, _, err := codec.DecodeString(bytes)
 	if err != nil {
 		o.Panic("GetString: %v", err)
 	}
 	return value
-}
-
-func (o *ScDict) GetTypedBytes(keyId int32, typeId int32) []byte {
-	o.validate(keyId, typeId)
-	suffix := o.Suffix(keyId)
-	key := o.NestedKey() + suffix
-	o.vm.Trace("GetTypedBytes: %s, key %s", o.Name()+suffix, key)
-	return o.Dict.MustGet(kv.Key(key[1:]))
 }
 
 func (o *ScDict) GetTypeId(keyId int32) int32 {
@@ -158,11 +145,12 @@ func (o *ScDict) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
-func (o *ScDict) MakeObjectId(keyId int32, factory ObjFactory) int32 {
-	newObject := factory()
-	objId := o.vm.TrackObject(newObject)
-	newObject.InitObj(objId, keyId, o)
-	return objId
+func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
+	o.validate(keyId, typeId)
+	suffix := o.Suffix(keyId)
+	key := o.NestedKey() + suffix
+	o.vm.Trace("key: %s", o.Name()+suffix)
+	return kv.Key(key[1:])
 }
 
 func (o *ScDict) Name() string {
@@ -197,30 +185,22 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 
 func (o *ScDict) SetBytes(keyId int32, value []byte) {
 	//TODO what about AGENT/ADDRESS/COLOR?
-	o.SetTypedBytes(keyId, OBJTYPE_BYTES, value)
+	o.kvStore.Set(o.key(keyId, OBJTYPE_BYTES), value)
 }
 
 func (o *ScDict) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyLength:
-		//TODO
-		o.Dict = dict.New()
+		//TODO this goes wrong for state, should clear map instead
+		o.kvStore = dict.New()
 		o.objects = make(map[int32]int32)
 	default:
-		o.SetTypedBytes(keyId, OBJTYPE_INT, codec.EncodeInt64(value))
+		o.kvStore.Set(o.key(keyId, OBJTYPE_INT), codec.EncodeInt64(value))
 	}
 }
 
 func (o *ScDict) SetString(keyId int32, value string) {
-	o.SetTypedBytes(keyId, OBJTYPE_STRING, codec.EncodeString(value))
-}
-
-func (o *ScDict) SetTypedBytes(keyId int32, typeId int32, value []byte) {
-	o.validate(keyId, typeId)
-	suffix := o.Suffix(keyId)
-	key := o.NestedKey() + suffix
-	o.vm.Trace("SetTypedBytes: %s, key %s", o.Name()+suffix, key)
-	o.Dict.Set(kv.Key(key[1:]), value)
+	o.kvStore.Set(o.key(keyId, OBJTYPE_STRING), codec.EncodeString(value))
 }
 
 func (o *ScDict) Suffix(keyId int32) string {
@@ -235,6 +215,9 @@ func (o *ScDict) Suffix(keyId int32) string {
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {
+	if typeId == -1 {
+		return
+	}
 	if (o.typeId&OBJTYPE_ARRAY) != 0 && o.typeId != typeId {
 		// actually array
 		o.Panic("validate: Invalid type")

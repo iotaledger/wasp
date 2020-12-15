@@ -20,7 +20,7 @@ func (o *ScContext) Exists(keyId int32) bool {
 	if keyId == KeyExports {
 		return o.vm.ctx == nil && o.vm.ctxView == nil
 	}
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScContext) Finalize() {
@@ -58,10 +58,10 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyExports:   func() WaspObject { return &ScExports{} },
 		KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
-		KeyParams:    func() WaspObject { return &ScDict{Dict: o.vm.Params()} },
+		KeyParams:    func() WaspObject { return &ScDict{kvStore: o.vm.Params()} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
 		KeyResults:   func() WaspObject { return &ScDict{} },
-		KeyState:     func() WaspObject { return &ScDict{Dict: o.vm.State()} },
+		KeyState:     func() WaspObject { return &ScDict{kvStore: o.vm.State()} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
 		KeyViews:     func() WaspObject { return &ScViews{} },

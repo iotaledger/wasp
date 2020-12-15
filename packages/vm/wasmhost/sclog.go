@@ -82,7 +82,7 @@ type ScLogEntry struct {
 }
 
 func (o *ScLogEntry) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScLogEntry) GetBytes(keyId int32) []byte {
