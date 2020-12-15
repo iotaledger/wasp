@@ -12,15 +12,6 @@ func args(args ...interface{}) []interface{} {
 	return args
 }
 
-const maxLength = 150
-
-func trim(s string) string {
-	if len(s) > maxLength {
-		return s[0:maxLength] + "..."
-	}
-	return s
-}
-
 func formatTimestamp(ts interface{}) string {
 	t, ok := ts.(time.Time)
 	if !ok {
