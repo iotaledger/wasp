@@ -3,9 +3,10 @@ package database
 
 import (
 	"errors"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/parameters"
 
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/daemon"
@@ -15,8 +16,7 @@ import (
 	"github.com/iotaledger/hive.go/timeutil"
 )
 
-// Database is the name of the database plugin.
-const PluginName = "Database"
+const pluginName = "Database"
 
 var (
 	log *logger.Logger
@@ -26,8 +26,9 @@ var (
 	storeOnce sync.Once
 )
 
+// Init is an entry point for the plugin.
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -43,14 +44,14 @@ func configure(_ *node.Plugin) {
 	}
 
 	// we open the database in the configure, so we must also make sure it's closed here
-	err = daemon.BackgroundWorker(PluginName, closeDB, parameters.PriorityDatabase)
+	err = daemon.BackgroundWorker(pluginName, closeDB, parameters.PriorityDatabase)
 	if err != nil {
 		log.Panicf("Failed to start as daemon: %s", err)
 	}
 }
 
 func run(_ *node.Plugin) {
-	if err := daemon.BackgroundWorker(PluginName+"[GC]", runGC, parameters.PriorityBadgerGarbageCollection); err != nil {
+	if err := daemon.BackgroundWorker(pluginName+"[GC]", runGC, parameters.PriorityBadgerGarbageCollection); err != nil {
 		log.Errorf("Failed to start as daemon: %s", err)
 	}
 }

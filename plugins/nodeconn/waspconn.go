@@ -71,7 +71,7 @@ func nodeConnect() {
 	}))
 
 	if err := SendWaspIdToNode(); err == nil {
-		log.Debugf("sent own wasp id to node: %s", peering.MyNetworkId())
+		log.Debugf("sent own wasp id to node: %s", peering.DefaultNetworkProvider().Self().NetID())
 	} else {
 		log.Errorf("failed to send wasp id to node: %v", err)
 	}
@@ -101,7 +101,7 @@ func retryNodeConnect() {
 }
 
 func SendDataToNode(data []byte) error {
-	choppedData, chopped, err := messageChopper.ChopData(data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
+	choppedData, chopped, err := msgChopper.ChopData(data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
 	if err != nil {
 		return err
 	}

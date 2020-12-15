@@ -1,9 +1,13 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chainimpl
 
 import (
 	"bytes"
+
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 )
 
 func (c *chainObj) dispatchMessage(msg interface{}) {

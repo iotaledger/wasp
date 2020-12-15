@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -103,7 +106,7 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 }
 
 func (op *operator) peerIndex() uint16 {
-	return op.dkshare.Index
+	return *op.dkshare.Index
 }
 
 func (op *operator) quorum() uint16 {

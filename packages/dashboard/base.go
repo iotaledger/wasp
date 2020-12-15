@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package dashboard
 
 import (
@@ -43,7 +46,7 @@ func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
 	return BaseTemplateParams{
 		NavPages:    navPages,
 		ActivePage:  activePage,
-		MyNetworkId: peering.MyNetworkId(),
+		MyNetworkId: peering.DefaultNetworkProvider().Self().NetID(),
 	}
 }
 

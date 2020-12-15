@@ -32,7 +32,7 @@ func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
 	return
 }
 
-// NewChainIDFromBytes constructor unmarshals bytes
+// NewChainIDFromBytes constructor reconstructs a ChainID from its binary representation.
 func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
@@ -40,7 +40,7 @@ func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 
 // NewRandomChainID constructor creates a random chain ID.
 func NewRandomChainID() ChainID {
-	return (ChainID)(address.RandomOfType(address.VersionBLS))
+	return ChainID(address.RandomOfType(address.VersionBLS))
 }
 
 // Bytes returns a serialized version of this ChainID.
@@ -73,4 +73,9 @@ func (chid *ChainID) Read(r io.Reader) error {
 		return ErrWrongDataLength
 	}
 	return nil
+}
+
+// Equal does what it should.
+func (chid *ChainID) Equal(other *ChainID) bool {
+	return other != nil && bytes.Equal(chid.Bytes(), other.Bytes())
 }

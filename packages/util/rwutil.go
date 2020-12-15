@@ -1,13 +1,15 @@
 package util
 
 import (
+	"encoding"
 	"encoding/binary"
+	"io"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
-	"io"
-	"time"
 )
 
 func WriteByte(w io.Writer, val byte) error {
@@ -304,6 +306,32 @@ func ReadHashValue(r io.Reader, h *hashing.HashValue) error {
 	}
 	if n != hashing.HashSize {
 		return errors.New("error while reading hash")
+	}
+	return nil
+}
+
+// WriteMarshaled supports kyber.Point, kyber.Scalar and similar.
+func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
+	var err error
+	var bin []byte
+	if bin, err = val.MarshalBinary(); err != nil {
+		return err
+	}
+	if err = WriteBytes16(w, bin); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ReadMarshaled supports kyber.Point, kyber.Scalar and similar.
+func ReadMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
+	var err error
+	var bin []byte
+	if bin, err = ReadBytes16(r); err != nil {
+		return err
+	}
+	if err = val.UnmarshalBinary(bin); err != nil {
+		return err
 	}
 	return nil
 }

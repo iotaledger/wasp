@@ -6,6 +6,8 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -22,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 )
 
 //goland:noinspection ALL

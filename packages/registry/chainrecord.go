@@ -3,6 +3,8 @@ package registry
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -10,11 +12,10 @@ import (
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/mr-tron/base58"
-	"io"
 )
 
 // ChainRecord is a minimum data needed to load a committee for the chain
-// it is up to the node (not smart contract) to check authorisations to create/update this record
+// it is up to the node (not smart contract) to check authorizations to create/update this record
 type ChainRecord struct {
 	ChainID        coretypes.ChainID
 	Color          balance.Color // origin tx hash

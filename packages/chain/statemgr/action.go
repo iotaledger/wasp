@@ -1,7 +1,13 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package statemgr
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -9,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/publisher"
-	"strconv"
-	"time"
 )
 
 func (sm *stateManager) takeAction() {

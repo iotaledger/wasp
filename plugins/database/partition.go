@@ -24,6 +24,7 @@ const (
 	ObjectTypeStateVariable
 	ObjectTypeProgramMetadata
 	ObjectTypeProgramCode
+	ObjectTypeNodeIdentity
 )
 
 type Partition struct {
@@ -101,7 +102,7 @@ func MakeKey(objType byte, keyBytes ...[]byte) []byte {
 }
 
 func createStore() {
-	log = logger.NewLogger(PluginName)
+	log = logger.NewLogger(pluginName)
 
 	var err error
 	if parameters.GetBool(parameters.DatabaseInMemory) {

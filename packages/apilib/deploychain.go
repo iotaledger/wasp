@@ -1,10 +1,13 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package apilib
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -15,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
 )
@@ -102,8 +106,10 @@ func DeactivateChain(par ActivateChainParams) error {
 }
 
 // DeployChain performs all actions needed to deploy the chain
+// TODO: [KP] Shouldn't that be in the client packages?
 // noinspection ALL
 func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
+	var err error
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
@@ -117,15 +123,26 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	fmt.Fprint(textout, par.Prefix)
 
 	// ----------- run DKG on committee nodes
-	chainAddr, err := GenerateNewDistributedKeySet(par.CommitteeApiHosts, par.N, par.T)
-
+	var dkgInitiatorIndex = rand.Intn(len(par.CommitteeApiHosts))
+	var dkShares *client.DKSharesInfo
+	dkShares, err = client.NewWaspClient(par.CommitteeApiHosts[dkgInitiatorIndex]).DKSharesPost(&client.DKSharesPostRequest{
+		PeerNetIDs:  par.CommitteePeeringHosts,
+		PeerPubKeys: nil,
+		Threshold:   par.T,
+		TimeoutMS:   60000, // 1 min
+	})
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "generating distributed key set.. FAILED: %v\n", err)
 		return nil, nil, nil, err
 	} else {
-		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", chainAddr.String())
+		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", dkShares.Address)
 	}
+	var chainAddr address.Address
+	if chainAddr, err = address.FromBase58(dkShares.Address); err != nil {
+		return nil, nil, nil, err
+	}
+	var chainID coretypes.ChainID = coretypes.ChainID(chainAddr) // That's temporary, a color should be used later.
 
 	// ----------- request owner address' outputs from the ledger
 	allOuts, err := par.Node.GetConfirmedAccountOutputs(&originatorAddr)
@@ -140,7 +157,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	// ----------- create origin transaction
 	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
-		OriginAddress:             *chainAddr,
+		OriginAddress:             chainAddr,
 		OriginatorSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:                 allOuts,
 	})
@@ -165,11 +182,9 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	committee := multiclient.New(par.CommitteeApiHosts)
 
-	chainid := (coretypes.ChainID)(*chainAddr) // using address as chain id
-
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&registry.ChainRecord{
-		ChainID:        chainid,
+		ChainID:        chainID,
 		Color:          (balance.Color)(originTx.ID()),
 		CommitteeNodes: par.CommitteePeeringHosts,
 	})
@@ -182,7 +197,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 
 	// ------------- activate chain
-	err = committee.ActivateChain(&chainid)
+	err = committee.ActivateChain(&chainID)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
@@ -205,7 +220,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// NOTE: whoever send first init request, is an owner of the chain
 	// create root init transaction
 	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
-		ChainID:              chainid,
+		ChainID:              chainID,
 		OwnerSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:            allOuts,
 		Description:          par.Description,
@@ -236,7 +251,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	fmt.Fprint(textout, par.Prefix)
 
 	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, MustAddress: %s, Color: %s, N = %d, T = %d\n",
-		chainid.String(), chainAddr.String(), scColor.String(), par.N, par.T)
+		chainID.String(), chainAddr.String(), scColor.String(), par.N, par.T)
 
-	return &chainid, chainAddr, &scColor, err
+	return &chainID, &chainAddr, &scColor, err
 }

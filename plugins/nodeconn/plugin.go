@@ -1,6 +1,9 @@
 package nodeconn
 
 import (
+	"sync"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
@@ -9,8 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"sync"
-	"time"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -20,9 +21,9 @@ var (
 	log *logger.Logger
 
 	bconn             *buffconn.BufferedConnection
-	messageChopper    = chopper.NewChopper()
 	bconnMutex        = &sync.Mutex{}
 	subscriptions     = make(map[address.Address]balance.Color)
+	msgChopper        = chopper.NewChopper()
 	subscriptionsSent bool
 )
 

@@ -3,14 +3,15 @@ all: build
 build:
 	go build ./...
 
-build-dkg:
-	go build github.com/iotaledger/wasp/packages/dkg
-
 test:
-	go test ./...
+	go install
+	go clean -testcache
+	go test ./... -timeout 20m
 
-test-dkg:
-	go clean -testcache && go test -v -timeout 30s github.com/iotaledger/wasp/packages/dkg
+test-short:
+	go clean -testcache
+	go test --short ./...
 
-.PHONY: all build build-dkg test
+
+.PHONY: all build test test-short
 
