@@ -15,7 +15,7 @@ func callView(chain chain.Chain, hname coretypes.Hname, fname string, params dic
 		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
 	}
 
-	ret, err := vctx.CallView(hname, coretypes.Hn(fname), nil)
+	ret, err := vctx.CallView(hname, coretypes.Hn(fname), params)
 	if err != nil {
 		return nil, fmt.Errorf("root view call failed: %v", err)
 	}

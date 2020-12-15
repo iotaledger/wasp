@@ -12,9 +12,11 @@ func (n *chainsNavPage) Href() string  { return chainListRoute }
 func (n *chainsNavPage) AddTemplates(r renderer) {
 	r[chainListTplName] = MakeTemplate(tplChainList)
 	r[chainTplName] = MakeTemplate(tplChain)
+	r[chainAccountTplName] = MakeTemplate(tplChainAccount)
 }
 
 func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
 	addChainListEndpoints(e)
 	addChainEndpoints(e)
+	addChainAccountEndpoints(e)
 }

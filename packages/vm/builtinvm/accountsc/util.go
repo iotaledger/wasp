@@ -206,9 +206,29 @@ func MustCheckLedger(state kv.KVStore, checkpoint string) {
 func getAccountBalanceDict(ctx vmtypes.SandboxView, account *datatypes.MustMap, event string) dict.Dict {
 	balances := getAccountBalances(account)
 	ctx.Log().Debugf("%s. balance = %s\n", event, cbalances.NewFromMap(balances).String())
+	return EncodeBalances(balances)
+}
+
+func EncodeBalances(balances map[balance.Color]int64) dict.Dict {
 	ret := dict.New()
 	for col, bal := range balances {
 		ret.Set(kv.Key(col[:]), codec.EncodeInt64(bal))
 	}
 	return ret
+}
+
+func DecodeBalances(balances dict.Dict) (map[balance.Color]int64, error) {
+	ret := map[balance.Color]int64{}
+	for col, bal := range balances {
+		c, _, err := codec.DecodeColor([]byte(col))
+		if err != nil {
+			return nil, err
+		}
+		b, _, err := codec.DecodeInt64(bal)
+		if err != nil {
+			return nil, err
+		}
+		ret[*c] = b
+	}
+	return ret, nil
 }

@@ -2,9 +2,12 @@ package coretypes
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"github.com/mr-tron/base58"
 	"io"
+	"strings"
+
+	"github.com/mr-tron/base58"
 )
 
 const ContractIDLength = ChainIDLength + HnameLength
@@ -32,6 +35,25 @@ func NewContractIDFromBase58(base58string string) (ret ContractID, err error) {
 		return
 	}
 	return NewContractIDFromBytes(data)
+}
+
+// NewContractIDFromString parses the human-readable string representation
+func NewContractIDFromString(s string) (ret ContractID, err error) {
+	parts := strings.Split(s, "::")
+	if len(parts) != 2 {
+		err = errors.New("invalid ContractID")
+		return
+	}
+	chid, err := NewChainIDFromBase58(parts[0])
+	if err != nil {
+		return
+	}
+	cid, err := HnameFromString(parts[1])
+	if err != nil {
+		return
+	}
+	ret = NewContractID(chid, cid)
+	return
 }
 
 // ChainID ID of the native chain of the contract
