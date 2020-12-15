@@ -218,7 +218,7 @@ func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredB
 
 func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	return ch.getAccountBalance(
-		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalBalance),
+		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalAssets),
 	)
 }
 

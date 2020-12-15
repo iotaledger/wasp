@@ -168,7 +168,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 func getTotalBalance(t *testing.T, chain *cluster.Chain) map[balance.Color]int64 {
 	r, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(accountsc.Interface.Hname()),
-		accountsc.FuncTotalBalance,
+		accountsc.FuncTotalAssets,
 		nil,
 	)
 	check(err, t)

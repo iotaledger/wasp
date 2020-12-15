@@ -25,7 +25,7 @@ var (
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.ViewFunc(FuncBalance, getBalance),
-		contract.ViewFunc(FuncTotalBalance, getTotalBalance),
+		contract.ViewFunc(FuncTotalAssets, getTotalAssets),
 		contract.ViewFunc(FuncAccounts, getAccounts),
 		contract.Func(FuncDeposit, deposit),
 		contract.Func(FuncMove, move),
@@ -35,13 +35,13 @@ func init() {
 }
 
 const (
-	FuncBalance      = "balance"
-	FuncTotalBalance = "totalBalance"
-	FuncDeposit      = "deposit"
-	FuncMove         = "move"
-	FuncAllow        = "allow"
-	FuncWithdraw     = "withdraw"
-	FuncAccounts     = "accounts"
+	FuncBalance     = "balance"
+	FuncTotalAssets = "totalAssets"
+	FuncDeposit     = "deposit"
+	FuncMove        = "move"
+	FuncAllow       = "allow"
+	FuncWithdraw    = "withdraw"
+	FuncAccounts    = "accounts"
 
 	ParamAgentID = "a"
 	ParamColor   = "c"
