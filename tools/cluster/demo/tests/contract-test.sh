@@ -19,12 +19,12 @@ r=$(wasp-cli chain list-contracts)
 echo "$r"
 [[ $(echo "$r" | tail -n +5 | wc -l) == "4" ]]
 
-r=$(wasp-cli chain call-view "$name" incrementViewCounter | wasp-cli decode string counter int)
+r=$(wasp-cli chain call-view "$name" increment_view_counter | wasp-cli decode string counter int)
 [[ "$r" == "counter: 0" ]]
 
 wasp-cli chain post-request "$name" increment
 
-r=$(wasp-cli chain call-view "$name" incrementViewCounter | wasp-cli decode string counter int)
+r=$(wasp-cli chain call-view "$name" increment_view_counter | wasp-cli decode string counter int)
 [[ "$r" == "counter: 1" ]]
 
 echo "PASS"

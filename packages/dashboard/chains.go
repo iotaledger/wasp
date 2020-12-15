@@ -20,10 +20,6 @@ import (
 
 type chainsNavPage struct{}
 
-func initChains() NavPage {
-	return &chainsNavPage{}
-}
-
 const chainListRoute = "/chains"
 const chainListTplName = "chainList"
 
@@ -33,9 +29,9 @@ const chainTplName = "chain"
 func (n *chainsNavPage) Title() string { return "Chains" }
 func (n *chainsNavPage) Href() string  { return chainListRoute }
 
-func (n *chainsNavPage) AddTemplates(renderer Renderer) {
-	renderer[chainTplName] = MakeTemplate(tplChain)
-	renderer[chainListTplName] = MakeTemplate(tplChainList)
+func (n *chainsNavPage) AddTemplates(r renderer) {
+	r[chainTplName] = MakeTemplate(tplChain)
+	r[chainListTplName] = MakeTemplate(tplChainList)
 }
 
 func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
@@ -271,7 +267,7 @@ const tplChain = `
 
 			<hr/>
 			<div>
-				<h3>Accounts</h3>
+				<h3>On-chain accounts</h3>
 				<table>
 					<thead>
 						<tr>

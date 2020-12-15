@@ -9,18 +9,14 @@ import (
 
 type peeringNavPage struct{}
 
-func initPeering() NavPage {
-	return &peeringNavPage{}
-}
-
 const peeringRoute = "/peering"
 const peeringTplName = "peering"
 
 func (n *peeringNavPage) Title() string { return "Peering" }
 func (n *peeringNavPage) Href() string  { return peeringRoute }
 
-func (n *peeringNavPage) AddTemplates(renderer Renderer) {
-	renderer[peeringTplName] = MakeTemplate(tplPeering)
+func (n *peeringNavPage) AddTemplates(r renderer) {
+	r[peeringTplName] = MakeTemplate(tplPeering)
 }
 
 func (n *peeringNavPage) AddEndpoints(e *echo.Echo) {
