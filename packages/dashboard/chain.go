@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -56,6 +57,11 @@ func addChainEndpoints(e *echo.Echo) {
 			if err != nil {
 				return err
 			}
+
+			result.TotalAssets, err = fetchTotalAssets(chain)
+			if err != nil {
+				return err
+			}
 		}
 
 		return c.Render(http.StatusOK, chainTplName, result)
@@ -79,6 +85,14 @@ func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
 	return ret, nil
 }
 
+func fetchTotalAssets(chain chain.Chain) (map[balance.Color]int64, error) {
+	bal, err := callView(chain, accountsc.Interface.Hname(), accountsc.FuncTotalAssets, nil)
+	if err != nil {
+		return nil, err
+	}
+	return accountsc.DecodeBalances(bal)
+}
+
 type ChainTemplateParams struct {
 	BaseTemplateParams
 
@@ -88,6 +102,7 @@ type ChainTemplateParams struct {
 	Block       state.Block
 	RootInfo    RootInfo
 	Accounts    []coretypes.AgentID
+	TotalAssets map[balance.Color]int64
 	Committee   struct {
 		Size       uint16
 		Quorum     uint16
@@ -110,7 +125,7 @@ const tplChain = `
 			<p>Chain Color: <code>{{.ChainRecord.Color}}</code></p>
 			<p>Active: <code>{{.ChainRecord.Active}}</code></p>
 			{{if .ChainRecord.Active}}
-				<p>Owner ID: {{template "agentid" .RootInfo.OwnerID}}</p>
+				<p>Owner ID: {{template "agentid" (args .ChainID .RootInfo.OwnerID)}}</p>
 				<p>Description: <code>{{.RootInfo.Description}}</code></p>
 			{{end}}
 		</div>
@@ -148,13 +163,16 @@ const tplChain = `
 						</tr>
 					</thead>
 					<tbody>
+					{{ $chainid := .ChainID }}
 					{{range $_, $agentid := .Accounts}}
 						<tr>
-							<td>{{template "agentid" $agentid}}</td>
+							<td>{{template "agentid" (args $chainid $agentid)}}</td>
 						</tr>
 					{{end}}
 					</tbody>
 				</table>
+				<h4>Total assets</h4>
+				{{ template "balances" .TotalAssets }}
 			</div>
 
 			<hr/>

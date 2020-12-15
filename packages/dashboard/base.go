@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package dashboard
 
 import (
@@ -43,7 +46,7 @@ func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
 	return BaseTemplateParams{
 		NavPages:    navPages,
 		ActivePage:  activePage,
-		MyNetworkId: peering.MyNetworkId(),
+		MyNetworkId: peering.DefaultNetworkProvider().Self().NetID(),
 	}
 }
 
@@ -62,17 +65,42 @@ func MakeTemplate(parts ...string) *template.Template {
 
 const tplBase = `
 {{define "externalLink"}}
-	<a href="{{ index . 0 }}" style="font-size: small">🡽 {{ index . 1 }}</a>
+	<a href="{{ index . 0 }}" class="linkbtn">🡽 {{ index . 1 }}</a>
+{{end}}
+
+{{define "exploreAddressInTangle"}}
+	{{ template "externalLink" (args (exploreAddressUrl .) "Tangle") }}
 {{end}}
 
 {{define "address"}}
-	<code>{{.}}</code> {{ template "externalLink" (args (exploreAddressUrl .) "Tangle") }}
+	<code>{{.}}</code> {{ template "exploreAddressInTangle" . }}
 {{end}}
 
 {{define "agentid"}}
-	{{if .IsAddress}}{{template "address" .MustAddress}}
-	{{else}}<code>{{.}}</code>
-	{{end}}
+	{{ $chainid := index . 0 }}
+	{{ $agentid := index . 1 }}
+	<code>{{ $agentid }}</code>
+	<a href="/chains/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
+	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
+{{end}}
+
+{{define "balances"}}
+	<table>
+		<thead>
+			<tr>
+				<th class="align-right">Color</th>
+				<th class="align-right">Balance</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $color, $bal := .}}
+			<tr>
+				<td class="align-right"><tt>{{ $color }}</tt></td>
+				<td class="align-right"><tt>{{ $bal }}</tt></td>
+			</tr>
+		{{end}}
+		</tbody>
+	</table>
 {{end}}
 
 {{define "base"}}
@@ -91,7 +119,18 @@ const tplBase = `
 
 	<body>
 		<style>
-			details {background: #EEF9FF}
+			details {
+				background: #EEF9FF;
+			}
+			.linkbtn {
+				font-size: small;
+				border: 1px solid var(--nc-lk-1);
+				padding: 2px;
+				text-decoration: none;
+			}
+			.align-right {
+				text-align: right;
+			}
 		</style>
 		<header>
 			<h1>Wasp node dashboard</h1>
@@ -99,11 +138,13 @@ const tplBase = `
 				{{$activePage := .ActivePage}}
 				{{range $i, $p := .NavPages}}
 					{{if $i}} | {{end}}
-					{{if eq $activePage $p.Href}}
-						<strong>{{$p.Title}}</strong>
-					{{else}}
-						<a href="{{$p.Href}}">{{$p.Title}}</a>
-					{{end}}
+					<a href="{{$p.Href}}">
+						{{- if eq $activePage $p.Href -}}
+							<strong>{{$p.Title}}</strong>
+						{{- else -}}
+							{{$p.Title}}
+						{{- end -}}
+					</a>
 				{{end}}
 			</nav>
 		</header>

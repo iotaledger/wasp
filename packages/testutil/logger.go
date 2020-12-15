@@ -1,12 +1,13 @@
-package testutil
-
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+package testutil
+
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
-	"testing"
 
 	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/zap"

@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chain
 
 import (
@@ -5,23 +8,24 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
+// Message types for the committee communications.
 const (
-	MsgStateIndexPingPong      = 0 + peering.FirstCommitteeMsgCode
-	MsgNotifyRequests          = 1 + peering.FirstCommitteeMsgCode
-	MsgNotifyFinalResultPosted = 2 + peering.FirstCommitteeMsgCode
-	MsgStartProcessingRequest  = 3 + peering.FirstCommitteeMsgCode
-	MsgSignedHash              = 4 + peering.FirstCommitteeMsgCode
-	MsgGetBatch                = 5 + peering.FirstCommitteeMsgCode
-	MsgStateUpdate             = 6 + peering.FirstCommitteeMsgCode
-	MsgBatchHeader             = 7 + peering.FirstCommitteeMsgCode
-	MsgTestTrace               = 8 + peering.FirstCommitteeMsgCode
+	MsgStateIndexPingPong      = 0 + peering.FirstUserMsgCode
+	MsgNotifyRequests          = 1 + peering.FirstUserMsgCode
+	MsgNotifyFinalResultPosted = 2 + peering.FirstUserMsgCode
+	MsgStartProcessingRequest  = 3 + peering.FirstUserMsgCode
+	MsgSignedHash              = 4 + peering.FirstUserMsgCode
+	MsgGetBatch                = 5 + peering.FirstUserMsgCode
+	MsgStateUpdate             = 6 + peering.FirstUserMsgCode
+	MsgBatchHeader             = 7 + peering.FirstUserMsgCode
+	MsgTestTrace               = 8 + peering.FirstUserMsgCode
 )
 
 type TimerTick int

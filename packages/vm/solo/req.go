@@ -5,6 +5,10 @@ package solo
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
@@ -21,9 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"sync"
-	"time"
 )
 
 type callParams struct {

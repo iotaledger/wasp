@@ -4,6 +4,8 @@
 package testcore
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestAccountsBase(t *testing.T) {

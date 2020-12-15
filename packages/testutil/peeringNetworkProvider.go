@@ -1,11 +1,15 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package testutil
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering/group"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 )
@@ -17,28 +21,36 @@ type PeeringNetwork struct {
 	nodes     []*peeringNode
 	providers []*peeringNetworkProvider
 	bufSize   int
+	log       *logger.Logger
 }
 
 // NewPeeringNetworkForLocs creates a test network with new keys, etc.
-func NewPeeringNetworkForLocs(peerLocs []string, bufSize int) *PeeringNetwork {
+func NewPeeringNetworkForLocs(peerNetIDs []string, bufSize int, log *logger.Logger) *PeeringNetwork {
 	var suite = edwards25519.NewBlakeSHA256Ed25519() //bn256.NewSuite()
-	var peerPubs []kyber.Point = make([]kyber.Point, len(peerLocs))
-	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerLocs))
-	for i := range peerLocs {
+	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
+	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+	for i := range peerNetIDs {
 		peerSecs[i] = suite.Scalar().Pick(suite.RandomStream())
 		peerPubs[i] = suite.Point().Mul(peerSecs[i], nil)
 	}
-	return NewPeeringNetwork(peerLocs, peerPubs, peerSecs, bufSize)
+	return NewPeeringNetwork(peerNetIDs, peerPubs, peerSecs, bufSize, log)
 }
 
 // NewPeeringNetwork creates new test network, it can then be used to create network nodes.
-func NewPeeringNetwork(locations []string, pubKeys []kyber.Point, secKeys []kyber.Scalar, bufSize int) *PeeringNetwork {
+func NewPeeringNetwork(
+	locations []string,
+	pubKeys []kyber.Point,
+	secKeys []kyber.Scalar,
+	bufSize int,
+	log *logger.Logger,
+) *PeeringNetwork {
 	nodes := make([]*peeringNode, len(locations))
 	providers := make([]*peeringNetworkProvider, len(locations))
 	var network = PeeringNetwork{
 		nodes:     nodes,
 		providers: providers,
 		bufSize:   bufSize,
+		log:       log,
 	}
 	for i := range nodes {
 		nodes[i] = newPeeringNode(locations[i], pubKeys[i], secKeys[i], &network)
@@ -58,9 +70,9 @@ func (p *PeeringNetwork) NetworkProviders() []peering.NetworkProvider {
 	return copy
 }
 
-func (p *PeeringNetwork) nodeByLocation(nodeLoc string) *peeringNode {
+func (p *PeeringNetwork) nodeByNetID(nodeNetID string) *peeringNode {
 	for i := range p.nodes {
-		if p.nodes[i].location == nodeLoc {
+		if p.nodes[i].netID == nodeNetID {
 			return p.nodes[i]
 		}
 	}
@@ -73,45 +85,50 @@ func (p *PeeringNetwork) nodeByLocation(nodeLoc string) *peeringNode {
 // node should be known for the sender.
 //
 type peeringNode struct {
-	location string
-	pubKey   kyber.Point
-	secKey   kyber.Scalar
-	recvCh   chan peeringMsg
-	recvCbs  []*peeringCb
-	network  *PeeringNetwork
+	netID   string
+	pubKey  kyber.Point
+	secKey  kyber.Scalar
+	recvCh  chan peeringMsg
+	recvCbs []*peeringCb
+	network *PeeringNetwork
+	log     *logger.Logger
 }
 type peeringMsg struct {
 	from *peeringNode
 	msg  peering.PeerMessage
 }
 type peeringCb struct {
-	callback func(from peering.PeerSender, msg *peering.PeerMessage) // Receive callback.
-	destNP   *peeringNetworkProvider                                 // Destination node.
-	chainID  coretypes.ChainID                                       // Only listen for specific chain msgs.
+	callback func(recv *peering.RecvEvent) // Receive callback.
+	destNP   *peeringNetworkProvider       // Destination node.
+	chainID  *coretypes.ChainID            // Only listen for specific chain msgs.
 }
 
-func newPeeringNode(location string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
+func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
 	recvCh := make(chan peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
 	node := peeringNode{
-		location: location,
-		pubKey:   pubKey,
-		secKey:   secKey,
-		recvCh:   recvCh,
-		recvCbs:  recvCbs,
-		network:  network,
+		netID:   netID,
+		pubKey:  pubKey,
+		secKey:  secKey,
+		recvCh:  recvCh,
+		recvCbs: recvCbs,
+		network: network,
+		log:     network.log.With("loc", netID),
 	}
 	go func() { // Receive loop.
 		for {
 			var pm peeringMsg = <-recvCh
-			fmt.Printf(
-				"[%v] test.Net: received msgType=%v from=%v, chainID=%v\n",
-				node.location, pm.msg.MsgType, pm.from.location, pm.msg.ChainID,
+			node.log.Debugf(
+				"received msgType=%v from=%v, chainID=%v",
+				pm.msg.MsgType, pm.from.netID, pm.msg.ChainID,
 			)
 			msgChainID := pm.msg.ChainID.String()
 			for _, cb := range node.recvCbs {
-				if cb.chainID.String() == msgChainID {
-					cb.callback(cb.destNP.senderByLocation(pm.from.location), &pm.msg)
+				if cb.chainID == nil || cb.chainID.String() == msgChainID {
+					cb.callback(&peering.RecvEvent{
+						From: cb.destNP.senderByNetID(pm.from.netID),
+						Msg:  &pm.msg,
+					})
 				}
 			}
 		}
@@ -149,6 +166,11 @@ func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peer
 	return &netProvider
 }
 
+// Run implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) Run(stopCh <-chan struct{}) {
+	<-stopCh
+}
+
 // Self implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Self() peering.PeerSender {
 	return newPeeringSender(p.self, p)
@@ -156,40 +178,65 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 
 // Group implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvider, error) {
-	nodes := make([]*peeringNode, len(peerAddrs))
+	peers := make([]peering.PeerSender, len(peerAddrs))
 	for i := range peerAddrs {
-		n := p.network.nodeByLocation(peerAddrs[i])
+		n := p.network.nodeByNetID(peerAddrs[i])
 		if n == nil {
 			return nil, errors.New("unknown_node_location")
 		}
-		nodes[i] = n
+		peers[i] = p.senders[i]
 	}
-	group := newPeeringGroupProvider(p, nodes)
-	return group, nil
+	return group.NewPeeringGroupProvider(p, peers, p.network.log), nil
 }
 
 // Attach implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Attach(
-	chainID coretypes.ChainID,
-	callback func(from peering.PeerSender, msg *peering.PeerMessage),
-) {
+	chainID *coretypes.ChainID,
+	callback func(recv *peering.RecvEvent),
+) interface{} {
 	p.self.recvCbs = append(p.self.recvCbs, &peeringCb{
 		callback: callback,
 		destNP:   p,
 		chainID:  chainID,
 	})
+	return nil // We don't care on the attachIDs for now.
 }
 
-// SendByLocation implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) SendByLocation(peerLoc string, msg *peering.PeerMessage) {
-	if sender := p.senderByLocation(peerLoc); sender != nil {
-		sender.SendMsg(msg)
+// Detach implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) Detach(attachID interface{}) {
+	// Detach is not important in tests.
+}
+
+// PeerByNetID implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
+	if s := p.senderByNetID(peerNetID); s != nil {
+		return s, nil
 	}
+	return nil, errors.New("peer not found by NetID")
 }
 
-func (p *peeringNetworkProvider) senderByLocation(peerLoc string) *peeringSender {
+// PeerByNetID implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) {
 	for i := range p.senders {
-		if p.senders[i].node.location == peerLoc {
+		if p.senders[i].node.pubKey.Equal(peerPub) {
+			return p.senders[i], nil
+		}
+	}
+	return nil, errors.New("peer not found by pubKey")
+}
+
+// PeerStatus implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) PeerStatus() []peering.PeerStatusProvider {
+	peerStatus := make([]peering.PeerStatusProvider, len(p.senders))
+	for i := range peerStatus {
+		peerStatus[i] = p.senders[i]
+	}
+	return peerStatus
+}
+
+func (p *peeringNetworkProvider) senderByNetID(peerNetID string) *peeringSender {
+	for i := range p.senders {
+		if p.senders[i].node.netID == peerNetID {
 			return p.senders[i]
 		}
 	}
@@ -212,9 +259,9 @@ func newPeeringSender(node *peeringNode, netProvider *peeringNetworkProvider) *p
 	}
 }
 
-// Location implements peering.PeerSender.
-func (p *peeringSender) Location() string {
-	return p.node.location
+// NetID implements peering.PeerSender.
+func (p *peeringSender) NetID() string {
+	return p.node.netID
 }
 
 // PubKey implements peering.PeerSender.
@@ -227,54 +274,22 @@ func (p *peeringSender) SendMsg(msg *peering.PeerMessage) {
 	p.node.sendMsg(p.netProvider.self, msg)
 }
 
-//
-// peeringGroupProvider implements peering.GroupProvider
-//
-type peeringGroupProvider struct {
-	netProvider *peeringNetworkProvider
-	nodes       []*peeringNode
+// IsAlive implements peering.PeerSender.
+func (p *peeringSender) IsAlive() bool {
+	return true // Not needed in tests.
 }
 
-func newPeeringGroupProvider(netProvider *peeringNetworkProvider, nodes []*peeringNode) *peeringGroupProvider {
-	return &peeringGroupProvider{
-		netProvider: netProvider,
-		nodes:       nodes,
-	}
+// IsInbound implements peering.PeerStatusProvider.
+func (p *peeringSender) IsInbound() bool {
+	return true // Not needed in tests.
 }
 
-// PeerIndex implements peering.GroupProvider.
-func (p *peeringGroupProvider) PeerIndex(peer peering.PeerSender) (int, error) {
-	return p.PeerIndexByPub(peer.PubKey())
+// NumUsers implements peering.PeerStatusProvider.
+func (p *peeringSender) NumUsers() int {
+	return 0 // Not needed in tests.
 }
 
-// PeerIndexByLoc implements peering.GroupProvider.
-func (p *peeringGroupProvider) PeerIndexByLoc(peerLoc string) (int, error) {
-	for i := range p.nodes {
-		if p.nodes[i].location == peerLoc {
-			return i, nil
-		}
-	}
-	return -1, errors.New("peer_not_found_by_loc")
-}
-
-// PeerIndexByPub implements peering.GroupProvider.
-func (p *peeringGroupProvider) PeerIndexByPub(peerPub kyber.Point) (int, error) {
-	for i := range p.nodes {
-		if p.nodes[i].pubKey.Equal(peerPub) {
-			return i, nil
-		}
-	}
-	return -1, errors.New("peer_not_found_by_pub")
-}
-
-// Broadcast implements peering.GroupProvider.
-func (p *peeringGroupProvider) Broadcast(msg *peering.PeerMessage) {
-	for i := range p.nodes {
-		p.nodes[i].sendMsg(p.netProvider.self, msg)
-	}
-}
-
-// SendMsgByIndex implements peering.GroupProvider.
-func (p *peeringGroupProvider) SendMsgByIndex(peerIdx int, msg *peering.PeerMessage) {
-	p.nodes[peerIdx].sendMsg(p.netProvider.self, msg)
+// Send implements peering.PeerSender.
+func (p *peeringSender) Close() {
+	// Not needed in tests.
 }

@@ -89,6 +89,33 @@ func (a AgentID) String() string {
 	return "C-" + a.MustContractID().String()
 }
 
+// NewAgentIDFromString parses the human-readable string representation
+func NewAgentIDFromString(s string) (ret AgentID, err error) {
+	if len(s) < 2 {
+		err = errors.New("invalid length")
+		return
+	}
+	switch s[:2] {
+	case "A-":
+		var addr address.Address
+		addr, err = address.FromBase58(s[2:])
+		if err != nil {
+			return
+		}
+		return NewAgentIDFromAddress(addr), nil
+	case "C-":
+		var cid ContractID
+		cid, err = NewContractIDFromString(s[2:])
+		if err != nil {
+			return
+		}
+		return NewAgentIDFromContractID(cid), nil
+	default:
+		err = errors.New("invalid prefix")
+	}
+	return
+}
+
 // ReadAgentID reading/unmarshaling
 func ReadAgentID(r io.Reader, agentID *AgentID) error {
 	n, err := r.Read(agentID[:])

@@ -1,11 +1,15 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chainimpl
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/prometheus/common/log"
-	"time"
 )
 
 func (c *chainObj) testTrace(msg *chain.TestTraceMsg) {

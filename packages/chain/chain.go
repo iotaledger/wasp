@@ -1,9 +1,15 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chain
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -82,8 +88,20 @@ type Operator interface {
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
-var ConstructorNew func(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) Chain
+var ConstructorNew func(
+	chr *registry.ChainRecord,
+	log *logger.Logger,
+	netProvider peering.NetworkProvider,
+	dksProvider tcrypto.RegistryProvider,
+	onActivation func(),
+) Chain
 
-func New(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) Chain {
-	return ConstructorNew(chr, log, onActivation)
+func New(
+	chr *registry.ChainRecord,
+	log *logger.Logger,
+	netProvider peering.NetworkProvider,
+	dksProvider tcrypto.RegistryProvider,
+	onActivation func(),
+) Chain {
+	return ConstructorNew(chr, log, netProvider, dksProvider, onActivation)
 }

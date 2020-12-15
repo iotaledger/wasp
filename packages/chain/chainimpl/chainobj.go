@@ -1,21 +1,25 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chainimpl
 
 import (
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/vm/processors"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/peering"
 	"go.uber.org/atomic"
 )
 
@@ -33,7 +37,7 @@ type chainObj struct {
 	chainID         coretypes.ChainID
 	procset         *processors.ProcessorCache
 	color           balance.Color
-	peers           []*peering.Peer
+	peers           peering.GroupProvider
 	size            uint16
 	quorum          uint16
 	ownIndex        uint16
@@ -44,76 +48,77 @@ type chainObj struct {
 	//
 	eventRequestProcessed *events.Event
 	log                   *logger.Logger
+	netProvider           peering.NetworkProvider
+	peersAttachRef        interface{}
+	dksProvider           tcrypto.RegistryProvider
 }
 
 func requestIDCaller(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])
 }
 
-func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation func()) chain.Chain {
+func newCommitteeObj(
+	chr *registry.ChainRecord,
+	log *logger.Logger,
+	netProvider peering.NetworkProvider,
+	dksProvider tcrypto.RegistryProvider,
+	onActivation func(),
+) chain.Chain {
+	var err error
 	log.Debugw("creating committee", "addr", chr.ChainID.String())
 
-	addr := chr.ChainID
+	addr := chr.ChainID.Address()
 	if util.ContainsDuplicates(chr.CommitteeNodes) {
 		log.Errorf("can't create chain object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
 			addr.String(), chr.CommitteeNodes)
 		return nil
 	}
-	a := (address.Address)(chr.ChainID)
-	dkshare, keyExists, err := registry.GetDKShare(&a)
+	dkshare, err := dksProvider.LoadDKShare(&addr)
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-
-	if !keyExists {
-		log.Errorf("private key wasn't found. Can't continue as committee node. Chain ID: %s", chr.ChainID.String())
+	if dkshare.Index == nil || !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, *dkshare.Index, netProvider) {
+		log.Errorf(
+			"chain record inconsistency: the own node %s is not in the committee for %s: %+v",
+			netProvider.Self().NetID(), addr.String(), chr.CommitteeNodes,
+		)
 		return nil
 	}
-	if !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, dkshare.Index) {
-		log.Errorf("chain record inconsistency: the own node %s is not in the committee for %s: %+v",
-			peering.MyNetworkId(), addr.String(), chr.CommitteeNodes)
+	var peers peering.GroupProvider
+	if peers, err = netProvider.Group(chr.CommitteeNodes); err != nil {
+		log.Errorf(
+			"node %s failed to setup committee communication with %+v, reason=%+v",
+			netProvider.Self().NetID(), chr.CommitteeNodes, err,
+		)
 		return nil
 	}
+	chainLog := log.Named(util.Short(chr.ChainID.String()))
 	ret := &chainObj{
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      chr.ChainID,
 		color:        chr.Color,
-		peers:        make([]*peering.Peer, 0),
+		peers:        peers,
 		onActivation: onActivation,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
-		log: log.Named(util.Short(chr.ChainID.String())),
+		log:         chainLog,
+		netProvider: netProvider,
+		dksProvider: dksProvider,
 	}
-	if keyExists {
-		ret.ownIndex = dkshare.Index
-		ret.size = dkshare.N
-		ret.quorum = dkshare.T
+	ret.peersAttachRef = peers.Attach(&ret.chainID, func(recv *peering.RecvEvent) {
+		ret.ReceiveMessage(recv.Msg)
+	})
 
-		numNil := 0
-		for _, remoteLocation := range chr.CommitteeNodes {
-			peer := peering.UsePeer(remoteLocation)
-			if peer == nil {
-				numNil++
-			}
-			ret.peers = append(ret.peers, peer)
-		}
-		if numNil != 1 || ret.peers[dkshare.Index] != nil {
-			// at this point must be exactly 1 element in ret.peers == to nil,
-			// the one with the index in the committee
-			ret.log.Panicf("failed to initialize peers of the committee. committeePeers: %+v. myId: %s", chr.CommitteeNodes, peering.MyNetworkId())
-		}
-	}
+	ret.ownIndex = *dkshare.Index
+	ret.size = dkshare.N
+	ret.quorum = dkshare.T
 
 	ret.stateMgr = statemgr.New(ret, ret.log)
-	if keyExists {
-		ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
-		ret.isCommitteeNode.Store(true)
-	} else {
-		ret.isCommitteeNode.Store(false)
-	}
+	ret.operator = consensus.NewOperator(ret, dkshare, ret.log)
+	ret.isCommitteeNode.Store(true)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -138,10 +143,10 @@ func newCommitteeObj(chr *registry.ChainRecord, log *logger.Logger, onActivation
 	return ret
 }
 
-// iAmInTheCommittee checks if netLocations makes sense
-func iAmInTheCommittee(committeeNodes []string, n, index uint16) bool {
+// iAmInTheCommittee checks if NetIDs makes sense
+func iAmInTheCommittee(committeeNodes []string, n, index uint16, netProvider peering.NetworkProvider) bool {
 	if len(committeeNodes) != int(n) {
 		return false
 	}
-	return committeeNodes[index] == peering.MyNetworkId()
+	return committeeNodes[index] == netProvider.Self().NetID()
 }
