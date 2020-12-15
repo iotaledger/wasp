@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-package alone
+
+package solo
 
 import (
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -42,6 +44,16 @@ func NewCall(sc, fun string, params ...interface{}) *callParams {
 	}
 	ret.withParams(params...)
 	return ret
+}
+
+func NewCallFromDict(sc, fun string, params dict.Dict) *callParams {
+	par := make([]interface{}, 0, 2*len(params))
+	params.MustIterate("", func(key kv.Key, value []byte) bool {
+		par = append(par, string(key))
+		par = append(par, value)
+		return true
+	})
+	return NewCall(sc, fun, par...)
 }
 
 func (r *callParams) WithTransfer(transfer map[balance.Color]int64) *callParams {

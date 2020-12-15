@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-package alone
+
+package solo
 
 import (
 	"bytes"
@@ -79,7 +80,9 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 	}
 	var res dict.Dict
 	res, err = ch.PostRequest(NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...), sigScheme)
-	require.NoError(ch.Glb.T, err)
+	if err != nil {
+		return
+	}
 	resBin := res.MustGet(blob.ParamHash)
 	var r *hashing.HashValue
 	var ok bool
@@ -222,7 +225,8 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	)
 }
 
-func (ch *Chain) GetFeeInfo(hname coretypes.Hname) (balance.Color, int64, int64) {
+func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
+	hname := coretypes.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Glb.T, err)
 	require.NotEqualValues(ch.Glb.T, 0, len(ret))

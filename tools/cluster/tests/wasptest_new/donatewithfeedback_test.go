@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
-	"github.com/iotaledger/wasp/packages/vm/alone"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -20,14 +20,14 @@ var dwfHname = coretypes.Hn(dwfName)
 func TestDwfDonateOnce(t *testing.T) {
 	t.SkipNow()
 	const numDonations = 1
-	al := alone.New(t, false, true)
+	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, dwfName, dwfFile)
 	require.NoError(t, err)
 
 	for i := 0; i < numDonations; i++ {
 		feedback := fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i)
-		req := alone.NewCall(dwfName, "donate", "feedback", feedback).
+		req := solo.NewCall(dwfName, "donate", "feedback", feedback).
 			WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 42})
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)

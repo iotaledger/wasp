@@ -8,12 +8,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/alone"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasic(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
 	chain.CheckBase()
@@ -24,12 +24,12 @@ func TestBasic(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := alone.NewCall(Interface.Name,
+	req := solo.NewCall(Interface.Name,
 		FuncStoreLog,
 		ParamLog, []byte("some test text"),
 		ParamContractHname, Interface.Hname(),
@@ -56,12 +56,12 @@ func TestStore(t *testing.T) {
 }
 
 func TestStoreWrongTypeParam(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := alone.NewCall(Interface.Name,
+	req := solo.NewCall(Interface.Name,
 		FuncStoreLog,
 		ParamLog, []byte("some test text"),
 		ParamContractHname, Interface.Hname(),
@@ -80,12 +80,12 @@ func TestStoreWrongTypeParam(t *testing.T) {
 }
 
 func TestGetLasts3(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req1 := alone.NewCall(Interface.Name,
+	req1 := solo.NewCall(Interface.Name,
 		FuncStoreLog,
 		ParamLog, []byte("PostRequest Number ONE"),
 		ParamContractHname, Interface.Hname(),
@@ -94,7 +94,7 @@ func TestGetLasts3(t *testing.T) {
 	_, err = chain.PostRequest(req1, nil)
 	require.NoError(t, err)
 
-	req2 := alone.NewCall(Interface.Name,
+	req2 := solo.NewCall(Interface.Name,
 		FuncStoreLog,
 		ParamLog, []byte("PostRequest Number TWO"),
 		ParamContractHname, Interface.Hname(),
@@ -103,7 +103,7 @@ func TestGetLasts3(t *testing.T) {
 	_, err = chain.PostRequest(req2, nil)
 	require.NoError(t, err)
 
-	req3 := alone.NewCall(Interface.Name,
+	req3 := solo.NewCall(Interface.Name,
 		FuncStoreLog,
 		ParamLog, []byte("PostRequest Number THREE"),
 		ParamContractHname, Interface.Hname(),
@@ -130,42 +130,42 @@ func TestGetLasts3(t *testing.T) {
 func TestGetBetweenTs(t *testing.T) {
 	//t.SkipNow()
 
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
 
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req1 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req1 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number ONE"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,
 	)
 	_, err = chain.PostRequest(req1, nil)
 
-	req2 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req2 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number TWO"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,
 	)
 	_, err = chain.PostRequest(req2, nil)
 
-	req3 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req3 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number THREE"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,
 	)
 	_, err = chain.PostRequest(req3, nil)
 
-	req4 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req4 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number FOUR"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,
 	)
 	_, err = chain.PostRequest(req4, nil)
 
-	req5 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req5 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number FIVE"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,
@@ -190,42 +190,42 @@ func TestGetBetweenTs(t *testing.T) {
 func TestGetBetweenTsAndDiferentsTypes(t *testing.T) {
 	//t.SkipNow()
 
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
 
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req1 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req1 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number ONE"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,
 	)
 	_, err = chain.PostRequest(req1, nil)
 
-	req2 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req2 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number TWO"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _GENERIC_DATA,
 	)
 	_, err = chain.PostRequest(req2, nil)
 
-	req3 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req3 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number THREE"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _GENERIC_DATA,
 	)
 	_, err = chain.PostRequest(req3, nil)
 
-	req4 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req4 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number FOUR"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _GENERIC_DATA,
 	)
 	_, err = chain.PostRequest(req4, nil)
 
-	req5 := alone.NewCall(Interface.Name, FuncStoreLog,
+	req5 := solo.NewCall(Interface.Name, FuncStoreLog,
 		ParamLog, []byte("PostRequest Number FIVE"),
 		ParamContractHname, Interface.Hname(),
 		ParamType, _REQUEST_FUNC,

@@ -3,7 +3,7 @@ package inccounter
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/alone"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -11,7 +11,7 @@ import (
 
 const incName = "incTest"
 
-func checkCounter(e *alone.Chain, expected int64) {
+func checkCounter(e *solo.Chain, expected int64) {
 	ret, err := e.CallView(incName, FuncGetCounter)
 	require.NoError(e.Glb.T, err)
 	c, ok, err := codec.DecodeInt64(ret.MustGet(VarCounter))
@@ -21,7 +21,7 @@ func checkCounter(e *alone.Chain, expected int64) {
 }
 
 func TestDeployInc(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -35,7 +35,7 @@ func TestDeployInc(t *testing.T) {
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -46,7 +46,7 @@ func TestDeployIncInitParams(t *testing.T) {
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -54,14 +54,14 @@ func TestIncDefaultParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	_, err = chain.PostRequest(alone.NewCall(incName, FuncIncCounter), nil)
+	_, err = chain.PostRequest(solo.NewCall(incName, FuncIncCounter), nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
 	chain.CheckAccountLedger()
 }
 
 func TestIncParam(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -69,7 +69,7 @@ func TestIncParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	_, err = chain.PostRequest(alone.NewCall(incName, FuncIncCounter, VarCounter, 3), nil)
+	_, err = chain.PostRequest(solo.NewCall(incName, FuncIncCounter, VarCounter, 3), nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
 
@@ -77,14 +77,14 @@ func TestIncParam(t *testing.T) {
 }
 
 func TestIncWith1Post(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := alone.NewCall(incName, FuncIncAndRepeatOnceAfter5s).
+	req := solo.NewCall(incName, FuncIncAndRepeatOnceAfter5s).
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)

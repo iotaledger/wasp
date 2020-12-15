@@ -1,24 +1,27 @@
-package alone
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+package testcore
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func checkFees(chain *Chain, contract string, expectedOf, expectedVf int64) {
-	col, ownerFee, validatorFee := chain.GetFeeInfo(coretypes.Hn(contract))
+func checkFees(chain *solo.Chain, contract string, expectedOf, expectedVf int64) {
+	col, ownerFee, validatorFee := chain.GetFeeInfo(contract)
 	require.EqualValues(chain.Glb.T, balance.ColorIOTA, col)
 	require.EqualValues(chain.Glb.T, expectedOf, ownerFee)
 	require.EqualValues(chain.Glb.T, expectedVf, validatorFee)
 }
 
 func TestFeeBasic(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	checkFees(chain, root.Interface.Name, 0, 0)
 	checkFees(chain, accountsc.Interface.Name, 0, 0)
@@ -26,12 +29,12 @@ func TestFeeBasic(t *testing.T) {
 }
 
 func TestSetDefaultFeeNotAuthorized(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
 	user := glb.NewSigSchemeWithFunds()
 
-	req := NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
+	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
 
@@ -41,12 +44,12 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 }
 
 func TestSetContractFeeNotAuthorized(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
 	user := glb.NewSigSchemeWithFunds()
 
-	req := NewCall(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
+	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
 
@@ -56,10 +59,10 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 }
 
 func TestSetDefaultOwnerFeeOk(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
 	_, err := chain.PostRequest(req, nil)
@@ -70,10 +73,10 @@ func TestSetDefaultOwnerFeeOk(t *testing.T) {
 }
 
 func TestSetDefaultValidatorFeeOk(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamValidatorFee, 499,
 	)
 	_, err := chain.PostRequest(req, nil)
@@ -84,10 +87,10 @@ func TestSetDefaultValidatorFeeOk(t *testing.T) {
 }
 
 func TestSetDefaultFeeOk(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 		root.ParamValidatorFee, 499,
 	)
@@ -99,10 +102,10 @@ func TestSetDefaultFeeOk(t *testing.T) {
 }
 
 func TestSetDefaultFeeFailNegative1(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, -2)
+	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, -2)
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 
@@ -112,10 +115,10 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 }
 
 func TestSetDefaultFeeFailNegative2(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, -100)
+	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, -100)
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 
@@ -125,10 +128,10 @@ func TestSetDefaultFeeFailNegative2(t *testing.T) {
 }
 
 func TestSetContractValidatorFeeOk(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamValidatorFee, 1000,
 	)
@@ -141,10 +144,10 @@ func TestSetContractValidatorFeeOk(t *testing.T) {
 }
 
 func TestSetContractOwnerFeeOk(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, accountsc.Interface.Hname(),
 		root.ParamOwnerFee, 499,
 	)
@@ -157,10 +160,10 @@ func TestSetContractOwnerFeeOk(t *testing.T) {
 }
 
 func TestSetContractFeeWithDefault(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamValidatorFee, 1000,
 	)
@@ -171,7 +174,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, accountsc.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 1000)
 
-	req = NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 499,
 	)
 	_, err = chain.PostRequest(req, nil)
@@ -181,7 +184,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, accountsc.Interface.Name, 499, 0)
 	checkFees(chain, blob.Interface.Name, 499, 1000)
 
-	req = NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999)
+	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999)
 	//.WithTransfer(
 	//		map[balance.Color]int64{
 	//			balance.ColorIOTA: 800,
@@ -196,10 +199,10 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 }
 
 func TestFeeNotEnough(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, root.Interface.Hname(),
 		root.ParamValidatorFee, 499,
 	)
@@ -211,7 +214,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
 	user := glb.NewSigSchemeWithFunds()
-	req = NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
 	_, err = chain.PostRequest(req, user)
@@ -223,10 +226,10 @@ func TestFeeNotEnough(t *testing.T) {
 }
 
 func TestFeeOwnerDontNeed(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, root.Interface.Hname(),
 		root.ParamValidatorFee, 499,
 	)
@@ -237,7 +240,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	checkFees(chain, accountsc.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
-	req = NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
 	_, err = chain.PostRequest(req, nil)

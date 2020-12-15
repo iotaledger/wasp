@@ -3,7 +3,7 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/alone"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"testing"
 	"time"
 
@@ -313,11 +313,11 @@ func TestIncViewCounter(t *testing.T) {
 }
 
 func TestIncAloneInc(t *testing.T) {
-	al := alone.New(t, false, true)
+	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
 	require.NoError(t, err)
-	req := alone.NewCall(incName, "increment").
+	req := solo.NewCall(incName, "increment").
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -329,11 +329,11 @@ func TestIncAloneInc(t *testing.T) {
 }
 
 func TestIncAloneRepeatMany(t *testing.T) {
-	al := alone.New(t, false, true)
+	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
 	require.NoError(t, err)
-	req := alone.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
+	req := solo.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)

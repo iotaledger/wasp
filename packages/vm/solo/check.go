@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-package alone
+
+package solo
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"

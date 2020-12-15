@@ -135,8 +135,12 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	if totalFee-1 > transfer.Balance(vmctx.feeColor) {
 		// fallback: not enough fees
 		// accrue everything to the sender
+		withReq1Iota := map[balance.Color]int64{
+			balance.ColorIOTA: 1,
+		}
+		transfer.AddToMap(withReq1Iota)
 		sender := vmctx.reqRef.SenderAgentID()
-		vmctx.creditToAccount(sender, transfer)
+		vmctx.creditToAccount(sender, cbalances.NewFromMap(withReq1Iota))
 		return cbalances.NewFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
 			vmctx.reqRef.RequestID().Short(), sender.String())
 	}
