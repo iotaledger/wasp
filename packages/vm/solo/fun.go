@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package alone
+package solo
 
 import (
 	"bytes"
@@ -81,7 +81,9 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 	}
 	var res dict.Dict
 	res, err = ch.PostRequest(NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...), sigScheme)
-	require.NoError(ch.Glb.T, err)
+	if err != nil {
+		return
+	}
 	resBin := res.MustGet(blob.ParamHash)
 	var r *hashing.HashValue
 	var ok bool
@@ -152,7 +154,7 @@ func (ch *Chain) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, n
 }
 
 func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(root.Interface.Name, root.FuncGetInfo)
+	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Glb.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
@@ -220,11 +222,12 @@ func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredB
 
 func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	return ch.getAccountBalance(
-		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalBalance),
+		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalAssets),
 	)
 }
 
-func (ch *Chain) GetFeeInfo(hname coretypes.Hname) (balance.Color, int64, int64) {
+func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
+	hname := coretypes.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Glb.T, err)
 	require.NotEqualValues(ch.Glb.T, 0, len(ret))

@@ -7,49 +7,17 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo"
 )
 
-type chainsNavPage struct{}
-
-func initChains() NavPage {
-	return &chainsNavPage{}
-}
-
-const chainListRoute = "/chains"
-const chainListTplName = "chainList"
-
 const chainRoute = "/chains/:chainid"
 const chainTplName = "chain"
 
-func (n *chainsNavPage) Title() string { return "Chains" }
-func (n *chainsNavPage) Href() string  { return chainListRoute }
-
-func (n *chainsNavPage) AddTemplates(renderer Renderer) {
-	renderer[chainTplName] = MakeTemplate(tplChain)
-	renderer[chainListTplName] = MakeTemplate(tplChainList)
-}
-
-func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
-	e.GET(chainListRoute, func(c echo.Context) error {
-		chains, err := fetchChains()
-		if err != nil {
-			return err
-		}
-		return c.Render(http.StatusOK, chainListTplName, &ChainListTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			Chains:             chains,
-		})
-	})
-
+func addChainEndpoints(e *echo.Echo) {
 	e.GET(chainRoute, func(c echo.Context) error {
 		chainid, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
 		if err != nil {
@@ -94,57 +62,6 @@ func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
 	})
 }
 
-func fetchChains() ([]*ChainOverview, error) {
-	r := make([]*ChainOverview, 0)
-	crs, err := registry.GetChainRecords()
-	if err != nil {
-		return nil, err
-	}
-	for _, cr := range crs {
-		info, err := fetchRootInfo(chains.GetChain(cr.ChainID))
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, &ChainOverview{
-			ChainRecord: cr,
-			RootInfo:    info,
-		})
-	}
-	return r, nil
-}
-
-func callView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	vctx, err := viewcontext.NewFromDB(*chain.ID(), chain.Processors())
-	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-	}
-
-	ret, err := vctx.CallView(hname, coretypes.Hn(fname), nil)
-	if err != nil {
-		return nil, fmt.Errorf("root view call failed: %v", err)
-	}
-	return ret, nil
-
-}
-
-func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
-	info, err := callView(chain, root.Interface.Hname(), root.FuncGetInfo, nil)
-	if err != nil {
-		err = fmt.Errorf("root view call failed: %v", err)
-		return
-	}
-
-	ret.Contracts, err = root.DecodeContractRegistry(datatypes.NewMustMap(info, root.VarContractRegistry))
-	if err != nil {
-		err = fmt.Errorf("DecodeContractRegistry() failed: %v", err)
-		return
-	}
-
-	ret.OwnerID, _, _ = codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
-	ret.Description, _, _ = codec.DecodeString(info.MustGet(root.VarDescription))
-	return
-}
-
 func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
 	accounts, err := callView(chain, accountsc.Interface.Hname(), accountsc.FuncAccounts, nil)
 	if err != nil {
@@ -161,54 +78,6 @@ func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
 	}
 	return ret, nil
 }
-
-type ChainListTemplateParams struct {
-	BaseTemplateParams
-	Chains []*ChainOverview
-}
-
-type ChainOverview struct {
-	ChainRecord *registry.ChainRecord
-	RootInfo    RootInfo
-}
-
-type RootInfo struct {
-	OwnerID     coretypes.AgentID
-	Description string
-	Contracts   map[coretypes.Hname]*root.ContractRecord
-}
-
-const tplChainList = `
-{{define "title"}}Chains{{end}}
-
-{{define "body"}}
-	<h2>Chains</h2>
-	<table>
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>Description</th>
-				<th>#Nodes</th>
-				<th>#Contracts</th>
-				<th>Status</th>
-				<th></th>
-			</tr>
-		</thead>
-		<tbody>
-		{{range $_, $c := .Chains}}
-			<tr>
-				<td><abbr title="{{$c.ChainRecord.ChainID.String}}"><code>{{printf "%.8s" $c.ChainRecord.ChainID}}…</code></abbr></td>
-				<td>{{printf "%.50s" $c.RootInfo.Description}}</td>
-				<td>{{len $c.ChainRecord.CommitteeNodes}}</td>
-				<td>{{len $c.RootInfo.Contracts}}</td>
-				<td>{{if $c.ChainRecord.Active}}active{{else}}inactive{{end}}</td>
-				<td><a href="/chains/{{$c.ChainRecord.ChainID}}">Details</a></td>
-			</tr>
-		{{end}}
-		</tbody>
-	</table>
-{{end}}
-`
 
 type ChainTemplateParams struct {
 	BaseTemplateParams
@@ -271,7 +140,7 @@ const tplChain = `
 
 			<hr/>
 			<div>
-				<h3>Accounts</h3>
+				<h3>On-chain accounts</h3>
 				<table>
 					<thead>
 						<tr>

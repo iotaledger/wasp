@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package alone
+package testcore
 
 import (
 	"testing"
@@ -11,32 +11,33 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAccountsBase(t *testing.T) {
-	glb := New(t, true, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 }
 
 func TestAccountsRepeatInit(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	req := NewCall(accountsc.Interface.Name, "init")
+	req := solo.NewCall(accountsc.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 	chain.CheckAccountLedger()
 }
 
 func TestAccountsBase1(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
@@ -44,7 +45,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
 	chain.CheckAccountLedger()
 
-	req = NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
+	req = solo.NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
@@ -54,13 +55,13 @@ func TestAccountsBase1(t *testing.T) {
 }
 
 func TestAccountsDepositWithdraw(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(accountsc.Interface.Name, accountsc.FuncDeposit).
+	req := solo.NewCall(accountsc.Interface.Name, accountsc.FuncDeposit).
 		WithTransfer(map[balance.Color]int64{
 			balance.ColorIOTA: 42,
 		})
@@ -69,7 +70,7 @@ func TestAccountsDepositWithdraw(t *testing.T) {
 
 	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
 
-	req = NewCall(accountsc.Interface.Name, accountsc.FuncWithdraw)
+	req = solo.NewCall(accountsc.Interface.Name, accountsc.FuncWithdraw)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)

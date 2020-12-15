@@ -4,11 +4,11 @@
 package wasmhost
 
 type ScContract struct {
-	MapObject
+	ScDict
 }
 
 func (o *ScContract) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScContract) GetBytes(keyId int32) []byte {
@@ -23,7 +23,7 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 		id := o.vm.ctx.ChainOwnerID()
 		return id[:]
 	}
-	return o.MapObject.GetBytes(keyId)
+	return o.ScDict.GetBytes(keyId)
 }
 
 func (o *ScContract) GetString(keyId int32) string {
@@ -32,7 +32,7 @@ func (o *ScContract) GetString(keyId int32) string {
 		return o.vm.GetDescription()
 	case KeyName: //TODO
 	}
-	return o.MapObject.GetString(keyId)
+	return o.ScDict.GetString(keyId)
 }
 
 func (o *ScContract) GetTypeId(keyId int32) int32 {
@@ -48,5 +48,5 @@ func (o *ScContract) GetTypeId(keyId int32) int32 {
 	case KeyOwner:
 		return OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	}
-	return -1
+	return 0
 }

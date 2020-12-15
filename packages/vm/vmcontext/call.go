@@ -71,6 +71,10 @@ func (vmctx *VMContext) callerIsRoot() bool {
 	return caller.MustContractID().Hname() == root.Interface.Hname()
 }
 
+func (vmctx *VMContext) requesterIsChainOwner() bool {
+	return vmctx.chainOwnerID == vmctx.reqRef.SenderAgentID()
+}
+
 // mustCallFromRequest is called for each request from the VM loop
 func (vmctx *VMContext) mustCallFromRequest() {
 	req := vmctx.reqRef.RequestSection()
@@ -81,6 +85,8 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	if err != nil {
 		// may be due to not enough rewards
 		vmctx.log.Warnf("mustCallFromRequest: %v", err)
+		vmctx.lastResult = nil
+		vmctx.lastError = err
 		return
 	}
 
@@ -116,9 +122,9 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
 	totalFee := vmctx.ownerFee + vmctx.validatorFee
-	if totalFee == 0 {
-		vmctx.log.Debugf("fees disabled, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
-		// if no fees enabled, accrue the token to the caller
+	if totalFee == 0 || vmctx.requesterIsChainOwner() {
+		// if no fees enabled or the caller is the chain owner, accrue the request token to the caller
+		vmctx.log.Debugf("no fees charged, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
 		fee := map[balance.Color]int64{
 			balance.ColorIOTA: 1,
 		}
@@ -129,8 +135,12 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	if totalFee-1 > transfer.Balance(vmctx.feeColor) {
 		// fallback: not enough fees
 		// accrue everything to the sender
+		withReq1Iota := map[balance.Color]int64{
+			balance.ColorIOTA: 1,
+		}
+		transfer.AddToMap(withReq1Iota)
 		sender := vmctx.reqRef.SenderAgentID()
-		vmctx.creditToAccount(sender, transfer)
+		vmctx.creditToAccount(sender, cbalances.NewFromMap(withReq1Iota))
 		return cbalances.NewFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
 			vmctx.reqRef.RequestID().Short(), sender.String())
 	}

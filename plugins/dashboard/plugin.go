@@ -41,20 +41,8 @@ func configure(*node.Plugin) {
 	}))
 	Server.Use(middleware.Recover())
 	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.DashboardAuth))
-	dashboard.UseHTMLErrorHandler(Server)
 
-	renderer := Renderer{}
-	Server.Renderer = renderer
-
-	addNavPage := func(navPage NavPage) {
-		navPages = append(navPages, navPage)
-		navPage.AddTemplates(renderer)
-		navPage.AddEndpoints(Server)
-	}
-
-	addNavPage(initConfig())
-	addNavPage(initPeering())
-	addNavPage(initChains())
+	dashboard.Init(Server)
 }
 
 func run(_ *node.Plugin) {

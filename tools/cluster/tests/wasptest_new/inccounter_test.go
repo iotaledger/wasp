@@ -3,7 +3,7 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/alone"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"testing"
 	"time"
 
@@ -28,7 +28,7 @@ const varNumRepeats = "num_repeats"
 
 func checkCounter(t *testing.T, expected int) bool {
 	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		for k,v := range state {
+		for k, v := range state {
 			fmt.Printf("%s: %v\n", string(k), v)
 		}
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(varCounter))
@@ -61,7 +61,8 @@ func TestIncDeployment(t *testing.T) {
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
+		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
 		//--
 		crBytes = contractRegistry.GetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -117,7 +118,8 @@ func testNothing(t *testing.T, numRequests int) {
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
+		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
 		//--
 		crBytes = contractRegistry.GetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -172,7 +174,8 @@ func testIncrement(t *testing.T, numRequests int) {
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&root.RootContractRecord)))
+		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
 		//--
 		crBytes = contractRegistry.GetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -310,11 +313,11 @@ func TestIncViewCounter(t *testing.T) {
 }
 
 func TestIncAloneInc(t *testing.T) {
-	al := alone.New(t, false, true)
+	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
 	require.NoError(t, err)
-	req := alone.NewCall(incName, "increment").
+	req := solo.NewCall(incName, "increment").
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -326,11 +329,11 @@ func TestIncAloneInc(t *testing.T) {
 }
 
 func TestIncAloneRepeatMany(t *testing.T) {
-	al := alone.New(t, false, true)
+	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
 	require.NoError(t, err)
-	req := alone.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
+	req := solo.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)

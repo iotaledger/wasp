@@ -14,13 +14,13 @@ import (
 )
 
 type ScCallInfo struct {
-	MapObject
+	ScDict
 	contract string
 	function string
 }
 
 func (o *ScCallInfo) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
@@ -46,7 +46,7 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	case KeyTransfers:
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 func (o *ScCallInfo) Invoke() {
@@ -57,7 +57,7 @@ func (o *ScCallInfo) Invoke() {
 	}
 	functionCode := coretypes.Hn(o.function)
 	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
-	params := o.vm.FindObject(paramsId).(*ScDict).Dict.(dict.Dict)
+	params := o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
 		o.vm.Trace("  PARAM '%s'", key)
 		return true
@@ -76,7 +76,7 @@ func (o *ScCallInfo) Invoke() {
 		o.Panic("failed to invoke call: %v", err)
 	}
 	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
-	o.vm.FindObject(resultsId).(*ScDict).Dict = results
+	o.vm.FindObject(resultsId).(*ScDict).kvStore = results
 }
 
 func (o *ScCallInfo) SetInt(keyId int32, value int64) {
@@ -90,7 +90,7 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 		}
 		o.Invoke()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
 
@@ -101,14 +101,14 @@ func (o *ScCallInfo) SetString(keyId int32, value string) {
 	case KeyFunction:
 		o.function = value
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScPostInfo struct {
-	MapObject
+	ScDict
 	chainId  *coretypes.ChainID
 	contract string
 	delay    uint32
@@ -116,7 +116,7 @@ type ScPostInfo struct {
 }
 
 func (o *ScPostInfo) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
@@ -141,7 +141,7 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	case KeyTransfers:
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 func (o *ScPostInfo) Invoke() {
@@ -158,7 +158,7 @@ func (o *ScPostInfo) Invoke() {
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
-		params = o.vm.FindObject(paramsId).(*ScDict).Dict.(dict.Dict)
+		params = o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
 			o.vm.Trace("  PARAM '%s'", key)
 			return true
@@ -187,7 +187,7 @@ func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
 		}
 		o.chainId = &chainId
 	default:
-		o.MapObject.SetBytes(keyId, value)
+		o.ScDict.SetBytes(keyId, value)
 	}
 }
 
@@ -205,7 +205,7 @@ func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 		o.delay = uint32(value)
 		o.Invoke()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
 
@@ -216,20 +216,20 @@ func (o *ScPostInfo) SetString(keyId int32, value string) {
 	case KeyFunction:
 		o.function = value
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScViewInfo struct {
-	MapObject
+	ScDict
 	contract string
 	function string
 }
 
 func (o *ScViewInfo) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
@@ -252,7 +252,7 @@ func (o *ScViewInfo) GetTypeId(keyId int32) int32 {
 	case KeyResults:
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 func (o *ScViewInfo) Invoke() {
@@ -265,7 +265,7 @@ func (o *ScViewInfo) Invoke() {
 	params := dict.New()
 	paramsId, ok := o.objects[KeyParams]
 	if ok {
-		params = o.vm.FindObject(paramsId).(*ScDict).Dict.(dict.Dict)
+		params = o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
 			o.vm.Trace("  PARAM '%s'", key)
 			return true
@@ -282,7 +282,7 @@ func (o *ScViewInfo) Invoke() {
 		o.Panic("failed to invoke view: %v", err)
 	}
 	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
-	o.vm.FindObject(resultsId).(*ScDict).Dict = results
+	o.vm.FindObject(resultsId).(*ScDict).kvStore = results
 }
 
 func (o *ScViewInfo) SetInt(keyId int32, value int64) {
@@ -296,7 +296,7 @@ func (o *ScViewInfo) SetInt(keyId int32, value int64) {
 		}
 		o.Invoke()
 	default:
-		o.MapObject.SetInt(keyId, value)
+		o.ScDict.SetInt(keyId, value)
 	}
 }
 
@@ -307,14 +307,14 @@ func (o *ScViewInfo) SetString(keyId int32, value string) {
 	case KeyFunction:
 		o.function = value
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScCalls struct {
-	ArrayObject
+	ScDict
 }
 
 func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
@@ -323,20 +323,10 @@ func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScCalls) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScPosts struct {
-	ArrayObject
+	ScDict
 }
 
 func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
@@ -345,20 +335,10 @@ func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScPosts) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScViews struct {
-	ArrayObject
+	ScDict
 }
 
 func (a *ScViews) GetObjectId(keyId int32, typeId int32) int32 {
@@ -367,25 +347,15 @@ func (a *ScViews) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScViews) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-		return
-	default:
-		a.ArrayObject.SetInt(keyId, value)
-	}
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScCallTransfers struct {
-	MapObject
+	ScDict
 	Transfers map[balance.Color]int64
 }
 
-func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ModelObject) {
-	o.MapObject.InitObj(id, keyId, owner)
+func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ScDict) {
+	o.ScDict.InitObj(id, keyId, owner)
 	o.Transfers = make(map[balance.Color]int64)
 }
 

@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package alone
+package testcore
 
 import (
 	"testing"
@@ -11,11 +11,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRootBasic(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -24,19 +25,19 @@ func TestRootBasic(t *testing.T) {
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
 	chain.CheckBase()
 
-	req := NewCall(root.Interface.Name, "init")
+	req := solo.NewCall(root.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
 
 func TestGetInfo(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -59,7 +60,7 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -95,7 +96,7 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -130,20 +131,20 @@ func TestDeployDouble(t *testing.T) {
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	_, ownerBack, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerBack)
 
-	req = NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
+	req = solo.NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
@@ -152,13 +153,13 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
 	newOwner := glb.NewSigSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, newOwner)
 	require.Error(t, err)
 

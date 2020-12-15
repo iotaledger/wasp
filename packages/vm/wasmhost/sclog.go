@@ -8,7 +8,7 @@ import (
 )
 
 type ScLogs struct {
-	MapObject
+	ScDict
 }
 
 func (o *ScLogs) Exists(keyId int32) bool {
@@ -29,14 +29,14 @@ func (o *ScLogs) GetTypeId(keyId int32) int32 {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScLog struct {
-	ArrayObject
+	ScDict
 	lines      *datatypes.MustTimestampedLog
 	logEntry   *ScLogEntry
 	logEntryId int32
 }
 
-func (a *ScLog) InitObj(id int32, keyId int32, owner *ModelObject) {
-	a.ModelObject.InitObj(id, keyId, owner)
+func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
+	a.ScDict.InitObj(id, keyId, owner)
 	key := a.vm.GetKey(keyId)
 	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), key)
 	a.logEntry = &ScLogEntry{lines: a.lines}
@@ -52,7 +52,7 @@ func (a *ScLog) GetInt(keyId int32) int64 {
 	case KeyLength:
 		return int64(a.lines.Len())
 	}
-	return a.ModelObject.GetInt(keyId)
+	return a.ScDict.GetInt(keyId)
 }
 
 func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
@@ -63,26 +63,26 @@ func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 	if uint32(keyId) == a.lines.Len() {
 		return a.logEntryId
 	}
-	return a.ArrayObject.GetObjectId(keyId, typeId)
+	return a.ScDict.GetObjectId(keyId, typeId)
 }
 
 func (a *ScLog) GetTypeId(keyId int32) int32 {
 	if a.Exists(keyId) {
 		return OBJTYPE_MAP
 	}
-	return -1
+	return 0
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScLogEntry struct {
-	MapObject
+	ScDict
 	lines     *datatypes.MustTimestampedLog
 	timestamp int64
 }
 
 func (o *ScLogEntry) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScLogEntry) GetBytes(keyId int32) []byte {
@@ -90,7 +90,7 @@ func (o *ScLogEntry) GetBytes(keyId int32) []byte {
 	//case KeyData:
 	//	ts := o.lines.TakeTimeSlice(o.lines.Earliest(), o.lines.Latest())
 	//}
-	return o.MapObject.GetBytes(keyId)
+	return o.ScDict.GetBytes(keyId)
 }
 
 func (o *ScLogEntry) GetInt(keyId int32) int64 {
@@ -98,7 +98,7 @@ func (o *ScLogEntry) GetInt(keyId int32) int64 {
 	//case KeyTimestamp:
 	//	return o.lines.Latest()
 	//}
-	return o.MapObject.GetInt(keyId)
+	return o.ScDict.GetInt(keyId)
 }
 
 func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
@@ -108,7 +108,7 @@ func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
 	case KeyTimestamp:
 		return OBJTYPE_INT
 	}
-	return -1
+	return 0
 }
 
 func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {

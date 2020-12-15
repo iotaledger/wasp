@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// 'alone' is a package to write unit tests for ISCP contracts in Go
-// Running the smart contract on 'alone' does not require the Wasp node.
+// 'solo' is a package to write unit tests for ISCP contracts in Go
+// Running the smart contract on 'solo' does not require the Wasp node.
 // The smart contract code is run synchronously on one process.
 // The smart contract is running in exactly the same code of the VM wrapper,
 // virtual state access and some other modules of the system.
@@ -10,7 +10,7 @@
 // It uses in-memory DB for virtual state and UTXODB to mock the ledger.
 // It deploys default chain and all builtin contracts
 // It allows self-posting of requests, with or without time locks, however only supports one chain
-package alone
+package solo
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"

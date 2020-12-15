@@ -4,7 +4,7 @@
 package wasmhost
 
 type ScExports struct {
-	ArrayObject
+	ScDict
 }
 
 func (o *ScExports) SetString(keyId int32, value string) {

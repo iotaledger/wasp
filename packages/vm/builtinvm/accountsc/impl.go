@@ -36,10 +36,10 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return getAccountBalanceDict(ctx, getAccount(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
 }
 
-// getTotalBalance returns total colored balances controlled by the chain
-func getTotalBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("getTotalBalance")
-	return getAccountBalanceDict(ctx, getTotalAssetsAccount(ctx.State()), "getTotalBalance"), nil
+// getTotalAssets returns total colored balances controlled by the chain
+func getTotalAssets(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("getTotalAssets")
+	return getAccountBalanceDict(ctx, getTotalAssetsAccount(ctx.State()), "getTotalAssets"), nil
 }
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec

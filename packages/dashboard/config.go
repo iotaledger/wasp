@@ -12,18 +12,14 @@ import (
 
 type configNavPage struct{}
 
-func initConfig() NavPage {
-	return &configNavPage{}
-}
-
 const configRoute = "/"
 const configTplName = "config"
 
 func (n *configNavPage) Title() string { return "Configuration" }
 func (n *configNavPage) Href() string  { return configRoute }
 
-func (n *configNavPage) AddTemplates(renderer Renderer) {
-	renderer[configTplName] = MakeTemplate(tplConfig)
+func (n *configNavPage) AddTemplates(r renderer) {
+	r[configTplName] = MakeTemplate(tplConfig)
 }
 
 func (n *configNavPage) AddEndpoints(e *echo.Echo) {

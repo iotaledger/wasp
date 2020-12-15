@@ -9,12 +9,12 @@ import (
 )
 
 type ScTransfer struct {
-	MapObject
+	ScDict
 	agent coretypes.AgentID
 }
 
 func (o *ScTransfer) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) >= 0
+	return o.GetTypeId(keyId) > 0
 }
 
 func (o *ScTransfer) GetTypeId(keyId int32) int32 {
@@ -34,7 +34,7 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 			panic("Invalid agent: " + err.Error())
 		}
 	default:
-		o.MapObject.SetBytes(keyId, value)
+		o.ScDict.SetBytes(keyId, value)
 	}
 }
 
@@ -58,22 +58,13 @@ func (o *ScTransfer) SetInt(keyId int32, value int64) {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScTransfers struct {
-	ArrayObject
+	ScDict
 }
 
 func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
 		return &ScTransfer{}
 	})
-}
-
-func (a *ScTransfers) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case KeyLength:
-		a.objects = nil
-	default:
-		a.Panic("SetInt: Invalid access")
-	}
 }
 
 func (a *ScTransfers) SetString(keyId int32, value string) {

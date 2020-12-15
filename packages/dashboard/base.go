@@ -6,11 +6,17 @@ package dashboard
 import (
 	"html/template"
 
-	"github.com/iotaledger/wasp/packages/dashboard"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo"
 )
+
+type NavPage interface {
+	Title() string
+	Href() string
+
+	AddTemplates(r renderer)
+	AddEndpoints(e *echo.Echo)
+}
 
 type BaseTemplateParams struct {
 	NavPages    []NavPage
@@ -18,7 +24,23 @@ type BaseTemplateParams struct {
 	MyNetworkId string
 }
 
-var navPages = []NavPage{}
+var navPages = []NavPage{
+	&configNavPage{},
+	&peeringNavPage{},
+	&chainsNavPage{},
+}
+
+func Init(server *echo.Echo) {
+	r := renderer{}
+	server.Renderer = r
+
+	for _, navPage := range navPages {
+		navPage.AddTemplates(r)
+		navPage.AddEndpoints(server)
+	}
+
+	useHTMLErrorHandler(server)
+}
 
 func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
 	return BaseTemplateParams{
@@ -28,37 +50,34 @@ func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
 	}
 }
 
-type NavPage interface {
-	Title() string
-	Href() string
-
-	AddTemplates(renderer Renderer)
-	AddEndpoints(e *echo.Echo)
-}
-
 func MakeTemplate(parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
-		"formatTimestamp":   dashboard.FormatTimestamp,
-		"exploreAddressUrl": dashboard.ExploreAddressUrl(exploreAddressBaseUrl()),
+		"formatTimestamp":   formatTimestamp,
+		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
+		"args":              args,
 	})
 	t = template.Must(t.Parse(tplBase))
-	t = template.Must(t.Parse(dashboard.TplExploreAddress))
-	t = template.Must(t.Parse(dashboard.TplExploreAgentID))
 	for _, part := range parts {
 		t = template.Must(t.Parse(part))
 	}
 	return t
 }
 
-func exploreAddressBaseUrl() string {
-	baseUrl := parameters.GetString(parameters.DashboardExploreAddressUrl)
-	if baseUrl != "" {
-		return baseUrl
-	}
-	return dashboard.ExploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
-}
-
 const tplBase = `
+{{define "externalLink"}}
+	<a href="{{ index . 0 }}" style="font-size: small">🡽 {{ index . 1 }}</a>
+{{end}}
+
+{{define "address"}}
+	<code>{{.}}</code> {{ template "externalLink" (args (exploreAddressUrl .) "Tangle") }}
+{{end}}
+
+{{define "agentid"}}
+	{{if .IsAddress}}{{template "address" .MustAddress}}
+	{{else}}<code>{{.}}</code>
+	{{end}}
+{{end}}
+
 {{define "base"}}
 	<!doctype html>
 	<html lang="en">

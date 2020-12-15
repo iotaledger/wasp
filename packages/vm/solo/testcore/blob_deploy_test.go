@@ -1,25 +1,26 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package alone
+package testcore
 
 import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBlobRepeatInit(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	req := NewCall(blob.Interface.Name, "init")
+	req := solo.NewCall(blob.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
 
 func TestBlobUpload(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	binary := []byte("supposed to be wasm")
 	hwasm, err := chain.UploadWasm(nil, binary)
@@ -32,7 +33,7 @@ func TestBlobUpload(t *testing.T) {
 }
 
 func TestBlobUploadTwice(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	binary := []byte("supposed to be wasm")
 	hwasm1, err := chain.UploadWasm(nil, binary)
@@ -49,10 +50,10 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-const wasmFile = "../../../tools/cluster/tests/wasptest_new/wasm/inccounter_bg.wasm"
+const wasmFile = "../../../../tools/cluster/tests/wasptest_new/wasm/inccounter_bg.wasm"
 
 func TestDeploy(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
@@ -62,14 +63,14 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestDeployWasm(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
 	require.NoError(t, err)
 }
 
 func TestDeployRubbish(t *testing.T) {
-	glb := New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	name := "testInccounter"
 	err := chain.DeployWasmContract(nil, name, "blob_deploy_test.go")

@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-type Renderer map[string]*template.Template
+type renderer map[string]*template.Template
 
-func (t Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+func (t renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t[name].ExecuteTemplate(w, "base", data)
 }

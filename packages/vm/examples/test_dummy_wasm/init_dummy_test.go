@@ -1,7 +1,7 @@
 package test_dummy_wasm
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/alone"
+	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -12,7 +12,7 @@ const (
 )
 
 func TestSuccess(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitEmptyBacklog()
 
@@ -23,7 +23,7 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestFail(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, contractName, fileName,
 		"failParam", 1,
@@ -34,7 +34,7 @@ func TestFail(t *testing.T) {
 }
 
 func TestFailRepeat(t *testing.T) {
-	glb := alone.New(t, false, false)
+	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, contractName, fileName,
 		"failParam", 1,

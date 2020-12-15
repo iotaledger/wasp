@@ -2,7 +2,6 @@ package accountsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -26,7 +25,7 @@ var (
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.ViewFunc(FuncBalance, getBalance),
-		contract.ViewFunc(FuncTotalBalance, getTotalBalance),
+		contract.ViewFunc(FuncTotalAssets, getTotalAssets),
 		contract.ViewFunc(FuncAccounts, getAccounts),
 		contract.Func(FuncDeposit, deposit),
 		contract.Func(FuncMove, move),
@@ -36,13 +35,13 @@ func init() {
 }
 
 const (
-	FuncBalance      = "balance"
-	FuncTotalBalance = "totalBalance"
-	FuncDeposit      = "deposit"
-	FuncMove         = "move"
-	FuncAllow        = "allow"
-	FuncWithdraw     = "withdraw"
-	FuncAccounts     = "accounts"
+	FuncBalance     = "balance"
+	FuncTotalAssets = "totalAssets"
+	FuncDeposit     = "deposit"
+	FuncMove        = "move"
+	FuncAllow       = "allow"
+	FuncWithdraw    = "withdraw"
+	FuncAccounts    = "accounts"
 
 	ParamAgentID = "a"
 	ParamColor   = "c"
@@ -56,8 +55,4 @@ var (
 
 func GetProcessor() vmtypes.Processor {
 	return Interface
-}
-
-func ChainOwnerAgentID(chainID coretypes.ChainID) coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, Interface.Hname()))
 }

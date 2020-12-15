@@ -12,7 +12,7 @@ import (
 var TestMode = false
 
 type ScUtility struct {
-	MapObject
+	ScDict
 	base58Decoded []byte
 	base58Encoded string
 	hash          []byte
@@ -20,8 +20,8 @@ type ScUtility struct {
 	nextRandom    int
 }
 
-func (o *ScUtility) InitObj(id int32, keyId int32, owner *ModelObject) {
-	o.MapObject.InitObj(id, keyId, owner)
+func (o *ScUtility) InitObj(id int32, keyId int32, owner *ScDict) {
+	o.ScDict.InitObj(id, keyId, owner)
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values
@@ -50,7 +50,7 @@ func (o *ScUtility) GetBytes(keyId int32) []byte {
 	case KeyHash:
 		return o.hash
 	}
-	return o.MapObject.GetBytes(keyId)
+	return o.ScDict.GetBytes(keyId)
 }
 
 func (o *ScUtility) GetInt(keyId int32) int64 {
@@ -74,7 +74,7 @@ func (o *ScUtility) GetInt(keyId int32) int64 {
 		o.nextRandom = i + 8
 		return int64(binary.LittleEndian.Uint64(o.random[i : i+8]))
 	}
-	return o.MapObject.GetInt(keyId)
+	return o.ScDict.GetInt(keyId)
 }
 
 func (o *ScUtility) GetString(keyId int32) string {
@@ -82,7 +82,7 @@ func (o *ScUtility) GetString(keyId int32) string {
 	case KeyBase58:
 		return o.base58Encoded
 	}
-	return o.MapObject.GetString(keyId)
+	return o.ScDict.GetString(keyId)
 }
 
 func (o *ScUtility) GetTypeId(keyId int32) int32 {
@@ -94,7 +94,7 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	case KeyRandom:
 		return OBJTYPE_INT
 	}
-	return -1
+	return 0
 }
 
 func (o *ScUtility) SetBytes(keyId int32, value []byte) {
@@ -104,7 +104,7 @@ func (o *ScUtility) SetBytes(keyId int32, value []byte) {
 	case KeyHash:
 		o.hash = hashing.HashData(value).Bytes()
 	default:
-		o.MapObject.SetBytes(keyId, value)
+		o.ScDict.SetBytes(keyId, value)
 	}
 }
 
@@ -113,6 +113,6 @@ func (o *ScUtility) SetString(keyId int32, value string) {
 	case KeyBase58:
 		o.base58Decoded, _ = base58.Decode(value)
 	default:
-		o.MapObject.SetString(keyId, value)
+		o.ScDict.SetString(keyId, value)
 	}
 }

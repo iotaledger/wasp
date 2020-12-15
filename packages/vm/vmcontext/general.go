@@ -14,42 +14,15 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
-
-func (vmctx *VMContext) chainInfo() (coretypes.ChainID, coretypes.AgentID) {
-	info, err := vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetInfo), nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	chainID, ok, err := codec.DecodeChainID(info.MustGet(root.VarChainID))
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		panic("inconsistency in the root 1")
-	}
-	if vmctx.chainID != chainID {
-		panic("inconsistency in the root 2: vmctx.chainID != *chainID")
-	}
-	owner, ok, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		panic("inconsistency in the root 3")
-	}
-	return chainID, owner
-}
 
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
 	return vmctx.chainID
 }
 
 func (vmctx *VMContext) ChainOwnerID() coretypes.AgentID {
-	_, ret := vmctx.chainInfo()
-	return ret
+	return vmctx.chainOwnerID
 }
 
 func (vmctx *VMContext) ContractCreator() coretypes.AgentID {

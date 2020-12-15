@@ -19,7 +19,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
 func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("blob.storeBlob.begin")
+	ctx.Log().Debugf("blob.storeBlob.begin")
 	state := ctx.State()
 	params := ctx.Params()
 	// calculate a deterministic hash of all blob fields
