@@ -35,16 +35,17 @@ func init() {
 
 const (
 	// state variables
-	VarStateInitialized = "i"
+	VarStateInitialized = "i" //+++ not used, delete
 
+	//+++ where is the name of the tlog itself?
 	// request parameters
-	ParamLog           = "dataParam"
+	ParamLog           = "dataParam" // ParamRecordData is better?
 	ParamContractHname = "contractHname"
-	ParamLasts         = "lastsParam"
+	ParamLasts         = "lastsParam" //+++ not used, delete
 	ParamFromTs        = "fromTs"
 	ParamToTs          = "toTs"
 	ParamLastsRecords  = "lastRecords"
-	ParamType          = "ParamTypeOfRecords"
+	ParamType          = "ParamTypeOfRecords" // better ParamRecordType?
 
 	// function names
 	FuncGetLog           = "getLogInfo"
@@ -53,6 +54,8 @@ const (
 	FuncStoreLog         = "storeLog"
 
 	//Type of records
+	// +++ Go type of the record type code should be uint16
+	// +++ are these record types defined at the system level? Doc-comments are needed
 	TR_DEPLOY         = 1
 	TR_TOKEN_TRANSFER = 2
 	TR_VIEWCALL       = 3
@@ -60,6 +63,7 @@ const (
 	TR_GENERIC_DATA   = 5
 )
 
+//+++ not needed
 func GetProcessor() vmtypes.Processor {
 	return Interface
 }

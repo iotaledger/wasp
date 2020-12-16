@@ -11,12 +11,15 @@ import (
 )
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	// this funtion can be empty
 	ctx.Eventf("chainlog.initialize.begin")
 	ctx.Eventf("chainlog.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
+//+++ describe the entry point, with parameters etc
 func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	// don't use Eventf. Instead use .Log().Debugf() or .Log().Infof()
 	ctx.Eventf("chainlog.storeLog.begin")
 	params := ctx.Params()
 	state := ctx.State()
@@ -25,7 +28,7 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	//+++ logData can be missing, i.e. == nil. Is it OK?
 	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamType))
 	if err != nil {
 		return nil, err
@@ -35,10 +38,11 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 
 	contractName := ctx.Caller().MustContractID().Hname()
-
 	switch typeP {
+	//+++ better define range for system record codes and check the range
 	case TR_DEPLOY, TR_TOKEN_TRANSFER, TR_VIEWCALL, TR_REQUEST_FUNC, TR_GENERIC_DATA:
 		entry := append(contractName.Bytes(), byte(typeP))
+		//+++ better not use name 'log'. Very genetric. use 'tlog' or similar
 		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
 		log.Append(ctx.GetTimestamp(), logData)
 	default:
@@ -47,6 +51,8 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+//+++ describe the entry point, with parameters etc
+//+++ do not understand what it does and why do we need hname as a parameter
 func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	state := ctx.State()
@@ -72,6 +78,8 @@ func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	switch typeP {
 	case TR_DEPLOY, TR_TOKEN_TRANSFER, TR_VIEWCALL, TR_REQUEST_FUNC, TR_GENERIC_DATA:
+		//+++ 1. type is uint16, not byte
+		//+++ 2. why the entry is used as a name of the tlog?
 		entry := append(contractName.Bytes(), byte(typeP))
 		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
 
@@ -83,12 +91,21 @@ func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
+// +++ must be described. The function should be like this:
+// get last N records with filter. Filter can be:
+//  - specific contract or all
+//  - specific data type or all
+// The log must be organized like this:
+// each record has structure: 4 bytes of contract's hname, 2 bytes of record type code, 0 or any number of data bytes
+// Each record type interpreted by core contracts will have specific interpretation of its data
+// the user defined types will be interpreted bu the core as bte arrays
 func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	state := ctx.State()
 	params := ctx.Params()
 
 	//TODO: check if the contract really exists in the chain
+	//+++ why we need to check it?
 	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
 	if err != nil {
 		return nil, err

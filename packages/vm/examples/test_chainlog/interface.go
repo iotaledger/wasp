@@ -7,6 +7,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
+// +++ we do not need special contract to test log. We just deploy chainlog contract on 'solo' tool
+// and write unit tests
+
 const (
 	Name        = "test_chainlog"
 	Version     = "0.1"
