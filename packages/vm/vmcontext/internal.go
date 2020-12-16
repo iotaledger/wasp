@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/hardcoded"
 )
@@ -109,4 +110,11 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color,
 		target,
 		cbalances.NewFromMap(map[balance.Color]int64{col: amount}),
 	)
+}
+
+func (vmctx *VMContext) StoreToChainLog(contract coretypes.Hname, recType byte, data []byte) {
+	vmctx.pushCallContext(chainlog.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	chainlog.AppendToChainlog(vmctx.State(), vmctx.timestamp, contract, recType, data)
 }

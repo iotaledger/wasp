@@ -143,6 +143,6 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 	return vm.NewContractEventPublisher(vmctx.CurrentContractID(), vmctx.log)
 }
 
-func (vmctx *VMContext) Request() *sctransaction.RequestRef {
-	return &vmctx.reqRef
+func (vmctx *VMContext) RequestID() coretypes.RequestID {
+	return *vmctx.reqRef.RequestID()
 }

@@ -1,4 +1,4 @@
-package log
+package chainlog
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -24,9 +24,6 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncStoreLog, storeLog),
-		contract.ViewFunc(FuncGetLog, getLogInfo),
-		contract.ViewFunc(FuncGetLasts, getLasts),
 		contract.ViewFunc(FuncGetLogsBetweenTs, getLogsBetweenTs),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
@@ -35,31 +32,33 @@ func init() {
 
 const (
 	// state variables
-	VarStateInitialized = "i"
+	VarStateInitialized = "i" //+++ not used, delete
 
+	//+++ where is the name of the tlog itself?
 	// request parameters
-	ParamLog           = "dataParam"
+	ParamLog           = "dataParam" // ParamRecordData is better?
 	ParamContractHname = "contractHname"
-	ParamLasts         = "lastsParam"
+	ParamLasts         = "lastsParam" //+++ not used, delete
 	ParamFromTs        = "fromTs"
 	ParamToTs          = "toTs"
 	ParamLastsRecords  = "lastRecords"
-	ParamType          = "ParamTypeOfRecords"
+	ParamType          = "ParamTypeOfRecords" // better ParamRecordType?
 
 	// function names
-	FuncGetLog           = "getLogInfo"
-	FuncGetLasts         = "getLasts"
 	FuncGetLogsBetweenTs = "getLogsBetweenTs"
 	FuncStoreLog         = "storeLog"
 
 	//Type of records
-	_DEPLOY         = 1
-	_TOKEN_TRANSFER = 2
-	_VIEWCALL       = 3
-	_REQUEST_FUNC   = 4
-	_GENERIC_DATA   = 5
+	// +++ Go type of the record type code should be uint16
+	// +++ are these record types defined at the system level? Doc-comments are needed
+	TR_DEPLOY         = 1
+	TR_TOKEN_TRANSFER = 2
+	TR_VIEWCALL       = 3
+	TR_REQUEST_FUNC   = 4
+	TR_GENERIC_DATA   = 5
 )
 
+//+++ not needed
 func GetProcessor() vmtypes.Processor {
 	return Interface
 }

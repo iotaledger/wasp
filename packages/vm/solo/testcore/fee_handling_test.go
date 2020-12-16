@@ -39,7 +39,7 @@ func TestBase(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 1, 0)
 }
 
-func Test1ReqTokenIsEnough(t *testing.T) {
+func TestFeeIsEnough1(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -62,10 +62,10 @@ func Test1ReqTokenIsEnough(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-4)
+	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
 }
 
-func Test1ReqTokenIsNotEnough(t *testing.T) {
+func TestFeeIsEnough2(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -83,15 +83,15 @@ func Test1ReqTokenIsNotEnough(t *testing.T) {
 
 	user := glb.NewSigSchemeWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
-	// for random user fees is not enough
 	_, err = chain.UploadBlob(user,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",
 	)
-	require.Error(t, err)
+	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	chain.CheckAccountBalance(userAgentID, balance.ColorIOTA, 1)
+	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
 	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
-	glb.CheckUtxodbBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-1)
+
+	chain.CheckAccountBalance(userAgentID, balance.ColorIOTA, 1)
+	glb.CheckUtxodbBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
 }

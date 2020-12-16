@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/dummyprocessor"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -17,6 +18,7 @@ func init() {
 	fmt.Printf("    %s: '%s'  \n", root.Interface.Hname().String(), root.Interface.Name)
 	fmt.Printf("    %s: '%s'  \n", accountsc.Interface.Hname().String(), accountsc.Interface.Name)
 	fmt.Printf("    %s: '%s'  \n", blob.Interface.Hname().String(), blob.Interface.Name)
+	fmt.Printf("    %s: '%s'  \n", chainlog.Interface.Hname().String(), chainlog.Interface.Name)
 	fmt.Printf("--------------- core contracts ------------------\n")
 }
 
