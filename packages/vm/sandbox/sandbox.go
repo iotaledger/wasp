@@ -123,5 +123,5 @@ func (s *sandbox) Eventf(format string, args ...interface{}) {
 }
 
 func (s *sandbox) ChainLog(data []byte) {
-	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), chainlog.TR_GENERIC_DATA, data)
+	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), chainlog.TRGenericData, data)
 }

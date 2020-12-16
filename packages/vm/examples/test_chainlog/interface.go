@@ -27,8 +27,6 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncTestStore, example_TestStore),
-		contract.Func(FuncTestGetLasts3, example_TestGetLasts3),
 		contract.Func(FuncTestGeneric, example_TestGeneric),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
@@ -37,13 +35,9 @@ func init() {
 
 const (
 	// function names
-	FuncTestStore     = "example_TestStore"
-	FuncTestGetLasts3 = "example_TestGetLasts3"
-	FuncTestGeneric   = "example_TestGeneric"
-
+	FuncTestGeneric = "example_TestGeneric"
 	//Variables
 	VarCounter = "counter"
-	TypeRecord = "typeOfRecord"
 )
 
 func GetProcessor() vmtypes.Processor {

@@ -3,7 +3,6 @@ package chainlog
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -11,7 +10,7 @@ const (
 	Name        = "chainlog"
 	Version     = "0.1"
 	fullName    = Name + "-" + Version
-	description = "Log Contract"
+	description = "Chainlog Contract"
 )
 
 var (
@@ -25,40 +24,37 @@ var (
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.ViewFunc(FuncGetLogsBetweenTs, getLogsBetweenTs),
+		contract.ViewFunc(FuncLastsNRecords, getLastsNRecords),
+		contract.ViewFunc(FuncLenByHnameAndTR, getLenByHnameAndTR),
 	})
-	examples.AddProcessor(Interface.ProgramHash, Interface)
-
 }
 
 const (
-	// state variables
-	VarStateInitialized = "i" //+++ not used, delete
-
-	//+++ where is the name of the tlog itself?
 	// request parameters
-	ParamLog           = "dataParam" // ParamRecordData is better?
+	ParamRecordData    = "recordData"
 	ParamContractHname = "contractHname"
-	ParamLasts         = "lastsParam" //+++ not used, delete
 	ParamFromTs        = "fromTs"
 	ParamToTs          = "toTs"
 	ParamLastsRecords  = "lastRecords"
-	ParamType          = "ParamTypeOfRecords" // better ParamRecordType?
+	ParamRecordType    = "ParamTypeOfRecords"
 
 	// function names
 	FuncGetLogsBetweenTs = "getLogsBetweenTs"
-	FuncStoreLog         = "storeLog"
+	FuncLastsNRecords    = "getLastsNRecords"
+	FuncLenByHnameAndTR  = "getLenByHnameAndTR"
 
 	//Type of records
-	// +++ Go type of the record type code should be uint16
-	// +++ are these record types defined at the system level? Doc-comments are needed
-	TR_DEPLOY         = 1
-	TR_TOKEN_TRANSFER = 2
-	TR_VIEWCALL       = 3
-	TR_REQUEST_FUNC   = 4
-	TR_GENERIC_DATA   = 5
+	//Constantes que definen de que tipo son los datos logueados. Se definen distintos tipos:
+	//	-TRDeploy       -> Cada vez que se quiera loguear un deploy
+	//	-TRViewCall     -> Cada vez que se quiera loguear una viewcall a un sc externo
+	//	-TRRequest -> Cada vez que se quiera loguear una request a un sc
+	//	-TRGenericData -> Cada vez que se quiera  loguear datos genericos establecidos por el usuario
+	TRDeploy      = byte(1)
+	TRViewCall    = byte(2)
+	TRRequest     = byte(3)
+	TRGenericData = byte(4)
 )
 
-//+++ not needed
 func GetProcessor() vmtypes.Processor {
 	return Interface
 }
