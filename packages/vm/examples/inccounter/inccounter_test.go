@@ -29,7 +29,7 @@ func TestDeployInc(t *testing.T) {
 	require.NoError(t, err)
 	chain.CheckBase()
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }

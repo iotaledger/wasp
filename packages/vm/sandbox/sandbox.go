@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -56,7 +57,7 @@ func (s *sandbox) State() kv.KVStore {
 }
 
 func (s *sandbox) RequestID() coretypes.RequestID {
-	return *s.vmctx.Request().RequestID()
+	return s.vmctx.RequestID()
 }
 
 // call context
@@ -119,4 +120,8 @@ func (s *sandbox) Event(msg string) {
 
 func (s *sandbox) Eventf(format string, args ...interface{}) {
 	s.vmctx.EventPublisher().Publishf(format, args...)
+}
+
+func (s *sandbox) ChainLog(data []byte) {
+	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), chainlog.TR_GENERIC_DATA, data)
 }

@@ -1,4 +1,4 @@
-package log
+package chainlog
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -24,9 +24,6 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncStoreLog, storeLog),
-		contract.ViewFunc(FuncGetLog, getLogInfo),
-		contract.ViewFunc(FuncGetLasts, getLasts),
 		contract.ViewFunc(FuncGetLogsBetweenTs, getLogsBetweenTs),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
@@ -48,8 +45,6 @@ const (
 	ParamType          = "ParamTypeOfRecords" // better ParamRecordType?
 
 	// function names
-	FuncGetLog           = "getLogInfo"
-	FuncGetLasts         = "getLasts"
 	FuncGetLogsBetweenTs = "getLogsBetweenTs"
 	FuncStoreLog         = "storeLog"
 

@@ -45,7 +45,7 @@ func TestGetInfo(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
-	require.EqualValues(t, 3, len(contracts))
+	require.EqualValues(t, 4, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -72,7 +72,7 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -111,7 +111,7 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)

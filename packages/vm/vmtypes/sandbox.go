@@ -70,7 +70,8 @@ type Sandbox interface {
 	// PostRequestToSelfWithDelay sends request to itself with timelock for some seconds after the current timestamp
 	// Deprecated: just a syntactical sugar for PostRequest
 	PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, deferForSec uint32) bool
-
+	// Chainlog stores user defined data to on-chain timestamped log
+	ChainLog(data []byte)
 	// Log interface provides local logging on the machine
 	Log() LogInterface
 
