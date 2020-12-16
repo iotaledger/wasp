@@ -57,7 +57,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -114,7 +114,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -170,7 +170,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)

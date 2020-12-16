@@ -38,7 +38,7 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 3, contractRegistry.Len())
+		require.EqualValues(t, 4, contractRegistry.Len())
 		return true
 	})
 

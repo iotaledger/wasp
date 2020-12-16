@@ -67,12 +67,12 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.id = id
 	o.keyId = keyId
 	o.ownerId = owner.id
-	o.isRoot = owner.id == 1
+	o.isRoot = o.kvStore != nil
+	if !o.isRoot {
+		o.kvStore = owner.kvStore
+	}
 	o.vm = owner.vm
 	o.vm.Trace("InitObj %s", o.Name())
-	if o.kvStore == nil {
-		o.kvStore = dict.New()
-	}
 	o.typeId = o.vm.FindObject(owner.id).GetTypeId(keyId)
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
@@ -120,7 +120,7 @@ func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 		o.Panic("GetObjectId: Invalid type")
 	}
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		keyId: func() WaspObject { return &ScDict{kvStore: o.kvStore} },
+		keyId: func() WaspObject { return &ScDict{} },
 	})
 }
 
@@ -149,7 +149,8 @@ func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 	o.validate(keyId, typeId)
 	suffix := o.Suffix(keyId)
 	key := o.NestedKey() + suffix
-	o.vm.Trace("key: %s", o.Name()+suffix)
+	o.vm.Trace("fld: %s", o.Name()+suffix)
+	o.vm.Trace("key: %s", key[1:])
 	return kv.Key(key[1:])
 }
 

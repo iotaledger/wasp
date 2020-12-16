@@ -3,6 +3,8 @@
 
 package wasmhost
 
+import "github.com/iotaledger/wasp/packages/kv/dict"
+
 type ScContext struct {
 	ScDict
 }
@@ -60,7 +62,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		KeyLogs:      func() WaspObject { return &ScLogs{} },
 		KeyParams:    func() WaspObject { return &ScDict{kvStore: o.vm.Params()} },
 		KeyPosts:     func() WaspObject { return &ScPosts{} },
-		KeyResults:   func() WaspObject { return &ScDict{} },
+		KeyResults:   func() WaspObject { return &ScDict{kvStore: dict.New()} },
 		KeyState:     func() WaspObject { return &ScDict{kvStore: o.vm.State()} },
 		KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		KeyUtility:   func() WaspObject { return &ScUtility{} },
