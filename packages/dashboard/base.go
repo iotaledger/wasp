@@ -55,6 +55,8 @@ func MakeTemplate(parts ...string) *template.Template {
 		"formatTimestamp":   formatTimestamp,
 		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
 		"args":              args,
+		"hashref":           hashref,
+		"quoted":            quoted,
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {
@@ -151,7 +153,7 @@ const tplBase = `
 		{{template "body" .}}
 		<hr/>
 		<footer>
-		<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
+		<p style="font-size: small">Node network ID: <code>{{.MyNetworkId}}</code></p>
 		</footer>
 	</body>
 	</html>

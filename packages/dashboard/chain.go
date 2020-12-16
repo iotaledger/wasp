@@ -7,10 +7,12 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo"
 )
@@ -62,6 +64,11 @@ func addChainEndpoints(e *echo.Echo) {
 			if err != nil {
 				return err
 			}
+
+			result.Blobs, err = fetchBlobs(chain)
+			if err != nil {
+				return err
+			}
 		}
 
 		return c.Render(http.StatusOK, chainTplName, result)
@@ -93,6 +100,14 @@ func fetchTotalAssets(chain chain.Chain) (map[balance.Color]int64, error) {
 	return accountsc.DecodeBalances(bal)
 }
 
+func fetchBlobs(chain chain.Chain) (map[hashing.HashValue]uint32, error) {
+	ret, err := callView(chain, blob.Interface.Hname(), blob.FuncListBlobs, nil)
+	if err != nil {
+		return nil, err
+	}
+	return blob.DecodeDirectory(ret)
+}
+
 type ChainTemplateParams struct {
 	BaseTemplateParams
 
@@ -103,6 +118,7 @@ type ChainTemplateParams struct {
 	RootInfo    RootInfo
 	Accounts    []coretypes.AgentID
 	TotalAssets map[balance.Color]int64
+	Blobs       map[hashing.HashValue]uint32
 	Committee   struct {
 		Size       uint16
 		Quorum     uint16
@@ -116,7 +132,8 @@ const tplChain = `
 {{define "title"}}Chain details{{end}}
 
 {{define "body"}}
-	<h2>Chain <tt>{{printf "%.8s" .ChainID}}…</tt></h2>
+	{{ $chainid := .ChainID }}
+	<h2>Chain <tt>{{printf "%.8s" $chainid}}…</tt></h2>
 
 	{{if .ChainRecord}}
 		<div>
@@ -125,8 +142,8 @@ const tplChain = `
 			<p>Chain Color: <code>{{.ChainRecord.Color}}</code></p>
 			<p>Active: <code>{{.ChainRecord.Active}}</code></p>
 			{{if .ChainRecord.Active}}
-				<p>Owner ID: {{template "agentid" (args .ChainID .RootInfo.OwnerID)}}</p>
-				<p>Description: <code>{{.RootInfo.Description}}</code></p>
+				<p>Owner ID: {{template "agentid" (args $chainid .RootInfo.OwnerID)}}</p>
+				<p>Description: <code>{{quoted 50 .RootInfo.Description}}</code></p>
 			{{end}}
 		</div>
 		{{if .ChainRecord.Active}}
@@ -144,8 +161,8 @@ const tplChain = `
 					<tbody>
 					{{range $_, $c := .RootInfo.Contracts}}
 						<tr>
-							<td><code>{{printf "%.15s" $c.Name}}</code></td>
-							<td>{{printf "%.50s" $c.Description}}</td>
+							<td><code>{{quoted 30 $c.Name}}</code></td>
+							<td><code>{{quoted 50 $c.Description}}</code></td>
 							<td><code>{{$c.ProgramHash.Short}}</code></td>
 						</tr>
 					{{end}}
@@ -163,7 +180,6 @@ const tplChain = `
 						</tr>
 					</thead>
 					<tbody>
-					{{ $chainid := .ChainID }}
 					{{range $_, $agentid := .Accounts}}
 						<tr>
 							<td>{{template "agentid" (args $chainid $agentid)}}</td>
@@ -173,6 +189,29 @@ const tplChain = `
 				</table>
 				<h4>Total assets</h4>
 				{{ template "balances" .TotalAssets }}
+			</div>
+
+			<hr/>
+			<div>
+				<h3>Blobs</h3>
+				<table>
+					<thead>
+						<tr>
+							<th>Hash</th>
+							<th>Size (bytes)</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+					{{range $hash, $size := .Blobs}}
+						<tr>
+							<td><code>{{ hashref $hash }}</code></td>
+							<td>{{ $size }}</td>
+							<td><a href="/chains/{{$chainid}}/blob/{{hashref $hash}}">Details</a></td>
+						</tr>
+					{{end}}
+					</tbody>
+				</table>
 			</div>
 
 			<hr/>
@@ -230,7 +269,7 @@ const tplChain = `
 			</div>
 		{{end}}
 	{{else}}
-		<p>No chain record for ID <code>{{.ChainID}}</code></p>
+		<p>No chain record for ID <code>{{$chainid}}</code></p>
 	{{end}}
 {{end}}
 `

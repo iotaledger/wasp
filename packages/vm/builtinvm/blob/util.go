@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -80,6 +81,22 @@ func DecodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
 			return nil, err
 		}
 		ret[string(field)] = uint32(v)
+	}
+	return ret, nil
+}
+
+func DecodeDirectory(blobs dict.Dict) (map[hashing.HashValue]uint32, error) {
+	ret := make(map[hashing.HashValue]uint32)
+	for hash, size := range blobs {
+		v, err := DecodeSize(size)
+		if err != nil {
+			return nil, err
+		}
+		h, _, err := codec.DecodeHashValue([]byte(hash))
+		if err != nil {
+			return nil, err
+		}
+		ret[*h] = uint32(v)
 	}
 	return ret, nil
 }
