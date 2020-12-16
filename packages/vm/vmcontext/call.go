@@ -121,45 +121,40 @@ func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, er
 	if !vmctx.txBuilder.Erase1TokenToChain(reqColor) {
 		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
 	}
+	// always accrue 1 uncolored iota to the sender on-chain. This makes completely fee-less requests possible
+	vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), cbalances.NewFromMap(map[balance.Color]int64{
+		balance.ColorIOTA: 1,
+	}))
 	totalFee := vmctx.ownerFee + vmctx.validatorFee
 	if totalFee == 0 || vmctx.requesterIsChainOwner() {
-		// if no fees enabled or the caller is the chain owner, accrue the request token to the caller
+		// no fees enabled or the caller is the chain owner
 		vmctx.log.Debugf("no fees charged, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
-		fee := map[balance.Color]int64{
-			balance.ColorIOTA: 1,
-		}
-		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), cbalances.NewFromMap(fee))
 		return transfer, nil
 	}
 	// handle fees
-	if totalFee-1 > transfer.Balance(vmctx.feeColor) {
+	if transfer.Balance(vmctx.feeColor) < totalFee {
 		// fallback: not enough fees
-		// accrue everything to the sender
-		withReq1Iota := map[balance.Color]int64{
-			balance.ColorIOTA: 1,
-		}
-		transfer.AddToMap(withReq1Iota)
+		// accrue everything to the sender, including the 1 iota from request
+		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to sender
 		sender := vmctx.reqRef.SenderAgentID()
-		vmctx.creditToAccount(sender, cbalances.NewFromMap(withReq1Iota))
+		vmctx.creditToAccount(sender, transfer)
 		return cbalances.NewFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
 			vmctx.reqRef.RequestID().Short(), sender.String())
 	}
-	// enough fees
-	// split between owner and validator
+	// enough fees. Split between owner and validator
 	if vmctx.ownerFee > 0 {
-		of := map[balance.Color]int64{
+		vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(map[balance.Color]int64{
 			vmctx.feeColor: vmctx.ownerFee,
-		}
-		vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(of))
+		}))
 	}
 	if vmctx.validatorFee > 0 {
-		vf := map[balance.Color]int64{
+		vmctx.creditToAccount(vmctx.validatorFeeTarget, cbalances.NewFromMap(map[balance.Color]int64{
 			vmctx.feeColor: vmctx.validatorFee,
-		}
-		vmctx.creditToAccount(vmctx.validatorFeeTarget, cbalances.NewFromMap(vf))
+		}))
 	}
+	// subtract fees from the transfer
 	remaining := map[balance.Color]int64{
-		vmctx.feeColor: -totalFee + 1,
+		vmctx.feeColor: -totalFee,
 	}
 	transfer.AddToMap(remaining)
 	return cbalances.NewFromMap(remaining), nil
