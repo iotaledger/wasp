@@ -43,12 +43,12 @@ const (
 	FuncLastsNRecords    = "getLastsNRecords"
 	FuncLenByHnameAndTR  = "getLenByHnameAndTR"
 
-	//Type of records
-	//Constantes que definen de que tipo son los datos logueados. Se definen distintos tipos:
-	//	-TRDeploy       -> Cada vez que se quiera loguear un deploy
-	//	-TRViewCall     -> Cada vez que se quiera loguear una viewcall a un sc externo
-	//	-TRRequest -> Cada vez que se quiera loguear una request a un sc
-	//	-TRGenericData -> Cada vez que se quiera  loguear datos genericos establecidos por el usuario
+	// Type of records
+	// Constants that define the type of logged data. Different types are defined:
+	// -TRDeploy -> Every time you want to log a contract deploy (in root)
+	// -TRViewCall -> Every time you want to log a viewcall, e.g an external sc
+	// -TRRequest -> Every time you want to log a request to a sc
+	// -TRGenericData -> Every time you want to log generic data set by the user
 	TRDeploy      = byte(1)
 	TRViewCall    = byte(2)
 	TRRequest     = byte(3)
