@@ -150,7 +150,7 @@ func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 	suffix := o.Suffix(keyId)
 	key := o.NestedKey() + suffix
 	o.vm.Trace("fld: %s", o.Name()+suffix)
-	o.vm.Trace("key: %s", key)
+	o.vm.Trace("key: %s", key[1:])
 	return kv.Key(key[1:])
 }
 
