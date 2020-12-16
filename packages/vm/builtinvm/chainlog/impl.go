@@ -26,15 +26,6 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, err
 	}
 
-	//TODO: check if the contract really exists in the chain
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
-	}
-
 	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamType))
 	if err != nil {
 		return nil, err
@@ -43,8 +34,10 @@ func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("paremeter 'ParamType' not found")
 	}
 
+	contractName := ctx.Caller().MustContractID().Hname()
+
 	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
+	case TR_DEPLOY, TR_TOKEN_TRANSFER, TR_VIEWCALL, TR_REQUEST_FUNC, TR_GENERIC_DATA:
 		entry := append(contractName.Bytes(), byte(typeP))
 		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
 		log.Append(ctx.GetTimestamp(), logData)
@@ -78,7 +71,7 @@ func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
+	case TR_DEPLOY, TR_TOKEN_TRANSFER, TR_VIEWCALL, TR_REQUEST_FUNC, TR_GENERIC_DATA:
 		entry := append(contractName.Bytes(), byte(typeP))
 		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
 
@@ -122,7 +115,7 @@ func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
+	case TR_DEPLOY, TR_TOKEN_TRANSFER, TR_VIEWCALL, TR_REQUEST_FUNC, TR_GENERIC_DATA:
 		entry := append(contractName.Bytes(), byte(typeP))
 		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
 
@@ -210,7 +203,7 @@ func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
+	case TR_DEPLOY, TR_TOKEN_TRANSFER, TR_VIEWCALL, TR_REQUEST_FUNC, TR_GENERIC_DATA:
 		entry := append(contractName.Bytes(), byte(typeP))
 		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
 

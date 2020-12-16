@@ -53,11 +53,11 @@ const (
 	FuncStoreLog         = "storeLog"
 
 	//Type of records
-	_DEPLOY         = 1
-	_TOKEN_TRANSFER = 2
-	_VIEWCALL       = 3
-	_REQUEST_FUNC   = 4
-	_GENERIC_DATA   = 5
+	TR_DEPLOY         = 1
+	TR_TOKEN_TRANSFER = 2
+	TR_VIEWCALL       = 3
+	TR_REQUEST_FUNC   = 4
+	TR_GENERIC_DATA   = 5
 )
 
 func GetProcessor() vmtypes.Processor {
