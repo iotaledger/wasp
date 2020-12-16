@@ -55,20 +55,14 @@ func (ch *Chain) FindContract(name string) (*root.ContractRecord, error) {
 	return root.DecodeContractRecord(retBin)
 }
 
-func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]int, bool) {
+func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
 	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash)
 	require.NoError(ch.Glb.T, err)
 	if res.IsEmpty() {
 		return nil, false
 	}
-	ret := make(map[string]int)
-	res.ForEach(func(key kv.Key, value []byte) bool {
-		v, ok, err := codec.DecodeInt64(value)
-		require.NoError(ch.Glb.T, err)
-		require.True(ch.Glb.T, ok)
-		ret[string(key)] = int(v)
-		return true
-	})
+	ret, err := blob.DecodeSizesMap(res)
+	require.NoError(ch.Glb.T, err)
 	return ret, true
 }
 

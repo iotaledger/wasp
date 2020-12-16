@@ -7,7 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 )
+
+const varStateDirectory = "d"
+
+const valuesPrefix = "v"
+const sizesPrefix = "s"
 
 func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
 	kSorted := fields.KeysSorted() // mind determinism
@@ -28,21 +34,52 @@ func MustGetBlobHash(fields dict.Dict) hashing.HashValue {
 	return ret
 }
 
-// GetBlobField retrieves blob field from the state or returns nil
-func GetBlobField(state kv.KVStore, blobHash hashing.HashValue, field []byte) []byte {
-	return datatypes.NewMustMap(state, string(blobHash[:])).GetAt(field)
+// GetDirectory retrieves the blob directory from the state
+func GetDirectory(state kv.KVStore) *datatypes.MustMap {
+	return datatypes.NewMustMap(state, varStateDirectory)
+}
+
+// GetBlobValues retrieves the blob field-value map from the state
+func GetBlobValues(state kv.KVStore, blobHash hashing.HashValue) *datatypes.MustMap {
+	return datatypes.NewMustMap(state, valuesPrefix+string(blobHash[:]))
+}
+
+// GetBlobSize retrieves the blob field-size map from the state
+func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *datatypes.MustMap {
+	return datatypes.NewMustMap(state, sizesPrefix+string(blobHash[:]))
 }
 
 func LocateProgram(state kv.KVStore, programHash hashing.HashValue) (string, []byte, error) {
 	fmt.Printf("--- LocateProgram: %s\n", programHash.String())
-	programBinary := GetBlobField(state, programHash, []byte(VarFieldProgramBinary))
+	blbValues := GetBlobValues(state, programHash)
+	programBinary := blbValues.GetAt([]byte(VarFieldProgramBinary))
 	if programBinary == nil {
 		return "", nil, fmt.Errorf("can't find program binary for hash %s", programHash.String())
 	}
-	v := GetBlobField(state, programHash, []byte(VarFieldVMType))
+	v := blbValues.GetAt([]byte(VarFieldVMType))
 	vmType := "wasmtimevm"
 	if v != nil {
 		vmType = string(v)
 	}
 	return vmType, programBinary, nil
+}
+
+func EncodeSize(size uint32) []byte {
+	return util.Uint32To4Bytes(size)
+}
+
+func DecodeSize(size []byte) (uint32, error) {
+	return util.Uint32From4Bytes(size)
+}
+
+func DecodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
+	ret := make(map[string]uint32)
+	for field, size := range sizes {
+		v, err := DecodeSize(size)
+		if err != nil {
+			return nil, err
+		}
+		ret[string(field)] = uint32(v)
+	}
+	return ret, nil
 }
