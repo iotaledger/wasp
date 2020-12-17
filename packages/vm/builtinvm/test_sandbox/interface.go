@@ -24,14 +24,18 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncTestGeneric, testChainLogTestGeneric),
+		contract.Func(FuncChainLogGenericData, testChainLogGenericData),
+		contract.Func(FuncChainLogEventData, testChainLogEventData),
+		contract.Func(FuncChainLogEventDataFormatted, testChainLogEventDataFormatted),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
 }
 
 const (
 	// function names
-	FuncTestGeneric = "testChainLogTestGeneric"
+	FuncChainLogGenericData        = "testChainLogGenericData"
+	FuncChainLogEventData          = "testChainLogEventData"
+	FuncChainLogEventDataFormatted = "testChainLogEventDataFormatted"
 	//Variables
 	VarCounter = "counter"
 )

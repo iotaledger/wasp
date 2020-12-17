@@ -20,14 +20,14 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestGetLenByHnameAndTR(t *testing.T) {
+func TestChainlogGetLenByHnameAndTR(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)
 
 	req := solo.NewCall(Interface.Name,
-		FuncTestGeneric,
+		FuncChainLogGenericData,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestGetLenByHnameAndTR(t *testing.T) {
 	require.EqualValues(t, 1, v)
 }
 
-func TestStoreWrongTypeParam(t *testing.T) {
+func TestChainlogWrongTypeParam(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -53,7 +53,7 @@ func TestStoreWrongTypeParam(t *testing.T) {
 	require.NoError(t, err)
 
 	req := solo.NewCall(Interface.Name,
-		FuncTestGeneric,
+		FuncChainLogGenericData,
 		VarCounter, 1,
 	)
 	_, err = chain.PostRequest(req, nil)
@@ -66,7 +66,7 @@ func TestStoreWrongTypeParam(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestGetLasts3(t *testing.T) {
+func TestChainlogGetLasts3(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
@@ -76,7 +76,7 @@ func TestGetLasts3(t *testing.T) {
 
 	for i := 1; i < 6; i++ {
 		req := solo.NewCall(Interface.Name,
-			FuncTestGeneric,
+			FuncChainLogGenericData,
 			VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
@@ -94,7 +94,7 @@ func TestGetLasts3(t *testing.T) {
 	require.EqualValues(t, 3, array.Len())
 }
 
-func TestGetBetweenTs(t *testing.T) {
+func TestChainlogGetBetweenTs(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
@@ -104,7 +104,7 @@ func TestGetBetweenTs(t *testing.T) {
 
 	for i := 1; i < 6; i++ {
 		req := solo.NewCall(Interface.Name,
-			FuncTestGeneric,
+			FuncChainLogGenericData,
 			VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
@@ -124,8 +124,55 @@ func TestGetBetweenTs(t *testing.T) {
 	require.EqualValues(t, 2, array.Len())
 }
 
-// not sure what is the purpose of the test
-func TestGetBetweenTsAndDifferentTypes(t *testing.T) {
+func TestChainlogEventData(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	require.NoError(t, err)
+
+	req := solo.NewCall(Interface.Name,
+		FuncChainLogEventData, //Sandbox call se the TREvent type
+	)
+	_, err = chain.PostRequest(req, nil)
+
+	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamFromTs, 0,
+		chainlog.ParamToTs, chain.State.Timestamp(),
+		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamRecordType, chainlog.TREvent,
+	)
+	require.NoError(t, err)
+	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
+
+	require.EqualValues(t, 1, array.Len())
+}
+
+func TestChainlogEventDataFomatted(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	require.NoError(t, err)
+
+	req := solo.NewCall(Interface.Name,
+		FuncChainLogEventDataFormatted, //Sandbox call se the TREvent type
+	)
+	_, err = chain.PostRequest(req, nil)
+
+	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamFromTs, 0,
+		chainlog.ParamToTs, chain.State.Timestamp(),
+		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamRecordType, chainlog.TREvent,
+	)
+	require.NoError(t, err)
+	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
+
+	require.EqualValues(t, 1, array.Len())
+}
+
+func TestChainlogGetBetweenTsAndDifferentTypes(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
@@ -135,7 +182,7 @@ func TestGetBetweenTsAndDifferentTypes(t *testing.T) {
 
 	for i := 1; i < 4; i++ {
 		req := solo.NewCall(Interface.Name,
-			FuncTestGeneric,
+			FuncChainLogEventData, //Sandbox call se the TREvent type
 			VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
@@ -143,21 +190,22 @@ func TestGetBetweenTsAndDifferentTypes(t *testing.T) {
 	}
 	for i := 4; i < 6; i++ {
 		req := solo.NewCall(Interface.Name,
-			FuncTestGeneric,
+			FuncChainLogGenericData, //Sandbox call use the TRGeneric type
 			VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
 	}
 
+	//This call should return all the record that has the TREvent type (in this case 3)
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
 		chainlog.ParamContractHname, Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRGenericData,
+		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
 
-	require.EqualValues(t, 5, array.Len())
+	require.EqualValues(t, 3, array.Len())
 }
