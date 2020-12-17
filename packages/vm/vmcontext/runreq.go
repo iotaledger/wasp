@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"runtime/debug"
 )
@@ -18,16 +19,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 	if !vmctx.setRequestContext(reqRef, timestamp) {
 		return state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	}
-	defer func() {
-		vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
-
-		vmctx.log.Debugw("runTheRequest OUT",
-			"reqId", vmctx.reqRef.RequestID().Short(),
-			"entry point", vmctx.reqRef.RequestSection().EntryPointCode().String(),
-			//"state update", vmctx.stateUpdate.String(),
-		)
-	}()
-
+	var err error
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -41,10 +33,33 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 				}
 				vmctx.Rollback()
 			}
+			err = vmctx.lastError
 		}()
 		vmctx.mustCallFromRequest()
 	}()
+
+	vmctx.chainlogRequest(err)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
+
+	vmctx.log.Debugw("runTheRequest OUT",
+		"reqId", vmctx.reqRef.RequestID().Short(),
+		"entry point", vmctx.reqRef.RequestSection().EntryPointCode().String(),
+		//"state update", vmctx.stateUpdate.String(),
+	)
 	return vmctx.stateUpdate
+}
+
+func (vmctx *VMContext) chainlogRequest(err error) {
+	e := ""
+	if err != nil {
+		e = err.Error()
+	}
+	rec := &chainlog.RequestChainLogRecord{
+		RequestID:  *vmctx.reqRef.RequestID(),
+		EntryPoint: vmctx.reqRef.RequestSection().EntryPointCode(),
+		Result:     e,
+	}
+	vmctx.StoreToChainLog(vmctx.reqHname, chainlog.TRRequest, chainlog.EncodeRequestChainLogRecord(rec))
 }
 
 func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {

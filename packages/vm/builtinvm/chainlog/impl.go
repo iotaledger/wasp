@@ -2,203 +2,104 @@ package chainlog
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+// initialize is mandatory
+func initialize(_ vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-//
-// Gets the length by Hname of the contract and the type of record of the log
-//
+// getLenByHnameAndTR gets the number of chainlog records filtered by hname and type
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
 //	- ParamRecordType Type of record that you want to query
 func getLenByHnameAndTR(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	state := ctx.State()
-	params := ctx.Params()
-
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
+	contractName, recType, err := getFilterParameters(ctx.Params())
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
-	}
-
-	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamRecordType))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamRecordType' not found")
-	}
-
 	ret := dict.New()
-	switch byte(typeP) {
-	case TRDeploy, TRViewCall, TRRequest, TRGenericData:
-		log, entry := GetOrCreateDataLog(state, contractName, byte(typeP))
-		ret.Set(kv.Key(entry.String()), codec.EncodeInt64(int64(log.Len())))
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamRecordType' is incorrect")
-	}
-
+	thelog := datatypes.NewMustTimestampedLog(ctx.State(), ChainLogName(contractName, recType))
+	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.Len())))
 	return ret, nil
 }
 
-//
-// Gets the last N records by contractHname and record type
-//
+// getLogRecords gets logs between timestamp interval and last N number of records
+// In time descending order
 // Parameters:
-//	- ParamContractHname Hname of the contract to view the logs
-//	- ParamRecordType Type of record that you want to query
-func getLastsNRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
-
-	state := ctx.State()
-	params := ctx.Params()
-
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
+//	- ParamContractHname Filter param, Hname of the contract to view the logs
+//	- ParamRecordType Filter param, Type of record that you want to query
+//  - ParamFromTs From interval. Defaults to 0
+//  - ParamToTs To Interval. Defaults to now (if both are missing means all)
+//  - ParamMaxLastRecords Max amount of records that you want to return. Defaults to 50
+func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	contractHname, recType, err := getFilterParameters(ctx.Params())
+	if err != nil {
+		return nil, err
+	}
+	maxLast, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamMaxLastRecords))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
+		// taking default
+		maxLast = DefaultMaxNumberOfRecords
 	}
-
-	l, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamLastsRecords))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		l = 0
-	}
-
-	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamRecordType))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamRecordType' not found")
-	}
-
-	ret := dict.New()
-	switch byte(typeP) {
-	case TRDeploy, TRViewCall, TRRequest, TRGenericData:
-		entry := append(contractName.Bytes(), byte(typeP))
-		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
-
-		if err != nil || log.Len() < uint32(l) {
-			return nil, err
-		}
-
-		tts := log.TakeTimeSlice(log.Earliest(), log.Latest())
-		if tts.IsEmpty() {
-			// empty time slice
-			return nil, nil
-		}
-		first, last := tts.FromToIndices()
-		from := first
-		nPoints := tts.NumPoints()
-		if l != 0 && nPoints > uint32(l) {
-			from = nPoints - uint32(l)
-		}
-		data := log.LoadRecordsRaw(from, last, false)
-
-		a := datatypes.NewMustArray(ret, string(entry))
-		for _, s := range data {
-			a.Push(s)
-		}
-
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamRecordType' is incorrect")
-	}
-
-	return ret, nil
-}
-
-// Gets logs between timestamp interval and last N number of records
-//
-// Parameters:
-//  - ParamFromTs From interval
-//  - ParamToTs To Interval
-//  - ParamLastsRecords Amount of records that you want to return
-//	- ParamContractHname Hname of the contract to view the logs
-//	- ParamRecordType Type of record that you want to query
-func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
-
-	state := ctx.State()
-	params := ctx.Params()
-
-	fromTs, ok, err := codec.DecodeInt64(params.MustGet(ParamFromTs))
+	fromTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamFromTs))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		fromTs = 0
 	}
-	toTs, ok, err := codec.DecodeInt64(params.MustGet(ParamToTs))
-
+	toTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamToTs))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		toTs = ctx.GetTimestamp()
 	}
-
-	lastRecords, ok, err := codec.DecodeInt64(params.MustGet(ParamLastsRecords))
-
-	if err != nil {
-		return nil, err
+	theLog := datatypes.NewMustTimestampedLog(ctx.State(), ChainLogName(contractHname, recType))
+	tts := theLog.TakeTimeSlice(fromTs, toTs)
+	if tts.IsEmpty() {
+		// empty time slice
+		return nil, nil
 	}
-	if !ok {
-		lastRecords = 0 // 0 means all
+	ret := dict.New()
+	first, last := tts.FromToIndicesCapped(uint32(maxLast))
+	data := theLog.LoadRecordsRaw(first, last, true) // descending
+	a := datatypes.NewMustArray(ret, ParamRecords)
+	for _, s := range data {
+		a.Push(s)
 	}
+	return ret, nil
+}
 
+// getFilterParameters internal utility function to parse and validate params
+func getFilterParameters(params dict.Dict) (coretypes.Hname, byte, error) {
 	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
+		return 0, 0, fmt.Errorf("parameter 'contractHname' not found")
 	}
-
 	typeP, ok, err := codec.DecodeInt64(params.MustGet(ParamRecordType))
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamRecordType' not found")
+		return 0, 0, fmt.Errorf("paremeter 'recordType' not found")
 	}
-
-	ret := dict.New()
-	switch byte(typeP) {
-	case TRDeploy, TRViewCall, TRRequest, TRGenericData:
-		log, entry := GetOrCreateDataLog(state, contractName, byte(typeP))
-		tts := log.TakeTimeSlice(fromTs, toTs)
-		if tts.IsEmpty() {
-			// empty time slice
-			return nil, nil
-		}
-		first, last := tts.FromToIndices()
-		from := first
-		nPoints := tts.NumPoints()
-		if lastRecords != 0 && nPoints > uint32(lastRecords) {
-			from = nPoints - uint32(lastRecords)
-		}
-		data := log.LoadRecordsRaw(from, last, false)
-		a := datatypes.NewMustArray(ret, entry.String())
-		for _, s := range data {
-			a.Push(s)
-		}
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamType' is incorrect")
+	if !IsSystemTR(byte(typeP)) {
+		return 0, 0, fmt.Errorf("parameter 'recordType' is wrong")
 	}
+	return contractName, byte(typeP), nil
 
-	return ret, nil
 }

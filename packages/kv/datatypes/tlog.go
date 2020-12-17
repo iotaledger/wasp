@@ -475,6 +475,17 @@ func (sl *TimeSlice) FromToIndices() (uint32, uint32) {
 	return sl.firstIdx, sl.lastIdx
 }
 
+func (sl *TimeSlice) FromToIndicesCapped(maxLast uint32) (uint32, uint32) {
+	if sl.IsEmpty() || maxLast == 0 {
+		return 0, 0
+	}
+	firstIdx, lastIdx := sl.FromToIndices()
+	if sl.NumPoints() <= maxLast {
+		return firstIdx, lastIdx
+	}
+	return lastIdx - maxLast + 1, lastIdx
+}
+
 // IsEmpty returns true if slice does not contains points
 func (sl *TimeSlice) IsEmpty() bool {
 	return sl == nil || sl.firstIdx > sl.lastIdx

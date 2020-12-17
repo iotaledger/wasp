@@ -21,18 +21,6 @@ func AddProcessor(progHash hashing.HashValue, proc vmtypes.Processor) {
 	fmt.Printf("AddProcessor: added example processor with hash %s\n", progHash.String())
 }
 
-//
-//var allExamples = map[string]vmtypes.Processor{
-//	vmnil.ProgramHash:         vmnil.GetProcessor(),
-//	logsc.ProgramHash:         logsc.GetProcessor(),
-//	inccounter.ProgramHashStr: inccounter.GetProcessor(),
-//	// TODO
-//	//fairroulette.ProgramHashStr:  fairroulette.GetProcessor(),
-//	//fairauction.ProgramHashStr:   fairauction.GetProcessor(),
-//	//tokenregistry.ProgramHashStr: tokenregistry.GetProcessor(),
-//	//dwfimpl.ProgramHashStr:       dwfimpl.GetProcessor(),
-//}
-
 func GetExampleProcessor(progHash hashing.HashValue) (vmtypes.Processor, bool) {
 	ret, ok := allExamples[progHash]
 	if !ok {

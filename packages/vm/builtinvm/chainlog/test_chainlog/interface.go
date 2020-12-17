@@ -1,14 +1,11 @@
+// smart contract for testing
 package test_chainlog
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/examples"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
-
-// +++ we do not need special contract to test log. We just deploy chainlog contract on 'solo' tool
-// and write unit tests
 
 const (
 	Name        = "test_chainlog"
@@ -27,19 +24,14 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncTestGeneric, example_TestGeneric),
+		contract.Func(FuncTestGeneric, testChainLogTestGeneric),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
-
 }
 
 const (
 	// function names
-	FuncTestGeneric = "example_TestGeneric"
+	FuncTestGeneric = "testChainLogTestGeneric"
 	//Variables
 	VarCounter = "counter"
 )
-
-func GetProcessor() vmtypes.Processor {
-	return Interface
-}

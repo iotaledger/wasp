@@ -116,5 +116,5 @@ func (vmctx *VMContext) StoreToChainLog(contract coretypes.Hname, recType byte, 
 	vmctx.pushCallContext(chainlog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	chainlog.AppendToChainlog(vmctx.State(), vmctx.timestamp, contract, recType, data)
+	chainlog.AppendToChainLog(vmctx.State(), vmctx.timestamp, contract, recType, data)
 }
