@@ -44,3 +44,25 @@ func testChainLogEventDataFormatted(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	return nil, nil
 }
+
+//The purpose of this function is to test Sandbox ChainOwnerID (It's not a ViewCall because ChainOwnerID is not in the SandboxView)
+func testChainOwnerID(ctx vmtypes.Sandbox) (dict.Dict, error) {
+
+	cOwnerID := ctx.ChainOwnerID()
+
+	ret := dict.New()
+	ret.Set(VarChainOwner, cOwnerID.Bytes())
+
+	return ret, nil
+}
+
+//The purpose of this function is to test Sandbox ChainID
+func testChainID(ctx vmtypes.SandboxView) (dict.Dict, error) {
+
+	cCreator := ctx.ChainID()
+
+	ret := dict.New()
+	ret.Set(VarChainID, cCreator.Bytes())
+
+	return ret, nil
+}

@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	Name        = "test_chainlog"
+	Name        = "test_sandbox"
 	Version     = "0.1"
 	fullName    = Name + "-" + Version
-	description = "Test chainlog contract"
+	description = "Test Sandbox functions"
 )
 
 var (
@@ -27,15 +27,23 @@ func init() {
 		contract.Func(FuncChainLogGenericData, testChainLogGenericData),
 		contract.Func(FuncChainLogEventData, testChainLogEventData),
 		contract.Func(FuncChainLogEventDataFormatted, testChainLogEventDataFormatted),
+		contract.Func(FuncChainOwnerID, testChainOwnerID),
+		contract.ViewFunc(FuncChainID, testChainID),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
 }
 
 const (
-	// function names
+	// function chainlog test
 	FuncChainLogGenericData        = "testChainLogGenericData"
 	FuncChainLogEventData          = "testChainLogEventData"
 	FuncChainLogEventDataFormatted = "testChainLogEventDataFormatted"
+
+	FuncChainOwnerID = "testChainOwnerID"
+	FuncChainID      = "testChainID"
+
 	//Variables
-	VarCounter = "counter"
+	VarCounter    = "counter"
+	VarChainOwner = "chainOwner"
+	VarChainID    = "chainID"
 )

@@ -209,3 +209,44 @@ func TestChainlogGetBetweenTsAndDifferentTypes(t *testing.T) {
 
 	require.EqualValues(t, 3, array.Len())
 }
+
+func TestChainOwnerID(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	originator := chain.OriginatorAgentID.Bytes()
+
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	require.NoError(t, err)
+
+	req := solo.NewCall(Interface.Name,
+		FuncChainOwnerID,
+	)
+	ret, err := chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	c := ret.MustGet(VarChainOwner)
+
+	require.EqualValues(t, originator, c)
+}
+
+func TestChainID(t *testing.T) {
+	glb := solo.New(t, false, false)
+
+	chain := glb.NewChain(nil, "chain1")
+	glb.SetTimeStep(500 * time.Millisecond)
+
+	chainID := chain.ChainID.Bytes()
+
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	require.NoError(t, err)
+
+	req := solo.NewCall(Interface.Name,
+		FuncChainID,
+	)
+	ret, err := chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	c := ret.MustGet(VarChainID)
+
+	require.EqualValues(t, chainID, c)
+}
