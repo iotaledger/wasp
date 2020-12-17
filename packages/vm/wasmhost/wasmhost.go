@@ -196,7 +196,7 @@ func (host *WasmHost) getKeyId(key []byte, fromString bool) int32 {
 }
 
 func (host *WasmHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
-	host.TraceHost("GetObjectId(o%d,k%d)", objId, keyId)
+	host.TraceHost("GetObjectId(o%d,k%d,t%d)", objId, keyId, typeId)
 	if host.HasError() {
 		return 0
 	}

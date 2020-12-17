@@ -79,7 +79,7 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 }
 
 func (o *ScDict) Exists(keyId int32) bool {
-	if (o.typeId & OBJTYPE_ARRAY) != 0 {
+	if o.typeId == (OBJTYPE_ARRAY | OBJTYPE_MAP) {
 		return uint32(keyId) <= uint32(len(o.objects))
 	}
 	return o.kvStore.MustHas(o.key(keyId, -1))
@@ -206,7 +206,7 @@ func (o *ScDict) SetString(keyId int32, value string) {
 
 func (o *ScDict) Suffix(keyId int32) string {
 	if (o.typeId & OBJTYPE_ARRAY) != 0 {
-		return fmt.Sprintf("#%d", keyId)
+		return fmt.Sprintf(".%d", keyId)
 	}
 	bytes := o.vm.getKeyFromId(keyId)
 	if (keyId & KeyFromString) != 0 {
@@ -219,9 +219,13 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 	if typeId == -1 {
 		return
 	}
-	if (o.typeId&OBJTYPE_ARRAY) != 0 && o.typeId != typeId {
+	if (o.typeId & OBJTYPE_ARRAY) != 0 {
 		// actually array
-		o.Panic("validate: Invalid type")
+		if (o.typeId &^ OBJTYPE_ARRAY) != typeId {
+			o.Panic("validate: Invalid type")
+		}
+		//TODO validate keyId >=0 && <= length
+		return
 	}
 	fieldType, ok := o.types[keyId]
 	if !ok {
