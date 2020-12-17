@@ -56,24 +56,36 @@ const tplChainList = `
 {{define "title"}}Chains{{end}}
 
 {{define "body"}}
+<div class="container">
+<div class="row">
+<div class="col-sm">
 	<h2>Chains</h2>
-	{{range $_, $c := .Chains}}
-		{{ $desc := printf "%.50s" $c.RootInfo.Description }}
-		{{ $id := $c.ChainRecord.ChainID }}
-		<details open="">
-			<summary>{{ if $desc }}{{ $desc }}{{ else }}<tt>{{ $c.ChainRecord.ChainID }}</tt>{{ end }}</summary>
-			<p>ChainID: <code>{{ $id }}</code></p>
-			{{ if $c.Error }}
-				<p><b>Error: {{ $c.Error }}</b></p>
-			{{ else if not $c.ChainRecord.Active }}
-				<p>This chain is <b>inactive</b>.</p>
-			{{ else }}
-				<p>Committee: <code>{{ $c.ChainRecord.CommitteeNodes }}</code></p>
-				<p>#Contracts: <code>{{ len $c.RootInfo.Contracts }}</code></p>
-				<p><a href="/chains/{{$c.ChainRecord.ChainID}}">Chain dashboard</a></p>
-			{{ end }}
-		</details>
-	{{end}}
+	<table style="max-width: 65em">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Description</th>
+				<th>#Nodes</th>
+				<th>#Contracts</th>
+				<th>Active?</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{range $_, $c := .Chains}}
+				{{ $id := $c.ChainRecord.ChainID }}
+				<tr>
+					<td data-label="ID"><a href="/chains/{{ $id }}"><tt>{{ $id }}</tt></a></td>
+					<td data-label="Description">{{ printf "%.50s" $c.RootInfo.Description }}
+						{{- if $c.Error }}<div class="card error">{{ $c.Error }}</div>{{ end }}</td>
+					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.ChainRecord.CommitteeNodes }}</tt>{{ end }}</td>
+					<td data-label="#Contracts">{{if not $c.Error}}<tt>{{ len $c.RootInfo.Contracts }}</tt>{{ end }}</td>
+					<td data-label="Active?">{{ if $c.ChainRecord.Active }} yes {{ else }} no {{ end }}</td>
+				</tr>
+			{{end}}
+		</tbody>
 	</table>
+</div>
+</div>
+</div>
 {{end}}
 `

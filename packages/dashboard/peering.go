@@ -42,9 +42,12 @@ const tplPeering = `
 {{define "title"}}Peering{{end}}
 
 {{define "body"}}
+<div class="container">
+<div class="row">
+<div class="col-sm">
 	<h2>Peers</h2>
-	<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
-	<table>
+	<p>Node network ID: <tt>{{.MyNetworkId}}</tt></p>
+	<table style="max-width: 50em">
 		<thead>
 			<tr>
 				<th>NetID</th>
@@ -56,13 +59,16 @@ const tplPeering = `
 		<tbody>
 		{{range $_, $ps := .NetworkProvider.PeerStatus}}
 			<tr>
-				<td><code>{{$ps.NetID}}</code></td>
-				<td>{{if $ps.IsInbound}}inbound{{else}}outbound{{end}}</td>
-				<td>{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
-				<td>{{$ps.NumUsers}}</td>
+				<td data-label="NetID"><tt>{{$ps.NetID}}</tt></td>
+				<td data-label="Type">{{if $ps.IsInbound}}inbound{{else}}outbound{{end}}</td>
+				<td data-label="Status">{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
+				<td data-label="#Users">{{$ps.NumUsers}}</td>
 			</tr>
 		{{end}}
 		</tbody>
 	</table>
+</div>
+</div>
+</div>
 {{end}}
 `

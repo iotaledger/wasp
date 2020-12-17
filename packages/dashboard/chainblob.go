@@ -120,35 +120,41 @@ const tplChainBlob = `
 {{define "title"}}Blob details{{end}}
 
 {{define "body"}}
-	<div>
-		<p>ChainID: <code>{{.ChainID}}</code></p>
-	</div>
+<div class="container">
+<div class="row">
+<div class="col-sm">
 	<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
+	<dl>
+		<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
+	</dl>
 	{{if .Blob}}
 		<div>
 			<table>
 				<thead>
 					<tr>
 						<th>Field</th>
-						<th class="align-right">Size (bytes)</th>
 						<th>Value</th>
+						<th class="align-right">Size (bytes)</th>
 						<th></th>
 					</tr>
 				</thead>
 				<tbody>
 				{{range $field, $value := .Blob}}
 					<tr>
-						<td><code>{{ quoted 30 $field }}</code></td>
-						<td class="align-right">{{ $value.Len }}</td>
+						<td><tt>{{ quoted 30 $field }}</tt></td>
 						<td><pre style="white-space: pre-wrap; max-width: 400px">{{ quoted 50 $value.Encoded }}</pre></td>
-						<td><a href="{{ $value.RawHref }}">Raw</a></td>
+						<td class="align-right">{{ $value.Len }}</td>
+						<td><a href="{{ $value.RawHref }}">Download</a></td>
 					</tr>
 				{{end}}
 				</tbody>
 			</table>
 		</div>
 	{{else}}
-		<p>Not found.</p>
+		<div class="card error">Not found.</div>
 	{{end}}
+</div>
+</div>
+</div>
 {{end}}
 `
