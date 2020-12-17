@@ -79,3 +79,14 @@ func TestDeployRubbish(t *testing.T) {
 	_, err = chain.FindContract(name)
 	require.Error(t, err)
 }
+
+func TestListBlobs(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
+	require.NoError(t, err)
+
+	ret, err := chain.PostRequest(solo.NewCall(blob.Interface.Name, blob.FuncListBlobs), nil)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, len(ret))
+}

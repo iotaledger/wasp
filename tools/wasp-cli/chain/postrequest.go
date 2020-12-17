@@ -18,7 +18,7 @@ func postRequestCmd(args []string) {
 		return SCClient(coretypes.Hn(args[0])).PostRequest(
 			args[1],
 			chainclient.PostRequestParams{
-				Args: encodeParams(args[2:]),
+				Args: util.EncodeParams(args[2:]),
 			},
 		)
 	})

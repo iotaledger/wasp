@@ -2,11 +2,10 @@ package blob
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -25,20 +24,31 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	// calculate a deterministic hash of all blob fields
 	blobHash, kSorted, values := mustGetBlobHash(params)
 
-	// get a record by blob hash
-	blb := datatypes.NewMustMap(state, string(blobHash[:]))
-	blbLen := datatypes.NewMustMap(state, string(blobHash[:])+"_len")
-	if blb.Len() > 0 || blb.Len() > 0 {
+	directory := GetDirectory(state)
+	if directory.HasAt(blobHash[:]) {
 		// blob already exists
 		return nil, fmt.Errorf("blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
 	}
+	// get a record by blob hash
+	blbValues := GetBlobValues(state, blobHash)
+	blbSizes := GetBlobSizes(state, blobHash)
+
+	totalSize := uint32(0)
+
 	// save record of the blob. In parallel save record of lenghts of blo fields
 	for i, k := range kSorted {
-		blb.SetAt([]byte(k), values[i])
-		blbLen.SetAt([]byte(k), util.Uint32To4Bytes(uint32(len(values[i]))))
+		size := uint32(len(values[i]))
+
+		blbValues.SetAt([]byte(k), values[i])
+		blbSizes.SetAt([]byte(k), EncodeSize(size))
+
+		totalSize += size
 	}
+
 	ret := dict.New()
 	ret.Set(ParamHash, codec.EncodeHashValue(&blobHash))
+
+	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 
 	ctx.Eventf("blob.storeBlob.success hash = %s", blobHash.String())
 	return ret, nil
@@ -55,14 +65,10 @@ func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("paremeter 'blob hash' not found")
 	}
-	blbLen := datatypes.NewMustMap(state, string(blobHash[:])+"_len")
+	blbSizes := GetBlobSizes(state, *blobHash)
 	ret := dict.New()
-	if blbLen.Len() == 0 {
-		// not found is not an error but result is empty
-		return ret, nil
-	}
-	blbLen.Iterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), codec.EncodeInt64(int64(util.MustUint32From4Bytes(value))))
+	blbSizes.Iterate(func(field []byte, value []byte) bool {
+		ret.Set(kv.Key(field), value)
 		return true
 	})
 	return ret, nil
@@ -71,6 +77,7 @@ func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
+
 	blobHash, ok, err := codec.DecodeHashValue(ctx.Params().MustGet(ParamHash))
 	if err != nil {
 		return nil, err
@@ -78,19 +85,31 @@ func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("paremeter 'blob hash' not found")
 	}
-	blb := datatypes.NewMustMap(state, string(blobHash[:]))
-	if blb.Len() == 0 {
-		return nil, fmt.Errorf("blob with hash %s has not been found", blobHash.String())
-	}
+
 	field := ctx.Params().MustGet(ParamField)
 	if field == nil {
 		return nil, fmt.Errorf("parameter 'blob field' not found")
 	}
-	value := GetBlobField(state, *blobHash, field)
+
+	blbValues := GetBlobValues(state, *blobHash)
+	if blbValues.Len() == 0 {
+		return nil, fmt.Errorf("blob with hash %s has not been found", blobHash.String())
+	}
+	value := blbValues.GetAt(field)
 	if value == nil {
 		return nil, fmt.Errorf("'blob field %s value not found", string(field))
 	}
 	ret := dict.New()
 	ret.Set(ParamBytes, value)
+	return ret, nil
+}
+
+func listBlobs(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("blob.listBlobs.begin")
+	ret := dict.New()
+	GetDirectory(ctx.State()).Iterate(func(hash []byte, totalSize []byte) bool {
+		ret.Set(kv.Key(hash), totalSize)
+		return true
+	})
 	return ret, nil
 }

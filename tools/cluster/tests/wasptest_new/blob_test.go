@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -53,7 +52,7 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	return chain
 }
 
-func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) dict.Dict {
+func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map[string]uint32 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(blob.Interface.Hname()),
 		blob.FuncGetBlobInfo,
@@ -62,7 +61,9 @@ func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) dic
 		}),
 	)
 	check(err, t)
-	return ret
+	decoded, err := blob.DecodeSizesMap(ret)
+	check(err, t)
+	return decoded
 }
 
 func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.HashValue, field string) []byte {
@@ -87,7 +88,7 @@ func TestBlobDeployChain(t *testing.T) {
 	chain := setupBlobTest(t)
 
 	ret := getBlobInfo(t, chain, *hashing.NilHash)
-	require.True(t, ret.IsEmpty())
+	require.Zero(t, len(ret))
 }
 
 func TestBlobStoreSmallBlob(t *testing.T) {
@@ -112,13 +113,10 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
 
-	ret := getBlobInfo(t, chain, expectedHash)
-	require.False(t, ret.IsEmpty())
+	sizes := getBlobInfo(t, chain, expectedHash)
+	require.NotZero(t, len(sizes))
 
-	v, ok, err := codec.DecodeInt64(ret.MustGet(blob.VarFieldProgramDescription))
-	require.NoError(t, err)
-	require.True(t, ok)
-	require.EqualValues(t, len(description), v)
+	require.EqualValues(t, len(description), sizes[blob.VarFieldProgramDescription])
 
 	retBin := getBlobFieldValue(t, chain, expectedHash, blob.VarFieldProgramDescription)
 	require.NotNil(t, retBin)
@@ -155,14 +153,12 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	check(err, t)
 
-	ret := getBlobInfo(t, chain, expectedHash)
-	require.False(t, ret.IsEmpty())
+	sizes := getBlobInfo(t, chain, expectedHash)
+	require.NotZero(t, len(sizes))
 
 	for i, fn := range fileNames {
-		v, err := ret.Get(kv.Key(fn))
-		require.NoError(t, err)
-		require.NotNil(t, v)
-		require.EqualValues(t, len(blobs[i]), util.MustUint64From8Bytes(v))
+		v := sizes[fn]
+		require.EqualValues(t, len(blobs[i]), v)
 		fmt.Printf("    %s: %d\n", fn, len(blobs[i]))
 
 		fdata := getBlobFieldValue(t, chain, expectedHash, fn)

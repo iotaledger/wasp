@@ -1,11 +1,9 @@
 package decode
 
 import (
-	"encoding/json"
 	"os"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/pflag"
@@ -16,8 +14,7 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 }
 
 func decodeCmd(args []string) {
-	var d dict.Dict
-	log.Check(json.NewDecoder(os.Stdin).Decode(&d))
+	d := util.UnmarshalDict()
 
 	if len(args) == 2 {
 		ktype := args[0]
