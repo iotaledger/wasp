@@ -57,7 +57,7 @@ func (vmctx *VMContext) chainlogRequest(err error) {
 	rec := &chainlog.RequestChainLogRecord{
 		RequestID:  *vmctx.reqRef.RequestID(),
 		EntryPoint: vmctx.reqRef.RequestSection().EntryPointCode(),
-		Result:     e,
+		Error:      e,
 	}
 	vmctx.StoreToChainLog(vmctx.reqHname, chainlog.TRRequest, chainlog.EncodeRequestChainLogRecord(rec))
 }

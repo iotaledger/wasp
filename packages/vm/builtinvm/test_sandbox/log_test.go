@@ -1,4 +1,4 @@
-package test_chainlog
+package test_sandbox
 
 import (
 	"testing"

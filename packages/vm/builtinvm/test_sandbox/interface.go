@@ -1,5 +1,5 @@
 // smart contract for testing
-package test_chainlog
+package test_sandbox
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"

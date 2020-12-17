@@ -25,7 +25,7 @@ func getLenByHnameAndTR(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		return nil, err
 	}
 	ret := dict.New()
-	thelog := datatypes.NewMustTimestampedLog(ctx.State(), ChainLogName(contractName, recType))
+	thelog := datatypes.NewMustTimestampedLog(ctx.State(), chainLogName(contractName, recType))
 	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.Len())))
 	return ret, nil
 }
@@ -65,7 +65,7 @@ func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		toTs = ctx.GetTimestamp()
 	}
-	theLog := datatypes.NewMustTimestampedLog(ctx.State(), ChainLogName(contractHname, recType))
+	theLog := datatypes.NewMustTimestampedLog(ctx.State(), chainLogName(contractHname, recType))
 	tts := theLog.TakeTimeSlice(fromTs, toTs)
 	if tts.IsEmpty() {
 		// empty time slice
@@ -101,5 +101,4 @@ func getFilterParameters(params dict.Dict) (coretypes.Hname, byte, error) {
 		return 0, 0, fmt.Errorf("parameter 'recordType' is wrong")
 	}
 	return contractName, byte(typeP), nil
-
 }

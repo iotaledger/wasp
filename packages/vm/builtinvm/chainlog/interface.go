@@ -75,7 +75,7 @@ func IsSystemTR(t byte) bool {
 type RequestChainLogRecord struct {
 	RequestID  coretypes.RequestID
 	EntryPoint coretypes.Hname
-	Result     string
+	Error      string
 }
 
 const MaxRequestError = 100
@@ -85,8 +85,8 @@ func EncodeRequestChainLogRecord(rec *RequestChainLogRecord) []byte {
 	var buf bytes.Buffer
 	buf.Write(rec.RequestID[:])
 	buf.Write(rec.EntryPoint.Bytes())
-	s := rec.Result
-	if len(rec.Result) > MaxRequestError {
+	s := rec.Error
+	if len(rec.Error) > MaxRequestError {
 		s = s[:MaxRequestError]
 	}
 	_ = util.WriteString16(&buf, s)
@@ -103,7 +103,7 @@ func DecodeRequestChainLogRecord(data []byte) (*RequestChainLogRecord, error) {
 		return nil, err
 	}
 	var err error
-	if ret.Result, err = util.ReadString16(rdr); err != nil {
+	if ret.Error, err = util.ReadString16(rdr); err != nil {
 		return nil, err
 	}
 	return ret, nil
