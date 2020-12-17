@@ -133,7 +133,10 @@ const tplChain = `
 
 {{define "body"}}
 	{{ $chainid := .ChainID }}
-	<h2>Chain <tt>{{printf "%.8s" $chainid}}…</tt></h2>
+	{{ $rootinfo := .RootInfo }}
+	{{ $desc := printf "%.50s" $rootinfo.Description }}
+
+	<h2>{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
 
 	{{if .ChainRecord}}
 		<div>
@@ -142,32 +145,42 @@ const tplChain = `
 			<p>Chain Color: <code>{{.ChainRecord.Color}}</code></p>
 			<p>Active: <code>{{.ChainRecord.Active}}</code></p>
 			{{if .ChainRecord.Active}}
-				<p>Owner ID: {{template "agentid" (args $chainid .RootInfo.OwnerID)}}</p>
-				<p>Description: <code>{{quoted 50 .RootInfo.Description}}</code></p>
+				<p>Owner ID: {{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</p>
+				<p>Delegated Owner ID:
+					{{- if $rootinfo.OwnerIDDelegated -}}
+						{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
+					{{- end -}}
+				</p>
+				<p>Default owner fee: <code>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</code></p>
+				<p>Default validator fee: <code>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</code></p>
 			{{end}}
 		</div>
 		{{if .ChainRecord.Active}}
 			<hr/>
 			<div>
 				<h3>Contracts</h3>
-				<table>
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Description</th>
-							<th>Program Hash</th>
-						</tr>
-					</thead>
-					<tbody>
-					{{range $_, $c := .RootInfo.Contracts}}
-						<tr>
-							<td><code>{{quoted 30 $c.Name}}</code></td>
-							<td><code>{{quoted 50 $c.Description}}</code></td>
-							<td><code>{{$c.ProgramHash.Short}}</code></td>
-						</tr>
-					{{end}}
-					</tbody>
-				</table>
+				{{range $_, $c := $rootinfo.Contracts}}
+					<details>
+						<summary><code>{{printf "%.30s" $c.Name}}</code></summary>
+						<p>Description: <code>{{printf "%.50s" $c.Description}}</code></p>
+						<p>Program hash: <code>{{$c.ProgramHash.String}}</code></p>
+						{{if $c.HasCreator}}<p>Creator: {{ template "agentid" (args $chainid $c.Creator) }}</p>{{end}}
+						<p>Owner fee:
+							{{ if $c.OwnerFee -}}
+								<code>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</code>
+							{{- else -}}
+								<code>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</code> (chain default)
+							{{- end -}}
+						</p>
+						<p>Validator fee:
+							{{ if $c.ValidatorFee -}}
+								<code>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
+							{{- else -}}
+								<code>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</code> (chain default)
+							{{- end -}}
+						</p>
+					</details>
+				{{end}}
 			</div>
 
 			<hr/>

@@ -25,20 +25,18 @@ func addChainListEndpoints(e *echo.Echo) {
 }
 
 func fetchChains() ([]*ChainOverview, error) {
-	r := make([]*ChainOverview, 0)
 	crs, err := registry.GetChainRecords()
 	if err != nil {
 		return nil, err
 	}
-	for _, cr := range crs {
+	r := make([]*ChainOverview, len(crs))
+	for i, cr := range crs {
 		info, err := fetchRootInfo(chains.GetChain(cr.ChainID))
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, &ChainOverview{
+		r[i] = &ChainOverview{
 			ChainRecord: cr,
 			RootInfo:    info,
-		})
+			Error:       err,
+		}
 	}
 	return r, nil
 }
@@ -51,6 +49,7 @@ type ChainListTemplateParams struct {
 type ChainOverview struct {
 	ChainRecord *registry.ChainRecord
 	RootInfo    RootInfo
+	Error       error
 }
 
 const tplChainList = `
@@ -58,29 +57,23 @@ const tplChainList = `
 
 {{define "body"}}
 	<h2>Chains</h2>
-	<table>
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>Description</th>
-				<th>#Nodes</th>
-				<th>#Contracts</th>
-				<th>Status</th>
-				<th></th>
-			</tr>
-		</thead>
-		<tbody>
-		{{range $_, $c := .Chains}}
-			<tr>
-				<td><abbr title="{{$c.ChainRecord.ChainID.String}}"><code>{{printf "%.8s" $c.ChainRecord.ChainID}}…</code></abbr></td>
-				<td>{{printf "%.50s" $c.RootInfo.Description}}</td>
-				<td>{{len $c.ChainRecord.CommitteeNodes}}</td>
-				<td>{{len $c.RootInfo.Contracts}}</td>
-				<td>{{if $c.ChainRecord.Active}}active{{else}}inactive{{end}}</td>
-				<td><a href="/chains/{{$c.ChainRecord.ChainID}}">Details</a></td>
-			</tr>
-		{{end}}
-		</tbody>
+	{{range $_, $c := .Chains}}
+		{{ $desc := printf "%.50s" $c.RootInfo.Description }}
+		{{ $id := $c.ChainRecord.ChainID }}
+		<details open="">
+			<summary>{{ if $desc }}{{ $desc }}{{ else }}<tt>{{ $c.ChainRecord.ChainID }}</tt>{{ end }}</summary>
+			<p>ChainID: <code>{{ $id }}</code></p>
+			{{ if $c.Error }}
+				<p><b>Error: {{ $c.Error }}</b></p>
+			{{ else if not $c.ChainRecord.Active }}
+				<p>This chain is <b>inactive</b>.</p>
+			{{ else }}
+				<p>Committee: <code>{{ $c.ChainRecord.CommitteeNodes }}</code></p>
+				<p>#Contracts: <code>{{ len $c.RootInfo.Contracts }}</code></p>
+				<p><a href="/chains/{{$c.ChainRecord.ChainID}}">Chain dashboard</a></p>
+			{{ end }}
+		</details>
+	{{end}}
 	</table>
 {{end}}
 `

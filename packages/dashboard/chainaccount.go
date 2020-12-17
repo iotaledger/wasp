@@ -66,7 +66,8 @@ const tplChainAccount = `
 	<div>
 		<p>ChainID: <code>{{.ChainID}}</code></p>
 	</div>
-	<h3>On-chain account <tt>{{.AgentID}}</tt></h3>
+	<h3>On-chain account</h3>
+	<p>AgentID: <code>{{.AgentID}}</code></p>
 	{{if .Balances}}
 		<div>
 			<h4>Balances</h4>

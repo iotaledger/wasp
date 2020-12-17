@@ -43,6 +43,7 @@ const tplPeering = `
 
 {{define "body"}}
 	<h2>Peers</h2>
+	<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
 	<table>
 		<thead>
 			<tr>
