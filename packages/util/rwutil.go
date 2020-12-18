@@ -47,11 +47,19 @@ func Uint32To4Bytes(val uint32) []byte {
 	return tmp4[:]
 }
 
-func MustUint32From4Bytes(b []byte) uint32 {
+func Uint32From4Bytes(b []byte) (uint32, error) {
 	if len(b) != 4 {
-		panic("len(b) != 4")
+		return 0, errors.New("len(b) != 4")
 	}
-	return binary.LittleEndian.Uint32(b[:])
+	return binary.LittleEndian.Uint32(b[:]), nil
+}
+
+func MustUint32From4Bytes(b []byte) uint32 {
+	n, err := Uint32From4Bytes(b)
+	if err != nil {
+		panic(err)
+	}
+	return n
 }
 
 func MustUint64From8Bytes(b []byte) uint64 {

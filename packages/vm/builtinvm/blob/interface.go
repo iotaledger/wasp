@@ -26,6 +26,7 @@ func init() {
 		contract.Func(FuncStoreBlob, storeBlob),
 		contract.ViewFunc(FuncGetBlobInfo, getBlobInfo),
 		contract.ViewFunc(FuncGetBlobField, getBlobField),
+		contract.ViewFunc(FuncListBlobs, listBlobs),
 	})
 }
 
@@ -46,6 +47,7 @@ const (
 	FuncGetBlobInfo  = "getBlobInfo"
 	FuncGetBlobField = "getBlobField"
 	FuncStoreBlob    = "storeBlob"
+	FuncListBlobs    = "listBlobs"
 )
 
 func GetProcessor() vmtypes.Processor {

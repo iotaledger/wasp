@@ -18,16 +18,14 @@ func listAccountsCmd(args []string) {
 	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncAccounts, nil)
 	log.Check(err)
 
-	log.Printf("Total %d accounts in chain %s\n", len(ret), GetCurrentChainID())
+	log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID())
 
 	header := []string{"agentid"}
 	rows := make([][]string, len(ret))
 	i := 0
 	for k := range ret {
 		agentId, _, err := codec.DecodeAgentID([]byte(k))
-		if err != nil {
-			panic(err.Error())
-		}
+		log.Check(err)
 		rows[i] = []string{agentId.String()}
 		i++
 	}
