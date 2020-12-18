@@ -180,7 +180,6 @@ func batchShortStr(batch []sctransaction.RequestRef) string {
 }
 
 func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
-	ch.Log.Infof("PostRequest: %s::%s", req.targetName, req.epName)
 	if sigScheme == nil {
 		sigScheme = ch.OriginatorSigScheme
 	}
@@ -202,6 +201,8 @@ func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.Signatur
 	if err != nil {
 		return nil, err
 	}
+	reqID := coretypes.NewRequestID(tx.ID(), 0)
+	ch.Log.Infof("PostRequest: %s::%s -- %s", req.targetName, req.epName, reqID.String())
 	return ch.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
