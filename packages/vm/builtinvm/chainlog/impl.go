@@ -11,15 +11,16 @@ import (
 )
 
 // initialize is mandatory
-func initialize(_ vmtypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("chainlog.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
-// getLenByHnameAndTR gets the number of chainlog records filtered by hname and type
+// getNumRecords gets the number of chainlog records filtered by hname and type
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
 //	- ParamRecordType Type of record that you want to query
-func getLenByHnameAndTR(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getNumRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	contractName, recType, err := getFilterParameters(ctx.Params())
 	if err != nil {
 		return nil, err

@@ -27,7 +27,7 @@ var (
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.ViewFunc(FuncGetLogRecords, getLogRecords),
-		contract.ViewFunc(FuncLenByHnameAndTR, getLenByHnameAndTR),
+		contract.ViewFunc(FuncGetNumRecords, getNumRecords),
 	})
 }
 
@@ -42,8 +42,8 @@ const (
 	ParamRecords        = "records"
 
 	// function names
-	FuncGetLogRecords   = "getLogRecords"
-	FuncLenByHnameAndTR = "getLenByHnameAndTR"
+	FuncGetLogRecords = "getLogRecords"
+	FuncGetNumRecords = "getNumRecords"
 
 	// Type of records
 	// Constants that define the system-interpreted type of logged data. Different types are defined:

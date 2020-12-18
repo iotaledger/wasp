@@ -180,6 +180,7 @@ func batchShortStr(batch []sctransaction.RequestRef) string {
 }
 
 func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+	ch.Log.Infof("PostRequest: %s::%s", req.targetName, req.epName)
 	if sigScheme == nil {
 		sigScheme = ch.OriginatorSigScheme
 	}
@@ -205,6 +206,7 @@ func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.Signatur
 }
 
 func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
+	ch.Log.Infof("CallViewFull: %s::%s", req.targetName, req.epName)
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 

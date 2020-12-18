@@ -10,7 +10,7 @@ import (
 )
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("blob.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
@@ -35,13 +35,14 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	totalSize := uint32(0)
 
-	// save record of the blob. In parallel save record of lenghts of blo fields
+	// save record of the blob. In parallel save record of sizes of blob fields
+	sizes := make([]uint32, len(kSorted))
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
 
 		blbValues.SetAt([]byte(k), values[i])
 		blbSizes.SetAt([]byte(k), EncodeSize(size))
-
+		sizes[i] = size
 		totalSize += size
 	}
 
@@ -50,7 +51,9 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 
-	ctx.Eventf("blob.storeBlob.success hash = %s", blobHash.String())
+	ctx.ChainLog([]byte(fmt.Sprintf("blob hash: %s, field sizes: %+v", blobHash.String(), sizes)))
+
+	ctx.Log().Debugf("blob.storeBlob.success hash = %s", blobHash.String())
 	return ret, nil
 }
 

@@ -15,8 +15,7 @@ import (
 
 // initialize the init call
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("accountsc.initialize.begin")
-	ctx.Eventf("accountsc.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("accountsc.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 

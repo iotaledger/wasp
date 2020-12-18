@@ -19,6 +19,7 @@ func (glb *Glb) CheckUtxodbBalance(addr address.Address, col balance.Color, expe
 }
 
 func (ch *Chain) CheckBase() {
+	// post and call same request, must be equal results
 	req := NewCall(root.Interface.Name, root.FuncGetChainInfo)
 	res1, err := ch.PostRequest(req, nil)
 	require.NoError(ch.Glb.T, err)
