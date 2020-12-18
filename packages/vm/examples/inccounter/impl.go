@@ -101,7 +101,11 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	if !ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncCounter), nil, 5) {
+	if !ctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: ctx.ContractID(),
+		EntryPoint:       coretypes.Hn(FuncIncCounter),
+		Timelock:         5 * 60,
+	}) {
 		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
 	}
 	ctx.Event("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
@@ -134,7 +138,11 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
-	if ctx.PostRequestToSelfWithDelay(coretypes.Hn(FuncIncAndRepeatMany), nil, 1) {
+	if ctx.PostRequest(vmtypes.NewRequestParams{
+		TargetContractID: ctx.ContractID(),
+		EntryPoint:       coretypes.Hn(FuncIncAndRepeatMany),
+		Timelock:         1 * 60,
+	}) {
 		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
 		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)

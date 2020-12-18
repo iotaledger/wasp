@@ -71,7 +71,7 @@ func (vmctx *VMContext) getFeeInfo(contractHname coretypes.Hname) (balance.Color
 	if err != nil {
 		return balance.Color{}, 0, 0, false
 	}
-	return *col, ownerFee, validatorFee, true
+	return col, ownerFee, validatorFee, true
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
@@ -116,5 +116,6 @@ func (vmctx *VMContext) StoreToChainLog(contract coretypes.Hname, recType byte, 
 	vmctx.pushCallContext(chainlog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
+	vmctx.log.Infof("StoreToChainLog/%s recType: %d, data = '%s'", contract.String(), recType, string(data))
 	chainlog.AppendToChainLog(vmctx.State(), vmctx.timestamp, contract, recType, data)
 }

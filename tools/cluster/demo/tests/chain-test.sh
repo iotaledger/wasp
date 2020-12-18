@@ -35,8 +35,8 @@ echo "$r"
 # test the list-contracts command
 r=$(wasp-cli chain list-contracts)
 echo "$r"
-# check that root + accountsc + blob contracts are listed
-[[ $(echo "$r" | tail -n +5 | wc -l) == "3" ]]
+# check that all core contracts are listed
+[[ $(echo "$r" | tail -n +5 | wc -l) == "4" ]]
 
 # test the list-accounts command
 r=$(wasp-cli chain list-accounts)

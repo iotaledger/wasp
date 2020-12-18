@@ -167,3 +167,7 @@ func NewContractRecord(itf *contract.ContractInterface, creator coretypes.AgentI
 	}
 	return
 }
+
+func (p *ContractRecord) HasCreator() bool {
+	return p.Creator != coretypes.AgentID{}
+}

@@ -201,10 +201,13 @@ func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.Signatur
 	if err != nil {
 		return nil, err
 	}
+	reqID := coretypes.NewRequestID(tx.ID(), 0)
+	ch.Log.Infof("PostRequest: %s::%s -- %s", req.targetName, req.epName, reqID.String())
 	return ch.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
 func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
+	ch.Log.Infof("CallViewFull: %s::%s", req.targetName, req.epName)
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 

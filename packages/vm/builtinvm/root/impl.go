@@ -203,7 +203,7 @@ func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
 	ret.Set(VarDescription, codec.EncodeString(info.Description))
-	ret.Set(VarFeeColor, codec.EncodeColor(&info.FeeColor))
+	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
 	ret.Set(VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
 

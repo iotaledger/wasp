@@ -155,7 +155,7 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
-		Description:          "'alone' testing chain",
+		Description:          "'solo' testing chain",
 		OwnerSignatureScheme: ret.OriginatorSigScheme,
 		AllInputs:            glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
 	})

@@ -25,20 +25,18 @@ func addChainListEndpoints(e *echo.Echo) {
 }
 
 func fetchChains() ([]*ChainOverview, error) {
-	r := make([]*ChainOverview, 0)
 	crs, err := registry.GetChainRecords()
 	if err != nil {
 		return nil, err
 	}
-	for _, cr := range crs {
+	r := make([]*ChainOverview, len(crs))
+	for i, cr := range crs {
 		info, err := fetchRootInfo(chains.GetChain(cr.ChainID))
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, &ChainOverview{
+		r[i] = &ChainOverview{
 			ChainRecord: cr,
 			RootInfo:    info,
-		})
+			Error:       err,
+		}
 	}
 	return r, nil
 }
@@ -51,36 +49,43 @@ type ChainListTemplateParams struct {
 type ChainOverview struct {
 	ChainRecord *registry.ChainRecord
 	RootInfo    RootInfo
+	Error       error
 }
 
 const tplChainList = `
 {{define "title"}}Chains{{end}}
 
 {{define "body"}}
+<div class="container">
+<div class="row">
+<div class="col-sm">
 	<h2>Chains</h2>
-	<table>
+	<table style="max-width: 65em">
 		<thead>
 			<tr>
 				<th>ID</th>
 				<th>Description</th>
 				<th>#Nodes</th>
 				<th>#Contracts</th>
-				<th>Status</th>
-				<th></th>
+				<th>Active?</th>
 			</tr>
 		</thead>
 		<tbody>
-		{{range $_, $c := .Chains}}
-			<tr>
-				<td><abbr title="{{$c.ChainRecord.ChainID.String}}"><code>{{printf "%.8s" $c.ChainRecord.ChainID}}…</code></abbr></td>
-				<td>{{printf "%.50s" $c.RootInfo.Description}}</td>
-				<td>{{len $c.ChainRecord.CommitteeNodes}}</td>
-				<td>{{len $c.RootInfo.Contracts}}</td>
-				<td>{{if $c.ChainRecord.Active}}active{{else}}inactive{{end}}</td>
-				<td><a href="/chains/{{$c.ChainRecord.ChainID}}">Details</a></td>
-			</tr>
-		{{end}}
+			{{range $_, $c := .Chains}}
+				{{ $id := $c.ChainRecord.ChainID }}
+				<tr>
+					<td data-label="ID"><a href="/chains/{{ $id }}"><tt>{{ $id }}</tt></a></td>
+					<td data-label="Description">{{ printf "%.50s" $c.RootInfo.Description }}
+						{{- if $c.Error }}<div class="card error">{{ $c.Error }}</div>{{ end }}</td>
+					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.ChainRecord.CommitteeNodes }}</tt>{{ end }}</td>
+					<td data-label="#Contracts">{{if not $c.Error}}<tt>{{ len $c.RootInfo.Contracts }}</tt>{{ end }}</td>
+					<td data-label="Active?">{{ if $c.ChainRecord.Active }} yes {{ else }} no {{ end }}</td>
+				</tr>
+			{{end}}
 		</tbody>
 	</table>
+</div>
+</div>
+</div>
 {{end}}
 `

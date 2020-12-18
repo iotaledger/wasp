@@ -103,10 +103,6 @@ func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
-	return s.vmctx.PostRequestToSelf(reqCode, args)
-}
-
 func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	return s.vmctx.PostRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
