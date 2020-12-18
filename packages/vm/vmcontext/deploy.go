@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
@@ -29,7 +30,10 @@ func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name strin
 	par.Set(root.ParamProgramHash, codec.EncodeHashValue(&programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
 	par.Set(root.ParamDescription, codec.EncodeString(description))
-	_, err = vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), par, nil)
+	if _, err = vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), par, nil); err == nil {
+		// successful deployment records will be stored in the chainlog/root under type TRDeploy
+		// TODO alternative: records type as a parameters to the sandbox call 'Chainlog'
+		vmctx.StoreToChainLog(root.Interface.Hname(), chainlog.TRDeploy, nil)
+	}
 	return err
-
 }

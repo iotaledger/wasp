@@ -254,7 +254,7 @@ func TestSandboxCall(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	//Description of root (solo tool)
-	desc := "'alone' testing chain"
+	desc := "'solo' testing chain"
 
 	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
 	require.NoError(t, err)

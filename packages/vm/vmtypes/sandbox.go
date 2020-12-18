@@ -61,20 +61,13 @@ type Sandbox interface {
 	// TransferCrossChain send funds to the targetAgentID account cross chain
 	// to move own funds to own account use MyAgentID() as a targetAgentID
 	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
-
 	// PostRequest sends cross-chain request
 	PostRequest(par NewRequestParams) bool
-	// PostRequestToSelf send cross chain request to the caller contract on the same chain
-	// Deprecated: just a syntactical sugar for PostRequest
-	PostRequestToSelf(entryPoint coretypes.Hname, args dict.Dict) bool
-	// PostRequestToSelfWithDelay sends request to itself with timelock for some seconds after the current timestamp
-	// Deprecated: just a syntactical sugar for PostRequest
-	PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, deferForSec uint32) bool
-	// Chainlog stores user defined data to on-chain timestamped log
+	// ChainLog stores user defined data to the on-chain timestamped log
 	ChainLog(data []byte)
+
 	// Log interface provides local logging on the machine
 	Log() LogInterface
-
 	// Event and Eventf publish "vmmsg" message through Publisher on nanomsg
 	// it also logs locally, but it is not the same thing
 	Event(msg string)
