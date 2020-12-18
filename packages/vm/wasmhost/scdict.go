@@ -216,6 +216,9 @@ func (o *ScDict) Suffix(keyId int32) string {
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {
+	if o.kvStore == nil {
+		o.Panic("validate: Missing kvstore")
+	}
 	if typeId == -1 {
 		return
 	}

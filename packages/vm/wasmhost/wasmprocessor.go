@@ -94,10 +94,6 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 	return host, true
 }
 
-func (host *wasmProcessor) GetKey(keyId int32) kv.Key {
-	return kv.Key(host.GetKeyFromId(keyId))
-}
-
 func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
 	vm, err := NewWasmProcessor(NewWasmTimeVM())
 	if err != nil {

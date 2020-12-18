@@ -17,14 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const incName = "inccounter"
-const incDescription = "IncCounter, a PoC smart contract"
-
-var incHname = coretypes.Hn(incName)
-
-const varCounter = "counter"
-const varNumRepeats = "num_repeats"
-
 func checkCounter(t *testing.T, expected int) bool {
 	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
 		for k, v := range state {
