@@ -29,6 +29,7 @@ func init() {
 		contract.Func(FuncChainLogEventDataFormatted, testChainLogEventDataFormatted),
 		contract.Func(FuncChainOwnerID, testChainOwnerID),
 		contract.ViewFunc(FuncChainID, testChainID),
+		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 	})
 	examples.AddProcessor(Interface.ProgramHash, Interface)
 }
@@ -39,11 +40,14 @@ const (
 	FuncChainLogEventData          = "testChainLogEventData"
 	FuncChainLogEventDataFormatted = "testChainLogEventDataFormatted"
 
+	//Function sandbox test
 	FuncChainOwnerID = "testChainOwnerID"
 	FuncChainID      = "testChainID"
+	FuncSandboxCall  = "testSandboxCall"
 
 	//Variables
-	VarCounter    = "counter"
-	VarChainOwner = "chainOwner"
-	VarChainID    = "chainID"
+	VarCounter     = "counter"
+	VarChainOwner  = "chainOwner"
+	VarChainID     = "chainID"
+	VarSandboxCall = "sandboxCall"
 )

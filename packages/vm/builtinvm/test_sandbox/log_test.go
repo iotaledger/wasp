@@ -233,7 +233,6 @@ func TestChainID(t *testing.T) {
 	glb := solo.New(t, false, false)
 
 	chain := glb.NewChain(nil, "chain1")
-	glb.SetTimeStep(500 * time.Millisecond)
 
 	chainID := chain.ChainID.Bytes()
 
@@ -249,4 +248,24 @@ func TestChainID(t *testing.T) {
 	c := ret.MustGet(VarChainID)
 
 	require.EqualValues(t, chainID, c)
+}
+
+func TestSandboxCall(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	//Description of root (solo tool)
+	desc := "'alone' testing chain"
+
+	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	require.NoError(t, err)
+
+	req := solo.NewCall(Interface.Name,
+		FuncSandboxCall,
+	)
+	ret, err := chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	d := ret.MustGet(VarSandboxCall)
+
+	require.EqualValues(t, desc, string(d))
 }

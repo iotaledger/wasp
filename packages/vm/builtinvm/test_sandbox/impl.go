@@ -3,8 +3,10 @@ package test_sandbox
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -63,6 +65,19 @@ func testChainID(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 	ret.Set(VarChainID, cCreator.Bytes())
+
+	return ret, nil
+}
+
+func testSandboxCall(ctx vmtypes.SandboxView) (dict.Dict, error) {
+
+	ret, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil)
+	if err != nil {
+		return nil, err
+	}
+	desc := ret.MustGet(root.VarDescription)
+
+	ret.Set(VarSandboxCall, desc)
 
 	return ret, nil
 }
