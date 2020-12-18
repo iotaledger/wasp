@@ -71,7 +71,7 @@ func (vmctx *VMContext) getFeeInfo(contractHname coretypes.Hname) (balance.Color
 	if err != nil {
 		return balance.Color{}, 0, 0, false
 	}
-	return *col, ownerFee, validatorFee, true
+	return col, ownerFee, validatorFee, true
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {

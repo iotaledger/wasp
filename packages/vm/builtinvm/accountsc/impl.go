@@ -108,7 +108,7 @@ func move(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, err
 	}
 	if !ok {
-		*color = balance.ColorIOTA
+		color = balance.ColorIOTA
 	}
 	targetChain := ctx.ChainID()
 	t, ok, err := codec.DecodeChainID(params.MustGet(ParamChainID))
@@ -118,7 +118,7 @@ func move(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if ok {
 		targetChain = t
 	}
-	tokensToMove := map[balance.Color]int64{*color: amount}
+	tokensToMove := map[balance.Color]int64{color: amount}
 	caller := ctx.Caller()
 	if targetChain == ctx.ChainID() {
 		// move on-chain

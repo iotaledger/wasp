@@ -17,7 +17,7 @@ wasp-cli chain deploy-contract "$vmtype" "$name" "$description" "$file"
 # check that new contract is listed
 r=$(wasp-cli chain list-contracts)
 echo "$r"
-[[ $(echo "$r" | tail -n +5 | wc -l) == "4" ]]
+[[ $(echo "$r" | tail -n +5 | wc -l) == "5" ]]
 
 r=$(wasp-cli chain call-view "$name" increment_view_counter | wasp-cli decode string counter int)
 [[ "$r" == "counter: 0" ]]

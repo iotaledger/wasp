@@ -228,7 +228,7 @@ func DecodeBalances(balances dict.Dict) (map[balance.Color]int64, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret[*c] = b
+		ret[c] = b
 	}
 	return ret, nil
 }

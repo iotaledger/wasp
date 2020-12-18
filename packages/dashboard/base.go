@@ -75,34 +75,24 @@ const tplBase = `
 {{end}}
 
 {{define "address"}}
-	<code>{{.}}</code> {{ template "exploreAddressInTangle" . }}
+	<tt>{{.}}</tt> {{ template "exploreAddressInTangle" . }}
 {{end}}
 
 {{define "agentid"}}
 	{{ $chainid := index . 0 }}
 	{{ $agentid := index . 1 }}
-	<code>{{ $agentid }}</code>
+	<tt>{{ $agentid }}</tt>
 	<a href="/chains/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
 	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
 {{end}}
 
 {{define "balances"}}
-	<table>
-		<thead>
-			<tr>
-				<th class="align-right">Color</th>
-				<th class="align-right">Balance</th>
-			</tr>
-		</thead>
-		<tbody>
+	<dl>
 		{{range $color, $bal := .}}
-			<tr>
-				<td class="align-right"><tt>{{ $color }}</tt></td>
-				<td class="align-right"><tt>{{ $bal }}</tt></td>
-			</tr>
+			<dt><tt>{{ $color }}</tt></dt>
+			<dd>{{ $bal }}</dd>
 		{{end}}
-		</tbody>
-	</table>
+	</dl>
 {{end}}
 
 {{define "base"}}
@@ -115,14 +105,33 @@ const tplBase = `
 
 		<title>{{template "title"}} - Wasp node dashboard</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/inter.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
 	</head>
 
 	<body>
 		<style>
-			details {
-				background: #EEF9FF;
+			tt {
+				font-family: Menlo, Consolas, monospace;
+			}
+			table {
+				max-height: none !important;
+			}
+			dl {
+				display: flex;
+				flex-wrap: wrap;
+				padding: var(--universal-padding);
+			}
+			dt {
+				width: 33%;
+				font-weight: bold;
+				text-align: right;
+			}
+			dt:after {
+				content: ":";
+			}
+			dd {
+				margin-left: auto;
+				width: 66%;
 			}
 			.linkbtn {
 				font-size: small;
@@ -134,27 +143,23 @@ const tplBase = `
 				text-align: right;
 			}
 		</style>
+
 		<header>
-			<h1>Wasp node dashboard</h1>
-			<nav>
+				<a class="logo" href="#">Wasp</a>
 				{{$activePage := .ActivePage}}
 				{{range $i, $p := .NavPages}}
-					{{if $i}} | {{end}}
-					<a href="{{$p.Href}}">
+					<a href="{{$p.Href}}" class="button"
 						{{- if eq $activePage $p.Href -}}
-							<strong>{{$p.Title}}</strong>
-						{{- else -}}
-							{{$p.Title}}
+							style="background-color: var(--button-hover-back-color)"
 						{{- end -}}
+					>
+						{{- $p.Title -}}
 					</a>
 				{{end}}
-			</nav>
 		</header>
-		{{template "body" .}}
-		<hr/>
-		<footer>
-		<p style="font-size: small">Node network ID: <code>{{.MyNetworkId}}</code></p>
-		</footer>
+		<main>
+			{{template "body" .}}
+		</main>
 	</body>
 	</html>
 {{end}}`

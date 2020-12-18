@@ -210,7 +210,7 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 		require.NoError(ch.Glb.T, err)
 		val, _, err := codec.DecodeInt64(value)
 		require.NoError(ch.Glb.T, err)
-		ret[*col] = val
+		ret[col] = val
 		return true
 	})
 	require.NoError(ch.Glb.T, err)
@@ -250,5 +250,5 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 	require.True(ch.Glb.T, ok)
 	require.True(ch.Glb.T, ownerFee >= 0)
 
-	return *feeColor, ownerFee, validatorFee
+	return feeColor, ownerFee, validatorFee
 }

@@ -40,9 +40,9 @@ func Encode(v interface{}) []byte {
 	case address.Address:
 		return EncodeAddress(&vt)
 	case *balance.Color:
-		return EncodeColor(vt)
+		return EncodeColor(*vt)
 	case balance.Color:
-		return EncodeColor(&vt)
+		return EncodeColor(vt)
 	case *coretypes.ChainID:
 		return EncodeChainID(*vt)
 	case coretypes.ChainID:
