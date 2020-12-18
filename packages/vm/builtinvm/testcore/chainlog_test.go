@@ -1,6 +1,7 @@
-package test_sandbox
+package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
 	"testing"
 	"time"
 
@@ -16,24 +17,24 @@ func TestBasic(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 
 	chain.CheckBase()
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 }
 
 func TestChainlogGetLenByHnameAndTR(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncChainLogGenericData,
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainLogGenericData,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncLenByHnameAndTR,
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TRGenericData,
 	)
 	require.NoError(t, err)
@@ -49,18 +50,18 @@ func TestChainlogWrongTypeParam(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncChainLogGenericData,
-		VarCounter, 1,
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainLogGenericData,
+		test_sandbox.VarCounter, 1,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	_, err = chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, 8,
 	)
 	require.Error(t, err)
@@ -71,13 +72,13 @@ func TestChainlogGetLasts3(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
 	for i := 1; i < 6; i++ {
-		req := solo.NewCall(Interface.Name,
-			FuncChainLogGenericData,
-			VarCounter, i,
+		req := solo.NewCall(test_sandbox.Interface.Name,
+			test_sandbox.FuncChainLogGenericData,
+			test_sandbox.VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
@@ -85,7 +86,7 @@ func TestChainlogGetLasts3(t *testing.T) {
 
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamMaxLastRecords, 3,
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TRGenericData,
 	)
 	require.NoError(t, err)
@@ -99,13 +100,13 @@ func TestChainlogGetBetweenTs(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
 	for i := 1; i < 6; i++ {
-		req := solo.NewCall(Interface.Name,
-			FuncChainLogGenericData,
-			VarCounter, i,
+		req := solo.NewCall(test_sandbox.Interface.Name,
+			test_sandbox.FuncChainLogGenericData,
+			test_sandbox.VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
@@ -115,7 +116,7 @@ func TestChainlogGetBetweenTs(t *testing.T) {
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp()-int64(1500*time.Millisecond),
 		chainlog.ParamMaxLastRecords, 2,
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TRGenericData,
 	)
 	require.NoError(t, err)
@@ -128,18 +129,18 @@ func TestChainlogEventData(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncChainLogEventData, //Sandbox call se the TREvent type
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainLogEventData, //Sandbox call se the TREvent type
 	)
 	_, err = chain.PostRequest(req, nil)
 
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
@@ -152,18 +153,18 @@ func TestChainlogEventDataFomatted(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncChainLogEventDataFormatted, //Sandbox call se the TREvent type
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainLogEventDataFormatted, //Sandbox call se the TREvent type
 	)
 	_, err = chain.PostRequest(req, nil)
 
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
@@ -177,21 +178,21 @@ func TestChainlogGetBetweenTsAndDifferentTypes(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
 	for i := 1; i < 4; i++ {
-		req := solo.NewCall(Interface.Name,
-			FuncChainLogEventData, //Sandbox call se the TREvent type
-			VarCounter, i,
+		req := solo.NewCall(test_sandbox.Interface.Name,
+			test_sandbox.FuncChainLogEventData, //Sandbox call se the TREvent type
+			test_sandbox.VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
 	}
 	for i := 4; i < 6; i++ {
-		req := solo.NewCall(Interface.Name,
-			FuncChainLogGenericData, //Sandbox call use the TRGeneric type
-			VarCounter, i,
+		req := solo.NewCall(test_sandbox.Interface.Name,
+			test_sandbox.FuncChainLogGenericData, //Sandbox call use the TRGeneric type
+			test_sandbox.VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
@@ -201,7 +202,7 @@ func TestChainlogGetBetweenTsAndDifferentTypes(t *testing.T) {
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
-		chainlog.ParamContractHname, Interface.Hname(),
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
@@ -215,16 +216,16 @@ func TestChainOwnerID(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	originator := chain.OriginatorAgentID.Bytes()
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncChainOwnerID,
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainOwnerID,
 	)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	c := ret.MustGet(VarChainOwner)
+	c := ret.MustGet(test_sandbox.VarChainOwner)
 
 	require.EqualValues(t, originator, c)
 }
@@ -236,16 +237,16 @@ func TestChainID(t *testing.T) {
 
 	chainID := chain.ChainID.Bytes()
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncChainID,
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainID,
 	)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	c := ret.MustGet(VarChainID)
+	c := ret.MustGet(test_sandbox.VarChainID)
 
 	require.EqualValues(t, chainID, c)
 }
@@ -256,16 +257,16 @@ func TestSandboxCall(t *testing.T) {
 	//Description of root (solo tool)
 	desc := "'solo' testing chain"
 
-	err := chain.DeployContract(nil, Interface.Name, Interface.ProgramHash)
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(Interface.Name,
-		FuncSandboxCall,
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncSandboxCall,
 	)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	d := ret.MustGet(VarSandboxCall)
+	d := ret.MustGet(test_sandbox.VarSandboxCall)
 
 	require.EqualValues(t, desc, string(d))
 }
