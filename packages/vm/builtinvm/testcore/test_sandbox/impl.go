@@ -81,3 +81,15 @@ func testSandboxCall(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 	return ret, nil
 }
+
+func testChainlogTRDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
+
+	//Deploy the same contract with another name
+	err := ctx.CreateContract(Interface.ProgramHash,
+		VarContractNameDeployed, "test contract deploy log", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}

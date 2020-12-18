@@ -1,9 +1,11 @@
 package testcore
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
@@ -269,4 +271,30 @@ func TestSandboxCall(t *testing.T) {
 	d := ret.MustGet(test_sandbox.VarSandboxCall)
 
 	require.EqualValues(t, desc, string(d))
+}
+
+func TestChainlogTRDeploy(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
+	require.NoError(t, err)
+
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainlogTRDeploy,
+	)
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	//This call should return only one record which should be the type of TRDeploy
+	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamFromTs, 0,
+		chainlog.ParamToTs, chain.State.Timestamp(),
+		chainlog.ParamContractHname, root.Interface.Hname(),
+		chainlog.ParamRecordType, chainlog.TRDeploy,
+	)
+	require.NoError(t, err)
+	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
+
+	require.EqualValues(t, 1, array.Len())
 }
