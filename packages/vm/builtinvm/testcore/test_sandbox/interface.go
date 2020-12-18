@@ -28,6 +28,7 @@ func init() {
 		contract.Func(FuncChainLogEventData, testChainLogEventData),
 		contract.Func(FuncChainLogEventDataFormatted, testChainLogEventDataFormatted),
 		contract.Func(FuncChainOwnerID, testChainOwnerID),
+		contract.Func(FuncChainlogTRDeploy, testChainlogTRDeploy),
 		contract.ViewFunc(FuncChainID, testChainID),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 	})
@@ -39,6 +40,7 @@ const (
 	FuncChainLogGenericData        = "testChainLogGenericData"
 	FuncChainLogEventData          = "testChainLogEventData"
 	FuncChainLogEventDataFormatted = "testChainLogEventDataFormatted"
+	FuncChainlogTRDeploy           = "testChainlogTRDeploy"
 
 	//Function sandbox test
 	FuncChainOwnerID = "testChainOwnerID"
@@ -46,8 +48,9 @@ const (
 	FuncSandboxCall  = "testSandboxCall"
 
 	//Variables
-	VarCounter     = "counter"
-	VarChainOwner  = "chainOwner"
-	VarChainID     = "chainID"
-	VarSandboxCall = "sandboxCall"
+	VarCounter              = "counter"
+	VarChainOwner           = "chainOwner"
+	VarChainID              = "chainID"
+	VarSandboxCall          = "sandboxCall"
+	VarContractNameDeployed = "exampleDeployTR"
 )
