@@ -288,8 +288,6 @@ func TestChainlogTRDeploy(t *testing.T) {
 
 	//This call should return only one record which should be the type of TRDeploy
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
-		chainlog.ParamFromTs, 0,
-		chainlog.ParamToTs, chain.State.Timestamp(),
 		chainlog.ParamContractHname, root.Interface.Hname(),
 		chainlog.ParamRecordType, chainlog.TRDeploy,
 	)
@@ -297,4 +295,58 @@ func TestChainlogTRDeploy(t *testing.T) {
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
 
 	require.EqualValues(t, 1, array.Len())
+}
+
+func TestChainlogMultipleTR(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+
+	//Deploy of the test sandbox contract
+	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
+	require.NoError(t, err)
+
+	//Triggers a chainlog TREvent and a TRRequest
+	req := solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainLogEventData,
+	)
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	//Triggers a chainlog TRGenericData and a TRRequest
+	req = solo.NewCall(test_sandbox.Interface.Name,
+		test_sandbox.FuncChainLogGenericData,
+		test_sandbox.VarCounter, 1,
+	)
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	/////Should return 2 logs records/////
+	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		chainlog.ParamRecordType, chainlog.TRRequest,
+	)
+	require.NoError(t, err)
+	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
+	require.EqualValues(t, 2, array.Len())
+	//////////////////////////////////////
+
+	/////Should return 1 logs record/////
+	res, err = chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		chainlog.ParamRecordType, chainlog.TRGenericData,
+	)
+	require.NoError(t, err)
+	array = datatypes.NewMustArray(res, chainlog.ParamRecords)
+	require.EqualValues(t, 1, array.Len())
+	//////////////////////////////////////
+
+	/////Should return 1 logs record/////
+	res, err = chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		chainlog.ParamRecordType, chainlog.TREvent,
+	)
+	require.NoError(t, err)
+	array = datatypes.NewMustArray(res, chainlog.ParamRecords)
+	require.EqualValues(t, 1, array.Len())
+	//////////////////////////////////////
 }
