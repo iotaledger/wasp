@@ -11,6 +11,7 @@ type ScContext struct {
 
 func NewScContext(vm *wasmProcessor) *ScContext {
 	o := &ScContext{}
+	o.name = "root"
 	o.id = 1
 	o.isRoot = true
 	o.vm = vm

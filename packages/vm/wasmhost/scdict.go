@@ -19,7 +19,6 @@ type WaspObject interface {
 	InitObj(id int32, keyId int32, owner *ScDict)
 	Panic(format string, args ...interface{})
 	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
-	Name() string
 	NestedKey() string
 	Suffix(keyId int32) string
 }
@@ -52,6 +51,7 @@ type ScDict struct {
 	isRoot  bool
 	keyId   int32
 	kvStore kv.KVStore
+	name    string
 	objects map[int32]int32
 	ownerId int32
 	typeId  int32
@@ -60,20 +60,26 @@ type ScDict struct {
 }
 
 func NewNullObject(vm *wasmProcessor) WaspObject {
-	return &ScDict{vm: vm, id: 0, isRoot: true}
+	return &ScDict{vm: vm, id: 0, isRoot: true, name: "null"}
 }
 
 func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.id = id
 	o.keyId = keyId
 	o.ownerId = owner.id
+	o.vm = owner.vm
 	o.isRoot = o.kvStore != nil
 	if !o.isRoot {
 		o.kvStore = owner.kvStore
 	}
-	o.vm = owner.vm
-	o.vm.Trace("InitObj %s", o.Name())
-	o.typeId = o.vm.FindObject(owner.id).GetTypeId(keyId)
+	ownerObj := o.Owner()
+	o.typeId = ownerObj.GetTypeId(keyId)
+	o.name = owner.name + ownerObj.Suffix(keyId)
+	if o.ownerId == 1 {
+		// strip off "root." prefix
+		o.name = o.name[5:]
+	}
+	o.Trace("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
 }
@@ -149,38 +155,26 @@ func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 	o.validate(keyId, typeId)
 	suffix := o.Suffix(keyId)
 	key := o.NestedKey() + suffix
-	o.vm.Trace("fld: %s", o.Name()+suffix)
-	o.vm.Trace("key: %s", key[1:])
+	o.Trace("fld: %s%s", o.name, suffix)
+	o.Trace("key: %s", key[1:])
 	return kv.Key(key[1:])
-}
-
-func (o *ScDict) Name() string {
-	switch o.id {
-	case 0:
-		return "null"
-	case 1:
-		return "root"
-	default:
-		owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
-		if o.ownerId == 1 {
-			// root sub object, skip the "root." prefix
-			return string(o.vm.getKeyFromId(o.keyId))
-		}
-		return owner.Name() + owner.Suffix(o.keyId)
-	}
 }
 
 func (o *ScDict) NestedKey() string {
 	if o.isRoot {
 		return ""
 	}
-	owner := o.vm.objIdToObj[o.ownerId].(WaspObject)
-	return owner.NestedKey() + owner.Suffix(o.keyId)
+	ownerObj := o.Owner()
+	return ownerObj.NestedKey() + ownerObj.Suffix(o.keyId)
+}
+
+func (o *ScDict) Owner() WaspObject {
+	return o.vm.FindObject(o.ownerId).(WaspObject)
 }
 
 func (o *ScDict) Panic(format string, args ...interface{}) {
-	err := o.Name() + "." + fmt.Sprintf(format, args...)
-	o.vm.LogText(err)
+	err := o.name + "." + fmt.Sprintf(format, args...)
+	o.Trace(err)
 	panic(err)
 }
 
@@ -213,6 +207,10 @@ func (o *ScDict) Suffix(keyId int32) string {
 		return "." + string(bytes)
 	}
 	return "." + base58.Encode(bytes)
+}
+
+func (o *ScDict) Trace(format string, a ...interface{}) {
+	o.vm.Trace(format, a...)
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {

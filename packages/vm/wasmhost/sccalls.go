@@ -50,7 +50,7 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScCallInfo) Invoke() {
-	o.vm.Trace("CALL c'%s' f'%s'", o.contract, o.function)
+	o.Trace("CALL c'%s' f'%s'", o.contract, o.function)
 	contractCode := o.vm.ContractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
@@ -59,7 +59,7 @@ func (o *ScCallInfo) Invoke() {
 	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
 	params := o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
-		o.vm.Trace("  PARAM '%s'", key)
+		o.Trace("  PARAM '%s'", key)
 		return true
 	})
 	transfersId := o.GetObjectId(KeyTransfers, OBJTYPE_MAP)
@@ -145,7 +145,7 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScPostInfo) Invoke() {
-	o.vm.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
+	o.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
 	chainId := o.vm.ctx.ChainID()
 	if o.chainId != nil {
 		chainId = *o.chainId
@@ -160,7 +160,7 @@ func (o *ScPostInfo) Invoke() {
 	if ok {
 		params = o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
-			o.vm.Trace("  PARAM '%s'", key)
+			o.Trace("  PARAM '%s'", key)
 			return true
 		})
 	}
@@ -256,7 +256,7 @@ func (o *ScViewInfo) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScViewInfo) Invoke() {
-	o.vm.Trace("VIEW c'%s' f'%s'", o.contract, o.function)
+	o.Trace("VIEW c'%s' f'%s'", o.contract, o.function)
 	contractCode := o.vm.ContractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
@@ -267,7 +267,7 @@ func (o *ScViewInfo) Invoke() {
 	if ok {
 		params = o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
-			o.vm.Trace("  PARAM '%s'", key)
+			o.Trace("  PARAM '%s'", key)
 			return true
 		})
 	}
@@ -361,7 +361,7 @@ func (o *ScCallTransfers) InitObj(id int32, keyId int32, owner *ScDict) {
 
 func (o *ScCallTransfers) Exists(keyId int32) bool {
 	var color balance.Color = [32]byte{}
-	copy(color[:], o.vm.getKeyFromId(keyId))
+	copy(color[:], o.vm.GetKeyFromId(keyId))
 	return o.Transfers[color] != 0
 }
 
@@ -375,7 +375,7 @@ func (o *ScCallTransfers) SetInt(keyId int32, value int64) {
 		o.Transfers = make(map[balance.Color]int64)
 	default:
 		var color balance.Color = [32]byte{}
-		copy(color[:], o.vm.getKeyFromId(keyId))
+		copy(color[:], o.vm.GetKeyFromId(keyId))
 		o.Transfers[color] = value
 	}
 }

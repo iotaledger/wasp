@@ -143,7 +143,7 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (host *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		host.LogText(text)
+		//host.LogText(text)
 	case KeyTrace:
 		host.LogText(text)
 	case KeyLog:
@@ -159,12 +159,10 @@ func (host *wasmProcessor) Log(logLevel int32, text string) {
 // Also, logging has levels
 func (host *wasmProcessor) LogText(text string) {
 	if host.ctx != nil {
-		//host.ctx.Event(text)
 		host.ctx.Log().Infof(text)
 		return
 	}
 	if host.ctxView != nil {
-		//host.ctxView.Event(text)
 		host.ctxView.Log().Infof(text)
 		return
 	}

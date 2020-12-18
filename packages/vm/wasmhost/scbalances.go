@@ -20,25 +20,21 @@ func (o *ScBalances) GetBytes(keyId int32) []byte {
 	key := o.vm.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
-		o.Panic(err.Error())
-		return balance.ColorNew[:]
+		o.Panic("GetBytes: %v", err)
 	}
-	if color == balance.ColorNew {
-		id := o.vm.ctx.RequestID()
-		return id[:32]
+	if color != balance.ColorNew {
+		o.Panic("GetBytes: Expected ColorNew")
 	}
-	o.ScDict.GetBytes(keyId)
-	return balance.ColorNew[:]
+	id := o.vm.ctx.RequestID()
+	return id[:32]
 }
 
 func (o *ScBalances) GetInt(keyId int32) int64 {
 	key := o.vm.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
-		o.Panic(err.Error())
-		return 0
+		o.Panic("GetInt: %v", err)
 	}
-
 	balances := o.vm.Balances()
 	if o.incoming {
 		if o.vm.ctx == nil {
@@ -46,7 +42,6 @@ func (o *ScBalances) GetInt(keyId int32) int64 {
 		}
 		balances = o.vm.ctx.IncomingTransfer()
 	}
-
 	return balances.Balance(color)
 }
 

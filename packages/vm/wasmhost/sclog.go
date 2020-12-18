@@ -39,7 +39,7 @@ type ScLog struct {
 
 func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
 	a.ScDict.InitObj(id, keyId, owner)
-	key := a.vm.GetKeyFromId(keyId)
+	key := a.vm.getKeyFromId(keyId)
 	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), kv.Key(key))
 	a.logEntry = &ScLogEntry{lines: a.lines, current: ^uint32(0)}
 	a.logEntryId = a.vm.TrackObject(a.logEntry)
@@ -65,6 +65,7 @@ func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 	if index > a.lines.Len() {
 		a.Panic("GetObjectId: Invalid index")
 	}
+	a.Trace("LoadRecord %s%s", a.name, a.Suffix(keyId))
 	a.logEntry.LoadRecord(index)
 	return a.logEntryId
 }

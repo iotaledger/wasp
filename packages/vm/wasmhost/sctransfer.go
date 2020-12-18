@@ -48,7 +48,7 @@ func (o *ScTransfer) SetInt(keyId int32, value int64) {
 		if err != nil {
 			panic("Invalid color: " + err.Error())
 		}
-		o.vm.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.agent.String())
+		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.agent.String())
 		if !o.vm.ctx.MoveTokens(o.agent, color, value) {
 			panic("Failed to move tokens")
 		}
