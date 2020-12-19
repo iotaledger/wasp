@@ -24,7 +24,7 @@ func (ch *Chain) CheckBase() {
 	res1, err := ch.PostRequest(req, nil)
 	require.NoError(ch.Glb.T, err)
 
-	res2, err := ch.CallViewFull(req)
+	res2, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Glb.T, err)
 
 	require.EqualValues(ch.Glb.T, res1.Hash(), res2.Hash())

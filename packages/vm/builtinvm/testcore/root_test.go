@@ -18,16 +18,16 @@ import (
 func TestRootBasic(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckBase()
-	chain.Infof("\n%s\n", chain.String())
+	chain.Log.Infof("\n%s\n", chain.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckBase()
 
@@ -39,7 +39,7 @@ func TestRootRepeatInit(t *testing.T) {
 func TestGetInfo(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	chainID, chainOwnerID, contracts := chain.GetInfo()
 
@@ -62,7 +62,7 @@ func TestGetInfo(t *testing.T) {
 func TestDeployExample(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
@@ -98,7 +98,7 @@ func TestDeployExample(t *testing.T) {
 func TestDeployDouble(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
@@ -133,7 +133,7 @@ func TestDeployDouble(t *testing.T) {
 func TestChangeOwnerAuthorized(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
@@ -155,7 +155,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 func TestChangeOwnerUnauthorized(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())

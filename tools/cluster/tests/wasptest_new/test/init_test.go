@@ -15,7 +15,7 @@ const (
 func TestDeployErc20(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	creator := glb.NewSignatureSchemeWithFunds()
 	creatorAgentID := coretypes.NewAgentIDFromAddress(creator.Address())

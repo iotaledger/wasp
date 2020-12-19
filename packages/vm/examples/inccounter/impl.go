@@ -177,7 +177,7 @@ func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	par := dict.New()
 	par.Set(VarCounter, codec.EncodeInt64(val+1))
-	err = ctx.CreateContract(hashBin, name, dscr, par)
+	err = ctx.DeployContract(hashBin, name, dscr, par)
 	if err != nil {
 		return nil, err
 	}

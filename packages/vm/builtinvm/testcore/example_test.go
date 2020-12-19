@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckBase()
-	chain.Infof("\n%s\n", chain.String())
+	chain.Log.Infof("\n%s\n", chain.String())
 
 	req := solo.NewCall(blob.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)

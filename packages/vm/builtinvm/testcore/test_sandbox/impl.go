@@ -84,7 +84,7 @@ func testSandboxCall(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 func testChainlogDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	//Deploy the same contract with another name
-	err := ctx.CreateContract(Interface.ProgramHash,
+	err := ctx.DeployContract(Interface.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)
 	if err != nil {
 		return nil, err

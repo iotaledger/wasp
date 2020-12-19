@@ -14,7 +14,7 @@ const (
 func TestSuccess(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployWasmContract(nil, contractName, fileName)
 	require.NoError(t, err)

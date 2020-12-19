@@ -147,7 +147,7 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		}
 	}
 	// calls to loads VM from binary to check if it loads successfully
-	err = ctx.CreateContract(*proghash, "", "", nil)
+	err = ctx.DeployContract(*proghash, "", "", nil)
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
 	}

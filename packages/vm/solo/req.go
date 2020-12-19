@@ -4,30 +4,21 @@
 package solo
 
 import (
-	"fmt"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 )
 
-type callParams struct {
+type CallParams struct {
 	targetName string
 	target     coretypes.Hname
 	epName     string
@@ -36,28 +27,28 @@ type callParams struct {
 	params     dict.Dict
 }
 
-func NewCall(sc, fun string, params ...interface{}) *callParams {
-	ret := &callParams{
-		targetName: sc,
-		target:     coretypes.Hn(sc),
-		epName:     fun,
-		entryPoint: coretypes.Hn(fun),
+// NewCall creates structure which wraps in one object call parameters, used in PostRequest and callViewFull
+// calls:
+//  - 'scName' is a a name of the target smart contract
+//  - 'funName' is a name of the target entry point (the function) of he smart contract program
+//  - 'params' is a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
+//     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
+// With the WithTransfer the CallParams structure may be complemented with attached colored
+// tokens sent together with the request
+func NewCall(scName, funName string, params ...interface{}) *CallParams {
+	ret := &CallParams{
+		targetName: scName,
+		target:     coretypes.Hn(scName),
+		epName:     funName,
+		entryPoint: coretypes.Hn(funName),
 	}
 	ret.withParams(params...)
 	return ret
 }
 
-func NewCallFromDict(sc, fun string, params dict.Dict) *callParams {
-	par := make([]interface{}, 0, 2*len(params))
-	params.MustIterate("", func(key kv.Key, value []byte) bool {
-		par = append(par, string(key))
-		par = append(par, value)
-		return true
-	})
-	return NewCall(sc, fun, par...)
-}
-
-func (r *callParams) WithTransfer(transfer map[balance.Color]int64) *callParams {
+// WithTransfer complement CallParams structure with the colored balances of tokens
+// in the form of a collection of pairs 'color': 'balance'
+func (r *CallParams) WithTransfer(transfer map[balance.Color]int64) *CallParams {
 	r.transfer = cbalances.NewFromMap(transfer)
 	return r
 }
@@ -80,106 +71,26 @@ func toMap(params ...interface{}) map[string]interface{} {
 	return par
 }
 
-func (r *callParams) withParams(params ...interface{}) *callParams {
+func (r *CallParams) withParams(params ...interface{}) *CallParams {
 	r.params = codec.MakeDict(toMap(params...))
 	return r
 }
 
-func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
-	ch.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
-	ch.runVMMutex.Lock()
-	defer ch.runVMMutex.Unlock()
-
-	task := &vm.VMTask{
-		Processors:         ch.proc,
-		ChainID:            ch.ChainID,
-		Color:              ch.ChainColor,
-		Entropy:            *hashing.RandomHash(nil),
-		ValidatorFeeTarget: ch.ValidatorFeeTarget,
-		Balances:           waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
-		Requests:           batch,
-		Timestamp:          ch.Glb.LogicalTime().UnixNano(),
-		VirtualState:       ch.State.Clone(),
-		Log:                ch.Log,
-	}
-	var err error
-	var wg sync.WaitGroup
-	var callRes dict.Dict
-	var callErr error
-	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(ch.Glb.T, err)
-		callRes = callResult
-		callErr = callError
-		wg.Done()
-	}
-
-	wg.Add(1)
-	err = runvm.RunComputationsAsync(task)
-	require.NoError(ch.Glb.T, err)
-
-	wg.Wait()
-	task.ResultTransaction.Sign(ch.ChainSigScheme)
-	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
-
-	ch.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
-
-	ch.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
-		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(batch), len(ch.StateTx.Requests()))
-	return callRes, callErr
-}
-
-func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
-	err := ch.Glb.utxoDB.AddTransaction(stateTx.Transaction)
-	require.NoError(ch.Glb.T, err)
-
-	err = newState.ApplyBlock(block)
-	require.NoError(ch.Glb.T, err)
-
-	err = newState.CommitToDb(block)
-	require.NoError(ch.Glb.T, err)
-
-	ch.StateTx = stateTx
-	ch.State = newState
-	ch.Glb.ClockStep()
-
-	// dispatch requests among chains
-	ch.Glb.glbMutex.Lock()
-	defer ch.Glb.glbMutex.Unlock()
-
-	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
-	for i, rsect := range ch.StateTx.Requests() {
-		chid := rsect.Target().ChainID()
-		_, ok := reqRefByChain[chid]
-		if !ok {
-			reqRefByChain[chid] = make([]sctransaction.RequestRef, 0)
-		}
-		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction.RequestRef{
-			Tx:    stateTx,
-			Index: uint16(i),
-		})
-	}
-	for chid, reqs := range reqRefByChain {
-		chain, ok := ch.Glb.chains[chid]
-		if !ok {
-			ch.Infof("dispatching requests. Unknown chain: %s", chid.String())
-			continue
-		}
-		chain.chPosted.Add(len(reqs))
-		for _, reqRef := range reqs {
-			chain.chInRequest <- reqRef
-		}
-	}
-}
-
-func batchShortStr(batch []sctransaction.RequestRef) string {
-	ret := make([]string, len(batch))
-	for i, r := range batch {
-		ret[i] = r.RequestID().Short()
-	}
-	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
-}
-
-func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+// PostRequest posts a request sent by the test program to the smart contract on the same or another chain:
+//  - creates a request transaction with the request block on it. The sigScheme is used to
+//    sign the inputs of the transaction or OriginatorSigScheme is used if parameter is nil
+//  - adds request transaction to UTXODB
+//  - runs the request in the VM. It results in new updated virtual state and a new transaction
+//    which anchors the state.
+//  - adds the resulting transaction to UTXODB
+//  - posts requests, contained in the resulting transaction to backlog queues of respective chains
+//  - returns the result of the call to the smart contract's entry point
+// Note that in real network of Wasp nodes (the committee) posting the transaction is completely
+// asynchronous, i.e. result of the call is not available to the originator of the post.
+//
+// Unlike the real Wasp environment, the 'solo' environment makes PostRequest a synchronous call.
+// It makes it possible step-by-step debug of the smart contract logic.
+func (ch *Chain) PostRequest(req *CallParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
 	if sigScheme == nil {
 		sigScheme = ch.OriginatorSigScheme
 	}
@@ -201,13 +112,16 @@ func (ch *Chain) PostRequest(req *callParams, sigScheme signaturescheme.Signatur
 	if err != nil {
 		return nil, err
 	}
+
 	reqID := coretypes.NewRequestID(tx.ID(), 0)
 	ch.Log.Infof("PostRequest: %s::%s -- %s", req.targetName, req.epName, reqID.String())
+
 	return ch.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
 }
 
-func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
-	ch.Log.Infof("CallViewFull: %s::%s", req.targetName, req.epName)
+// callViewFull calls the view entry point of the smart contract
+// with params wrapped into the CallParams object. The transfer part, is any, is ignored
+func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -215,11 +129,23 @@ func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
 
-func (ch *Chain) CallView(sc string, fun string, params ...interface{}) (dict.Dict, error) {
-	return ch.CallViewFull(NewCall(sc, fun, params...))
+// CallView calls the view entry point of the smart contract.
+// The call params should be in pairs ('paramName', 'paramValue') where 'paramName' is a string
+// and 'paramValue' must be of type accepted by the 'codec' package
+func (ch *Chain) CallView(scName string, funName string, params ...interface{}) (dict.Dict, error) {
+	ch.Log.Infof("callViewFull: %s::%s", scName, funName)
+	return ch.callViewFull(NewCall(scName, funName, params...))
 }
 
-func (ch *Chain) WaitEmptyBacklog(maxWait ...time.Duration) {
+// WaitForEmptyBacklog waits until the backlog queue of the chain becomes empty.
+// It is useful when smart contract(s) in the test are posting asynchronous requests
+// between chains.
+//
+// The call is needed in order to prevent finishing the test before all
+// asynchronous request between chains are processed.
+// Otherwise waiting is not necessary because all PostRequest calls by the test itself
+// are synchronous and are processed immediately
+func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 	maxDurationSet := len(maxWait) > 0
 	var deadline time.Time
 	if maxDurationSet {

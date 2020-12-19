@@ -30,7 +30,7 @@ func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
 
 // CreateContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
+func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
 	return s.vmctx.CreateContract(programHash, name, description, initParams)
 }
 

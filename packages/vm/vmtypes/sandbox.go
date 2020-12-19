@@ -33,7 +33,7 @@ type Sandbox interface {
 	ContractCreator() coretypes.AgentID
 
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
+	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and target contract's accounts (if enough)
 	// If the entry point if view, 'transfer' has no effect

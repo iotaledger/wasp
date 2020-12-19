@@ -44,7 +44,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	chain.WaitEmptyBacklog()
+	chain.WaitForEmptyBacklog()
 	ret, err := chain.CallView(incName, "increment_view_counter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))

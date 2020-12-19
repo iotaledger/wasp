@@ -23,7 +23,7 @@ func checkCounter(e *solo.Chain, expected int64) {
 func TestDeployInc(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash)
 	require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestDeployInc(t *testing.T) {
 func TestDeployIncInitParams(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestDeployIncInitParams(t *testing.T) {
 func TestIncDefaultParam(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestIncDefaultParam(t *testing.T) {
 func TestIncParam(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestIncWith1Post(t *testing.T) {
 	// advance logical clock to unlock that timelocked request
 	glb.AdvanceClockBy(6 * time.Second)
 
-	chain.WaitEmptyBacklog()
+	chain.WaitForEmptyBacklog()
 	checkCounter(chain, 19)
 
 	chain.CheckAccountLedger()
