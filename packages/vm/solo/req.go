@@ -91,7 +91,7 @@ func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.
 	defer ch.runVMMutex.Unlock()
 
 	task := &vm.VMTask{
-		Processors:         ch.Proc,
+		Processors:         ch.proc,
 		ChainID:            ch.ChainID,
 		Color:              ch.ChainColor,
 		Entropy:            *hashing.RandomHash(nil),
@@ -211,7 +211,7 @@ func (ch *Chain) CallViewFull(req *callParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.Proc, ch.Log)
+	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.proc, ch.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
 

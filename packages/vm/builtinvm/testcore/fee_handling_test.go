@@ -81,7 +81,7 @@ func TestFeeIsEnough2(t *testing.T) {
 
 	checkFees(chain, blob.Interface.Name, 2, 0)
 
-	user := glb.NewSigSchemeWithFunds()
+	user := glb.NewSignatureSchemeWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	_, err = chain.UploadBlob(user,
 		blob.VarFieldVMType, "dummyType",

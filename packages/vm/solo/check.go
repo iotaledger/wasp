@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (glb *Glb) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+func (glb *Solo) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
 	require.EqualValues(glb.T, expected, glb.GetUtxodbBalance(addr, col))
 }
 

@@ -175,13 +175,13 @@ func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.
 	return chainID, chainOwnerID, contracts
 }
 
-func (glb *Glb) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
+func (glb *Solo) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
 	bals := glb.GetUtxodbBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
-func (glb *Glb) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
+func (glb *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
 	outs := glb.utxoDB.GetAddressOutputs(addr)
 	ret, _ := waspconn.OutputBalancesByColor(outs)
 	return ret

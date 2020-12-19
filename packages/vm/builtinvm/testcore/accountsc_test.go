@@ -35,7 +35,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := glb.NewSigSchemeWithFunds()
+	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
@@ -59,7 +59,7 @@ func TestAccountsDepositWithdraw(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := glb.NewSigSchemeWithFunds()
+	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(accountsc.Interface.Name, accountsc.FuncDeposit).
 		WithTransfer(map[balance.Color]int64{

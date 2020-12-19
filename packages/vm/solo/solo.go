@@ -1,15 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// 'solo' is a package to write unit tests for ISCP contracts in Go
-// Running the smart contract on 'solo' does not require the Wasp node.
-// The smart contract code is run synchronously on one process.
-// The smart contract is running in exactly the same code of the VM wrapper,
-// virtual state access and some other modules of the system.
-// It does not use Wasp plugins, committees, consensus, state manager, database, peer and node communications.
-// It uses in-memory DB for virtual state and UTXODB to mock the ledger.
-// It deploys default chain and all builtin contracts
-// It allows self-posting of requests, with or without time locks, however only supports one chain
 package solo
 
 import (
@@ -36,10 +27,12 @@ import (
 	"time"
 )
 
+// DefaultTimeStep is a default step for the logical clock for each PostRequest call.
 const DefaultTimeStep = 1 * time.Millisecond
 
-// Glb global structure
-type Glb struct {
+// Solo is a structure which contains global parameters of the test: one per test instance
+type Solo struct {
+	// instance of the test
 	T           *testing.T
 	logger      *logger.Logger
 	utxoDB      *utxodb.UtxoDB
@@ -50,22 +43,53 @@ type Glb struct {
 	doOnce      sync.Once
 }
 
-// Chain represents individual chain
+// Chain represents state of individual chain.
+// There may be several parallel instances of the chain in the test
 type Chain struct {
-	Glb                 *Glb
-	Name                string
-	ChainSigScheme      signaturescheme.SignatureScheme
+	// Glb is a pointer to the global structure
+	Glb *Solo
+	// Name is the name of the chain
+	Name string
+
+	// ChainSigScheme signature scheme of the chain address, the one used to control funds owned by the chain.
+	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
+	ChainSigScheme signaturescheme.SignatureScheme
+
+	// OriginatorSigScheme the signature scheme used to create the chain (origin transaction).
+	// It is a default signature scheme in many of 'solo' calls which require private key.
 	OriginatorSigScheme signaturescheme.SignatureScheme
-	ChainID             coretypes.ChainID
-	ChainAddress        address.Address
-	ChainColor          balance.Color
-	OriginatorAddress   address.Address
-	OriginatorAgentID   coretypes.AgentID
-	ValidatorFeeTarget  coretypes.AgentID
-	StateTx             *sctransaction.Transaction
-	State               state.VirtualState
-	Proc                *processors.ProcessorCache
-	Log                 *logger.Logger
+
+	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
+	ChainID coretypes.ChainID
+
+	// ChainAddress is the alias of ChainSigScheme.Address()
+	ChainAddress address.Address
+
+	// ChainColor is the color of the non-fungible token of the chain.
+	// It is equal to the hash of the origin transaction of the chain
+	ChainColor balance.Color
+
+	// OriginatorAddress is the alias for OriginatorSigScheme.Address()
+	OriginatorAddress address.Address
+
+	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
+	OriginatorAgentID coretypes.AgentID
+
+	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
+	ValidatorFeeTarget coretypes.AgentID
+
+	// StateTx is the anchor transaction of the current state of the chain
+	StateTx *sctransaction.Transaction
+
+	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
+	State state.VirtualState
+
+	// Log is the named logger of the chain
+	Log *logger.Logger
+
+	// processor cache
+	proc *processors.ProcessorCache
+
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	chPosted     sync.WaitGroup
@@ -78,12 +102,15 @@ type Chain struct {
 
 var doOnce = sync.Once{}
 
-func New(t *testing.T, debug bool, printStackTrace bool) *Glb {
+// New creates an instance of the `solo` environment for the test instances.
+//   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
+//   'printStackTrace' controls printing stack trace in case of errors
+func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmhost.GetProcessor)
 		require.NoError(t, err)
 	})
-	ret := &Glb{
+	ret := &Solo{
 		T:           t,
 		logger:      testutil.NewLogger(t),
 		utxoDB:      utxodb.New(),
@@ -98,7 +125,21 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Glb {
 	return ret
 }
 
-func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
+// NewChain deploys new chain instance.
+//
+//   If 'chainOriginator' is nil, new one is generated and 1337 iotas is are loaded from the faucet of the UTXODB.
+//   If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
+// To deploy the chai instance the following steps are performed:
+//    - chain signature scheme (private key), chain address and chain ID are created
+//    - empty virtual state is initialized
+//    - origin transaction is created by the originator and added to the UTXODB
+//    - 'init' request transaction to the 'root' contract is created and added to UTXODB
+//    - backlog processing threads (goroutines) are started
+//    - VM processor cache is initialized
+//    - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
+//      'blob', 'accountsc', 'chainlog'
+// Upon return, the chain is fully functional to process requests
+func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	if chainOriginator == nil {
 		chainOriginator = signaturescheme.ED25519(ed25519.GenerateKeyPair())
@@ -111,7 +152,6 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 	if len(validatorFeeTarget) > 0 {
 		feeTarget = validatorFeeTarget[0]
 	}
-
 	ret := &Chain{
 		Glb:                 glb,
 		Name:                name,
@@ -123,7 +163,7 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 		ValidatorFeeTarget:  feeTarget,
 		ChainID:             chainID,
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
-		Proc:                processors.MustNew(),
+		proc:                processors.MustNew(),
 		Log:                 glb.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
@@ -170,7 +210,7 @@ func (glb *Glb) NewChain(chainOriginator signaturescheme.SignatureScheme, name s
 	glb.glbMutex.Unlock()
 
 	go ret.readRequestsLoop()
-	go ret.runBatchLoop()
+	go ret.batchLoop()
 
 	_, err = ret.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
 	require.NoError(glb.T, err)
@@ -210,11 +250,12 @@ func (ch *Chain) collateBatch() []sctransaction.RequestRef {
 	return ret
 }
 
-func (ch *Chain) runBatchLoop() {
+// batchLoop mimics leaders's behavior in the Wasp committee
+func (ch *Chain) batchLoop() {
 	for {
 		batch := ch.collateBatch()
 		if len(batch) > 0 {
-			_, err := ch.runBatch(batch, "runBatchLoop")
+			_, err := ch.runBatch(batch, "batchLoop")
 			if err != nil {
 				ch.Log.Errorf("runBatch: %v", err)
 			}
@@ -224,6 +265,7 @@ func (ch *Chain) runBatchLoop() {
 	}
 }
 
+// backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
 	ch.chPosted.Wait()
 	ch.backlogMutex.Lock()
@@ -231,12 +273,13 @@ func (ch *Chain) backlogLen() int {
 	return len(ch.backlog)
 }
 
-// NewSigSchemeWithFunds generates new ed25519 sigscheme and requests funds from the faucet
-func (glb *Glb) NewSigSchemeWithFunds() signaturescheme.SignatureScheme {
+// NewSignatureSchemeWithFunds generates new ed25519 signature scheme and requests funds (1337 iotas)
+// from the UTXODB faucet
+func (glb *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	_, err := glb.utxoDB.RequestFunds(ret.Address())
 	if err != nil {
-		glb.logger.Panicf("NewSigSchemeWithFunds: %v", err)
+		glb.logger.Panicf("NewSignatureSchemeWithFunds: %v", err)
 	}
 	glb.CheckUtxodbBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 	return ret
