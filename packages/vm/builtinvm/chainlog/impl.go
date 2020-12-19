@@ -3,6 +3,7 @@ package chainlog
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
@@ -16,31 +17,29 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// getNumRecords gets the number of chainlog records filtered by hname and type
+// getNumRecords gets the number of chainlog records for contarct
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
-//	- ParamRecordType Type of record that you want to query
 func getNumRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	contractName, recType, err := getFilterParameters(ctx.Params())
+	contractName, err := getHnameParameter(ctx.Params())
 	if err != nil {
 		return nil, err
 	}
 	ret := dict.New()
-	thelog := datatypes.NewMustTimestampedLog(ctx.State(), chainLogName(contractName, recType))
+	thelog := datatypes.NewMustTimestampedLog(ctx.State(), kv.Key(contractName.Bytes()))
 	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.Len())))
 	return ret, nil
 }
 
-// getLogRecords gets logs between timestamp interval and last N number of records
+// getLogRecords returns records between timestamp interval for the hname
 // In time descending order
 // Parameters:
 //	- ParamContractHname Filter param, Hname of the contract to view the logs
-//	- ParamRecordType Filter param, Type of record that you want to query
 //  - ParamFromTs From interval. Defaults to 0
 //  - ParamToTs To Interval. Defaults to now (if both are missing means all)
 //  - ParamMaxLastRecords Max amount of records that you want to return. Defaults to 50
 func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	contractHname, recType, err := getFilterParameters(ctx.Params())
+	contractHname, err := getHnameParameter(ctx.Params())
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		toTs = ctx.GetTimestamp()
 	}
-	theLog := datatypes.NewMustTimestampedLog(ctx.State(), chainLogName(contractHname, recType))
+	theLog := datatypes.NewMustTimestampedLog(ctx.State(), kv.Key(contractHname.Bytes()))
 	tts := theLog.TakeTimeSlice(fromTs, toTs)
 	if tts.IsEmpty() {
 		// empty time slice
@@ -82,24 +81,14 @@ func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-// getFilterParameters internal utility function to parse and validate params
-func getFilterParameters(params dict.Dict) (coretypes.Hname, byte, error) {
+// getHnameParameter internal utility function to parse and validate params
+func getHnameParameter(params dict.Dict) (coretypes.Hname, error) {
 	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 	if !ok {
-		return 0, 0, fmt.Errorf("parameter 'contractHname' not found")
+		return 0, fmt.Errorf("parameter 'contractHname' not found")
 	}
-	typeP, ok, err := codec.DecodeInt64(params.MustGet(ParamRecordType))
-	if err != nil {
-		return 0, 0, err
-	}
-	if !ok {
-		return 0, 0, fmt.Errorf("paremeter 'recordType' not found")
-	}
-	if !IsSystemTR(byte(typeP)) {
-		return 0, 0, fmt.Errorf("parameter 'recordType' is wrong")
-	}
-	return contractName, byte(typeP), nil
+	return contractName, nil
 }

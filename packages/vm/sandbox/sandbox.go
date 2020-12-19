@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -112,16 +111,16 @@ func (s *sandbox) Log() vmtypes.LogInterface {
 }
 
 func (s *sandbox) Event(msg string) {
-	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), chainlog.TREvent, []byte(msg))
+	s.ChainLog([]byte(msg))
 	s.vmctx.EventPublisher().Publish(msg)
 }
 
 func (s *sandbox) Eventf(format string, args ...interface{}) {
-	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), chainlog.TREvent, []byte(fmt.Sprintf(format, args...)))
+	s.ChainLog([]byte(fmt.Sprintf(format, args...)))
 	s.vmctx.EventPublisher().Publishf(format, args...)
 }
 
 func (s *sandbox) ChainLog(data []byte) {
 	s.Log().Infof("chainlog record: '%s'", string(data))
-	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), chainlog.TRGenericData, data)
+	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), data)
 }

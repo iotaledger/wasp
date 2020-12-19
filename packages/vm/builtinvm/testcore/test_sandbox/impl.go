@@ -24,12 +24,12 @@ func testChainLogGenericData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !ok {
 		inc = 1
 	}
-	ctx.ChainLog([]byte(fmt.Sprintf("[TRGenericData] Counter Number: %d", inc)))
+	ctx.ChainLog([]byte(fmt.Sprintf("[GenericData] Counter Number: %d", inc)))
 	return nil, nil
 }
 
 func testChainLogEventData(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Event("[TREvent] - Testing Event...")
+	ctx.Event("[Event] - Testing Event...")
 	return nil, nil
 }
 
@@ -42,7 +42,7 @@ func testChainLogEventDataFormatted(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !ok {
 		inc = 1
 	}
-	ctx.Eventf("[TREvent] - (%d) - Testing Event...", inc)
+	ctx.Eventf("[Eventf] - (%d) - Testing Event...", inc)
 
 	return nil, nil
 }
@@ -82,8 +82,7 @@ func testSandboxCall(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func testChainlogTRDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
-
+func testChainlogDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	//Deploy the same contract with another name
 	err := ctx.CreateContract(Interface.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)

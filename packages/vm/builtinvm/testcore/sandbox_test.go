@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,28 +23,7 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestChainlogWrongTypeParam(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
-
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-
-	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncChainLogGenericData,
-		test_sandbox.VarCounter, 1,
-	)
-	_, err = chain.PostRequest(req, nil)
-	require.NoError(t, err)
-
-	_, err = chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
-		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, 8,
-	)
-	require.Error(t, err)
-}
-
-func TestChainlogGetLasts3(t *testing.T) {
+func TestChainlogGetLast3(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
@@ -63,7 +43,6 @@ func TestChainlogGetLasts3(t *testing.T) {
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamMaxLastRecords, 3,
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRGenericData,
 	)
 	require.NoError(t, err)
 
@@ -93,7 +72,6 @@ func TestChainlogGetBetweenTs(t *testing.T) {
 		chainlog.ParamToTs, chain.State.Timestamp()-int64(1500*time.Millisecond),
 		chainlog.ParamMaxLastRecords, 2,
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRGenericData,
 	)
 	require.NoError(t, err)
 
@@ -101,7 +79,7 @@ func TestChainlogGetBetweenTs(t *testing.T) {
 	require.EqualValues(t, 2, array.Len())
 }
 
-func TestChainlogEventData(t *testing.T) {
+func TestChainLogEventData(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -109,7 +87,7 @@ func TestChainlogEventData(t *testing.T) {
 	require.NoError(t, err)
 
 	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncChainLogEventData, //Sandbox call se the TREvent type
+		test_sandbox.FuncChainLogEventData,
 	)
 	_, err = chain.PostRequest(req, nil)
 
@@ -117,15 +95,18 @@ func TestChainlogEventData(t *testing.T) {
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
 
-	require.EqualValues(t, 1, array.Len())
+	require.EqualValues(t, 2, array.Len())
+
+	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	require.NoError(t, err)
+	t.Log(str)
 }
 
-func TestChainlogEventDataFomatted(t *testing.T) {
+func TestChainLogEventDataFormatted(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -133,7 +114,7 @@ func TestChainlogEventDataFomatted(t *testing.T) {
 	require.NoError(t, err)
 
 	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncChainLogEventDataFormatted, //Sandbox call se the TREvent type
+		test_sandbox.FuncChainLogEventDataFormatted,
 	)
 	_, err = chain.PostRequest(req, nil)
 
@@ -141,15 +122,18 @@ func TestChainlogEventDataFomatted(t *testing.T) {
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
 
-	require.EqualValues(t, 1, array.Len())
+	require.EqualValues(t, 2, array.Len())
+
+	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	require.NoError(t, err)
+	t.Log(str)
 }
 
-func TestChainlogGetBetweenTsAndDifferentTypes(t *testing.T) {
+func TestChainlogDifferentCalls(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	glb.SetTimeStep(500 * time.Millisecond)
@@ -157,34 +141,43 @@ func TestChainlogGetBetweenTsAndDifferentTypes(t *testing.T) {
 	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	for i := 1; i < 4; i++ {
+	count := 1
+	// events
+	for i := 1; i <= 3; i++ {
 		req := solo.NewCall(test_sandbox.Interface.Name,
-			test_sandbox.FuncChainLogEventData, //Sandbox call se the TREvent type
-			test_sandbox.VarCounter, i,
+			test_sandbox.FuncChainLogEventData,
+			test_sandbox.VarCounter, count,
 		)
+		count++
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
 	}
-	for i := 4; i < 6; i++ {
+	// generic
+	for i := 1; i <= 2; i++ {
 		req := solo.NewCall(test_sandbox.Interface.Name,
-			test_sandbox.FuncChainLogGenericData, //Sandbox call use the TRGeneric type
-			test_sandbox.VarCounter, i,
+			test_sandbox.FuncChainLogGenericData,
+			test_sandbox.VarCounter, count,
 		)
+		count++
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
 	}
-
-	//This call should return all the record that has the TREvent type (in this case 3)
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamFromTs, 0,
 		chainlog.ParamToTs, chain.State.Timestamp(),
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TREvent,
 	)
 	require.NoError(t, err)
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
+	require.EqualValues(t, (2+3)*2, array.Len())
 
-	require.EqualValues(t, 3, array.Len())
+	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	require.NoError(t, err)
+	t.Log(str)
+
+	require.EqualValues(t, 2+3, strings.Count(str, "[req]"))
+	require.EqualValues(t, 2, strings.Count(str, "[GenericData]"))
+	require.EqualValues(t, 3, strings.Count(str, "[Event]"))
 }
 
 func TestChainOwnerID(t *testing.T) {
@@ -255,13 +248,13 @@ func TestChainLogGetNumRecords(t *testing.T) {
 
 	req := solo.NewCall(test_sandbox.Interface.Name,
 		test_sandbox.FuncChainLogGenericData,
+		test_sandbox.VarCounter, 1337,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetNumRecords,
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRGenericData,
 	)
 	require.NoError(t, err)
 
@@ -269,10 +262,19 @@ func TestChainLogGetNumRecords(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, ok)
-	require.EqualValues(t, 1, v)
+	require.EqualValues(t, 2, v)
+
+	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	require.NoError(t, err)
+	t.Log(str)
+
+	require.EqualValues(t, 1, strings.Count(str, "[req]"))
+	require.EqualValues(t, 1, strings.Count(str, "[GenericData]"))
+	require.EqualValues(t, 0, strings.Count(str, "[Event]"))
+	require.EqualValues(t, 1, strings.Count(str, "1337"))
 }
 
-func TestChainLogTRDeploy(t *testing.T) {
+func TestChainLogSandboxDeploy(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -280,7 +282,7 @@ func TestChainLogTRDeploy(t *testing.T) {
 	require.NoError(t, err)
 
 	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncChainlogTRDeploy,
+		test_sandbox.FuncChainlogDeploy,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -288,15 +290,21 @@ func TestChainLogTRDeploy(t *testing.T) {
 	//This call should return only one record which should be the type of TRDeploy
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamContractHname, root.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRDeploy,
 	)
 	require.NoError(t, err)
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
 
-	require.EqualValues(t, 1, array.Len())
+	require.EqualValues(t, 4, array.Len())
+
+	str, err := chain.GetChainLogRecordsString(root.Interface.Name)
+	require.NoError(t, err)
+	t.Log(str)
+
+	require.EqualValues(t, 2, strings.Count(str, "[deploy]"))
+	require.EqualValues(t, 2, strings.Count(str, "[req]"))
 }
 
-func TestChainLogMultipleTR(t *testing.T) {
+func TestChainLogMultiple(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
@@ -304,48 +312,39 @@ func TestChainLogMultipleTR(t *testing.T) {
 	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	//Triggers a chainlog TREvent and a TRRequest
 	req := solo.NewCall(test_sandbox.Interface.Name,
 		test_sandbox.FuncChainLogEventData,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	//Triggers a chainlog TRGenericData and a TRRequest
 	req = solo.NewCall(test_sandbox.Interface.Name,
 		test_sandbox.FuncChainLogGenericData,
-		test_sandbox.VarCounter, 1,
+		test_sandbox.VarCounter, 333,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	/////Should return 2 logs records/////
+	/////Should return 4 logs records/////
 	res, err := chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRRequest,
 	)
 	require.NoError(t, err)
 	array := datatypes.NewMustArray(res, chainlog.ParamRecords)
-	require.EqualValues(t, 2, array.Len())
+	require.EqualValues(t, 4, array.Len())
 	//////////////////////////////////////
 
-	/////Should return 1 logs record/////
-	res, err = chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
-		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TRGenericData,
-	)
+	strRoot, err := chain.GetChainLogRecordsString(root.Interface.Name)
 	require.NoError(t, err)
-	array = datatypes.NewMustArray(res, chainlog.ParamRecords)
-	require.EqualValues(t, 1, array.Len())
-	//////////////////////////////////////
+	t.Log(strRoot)
+	require.EqualValues(t, 2, strings.Count(strRoot, "[req]"))
+	require.EqualValues(t, 1, strings.Count(strRoot, "[deploy]"))
 
-	/////Should return 1 logs record/////
-	res, err = chain.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
-		chainlog.ParamContractHname, test_sandbox.Interface.Hname(),
-		chainlog.ParamRecordType, chainlog.TREvent,
-	)
+	strTest, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
-	array = datatypes.NewMustArray(res, chainlog.ParamRecords)
-	require.EqualValues(t, 1, array.Len())
-	//////////////////////////////////////
+	t.Log(strTest)
+	require.EqualValues(t, 2, strings.Count(strTest, "[req]"))
+	require.EqualValues(t, 1, strings.Count(strTest, "[GenericData]"))
+	require.EqualValues(t, 1, strings.Count(strTest, "[Event]"))
+	require.EqualValues(t, 1, strings.Count(strTest, "333"))
 }

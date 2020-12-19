@@ -161,6 +161,11 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
 	}
+
+	logMsg := fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: %s",
+		name, coretypes.Hn(name), proghash.String(), description)
+	ctx.ChainLog([]byte(logMsg))
+
 	ctx.Log().Infof("root.deployContract.success. Deployed contract '%s', hname = %s", name, coretypes.Hn(name).String())
 	return nil, nil
 }

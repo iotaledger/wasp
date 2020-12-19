@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"runtime/debug"
 )
@@ -50,16 +49,12 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 }
 
 func (vmctx *VMContext) chainlogRequest(err error) {
-	e := ""
+	e := "Ok"
 	if err != nil {
 		e = err.Error()
 	}
-	rec := &chainlog.RequestChainLogRecord{
-		RequestID:  *vmctx.reqRef.RequestID(),
-		EntryPoint: vmctx.reqRef.RequestSection().EntryPointCode(),
-		Error:      e,
-	}
-	vmctx.StoreToChainLog(vmctx.reqHname, chainlog.TRRequest, chainlog.EncodeRequestChainLogRecord(rec))
+	msg := fmt.Sprintf("[req] %s: %s", vmctx.reqRef.RequestID().String(), e)
+	vmctx.StoreToChainLog(vmctx.reqHname, []byte(msg))
 }
 
 func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {

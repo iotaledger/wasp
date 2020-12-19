@@ -257,10 +257,9 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 
 // GetChainLogRecords return latest up to 50 records for a given SC and record type
 // from the specific chainlog as array in time-descending order
-func (ch *Chain) GetChainLogRecords(name string, recType byte) ([]datatypes.TimestampedLogRecord, error) {
+func (ch *Chain) GetChainLogRecords(name string) ([]datatypes.TimestampedLogRecord, error) {
 	res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
 		chainlog.ParamContractHname, coretypes.Hn(name),
-		chainlog.ParamRecordType, recType,
 	)
 	if err != nil {
 		return nil, err
@@ -276,25 +275,29 @@ func (ch *Chain) GetChainLogRecords(name string, recType byte) ([]datatypes.Time
 	return ret, nil
 }
 
+// GetChainLogRecordsToString return stringified response from GetChainLogRecords
+func (ch *Chain) GetChainLogRecordsString(name string) (string, error) {
+	recs, err := ch.GetChainLogRecords(name)
+	if err != nil {
+		return "", err
+	}
+	ret := fmt.Sprintf("log records for '%s':", name)
+	for _, r := range recs {
+		ret += fmt.Sprintf("\n%d: %s", r.Timestamp, string(r.Data))
+	}
+	return ret, nil
+}
+
 // GetChainLogNumRecords return number of chainlog records for the given contacts
 // and specified types of records. If no types of records specified, it returns
 // number of records for all types
-func (ch *Chain) GetChainLogNumRecords(name string, recTypes ...byte) int {
-	if len(recTypes) == 0 {
-		recTypes = []byte{chainlog.TRDeploy, chainlog.TREvent, chainlog.TRRequest, chainlog.TRGenericData}
-	}
-	hn := coretypes.Hn(name)
-	ret := 0
-	for _, recType := range recTypes {
-		res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetNumRecords,
-			chainlog.ParamContractHname, hn,
-			chainlog.ParamRecordType, recType,
-		)
-		require.NoError(ch.Glb.T, err)
-		s, ok, err := codec.DecodeInt64(res.MustGet(chainlog.ParamNumRecords))
-		require.NoError(ch.Glb.T, err)
-		require.True(ch.Glb.T, ok)
-		ret += int(s)
-	}
-	return ret
+func (ch *Chain) GetChainLogNumRecords(name string) int {
+	res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetNumRecords,
+		chainlog.ParamContractHname, coretypes.Hn(name),
+	)
+	require.NoError(ch.Glb.T, err)
+	ret, ok, err := codec.DecodeInt64(res.MustGet(chainlog.ParamNumRecords))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+	return int(ret)
 }
