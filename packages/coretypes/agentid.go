@@ -94,9 +94,9 @@ func (a AgentID) Bytes() []byte {
 // String human readable string
 func (a AgentID) String() string {
 	if a.IsAddress() {
-		return "A-" + a.MustAddress().String()
+		return "A/" + a.MustAddress().String()
 	}
-	return "C-" + a.MustContractID().String()
+	return "C/" + a.MustContractID().String()
 }
 
 // NewAgentIDFromString parses the human-readable string representation
@@ -106,14 +106,14 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 		return
 	}
 	switch s[:2] {
-	case "A-":
+	case "A/":
 		var addr address.Address
 		addr, err = address.FromBase58(s[2:])
 		if err != nil {
 			return
 		}
 		return NewAgentIDFromAddress(addr), nil
-	case "C-":
+	case "C/":
 		var cid ContractID
 		cid, err = NewContractIDFromString(s[2:])
 		if err != nil {
