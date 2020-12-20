@@ -6,6 +6,7 @@ package apilib
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"io"
 	"io/ioutil"
 	"os"
@@ -106,7 +107,7 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	chainAddr := chainID.Address()
+	chainAddr := address.Address(chainID)
 	dkShares, err := multiclient.New(apiHosts).DKSharesGet(&chainAddr)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())

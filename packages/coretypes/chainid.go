@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package coretypes
 
 import (
@@ -8,16 +11,18 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+// ChainIDLength size of the ChainID in bytes
 const ChainIDLength = address.Length
 
-// ChainID epresents global identifier of the chain
-// Currently it is an alias for the chain address
-// In it will be and alias for chain color
+// ChainID represents the global identifier of the chain
+//
+// Currently it is an alias for the chain address (type address.Address)
+// In the future it will be refactored as an alias for chain color (type balance.Color)
 type ChainID address.Address
 
 var NilChainID = ChainID{}
 
-// NewChainIDFromBase58 constructor unmarshals string
+// NewChainIDFromBase58 constructor decodes base58 string to the ChainID
 func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
 	var b []byte
 	b, err = base58.Decode(b58)
@@ -32,38 +37,34 @@ func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
 	return
 }
 
-// NewChainIDFromBytes constructor reconstructs a ChainID from its binary representation.
+// NewChainIDFromBytes reconstructs a ChainID from its binary representation.
 func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
 }
 
-// NewRandomChainID constructor creates a random chain ID.
+// NewRandomChainID creates a random chain ID.
 func NewRandomChainID() ChainID {
 	return ChainID(address.RandomOfType(address.VersionBLS))
 }
 
-// Bytes returns a serialized version of this ChainID.
+// Bytes returns the ChainID as byte slice.
 func (chid ChainID) Bytes() []byte {
-	return chid.Address().Bytes()
+	return address.Address(chid).Bytes()
 }
 
-// String human readable form
+// String human readable form (base58 encoding)
 func (chid ChainID) String() string {
-	return chid.Address().String()
+	return address.Address(chid).String()
 }
 
-func (chid ChainID) Address() address.Address {
-	return address.Address(chid)
-}
-
-// Write marshal
+// Write to writer
 func (chid *ChainID) Write(w io.Writer) error {
 	_, err := w.Write(chid[:])
 	return err
 }
 
-// Read unmarshal
+// Read from reader
 func (chid *ChainID) Read(r io.Reader) error {
 	n, err := r.Read(chid[:])
 	if err != nil {
@@ -73,9 +74,4 @@ func (chid *ChainID) Read(r io.Reader) error {
 		return ErrWrongDataLength
 	}
 	return nil
-}
-
-// Equal does what it should.
-func (chid *ChainID) Equal(other *ChainID) bool {
-	return other != nil && bytes.Equal(chid.Bytes(), other.Bytes())
 }

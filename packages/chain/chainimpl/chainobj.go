@@ -4,6 +4,7 @@
 package chainimpl
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"sync"
 	"time"
 
@@ -67,7 +68,7 @@ func newCommitteeObj(
 	var err error
 	log.Debugw("creating committee", "addr", chr.ChainID.String())
 
-	addr := chr.ChainID.Address()
+	addr := address.Address(chr.ChainID)
 	if util.ContainsDuplicates(chr.CommitteeNodes) {
 		log.Errorf("can't create chain object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
 			addr.String(), chr.CommitteeNodes)

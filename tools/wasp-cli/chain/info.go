@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -13,7 +14,7 @@ func infoCmd(args []string) {
 	log.Check(err)
 
 	log.Printf("Chain ID: %s\n", chain.ChainID)
-	log.Printf("Chain Address: %s\n", chain.ChainID.Address())
+	log.Printf("Chain Address: %s\n", address.Address(chain.ChainID))
 	log.Printf("Chain Color: %s\n", chain.Color)
 	log.Printf("Committee nodes: %+v\n", chain.CommitteeNodes)
 	log.Printf("Active: %v\n", chain.Active)

@@ -29,7 +29,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	dst, err = peering.NewPeerMessageFromBytes(bin)
 	require.Nil(t, err)
 	require.NotNil(t, dst)
-	require.True(t, src.ChainID.Equal(&dst.ChainID))
+	require.EqualValues(t, src.ChainID, dst.ChainID)
 	require.Equal(t, src.SenderIndex, dst.SenderIndex)
 	require.Equal(t, src.Timestamp, dst.Timestamp)
 	require.Equal(t, src.MsgType, dst.MsgType)
@@ -70,7 +70,7 @@ func TestPeerMessageChunks(t *testing.T) {
 			require.Nil(t, dst)
 		}
 	}
-	require.True(t, src.ChainID.Equal(&dst.ChainID))
+	require.EqualValues(t, src.ChainID, dst.ChainID)
 	require.Equal(t, src.SenderIndex, dst.SenderIndex)
 	require.Equal(t, src.Timestamp, dst.Timestamp)
 	require.Equal(t, src.MsgType, dst.MsgType)

@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package coretypes
 
 import (
@@ -10,7 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Hname is 4 bytes of blake2b hash of any string. Ensured is not 0 and not ^0
+// Hname is 4 bytes of blake2b hash of any string interpreted as little-endian uint32.
+// 0 and not ^0 are reserved values and the coretypes.Hn ensures it is not returned
 type Hname uint32
 
 const HnameLength = 4
@@ -27,7 +31,7 @@ func NewHnameFromBytes(data []byte) (ret Hname, err error) {
 	return
 }
 
-// Hn beware collisions: hash is only 4 bytes!
+// Hn created hname from arbitrary string.
 func Hn(funname string) (ret Hname) {
 	h := hashing.HashStrings(funname)
 	_ = ret.Read(bytes.NewReader(h[:HnameLength]))

@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package coretypes
 
 import (
@@ -10,9 +13,10 @@ import (
 	"io"
 )
 
+// RequestIDLength size of the RequestID in bytes
 const RequestIDLength = valuetransaction.IDLength + 2
 
-// RequestID is a global ID of any request. It is a concatenation of trasaction ID and 2 bytes of index of the section
+// RequestID is a global ID of any request. It is a concatenation of transaction ID and 2 bytes of index of the section
 type RequestID [RequestIDLength]byte
 
 // NewRequestID a constructor
