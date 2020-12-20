@@ -11,7 +11,7 @@ Running and testing the smart contract on 'solo' does not require to run the Was
 nodes nor committee of nodes: just ordinary 'go test' environment.
 
 See here the GoDoc documentation of the `solo` package:
- [![Go Reference](https://pkg.go.dev/badge/iotaledger/wasp/packages/vm/solo.svg)](https://pkg.go.dev/github.com/iotaledger/wasp/packages/vm/solo)
+ [![Go Reference](https://pkg.go.dev/badge/iotaledger/wasp/packages/solo.svg)](https://pkg.go.dev/github.com/iotaledger/wasp/packages/solo)
 
 ### Native environment
 `solo` shares the same code of Virtual Machine with the Wasp node. This guarantees that smart contract programs
@@ -28,7 +28,7 @@ interface of access to it as the database of the Wasp node.
 ### Writing smart contracts
 
 The smart contracts are usually written in Rust using Rust libraries provided
-in the (wasplib repository)[https:github.com/iotaledger/wasplib].
+in the (wasplib repository)[https://github.com/iotaledger/wasplib].
 Rust code is compiled into the WebAssembly (Wasm) binary.
 The Wasm binary is uploaded by `solo` onto the chain and then loaded into the VM
 and executed.
