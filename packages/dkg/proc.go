@@ -86,6 +86,7 @@ func onInitiatorInit(dkgID *coretypes.ChainID, msg *initiatorInitMsg, node *Node
 		log:          log,
 		myNetID:      node.netProvider.Self().NetID(),
 	}
+	p.log.Infof("Starting DKG Peer process at %v for DkgID=%v", p.myNetID, p.dkgID.String())
 	stepsStart := make(chan map[uint16]*peering.PeerMessage)
 	p.steps = make(map[byte]*procStep)
 	p.steps[rabinStep1R21SendDeals] = newProcStep(rabinStep1R21SendDeals, &p,

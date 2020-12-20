@@ -269,11 +269,11 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 	go func() {
 		// This part should be executed async, because it accesses the network again, and can
 		// be locked because of the naive implementation of `events.Event`. It locks on all the callbacks.
+		n.procLock.Lock()
 		if p, err = onInitiatorInit(&recv.Msg.ChainID, &req, n); err == nil {
-			n.procLock.Lock()
 			n.processes[p.dkgRef] = p
-			n.procLock.Unlock()
 		}
+		n.procLock.Unlock()
 		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
 			error: err,
 		}))
