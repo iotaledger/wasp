@@ -7,8 +7,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 )
 
-// ColoredBalances interface to immutable map of color codes: int64
-// Guarantees always non-zero balances for any color present in the map
+// ColoredBalances is an interface to immutable map of (color code: int64)
+//
+// New colored balance can be created by cbalances.NewFromMap and cbalances.NewFromBalances
 type ColoredBalances interface {
 	// Balance is balance of the color or 0 if color is not present
 	Balance(color balance.Color) int64

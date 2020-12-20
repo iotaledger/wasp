@@ -16,7 +16,9 @@ import (
 // RequestIDLength size of the RequestID in bytes
 const RequestIDLength = valuetransaction.IDLength + 2
 
-// RequestID is a global ID of any request. It is a concatenation of transaction ID and 2 bytes of index of the section
+// RequestID is a global ID of any smart contract request.
+// In ISCP, each request is a section in the smart contract transaction (sctransaction.Transaction).
+// The request ID is a concatenation of the transaction ID and little-endian 2 bytes of uint16 index of the section
 type RequestID [RequestIDLength]byte
 
 // NewRequestID a constructor
@@ -42,6 +44,7 @@ func NewRequestIDFromBytes(data []byte) (ret RequestID, err error) {
 	return
 }
 
+// Bytes returns requestID as a byte slice
 func (rid *RequestID) Bytes() []byte {
 	return rid[:]
 }
@@ -74,6 +77,7 @@ func (rid *RequestID) Read(r io.Reader) error {
 	return nil
 }
 
+// String is a human readable representation of the requestID
 func (rid *RequestID) String() string {
 	return fmt.Sprintf("[%d]%s", rid.Index(), rid.TransactionID().String())
 }
