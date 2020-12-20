@@ -12,6 +12,8 @@ package peering
 
 import (
 	"bytes"
+	"errors"
+	"hash/crc32"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
@@ -32,6 +34,14 @@ const (
 
 	chunkMessageOverhead = 8 + 1
 )
+
+var (
+	crc32q *crc32.Table
+)
+
+func init() {
+	crc32q = crc32.MakeTable(0xD5828281)
+}
 
 // NetworkProvider stands for the peer-to-peer network, as seen
 // from the viewpoint of a single participant.
@@ -142,6 +152,15 @@ func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 		if m.MsgData, err = util.ReadBytes32(r); err != nil {
 			return nil, err
 		}
+		var checksumCalc uint32
+		var checksumRead uint32
+		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
+		if err = util.ReadUint32(r, &checksumRead); err != nil {
+			return nil, err
+		}
+		if checksumCalc != checksumRead {
+			return nil, errors.New("message_checksum_invalid")
+		}
 	}
 	return &m, nil
 }
@@ -186,6 +205,11 @@ func (m *PeerMessage) Bytes() ([]byte, error) {
 			return nil, err
 		}
 		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+			return nil, err
+		}
+		var checksumCalc uint32
+		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
+		if err = util.WriteUint32(&buf, checksumCalc); err != nil {
 			return nil, err
 		}
 	}

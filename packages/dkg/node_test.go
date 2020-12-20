@@ -3,7 +3,9 @@
 
 package dkg_test
 
-// TODO: Test with unreliable network.
+// TODO: Tests with corrupted messages.
+// TODO: Tests with byzantine messages.
+// TODO: Single node down for some time.
 
 import (
 	"fmt"
@@ -20,11 +22,10 @@ import (
 	"go.dedis.ch/kyber/v3/util/key"
 )
 
-// TestBn256 checks if DKG procedure is executed successfully in a common case.
-func TestBn256(t *testing.T) {
+// TestBasic checks if DKG procedure is executed successfully in a common case.
+func TestBasic(t *testing.T) {
 	log := testutil.NewLogger(t)
 	defer log.Sync()
-	t.SkipNow()
 	//
 	// Create a fake network and keys for the tests.
 	var timeout = 100 * time.Second
@@ -36,13 +37,14 @@ func TestBn256(t *testing.T) {
 	var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 	for i := range peerNetIDs {
 		peerPair := key.NewKeyPair(suite)
-		peerNetIDs[i] = fmt.Sprintf("P%06d", i)
+		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
 		peerSecs[i] = peerPair.Private
 		peerPubs[i] = peerPair.Public
 	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerPubs, peerSecs, 10000,
-		testutil.WithLevel(log, logger.LevelWarn, true),
+		testutil.NewPeeringNetReliable(),
+		testutil.WithLevel(log, logger.LevelWarn, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
@@ -52,7 +54,7 @@ func TestBn256(t *testing.T) {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
-			log.With("NetID", peerNetIDs[i]),
+			testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
 	//
@@ -61,6 +63,8 @@ func TestBn256(t *testing.T) {
 		peerNetIDs,
 		peerPubs,
 		threshold,
+		1*time.Second,
+		2*time.Second,
 		timeout,
 	)
 	require.Nil(t, err)
@@ -68,9 +72,9 @@ func TestBn256(t *testing.T) {
 	require.NotNil(t, dkShare.SharedPublic)
 }
 
-// TestBn256NoPubs checks, if public keys are taken from the peering network successfully.
+// TestNoPubs checks, if public keys are taken from the peering network successfully.
 // See a NOTE in the test case bellow.
-func TestBn256NoPubs(t *testing.T) {
+func TestNoPubs(t *testing.T) {
 	log := testutil.NewLogger(t)
 	defer log.Sync()
 	//
@@ -84,13 +88,14 @@ func TestBn256NoPubs(t *testing.T) {
 	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	for i := range peerNetIDs {
 		peerPair := key.NewKeyPair(suite)
-		peerNetIDs[i] = fmt.Sprintf("P%06d", i)
+		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
 		peerSecs[i] = peerPair.Private
 		peerPubs[i] = peerPair.Public
 	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerPubs, peerSecs, 10000,
-		testutil.WithLevel(log, logger.LevelWarn, true),
+		testutil.NewPeeringNetReliable(),
+		testutil.WithLevel(log, logger.LevelWarn, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
@@ -100,7 +105,7 @@ func TestBn256NoPubs(t *testing.T) {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
-			log.With("NetID", peerNetIDs[i]),
+			testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
 	//
@@ -109,6 +114,67 @@ func TestBn256NoPubs(t *testing.T) {
 		peerNetIDs,
 		nil, // NOTE: Should be taken from the peering node.
 		threshold,
+		1*time.Second,
+		2*time.Second,
+		timeout,
+	)
+	require.Nil(t, err)
+	require.NotNil(t, dkShare.Address)
+	require.NotNil(t, dkShare.SharedPublic)
+}
+
+// TestUnreliableNet checks, if DKG runs on an unreliable network.
+// See a NOTE in the test case bellow.
+func TestUnreliableNet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	log := testutil.NewLogger(t)
+	defer log.Sync()
+	//
+	// Create a fake network and keys for the tests.
+	var timeout = 100 * time.Second
+	var threshold uint16 = 10
+	var peerCount uint16 = 10
+	var peerNetIDs []string = make([]string, peerCount)
+	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
+	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
+	for i := range peerNetIDs {
+		peerPair := key.NewKeyPair(suite)
+		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
+		peerSecs[i] = peerPair.Private
+		peerPubs[i] = peerPair.Public
+	}
+	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+		peerNetIDs, peerPubs, peerSecs, 10000,
+		testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
+			80,                                         // Delivered %
+			20,                                         // Duplicated %
+			10*time.Millisecond, 1000*time.Millisecond, // Delays (from, till)
+			testutil.WithLevel(log.Named("UnreliableNet"), logger.LevelDebug, false),
+		),
+		testutil.WithLevel(log, logger.LevelInfo, false),
+	)
+	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	//
+	// Initialize the DKG subsystem in each node.
+	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+	for i := range peerNetIDs {
+		registry := testutil.NewDkgRegistryProvider(suite)
+		dkgNodes[i] = dkg.NewNode(
+			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
+			testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
+		)
+	}
+	//
+	// Initiate the key generation from some client node.
+	dkShare, err := dkgNodes[0].GenerateDistributedKey(
+		peerNetIDs,
+		nil, // NOTE: Should be taken from the peering node.
+		threshold,
+		100*time.Millisecond, // Round retry.
+		500*time.Millisecond, // Step retry.
 		timeout,
 	)
 	require.Nil(t, err)

@@ -14,7 +14,7 @@ type WaitChan struct {
 }
 
 func NewWaitChan() *WaitChan {
-	return &WaitChan{ch: make(chan bool, 2)}
+	return &WaitChan{ch: make(chan bool, 1)}
 }
 
 func (c *WaitChan) Done() {

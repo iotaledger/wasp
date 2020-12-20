@@ -122,11 +122,19 @@ func (g *groupImpl) ExchangeRound(
 				return errors.New("recv_channel_closed")
 			}
 			if recvMsg.Msg.SenderIndex, err = g.PeerIndex(recvMsg.From); err != nil {
-				g.log.Warnf("Dropping message because of %v from peer %v: %v", err, recvMsg.From.NetID(), recvMsg.Msg)
+				g.log.Warnf(
+					"Dropping message %v -> %v, MsgType=%v because of %v",
+					recvMsg.From.NetID(), g.netProvider.Self().NetID(),
+					recvMsg.Msg.MsgType, err,
+				)
 				continue
 			}
 			if acks[recvMsg.Msg.SenderIndex] { // Only consider first successful message.
-				g.log.Warnf("Dropping duplicate message from peer %v: %v", recvMsg.From.NetID(), recvMsg.Msg)
+				g.log.Warnf(
+					"Dropping duplicate message %v -> %v, MsgType=%v",
+					recvMsg.From.NetID(), g.netProvider.Self().NetID(),
+					recvMsg.Msg.MsgType,
+				)
 				continue
 			}
 			if acks[recvMsg.Msg.SenderIndex], err = recvCB(recvMsg); err != nil {
