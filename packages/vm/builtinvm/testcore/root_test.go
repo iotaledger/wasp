@@ -20,7 +20,7 @@ func TestRootBasic(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	chain.CheckBase()
+	chain.CheckChain()
 	chain.Log.Infof("\n%s\n", chain.String())
 }
 
@@ -29,7 +29,7 @@ func TestRootRepeatInit(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	chain.CheckBase()
+	chain.CheckChain()
 
 	req := solo.NewCall(root.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)

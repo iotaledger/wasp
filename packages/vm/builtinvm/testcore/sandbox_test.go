@@ -18,7 +18,7 @@ func TestBasic(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	chain.CheckBase()
+	chain.CheckChain()
 	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 }

@@ -44,10 +44,11 @@ type Solo struct {
 }
 
 // Chain represents state of individual chain.
-// There may be several parallel instances of the chain in the test
+// There may be several parallel instances of the chain in the 'solo' test
 type Chain struct {
-	// Glb is a pointer to the global structure
+	// Glb is a pointer to the global structure of the 'solo' test
 	Glb *Solo
+
 	// Name is the name of the chain
 	Name string
 
