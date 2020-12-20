@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/solo"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

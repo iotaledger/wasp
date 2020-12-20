@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 

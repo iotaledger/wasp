@@ -10,8 +10,8 @@ Normally, the smart contract is developed and tested in the `solo` environment b
 Running and testing the smart contract on 'solo' does not require to run the Wasp
 nodes nor committee of nodes: just ordinary 'go test' environment.
 
-See here the [![GoDoc](https://godoc.org/github.com/iotaledger/wasp/packages/vm/solo?status.png)](https://pkg.go.dev/github.com/iotaledger/wasp/packages/vm/solo)
-of the `solo` package.
+See here the GoDoc documentation of the `solo` package:
+ [![Go Reference](https://pkg.go.dev/badge/iotaledger/wasp/packages/vm/solo.svg)](https://pkg.go.dev/github.com/iotaledger/wasp/packages/vm/solo)
 
 ### Native environment
 `solo` shares the same code of Virtual Machine with the Wasp node. This guarantees that smart contract programs

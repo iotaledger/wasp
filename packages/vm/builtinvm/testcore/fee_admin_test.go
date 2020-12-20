@@ -5,10 +5,10 @@ package testcore
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

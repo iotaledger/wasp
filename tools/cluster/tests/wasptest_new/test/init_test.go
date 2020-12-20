@@ -2,7 +2,7 @@ package erc20
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/vm/solo"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

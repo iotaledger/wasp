@@ -3,7 +3,7 @@ package inccounter
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/solo"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

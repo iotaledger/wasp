@@ -6,8 +6,8 @@ package testcore
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
