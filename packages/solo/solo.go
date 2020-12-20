@@ -141,6 +141,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //      'blob', 'accountsc', 'chainlog'
 // Upon return, the chain is fully functional to process requests
 func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
+	glb.logger.Infof("deploying new chain '%s'", name)
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	if chainOriginator == nil {
 		chainOriginator = signaturescheme.ED25519(ed25519.GenerateKeyPair())
@@ -216,6 +217,7 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 	_, err = ret.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
 	require.NoError(glb.T, err)
 
+	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID)
 	return ret
 }
 

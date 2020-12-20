@@ -12,9 +12,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-const VMType = "builtinvm"
+const (
+	VMType             = "builtinvm"
+	printCoreContracts = false
+)
 
 func init() {
+	if printCoreContracts {
+		PrintCoreContracts()
+	}
+}
+
+func PrintCoreContracts() {
 	fmt.Printf("--------------- core contracts ------------------\n")
 	fmt.Printf("    %s: '%s'  \n", root.Interface.Hname().String(), root.Interface.Name)
 	fmt.Printf("    %s: '%s'  \n", accountsc.Interface.Hname().String(), accountsc.Interface.Name)

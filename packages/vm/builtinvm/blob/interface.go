@@ -9,15 +9,14 @@ import (
 const (
 	Name        = "blob"
 	Version     = "0.1"
-	fullName    = Name + "-" + Version
 	description = "Blob Contract"
 )
 
 var (
 	Interface = &contract.ContractInterface{
-		Name:        fullName,
+		Name:        Name,
 		Description: description,
-		ProgramHash: *hashing.HashStrings(fullName),
+		ProgramHash: *hashing.HashStrings(Name),
 	}
 )
 

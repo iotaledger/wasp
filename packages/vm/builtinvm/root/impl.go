@@ -29,7 +29,7 @@ import (
 // - ParamFeeColor balance.Color fee color code. Defaults to IOTA color. It cannot be changed
 // - ParamOwnerFee int64 globally set default fee value. Defaults to 0
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof("root.initialize.begin")
+	ctx.Log().Debugf("root.initialize.begin")
 	params := ctx.Params()
 	state := ctx.State()
 	if state.MustGet(VarStateInitialized) != nil {

@@ -32,7 +32,7 @@ func (glb *Solo) AdvanceClockBy(step time.Duration) {
 	defer glb.glbMutex.Unlock()
 
 	glb.advanceClockTo(glb.logicalTime.Add(step))
-	glb.logger.Infof("AdvanceClockBy: logical clock advanced by %v ahead", step)
+	glb.logger.Infof("AdvanceClockBy: logical clock advanced by %v", step)
 }
 
 // ClockStep advances logical clock by time step set by SetTimeStep

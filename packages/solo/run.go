@@ -19,7 +19,7 @@ import (
 )
 
 func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
-	ch.Log.Debugf("runBatch ('%s'): %s", trace, batchShortStr(batch))
+	ch.Log.Debugf("runBatch ('%s')", trace)
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -52,12 +52,8 @@ func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.
 
 	wg.Wait()
 	task.ResultTransaction.Sign(ch.ChainSigScheme)
-	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
 
 	ch.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
-
-	ch.Log.Infof("state transition #%d --> #%d. Batch: %s. Posted requests: %d",
-		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(batch), len(ch.StateTx.Requests()))
 	return callRes, callErr
 }
 
@@ -71,8 +67,16 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	err = newState.CommitToDb(block)
 	require.NoError(ch.Glb.T, err)
 
+	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
+
 	ch.StateTx = stateTx
 	ch.State = newState
+
+	ch.Log.Infof("state transition #%d --> #%d. Requests: %d. Posted requests: %d",
+		prevBlockIndex, ch.State.BlockIndex(), len(block.RequestIDs()), len(ch.StateTx.Requests()))
+	ch.Log.Debugf("Batch processed: %s",
+		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(block.RequestIDs()))
+
 	ch.Glb.ClockStep()
 
 	// dispatch requests among chains
@@ -104,10 +108,10 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	}
 }
 
-func batchShortStr(batch []sctransaction.RequestRef) string {
-	ret := make([]string, len(batch))
-	for i, r := range batch {
-		ret[i] = r.RequestID().Short()
+func batchShortStr(reqIds []*coretypes.RequestID) string {
+	ret := make([]string, len(reqIds))
+	for i, r := range reqIds {
+		ret[i] = r.Short()
 	}
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }
