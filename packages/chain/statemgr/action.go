@@ -199,6 +199,9 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 // index of evidenced state index is passed to record the largest one.
 // This is needed to check synchronization status.
 func (sm *stateManager) EvidenceStateIndex(stateIndex uint32) {
+	sm.evidenceStateIndexCh <- stateIndex
+}
+func (sm *stateManager) evidenceStateIndex(stateIndex uint32) {
 	// synced state is when current state index is behind
 	// the largestEvidencedStateIndex no more than by 1 point
 	wasSynchronized := sm.isSynchronized()

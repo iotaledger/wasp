@@ -71,6 +71,7 @@ type StateManager interface {
 	EventStateTransactionMsg(msg *StateTransactionMsg)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
+	Close()
 }
 
 type Operator interface {

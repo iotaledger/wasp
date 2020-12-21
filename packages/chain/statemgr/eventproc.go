@@ -11,6 +11,9 @@ import (
 
 // EventPingPongMsg reacts to the PinPong message
 func (sm *stateManager) EventStateIndexPingPongMsg(msg *chain.StateIndexPingPongMsg) {
+	sm.eventStateIndexPingPongMsgCh <- msg
+}
+func (sm *stateManager) eventStateIndexPingPongMsg(msg *chain.StateIndexPingPongMsg) {
 	before := sm.numPongsHasQuorum()
 	sm.pingPongReceived(msg.SenderIndex)
 	after := sm.numPongsHasQuorum()
@@ -32,6 +35,9 @@ func (sm *stateManager) EventStateIndexPingPongMsg(msg *chain.StateIndexPingPong
 
 // EventGetBlockMsg is a request for a block while syncing
 func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
+	sm.eventGetBlockMsgCh <- msg
+}
+func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg",
 		"sender index", msg.SenderIndex,
 		"block index", msg.BlockIndex,
@@ -70,6 +76,9 @@ func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 
 // EventBlockHeaderMsg
 func (sm *stateManager) EventBlockHeaderMsg(msg *chain.BlockHeaderMsg) {
+	sm.eventBlockHeaderMsgCh <- msg
+}
+func (sm *stateManager) eventBlockHeaderMsg(msg *chain.BlockHeaderMsg) {
 	sm.log.Debugw("EventBlockHeaderMsg",
 		"sender", msg.SenderIndex,
 		"state index", msg.BlockIndex,
@@ -92,6 +101,9 @@ func (sm *stateManager) EventBlockHeaderMsg(msg *chain.BlockHeaderMsg) {
 // response to the state update msg.
 // It collects state updates while waiting for the anchoring state transaction
 func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
+	sm.eventStateUpdateMsgCh <- msg
+}
+func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 	sm.log.Debugw("EventStateUpdateMsg",
 		"sender", msg.SenderIndex,
 		"state index", msg.BlockIndex,
@@ -146,6 +158,9 @@ func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
 func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg) {
+	sm.eventStateTransactionMsgCh <- msg
+}
+func (sm *stateManager) eventStateTransactionMsg(msg *chain.StateTransactionMsg) {
 	stateBlock, ok := msg.Transaction.State()
 	if !ok {
 		// should not happen: must have state block
@@ -166,7 +181,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 	//}
 	//sm.log.Debugf("EventStateTransactionMsg:\n%s", prop.String())
 
-	sm.EvidenceStateIndex(stateBlock.BlockIndex())
+	sm.evidenceStateIndex(stateBlock.BlockIndex())
 
 	if sm.solidStateValid {
 		if stateBlock.BlockIndex() != sm.solidState.BlockIndex()+1 {
@@ -194,6 +209,9 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 }
 
 func (sm *stateManager) EventPendingBlockMsg(msg chain.PendingBlockMsg) {
+	sm.eventPendingBlockMsgCh <- msg
+}
+func (sm *stateManager) eventPendingBlockMsg(msg chain.PendingBlockMsg) {
 	sm.log.Debugw("EventPendingBlockMsg",
 		"state index", msg.Block.StateIndex(),
 		"size", msg.Block.Size(),
@@ -208,6 +226,9 @@ func (sm *stateManager) EventPendingBlockMsg(msg chain.PendingBlockMsg) {
 
 func (sm *stateManager) EventTimerMsg(msg chain.TimerTick) {
 	if msg%2 == 0 {
-		sm.takeAction()
+		sm.eventTimerMsgCh <- msg
 	}
+}
+func (sm *stateManager) eventTimerMsg(msg chain.TimerTick) {
+	sm.takeAction()
 }

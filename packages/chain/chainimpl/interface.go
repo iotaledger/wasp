@@ -127,6 +127,8 @@ func (c *chainObj) Dismiss() {
 		close(c.chMsg)
 		c.peers.Detach(c.peersAttachRef)
 		c.peers.Close()
+
+		c.stateMgr.Close()
 	})
 
 	publisher.Publish("dismissed_committee", c.chainID.String())
