@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/dummyprocessor"
@@ -26,7 +26,7 @@ func init() {
 func PrintCoreContracts() {
 	fmt.Printf("--------------- core contracts ------------------\n")
 	fmt.Printf("    %s: '%s'  \n", root.Interface.Hname().String(), root.Interface.Name)
-	fmt.Printf("    %s: '%s'  \n", accountsc.Interface.Hname().String(), accountsc.Interface.Name)
+	fmt.Printf("    %s: '%s'  \n", accounts.Interface.Hname().String(), accounts.Interface.Name)
 	fmt.Printf("    %s: '%s'  \n", blob.Interface.Hname().String(), blob.Interface.Name)
 	fmt.Printf("    %s: '%s'  \n", chainlog.Interface.Hname().String(), chainlog.Interface.Name)
 	fmt.Printf("--------------- core contracts ------------------\n")
@@ -37,8 +37,8 @@ func GetProcessor(programHash hashing.HashValue) (vmtypes.Processor, error) {
 	case root.Interface.ProgramHash:
 		return root.GetProcessor(), nil
 
-	case accountsc.Interface.ProgramHash:
-		return accountsc.GetProcessor(), nil
+	case accounts.Interface.ProgramHash:
+		return accounts.GetProcessor(), nil
 
 	case blob.Interface.ProgramHash:
 		return blob.GetProcessor(), nil

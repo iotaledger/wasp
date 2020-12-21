@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +24,7 @@ func TestAccountsBase(t *testing.T) {
 func TestAccountsRepeatInit(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	req := solo.NewCall(accountsc.Interface.Name, "init")
+	req := solo.NewCall(accounts.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 	chain.CheckAccountLedger()
@@ -41,16 +41,16 @@ func TestAccountsBase1(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
 	chain.CheckAccountLedger()
 
 	req = solo.NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 1)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 1)
 	chain.CheckAccountLedger()
 }
 
@@ -61,18 +61,18 @@ func TestAccountsDepositWithdraw(t *testing.T) {
 
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := solo.NewCall(accountsc.Interface.Name, accountsc.FuncDeposit).
+	req := solo.NewCall(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(map[balance.Color]int64{
 			balance.ColorIOTA: 42,
 		})
 	_, err := chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
+	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
 
-	req = solo.NewCall(accountsc.Interface.Name, accountsc.FuncWithdraw)
+	req = solo.NewCall(accounts.Interface.Name, accounts.FuncWithdraw)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
-	chain.CheckAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
-	glb.CheckUtxodbBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
+	glb.AssertUtxodbBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 }

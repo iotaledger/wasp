@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
@@ -135,7 +135,7 @@ func (op *operator) mustStateIndex() uint32 {
 func (op *operator) getFeeDestination() coretypes.AgentID {
 	// TODO
 	// temporary to the chain owner's account
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accountsc.Interface.Hname()))
+	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accounts.Interface.Hname()))
 }
 
 func (op *operator) getMinimumReward() int64 {

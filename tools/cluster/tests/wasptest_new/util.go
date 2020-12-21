@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -53,15 +53,15 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, blob.Interface.Name, cr.Name)
 
-		crBytes = contractRegistry.GetAt(accountsc.Interface.Hname().Bytes())
+		crBytes = contractRegistry.GetAt(accounts.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)
 
-		require.EqualValues(t, accountsc.Interface.ProgramHash, cr.ProgramHash)
-		require.EqualValues(t, accountsc.Interface.Description, cr.Description)
+		require.EqualValues(t, accounts.Interface.ProgramHash, cr.ProgramHash)
+		require.EqualValues(t, accounts.Interface.Description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, accountsc.Interface.Name, cr.Name)
+		require.EqualValues(t, accounts.Interface.Name, cr.Name)
 		return true
 	})
 }
@@ -85,12 +85,12 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, blob.Interface.Description, recBlob.Description)
 	require.EqualValues(t, origAgentID, recBlob.Creator)
 
-	recAccounts, err := findContract(chain, accountsc.Interface.Name)
+	recAccounts, err := findContract(chain, accounts.Interface.Name)
 	check(err, t)
 	require.NotNil(t, recAccounts)
-	require.EqualValues(t, accountsc.Interface.Name, recAccounts.Name)
-	require.EqualValues(t, accountsc.Interface.ProgramHash, recAccounts.ProgramHash)
-	require.EqualValues(t, accountsc.Interface.Description, recAccounts.Description)
+	require.EqualValues(t, accounts.Interface.Name, recAccounts.Name)
+	require.EqualValues(t, accounts.Interface.ProgramHash, recAccounts.ProgramHash)
+	require.EqualValues(t, accounts.Interface.Description, recAccounts.Description)
 	require.EqualValues(t, origAgentID, recAccounts.Creator)
 }
 
@@ -109,10 +109,10 @@ func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) err
 
 func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.AgentID, color balance.Color) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(accountsc.Interface.Hname()),
-		accountsc.FuncBalance,
+		chain.ContractID(accounts.Interface.Hname()),
+		accounts.FuncBalance,
 		dict.FromGoMap(map[kv.Key][]byte{
-			accountsc.ParamAgentID: agentID[:],
+			accounts.ParamAgentID: agentID[:],
 		}),
 	)
 	check(err, t)
@@ -130,8 +130,8 @@ func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID coretypes.A
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(accountsc.Interface.Hname()),
-		accountsc.FuncAccounts,
+		chain.ContractID(accounts.Interface.Hname()),
+		accounts.FuncAccounts,
 		nil,
 	)
 	check(err, t)
@@ -150,13 +150,13 @@ func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []coretypes.AgentID 
 
 func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentID]map[balance.Color]int64 {
 	ret := make(map[coretypes.AgentID]map[balance.Color]int64)
-	accounts := getAccountsOnChain(t, chain)
-	for _, agentID := range accounts {
+	acc := getAccountsOnChain(t, chain)
+	for _, agentID := range acc {
 		r, err := chain.Cluster.WaspClient(0).CallView(
-			chain.ContractID(accountsc.Interface.Hname()),
-			accountsc.FuncBalance,
+			chain.ContractID(accounts.Interface.Hname()),
+			accounts.FuncBalance,
 			dict.FromGoMap(map[kv.Key][]byte{
-				accountsc.ParamAgentID: agentID[:],
+				accounts.ParamAgentID: agentID[:],
 			}),
 		)
 		check(err, t)
@@ -167,8 +167,8 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[coretypes.AgentI
 
 func getTotalBalance(t *testing.T, chain *cluster.Chain) map[balance.Color]int64 {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(accountsc.Interface.Hname()),
-		accountsc.FuncTotalAssets,
+		chain.ContractID(accounts.Interface.Hname()),
+		accounts.FuncTotalAssets,
 		nil,
 	)
 	check(err, t)

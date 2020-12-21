@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
@@ -51,7 +51,7 @@ func TestGetInfo(t *testing.T) {
 	require.True(t, ok)
 	recBlob, ok := contracts[blob.Interface.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[accountsc.Interface.Hname()]
+	_, ok = contracts[accounts.Interface.Hname()]
 	require.True(t, ok)
 
 	rec, err := chain.FindContract(blob.Interface.Name)
@@ -78,7 +78,7 @@ func TestDeployExample(t *testing.T) {
 	require.True(t, ok)
 	_, ok = contracts[blob.Interface.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[accountsc.Interface.Hname()]
+	_, ok = contracts[accounts.Interface.Hname()]
 	require.True(t, ok)
 
 	rec, ok := contracts[coretypes.Hn(name)]
@@ -117,7 +117,7 @@ func TestDeployDouble(t *testing.T) {
 	require.True(t, ok)
 	_, ok = contracts[blob.Interface.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[accountsc.Interface.Hname()]
+	_, ok = contracts[accounts.Interface.Hname()]
 	require.True(t, ok)
 
 	rec, ok := contracts[coretypes.Hn(name)]

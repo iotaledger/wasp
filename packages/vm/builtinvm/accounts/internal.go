@@ -1,4 +1,4 @@
-package accountsc
+package accounts
 
 import (
 	"fmt"

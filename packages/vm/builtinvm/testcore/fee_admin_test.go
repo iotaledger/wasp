@@ -6,7 +6,7 @@ package testcore
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,7 @@ func TestFeeBasic(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -39,7 +39,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -54,7 +54,7 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -68,7 +68,7 @@ func TestSetDefaultOwnerFeeOk(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	checkFees(chain, root.Interface.Name, 1000, 0)
-	checkFees(chain, accountsc.Interface.Name, 1000, 0)
+	checkFees(chain, accounts.Interface.Name, 1000, 0)
 	checkFees(chain, blob.Interface.Name, 1000, 0)
 }
 
@@ -82,7 +82,7 @@ func TestSetDefaultValidatorFeeOk(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	checkFees(chain, root.Interface.Name, 0, 499)
-	checkFees(chain, accountsc.Interface.Name, 0, 499)
+	checkFees(chain, accounts.Interface.Name, 0, 499)
 	checkFees(chain, blob.Interface.Name, 0, 499)
 }
 
@@ -97,7 +97,7 @@ func TestSetDefaultFeeOk(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	checkFees(chain, root.Interface.Name, 1000, 499)
-	checkFees(chain, accountsc.Interface.Name, 1000, 499)
+	checkFees(chain, accounts.Interface.Name, 1000, 499)
 	checkFees(chain, blob.Interface.Name, 1000, 499)
 }
 
@@ -110,7 +110,7 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -123,7 +123,7 @@ func TestSetDefaultFeeFailNegative2(t *testing.T) {
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -139,7 +139,7 @@ func TestSetContractValidatorFeeOk(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 1000)
 }
 
@@ -148,14 +148,14 @@ func TestSetContractOwnerFeeOk(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 
 	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
-		root.ParamHname, accountsc.Interface.Hname(),
+		root.ParamHname, accounts.Interface.Hname(),
 		root.ParamOwnerFee, 499,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 499, 0)
+	checkFees(chain, accounts.Interface.Name, 499, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -171,7 +171,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 1000)
 
 	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
@@ -181,7 +181,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 499, 0)
-	checkFees(chain, accountsc.Interface.Name, 499, 0)
+	checkFees(chain, accounts.Interface.Name, 499, 0)
 	checkFees(chain, blob.Interface.Name, 499, 1000)
 
 	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999)
@@ -194,7 +194,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 499, 1999)
-	checkFees(chain, accountsc.Interface.Name, 499, 1999)
+	checkFees(chain, accounts.Interface.Name, 499, 1999)
 	checkFees(chain, blob.Interface.Name, 499, 1000)
 }
 
@@ -210,7 +210,7 @@ func TestFeeNotEnough(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 499)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
 	user := glb.NewSignatureSchemeWithFunds()
@@ -221,7 +221,7 @@ func TestFeeNotEnough(t *testing.T) {
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 499)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 }
 
@@ -237,7 +237,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 499)
-	checkFees(chain, accountsc.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
 	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
@@ -247,6 +247,6 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 1000, 499)
-	checkFees(chain, accountsc.Interface.Name, 1000, 0)
+	checkFees(chain, accounts.Interface.Name, 1000, 0)
 	checkFees(chain, blob.Interface.Name, 1000, 0)
 }

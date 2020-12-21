@@ -10,12 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func listAccountsCmd(args []string) {
-	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncAccounts, nil)
+	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncAccounts, nil)
 	log.Check(err)
 
 	log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID())
@@ -40,8 +40,8 @@ func balanceCmd(args []string) {
 	agentID, err := coretypes.NewAgentIDFromString(args[0])
 	log.Check(err)
 
-	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
-		accountsc.ParamAgentID: agentID.Bytes(),
+	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
+		accounts.ParamAgentID: agentID.Bytes(),
 	}))
 	log.Check(err)
 

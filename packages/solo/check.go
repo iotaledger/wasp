@@ -8,15 +8,15 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
 )
 
-// CheckUtxodbBalance asserts the UTXODB balance of specific color in the address
-func (glb *Solo) CheckUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+// AssertUtxodbBalance asserts the UTXODB balance of specific color in the address
+func (glb *Solo) AssertUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
 	require.EqualValues(glb.T, expected, glb.GetUtxodbBalance(addr, col))
 }
 
@@ -37,11 +37,11 @@ func (ch *Chain) CheckChain() {
 	emptyRootRecord := root.NewContractRecord(root.Interface, coretypes.AgentID{})
 	require.EqualValues(ch.Glb.T, root.EncodeContractRecord(&emptyRootRecord), root.EncodeContractRecord(rootRec))
 
-	accountsRec, err := ch.FindContract(accountsc.Interface.Name)
+	accountsRec, err := ch.FindContract(accounts.Interface.Name)
 	require.NoError(ch.Glb.T, err)
-	require.EqualValues(ch.Glb.T, accountsc.Interface.Name, accountsRec.Name)
-	require.EqualValues(ch.Glb.T, accountsc.Interface.Description, accountsRec.Description)
-	require.EqualValues(ch.Glb.T, accountsc.Interface.ProgramHash, accountsRec.ProgramHash)
+	require.EqualValues(ch.Glb.T, accounts.Interface.Name, accountsRec.Name)
+	require.EqualValues(ch.Glb.T, accounts.Interface.Description, accountsRec.Description)
+	require.EqualValues(ch.Glb.T, accounts.Interface.ProgramHash, accountsRec.ProgramHash)
 	require.EqualValues(ch.Glb.T, ch.OriginatorAgentID, accountsRec.Creator)
 
 	blobRec, err := ch.FindContract(blob.Interface.Name)
@@ -73,7 +73,7 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Glb.T, total.Equal(cbalances.NewFromMap(sum)))
 }
 
-// CheckAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) CheckAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
+// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
+func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
 	require.EqualValues(ch.Glb.T, bal, ch.GetAccountBalance(agentID).Balance(col))
 }

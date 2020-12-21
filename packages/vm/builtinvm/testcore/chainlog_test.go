@@ -3,7 +3,7 @@ package testcore
 import (
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -29,7 +29,7 @@ func TestChainLogBasic1(t *testing.T) {
 	num := chain.GetChainLogNumRecords(root.Interface.Name)
 	require.EqualValues(t, 1, num)
 
-	num = chain.GetChainLogNumRecords(accountsc.Interface.Name)
+	num = chain.GetChainLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetChainLogNumRecords(blob.Interface.Name)
@@ -48,7 +48,7 @@ func TestChainLogDeploy(t *testing.T) {
 	num := chain.GetChainLogNumRecords(root.Interface.Name)
 	require.EqualValues(t, 1, num)
 
-	num = chain.GetChainLogNumRecords(accountsc.Interface.Name)
+	num = chain.GetChainLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetChainLogNumRecords(chainlog.Interface.Name)
@@ -69,7 +69,7 @@ func TestChainLogDeploy(t *testing.T) {
 	num = chain.GetChainLogNumRecords(root.Interface.Name)
 	require.EqualValues(t, 3, num)
 
-	num = chain.GetChainLogNumRecords(accountsc.Interface.Name)
+	num = chain.GetChainLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetChainLogNumRecords(chainlog.Interface.Name)

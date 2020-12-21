@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
@@ -202,14 +202,14 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
 		require.EqualValues(t, 6, contractRegistry.Len())
 		//--
-		crBytes := contractRegistry.GetAt(accountsc.Interface.Hname().Bytes())
+		crBytes := contractRegistry.GetAt(accounts.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
-		require.EqualValues(t, accountsc.Interface.ProgramHash, cr.ProgramHash)
-		require.EqualValues(t, accountsc.Interface.Description, cr.Description)
+		require.EqualValues(t, accounts.Interface.ProgramHash, cr.ProgramHash)
+		require.EqualValues(t, accounts.Interface.Description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, accountsc.Interface.Name, cr.Name)
+		require.EqualValues(t, accounts.Interface.Name, cr.Name)
 
 		//--
 		crBytes = contractRegistry.GetAt(hnameNew.Bytes())

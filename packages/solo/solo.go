@@ -175,7 +175,7 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		batch:        nil,
 		batchMutex:   &sync.Mutex{},
 	}
-	glb.CheckUtxodbBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	glb.AssertUtxodbBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 	var err error
 	ret.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:             ret.ChainAddress,
@@ -284,6 +284,6 @@ func (glb *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	if err != nil {
 		glb.logger.Panicf("NewSignatureSchemeWithFunds: %v", err)
 	}
-	glb.CheckUtxodbBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	glb.AssertUtxodbBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 	return ret
 }

@@ -18,8 +18,8 @@ func TestInit(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 1)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 1)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
 }
 
 func TestBase(t *testing.T) {
@@ -33,8 +33,8 @@ func TestBase(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 }
@@ -50,8 +50,8 @@ func TestFeeIsEnough1(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 
@@ -61,8 +61,8 @@ func TestFeeIsEnough1(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
 }
 
 func TestFeeIsEnough2(t *testing.T) {
@@ -76,8 +76,8 @@ func TestFeeIsEnough2(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	checkFees(chain, blob.Interface.Name, 2, 0)
 
@@ -89,9 +89,9 @@ func TestFeeIsEnough2(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.CheckAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
-	glb.CheckUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
-	chain.CheckAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	glb.CheckUtxodbBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
+	glb.AssertUtxodbBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
 }

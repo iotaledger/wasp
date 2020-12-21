@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 )
 
 func TestDepositWithdraw(t *testing.T) {
@@ -52,7 +52,7 @@ func TestDepositWithdraw(t *testing.T) {
 	// deposit some iotas to the chain
 	depositIotas := int64(42)
 	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncDeposit), chainclient.PostRequestParams{
+	reqTx, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: depositIotas,
 		},
@@ -72,11 +72,11 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// move 1 iota to another account on chain
 	colorIota := balance.ColorIOTA
-	reqTx2, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncMove), chainclient.PostRequestParams{
+	reqTx2, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncMove), chainclient.PostRequestParams{
 		Args: codec.MakeDict(map[string]interface{}{
-			accountsc.ParamAgentID: &origAgentId,
-			accountsc.ParamColor:   &colorIota,
-			accountsc.ParamAmount:  1,
+			accounts.ParamAgentID: &origAgentId,
+			accounts.ParamColor:   &colorIota,
+			accounts.ParamAmount:  1,
 		}),
 	})
 	check(err, t)
@@ -89,7 +89,7 @@ func TestDepositWithdraw(t *testing.T) {
 	checkBalanceOnChain(t, chain, origAgentId, balance.ColorIOTA, 2)
 
 	// withdraw iotas back
-	reqTx3, err := chClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw))
+	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx3, 30*time.Second)
 	check(err, t)

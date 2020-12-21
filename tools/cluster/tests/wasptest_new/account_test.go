@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
@@ -52,7 +52,7 @@ func TestBasicAccounts(t *testing.T) {
 	}
 
 	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
-	t.Logf("   %s: %s", accountsc.Name, accountsc.Interface.Hname().String())
+	t.Logf("   %s: %s", accounts.Name, accounts.Interface.Hname().String())
 
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
@@ -163,7 +163,7 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 
 	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
-	t.Logf("   %s: %s", accountsc.Name, accountsc.Interface.Hname().String())
+	t.Logf("   %s: %s", accounts.Name, accounts.Interface.Hname().String())
 
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 2, blockIndex)
@@ -268,7 +268,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
 	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.PostRequest(accountsc.Interface.Hname(), coretypes.Hn(accountsc.FuncWithdraw))
+	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)

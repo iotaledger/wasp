@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo"
@@ -76,7 +76,7 @@ func addChainEndpoints(e *echo.Echo) {
 }
 
 func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
-	accounts, err := callView(chain, accountsc.Interface.Hname(), accountsc.FuncAccounts, nil)
+	accounts, err := callView(chain, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
@@ -93,11 +93,11 @@ func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
 }
 
 func fetchTotalAssets(chain chain.Chain) (map[balance.Color]int64, error) {
-	bal, err := callView(chain, accountsc.Interface.Hname(), accountsc.FuncTotalAssets, nil)
+	bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
 	if err != nil {
 		return nil, err
 	}
-	return accountsc.DecodeBalances(bal)
+	return accounts.DecodeBalances(bal)
 }
 
 func fetchBlobs(chain chain.Chain) (map[hashing.HashValue]uint32, error) {

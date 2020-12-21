@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo"
 )
@@ -34,13 +34,13 @@ func addChainAccountEndpoints(e *echo.Echo) {
 
 		chain := chains.GetChain(chainID)
 		if chain != nil {
-			bal, err := callView(chain, accountsc.Interface.Hname(), accountsc.FuncBalance, codec.MakeDict(map[string]interface{}{
-				accountsc.ParamAgentID: codec.EncodeAgentID(agentID),
+			bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
+				accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 			}))
 			if err != nil {
 				return err
 			}
-			result.Balances, err = accountsc.DecodeBalances(bal)
+			result.Balances, err = accounts.DecodeBalances(bal)
 			if err != nil {
 				return err
 			}

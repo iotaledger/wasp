@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -72,7 +72,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
 	// deploy accountsc
-	rec = NewContractRecord(accountsc.Interface, ctx.Caller())
+	rec = NewContractRecord(accounts.Interface, ctx.Caller())
 	err = storeAndInitContract(ctx, &rec, nil)
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
@@ -100,7 +100,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname().String())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accountsc.Interface.Name, accountsc.Interface.Hname().String())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", chainlog.Interface.Name, chainlog.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil

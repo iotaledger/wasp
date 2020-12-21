@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -62,11 +62,11 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 }
 
 func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
-	privileged := vmctx.CurrentContractHname() == accountsc.Interface.Hname()
+	privileged := vmctx.CurrentContractHname() == accounts.Interface.Hname()
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
 	if !privileged {
 		// if caller is accoutsc, it must debit from account by itself
-		if !accountsc.DebitFromAccount(vmctx.State(), vmctx.MyAgentID(), transfer) {
+		if !accounts.DebitFromAccount(vmctx.State(), vmctx.MyAgentID(), transfer) {
 			return false
 		}
 	}
@@ -85,10 +85,10 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 	// the transfer is performed by the accountsc contract on another chain
 	// it deposits received funds to the target on behalf of the caller
 	par := dict.New()
-	par.Set(accountsc.ParamAgentID, codec.EncodeAgentID(targetAgentID))
+	par.Set(accounts.ParamAgentID, codec.EncodeAgentID(targetAgentID))
 	return vmctx.PostRequest(vmtypes.NewRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChainID, accountsc.Interface.Hname()),
-		EntryPoint:       coretypes.Hn(accountsc.FuncDeposit),
+		TargetContractID: coretypes.NewContractID(targetChainID, accounts.Interface.Hname()),
+		EntryPoint:       coretypes.Hn(accounts.FuncDeposit),
 		Params:           par,
 		Transfer:         transfer,
 	})

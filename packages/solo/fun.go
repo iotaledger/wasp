@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -218,7 +218,7 @@ func (glb *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64
 
 // GetAccounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) GetAccounts() []coretypes.AgentID {
-	d, err := ch.CallView(accountsc.Interface.Name, accountsc.FuncAccounts)
+	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncAccounts)
 	require.NoError(ch.Glb.T, err)
 	keys := d.KeysSorted()
 	ret := make([]coretypes.AgentID, 0, len(keys)-1)
@@ -253,14 +253,14 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 // account controlled by the 'agentID'
 func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
 	return ch.getAccountBalance(
-		ch.CallView(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID),
+		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
 	)
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
 func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	return ch.getAccountBalance(
-		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalAssets),
+		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
 	)
 }
 
