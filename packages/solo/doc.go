@@ -59,17 +59,18 @@
 //		}
 //	}
 // will produce the following output:
-//	=== RUN   TestExample
-//	2020-12-20T21:09:19.256+0200	INFO	TestExample	solo/solo.go:144	deploying new chain 'exampleChain'
-//	2020-12-20T21:09:19.260+0200	INFO	TestExample.exampleChain	solo/run.go:75	state transition #0 --> #1. Requests: 1. Posted requests: 0
-//	2020-12-20T21:09:19.260+0200	INFO	TestExample	solo/clock.go:44	ClockStep: logical clock advanced by 1ms ahead
-//	2020-12-20T21:09:19.260+0200	INFO	TestExample.exampleChain	solo/solo.go:220	chain 'exampleChain' deployed. Chain ID: WgSeZYaXahEbBu5ebHSymFCJHsUnZwjNTxRvf5CETAdQ
-//	2020-12-20T21:09:19.260+0200	INFO	TestExample.exampleChain	solo/req.go:136	callView: root::getChainInfo
-//		doc_test.go:16: chainID: WgSeZYaXahEbBu5ebHSymFCJHsUnZwjNTxRvf5CETAdQ
-//		doc_test.go:17: chain owner ID: A-ZhE9ZN1c64EbqfLudFibf99yavbXZ8ZwNiVFTNguUyGx
-//		doc_test.go:19:     Contract: chainlog
-//		doc_test.go:19:     Contract: accounts
-//		doc_test.go:19:     Contract: blob
-//		doc_test.go:19:     Contract: root
-//	--- PASS: TestExample (0.00s)
+//  	=== RUN   TestExample1
+//	12:24:16.779	INFO	TestExample1	solo/solo.go:144	deploying new chain 'exampleChain'
+//	12:24:16.783	INFO	TestExample1.exampleChain	solo/run.go:75	state transition #0 --> #1. Requests in the block: 1. Posted: 0
+//	12:24:16.783	INFO	TestExample1	solo/clock.go:44	ClockStep: logical clock advanced by 1ms
+//	12:24:16.783	INFO	TestExample1.exampleChain	solo/solo.go:220	chain 'exampleChain' deployed. Chain ID: JG1UBRzEesdkTnLJBc7oK9HTm98ioNekdKLJ1f2ScK5Q
+//	12:24:16.783	INFO	TestExample1.exampleChain	solo/req.go:136	callView: root::getChainInfo
+//		example1_test.go:17: chainID: JG1UBRzEesdkTnLJBc7oK9HTm98ioNekdKLJ1f2ScK5Q
+//		example1_test.go:18: chain owner ID: A/SHRk4KG8ruMB7GwoqWVsaeHreQAKFCUc45bBCHwnrk5h
+//		example1_test.go:20:     Contract: accounts
+//		example1_test.go:20:     Contract: chainlog
+//		example1_test.go:20:     Contract: root
+//		example1_test.go:20:     Contract: blob
+//	--- PASS: TestExample1 (0.00s)
+//PASS
 package solo
