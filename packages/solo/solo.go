@@ -113,7 +113,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	})
 	ret := &Solo{
 		T:           t,
-		logger:      testutil.NewLogger(t),
+		logger:      testutil.NewLogger(t, "15:04:05.000"),
 		utxoDB:      utxodb.New(),
 		glbMutex:    &sync.Mutex{},
 		logicalTime: time.Now(),

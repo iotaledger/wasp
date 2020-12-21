@@ -14,8 +14,13 @@ import (
 )
 
 // NewLogger produces a logger adjusted for test cases.
-func NewLogger(t *testing.T) *logger.Logger {
-	log, err := zap.NewDevelopment()
+func NewLogger(t *testing.T, timeLayout ...string) *logger.Logger {
+	// log, err := zap.NewDevelopment()
+	cfg := zap.NewDevelopmentConfig()
+	if len(timeLayout) > 0 {
+		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(timeLayout[0])
+	}
+	log, err := cfg.Build()
 	require.NoError(t, err)
 	return log.Named(t.Name()).Sugar()
 }

@@ -28,16 +28,16 @@ interface of access to it as the database of the Wasp node.
 ### Writing smart contracts
 
 The smart contracts are usually written in Rust using Rust libraries provided
-in the (wasplib repository)[https://github.com/iotaledger/wasplib].
+in the [wasplib repository](https://github.com/iotaledger/wasplib).
 Rust code is compiled into the WebAssembly (Wasm) binary.
 The Wasm binary is uploaded by `solo` onto the chain and then loaded into the VM
 and executed.
 
 Another option to write and run ISCP smart contracts is to use the native Go environment
 of the Wasp node and `Sandbox` interface, provided by the Wasp for the VM: the "hardcoded" mode. 
-The latter approach is not normally used to develop apps,
-however is used for the 4 builtin contracts which constitutes the core of the ISCP chains.
-The approach to write "hardcoded" smart contracts may also be a very useful for
-the development and debugging of the smart contract logic in IDE such as GoLand, before writing it as
+The latter approach is not normally used to develop apps.
+However, is is how the 4 builtin smart contracts which constitutes the core of the ISCP chains, are written.
+The approach to write "hardcoded" smart contracts may also be a useful for
+the development and debugging of the smart contract logic in IDEs such as GoLand, before writing it as
 a Rust/Wasm smart contract.
 

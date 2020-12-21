@@ -41,7 +41,7 @@ func (glb *Solo) ClockStep() {
 	defer glb.glbMutex.Unlock()
 
 	glb.advanceClockTo(glb.logicalTime.Add(glb.timeStep))
-	glb.logger.Infof("ClockStep: logical clock advanced by %v ahead", glb.timeStep)
+	glb.logger.Infof("ClockStep: logical clock advanced by %v", glb.timeStep)
 }
 
 // SetTimeStep sets default time step for the 'solo' instance
