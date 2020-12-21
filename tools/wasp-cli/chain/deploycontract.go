@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -27,7 +26,7 @@ func deployContractCmd(args []string) {
 	blobFieldValues := map[string]interface{}{
 		blob.VarFieldVMType:             vmtype,
 		blob.VarFieldProgramDescription: description,
-		blob.VarFieldProgramBinary:      readBinary(filename),
+		blob.VarFieldProgramBinary:      util.ReadFile(filename),
 	}
 
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
@@ -55,10 +54,4 @@ func deployContractCmd(args []string) {
 			},
 		)
 	})
-}
-
-func readBinary(fname string) []byte {
-	b, err := ioutil.ReadFile(fname)
-	log.Check(err)
-	return b
 }

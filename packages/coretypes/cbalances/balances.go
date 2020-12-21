@@ -1,4 +1,7 @@
-// implements coretypes.ColoredBalances interface
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// package cbalances implements coretypes.ColoredBalances interface
 package cbalances
 
 import (
@@ -13,6 +16,7 @@ import (
 
 type coloredBalances map[balance.Color]int64
 
+// Nil represents empty colorded balances
 var Nil = coretypes.ColoredBalances(coloredBalances(make(map[balance.Color]int64)))
 
 func Str(b coretypes.ColoredBalances) string {
@@ -22,6 +26,7 @@ func Str(b coretypes.ColoredBalances) string {
 	return b.String()
 }
 
+// NewFromMap new ColoredBalances from map
 func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	if m == nil {
 		return Nil
@@ -35,6 +40,7 @@ func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	return coloredBalances(ret)
 }
 
+// NewFromBalances from balances in the form of transaction output
 func NewFromBalances(bals []*balance.Balance) coretypes.ColoredBalances {
 	if bals == nil {
 		return Nil
@@ -96,6 +102,7 @@ func (b coloredBalances) IterateDeterministic(f func(col balance.Color, bal int6
 	}
 }
 
+//
 func (b coloredBalances) Len() uint16 {
 	return uint16(len(b))
 }
@@ -121,7 +128,6 @@ func (b coloredBalances) Equal(b1 coretypes.ColoredBalances) bool {
 	return ret
 }
 
-// Diff return difference between the two: b - b1
 func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBalances {
 	ret := make(map[balance.Color]int64)
 	if b == nil && b1 == nil {
@@ -145,7 +151,6 @@ func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBal
 	return NewFromMap(ret)
 }
 
-// Includes b >= b1
 func (b coloredBalances) Includes(b1 coretypes.ColoredBalances) bool {
 	diff := b.Diff(b1)
 	if diff == nil || diff.Len() == 0 {
@@ -170,6 +175,7 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	})
 }
 
+//goland:noinspection ALL
 func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
 	l := uint16(0)
 	if b != nil {

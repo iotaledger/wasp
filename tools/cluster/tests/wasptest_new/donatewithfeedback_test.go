@@ -5,8 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
-	"github.com/iotaledger/wasp/packages/vm/solo"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -18,7 +17,6 @@ const dwfDescription = "Donate with feedback, a PoC smart contract"
 var dwfHname = coretypes.Hn(dwfName)
 
 func TestDwfDonateOnce(t *testing.T) {
-	t.SkipNow()
 	const numDonations = 1
 	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
@@ -35,18 +33,20 @@ func TestDwfDonateOnce(t *testing.T) {
 
 	ret, err := chain.CallView(dwfName, "view_donations")
 	require.NoError(t, err)
-	largest, _, err := codec.DecodeInt64(ret.MustGet("largest"))
+	largest, _, err := codec.DecodeInt64(ret.MustGet("max_donation"))
 	check(err, t)
 	require.EqualValues(t, 42, largest)
-	total, _, err := codec.DecodeInt64(ret.MustGet("total"))
+	total, _, err := codec.DecodeInt64(ret.MustGet("total_donation"))
 	check(err, t)
 	require.EqualValues(t, 42*numDonations, total)
-	donations := datatypes.NewMustArray(ret, "donations")
-	for i := uint16(0); i < donations.Len(); i++ {
-		donation := donations.GetAt(i)
-		_ = donation
-		check(err, t)
-	}
+
+	//donations := datatypes.NewMustArray(ret, "donations")
+	//for i := uint16(0); i < donations.Len(); i++ {
+	//	donation := donations.GetAt(i)
+	//	_ = donation
+	//	check(err, t)
+	//}
+
 	////TODO make sure record encoding is the same
 	//if *useWasp {
 	//	status, err := dwfClient.FetchStatus()

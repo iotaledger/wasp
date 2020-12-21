@@ -6,8 +6,6 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -21,11 +19,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 )
 
+// String is string representation for main parameters of the chain
 //goland:noinspection ALL
 func (ch *Chain) String() string {
 	var buf bytes.Buffer
@@ -36,12 +37,12 @@ func (ch *Chain) String() string {
 	return string(buf.Bytes())
 }
 
-func (ch *Chain) Infof(format string, args ...interface{}) {
-	ch.Log.Infof(format, args...)
-}
-
-func (ch *Chain) FindContract(name string) (*root.ContractRecord, error) {
-	retDict, err := ch.CallView(root.Interface.Name, root.FuncFindContract, root.ParamHname, coretypes.Hn(name))
+// FindContract is a view call to the 'root' smart contract on the chain.
+// It returns registry record of the deployed smart contract with the given name
+func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
+	retDict, err := ch.CallView(root.Interface.Name, root.FuncFindContract,
+		root.ParamHname, coretypes.Hn(scName),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -50,28 +51,29 @@ func (ch *Chain) FindContract(name string) (*root.ContractRecord, error) {
 		return nil, err
 	}
 	if retBin == nil {
-		return nil, fmt.Errorf("conract '%s' not found", name)
+		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
 	return root.DecodeContractRecord(retBin)
 }
 
-func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]int, bool) {
+// GetBlobInfo return info about blob with the given hash with existence flag
+// The blob information is returned as a map of pairs 'blobFieldName': 'fieldDataLength'
+func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
 	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash)
 	require.NoError(ch.Glb.T, err)
 	if res.IsEmpty() {
 		return nil, false
 	}
-	ret := make(map[string]int)
-	res.ForEach(func(key kv.Key, value []byte) bool {
-		v, ok, err := codec.DecodeInt64(value)
-		require.NoError(ch.Glb.T, err)
-		require.True(ch.Glb.T, ok)
-		ret[string(key)] = int(v)
-		return true
-	})
+	ret, err := blob.DecodeSizesMap(res)
+	require.NoError(ch.Glb.T, err)
 	return ret, true
 }
 
+// UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
+// data to the chain. It returns hash of the blob, the unique identified of it.
+// Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
+//
+// The parameters must be in the form of sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
 	par := toMap(params...)
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
@@ -79,8 +81,17 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
+
+	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
+	require.EqualValues(ch.Glb.T, feeColor, balance.ColorIOTA)
+	totalFee := ownerFee + validatorFee
+	transferMap := map[balance.Color]int64{}
+	if totalFee > 0 {
+		transferMap[balance.ColorIOTA] = totalFee
+	}
+	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...).WithTransfer(transferMap)
 	var res dict.Dict
-	res, err = ch.PostRequest(NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...), sigScheme)
+	res, err = ch.PostRequest(req, sigScheme)
 	if err != nil {
 		return
 	}
@@ -100,6 +111,11 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 	return
 }
 
+// UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
+//  parameter 'binaryCode' is the binary of Wasm smart contract program
+//
+// The blob for the Wasm binary used fixed field names which are statically known by the .
+// 'root' smart contract which is responsible for the deployment of contracts on the chain
 func (ch *Chain) UploadWasm(sigScheme signaturescheme.SignatureScheme, binaryCode []byte) (ret hashing.HashValue, err error) {
 	return ch.UploadBlob(sigScheme,
 		blob.VarFieldVMType, wasmtimevm.VMType,
@@ -107,15 +123,17 @@ func (ch *Chain) UploadWasm(sigScheme signaturescheme.SignatureScheme, binaryCod
 	)
 }
 
-func (ch *Chain) UploadWasmFromFile(sigScheme signaturescheme.SignatureScheme, fname string) (ret hashing.HashValue, err error) {
+// UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
+func (ch *Chain) UploadWasmFromFile(sigScheme signaturescheme.SignatureScheme, fileName string) (ret hashing.HashValue, err error) {
 	var binary []byte
-	binary, err = ioutil.ReadFile(fname)
+	binary, err = ioutil.ReadFile(fileName)
 	if err != nil {
 		return
 	}
 	return ch.UploadWasm(sigScheme, binary)
 }
 
+// GetWasmBinary retrieves program binary in the format of Wasm blob from the chain by hash.
 func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobField,
 		blob.ParamHash, progHash,
@@ -137,14 +155,23 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	return binary, nil
 }
 
-func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, progHash hashing.HashValue, params ...interface{}) error {
-	par := []interface{}{root.ParamProgramHash, progHash, root.ParamName, name}
+// DeployContract deploys contract with the given name by its 'programHash'. 'sigScheme' represents
+// the private key of the creator (nil defaults to chain originator). The creator becomes the
+// initial owner of the chain.
+// The parameter 'programHash' can be one of the following:
+//   - it is and ID of  the blob stored on the chain in the format of Wasm binary
+//   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
+//     smart contact must be made available with the call examples.AddProcessor
+func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, programHash hashing.HashValue, params ...interface{}) error {
+	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
 	req := NewCall(root.Interface.Name, root.FuncDeployContract, par...)
 	_, err := ch.PostRequest(req, sigScheme)
 	return err
 }
 
+// DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
+// deploying the smart contract in one call
 func (ch *Chain) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, name string, fname string, params ...interface{}) error {
 	hprog, err := ch.UploadWasmFromFile(sigScheme, fname)
 	if err != nil {
@@ -153,6 +180,10 @@ func (ch *Chain) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, n
 	return ch.DeployContract(sigScheme, name, hprog, params...)
 }
 
+// GetInfo return main parameters of the chain:
+//  - chainID
+//  - agentID of the chain owner
+//  - registry of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Glb.T, err)
@@ -170,18 +201,22 @@ func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.
 	return chainID, chainOwnerID, contracts
 }
 
-func (glb *Glb) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
+// GetUtxodbBalance returns number of tokens of given color contained in the given address
+// on the UTXODB ledger
+func (glb *Solo) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
 	bals := glb.GetUtxodbBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
-func (glb *Glb) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
+// GetUtxodbBalances returns all colored balances of the address contained in the UTXODB ledger
+func (glb *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
 	outs := glb.utxoDB.GetAddressOutputs(addr)
 	ret, _ := waspconn.OutputBalancesByColor(outs)
 	return ret
 }
 
+// GetAccounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	d, err := ch.CallView(accountsc.Interface.Name, accountsc.FuncAccounts)
 	require.NoError(ch.Glb.T, err)
@@ -207,25 +242,33 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 		require.NoError(ch.Glb.T, err)
 		val, _, err := codec.DecodeInt64(value)
 		require.NoError(ch.Glb.T, err)
-		ret[*col] = val
+		ret[col] = val
 		return true
 	})
 	require.NoError(ch.Glb.T, err)
 	return cbalances.NewFromMap(ret)
 }
 
+// GetAccountBalance return all balances of colored tokens contained in the on-chain
+// account controlled by the 'agentID'
 func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accountsc.Interface.Name, accountsc.FuncBalance, accountsc.ParamAgentID, agentID),
 	)
 }
 
+// GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
 func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accountsc.Interface.Name, accountsc.FuncTotalAssets),
 	)
 }
 
+// GetFeeInfo returns the fee info for the specific chain and smart contract
+//  - color of the fee tokens in the chain
+//  - chain owner part of the fee (number of tokens)
+//  - validator part of the fee (number of tokens)
+// Total fee is sum of owner fee and validator fee
 func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 	hname := coretypes.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
@@ -247,5 +290,53 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 	require.True(ch.Glb.T, ok)
 	require.True(ch.Glb.T, ownerFee >= 0)
 
-	return *feeColor, ownerFee, validatorFee
+	return feeColor, ownerFee, validatorFee
+}
+
+// GetChainLogRecords calls the view in the  'chainlog' core smart contract to retrieve
+// latest up to 50 records for a given smart contract.
+// It returns records as array in time-descending order.
+//
+// More than 50 records may be retrieved by calling the view directly
+func (ch *Chain) GetChainLogRecords(name string) ([]datatypes.TimestampedLogRecord, error) {
+	res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
+		chainlog.ParamContractHname, coretypes.Hn(name),
+	)
+	if err != nil {
+		return nil, err
+	}
+	recs := datatypes.NewMustArray(res, chainlog.ParamRecords)
+	ret := make([]datatypes.TimestampedLogRecord, recs.Len())
+	for i := uint16(0); i < recs.Len(); i++ {
+		data := recs.GetAt(i)
+		rec, err := datatypes.ParseRawLogRecord(data)
+		require.NoError(ch.Glb.T, err)
+		ret[i] = *rec
+	}
+	return ret, nil
+}
+
+// GetChainLogRecordsString return stringified response from GetChainLogRecords
+func (ch *Chain) GetChainLogRecordsString(name string) (string, error) {
+	recs, err := ch.GetChainLogRecords(name)
+	if err != nil {
+		return "", err
+	}
+	ret := fmt.Sprintf("log records for '%s':", name)
+	for _, r := range recs {
+		ret += fmt.Sprintf("\n%d: %s", r.Timestamp, string(r.Data))
+	}
+	return ret, nil
+}
+
+// GetChainLogNumRecords returns total number of chainlog records for the given contact.
+func (ch *Chain) GetChainLogNumRecords(name string) int {
+	res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetNumRecords,
+		chainlog.ParamContractHname, coretypes.Hn(name),
+	)
+	require.NoError(ch.Glb.T, err)
+	ret, ok, err := codec.DecodeInt64(res.MustGet(chainlog.ParamNumRecords))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+	return int(ret)
 }

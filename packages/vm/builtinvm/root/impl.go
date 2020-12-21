@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -28,7 +29,7 @@ import (
 // - ParamFeeColor balance.Color fee color code. Defaults to IOTA color. It cannot be changed
 // - ParamOwnerFee int64 globally set default fee value. Defaults to 0
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof("root.initialize.begin")
+	ctx.Log().Debugf("root.initialize.begin")
 	params := ctx.Params()
 	state := ctx.State()
 	if state.MustGet(VarStateInitialized) != nil {
@@ -76,6 +77,12 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
+	// deploy chainlog
+	rec = NewContractRecord(chainlog.Interface, ctx.Caller())
+	err = storeAndInitContract(ctx, &rec, nil)
+	if err != nil {
+		ctx.Log().Panicf("root.init.fail: %v", err)
+	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.Set(VarChainID, codec.EncodeChainID(chainID))
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
@@ -94,6 +101,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accountsc.Interface.Name, accountsc.Interface.Hname().String())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", chainlog.Interface.Name, chainlog.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }
@@ -139,7 +147,7 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		}
 	}
 	// calls to loads VM from binary to check if it loads successfully
-	err = ctx.CreateContract(*proghash, "", "", nil)
+	err = ctx.DeployContract(*proghash, "", "", nil)
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
 	}
@@ -153,6 +161,11 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
 	}
+
+	logMsg := fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: %s",
+		name, coretypes.Hn(name), proghash.String(), description)
+	ctx.ChainLog([]byte(logMsg))
+
 	ctx.Log().Infof("root.deployContract.success. Deployed contract '%s', hname = %s", name, coretypes.Hn(name).String())
 	return nil, nil
 }
@@ -195,7 +208,7 @@ func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
 	ret.Set(VarDescription, codec.EncodeString(info.Description))
-	ret.Set(VarFeeColor, codec.EncodeColor(&info.FeeColor))
+	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
 	ret.Set(VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
 

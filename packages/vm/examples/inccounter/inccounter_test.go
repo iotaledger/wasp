@@ -3,7 +3,7 @@ package inccounter
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/solo"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -23,13 +23,13 @@ func checkCounter(e *solo.Chain, expected int64) {
 func TestDeployInc(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash)
 	require.NoError(t, err)
-	chain.CheckBase()
+	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }
@@ -37,7 +37,7 @@ func TestDeployInc(t *testing.T) {
 func TestDeployIncInitParams(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestDeployIncInitParams(t *testing.T) {
 func TestIncDefaultParam(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestIncDefaultParam(t *testing.T) {
 func TestIncParam(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestIncWith1Post(t *testing.T) {
 	// advance logical clock to unlock that timelocked request
 	glb.AdvanceClockBy(6 * time.Second)
 
-	chain.WaitEmptyBacklog()
+	chain.WaitForEmptyBacklog()
 	checkCounter(chain, 19)
 
 	chain.CheckAccountLedger()

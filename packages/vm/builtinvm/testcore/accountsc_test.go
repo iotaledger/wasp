@@ -8,10 +8,10 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +35,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := glb.NewSigSchemeWithFunds()
+	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
@@ -59,7 +59,7 @@ func TestAccountsDepositWithdraw(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := glb.NewSigSchemeWithFunds()
+	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(accountsc.Interface.Name, accountsc.FuncDeposit).
 		WithTransfer(map[balance.Color]int64{

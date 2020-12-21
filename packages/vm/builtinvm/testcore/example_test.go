@@ -6,8 +6,8 @@ package testcore
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,8 +16,8 @@ import (
 func TestNew(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	chain.CheckBase()
-	chain.Infof("\n%s\n", chain.String())
+	chain.CheckChain()
+	chain.Log.Infof("\n%s\n", chain.String())
 
 	req := solo.NewCall(blob.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)

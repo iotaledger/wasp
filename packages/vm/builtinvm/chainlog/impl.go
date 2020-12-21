@@ -1,239 +1,94 @@
-package log
+package chainlog
 
 import (
 	"fmt"
-
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
+// initialize is mandatory
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("chainlog.initialize.begin")
-	ctx.Eventf("chainlog.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("chainlog.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
-func storeLog(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("chainlog.storeLog.begin")
-	params := ctx.Params()
-	state := ctx.State()
-
-	logData, err := params.Get(ParamLog)
-	if err != nil {
-		return nil, err
-	}
-
-	//TODO: check if the contract really exists in the chain
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
-	}
-
-	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamType))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamType' not found")
-	}
-
-	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
-		entry := append(contractName.Bytes(), byte(typeP))
-		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
-		log.Append(ctx.GetTimestamp(), logData)
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamType' is incorrect")
-	}
-	return nil, nil
-}
-
-func getLogInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
-
-	state := ctx.State()
-	params := ctx.Params()
-
-	//TODO: check if the contract really exists in the chain
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
-	}
-
-	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamType))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamType' not found")
-	}
-
-	ret := dict.New()
-	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
-		entry := append(contractName.Bytes(), byte(typeP))
-		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
-
-		ret.Set(kv.Key(entry), codec.EncodeInt64(int64(log.Len())))
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamType' is incorrect")
-	}
-
-	return ret, nil
-}
-
-func getLasts(ctx vmtypes.SandboxView) (dict.Dict, error) {
-
-	state := ctx.State()
-	params := ctx.Params()
-
-	//TODO: check if the contract really exists in the chain
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
-	}
-
-	l, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamLastsRecords))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		l = 0
-	}
-
-	typeP, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamType))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamType' not found")
-	}
-
-	ret := dict.New()
-	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
-		entry := append(contractName.Bytes(), byte(typeP))
-		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
-
-		if err != nil || log.Len() < uint32(l) {
-			return nil, err
-		}
-
-		tts := log.TakeTimeSlice(log.Earliest(), log.Latest())
-		if tts.IsEmpty() {
-			// empty time slice
-			return nil, nil
-		}
-		first, last := tts.FromToIndices()
-		from := first
-		nPoints := tts.NumPoints()
-		if l != 0 && nPoints > uint32(l) {
-			from = nPoints - uint32(l)
-		}
-		data := log.LoadRecordsRaw(from, last, false)
-
-		a := datatypes.NewMustArray(ret, string(entry))
-		for _, s := range data {
-			a.Push(s)
-		}
-
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamType' is incorrect")
-	}
-
-	return ret, nil
-}
-
-// Gets logs between timestamp interval and last N number of records
-//
+// getNumRecords gets the number of chainlog records for contarct
 // Parameters:
-//  - ParamFromTs From interval
-//  - ParamToTs To Interval
-//  - ParamLastsRecords Amount of records that you want to return
-func getLogsBetweenTs(ctx vmtypes.SandboxView) (dict.Dict, error) {
+//	- ParamContractHname Hname of the contract to view the logs
+func getNumRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	contractName, err := getHnameParameter(ctx.Params())
+	if err != nil {
+		return nil, err
+	}
+	ret := dict.New()
+	thelog := datatypes.NewMustTimestampedLog(ctx.State(), kv.Key(contractName.Bytes()))
+	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.Len())))
+	return ret, nil
+}
 
-	state := ctx.State()
-	params := ctx.Params()
-
-	fromTs, ok, err := codec.DecodeInt64(params.MustGet(ParamFromTs))
+// getLogRecords returns records between timestamp interval for the hname
+// In time descending order
+// Parameters:
+//	- ParamContractHname Filter param, Hname of the contract to view the logs
+//  - ParamFromTs From interval. Defaults to 0
+//  - ParamToTs To Interval. Defaults to now (if both are missing means all)
+//  - ParamMaxLastRecords Max amount of records that you want to return. Defaults to 50
+func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	contractHname, err := getHnameParameter(ctx.Params())
+	if err != nil {
+		return nil, err
+	}
+	maxLast, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamMaxLastRecords))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		// taking default
+		maxLast = DefaultMaxNumberOfRecords
+	}
+	fromTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamFromTs))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		fromTs = 0
 	}
-	toTs, ok, err := codec.DecodeInt64(params.MustGet(ParamToTs))
-
+	toTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamToTs))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		toTs = ctx.GetTimestamp()
 	}
-
-	l, ok, err := codec.DecodeInt64(params.MustGet(ParamLastsRecords))
-
-	if err != nil {
-		return nil, err
+	theLog := datatypes.NewMustTimestampedLog(ctx.State(), kv.Key(contractHname.Bytes()))
+	tts := theLog.TakeTimeSlice(fromTs, toTs)
+	if tts.IsEmpty() {
+		// empty time slice
+		return nil, nil
 	}
-	if !ok {
-		l = 0 // 0 means all
+	ret := dict.New()
+	first, last := tts.FromToIndicesCapped(uint32(maxLast))
+	data := theLog.LoadRecordsRaw(first, last, true) // descending
+	a := datatypes.NewMustArray(ret, ParamRecords)
+	for _, s := range data {
+		a.Push(s)
 	}
+	return ret, nil
+}
 
-	//TODO: check if the contract really exists in the chain
+// getHnameParameter internal utility function to parse and validate params
+func getHnameParameter(params dict.Dict) (coretypes.Hname, error) {
 	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("paremeter 'contract hname' not found")
+		return 0, fmt.Errorf("parameter 'contractHname' not found")
 	}
-
-	typeP, ok, err := codec.DecodeInt64(params.MustGet(ParamType))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'ParamType' not found")
-	}
-
-	ret := dict.New()
-	switch typeP {
-	case _DEPLOY, _TOKEN_TRANSFER, _VIEWCALL, _REQUEST_FUNC, _GENERIC_DATA:
-		entry := append(contractName.Bytes(), byte(typeP))
-		log := datatypes.NewMustTimestampedLog(state, kv.Key(entry))
-
-		tts := log.TakeTimeSlice(fromTs, toTs)
-		if tts.IsEmpty() {
-			// empty time slice
-			return nil, nil
-		}
-		first, last := tts.FromToIndices()
-		from := first
-		nPoints := tts.NumPoints()
-		if l != 0 && nPoints > uint32(l) {
-			from = nPoints - uint32(l)
-		}
-
-		data := log.LoadRecordsRaw(from, last, false)
-		a := datatypes.NewMustArray(ret, string(entry))
-		for _, s := range data {
-			a.Push(s)
-		}
-	default:
-		return nil, fmt.Errorf("Type parameter 'ParamType' is incorrect")
-	}
-
-	return ret, nil
+	return contractName, nil
 }

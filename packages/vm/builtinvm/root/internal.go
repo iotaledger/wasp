@@ -39,7 +39,7 @@ func GetChainInfo(state kv.KVStore) *ChainInfo {
 	ret.Description, _, _ = codec.DecodeString(state.MustGet(VarDescription))
 	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
 	if ok {
-		ret.FeeColor = *feeColor
+		ret.FeeColor = feeColor
 	} else {
 		ret.FeeColor = balance.ColorIOTA
 	}
@@ -57,33 +57,38 @@ func GetChainInfo(state kv.KVStore) *ChainInfo {
 // GetFeeInfo is an internal utility function which returns fee info for the contract
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
-func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (*balance.Color, int64, int64, error) {
+func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (balance.Color, int64, int64, error) {
 	rec, err := FindContract(state, hname)
 	if err != nil {
 		// contract not found
-		return nil, 0, 0, err
+		return balance.Color{}, 0, 0, err
 	}
-	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
-	if !ok {
-		feeColor = &balance.ColorIOTA
-	}
+	feeColor, defaultOwnerFee, defaultValidatorFee, err := GetDefaultFeeInfo(state)
 	ownerFee := rec.OwnerFee
 	if ownerFee == 0 {
-		// look up for default ownerFee on chain
-		f, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
-		if ok {
-			ownerFee = f
-		}
+		ownerFee = defaultOwnerFee
 	}
 	validatorFee := rec.ValidatorFee
 	if validatorFee == 0 {
-		// look up for default ownerFee on chain
-		f, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
-		if ok {
-			validatorFee = f
-		}
+		validatorFee = defaultValidatorFee
 	}
 	return feeColor, ownerFee, validatorFee, nil
+}
+
+func GetDefaultFeeInfo(state kv.KVStore) (balance.Color, int64, int64, error) {
+	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
+	if !ok {
+		feeColor = balance.ColorIOTA
+	}
+	defaultOwnerFee, _, err := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
+	if err != nil {
+		return balance.Color{}, 0, 0, err
+	}
+	defaultValidatorFee, _, err := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
+	if err != nil {
+		return balance.Color{}, 0, 0, err
+	}
+	return feeColor, defaultOwnerFee, defaultValidatorFee, nil
 }
 
 // DecodeContractRegistry encodes the whole contract registry in the MustMap in the kvstor to the

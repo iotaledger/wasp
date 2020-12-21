@@ -40,23 +40,19 @@ const tplConfig = `
 {{define "title"}}Node configuration{{end}}
 
 {{define "body"}}
+<div class="container">
+<div class="row">
+<div class="col-sm">
 	<h2>Node configuration</h2>
 
-	<table>
-		<thead>
-			<tr>
-				<th>Key</th>
-				<th>Value</th>
-			</tr>
-		</thead>
-		<tbody>
+	<dl>
 		{{range $k, $v := .Configuration}}
-			<tr>
-				<td><code>{{$k}}</code></td>
-				<td><code>{{$v}}</code></td>
-			</tr>
+				<dt><tt>{{$k}}</tt></dt>
+				<dd><tt>{{$v}}</tt></dd>
 		{{end}}
-		</tbody>
-	</table>
+	</dl>
+</div>
+</div>
+</div>
 {{end}}
 `

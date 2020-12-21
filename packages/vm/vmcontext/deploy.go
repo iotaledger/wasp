@@ -31,5 +31,4 @@ func (vmctx *VMContext) CreateContract(programHash hashing.HashValue, name strin
 	par.Set(root.ParamDescription, codec.EncodeString(description))
 	_, err = vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), par, nil)
 	return err
-
 }

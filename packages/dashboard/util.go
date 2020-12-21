@@ -5,11 +5,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func args(args ...interface{}) []interface{} {
 	return args
+}
+
+func hashref(hash hashing.HashValue) *hashing.HashValue {
+	return &hash
+}
+
+func quoted(max int, s string) string {
+	if len(s) > max {
+		s = s[:max] + "…"
+	}
+	return fmt.Sprintf("%q", s)
 }
 
 func formatTimestamp(ts interface{}) string {

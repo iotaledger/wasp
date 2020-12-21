@@ -5,10 +5,10 @@ package testcore
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -32,7 +32,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	user := glb.NewSigSchemeWithFunds()
+	user := glb.NewSignatureSchemeWithFunds()
 
 	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequest(req, user)
@@ -47,7 +47,7 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	user := glb.NewSigSchemeWithFunds()
+	user := glb.NewSignatureSchemeWithFunds()
 
 	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequest(req, user)
@@ -213,7 +213,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, accountsc.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
-	user := glb.NewSigSchemeWithFunds()
+	user := glb.NewSignatureSchemeWithFunds()
 	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)

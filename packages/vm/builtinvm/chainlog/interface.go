@@ -1,65 +1,50 @@
-package log
+package chainlog
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
 	Name        = "chainlog"
 	Version     = "0.1"
-	fullName    = Name + "-" + Version
-	description = "Log Contract"
+	description = "Chainlog Contract"
 )
 
 var (
 	Interface = &contract.ContractInterface{
-		Name:        fullName,
+		Name:        Name,
 		Description: description,
-		ProgramHash: *hashing.HashStrings(fullName),
+		ProgramHash: *hashing.HashStrings(Name),
 	}
 )
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncStoreLog, storeLog),
-		contract.ViewFunc(FuncGetLog, getLogInfo),
-		contract.ViewFunc(FuncGetLasts, getLasts),
-		contract.ViewFunc(FuncGetLogsBetweenTs, getLogsBetweenTs),
+		contract.ViewFunc(FuncGetLogRecords, getLogRecords),
+		contract.ViewFunc(FuncGetNumRecords, getNumRecords),
 	})
-	examples.AddProcessor(Interface.ProgramHash, Interface)
-
 }
 
 const (
-	// state variables
-	VarStateInitialized = "i"
-
 	// request parameters
-	ParamLog           = "dataParam"
-	ParamContractHname = "contractHname"
-	ParamLasts         = "lastsParam"
-	ParamFromTs        = "fromTs"
-	ParamToTs          = "toTs"
-	ParamLastsRecords  = "lastRecords"
-	ParamType          = "ParamTypeOfRecords"
+	ParamContractHname  = "contractHname"
+	ParamFromTs         = "fromTs"
+	ParamToTs           = "toTs"
+	ParamMaxLastRecords = "maxLastRecords"
+	ParamNumRecords     = "numRecords"
+	ParamRecords        = "records"
 
 	// function names
-	FuncGetLog           = "getLogInfo"
-	FuncGetLasts         = "getLasts"
-	FuncGetLogsBetweenTs = "getLogsBetweenTs"
-	FuncStoreLog         = "storeLog"
+	FuncGetLogRecords = "getLogRecords"
+	FuncGetNumRecords = "getNumRecords"
 
-	//Type of records
-	_DEPLOY         = 1
-	_TOKEN_TRANSFER = 2
-	_VIEWCALL       = 3
-	_REQUEST_FUNC   = 4
-	_GENERIC_DATA   = 5
+	DefaultMaxNumberOfRecords = 50
 )
 
 func GetProcessor() vmtypes.Processor {
 	return Interface
 }
+
+const MaxRequestError = 100

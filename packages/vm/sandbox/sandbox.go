@@ -4,6 +4,7 @@
 package sandbox
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -29,7 +30,7 @@ func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
 
 // CreateContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *sandbox) CreateContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
+func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
 	return s.vmctx.CreateContract(programHash, name, description, initParams)
 }
 
@@ -56,7 +57,7 @@ func (s *sandbox) State() kv.KVStore {
 }
 
 func (s *sandbox) RequestID() coretypes.RequestID {
-	return *s.vmctx.Request().RequestID()
+	return s.vmctx.RequestID()
 }
 
 // call context
@@ -101,10 +102,6 @@ func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) PostRequestToSelf(reqCode coretypes.Hname, args dict.Dict) bool {
-	return s.vmctx.PostRequestToSelf(reqCode, args)
-}
-
 func (s *sandbox) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	return s.vmctx.PostRequestToSelfWithDelay(entryPoint, args, delaySec)
 }
@@ -114,9 +111,16 @@ func (s *sandbox) Log() vmtypes.LogInterface {
 }
 
 func (s *sandbox) Event(msg string) {
+	s.ChainLog([]byte(msg))
 	s.vmctx.EventPublisher().Publish(msg)
 }
 
 func (s *sandbox) Eventf(format string, args ...interface{}) {
+	s.ChainLog([]byte(fmt.Sprintf(format, args...)))
 	s.vmctx.EventPublisher().Publishf(format, args...)
+}
+
+func (s *sandbox) ChainLog(data []byte) {
+	s.Log().Infof("chainlog record: '%s'", string(data))
+	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), data)
 }

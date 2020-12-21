@@ -99,7 +99,7 @@ func (s stateWrapper) Set(name kv.Key, value []byte) {
 
 func (vmctx *VMContext) State() kv.KVStore {
 	w := vmctx.stateWrapper()
-	vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
+	//vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
 	return w
 }
 

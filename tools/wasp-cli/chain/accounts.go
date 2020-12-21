@@ -18,17 +18,15 @@ func listAccountsCmd(args []string) {
 	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncAccounts, nil)
 	log.Check(err)
 
-	log.Printf("Total %d accounts in chain %s\n", len(ret), GetCurrentChainID())
+	log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID())
 
-	header := []string{"agentid (b58)", "agentid (string)"}
+	header := []string{"agentid"}
 	rows := make([][]string, len(ret))
 	i := 0
 	for k := range ret {
 		agentId, _, err := codec.DecodeAgentID([]byte(k))
-		if err != nil {
-			panic(err.Error())
-		}
-		rows[i] = []string{agentId.Base58(), agentId.String()}
+		log.Check(err)
+		rows[i] = []string{agentId.String()}
 		i++
 	}
 	log.PrintTable(header, rows)
@@ -39,7 +37,8 @@ func balanceCmd(args []string) {
 		log.Usage("%s chain balance <agentid>\n", os.Args[0])
 	}
 
-	agentID := parseAgentID(args[0])
+	agentID, err := coretypes.NewAgentIDFromString(args[0])
+	log.Check(err)
 
 	ret, err := SCClient(accountsc.Interface.Hname()).CallView(accountsc.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
 		accountsc.ParamAgentID: agentID.Bytes(),
@@ -59,10 +58,4 @@ func balanceCmd(args []string) {
 		i++
 	}
 	log.PrintTable(header, rows)
-}
-
-func parseAgentID(s string) coretypes.AgentID {
-	agentid, err := coretypes.AgentIDFromBase58(s)
-	log.Check(err)
-	return agentid
 }

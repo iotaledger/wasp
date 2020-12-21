@@ -19,4 +19,5 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+	golang.org/x/tools v0.0.0-20201218024724-ae774e9781d2 // indirect
 )

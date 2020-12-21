@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package coretypes
 
 import (
@@ -9,26 +12,31 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+// AgentIDLength size of AgentID in bytes
 const AgentIDLength = ChainIDLength + HnameLength
 
-// AgentID assumes:
-// - ChainID is MustAddress
-// - AgentID is never used for contract with index 0
+// AgentID represents exactly one of two types of entities on the ISCP ledger in one ID:
+//  - It can represent an address on the Tangle (controlled by some private key). In this case it can be
+//    interpreted as address.Address type (see MustAddress).
+//  - alternatively, it can represent a smart contract on the ISCP. In this case it can be interpreted as
+//    a coretypes.ContractID type (see MustContractID)
+// Type of ID represented by the AgentID can be recognized with IsAddress call.
+// An attempt to interpret the AgentID in the wrong way invokes panic
 type AgentID [AgentIDLength]byte
 
-// NewAgentIDFromContractID a constructor
+// NewAgentIDFromContractID makes AgentID from ContractID
 func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
 	copy(ret[:], id[:])
 	return
 }
 
-// NewAgentIDFromAddress a constructor
+// NewAgentIDFromAddress makes AgentID from address.Address
 func NewAgentIDFromAddress(addr address.Address) AgentID {
 	// 0 is a reserved hname
 	return NewAgentIDFromContractID(NewContractID(ChainID(addr), 0))
 }
 
-// NewAgentIDFromBytes a constructor
+// NewAgentIDFromBytes makes an AgentID from binary representation
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	if len(data) != AgentIDLength {
 		err = ErrWrongDataLength
@@ -38,6 +46,7 @@ func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	return
 }
 
+// NewRandomAgentID creates random AgentID
 func NewRandomAgentID() AgentID {
 	chainID := NewRandomChainID()
 	hname := Hn("testFunction")
@@ -53,6 +62,7 @@ func (a *AgentID) hnameField() []byte {
 }
 
 // IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
+// This is based on the assumption that fro coretypes.Hname 0 is a reserved value
 func (a AgentID) IsAddress() bool {
 	var z [4]byte
 	return bytes.Equal(a.hnameField(), z[:])
@@ -76,7 +86,7 @@ func (a AgentID) MustContractID() (ret ContractID) {
 	return
 }
 
-// Bytes marshals to bytes
+// Bytes AgentID as byte slice
 func (a AgentID) Bytes() []byte {
 	return a[:]
 }
@@ -84,12 +94,39 @@ func (a AgentID) Bytes() []byte {
 // String human readable string
 func (a AgentID) String() string {
 	if a.IsAddress() {
-		return "A-" + a.MustAddress().String()
+		return "A/" + a.MustAddress().String()
 	}
-	return "C-" + a.MustContractID().String()
+	return "C/" + a.MustContractID().String()
 }
 
-// ReadAgentID reading/unmarshaling
+// NewAgentIDFromString parses the human-readable string representation
+func NewAgentIDFromString(s string) (ret AgentID, err error) {
+	if len(s) < 2 {
+		err = errors.New("invalid length")
+		return
+	}
+	switch s[:2] {
+	case "A/":
+		var addr address.Address
+		addr, err = address.FromBase58(s[2:])
+		if err != nil {
+			return
+		}
+		return NewAgentIDFromAddress(addr), nil
+	case "C/":
+		var cid ContractID
+		cid, err = NewContractIDFromString(s[2:])
+		if err != nil {
+			return
+		}
+		return NewAgentIDFromContractID(cid), nil
+	default:
+		err = errors.New("invalid prefix")
+	}
+	return
+}
+
+// ReadAgentID decodes from binary representation
 func ReadAgentID(r io.Reader, agentID *AgentID) error {
 	n, err := r.Read(agentID[:])
 	if err != nil {
@@ -103,12 +140,4 @@ func ReadAgentID(r io.Reader, agentID *AgentID) error {
 
 func (a AgentID) Base58() string {
 	return base58.Encode(a[:])
-}
-
-func AgentIDFromBase58(s string) (ret AgentID, err error) {
-	var data []byte
-	if data, err = base58.Decode(s); err != nil {
-		return
-	}
-	return NewAgentIDFromBytes(data)
 }

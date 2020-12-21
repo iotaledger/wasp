@@ -4,7 +4,9 @@
 package wasmhost
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type ScLogs struct {
@@ -37,9 +39,9 @@ type ScLog struct {
 
 func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
 	a.ScDict.InitObj(id, keyId, owner)
-	key := a.vm.GetKey(keyId)
-	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), key)
-	a.logEntry = &ScLogEntry{lines: a.lines}
+	key := a.vm.getKeyFromId(keyId)
+	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), kv.Key(key))
+	a.logEntry = &ScLogEntry{lines: a.lines, current: ^uint32(0)}
 	a.logEntryId = a.vm.TrackObject(a.logEntry)
 }
 
@@ -59,11 +61,13 @@ func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 	if typeId != OBJTYPE_MAP {
 		a.Panic("GetObjectId: Invalid type")
 	}
-	//TODO can only access new entries for now
-	if uint32(keyId) == a.lines.Len() {
-		return a.logEntryId
+	index := uint32(keyId)
+	if index > a.lines.Len() {
+		a.Panic("GetObjectId: Invalid index")
 	}
-	return a.ScDict.GetObjectId(keyId, typeId)
+	a.Trace("LoadRecord %s%s", a.name, a.Suffix(keyId))
+	a.logEntry.LoadRecord(index)
+	return a.logEntryId
 }
 
 func (a *ScLog) GetTypeId(keyId int32) int32 {
@@ -77,28 +81,39 @@ func (a *ScLog) GetTypeId(keyId int32) int32 {
 
 type ScLogEntry struct {
 	ScDict
+	current   uint32
 	lines     *datatypes.MustTimestampedLog
+	record    []byte
 	timestamp int64
 }
 
 func (o *ScLogEntry) Exists(keyId int32) bool {
-	return o.GetTypeId(keyId) > 0
+	if o.current < o.lines.Len() {
+		return o.GetTypeId(keyId) > 0
+	}
+	return false
 }
 
 func (o *ScLogEntry) GetBytes(keyId int32) []byte {
-	//switch keyId {
-	//case KeyData:
-	//	ts := o.lines.TakeTimeSlice(o.lines.Earliest(), o.lines.Latest())
-	//}
-	return o.ScDict.GetBytes(keyId)
+	switch keyId {
+	case KeyData:
+		if o.current < o.lines.Len() {
+			return o.record[8:]
+		}
+	}
+	o.Panic("GetBytes: Invalid key")
+	return nil
 }
 
 func (o *ScLogEntry) GetInt(keyId int32) int64 {
-	//switch keyId {
-	//case KeyTimestamp:
-	//	return o.lines.Latest()
-	//}
-	return o.ScDict.GetInt(keyId)
+	switch keyId {
+	case KeyTimestamp:
+		if o.current < o.lines.Len() {
+			return int64(util.MustUint64From8Bytes(o.record[:8]))
+		}
+	}
+	o.Panic("GetBytes: Invalid key")
+	return 0
 }
 
 func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
@@ -111,11 +126,24 @@ func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
+func (o *ScLogEntry) LoadRecord(index uint32) {
+	if index != o.current {
+		o.current = index
+		if index < o.lines.Len() {
+			o.record = o.lines.LoadRecordsRaw(index, index, false)[0]
+		}
+	}
+}
+
 func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case KeyData:
-		o.lines.Append(o.timestamp, value)
-		return
+		// can only append
+		if o.current == o.lines.Len() {
+			o.lines.Append(o.timestamp, value)
+			o.current = ^uint32(0)
+			return
+		}
 	}
 	o.Panic("SetBytes: Invalid key")
 }
@@ -123,8 +151,11 @@ func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {
 func (o *ScLogEntry) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case KeyTimestamp:
-		o.timestamp = value
-		return
+		// can only append
+		if o.current == o.lines.Len() {
+			o.timestamp = value
+			return
+		}
 	}
 	o.Panic("SetInt: Invalid key")
 }

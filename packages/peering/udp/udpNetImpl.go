@@ -119,7 +119,7 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 // Attach implements peering.NetworkProvider.
 func (n *NetImpl) Attach(chainID *coretypes.ChainID, callback func(recv *peering.RecvEvent)) interface{} {
 	closure := events.NewClosure(func(recv *peering.RecvEvent) {
-		if chainID == nil || chainID.Equal(&recv.Msg.ChainID) {
+		if chainID == nil || *chainID == recv.Msg.ChainID {
 			callback(recv)
 		}
 	})

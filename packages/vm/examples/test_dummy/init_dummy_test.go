@@ -1,7 +1,7 @@
 package test_env
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/solo"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -26,11 +26,11 @@ func TestFailRepeat(t *testing.T) {
 	err := chain.DeployContract(nil, "dummy", ProgramHash, "fail", 1)
 	require.Error(t, err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, 3, len(rec))
+	require.EqualValues(t, 4, len(rec))
 
 	// repeat must succeed
 	err = chain.DeployContract(nil, "dummy", ProgramHash)
 	require.NoError(t, err)
 	_, _, rec = chain.GetInfo()
-	require.EqualValues(t, 4, len(rec))
+	require.EqualValues(t, 5, len(rec))
 }

@@ -55,6 +55,8 @@ func MakeTemplate(parts ...string) *template.Template {
 		"formatTimestamp":   formatTimestamp,
 		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
 		"args":              args,
+		"hashref":           hashref,
+		"quoted":            quoted,
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {
@@ -65,17 +67,32 @@ func MakeTemplate(parts ...string) *template.Template {
 
 const tplBase = `
 {{define "externalLink"}}
-	<a href="{{ index . 0 }}" style="font-size: small">🡽 {{ index . 1 }}</a>
+	<a href="{{ index . 0 }}" class="linkbtn">🡽 {{ index . 1 }}</a>
+{{end}}
+
+{{define "exploreAddressInTangle"}}
+	{{ template "externalLink" (args (exploreAddressUrl .) "Tangle") }}
 {{end}}
 
 {{define "address"}}
-	<code>{{.}}</code> {{ template "externalLink" (args (exploreAddressUrl .) "Tangle") }}
+	<tt>{{.}}</tt> {{ template "exploreAddressInTangle" . }}
 {{end}}
 
 {{define "agentid"}}
-	{{if .IsAddress}}{{template "address" .MustAddress}}
-	{{else}}<code>{{.}}</code>
-	{{end}}
+	{{ $chainid := index . 0 }}
+	{{ $agentid := index . 1 }}
+	<tt>{{ $agentid }}</tt>
+	<a href="/chains/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
+	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
+{{end}}
+
+{{define "balances"}}
+	<dl>
+		{{range $color, $bal := .}}
+			<dt><tt>{{ $color }}</tt></dt>
+			<dd>{{ $bal }}</dd>
+		{{end}}
+	</dl>
 {{end}}
 
 {{define "base"}}
@@ -88,33 +105,61 @@ const tplBase = `
 
 		<title>{{template "title"}} - Wasp node dashboard</title>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/inter.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
 	</head>
 
 	<body>
 		<style>
-			details {background: #EEF9FF}
+			tt {
+				font-family: Menlo, Consolas, monospace;
+			}
+			table {
+				max-height: none !important;
+			}
+			dl {
+				display: flex;
+				flex-wrap: wrap;
+				padding: var(--universal-padding);
+			}
+			dt {
+				width: 33%;
+				font-weight: bold;
+				text-align: right;
+			}
+			dt:after {
+				content: ":";
+			}
+			dd {
+				margin-left: auto;
+				width: 66%;
+			}
+			.linkbtn {
+				font-size: small;
+				border: 1px solid var(--nc-lk-1);
+				padding: 2px;
+				text-decoration: none;
+			}
+			.align-right {
+				text-align: right;
+			}
 		</style>
+
 		<header>
-			<h1>Wasp node dashboard</h1>
-			<nav>
+				<a class="logo" href="#">Wasp</a>
 				{{$activePage := .ActivePage}}
 				{{range $i, $p := .NavPages}}
-					{{if $i}} | {{end}}
-					{{if eq $activePage $p.Href}}
-						<strong>{{$p.Title}}</strong>
-					{{else}}
-						<a href="{{$p.Href}}">{{$p.Title}}</a>
-					{{end}}
+					<a href="{{$p.Href}}" class="button"
+						{{- if eq $activePage $p.Href -}}
+							style="background-color: var(--button-hover-back-color)"
+						{{- end -}}
+					>
+						{{- $p.Title -}}
+					</a>
 				{{end}}
-			</nav>
 		</header>
-		{{template "body" .}}
-		<hr/>
-		<footer>
-		<p>Node network ID: <code>{{.MyNetworkId}}</code></p>
-		</footer>
+		<main>
+			{{template "body" .}}
+		</main>
 	</body>
 	</html>
 {{end}}`

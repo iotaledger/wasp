@@ -3,7 +3,6 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"testing"
 	"time"
 
@@ -17,14 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
 )
-
-const incName = "inccounter"
-const incDescription = "IncCounter, a PoC smart contract"
-
-var incHname = coretypes.Hn(incName)
-
-const varCounter = "counter"
-const varNumRepeats = "num_repeats"
 
 func checkCounter(t *testing.T, expected int) bool {
 	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
@@ -57,7 +48,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -114,7 +105,7 @@ func testNothing(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -170,7 +161,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.EqualValues(t, chain.Description, desc)
 
 		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		require.EqualValues(t, 5, contractRegistry.Len())
 		//--
 		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
@@ -310,37 +301,4 @@ func TestIncViewCounter(t *testing.T) {
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	check(err, t)
 	require.EqualValues(t, 1, counter)
-}
-
-func TestIncAloneInc(t *testing.T) {
-	al := solo.New(t, false, true)
-	chain := al.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
-	require.NoError(t, err)
-	req := solo.NewCall(incName, "increment").
-		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
-	_, err = chain.PostRequest(req, nil)
-	require.NoError(t, err)
-	ret, err := chain.CallView(incName, "increment_view_counter")
-	require.NoError(t, err)
-	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
-	check(err, t)
-	require.EqualValues(t, 1, counter)
-}
-
-func TestIncAloneRepeatMany(t *testing.T) {
-	al := solo.New(t, false, true)
-	chain := al.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, incName, "wasm/inccounter_bg.wasm")
-	require.NoError(t, err)
-	req := solo.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
-		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
-	_, err = chain.PostRequest(req, nil)
-	require.NoError(t, err)
-	chain.WaitEmptyBacklog()
-	ret, err := chain.CallView(incName, "increment_view_counter")
-	require.NoError(t, err)
-	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
-	check(err, t)
-	require.EqualValues(t, 3, counter)
 }

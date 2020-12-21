@@ -7,29 +7,29 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accountsc"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
-	"github.com/iotaledger/wasp/packages/vm/solo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRootBasic(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
-	chain.CheckBase()
-	chain.Infof("\n%s\n", chain.String())
+	chain.CheckChain()
+	chain.Log.Infof("\n%s\n", chain.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
-	chain.CheckBase()
+	chain.CheckChain()
 
 	req := solo.NewCall(root.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
@@ -39,13 +39,13 @@ func TestRootRepeatInit(t *testing.T) {
 func TestGetInfo(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	chainID, chainOwnerID, contracts := chain.GetInfo()
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
-	require.EqualValues(t, 3, len(contracts))
+	require.EqualValues(t, 4, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -62,7 +62,7 @@ func TestGetInfo(t *testing.T) {
 func TestDeployExample(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
@@ -72,7 +72,7 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -98,7 +98,7 @@ func TestDeployExample(t *testing.T) {
 func TestDeployDouble(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
@@ -111,7 +111,7 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -133,9 +133,9 @@ func TestDeployDouble(t *testing.T) {
 func TestChangeOwnerAuthorized(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
-	newOwner := glb.NewSigSchemeWithFunds()
+	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
@@ -155,9 +155,9 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 func TestChangeOwnerUnauthorized(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	defer chain.WaitEmptyBacklog()
+	defer chain.WaitForEmptyBacklog()
 
-	newOwner := glb.NewSigSchemeWithFunds()
+	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, newOwner)
