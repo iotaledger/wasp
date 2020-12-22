@@ -63,24 +63,20 @@ const tplChainAccount = `
 {{define "title"}}On-chain account details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
-	<h3>On-chain account</h3>
-	<dl>
-		<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
-		<dt>AgentID</dt><dd><tt>{{.AgentID}}</tt></dd>
-	</dl>
 	{{if .Balances}}
-		<div>
-			<h4>Balances</h4>
-			{{ template "balances" .Balances }}
+		<div class="card fluid">
+			<h3>On-chain account</h3>
+			<dl>
+				<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
+				<dt>AgentID</dt><dd><tt>{{.AgentID}}</tt></dd>
+			</dl>
+				<div>
+					<h4>Balances</h4>
+					{{ template "balances" .Balances }}
+				</div>
 		</div>
 	{{else}}
 		<div class="card error">Not found.</div>
 	{{end}}
-</div>
-</div>
-</div>
 {{end}}
 `

@@ -120,15 +120,12 @@ const tplChainBlob = `
 {{define "title"}}Blob details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
-	<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
-	<dl>
-		<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
-	</dl>
 	{{if .Blob}}
-		<div>
+		<div class="card fluid">
+			<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
+			<dl>
+				<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
+			</dl>
 			<table>
 				<thead>
 					<tr>
@@ -153,8 +150,5 @@ const tplChainBlob = `
 	{{else}}
 		<div class="card error">Not found.</div>
 	{{end}}
-</div>
-</div>
-</div>
 {{end}}
 `

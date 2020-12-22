@@ -87,43 +87,44 @@ const tplChainContract = `
 {{define "title"}}Contract details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
 	{{ $c := .ContractRecord }}
 	{{ $chainid := .ChainID }}
 	{{ $rootinfo := .RootInfo }}
 	{{ if $c }}
-		<h3>Contract {{printf "%.30s" $c.Name}}</h3>
-		<dl>
-			<dt>ChainID</dt><dd><tt>{{$chainid}}</tt></dd>
-			<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
-			<dt>Description</dt><dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
-			<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
-			{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-			<dt>Owner fee</dt><dd>
-				{{- if $c.OwnerFee -}}
-					<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
-				{{- else -}}
-					<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-				{{- end -}}
-			</dd>
-			<dt>Validator fee</dt><dd>
-				{{- if $c.ValidatorFee -}}
-					<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-				{{- else -}}
-					<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-				{{- end -}}
-			</dd>
-		</dl>
+		<div class="card fluid">
+			<h3>Contract {{printf "%.30s" $c.Name}}</h3>
+			<dl>
+				<dt>ChainID</dt><dd><tt>{{$chainid}}</tt></dd>
+				<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
+				<dt>Description</dt><dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
+				<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
+				{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
+				<dt>Owner fee</dt><dd>
+					{{- if $c.OwnerFee -}}
+						<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
+					{{- else -}}
+						<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
+					{{- end -}}
+				</dd>
+				<dt>Validator fee</dt><dd>
+					{{- if $c.ValidatorFee -}}
+						<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
+					{{- else -}}
+						<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
+					{{- end -}}
+				</dd>
+			</dl>
+		</div>
 
-		<h4>Log</h4>
-		<dl>
-			{{ range $_, $rec := .Log }}
-				<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
-				<dd>{{- quoted 100 (bytesToString $rec.Data) -}}</dd>
-			{{ end }}
-		</dl>
+		<div class="card fluid">
+			<h3>Log</h3>
+			<dl>
+				{{ range $_, $rec := .Log }}
+					<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
+					<dd><pre>{{- quoted 1000 (bytesToString $rec.Data) -}}</pre></dd>
+				{{ end }}
+			</dl>
+		</div>
 	{{else}}
 		<div class="card error">Not found.</div>
 	{{end}}

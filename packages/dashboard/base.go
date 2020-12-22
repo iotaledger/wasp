@@ -121,6 +121,7 @@ const tplBase = `
 				display: flex;
 				flex-wrap: wrap;
 				padding: var(--universal-padding);
+				align-items: baseline;
 			}
 			dt {
 				width: 33%;
@@ -143,6 +144,12 @@ const tplBase = `
 			.align-right {
 				text-align: right;
 			}
+			body {
+				--back-color: #eee;
+			}
+			table th, table td {
+				padding: var(--universal-padding);
+			}
 		</style>
 
 		<header>
@@ -159,7 +166,13 @@ const tplBase = `
 				{{end}}
 		</header>
 		<main>
-			{{template "body" .}}
+			<div class="container">
+			<div class="row" style="justify-content: center">
+			<div class="col-sm" style="max-width: 65em">
+				{{template "body" .}}
+			</div>
+			</div>
+			</div>
 		</main>
 	</body>
 	</html>

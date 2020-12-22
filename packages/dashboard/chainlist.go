@@ -56,11 +56,9 @@ const tplChainList = `
 {{define "title"}}Chains{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
+<div class="card fluid">
 	<h2>Chains</h2>
-	<table style="max-width: 65em">
+	<table>
 		<thead>
 			<tr>
 				<th>ID</th>
@@ -84,8 +82,6 @@ const tplChainList = `
 			{{end}}
 		</tbody>
 	</table>
-</div>
-</div>
 </div>
 {{end}}
 `
