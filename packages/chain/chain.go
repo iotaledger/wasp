@@ -71,6 +71,7 @@ type StateManager interface {
 	EventStateTransactionMsg(msg *StateTransactionMsg)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
+	Close()
 }
 
 type Operator interface {
@@ -84,6 +85,7 @@ type Operator interface {
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
 	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)
 	EventTimerMsg(TimerTick)
+	Close()
 	//
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }

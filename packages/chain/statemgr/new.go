@@ -64,6 +64,17 @@ type stateManager struct {
 
 	// logger
 	log *logger.Logger
+
+	// Channels for accepting external events.
+	evidenceStateIndexCh         chan uint32
+	eventStateIndexPingPongMsgCh chan *chain.StateIndexPingPongMsg
+	eventGetBlockMsgCh           chan *chain.GetBlockMsg
+	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
+	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
+	eventStateTransactionMsgCh   chan *chain.StateTransactionMsg
+	eventPendingBlockMsgCh       chan chain.PendingBlockMsg
+	eventTimerMsgCh              chan chain.TimerTick
+	closeCh                      chan bool
 }
 
 type syncedBatch struct {
@@ -84,15 +95,28 @@ type pendingBlock struct {
 
 func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
-		chain:         c,
-		pingPong:      make([]bool, c.Size()),
-		pendingBlocks: make(map[hashing.HashValue]*pendingBlock),
-		permutation:   util.NewPermutation16(c.NumPeers(), nil),
-		log:           log.Named("s"),
+		chain:                        c,
+		pingPong:                     make([]bool, c.Size()),
+		pendingBlocks:                make(map[hashing.HashValue]*pendingBlock),
+		permutation:                  util.NewPermutation16(c.NumPeers(), nil),
+		log:                          log.Named("s"),
+		evidenceStateIndexCh:         make(chan uint32),
+		eventStateIndexPingPongMsgCh: make(chan *chain.StateIndexPingPongMsg),
+		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
+		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
+		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
+		eventStateTransactionMsgCh:   make(chan *chain.StateTransactionMsg),
+		eventPendingBlockMsgCh:       make(chan chain.PendingBlockMsg),
+		eventTimerMsgCh:              make(chan chain.TimerTick),
+		closeCh:                      make(chan bool),
 	}
 	go ret.initLoadState()
 
 	return ret
+}
+
+func (sm *stateManager) Close() {
+	close(sm.closeCh)
 }
 
 // initial loading of the solid state
@@ -128,6 +152,47 @@ func (sm *stateManager) initLoadState() {
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 
-	// open msg queue for the committee
-	sm.chain.SetReadyStateManager()
+	sm.chain.SetReadyStateManager() // Open msg queue for the committee
+	sm.recvLoop()                   // Start to process external events.
+}
+
+func (sm *stateManager) recvLoop() {
+	for {
+		select {
+		case msg, ok := <-sm.evidenceStateIndexCh:
+			if ok {
+				sm.evidenceStateIndex(msg)
+			}
+		case msg, ok := <-sm.eventStateIndexPingPongMsgCh:
+			if ok {
+				sm.eventStateIndexPingPongMsg(msg)
+			}
+		case msg, ok := <-sm.eventGetBlockMsgCh:
+			if ok {
+				sm.eventGetBlockMsg(msg)
+			}
+		case msg, ok := <-sm.eventBlockHeaderMsgCh:
+			if ok {
+				sm.eventBlockHeaderMsg(msg)
+			}
+		case msg, ok := <-sm.eventStateUpdateMsgCh:
+			if ok {
+				sm.eventStateUpdateMsg(msg)
+			}
+		case msg, ok := <-sm.eventStateTransactionMsgCh:
+			if ok {
+				sm.eventStateTransactionMsg(msg)
+			}
+		case msg, ok := <-sm.eventPendingBlockMsgCh:
+			if ok {
+				sm.eventPendingBlockMsg(msg)
+			}
+		case msg, ok := <-sm.eventTimerMsgCh:
+			if ok {
+				sm.eventTimerMsg(msg)
+			}
+		case <-sm.closeCh:
+			return
+		}
+	}
 }
