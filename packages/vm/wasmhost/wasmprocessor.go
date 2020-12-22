@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/logger"
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -20,10 +21,12 @@ type wasmProcessor struct {
 	function  string
 	nesting   int
 	scContext *ScContext
+	logger    *logger.Logger
 }
 
-func NewWasmProcessor(vm WasmVM) (*wasmProcessor, error) {
-	host := &wasmProcessor{}
+// TODO logger to be used for internal logging in the processor with Debugf. No fmt.Printf
+func NewWasmProcessor(vm WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
+	host := &wasmProcessor{logger: logger}
 	host.vm = vm
 	host.scContext = NewScContext(host)
 	host.Init(NewNullObject(host), host.scContext, host)
@@ -94,8 +97,8 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 	return host, true
 }
 
-func GetProcessor(binaryCode []byte) (vmtypes.Processor, error) {
-	vm, err := NewWasmProcessor(NewWasmTimeVM())
+func GetProcessor(binaryCode []byte, logger *logger.Logger) (vmtypes.Processor, error) {
+	vm, err := NewWasmProcessor(NewWasmTimeVM(), logger)
 	if err != nil {
 		return nil, err
 	}
