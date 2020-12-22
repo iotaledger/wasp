@@ -21,6 +21,7 @@ type PeeringNetwork struct {
 	nodes     []*peeringNode
 	providers []*peeringNetworkProvider
 	bufSize   int
+	behavior  PeeringNetBehavior
 	log       *logger.Logger
 }
 
@@ -33,7 +34,8 @@ func NewPeeringNetworkForLocs(peerNetIDs []string, bufSize int, log *logger.Logg
 		peerSecs[i] = suite.Scalar().Pick(suite.RandomStream())
 		peerPubs[i] = suite.Point().Mul(peerSecs[i], nil)
 	}
-	return NewPeeringNetwork(peerNetIDs, peerPubs, peerSecs, bufSize, log)
+	behavior := NewPeeringNetReliable()
+	return NewPeeringNetwork(peerNetIDs, peerPubs, peerSecs, bufSize, behavior, log)
 }
 
 // NewPeeringNetwork creates new test network, it can then be used to create network nodes.
@@ -42,6 +44,7 @@ func NewPeeringNetwork(
 	pubKeys []kyber.Point,
 	secKeys []kyber.Scalar,
 	bufSize int,
+	behavior PeeringNetBehavior,
 	log *logger.Logger,
 ) *PeeringNetwork {
 	nodes := make([]*peeringNode, len(locations))
@@ -50,6 +53,7 @@ func NewPeeringNetwork(
 		nodes:     nodes,
 		providers: providers,
 		bufSize:   bufSize,
+		behavior:  behavior,
 		log:       log,
 	}
 	for i := range nodes {
@@ -88,7 +92,8 @@ type peeringNode struct {
 	netID   string
 	pubKey  kyber.Point
 	secKey  kyber.Scalar
-	recvCh  chan peeringMsg
+	sendCh  chan *peeringMsg
+	recvCh  chan *peeringMsg
 	recvCbs []*peeringCb
 	network *PeeringNetwork
 	log     *logger.Logger
@@ -104,20 +109,23 @@ type peeringCb struct {
 }
 
 func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
-	recvCh := make(chan peeringMsg, network.bufSize)
+	sendCh := make(chan *peeringMsg, network.bufSize)
+	recvCh := make(chan *peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
 	node := peeringNode{
 		netID:   netID,
 		pubKey:  pubKey,
 		secKey:  secKey,
+		sendCh:  sendCh,
 		recvCh:  recvCh,
 		recvCbs: recvCbs,
 		network: network,
 		log:     network.log.With("loc", netID),
 	}
+	network.behavior.AddLink(sendCh, recvCh, netID)
 	go func() { // Receive loop.
 		for {
-			var pm peeringMsg = <-recvCh
+			var pm *peeringMsg = <-recvCh
 			node.log.Debugf(
 				"received msgType=%v from=%v, chainID=%v",
 				pm.msg.MsgType, pm.from.netID, pm.msg.ChainID,
@@ -136,8 +144,8 @@ func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, netwo
 	return &node
 }
 
-func (p *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {
-	p.recvCh <- peeringMsg{
+func (n *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {
+	n.sendCh <- &peeringMsg{
 		from: from,
 		msg:  *msg,
 	}

@@ -55,6 +55,8 @@ func handleDKSharesPost(c echo.Context) error {
 		req.PeerNetIDs,
 		peerPubKeys,
 		req.Threshold,
+		1*time.Second,
+		3*time.Second,
 		time.Duration(req.TimeoutMS)*time.Millisecond,
 	)
 	if err != nil {
