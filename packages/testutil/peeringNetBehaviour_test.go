@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,7 +54,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	// Run the test.
 	var someNode = peeringNode{netID: "src"}
 	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, NewLogger(t))
+	behavior = NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, WithLevel(NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -102,7 +103,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	// Run the test.
 	var someNode = peeringNode{netID: "src"}
 	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, NewLogger(t)) // NOTE: No drops, duplicates, delays.
+	behavior = NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, WithLevel(NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: &someNode}
