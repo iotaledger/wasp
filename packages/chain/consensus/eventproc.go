@@ -16,6 +16,9 @@ import (
 
 // EventStateTransitionMsg is triggered by new currentState transition message sent by currentState manager
 func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
+	op.eventStateTransitionMsgCh <- msg
+}
+func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg.AnchorTransaction, msg.VariableState, msg.Synchronized)
 
 	vh := op.currentState.Hash()
@@ -41,6 +44,9 @@ func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 }
 
 func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
+	op.eventBalancesMsgCh <- reqMsg
+}
+func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
 	if err := op.checkSCToken(reqMsg.Balances); err != nil {
 		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
@@ -55,6 +61,9 @@ func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
 
 // EventRequestMsg triggered by new request msg from the node
 func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
+	op.eventRequestMsgCh <- reqMsg
+}
+func (op *operator) eventRequestMsg(reqMsg *chain.RequestMsg) {
 	op.log.Debugw("EventRequestMsg",
 		"reqid", reqMsg.RequestId().Short(),
 		"backlog req", len(op.requests),
@@ -76,6 +85,9 @@ func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
 
 // EventNotifyReqMsg request notification received from the peer
 func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
+	op.eventNotifyReqMsgCh <- msg
+}
+func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
 		"reqIds", idsShortStr(msg.RequestIDs),
 		"sender", msg.SenderIndex,
@@ -89,6 +101,9 @@ func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 
 // EventStartProcessingBatchMsg leader sent command to start processing the batch
 func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatchMsg) {
+	op.eventStartProcessingBatchMsgCh <- msg
+}
+func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
 
 	op.log.Debugw("EventStartProcessingBatchMsg",
@@ -151,6 +166,9 @@ func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 // EventResultCalculated VM goroutine finished run and posted this message
 // the action is to send the result to the leader
 func (op *operator) EventResultCalculated(ctx *chain.VMResultMsg) {
+	op.eventResultCalculatedCh <- ctx
+}
+func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 	op.log.Debugf("eventResultCalculated")
 
 	// check if result belongs to context
@@ -181,6 +199,9 @@ func (op *operator) EventResultCalculated(ctx *chain.VMResultMsg) {
 
 // EventSignedHashMsg result received from another peer
 func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
+	op.eventSignedHashMsgCh <- msg
+}
+func (op *operator) eventSignedHashMsg(msg *chain.SignedHashMsg) {
 	op.log.Debugw("EventSignedHashMsg",
 		"sender", msg.SenderIndex,
 		"batch hash", msg.BatchHash.String(),
@@ -217,6 +238,9 @@ func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
 // immediately after posting finalized transaction to the tangle.
 // The message is used to postpone leader rotation deadline for at least confirmation period
 func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
+	op.eventNotifyFinalResultPostedMsgCh <- msg
+}
+func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.BlockIndex,
@@ -234,6 +258,9 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 }
 
 func (op *operator) EventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
+	op.eventTransactionInclusionLevelMsgCh <- msg
+}
+func (op *operator) eventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
 	op.log.Debugw("EventTransactionInclusionLevelMsg",
 		"txid", msg.TxId.String(),
 		"level", waspconn.InclusionLevelText(msg.Level),
@@ -242,6 +269,9 @@ func (op *operator) EventTransactionInclusionLevelMsg(msg *chain.TransactionIncl
 }
 
 func (op *operator) EventTimerMsg(msg chain.TimerTick) {
+	op.eventTimerMsgCh <- msg
+}
+func (op *operator) eventTimerMsg(msg chain.TimerTick) {
 	if msg%40 == 0 {
 		blockIndex, ok := op.blockIndex()
 		si := int32(-1)

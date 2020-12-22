@@ -129,6 +129,7 @@ func (c *chainObj) Dismiss() {
 		c.peers.Close()
 
 		c.stateMgr.Close()
+		c.operator.Close()
 	})
 
 	publisher.Publish("dismissed_committee", c.chainID.String())

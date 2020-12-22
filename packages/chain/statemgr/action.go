@@ -40,7 +40,7 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 
 	sm.consensusNotifiedOnStateTransition = true
 	go sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState:     sm.solidState,
+		VariableState:     sm.solidState.Clone(),
 		AnchorTransaction: sm.approvingTransaction,
 		Synchronized:      sm.isSynchronized(),
 	})

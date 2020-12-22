@@ -85,6 +85,7 @@ type Operator interface {
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
 	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)
 	EventTimerMsg(TimerTick)
+	Close()
 	//
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }

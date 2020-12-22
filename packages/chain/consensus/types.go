@@ -58,6 +58,19 @@ type operator struct {
 	// data for concurrent access, from APIs mostly
 	concurrentAccessMutex sync.RWMutex
 	requestIdsProtected   map[coretypes.RequestID]bool
+
+	// Channels for accepting external events.
+	eventStateTransitionMsgCh           chan *chain.StateTransitionMsg
+	eventBalancesMsgCh                  chan chain.BalancesMsg
+	eventRequestMsgCh                   chan *chain.RequestMsg
+	eventNotifyReqMsgCh                 chan *chain.NotifyReqMsg
+	eventStartProcessingBatchMsgCh      chan *chain.StartProcessingBatchMsg
+	eventResultCalculatedCh             chan *chain.VMResultMsg
+	eventSignedHashMsgCh                chan *chain.SignedHashMsg
+	eventNotifyFinalResultPostedMsgCh   chan *chain.NotifyFinalResultPostedMsg
+	eventTransactionInclusionLevelMsgCh chan *chain.TransactionInclusionLevelMsg
+	eventTimerMsgCh                     chan chain.TimerTick
+	closeCh                             chan bool
 }
 
 type leaderStatus struct {
@@ -94,15 +107,80 @@ func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Lo
 	defer committee.SetReadyConsensus()
 
 	ret := &operator{
-		chain:               committee,
-		dkshare:             dkshare,
-		requests:            make(map[coretypes.RequestID]*request),
-		requestIdsProtected: make(map[coretypes.RequestID]bool),
-		peerPermutation:     util.NewPermutation16(committee.Size(), nil),
-		log:                 log.Named("c"),
+		chain:                               committee,
+		dkshare:                             dkshare,
+		requests:                            make(map[coretypes.RequestID]*request),
+		requestIdsProtected:                 make(map[coretypes.RequestID]bool),
+		peerPermutation:                     util.NewPermutation16(committee.Size(), nil),
+		log:                                 log.Named("c"),
+		eventStateTransitionMsgCh:           make(chan *chain.StateTransitionMsg),
+		eventBalancesMsgCh:                  make(chan chain.BalancesMsg),
+		eventRequestMsgCh:                   make(chan *chain.RequestMsg),
+		eventNotifyReqMsgCh:                 make(chan *chain.NotifyReqMsg),
+		eventStartProcessingBatchMsgCh:      make(chan *chain.StartProcessingBatchMsg),
+		eventResultCalculatedCh:             make(chan *chain.VMResultMsg),
+		eventSignedHashMsgCh:                make(chan *chain.SignedHashMsg),
+		eventNotifyFinalResultPostedMsgCh:   make(chan *chain.NotifyFinalResultPostedMsg),
+		eventTransactionInclusionLevelMsgCh: make(chan *chain.TransactionInclusionLevelMsg),
+		eventTimerMsgCh:                     make(chan chain.TimerTick),
+		closeCh:                             make(chan bool),
 	}
 	ret.setNextConsensusStage(consensusStageNoSync)
+	go ret.recvLoop()
 	return ret
+}
+
+func (op *operator) Close() {
+	close(op.closeCh)
+}
+
+func (op *operator) recvLoop() {
+	for {
+		select {
+		case msg, ok := <-op.eventStateTransitionMsgCh:
+			if ok {
+				op.eventStateTransitionMsg(msg)
+			}
+		case msg, ok := <-op.eventBalancesMsgCh:
+			if ok {
+				op.eventBalancesMsg(msg)
+			}
+		case msg, ok := <-op.eventRequestMsgCh:
+			if ok {
+				op.eventRequestMsg(msg)
+			}
+		case msg, ok := <-op.eventNotifyReqMsgCh:
+			if ok {
+				op.eventNotifyReqMsg(msg)
+			}
+		case msg, ok := <-op.eventStartProcessingBatchMsgCh:
+			if ok {
+				op.eventStartProcessingBatchMsg(msg)
+			}
+		case msg, ok := <-op.eventResultCalculatedCh:
+			if ok {
+				op.eventResultCalculated(msg)
+			}
+		case msg, ok := <-op.eventSignedHashMsgCh:
+			if ok {
+				op.eventSignedHashMsg(msg)
+			}
+		case msg, ok := <-op.eventNotifyFinalResultPostedMsgCh:
+			if ok {
+				op.eventNotifyFinalResultPostedMsg(msg)
+			}
+		case msg, ok := <-op.eventTransactionInclusionLevelMsgCh:
+			if ok {
+				op.eventTransactionInclusionLevelMsg(msg)
+			}
+		case msg, ok := <-op.eventTimerMsgCh:
+			if ok {
+				op.eventTimerMsg(msg)
+			}
+		case <-op.closeCh:
+			return
+		}
+	}
 }
 
 func (op *operator) peerIndex() uint16 {
