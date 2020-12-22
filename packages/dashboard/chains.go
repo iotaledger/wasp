@@ -14,6 +14,7 @@ func (n *chainsNavPage) AddTemplates(r renderer) {
 	r[chainTplName] = MakeTemplate(tplChain)
 	r[chainAccountTplName] = MakeTemplate(tplChainAccount)
 	r[chainBlobTplName] = MakeTemplate(tplChainBlob)
+	r[chainContractTplName] = MakeTemplate(tplChainContract)
 }
 
 func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
@@ -21,4 +22,5 @@ func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
 	addChainEndpoints(e)
 	addChainAccountEndpoints(e)
 	addChainBlobEndpoints(e)
+	addChainContractEndpoints(e)
 }

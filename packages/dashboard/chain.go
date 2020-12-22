@@ -162,30 +162,12 @@ const tplChain = `
 		{{if .ChainRecord.Active}}
 			<div class="card fluid">
 				<h3>Contracts</h3>
+				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
-					<div class="card fluid">
-						<h4><tt>{{printf "%.30s" $c.Name}}</tt></h4>
-						<dl>
-							<dt>Description</dt><dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
-							<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
-							{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-							<dt>Owner fee</dt><dd>
-								{{- if $c.OwnerFee -}}
-									<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
-								{{- else -}}
-									<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-								{{- end -}}
-							</dd>
-							<dt>Validator fee</dt><dd>
-								{{- if $c.ValidatorFee -}}
-									<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-								{{- else -}}
-									<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-								{{- end -}}
-							</dd>
-						</dl>
-					</div>
+					<dt><a href="/chains/{{$chainid}}/contract/{{$c.Hname}}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
+					<dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
 				{{end}}
+				</dl>
 			</div>
 
 			<div class="card fluid">

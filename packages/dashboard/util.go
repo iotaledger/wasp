@@ -24,6 +24,10 @@ func quoted(max int, s string) string {
 	return fmt.Sprintf("%q", s)
 }
 
+func bytesToString(b []byte) string {
+	return string(b)
+}
+
 func formatTimestamp(ts interface{}) string {
 	t, ok := ts.(time.Time)
 	if !ok {

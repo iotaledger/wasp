@@ -58,6 +58,11 @@ func (chid ChainID) String() string {
 	return address.Address(chid).String()
 }
 
+// Address returns the ChainID as an Address
+func (chid ChainID) Address() address.Address {
+	return address.Address(chid)
+}
+
 // Write to writer
 func (chid *ChainID) Write(w io.Writer) error {
 	_, err := w.Write(chid[:])

@@ -57,6 +57,7 @@ func MakeTemplate(parts ...string) *template.Template {
 		"args":              args,
 		"hashref":           hashref,
 		"quoted":            quoted,
+		"bytesToString":     bytesToString,
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {
