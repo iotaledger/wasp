@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -28,9 +29,12 @@ func addChainContractEndpoints(e *echo.Echo) {
 		}
 
 		result := &ChainContractTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			ChainID:            chainID,
-			Hname:              hname,
+			BaseTemplateParams: BaseParams(c, chainContractRoute, chainBreadcrumb(chainID), Breadcrumb{
+				Title: fmt.Sprintf("Contract %d", hname),
+				Href:  "#",
+			}),
+			ChainID: chainID,
+			Hname:   hname,
 		}
 
 		chain := chains.GetChain(chainID)

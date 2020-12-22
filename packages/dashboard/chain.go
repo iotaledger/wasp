@@ -28,7 +28,7 @@ func addChainEndpoints(e *echo.Echo) {
 		}
 
 		result := &ChainTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
+			BaseTemplateParams: BaseParams(c, chainRoute, chainBreadcrumb(chainid)),
 			ChainID:            chainid,
 		}
 

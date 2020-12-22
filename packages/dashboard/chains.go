@@ -1,6 +1,9 @@
 package dashboard
 
 import (
+	"fmt"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/labstack/echo"
 )
 
@@ -23,4 +26,11 @@ func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
 	addChainAccountEndpoints(e)
 	addChainBlobEndpoints(e)
 	addChainContractEndpoints(e)
+}
+
+func chainBreadcrumb(chainID coretypes.ChainID) Breadcrumb {
+	return Breadcrumb{
+		Title: fmt.Sprintf("Chain %.8s…", chainID),
+		Href:  fmt.Sprintf("/chains/%s", chainID),
+	}
 }

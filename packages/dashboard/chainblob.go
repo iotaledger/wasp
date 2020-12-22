@@ -34,9 +34,12 @@ func addChainBlobEndpoints(e *echo.Echo) {
 		}
 
 		result := &ChainBlobTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			ChainID:            chainID,
-			Hash:               hash,
+			BaseTemplateParams: BaseParams(c, chainBlobRoute, chainBreadcrumb(chainID), Breadcrumb{
+				Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
+				Href:  "#",
+			}),
+			ChainID: chainID,
+			Hash:    hash,
 		}
 
 		chain := chains.GetChain(chainID)

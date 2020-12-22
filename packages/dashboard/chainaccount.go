@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -11,7 +12,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainAccountRoute = "/chains/:chainid/account/:agentid"
+const chainAccountRoute = "/chains/:chainid/account/:type/:id"
 const chainAccountTplName = "chainAccount"
 
 func addChainAccountEndpoints(e *echo.Echo) {
@@ -21,15 +22,18 @@ func addChainAccountEndpoints(e *echo.Echo) {
 			return err
 		}
 
-		agentID, err := coretypes.NewAgentIDFromString(c.Param("agentid"))
+		agentID, err := coretypes.NewAgentIDFromString(c.Param("type") + "/" + c.Param("id"))
 		if err != nil {
 			return err
 		}
 
 		result := &ChainAccountTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			ChainID:            chainID,
-			AgentID:            agentID,
+			BaseTemplateParams: BaseParams(c, chainAccountRoute, chainBreadcrumb(chainID), Breadcrumb{
+				Title: fmt.Sprintf("Account %.8s…", agentID),
+				Href:  "#",
+			}),
+			ChainID: chainID,
+			AgentID: agentID,
 		}
 
 		chain := chains.GetChain(chainID)

@@ -18,8 +18,15 @@ type NavPage interface {
 	AddEndpoints(e *echo.Echo)
 }
 
+type Breadcrumb struct {
+	Title  string
+	Href   string
+	Active bool
+}
+
 type BaseTemplateParams struct {
 	NavPages    []NavPage
+	Breadcrumbs []Breadcrumb
 	ActivePage  string
 	MyNetworkId string
 }
@@ -42,12 +49,17 @@ func Init(server *echo.Echo) {
 	useHTMLErrorHandler(server)
 }
 
-func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
-	return BaseTemplateParams{
+func BaseParams(c echo.Context, activePage string, breadcrumbs ...Breadcrumb) BaseTemplateParams {
+	b := BaseTemplateParams{
 		NavPages:    navPages,
+		Breadcrumbs: breadcrumbs,
 		ActivePage:  activePage,
 		MyNetworkId: peering.DefaultNetworkProvider().Self().NetID(),
 	}
+	if len(b.Breadcrumbs) > 0 {
+		b.Breadcrumbs[len(b.Breadcrumbs)-1].Active = true
+	}
+	return b
 }
 
 func MakeTemplate(parts ...string) *template.Template {
@@ -94,6 +106,19 @@ const tplBase = `
 			<dd>{{ $bal }}</dd>
 		{{end}}
 	</dl>
+{{end}}
+
+{{define "navitem"}}
+	{{ $title := index . 0 }}
+	{{ $href := index . 1 }}
+	{{ $active := index . 2 }}
+	<a href="{{$href}}" class="button"
+		{{- if $active -}}
+			style="background-color: var(--button-hover-back-color)"
+		{{- end -}}
+	>
+		{{- $title -}}
+	</a>
 {{end}}
 
 {{define "base"}}
@@ -155,14 +180,11 @@ const tplBase = `
 		<header>
 				<a class="logo" href="#">Wasp</a>
 				{{$activePage := .ActivePage}}
-				{{range $i, $p := .NavPages}}
-					<a href="{{$p.Href}}" class="button"
-						{{- if eq $activePage $p.Href -}}
-							style="background-color: var(--button-hover-back-color)"
-						{{- end -}}
-					>
-						{{- $p.Title -}}
-					</a>
+				{{range $_, $p := .NavPages}}
+					{{ template "navitem" (args $p.Title $p.Href (eq $activePage $p.Href)) }}
+				{{end}}
+				{{range $_, $p := .Breadcrumbs}}
+					{{ template "navitem" (args (printf "🢒 %s" $p.Title) $p.Href $p.Active) }}
 				{{end}}
 		</header>
 		<main>
