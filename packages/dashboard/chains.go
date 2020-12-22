@@ -31,6 +31,6 @@ func (n *chainsNavPage) AddEndpoints(e *echo.Echo) {
 func chainBreadcrumb(chainID coretypes.ChainID) Breadcrumb {
 	return Breadcrumb{
 		Title: fmt.Sprintf("Chain %.8s…", chainID),
-		Href:  fmt.Sprintf("/chains/%s", chainID),
+		Href:  fmt.Sprintf("/chain/%s", chainID),
 	}
 }

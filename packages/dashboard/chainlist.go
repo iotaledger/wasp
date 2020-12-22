@@ -72,7 +72,7 @@ const tplChainList = `
 			{{range $_, $c := .Chains}}
 				{{ $id := $c.ChainRecord.ChainID }}
 				<tr>
-					<td data-label="ID"><a href="/chains/{{ $id }}"><tt>{{ $id }}</tt></a></td>
+					<td data-label="ID"><a href="/chain/{{ $id }}"><tt>{{ $id }}</tt></a></td>
 					<td data-label="Description">{{ printf "%.50s" $c.RootInfo.Description }}
 						{{- if $c.Error }}<div class="card error">{{ $c.Error }}</div>{{ end }}</td>
 					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.ChainRecord.CommitteeNodes }}</tt>{{ end }}</td>

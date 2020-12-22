@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainContractRoute = "/chains/:chainid/contract/:hname"
+const chainContractRoute = "/chain/:chainid/contract/:hname"
 const chainContractTplName = "chainContract"
 
 func addChainContractEndpoints(e *echo.Echo) {

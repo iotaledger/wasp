@@ -95,7 +95,7 @@ const tplBase = `
 	{{ $chainid := index . 0 }}
 	{{ $agentid := index . 1 }}
 	<tt>{{ $agentid }}</tt>
-	<a href="/chains/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
+	<a href="/chain/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
 	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
 {{end}}
 

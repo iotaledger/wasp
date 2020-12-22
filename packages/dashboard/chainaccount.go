@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainAccountRoute = "/chains/:chainid/account/:type/:id"
+const chainAccountRoute = "/chain/:chainid/account/:type/:id"
 const chainAccountTplName = "chainAccount"
 
 func addChainAccountEndpoints(e *echo.Echo) {

@@ -14,11 +14,11 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-const chainBlobRoute = "/chains/:chainid/blob/:hash"
+const chainBlobRoute = "/chain/:chainid/blob/:hash"
 const chainBlobTplName = "chainBlob"
 
 func chainBlobRawRoute(chainID string, hash string, field string) string {
-	return fmt.Sprintf("/chains/%s/blob/%s/raw/%s", chainID, hash, field)
+	return fmt.Sprintf("/chain/%s/blob/%s/raw/%s", chainID, hash, field)
 }
 
 func addChainBlobEndpoints(e *echo.Echo) {

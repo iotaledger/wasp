@@ -17,7 +17,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainRoute = "/chains/:chainid"
+const chainRoute = "/chain/:chainid"
 const chainTplName = "chain"
 
 func addChainEndpoints(e *echo.Echo) {
@@ -164,7 +164,7 @@ const tplChain = `
 				<h3>Contracts</h3>
 				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
-					<dt><a href="/chains/{{$chainid}}/contract/{{$c.Hname}}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
+					<dt><a href="/chain/{{$chainid}}/contract/{{$c.Hname}}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
 					<dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
 				{{end}}
 				</dl>
@@ -202,7 +202,7 @@ const tplChain = `
 					<tbody>
 					{{range $hash, $size := .Blobs}}
 						<tr>
-							<td><a href="/chains/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
+							<td><a href="/chain/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
 							<td>{{ $size }}</td>
 						</tr>
 					{{end}}
