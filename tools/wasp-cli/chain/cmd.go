@@ -28,6 +28,7 @@ var subcmds = map[string]func([]string){
 	"list-blobs":      listBlobsCmd,
 	"store-blob":      storeBlobCmd,
 	"show-blob":       showBlobCmd,
+	"log":             logCmd,
 	"post-request":    postRequestCmd,
 	"call-view":       callViewCmd,
 }
