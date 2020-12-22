@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -77,10 +76,6 @@ const (
 	FuncSetDefaultFee          = "setDefaultFee"
 	FuncSetContractFee         = "setContractFee"
 )
-
-func GetProcessor() vmtypes.Processor {
-	return Interface
-}
 
 // ContractRecord is a structure which contains metadata for a deployed contract
 type ContractRecord struct {

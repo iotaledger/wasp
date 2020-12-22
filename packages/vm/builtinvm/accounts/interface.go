@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -51,7 +50,3 @@ const (
 var (
 	ErrParamWrongOrNotFound = fmt.Errorf("wrong parameters: agent ID is wrong or not found")
 )
-
-func GetProcessor() vmtypes.Processor {
-	return Interface
-}
