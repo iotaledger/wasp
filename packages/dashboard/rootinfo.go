@@ -3,6 +3,7 @@ package dashboard
 import (
 	"fmt"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -12,6 +13,8 @@ import (
 )
 
 type RootInfo struct {
+	ChainAddress address.Address
+
 	OwnerID          coretypes.AgentID
 	OwnerIDDelegated *coretypes.AgentID
 
@@ -24,6 +27,8 @@ type RootInfo struct {
 }
 
 func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
+	ret.ChainAddress = chain.Address()
+
 	info, err := callView(chain, root.Interface.Hname(), root.FuncGetChainInfo, nil)
 	if err != nil {
 		err = fmt.Errorf("root view call failed: %v", err)

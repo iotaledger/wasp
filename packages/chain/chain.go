@@ -6,20 +6,21 @@ package chain
 import (
 	"fmt"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/registry"
 )
 
 type Chain interface {
 	ID() *coretypes.ChainID
 	Color() *balance.Color
+	Address() address.Address
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16

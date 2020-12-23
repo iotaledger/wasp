@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/vm/processors"
-
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
@@ -145,6 +145,10 @@ func (c *chainObj) ID() *coretypes.ChainID {
 
 func (c *chainObj) Color() *balance.Color {
 	return &c.color
+}
+
+func (c *chainObj) Address() address.Address {
+	return address.Address(c.chainID)
 }
 
 func (c *chainObj) Size() uint16 {

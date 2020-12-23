@@ -6,7 +6,6 @@ package consensus
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
@@ -29,7 +28,7 @@ func (op *operator) pullInclusionLevel() {
 		return
 	}
 	if time.Now().After(op.nextPullInclusionLevel) {
-		addr := address.Address(*op.chain.ID())
+		addr := op.chain.Address()
 		if err := nodeconn.RequestInclusionLevelFromNode(op.postedResultTxid, &addr); err != nil {
 			op.log.Errorf("RequestInclusionLevelFromNode: %v", err)
 		}
@@ -205,7 +204,7 @@ func (op *operator) checkQuorum() bool {
 		txid.String(), stateIndex, sh.String(), contributingPeers)
 	op.leaderStatus.finalized = true
 
-	addr := address.Address(*op.chain.ID())
+	addr := op.chain.Address()
 	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
