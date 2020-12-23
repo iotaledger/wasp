@@ -111,16 +111,11 @@ func (s *sandbox) Log() vmtypes.LogInterface {
 }
 
 func (s *sandbox) Event(msg string) {
-	s.ChainLog([]byte(msg))
+	s.Log().Infof("chainlog record: '%s'", msg)
+	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), []byte(msg))
 	s.vmctx.EventPublisher().Publish(msg)
 }
 
 func (s *sandbox) Eventf(format string, args ...interface{}) {
-	s.ChainLog([]byte(fmt.Sprintf(format, args...)))
-	s.vmctx.EventPublisher().Publishf(format, args...)
-}
-
-func (s *sandbox) ChainLog(data []byte) {
-	s.Log().Infof("chainlog record: '%s'", string(data))
-	s.vmctx.StoreToChainLog(s.vmctx.CurrentContractHname(), data)
+	s.Event(fmt.Sprintf(format, args...))
 }

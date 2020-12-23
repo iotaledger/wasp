@@ -54,6 +54,8 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transa
 
 type NewRootInitRequestTransactionParams struct {
 	ChainID              coretypes.ChainID
+	ChainColor           balance.Color
+	ChainAddress         address.Address
 	Description          string
 	OwnerSignatureScheme signaturescheme.SignatureScheme
 	AllInputs            map[valuetransaction.OutputID][]*balance.Balance
@@ -72,6 +74,8 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointInit)
 	args := dict.New()
 	args.Set(root.ParamChainID, codec.EncodeChainID(par.ChainID))
+	args.Set(root.ParamChainColor, codec.EncodeColor(par.ChainColor))
+	args.Set(root.ParamChainAddress, codec.EncodeAddress(&par.ChainAddress))
 	args.Set(root.ParamDescription, codec.EncodeString(par.Description))
 	initRequest.WithArgs(args)
 

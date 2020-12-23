@@ -36,6 +36,9 @@ func GetChainInfo(state kv.KVStore) *ChainInfo {
 	ret := &ChainInfo{}
 	ret.ChainID, _, _ = codec.DecodeChainID(state.MustGet(VarChainID))
 	ret.ChainOwnerID, _, _ = codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	ret.ChainColor, _, _ = codec.DecodeColor(state.MustGet(VarChainColor))
+	a, _, _ := codec.DecodeAddress(state.MustGet(VarChainAddress))
+	ret.ChainAddress = *a
 	ret.Description, _, _ = codec.DecodeString(state.MustGet(VarDescription))
 	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
 	if ok {

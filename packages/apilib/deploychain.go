@@ -180,12 +180,12 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
+	chainColor := balance.Color(originTx.ID())
 	committee := multiclient.New(par.CommitteeApiHosts)
-
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&registry.ChainRecord{
 		ChainID:        chainID,
-		Color:          (balance.Color)(originTx.ID()),
+		Color:          chainColor,
 		CommitteeNodes: par.CommitteePeeringHosts,
 	})
 
@@ -221,6 +221,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// create root init transaction
 	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
+		ChainColor:           chainColor,
+		ChainAddress:         chainAddr,
 		OwnerSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:            allOuts,
 		Description:          par.Description,

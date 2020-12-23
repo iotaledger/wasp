@@ -63,14 +63,13 @@ type Sandbox interface {
 	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	PostRequest(par NewRequestParams) bool
-	// ChainLog stores user defined data to the on-chain timestamped log
-	ChainLog(data []byte)
 
 	// Log interface provides local logging on the machine
 	Log() LogInterface
 	// Event and Eventf publish "vmmsg" message through Publisher on nanomsg
 	// it also logs locally, but it is not the same thing
 	Event(msg string)
+	// Deprecated: use Event(fmt.Sprintf()) instead
 	Eventf(format string, args ...interface{})
 
 	// clear all updates, restore same context as in the beginning of the VM call

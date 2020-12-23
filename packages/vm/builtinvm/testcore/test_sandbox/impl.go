@@ -24,7 +24,7 @@ func testChainLogGenericData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !ok {
 		inc = 1
 	}
-	ctx.ChainLog([]byte(fmt.Sprintf("[GenericData] Counter Number: %d", inc)))
+	ctx.Event(fmt.Sprintf("[GenericData] Counter Number: %d", inc))
 	return nil, nil
 }
 

@@ -28,7 +28,7 @@ func TestDeployInc(t *testing.T) {
 	err := chain.DeployContract(nil, incName, ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
-	_, _, contracts := chain.GetInfo()
+	_, contracts := chain.GetInfo()
 	require.EqualValues(t, 5, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()

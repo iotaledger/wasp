@@ -204,6 +204,8 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
+		ChainColor:           ret.ChainColor,
+		ChainAddress:         ret.ChainAddress,
 		Description:          "'solo' testing chain",
 		OwnerSignatureScheme: ret.OriginatorSigScheme,
 		AllInputs:            glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),

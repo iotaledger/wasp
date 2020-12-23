@@ -18,7 +18,7 @@ func TestSuccess(t *testing.T) {
 
 	err := chain.DeployWasmContract(nil, contractName, fileName)
 	require.NoError(t, err)
-	_, _, rec := chain.GetInfo()
+	_, rec := chain.GetInfo()
 	require.EqualValues(t, 5, len(rec))
 }
 
@@ -29,7 +29,7 @@ func TestFail(t *testing.T) {
 		"failParam", 1,
 	)
 	require.Error(t, err)
-	_, _, rec := chain.GetInfo()
+	_, rec := chain.GetInfo()
 	require.EqualValues(t, 4, len(rec))
 }
 
@@ -43,6 +43,6 @@ func TestFailRepeat(t *testing.T) {
 
 	err = chain.DeployWasmContract(nil, contractName, fileName)
 	require.NoError(t, err)
-	_, _, rec := chain.GetInfo()
+	_, rec := chain.GetInfo()
 	require.EqualValues(t, 5, len(rec))
 }

@@ -2,6 +2,7 @@ package root
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
@@ -42,6 +43,8 @@ func init() {
 const (
 	VarStateInitialized      = "i"
 	VarChainID               = "c"
+	VarChainColor            = "co"
+	VarChainAddress          = "ad"
 	VarChainOwnerID          = "o"
 	VarFeeColor              = "f"
 	VarDefaultOwnerFee       = "do"
@@ -54,6 +57,8 @@ const (
 // param variables
 const (
 	ParamChainID      = "$$chainid$$"
+	ParamChainColor   = "$$color$$"
+	ParamChainAddress = "$$address$$"
 	ParamChainOwner   = "$$owner$$"
 	ParamProgramHash  = "$$proghash$$"
 	ParamDescription  = "$$description$$"
@@ -90,6 +95,8 @@ type ContractRecord struct {
 type ChainInfo struct {
 	ChainID             coretypes.ChainID
 	ChainOwnerID        coretypes.AgentID
+	ChainColor          balance.Color
+	ChainAddress        address.Address
 	Description         string
 	FeeColor            balance.Color
 	DefaultOwnerFee     int64
