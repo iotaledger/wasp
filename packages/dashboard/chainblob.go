@@ -153,6 +153,7 @@ const tplChainBlob = `
 				</tbody>
 			</table>
 		</div>
+		{{ template "ws" .ChainID }}
 	{{else}}
 		<div class="card fluid error">Not found.</div>
 	{{end}}

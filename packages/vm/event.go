@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/plugins/publisher"
+	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 type ContractEventPublisher struct {

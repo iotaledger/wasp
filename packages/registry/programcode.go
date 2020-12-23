@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/plugins/database"
-	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 func dbkeyProgramCode(progHash *hashing.HashValue) []byte {

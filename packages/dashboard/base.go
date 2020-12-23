@@ -46,6 +46,9 @@ func Init(server *echo.Echo) {
 		navPage.AddEndpoints(server)
 	}
 
+	addWsEndpoints(server)
+	startWsForwarder()
+
 	useHTMLErrorHandler(server)
 }
 
