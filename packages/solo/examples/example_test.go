@@ -11,12 +11,12 @@ func TestExample1(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "exampleChain")
 
-	chainID, ownerID, coreContracts := chain.GetInfo() // calls view root::GetInfo
+	info, coreContracts := chain.GetInfo() // calls view root::GetInfo
 
 	require.EqualValues(t, 4, len(coreContracts)) // 4 core contracts deployed by default
 
-	t.Logf("chainID: %s", chainID)
-	t.Logf("chain owner ID: %s", ownerID)
+	t.Logf("chainID: %s", info.ChainID)
+	t.Logf("chain owner ID: %s", info.ChainOwnerID)
 	for _, rec := range coreContracts {
 		t.Logf("    Contract: %s", rec.Name)
 	}

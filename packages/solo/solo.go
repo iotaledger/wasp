@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
@@ -101,27 +102,33 @@ type Chain struct {
 	batchMutex   *sync.Mutex
 }
 
-var doOnce = sync.Once{}
+var (
+	doOnce    = sync.Once{}
+	glbLogger *logger.Logger
+)
 
 // New creates an instance of the `solo` environment for the test instances.
 //   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 //   'printStackTrace' controls printing stack trace in case of errors
 func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
-		err := processors.RegisterVMType(wasmtimevm.VMType, wasmhost.GetProcessor)
+		glbLogger = testutil.NewLogger(t, "15:04:05.000")
+		if !debug {
+			glbLogger = testutil.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
+		}
+		err := processors.RegisterVMType(wasmtimevm.VMType, func(binary []byte) (vmtypes.Processor, error) {
+			return wasmhost.GetProcessor(binary, glbLogger)
+		})
 		require.NoError(t, err)
 	})
 	ret := &Solo{
 		T:           t,
-		logger:      testutil.NewLogger(t, "15:04:05.000"),
+		logger:      glbLogger,
 		utxoDB:      utxodb.New(),
 		glbMutex:    &sync.Mutex{},
 		logicalTime: time.Now(),
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[coretypes.ChainID]*Chain),
-	}
-	if !debug {
-		ret.logger = testutil.WithLevel(ret.logger, zapcore.InfoLevel, printStackTrace)
 	}
 	return ret
 }
@@ -197,6 +204,8 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
+		ChainColor:           ret.ChainColor,
+		ChainAddress:         ret.ChainAddress,
 		Description:          "'solo' testing chain",
 		OwnerSignatureScheme: ret.OriginatorSigScheme,
 		AllInputs:            glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),

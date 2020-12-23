@@ -72,5 +72,4 @@
 //		example1_test.go:20:     Contract: root
 //		example1_test.go:20:     Contract: blob
 //	--- PASS: TestExample1 (0.00s)
-//PASS
 package solo

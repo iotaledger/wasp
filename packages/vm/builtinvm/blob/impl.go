@@ -51,7 +51,7 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 
-	ctx.ChainLog([]byte(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes)))
+	ctx.Event(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes))
 
 	ctx.Log().Debugf("blob.storeBlob.success hash = %s", blobHash.String())
 	return ret, nil

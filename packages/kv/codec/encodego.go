@@ -36,9 +36,9 @@ func Encode(v interface{}) []byte {
 	case hashing.HashValue:
 		return EncodeHashValue(&vt)
 	case *address.Address:
-		return EncodeAddress(vt)
+		return EncodeAddress(*vt)
 	case address.Address:
-		return EncodeAddress(&vt)
+		return EncodeAddress(vt)
 	case *balance.Color:
 		return EncodeColor(*vt)
 	case balance.Color:

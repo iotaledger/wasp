@@ -14,11 +14,11 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-const chainBlobRoute = "/chains/:chainid/blob/:hash"
+const chainBlobRoute = "/chain/:chainid/blob/:hash"
 const chainBlobTplName = "chainBlob"
 
 func chainBlobRawRoute(chainID string, hash string, field string) string {
-	return fmt.Sprintf("/chains/%s/blob/%s/raw/%s", chainID, hash, field)
+	return fmt.Sprintf("/chain/%s/blob/%s/raw/%s", chainID, hash, field)
 }
 
 func addChainBlobEndpoints(e *echo.Echo) {
@@ -34,9 +34,12 @@ func addChainBlobEndpoints(e *echo.Echo) {
 		}
 
 		result := &ChainBlobTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			ChainID:            chainID,
-			Hash:               hash,
+			BaseTemplateParams: BaseParams(c, chainBlobRoute, chainBreadcrumb(chainID), Breadcrumb{
+				Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
+				Href:  "#",
+			}),
+			ChainID: chainID,
+			Hash:    hash,
 		}
 
 		chain := chains.GetChain(chainID)
@@ -120,41 +123,38 @@ const tplChainBlob = `
 {{define "title"}}Blob details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
-	<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
-	<dl>
-		<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
-	</dl>
 	{{if .Blob}}
-		<div>
+		<div class="card fluid">
+			<h2 class="section">Blob</h2>
+			<dl>
+				<dt>Hash</dt><dd><tt>{{hashref .Hash}}</tt></dd>
+			</dl>
+		</div>
+		<div class="card fluid">
+			<h4 class="section">Fields</h3>
 			<table>
 				<thead>
 					<tr>
 						<th>Field</th>
-						<th>Value</th>
-						<th class="align-right">Size (bytes)</th>
-						<th></th>
+						<th style="flex: 2">Value</th>
+						<th class="align-right" style="flex: 0.5">Size (bytes)</th>
+						<th style="flex: 0.5"></th>
 					</tr>
 				</thead>
 				<tbody>
 				{{range $field, $value := .Blob}}
 					<tr>
 						<td><tt>{{ quoted 30 $field }}</tt></td>
-						<td><pre style="white-space: pre-wrap; max-width: 400px">{{ quoted 50 $value.Encoded }}</pre></td>
-						<td class="align-right">{{ $value.Len }}</td>
-						<td><a href="{{ $value.RawHref }}">Download</a></td>
+						<td style="flex: 2"><pre style="white-space: pre-wrap; max-width: 400px">{{ quoted 50 $value.Encoded }}</pre></td>
+						<td class="align-right" style="flex: 0.5">{{ $value.Len }}</td>
+						<td style="flex: 0.5"><a href="{{ $value.RawHref }}">Download</a></td>
 					</tr>
 				{{end}}
 				</tbody>
 			</table>
 		</div>
 	{{else}}
-		<div class="card error">Not found.</div>
+		<div class="card fluid error">Not found.</div>
 	{{end}}
-</div>
-</div>
-</div>
 {{end}}
 `

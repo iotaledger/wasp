@@ -32,26 +32,53 @@ func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, err
 }
 
 // GetChainInfo return global variables of the chain
-func GetChainInfo(state kv.KVStore) *ChainInfo {
+func GetChainInfo(state kv.KVStore) (*ChainInfo, error) {
 	ret := &ChainInfo{}
-	ret.ChainID, _, _ = codec.DecodeChainID(state.MustGet(VarChainID))
-	ret.ChainOwnerID, _, _ = codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
-	ret.Description, _, _ = codec.DecodeString(state.MustGet(VarDescription))
-	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
+	var err error
+	ret.ChainID, _, err = codec.DecodeChainID(state.MustGet(VarChainID))
+	if err != nil {
+		return nil, err
+	}
+	ret.ChainOwnerID, _, err = codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	if err != nil {
+		return nil, err
+	}
+	ret.ChainColor, _, err = codec.DecodeColor(state.MustGet(VarChainColor))
+	if err != nil {
+		return nil, err
+	}
+	ret.ChainAddress, _, err = codec.DecodeAddress(state.MustGet(VarChainAddress))
+	if err != nil {
+		return nil, err
+	}
+	ret.Description, _, err = codec.DecodeString(state.MustGet(VarDescription))
+	if err != nil {
+		return nil, err
+	}
+	feeColor, ok, err := codec.DecodeColor(state.MustGet(VarFeeColor))
+	if err != nil {
+		return nil, err
+	}
 	if ok {
 		ret.FeeColor = feeColor
 	} else {
 		ret.FeeColor = balance.ColorIOTA
 	}
-	defaultOwnerFee, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
+	defaultOwnerFee, ok, err := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
+	if err != nil {
+		return nil, err
+	}
 	if ok {
 		ret.DefaultOwnerFee = defaultOwnerFee
 	}
-	defaultValidatorFee, ok, _ := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
+	defaultValidatorFee, ok, err := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
+	if err != nil {
+		return nil, err
+	}
 	if ok {
 		ret.DefaultValidatorFee = defaultValidatorFee
 	}
-	return ret
+	return ret, nil
 }
 
 // GetFeeInfo is an internal utility function which returns fee info for the contract

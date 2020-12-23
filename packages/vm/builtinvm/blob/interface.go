@@ -3,7 +3,6 @@ package blob
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -48,7 +47,3 @@ const (
 	FuncStoreBlob    = "storeBlob"
 	FuncListBlobs    = "listBlobs"
 )
-
-func GetProcessor() vmtypes.Processor {
-	return Interface
-}

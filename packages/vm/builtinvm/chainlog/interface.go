@@ -3,7 +3,6 @@ package chainlog
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -42,9 +41,3 @@ const (
 
 	DefaultMaxNumberOfRecords = 50
 )
-
-func GetProcessor() vmtypes.Processor {
-	return Interface
-}
-
-const MaxRequestError = 100

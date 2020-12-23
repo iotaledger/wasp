@@ -4,17 +4,17 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 )
 
-func DecodeAddress(b []byte) (*address.Address, bool, error) {
+func DecodeAddress(b []byte) (address.Address, bool, error) {
 	if b == nil {
-		return nil, false, nil
+		return address.Address{}, false, nil
 	}
 	ret, _, err := address.FromBytes(b)
 	if err != nil {
-		return nil, false, err
+		return address.Address{}, false, err
 	}
-	return &ret, true, nil
+	return ret, true, nil
 }
 
-func EncodeAddress(value *address.Address) []byte {
+func EncodeAddress(value address.Address) []byte {
 	return value.Bytes()
 }

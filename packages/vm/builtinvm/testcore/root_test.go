@@ -41,10 +41,12 @@ func TestGetInfo(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	chainID, chainOwnerID, contracts := chain.GetInfo()
+	info, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID, chainID)
-	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
+	require.EqualValues(t, chain.ChainID, info.ChainID)
+	require.EqualValues(t, chain.ChainColor, info.ChainColor)
+	require.EqualValues(t, chain.ChainAddress, info.ChainAddress)
+	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
 	require.EqualValues(t, 4, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
@@ -68,10 +70,10 @@ func TestDeployExample(t *testing.T) {
 	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
 	require.NoError(t, err)
 
-	chainID, chainOwnerID, contracts := chain.GetInfo()
+	info, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID, chainID)
-	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
+	require.EqualValues(t, chain.ChainID, info.ChainID)
+	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
 	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
@@ -107,10 +109,10 @@ func TestDeployDouble(t *testing.T) {
 	err = chain.DeployContract(nil, name, inccounter.ProgramHash)
 	require.Error(t, err)
 
-	chainID, chainOwnerID, contracts := chain.GetInfo()
+	info, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID, chainID)
-	require.EqualValues(t, chain.OriginatorAgentID, chainOwnerID)
+	require.EqualValues(t, chain.ChainID, info.ChainID)
+	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
 	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
@@ -141,15 +143,15 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	_, ownerBack, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OriginatorAgentID, ownerBack)
+	info, _ := chain.GetInfo()
+	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
 
 	req = solo.NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
-	_, ownerBack, _ = chain.GetInfo()
-	require.EqualValues(t, newOwnerAgentID, ownerBack)
+	info, _ = chain.GetInfo()
+	require.EqualValues(t, newOwnerAgentID, info.ChainOwnerID)
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
@@ -163,6 +165,6 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	_, err := chain.PostRequest(req, newOwner)
 	require.Error(t, err)
 
-	_, ownerBack, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OriginatorAgentID, ownerBack)
+	info, _ := chain.GetInfo()
+	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
 }

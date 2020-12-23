@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -25,33 +26,91 @@ import (
 
 const (
 	//
-	// Initiator <-> Peer communication.
+	// Initiator <-> Peer node communication.
 	//
 	// NOTE: initiatorInitMsgType must be unique across all the uses of peering package,
 	// because it is used to start new chain, thus chainID is not used for message recognition.
-	initiatorInitMsgType     byte = peering.FirstUserMsgCode + 200 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
-	initiatorStepMsgType     byte = peering.FirstUserMsgCode + 1   // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
-	initiatorDoneMsgType     byte = peering.FirstUserMsgCode + 2   // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
-	initiatorPubShareMsgType byte = peering.FirstUserMsgCode + 3   // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
-	initiatorStatusMsgType   byte = peering.FirstUserMsgCode + 4   // Peer -> Initiator; in the case of error or void ack.
+	initiatorInitMsgType byte = peering.FirstUserMsgCode + 184 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
+	//
+	// Initiator <-> Peer proc communication.
+	initiatorMsgBase         byte = peering.FirstUserMsgCode + 4 // 4 to align with round numbers.
+	initiatorStepMsgType     byte = initiatorMsgBase + 1         // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
+	initiatorDoneMsgType     byte = initiatorMsgBase + 2         // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
+	initiatorPubShareMsgType byte = initiatorMsgBase + 3         // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
+	initiatorStatusMsgType   byte = initiatorMsgBase + 4         // Peer -> Initiator; in the case of error or void ack.
+	initiatorMsgFree         byte = initiatorMsgBase + 5         // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol.
-	rabinDealMsgType               byte = peering.FirstUserMsgCode + 11
-	rabinResponseMsgType           byte = peering.FirstUserMsgCode + 12
-	rabinJustificationMsgType      byte = peering.FirstUserMsgCode + 13
-	rabinSecretCommitsMsgType      byte = peering.FirstUserMsgCode + 14
-	rabinComplaintCommitsMsgType   byte = peering.FirstUserMsgCode + 15
-	rabinReconstructCommitsMsgType byte = peering.FirstUserMsgCode + 16
+	rabinMsgBase                   byte = peering.FirstUserMsgCode + 34
+	rabinDealMsgType               byte = rabinMsgBase + 1
+	rabinResponseMsgType           byte = rabinMsgBase + 2
+	rabinJustificationMsgType      byte = rabinMsgBase + 3
+	rabinSecretCommitsMsgType      byte = rabinMsgBase + 4
+	rabinComplaintCommitsMsgType   byte = rabinMsgBase + 5
+	rabinReconstructCommitsMsgType byte = rabinMsgBase + 6
+	rabinMsgFree                   byte = rabinMsgBase + 7 // Just a placeholder for first unallocated message type.
+	//
+	// Peer <-> Peer communication for the Rabin protocol, messages repeatedly sent
+	// in response to duplicated messages from other peers. They should be treated
+	// in a special way to avoid infinite message loops.
+	rabinEcho byte = peering.FirstUserMsgCode + 44
 )
+
+// Checks if that's a Initiator -> PeerNode message.
+func isDkgInitNodeMsg(msgType byte) bool {
+	return msgType == initiatorInitMsgType
+}
+
+// Checks if that's a Initiator <-> PeerProc message.
+func isDkgInitProcMsg(msgType byte) bool {
+	return initiatorMsgBase <= msgType && msgType < initiatorMsgFree
+}
+
+// Check if that's a Initiator -> PeerProc message.
+func isDkgInitProcRecvMsg(msgType byte) bool {
+	return msgType == initiatorStepMsgType || msgType == initiatorDoneMsgType
+}
+
+// Checks if that's a PeerProc <-> PeerProc message.
+func isDkgRabinRoundMsg(msgType byte) bool {
+	return rabinMsgBase <= msgType && msgType < rabinMsgFree
+}
+
+// Checks if that's a PeerProc <-> PeerProc echoed / repeated message.
+func isDkgRabinEchoMsg(msgType byte) bool {
+	return rabinEcho <= msgType && msgType < rabinMsgFree-rabinMsgBase+rabinEcho
+}
+
+func makeDkgRoundEchoMsg(msgType byte) (byte, error) {
+	if isDkgRabinRoundMsg(msgType) {
+		return msgType - rabinMsgBase + rabinEcho, nil
+	}
+	if isDkgRabinEchoMsg(msgType) {
+		return msgType, nil
+	}
+	return msgType, errors.New("round_msg_type_expected")
+}
+func makeDkgRoundMsg(msgType byte) (byte, error) {
+	if isDkgRabinRoundMsg(msgType) {
+		return msgType, nil
+	}
+	if isDkgRabinEchoMsg(msgType) {
+		return msgType - rabinEcho + rabinMsgBase, nil
+	}
+	return msgType, errors.New("round_or_echo_msg_type_expected")
+}
 
 // All the messages exchanged via the Peering subsystem will implement this.
 type msgByteCoder interface {
 	MsgType() byte
+	Step() byte
+	SetStep(step byte)
 	Write(io.Writer) error
 	Read(io.Reader) error
 }
 
-func makePeerMessage(chainID *coretypes.ChainID, msg msgByteCoder) *peering.PeerMessage {
+func makePeerMessage(chainID *coretypes.ChainID, step byte, msg msgByteCoder) *peering.PeerMessage {
+	msg.SetStep(step)
 	return &peering.PeerMessage{
 		ChainID:     *chainID,
 		SenderIndex: 0, // This is resolved on the receiving side.
@@ -61,9 +120,14 @@ func makePeerMessage(chainID *coretypes.ChainID, msg msgByteCoder) *peering.Peer
 	}
 }
 
+// All the messages in this module have a step as a first byte in the payload.
+// This function reads that step without decoding all the data.
+func readDkgMessageStep(msgData []byte) byte {
+	return msgData[0]
+}
+
 type initiatorMsg interface {
 	msgByteCoder
-	Step() byte
 	Error() error
 	IsResponse() bool
 }
@@ -118,12 +182,19 @@ type initiatorInitMsg struct {
 	peerPubs     []kyber.Point
 	initiatorPub kyber.Point
 	threshold    uint16
-	timeoutMS    uint32
+	timeout      time.Duration
+	roundRetry   time.Duration
 	suite        kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
 	return initiatorInitMsgType
+}
+func (m *initiatorInitMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorInitMsg) SetStep(step byte) {
+	m.step = step
 }
 func (m *initiatorInitMsg) Write(w io.Writer) error {
 	var err error
@@ -150,7 +221,10 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 	if err = util.WriteUint16(w, m.threshold); err != nil {
 		return err
 	}
-	if err = util.WriteUint32(w, m.timeoutMS); err != nil {
+	if err = util.WriteInt64(w, m.timeout.Milliseconds()); err != nil {
+		return err
+	}
+	if err = util.WriteInt64(w, m.roundRetry.Milliseconds()); err != nil {
 		return err
 	}
 	return nil
@@ -184,18 +258,22 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
 		return err
 	}
-	if err = util.ReadUint32(r, &m.timeoutMS); err != nil {
+	var timeoutMS int64
+	if err = util.ReadInt64(r, &timeoutMS); err != nil {
 		return err
 	}
+	m.timeout = time.Duration(timeoutMS) * time.Millisecond
+	var roundRetryMS int64
+	if err = util.ReadInt64(r, &roundRetryMS); err != nil {
+		return err
+	}
+	m.roundRetry = time.Duration(roundRetryMS) * time.Millisecond
 	return nil
 }
 func (m *initiatorInitMsg) fromBytes(buf []byte, group kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.suite = group
 	return m.Read(r)
-}
-func (m *initiatorInitMsg) Step() byte {
-	return m.step
 }
 func (m *initiatorInitMsg) Error() error {
 	return nil
@@ -218,6 +296,12 @@ type initiatorStepMsg struct {
 func (m *initiatorStepMsg) MsgType() byte {
 	return initiatorStepMsgType
 }
+func (m *initiatorStepMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorStepMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *initiatorStepMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -235,9 +319,6 @@ func (m *initiatorStepMsg) Read(r io.Reader) error {
 func (m *initiatorStepMsg) fromBytes(buf []byte, group kyber.Group) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
-}
-func (m *initiatorStepMsg) Step() byte {
-	return m.step
 }
 func (m *initiatorStepMsg) Error() error {
 	return nil
@@ -257,6 +338,12 @@ type initiatorDoneMsg struct {
 
 func (m *initiatorDoneMsg) MsgType() byte {
 	return initiatorDoneMsgType
+}
+func (m *initiatorDoneMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorDoneMsg) SetStep(step byte) {
+	m.step = step
 }
 func (m *initiatorDoneMsg) Write(w io.Writer) error {
 	var err error
@@ -296,9 +383,6 @@ func (m *initiatorDoneMsg) fromBytes(buf []byte, suite kyber.Group) error {
 	m.suite = suite
 	return m.Read(r)
 }
-func (m *initiatorDoneMsg) Step() byte {
-	return m.step
-}
 func (m *initiatorDoneMsg) Error() error {
 	return nil
 }
@@ -324,6 +408,12 @@ type initiatorPubShareMsg struct {
 
 func (m *initiatorPubShareMsg) MsgType() byte {
 	return initiatorPubShareMsgType
+}
+func (m *initiatorPubShareMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorPubShareMsg) SetStep(step byte) {
+	m.step = step
 }
 func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	var err error
@@ -376,9 +466,6 @@ func (m *initiatorPubShareMsg) fromBytes(buf []byte, suite kyber.Group) error {
 	m.suite = suite
 	return m.Read(r)
 }
-func (m *initiatorPubShareMsg) Step() byte {
-	return m.step
-}
 func (m *initiatorPubShareMsg) Error() error {
 	return nil
 }
@@ -396,6 +483,12 @@ type initiatorStatusMsg struct {
 
 func (m *initiatorStatusMsg) MsgType() byte {
 	return initiatorStatusMsgType
+}
+func (m *initiatorStatusMsg) Step() byte {
+	return m.step
+}
+func (m *initiatorStatusMsg) SetStep(step byte) {
+	m.step = step
 }
 func (m *initiatorStatusMsg) Write(w io.Writer) error {
 	var err error
@@ -431,9 +524,6 @@ func (m *initiatorStatusMsg) fromBytes(buf []byte, group kyber.Group) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
-func (m *initiatorStatusMsg) Step() byte {
-	return m.step
-}
 func (m *initiatorStatusMsg) Error() error {
 	return m.error
 }
@@ -445,14 +535,24 @@ func (m *initiatorStatusMsg) IsResponse() bool {
 //	rabin_dkg.Deal
 //
 type rabinDealMsg struct {
+	step byte
 	deal *rabin_dkg.Deal
 }
 
 func (m *rabinDealMsg) MsgType() byte {
 	return rabinDealMsgType
 }
+func (m *rabinDealMsg) Step() byte {
+	return m.step
+}
+func (m *rabinDealMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *rabinDealMsg) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
 	if err = util.WriteUint32(w, m.deal.Index); err != nil {
 		return err
 	}
@@ -472,6 +572,9 @@ func (m *rabinDealMsg) Write(w io.Writer) error {
 }
 func (m *rabinDealMsg) Read(r io.Reader) error {
 	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
 	if err = util.ReadUint32(r, &m.deal.Index); err != nil {
 		return err
 	}
@@ -503,14 +606,24 @@ func (m *rabinDealMsg) fromBytes(buf []byte, group kyber.Group) error {
 //	rabin_dkg.Response
 //
 type rabinResponseMsg struct {
+	step      byte
 	responses []*rabin_dkg.Response
 }
 
 func (m *rabinResponseMsg) MsgType() byte {
 	return rabinResponseMsgType
 }
+func (m *rabinResponseMsg) Step() byte {
+	return m.step
+}
+func (m *rabinResponseMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *rabinResponseMsg) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
 	listLen := uint32(len(m.responses))
 	if err = util.WriteUint32(w, listLen); err != nil {
 		return err
@@ -536,6 +649,9 @@ func (m *rabinResponseMsg) Write(w io.Writer) error {
 }
 func (m *rabinResponseMsg) Read(r io.Reader) error {
 	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
 	var listLen uint32
 	if err = util.ReadUint32(r, &listLen); err != nil {
 		return err
@@ -573,15 +689,25 @@ func (m *rabinResponseMsg) fromBytes(buf []byte) error {
 //	rabin_dkg.Justification
 //
 type rabinJustificationMsg struct {
-	group          kyber.Group // Just for un-marshaling.
+	step           byte
 	justifications []*rabin_dkg.Justification
+	group          kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinJustificationMsg) MsgType() byte {
 	return rabinJustificationMsgType
 }
+func (m *rabinJustificationMsg) Step() byte {
+	return m.step
+}
+func (m *rabinJustificationMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *rabinJustificationMsg) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
 	jLen := uint32(len(m.justifications))
 	if err = util.WriteUint32(w, jLen); err != nil {
 		return err
@@ -607,6 +733,9 @@ func (m *rabinJustificationMsg) Write(w io.Writer) error {
 }
 func (m *rabinJustificationMsg) Read(r io.Reader) error {
 	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
 	var jLen uint32
 	if err = util.ReadUint32(r, &jLen); err != nil {
 		return err
@@ -645,15 +774,25 @@ func (m *rabinJustificationMsg) fromBytes(buf []byte, group kyber.Group) error {
 //	rabin_dkg.SecretCommits
 //
 type rabinSecretCommitsMsg struct {
-	group         kyber.Group // Just for un-marshaling.
+	step          byte
 	secretCommits *rabin_dkg.SecretCommits
+	group         kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinSecretCommitsMsg) MsgType() byte {
 	return rabinSecretCommitsMsgType
 }
+func (m *rabinSecretCommitsMsg) Step() byte {
+	return m.step
+}
+func (m *rabinSecretCommitsMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
 	if err = util.WriteBoolByte(w, m.secretCommits == nil); err != nil {
 		return err
 	}
@@ -681,6 +820,9 @@ func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 }
 func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
 	var isNil bool
 	if err = util.ReadBoolByte(r, &isNil); err != nil {
 		return err
@@ -722,15 +864,25 @@ func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
 //	rabin_dkg.ComplaintCommits
 //
 type rabinComplaintCommitsMsg struct {
-	group            kyber.Group // Just for un-marshaling.
+	step             byte
 	complaintCommits []*rabin_dkg.ComplaintCommits
+	group            kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinComplaintCommitsMsg) MsgType() byte {
 	return rabinComplaintCommitsMsgType
 }
+func (m *rabinComplaintCommitsMsg) Step() byte {
+	return m.step
+}
+func (m *rabinComplaintCommitsMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
 	if err = util.WriteUint32(w, uint32(len(m.complaintCommits))); err != nil {
 		return err
 	}
@@ -752,6 +904,9 @@ func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 }
 func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
 	var ccLen uint32
 	if err = util.ReadUint32(r, &ccLen); err != nil {
 		return err
@@ -784,15 +939,25 @@ func (m *rabinComplaintCommitsMsg) fromBytes(buf []byte, group kyber.Group) erro
 //	rabin_dkg.ReconstructCommits
 //
 type rabinReconstructCommitsMsg struct {
-	group              kyber.Group // Just for un-marshaling.
+	step               byte
 	reconstructCommits []*rabin_dkg.ReconstructCommits
+	group              kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinReconstructCommitsMsg) MsgType() byte {
 	return rabinReconstructCommitsMsgType
 }
+func (m *rabinReconstructCommitsMsg) Step() byte {
+	return m.step
+}
+func (m *rabinReconstructCommitsMsg) SetStep(step byte) {
+	m.step = step
+}
 func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteByte(w, m.step); err != nil {
+		return err
+	}
 	if err = util.WriteUint32(w, uint32(len(m.reconstructCommits))); err != nil {
 		return err
 	}
@@ -817,6 +982,9 @@ func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 }
 func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
 	var ccLen uint32
 	if err = util.ReadUint32(r, &ccLen); err != nil {
 		return err

@@ -21,7 +21,13 @@ func quoted(max int, s string) string {
 	if len(s) > max {
 		s = s[:max] + "…"
 	}
-	return fmt.Sprintf("%q", s)
+	s = fmt.Sprintf("%q", s)
+	// remove quotes
+	return s[1 : len(s)-1]
+}
+
+func bytesToString(b []byte) string {
+	return string(b)
 }
 
 func formatTimestamp(ts interface{}) string {

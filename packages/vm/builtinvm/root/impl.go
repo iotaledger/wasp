@@ -42,6 +42,14 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !ok || err != nil {
 		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainID, err)
 	}
+	chainColor, ok, err := codec.DecodeColor(params.MustGet(ParamChainColor))
+	if !ok || err != nil {
+		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainColor, err)
+	}
+	chainAddress, ok, err := codec.DecodeAddress(params.MustGet(ParamChainAddress))
+	if !ok || err != nil {
+		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainAddress, err)
+	}
 	// -- description
 	chainDescription, ok, err := codec.DecodeString(params.MustGet(ParamDescription))
 	if err != nil {
@@ -85,6 +93,8 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.Set(VarChainID, codec.EncodeChainID(chainID))
+	state.Set(VarChainColor, codec.EncodeColor(chainColor))
+	state.Set(VarChainAddress, codec.EncodeAddress(chainAddress))
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
 	state.Set(VarDescription, codec.EncodeString(chainDescription))
 	if feeColorSet {
@@ -162,11 +172,8 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
 	}
 
-	logMsg := fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: %s",
-		name, coretypes.Hn(name), proghash.String(), description)
-	ctx.ChainLog([]byte(logMsg))
-
-	ctx.Log().Infof("root.deployContract.success. Deployed contract '%s', hname = %s", name, coretypes.Hn(name).String())
+	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
+		name, coretypes.Hn(name), proghash.String(), description))
 	return nil, nil
 }
 
@@ -203,10 +210,15 @@ func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
 func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	info := GetChainInfo(ctx.State())
+	info, err := GetChainInfo(ctx.State())
+	if err != nil {
+		return nil, err
+	}
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
+	ret.Set(VarChainColor, codec.EncodeColor(info.ChainColor))
+	ret.Set(VarChainAddress, codec.EncodeAddress(info.ChainAddress))
 	ret.Set(VarDescription, codec.EncodeString(info.Description))
 	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))

@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -11,7 +12,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainAccountRoute = "/chains/:chainid/account/:agentid"
+const chainAccountRoute = "/chain/:chainid/account/:type/:id"
 const chainAccountTplName = "chainAccount"
 
 func addChainAccountEndpoints(e *echo.Echo) {
@@ -21,15 +22,18 @@ func addChainAccountEndpoints(e *echo.Echo) {
 			return err
 		}
 
-		agentID, err := coretypes.NewAgentIDFromString(c.Param("agentid"))
+		agentID, err := coretypes.NewAgentIDFromString(c.Param("type") + "/" + c.Param("id"))
 		if err != nil {
 			return err
 		}
 
 		result := &ChainAccountTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			ChainID:            chainID,
-			AgentID:            agentID,
+			BaseTemplateParams: BaseParams(c, chainAccountRoute, chainBreadcrumb(chainID), Breadcrumb{
+				Title: fmt.Sprintf("Account %.8s…", agentID),
+				Href:  "#",
+			}),
+			ChainID: chainID,
+			AgentID: agentID,
 		}
 
 		chain := chains.GetChain(chainID)
@@ -63,24 +67,19 @@ const tplChainAccount = `
 {{define "title"}}On-chain account details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
-	<h3>On-chain account</h3>
-	<dl>
-		<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
-		<dt>AgentID</dt><dd><tt>{{.AgentID}}</tt></dd>
-	</dl>
 	{{if .Balances}}
-		<div>
-			<h4>Balances</h4>
+		<div class="card fluid">
+			<h2 class="section">On-chain account</h2>
+			<dl>
+				<dt>AgentID</dt><dd><tt>{{.AgentID}}</tt></dd>
+			</dl>
+		</div>
+		<div class="card fluid">
+			<h3 class="section">Balances</h3>
 			{{ template "balances" .Balances }}
 		</div>
 	{{else}}
-		<div class="card error">Not found.</div>
+		<div class="card fluid error">Not found.</div>
 	{{end}}
-</div>
-</div>
-</div>
 {{end}}
 `

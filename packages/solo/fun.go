@@ -180,15 +180,30 @@ func (ch *Chain) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, n
 	return ch.DeployContract(sigScheme, name, hprog, params...)
 }
 
+type ChainInfo struct {
+	ChainID      coretypes.ChainID
+	ChainOwnerID coretypes.AgentID
+	ChainColor   balance.Color
+	ChainAddress address.Address
+}
+
 // GetInfo return main parameters of the chain:
 //  - chainID
 //  - agentID of the chain owner
 //  - registry of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Glb.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+
+	chainColor, ok, err := codec.DecodeColor(res.MustGet(root.VarChainColor))
+	require.NoError(ch.Glb.T, err)
+	require.True(ch.Glb.T, ok)
+
+	chainAddress, ok, err := codec.DecodeAddress(res.MustGet(root.VarChainAddress))
 	require.NoError(ch.Glb.T, err)
 	require.True(ch.Glb.T, ok)
 
@@ -198,7 +213,12 @@ func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.
 
 	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(res, root.VarContractRegistry))
 	require.NoError(ch.Glb.T, err)
-	return chainID, chainOwnerID, contracts
+	return ChainInfo{
+		ChainID:      chainID,
+		ChainOwnerID: chainOwnerID,
+		ChainColor:   chainColor,
+		ChainAddress: chainAddress,
+	}, contracts
 }
 
 // GetUtxodbBalance returns number of tokens of given color contained in the given address

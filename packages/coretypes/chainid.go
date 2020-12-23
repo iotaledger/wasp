@@ -50,7 +50,7 @@ func NewRandomChainID() ChainID {
 
 // Bytes returns the ChainID as byte slice.
 func (chid ChainID) Bytes() []byte {
-	return address.Address(chid).Bytes()
+	return chid[:]
 }
 
 // String human readable form (base58 encoding)

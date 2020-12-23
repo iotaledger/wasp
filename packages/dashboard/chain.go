@@ -17,7 +17,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainRoute = "/chains/:chainid"
+const chainRoute = "/chain/:chainid"
 const chainTplName = "chain"
 
 func addChainEndpoints(e *echo.Echo) {
@@ -28,7 +28,7 @@ func addChainEndpoints(e *echo.Echo) {
 		}
 
 		result := &ChainTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
+			BaseTemplateParams: BaseParams(c, chainRoute, chainBreadcrumb(chainid)),
 			ChainID:            chainid,
 		}
 
@@ -132,65 +132,47 @@ const tplChain = `
 {{define "title"}}Chain details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
 	{{ $chainid := .ChainID }}
 
 	{{if .ChainRecord}}
 		{{ $rootinfo := .RootInfo }}
 		{{ $desc := printf "%.50s" $rootinfo.Description }}
 
-		<h2>{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
+		<div class="card fluid">
+			<h2 class="section">{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
 
-		<dl>
-			<dt>ChainID</dt><dd><tt>{{.ChainRecord.ChainID}}</tt></dd>
-			<dt>Chain address</dt><dd>{{template "address" .ChainRecord.ChainID.Address}}</dd>
-			<dt>Chain color</dt><dd><tt>{{.ChainRecord.Color}}</tt></dd>
-			<dt>Active</dt><dd><tt>{{.ChainRecord.Active}}</tt></dd>
-			{{if .ChainRecord.Active}}
-				<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
-				<dt>Delegated Owner ID</dt><dd>
-					{{- if $rootinfo.OwnerIDDelegated -}}
-						{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
-					{{- end -}}
-				</dd>
-				<dt>Default owner fee</dt><dd><tt>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</tt></dd>
-				<dt>Default validator fee</dt><dd><tt>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</tt></dd>
-			{{end}}
-		</dl>
+			<dl>
+				<dt>ChainID</dt><dd><tt>{{.ChainRecord.ChainID}}</tt></dd>
+				<dt>Chain address</dt><dd>{{template "address" .RootInfo.ChainAddress}}</dd>
+				<dt>Chain color</dt><dd><tt>{{.RootInfo.ChainColor}}</tt></dd>
+				<dt>Active</dt><dd><tt>{{.ChainRecord.Active}}</tt></dd>
+				{{if .ChainRecord.Active}}
+					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
+					<dt>Delegated Owner ID</dt><dd>
+						{{- if $rootinfo.OwnerIDDelegated -}}
+							{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
+						{{- end -}}
+					</dd>
+					<dt>Default owner fee</dt><dd><tt>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</tt></dd>
+					<dt>Default validator fee</dt><dd><tt>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</tt></dd>
+				{{end}}
+			</dl>
+		</div>
+
 		{{if .ChainRecord.Active}}
 			<div class="card fluid">
-				<h3>Contracts</h3>
+				<h3 class="section">Contracts</h3>
+				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
-					<div class="card fluid">
-						<h4><tt>{{printf "%.30s" $c.Name}}</tt></h4>
-						<dl>
-							<dt>Description</dt><dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
-							<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
-							{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-							<dt>Owner fee</dt><dd>
-								{{- if $c.OwnerFee -}}
-									<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
-								{{- else -}}
-									<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-								{{- end -}}
-							</dd>
-							<dt>Validator fee</dt><dd>
-								{{- if $c.ValidatorFee -}}
-									<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-								{{- else -}}
-									<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-								{{- end -}}
-							</dd>
-						</dl>
-					</div>
+					<dt><a href="/chain/{{$chainid}}/contract/{{$c.Hname}}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
+					<dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
 				{{end}}
+				</dl>
 			</div>
 
 			<div class="card fluid">
-				<h3>On-chain accounts</h3>
-				<table style="max-width: 50em">
+				<h3 class="section">On-chain accounts</h3>
+				<table>
 					<thead>
 						<tr>
 							<th>AgentID</th>
@@ -209,18 +191,18 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>Blobs</h3>
-				<table style="max-width: 50em">
+				<h3 class="section">Blobs</h3>
+				<table>
 					<thead>
 						<tr>
-							<th>Hash</th>
+							<th style="flex: 2">Hash</th>
 							<th>Size (bytes)</th>
 						</tr>
 					</thead>
 					<tbody>
 					{{range $hash, $size := .Blobs}}
 						<tr>
-							<td><a href="/chains/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
+							<td style="flex: 2"><a href="/chain/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
 							<td>{{ $size }}</td>
 						</tr>
 					{{end}}
@@ -229,7 +211,7 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>Block</h3>
+				<h3 class="section">Block</h3>
 				<dl>
 				<dt>State index</dt><dd><tt>{{.Block.StateIndex}}</tt></dd>
 				<dt>State Transaction ID</dt><dd><tt>{{.Block.StateTransactionID}}</tt></dd>
@@ -237,7 +219,7 @@ const tplChain = `
 				<dt>Essence Hash</dt><dd><tt>{{.Block.EssenceHash}}</tt></dd>
 				</dl>
 				<div>
-					<table style="max-width: 50em">
+					<table>
 						<caption>Requests</caption>
 						<thead>
 							<tr>
@@ -256,14 +238,14 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>Committee</h3>
+				<h3 class="section">Committee</h3>
 				<dl>
 				<dt>Size</dt>      <dd><tt>{{.Committee.Size}}</tt></dd>
 				<dt>Quorum</dt>    <dd><tt>{{.Committee.Quorum}}</tt></dd>
 				<dt>NumPeers</dt>  <dd><tt>{{.Committee.NumPeers}}</tt></dd>
 				<dt>HasQuorum</dt> <dd><tt>{{.Committee.HasQuorum}}</tt></dd>
 				</dl>
-				<table style="max-width: 50em">
+				<table>
 				<caption>Peer status</caption>
 				<thead>
 					<tr>
@@ -287,8 +269,5 @@ const tplChain = `
 	{{else}}
 		<div class="card fluid error">No chain record for ID <td>{{$chainid}}</tt></div>
 	{{end}}
-</div>
-</div>
-</div>
 {{end}}
 `
