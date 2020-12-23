@@ -80,7 +80,7 @@ func MakeTemplate(parts ...string) *template.Template {
 
 const tplBase = `
 {{define "externalLink"}}
-	<a href="{{ index . 0 }}" class="linkbtn">🡽 {{ index . 1 }}</a>
+	<a href="{{ index . 0 }}" style="font-size: small">🡽 {{ index . 1 }}</a>
 {{end}}
 
 {{define "exploreAddressInTangle"}}
@@ -94,8 +94,7 @@ const tplBase = `
 {{define "agentid"}}
 	{{ $chainid := index . 0 }}
 	{{ $agentid := index . 1 }}
-	<tt>{{ $agentid }}</tt>
-	<a href="/chain/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
+	<a href="/chain/{{ $chainid }}/account/{{ $agentid }}"><tt>{{ $agentid }}</tt></a>
 	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
 {{end}}
 
@@ -160,20 +159,20 @@ const tplBase = `
 				margin-left: auto;
 				width: 66%;
 			}
-			.linkbtn {
-				font-size: small;
-				border: 1px solid var(--nc-lk-1);
-				padding: 2px;
-				text-decoration: none;
-			}
 			.align-right {
 				text-align: right;
 			}
 			body {
 				--back-color: #eee;
 			}
+			table {
+				margin-top: var(--universal-margin);
+			}
 			table th, table td {
 				padding: var(--universal-padding);
+			}
+			.card {
+				padding: 1em;
 			}
 		</style>
 

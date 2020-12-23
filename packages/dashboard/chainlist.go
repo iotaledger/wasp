@@ -57,7 +57,7 @@ const tplChainList = `
 
 {{define "body"}}
 <div class="card fluid">
-	<h2>Chains</h2>
+	<h2 class="section">Chains</h2>
 	<table>
 		<thead>
 			<tr>
@@ -74,7 +74,7 @@ const tplChainList = `
 				<tr>
 					<td data-label="ID"><a href="/chain/{{ $id }}"><tt>{{ $id }}</tt></a></td>
 					<td data-label="Description">{{ printf "%.50s" $c.RootInfo.Description }}
-						{{- if $c.Error }}<div class="card error">{{ $c.Error }}</div>{{ end }}</td>
+						{{- if $c.Error }}<div class="card fluid error">{{ $c.Error }}</div>{{ end }}</td>
 					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.ChainRecord.CommitteeNodes }}</tt>{{ end }}</td>
 					<td data-label="#Contracts">{{if not $c.Error}}<tt>{{ len $c.RootInfo.Contracts }}</tt>{{ end }}</td>
 					<td data-label="Active?">{{ if $c.ChainRecord.Active }} yes {{ else }} no {{ end }}</td>

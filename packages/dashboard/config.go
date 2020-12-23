@@ -41,7 +41,7 @@ const tplConfig = `
 
 {{define "body"}}
 <div class="card fluid">
-	<h2>Node configuration</h2>
+	<h2 class="section">Node configuration</h2>
 
 	<dl>
 		{{range $k, $v := .Configuration}}
