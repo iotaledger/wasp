@@ -75,7 +75,7 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	args := dict.New()
 	args.Set(root.ParamChainID, codec.EncodeChainID(par.ChainID))
 	args.Set(root.ParamChainColor, codec.EncodeColor(par.ChainColor))
-	args.Set(root.ParamChainAddress, codec.EncodeAddress(&par.ChainAddress))
+	args.Set(root.ParamChainAddress, codec.EncodeAddress(par.ChainAddress))
 	args.Set(root.ParamDescription, codec.EncodeString(par.Description))
 	initRequest.WithArgs(args)
 

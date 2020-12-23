@@ -217,7 +217,7 @@ func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord)
 		ChainID:      chainID,
 		ChainOwnerID: chainOwnerID,
 		ChainColor:   chainColor,
-		ChainAddress: *chainAddress,
+		ChainAddress: chainAddress,
 	}, contracts
 }
 

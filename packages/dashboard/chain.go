@@ -144,7 +144,7 @@ const tplChain = `
 			<dl>
 				<dt>ChainID</dt><dd><tt>{{.ChainRecord.ChainID}}</tt></dd>
 				<dt>Chain address</dt><dd>{{template "address" .RootInfo.ChainAddress}}</dd>
-				<dt>Chain color</dt><dd><tt>{{.ChainRecord.Color}}</tt></dd>
+				<dt>Chain color</dt><dd><tt>{{.RootInfo.ChainColor}}</tt></dd>
 				<dt>Active</dt><dd><tt>{{.ChainRecord.Active}}</tt></dd>
 				{{if .ChainRecord.Active}}
 					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>

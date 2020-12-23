@@ -68,7 +68,7 @@ func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
 	if !ok || err != nil {
 		return false
 	}
-	return *addr == *ownerAddr
+	return addr == *ownerAddr
 }
 
 func (vs *virtualState) DangerouslyConvertToString() string {

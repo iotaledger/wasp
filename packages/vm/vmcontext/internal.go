@@ -56,7 +56,7 @@ func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*roo
 	return ret, true
 }
 
-func (vmctx *VMContext) getChainInfo() *root.ChainInfo {
+func (vmctx *VMContext) getChainInfo() (*root.ChainInfo, error) {
 	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 

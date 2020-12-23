@@ -14,14 +14,20 @@ func infoCmd(args []string) {
 	log.Check(err)
 
 	log.Printf("Chain ID: %s\n", chain.ChainID)
-	log.Printf("Chain Address: %s\n", address.Address(chain.ChainID))
-	log.Printf("Chain Color: %s\n", chain.Color)
 	log.Printf("Committee nodes: %+v\n", chain.CommitteeNodes)
 	log.Printf("Active: %v\n", chain.Active)
 
 	if chain.Active {
 		info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo, nil)
 		log.Check(err)
+
+		color, _, err := codec.DecodeColor(info.MustGet(root.VarChainColor))
+		log.Check(err)
+		log.Printf("Chain Color: %s\n", color)
+
+		addr, _, err := codec.DecodeAddress(info.MustGet(root.VarChainAddress))
+		log.Check(err)
+		log.Printf("Chain Address: %s\n", address.Address(addr))
 
 		description, _, err := codec.DecodeString(info.MustGet(root.VarDescription))
 		log.Check(err)

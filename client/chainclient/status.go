@@ -22,8 +22,8 @@ type SCStatus struct {
 
 	ProgramHash   *hashing.HashValue
 	Description   string
-	OwnerAddress  *address.Address
-	SCAddress     *address.Address
+	OwnerAddress  address.Address
+	SCAddress     address.Address
 	Balance       map[balance.Color]int64
 	MinimumReward int64
 	FetchedAt     time.Time
@@ -51,7 +51,6 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 	description, _ := res.Get(vmconst.VarNameDescription).MustString()
 	minReward, _ := res.Get(vmconst.VarNameMinimumReward).MustInt64()
 
-	addr := (address.Address)(c.ChainID)
 	return &SCStatus{
 		StateIndex: res.StateIndex,
 		Timestamp:  res.Timestamp.UTC(),
@@ -63,7 +62,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 		Description:   description,
 		OwnerAddress:  res.Get(vmconst.VarNameOwnerAddress).MustAddress(),
 		MinimumReward: minReward,
-		SCAddress:     &addr,
+		SCAddress:     (address.Address)(c.ChainID),
 		Balance:       balance,
 		FetchedAt:     time.Now().UTC(),
 	}, res, nil

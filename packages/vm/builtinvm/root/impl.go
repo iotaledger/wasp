@@ -210,12 +210,15 @@ func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
 func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
-	info := GetChainInfo(ctx.State())
+	info, err := GetChainInfo(ctx.State())
+	if err != nil {
+		return nil, err
+	}
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
 	ret.Set(VarChainColor, codec.EncodeColor(info.ChainColor))
-	ret.Set(VarChainAddress, codec.EncodeAddress(&info.ChainAddress))
+	ret.Set(VarChainAddress, codec.EncodeAddress(info.ChainAddress))
 	ret.Set(VarDescription, codec.EncodeString(info.Description))
 	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))

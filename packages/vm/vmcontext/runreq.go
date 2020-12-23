@@ -72,7 +72,10 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 		return true
 	}
 	// ordinary request, only makes sense when chain is already deployed
-	info := vmctx.getChainInfo()
+	info, err := vmctx.getChainInfo()
+	if err != nil {
+		panic(err)
+	}
 	if info.ChainID != vmctx.chainID {
 		vmctx.log.Errorf("setRequestContext: major inconsistency of chainID")
 		return false
