@@ -43,10 +43,13 @@ const tplPeering = `
 
 {{define "body"}}
 <div class="card fluid">
-	<h2>Peers</h2>
+	<h2 class="section">Peering</h2>
 	<dl>
 		<dt>Node network ID</dt><dd><tt>{{.MyNetworkId}}</tt></dd>
 	</dl>
+</div>
+<div class="card fluid">
+	<h3 class="section">Peers</h3>
 	<table>
 		<thead>
 			<tr>

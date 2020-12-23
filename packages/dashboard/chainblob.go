@@ -125,33 +125,36 @@ const tplChainBlob = `
 {{define "body"}}
 	{{if .Blob}}
 		<div class="card fluid">
-			<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
+			<h2 class="section">Blob</h2>
 			<dl>
-				<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
+				<dt>Hash</dt><dd><tt>{{hashref .Hash}}</tt></dd>
 			</dl>
+		</div>
+		<div class="card fluid">
+			<h4 class="section">Fields</h3>
 			<table>
 				<thead>
 					<tr>
 						<th>Field</th>
-						<th>Value</th>
-						<th class="align-right">Size (bytes)</th>
-						<th></th>
+						<th style="flex: 2">Value</th>
+						<th class="align-right" style="flex: 0.5">Size (bytes)</th>
+						<th style="flex: 0.5"></th>
 					</tr>
 				</thead>
 				<tbody>
 				{{range $field, $value := .Blob}}
 					<tr>
 						<td><tt>{{ quoted 30 $field }}</tt></td>
-						<td><pre style="white-space: pre-wrap; max-width: 400px">{{ quoted 50 $value.Encoded }}</pre></td>
-						<td class="align-right">{{ $value.Len }}</td>
-						<td><a href="{{ $value.RawHref }}">Download</a></td>
+						<td style="flex: 2"><pre style="white-space: pre-wrap; max-width: 400px">{{ quoted 50 $value.Encoded }}</pre></td>
+						<td class="align-right" style="flex: 0.5">{{ $value.Len }}</td>
+						<td style="flex: 0.5"><a href="{{ $value.RawHref }}">Download</a></td>
 					</tr>
 				{{end}}
 				</tbody>
 			</table>
 		</div>
 	{{else}}
-		<div class="card error">Not found.</div>
+		<div class="card fluid error">Not found.</div>
 	{{end}}
 {{end}}
 `

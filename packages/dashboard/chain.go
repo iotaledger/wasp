@@ -139,7 +139,7 @@ const tplChain = `
 		{{ $desc := printf "%.50s" $rootinfo.Description }}
 
 		<div class="card fluid">
-			<h2>{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
+			<h2 class="section">{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
 
 			<dl>
 				<dt>ChainID</dt><dd><tt>{{.ChainRecord.ChainID}}</tt></dd>
@@ -161,7 +161,7 @@ const tplChain = `
 
 		{{if .ChainRecord.Active}}
 			<div class="card fluid">
-				<h3>Contracts</h3>
+				<h3 class="section">Contracts</h3>
 				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
 					<dt><a href="/chain/{{$chainid}}/contract/{{$c.Hname}}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
@@ -171,7 +171,7 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>On-chain accounts</h3>
+				<h3 class="section">On-chain accounts</h3>
 				<table>
 					<thead>
 						<tr>
@@ -191,18 +191,18 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>Blobs</h3>
+				<h3 class="section">Blobs</h3>
 				<table>
 					<thead>
 						<tr>
-							<th>Hash</th>
+							<th style="flex: 2">Hash</th>
 							<th>Size (bytes)</th>
 						</tr>
 					</thead>
 					<tbody>
 					{{range $hash, $size := .Blobs}}
 						<tr>
-							<td><a href="/chain/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
+							<td style="flex: 2"><a href="/chain/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
 							<td>{{ $size }}</td>
 						</tr>
 					{{end}}
@@ -211,7 +211,7 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>Block</h3>
+				<h3 class="section">Block</h3>
 				<dl>
 				<dt>State index</dt><dd><tt>{{.Block.StateIndex}}</tt></dd>
 				<dt>State Transaction ID</dt><dd><tt>{{.Block.StateTransactionID}}</tt></dd>
@@ -238,7 +238,7 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3>Committee</h3>
+				<h3 class="section">Committee</h3>
 				<dl>
 				<dt>Size</dt>      <dd><tt>{{.Committee.Size}}</tt></dd>
 				<dt>Quorum</dt>    <dd><tt>{{.Committee.Quorum}}</tt></dd>

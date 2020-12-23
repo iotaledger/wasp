@@ -96,9 +96,9 @@ const tplChainContract = `
 	{{ $rootinfo := .RootInfo }}
 	{{ if $c }}
 		<div class="card fluid">
-			<h3>Contract {{printf "%.30s" $c.Name}}</h3>
+			<h2 class="section">Contract</h2>
 			<dl>
-				<dt>ChainID</dt><dd><tt>{{$chainid}}</tt></dd>
+				<dt>Name</dt><dd><tt>{{printf "%.50s" $c.Name}}</tt></dd>
 				<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
 				<dt>Description</dt><dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
 				<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
@@ -121,7 +121,7 @@ const tplChainContract = `
 		</div>
 
 		<div class="card fluid">
-			<h3>Log</h3>
+			<h3 class="section">Log</h3>
 			<dl>
 				{{ range $_, $rec := .Log }}
 					<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
@@ -130,7 +130,7 @@ const tplChainContract = `
 			</dl>
 		</div>
 	{{else}}
-		<div class="card error">Not found.</div>
+		<div class="card fluid error">Not found.</div>
 	{{end}}
 </div>
 </div>
