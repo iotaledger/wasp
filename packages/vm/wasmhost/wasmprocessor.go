@@ -24,9 +24,8 @@ type wasmProcessor struct {
 	logger    *logger.Logger
 }
 
-// TODO logger to be used for internal logging in the processor with Debugf. No fmt.Printf
 func NewWasmProcessor(vm WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
-	host := &wasmProcessor{logger: logger}
+	host := &wasmProcessor{logger: logger.Named("wasmtrace")}
 	host.vm = vm
 	host.scContext = NewScContext(host)
 	host.Init(NewNullObject(host), host.scContext, host)
@@ -53,7 +52,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	defer func() {
 		host.nesting--
 		if host.nesting == 0 {
-			host.LogText("Finalizing calls")
+			host.logTextIntern("Finalizing calls")
 			host.scContext.Finalize()
 		}
 		host.ctx = saveCtx
@@ -62,11 +61,11 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 
 	testMode, _ := host.Params().Has("testMode")
 	if testMode {
-		host.LogText("TEST MODE")
+		host.logTextIntern("TEST MODE")
 		TestMode = true
 	}
 
-	host.LogText("Calling " + host.function)
+	host.logTextIntern("Calling " + host.function)
 	err := host.RunScFunction(host.function)
 	if err != nil {
 		return nil, err
@@ -115,7 +114,7 @@ func (host *wasmProcessor) IsView() bool {
 
 func (host *wasmProcessor) SetExport(index int32, functionName string) {
 	if index < 0 {
-		host.LogText(functionName + " = " + strconv.Itoa(int(index)))
+		host.logTextIntern(functionName + " = " + strconv.Itoa(int(index)))
 		if index != KeyZzzzzzz {
 			host.SetError("SetExport: predefined key value mismatch")
 		}
@@ -127,7 +126,7 @@ func (host *wasmProcessor) SetExport(index int32, functionName string) {
 		return
 	}
 	hn := coretypes.Hn(functionName)
-	host.LogText(functionName + " = " + hn.String())
+	host.logTextIntern(functionName + " = " + hn.String())
 	hashedName := uint32(hn)
 	_, ok = host.codeToFunc[hashedName]
 	if ok {
@@ -146,30 +145,24 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 func (host *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case KeyTraceHost:
-		//host.LogText(text)
+		//host.logTextIntern(text)
 	case KeyTrace:
-		host.LogText(text)
+		host.logTextIntern(text)
 	case KeyLog:
-		host.LogText(text)
+		host.logTextIntern(text)
 	case KeyWarning:
-		host.LogText(text)
+		host.logTextIntern(text)
 	case KeyError:
-		host.LogText(text)
+		host.logTextIntern(text)
 	}
 }
 
-// TODO there's a need to distinguish between logging and events
-// Also, logging has levels
-func (host *wasmProcessor) LogText(text string) {
-	if host.ctx != nil {
-		host.ctx.Log().Infof(text)
+// logTextIntern internal tracing for wasmProcessor
+func (host *wasmProcessor) logTextIntern(text string) {
+	if host.logger != nil {
+		host.logger.Debug(text)
 		return
 	}
-	if host.ctxView != nil {
-		host.ctxView.Log().Infof(text)
-		return
-	}
-	// fallback logging
 	fmt.Println(text)
 }
 

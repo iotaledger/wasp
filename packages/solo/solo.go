@@ -113,6 +113,9 @@ var (
 func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
 		glbLogger = testutil.NewLogger(t, "15:04:05.000")
+		if !debug {
+			glbLogger = testutil.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
+		}
 		err := processors.RegisterVMType(wasmtimevm.VMType, func(binary []byte) (vmtypes.Processor, error) {
 			return wasmhost.GetProcessor(binary, glbLogger)
 		})
@@ -126,9 +129,6 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		logicalTime: time.Now(),
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[coretypes.ChainID]*Chain),
-	}
-	if !debug {
-		ret.logger = testutil.WithLevel(ret.logger, zapcore.InfoLevel, printStackTrace)
 	}
 	return ret
 }
