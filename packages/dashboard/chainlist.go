@@ -56,11 +56,9 @@ const tplChainList = `
 {{define "title"}}Chains{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
+<div class="card fluid">
 	<h2>Chains</h2>
-	<table style="max-width: 65em">
+	<table>
 		<thead>
 			<tr>
 				<th>ID</th>
@@ -74,7 +72,7 @@ const tplChainList = `
 			{{range $_, $c := .Chains}}
 				{{ $id := $c.ChainRecord.ChainID }}
 				<tr>
-					<td data-label="ID"><a href="/chains/{{ $id }}"><tt>{{ $id }}</tt></a></td>
+					<td data-label="ID"><a href="/chain/{{ $id }}"><tt>{{ $id }}</tt></a></td>
 					<td data-label="Description">{{ printf "%.50s" $c.RootInfo.Description }}
 						{{- if $c.Error }}<div class="card error">{{ $c.Error }}</div>{{ end }}</td>
 					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.ChainRecord.CommitteeNodes }}</tt>{{ end }}</td>
@@ -84,8 +82,6 @@ const tplChainList = `
 			{{end}}
 		</tbody>
 	</table>
-</div>
-</div>
 </div>
 {{end}}
 `

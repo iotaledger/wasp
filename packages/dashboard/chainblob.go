@@ -14,11 +14,11 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-const chainBlobRoute = "/chains/:chainid/blob/:hash"
+const chainBlobRoute = "/chain/:chainid/blob/:hash"
 const chainBlobTplName = "chainBlob"
 
 func chainBlobRawRoute(chainID string, hash string, field string) string {
-	return fmt.Sprintf("/chains/%s/blob/%s/raw/%s", chainID, hash, field)
+	return fmt.Sprintf("/chain/%s/blob/%s/raw/%s", chainID, hash, field)
 }
 
 func addChainBlobEndpoints(e *echo.Echo) {
@@ -34,9 +34,12 @@ func addChainBlobEndpoints(e *echo.Echo) {
 		}
 
 		result := &ChainBlobTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			ChainID:            chainID,
-			Hash:               hash,
+			BaseTemplateParams: BaseParams(c, chainBlobRoute, chainBreadcrumb(chainID), Breadcrumb{
+				Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
+				Href:  "#",
+			}),
+			ChainID: chainID,
+			Hash:    hash,
 		}
 
 		chain := chains.GetChain(chainID)
@@ -120,15 +123,12 @@ const tplChainBlob = `
 {{define "title"}}Blob details{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
-	<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
-	<dl>
-		<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
-	</dl>
 	{{if .Blob}}
-		<div>
+		<div class="card fluid">
+			<h3>Blob <tt>{{hashref .Hash}}</tt></h3>
+			<dl>
+				<dt>ChainID</dt><dd><tt>{{.ChainID}}</tt></dd>
+			</dl>
 			<table>
 				<thead>
 					<tr>
@@ -153,8 +153,5 @@ const tplChainBlob = `
 	{{else}}
 		<div class="card error">Not found.</div>
 	{{end}}
-</div>
-</div>
-</div>
 {{end}}
 `

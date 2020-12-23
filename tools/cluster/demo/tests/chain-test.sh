@@ -52,7 +52,12 @@ echo "$r"
 [[ $(echo "$r" | tail -n +4) =~ IOTA\ +1\ *$ ]]
 
 # same test, this time calling the view function manually
-r=$(wasp-cli chain call-view accounts-0.1 balance string a agentid "$agentid" | wasp-cli decode color int)
+r=$(wasp-cli chain call-view accounts balance string a agentid "$agentid" | wasp-cli decode color int)
 [[ "$r" == "IOTA: 1" ]]
+
+# test the chainlog
+r=$(wasp-cli chain log root)
+echo "$r"
+[[ $(echo "$r" | wc -l) == "1" ]]
 
 echo "PASS"

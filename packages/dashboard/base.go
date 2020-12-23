@@ -18,8 +18,15 @@ type NavPage interface {
 	AddEndpoints(e *echo.Echo)
 }
 
+type Breadcrumb struct {
+	Title  string
+	Href   string
+	Active bool
+}
+
 type BaseTemplateParams struct {
 	NavPages    []NavPage
+	Breadcrumbs []Breadcrumb
 	ActivePage  string
 	MyNetworkId string
 }
@@ -42,12 +49,17 @@ func Init(server *echo.Echo) {
 	useHTMLErrorHandler(server)
 }
 
-func BaseParams(c echo.Context, activePage string) BaseTemplateParams {
-	return BaseTemplateParams{
+func BaseParams(c echo.Context, activePage string, breadcrumbs ...Breadcrumb) BaseTemplateParams {
+	b := BaseTemplateParams{
 		NavPages:    navPages,
+		Breadcrumbs: breadcrumbs,
 		ActivePage:  activePage,
 		MyNetworkId: peering.DefaultNetworkProvider().Self().NetID(),
 	}
+	if len(b.Breadcrumbs) > 0 {
+		b.Breadcrumbs[len(b.Breadcrumbs)-1].Active = true
+	}
+	return b
 }
 
 func MakeTemplate(parts ...string) *template.Template {
@@ -57,6 +69,7 @@ func MakeTemplate(parts ...string) *template.Template {
 		"args":              args,
 		"hashref":           hashref,
 		"quoted":            quoted,
+		"bytesToString":     bytesToString,
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {
@@ -82,7 +95,7 @@ const tplBase = `
 	{{ $chainid := index . 0 }}
 	{{ $agentid := index . 1 }}
 	<tt>{{ $agentid }}</tt>
-	<a href="/chains/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
+	<a href="/chain/{{ $chainid }}/account/{{ $agentid }}" class="linkbtn">Balance</a>
 	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
 {{end}}
 
@@ -93,6 +106,19 @@ const tplBase = `
 			<dd>{{ $bal }}</dd>
 		{{end}}
 	</dl>
+{{end}}
+
+{{define "navitem"}}
+	{{ $title := index . 0 }}
+	{{ $href := index . 1 }}
+	{{ $active := index . 2 }}
+	<a href="{{$href}}" class="button"
+		{{- if $active -}}
+			style="background-color: var(--button-hover-back-color)"
+		{{- end -}}
+	>
+		{{- $title -}}
+	</a>
 {{end}}
 
 {{define "base"}}
@@ -120,6 +146,7 @@ const tplBase = `
 				display: flex;
 				flex-wrap: wrap;
 				padding: var(--universal-padding);
+				align-items: baseline;
 			}
 			dt {
 				width: 33%;
@@ -142,23 +169,32 @@ const tplBase = `
 			.align-right {
 				text-align: right;
 			}
+			body {
+				--back-color: #eee;
+			}
+			table th, table td {
+				padding: var(--universal-padding);
+			}
 		</style>
 
 		<header>
 				<a class="logo" href="#">Wasp</a>
 				{{$activePage := .ActivePage}}
-				{{range $i, $p := .NavPages}}
-					<a href="{{$p.Href}}" class="button"
-						{{- if eq $activePage $p.Href -}}
-							style="background-color: var(--button-hover-back-color)"
-						{{- end -}}
-					>
-						{{- $p.Title -}}
-					</a>
+				{{range $_, $p := .NavPages}}
+					{{ template "navitem" (args $p.Title $p.Href (eq $activePage $p.Href)) }}
+				{{end}}
+				{{range $_, $p := .Breadcrumbs}}
+					{{ template "navitem" (args (printf "🢒 %s" $p.Title) $p.Href $p.Active) }}
 				{{end}}
 		</header>
 		<main>
-			{{template "body" .}}
+			<div class="container">
+			<div class="row" style="justify-content: center">
+			<div class="col-sm" style="max-width: 65em">
+				{{template "body" .}}
+			</div>
+			</div>
+			</div>
 		</main>
 	</body>
 	</html>

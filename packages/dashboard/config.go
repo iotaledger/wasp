@@ -40,9 +40,7 @@ const tplConfig = `
 {{define "title"}}Node configuration{{end}}
 
 {{define "body"}}
-<div class="container">
-<div class="row">
-<div class="col-sm">
+<div class="card fluid">
 	<h2>Node configuration</h2>
 
 	<dl>
@@ -51,8 +49,6 @@ const tplConfig = `
 				<dd><tt>{{$v}}</tt></dd>
 		{{end}}
 	</dl>
-</div>
-</div>
 </div>
 {{end}}
 `

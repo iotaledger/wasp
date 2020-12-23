@@ -96,6 +96,10 @@ type ChainInfo struct {
 	DefaultValidatorFee int64
 }
 
+func (p *ContractRecord) Hname() coretypes.Hname {
+	return coretypes.Hn(p.Name)
+}
+
 // serde
 func (p *ContractRecord) Write(w io.Writer) error {
 	if _, err := w.Write(p.ProgramHash[:]); err != nil {
