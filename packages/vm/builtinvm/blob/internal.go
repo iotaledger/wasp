@@ -51,7 +51,6 @@ func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *datatypes.MustM
 }
 
 func LocateProgram(state kv.KVStore, programHash hashing.HashValue) (string, []byte, error) {
-	fmt.Printf("--- LocateProgram: %s\n", programHash.String())
 	blbValues := GetBlobValues(state, programHash)
 	programBinary := blbValues.GetAt([]byte(VarFieldProgramBinary))
 	if programBinary == nil {
