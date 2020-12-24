@@ -1,10 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package wasmhost
+package wasmimpl
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 type ScBalances struct {
@@ -47,13 +48,13 @@ func (o *ScBalances) GetInt(keyId int32) int64 {
 
 func (o *ScBalances) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyColor: func() WaspObject { return &ScBalanceColors{incoming: o.incoming} },
+		wasmhost.KeyColor: func() WaspObject { return &ScBalanceColors{incoming: o.incoming} },
 	})
 }
 
 func (o *ScBalances) GetTypeId(keyId int32) int32 {
 	if o.Exists(keyId) {
-		return OBJTYPE_INT
+		return wasmhost.OBJTYPE_INT
 	}
 	return 0
 }
@@ -80,7 +81,7 @@ func (o *ScBalanceColors) GetBytes(keyId int32) []byte {
 
 func (o *ScBalanceColors) GetTypeId(keyId int32) int32 {
 	if o.Exists(keyId) {
-		return OBJTYPE_COLOR
+		return wasmhost.OBJTYPE_COLOR
 	}
 	return 0
 }

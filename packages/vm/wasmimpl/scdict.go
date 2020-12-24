@@ -1,13 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package wasmhost
+package wasmimpl
 
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/mr-tron/base58"
 )
 
@@ -15,7 +16,7 @@ type ObjFactory func() WaspObject
 type ObjFactories map[int32]ObjFactory
 
 type WaspObject interface {
-	HostObject
+	wasmhost.HostObject
 	InitObj(id int32, keyId int32, owner *ScDict)
 	Panic(format string, args ...interface{})
 	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
@@ -85,7 +86,7 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 }
 
 func (o *ScDict) Exists(keyId int32) bool {
-	if o.typeId == (OBJTYPE_ARRAY | OBJTYPE_MAP) {
+	if o.typeId == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
 		return uint32(keyId) <= uint32(len(o.objects))
 	}
 	return o.kvStore.MustHas(o.key(keyId, -1))
@@ -105,14 +106,14 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 
 func (o *ScDict) GetBytes(keyId int32) []byte {
 	//TODO what about AGENT/ADDRESS/COLOR?
-	return o.kvStore.MustGet(o.key(keyId, OBJTYPE_BYTES))
+	return o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_BYTES))
 }
 
 func (o *ScDict) GetInt(keyId int32) int64 {
-	if (o.typeId&OBJTYPE_ARRAY) != 0 && keyId == KeyLength {
+	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && keyId == wasmhost.KeyLength {
 		return int64(len(o.objects))
 	}
-	bytes := o.kvStore.MustGet(o.key(keyId, OBJTYPE_INT))
+	bytes := o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_INT))
 	value, _, err := codec.DecodeInt64(bytes)
 	if err != nil {
 		o.Panic("GetInt: %v", err)
@@ -122,7 +123,7 @@ func (o *ScDict) GetInt(keyId int32) int64 {
 
 func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
-	if (typeId&OBJTYPE_ARRAY) == 0 && typeId != OBJTYPE_MAP {
+	if (typeId&wasmhost.OBJTYPE_ARRAY) == 0 && typeId != wasmhost.OBJTYPE_MAP {
 		o.Panic("GetObjectId: Invalid type")
 	}
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
@@ -131,7 +132,7 @@ func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScDict) GetString(keyId int32) string {
-	bytes := o.kvStore.MustGet(o.key(keyId, OBJTYPE_STRING))
+	bytes := o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_STRING))
 	value, _, err := codec.DecodeString(bytes)
 	if err != nil {
 		o.Panic("GetString: %v", err)
@@ -140,8 +141,8 @@ func (o *ScDict) GetString(keyId int32) string {
 }
 
 func (o *ScDict) GetTypeId(keyId int32) int32 {
-	if (o.typeId & OBJTYPE_ARRAY) != 0 {
-		return o.typeId &^ OBJTYPE_ARRAY
+	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+		return o.typeId &^ wasmhost.OBJTYPE_ARRAY
 	}
 	//TODO incomplete, currently only contains used field types
 	typeId, ok := o.types[keyId]
@@ -180,30 +181,30 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 
 func (o *ScDict) SetBytes(keyId int32, value []byte) {
 	//TODO what about AGENT/ADDRESS/COLOR?
-	o.kvStore.Set(o.key(keyId, OBJTYPE_BYTES), value)
+	o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_BYTES), value)
 }
 
 func (o *ScDict) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case KeyLength:
+	case wasmhost.KeyLength:
 		//TODO this goes wrong for state, should clear map instead
 		o.kvStore = dict.New()
 		o.objects = make(map[int32]int32)
 	default:
-		o.kvStore.Set(o.key(keyId, OBJTYPE_INT), codec.EncodeInt64(value))
+		o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_INT), codec.EncodeInt64(value))
 	}
 }
 
 func (o *ScDict) SetString(keyId int32, value string) {
-	o.kvStore.Set(o.key(keyId, OBJTYPE_STRING), codec.EncodeString(value))
+	o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_STRING), codec.EncodeString(value))
 }
 
 func (o *ScDict) Suffix(keyId int32) string {
-	if (o.typeId & OBJTYPE_ARRAY) != 0 {
+	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 		return fmt.Sprintf(".%d", keyId)
 	}
-	bytes := o.vm.getKeyFromId(keyId)
-	if (keyId & KeyFromString) != 0 {
+	bytes := o.vm.GetKeyFromId(keyId)
+	if (keyId & wasmhost.KeyFromString) != 0 {
 		return "." + string(bytes)
 	}
 	return "." + base58.Encode(bytes)
@@ -220,9 +221,9 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 	if typeId == -1 {
 		return
 	}
-	if (o.typeId & OBJTYPE_ARRAY) != 0 {
+	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 		// actually array
-		if (o.typeId &^ OBJTYPE_ARRAY) != typeId {
+		if (o.typeId &^ wasmhost.OBJTYPE_ARRAY) != typeId {
 			o.Panic("validate: Invalid type")
 		}
 		//TODO validate keyId >=0 && <= length

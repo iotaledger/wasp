@@ -6,6 +6,7 @@ package wasmhost
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/mr-tron/base58"
 )
 
@@ -54,6 +55,12 @@ type WasmHost struct {
 	useBase58Keys bool
 }
 
+func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
+	host.vm = vm
+	host.useBase58Keys = useBase58Keys
+	return vm.LinkHost(host)
+}
+
 func (host *WasmHost) Init(null HostObject, root HostObject, logger LogInterface) {
 	host.codeToFunc = make(map[uint32]string)
 	host.error = ""
@@ -69,10 +76,6 @@ func (host *WasmHost) Init(null HostObject, root HostObject, logger LogInterface
 	}
 	host.TrackObject(null)
 	host.TrackObject(root)
-}
-
-func (host *WasmHost) InitVM(vm WasmVM) error {
-	return vm.LinkHost(host)
 }
 
 func (host *WasmHost) Exists(objId int32, keyId int32) bool {
@@ -93,6 +96,10 @@ func (host *WasmHost) FindSubObject(obj HostObject, keyId int32, typeId int32) H
 		obj = host.FindObject(1)
 	}
 	return host.FindObject(obj.GetObjectId(keyId, typeId))
+}
+
+func (host *WasmHost) FunctionFromCode(code uint32) string {
+	return host.codeToFunc[code]
 }
 
 func (host *WasmHost) GetBytes(objId int32, keyId int32) []byte {
@@ -240,6 +247,10 @@ func (host *WasmHost) HasError() bool {
 	return false
 }
 
+func (host *WasmHost) IsView(function string) bool {
+	return (host.funcToIndex[function] & 0x8000) != 0
+}
+
 func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	err := host.vm.LoadWasm(wasmData)
 	if err != nil {
@@ -251,6 +262,10 @@ func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	}
 	host.vm.SaveMemory()
 	return nil
+}
+
+func (host *WasmHost) ResetObjects() {
+	host.objIdToObj = host.objIdToObj[:2]
 }
 
 func (host *WasmHost) RunFunction(functionName string) error {
@@ -284,6 +299,30 @@ func (host *WasmHost) SetError(text string) {
 	if !host.HasError() {
 		host.error = text
 	}
+}
+
+func (host *WasmHost) SetExport(index int32, functionName string) {
+	if index < 0 {
+		if index != KeyZzzzzzz {
+			host.SetError("SetExport: predefined key value mismatch")
+		}
+		return
+	}
+	_, ok := host.funcToCode[functionName]
+	if ok {
+		host.SetError("SetExport: duplicate function name")
+		return
+	}
+	hn := coretypes.Hn(functionName)
+	hashedName := uint32(hn)
+	_, ok = host.codeToFunc[hashedName]
+	if ok {
+		host.SetError("SetExport: duplicate hashed name")
+		return
+	}
+	host.codeToFunc[hashedName] = functionName
+	host.funcToCode[functionName] = hashedName
+	host.funcToIndex[functionName] = index
 }
 
 func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {

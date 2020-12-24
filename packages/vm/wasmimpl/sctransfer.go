@@ -1,11 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package wasmhost
+package wasmimpl
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 type ScTransfer struct {
@@ -19,16 +20,16 @@ func (o *ScTransfer) Exists(keyId int32) bool {
 
 func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyAgent:
-		return OBJTYPE_BYTES //TODO OBJTYPE_AGENT
+	case wasmhost.KeyAgent:
+		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	}
-	return OBJTYPE_INT
+	return wasmhost.OBJTYPE_INT
 }
 
 func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 	var err error
 	switch keyId {
-	case KeyAgent:
+	case wasmhost.KeyAgent:
 		o.agent, err = coretypes.NewAgentIDFromBytes(value)
 		if err != nil {
 			panic("Invalid agent: " + err.Error())
@@ -40,7 +41,7 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 
 func (o *ScTransfer) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case KeyLength:
+	case wasmhost.KeyLength:
 		o.agent = coretypes.AgentID{}
 	default:
 		key := o.vm.GetKeyFromId(keyId)

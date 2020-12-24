@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/vm/wasmimpl"
 )
 
 // VMType is the name of the plugin.
@@ -27,7 +27,7 @@ func configure(_ *node.Plugin) {
 
 	// register VM type(s)
 	err := processors.RegisterVMType(VMType, func(binary []byte) (vmtypes.Processor, error) {
-		return wasmhost.GetProcessor(binary, log)
+		return wasmimpl.GetProcessor(binary, log)
 	})
 	if err != nil {
 		log.Panicf("%v: %v", VMType, err)

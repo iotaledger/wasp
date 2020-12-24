@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package wasmhost
+package wasmimpl
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 type ScCallInfo struct {
@@ -25,26 +26,26 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyParams:    func() WaspObject { return &ScDict{kvStore: dict.New()} },
-		KeyResults:   func() WaspObject { return &ScDict{kvStore: dict.New()} },
-		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
+		wasmhost.KeyParams:    func() WaspObject { return &ScDict{kvStore: dict.New()} },
+		wasmhost.KeyResults:   func() WaspObject { return &ScDict{kvStore: dict.New()} },
+		wasmhost.KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
 
 func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyContract:
-		return OBJTYPE_STRING
-	case KeyDelay:
-		return OBJTYPE_INT
-	case KeyFunction:
-		return OBJTYPE_STRING
-	case KeyParams:
-		return OBJTYPE_MAP
-	case KeyResults:
-		return OBJTYPE_MAP
-	case KeyTransfers:
-		return OBJTYPE_MAP
+	case wasmhost.KeyContract:
+		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyDelay:
+		return wasmhost.OBJTYPE_INT
+	case wasmhost.KeyFunction:
+		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyParams:
+		return wasmhost.OBJTYPE_MAP
+	case wasmhost.KeyResults:
+		return wasmhost.OBJTYPE_MAP
+	case wasmhost.KeyTransfers:
+		return wasmhost.OBJTYPE_MAP
 	}
 	return 0
 }
@@ -56,13 +57,13 @@ func (o *ScCallInfo) Invoke() {
 		contractCode = coretypes.Hn(o.contract)
 	}
 	functionCode := coretypes.Hn(o.function)
-	paramsId := o.GetObjectId(KeyParams, OBJTYPE_MAP)
+	paramsId := o.GetObjectId(wasmhost.KeyParams, wasmhost.OBJTYPE_MAP)
 	params := o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
 		o.Trace("  PARAM '%s'", key)
 		return true
 	})
-	transfersId := o.GetObjectId(KeyTransfers, OBJTYPE_MAP)
+	transfersId := o.GetObjectId(wasmhost.KeyTransfers, wasmhost.OBJTYPE_MAP)
 	transfers := o.vm.FindObject(transfersId).(*ScCallTransfers).Transfers
 	balances := cbalances.NewFromMap(transfers)
 	var err error
@@ -75,16 +76,16 @@ func (o *ScCallInfo) Invoke() {
 	if err != nil {
 		o.Panic("failed to invoke call: %v", err)
 	}
-	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
+	resultsId := o.GetObjectId(wasmhost.KeyResults, wasmhost.OBJTYPE_MAP)
 	o.vm.FindObject(resultsId).(*ScDict).kvStore = results
 }
 
 func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case KeyLength:
+	case wasmhost.KeyLength:
 		o.contract = ""
 		o.function = ""
-	case KeyDelay:
+	case wasmhost.KeyDelay:
 		if value != -1 {
 			o.Panic("Unexpected value for delay: %d", value)
 		}
@@ -96,9 +97,9 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 
 func (o *ScCallInfo) SetString(keyId int32, value string) {
 	switch keyId {
-	case KeyContract:
+	case wasmhost.KeyContract:
 		o.contract = value
-	case KeyFunction:
+	case wasmhost.KeyFunction:
 		o.function = value
 	default:
 		o.ScDict.SetString(keyId, value)
@@ -121,25 +122,25 @@ func (o *ScPostInfo) Exists(keyId int32) bool {
 
 func (o *ScPostInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyParams:    func() WaspObject { return &ScDict{kvStore: dict.New()} },
-		KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
+		wasmhost.KeyParams:    func() WaspObject { return &ScDict{kvStore: dict.New()} },
+		wasmhost.KeyTransfers: func() WaspObject { return &ScCallTransfers{} },
 	})
 }
 
 func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyChain:
-		return OBJTYPE_BYTES //TODO OBJTYPE_ADDRESS
-	case KeyContract:
-		return OBJTYPE_STRING
-	case KeyDelay:
-		return OBJTYPE_INT
-	case KeyFunction:
-		return OBJTYPE_STRING
-	case KeyParams:
-		return OBJTYPE_MAP
-	case KeyTransfers:
-		return OBJTYPE_MAP
+	case wasmhost.KeyChain:
+		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_ADDRESS
+	case wasmhost.KeyContract:
+		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyDelay:
+		return wasmhost.OBJTYPE_INT
+	case wasmhost.KeyFunction:
+		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyParams:
+		return wasmhost.OBJTYPE_MAP
+	case wasmhost.KeyTransfers:
+		return wasmhost.OBJTYPE_MAP
 	}
 	return 0
 }
@@ -156,7 +157,7 @@ func (o *ScPostInfo) Invoke() {
 	}
 	functionCode := coretypes.Hn(o.function)
 	params := dict.New()
-	paramsId, ok := o.objects[KeyParams]
+	paramsId, ok := o.objects[wasmhost.KeyParams]
 	if ok {
 		params = o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
@@ -164,7 +165,7 @@ func (o *ScPostInfo) Invoke() {
 			return true
 		})
 	}
-	transfersId := o.GetObjectId(KeyTransfers, OBJTYPE_MAP)
+	transfersId := o.GetObjectId(wasmhost.KeyTransfers, wasmhost.OBJTYPE_MAP)
 	transfers := o.vm.FindObject(transfersId).(*ScCallTransfers).Transfers
 	balances := cbalances.NewFromMap(transfers)
 	if !o.vm.ctx.PostRequest(vmtypes.NewRequestParams{
@@ -180,7 +181,7 @@ func (o *ScPostInfo) Invoke() {
 
 func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
 	switch keyId {
-	case KeyChain:
+	case wasmhost.KeyChain:
 		chainId, err := coretypes.NewChainIDFromBytes(value)
 		if err != nil {
 			o.Panic(err.Error())
@@ -193,12 +194,12 @@ func (o *ScPostInfo) SetBytes(keyId int32, value []byte) {
 
 func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case KeyLength:
+	case wasmhost.KeyLength:
 		o.chainId = nil
 		o.contract = ""
 		o.delay = 0
 		o.function = ""
-	case KeyDelay:
+	case wasmhost.KeyDelay:
 		if value < 0 {
 			o.Panic("Unexpected value for delay: %d", value)
 		}
@@ -211,9 +212,9 @@ func (o *ScPostInfo) SetInt(keyId int32, value int64) {
 
 func (o *ScPostInfo) SetString(keyId int32, value string) {
 	switch keyId {
-	case KeyContract:
+	case wasmhost.KeyContract:
 		o.contract = value
-	case KeyFunction:
+	case wasmhost.KeyFunction:
 		o.function = value
 	default:
 		o.ScDict.SetString(keyId, value)
@@ -234,23 +235,23 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		KeyParams:  func() WaspObject { return &ScDict{kvStore: dict.New()} },
-		KeyResults: func() WaspObject { return &ScDict{kvStore: dict.New()} },
+		wasmhost.KeyParams:  func() WaspObject { return &ScDict{kvStore: dict.New()} },
+		wasmhost.KeyResults: func() WaspObject { return &ScDict{kvStore: dict.New()} },
 	})
 }
 
 func (o *ScViewInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case KeyContract:
-		return OBJTYPE_STRING
-	case KeyDelay:
-		return OBJTYPE_INT
-	case KeyFunction:
-		return OBJTYPE_STRING
-	case KeyParams:
-		return OBJTYPE_MAP
-	case KeyResults:
-		return OBJTYPE_MAP
+	case wasmhost.KeyContract:
+		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyDelay:
+		return wasmhost.OBJTYPE_INT
+	case wasmhost.KeyFunction:
+		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyParams:
+		return wasmhost.OBJTYPE_MAP
+	case wasmhost.KeyResults:
+		return wasmhost.OBJTYPE_MAP
 	}
 	return 0
 }
@@ -263,7 +264,7 @@ func (o *ScViewInfo) Invoke() {
 	}
 	functionCode := coretypes.Hn(o.function)
 	params := dict.New()
-	paramsId, ok := o.objects[KeyParams]
+	paramsId, ok := o.objects[wasmhost.KeyParams]
 	if ok {
 		params = o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 		params.MustIterate("", func(key kv.Key, value []byte) bool {
@@ -281,16 +282,16 @@ func (o *ScViewInfo) Invoke() {
 	if err != nil {
 		o.Panic("failed to invoke view: %v", err)
 	}
-	resultsId := o.GetObjectId(KeyResults, OBJTYPE_MAP)
+	resultsId := o.GetObjectId(wasmhost.KeyResults, wasmhost.OBJTYPE_MAP)
 	o.vm.FindObject(resultsId).(*ScDict).kvStore = results
 }
 
 func (o *ScViewInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case KeyLength:
+	case wasmhost.KeyLength:
 		o.contract = ""
 		o.function = ""
-	case KeyDelay:
+	case wasmhost.KeyDelay:
 		if value != -2 {
 			o.Panic("Unexpected value for delay: %d", value)
 		}
@@ -302,9 +303,9 @@ func (o *ScViewInfo) SetInt(keyId int32, value int64) {
 
 func (o *ScViewInfo) SetString(keyId int32, value string) {
 	switch keyId {
-	case KeyContract:
+	case wasmhost.KeyContract:
 		o.contract = value
-	case KeyFunction:
+	case wasmhost.KeyFunction:
 		o.function = value
 	default:
 		o.ScDict.SetString(keyId, value)
@@ -366,12 +367,12 @@ func (o *ScCallTransfers) Exists(keyId int32) bool {
 }
 
 func (o *ScCallTransfers) GetTypeId(keyId int32) int32 {
-	return OBJTYPE_INT
+	return wasmhost.OBJTYPE_INT
 }
 
 func (o *ScCallTransfers) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case KeyLength:
+	case wasmhost.KeyLength:
 		o.Transfers = make(map[balance.Color]int64)
 	default:
 		var color balance.Color = [32]byte{}

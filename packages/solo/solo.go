@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/vm/wasmimpl"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -117,7 +117,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 			glbLogger = testutil.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
 		err := processors.RegisterVMType(wasmtimevm.VMType, func(binary []byte) (vmtypes.Processor, error) {
-			return wasmhost.GetProcessor(binary, glbLogger)
+			return wasmimpl.GetProcessor(binary, glbLogger)
 		})
 		require.NoError(t, err)
 	})

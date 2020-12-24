@@ -1,21 +1,20 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package wasmhost
+package wasmimpl
 
 import (
 	"fmt"
 	"github.com/iotaledger/hive.go/logger"
-	"strconv"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 type wasmProcessor struct {
-	WasmHost
+	wasmhost.WasmHost
 	ctx       vmtypes.Sandbox
 	ctxView   vmtypes.SandboxView
 	function  string
@@ -24,9 +23,9 @@ type wasmProcessor struct {
 	logger    *logger.Logger
 }
 
-var GoWasmVM WasmVM
+var GoWasmVM wasmhost.WasmVM
 
-func NewWasmProcessor(vm WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
+func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
 	if logger != nil {
 		host.logger = logger.Named("wasmtrace")
@@ -34,13 +33,12 @@ func NewWasmProcessor(vm WasmVM, logger *logger.Logger) (*wasmProcessor, error) 
 	if GoWasmVM != nil {
 		vm = GoWasmVM
 	}
-	host.vm = vm
-	host.scContext = NewScContext(host)
-	host.Init(NewNullObject(host), host.scContext, host)
-	err := host.InitVM(vm)
+	err := host.InitVM(vm, false)
 	if err != nil {
 		return nil, err
 	}
+	host.scContext = NewScContext(host)
+	host.Init(NewNullObject(host), host.scContext, host)
 	return host, nil
 }
 
@@ -60,7 +58,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	defer func() {
 		host.nesting--
 		if host.nesting == 0 {
-			host.logTextIntern("Finalizing calls")
+			host.logText("Finalizing calls")
 			host.scContext.Finalize()
 		}
 		host.ctx = saveCtx
@@ -69,17 +67,17 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 
 	testMode, _ := host.Params().Has("testMode")
 	if testMode {
-		host.logTextIntern("TEST MODE")
+		host.logText("TEST MODE")
 		TestMode = true
 	}
 
-	host.logTextIntern("Calling " + host.function)
+	host.logText("Calling " + host.function)
 	err := host.RunScFunction(host.function)
 	if err != nil {
 		return nil, err
 	}
 
-	results := host.FindSubObject(nil, KeyResults, OBJTYPE_MAP).(*ScDict).kvStore.(dict.Dict)
+	results := host.FindSubObject(nil, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP).(*ScDict).kvStore.(dict.Dict)
 	return results, nil
 }
 
@@ -96,8 +94,8 @@ func (host *wasmProcessor) GetDescription() string {
 }
 
 func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
-	function, ok := host.codeToFunc[uint32(code)]
-	if !ok && code != coretypes.EntryPointInit {
+	function := host.FunctionFromCode(uint32(code))
+	if function == "" && code != coretypes.EntryPointInit {
 		return nil, false
 	}
 	host.function = function
@@ -105,7 +103,7 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 }
 
 func GetProcessor(binaryCode []byte, logger *logger.Logger) (vmtypes.Processor, error) {
-	vm, err := NewWasmProcessor(NewWasmTimeVM(), logger)
+	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), logger)
 	if err != nil {
 		return nil, err
 	}
@@ -117,33 +115,7 @@ func GetProcessor(binaryCode []byte, logger *logger.Logger) (vmtypes.Processor, 
 }
 
 func (host *wasmProcessor) IsView() bool {
-	return (host.funcToIndex[host.function] & 0x8000) != 0
-}
-
-func (host *wasmProcessor) SetExport(index int32, functionName string) {
-	if index < 0 {
-		host.logTextIntern(functionName + " = " + strconv.Itoa(int(index)))
-		if index != KeyZzzzzzz {
-			host.SetError("SetExport: predefined key value mismatch")
-		}
-		return
-	}
-	_, ok := host.funcToCode[functionName]
-	if ok {
-		host.SetError("SetExport: duplicate function name")
-		return
-	}
-	hn := coretypes.Hn(functionName)
-	host.logTextIntern(functionName + " = " + hn.String())
-	hashedName := uint32(hn)
-	_, ok = host.codeToFunc[hashedName]
-	if ok {
-		host.SetError("SetExport: duplicate hashed name")
-		return
-	}
-	host.codeToFunc[hashedName] = functionName
-	host.funcToCode[functionName] = hashedName
-	host.funcToIndex[functionName] = index
+	return host.WasmHost.IsView(host.function)
 }
 
 func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
@@ -152,23 +124,23 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 
 func (host *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
-	case KeyTraceAll:
-		//host.logTextIntern(text)
-	case KeyTrace:
-		host.logTextIntern(text)
-	case KeyLog:
-		host.logTextIntern(text)
-	case KeyPanic:
-		host.logTextIntern(text)
-	case KeyWarning:
-		host.logTextIntern(text)
-	case KeyError:
-		host.logTextIntern(text)
+	case wasmhost.KeyTraceAll:
+		//host.logText(text)
+	case wasmhost.KeyTrace:
+		host.logText(text)
+	case wasmhost.KeyLog:
+		host.logText(text)
+	case wasmhost.KeyPanic:
+		host.logText(text)
+	case wasmhost.KeyWarning:
+		host.logText(text)
+	case wasmhost.KeyError:
+		host.logText(text)
 	}
 }
 
-// logTextIntern internal tracing for wasmProcessor
-func (host *wasmProcessor) logTextIntern(text string) {
+// logText internal tracing for wasmProcessor
+func (host *wasmProcessor) logText(text string) {
 	if host.logger != nil {
 		host.logger.Debug(text)
 		return
