@@ -54,6 +54,7 @@ func (vmctx *VMContext) chainlogRequest(err error) {
 		e = err.Error()
 	}
 	msg := fmt.Sprintf("[req] %s: %s", vmctx.reqRef.RequestID().String(), e)
+	vmctx.log.Infof("chainlog -> '%s'", msg)
 	vmctx.StoreToChainLog(vmctx.reqHname, []byte(msg))
 }
 
