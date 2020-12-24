@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/publisher"
+	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 func (op *operator) newRequest(reqId coretypes.RequestID) *request {

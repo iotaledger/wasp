@@ -266,6 +266,7 @@ const tplChain = `
 				</table>
 			</div>
 		{{end}}
+		{{ template "ws" .ChainID }}
 	{{else}}
 		<div class="card fluid error">No chain record for ID <td>{{$chainid}}</tt></div>
 	{{end}}

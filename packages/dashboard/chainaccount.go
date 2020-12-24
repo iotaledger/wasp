@@ -78,6 +78,7 @@ const tplChainAccount = `
 			<h3 class="section">Balances</h3>
 			{{ template "balances" .Balances }}
 		</div>
+		{{ template "ws" .ChainID }}
 	{{else}}
 		<div class="card fluid error">Not found.</div>
 	{{end}}

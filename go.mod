@@ -8,6 +8,7 @@ require (
 	github.com/iotaledger/hive.go v0.0.0-20201203130604-bd82d648670e
 	github.com/knadh/koanf v0.14.0
 	github.com/labstack/echo v3.3.10+incompatible
+	github.com/labstack/gommon v0.3.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0
@@ -19,5 +20,6 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/tools v0.0.0-20201218024724-ae774e9781d2 // indirect
 )
