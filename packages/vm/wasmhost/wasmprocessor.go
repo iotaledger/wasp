@@ -24,10 +24,15 @@ type wasmProcessor struct {
 	logger    *logger.Logger
 }
 
+var GoWasmVM WasmVM
+
 func NewWasmProcessor(vm WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
 	if logger != nil {
 		host.logger = logger.Named("wasmtrace")
+	}
+	if GoWasmVM != nil {
+		vm = GoWasmVM
 	}
 	host.vm = vm
 	host.scContext = NewScContext(host)
