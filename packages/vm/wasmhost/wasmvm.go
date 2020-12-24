@@ -153,6 +153,10 @@ func (vm *WasmVmBase) PostCall(frame []byte) {
 func (vm *WasmVmBase) SaveMemory() {
 	// find initialized data range in memory
 	ptr := vm.impl.UnsafeMemory()
+	if ptr == nil {
+		// this vm implementation does not communicate via mem pool
+		return
+	}
 	firstNonZero := 0
 	lastNonZero := 0
 	for i, b := range ptr {
