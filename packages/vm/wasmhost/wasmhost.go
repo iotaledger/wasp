@@ -56,9 +56,8 @@ type WasmHost struct {
 }
 
 func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
-	host.vm = vm
 	host.useBase58Keys = useBase58Keys
-	return vm.LinkHost(host)
+	return vm.LinkHost(vm, host)
 }
 
 func (host *WasmHost) Init(null HostObject, root HostObject, logger LogInterface) {

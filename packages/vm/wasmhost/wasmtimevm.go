@@ -19,66 +19,65 @@ type WasmTimeVM struct {
 
 func NewWasmTimeVM() *WasmTimeVM {
 	vm := &WasmTimeVM{}
-	vm.impl = vm
 	vm.store = wasmtime.NewStore(wasmtime.NewEngine())
 	vm.linker = wasmtime.NewLinker(vm.store)
 	return vm
 }
 
-func (vm *WasmTimeVM) LinkHost(host *WasmHost) error {
-	vm.host = host
+func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
+	vm.WasmVmBase.LinkHost(impl, host)
 	err := vm.linker.DefineFunc("wasplib", "hostGetBytes",
 		func(objId int32, keyId int32, stringRef int32, size int32) int32 {
-			return vm.hostGetBytes(objId, keyId, stringRef, size)
+			return vm.HostGetBytes(objId, keyId, stringRef, size)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostGetInt",
 		func(objId int32, keyId int32) int64 {
-			return vm.hostGetInt(objId, keyId)
+			return vm.HostGetInt(objId, keyId)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostGetIntRef",
 		func(objId int32, keyId int32, intRef int32) {
-			vm.hostGetIntRef(objId, keyId, intRef)
+			vm.HostGetIntRef(objId, keyId, intRef)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostGetKeyId",
 		func(keyRef int32, size int32) int32 {
-			return vm.hostGetKeyId(keyRef, size)
+			return vm.HostGetKeyId(keyRef, size)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostGetObjectId",
 		func(objId int32, keyId int32, typeId int32) int32 {
-			return vm.hostGetObjectId(objId, keyId, typeId)
+			return vm.HostGetObjectId(objId, keyId, typeId)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostSetBytes",
 		func(objId int32, keyId int32, stringRef int32, size int32) {
-			vm.hostSetBytes(objId, keyId, stringRef, size)
+			vm.HostSetBytes(objId, keyId, stringRef, size)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostSetInt",
 		func(objId int32, keyId int32, value int64) {
-			vm.hostSetInt(objId, keyId, value)
+			vm.HostSetInt(objId, keyId, value)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("wasplib", "hostSetIntRef",
 		func(objId int32, keyId int32, intRef int32) {
-			vm.hostSetIntRef(objId, keyId, intRef)
+			vm.HostSetIntRef(objId, keyId, intRef)
 		})
 	if err != nil {
 		return err
@@ -86,7 +85,7 @@ func (vm *WasmTimeVM) LinkHost(host *WasmHost) error {
 	// go implementation uses this one to write panic message
 	err = vm.linker.DefineFunc("wasi_unstable", "fd_write",
 		func(fd int32, iovs int32, size int32, written int32) int32 {
-			return vm.hostFdWrite(fd, iovs, size, written)
+			return vm.HostFdWrite(fd, iovs, size, written)
 		})
 	if err != nil {
 		return err
