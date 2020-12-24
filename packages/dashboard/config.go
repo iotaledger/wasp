@@ -10,24 +10,23 @@ import (
 	"github.com/labstack/echo"
 )
 
-type configNavPage struct{}
+func configInit(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/", handleConfig)
+	route.Name = "config"
 
-const configRoute = "/"
-const configTplName = "config"
+	r[route.Path] = makeTemplate(e, tplConfig)
 
-func (n *configNavPage) Title() string { return "Configuration" }
-func (n *configNavPage) Href() string  { return configRoute }
-
-func (n *configNavPage) AddTemplates(r renderer) {
-	r[configTplName] = MakeTemplate(tplConfig)
+	return Tab{
+		Path:  route.Path,
+		Title: "Configuration",
+		Href:  route.Path,
+	}
 }
 
-func (n *configNavPage) AddEndpoints(e *echo.Echo) {
-	e.GET(configRoute, func(c echo.Context) error {
-		return c.Render(http.StatusOK, configTplName, &ConfigTemplateParams{
-			BaseTemplateParams: BaseParams(c, configRoute),
-			Configuration:      config.Dump(),
-		})
+func handleConfig(c echo.Context) error {
+	return c.Render(http.StatusOK, c.Path(), &ConfigTemplateParams{
+		BaseTemplateParams: BaseParams(c),
+		Configuration:      config.Dump(),
 	})
 }
 

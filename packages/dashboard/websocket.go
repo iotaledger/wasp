@@ -15,7 +15,8 @@ import (
 var wsClients = sync.Map{}
 
 func addWsEndpoints(e *echo.Echo) {
-	e.GET("/chain/:chainid/ws", handleWebSocket)
+	route := e.GET("/chain/:chainid/ws", handleWebSocket)
+	route.Name = "chainWs"
 }
 
 func handleWebSocket(c echo.Context) error {
@@ -74,7 +75,7 @@ func startWsForwarder() {
 const tplWs = `
 {{define "ws"}}
 	<script>
-		const url = 'ws://' +  location.host + '/chain/{{.}}/ws';
+		const url = 'ws://' +  location.host + '{{ uri "chainWs" . }}';
 		console.log('opening WebSocket to ' + url);
 		const ws = new WebSocket(url);
 

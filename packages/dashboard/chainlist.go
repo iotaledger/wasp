@@ -8,19 +8,27 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainListRoute = "/chains"
-const chainListTplName = "chainList"
+func initChainList(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/chains", handleChainList)
+	route.Name = "chainList"
 
-func addChainListEndpoints(e *echo.Echo) {
-	e.GET(chainListRoute, func(c echo.Context) error {
-		chains, err := fetchChains()
-		if err != nil {
-			return err
-		}
-		return c.Render(http.StatusOK, chainListTplName, &ChainListTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainListRoute),
-			Chains:             chains,
-		})
+	r[route.Path] = makeTemplate(e, tplChainList)
+
+	return Tab{
+		Path:  route.Path,
+		Title: "Chains",
+		Href:  route.Path,
+	}
+}
+
+func handleChainList(c echo.Context) error {
+	chains, err := fetchChains()
+	if err != nil {
+		return err
+	}
+	return c.Render(http.StatusOK, c.Path(), &ChainListTemplateParams{
+		BaseTemplateParams: BaseParams(c),
+		Chains:             chains,
 	})
 }
 
@@ -72,7 +80,7 @@ const tplChainList = `
 			{{range $_, $c := .Chains}}
 				{{ $id := $c.ChainRecord.ChainID }}
 				<tr>
-					<td data-label="ID"><a href="/chain/{{ $id }}"><tt>{{ $id }}</tt></a></td>
+					<td data-label="ID">{{ if not $c.Error }}<a href="{{ uri "chain" $id }}"><tt>{{ $id }}</tt></a>{{ else }}<tt>{{ $id }}</tt>{{ end }}</td>
 					<td data-label="Description">{{ printf "%.50s" $c.RootInfo.Description }}
 						{{- if $c.Error }}<div class="card fluid error">{{ $c.Error }}</div>{{ end }}</td>
 					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.ChainRecord.CommitteeNodes }}</tt>{{ end }}</td>

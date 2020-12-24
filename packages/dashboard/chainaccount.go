@@ -3,6 +3,7 @@ package dashboard
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -12,46 +13,48 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainAccountRoute = "/chain/:chainid/account/:type/:id"
-const chainAccountTplName = "chainAccount"
+func initChainAccount(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/account/:agentid", handleChainAccount)
+	route.Name = "chainAccount"
+	r[route.Path] = makeTemplate(e, tplChainAccount, tplWs)
+}
 
-func addChainAccountEndpoints(e *echo.Echo) {
-	e.GET(chainAccountRoute, func(c echo.Context) error {
-		chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+func handleChainAccount(c echo.Context) error {
+	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	if err != nil {
+		return err
+	}
+
+	agentID, err := coretypes.NewAgentIDFromString(strings.Replace(c.Param("agentid"), ":", "/", 1))
+	if err != nil {
+		return err
+	}
+
+	result := &ChainAccountTemplateParams{
+		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+			Path:  c.Path(),
+			Title: fmt.Sprintf("Account %.8s…", agentID),
+			Href:  "#",
+		}),
+		ChainID: chainID,
+		AgentID: agentID,
+	}
+
+	chain := chains.GetChain(chainID)
+	if chain != nil {
+		bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
+			accounts.ParamAgentID: codec.EncodeAgentID(agentID),
+		}))
 		if err != nil {
 			return err
 		}
-
-		agentID, err := coretypes.NewAgentIDFromString(c.Param("type") + "/" + c.Param("id"))
+		result.Balances, err = accounts.DecodeBalances(bal)
 		if err != nil {
 			return err
 		}
+	}
 
-		result := &ChainAccountTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainAccountRoute, chainBreadcrumb(chainID), Breadcrumb{
-				Title: fmt.Sprintf("Account %.8s…", agentID),
-				Href:  "#",
-			}),
-			ChainID: chainID,
-			AgentID: agentID,
-		}
-
-		chain := chains.GetChain(chainID)
-		if chain != nil {
-			bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
-				accounts.ParamAgentID: codec.EncodeAgentID(agentID),
-			}))
-			if err != nil {
-				return err
-			}
-			result.Balances, err = accounts.DecodeBalances(bal)
-			if err != nil {
-				return err
-			}
-		}
-
-		return c.Render(http.StatusOK, chainAccountTplName, result)
-	})
+	return c.Render(http.StatusOK, c.Path(), result)
 }
 
 type ChainAccountTemplateParams struct {
