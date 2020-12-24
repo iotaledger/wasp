@@ -23,6 +23,8 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestFail(t *testing.T) {
+	// disabled, changes to Wasm VM but test_dummy code is no longer in wasplib
+	t.SkipNow()
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, contractName, fileName,
@@ -34,6 +36,8 @@ func TestFail(t *testing.T) {
 }
 
 func TestFailRepeat(t *testing.T) {
+	// disabled, changes to Wasm VM but test_dummy code is no longer in wasplib
+	t.SkipNow()
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, contractName, fileName,
