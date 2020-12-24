@@ -132,7 +132,7 @@ func (vm *WasmVmBase) HostSetIntRef(objId int32, keyId int32, intRef int32) {
 	host.SetInt(objId, keyId, vm.vmGetInt(intRef))
 }
 
-func (vm *WasmVmBase) preCall() []byte {
+func (vm *WasmVmBase) PreCall() []byte {
 	ptr := vm.impl.UnsafeMemory()
 	frame := make([]byte, len(ptr))
 	copy(frame, ptr)
@@ -145,7 +145,7 @@ func (vm *WasmVmBase) preCall() []byte {
 	return frame
 }
 
-func (vm *WasmVmBase) postCall(frame []byte) {
+func (vm *WasmVmBase) PostCall(frame []byte) {
 	ptr := vm.impl.UnsafeMemory()
 	copy(ptr, frame)
 }
