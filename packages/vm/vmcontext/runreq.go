@@ -54,6 +54,7 @@ func (vmctx *VMContext) chainlogRequest(err error) {
 		e = err.Error()
 	}
 	msg := fmt.Sprintf("[req] %s: %s", vmctx.reqRef.RequestID().String(), e)
+	vmctx.log.Infof("chainlog -> '%s'", msg)
 	vmctx.StoreToChainLog(vmctx.reqHname, []byte(msg))
 }
 
@@ -74,7 +75,8 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	// ordinary request, only makes sense when chain is already deployed
 	info, err := vmctx.getChainInfo()
 	if err != nil {
-		panic(err)
+		vmctx.log.Errorf("setRequestContext: %s", err)
+		return false
 	}
 	if info.ChainID != vmctx.chainID {
 		vmctx.log.Errorf("setRequestContext: major inconsistency of chainID")

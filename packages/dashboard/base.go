@@ -5,64 +5,56 @@ package dashboard
 
 import (
 	"html/template"
+	"strings"
 
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo"
+	"github.com/mr-tron/base58"
 )
 
-type NavPage interface {
-	Title() string
-	Href() string
-
-	AddTemplates(r renderer)
-	AddEndpoints(e *echo.Echo)
-}
-
-type Breadcrumb struct {
-	Title  string
-	Href   string
-	Active bool
+type Tab struct {
+	Path       string
+	Title      string
+	Href       string
+	Breadcrumb bool
 }
 
 type BaseTemplateParams struct {
-	NavPages    []NavPage
-	Breadcrumbs []Breadcrumb
-	ActivePage  string
+	NavPages    []Tab
+	Breadcrumbs []Tab
+	Path        string
 	MyNetworkId string
 }
 
-var navPages = []NavPage{
-	&configNavPage{},
-	&peeringNavPage{},
-	&chainsNavPage{},
-}
+var navPages []Tab
 
 func Init(server *echo.Echo) {
 	r := renderer{}
 	server.Renderer = r
 
-	for _, navPage := range navPages {
-		navPage.AddTemplates(r)
-		navPage.AddEndpoints(server)
+	navPages = []Tab{
+		configInit(server, r),
+		peeringInit(server, r),
+		chainsInit(server, r),
 	}
+
+	addWsEndpoints(server)
+	startWsForwarder()
 
 	useHTMLErrorHandler(server)
 }
 
-func BaseParams(c echo.Context, activePage string, breadcrumbs ...Breadcrumb) BaseTemplateParams {
+func BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {
 	b := BaseTemplateParams{
 		NavPages:    navPages,
 		Breadcrumbs: breadcrumbs,
-		ActivePage:  activePage,
+		Path:        c.Path(),
 		MyNetworkId: peering.DefaultNetworkProvider().Self().NetID(),
-	}
-	if len(b.Breadcrumbs) > 0 {
-		b.Breadcrumbs[len(b.Breadcrumbs)-1].Active = true
 	}
 	return b
 }
 
-func MakeTemplate(parts ...string) *template.Template {
+func makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":   formatTimestamp,
 		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
@@ -70,6 +62,9 @@ func MakeTemplate(parts ...string) *template.Template {
 		"hashref":           hashref,
 		"quoted":            quoted,
 		"bytesToString":     bytesToString,
+		"base58":            base58.Encode,
+		"replace":           strings.Replace,
+		"uri":               func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {
@@ -94,7 +89,7 @@ const tplBase = `
 {{define "agentid"}}
 	{{ $chainid := index . 0 }}
 	{{ $agentid := index . 1 }}
-	<a href="/chain/{{ $chainid }}/account/{{ $agentid }}"><tt>{{ $agentid }}</tt></a>
+	<a href="{{ uri "chainAccount" $chainid (replace $agentid.String "/" ":" 1) }}"><tt>{{ $agentid }}</tt></a>
 	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
 {{end}}
 
@@ -107,7 +102,7 @@ const tplBase = `
 	</dl>
 {{end}}
 
-{{define "navitem"}}
+{{define "tab"}}
 	{{ $title := index . 0 }}
 	{{ $href := index . 1 }}
 	{{ $active := index . 2 }}
@@ -178,12 +173,12 @@ const tplBase = `
 
 		<header>
 				<a class="logo" href="#">Wasp</a>
-				{{$activePage := .ActivePage}}
-				{{range $_, $p := .NavPages}}
-					{{ template "navitem" (args $p.Title $p.Href (eq $activePage $p.Href)) }}
+				{{$path := .Path}}
+				{{range $_, $tab := .NavPages}}
+					{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path)) }}
 				{{end}}
-				{{range $_, $p := .Breadcrumbs}}
-					{{ template "navitem" (args (printf "🢒 %s" $p.Title) $p.Href $p.Active) }}
+				{{range $_, $tab := .Breadcrumbs}}
+					{{ template "tab" (args (printf "🢒 %s" $tab.Title) $tab.Href (eq $path $tab.Path)) }}
 				{{end}}
 		</header>
 		<main>

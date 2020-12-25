@@ -14,10 +14,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-// EventStateTransitionMsg is triggered by new currentState transition message sent by currentState manager
+// EventStateTransitionMsg is called when new state transition message sent by the state manager
 func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.eventStateTransitionMsgCh <- msg
 }
+
+// eventStateTransitionMsg internal event handler
 func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg.AnchorTransaction, msg.VariableState, msg.Synchronized)
 
@@ -43,19 +45,22 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.takeAction()
 }
 
+// EventBalancesMsg is triggered whenever address balances are coming from the goshimmer
 func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.eventBalancesMsgCh <- reqMsg
 }
+
+// eventBalancesMsg internal event jandler
 func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
-	if err := op.checkSCToken(reqMsg.Balances); err != nil {
+
+	// TODO here redundant. Should be checked in the dispatcher (?)
+	if err := op.checkChainToken(reqMsg.Balances); err != nil {
 		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
 		return
 	}
-
 	op.balances = reqMsg.Balances
 	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
-
 	op.takeAction()
 }
 
@@ -63,23 +68,21 @@ func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
 func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
 	op.eventRequestMsgCh <- reqMsg
 }
+
+// eventRequestMsg internal handler
 func (op *operator) eventRequestMsg(reqMsg *chain.RequestMsg) {
 	op.log.Debugw("EventRequestMsg",
 		"reqid", reqMsg.RequestId().Short(),
 		"backlog req", len(op.requests),
 		"backlog notif", len(op.notificationsBacklog),
 	)
-	// place request into the backlog list
+	// place request into the backlog
 	req, _ := op.requestFromMsg(reqMsg)
 	if req == nil {
+		// TODO probably redundant logging
 		op.log.Warn("received already processed request id = %s", reqMsg.RequestId().Short())
 		return
 	}
-	//if reqMsg.Timelock() != 0 {
-	//	req.log.Debugf("TIMELOCKED REQUEST: %s. Nowis (Unix) = %d",
-	//		reqMsg.RequestSection().String(reqMsg.RequestID()), time.Now().Unix())
-	//}
-
 	op.takeAction()
 }
 
@@ -87,6 +90,8 @@ func (op *operator) eventRequestMsg(reqMsg *chain.RequestMsg) {
 func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.eventNotifyReqMsgCh <- msg
 }
+
+// eventNotifyReqMsg internal handler
 func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
 		"reqIds", idsShortStr(msg.RequestIDs),
@@ -95,14 +100,15 @@ func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	)
 	op.storeNotification(msg)
 	op.markRequestsNotified([]*chain.NotifyReqMsg{msg})
-
 	op.takeAction()
 }
 
-// EventStartProcessingBatchMsg leader sent command to start processing the batch
+// EventStartProcessingBatchMsg command to start processing the batch received from the leader
 func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatchMsg) {
 	op.eventStartProcessingBatchMsgCh <- msg
 }
+
+// eventStartProcessingBatchMsg internal handler
 func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatchMsg) {
 	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
 
@@ -118,6 +124,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		return
 	}
 	if op.iAmCurrentLeader() {
+		// TODO should not happen. Probably redundant. Panic?
 		op.log.Warnw("EventStartProcessingBatchMsg: ignored",
 			"sender", msg.SenderIndex,
 			"state index", stateIndex,
@@ -129,17 +136,22 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 	numOrig := len(msg.RequestIds)
 	reqs := op.takeFromIds(msg.RequestIds)
 	if len(reqs) != numOrig {
-		op.log.Warnf("node can't process the batch: some requests are already processed")
+		// some request were filtered out because not messages didn't reach the node yet.
+		// can't happen? Redundant? Panic?
+		op.log.Warnf("node can't process the batch: some requests are not known to the node")
 		return
 	}
-
 	reqs = op.filterNotReadyYet(reqs)
 	if len(reqs) != numOrig {
 		// do not start processing batch if some of it's requests are not ready yet
 		op.log.Warn("node is not ready to process the batch")
 		return
 	}
-	// check timestamp
+	// check timestamp. If the local clock is different from the timestamp from the leader more
+	// tha threshold, ignore command from the leader.
+	// Note that if leader's clock is ot synced with the peers clock significantly, committee
+	// will ignore the leader and leader will never earn reward.
+	// TODO: attack analysis
 	localts := time.Now().UnixNano()
 	diff := localts - msg.Timestamp
 	if diff < 0 {
@@ -151,7 +163,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		return
 	}
 
-	// start async calculation
+	// start async calculation as requested by the leader
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
 		timestamp:       msg.Timestamp,
@@ -163,15 +175,18 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 	op.takeAction()
 }
 
-// EventResultCalculated VM goroutine finished run and posted this message
+// EventResultCalculated batch calculation goroutine finished calculations and posted this message
 // the action is to send the result to the leader
 func (op *operator) EventResultCalculated(ctx *chain.VMResultMsg) {
 	op.eventResultCalculatedCh <- ctx
 }
+
+// eventResultCalculated internal handler
 func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 	op.log.Debugf("eventResultCalculated")
 
-	// check if result belongs to context
+	// check if result belongs to the context. In general, consensus may be already reached
+	// even before the node finished its calculations
 	if ctx.Task.ResultBlock.StateIndex() != op.mustStateIndex()+1 {
 		// out of context. ignore
 		return
@@ -181,7 +196,8 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 		"blockIndex", op.mustStateIndex(),
 	)
 
-	// inform state manager about new result batch
+	// inform own state manager about new result block. The state manager will start waiting
+	// from confirmation of it from the tangle
 	go func() {
 		op.chain.ReceiveMessage(chain.PendingBlockMsg{
 			Block: ctx.Task.ResultBlock,
@@ -197,10 +213,12 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 	op.takeAction()
 }
 
-// EventSignedHashMsg result received from another peer
+// EventSignedHashMsg partially signed calculation result received from another peer
 func (op *operator) EventSignedHashMsg(msg *chain.SignedHashMsg) {
 	op.eventSignedHashMsgCh <- msg
 }
+
+// eventSignedHashMsg internal handler
 func (op *operator) eventSignedHashMsg(msg *chain.SignedHashMsg) {
 	op.log.Debugw("EventSignedHashMsg",
 		"sender", msg.SenderIndex,
@@ -210,20 +228,22 @@ func (op *operator) eventSignedHashMsg(msg *chain.SignedHashMsg) {
 	)
 	if op.leaderStatus == nil {
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus == nil")
-		// shouldn't be
+		// shouldn't be, probably an attack
 		return
 	}
 	if stateIndex, ok := op.blockIndex(); !ok || msg.BlockIndex != stateIndex {
-		// out of context
+		// out of context, current node is lagging behind
 		op.log.Debugf("EventSignedHashMsg: out of context")
 		return
 	}
 	if msg.BatchHash != op.leaderStatus.batchHash {
+		// shouldn't be. Probably an attack
 		op.log.Errorf("EventSignedHashMsg: msg.BatchHash != op.leaderStatus.batchHash")
 		return
 	}
 	if op.leaderStatus.signedResults[msg.SenderIndex] != nil {
-		// repeating message from peer
+		// repeating message from peer.
+		// Shouldn't be. May be an attack or misbehavior
 		op.log.Debugf("EventSignedHashMsg: op.leaderStatus.signedResults[msg.SenderIndex].essenceHash != nil")
 		return
 	}
@@ -234,12 +254,15 @@ func (op *operator) eventSignedHashMsg(msg *chain.SignedHashMsg) {
 	op.takeAction()
 }
 
-// EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to other peers
+// EventNotifyFinalResultPostedMsg is triggered by the message sent by the leader to peers
 // immediately after posting finalized transaction to the tangle.
 // The message is used to postpone leader rotation deadline for at least confirmation period
+// Note that receiving this message does no mean the transaction has been accepted by th network
 func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
 	op.eventNotifyFinalResultPostedMsgCh <- msg
 }
+
+// eventNotifyFinalResultPostedMsg internal handler
 func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
@@ -247,6 +270,7 @@ func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 		"txid", msg.TxId.String(),
 	)
 	if stateIndex, ok := op.blockIndex(); !ok || msg.BlockIndex != stateIndex {
+		// the leader probably is lagging behind or it is an attack
 		return
 	}
 	if op.iAmCurrentLeader() {
@@ -257,9 +281,12 @@ func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 	op.setFinalizedTransaction(&msg.TxId)
 }
 
+// EventTransactionInclusionLevelMsg goshimmer send information about transaction
 func (op *operator) EventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
 	op.eventTransactionInclusionLevelMsgCh <- msg
 }
+
+// eventTransactionInclusionLevelMsg intrenal handler
 func (op *operator) eventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
 	op.log.Debugw("EventTransactionInclusionLevelMsg",
 		"txid", msg.TxId.String(),
@@ -268,9 +295,12 @@ func (op *operator) eventTransactionInclusionLevelMsg(msg *chain.TransactionIncl
 	op.checkInclusionLevel(msg.TxId, msg.Level)
 }
 
+// EventTimerMsg timer tick
 func (op *operator) EventTimerMsg(msg chain.TimerTick) {
 	op.eventTimerMsgCh <- msg
 }
+
+// eventTimerMsg internal handler
 func (op *operator) eventTimerMsg(msg chain.TimerTick) {
 	if msg%40 == 0 {
 		blockIndex, ok := op.blockIndex()

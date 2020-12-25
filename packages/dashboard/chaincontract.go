@@ -13,67 +13,69 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainContractRoute = "/chain/:chainid/contract/:hname"
-const chainContractTplName = "chainContract"
+func initChainContract(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/contract/:hname", handleChainContract)
+	route.Name = "chainContract"
+	r[route.Path] = makeTemplate(e, tplChainContract, tplWs)
+}
 
-func addChainContractEndpoints(e *echo.Echo) {
-	e.GET(chainContractRoute, func(c echo.Context) error {
-		chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+func handleChainContract(c echo.Context) error {
+	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	if err != nil {
+		return err
+	}
+
+	hname, err := coretypes.HnameFromString(c.Param("hname"))
+	if err != nil {
+		return err
+	}
+
+	result := &ChainContractTemplateParams{
+		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+			Path:  c.Path(),
+			Title: fmt.Sprintf("Contract %d", hname),
+			Href:  "#",
+		}),
+		ChainID: chainID,
+		Hname:   hname,
+	}
+
+	chain := chains.GetChain(chainID)
+	if chain != nil {
+		r, err := callView(chain, root.Interface.Hname(), root.FuncFindContract, codec.MakeDict(map[string]interface{}{
+			root.ParamHname: codec.EncodeHname(hname),
+		}))
+		if err != nil {
+			return err
+		}
+		result.ContractRecord, err = root.DecodeContractRecord(r[root.ParamData])
 		if err != nil {
 			return err
 		}
 
-		hname, err := coretypes.HnameFromString(c.Param("hname"))
+		r, err = callView(chain, chainlog.Interface.Hname(), chainlog.FuncGetLogRecords, codec.MakeDict(map[string]interface{}{
+			chainlog.ParamContractHname: codec.EncodeHname(hname),
+		}))
 		if err != nil {
 			return err
 		}
-
-		result := &ChainContractTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainContractRoute, chainBreadcrumb(chainID), Breadcrumb{
-				Title: fmt.Sprintf("Contract %d", hname),
-				Href:  "#",
-			}),
-			ChainID: chainID,
-			Hname:   hname,
-		}
-
-		chain := chains.GetChain(chainID)
-		if chain != nil {
-			r, err := callView(chain, root.Interface.Hname(), root.FuncFindContract, codec.MakeDict(map[string]interface{}{
-				root.ParamHname: codec.EncodeHname(hname),
-			}))
-			if err != nil {
-				return err
-			}
-			result.ContractRecord, err = root.DecodeContractRecord(r[root.ParamData])
-			if err != nil {
-				return err
-			}
-
-			r, err = callView(chain, chainlog.Interface.Hname(), chainlog.FuncGetLogRecords, codec.MakeDict(map[string]interface{}{
-				chainlog.ParamContractHname: codec.EncodeHname(hname),
-			}))
-			if err != nil {
-				return err
-			}
-			records := datatypes.NewMustArray(r, chainlog.ParamRecords)
-			result.Log = make([]*datatypes.TimestampedLogRecord, records.Len())
-			for i := uint16(0); i < records.Len(); i++ {
-				b := records.GetAt(i)
-				result.Log[i], err = datatypes.ParseRawLogRecord(b)
-				if err != nil {
-					return err
-				}
-			}
-
-			result.RootInfo, err = fetchRootInfo(chain)
+		records := datatypes.NewMustArray(r, chainlog.ParamRecords)
+		result.Log = make([]*datatypes.TimestampedLogRecord, records.Len())
+		for i := uint16(0); i < records.Len(); i++ {
+			b := records.GetAt(i)
+			result.Log[i], err = datatypes.ParseRawLogRecord(b)
 			if err != nil {
 				return err
 			}
 		}
 
-		return c.Render(http.StatusOK, chainContractTplName, result)
-	})
+		result.RootInfo, err = fetchRootInfo(chain)
+		if err != nil {
+			return err
+		}
+	}
+
+	return c.Render(http.StatusOK, c.Path(), result)
 }
 
 type ChainContractTemplateParams struct {
@@ -129,6 +131,7 @@ const tplChainContract = `
 				{{ end }}
 			</dl>
 		</div>
+		{{ template "ws" .ChainID }}
 	{{else}}
 		<div class="card fluid error">Not found.</div>
 	{{end}}

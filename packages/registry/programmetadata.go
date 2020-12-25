@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
-	"github.com/iotaledger/wasp/plugins/publisher"
+	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 // each program is uniquely identified by the hash of its binary code

@@ -17,62 +17,74 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainRoute = "/chain/:chainid"
 const chainTplName = "chain"
 
-func addChainEndpoints(e *echo.Echo) {
-	e.GET(chainRoute, func(c echo.Context) error {
-		chainid, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
+	return Tab{
+		Path:  e.Reverse("chain"),
+		Title: fmt.Sprintf("Chain %.8s…", chainID),
+		Href:  e.Reverse("chain", chainID.String()),
+	}
+}
+
+func initChain(e *echo.Echo, r renderer) {
+	e.GET("/chain/:chainid", handleChain).Name = "chain"
+	r[chainTplName] = makeTemplate(e, tplChain, tplWs)
+}
+
+func handleChain(c echo.Context) error {
+	chainid, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	if err != nil {
+		return err
+	}
+
+	tab := chainBreadcrumb(c.Echo(), chainid)
+
+	result := &ChainTemplateParams{
+		BaseTemplateParams: BaseParams(c, tab),
+		ChainID:            chainid,
+	}
+
+	result.ChainRecord, err = registry.GetChainRecord(&chainid)
+	if err != nil {
+		return err
+	}
+
+	if result.ChainRecord != nil && result.ChainRecord.Active {
+		_, result.Block, _, err = state.LoadSolidState(&chainid)
 		if err != nil {
 			return err
 		}
 
-		result := &ChainTemplateParams{
-			BaseTemplateParams: BaseParams(c, chainRoute, chainBreadcrumb(chainid)),
-			ChainID:            chainid,
-		}
+		chain := chains.GetChain(chainid)
 
-		result.ChainRecord, err = registry.GetChainRecord(&chainid)
+		result.Committee.Size = chain.Size()
+		result.Committee.Quorum = chain.Quorum()
+		result.Committee.NumPeers = chain.NumPeers()
+		result.Committee.HasQuorum = chain.HasQuorum()
+		result.Committee.PeerStatus = chain.PeerStatus()
+		result.RootInfo, err = fetchRootInfo(chain)
 		if err != nil {
 			return err
 		}
 
-		if result.ChainRecord != nil && result.ChainRecord.Active {
-			_, result.Block, _, err = state.LoadSolidState(&chainid)
-			if err != nil {
-				return err
-			}
-
-			chain := chains.GetChain(chainid)
-
-			result.Committee.Size = chain.Size()
-			result.Committee.Quorum = chain.Quorum()
-			result.Committee.NumPeers = chain.NumPeers()
-			result.Committee.HasQuorum = chain.HasQuorum()
-			result.Committee.PeerStatus = chain.PeerStatus()
-			result.RootInfo, err = fetchRootInfo(chain)
-			if err != nil {
-				return err
-			}
-
-			result.Accounts, err = fetchAccounts(chain)
-			if err != nil {
-				return err
-			}
-
-			result.TotalAssets, err = fetchTotalAssets(chain)
-			if err != nil {
-				return err
-			}
-
-			result.Blobs, err = fetchBlobs(chain)
-			if err != nil {
-				return err
-			}
+		result.Accounts, err = fetchAccounts(chain)
+		if err != nil {
+			return err
 		}
 
-		return c.Render(http.StatusOK, chainTplName, result)
-	})
+		result.TotalAssets, err = fetchTotalAssets(chain)
+		if err != nil {
+			return err
+		}
+
+		result.Blobs, err = fetchBlobs(chain)
+		if err != nil {
+			return err
+		}
+	}
+
+	return c.Render(http.StatusOK, chainTplName, result)
 }
 
 func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
@@ -164,7 +176,7 @@ const tplChain = `
 				<h3 class="section">Contracts</h3>
 				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
-					<dt><a href="/chain/{{$chainid}}/contract/{{$c.Hname}}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
+					<dt><a href="{{ uri "chainContract" $chainid $c.Hname }}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
 					<dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
 				{{end}}
 				</dl>
@@ -202,7 +214,7 @@ const tplChain = `
 					<tbody>
 					{{range $hash, $size := .Blobs}}
 						<tr>
-							<td style="flex: 2"><a href="/chain/{{$chainid}}/blob/{{hashref $hash}}"><tt>{{ hashref $hash }}</tt></a></td>
+							<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid (hashref $hash) }}"><tt>{{ hashref $hash }}</tt></a></td>
 							<td>{{ $size }}</td>
 						</tr>
 					{{end}}
@@ -266,6 +278,7 @@ const tplChain = `
 				</table>
 			</div>
 		{{end}}
+		{{ template "ws" .ChainID }}
 	{{else}}
 		<div class="card fluid error">No chain record for ID <td>{{$chainid}}</tt></div>
 	{{end}}

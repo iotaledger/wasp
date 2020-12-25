@@ -9,10 +9,10 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/publisher"
 )
 
 func (op *operator) newRequest(reqId coretypes.RequestID) *request {
@@ -135,8 +135,8 @@ func idsShortStr(ids []coretypes.RequestID) []string {
 func (op *operator) takeFromIds(reqIds []coretypes.RequestID) []*request {
 	ret := make([]*request, 0, len(reqIds))
 	for _, reqId := range reqIds {
-		req, _ := op.requestFromId(reqId)
-		if req == nil {
+		req, ok := op.requestFromId(reqId)
+		if !ok || req == nil {
 			continue
 		}
 		ret = append(ret, req)

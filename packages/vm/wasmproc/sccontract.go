@@ -21,7 +21,7 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 	case wasmhost.KeyId:
 		id := o.vm.ContractID()
 		return id[:]
-	case wasmhost.KeyOwner:
+	case wasmhost.KeyChainOwner:
 		id := o.vm.ctx.ChainOwnerID()
 		return id[:]
 	}
@@ -47,7 +47,7 @@ func (o *ScContract) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyName:
 		return wasmhost.OBJTYPE_STRING
-	case wasmhost.KeyOwner:
+	case wasmhost.KeyChainOwner:
 		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	}
 	return 0

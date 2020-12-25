@@ -175,7 +175,8 @@ func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 	return ret
 }
 
-func (op *operator) checkSCToken(balances map[valuetransaction.ID][]*balance.Balance) error {
+// checkChainToken validates if the NFT, the chain token, is among balances, as expected
+func (op *operator) checkChainToken(balances map[valuetransaction.ID][]*balance.Balance) error {
 	sum := int64(0)
 	color := *op.chain.Color()
 	for _, bals := range balances {

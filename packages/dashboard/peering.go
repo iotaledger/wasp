@@ -11,28 +11,26 @@ import (
 	"github.com/labstack/echo"
 )
 
-type peeringNavPage struct{}
+func peeringInit(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/peering", handlePeering)
+	route.Name = "peering"
 
-const peeringRoute = "/peering"
-const peeringTplName = "peering"
+	r[route.Path] = makeTemplate(e, tplPeering)
 
-func (n *peeringNavPage) Title() string { return "Peering" }
-func (n *peeringNavPage) Href() string  { return peeringRoute }
-
-func (n *peeringNavPage) AddTemplates(r renderer) {
-	r[peeringTplName] = MakeTemplate(tplPeering)
+	return Tab{
+		Path:  route.Path,
+		Title: "Peering",
+		Href:  route.Path,
+	}
 }
 
-func (n *peeringNavPage) AddEndpoints(e *echo.Echo) {
-	e.GET(peeringRoute, func(c echo.Context) error {
-		return c.Render(http.StatusOK, peeringTplName, &PeeringTemplateParams{
-			BaseTemplateParams: BaseParams(c, peeringRoute),
-			NetworkProvider:    peering.DefaultNetworkProvider(),
-		})
+func handlePeering(c echo.Context) error {
+	return c.Render(http.StatusOK, c.Path(), &PeeringTemplateParams{
+		BaseTemplateParams: BaseParams(c),
+		NetworkProvider:    peering.DefaultNetworkProvider(),
 	})
 }
 
-// PeeringTemplateParams holts template params.
 type PeeringTemplateParams struct {
 	BaseTemplateParams
 	NetworkProvider peering_pkg.NetworkProvider
