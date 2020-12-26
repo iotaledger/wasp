@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -38,10 +37,9 @@ func TestBasicAccounts(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
-	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
-	check(err, t)
+	programHash := inccounter.Interface.ProgramHash
 
-	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})
@@ -149,10 +147,10 @@ func TestBasic2Accounts(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
-	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	programHash := inccounter.Interface.ProgramHash
 	check(err, t)
 
-	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})

@@ -13,16 +13,14 @@ import (
 
 const (
 	Name        = "inccounter"
-	Version     = "0.1"
-	fullName    = Name + "-" + Version
 	description = "Increment counter, a PoC smart contract"
 )
 
 var (
 	Interface = &contract.ContractInterface{
-		Name:        fullName,
+		Name:        Name,
 		Description: description,
-		ProgramHash: *hashing.HashStrings(fullName),
+		ProgramHash: *hashing.HashStrings(Name),
 	}
 )
 
@@ -45,28 +43,18 @@ const (
 )
 
 const (
-	ProgramHashStr = "9qJQozz1TMhaJ2iYZUuxs49qL9LQYGJJ7xaVfE1TCf15"
-
 	VarNumRepeats  = "numRepeats"
 	VarCounter     = "counter"
 	VarName        = "name"
 	VarDescription = "dscr"
 )
 
-var (
-	ProgramHash, _ = hashing.HashValueFromBase58(ProgramHashStr)
-)
-
 func init() {
-	examples.AddProcessor(ProgramHash, Interface)
-}
-
-func GetProcessor() vmtypes.Processor {
-	return Interface
+	examples.AddProcessor(Interface)
 }
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.init in %s", ctx.ContractID().Hname().String())
+	ctx.Log().Debugf("inccounter.init in %s", ctx.ContractID().Hname().String())
 	params := ctx.Params()
 	val, _, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -78,7 +66,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 func incCounter(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.incCounter in %s", ctx.ContractID().Hname().String())
+	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.ContractID().Hname().String())
 	params := ctx.Params()
 	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -89,17 +77,17 @@ func incCounter(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Eventf("incCounter: increasing counter value %d by %d", val, inc)
+	ctx.Log().Debugf("incCounter: increasing counter value %d by %d", val, inc)
 	state.Set(VarCounter, codec.EncodeInt64(val+inc))
 	return nil, nil
 }
 
 func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.incCounterAndRepeatOnce")
+	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 
-	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
+	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	if !ctx.PostRequest(vmtypes.NewRequestParams{
 		TargetContractID: ctx.ContractID(),
@@ -108,19 +96,19 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}) {
 		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
 	}
-	ctx.Event("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
+	ctx.Log().Debugf("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
 	return nil, nil
 }
 
 func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.incCounterAndRepeatMany")
+	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
 	params := ctx.Params()
 
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	ctx.Eventf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
+	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
 	numRepeats, ok, err := codec.DecodeInt64(params.MustGet(VarNumRepeats))
 	if err != nil {
@@ -130,11 +118,11 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		numRepeats, _, _ = codec.DecodeInt64(state.MustGet(VarNumRepeats))
 	}
 	if numRepeats == 0 {
-		ctx.Eventf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
+		ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
 		return nil, nil
 	}
 
-	ctx.Eventf("chain of %d requests ahead", numRepeats)
+	ctx.Log().Debugf("chain of %d requests ahead", numRepeats)
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
@@ -143,24 +131,20 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		EntryPoint:       coretypes.Hn(FuncIncAndRepeatMany),
 		Timelock:         1 * 60,
 	}) {
-		ctx.Eventf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+		ctx.Log().Debugf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
 	} else {
-		ctx.Eventf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+		ctx.Log().Debugf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
 	}
 	return nil, nil
 }
 
 // spawn deploys new contract and calls it
 func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Eventf("inccounter.spawn")
+	ctx.Log().Debugf("inccounter.spawn")
 	state := ctx.State()
 
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 
-	hashBin, err := hashing.HashValueFromBase58(ProgramHashStr)
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
 	name, ok, err := codec.DecodeString(ctx.Params().MustGet(VarName))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
@@ -177,7 +161,7 @@ func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	par := dict.New()
 	par.Set(VarCounter, codec.EncodeInt64(val+1))
-	err = ctx.DeployContract(hashBin, name, dscr, par)
+	err = ctx.DeployContract(Interface.ProgramHash, name, dscr, par)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +173,7 @@ func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, err
 	}
 
-	ctx.Eventf("inccounter.spawn: new contract name = %s hname = %s", name, hname.String())
+	ctx.Log().Debugf("inccounter.spawn: new contract name = %s hname = %s", name, hname.String())
 	return nil, nil
 }
 

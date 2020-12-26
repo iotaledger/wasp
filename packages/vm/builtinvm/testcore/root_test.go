@@ -67,7 +67,7 @@ func TestDeployExample(t *testing.T) {
 	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
-	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
+	err := chain.DeployContract(nil, name, inccounter.Interface.ProgramHash)
 	require.NoError(t, err)
 
 	info, contracts := chain.GetInfo()
@@ -90,7 +90,7 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
 	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
-	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
+	require.EqualValues(t, inccounter.Interface.ProgramHash, rec.ProgramHash)
 
 	recFind, err := chain.FindContract(name)
 	require.NoError(t, err)
@@ -103,10 +103,10 @@ func TestDeployDouble(t *testing.T) {
 	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
-	err := chain.DeployContract(nil, name, inccounter.ProgramHash)
+	err := chain.DeployContract(nil, name, inccounter.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	err = chain.DeployContract(nil, name, inccounter.ProgramHash)
+	err = chain.DeployContract(nil, name, inccounter.Interface.ProgramHash)
 	require.Error(t, err)
 
 	info, contracts := chain.GetInfo()
@@ -129,7 +129,7 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
 	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
-	require.EqualValues(t, inccounter.ProgramHash, rec.ProgramHash)
+	require.EqualValues(t, inccounter.Interface.ProgramHash, rec.ProgramHash)
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {

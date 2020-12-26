@@ -25,7 +25,7 @@ func TestDeployInc(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	err := chain.DeployContract(nil, incName, ProgramHash)
+	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, contracts := chain.GetInfo()
@@ -39,7 +39,7 @@ func TestDeployIncInitParams(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 	chain.CheckAccountLedger()
@@ -50,7 +50,7 @@ func TestIncDefaultParam(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
@@ -65,7 +65,7 @@ func TestIncParam(t *testing.T) {
 	chain := glb.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
@@ -80,7 +80,7 @@ func TestIncWith1Post(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 

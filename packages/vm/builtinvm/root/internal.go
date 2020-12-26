@@ -7,6 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // FindContract is an internal utility function which finds a contract in the KVStore
@@ -142,7 +144,37 @@ func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coretypes.
 	return ret, err
 }
 
-func CheckAuthorization(state kv.KVStore, agentID coretypes.AgentID) bool {
+func CheckAuthorizationByChainOwner(state kv.KVStore, agentID coretypes.AgentID) bool {
 	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
 	return currentOwner == agentID
+}
+
+// storeAndInitContract internal utility function
+func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
+	hname := coretypes.Hn(rec.Name)
+	contractRegistry := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
+	if contractRegistry.HasAt(hname.Bytes()) {
+		return fmt.Errorf("contract '%s'/%s already exist", rec.Name, hname.String())
+	}
+	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
+	_, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil)
+	if err != nil {
+		// call to 'init' failed: delete record
+		contractRegistry.DelAt(hname.Bytes())
+		err = fmt.Errorf("contract '%s'/%s: calling 'init': %v", rec.Name, hname.String(), err)
+	}
+	return err
+}
+
+// isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
+func isAuthorizedToDeploy(ctx vmtypes.Sandbox) bool {
+	if ctx.Caller() == ctx.ChainOwnerID() {
+		// chain owner is always authorized
+		return true
+	}
+	if !ctx.Caller().IsAddress() {
+		// smart contract from the same chain is always authorize
+		return ctx.Caller().MustContractID().ChainID() == ctx.ChainID()
+	}
+	return datatypes.NewMustMap(ctx.State(), VarDeployAuthorisations).HasAt(ctx.Caller().Bytes())
 }

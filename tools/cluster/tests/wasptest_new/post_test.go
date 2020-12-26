@@ -21,9 +21,9 @@ import (
 func deployInccounter42(t *testing.T, name string, counter int64) coretypes.ContractID {
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
-	programHash = inccounter.ProgramHash
+	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: counter,
 		root.ParamName:        name,
 	})

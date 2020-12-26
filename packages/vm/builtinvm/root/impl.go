@@ -126,8 +126,10 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
+	if !isAuthorizedToDeploy(ctx) {
+		return nil, fmt.Errorf("root.deployContract.deployContract: not permitted")
+	}
 	params := ctx.Params()
-
 	proghash, ok, err := codec.DecodeHashValue(params.MustGet(ParamProgramHash))
 	if err != nil {
 		return nil, fmt.Errorf("root.deployContract.wrong.param %s: %v", ParamProgramHash, err)
@@ -238,7 +240,7 @@ func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // Two step process allow/change is in order to avoid mistakes
 func delegateChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
-	if !CheckAuthorization(ctx.State(), ctx.Caller()) {
+	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.delegateChainOwnership: not authorized")
 	}
 	newOwnerID, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamChainOwner))
@@ -311,7 +313,7 @@ func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setDefaultFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	if !CheckAuthorization(ctx.State(), ctx.Caller()) {
+	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.setDefaultFee: not authorized")
 	}
 	ownerFee, ownerFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamOwnerFee))
@@ -354,7 +356,7 @@ func setDefaultFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	if !CheckAuthorization(ctx.State(), ctx.Caller()) {
+	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.setContractFee: not authorized")
 	}
 	hname, ok, err := codec.DecodeHname(ctx.Params().MustGet(ParamHname))
@@ -392,19 +394,39 @@ func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// storeAndInitContract internal utility function
-func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
-	hname := coretypes.Hn(rec.Name)
-	contractRegistry := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
-	if contractRegistry.HasAt(hname.Bytes()) {
-		return fmt.Errorf("contract '%s'/%s already exist", rec.Name, hname.String())
+// grantDeploy grants permission to deploy contracts
+// Input:
+//  - ParamDeployer coretypes.AgentID
+func grantDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
+		return nil, fmt.Errorf("root.grantDeployer: not authorized")
 	}
-	contractRegistry.SetAt(hname.Bytes(), EncodeContractRecord(rec))
-	_, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil)
+	deployer, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamDeployer))
 	if err != nil {
-		// call to 'init' failed: delete record
-		contractRegistry.DelAt(hname.Bytes())
-		err = fmt.Errorf("contract '%s'/%s: calling 'init': %v", rec.Name, hname.String(), err)
+		return nil, err
 	}
-	return err
+	if !ok {
+		return nil, fmt.Errorf("parameter 'deployer' undefined")
+	}
+
+	datatypes.NewMustMap(ctx.State(), VarDeployAuthorisations).SetAt(deployer.Bytes(), []byte{0xFF})
+	return nil, nil
+}
+
+// grantDeploy revokes permission to deploy contracts
+// Input:
+//  - ParamDeployer coretypes.AgentID
+func revokeDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
+		return nil, fmt.Errorf("root.revokeDeployer: not authorized")
+	}
+	deployer, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamDeployer))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, fmt.Errorf("parameter 'deployer' undefined")
+	}
+	datatypes.NewMustMap(ctx.State(), VarDeployAuthorisations).DelAt(deployer.Bytes())
+	return nil, nil
 }

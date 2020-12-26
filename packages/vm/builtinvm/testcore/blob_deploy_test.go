@@ -4,6 +4,8 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/solo"
@@ -89,4 +91,84 @@ func TestListBlobs(t *testing.T) {
 	ret, err := chain.PostRequest(solo.NewCall(blob.Interface.Name, blob.FuncListBlobs), nil)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(ret))
+}
+
+func TestDeployNotAuthorized(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	user1 := glb.NewSignatureSchemeWithFunds()
+	err := chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	require.Error(t, err)
+}
+
+func TestDeployGrant(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	user1 := glb.NewSignatureSchemeWithFunds()
+	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
+
+	req := solo.NewCall(root.Interface.Name, root.FuncGrantDeploy,
+		root.ParamDeployer, user1AgentID,
+	)
+	_, err := chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	err = chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	require.NoError(t, err)
+
+	_, contacts := chain.GetInfo()
+	require.EqualValues(t, 5, len(contacts))
+
+	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
+	require.NoError(t, err)
+
+	_, contacts = chain.GetInfo()
+	require.EqualValues(t, 6, len(contacts))
+}
+
+func TestRevokeDeploy(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	user1 := glb.NewSignatureSchemeWithFunds()
+	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
+
+	req := solo.NewCall(root.Interface.Name, root.FuncGrantDeploy,
+		root.ParamDeployer, user1AgentID,
+	)
+	_, err := chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	err = chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	require.NoError(t, err)
+
+	_, contacts := chain.GetInfo()
+	require.EqualValues(t, 5, len(contacts))
+
+	req = solo.NewCall(root.Interface.Name, root.FuncRevokeDeploy,
+		root.ParamDeployer, user1AgentID,
+	)
+	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
+
+	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
+	require.Error(t, err)
+
+	_, contacts = chain.GetInfo()
+	require.EqualValues(t, 5, len(contacts))
+}
+
+func TestDeployGrantFail(t *testing.T) {
+	glb := solo.New(t, false, false)
+	chain := glb.NewChain(nil, "chain1")
+	user1 := glb.NewSignatureSchemeWithFunds()
+	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
+
+	req := solo.NewCall(root.Interface.Name, root.FuncGrantDeploy,
+		root.ParamDeployer, user1AgentID,
+	)
+	_, err := chain.PostRequest(req, user1)
+	require.Error(t, err)
+
+	err = chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	require.Error(t, err)
 }

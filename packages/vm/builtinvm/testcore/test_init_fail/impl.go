@@ -21,12 +21,11 @@ var (
 		Description: description,
 		ProgramHash: *hashing.HashStrings(Name),
 	}
-	ProgramHash, _ = hashing.HashValueFromBase58(description)
 )
 
 func init() {
 	Interface.WithFunctions(initialize, nil)
-	examples.AddProcessor(ProgramHash, Interface)
+	examples.AddProcessor(Interface)
 }
 
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {

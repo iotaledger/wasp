@@ -36,6 +36,8 @@ func init() {
 		contract.ViewFunc(FuncGetFeeInfo, getFeeInfo),
 		contract.Func(FuncSetDefaultFee, setDefaultFee),
 		contract.Func(FuncSetContractFee, setContractFee),
+		contract.Func(FuncGrantDeploy, grantDeploy),
+		contract.Func(FuncRevokeDeploy, revokeDeploy),
 	})
 }
 
@@ -52,6 +54,7 @@ const (
 	VarChainOwnerIDDelegated = "n"
 	VarContractRegistry      = "r"
 	VarDescription           = "d"
+	VarDeployAuthorisations  = "dep"
 )
 
 // param variables
@@ -68,6 +71,7 @@ const (
 	ParamFeeColor     = "$$feecolor$$"
 	ParamOwnerFee     = "$$ownerfee$$"
 	ParamValidatorFee = "$$validatorfee$$"
+	ParamDeployer     = "$$deployer$$"
 )
 
 // function names
@@ -80,6 +84,8 @@ const (
 	FuncGetFeeInfo             = "getFeeInfo"
 	FuncSetDefaultFee          = "setDefaultFee"
 	FuncSetContractFee         = "setContractFee"
+	FuncGrantDeploy            = "grantDeploy"
+	FuncRevokeDeploy           = "revokeDeploy"
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract

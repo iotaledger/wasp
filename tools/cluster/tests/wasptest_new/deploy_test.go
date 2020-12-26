@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -72,10 +70,10 @@ func TestDeployContractOnly(t *testing.T) {
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
-	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	programHash := inccounter.Interface.ProgramHash
 	check(err, t)
 
-	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        name,
 	})
@@ -144,10 +142,10 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	description := "testing contract deployment with inccounter"
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
-	programHash, err := hashing.HashValueFromBase58(inccounter.ProgramHashStr)
+	programHash := inccounter.Interface.ProgramHash
 	check(err, t)
 
-	_, err = chain.DeployContract(name, inccounter.ProgramHashStr, description, map[string]interface{}{
+	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 	})
 	check(err, t)
