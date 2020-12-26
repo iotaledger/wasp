@@ -2,6 +2,7 @@
 // - initial setup of the chain during chain deployment
 // - maintaining of core parameters of the chain
 // - maintaining (setting, delegating) chain owner ID
+// - maintaining (granting, revoking) smart contract deployment rights
 // - deployment of smart contracts on the chain and maintenance of contract registry
 package root
 
@@ -394,10 +395,10 @@ func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// grantDeploy grants permission to deploy contracts
+// grantDeployPermission grants permission to deploy contracts
 // Input:
 //  - ParamDeployer coretypes.AgentID
-func grantDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func grantDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.grantDeployer: not authorized")
 	}
@@ -413,10 +414,10 @@ func grantDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// grantDeploy revokes permission to deploy contracts
+// grantDeployPermission revokes permission to deploy contracts
 // Input:
 //  - ParamDeployer coretypes.AgentID
-func revokeDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func revokeDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.revokeDeployer: not authorized")
 	}

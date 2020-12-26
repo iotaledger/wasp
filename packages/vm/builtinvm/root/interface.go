@@ -36,8 +36,8 @@ func init() {
 		contract.ViewFunc(FuncGetFeeInfo, getFeeInfo),
 		contract.Func(FuncSetDefaultFee, setDefaultFee),
 		contract.Func(FuncSetContractFee, setContractFee),
-		contract.Func(FuncGrantDeploy, grantDeploy),
-		contract.Func(FuncRevokeDeploy, revokeDeploy),
+		contract.Func(FuncGrantDeploy, grantDeployPermission),
+		contract.Func(FuncRevokeDeploy, revokeDeployPermission),
 	})
 }
 
@@ -84,8 +84,8 @@ const (
 	FuncGetFeeInfo             = "getFeeInfo"
 	FuncSetDefaultFee          = "setDefaultFee"
 	FuncSetContractFee         = "setContractFee"
-	FuncGrantDeploy            = "grantDeploy"
-	FuncRevokeDeploy           = "revokeDeploy"
+	FuncGrantDeploy            = "grantDeployPermission"
+	FuncRevokeDeploy           = "revokeDeployPermission"
 )
 
 // ContractRecord is a structure which contains metadata for a deployed contract
