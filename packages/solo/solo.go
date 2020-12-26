@@ -112,7 +112,7 @@ var (
 //   'printStackTrace' controls printing stack trace in case of errors
 func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
-		glbLogger = testutil.NewLogger(t, "15:04:05.000")
+		glbLogger = testutil.NewLogger(t, "04:05.000")
 		if !debug {
 			glbLogger = testutil.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
