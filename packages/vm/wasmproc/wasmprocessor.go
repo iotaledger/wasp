@@ -13,6 +13,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
+// TODO it may be better for the wasmhost to implement Processor interface and
+//  use sandbox as call context for some wasmhost call.
+//  That would be cleaner architecture: less OO more functional.
+//  Alternatively, logger can be passed into the wasm host, because wasmhost needs it for internal tracing
+
 type wasmProcessor struct {
 	wasmhost.WasmHost
 	ctx       vmtypes.Sandbox
@@ -20,11 +25,13 @@ type wasmProcessor struct {
 	function  string
 	nesting   int
 	scContext *ScContext
-	logger    *logger.Logger
+	logger    *logger.Logger // for internal tracing only
 }
 
 var GoWasmVM wasmhost.WasmVM
 
+// NewWasmProcessor creates new wasm processor.
+// TODO The logger is for processor tracing, not for sandbox calls
 func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
 	if logger != nil {
@@ -122,6 +129,10 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return host
 }
 
+// TODO in this mixed two different things: internal tracing and Sandbox logging
+//  it is not correct semantically
+// TODO #2 why do we need so many levels in the SC logging. Logging is mostly for debugging only
+//  In the sandbox only Info and Debug (tracing) levels implemented on purpose. Plus special for panic logging
 func (host *wasmProcessor) Log(logLevel int32, text string) {
 	switch logLevel {
 	case wasmhost.KeyTraceAll:

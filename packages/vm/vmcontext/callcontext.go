@@ -53,6 +53,7 @@ func (vmctx *VMContext) popCallContext() {
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	}
+	vmctx.callStack[len(vmctx.callStack)-1] = nil // for GC
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
 }
 

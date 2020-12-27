@@ -3,6 +3,8 @@
 
 package wasmproc
 
+// TODO do we need it? We have codec package
+
 type BytesDecoder struct {
 	data []byte
 }
