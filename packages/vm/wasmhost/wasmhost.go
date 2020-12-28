@@ -50,7 +50,7 @@ type WasmHost struct {
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
 	keyToKeyId    map[string]int32
-	logger        LogInterface
+	logger        LogInterface // TODO should not be mixed sandbox logging and internal tracing in one interface
 	objIdToObj    []HostObject
 	useBase58Keys bool
 }
@@ -333,6 +333,17 @@ func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {
 	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
 }
 
+// TODO should be separated tracing from sandbox logging
+//  The expected implementation should:
+//   - link Rust 'event' call with sandbox Event
+//   - link Rust 'log' (or 'log_info') call with sandbox Log().Info
+//   - link Rust 'debug' (or 'log_debug') call with Log().Debug
+//   - link Rust 'panic' (or something) call with Log().Panic
+//   In Rust we do not need more tracing
+//
+// TODO #2 do we really need "type-based" interfaces like SetString to communicate
+//  sandbox calls like logging from wasm?
+//  Because semantically it is strange, it requires "interception" etc
 func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 	if objId == 1 {
 		// intercept logging keys to prevent final logging of SetBytes itself
@@ -352,6 +363,8 @@ func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 	host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
 }
 
+// TODO for internal tracing should be used logger provided with the processor
+//  (which is different from the sandbox logging)
 func (host *WasmHost) Trace(format string, a ...interface{}) {
 	host.logger.Log(KeyTrace, fmt.Sprintf(format, a...))
 }
