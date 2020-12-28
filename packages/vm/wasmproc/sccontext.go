@@ -117,8 +117,8 @@ func (o *ScContext) SetString(keyId int32, value string) {
 	case wasmhost.KeyLog:
 		o.vm.log().Infof(value)
 	case wasmhost.KeyTrace:
-		o.vm.log().Infof(value)
+		o.vm.log().Debugf(value)
 	case wasmhost.KeyPanic:
-		o.vm.log().Infof(value)
+		o.vm.log().Panicf(value)
 	}
 }

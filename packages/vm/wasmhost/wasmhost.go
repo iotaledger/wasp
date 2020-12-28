@@ -56,7 +56,7 @@ func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
 }
 
 func (host *WasmHost) Init(null HostObject, root HostObject, logger *logger.Logger) {
-	if logger != nil {
+	if logger == nil {
 		host.logger = logger.Named("wasmtrace")
 	}
 	host.codeToFunc = make(map[uint32]string)
