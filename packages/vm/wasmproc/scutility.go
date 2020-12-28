@@ -57,18 +57,11 @@ func (o *ScUtility) GetBytes(keyId int32) []byte {
 func (o *ScUtility) GetInt(keyId int32) int64 {
 	switch keyId {
 	case wasmhost.KeyRandom:
-		//TODO using GetEntropy correctly is painful, so we use tx hash instead
-		// we need to be able to get the signature of a specific tx to have
-		// deterministic entropy that cannot be interrupted
-		//
-		// TODO using RequestID is not correct, because it is playable and not secure.
-		//  GetEntropy takes transaction hash which includes also a signature.
-		//  The VMContext environment ensures unique random hash for each request in the block
 		if o.random == nil {
 			// need to initialize pseudo-random generator with
 			// a sufficiently random, yet deterministic, value
-			id := o.vm.ctx.RequestID()
-			o.random = id.TransactionID().Bytes()
+			id := o.vm.ctx.GetEntropy()
+			o.random = id.Bytes()
 		}
 		i := o.nextRandom
 		if i+8 > len(o.random) {

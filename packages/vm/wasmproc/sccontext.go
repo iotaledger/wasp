@@ -109,3 +109,16 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 	}
 	return 0
 }
+
+func (o *ScContext) SetString(keyId int32, value string) {
+	switch keyId {
+	case wasmhost.KeyEvent:
+		o.vm.ctx.Event(value)
+	case wasmhost.KeyLog:
+		o.vm.log().Infof(value)
+	case wasmhost.KeyTrace:
+		o.vm.log().Infof(value)
+	case wasmhost.KeyPanic:
+		o.vm.log().Infof(value)
+	}
+}

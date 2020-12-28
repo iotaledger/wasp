@@ -5,7 +5,7 @@ package wasmhost
 
 import (
 	"errors"
-	"fmt"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/mr-tron/base58"
 )
@@ -36,21 +36,16 @@ type HostObject interface {
 	SetString(keyId int32, value string)
 }
 
-type LogInterface interface {
-	Log(logLevel int32, text string)
-}
-
 // implements client.ScHost interface
 type WasmHost struct {
 	vm            WasmVM
 	codeToFunc    map[uint32]string
-	error         string
 	funcToCode    map[string]uint32
 	funcToIndex   map[string]int32
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
 	keyToKeyId    map[string]int32
-	logger        LogInterface // TODO should not be mixed sandbox logging and internal tracing in one interface
+	logger        *logger.Logger
 	objIdToObj    []HostObject
 	useBase58Keys bool
 }
@@ -60,9 +55,11 @@ func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
 	return vm.LinkHost(vm, host)
 }
 
-func (host *WasmHost) Init(null HostObject, root HostObject, logger LogInterface) {
+func (host *WasmHost) Init(null HostObject, root HostObject, logger *logger.Logger) {
+	if logger != nil {
+		host.logger = logger.Named("wasmtrace")
+	}
 	host.codeToFunc = make(map[uint32]string)
-	host.error = ""
 	host.funcToCode = make(map[string]uint32)
 	host.funcToIndex = make(map[string]int32)
 	host.logger = logger
@@ -83,7 +80,7 @@ func (host *WasmHost) Exists(objId int32, keyId int32) bool {
 
 func (host *WasmHost) FindObject(objId int32) HostObject {
 	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
-		host.SetError("Invalid objId")
+		panic("FindObject: invalid objId")
 		objId = 0
 	}
 	return host.objIdToObj[objId]
@@ -102,9 +99,6 @@ func (host *WasmHost) FunctionFromCode(code uint32) string {
 }
 
 func (host *WasmHost) GetBytes(objId int32, keyId int32) []byte {
-	if host.HasError() {
-		return nil
-	}
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
 		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
@@ -117,15 +111,6 @@ func (host *WasmHost) GetBytes(objId int32, keyId int32) []byte {
 
 func (host *WasmHost) GetInt(objId int32, keyId int32) int64 {
 	host.TraceAll("GetInt(o%d,k%d)", objId, keyId)
-	if keyId == KeyError && objId == 1 {
-		if host.HasError() {
-			return 1
-		}
-		return 0
-	}
-	if host.HasError() {
-		return 0
-	}
 	value := host.FindObject(objId).GetInt(keyId)
 	host.Trace("GetInt o%d k%d = %d", objId, keyId, value)
 	return value
@@ -203,9 +188,6 @@ func (host *WasmHost) getKeyId(key []byte, fromString bool) int32 {
 
 func (host *WasmHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
 	host.TraceAll("GetObjectId(o%d,k%d,t%d)", objId, keyId, typeId)
-	if host.HasError() {
-		return 0
-	}
 	subId := host.FindObject(objId).GetObjectId(keyId, typeId)
 	host.Trace("GetObjectId o%d k%d t%d = o%d", objId, keyId, typeId, subId)
 	return subId
@@ -220,14 +202,6 @@ func (host *WasmHost) GetString(objId int32, keyId int32) string {
 }
 
 func (host *WasmHost) getString(objId int32, keyId int32) *string {
-	// get error string takes precedence over returning error code
-	if keyId == KeyError && objId == 1 {
-		host.Trace("GetString o%d k%d = '%s'", objId, keyId, host.error)
-		return &host.error
-	}
-	if host.HasError() {
-		return nil
-	}
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
 		host.Trace("GetString o%d k%d missing key", objId, keyId)
@@ -236,14 +210,6 @@ func (host *WasmHost) getString(objId int32, keyId int32) *string {
 	value := obj.GetString(keyId)
 	host.Trace("GetString o%d k%d = '%s'", objId, keyId, value)
 	return &value
-}
-
-func (host *WasmHost) HasError() bool {
-	if host.error != "" {
-		host.Trace("HasError")
-		return true
-	}
-	return false
 }
 
 func (host *WasmHost) IsView(function string) bool {
@@ -276,48 +242,32 @@ func (host *WasmHost) RunScFunction(functionName string) error {
 	if !ok {
 		return errors.New("unknown SC function name: " + functionName)
 	}
-	err := host.vm.RunScFunction(index)
-	if err == nil && host.error != "" {
-		err = errors.New(host.error)
-	}
-	host.error = ""
-	return err
+	return host.vm.RunScFunction(index)
 }
 
 func (host *WasmHost) SetBytes(objId int32, keyId int32, bytes []byte) {
-	if host.HasError() {
-		return
-	}
 	host.FindObject(objId).SetBytes(keyId, bytes)
 	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
 
 }
 
-func (host *WasmHost) SetError(text string) {
-	host.Trace("SetError '%s'", text)
-	if !host.HasError() {
-		host.error = text
-	}
-}
-
 func (host *WasmHost) SetExport(index int32, functionName string) {
 	if index < 0 {
-		if index != KeyZzzzzzz {
-			host.SetError("SetExport: predefined key value mismatch")
+		// double check that predefined keys are in sync
+		if index == KeyZzzzzzz {
+			return
 		}
-		return
+		panic("SetExport: predefined key value mismatch")
 	}
 	_, ok := host.funcToCode[functionName]
 	if ok {
-		host.SetError("SetExport: duplicate function name")
-		return
+		panic("SetExport: duplicate function name")
 	}
 	hn := coretypes.Hn(functionName)
 	hashedName := uint32(hn)
 	_, ok = host.codeToFunc[hashedName]
 	if ok {
-		host.SetError("SetExport: duplicate hashed name")
-		return
+		panic("SetExport: duplicate hashed name")
 	}
 	host.codeToFunc[hashedName] = functionName
 	host.funcToCode[functionName] = hashedName
@@ -326,51 +276,24 @@ func (host *WasmHost) SetExport(index int32, functionName string) {
 
 func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {
 	host.TraceAll("SetInt(o%d,k%d)", objId, keyId)
-	if host.HasError() {
-		return
-	}
 	host.FindObject(objId).SetInt(keyId, value)
 	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
 }
 
-// TODO should be separated tracing from sandbox logging
-//  The expected implementation should:
-//   - link Rust 'event' call with sandbox Event
-//   - link Rust 'log' (or 'log_info') call with sandbox Log().Info
-//   - link Rust 'debug' (or 'log_debug') call with Log().Debug
-//   - link Rust 'panic' (or something) call with Log().Panic
-//   In Rust we do not need more tracing
-//
 // TODO #2 do we really need "type-based" interfaces like SetString to communicate
 //  sandbox calls like logging from wasm?
 //  Because semantically it is strange, it requires "interception" etc
 func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
-	if objId == 1 {
-		// intercept logging keys to prevent final logging of SetBytes itself
-		switch keyId {
-		case KeyEvent:
-			//TODO
-		case KeyLog, KeyPanic, KeyTrace, KeyTraceAll:
-			host.logger.Log(keyId, value)
-			return
-		}
-	}
-
-	if host.HasError() {
-		return
-	}
 	host.FindObject(objId).SetString(keyId, value)
 	host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
 }
 
-// TODO for internal tracing should be used logger provided with the processor
-//  (which is different from the sandbox logging)
 func (host *WasmHost) Trace(format string, a ...interface{}) {
-	host.logger.Log(KeyTrace, fmt.Sprintf(format, a...))
+	host.logger.Infof(format, a...)
 }
 
 func (host *WasmHost) TraceAll(format string, a ...interface{}) {
-	host.logger.Log(KeyTraceAll, fmt.Sprintf(format, a...))
+	host.logger.Debugf(format, a...)
 }
 
 func (host *WasmHost) TrackObject(obj HostObject) int32 {

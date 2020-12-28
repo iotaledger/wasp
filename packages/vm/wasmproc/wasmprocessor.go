@@ -4,7 +4,6 @@
 package wasmproc
 
 import (
-	"fmt"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -16,7 +15,6 @@ import (
 // TODO it may be better for the wasmhost to implement Processor interface and
 //  use sandbox as call context for some wasmhost call.
 //  That would be cleaner architecture: less OO more functional.
-//  Alternatively, logger can be passed into the wasm host, because wasmhost needs it for internal tracing
 
 type wasmProcessor struct {
 	wasmhost.WasmHost
@@ -25,18 +23,13 @@ type wasmProcessor struct {
 	function  string
 	nesting   int
 	scContext *ScContext
-	logger    *logger.Logger // for internal tracing only
 }
 
 var GoWasmVM wasmhost.WasmVM
 
 // NewWasmProcessor creates new wasm processor.
-// TODO The logger is for processor tracing, not for sandbox calls
 func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
-	if logger != nil {
-		host.logger = logger.Named("wasmtrace")
-	}
 	if GoWasmVM != nil {
 		vm = GoWasmVM
 	}
@@ -45,7 +38,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor
 		return nil, err
 	}
 	host.scContext = NewScContext(host)
-	host.Init(NewNullObject(host), host.scContext, host)
+	host.Init(NewNullObject(host), host.scContext, logger)
 	return host, nil
 }
 
@@ -65,7 +58,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	defer func() {
 		host.nesting--
 		if host.nesting == 0 {
-			host.logText("Finalizing calls")
+			host.Trace("Finalizing calls")
 			host.scContext.Finalize()
 		}
 		host.ctx = saveCtx
@@ -74,11 +67,11 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 
 	testMode, _ := host.Params().Has("testMode")
 	if testMode {
-		host.logText("TEST MODE")
+		host.Trace("TEST MODE")
 		TestMode = true
 	}
 
-	host.logText("Calling " + host.function)
+	host.Trace("Calling " + host.function)
 	err := host.RunScFunction(host.function)
 	if err != nil {
 		return nil, err
@@ -129,32 +122,6 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return host
 }
 
-// TODO in this mixed two different things: internal tracing and Sandbox logging
-//  it is not correct semantically
-// TODO #2 why do we need so many levels in the SC logging. Logging is mostly for debugging only
-//  In the sandbox only Info and Debug (tracing) levels implemented on purpose. Plus special for panic logging
-func (host *wasmProcessor) Log(logLevel int32, text string) {
-	switch logLevel {
-	case wasmhost.KeyTraceAll:
-		//host.logText(text)
-	case wasmhost.KeyTrace:
-		host.logText(text)
-	case wasmhost.KeyLog:
-		host.logText(text)
-	case wasmhost.KeyPanic:
-		host.logText(text)
-	}
-}
-
-// logText internal tracing for wasmProcessor
-func (host *wasmProcessor) logText(text string) {
-	if host.logger != nil {
-		host.logger.Debug(text)
-		return
-	}
-	fmt.Println(text)
-}
-
 func (host *wasmProcessor) Balances() coretypes.ColoredBalances {
 	if host.ctx != nil {
 		return host.ctx.Balances()
@@ -167,6 +134,13 @@ func (host *wasmProcessor) ContractID() coretypes.ContractID {
 		return host.ctx.ContractID()
 	}
 	return host.ctxView.ContractID()
+}
+
+func (host *wasmProcessor) log() vmtypes.LogInterface {
+	if host.ctx != nil {
+		return host.ctx.Log()
+	}
+	return host.ctxView.Log()
 }
 
 func (host *wasmProcessor) Params() dict.Dict {
