@@ -45,7 +45,7 @@ type WasmHost struct {
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
 	keyToKeyId    map[string]int32
-	logger        *logger.Logger
+	log           *logger.Logger
 	objIdToObj    []HostObject
 	useBase58Keys bool
 }
@@ -55,14 +55,16 @@ func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
 	return vm.LinkHost(vm, host)
 }
 
-func (host *WasmHost) Init(null HostObject, root HostObject, logger *logger.Logger) {
-	if logger == nil {
-		host.logger = logger.Named("wasmtrace")
+func (host *WasmHost) Init(null HostObject, root HostObject, log *logger.Logger) {
+	if log == nil {
+		host.log = logger.NewLogger("wasmtimevm")
+	} else {
+		host.log = log.Named("wasmtrace")
 	}
 	host.codeToFunc = make(map[uint32]string)
 	host.funcToCode = make(map[string]uint32)
 	host.funcToIndex = make(map[string]int32)
-	host.logger = logger
+	host.log = log
 	host.objIdToObj = nil
 	host.keyIdToKey = [][]byte{[]byte("<null>")}
 	host.keyToKeyId = make(map[string]int32)
@@ -289,11 +291,11 @@ func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 }
 
 func (host *WasmHost) Trace(format string, a ...interface{}) {
-	host.logger.Infof(format, a...)
+	host.log.Infof(format, a...)
 }
 
 func (host *WasmHost) TraceAll(format string, a ...interface{}) {
-	host.logger.Debugf(format, a...)
+	host.log.Debugf(format, a...)
 }
 
 func (host *WasmHost) TrackObject(obj HostObject) int32 {
