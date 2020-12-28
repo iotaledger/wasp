@@ -60,7 +60,7 @@ func makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
 		"args":              args,
 		"hashref":           hashref,
-		"quoted":            quoted,
+		"trim":              trim,
 		"bytesToString":     bytesToString,
 		"base58":            base58.Encode,
 		"replace":           strings.Replace,
@@ -164,6 +164,10 @@ const tplBase = `
 				margin-top: var(--universal-margin);
 			}
 			table th, table td {
+				padding: var(--universal-padding);
+			}
+			pre {
+				margin: 0;
 				padding: var(--universal-padding);
 			}
 			.card {
