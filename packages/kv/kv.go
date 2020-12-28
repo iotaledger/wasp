@@ -14,8 +14,8 @@ func (k Key) HasPrefix(prefix Key) bool {
 	return k[:len(prefix)] == prefix
 }
 
-// KVStore represents a key-value store where both keys and values are
-// arbitrary byte slices.
+// KVStore represents a key-value store
+// where both keys and values are arbitrary byte slices.
 type KVStore interface {
 	WriteableKVStore
 	ReadableKVStore
