@@ -132,10 +132,6 @@ func (host *wasmProcessor) Log(logLevel int32, text string) {
 		host.logText(text)
 	case wasmhost.KeyPanic:
 		host.logText(text)
-	case wasmhost.KeyWarning:
-		host.logText(text)
-	case wasmhost.KeyError:
-		host.logText(text)
 	}
 }
 

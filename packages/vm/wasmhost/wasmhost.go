@@ -337,9 +337,8 @@ func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 	if objId == 1 {
 		// intercept logging keys to prevent final logging of SetBytes itself
 		switch keyId {
-		case KeyError:
-			host.SetError(value)
-			return
+		case KeyEvent:
+			//TODO
 		case KeyLog, KeyPanic, KeyTrace, KeyTraceAll:
 			host.logger.Log(keyId, value)
 			return
