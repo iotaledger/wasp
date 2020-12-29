@@ -14,8 +14,6 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-const chainBlobTplName = "chainBlob"
-
 func initChainBlob(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/blob/:hash", handleChainBlob)
 	route.Name = "chainBlob"
@@ -71,7 +69,7 @@ func handleChainBlob(c echo.Context) error {
 		}
 	}
 
-	return c.Render(http.StatusOK, chainBlobTplName, result)
+	return c.Render(http.StatusOK, c.Path(), result)
 }
 
 func handleChainBlobDownload(c echo.Context) error {
@@ -140,7 +138,7 @@ const tplChainBlob = `
 				<thead>
 					<tr>
 						<th>Field</th>
-						<th style="flex: 2">Value</th>
+						<th style="flex: 2">Value (first 100 bytes)</th>
 						<th class="align-right" style="flex: 0.5">Size (bytes)</th>
 						<th style="flex: 0.5"></th>
 					</tr>
@@ -148,8 +146,8 @@ const tplChainBlob = `
 				<tbody>
 				{{range $i, $field := .Blob}}
 					<tr>
-						<td><tt>{{ quoted 30 (bytesToString $field.Key) }}</tt></td>
-						<td style="flex: 2"><pre style="white-space: pre-wrap; max-width: 400px">{{ quoted 100 (bytesToString $field.Value) }}</pre></td>
+						<td><tt>{{ trim 30 (bytesToString $field.Key) }}</tt></td>
+						<td style="flex: 2"><pre style="white-space: pre-wrap">{{ trim 100 (bytesToString $field.Value) }}</pre></td>
 						<td class="align-right" style="flex: 0.5">{{ len $field.Value }}</td>
 						<td style="flex: 0.5"><a href="{{ uri "chainBlobDownload" $chainid (hashref $hash) (base58 $field.Key) }}">Download</a></td>
 					</tr>

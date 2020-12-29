@@ -17,10 +17,11 @@ func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
 }
 
-func quoted(max int, s string) string {
+func trim(max int, s string) string {
 	if len(s) > max {
 		s = s[:max] + "…"
 	}
+	// escape unprintable chars
 	s = fmt.Sprintf("%q", s)
 	// remove quotes
 	return s[1 : len(s)-1]

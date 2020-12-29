@@ -100,9 +100,9 @@ const tplChainContract = `
 		<div class="card fluid">
 			<h2 class="section">Contract</h2>
 			<dl>
-				<dt>Name</dt><dd><tt>{{printf "%.50s" $c.Name}}</tt></dd>
+				<dt>Name</dt><dd><tt>{{trim 50 $c.Name}}</tt></dd>
 				<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
-				<dt>Description</dt><dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
+				<dt>Description</dt><dd><tt>{{trim 50 $c.Description}}</tt></dd>
 				<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
 				{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
 				<dt>Owner fee</dt><dd>
@@ -124,10 +124,10 @@ const tplChainContract = `
 
 		<div class="card fluid">
 			<h3 class="section">Log</h3>
-			<dl>
+			<dl style="align-items: center">
 				{{ range $_, $rec := .Log }}
 					<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
-					<dd><pre>{{- quoted 1000 (bytesToString $rec.Data) -}}</pre></dd>
+					<dd><pre>{{- trim 1000 (bytesToString $rec.Data) -}}</pre></dd>
 				{{ end }}
 			</dl>
 		</div>

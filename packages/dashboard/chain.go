@@ -17,8 +17,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-const chainTplName = "chain"
-
 func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
@@ -28,8 +26,9 @@ func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
 }
 
 func initChain(e *echo.Echo, r renderer) {
-	e.GET("/chain/:chainid", handleChain).Name = "chain"
-	r[chainTplName] = makeTemplate(e, tplChain, tplWs)
+	route := e.GET("/chain/:chainid", handleChain)
+	route.Name = "chain"
+	r[route.Path] = makeTemplate(e, tplChain, tplWs)
 }
 
 func handleChain(c echo.Context) error {
@@ -84,7 +83,7 @@ func handleChain(c echo.Context) error {
 		}
 	}
 
-	return c.Render(http.StatusOK, chainTplName, result)
+	return c.Render(http.StatusOK, c.Path(), result)
 }
 
 func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
@@ -148,7 +147,7 @@ const tplChain = `
 
 	{{if .ChainRecord}}
 		{{ $rootinfo := .RootInfo }}
-		{{ $desc := printf "%.50s" $rootinfo.Description }}
+		{{ $desc := trim 50 $rootinfo.Description }}
 
 		<div class="card fluid">
 			<h2 class="section">{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
@@ -176,8 +175,8 @@ const tplChain = `
 				<h3 class="section">Contracts</h3>
 				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
-					<dt><a href="{{ uri "chainContract" $chainid $c.Hname }}"><tt>{{printf "%.30s" $c.Name}}</tt></a></dt>
-					<dd><tt>{{printf "%.50s" $c.Description}}</tt></dd>
+					<dt><a href="{{ uri "chainContract" $chainid $c.Hname }}"><tt>{{trim 30 $c.Name}}</tt></a></dt>
+					<dd><tt>{{trim 50 $c.Description}}</tt></dd>
 				{{end}}
 				</dl>
 			</div>

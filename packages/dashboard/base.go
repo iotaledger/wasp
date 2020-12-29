@@ -60,7 +60,7 @@ func makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
 		"args":              args,
 		"hashref":           hashref,
-		"quoted":            quoted,
+		"trim":              trim,
 		"bytesToString":     bytesToString,
 		"base58":            base58.Encode,
 		"replace":           strings.Replace,
@@ -108,7 +108,7 @@ const tplBase = `
 	{{ $active := index . 2 }}
 	<a href="{{$href}}" class="button"
 		{{- if $active -}}
-			style="background-color: var(--button-hover-back-color)"
+			style="background-color: var(--header-hover-back-color)"
 		{{- end -}}
 	>
 		{{- $title -}}
@@ -130,6 +130,34 @@ const tplBase = `
 
 	<body>
 		<style>
+			body {
+				--gray2: #EEF2FA;
+				--gray3: #D9E1EF;
+				--main-green: #0FC1B7;
+				--light-green: #00E0CA;
+				--dark-gray: #131F37;
+
+				--a-link-color: var(--main-green);
+				--a-visited-color: var(--main-green);
+				--pre-color: var(--main-green);
+				--card-border-color: var(--gray3);
+				--card-back-color: white;
+				--header-back-color: var(--dark-gray);
+				--header-hover-back-color: var(--main-green);
+				--header-fore-color: white;
+				--back-color: var(--gray2);
+				--fore-color: var(--dark-gray);
+				--card-fore-color: var(--dark-gray);
+				--table-head-back-color: var(--gray2);
+				--table-body-back-color: white;
+				--table-head-fore-color: var(--dark-gray);
+				--table-body-fore-color: var(--dark-gray);
+				--table-border-color: var(--gray3);
+				--table-border-separator-color: var(--gray3);
+			}
+			header {
+				border: none;
+			}
 			tt {
 				font-family: Menlo, Consolas, monospace;
 			}
@@ -157,13 +185,14 @@ const tplBase = `
 			.align-right {
 				text-align: right;
 			}
-			body {
-				--back-color: #eee;
-			}
 			table {
 				margin-top: var(--universal-margin);
 			}
 			table th, table td {
+				padding: var(--universal-padding);
+			}
+			pre {
+				margin: 0;
 				padding: var(--universal-padding);
 			}
 			.card {
@@ -172,7 +201,7 @@ const tplBase = `
 		</style>
 
 		<header>
-				<a class="logo" href="#">Wasp</a>
+				<a class="logo" href="#" style="color: var(--light-green)">Wasp</a>
 				{{$path := .Path}}
 				{{range $_, $tab := .NavPages}}
 					{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path)) }}
