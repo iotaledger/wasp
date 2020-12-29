@@ -12,10 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
-// TODO it may be better for the wasmhost to implement Processor interface and
-//  use sandbox as call context for some wasmhost call.
-//  That would be cleaner architecture: less OO more functional.
-
 type wasmProcessor struct {
 	wasmhost.WasmHost
 	ctx       vmtypes.Sandbox

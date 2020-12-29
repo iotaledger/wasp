@@ -232,6 +232,19 @@ func (host *WasmHost) ResetObjects() {
 	host.objIdToObj = host.objIdToObj[:2]
 }
 
+// TODO recovering inside processor implementation is not correct
+// TODO btw, current code doesn't catch panic. Something like (but lets remove it anyway):
+//   var err error
+//   func(){
+//     defer func() {
+//	     if errPanic := recover(); errPanic != nil {
+//		    err = fmt.Errorf("recover from panic: %s", errPanic)
+//	     }
+//     }()
+//     err = host.vm.RunFunction(functionName)
+//   }()
+//   return err
+//
 func (host *WasmHost) RunFunction(functionName string) (err error) {
 	defer func() {
 		if errPanic := recover(); errPanic != nil {
@@ -242,6 +255,7 @@ func (host *WasmHost) RunFunction(functionName string) (err error) {
 	return host.vm.RunFunction(functionName)
 }
 
+// TODO recovering inside processor implementation is not correct
 func (host *WasmHost) RunScFunction(functionName string) (err error) {
 	index, ok := host.funcToIndex[functionName]
 	if !ok {
@@ -292,9 +306,6 @@ func (host *WasmHost) SetInt(objId int32, keyId int32, value int64) {
 	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
 }
 
-// TODO #2 do we really need "type-based" interfaces like SetString to communicate
-//  sandbox calls like logging from wasm?
-//  Because semantically it is strange, it requires "interception" etc
 func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 	host.FindObject(objId).SetString(keyId, value)
 	host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
