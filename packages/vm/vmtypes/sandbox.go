@@ -71,9 +71,6 @@ type Sandbox interface {
 	Event(msg string)
 	// Deprecated: use Event(fmt.Sprintf()) instead
 	Eventf(format string, args ...interface{})
-
-	// clear all updates, restore same context as in the beginning of the VM call
-	Rollback()
 }
 
 type NewRequestParams struct {

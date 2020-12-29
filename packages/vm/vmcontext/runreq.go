@@ -20,6 +20,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 	}
 	var err error
 	func() {
+		// panic catcher for the whole call from request to the VM
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
@@ -30,13 +31,17 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 					// There was an error accessing the DB
 					// TODO invalidate the whole block?
 				}
-				vmctx.Rollback()
+				vmctx.txBuilder = vmctx.saveTxBuilder
+				vmctx.stateUpdate.Clear()
 			}
 			err = vmctx.lastError
 		}()
 		vmctx.mustCallFromRequest()
 	}()
 
+	if err != nil {
+		// TODO fallback processing on any error returned from the call
+	}
 	vmctx.chainlogRequest(err)
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
@@ -98,11 +103,6 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 func isInitChainRequest(reqRef sctransaction.RequestRef) bool {
 	s := reqRef.RequestSection()
 	return s.Target().Hname() == root.Interface.Hname() && s.EntryPointCode() == coretypes.EntryPointInit
-}
-
-func (vmctx *VMContext) Rollback() {
-	vmctx.txBuilder = vmctx.saveTxBuilder
-	vmctx.stateUpdate.Clear()
 }
 
 func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash *hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {

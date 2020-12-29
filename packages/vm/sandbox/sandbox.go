@@ -86,10 +86,6 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) Rollback() {
-	s.vmctx.Rollback()
-}
-
 func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
 	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
