@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"errors"
+	"fmt"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/mr-tron/base58"
@@ -56,11 +57,7 @@ func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
 }
 
 func (host *WasmHost) Init(null HostObject, root HostObject, log *logger.Logger) {
-	if log == nil {
-		host.log = logger.NewLogger("wasmtimevm")
-	} else {
-		host.log = log.Named("wasmtrace")
-	}
+	host.log = log.Named("wasmtrace")
 	host.codeToFunc = make(map[uint32]string)
 	host.funcToCode = make(map[string]uint32)
 	host.funcToIndex = make(map[string]int32)
@@ -223,7 +220,7 @@ func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	if err != nil {
 		return err
 	}
-	err = host.vm.RunFunction("on_load")
+	err = host.RunFunction("on_load")
 	if err != nil {
 		return err
 	}
@@ -235,15 +232,28 @@ func (host *WasmHost) ResetObjects() {
 	host.objIdToObj = host.objIdToObj[:2]
 }
 
-func (host *WasmHost) RunFunction(functionName string) error {
+func (host *WasmHost) RunFunction(functionName string) (err error) {
+	defer func() {
+		if errPanic := recover(); errPanic != nil {
+			err = errors.New(fmt.Sprint(errPanic))
+		}
+	}()
+
 	return host.vm.RunFunction(functionName)
 }
 
-func (host *WasmHost) RunScFunction(functionName string) error {
+func (host *WasmHost) RunScFunction(functionName string) (err error) {
 	index, ok := host.funcToIndex[functionName]
 	if !ok {
 		return errors.New("unknown SC function name: " + functionName)
 	}
+
+	defer func() {
+		if errPanic := recover(); errPanic != nil {
+			err = errors.New(fmt.Sprint(errPanic))
+		}
+	}()
+
 	return host.vm.RunScFunction(index)
 }
 
