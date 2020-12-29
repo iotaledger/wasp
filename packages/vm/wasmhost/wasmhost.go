@@ -5,7 +5,6 @@ package wasmhost
 
 import (
 	"errors"
-	"fmt"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/mr-tron/base58"
@@ -232,42 +231,15 @@ func (host *WasmHost) ResetObjects() {
 	host.objIdToObj = host.objIdToObj[:2]
 }
 
-// TODO recovering inside processor implementation is not correct
-// TODO btw, current code doesn't catch panic. Something like (but lets remove it anyway):
-//   var err error
-//   func(){
-//     defer func() {
-//	     if errPanic := recover(); errPanic != nil {
-//		    err = fmt.Errorf("recover from panic: %s", errPanic)
-//	     }
-//     }()
-//     err = host.vm.RunFunction(functionName)
-//   }()
-//   return err
-//
 func (host *WasmHost) RunFunction(functionName string) (err error) {
-	defer func() {
-		if errPanic := recover(); errPanic != nil {
-			err = errors.New(fmt.Sprint(errPanic))
-		}
-	}()
-
 	return host.vm.RunFunction(functionName)
 }
 
-// TODO recovering inside processor implementation is not correct
 func (host *WasmHost) RunScFunction(functionName string) (err error) {
 	index, ok := host.funcToIndex[functionName]
 	if !ok {
 		return errors.New("unknown SC function name: " + functionName)
 	}
-
-	defer func() {
-		if errPanic := recover(); errPanic != nil {
-			err = errors.New(fmt.Sprint(errPanic))
-		}
-	}()
-
 	return host.vm.RunScFunction(index)
 }
 
