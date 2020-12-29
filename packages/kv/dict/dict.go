@@ -13,30 +13,37 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-// Dict is a KVStore backed by an in-memory map
+// Dict is an implementation kv.KVStore interface backed by an in-memory map.
+// kv.KVStore represents a key-value store
+// where both keys and values are arbitrary byte slices.
 type Dict map[kv.Key][]byte
 
+// MustGet retrieves value by key
 func (d Dict) MustGet(key kv.Key) []byte {
 	return kv.MustGet(d, key)
 }
 
+// MustHas checks if the value exists
 func (d Dict) MustHas(key kv.Key) bool {
 	return kv.MustHas(d, key)
 }
 
+// MustIterate iterated of key/value pairs. In general, non-deterministic
 func (d Dict) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
 	kv.MustIterate(d, prefix, f)
 }
 
+// MustIterateKeys iterated of keys of the dictionary. In general, non-deterministic
 func (d Dict) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(d, prefix, f)
 }
 
-// create/clone
+// New creates new
 func New() Dict {
 	return make(Dict)
 }
 
+// Clone creates clone (deep copy) of Dict
 func (d Dict) Clone() Dict {
 	clone := make(Dict)
 	d.ForEach(func(key kv.Key, value []byte) bool {
@@ -46,18 +53,12 @@ func (d Dict) Clone() Dict {
 	return clone
 }
 
+// FromGoMap casts map to Dict
 func FromGoMap(d map[kv.Key][]byte) Dict {
-	return Dict(d)
+	return d
 }
 
-func Clone(other Dict) (Dict, error) {
-	d := make(Dict)
-	for k, v := range other {
-		d[k] = v
-	}
-	return d, nil
-}
-
+// FromKVStore convert (copy) any KVStore to dict
 func FromKVStore(s kv.KVStore) (Dict, error) {
 	d := make(Dict)
 	err := s.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
@@ -104,7 +105,7 @@ func slice(s string) string {
 	return s
 }
 
-// NON DETERMINISTIC!
+// ForEach iterates non-deterministic!
 func (d Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
 	for k, v := range d {
 		if !fun(k, v) {
@@ -113,6 +114,7 @@ func (d Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
 	}
 }
 
+// ForEachDeterministic iterates in the order of alphabetically sorted keys
 func (d Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	if d == nil {
 		return
@@ -124,10 +126,12 @@ func (d Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
 	}
 }
 
+// IsEmpty returns of it has no records
 func (d Dict) IsEmpty() bool {
 	return len(d) == 0
 }
 
+// Set sets the value for the key
 func (d Dict) Set(key kv.Key, value []byte) {
 	if value == nil {
 		panic("cannot Set(key, nil), use Del() to remove a key/value")
@@ -135,15 +139,18 @@ func (d Dict) Set(key kv.Key, value []byte) {
 	d[key] = value
 }
 
+// Del removes key/value pair
 func (d Dict) Del(key kv.Key) {
 	delete(d, key)
 }
 
+// Has checks if key exist
 func (d Dict) Has(key kv.Key) (bool, error) {
 	_, ok := d[key]
 	return ok, nil
 }
 
+// Iterate over keys with prefix
 func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	for k, v := range d {
 		if !k.HasPrefix(prefix) {
@@ -156,6 +163,7 @@ func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) erro
 	return nil
 }
 
+// IterateKeys over keys with prefix
 func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	for k := range d {
 		if !k.HasPrefix(prefix) {
@@ -168,6 +176,7 @@ func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return nil
 }
 
+// Get takes a value. Returns nil if key does not exist
 func (d Dict) Get(key kv.Key) ([]byte, error) {
 	v, _ := d[key]
 	return v, nil
@@ -209,6 +218,7 @@ func (d Dict) Read(r io.Reader) error {
 	return nil
 }
 
+// Keys takes all keys
 func (d Dict) Keys() []kv.Key {
 	ret := make([]kv.Key, 0)
 	for key := range d {
@@ -217,6 +227,7 @@ func (d Dict) Keys() []kv.Key {
 	return ret
 }
 
+// KeysSorted takes keys and sorts them
 func (d Dict) KeysSorted() []kv.Key {
 	k := d.Keys()
 	sort.Slice(k, func(i, j int) bool {
@@ -225,12 +236,14 @@ func (d Dict) KeysSorted() []kv.Key {
 	return k
 }
 
+// Extend appends another Dict
 func (d Dict) Extend(from Dict) {
 	for key, value := range from {
 		d.Set(key, value)
 	}
 }
 
+// Hash takes deterministic has of the dict
 func (d Dict) Hash() hashing.HashValue {
 	keys := d.KeysSorted()
 	data := make([][]byte, 0, 2*len(d))

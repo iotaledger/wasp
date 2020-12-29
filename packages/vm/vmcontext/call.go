@@ -47,6 +47,9 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 		}
 		defer vmctx.popCallContext()
 
+		// TODO if the transfer is not empty for the view, the tokens must be
+		//  returned back to requester (accrued on-chain)
+		//  or more sophisticated policy
 		return ep.CallView(NewSandboxView(vmctx))
 	}
 	if err := vmctx.pushCallContextWithTransfer(contract, params, transfer); err != nil {
