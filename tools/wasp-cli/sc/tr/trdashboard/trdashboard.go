@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/dashboard"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/tr"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type trdashboard struct{}

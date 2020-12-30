@@ -17,7 +17,7 @@ type SCStatus struct {
 	StateIndex uint32
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
-	StateTxId  *valuetransaction.ID
+	StateTxId  valuetransaction.ID
 	Requests   []*coretypes.RequestID
 
 	ProgramHash   *hashing.HashValue

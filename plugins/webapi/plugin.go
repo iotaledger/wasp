@@ -8,24 +8,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/daemon"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-
-	"github.com/iotaledger/hive.go/daemon"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/node"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 // PluginName is the name of the web API plugin.
 const PluginName = "WebAPI"
 
 var (
-	// Server is the web API server.
-	Server = echo.New()
+	Server echoswagger.ApiRoot
 
 	log *logger.Logger
 
@@ -45,16 +44,22 @@ func WaitUntilIsUp() { // TODO: Not used?
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
 
-	Server.HideBanner = true
-	Server.HidePort = true
-	Server.HTTPErrorHandler = customHTTPErrorHandler
-	Server.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+	Server = echoswagger.New(echo.New(), "/doc", &echoswagger.Info{
+		Title:       "Wasp API",
+		Description: "REST API for the IOTA Wasp node",
+		Version:     "0.1",
+	})
+
+	Server.Echo().HideBanner = true
+	Server.Echo().HidePort = true
+	Server.Echo().HTTPErrorHandler = customHTTPErrorHandler
+	Server.Echo().Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
 	}))
 
-	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.WebAPIAuth))
+	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
 
-	addEndpoints(adminWhitelist())
+	addEndpoints(Server, adminWhitelist())
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {
@@ -68,7 +73,7 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 			}
 		}
 	}
-	Server.DefaultHTTPErrorHandler(err, c)
+	c.Echo().DefaultHTTPErrorHandler(err, c)
 }
 
 func adminWhitelist() []net.IP {
@@ -90,11 +95,12 @@ func run(_ *node.Plugin) {
 
 func worker(shutdownSignal <-chan struct{}) {
 	stopped := make(chan struct{})
+	server := Server.Echo()
 	go func() {
 		defer close(stopped)
 		bindAddr := parameters.GetString(parameters.WebAPIBindAddress)
 		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
-		if err := Server.Start(bindAddr); err != nil {
+		if err := server.Start(bindAddr); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				log.Errorf("Error serving: %s", err)
 			}
@@ -111,7 +117,7 @@ func worker(shutdownSignal <-chan struct{}) {
 	defer log.Infof("Stopping %s ... done", PluginName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := Server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		log.Errorf("Error stopping: %s", err)
 	}
 }

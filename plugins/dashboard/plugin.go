@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 const PluginName = "Dashboard"

@@ -5,10 +5,10 @@ import (
 )
 
 type ChainRecord struct {
-	ChainID        *ChainID
-	Color          *Color
-	CommitteeNodes []string
-	Active         bool
+	ChainID        ChainID  `swagger:"desc(ChainID (base58-encoded))"`
+	Color          Color    `swagger:"desc(Chain color (base58-encoded))"`
+	CommitteeNodes []string `swagger:"desc(List of committee nodes (network IDs))"`
+	Active         bool     `swagger:"desc(Whether or not the chain is active)"`
 }
 
 func NewChainRecord(bd *registry.ChainRecord) *ChainRecord {
@@ -22,8 +22,8 @@ func NewChainRecord(bd *registry.ChainRecord) *ChainRecord {
 
 func (bd *ChainRecord) ChainRecord() *registry.ChainRecord {
 	return &registry.ChainRecord{
-		ChainID:        *bd.ChainID.ChainID(),
-		Color:          *bd.Color.Color(),
+		ChainID:        bd.ChainID.ChainID(),
+		Color:          bd.Color.Color(),
 		CommitteeNodes: bd.CommitteeNodes[:],
 		Active:         bd.Active,
 	}

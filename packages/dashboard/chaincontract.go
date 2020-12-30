@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func initChainContract(e *echo.Echo, r renderer) {

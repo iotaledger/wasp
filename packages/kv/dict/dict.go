@@ -1,12 +1,14 @@
 package dict
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"io"
 	"sort"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -178,8 +180,7 @@ func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 
 // Get takes a value. Returns nil if key does not exist
 func (d Dict) Get(key kv.Key) ([]byte, error) {
-	v, _ := d[key]
-	return v, nil
+	return d[key], nil
 }
 
 func (d Dict) Write(w io.Writer) error {
@@ -255,28 +256,47 @@ func (d Dict) Hash() hashing.HashValue {
 	return *hashing.HashData(data...)
 }
 
-type jsonItem struct {
-	Key   []byte
-	Value []byte
+// JSONDict is the JSON-compatible representation of a Dict
+type JSONDict struct {
+	Items []Item
+}
+
+// Item is a JSON-compatible representation of a single key-value pair
+type Item struct {
+	Key   string `swagger:"desc(Key (base64-encoded))"`
+	Value string `swagger:"desc(Value (base64-encoded))"`
+}
+
+// JSONDict returns a JSON-compatible representation of the Dict
+func (d Dict) JSONDict() JSONDict {
+	j := JSONDict{Items: make([]Item, len(d))}
+	for i, k := range d.sortedKeys() {
+		j.Items[i].Key = base64.StdEncoding.EncodeToString([]byte(k))
+		j.Items[i].Value = base64.StdEncoding.EncodeToString(d[k])
+	}
+	return j
 }
 
 func (d Dict) MarshalJSON() ([]byte, error) {
-	items := make([]jsonItem, len(d))
-	for i, k := range d.sortedKeys() {
-		items[i].Key = []byte(k)
-		items[i].Value = d[k]
-	}
-	return json.Marshal(items)
+	return json.Marshal(d.JSONDict())
 }
 
 func (d *Dict) UnmarshalJSON(b []byte) error {
-	var items []jsonItem
-	if err := json.Unmarshal(b, &items); err != nil {
+	var j JSONDict
+	if err := json.Unmarshal(b, &j); err != nil {
 		return err
 	}
 	*d = make(Dict)
-	for _, item := range items {
-		(*d)[kv.Key(item.Key)] = item.Value
+	for _, item := range j.Items {
+		k, err := base64.StdEncoding.DecodeString(item.Key)
+		if err != nil {
+			return err
+		}
+		v, err := base64.StdEncoding.DecodeString(item.Value)
+		if err != nil {
+			return err
+		}
+		(*d)[kv.Key(k)] = v
 	}
 	return nil
 }
