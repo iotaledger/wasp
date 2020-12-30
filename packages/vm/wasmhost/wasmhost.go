@@ -24,6 +24,9 @@ const (
 
 const KeyFromString int32 = 0x4000
 
+var HostTracing = false
+var ExtendedHostTracing = false
+
 type HostObject interface {
 	Exists(keyId int32) bool
 	GetBytes(keyId int32) []byte
@@ -284,11 +287,11 @@ func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 }
 
 func (host *WasmHost) Trace(format string, a ...interface{}) {
-	host.log.Infof(format, a...)
+	if HostTracing { host.log.Debugf(format, a...) }
 }
 
 func (host *WasmHost) TraceAll(format string, a ...interface{}) {
-	host.log.Debugf(format, a...)
+	if ExtendedHostTracing { host.Trace(format, a...) }
 }
 
 func (host *WasmHost) TrackObject(obj HostObject) int32 {
