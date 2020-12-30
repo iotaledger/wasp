@@ -27,11 +27,13 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 				vmctx.lastError = fmt.Errorf("recovered from panic in VM: %v", r)
 				vmctx.log.Error(vmctx.lastError)
 				debug.PrintStack()
-				if _, ok := r.(buffered.DBError); ok {
+				if dberr, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB
-					// TODO invalidate the whole block?
+					// The world stops
+					vmctx.Panicf("DB error: %v", dberr)
 				}
 				vmctx.txBuilder = vmctx.saveTxBuilder
+				vmctx.txBuilder.MustValidate()
 				vmctx.stateUpdate.Clear()
 			}
 			err = vmctx.lastError
@@ -111,8 +113,6 @@ func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash 
 	if err != nil {
 		return nil, err
 	}
-	// create result transaction
-	//vmctx.log.Debugf("-- before building the tx:\n%s\n", vmctx.txBuilder.Dump(true))
 	tx, err := vmctx.txBuilder.Build()
 	if err != nil {
 		return nil, err

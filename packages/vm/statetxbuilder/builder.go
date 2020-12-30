@@ -91,6 +91,7 @@ func (txb *Builder) Erase1TokenToChain(col balance.Color) bool {
 }
 
 func (txb *Builder) Build() (*sctransaction.Transaction, error) {
+	txb.MustValidate()
 	return sctransaction.NewTransaction(
 		txb.vtxb.build(),
 		txb.stateSection,
@@ -108,4 +109,8 @@ func (txb *Builder) Dump(dumpVtxb bool) string {
 		ret += txb.vtxb.Dump()
 	}
 	return ret
+}
+
+func (txb *Builder) MustValidate() {
+	txb.vtxb.validate()
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"sort"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -23,6 +24,7 @@ type vtxBuilder struct {
 	reminderAddr          address.Address
 	inputBalancesByOutput []inputBalances
 	outputBalances        map[address.Address]map[balance.Color]int64
+	originalBalances      map[balance.Color]int64
 }
 
 var (
@@ -36,6 +38,7 @@ func newValueTxBuilder(addr address.Address, addressBalances map[valuetransactio
 		reminderAddr:          addr,
 		inputBalancesByOutput: make([]inputBalances, 0),
 		outputBalances:        make(map[address.Address]map[balance.Color]int64),
+		originalBalances:      make(map[balance.Color]int64),
 	}
 	var err error
 	for txid, bals := range addressBalances {
@@ -52,6 +55,11 @@ func newValueTxBuilder(addr address.Address, addressBalances map[valuetransactio
 			return nil, err
 		}
 		ret.inputBalancesByOutput = append(ret.inputBalancesByOutput, inb)
+
+		for _, bal := range bals {
+			b, _ := ret.originalBalances[bal.Color]
+			ret.originalBalances[bal.Color] = b + bal.Value
+		}
 	}
 	ret.sortInputBalancesById() // for determinism
 	return ret, nil
@@ -62,6 +70,7 @@ func (vtxb *vtxBuilder) clone() *vtxBuilder {
 		reminderAddr:          vtxb.reminderAddr,
 		inputBalancesByOutput: make([]inputBalances, 0),
 		outputBalances:        make(map[address.Address]map[balance.Color]int64),
+		originalBalances:      make(map[balance.Color]int64),
 	}
 	for _, b := range vtxb.inputBalancesByOutput {
 		remain, err := copyCompressAndSortBalances(b.remain)
@@ -85,6 +94,9 @@ func (vtxb *vtxBuilder) clone() *vtxBuilder {
 		}
 		ret.outputBalances[addr] = m
 	}
+	for col, b := range vtxb.originalBalances {
+		ret.originalBalances[col] = b
+	}
 	return ret
 }
 
@@ -103,6 +115,7 @@ func copyCompressAndSortBalances(bals []*balance.Balance) ([]*balance.Balance, e
 	if len(bals) == 0 {
 		return nil, nil
 	}
+	ret := make([]*balance.Balance, 0, len(bals))
 	bmap := make(map[balance.Color]int64)
 	for _, bal := range bals {
 		if _, ok := bmap[bal.Color]; !ok {
@@ -110,14 +123,13 @@ func copyCompressAndSortBalances(bals []*balance.Balance) ([]*balance.Balance, e
 		}
 		bmap[bal.Color] += bal.Value
 	}
-	bals = bals[:0]
 	for col, val := range bmap {
-		bals = append(bals, balance.New(col, val))
+		ret = append(ret, balance.New(col, val))
 	}
-	sort.Slice(bals, func(i, j int) bool {
-		return bytes.Compare(bals[i].Color[:], bals[j].Color[:]) < 0
+	sort.Slice(ret, func(i, j int) bool {
+		return bytes.Compare(ret[i].Color[:], ret[j].Color[:]) < 0
 	})
-	return bals, nil
+	return ret, nil
 }
 
 func (vtxb *vtxBuilder) sortInputBalancesById() {
@@ -288,4 +300,38 @@ func (vtxb *vtxBuilder) Dump() string {
 		}
 	}
 	return ret
+}
+
+func (vtxb *vtxBuilder) validate() {
+	remaining := make(map[balance.Color]int64)
+	consumed := make(map[balance.Color]int64)
+	inOutputs := make(map[balance.Color]int64)
+
+	for _, ib := range vtxb.inputBalancesByOutput {
+		for _, b := range ib.remain {
+			s, _ := remaining[b.Color]
+			remaining[b.Color] = s + b.Value
+		}
+		for _, b := range ib.consumed {
+			s, _ := consumed[b.Color]
+			consumed[b.Color] = s + b.Value
+		}
+	}
+	for _, balmap := range vtxb.outputBalances {
+		for col, val := range balmap {
+			s, _ := inOutputs[col]
+			inOutputs[col] = s + val
+		}
+	}
+	orig := cbalances.NewFromMap(vtxb.originalBalances)
+	rem := cbalances.NewFromMap(remaining)
+	cons := cbalances.NewFromMap(consumed)
+
+	sumMap := make(map[balance.Color]int64)
+	rem.AddToMap(sumMap)
+	cons.AddToMap(sumMap)
+	sum := cbalances.NewFromMap(sumMap)
+	if !sum.Equal(orig) {
+		panic("invalid sums")
+	}
 }
