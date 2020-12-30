@@ -55,13 +55,13 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		host.nesting--
 		if host.nesting == 0 {
 			host.Trace("Finalizing calls")
-			host.scContext.Finalize()
+			host.scContext.finalize()
 		}
 		host.ctx = saveCtx
 		host.ctxView = saveCtxView
 	}()
 
-	testMode, _ := host.Params().Has("testMode")
+	testMode, _ := host.params().Has("testMode")
 	if testMode {
 		host.Trace("TEST MODE")
 		TestMode = true
@@ -118,14 +118,14 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return host
 }
 
-func (host *wasmProcessor) Balances() coretypes.ColoredBalances {
+func (host *wasmProcessor) balances() coretypes.ColoredBalances {
 	if host.ctx != nil {
 		return host.ctx.Balances()
 	}
 	return host.ctxView.Balances()
 }
 
-func (host *wasmProcessor) ContractID() coretypes.ContractID {
+func (host *wasmProcessor) contractID() coretypes.ContractID {
 	if host.ctx != nil {
 		return host.ctx.ContractID()
 	}
@@ -139,14 +139,14 @@ func (host *wasmProcessor) log() vmtypes.LogInterface {
 	return host.ctxView.Log()
 }
 
-func (host *wasmProcessor) Params() dict.Dict {
+func (host *wasmProcessor) params() dict.Dict {
 	if host.ctx != nil {
 		return host.ctx.Params()
 	}
 	return host.ctxView.Params()
 }
 
-func (host *wasmProcessor) State() kv.KVStore {
+func (host *wasmProcessor) state() kv.KVStore {
 	if host.ctx != nil {
 		return host.ctx.State()
 	}

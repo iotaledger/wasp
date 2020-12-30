@@ -41,7 +41,7 @@ type ScLog struct {
 func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
 	a.ScDict.InitObj(id, keyId, owner)
 	key := a.vm.GetKeyFromId(keyId)
-	a.lines = datatypes.NewMustTimestampedLog(a.vm.State(), kv.Key(key))
+	a.lines = datatypes.NewMustTimestampedLog(a.vm.state(), kv.Key(key))
 	a.logEntry = &ScLogEntry{lines: a.lines, current: ^uint32(0)}
 	a.logEntryId = a.vm.TrackObject(a.logEntry)
 }

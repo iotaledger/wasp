@@ -29,7 +29,7 @@ func (o *ScContext) Exists(keyId int32) bool {
 	return o.GetTypeId(keyId) > 0
 }
 
-func (o *ScContext) Finalize() {
+func (o *ScContext) finalize() {
 	o.objects = make(map[int32]int32)
 	o.vm.ResetObjects()
 }
@@ -64,10 +64,10 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		wasmhost.KeyExports:   func() WaspObject { return &ScExports{} },
 		wasmhost.KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		wasmhost.KeyLogs:      func() WaspObject { return &ScLogs{} },
-		wasmhost.KeyParams:    func() WaspObject { return &ScDict{kvStore: o.vm.Params()} },
+		wasmhost.KeyParams:    func() WaspObject { return &ScDict{kvStore: o.vm.params()} },
 		wasmhost.KeyPosts:     func() WaspObject { return &ScPosts{} },
 		wasmhost.KeyResults:   func() WaspObject { return &ScDict{kvStore: dict.New()} },
-		wasmhost.KeyState:     func() WaspObject { return &ScDict{kvStore: o.vm.State()} },
+		wasmhost.KeyState:     func() WaspObject { return &ScDict{kvStore: o.vm.state()} },
 		wasmhost.KeyTransfers: func() WaspObject { return &ScTransfers{} },
 		wasmhost.KeyUtility:   func() WaspObject { return &ScUtility{} },
 		wasmhost.KeyViews:     func() WaspObject { return &ScViews{} },

@@ -36,7 +36,7 @@ func (o *ScBalances) GetInt(keyId int32) int64 {
 	if err != nil {
 		o.Panic("GetInt: %v", err)
 	}
-	balances := o.vm.Balances()
+	balances := o.vm.balances()
 	if o.incoming {
 		if o.vm.ctx == nil {
 			return 0
@@ -90,7 +90,7 @@ func (o *ScBalanceColors) loadColors() {
 	if len(o.colors) > 0 {
 		return
 	}
-	balances := o.vm.Balances()
+	balances := o.vm.balances()
 	if o.incoming {
 		if o.vm.ctx == nil {
 			return

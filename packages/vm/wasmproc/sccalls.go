@@ -52,7 +52,7 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScCallInfo) Invoke() {
 	o.Trace("CALL c'%s' f'%s'", o.contract, o.function)
-	contractCode := o.vm.ContractID().Hname()
+	contractCode := o.vm.contractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
 	}
@@ -151,7 +151,7 @@ func (o *ScPostInfo) Invoke() {
 	if o.chainId != nil {
 		chainId = *o.chainId
 	}
-	contractCode := o.vm.ContractID().Hname()
+	contractCode := o.vm.contractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
 	}
@@ -258,7 +258,7 @@ func (o *ScViewInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScViewInfo) Invoke() {
 	o.Trace("VIEW c'%s' f'%s'", o.contract, o.function)
-	contractCode := o.vm.ContractID().Hname()
+	contractCode := o.vm.contractID().Hname()
 	if o.contract != "" {
 		contractCode = coretypes.Hn(o.contract)
 	}

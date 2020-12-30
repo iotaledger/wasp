@@ -25,7 +25,7 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 		id := o.vm.ctx.ContractCreator()
 		return id[:]
 	case wasmhost.KeyId:
-		id := o.vm.ContractID()
+		id := o.vm.contractID()
 		return id[:]
 	}
 	return o.ScDict.GetBytes(keyId)
@@ -34,8 +34,10 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 func (o *ScContract) GetString(keyId int32) string {
 	switch keyId {
 	case wasmhost.KeyDescription:
+		//TODO currently always returns "Wasm VM smart contract processor"
+		// ask core contract for contract description instead?
 		return o.vm.GetDescription()
-	case wasmhost.KeyName: //TODO
+	case wasmhost.KeyName: //TODO ask core contract for contract name?
 	}
 	return o.ScDict.GetString(keyId)
 }
