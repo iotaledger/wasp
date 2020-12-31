@@ -3,6 +3,7 @@ package runvm
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"time"
@@ -15,7 +16,7 @@ import (
 // RunComputationsAsync runs computations for the batch of requests in the background
 func RunComputationsAsync(ctx *vm.VMTask) error {
 	if len(ctx.Requests) == 0 {
-		return fmt.Errorf("must be at least 1 request")
+		return fmt.Errorf("RunComputationsAsync: must be at least 1 request")
 	}
 
 	txb, err := statetxbuilder.New(address.Address(ctx.ChainID), ctx.Color, ctx.Balances)
@@ -45,23 +46,25 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		task.OnFinish(nil, nil, fmt.Errorf("runTask.createVMContext: %v", err))
 		return
 	}
+
 	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
+	var lastResult dict.Dict
+	var lastErr error
+	var lastStateUpdate state.StateUpdate
+
+	// loop over the batch of requests and run each request on the VM.
+	// the result accumulates in the VMContext and in the list of stateUpdates
 	timestamp := task.Timestamp
 	for _, reqRef := range task.Requests {
-		stateUpdate := vmctx.RunTheRequest(reqRef, timestamp)
+		vmctx.RunTheRequest(reqRef, timestamp)
+		lastStateUpdate, lastResult, lastErr = vmctx.GetResult()
 
-		stateUpdates = append(stateUpdates, stateUpdate)
-		// update state
+		stateUpdates = append(stateUpdates, lastStateUpdate)
 		if timestamp != 0 {
 			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
 			// the reason is to provide a different timestamp for each VM call and remain deterministic
 			timestamp += 1
 		}
-	}
-	if len(stateUpdates) == 0 {
-		// should not happen
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM: no state updates were produced"))
-		return
 	}
 
 	// create block from state updates.
@@ -90,12 +93,11 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 	}
 	// Note: can't take tx ID!!
 	task.Log.Debugw("runTask OUT",
-		"result batch size", task.ResultBlock.Size(),
-		"result batch state index", task.ResultBlock.StateIndex(),
-		"result variable state hash", stateHash.String(),
-		"result essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
-		"result tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
+		"batch size", task.ResultBlock.Size(),
+		"block index", task.ResultBlock.StateIndex(),
+		"variable state hash", stateHash.String(),
+		"tx essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
+		"tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
 	)
-	lastResult, lastErr := vmctx.LastCallResult()
 	task.OnFinish(lastResult, lastErr, nil)
 }

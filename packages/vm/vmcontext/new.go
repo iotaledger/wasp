@@ -17,14 +17,14 @@ import (
 // context for one request
 type VMContext struct {
 	// same for the block
-	chainID       coretypes.ChainID
-	chainOwnerID  coretypes.AgentID
-	processors    *processors.ProcessorCache
-	balances      map[valuetransaction.ID][]*balance.Balance
-	txBuilder     *statetxbuilder.Builder // mutated
-	saveTxBuilder *statetxbuilder.Builder // for rollback
-	virtualState  state.VirtualState      // mutated
-	log           *logger.Logger
+	chainID           coretypes.ChainID
+	chainOwnerID      coretypes.AgentID
+	processors        *processors.ProcessorCache
+	balances          map[valuetransaction.ID][]*balance.Balance
+	txBuilder         *statetxbuilder.Builder // mutated
+	baselineTxBuilder *statetxbuilder.Builder // for rollback
+	virtualState      state.VirtualState      // mutated
+	log               *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
 	feeColor           balance.Color
@@ -68,6 +68,6 @@ func NewVMContext(task *vm.VMTask, txb *statetxbuilder.Builder) (*VMContext, err
 	return ret, nil
 }
 
-func (vmctx *VMContext) LastCallResult() (dict.Dict, error) {
-	return vmctx.lastResult, vmctx.lastError
+func (vmctx *VMContext) GetResult() (state.StateUpdate, dict.Dict, error) {
+	return vmctx.stateUpdate, vmctx.lastResult, vmctx.lastError
 }

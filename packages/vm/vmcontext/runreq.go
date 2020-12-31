@@ -14,9 +14,9 @@ import (
 // runTheRequest:
 // - handles request token
 // - processes reward logic
-func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp int64) state.StateUpdate {
-	if !vmctx.setRequestContext(reqRef, timestamp) {
-		return state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
+func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp int64) {
+	if !vmctx.prepareRequestContext(reqRef, timestamp) {
+		return
 	}
 	var err error
 	func() {
@@ -32,7 +32,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 					// The world stops
 					vmctx.Panicf("DB error: %v", dberr)
 				}
-				vmctx.txBuilder = vmctx.saveTxBuilder
+				vmctx.txBuilder = vmctx.baselineTxBuilder
 				vmctx.txBuilder.MustValidate()
 				vmctx.stateUpdate.Clear()
 			}
@@ -52,7 +52,6 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 		"entry point", vmctx.reqRef.RequestSection().EntryPointCode().String(),
 		//"state update", vmctx.stateUpdate.String(),
 	)
-	return vmctx.stateUpdate
 }
 
 func (vmctx *VMContext) chainlogRequest(err error) {
@@ -65,9 +64,8 @@ func (vmctx *VMContext) chainlogRequest(err error) {
 	vmctx.StoreToChainLog(vmctx.reqHname, []byte(msg))
 }
 
-func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {
+func (vmctx *VMContext) prepareRequestContext(reqRef sctransaction.RequestRef, timestamp int64) bool {
 	reqHname := reqRef.RequestSection().Target().Hname()
-	vmctx.saveTxBuilder = vmctx.txBuilder.Clone()
 	vmctx.reqRef = reqRef
 	vmctx.reqHname = reqHname
 
@@ -76,17 +74,20 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
 
+	// TODO handle tokens and save the state update baseline
+	vmctx.baselineTxBuilder = vmctx.txBuilder.Clone()
+
 	if isInitChainRequest(reqRef) {
 		return true
 	}
 	// ordinary request, only makes sense when chain is already deployed
 	info, err := vmctx.getChainInfo()
 	if err != nil {
-		vmctx.log.Errorf("setRequestContext: %s", err)
+		vmctx.log.Errorf("prepareRequestContext: %s", err)
 		return false
 	}
 	if info.ChainID != vmctx.chainID {
-		vmctx.log.Errorf("setRequestContext: major inconsistency of chainID")
+		vmctx.log.Panicf("prepareRequestContext: major inconsistency of chainID")
 		return false
 	}
 	vmctx.chainOwnerID = info.ChainOwnerID
@@ -99,6 +100,7 @@ func (vmctx *VMContext) setRequestContext(reqRef sctransaction.RequestRef, times
 	vmctx.feeColor = feeColor
 	vmctx.ownerFee = ownerFee
 	vmctx.validatorFee = validatorFee
+
 	return true
 }
 
