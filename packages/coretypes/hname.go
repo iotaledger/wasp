@@ -6,6 +6,7 @@ package coretypes
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"strconv"
 
@@ -24,6 +25,11 @@ const FuncInit = "init"
 
 // EntryPointInit is a hashed name of the init function
 var EntryPointInit = Hn(FuncInit)
+
+func init() {
+	fmt.Printf("----------------\nreserved entry pont '%s': %s\n----------------\n",
+		FuncInit, EntryPointInit.String())
+}
 
 // NewHnameFromBytes constructur, unmarshalling
 func NewHnameFromBytes(data []byte) (ret Hname, err error) {

@@ -48,7 +48,7 @@ type StateUpdate interface {
 	// the payload of variables/values
 	String() string
 	Mutations() buffered.MutationSequence
-	Clear()
+	Clone() StateUpdate
 	Write(io.Writer) error
 	Read(io.Reader) error
 }
