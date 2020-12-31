@@ -17,9 +17,10 @@ const (
 	OBJTYPE_AGENT   int32 = 2
 	OBJTYPE_BYTES   int32 = 3
 	OBJTYPE_COLOR   int32 = 4
-	OBJTYPE_INT     int32 = 5
-	OBJTYPE_MAP     int32 = 6
-	OBJTYPE_STRING  int32 = 7
+	OBJTYPE_HASH    int32 = 5
+	OBJTYPE_INT     int32 = 6
+	OBJTYPE_MAP     int32 = 7
+	OBJTYPE_STRING  int32 = 8
 )
 
 const KeyFromString int32 = 0x4000
@@ -287,11 +288,15 @@ func (host *WasmHost) SetString(objId int32, keyId int32, value string) {
 }
 
 func (host *WasmHost) Trace(format string, a ...interface{}) {
-	if HostTracing { host.log.Debugf(format, a...) }
+	if HostTracing {
+		host.log.Debugf(format, a...)
+	}
 }
 
 func (host *WasmHost) TraceAll(format string, a ...interface{}) {
-	if ExtendedHostTracing { host.Trace(format, a...) }
+	if ExtendedHostTracing {
+		host.Trace(format, a...)
+	}
 }
 
 func (host *WasmHost) TrackObject(obj HostObject) int32 {

@@ -88,7 +88,7 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	case wasmhost.KeyBase58:
 		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyHash:
-		return wasmhost.OBJTYPE_BYTES
+		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_HASH
 	case wasmhost.KeyRandom:
 		return wasmhost.OBJTYPE_INT
 	}

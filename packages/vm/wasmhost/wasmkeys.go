@@ -14,7 +14,8 @@ const (
 	KeyCreator     = KeyContract    - 1
 	KeyData        = KeyCreator     - 1
 	KeyDelay       = KeyData        - 1
-	KeyDescription = KeyDelay       - 1
+	KeyDeploys     = KeyDelay       - 1
+	KeyDescription = KeyDeploys     - 1
 	KeyEvent       = KeyDescription - 1
 	KeyExports     = KeyEvent       - 1
 	KeyFunction    = KeyExports     - 1
@@ -53,6 +54,7 @@ var keyMap = map[string]int32{
 	"creator":     KeyCreator,
 	"data":        KeyData,
 	"delay":       KeyDelay,
+	"deploys":     KeyDeploys,
 	"description": KeyDescription,
 	"event":       KeyEvent,
 	"exports":     KeyExports,

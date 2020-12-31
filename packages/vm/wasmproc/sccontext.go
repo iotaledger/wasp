@@ -61,6 +61,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		wasmhost.KeyBalances:  func() WaspObject { return &ScBalances{} },
 		wasmhost.KeyCalls:     func() WaspObject { return &ScCalls{} },
 		wasmhost.KeyContract:  func() WaspObject { return &ScContract{} },
+		wasmhost.KeyDeploys:   func() WaspObject { return &ScDeploys{} },
 		wasmhost.KeyExports:   func() WaspObject { return &ScExports{} },
 		wasmhost.KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
 		wasmhost.KeyLogs:      func() WaspObject { return &ScLogs{} },
