@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
 )
 

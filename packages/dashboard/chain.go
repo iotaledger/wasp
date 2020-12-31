@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {

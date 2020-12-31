@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type BaseTemplateParams struct {

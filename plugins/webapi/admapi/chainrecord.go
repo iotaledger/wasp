@@ -2,20 +2,38 @@ package admapi
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/jsonable"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainRecordEndpoints(adm *echo.Group) {
-	adm.POST("/"+client.PutChainRecordRoute, handlePutChainRecord)
-	adm.GET("/"+client.GetChainRecordRoute(":chainid"), handleGetChainRecord)
-	adm.GET("/"+client.GetChainRecordListRoute, handleGetChainRecordList)
+func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
+	example := jsonable.ChainRecord{
+		ChainID:        jsonable.NewChainID(&coretypes.ChainID{1, 2, 3, 4}),
+		Color:          jsonable.NewColor(&balance.Color{5, 6, 7, 8}),
+		CommitteeNodes: []string{"wasp1:4000", "wasp2:4000"},
+		Active:         false,
+	}
+
+	adm.POST("/"+client.PutChainRecordRoute, handlePutChainRecord).
+		SetSummary("Create a new chain record").
+		AddParamBody(example, "ChainRecord", "Chain record", true)
+
+	adm.GET("/"+client.GetChainRecordRoute(":chainID"), handleGetChainRecord).
+		SetSummary("Find the chain record for the given chain ID").
+		AddParamPath("", "chainID", "ChainID (base58)").
+		AddResponse(http.StatusOK, "Chain Record", example, nil)
+
+	adm.GET("/"+client.GetChainRecordListRoute, handleGetChainRecordList).
+		SetSummary("Get the list of chain records in the node").
+		AddResponse(http.StatusOK, "Chain Record", []jsonable.ChainRecord{example}, nil)
 }
 
 func handlePutChainRecord(c echo.Context) error {
@@ -45,7 +63,7 @@ func handlePutChainRecord(c echo.Context) error {
 }
 
 func handleGetChainRecord(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

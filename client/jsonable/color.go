@@ -7,16 +7,15 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type Color struct {
-	color balance.Color
-}
+// Color is the base58 representation of balance.Color
+type Color string
 
-func NewColor(color *balance.Color) *Color {
-	return &Color{color: *color}
+func NewColor(color *balance.Color) Color {
+	return Color(color.String())
 }
 
 func (c Color) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.Color().String())
+	return json.Marshal(string(c))
 }
 
 func (c *Color) UnmarshalJSON(b []byte) error {
@@ -24,11 +23,15 @@ func (c *Color) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	col, err := util.ColorFromString(s)
-	c.color = col
+	_, err := util.ColorFromString(s)
+	*c = Color(s)
 	return err
 }
 
-func (c Color) Color() *balance.Color {
-	return &c.color
+func (c Color) Color() balance.Color {
+	col, err := util.ColorFromString(string(c))
+	if err != nil {
+		panic(err)
+	}
+	return col
 }

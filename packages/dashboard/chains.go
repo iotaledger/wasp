@@ -1,7 +1,7 @@
 package dashboard
 
 import (
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func chainsInit(e *echo.Echo, r renderer) Tab {

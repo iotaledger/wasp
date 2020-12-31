@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
 )
 

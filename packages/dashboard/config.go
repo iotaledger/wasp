@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/plugins/config"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func configInit(e *echo.Echo, r renderer) Tab {

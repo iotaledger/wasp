@@ -7,13 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func CallViewRoute(scID string, fname string) string {
-	return "sc/" + scID + "/state/view/" + fname
+func CallViewRoute(contractID string, fname string) string {
+	return "contract/" + contractID + "/callview/" + fname
 }
 
-func (c *WaspClient) CallView(scID coretypes.ContractID, fname string, arguments dict.Dict) (dict.Dict, error) {
+func (c *WaspClient) CallView(contractID coretypes.ContractID, fname string, arguments dict.Dict) (dict.Dict, error) {
 	var res dict.Dict
-	if err := c.do(http.MethodGet, CallViewRoute(scID.Base58(), fname), arguments, &res); err != nil {
+	if err := c.do(http.MethodGet, CallViewRoute(contractID.Base58(), fname), arguments, &res); err != nil {
 		return nil, err
 	}
 	return res, nil

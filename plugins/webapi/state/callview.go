@@ -1,21 +1,34 @@
 package state
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func AddEndpoints(server *echo.Echo) {
+func AddEndpoints(server echoswagger.ApiRouter) {
 	addStateQueryEndpoint(server)
-	server.GET("/"+client.CallViewRoute(":contractID", ":fname"), handleCallView)
+
+	dictExample := dict.Dict{
+		kv.Key("key1"): []byte("value1"),
+	}.JSONDict()
+
+	server.GET("/"+client.CallViewRoute(":contractID", ":fname"), handleCallView).
+		SetSummary("Call a view function on a contract").
+		AddParamPath("", "contractID", "ContractID (base58-encoded)").
+		AddParamPath("getInfo", "fname", "Function name").
+		AddParamBody(dictExample, "params", "Parameters", false).
+		AddResponse(http.StatusOK, "Result", dictExample, nil)
 }
 
 func handleCallView(c echo.Context) error {
@@ -26,9 +39,12 @@ func handleCallView(c echo.Context) error {
 
 	fname := c.Param("fname")
 
-	params := dict.New()
-	if err = c.Bind(&params); err != nil {
-		return httperrors.BadRequest("Invalid request body")
+	var params dict.Dict
+	// for some reason c.Bind(&params) doesn't work
+	if c.Request().Body != nil {
+		if err := json.NewDecoder(c.Request().Body).Decode(&params); err != nil {
+			return httperrors.BadRequest("Invalid request body")
+		}
 	}
 
 	chain := chains.GetChain(contractID.ChainID())
