@@ -7,8 +7,9 @@ require (
 	github.com/iotaledger/goshimmer v0.3.1-0.20201229190325-903bd925f4de
 	github.com/iotaledger/hive.go v0.0.0-20201203130604-bd82d648670e
 	github.com/knadh/koanf v0.14.0
-	github.com/labstack/echo v3.3.10+incompatible
+	github.com/labstack/echo/v4 v4.1.13
 	github.com/mr-tron/base58 v1.2.0
+	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0
 	github.com/spf13/pflag v1.0.5

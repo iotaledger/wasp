@@ -4,17 +4,15 @@
 package apilib
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"io"
 	"io/ioutil"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
@@ -143,7 +141,7 @@ func consistentPublicKeyInfo(pki1, pki2 *client.DKSharesInfo) bool {
 	if pki1.Address != pki2.Address {
 		return false
 	}
-	if !bytes.Equal(pki1.SharedPubKey, pki2.SharedPubKey) {
+	if pki1.SharedPubKey != pki2.SharedPubKey {
 		return false
 	}
 	if pki1.Threshold != pki2.Threshold {
@@ -153,7 +151,7 @@ func consistentPublicKeyInfo(pki1, pki2 *client.DKSharesInfo) bool {
 		return false
 	}
 	for i := range pki1.PubKeyShares {
-		if !bytes.Equal(pki1.PubKeyShares[i], pki2.PubKeyShares[i]) {
+		if pki1.PubKeyShares[i] != pki2.PubKeyShares[i] {
 			return false
 		}
 	}

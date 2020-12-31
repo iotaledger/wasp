@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // same as https://github.com/labstack/echo/blob/151ed6b3f150163352985448b5630ab69de40aa5/echo.go#L347

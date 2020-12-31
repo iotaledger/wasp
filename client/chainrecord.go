@@ -10,7 +10,7 @@ import (
 
 const (
 	PutChainRecordRoute     = "chainrecord"
-	GetChainRecordListRoute = "chainrecord"
+	GetChainRecordListRoute = "chainrecords"
 )
 
 func GetChainRecordRoute(chainid string) string {

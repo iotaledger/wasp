@@ -28,7 +28,7 @@ type Results struct {
 	StateIndex uint32
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
-	StateTxId  *jsonable.ValueTxID
+	StateTxId  jsonable.ValueTxID
 	Requests   []*coretypes.RequestID
 }
 

@@ -3,8 +3,8 @@ package auth
 import (
 	"fmt"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func AddAuthentication(e *echo.Echo, config map[string]string) {

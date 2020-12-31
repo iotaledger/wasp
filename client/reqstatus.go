@@ -17,11 +17,11 @@ func WaitRequestProcessedRoute(chainId string, reqId string) string {
 }
 
 type WaitRequestProcessedParams struct {
-	Timeout time.Duration
+	Timeout time.Duration `swagger:"desc(Timeout in nanoseconds),default(30 seconds)"`
 }
 
 type RequestStatusResponse struct {
-	IsProcessed bool
+	IsProcessed bool `swagger:"desc(True if the request has been processed)"`
 }
 
 func (c *WaspClient) RequestStatus(chainId *coretypes.ChainID, reqId *coretypes.RequestID) (*RequestStatusResponse, error) {

@@ -6,6 +6,7 @@ package admapi
 // Endpoints for creating and getting Distributed key shares.
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,13 +17,35 @@ import (
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 	"go.dedis.ch/kyber/v3"
 )
 
-func addDKSharesEndpoints(adm *echo.Group) {
-	adm.POST("/"+client.DKSharesPostRoute(), handleDKSharesPost)
-	adm.GET("/"+client.DKSharesGetRoute(":sharedAddress"), handleDKSharesGet)
+func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
+	requestExample := client.DKSharesPostRequest{
+		PeerNetIDs:  []string{"wasp1:4000", "wasp2:4000", "wasp3:4000", "wasp4:4000"},
+		PeerPubKeys: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
+		Threshold:   3,
+		TimeoutMS:   10000,
+	}
+	infoExample := client.DKSharesInfo{
+		Address:      address.Address{5, 6, 7, 8}.String(),
+		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
+		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
+		Threshold:    3,
+		PeerIndex:    nil,
+	}
+
+	adm.POST("/"+client.DKSharesPostRoute(), handleDKSharesPost).
+		AddParamBody(requestExample, "DKSharesPostRequest", "Request parameters", true).
+		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
+		SetSummary("Generate a new distributed key")
+
+	adm.GET("/"+client.DKSharesGetRoute(":sharedAddress"), handleDKSharesGet).
+		AddParamPath("", "sharedAddress", "Address of the DK share (base58)").
+		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
+		SetSummary("Get distributed key properties")
 }
 
 func handleDKSharesPost(c echo.Context) error {
@@ -44,7 +67,11 @@ func handleDKSharesPost(c echo.Context) error {
 		peerPubKeys = make([]kyber.Point, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
 			peerPubKeys[i] = suite.Point()
-			if err = peerPubKeys[i].UnmarshalBinary(req.PeerPubKeys[i]); err != nil {
+			b, err := base64.StdEncoding.DecodeString(req.PeerPubKeys[i])
+			if err != nil {
+				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
+			}
+			if err = peerPubKeys[i].UnmarshalBinary(b); err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
 		}
@@ -90,22 +117,25 @@ func handleDKSharesGet(c echo.Context) error {
 func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*client.DKSharesInfo, error) {
 	var err error
 
-	var sharedPubKeyBin []byte
-	if sharedPubKeyBin, err = dkShare.SharedPublic.MarshalBinary(); err != nil {
+	b, err := dkShare.SharedPublic.MarshalBinary()
+	if err != nil {
 		return nil, err
 	}
+	sharedPubKey := base64.StdEncoding.EncodeToString(b)
 
-	pubKeySharesBin := make([][]byte, len(dkShare.PublicShares))
+	pubKeyShares := make([]string, len(dkShare.PublicShares))
 	for i := range dkShare.PublicShares {
-		if pubKeySharesBin[i], err = dkShare.PublicShares[i].MarshalBinary(); err != nil {
+		b, err := dkShare.PublicShares[i].MarshalBinary()
+		if err != nil {
 			return nil, err
 		}
+		pubKeyShares[i] = base64.StdEncoding.EncodeToString(b)
 	}
 
 	return &client.DKSharesInfo{
 		Address:      dkShare.Address.String(),
-		SharedPubKey: sharedPubKeyBin,
-		PubKeyShares: pubKeySharesBin,
+		SharedPubKey: sharedPubKey,
+		PubKeyShares: pubKeyShares,
 		Threshold:    dkShare.T,
 		PeerIndex:    dkShare.Index,
 	}, nil

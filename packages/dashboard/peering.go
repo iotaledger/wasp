@@ -8,7 +8,7 @@ import (
 
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func peeringInit(e *echo.Echo, r renderer) Tab {

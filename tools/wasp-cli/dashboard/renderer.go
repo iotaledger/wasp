@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"io"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type Renderer map[string]*template.Template

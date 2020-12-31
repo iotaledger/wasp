@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func initChainList(e *echo.Echo, r renderer) Tab {

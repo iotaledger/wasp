@@ -2,6 +2,7 @@ package dict
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -106,6 +107,23 @@ func TestMarshaling(t *testing.T) {
 
 	vars2 := New()
 	err = vars2.Read(bytes.NewBuffer(buf.Bytes()))
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
+}
+
+func TestJSONMarshaling(t *testing.T) {
+	vars1 := New()
+	vars1.Set("k1", []byte("kuku"))
+	vars1.Set("k2", []byte{42})
+	vars1.Set("k3", []byte("kuku"))
+	vars1.Set("k4", []byte{2})
+
+	b, err := json.Marshal(vars1)
+	assert.NoError(t, err)
+
+	var vars2 Dict
+	err = json.Unmarshal(b, &vars2)
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))

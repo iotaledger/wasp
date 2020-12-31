@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/client"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 var log *logger.Logger
@@ -15,15 +15,13 @@ func initLogger() {
 	log = logger.NewLogger("webapi/adm")
 }
 
-func AddEndpoints(e *echo.Echo, adminWhitelist []net.IP) {
+func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP) {
 	initLogger()
 
-	adm := e.Group("/" + client.AdminRoutePrefix)
-	adm.Use(protected(adminWhitelist))
+	adm.EchoGroup().Use(protected(adminWhitelist))
 
 	addShutdownEndpoint(adm)
 	addChainRecordEndpoints(adm)
-	addProgramEndpoints(adm)
 	addChainEndpoints(adm)
 	addStateEndpoints(adm)
 	addDKSharesEndpoints(adm)

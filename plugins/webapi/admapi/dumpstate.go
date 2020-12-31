@@ -11,31 +11,36 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addStateEndpoints(adm *echo.Group) {
-	adm.GET("/"+client.DumpSCStateRoute(":scid"), handleDumpSCState)
+func addStateEndpoints(adm echoswagger.ApiGroup) {
+	adm.GET("/"+client.DumpSCStateRoute(":contractID"), handleDumpSCState).
+		AddParamPath("", "contractID", "ContractID").
+		AddResponse(http.StatusOK, "State dump", client.SCStateDump{}, nil).
+		SetSummary("Dump the whole contract state").
+		SetDescription("This may be a dangerous operation if the state is too large. Only for testing use!")
 }
 
 func handleDumpSCState(c echo.Context) error {
-	scid, err := coretypes.NewContractIDFromBase58(c.Param("scid"))
+	contractID, err := coretypes.NewContractIDFromBase58(c.Param("contractID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("scid")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("contractID")))
 	}
 
-	chainID := scid.ChainID()
+	chainID := contractID.ChainID()
 	virtualState, _, ok, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return httperrors.NotFound(fmt.Sprintf("State not found for contract %s", scid.String()))
+		return httperrors.NotFound(fmt.Sprintf("State not found for contract %s", contractID.String()))
 	}
 
 	vars, err := dict.FromKVStore(subrealm.New(
 		virtualState.Variables().DangerouslyDumpToDict(),
-		kv.Key(scid.Hname().Bytes()),
+		kv.Key(contractID.Hname().Bytes()),
 	))
 	if err != nil {
 		return err

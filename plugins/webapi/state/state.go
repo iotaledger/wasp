@@ -12,11 +12,16 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addStateQueryEndpoint(server *echo.Echo) {
-	server.GET("/"+client.StateQueryRoute(":chainID"), handleStateQuery)
+func addStateQueryEndpoint(server echoswagger.ApiRouter) {
+	server.GET("/"+client.StateQueryRoute(":chainID"), handleStateQuery).
+		SetDeprecated().
+		SetSummary("Query the chain state").
+		AddParamBody(statequery.Request{}, "query", "Query parameters", true).
+		AddResponse(http.StatusOK, "Query result", statequery.Results{}, nil)
 }
 
 func handleStateQuery(c echo.Context) error {
