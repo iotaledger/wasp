@@ -151,13 +151,9 @@ func (b coloredBalances) Diff(b1 coretypes.ColoredBalances) coretypes.ColoredBal
 	return NewFromMap(ret)
 }
 
-func (b coloredBalances) Includes(b1 coretypes.ColoredBalances) bool {
-	diff := b.Diff(b1)
-	if diff == nil || diff.Len() == 0 {
-		return true
-	}
+func (b coloredBalances) NonNegative() bool {
 	ret := true
-	diff.Iterate(func(col balance.Color, bal int64) bool {
+	b.Iterate(func(col balance.Color, bal int64) bool {
 		if bal < 0 {
 			ret = false
 			return false
