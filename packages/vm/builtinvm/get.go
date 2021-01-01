@@ -2,7 +2,7 @@ package builtinvm
 
 import (
 	"fmt"
-
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
@@ -18,17 +18,19 @@ const (
 
 func init() {
 	if printCoreContracts {
-		PrintCoreContracts()
+		printReservedHnames()
 	}
 }
 
-func PrintCoreContracts() {
-	fmt.Printf("--------------- core contracts ------------------\n")
-	fmt.Printf("    %s: '%s'  \n", root.Interface.Hname().String(), root.Interface.Name)
-	fmt.Printf("    %s: '%s'  \n", accounts.Interface.Hname().String(), accounts.Interface.Name)
-	fmt.Printf("    %s: '%s'  \n", blob.Interface.Hname().String(), blob.Interface.Name)
-	fmt.Printf("    %s: '%s'  \n", chainlog.Interface.Hname().String(), chainlog.Interface.Name)
-	fmt.Printf("--------------- core contracts ------------------\n")
+// for debugging
+func printReservedHnames() {
+	fmt.Printf("--------------- reserved hnames ------------------\n")
+	fmt.Printf("    %10s: '%s'\n", root.Interface.Hname().String(), root.Interface.Name)
+	fmt.Printf("    %10s: '%s'\n", accounts.Interface.Hname().String(), accounts.Interface.Name)
+	fmt.Printf("    %10s: '%s'\n", blob.Interface.Hname().String(), blob.Interface.Name)
+	fmt.Printf("    %10s: '%s'\n", chainlog.Interface.Hname().String(), chainlog.Interface.Name)
+	fmt.Printf("    %10s: '%s'\n", coretypes.EntryPointInit.String(), coretypes.FuncInit)
+	fmt.Printf("--------------- reserved hnames ------------------\n")
 }
 
 func GetProcessor(programHash hashing.HashValue) (vmtypes.Processor, error) {

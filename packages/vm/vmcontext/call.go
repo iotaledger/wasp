@@ -55,10 +55,10 @@ func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hn
 	}
 	defer vmctx.popCallContext()
 
-	// prevent calling 'init' not from root targetContract or not while initializing root
+	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == coretypes.EntryPointInit && targetContract != root.Interface.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to call init not from root targetContract")
+			return nil, fmt.Errorf("attempt to call init not from the root contract")
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))

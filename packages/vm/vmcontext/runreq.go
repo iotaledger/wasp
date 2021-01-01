@@ -36,7 +36,6 @@ func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
 				vmctx.lastError = fmt.Errorf("recovered from panic in VM: %v", r)
-				//debug.PrintStack()
 				if dberr, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB
 					// The world stops
