@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -20,10 +18,10 @@ var (
 )
 
 // Call
-func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
-	vmctx.log.Debugw("Call", "contract", contract, "epCode", epCode.String())
+func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
+	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode.String())
 
-	rec, ok := vmctx.findContractByHname(contract)
+	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
 		return nil, ErrContractNotFound
 	}
@@ -42,7 +40,7 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 			return nil, fmt.Errorf("'init' entry point can't be a view")
 		}
 		// passing nil as transfer: calling to view should not have effect on chain ledger
-		if err := vmctx.pushCallContextWithTransfer(contract, params, nil); err != nil {
+		if err := vmctx.pushCallContextWithTransfer(targetContract, params, nil); err != nil {
 			return nil, err
 		}
 		defer vmctx.popCallContext()
@@ -52,15 +50,15 @@ func (vmctx *VMContext) Call(contract coretypes.Hname, epCode coretypes.Hname, p
 		//  or more sophisticated policy
 		return ep.CallView(NewSandboxView(vmctx))
 	}
-	if err := vmctx.pushCallContextWithTransfer(contract, params, transfer); err != nil {
+	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
 		return nil, err
 	}
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == coretypes.EntryPointInit && contract != root.Interface.Hname() {
+	if epCode == coretypes.EntryPointInit && targetContract != root.Interface.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to call init not from root contract")
+			return nil, fmt.Errorf("attempt to call init not from the root contract")
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
@@ -83,84 +81,8 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	req := vmctx.reqRef.RequestSection()
 	vmctx.log.Debugf("mustCallFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
 
-	// handles request token and node fees
-	remaining, err := vmctx.mustDefaultHandleTokens()
-	if err != nil {
-		// may be due to not enough rewards
-		vmctx.log.Warnf("mustCallFromRequest: %v", err)
-		vmctx.lastResult = nil
-		vmctx.lastError = err
-		return
-	}
-
 	// call contract from request context
-	vmctx.lastResult, vmctx.lastError = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), remaining)
-
-	switch vmctx.lastError {
-	case nil:
-		return
-	case ErrContractNotFound, ErrEntryPointNotFound, ErrProcessorNotFound:
-		// if sent to the wrong contract or entry point, accrue the transfer to the sender' account on the chain
-		// the sender can withdraw it at any time
-		// TODO more sophisticated policy
-		vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), remaining)
-	default:
-		vmctx.log.Errorf("mustCallFromRequest.error: %v reqid: %s", vmctx.lastError, vmctx.reqRef.RequestID().String())
-	}
-}
-
-// mustDefaultHandleTokens:
-// - handles request token
-// - handles node fee, including fallback if not enough
-func (vmctx *VMContext) mustDefaultHandleTokens() (coretypes.ColoredBalances, error) {
-	transfer := vmctx.reqRef.RequestSection().Transfer()
-	reqColor := balance.Color(vmctx.reqRef.Tx.ID())
-
-	// handle request token
-	if vmctx.txBuilder.Balance(reqColor) == 0 {
-		// must be checked before, while validating transaction
-		vmctx.log.Panicf("request token not found: %s", reqColor.String())
-	}
-	if !vmctx.txBuilder.Erase1TokenToChain(reqColor) {
-		vmctx.log.Panicf("internal error: can't destroy request token not found: %s", reqColor.String())
-	}
-	// always accrue 1 uncolored iota to the sender on-chain. This makes completely fee-less requests possible
-	vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), cbalances.NewFromMap(map[balance.Color]int64{
-		balance.ColorIOTA: 1,
-	}))
-	totalFee := vmctx.ownerFee + vmctx.validatorFee
-	if totalFee == 0 || vmctx.requesterIsChainOwner() {
-		// no fees enabled or the caller is the chain owner
-		vmctx.log.Debugf("no fees charged, credit 1 iota to %s\n", vmctx.reqRef.SenderAgentID())
-		return transfer, nil
-	}
-	// handle fees
-	if transfer.Balance(vmctx.feeColor) < totalFee {
-		// fallback: not enough fees
-		// accrue everything to the sender, including the 1 iota from request
-		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to sender
-		sender := vmctx.reqRef.SenderAgentID()
-		vmctx.creditToAccount(sender, transfer)
-		return cbalances.NewFromMap(nil), fmt.Errorf("not enough fees for request %s. Transfer accrued to %s",
-			vmctx.reqRef.RequestID().Short(), sender.String())
-	}
-	// enough fees. Split between owner and validator
-	if vmctx.ownerFee > 0 {
-		vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(map[balance.Color]int64{
-			vmctx.feeColor: vmctx.ownerFee,
-		}))
-	}
-	if vmctx.validatorFee > 0 {
-		vmctx.creditToAccount(vmctx.validatorFeeTarget, cbalances.NewFromMap(map[balance.Color]int64{
-			vmctx.feeColor: vmctx.validatorFee,
-		}))
-	}
-	// subtract fees from the transfer
-	remaining := map[balance.Color]int64{
-		vmctx.feeColor: -totalFee,
-	}
-	transfer.AddToMap(remaining)
-	return cbalances.NewFromMap(remaining), nil
+	vmctx.lastResult, vmctx.lastError = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), vmctx.remainingAfterFees)
 }
 
 func (vmctx *VMContext) Params() dict.Dict {

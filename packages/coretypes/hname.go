@@ -25,7 +25,7 @@ const FuncInit = "init"
 // EntryPointInit is a hashed name of the init function
 var EntryPointInit = Hn(FuncInit)
 
-// NewHnameFromBytes constructur, unmarshalling
+// NewHnameFromBytes constructor, unmarshalling
 func NewHnameFromBytes(data []byte) (ret Hname, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return

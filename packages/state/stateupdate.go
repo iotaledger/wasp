@@ -34,8 +34,10 @@ func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
 
 // StateUpdate
 
-func (su *stateUpdate) Clear() {
-	su.mutations = buffered.NewMutationSequence()
+func (su *stateUpdate) Clone() StateUpdate {
+	ret := *su
+	ret.mutations = su.mutations.Clone()
+	return &ret
 }
 
 func (su *stateUpdate) String() string {
