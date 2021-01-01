@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -33,7 +32,7 @@ type VMContext struct {
 	remainingAfterFees coretypes.ColoredBalances
 	// request context
 	entropy     hashing.HashValue // mutates with each request
-	reqRef      sctransaction.RequestRef
+	reqRef      vm.RequestRefWithFreeTokens
 	reqHname    coretypes.Hname
 	timestamp   int64
 	stateUpdate state.StateUpdate

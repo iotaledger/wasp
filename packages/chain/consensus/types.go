@@ -89,12 +89,14 @@ type signedResult struct {
 	sigShare    tbdn.SigShare
 }
 
-// keeps stateTx of the request
+// backlog entry. Keeps stateTx of the request
 type request struct {
 	// id of the hash of request tx id and request block index
 	reqId coretypes.RequestID
 	// from request message. nil if request message wasn't received yet
 	reqTx *sctransaction.Transaction
+	// from request message. Not nil only if free tokens were attached to the request
+	freeTokens coretypes.ColoredBalances
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
 	// notification vector for the current currentState

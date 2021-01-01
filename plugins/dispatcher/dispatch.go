@@ -66,12 +66,20 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	}
 
 	// send all requests to addr
+	// if there are any free tokens, they will be attached to the first message.
+	// otherwise they all will be nil
+	freeTokens := txProp.FreeTokensForAddress(addr)
+	if freeTokens != nil && freeTokens.Len() == 0 {
+		freeTokens = nil
+	}
 	for i, reqBlk := range tx.Requests() {
 		if reqBlk.Target().ChainID() == (coretypes.ChainID)(addr) {
 			cmt.ReceiveMessage(&chain.RequestMsg{
 				Transaction: tx,
 				Index:       (uint16)(i),
+				FreeTokens:  freeTokens,
 			})
+			freeTokens = nil
 		}
 	}
 }

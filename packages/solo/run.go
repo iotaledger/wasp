@@ -18,7 +18,7 @@ import (
 	"sync"
 )
 
-func (ch *Chain) runBatch(batch []sctransaction.RequestRef, trace string) (dict.Dict, error) {
+func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()

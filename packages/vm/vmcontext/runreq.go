@@ -8,13 +8,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 )
 
 // runTheRequest:
 // - handles request token
 // - processes reward logic
-func (vmctx *VMContext) RunTheRequest(reqRef sctransaction.RequestRef, timestamp int64) {
+func (vmctx *VMContext) RunTheRequest(reqRef vm.RequestRefWithFreeTokens, timestamp int64) {
+	if reqRef.FreeTokens != nil {
+		panic("free token processing not implemented")
+	}
 	vmctx.prepareForRequest(reqRef, timestamp)
 
 	if vmctx.isInitChainRequest() {
@@ -125,7 +129,7 @@ func (vmctx *VMContext) mustPreprocessRequest() bool {
 	return true
 }
 
-func (vmctx *VMContext) prepareForRequest(reqRef sctransaction.RequestRef, timestamp int64) {
+func (vmctx *VMContext) prepareForRequest(reqRef vm.RequestRefWithFreeTokens, timestamp int64) {
 	reqHname := reqRef.RequestSection().Target().Hname()
 	vmctx.reqRef = reqRef
 	vmctx.reqHname = reqHname
