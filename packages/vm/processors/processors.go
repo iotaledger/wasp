@@ -73,20 +73,24 @@ func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
 }
 
 func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
+	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
+}
+
+func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	if proc, ok := cps.processors[rec.ProgramHash]; ok {
+	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
-	vmtype, binary, err := getBinary(rec.ProgramHash)
+	vmtype, binary, err := getBinary(progHash)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
 	}
-	if err = cps.newProcessor(rec.ProgramHash, binary, vmtype); err != nil {
+	if err = cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
 	}
-	if proc, ok := cps.processors[rec.ProgramHash]; ok {
+	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
 	return nil, fmt.Errorf("internal error: can't get the deployed processor")

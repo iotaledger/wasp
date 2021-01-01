@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
 )
@@ -31,14 +32,15 @@ type VMContext struct {
 	// transfer
 	remainingAfterFees coretypes.ColoredBalances
 	// request context
-	entropy     hashing.HashValue // mutates with each request
-	reqRef      vm.RequestRefWithFreeTokens
-	reqHname    coretypes.Hname
-	timestamp   int64
-	stateUpdate state.StateUpdate
-	lastError   error     // mutated
-	lastResult  dict.Dict // mutated. Used only by 'alone'
-	callStack   []*callContext
+	entropy        hashing.HashValue // mutates with each request
+	reqRef         vm.RequestRefWithFreeTokens
+	reqHname       coretypes.Hname
+	contractRecord *root.ContractRecord
+	timestamp      int64
+	stateUpdate    state.StateUpdate
+	lastError      error     // mutated
+	lastResult     dict.Dict // mutated. Used only by 'alone'
+	callStack      []*callContext
 }
 
 type callContext struct {

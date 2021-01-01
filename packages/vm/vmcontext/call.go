@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -20,12 +21,15 @@ var (
 // Call
 func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode.String())
-
 	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
 		return nil, ErrContractNotFound
 	}
-	proc, err := vmctx.processors.GetOrCreateProcessor(rec, vmctx.getBinary)
+	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
+}
+
+func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
+	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +62,7 @@ func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hn
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == coretypes.EntryPointInit && targetContract != root.Interface.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to call init not from the root contract")
+			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
@@ -74,15 +78,6 @@ func (vmctx *VMContext) callerIsRoot() bool {
 
 func (vmctx *VMContext) requesterIsChainOwner() bool {
 	return vmctx.chainOwnerID == vmctx.reqRef.SenderAgentID()
-}
-
-// mustCallFromRequest is called for each request from the VM loop
-func (vmctx *VMContext) mustCallFromRequest() {
-	req := vmctx.reqRef.RequestSection()
-	vmctx.log.Debugf("mustCallFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
-
-	// call contract from request context
-	vmctx.lastResult, vmctx.lastError = vmctx.Call(vmctx.reqHname, req.EntryPointCode(), req.Args(), vmctx.remainingAfterFees)
 }
 
 func (vmctx *VMContext) Params() dict.Dict {

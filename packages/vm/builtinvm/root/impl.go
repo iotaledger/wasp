@@ -288,6 +288,7 @@ func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // Output:
 // - ParamFeeColor balance.Color color of tokens accepted for fees
 // - ParamValidatorFee int64 minimum fee for contract
+// Note: return default chain values if contract doesn't exist
 func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	params := ctx.Params()
 	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
@@ -297,11 +298,7 @@ func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
-	feeColor, ownerFee, validatorFee, err := GetFeeInfo(ctx.State(), hname)
-	if err != nil {
-		return nil, fmt.Errorf("GetFeeInfo: %v", err)
-
-	}
+	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx.State(), hname)
 	ret := dict.New()
 	ret.Set(ParamFeeColor, codec.EncodeColor(feeColor))
 	ret.Set(ParamOwnerFee, codec.EncodeInt64(ownerFee))
