@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
 )

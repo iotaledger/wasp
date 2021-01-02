@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 func TestDepositWithdraw(t *testing.T) {

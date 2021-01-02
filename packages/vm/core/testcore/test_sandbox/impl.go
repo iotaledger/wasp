@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -55,8 +55,8 @@ func testCheckContextFromViewEP(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return nil, nil
 }
 
-// testChainLogGenericData is called several times in log_test.go
-func testChainLogGenericData(ctx vmtypes.Sandbox) (dict.Dict, error) {
+// testEventLogGenericData is called several times in log_test.go
+func testEventLogGenericData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	params := ctx.Params()
 	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -69,7 +69,7 @@ func testChainLogGenericData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func testChainLogEventData(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func testEventLogEventData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Event("[Event] - Testing Event...")
 	return nil, nil
 }
@@ -108,7 +108,7 @@ func testSandboxCall(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func testChainlogDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func testEventLogDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	//Deploy the same contract with another name
 	err := ctx.DeployContract(Interface.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)

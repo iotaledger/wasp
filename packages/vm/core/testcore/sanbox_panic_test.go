@@ -2,7 +2,7 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"

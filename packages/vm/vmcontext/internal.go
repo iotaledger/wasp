@@ -5,10 +5,10 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/hardcoded"
 )
 
@@ -111,9 +111,9 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color,
 }
 
 func (vmctx *VMContext) StoreToChainLog(contract coretypes.Hname, data []byte) {
-	vmctx.pushCallContext(chainlog.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(eventlog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	vmctx.log.Debugf("StoreToChainLog/%s: data: '%s'", contract.String(), string(data))
-	chainlog.AppendToChainLog(vmctx.State(), vmctx.timestamp, contract, data)
+	eventlog.AppendToChainLog(vmctx.State(), vmctx.timestamp, contract, data)
 }

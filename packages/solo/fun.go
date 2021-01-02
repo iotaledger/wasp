@@ -17,10 +17,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -335,13 +335,13 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 //
 // More than 50 records may be retrieved by calling the view directly
 func (ch *Chain) GetChainLogRecords(name string) ([]datatypes.TimestampedLogRecord, error) {
-	res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetLogRecords,
-		chainlog.ParamContractHname, coretypes.Hn(name),
+	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
+		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
 	if err != nil {
 		return nil, err
 	}
-	recs := datatypes.NewMustArray(res, chainlog.ParamRecords)
+	recs := datatypes.NewMustArray(res, eventlog.ParamRecords)
 	ret := make([]datatypes.TimestampedLogRecord, recs.Len())
 	for i := uint16(0); i < recs.Len(); i++ {
 		data := recs.GetAt(i)
@@ -367,11 +367,11 @@ func (ch *Chain) GetChainLogRecordsString(name string) (string, error) {
 
 // GetChainLogNumRecords returns total number of chainlog records for the given contact.
 func (ch *Chain) GetChainLogNumRecords(name string) int {
-	res, err := ch.CallView(chainlog.Interface.Name, chainlog.FuncGetNumRecords,
-		chainlog.ParamContractHname, coretypes.Hn(name),
+	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
+		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
 	require.NoError(ch.Glb.T, err)
-	ret, ok, err := codec.DecodeInt64(res.MustGet(chainlog.ParamNumRecords))
+	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
 	require.NoError(ch.Glb.T, err)
 	require.True(ch.Glb.T, ok)
 	return int(ret)

@@ -22,10 +22,10 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncChainLogGenericData, testChainLogGenericData),
-		contract.Func(FuncChainLogEventData, testChainLogEventData),
+		contract.Func(FuncEventLogGenericData, testEventLogGenericData),
+		contract.Func(FuncEventLogEventData, testEventLogEventData),
 		contract.Func(FuncChainOwnerID, testChainOwnerID),
-		contract.Func(FuncChainlogDeploy, testChainlogDeploy),
+		contract.Func(FuncEventLogDeploy, testEventLogDeploy),
 		contract.ViewFunc(FuncChainID, testChainID),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 
@@ -45,10 +45,10 @@ func init() {
 }
 
 const (
-	// function chainlog test
-	FuncChainLogGenericData = "testChainLogGenericData"
-	FuncChainLogEventData   = "testChainLogEventData"
-	FuncChainlogDeploy      = "testChainlogDeploy"
+	// function eventlog test
+	FuncEventLogGenericData = "testEventLogGenericData"
+	FuncEventLogEventData   = "testEventLogEventData"
+	FuncEventLogDeploy      = "testEventLogDeploy"
 
 	//Function sandbox test
 	FuncChainOwnerID           = "testChainOwnerID"

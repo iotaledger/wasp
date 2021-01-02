@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -97,4 +97,26 @@ func TestWithdrawToAddress(t *testing.T) {
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
 	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
 	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
+}
+
+func TestDoPanicUser(t *testing.T) {
+	glb, chain, cID := setupForTransfer(t)
+	cAID := coretypes.NewAgentIDFromContractID(cID)
+	user := glb.NewSignatureSchemeWithFunds()
+	userAddress := user.Address()
+	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
+
+	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicFullEP).
+		WithTransfer(map[balance.Color]int64{
+			balance.ColorIOTA: 42,
+		})
+	_, err := chain.PostRequest(req, user)
+	require.NoError(t, err)
+
+	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
+	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
+	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-3)
+	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-42)
 }

@@ -3,8 +3,8 @@ package testcore
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

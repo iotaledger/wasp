@@ -1,4 +1,4 @@
-package chainlog
+package eventlog
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
