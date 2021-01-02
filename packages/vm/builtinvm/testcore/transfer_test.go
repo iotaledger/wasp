@@ -94,7 +94,7 @@ func TestWithdrawToAddress(t *testing.T) {
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 1)
+	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
 	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
-	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-1)
+	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
 }

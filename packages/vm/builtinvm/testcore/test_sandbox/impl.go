@@ -2,9 +2,7 @@ package test_sandbox
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
@@ -166,14 +164,9 @@ func sendToAddress(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, nil
 	}
 	myTokens := ctx.Balances()
-	minus1 := map[balance.Color]int64{
-		balance.ColorIOTA: -1,
-	}
-	myTokens.AddToMap(minus1)
-	toSend := cbalances.NewFromMap(minus1)
-	succ := ctx.TransferToAddress(targetAddress, toSend)
+	succ := ctx.TransferToAddress(targetAddress, myTokens)
 	if !succ {
-		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, toSend.String())
+		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String())
 	}
 	return nil, nil
 }
