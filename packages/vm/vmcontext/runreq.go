@@ -130,10 +130,19 @@ func (vmctx *VMContext) mustHandleFreeTokens() {
 	vmctx.creditToAccount(vmctx.ChainOwnerID(), vmctx.reqRef.FreeTokens)
 }
 
-// mustHandleFallback all remaining tokens are accrued to the sender
-// TODO more sophisticated policy, depending on error type
+// mustHandleFallback all remaining tokens are:
+// -- if sender is address, sent to that address
+// -- otherwise accrue to the sender on-chain
 func (vmctx *VMContext) mustHandleFallback() {
-	vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), vmctx.remainingAfterFees)
+	sender := vmctx.reqRef.SenderAgentID()
+	if sender.IsAddress() {
+		err := vmctx.txBuilder.TransferToAddress(sender.MustAddress(), vmctx.remainingAfterFees)
+		if err != nil {
+			vmctx.log.Panicf("mustHandleFallback: transferring tokens to address %s", sender.MustAddress().String())
+		}
+	} else {
+		vmctx.creditToAccount(sender, vmctx.remainingAfterFees)
+	}
 }
 
 // mustCallFromRequest is the call itself. Assumes sc exists
