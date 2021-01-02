@@ -78,12 +78,27 @@ func testChainlogDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func testPanicFullEntryPoint(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func testPanicFullEP(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Panicf(ErrorFullPanic)
 	return nil, nil
 }
 
-func testPanicViewEntryPoint(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func testPanicViewEP(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Panicf(ErrorViewPanic)
 	return nil, nil
+}
+
+func testCallPanicFullEP(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
+	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicFullEP), nil, nil)
+}
+
+func testCallPanicViewEPFromFull(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
+	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicViewEP), nil, nil)
+}
+
+func testCallPanicViewEPFromView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
+	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicViewEP), nil)
 }

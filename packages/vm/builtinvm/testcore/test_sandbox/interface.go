@@ -26,10 +26,14 @@ func init() {
 		contract.Func(FuncChainLogEventData, testChainLogEventData),
 		contract.Func(FuncChainOwnerID, testChainOwnerID),
 		contract.Func(FuncChainlogDeploy, testChainlogDeploy),
-		contract.Func(FuncPanicFullEntryPoint, testPanicFullEntryPoint),
-		contract.ViewFunc(FuncPanicViewEntryPoint, testPanicViewEntryPoint),
 		contract.ViewFunc(FuncChainID, testChainID),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
+
+		contract.Func(FuncPanicFullEP, testPanicFullEP),
+		contract.ViewFunc(FuncPanicViewEP, testPanicViewEP),
+		contract.Func(FuncCallPanicFullEP, testCallPanicFullEP),
+		contract.Func(FuncCallPanicViewEPFromFull, testCallPanicViewEPFromFull),
+		contract.ViewFunc(FuncCallPanicViewEPFromView, testCallPanicViewEPFromView),
 	})
 	examples.AddProcessor(Interface)
 }
@@ -41,11 +45,15 @@ const (
 	FuncChainlogDeploy      = "testChainlogDeploy"
 
 	//Function sandbox test
-	FuncChainOwnerID        = "testChainOwnerID"
-	FuncChainID             = "testChainID"
-	FuncSandboxCall         = "testSandboxCall"
-	FuncPanicFullEntryPoint = "testPanicFullEntryPoint"
-	FuncPanicViewEntryPoint = "testPanicViewEntryPoint"
+	FuncChainOwnerID = "testChainOwnerID"
+	FuncChainID      = "testChainID"
+	FuncSandboxCall  = "testSandboxCall"
+
+	FuncPanicFullEP             = "testPanicFullEP"
+	FuncPanicViewEP             = "testPanicViewEP"
+	FuncCallPanicFullEP         = "testCallPanicFullEP"
+	FuncCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
+	FuncCallPanicViewEPFromView = "testCallPanicViewEPFromView"
 
 	//Variables
 	VarCounter              = "counter"
