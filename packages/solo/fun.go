@@ -37,6 +37,22 @@ func (ch *Chain) String() string {
 	return string(buf.Bytes())
 }
 
+// DumpAccounts dumps all account balances into the human readable string
+func (ch *Chain) DumpAccounts() string {
+	info, _ := ch.GetInfo()
+	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID, info.ChainOwnerID)
+	acc := ch.GetAccounts()
+	for _, aid := range acc {
+		ret += fmt.Sprintf("  %s:\n", aid)
+		bals := ch.GetAccountBalance(aid)
+		bals.IterateDeterministic(func(col balance.Color, bal int64) bool {
+			ret += fmt.Sprintf("       %s: %d\n", col, bal)
+			return true
+		})
+	}
+	return ret
+}
+
 // FindContract is a view call to the 'root' smart contract on the chain.
 // It returns registry record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {

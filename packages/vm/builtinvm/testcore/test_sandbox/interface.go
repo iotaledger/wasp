@@ -29,11 +29,17 @@ func init() {
 		contract.ViewFunc(FuncChainID, testChainID),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 
+		contract.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
+		contract.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
+
 		contract.Func(FuncPanicFullEP, testPanicFullEP),
 		contract.ViewFunc(FuncPanicViewEP, testPanicViewEP),
 		contract.Func(FuncCallPanicFullEP, testCallPanicFullEP),
 		contract.Func(FuncCallPanicViewEPFromFull, testCallPanicViewEPFromFull),
 		contract.ViewFunc(FuncCallPanicViewEPFromView, testCallPanicViewEPFromView),
+
+		contract.Func(FuncDoNothing, doNothing),
+		contract.Func(FuncSendToAddress, sendToAddress),
 	})
 	examples.AddProcessor(Interface)
 }
@@ -45,15 +51,20 @@ const (
 	FuncChainlogDeploy      = "testChainlogDeploy"
 
 	//Function sandbox test
-	FuncChainOwnerID = "testChainOwnerID"
-	FuncChainID      = "testChainID"
-	FuncSandboxCall  = "testSandboxCall"
+	FuncChainOwnerID           = "testChainOwnerID"
+	FuncChainID                = "testChainID"
+	FuncSandboxCall            = "testSandboxCall"
+	FuncCheckContextFromFullEP = "testCheckContextFromFullEP"
+	FuncCheckContextFromViewEP = "testCheckContextFromViewEP"
 
 	FuncPanicFullEP             = "testPanicFullEP"
 	FuncPanicViewEP             = "testPanicViewEP"
 	FuncCallPanicFullEP         = "testCallPanicFullEP"
 	FuncCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
 	FuncCallPanicViewEPFromView = "testCallPanicViewEPFromView"
+
+	FuncDoNothing     = "doNothing"
+	FuncSendToAddress = "sendToAddress"
 
 	//Variables
 	VarCounter              = "counter"
@@ -62,7 +73,17 @@ const (
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
 
+	// parameters
+	ParamAddress         = "address"
+	ParamChainID         = "chainid"
+	ParamChainOwnerID    = "chainOwnerID"
+	ParamCaller          = "caller"
+	ParamContractID      = "contractID"
+	ParamAgentID         = "agentID"
+	ParamContractCreator = "contractCreator"
+
 	// error fragments for testing
-	ErrorFullPanic = "========== panic FULL ENTRY POINT ========="
-	ErrorViewPanic = "========== panic VIEW ========="
+	MsgFullPanic = "========== panic FULL ENTRY POINT ========="
+	MsgViewPanic = "========== panic VIEW ========="
+	MsgDoNothing = "========== doing nothing"
 )

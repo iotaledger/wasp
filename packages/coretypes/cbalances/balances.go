@@ -62,8 +62,8 @@ func (b coloredBalances) Balance(col balance.Color) int64 {
 }
 
 func (b coloredBalances) String() string {
-	if b == nil {
-		return ""
+	if b == nil || b.Len() == 0 {
+		return "(empty)"
 	}
 	ret := ""
 	b.IterateDeterministic(func(col balance.Color, bal int64) bool {

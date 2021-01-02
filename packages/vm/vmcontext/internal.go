@@ -89,10 +89,12 @@ func (vmctx *VMContext) getBalance(col balance.Color) int64 {
 }
 
 func (vmctx *VMContext) getMyBalances() coretypes.ColoredBalances {
+	agentID := vmctx.MyAgentID()
+
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	ret, _ := accounts.GetAccountBalances(vmctx.State(), vmctx.MyAgentID())
+	ret, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
 	return cbalances.NewFromMap(ret)
 }
 
