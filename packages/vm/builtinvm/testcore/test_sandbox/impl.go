@@ -33,20 +33,6 @@ func testChainLogEventData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func testChainLogEventDataFormatted(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	params := ctx.Params()
-	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		inc = 1
-	}
-	ctx.Eventf("[Eventf] - (%d) - Testing Event...", inc)
-
-	return nil, nil
-}
-
 //The purpose of this function is to test Sandbox ChainOwnerID (It's not a ViewCall because ChainOwnerID is not in the SandboxView)
 func testChainOwnerID(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
@@ -89,6 +75,15 @@ func testChainlogDeploy(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
+	return nil, nil
+}
 
+func testPanicFullEntryPoint(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Log().Panicf(ErrorFullPanic)
+	return nil, nil
+}
+
+func testPanicViewEntryPoint(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	ctx.Log().Panicf(ErrorViewPanic)
 	return nil, nil
 }

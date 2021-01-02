@@ -24,9 +24,10 @@ func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
 		contract.Func(FuncChainLogGenericData, testChainLogGenericData),
 		contract.Func(FuncChainLogEventData, testChainLogEventData),
-		contract.Func(FuncChainLogEventDataFormatted, testChainLogEventDataFormatted),
 		contract.Func(FuncChainOwnerID, testChainOwnerID),
 		contract.Func(FuncChainlogDeploy, testChainlogDeploy),
+		contract.Func(FuncPanicFullEntryPoint, testPanicFullEntryPoint),
+		contract.ViewFunc(FuncPanicViewEntryPoint, testPanicViewEntryPoint),
 		contract.ViewFunc(FuncChainID, testChainID),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 	})
@@ -35,15 +36,16 @@ func init() {
 
 const (
 	// function chainlog test
-	FuncChainLogGenericData        = "testChainLogGenericData"
-	FuncChainLogEventData          = "testChainLogEventData"
-	FuncChainLogEventDataFormatted = "testChainLogEventDataFormatted"
-	FuncChainlogDeploy             = "testChainlogDeploy"
+	FuncChainLogGenericData = "testChainLogGenericData"
+	FuncChainLogEventData   = "testChainLogEventData"
+	FuncChainlogDeploy      = "testChainlogDeploy"
 
 	//Function sandbox test
-	FuncChainOwnerID = "testChainOwnerID"
-	FuncChainID      = "testChainID"
-	FuncSandboxCall  = "testSandboxCall"
+	FuncChainOwnerID        = "testChainOwnerID"
+	FuncChainID             = "testChainID"
+	FuncSandboxCall         = "testSandboxCall"
+	FuncPanicFullEntryPoint = "testPanicFullEntryPoint"
+	FuncPanicViewEntryPoint = "testPanicViewEntryPoint"
 
 	//Variables
 	VarCounter              = "counter"
@@ -51,4 +53,8 @@ const (
 	VarChainID              = "chainID"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
+
+	// error fragments for testing
+	ErrorFullPanic = "========== panic FULL ENTRY POINT ========="
+	ErrorViewPanic = "========== panic VIEW ========="
 )

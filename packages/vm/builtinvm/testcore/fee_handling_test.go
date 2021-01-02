@@ -8,7 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
+	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
 	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -20,6 +22,11 @@ func TestInit(t *testing.T) {
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 1)
 	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
+
+	checkFees(chain, blob.Interface.Name, 0, 0)
+	checkFees(chain, root.Interface.Name, 0, 0)
+	checkFees(chain, accounts.Interface.Name, 0, 0)
+	checkFees(chain, chainlog.Interface.Name, 0, 0)
 }
 
 func TestBase(t *testing.T) {
