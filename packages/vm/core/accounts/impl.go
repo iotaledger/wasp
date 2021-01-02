@@ -156,7 +156,8 @@ func withdraw(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	MustCheckLedger(state, "accountsc.withdraw.begin")
 	defer MustCheckLedger(state, "accountsc.withdraw.exit")
 	caller := ctx.Caller()
-	ctx.Eventf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.ContractID().String())
+	msg := fmt.Sprintf("accountsc.withdraw.begin: caller agentID: %s myContractId: %s", caller.String(), ctx.ContractID().String())
+	ctx.Event(msg)
 
 	if !caller.IsAddress() {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: caller must be an address")
@@ -174,7 +175,8 @@ func withdraw(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("accountsc.withdraw.fail: TransferToAddress failed")
 	}
 	// sent to address
-	ctx.Eventf("accountsc.withdraw.success. Sent to address %s -- %s", addr.String(), send.String())
+	msg = fmt.Sprintf("accountsc.withdraw.success. Sent to address %s -- %s", addr.String(), send.String())
+	ctx.Event(msg)
 	return nil, nil
 }
 
