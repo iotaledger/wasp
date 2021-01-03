@@ -9,10 +9,9 @@ import (
 
 func TestExample1(t *testing.T) {
 	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "exampleChain")
+	chain := glb.NewChain(nil, "ex1")
 
-	chainInfo, coreContracts := chain.GetInfo() // calls view root::GetInfo
-
+	chainInfo, coreContracts := chain.GetInfo()   // calls view root::GetInfo
 	require.EqualValues(t, 4, len(coreContracts)) // 4 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainInfo.ChainID)

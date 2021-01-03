@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	Name        = "chainlog"
+	Name        = "eventlog"
 	Version     = "0.1"
-	description = "Chainlog Contract"
+	description = "Event log Contract"
 )
 
 var (

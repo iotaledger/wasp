@@ -173,8 +173,8 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 		e = err.Error()
 	}
 	msg := fmt.Sprintf("[req] %s: %s", vmctx.reqRef.RequestID().String(), e)
-	vmctx.log.Infof("chainlog -> '%s'", msg)
-	vmctx.StoreToChainLog(vmctx.reqHname, []byte(msg))
+	vmctx.log.Infof("eventlog -> '%s'", msg)
+	vmctx.StoreToEventLog(vmctx.reqHname, []byte(msg))
 }
 
 // mustGetBaseValues only makes sense if chain is already deployed

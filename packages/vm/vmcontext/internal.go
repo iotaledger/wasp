@@ -110,10 +110,10 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color,
 	)
 }
 
-func (vmctx *VMContext) StoreToChainLog(contract coretypes.Hname, data []byte) {
+func (vmctx *VMContext) StoreToEventLog(contract coretypes.Hname, data []byte) {
 	vmctx.pushCallContext(eventlog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	vmctx.log.Debugf("StoreToChainLog/%s: data: '%s'", contract.String(), string(data))
-	eventlog.AppendToChainLog(vmctx.State(), vmctx.timestamp, contract, data)
+	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
+	eventlog.AppendToLog(vmctx.State(), vmctx.timestamp, contract, data)
 }
