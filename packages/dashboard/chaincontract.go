@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
@@ -53,13 +53,13 @@ func handleChainContract(c echo.Context) error {
 			return err
 		}
 
-		r, err = callView(chain, chainlog.Interface.Hname(), chainlog.FuncGetLogRecords, codec.MakeDict(map[string]interface{}{
-			chainlog.ParamContractHname: codec.EncodeHname(hname),
+		r, err = callView(chain, eventlog.Interface.Hname(), eventlog.FuncGetLogRecords, codec.MakeDict(map[string]interface{}{
+			eventlog.ParamContractHname: codec.EncodeHname(hname),
 		}))
 		if err != nil {
 			return err
 		}
-		records := datatypes.NewMustArray(r, chainlog.ParamRecords)
+		records := datatypes.NewMustArray(r, eventlog.ParamRecords)
 		result.Log = make([]*datatypes.TimestampedLogRecord, records.Len())
 		for i := uint16(0); i < records.Len(); i++ {
 			b := records.GetAt(i)

@@ -13,16 +13,16 @@ import (
 	"github.com/iotaledger/wasp/packages/txutil"
 )
 
+// Properties represents result of analysis and semantic check of the SC transaction
+// SC transaction is a value transaction with successfully parsed data payload
 type Properties struct {
-	// TX ID
+	// transaction ID
 	txid valuetransaction.ID
-	//
-	numSignatures int
-	// the only senderAddress of the SC transaction
+	// senderAddress of the SC transaction. It is the only
 	senderAddress address.Address
 	// is it state transaction (== does it contain valid stateSection)
 	isState bool
-	// if isState == true: it states if it is the origin transaction
+	// if isState == true it states if it is the origin transaction, otherwise uninterpreted
 	isOrigin bool
 	// if isState == true: chainID
 	chainID coretypes.ChainID
@@ -33,22 +33,31 @@ type Properties struct {
 	// timestamp from state section
 	timestamp int64
 	// stateHash from state section
-	stateHash       hashing.HashValue
-	numMintedTokens int64
+	stateHash hashing.HashValue
 	// number of requests
 	numRequests int
 	// data payload len
 	dataPayloadSize uint32
+	// number of minted tokens to any address - number of requests
+	numFreeMintedTokens int64
+	// free tokens: tokens with output to chain address - tokens transferred by requests - request tokens - chain token
+	// In most cases it is empty, because all tokens should be transferred with requests
+	// Free tokens normally should be returned to the sender
+	freeTokensByAddress map[address.Address]coretypes.ColoredBalances
 }
 
 func (tx *Transaction) calcProperties() (*Properties, error) {
 	ret := &Properties{
-		txid:            tx.ID(),
-		dataPayloadSize: tx.DataPayloadSize(),
+		txid:                tx.ID(),
+		dataPayloadSize:     tx.DataPayloadSize(),
+		freeTokensByAddress: make(map[address.Address]coretypes.ColoredBalances),
 	}
 
-	if tx.SignaturesValid() {
-		ret.numSignatures = len(tx.Signatures())
+	if !tx.SignaturesValid() {
+		return nil, fmt.Errorf("invalid signatures")
+	}
+	if len(tx.Signatures()) > 1 {
+		return nil, fmt.Errorf("number of signatures > 1")
 	}
 	if err := ret.analyzeSender(tx); err != nil {
 		return nil, err
@@ -64,9 +73,9 @@ func (tx *Transaction) calcProperties() (*Properties, error) {
 }
 
 func (prop *Properties) calcNumMinted(tx *Transaction) {
-	prop.numMintedTokens = 0
+	prop.numFreeMintedTokens = 0
 	tx.Transaction.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		prop.numMintedTokens += txutil.BalanceOfColor(bals, balance.ColorNew)
+		prop.numFreeMintedTokens += txutil.BalanceOfColor(bals, balance.ColorNew)
 		return true
 	})
 }
@@ -149,47 +158,48 @@ func (prop *Properties) analyzeRequestBlocks(tx *Transaction) error {
 	// sum up transfers of requests by target chain
 	reqTransfersByTargetChain := make(map[coretypes.ChainID]map[balance.Color]int64)
 	for _, req := range tx.Requests() {
-		chainid := req.targetContractID.ChainID()
+		chainid := req.Target().ChainID()
 		m, ok := reqTransfersByTargetChain[chainid]
 		if !ok {
 			m = make(map[balance.Color]int64)
 			reqTransfersByTargetChain[chainid] = m
 		}
-		req.transfer.AddToMap(m)
+		req.Transfer().AddToMap(m)
 		// add one request token
 		numMinted, _ := m[balance.ColorNew]
 		m[balance.ColorNew] = numMinted + 1
 	}
 	var err error
-	// validate all outputs w.r.t. request transfers
+	// validate all outputs against request transfers
 	tx.Transaction.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
 		m, ok := reqTransfersByTargetChain[coretypes.ChainID(addr)]
 		if !ok {
-			// do not check outputs to outside addresses
+			// ignore outputs to outside addresses
 			return true
 		}
-		outBalances := cbalances.NewFromBalances(bals)
-		reqBalances := cbalances.NewFromMap(m)
-		if addr != prop.chainAddress {
-			// output to another chain
-			// outputs and requests must be equal
-			if !outBalances.Equal(reqBalances) {
-				err = fmt.Errorf("mismatch between transfer data in request section and tx outputs")
+		diff := cbalances.NewFromBalances(bals).Diff(cbalances.NewFromMap(m))
+		if prop.isState && addr == prop.chainAddress {
+			if diff.Len() != 1 && diff.Balance(prop.stateColor) != 1 {
+				// output to the self in the state transaction can't contain free tokens
+				err = fmt.Errorf("wrong output to chain address in the state transaction")
 				return false
 			}
+			return true
 		}
-		// output to the same chain
-		// the request transfer must be subset of outputs and number of minted
-		// request tokens must be equal to number of requests
-		if outBalances.Balance(balance.ColorNew) != reqBalances.Balance(balance.ColorNew) {
-			err = fmt.Errorf("wrong number of minted tokens in the output to the chain address")
+		if diff.Len() == 0 {
+			// exact match
+			return true
+		}
+		if diff.Balance(balance.ColorNew) != 0 {
+			err = fmt.Errorf("wrong number of minted tokens in the output to the address %s", addr.String())
 			return false
 		}
-		// request balances must be contained in the chain balances
-		if !outBalances.Includes(reqBalances) {
-			err = fmt.Errorf("inconsisteny among request to self")
+		if !diff.NonNegative() {
+			err = fmt.Errorf("mismatch between request metadata and outputs for address %s", addr.String())
 			return false
 		}
+		// there are some free tokens for the address
+		prop.freeTokensByAddress[addr] = diff
 		return true
 	})
 	return err
@@ -231,24 +241,25 @@ func (prop *Properties) NumFreeMintedTokens() int64 {
 	if prop.isOrigin {
 		return 0
 	}
-	return prop.numMintedTokens - int64(prop.numRequests)
+	return prop.numFreeMintedTokens - int64(prop.numRequests)
 }
 
-// NumSignatures number of valid signatures
-func (prop *Properties) NumSignatures() int {
-	return prop.numSignatures
+func (prop *Properties) FreeTokensForAddress(addr address.Address) coretypes.ColoredBalances {
+	if ret, ok := prop.freeTokensByAddress[addr]; ok {
+		return ret
+	}
+	return cbalances.Nil
 }
 
 func (prop *Properties) String() string {
 	ret := "---- Transaction:\n"
-	ret += fmt.Sprintf("   txid: %s\n   num signatures: %d\n", prop.txid.String(), prop.numSignatures)
 	ret += fmt.Sprintf("   requests: %d\n", prop.numRequests)
 	ret += fmt.Sprintf("   senderAddress: %s\n", prop.senderAddress.String())
 	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
 	ret += fmt.Sprintf("   chainAddress: %s\n", prop.chainAddress.String())
 	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
 	ret += fmt.Sprintf("   timestamp: %d\n    stateHash: %s\n", prop.timestamp, prop.stateHash.String())
-	ret += fmt.Sprintf("   numMinted: %d\n", prop.numMintedTokens)
+	ret += fmt.Sprintf("   numMinted: %d\n", prop.numFreeMintedTokens)
 	ret += fmt.Sprintf("   data payload size: %d\n", prop.dataPayloadSize)
 	return ret
 }

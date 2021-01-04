@@ -3,8 +3,8 @@ package processors
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
@@ -22,7 +22,7 @@ func MustNew() *ProcessorCache {
 		processors: make(map[hashing.HashValue]vmtypes.Processor),
 	}
 	// default builtin processor has root contract hash
-	err := ret.NewProcessor(root.Interface.ProgramHash, nil, builtinvm.VMType)
+	err := ret.NewProcessor(root.Interface.ProgramHash, nil, core.VMType)
 	if err != nil {
 		panic(err)
 	}
@@ -46,8 +46,8 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 		return nil
 	}
 	switch vmtype {
-	case builtinvm.VMType:
-		proc, err = builtinvm.GetProcessor(programHash)
+	case core.VMType:
+		proc, err = core.GetProcessor(programHash)
 		if err != nil {
 			return err
 		}
@@ -73,20 +73,24 @@ func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
 }
 
 func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
+	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
+}
+
+func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
-	if proc, ok := cps.processors[rec.ProgramHash]; ok {
+	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
-	vmtype, binary, err := getBinary(rec.ProgramHash)
+	vmtype, binary, err := getBinary(progHash)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
 	}
-	if err = cps.newProcessor(rec.ProgramHash, binary, vmtype); err != nil {
+	if err = cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
 	}
-	if proc, ok := cps.processors[rec.ProgramHash]; ok {
+	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
 	return nil, fmt.Errorf("internal error: can't get the deployed processor")

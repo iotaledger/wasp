@@ -5,10 +5,10 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/hardcoded"
 )
 
@@ -63,15 +63,11 @@ func (vmctx *VMContext) getChainInfo() (*root.ChainInfo, error) {
 	return root.GetChainInfo(vmctx.State())
 }
 
-func (vmctx *VMContext) getFeeInfo(contractHname coretypes.Hname) (balance.Color, int64, int64, bool) {
+func (vmctx *VMContext) getFeeInfo() (balance.Color, int64, int64) {
 	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	col, ownerFee, validatorFee, err := root.GetFeeInfo(vmctx.State(), contractHname)
-	if err != nil {
-		return balance.Color{}, 0, 0, false
-	}
-	return col, ownerFee, validatorFee, true
+	return root.GetFeeInfoByContractRecord(vmctx.State(), vmctx.contractRecord)
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
@@ -93,10 +89,12 @@ func (vmctx *VMContext) getBalance(col balance.Color) int64 {
 }
 
 func (vmctx *VMContext) getMyBalances() coretypes.ColoredBalances {
+	agentID := vmctx.MyAgentID()
+
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	ret, _ := accounts.GetAccountBalances(vmctx.State(), vmctx.MyAgentID())
+	ret, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
 	return cbalances.NewFromMap(ret)
 }
 
@@ -112,10 +110,10 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color,
 	)
 }
 
-func (vmctx *VMContext) StoreToChainLog(contract coretypes.Hname, data []byte) {
-	vmctx.pushCallContext(chainlog.Interface.Hname(), nil, nil)
+func (vmctx *VMContext) StoreToEventLog(contract coretypes.Hname, data []byte) {
+	vmctx.pushCallContext(eventlog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	vmctx.log.Debugf("StoreToChainLog/%s: data: '%s'", contract.String(), string(data))
-	chainlog.AppendToChainLog(vmctx.State(), vmctx.timestamp, contract, data)
+	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
+	eventlog.AppendToLog(vmctx.State(), vmctx.timestamp, contract, data)
 }

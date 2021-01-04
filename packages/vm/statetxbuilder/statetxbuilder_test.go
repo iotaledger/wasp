@@ -11,7 +11,8 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	chAddr := signaturescheme.ED25519(ed25519.GenerateKeyPair()).Address()
+	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	chAddr := chSig.Address()
 	col1, _, err := balance.ColorFromBytes(hashing.RandomHash(nil)[:])
 	require.NoError(t, err)
 	txid1, _, err := transaction.IDFromBytes(hashing.RandomHash(nil)[:])
@@ -35,6 +36,7 @@ func TestBasic(t *testing.T) {
 
 	tx, err := b.Build()
 	require.NoError(t, err)
+	tx.Sign(chSig)
 
 	prop, err := tx.Properties()
 	require.NoError(t, err)

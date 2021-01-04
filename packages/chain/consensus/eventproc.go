@@ -75,11 +75,11 @@ func (op *operator) eventRequestMsg(reqMsg *chain.RequestMsg) {
 		"reqid", reqMsg.RequestId().Short(),
 		"backlog req", len(op.requests),
 		"backlog notif", len(op.notificationsBacklog),
+		"free tokens attached", reqMsg.FreeTokens != nil,
 	)
 	// place request into the backlog
 	req, _ := op.requestFromMsg(reqMsg)
 	if req == nil {
-		// TODO probably redundant logging
 		op.log.Warn("received already processed request id = %s", reqMsg.RequestId().Short())
 		return
 	}

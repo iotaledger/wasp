@@ -1,4 +1,4 @@
-package chainlog
+package eventlog
 
 import (
 	"fmt"
@@ -13,11 +13,11 @@ import (
 
 // initialize is mandatory
 func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("chainlog.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("eventlog.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
 
-// getNumRecords gets the number of chainlog records for contarct
+// getNumRecords gets the number of eventlog records for contarct
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
 func getNumRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {

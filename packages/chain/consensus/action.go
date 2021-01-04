@@ -213,17 +213,10 @@ func (op *operator) checkQuorum() {
 	// just in case we are double-checking semantic validity of the transaction
 	// Invalidity of properties means internal error
 	// Nota that tx ID is not known and cannot be taken before this point,
-	prop, err := op.leaderStatus.resultTx.Properties()
+	_, err := op.leaderStatus.resultTx.Properties()
 	if err != nil {
 		op.log.Panicf("internal error: invalid tx properties: %v\ndump tx: %s\ndump vtx: %s\n", err,
 			op.leaderStatus.resultTx.String(), op.leaderStatus.resultTx.Transaction.String())
-		return
-	}
-
-	op.log.Debugf("checking result tx properties: %s", prop.String())
-	if prop.NumSignatures() != 1 {
-		// internal error
-		op.log.Panicf("checking result tx: num valid signatures != 1")
 		return
 	}
 

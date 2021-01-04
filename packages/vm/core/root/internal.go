@@ -86,22 +86,25 @@ func GetChainInfo(state kv.KVStore) (*ChainInfo, error) {
 // GetFeeInfo is an internal utility function which returns fee info for the contract
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
-func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (balance.Color, int64, int64, error) {
-	rec, err := FindContract(state, hname)
-	if err != nil {
-		// contract not found
-		return balance.Color{}, 0, 0, err
+func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (balance.Color, int64, int64) {
+	rec, _ := FindContract(state, hname)
+	return GetFeeInfoByContractRecord(state, rec)
+}
+
+func GetFeeInfoByContractRecord(state kv.KVStore, rec *ContractRecord) (balance.Color, int64, int64) {
+	var ownerFee, validatorFee int64
+	if rec != nil {
+		ownerFee = rec.OwnerFee
+		validatorFee = rec.ValidatorFee
 	}
-	feeColor, defaultOwnerFee, defaultValidatorFee, err := GetDefaultFeeInfo(state)
-	ownerFee := rec.OwnerFee
+	feeColor, defaultOwnerFee, defaultValidatorFee, _ := GetDefaultFeeInfo(state)
 	if ownerFee == 0 {
 		ownerFee = defaultOwnerFee
 	}
-	validatorFee := rec.ValidatorFee
 	if validatorFee == 0 {
 		validatorFee = defaultValidatorFee
 	}
-	return feeColor, ownerFee, validatorFee, nil
+	return feeColor, ownerFee, validatorFee
 }
 
 func GetDefaultFeeInfo(state kv.KVStore) (balance.Color, int64, int64, error) {

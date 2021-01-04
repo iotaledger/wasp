@@ -1,4 +1,4 @@
-package chainlog
+package eventlog
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	Name        = "chainlog"
+	Name        = "eventlog"
 	Version     = "0.1"
-	description = "Chainlog Contract"
+	description = "Event log Contract"
 )
 
 var (

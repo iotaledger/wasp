@@ -8,10 +8,10 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,11 +51,11 @@ func (ch *Chain) CheckChain() {
 	require.EqualValues(ch.Glb.T, blob.Interface.ProgramHash, blobRec.ProgramHash)
 	require.EqualValues(ch.Glb.T, ch.OriginatorAgentID, blobRec.Creator)
 
-	chainlogRec, err := ch.FindContract(chainlog.Interface.Name)
+	chainlogRec, err := ch.FindContract(eventlog.Interface.Name)
 	require.NoError(ch.Glb.T, err)
-	require.EqualValues(ch.Glb.T, chainlog.Interface.Name, chainlogRec.Name)
-	require.EqualValues(ch.Glb.T, chainlog.Interface.Description, chainlogRec.Description)
-	require.EqualValues(ch.Glb.T, chainlog.Interface.ProgramHash, chainlogRec.ProgramHash)
+	require.EqualValues(ch.Glb.T, eventlog.Interface.Name, chainlogRec.Name)
+	require.EqualValues(ch.Glb.T, eventlog.Interface.Description, chainlogRec.Description)
+	require.EqualValues(ch.Glb.T, eventlog.Interface.ProgramHash, chainlogRec.ProgramHash)
 	require.EqualValues(ch.Glb.T, ch.OriginatorAgentID, chainlogRec.Creator)
 
 	ch.CheckAccountLedger()

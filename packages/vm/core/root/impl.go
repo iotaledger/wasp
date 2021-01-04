@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/datatypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/accounts"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/chainlog"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -87,7 +87,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("root.init.fail: %v", err)
 	}
 	// deploy chainlog
-	rec = NewContractRecord(chainlog.Interface, ctx.Caller())
+	rec = NewContractRecord(eventlog.Interface, ctx.Caller())
 	err = storeAndInitContract(ctx, &rec, nil)
 	if err != nil {
 		ctx.Log().Panicf("root.init.fail: %v", err)
@@ -112,7 +112,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname().String())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", chainlog.Interface.Name, chainlog.Interface.Hname().String())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", eventlog.Interface.Name, eventlog.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }
@@ -288,6 +288,7 @@ func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // Output:
 // - ParamFeeColor balance.Color color of tokens accepted for fees
 // - ParamValidatorFee int64 minimum fee for contract
+// Note: return default chain values if contract doesn't exist
 func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	params := ctx.Params()
 	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
@@ -297,11 +298,7 @@ func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
-	feeColor, ownerFee, validatorFee, err := GetFeeInfo(ctx.State(), hname)
-	if err != nil {
-		return nil, fmt.Errorf("GetFeeInfo: %v", err)
-
-	}
+	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx.State(), hname)
 	ret := dict.New()
 	ret.Set(ParamFeeColor, codec.EncodeColor(feeColor))
 	ret.Set(ParamOwnerFee, codec.EncodeInt64(ownerFee))

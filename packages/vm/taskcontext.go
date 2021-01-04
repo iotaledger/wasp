@@ -14,6 +14,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
+type RequestRefWithFreeTokens struct {
+	sctransaction.RequestRef
+	FreeTokens coretypes.ColoredBalances
+}
+
 // task context (for batch of requests)
 type VMTask struct {
 	Processors *processors.ProcessorCache
@@ -24,7 +29,7 @@ type VMTask struct {
 	Entropy            hashing.HashValue
 	Balances           map[valuetransaction.ID][]*balance.Balance
 	ValidatorFeeTarget coretypes.AgentID
-	Requests           []sctransaction.RequestRef
+	Requests           []RequestRefWithFreeTokens
 	Timestamp          int64
 	VirtualState       state.VirtualState // input immutable
 	Log                *logger.Logger

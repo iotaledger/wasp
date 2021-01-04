@@ -5,6 +5,7 @@ package consensus
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -53,6 +54,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	if ok {
 		if msgFirstTime {
 			ret.reqTx = reqMsg.Transaction
+			ret.freeTokens = reqMsg.FreeTokens
 			ret.whenMsgReceived = time.Now()
 			publish = true
 		}
@@ -60,6 +62,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 		ret = op.newRequest(*reqId)
 		ret.whenMsgReceived = time.Now()
 		ret.reqTx = reqMsg.Transaction
+		ret.freeTokens = reqMsg.FreeTokens
 		op.requests[*reqId] = ret
 		op.addRequestIdConcurrent(reqId)
 		publish = true
@@ -152,12 +155,15 @@ func takeIds(reqs []*request) []coretypes.RequestID {
 	return ret
 }
 
-func takeRefs(reqs []*request) []sctransaction.RequestRef {
-	ret := make([]sctransaction.RequestRef, len(reqs))
+func takeRefs(reqs []*request) []vm.RequestRefWithFreeTokens {
+	ret := make([]vm.RequestRefWithFreeTokens, len(reqs))
 	for i := range ret {
-		ret[i] = sctransaction.RequestRef{
-			Tx:    reqs[i].reqTx,
-			Index: reqs[i].reqId.Index(),
+		ret[i] = vm.RequestRefWithFreeTokens{
+			RequestRef: sctransaction.RequestRef{
+				Tx:    reqs[i].reqTx,
+				Index: reqs[i].reqId.Index(),
+			},
+			FreeTokens: reqs[i].freeTokens,
 		}
 	}
 	return ret

@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -223,7 +224,9 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 	go ret.readRequestsLoop()
 	go ret.batchLoop()
 
-	_, err = ret.runBatch([]sctransaction.RequestRef{{Tx: initTx, Index: 0}}, "new")
+	r := vm.RequestRefWithFreeTokens{}
+	r.Tx = initTx
+	_, err = ret.runBatch([]vm.RequestRefWithFreeTokens{r}, "new")
 	require.NoError(glb.T, err)
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID)
@@ -241,11 +244,11 @@ func (ch *Chain) readRequestsLoop() {
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []sctransaction.RequestRef {
+func (ch *Chain) collateBatch() []vm.RequestRefWithFreeTokens {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 
-	ret := make([]sctransaction.RequestRef, 0)
+	ret := make([]vm.RequestRefWithFreeTokens, 0)
 	remain := ch.backlog[:0]
 	for _, ref := range ch.backlog {
 		// using logical clock
@@ -253,7 +256,7 @@ func (ch *Chain) collateBatch() []sctransaction.RequestRef {
 			if ref.RequestSection().Timelock() != 0 {
 				ch.Log.Infof("unlocked time-locked request %s", ref.RequestID().String())
 			}
-			ret = append(ret, ref)
+			ret = append(ret, vm.RequestRefWithFreeTokens{RequestRef: ref})
 		} else {
 			remain = append(remain, ref)
 		}

@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -116,7 +117,9 @@ func (ch *Chain) PostRequest(req *CallParams, sigScheme signaturescheme.Signatur
 	reqID := coretypes.NewRequestID(tx.ID(), 0)
 	ch.Log.Infof("PostRequest: %s::%s -- %s", req.targetName, req.epName, reqID.String())
 
-	return ch.runBatch([]sctransaction.RequestRef{{Tx: tx, Index: 0}}, "post")
+	r := vm.RequestRefWithFreeTokens{}
+	r.Tx = tx
+	return ch.runBatch([]vm.RequestRefWithFreeTokens{r}, "post")
 }
 
 // callViewFull calls the view entry point of the smart contract

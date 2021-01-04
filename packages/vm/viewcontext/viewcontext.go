@@ -3,6 +3,7 @@ package viewcontext
 import (
 	"fmt"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -10,8 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/blob"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/root"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/hardcoded"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -51,7 +52,27 @@ func New(chainID coretypes.ChainID, state kv.KVStore, ts int64, proc *processors
 	}
 }
 
+// CallView in viewcontext implements own panic catcher.
 func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+	var ret dict.Dict
+	var err error
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				ret = nil
+				err = fmt.Errorf("recovered from panic in VM: %v", r)
+				if dberr, ok := r.(buffered.DBError); ok {
+					// There was an error accessing DB. The world stops
+					v.log.Panicf("DB error: %v", dberr)
+				}
+			}
+		}()
+		ret, err = v.mustCallView(contractHname, epCode, params)
+	}()
+	return ret, err
+}
+
+func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	rec, err := root.FindContract(contractStateSubpartition(v.state, root.Interface.Hname()), contractHname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)

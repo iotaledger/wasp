@@ -2,7 +2,7 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/builtinvm/testcore/test_init_fail"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_init_fail"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

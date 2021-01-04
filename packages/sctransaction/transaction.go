@@ -55,7 +55,7 @@ func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, err
 	return ret, nil
 }
 
-// return valid properties if sc transaction is semantically correct
+// Properties returns valid properties if sc transaction is semantically correct
 func (tx *Transaction) Properties() (*Properties, error) {
 	if tx.properties != nil {
 		return tx.properties, nil
