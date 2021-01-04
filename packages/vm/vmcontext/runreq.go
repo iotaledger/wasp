@@ -150,7 +150,8 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	req := vmctx.reqRef.RequestSection()
 	vmctx.log.Debugf("mustCallFromRequest: %s -- %s\n", vmctx.reqRef.RequestID().String(), req.String())
 
-	vmctx.lastResult, vmctx.lastError = vmctx.callByProgramHash(
+	// calling only non vew entry points. Calling the view will trigger error and fallback
+	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		vmctx.reqHname, req.EntryPointCode(), req.Args(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 

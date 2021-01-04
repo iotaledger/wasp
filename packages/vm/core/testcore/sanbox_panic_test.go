@@ -30,8 +30,7 @@ func TestPanicViewPost(t *testing.T) {
 	require.NoError(t, err)
 	chain.CheckChain()
 
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicViewEP)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncPanicViewEP)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgViewPanic))
 }

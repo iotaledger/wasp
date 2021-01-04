@@ -40,6 +40,8 @@ func init() {
 
 		contract.Func(FuncDoNothing, doNothing),
 		contract.Func(FuncSendToAddress, sendToAddress),
+
+		contract.ViewFunc(FuncJustView, testJustView),
 	})
 	examples.AddProcessor(Interface)
 }
@@ -65,6 +67,7 @@ const (
 
 	FuncDoNothing     = "doNothing"
 	FuncSendToAddress = "sendToAddress"
+	FuncJustView      = "justView"
 
 	//Variables
 	VarCounter              = "counter"

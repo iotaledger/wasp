@@ -128,6 +128,11 @@ func testPanicViewEP(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return nil, nil
 }
 
+func testJustView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	ctx.Log().Infof("calling empty view entry point")
+	return nil, nil
+}
+
 func testCallPanicFullEP(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
 	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicFullEP), nil, nil)

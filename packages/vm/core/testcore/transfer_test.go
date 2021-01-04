@@ -210,3 +210,34 @@ func TestDoPanicUserFee(t *testing.T) {
 	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
 	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-10)
 }
+
+func TestRequestToView(t *testing.T) {
+	glb, chain, cID := setupForTransfer(t)
+	cAID := coretypes.NewAgentIDFromContractID(cID)
+	user := glb.NewSignatureSchemeWithFunds()
+	userAddress := user.Address()
+	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
+
+	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
+	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
+	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-3)
+	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+
+	// sending request to the view entry point should return an error and invoke fallback for tokens
+	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncJustView).
+		WithTransfer(map[balance.Color]int64{
+			balance.ColorIOTA: 42,
+		})
+	_, err := chain.PostRequest(req, user)
+	require.Error(t, err)
+
+	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
+	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
+	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
+	glb.AssertUtxodbBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-3)
+	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
+
+}

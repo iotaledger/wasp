@@ -68,6 +68,34 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	return ep.Call(NewSandbox(vmctx))
 }
 
+func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
+	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
+	if err != nil {
+		return nil, err
+	}
+	ep, ok := proc.GetEntryPoint(epCode)
+	if !ok {
+		return nil, ErrEntryPointNotFound
+	}
+
+	// distinguishing between two types of entry points. Passing different types of sandboxes
+	if ep.IsView() {
+		return nil, fmt.Errorf("non-view entry point expected")
+	}
+	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
+		return nil, err
+	}
+	defer vmctx.popCallContext()
+
+	// prevent calling 'init' not from root contract or not while initializing root
+	if epCode == coretypes.EntryPointInit && targetContract != root.Interface.Hname() {
+		if !vmctx.callerIsRoot() {
+			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
+		}
+	}
+	return ep.Call(NewSandbox(vmctx))
+}
+
 func (vmctx *VMContext) callerIsRoot() bool {
 	caller := vmctx.Caller()
 	if caller.IsAddress() {

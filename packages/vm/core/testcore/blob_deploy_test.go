@@ -88,7 +88,7 @@ func TestListBlobs(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
 	require.NoError(t, err)
 
-	ret, err := chain.PostRequest(solo.NewCall(blob.Interface.Name, blob.FuncListBlobs), nil)
+	ret, err := chain.CallView(blob.Interface.Name, blob.FuncListBlobs)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(ret))
 }

@@ -22,15 +22,9 @@ func (glb *Solo) AssertUtxodbBalance(addr address.Address, col balance.Color, ex
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	// post and call same request, must be equal results
-	req := NewCall(root.Interface.Name, root.FuncGetChainInfo)
-	res1, err := ch.PostRequest(req, nil)
-	require.NoError(ch.Glb.T, err)
 
-	res2, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
+	_, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Glb.T, err)
-
-	require.EqualValues(ch.Glb.T, res1.Hash(), res2.Hash())
 
 	rootRec, err := ch.FindContract(root.Interface.Name)
 	require.NoError(ch.Glb.T, err)

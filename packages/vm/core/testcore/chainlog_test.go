@@ -249,10 +249,7 @@ func TestChainID(t *testing.T) {
 	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncChainID,
-	)
-	ret, err := chain.PostRequest(req, nil)
+	ret, err := chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncChainID)
 	require.NoError(t, err)
 
 	c := ret.MustGet(test_sandbox.VarChainID)
@@ -269,10 +266,7 @@ func TestSandboxCall(t *testing.T) {
 	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncSandboxCall,
-	)
-	ret, err := chain.PostRequest(req, nil)
+	ret, err := chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncSandboxCall)
 	require.NoError(t, err)
 
 	d := ret.MustGet(test_sandbox.VarSandboxCall)
