@@ -103,7 +103,7 @@ func (s *sandbox) Log() vmtypes.LogInterface {
 }
 
 func (s *sandbox) Event(msg string) {
-	s.Log().Infof("chainlog -> '%s'", msg)
+	s.Log().Infof("eventlog -> '%s'", msg)
 	s.vmctx.StoreToEventLog(s.vmctx.CurrentContractHname(), []byte(msg))
 	s.vmctx.EventPublisher().Publish(msg)
 }
