@@ -37,7 +37,7 @@ func (vmctx *VMContext) RunTheRequest(reqRef vm.RequestRefWithFreeTokens, timest
 
 	vmctx.lastError = nil
 	func() {
-		// panic catcher for the whole callByProgramHash from request to the VM
+		// panic catcher for the whole call from request to the VM
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil

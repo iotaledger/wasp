@@ -56,10 +56,9 @@ type Sandbox interface {
 	MoveTokens(target coretypes.AgentID, col balance.Color, amount int64) bool
 
 	// Moving tokens outside of the current chain
-	// TransferToAddress send tokens to ledger address (not contract)
+	// TransferToAddress send tokens to the L1 ledger address (not contract)
 	TransferToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
 	// TransferCrossChain send funds to the targetAgentID account cross chain
-	// to move own funds to own account use MyAgentID() as a targetAgentID
 	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	PostRequest(par NewRequestParams) bool

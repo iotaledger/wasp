@@ -87,6 +87,7 @@ func GetChainInfo(state kv.KVStore) (*ChainInfo, error) {
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
 func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (balance.Color, int64, int64) {
+	//returns nil of contract not found
 	rec, _ := FindContract(state, hname)
 	return GetFeeInfoByContractRecord(state, rec)
 }
