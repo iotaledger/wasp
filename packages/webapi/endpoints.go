@@ -3,15 +3,20 @@ package webapi
 import (
 	"net"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/plugins/webapi/admapi"
-	"github.com/iotaledger/wasp/plugins/webapi/info"
-	"github.com/iotaledger/wasp/plugins/webapi/request"
-	"github.com/iotaledger/wasp/plugins/webapi/state"
+	"github.com/iotaledger/wasp/packages/webapi/admapi"
+	"github.com/iotaledger/wasp/packages/webapi/info"
+	"github.com/iotaledger/wasp/packages/webapi/request"
+	"github.com/iotaledger/wasp/packages/webapi/state"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addEndpoints(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
+var log *logger.Logger
+
+func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
+	log = logger.NewLogger("WebAPI")
+
 	server.SetRequestContentType("application/json")
 	server.SetResponseContentType("application/json")
 

@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 )
 

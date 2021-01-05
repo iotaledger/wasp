@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )

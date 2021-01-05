@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/jsonable"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )

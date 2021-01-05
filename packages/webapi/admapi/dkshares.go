@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.dedis.ch/kyber/v3"
