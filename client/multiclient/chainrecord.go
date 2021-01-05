@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
-// PutChainRecord calls PutChainRecord to hosts in parallel
+// PutChainRecord calls PutChainRecord in all wasp nodes
 func (m *MultiClient) PutChainRecord(bd *registry.ChainRecord) error {
 	return m.Do(func(i int, w *client.WaspClient) error {
 		return w.PutChainRecord(bd)

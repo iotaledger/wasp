@@ -51,7 +51,7 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 			missing = true
 			continue
 		}
-		if client.IsNotFound(err) {
+		if model.IsHTTPNotFound(err) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord for %s does not exist\n", i, host, chainID.String())
 			ret = false
 			missing = true

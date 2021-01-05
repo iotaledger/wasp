@@ -14,14 +14,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-// DKSharesPost creates new DKShare and returns its state.
+// DKSharesPost creates a new DKShare and returns its state.
 func (c *WaspClient) DKSharesPost(request *model.DKSharesPostRequest) (*model.DKSharesInfo, error) {
 	var response model.DKSharesInfo
 	err := c.do(http.MethodPost, routes.DKSharesPost(), request, &response)
 	return &response, err
 }
 
-// DKSharesGet retrieves representation of an existing DKShare.
+// DKSharesGet retrieves the representation of an existing DKShare.
 func (c *WaspClient) DKSharesGet(sharedAddress *address.Address) (*model.DKSharesInfo, error) {
 	var sharedAddressStr = sharedAddress.String()
 	var response model.DKSharesInfo

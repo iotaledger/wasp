@@ -61,7 +61,7 @@ func TestLoadTrAndFaAndThenRunTrMint(t *testing.T) {
 	assert.True(t, succ)
 
 	tc := trclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scTRChain,
 		auctionOwner.SigScheme(),
@@ -144,7 +144,7 @@ func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
 	checkSuccess(err, t, "FairAuction has been created and activated")
 
 	tc := trclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scTRChain,
 		auctionOwner.SigScheme(),
@@ -200,7 +200,7 @@ func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
 	}
 
 	faclientOwner := faclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scFAChain,
 		auctionOwner.SigScheme(),
@@ -210,8 +210,8 @@ func TestTrMintAndFaAuctionWith2Bids(t *testing.T) {
 	_, err = faclientOwner.StartAuction("selling my only token", &mintedColor, 1, 100, 1)
 	checkSuccess(err, t, "StartAuction created")
 
-	faclientBidder1 := faclient.NewClient(chainclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAChain, bidder1.SigScheme()), 0)
-	faclientBidder2 := faclient.NewClient(chainclient.New(wasps.NodeClient, wasps.WaspClient(0), scFAChain, bidder2.SigScheme()), 0)
+	faclientBidder1 := faclient.NewClient(chainclient.New(wasps.Level1Client, wasps.WaspClient(0), scFAChain, bidder1.SigScheme()), 0)
+	faclientBidder2 := faclient.NewClient(chainclient.New(wasps.Level1Client, wasps.WaspClient(0), scFAChain, bidder2.SigScheme()), 0)
 
 	subs, err := subscribe.SubscribeMulti(wasps.PublisherHosts(), "request_out")
 	check(err, t)

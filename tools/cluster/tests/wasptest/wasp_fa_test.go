@@ -48,7 +48,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = wasps.Level1Client.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -153,7 +153,7 @@ func TestFA1Color0Bids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = wasps.Level1Client.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -260,7 +260,7 @@ func TestFA2Color0Bids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = wasps.Level1Client.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 2 colored tokens
@@ -386,12 +386,12 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = wasps.Level1Client.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	bidder1Addr := bidder1.Address()
 
-	err = wasps.NodeClient.RequestFunds(bidder1Addr)
+	err = wasps.Level1Client.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	scOwnerAddr := sc.OwnerAddress()
@@ -520,7 +520,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = wasps.Level1Client.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -534,7 +534,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 
 	bidder1Addr := bidder1.Address()
 
-	err = wasps.NodeClient.RequestFunds(bidder1Addr)
+	err = wasps.Level1Client.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)
@@ -659,7 +659,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	auctionOwnerAddr := auctionOwner.Address()
 
-	err = wasps.NodeClient.RequestFunds(auctionOwnerAddr)
+	err = wasps.Level1Client.RequestFunds(auctionOwnerAddr)
 	check(err, t)
 
 	// create 1 colored token
@@ -671,12 +671,12 @@ func TestFA1Color2Bidders(t *testing.T) {
 
 	bidder1Addr := bidder1.Address()
 
-	err = wasps.NodeClient.RequestFunds(bidder1Addr)
+	err = wasps.Level1Client.RequestFunds(bidder1Addr)
 	check(err, t)
 
 	bidder2Addr := bidder2.Address()
 
-	err = wasps.NodeClient.RequestFunds(bidder2Addr)
+	err = wasps.Level1Client.RequestFunds(bidder2Addr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)

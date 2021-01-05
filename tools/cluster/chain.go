@@ -5,24 +5,23 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
-
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 )
 
 type Chain struct {
@@ -81,7 +80,7 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 
 func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
 	return chainclient.New(
-		ch.Cluster.NodeClient,
+		ch.Cluster.Level1Client,
 		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
 		ch.ChainID,
 		sigScheme,
@@ -104,7 +103,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 		}
 		contractID := coretypes.NewContractID(ch.ChainID, hname)
 		actual, err := ch.Cluster.WaspClient(i).DumpSCState(&contractID)
-		if client.IsNotFound(err) {
+		if model.IsHTTPNotFound(err) {
 			pass = false
 			fmt.Printf("   FAIL: state does not exist\n")
 			continue

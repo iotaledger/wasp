@@ -29,7 +29,7 @@ func TestKillNode(t *testing.T) {
 
 	for i := 0; i < noRequests; i++ {
 		_, err = waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
-			NodeClient:      wasps.NodeClient,
+			Level1Client:    wasps.Level1Client,
 			SenderSigScheme: scOwner.SigScheme(),
 			RequestSectionParams: []waspapi.RequestSectionParams{
 				{

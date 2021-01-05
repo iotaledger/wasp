@@ -47,7 +47,7 @@ func Test2SC(t *testing.T) {
 	assert.True(t, succ)
 
 	tc := trclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		&chidTR,
 		auctionOwner.SigScheme(),
@@ -122,7 +122,7 @@ func TestPlus2SC(t *testing.T) {
 	chidFA := (coretypes.ChainID)(*scFAAddr)
 
 	tc := trclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		&chidTR,
 		auctionOwner.SigScheme(),
@@ -178,7 +178,7 @@ func TestPlus2SC(t *testing.T) {
 	}
 
 	faclientOwner := faclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		&chidFA,
 		auctionOwner.SigScheme(),
@@ -189,13 +189,13 @@ func TestPlus2SC(t *testing.T) {
 	checkSuccess(err, t, "StartAuction created")
 
 	faclientBidder1 := faclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		&chidFA,
 		bidder1.SigScheme(),
 	))
 	faclientBidder2 := faclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		&chidFA,
 		bidder2.SigScheme(),

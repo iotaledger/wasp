@@ -83,7 +83,7 @@ func TestInitERC20Once(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	client := chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scChain,
 		scOwner.SigScheme(),
@@ -137,7 +137,7 @@ func TestInitERC20Twice(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	client := chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scChain,
 		scOwner.SigScheme(),
@@ -207,7 +207,7 @@ func TestTransferOk(t *testing.T) {
 	checkSuccess(err, t, "smart contract has been created and activated")
 
 	client := chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scChain,
 		scOwner.SigScheme(),

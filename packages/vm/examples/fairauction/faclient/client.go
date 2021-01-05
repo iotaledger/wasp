@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )
 
@@ -78,7 +78,7 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 	res, err := fc.StateQuery(query)
 	var ownerMarginState int64
 	var ok bool
-	if client.IsNotFound(err) {
+	if model.IsHTTPNotFound(err) {
 		if err != nil {
 			return 0, err
 		}
