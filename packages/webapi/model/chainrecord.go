@@ -1,4 +1,4 @@
-package jsonable
+package model
 
 import (
 	"github.com/iotaledger/wasp/packages/registry"

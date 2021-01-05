@@ -4,7 +4,6 @@ import (
 	"net"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/request"
@@ -25,7 +24,7 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	request.AddEndpoints(pub)
 	state.AddEndpoints(pub)
 
-	adm := server.Group("admin", "/"+client.AdminRoutePrefix).SetDescription("Admin endpoints")
+	adm := server.Group("admin", "").SetDescription("Admin endpoints")
 	admapi.AddEndpoints(adm, adminWhitelist)
 	log.Infof("added web api endpoints")
 }

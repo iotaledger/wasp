@@ -5,15 +5,16 @@ package apilib
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"io"
 	"io/ioutil"
 	"os"
 
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
 const prefix = "[checkSC] "
@@ -112,7 +113,7 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 		return false
 	}
 
-	var keyExample *client.DKSharesInfo
+	var keyExample *model.DKSharesInfo
 	for i := range dkShares {
 		keyExample = dkShares[i]
 		fmt.Fprintf(out, prefix+"public key info example was taken from %s:\n%s\n", apiHosts[i], publicKeyInfoToString(keyExample))
@@ -137,7 +138,7 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 	return ret
 }
 
-func consistentPublicKeyInfo(pki1, pki2 *client.DKSharesInfo) bool {
+func consistentPublicKeyInfo(pki1, pki2 *model.DKSharesInfo) bool {
 	if pki1.Address != pki2.Address {
 		return false
 	}
@@ -158,7 +159,7 @@ func consistentPublicKeyInfo(pki1, pki2 *client.DKSharesInfo) bool {
 	return true
 }
 
-func publicKeyInfoToString(pki *client.DKSharesInfo) string {
+func publicKeyInfoToString(pki *model.DKSharesInfo) string {
 	ret := fmt.Sprintf("    Master public key: %s\n", pki.SharedPubKey)
 	ret += fmt.Sprintf("    N: %d\n", len(pki.PubKeyShares))
 	ret += fmt.Sprintf("    T: %d\n", pki.Threshold)

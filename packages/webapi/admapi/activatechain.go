@@ -4,23 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/pangpanglabs/echoswagger/v2"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addChainEndpoints(adm echoswagger.ApiGroup) {
-	adm.POST("/"+client.ActivateChainRoute(":chainID"), handleActivateChain).
+	adm.POST(routes.ActivateChain(":chainID"), handleActivateChain).
 		AddParamPath("", "chainID", "ChainID (base58)").
 		SetSummary("Activate a chain")
 
-	adm.POST("/"+client.DeactivateChainRoute(":chainID"), handleDeactivateChain).
+	adm.POST(routes.DeactivateChain(":chainID"), handleDeactivateChain).
 		AddParamPath("", "chainID", "ChainID (base58)").
 		SetSummary("Deactivate a chain")
 }

@@ -4,21 +4,13 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-type SCStateDump struct {
-	Index     uint32    `json:"index"`
-	Variables dict.Dict `json:"variables"`
-}
-
-func DumpSCStateRoute(scid string) string {
-	return "sc/" + scid + "/dumpstate"
-}
-
-func (c *WaspClient) DumpSCState(scid *coretypes.ContractID) (*SCStateDump, error) {
-	res := &SCStateDump{}
-	if err := c.do(http.MethodGet, AdminRoutePrefix+"/"+DumpSCStateRoute(scid.Base58()), nil, res); err != nil {
+func (c *WaspClient) DumpSCState(scid *coretypes.ContractID) (*model.SCStateDump, error) {
+	res := &model.SCStateDump{}
+	if err := c.do(http.MethodGet, routes.DumpState(scid.Base58()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil

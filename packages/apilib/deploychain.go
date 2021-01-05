@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
 type CreateChainParams struct {
@@ -124,8 +125,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	// ----------- run DKG on committee nodes
 	var dkgInitiatorIndex = rand.Intn(len(par.CommitteeApiHosts))
-	var dkShares *client.DKSharesInfo
-	dkShares, err = client.NewWaspClient(par.CommitteeApiHosts[dkgInitiatorIndex]).DKSharesPost(&client.DKSharesPostRequest{
+	var dkShares *model.DKSharesInfo
+	dkShares, err = client.NewWaspClient(par.CommitteeApiHosts[dkgInitiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
 		PeerNetIDs:  par.CommitteePeeringHosts,
 		PeerPubKeys: nil,
 		Threshold:   par.T,

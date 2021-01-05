@@ -6,27 +6,28 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func AddEndpoints(server echoswagger.ApiRouter) {
-	server.GET("/"+client.RequestStatusRoute(":chainID", ":reqID"), handleRequestStatus).
+	server.GET(routes.RequestStatus(":chainID", ":reqID"), handleRequestStatus).
 		SetSummary("Get the processing status of a given request in the node").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddParamPath("", "reqID", "Request ID (base58)").
-		AddResponse(http.StatusOK, "Request status", client.RequestStatusResponse{}, nil)
+		AddResponse(http.StatusOK, "Request status", model.RequestStatusResponse{}, nil)
 
-	server.GET("/"+client.WaitRequestProcessedRoute(":chainID", ":reqID"), handleWaitRequestProcessed).
+	server.GET(routes.WaitRequestProcessed(":chainID", ":reqID"), handleWaitRequestProcessed).
 		SetSummary("Wait until the given request has been processed by the node").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddParamPath("", "reqID", "Request ID (base58)").
-		AddParamBody(client.WaitRequestProcessedParams{}, "Params", "Optional parameters", false)
+		AddParamBody(model.WaitRequestProcessedParams{}, "Params", "Optional parameters", false)
 }
 
 func handleRequestStatus(c echo.Context) error {
@@ -41,7 +42,7 @@ func handleRequestStatus(c echo.Context) error {
 	case chain.RequestProcessingStatusBacklog:
 		isProcessed = false
 	}
-	return c.JSON(http.StatusOK, client.RequestStatusResponse{
+	return c.JSON(http.StatusOK, model.RequestStatusResponse{
 		IsProcessed: isProcessed,
 	})
 }
@@ -52,8 +53,8 @@ func handleWaitRequestProcessed(c echo.Context) error {
 		return err
 	}
 
-	req := client.WaitRequestProcessedParams{
-		Timeout: client.WaitRequestProcessedDefaultTimeout,
+	req := model.WaitRequestProcessedParams{
+		Timeout: model.WaitRequestProcessedDefaultTimeout,
 	}
 	if c.Request().Header.Get("Content-Type") == "application/json" {
 		if err := c.Bind(&req); err != nil {

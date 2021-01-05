@@ -15,8 +15,6 @@ type WaspClient struct {
 	baseURL    string
 }
 
-const AdminRoutePrefix = "adm"
-
 // NewWaspClient returns a new *WaspClient with the given baseURL and httpClient.
 func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 	if !strings.Contains(baseURL, "://") {
@@ -87,7 +85,8 @@ func (c *WaspClient) do(method string, route string, reqObj interface{}, resObj 
 	}
 
 	// construct request
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", c.baseURL, route), func() io.Reader {
+	url := fmt.Sprintf("%s/%s", strings.TrimRight(c.baseURL, "/"), strings.TrimLeft(route, "/"))
+	req, err := http.NewRequest(method, url, func() io.Reader {
 		if data == nil {
 			return nil
 		}
