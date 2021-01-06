@@ -196,7 +196,7 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan map[uint16]*peerin
 func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, initRecv *peering.RecvEvent, prevMsgs map[uint16]*peering.PeerMessage) (map[uint16]*peering.PeerMessage, error) {
 	var err error
 	if p.dkgImpl == nil {
-		return nil, errors.New("unexpected_step_for_n=1")
+		return nil, errors.New("unexpected step for n=1")
 	}
 	p.dkgLock.Lock()
 	var deals map[int]*rabin_dkg.Deal
@@ -224,7 +224,7 @@ func (p *proc) rabinStep1R21SendDealsMakeResp(step byte, initRecv *peering.RecvE
 func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, initRecv *peering.RecvEvent, prevMsgs map[uint16]*peering.PeerMessage) (map[uint16]*peering.PeerMessage, error) {
 	var err error
 	if p.dkgImpl == nil {
-		return nil, errors.New("unexpected_step_for_n=1")
+		return nil, errors.New("unexpected step for n=1")
 	}
 	//
 	// Decode the received deals, avoid nested locks.
@@ -271,7 +271,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeResp(step byte, initRecv *peering.R
 func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, initRecv *peering.RecvEvent, prevMsgs map[uint16]*peering.PeerMessage) (map[uint16]*peering.PeerMessage, error) {
 	var err error
 	if p.dkgImpl == nil {
-		return nil, errors.New("unexpected_step_for_n=1")
+		return nil, errors.New("unexpected step for n=1")
 	}
 	//
 	// Decode the received responces.
@@ -323,7 +323,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeResp(step byte, initRecv *peer
 func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, initRecv *peering.RecvEvent, prevMsgs map[uint16]*peering.PeerMessage) (map[uint16]*peering.PeerMessage, error) {
 	var err error
 	if p.dkgImpl == nil {
-		return nil, errors.New("unexpected_step_for_n=1")
+		return nil, errors.New("unexpected step for n=1")
 	}
 	//
 	// Decode the received justifications.
@@ -393,7 +393,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeResp(step byte, initRecv *peerin
 func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, initRecv *peering.RecvEvent, prevMsgs map[uint16]*peering.PeerMessage) (map[uint16]*peering.PeerMessage, error) {
 	var err error
 	if p.dkgImpl == nil {
-		return nil, errors.New("unexpected_step_for_n=1")
+		return nil, errors.New("unexpected step for n=1")
 	}
 	//
 	// Decode and process the received secret commits.
@@ -587,7 +587,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, initRecv *peering
 		return nil, err
 	}
 	if p.dkShare == nil {
-		return nil, errors.New("there_is_no_dkShare_to_commit")
+		return nil, errors.New("there is no dkShare to commit")
 	}
 	p.dkShare.PublicShares = doneMsg.pubShares // Store public shares of all the other peers.
 	if err = p.node.registry.SaveDKShare(p.dkShare); err != nil {
