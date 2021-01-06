@@ -27,6 +27,8 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 
 func (o *ScTransfer) Invoke() {
     if o.chain != coretypes.NilChainID {
+    	//TODO double check if agent address is chain id?
+    	// and what if agent is address in that case?
 		o.vm.ctx.TransferCrossChain(o.agent, o.chain, cbalances.NewFromMap(o.balances))
 		return
 	}
@@ -34,6 +36,7 @@ func (o *ScTransfer) Invoke() {
 		o.vm.ctx.TransferToAddress(o.agent.MustAddress(), cbalances.NewFromMap(o.balances))
 		return
 	}
+	//TODO double check if agent address is own chain id?
 	for color,amount := range o.balances {
 		o.vm.ctx.MoveTokens(o.agent, color, amount)
 	}
