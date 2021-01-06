@@ -4,21 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addStateEndpoints(adm echoswagger.ApiGroup) {
-	adm.GET("/"+client.DumpSCStateRoute(":contractID"), handleDumpSCState).
+	adm.GET(routes.DumpState(":contractID"), handleDumpSCState).
 		AddParamPath("", "contractID", "ContractID").
-		AddResponse(http.StatusOK, "State dump", client.SCStateDump{}, nil).
+		AddResponse(http.StatusOK, "State dump", model.SCStateDump{}, nil).
 		SetSummary("Dump the whole contract state").
 		SetDescription("This may be a dangerous operation if the state is too large. Only for testing use!")
 }
@@ -46,7 +47,7 @@ func handleDumpSCState(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, &client.SCStateDump{
+	return c.JSON(http.StatusOK, &model.SCStateDump{
 		Index:     virtualState.BlockIndex(),
 		Variables: vars,
 	})

@@ -12,24 +12,25 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.dedis.ch/kyber/v3"
 )
 
 func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
-	requestExample := client.DKSharesPostRequest{
+	requestExample := model.DKSharesPostRequest{
 		PeerNetIDs:  []string{"wasp1:4000", "wasp2:4000", "wasp3:4000", "wasp4:4000"},
 		PeerPubKeys: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:   3,
 		TimeoutMS:   10000,
 	}
-	infoExample := client.DKSharesInfo{
+	infoExample := model.DKSharesInfo{
 		Address:      address.Address{5, 6, 7, 8}.String(),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
@@ -37,19 +38,19 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
 		PeerIndex:    nil,
 	}
 
-	adm.POST("/"+client.DKSharesPostRoute(), handleDKSharesPost).
+	adm.POST(routes.DKSharesPost(), handleDKSharesPost).
 		AddParamBody(requestExample, "DKSharesPostRequest", "Request parameters", true).
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Generate a new distributed key")
 
-	adm.GET("/"+client.DKSharesGetRoute(":sharedAddress"), handleDKSharesGet).
+	adm.GET(routes.DKSharesGet(":sharedAddress"), handleDKSharesGet).
 		AddParamPath("", "sharedAddress", "Address of the DK share (base58)").
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Get distributed key properties")
 }
 
 func handleDKSharesPost(c echo.Context) error {
-	var req client.DKSharesPostRequest
+	var req model.DKSharesPostRequest
 	var err error
 
 	var suite = dkg.DefaultNode().GroupSuite()
@@ -90,7 +91,7 @@ func handleDKSharesPost(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	var response *client.DKSharesInfo
+	var response *model.DKSharesInfo
 	if response, err = makeDKSharesInfo(dkShare); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -107,14 +108,14 @@ func handleDKSharesGet(c echo.Context) error {
 	if dkShare, err = registry.DefaultRegistry().LoadDKShare(&sharedAddress); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	var response *client.DKSharesInfo
+	var response *model.DKSharesInfo
 	if response, err = makeDKSharesInfo(dkShare); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, response)
 }
 
-func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*client.DKSharesInfo, error) {
+func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*model.DKSharesInfo, error) {
 	var err error
 
 	b, err := dkShare.SharedPublic.MarshalBinary()
@@ -132,7 +133,7 @@ func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*client.DKSharesInfo, error) {
 		pubKeyShares[i] = base64.StdEncoding.EncodeToString(b)
 	}
 
-	return &client.DKSharesInfo{
+	return &model.DKSharesInfo{
 		Address:      dkShare.Address.String(),
 		SharedPubKey: sharedPubKey,
 		PubKeyShares: pubKeyShares,

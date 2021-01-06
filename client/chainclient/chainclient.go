@@ -8,29 +8,31 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
+// Client allows to send webapi requests to a specific chain in the node
 type Client struct {
-	NodeClient nodeclient.NodeClient
-	WaspClient *client.WaspClient
-	ChainID    coretypes.ChainID
-	SigScheme  signaturescheme.SignatureScheme
+	Level1Client level1.Level1Client
+	WaspClient   *client.WaspClient
+	ChainID      coretypes.ChainID
+	SigScheme    signaturescheme.SignatureScheme
 }
 
+// New creates a new chainclient.Client
 func New(
-	nodeClient nodeclient.NodeClient,
+	level1Client level1.Level1Client,
 	waspClient *client.WaspClient,
 	chainID coretypes.ChainID,
 	sigScheme signaturescheme.SignatureScheme,
 ) *Client {
 	return &Client{
-		NodeClient: nodeClient,
-		WaspClient: waspClient,
-		ChainID:    chainID,
-		SigScheme:  sigScheme,
+		Level1Client: level1Client,
+		WaspClient:   waspClient,
+		ChainID:      chainID,
+		SigScheme:    sigScheme,
 	}
 }
 
@@ -40,6 +42,7 @@ type PostRequestParams struct {
 	Args     dict.Dict
 }
 
+// PostRequest sends a request transaction to the chain
 func (c *Client) PostRequest(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
@@ -51,7 +54,7 @@ func (c *Client) PostRequest(
 	}
 
 	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
-		NodeClient:      c.NodeClient,
+		Level1Client:    c.Level1Client,
 		SenderSigScheme: c.SigScheme,
 		Mint:            par.Mint,
 		RequestSectionParams: []apilib.RequestSectionParams{{

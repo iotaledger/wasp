@@ -7,10 +7,10 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/client/statequery"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
+	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )
 
 type SCStatus struct {
@@ -70,7 +70,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 
 func (c *Client) FetchBalance() (map[balance.Color]int64, error) {
 	addr := (address.Address)(c.ChainID)
-	outs, err := c.NodeClient.GetConfirmedAccountOutputs(&addr)
+	outs, err := c.Level1Client.GetConfirmedAccountOutputs(&addr)
 	if err != nil {
 		return nil, err
 	}

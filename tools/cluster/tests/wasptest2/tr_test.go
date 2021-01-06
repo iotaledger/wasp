@@ -45,7 +45,7 @@ func TestTRTest(t *testing.T) {
 	}
 
 	tc := trclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scAddr,
 		minter.SigScheme(),

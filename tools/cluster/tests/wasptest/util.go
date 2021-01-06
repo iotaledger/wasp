@@ -16,7 +16,7 @@ import (
 func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.Chain) error {
 	//fmt.Printf("------------------------------   Test 3: create origin of 1 SC\n")
 
-	tx, err := sc.CreateOrigin(clu.NodeClient)
+	tx, err := sc.CreateOrigin(clu.Level1Client)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.Chain) error {
 	fmt.Printf("[cluster] new origin tx: id: %s, state hash: %v, addr: %s owner: %s\n",
 		tx.ID().String(), sh.String(), sc.Address, ownerAddr.String())
 
-	err = clu.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
+	err = clu.Level1Client.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		return err
 	}
@@ -40,11 +40,11 @@ func CreateOrigin1SC(clu *cluster.Cluster, sc *cluster.Chain) error {
 }
 
 func mintNewColoredTokens(wasps *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, amount int64) (*balance.Color, error) {
-	tx, err := vtxbuilder.NewColoredTokensTransaction(wasps.NodeClient, sigScheme, amount)
+	tx, err := vtxbuilder.NewColoredTokensTransaction(wasps.Level1Client, sigScheme, amount)
 	if err != nil {
 		return nil, err
 	}
-	err = wasps.NodeClient.PostAndWaitForConfirmation(tx)
+	err = wasps.Level1Client.PostAndWaitForConfirmation(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func SendSimpleRequest(
 	reqParams waspapi.RequestSectionParams) error {
 
 	tx, err := waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
-		NodeClient:           clu.NodeClient,
+		Level1Client:         clu.Level1Client,
 		SenderSigScheme:      sigScheme,
 		RequestSectionParams: []waspapi.RequestSectionParams{reqParams},
 		Post:                 true,
@@ -93,7 +93,7 @@ func SendSimpleRequest(
 
 func SendSimpleRequestMulti(clu *cluster.Cluster, sigScheme signaturescheme.SignatureScheme, reqParams []waspapi.RequestSectionParams) error {
 	tx, err := waspapi.CreateRequestTransaction(waspapi.CreateRequestTransactionParams{
-		NodeClient:           clu.NodeClient,
+		Level1Client:         clu.Level1Client,
 		SenderSigScheme:      sigScheme,
 		RequestSectionParams: reqParams,
 		Post:                 true,

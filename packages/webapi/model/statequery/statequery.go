@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/client/jsonable"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -28,7 +28,7 @@ type Results struct {
 	StateIndex uint32
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
-	StateTxId  jsonable.ValueTxID
+	StateTxId  model.ValueTxID
 	Requests   []*coretypes.RequestID
 }
 

@@ -149,5 +149,5 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	err = requestFunds(clu, scOwnerAddr, "client")
 	check(err, t)
 
-	client = chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	client = chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
 }

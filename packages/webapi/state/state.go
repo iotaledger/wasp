@@ -6,20 +6,21 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/jsonable"
-	"github.com/iotaledger/wasp/client/statequery"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addStateQueryEndpoint(server echoswagger.ApiRouter) {
-	server.GET("/"+client.StateQueryRoute(":chainID"), handleStateQuery).
+	server.GET(routes.StateQuery(":chainID"), handleStateQuery).
 		SetDeprecated().
 		SetSummary("Query the chain state").
+		AddParamPath("", "chainID", "ChainID (base58)").
 		AddParamBody(statequery.Request{}, "query", "Query parameters", true).
 		AddResponse(http.StatusOK, "Query result", statequery.Results{}, nil)
 }
@@ -50,7 +51,7 @@ func handleStateQuery(c echo.Context) error {
 		StateIndex: state.BlockIndex(),
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
-		StateTxId:  jsonable.NewValueTxID(&txid),
+		StateTxId:  model.NewValueTxID(&txid),
 		Requests:   make([]*coretypes.RequestID, len(batch.RequestIDs())),
 	}
 	copy(ret.Requests, batch.RequestIDs())

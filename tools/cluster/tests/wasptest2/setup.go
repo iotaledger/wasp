@@ -85,7 +85,7 @@ func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription st
 }
 
 func requestFunds(wasps *cluster.Cluster, addr *address.Address, who string) error {
-	err := wasps.NodeClient.RequestFunds(addr)
+	err := wasps.Level1Client.RequestFunds(addr)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func startSmartContract(wasps *cluster.Cluster, scProgramHash string, scDescript
 		scProgramHash = programHash.String()
 	}
 	scAddr, scColor, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:                  wasps.NodeClient,
+		Node:                  wasps.Level1Client,
 		CommitteeApiHosts:     wasps.ApiHosts(),
 		CommitteePeeringHosts: wasps.PeeringHosts(),
 		N:                     4,

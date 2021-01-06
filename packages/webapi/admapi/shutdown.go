@@ -3,14 +3,14 @@ package admapi
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addShutdownEndpoint(adm echoswagger.ApiGroup) {
-	adm.GET("/"+client.ShutdownRoute, handleShutdown).
+	adm.GET(routes.Shutdown(), handleShutdown).
 		SetSummary("Shut down the node")
 }
 

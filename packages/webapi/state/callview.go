@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -23,7 +23,7 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 		kv.Key("key1"): []byte("value1"),
 	}.JSONDict()
 
-	server.GET("/"+client.CallViewRoute(":contractID", ":fname"), handleCallView).
+	server.GET(routes.CallView(":contractID", ":fname"), handleCallView).
 		SetSummary("Call a view function on a contract").
 		AddParamPath("", "contractID", "ContractID (base58-encoded)").
 		AddParamPath("getInfo", "fname", "Function name").

@@ -8,14 +8,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
+// WaspClient allows to make requests to the Wasp web API.
 type WaspClient struct {
 	httpClient http.Client
 	baseURL    string
 }
-
-const AdminRoutePrefix = "adm"
 
 // NewWaspClient returns a new *WaspClient with the given baseURL and httpClient.
 func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
@@ -26,28 +27,6 @@ func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 		return &WaspClient{baseURL: baseURL, httpClient: httpClient[0]}
 	}
 	return &WaspClient{baseURL: baseURL}
-}
-
-type ErrorResponse struct {
-	Message string `json:"message"`
-	code    int
-}
-
-func NewErrorResponse(code int, message string) *ErrorResponse {
-	return &ErrorResponse{Message: message, code: code}
-}
-
-func (e *ErrorResponse) Error() string {
-	return fmt.Sprintf("%d: %s", e.code, e.Message)
-}
-
-func (e *ErrorResponse) Code() int {
-	return e.code
-}
-
-func IsNotFound(e error) bool {
-	er, ok := e.(*ErrorResponse)
-	return ok && er.Code() == http.StatusNotFound
 }
 
 func processResponse(res *http.Response, decodeTo interface{}) error {
@@ -65,13 +44,11 @@ func processResponse(res *http.Response, decodeTo interface{}) error {
 		}
 	}
 
-	errRes := &ErrorResponse{
-		code: res.StatusCode,
-	}
+	errRes := &model.HTTPError{}
 	if err := json.Unmarshal(resBody, errRes); err != nil {
 		errRes.Message = http.StatusText(res.StatusCode)
 	}
-	errRes.code = res.StatusCode
+	errRes.StatusCode = res.StatusCode
 	return errRes
 }
 
@@ -87,7 +64,8 @@ func (c *WaspClient) do(method string, route string, reqObj interface{}, resObj 
 	}
 
 	// construct request
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", c.baseURL, route), func() io.Reader {
+	url := fmt.Sprintf("%s/%s", strings.TrimRight(c.baseURL, "/"), strings.TrimLeft(route, "/"))
+	req, err := http.NewRequest(method, url, func() io.Reader {
 		if data == nil {
 			return nil
 		}

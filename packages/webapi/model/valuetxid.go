@@ -1,4 +1,4 @@
-package jsonable
+package model
 
 import (
 	"encoding/json"

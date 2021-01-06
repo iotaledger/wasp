@@ -14,17 +14,18 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/nodeclient"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/util/multicall"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
 type CreateChainParams struct {
-	Node                  nodeclient.NodeClient
+	Node                  level1.Level1Client
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
 	AccessNodes           []string
@@ -124,8 +125,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	// ----------- run DKG on committee nodes
 	var dkgInitiatorIndex = rand.Intn(len(par.CommitteeApiHosts))
-	var dkShares *client.DKSharesInfo
-	dkShares, err = client.NewWaspClient(par.CommitteeApiHosts[dkgInitiatorIndex]).DKSharesPost(&client.DKSharesPostRequest{
+	var dkShares *model.DKSharesInfo
+	dkShares, err = client.NewWaspClient(par.CommitteeApiHosts[dkgInitiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
 		PeerNetIDs:  par.CommitteePeeringHosts,
 		PeerPubKeys: nil,
 		Threshold:   par.T,

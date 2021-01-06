@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/nodeclient"
+	"github.com/iotaledger/wasp/client/level1"
 )
 
 const RequestFundsAmount = utxodb.RequestFundsAmount
@@ -17,7 +17,10 @@ type utxodbclient struct {
 	goshimmerHost string
 }
 
-func NewGoshimmerUtxodbClient(host string) nodeclient.NodeClient {
+// NewGoshimmerUtxodbClient returns a Level1Client that uses the UTXODB interface.
+//
+// It requires a Goshimmer node configuerd in UTXODB mode in order to work.
+func NewGoshimmerUtxodbClient(host string) level1.Level1Client {
 	return &utxodbclient{host}
 }
 
