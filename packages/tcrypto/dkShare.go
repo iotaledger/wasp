@@ -200,10 +200,17 @@ func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
 func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signaturescheme.Signature, error) {
-	pubPoly := share.NewPubPoly(s.suite, nil, s.PublicCommits)
-	recoveredSignature, err := tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
-	if err != nil {
-		return nil, err
+	var err error
+	var recoveredSignature []byte
+	if s.N > 1 {
+		pubPoly := share.NewPubPoly(s.suite, nil, s.PublicCommits)
+		recoveredSignature, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		singleSigShare := tbdn.SigShare(sigShares[0])
+		recoveredSignature = singleSigShare.Value()
 	}
 	pubKeyBin, err := s.SharedPublic.MarshalBinary()
 	if err != nil {

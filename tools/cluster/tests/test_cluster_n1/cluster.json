@@ -1,0 +1,8 @@
+{
+  "nodes": [
+    {"api_port": 9090, "peering_port": 4000, "nanomsg_port": 5550, "dashboard_port": 7000}
+  ],
+  "goshimmer": {
+    "api_port": 8080
+  }
+}
