@@ -26,20 +26,24 @@ func (o *ScTransfer) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScTransfer) Invoke() {
+	// is this a local transfer?
+	if o.chain == o.vm.ctx.ChainID() {
+		for color, amount := range o.balances {
+			o.vm.ctx.MoveTokens(o.agent, color, amount)
+		}
+		return
+	}
+	// is this a cross chain transfer?
     if o.chain != coretypes.NilChainID {
-    	//TODO double check if agent address is chain id?
-    	// and what if agent is address in that case?
 		o.vm.ctx.TransferCrossChain(o.agent, o.chain, cbalances.NewFromMap(o.balances))
 		return
 	}
+	// should be transfer to Tangle ledger address
 	if o.agent.IsAddress() {
 		o.vm.ctx.TransferToAddress(o.agent.MustAddress(), cbalances.NewFromMap(o.balances))
 		return
 	}
-	//TODO double check if agent address is own chain id?
-	for color,amount := range o.balances {
-		o.vm.ctx.MoveTokens(o.agent, color, amount)
-	}
+	o.Panic("Invoke: inconsistent agent id")
 }
 
 func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
