@@ -2,6 +2,7 @@ package root
 
 import (
 	"bytes"
+	"errors"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -24,6 +25,7 @@ var (
 		Description: description,
 		ProgramHash: *hashing.HashStrings(Name),
 	}
+	ErrContractNotFound = errors.New("smart contract not found")
 )
 
 func init() {

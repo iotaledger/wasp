@@ -45,7 +45,7 @@ func TestTRMint1Token(t *testing.T) {
 	progHash, err := hashing.HashValueFromBase58(tokenregistry.ProgramHash)
 	check(err, t)
 
-	err = wasps.NodeClient.RequestFunds(minterAddr)
+	err = wasps.Level1Client.RequestFunds(minterAddr)
 	check(err, t)
 
 	time.Sleep(2 * time.Second)

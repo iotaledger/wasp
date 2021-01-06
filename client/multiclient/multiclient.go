@@ -8,12 +8,14 @@ import (
 	"github.com/iotaledger/wasp/packages/util/multicall"
 )
 
+// MultiClient allows to send webapi requests in parallel to multiple wasp nodes
 type MultiClient struct {
 	nodes []*client.WaspClient
 
 	Timeout time.Duration
 }
 
+// New creates a new instance of MultiClient
 func New(hosts []string, httpClient ...func() http.Client) *MultiClient {
 	m := &MultiClient{
 		nodes: make([]*client.WaspClient, len(hosts)),
@@ -29,6 +31,7 @@ func New(hosts []string, httpClient ...func() http.Client) *MultiClient {
 	return m
 }
 
+// Do executes a callback once for each node in parallel, then wraps all error results into a single one
 func (m *MultiClient) Do(f func(int, *client.WaspClient) error) error {
 	funs := make([]func() error, len(m.nodes))
 	for i := range m.nodes {

@@ -11,10 +11,11 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
-	"github.com/iotaledger/wasp/plugins/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -59,7 +60,7 @@ func configure(*node.Plugin) {
 
 	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
 
-	addEndpoints(Server, adminWhitelist())
+	webapi.Init(Server, adminWhitelist())
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {
@@ -69,7 +70,7 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 			if c.Request().Method == http.MethodHead { // Issue #608
 				err = c.NoContent(he.Code)
 			} else {
-				err = c.JSON(he.Code, client.NewErrorResponse(he.Code, he.Error()))
+				err = c.JSON(he.Code, model.NewHTTPError(he.Code, he.Error()))
 			}
 		}
 	}

@@ -366,7 +366,6 @@ func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	rec, err := FindContract(ctx.State(), hname)
 	if err != nil {
-		// contract not found
 		return nil, err
 	}
 	ownerFee, ownerFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamOwnerFee))

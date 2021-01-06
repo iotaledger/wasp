@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-// Puts chain records into the nodes. Also requests funds from the nodeClient for owners.
+// Puts chain records into the nodes. Also requests funds from the level1Client for owners.
 func PutChainRecord(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, error) {
 	requested := make(map[address.Address]bool)
 
@@ -20,7 +20,7 @@ func PutChainRecord(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, er
 	ownerAddr := sc.OriginatorAddress()
 	_, ok := requested[*ownerAddr]
 	if !ok {
-		err := clu.NodeClient.RequestFunds(ownerAddr)
+		err := clu.Level1Client.RequestFunds(ownerAddr)
 		if err != nil {
 			fmt.Printf("[cluster] Could not request funds: %v\n", err)
 			return nil, fmt.Errorf("Could not request funds: %v", err)
@@ -42,7 +42,7 @@ func putScData(clu *cluster.Cluster, sc *cluster.Chain) (*balance.Color, error) 
 		return nil, err
 	}
 
-	origTx, err := sc.CreateOrigin(clu.NodeClient)
+	origTx, err := sc.CreateOrigin(clu.Level1Client)
 	if err != nil {
 		return nil, err
 	}

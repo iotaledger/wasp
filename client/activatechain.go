@@ -1,22 +1,18 @@
 package client
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func ActivateChainRoute(chainid string) string {
-	return "chain/" + chainid + "/activate"
-}
-
-func DeactivateChainRoute(chainid string) string {
-	return "chain/" + chainid + "/deactivate"
-}
-
+// ActivateChain sends a request to activate a chain in the wasp node
 func (c *WaspClient) ActivateChain(chainid *coretypes.ChainID) error {
-	return c.do(http.MethodPost, AdminRoutePrefix+"/"+ActivateChainRoute(chainid.String()), nil, nil)
+	return c.do(http.MethodPost, routes.ActivateChain(chainid.String()), nil, nil)
 }
 
+// DeactivateChain sends a request to deactivate a chain in the wasp node
 func (c *WaspClient) DeactivateChain(chainid *coretypes.ChainID) error {
-	return c.do(http.MethodPost, AdminRoutePrefix+"/"+DeactivateChainRoute(chainid.String()), nil, nil)
+	return c.do(http.MethodPost, routes.DeactivateChain(chainid.String()), nil, nil)
 }

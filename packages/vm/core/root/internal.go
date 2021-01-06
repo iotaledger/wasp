@@ -23,7 +23,7 @@ func FindContract(state kv.KVStore, hname coretypes.Hname) (*ContractRecord, err
 			rec := NewContractRecord(Interface, coretypes.AgentID{})
 			return &rec, nil
 		}
-		return nil, fmt.Errorf("root: contract %s not found", hname)
+		return nil, ErrContractNotFound
 	}
 
 	ret, err := DecodeContractRecord(retBin)
@@ -88,7 +88,14 @@ func GetChainInfo(state kv.KVStore) (*ChainInfo, error) {
 // It is not exposed to the sandbox
 func GetFeeInfo(state kv.KVStore, hname coretypes.Hname) (balance.Color, int64, int64) {
 	//returns nil of contract not found
-	rec, _ := FindContract(state, hname)
+	rec, err := FindContract(state, hname)
+	if err != nil {
+		if err != ErrContractNotFound {
+			panic(err)
+		} else {
+			rec = nil
+		}
+	}
 	return GetFeeInfoByContractRecord(state, rec)
 }
 
@@ -98,7 +105,10 @@ func GetFeeInfoByContractRecord(state kv.KVStore, rec *ContractRecord) (balance.
 		ownerFee = rec.OwnerFee
 		validatorFee = rec.ValidatorFee
 	}
-	feeColor, defaultOwnerFee, defaultValidatorFee, _ := GetDefaultFeeInfo(state)
+	feeColor, defaultOwnerFee, defaultValidatorFee, err := GetDefaultFeeInfo(state)
+	if err != nil {
+		panic(err)
+	}
 	if ownerFee == 0 {
 		ownerFee = defaultOwnerFee
 	}
@@ -109,7 +119,10 @@ func GetFeeInfoByContractRecord(state kv.KVStore, rec *ContractRecord) (balance.
 }
 
 func GetDefaultFeeInfo(state kv.KVStore) (balance.Color, int64, int64, error) {
-	feeColor, ok, _ := codec.DecodeColor(state.MustGet(VarFeeColor))
+	feeColor, ok, err := codec.DecodeColor(state.MustGet(VarFeeColor))
+	if err != nil {
+		panic(err)
+	}
 	if !ok {
 		feeColor = balance.ColorIOTA
 	}
@@ -149,7 +162,10 @@ func DecodeContractRegistry(contractRegistry *datatypes.MustMap) (map[coretypes.
 }
 
 func CheckAuthorizationByChainOwner(state kv.KVStore, agentID coretypes.AgentID) bool {
-	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	currentOwner, _, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	if err != nil {
+		panic(err)
+	}
 	return currentOwner == agentID
 }
 

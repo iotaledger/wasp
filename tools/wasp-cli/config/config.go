@@ -6,8 +6,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/nodeclient"
-	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
+	"github.com/iotaledger/wasp/client/level1"
+	"github.com/iotaledger/wasp/client/level1/goshimmer"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/pflag"
@@ -68,7 +68,7 @@ func Utxodb() bool {
 	return viper.GetBool("utxodb")
 }
 
-func GoshimmerClient() nodeclient.NodeClient {
+func GoshimmerClient() level1.Level1Client {
 	if Utxodb() {
 		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
 	}

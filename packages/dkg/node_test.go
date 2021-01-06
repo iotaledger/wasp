@@ -181,3 +181,55 @@ func TestUnreliableNet(t *testing.T) {
 	require.NotNil(t, dkShare.Address)
 	require.NotNil(t, dkShare.SharedPublic)
 }
+
+// TestLowN checks, if the DKG works with N=1 and other low values. N=1 is a special case.
+func TestLowN(t *testing.T) {
+	log := testutil.NewLogger(t)
+	defer log.Sync()
+	//
+	// Create a fake network and keys for the tests.
+	for n := uint16(1); n < 4; n++ {
+		var timeout = 100 * time.Second
+		var threshold uint16 = n
+		var peerCount uint16 = n
+		var peerNetIDs []string = make([]string, peerCount)
+		var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
+		var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+		var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
+		for i := range peerNetIDs {
+			peerPair := key.NewKeyPair(suite)
+			peerNetIDs[i] = fmt.Sprintf("P%02d", i)
+			peerSecs[i] = peerPair.Private
+			peerPubs[i] = peerPair.Public
+		}
+		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+			peerNetIDs, peerPubs, peerSecs, 10000,
+			testutil.NewPeeringNetReliable(),
+			testutil.WithLevel(log, logger.LevelWarn, false),
+		)
+		var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+		//
+		// Initialize the DKG subsystem in each node.
+		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+		for i := range peerNetIDs {
+			registry := testutil.NewDkgRegistryProvider(suite)
+			dkgNodes[i] = dkg.NewNode(
+				peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
+				testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
+			)
+		}
+		//
+		// Initiate the key generation from some client node.
+		dkShare, err := dkgNodes[0].GenerateDistributedKey(
+			peerNetIDs,
+			peerPubs,
+			threshold,
+			1*time.Second,
+			2*time.Second,
+			timeout,
+		)
+		require.Nil(t, err)
+		require.NotNil(t, dkShare.Address)
+		require.NotNil(t, dkShare.SharedPublic)
+	}
+}

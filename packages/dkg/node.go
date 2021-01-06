@@ -84,7 +84,7 @@ func (n *Node) GenerateDistributedKey(
 	var peerCount = uint16(len(peerNetIDs))
 	//
 	// Some validationfor the parameters.
-	if peerCount < 2 || threshold < 1 || threshold > peerCount {
+	if peerCount < 1 || threshold < 1 || threshold > peerCount {
 		return nil, fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold)
 	}
 	if threshold < peerCount/2+1 {
@@ -135,20 +135,22 @@ func (n *Node) GenerateDistributedKey(
 	//
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
-	if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep1R21SendDeals); err != nil {
-		return nil, err
-	}
-	if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep2R22SendResponses); err != nil {
-		return nil, err
-	}
-	if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep3R23SendJustifications); err != nil {
-		return nil, err
-	}
-	if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep4R4SendSecretCommits); err != nil {
-		return nil, err
-	}
-	if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep5R5SendComplaintCommits); err != nil {
-		return nil, err
+	if peerCount > 1 {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep1R21SendDeals); err != nil {
+			return nil, err
+		}
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep2R22SendResponses); err != nil {
+			return nil, err
+		}
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep3R23SendJustifications); err != nil {
+			return nil, err
+		}
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep4R4SendSecretCommits); err != nil {
+			return nil, err
+		}
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep5R5SendComplaintCommits); err != nil {
+			return nil, err
+		}
 	}
 	//
 	// Now get the public keys.

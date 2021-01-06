@@ -2,12 +2,11 @@ package client
 
 import (
 	"net/http"
+
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-const (
-	ShutdownRoute = "shutdown"
-)
-
+// Shutdown shuts down the node
 func (c *WaspClient) Shutdown() error {
-	return c.do(http.MethodGet, AdminRoutePrefix+"/"+ShutdownRoute, nil, nil)
+	return c.do(http.MethodGet, routes.Shutdown(), nil, nil)
 }

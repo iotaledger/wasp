@@ -51,7 +51,7 @@ func TestTrMintSupply(t *testing.T) {
 	}
 
 	tc := trclient.NewClient(chainclient.New(
-		wasps.NodeClient,
+		wasps.Level1Client,
 		wasps.WaspClient(0),
 		scChain,
 		minter.SigScheme(),

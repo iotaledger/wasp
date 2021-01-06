@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
+// WaitUntilRequestProcessed blocks until the request has been processed by all nodes
 func (m *MultiClient) WaitUntilRequestProcessed(chainId *coretypes.ChainID, reqId *coretypes.RequestID, timeout time.Duration) error {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
@@ -18,6 +19,8 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainId *coretypes.ChainID, reqI
 	})
 }
 
+// WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
+// by all nodes
 func (m *MultiClient) WaitUntilAllRequestsProcessed(tx *sctransaction.Transaction, timeout time.Duration) error {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()

@@ -19,25 +19,26 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/level1"
+	"github.com/iotaledger/wasp/client/level1/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/nodeclient"
-	"github.com/iotaledger/wasp/packages/nodeclient/goshimmer"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
 type Cluster struct {
-	Config     *ClusterConfig
-	ConfigPath string // where the cluster configuration is stored - read only
-	DataPath   string // where the cluster's volatile data lives
-	Started    bool
-	NodeClient nodeclient.NodeClient
+	Config       *ClusterConfig
+	ConfigPath   string // where the cluster configuration is stored - read only
+	DataPath     string // where the cluster's volatile data lives
+	Started      bool
+	Level1Client level1.Level1Client
 	// reading publisher's output
 	messagesCh   chan *subscribe.HostMessage
 	stopReading  chan bool
@@ -61,25 +62,29 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 		return nil, err
 	}
 
-	var nodeClient nodeclient.NodeClient
+	var level1Client level1.Level1Client
 	if config.Goshimmer.Provided {
-		nodeClient = goshimmer.NewGoshimmerClient(config.goshimmerApiHost())
+		level1Client = goshimmer.NewGoshimmerClient(config.goshimmerApiHost())
 	} else {
-		nodeClient = testutil.NewGoshimmerUtxodbClient(config.goshimmerApiHost())
+		level1Client = testutil.NewGoshimmerUtxodbClient(config.goshimmerApiHost())
 	}
 
 	return &Cluster{
-		Config:     config,
-		ConfigPath: configPath,
-		DataPath:   dataPath,
-		NodeClient: nodeClient,
+		Config:       config,
+		ConfigPath:   configPath,
+		DataPath:     dataPath,
+		Level1Client: level1Client,
 	}, nil
 }
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	committee := clu.Config.AllWaspNodes()
-	quorum := uint16(len(committee) * 3 / 4)
-	return clu.DeployChain("Default chain", committee, quorum, []int{})
+	minQuorum := len(committee)/2 + 1
+	quorum := len(committee) * 3 / 4
+	if quorum < minQuorum {
+		quorum = minQuorum
+	}
+	return clu.DeployChain("Default chain", committee, uint16(quorum), []int{})
 }
 
 func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16, accessNodes []int) (*Chain, error) {
@@ -94,13 +99,13 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		Cluster:        clu,
 	}
 
-	err := clu.NodeClient.RequestFunds(chain.OriginatorAddress())
+	err := clu.Level1Client.RequestFunds(chain.OriginatorAddress())
 	if err != nil {
 		return nil, err
 	}
 
 	chainid, addr, color, err := waspapi.DeployChain(waspapi.CreateChainParams{
-		Node:                  clu.NodeClient,
+		Node:                  clu.Level1Client,
 		CommitteeApiHosts:     clu.WaspHosts(committeeNodes, (*WaspNodeConfig).ApiHost),
 		CommitteePeeringHosts: clu.WaspHosts(committeeNodes, (*WaspNodeConfig).PeeringHost),
 		AccessNodes:           clu.WaspHosts(accessNodes, (*WaspNodeConfig).PeeringHost),
@@ -598,7 +603,7 @@ func (cluster *Cluster) report() (bool, bool, string) {
 
 func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
-	err := cluster.NodeClient.PostAndWaitForConfirmation(tx.Transaction)
+	err := cluster.Level1Client.PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {
 		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
 		return err
@@ -608,7 +613,7 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
 }
 
 func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpected int64, expect map[balance.Color]int64, comment ...string) bool {
-	allOuts, err := cluster.NodeClient.GetConfirmedAccountOutputs(addr)
+	allOuts, err := cluster.Level1Client.GetConfirmedAccountOutputs(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedAccountOutputs error: %v\n", err)
 		return false
@@ -641,7 +646,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr *address.Address, totalExpect
 func verifySCStateVariables2(host string, addr *address.Address, expectedValues map[kv.Key]interface{}) bool {
 	contractID := coretypes.NewContractID((coretypes.ChainID)(*addr), 0)
 	actual, err := client.NewWaspClient(host).DumpSCState(&contractID)
-	if client.IsNotFound(err) {
+	if model.IsHTTPNotFound(err) {
 		fmt.Printf("              state does not exist: FAIL\n")
 		return false
 	}

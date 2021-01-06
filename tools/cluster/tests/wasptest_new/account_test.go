@@ -15,12 +15,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasicAccounts(t *testing.T) {
 	setup(t, "test_cluster")
-
 	err := clu.ListenToMessages(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
@@ -30,9 +30,28 @@ func TestBasicAccounts(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
-
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
+	testBasicAccounts(t, chain)
+}
+
+func TestBasicAccountsN1(t *testing.T) {
+	setup(t, "test_cluster_n1")
+	err := clu.ListenToMessages(map[string]int{
+		"chainrec":            2,
+		"active_committee":    1,
+		"dismissed_committee": 0,
+		"state":               2,
+		"request_in":          1,
+		"request_out":         2,
+	})
+	check(err, t)
+	chain, err := clu.DeployChain("single_node_chain", []int{0}, 1, []int{})
+	check(err, t)
+	testBasicAccounts(t, chain)
+}
+
+func testBasicAccounts(t *testing.T, chain *cluster.Chain) {
 
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
@@ -89,7 +108,7 @@ func TestBasicAccounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := int64(42)
-	chClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	chClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
 	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: map[balance.Color]int64{balance.ColorIOTA: transferIotas},
 	})
@@ -213,7 +232,7 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := int64(42)
-	myWalletClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
+	myWalletClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
 	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: map[balance.Color]int64{balance.ColorIOTA: transferIotas},
 	})
@@ -265,7 +284,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
-	originatorClient := chainclient.New(clu.NodeClient, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	originatorClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 
