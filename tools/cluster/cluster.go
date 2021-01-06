@@ -79,8 +79,12 @@ func New(configPath string, dataPath string) (*Cluster, error) {
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	committee := clu.Config.AllWaspNodes()
-	quorum := uint16(len(committee) * 3 / 4)
-	return clu.DeployChain("Default chain", committee, quorum, []int{})
+	minQuorum := len(committee)/2 + 1
+	quorum := len(committee) * 3 / 4
+	if quorum < minQuorum {
+		quorum = minQuorum
+	}
+	return clu.DeployChain("Default chain", committee, uint16(quorum), []int{})
 }
 
 func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16, accessNodes []int) (*Chain, error) {
