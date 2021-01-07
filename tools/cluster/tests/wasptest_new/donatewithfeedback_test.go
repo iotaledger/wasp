@@ -26,7 +26,7 @@ func TestDwfDonateOnce(t *testing.T) {
 	for i := 0; i < numDonations; i++ {
 		feedback := fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i)
 		req := solo.NewCall(dwfName, "donate", "feedback", feedback).
-			WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 42})
+			WithTransfer(balance.ColorIOTA, 42)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
 	}

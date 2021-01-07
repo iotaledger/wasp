@@ -45,9 +45,7 @@ func TestExample3(t *testing.T) {
 
 	// send 42 iotas to the own account on-chain
 	req := solo.NewCall("accounts", "deposit").
-		WithTransfer(map[balance.Color]int64{
-			balance.ColorIOTA: 42,
-		})
+		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, userWallet)
 	require.NoError(t, err)
 

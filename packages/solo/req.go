@@ -34,7 +34,7 @@ type CallParams struct {
 //  - 'funName' is a name of the target entry point (the function) of he smart contract program
 //  - 'params' is a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
-// With the WithTransfer the CallParams structure may be complemented with attached colored
+// With the WithTransfers the CallParams structure may be complemented with attached colored
 // tokens sent together with the request
 func NewCall(scName, funName string, params ...interface{}) *CallParams {
 	ret := &CallParams{
@@ -47,9 +47,15 @@ func NewCall(scName, funName string, params ...interface{}) *CallParams {
 	return ret
 }
 
-// WithTransfer complement CallParams structure with the colored balances of tokens
+// WithTransfer is a shorthand for the most often used case where only
+// a single color is transferred by WithTransfers
+func (r *CallParams) WithTransfer(color balance.Color, amount int64) *CallParams {
+	return r.WithTransfers(map[balance.Color]int64{color: amount})
+}
+
+// WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
-func (r *CallParams) WithTransfer(transfer map[balance.Color]int64) *CallParams {
+func (r *CallParams) WithTransfers(transfer map[balance.Color]int64) *CallParams {
 	r.transfer = cbalances.NewFromMap(transfer)
 	return r
 }

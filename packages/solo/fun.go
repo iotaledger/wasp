@@ -98,14 +98,13 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		return expectedHash, nil
 	}
 
+	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
 	require.EqualValues(ch.Glb.T, feeColor, balance.ColorIOTA)
 	totalFee := ownerFee + validatorFee
-	transferMap := map[balance.Color]int64{}
 	if totalFee > 0 {
-		transferMap[balance.ColorIOTA] = totalFee
+		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
-	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...).WithTransfer(transferMap)
 	var res dict.Dict
 	res, err = ch.PostRequest(req, sigScheme)
 	if err != nil {

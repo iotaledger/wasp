@@ -85,7 +85,7 @@ func TestIncWith1Post(t *testing.T) {
 	checkCounter(chain, 17)
 
 	req := solo.NewCall(incName, FuncIncAndRepeatOnceAfter5s).
-		WithTransfer(map[balance.Color]int64{balance.ColorIOTA: 1})
+		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	// advance logical clock to unlock that timelocked request

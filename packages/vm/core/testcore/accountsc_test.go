@@ -62,9 +62,7 @@ func TestAccountsDepositWithdraw(t *testing.T) {
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCall(accounts.Interface.Name, accounts.FuncDeposit).
-		WithTransfer(map[balance.Color]int64{
-			balance.ColorIOTA: 42,
-		})
+		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 

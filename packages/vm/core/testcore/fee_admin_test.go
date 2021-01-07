@@ -185,7 +185,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 499, 1000)
 
 	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999)
-	//.WithTransfer(
+	//.WithTransfers(
 	//		map[balance.Color]int64{
 	//			balance.ColorIOTA: 800,
 	//		},
