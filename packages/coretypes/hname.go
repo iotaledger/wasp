@@ -6,6 +6,7 @@ package coretypes
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"strconv"
 
@@ -49,11 +50,11 @@ func (hn Hname) Bytes() []byte {
 }
 
 func (hn Hname) String() string {
-	return strconv.Itoa((int)(hn))
+	return fmt.Sprintf("%08x", (int)(hn))
 }
 
 func HnameFromString(s string) (Hname, error) {
-	n, err := strconv.ParseUint(s, 10, 32)
+	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
 		return 0, errors.Wrap(err, "cannot parse hname")
 	}
