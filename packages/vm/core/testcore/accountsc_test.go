@@ -74,5 +74,5 @@ func TestAccountsDepositWithdraw(t *testing.T) {
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
-	glb.AssertUtxodbBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	glb.AssertAddressBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 }

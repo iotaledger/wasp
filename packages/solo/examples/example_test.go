@@ -29,7 +29,7 @@ func TestExample2(t *testing.T) {
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := glb.GetUtxodbBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, 1337)
+	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 }
 
 func TestExample3(t *testing.T) {
@@ -41,7 +41,7 @@ func TestExample3(t *testing.T) {
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := glb.GetUtxodbBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, 1337)
+	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 
 	// send 42 iotas to the own account on-chain
 	req := solo.NewCall("accounts", "deposit").
@@ -60,5 +60,5 @@ func TestExample3(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0) // empty
-	glb.AssertUtxodbBalance(userAddress, balance.ColorIOTA, 1337)
+	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 }

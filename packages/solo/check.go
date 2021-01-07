@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// AssertUtxodbBalance asserts the UTXODB balance of specific color in the address
-func (glb *Solo) AssertUtxodbBalance(addr address.Address, col balance.Color, expected int64) {
+// AssertAddressBalance asserts the UTXODB address balance of specific color in the address
+func (glb *Solo) AssertAddressBalance(addr address.Address, col balance.Color, expected int64) {
 	require.EqualValues(glb.T, expected, glb.GetUtxodbBalance(addr, col))
 }
 
