@@ -37,21 +37,17 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	if !ok {
 		return nil, ErrEntryPointNotFound
 	}
-
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
 		if epCode == coretypes.EntryPointInit {
 			return nil, fmt.Errorf("'init' entry point can't be a view")
 		}
-		// passing nil as transfer: calling to view should not have effect on chain ledger
+		// passing nil as transfer: calling the view should not have effect on chain ledger
 		if err := vmctx.pushCallContextWithTransfer(targetContract, params, nil); err != nil {
 			return nil, err
 		}
 		defer vmctx.popCallContext()
 
-		// TODO if the transfer is not empty for the view, the tokens must be
-		//  returned back to requester (accrued on-chain)
-		//  or more sophisticated policy
 		return ep.CallView(NewSandboxView(vmctx))
 	}
 	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {

@@ -35,8 +35,9 @@ type Sandbox interface {
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
 	// Call calls the entry point of the contract with parameters and transfer.
-	// If the entry point is full entry point, transfer tokens are moved between caller's and target contract's accounts (if enough)
-	// If the entry point if view, 'transfer' has no effect
+	// If the entry point is full entry point, transfer tokens are moved between caller's and
+	// target contract's accounts (if enough)
+	// If the entry point is view, 'transfer' has no effect
 	Call(target coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
 	RequestID() coretypes.RequestID
@@ -59,6 +60,7 @@ type Sandbox interface {
 	// TransferToAddress send tokens to the L1 ledger address (not contract)
 	TransferToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
 	// TransferCrossChain send funds to the targetAgentID account cross chain
+	// syntactic sugar for sending "deposit" request to the "accounts" contract on the target chain
 	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	PostRequest(par NewRequestParams) bool
