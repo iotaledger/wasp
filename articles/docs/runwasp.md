@@ -21,7 +21,7 @@ $ cd goshimmer
 $ go install  
 ```
 
-Next, follow [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-(Joining-the-pollen-testnet)
+Next, follow [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-(Joining-the-pollen-testnet))
 to configure and run the goshimmer node connected to the Pollen network.
 
 Note: by default the WaspConn plugin will be listening for Wasp connections on port `5000`.

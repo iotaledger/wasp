@@ -38,6 +38,13 @@ commercial settings or whenever processing of critical data is involved._
 ## Run
 
 - [How to run a Wasp node](articles/docs/runwasp.md)
+
+## Develop
+
+Below are some articles describing the architecture:
+
+- [Core types](articles/docs/coretypes.md)
+- [On-chain accounts](articles/docs/accounts.md)
 - [Wasp Publisher](articles/docs/publisher.md)
 
 ## PoC smart contracts

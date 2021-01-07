@@ -12,8 +12,8 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-// AgentIDLength size of AgentID in bytes
-const AgentIDLength = ChainIDLength + HnameLength
+// AgentIDLength is the size of AgentID in bytes
+const AgentIDLength = ContractIDLength // max(ContractIDLength, address.Length)
 
 // AgentID represents exactly one of two types of entities on the ISCP ledger in one ID:
 //  - It can represent an address on the Tangle (controlled by some private key). In this case it can be
