@@ -100,10 +100,14 @@ func TestAgentID(t *testing.T) {
 
 func TestHname(t *testing.T) {
 	hn1 := Hn("first")
-	t.Logf("Hname('first') = %d = %s", hn1, hn1.String())
 
 	hn1bytes := hn1.Bytes()
 	hn1back, err := NewHnameFromBytes(hn1bytes)
+	require.NoError(t, err)
+	require.EqualValues(t, hn1, hn1back)
+
+	s := hn1.String()
+	hn1back, err = HnameFromString(s)
 	require.NoError(t, err)
 	require.EqualValues(t, hn1, hn1back)
 }

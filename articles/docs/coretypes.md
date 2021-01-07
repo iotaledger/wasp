@@ -53,9 +53,8 @@ and _hname_ of the contract (resulting in a 37 byte long value):
 <contract ID> = <chain ID> || <contract hname>
 ```
 
-The user-friendly representation of the contract ID is `<chain ID
-(base58)>::<hname (decimal)>`.  For example:
-`2AxoLpidnriXtSif5NnXSWdt28fUb6VwVRjULdDoe6pZVw::2752361992`.
+The user-friendly representation of the contract ID is `<chain ID (base58)>::<hname (hex)>`.
+For example: `2AxoLpidnriXtSif5NnXSWdt28fUb6VwVRjULdDoe6pZVw::cebf5908`.
 
 
 ## Agent ID
@@ -82,7 +81,7 @@ User friendly representations of both types of _agent ID_ are prefixed by `A/`
 
 ```
 A/26yEvt3imFtcvK4NpgXK3499Rw2man3LTuvK2Mg4Rp8reZ
-C/mZdSYhXd4F5qQGgELK8JvzUYovcNmPoVHxW1p4LF4gxT::3870572162
+C/mZdSYhXd4F5qQGgELK8JvzUYovcNmPoVHxW1p4LF4gxT::cebf5908
 ```
 
 

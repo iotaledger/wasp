@@ -22,10 +22,10 @@ func NewContractEventPublisher(contractID coretypes.ContractID, log *logger.Logg
 
 func (c ContractEventPublisher) Publish(msg string) {
 	c.log.Info(c.contractID.String() + "/event " + msg)
-	publisher.Publish("vmmsg", c.contractID.ChainID().String(), fmt.Sprintf("%d", c.contractID.Hname()), msg)
+	publisher.Publish("vmmsg", c.contractID.ChainID().String(), c.contractID.Hname().String(), msg)
 }
 
 func (c ContractEventPublisher) Publishf(format string, args ...interface{}) {
 	c.log.Infof(c.contractID.String()+"/event "+format, args...)
-	publisher.Publish("vmmsg", c.contractID.ChainID().String(), fmt.Sprintf("%d", c.contractID.Hname()), fmt.Sprintf(format, args...))
+	publisher.Publish("vmmsg", c.contractID.ChainID().String(), c.contractID.Hname().String(), fmt.Sprintf(format, args...))
 }
