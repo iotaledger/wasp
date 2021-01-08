@@ -170,6 +170,7 @@ func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 			time.Sleep(50 * time.Millisecond)
 			if maxDurationSet && deadline.Before(time.Now()) {
 				ch.Log.Warnf("exit due to timeout of max wait for %v", maxWait[0])
+				break
 			}
 		} else {
 			time.Sleep(10 * time.Millisecond)
