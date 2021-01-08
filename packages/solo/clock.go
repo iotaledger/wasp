@@ -6,47 +6,47 @@ package solo
 import "time"
 
 // LogicalTime return current logical clock time on the 'solo' instance
-func (glb *Solo) LogicalTime() time.Time {
-	glb.glbMutex.Lock()
-	defer glb.glbMutex.Unlock()
-	return glb.logicalTime
+func (env *Solo) LogicalTime() time.Time {
+	env.glbMutex.Lock()
+	defer env.glbMutex.Unlock()
+	return env.logicalTime
 }
 
 // AdvanceClockTo advances logical clock to the specific time moment in the (logical) future
-func (glb *Solo) AdvanceClockTo(ts time.Time) {
-	glb.glbMutex.Lock()
-	defer glb.glbMutex.Unlock()
-	glb.advanceClockTo(ts)
+func (env *Solo) AdvanceClockTo(ts time.Time) {
+	env.glbMutex.Lock()
+	defer env.glbMutex.Unlock()
+	env.advanceClockTo(ts)
 }
 
-func (glb *Solo) advanceClockTo(ts time.Time) {
-	if !glb.logicalTime.Before(ts) {
-		glb.logger.Panic("can'T advance clock to the past")
+func (env *Solo) advanceClockTo(ts time.Time) {
+	if !env.logicalTime.Before(ts) {
+		env.logger.Panic("can'T advance clock to the past")
 	}
-	glb.logicalTime = ts
+	env.logicalTime = ts
 }
 
 // AdvanceClockBy advances logical clock by time step
-func (glb *Solo) AdvanceClockBy(step time.Duration) {
-	glb.glbMutex.Lock()
-	defer glb.glbMutex.Unlock()
+func (env *Solo) AdvanceClockBy(step time.Duration) {
+	env.glbMutex.Lock()
+	defer env.glbMutex.Unlock()
 
-	glb.advanceClockTo(glb.logicalTime.Add(step))
-	glb.logger.Infof("AdvanceClockBy: logical clock advanced by %v", step)
+	env.advanceClockTo(env.logicalTime.Add(step))
+	env.logger.Infof("AdvanceClockBy: logical clock advanced by %v", step)
 }
 
 // ClockStep advances logical clock by time step set by SetTimeStep
-func (glb *Solo) ClockStep() {
-	glb.glbMutex.Lock()
-	defer glb.glbMutex.Unlock()
+func (env *Solo) ClockStep() {
+	env.glbMutex.Lock()
+	defer env.glbMutex.Unlock()
 
-	glb.advanceClockTo(glb.logicalTime.Add(glb.timeStep))
-	glb.logger.Infof("ClockStep: logical clock advanced by %v", glb.timeStep)
+	env.advanceClockTo(env.logicalTime.Add(env.timeStep))
+	env.logger.Infof("ClockStep: logical clock advanced by %v", env.timeStep)
 }
 
 // SetTimeStep sets default time step for the 'solo' instance
-func (glb *Solo) SetTimeStep(step time.Duration) {
-	glb.glbMutex.Lock()
-	defer glb.glbMutex.Unlock()
-	glb.timeStep = step
+func (env *Solo) SetTimeStep(step time.Duration) {
+	env.glbMutex.Lock()
+	defer env.glbMutex.Unlock()
+	env.timeStep = step
 }

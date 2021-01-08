@@ -13,11 +13,11 @@ const incName = "incTest"
 
 func checkCounter(e *solo.Chain, expected int64) {
 	ret, err := e.CallView(incName, FuncGetCounter)
-	require.NoError(e.Glb.T, err)
+	require.NoError(e.Env.T, err)
 	c, ok, err := codec.DecodeInt64(ret.MustGet(VarCounter))
-	require.NoError(e.Glb.T, err)
-	require.True(e.Glb.T, ok)
-	require.EqualValues(e.Glb.T, expected, c)
+	require.NoError(e.Env.T, err)
+	require.True(e.Env.T, ok)
+	require.EqualValues(e.Env.T, expected, c)
 }
 
 func TestDeployInc(t *testing.T) {

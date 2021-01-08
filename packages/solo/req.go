@@ -101,21 +101,21 @@ func (ch *Chain) PostRequest(req *CallParams, sigScheme signaturescheme.Signatur
 	if sigScheme == nil {
 		sigScheme = ch.OriginatorSigScheme
 	}
-	allOuts := ch.Glb.utxoDB.GetAddressOutputs(sigScheme.Address())
+	allOuts := ch.Env.utxoDB.GetAddressOutputs(sigScheme.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
 		WithTransfer(req.transfer).
 		WithArgs(req.params)
 	err = txb.AddRequestSection(reqSect)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	tx, err := txb.Build(false)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	tx.Sign(sigScheme)
-	err = ch.Glb.utxoDB.AddTransaction(tx.Transaction)
+	err = ch.Env.utxoDB.AddTransaction(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}

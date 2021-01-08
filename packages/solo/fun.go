@@ -33,7 +33,7 @@ func (ch *Chain) String() string {
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID.String())
 	fmt.Fprintf(&buf, "Chain address: %s\n", ch.ChainAddress.String())
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Glb.utxoDB.GetGenesisAddress().String())
+	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress().String())
 	return string(buf.Bytes())
 }
 
@@ -76,12 +76,12 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 // The blob information is returned as a map of pairs 'blobFieldName': 'fieldDataLength'
 func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
 	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	if res.IsEmpty() {
 		return nil, false
 	}
 	ret, err := blob.DecodeSizesMap(res)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	return ret, true
 }
 
@@ -100,7 +100,7 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 
 	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
-	require.EqualValues(ch.Glb.T, feeColor, balance.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, balance.ColorIOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
 		req.WithTransfer(balance.ColorIOTA, totalFee)
@@ -122,7 +122,7 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		return
 	}
 	ret = *r
-	require.EqualValues(ch.Glb.T, expectedHash, ret)
+	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return
 }
 
@@ -157,7 +157,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	require.EqualValues(ch.Glb.T, wasmtimevm.VMType, string(res.MustGet(blob.ParamBytes)))
+	require.EqualValues(ch.Env.T, wasmtimevm.VMType, string(res.MustGet(blob.ParamBytes)))
 
 	res, err = ch.CallView(blob.Interface.Name, blob.FuncGetBlobField,
 		blob.ParamHash, progHash,
@@ -208,26 +208,26 @@ type ChainInfo struct {
 //  - registry of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
 
 	chainColor, ok, err := codec.DecodeColor(res.MustGet(root.VarChainColor))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
 
 	chainAddress, ok, err := codec.DecodeAddress(res.MustGet(root.VarChainAddress))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
 
 	chainOwnerID, ok, err := codec.DecodeAgentID(res.MustGet(root.VarChainOwnerID))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
 
 	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(res, root.VarContractRegistry))
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	return ChainInfo{
 		ChainID:      chainID,
 		ChainOwnerID: chainOwnerID,
@@ -238,15 +238,15 @@ func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord)
 
 // GetUtxodbBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (glb *Solo) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
-	bals := glb.GetUtxodbBalances(addr)
+func (env *Solo) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
+	bals := env.GetUtxodbBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
 // GetUtxodbBalances returns all colored balances of the address contained in the UTXODB ledger
-func (glb *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
-	outs := glb.utxoDB.GetAddressOutputs(addr)
+func (env *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
+	outs := env.utxoDB.GetAddressOutputs(addr)
 	ret, _ := waspconn.OutputBalancesByColor(outs)
 	return ret
 }
@@ -254,33 +254,33 @@ func (glb *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64
 // GetAccounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncAccounts)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
 	ret := make([]coretypes.AgentID, 0, len(keys)-1)
 	for _, key := range keys {
 		aid, ok, err := codec.DecodeAgentID([]byte(key))
-		require.NoError(ch.Glb.T, err)
-		require.True(ch.Glb.T, ok)
+		require.NoError(ch.Env.T, err)
+		require.True(ch.Env.T, ok)
 		ret = append(ret, aid)
 	}
 	return ret
 }
 
 func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalances {
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
 		return cbalances.Nil
 	}
 	ret := make(map[balance.Color]int64)
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
 		col, _, err := codec.DecodeColor([]byte(key))
-		require.NoError(ch.Glb.T, err)
+		require.NoError(ch.Env.T, err)
 		val, _, err := codec.DecodeInt64(value)
-		require.NoError(ch.Glb.T, err)
+		require.NoError(ch.Env.T, err)
 		ret[col] = val
 		return true
 	})
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	return cbalances.NewFromMap(ret)
 }
 
@@ -307,23 +307,23 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 	hname := coretypes.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
-	require.NoError(ch.Glb.T, err)
-	require.NotEqualValues(ch.Glb.T, 0, len(ret))
+	require.NoError(ch.Env.T, err)
+	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
 	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.ParamFeeColor))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
-	require.NotNil(ch.Glb.T, feeColor)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
+	require.NotNil(ch.Env.T, feeColor)
 
 	validatorFee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamValidatorFee))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
-	require.True(ch.Glb.T, validatorFee >= 0)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
+	require.True(ch.Env.T, validatorFee >= 0)
 
 	ownerFee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamOwnerFee))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
-	require.True(ch.Glb.T, ownerFee >= 0)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
+	require.True(ch.Env.T, ownerFee >= 0)
 
 	return feeColor, ownerFee, validatorFee
 }
@@ -345,7 +345,7 @@ func (ch *Chain) GetChainLogRecords(name string) ([]datatypes.TimestampedLogReco
 	for i := uint16(0); i < recs.Len(); i++ {
 		data := recs.GetAt(i)
 		rec, err := datatypes.ParseRawLogRecord(data)
-		require.NoError(ch.Glb.T, err)
+		require.NoError(ch.Env.T, err)
 		ret[i] = *rec
 	}
 	return ret, nil
@@ -369,9 +369,9 @@ func (ch *Chain) GetChainLogNumRecords(name string) int {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
-	require.NoError(ch.Glb.T, err)
-	require.True(ch.Glb.T, ok)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
 	return int(ret)
 }

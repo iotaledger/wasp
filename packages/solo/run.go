@@ -29,9 +29,9 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 		Color:              ch.ChainColor,
 		Entropy:            *hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
-		Balances:           waspconn.OutputsToBalances(ch.Glb.utxoDB.GetAddressOutputs(ch.ChainAddress)),
+		Balances:           waspconn.OutputsToBalances(ch.Env.utxoDB.GetAddressOutputs(ch.ChainAddress)),
 		Requests:           batch,
-		Timestamp:          ch.Glb.LogicalTime().UnixNano(),
+		Timestamp:          ch.Env.LogicalTime().UnixNano(),
 		VirtualState:       ch.State.Clone(),
 		Log:                ch.Log,
 	}
@@ -40,7 +40,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	var callRes dict.Dict
 	var callErr error
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(ch.Glb.T, err)
+		require.NoError(ch.Env.T, err)
 		callRes = callResult
 		callErr = callError
 		wg.Done()
@@ -48,7 +48,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 
 	wg.Add(1)
 	err = runvm.RunComputationsAsync(task)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	wg.Wait()
 	task.ResultTransaction.Sign(ch.ChainSigScheme)
@@ -58,14 +58,14 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 }
 
 func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
-	err := ch.Glb.utxoDB.AddTransaction(stateTx.Transaction)
-	require.NoError(ch.Glb.T, err)
+	err := ch.Env.utxoDB.AddTransaction(stateTx.Transaction)
+	require.NoError(ch.Env.T, err)
 
 	err = newState.ApplyBlock(block)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	err = newState.CommitToDb(block)
-	require.NoError(ch.Glb.T, err)
+	require.NoError(ch.Env.T, err)
 
 	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
 
@@ -77,11 +77,11 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	ch.Log.Debugf("Batch processed: %s",
 		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(block.RequestIDs()))
 
-	ch.Glb.ClockStep()
+	ch.Env.ClockStep()
 
 	// dispatch requests among chains
-	ch.Glb.glbMutex.Lock()
-	defer ch.Glb.glbMutex.Unlock()
+	ch.Env.glbMutex.Lock()
+	defer ch.Env.glbMutex.Unlock()
 
 	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
 	for i, rsect := range ch.StateTx.Requests() {
@@ -96,7 +96,7 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 		})
 	}
 	for chid, reqs := range reqRefByChain {
-		chain, ok := ch.Glb.chains[chid]
+		chain, ok := ch.Env.chains[chid]
 		if !ok {
 			ch.Log.Infof("dispatching requests. Unknown chain: %s", chid.String())
 			continue

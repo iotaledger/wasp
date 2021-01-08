@@ -15,9 +15,9 @@ import (
 
 func checkFees(chain *solo.Chain, contract string, expectedOf, expectedVf int64) {
 	col, ownerFee, validatorFee := chain.GetFeeInfo(contract)
-	require.EqualValues(chain.Glb.T, balance.ColorIOTA, col)
-	require.EqualValues(chain.Glb.T, expectedOf, ownerFee)
-	require.EqualValues(chain.Glb.T, expectedVf, validatorFee)
+	require.EqualValues(chain.Env.T, balance.ColorIOTA, col)
+	require.EqualValues(chain.Env.T, expectedOf, ownerFee)
+	require.EqualValues(chain.Env.T, expectedVf, validatorFee)
 }
 
 func TestFeeBasic(t *testing.T) {

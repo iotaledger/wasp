@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
+	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -48,8 +49,8 @@ type Solo struct {
 // Chain represents state of individual chain.
 // There may be several parallel instances of the chain in the 'solo' test
 type Chain struct {
-	// Glb is a pointer to the global structure of the 'solo' test
-	Glb *Solo
+	// Env is a pointer to the global structure of the 'solo' test
+	Env *Solo
 
 	// Name is the name of the chain
 	Name string
@@ -148,13 +149,13 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //    - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 //      'blob', 'accountsc', 'chainlog'
 // Upon return, the chain is fully functional to process requests
-func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
-	glb.logger.Infof("deploying new chain '%s'", name)
+func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
+	env.logger.Infof("deploying new chain '%s'", name)
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
 	if chainOriginator == nil {
 		chainOriginator = signaturescheme.ED25519(ed25519.GenerateKeyPair())
-		_, err := glb.utxoDB.RequestFunds(chainOriginator.Address())
-		require.NoError(glb.T, err)
+		_, err := env.utxoDB.RequestFunds(chainOriginator.Address())
+		require.NoError(env.T, err)
 	}
 	chainID := coretypes.ChainID(chSig.Address())
 	originatorAgentID := coretypes.NewAgentIDFromAddress(chainOriginator.Address())
@@ -163,7 +164,7 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		feeTarget = validatorFeeTarget[0]
 	}
 	ret := &Chain{
-		Glb:                 glb,
+		Env:                 env,
 		Name:                name,
 		ChainSigScheme:      chSig,
 		OriginatorSigScheme: chainOriginator,
@@ -174,7 +175,7 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		ChainID:             chainID,
 		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		proc:                processors.MustNew(),
-		Log:                 glb.logger.Named(name),
+		Log:                 env.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
 		chInRequest:  make(chan sctransaction.RequestRef),
@@ -183,25 +184,25 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		batch:        nil,
 		batchMutex:   &sync.Mutex{},
 	}
-	glb.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 	var err error
 	ret.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
 		OriginAddress:             ret.ChainAddress,
 		OriginatorSignatureScheme: ret.OriginatorSigScheme,
-		AllInputs:                 glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
+		AllInputs:                 env.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
 	})
-	require.NoError(glb.T, err)
-	require.NotNil(glb.T, ret.StateTx)
-	err = glb.utxoDB.AddTransaction(ret.StateTx.Transaction)
-	require.NoError(glb.T, err)
+	require.NoError(env.T, err)
+	require.NotNil(env.T, ret.StateTx)
+	err = env.utxoDB.AddTransaction(ret.StateTx.Transaction)
+	require.NoError(env.T, err)
 
 	ret.ChainColor = balance.Color(ret.StateTx.ID())
 
 	originBlock := state.MustNewOriginBlock(&ret.ChainColor)
 	err = ret.State.ApplyBlock(originBlock)
-	require.NoError(glb.T, err)
+	require.NoError(env.T, err)
 	err = ret.State.CommitToDb(originBlock)
-	require.NoError(glb.T, err)
+	require.NoError(env.T, err)
 
 	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
@@ -209,17 +210,17 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		ChainAddress:         ret.ChainAddress,
 		Description:          "'solo' testing chain",
 		OwnerSignatureScheme: ret.OriginatorSigScheme,
-		AllInputs:            glb.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
+		AllInputs:            env.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
 	})
-	require.NoError(glb.T, err)
-	require.NotNil(glb.T, initTx)
+	require.NoError(env.T, err)
+	require.NotNil(env.T, initTx)
 
-	err = glb.utxoDB.AddTransaction(initTx.Transaction)
-	require.NoError(glb.T, err)
+	err = env.utxoDB.AddTransaction(initTx.Transaction)
+	require.NoError(env.T, err)
 
-	glb.glbMutex.Lock()
-	glb.chains[chainID] = ret
-	glb.glbMutex.Unlock()
+	env.glbMutex.Lock()
+	env.chains[chainID] = ret
+	env.glbMutex.Unlock()
 
 	go ret.readRequestsLoop()
 	go ret.batchLoop()
@@ -227,7 +228,7 @@ func (glb *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 	r := vm.RequestRefWithFreeTokens{}
 	r.Tx = initTx
 	_, err = ret.runBatch([]vm.RequestRefWithFreeTokens{r}, "new")
-	require.NoError(glb.T, err)
+	require.NoError(env.T, err)
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID)
 	return ret
@@ -252,7 +253,7 @@ func (ch *Chain) collateBatch() []vm.RequestRefWithFreeTokens {
 	remain := ch.backlog[:0]
 	for _, ref := range ch.backlog {
 		// using logical clock
-		if int64(ref.RequestSection().Timelock()) <= ch.Glb.LogicalTime().Unix() {
+		if int64(ref.RequestSection().Timelock()) <= ch.Env.LogicalTime().Unix() {
 			if ref.RequestSection().Timelock() != 0 {
 				ch.Log.Infof("unlocked time-locked request %s", ref.RequestID().String())
 			}
@@ -290,12 +291,43 @@ func (ch *Chain) backlogLen() int {
 
 // NewSignatureSchemeWithFunds generates new ed25519 signature scheme and requests funds (1337 iotas)
 // from the UTXODB faucet
-func (glb *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
+func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
-	_, err := glb.utxoDB.RequestFunds(ret.Address())
+	_, err := env.utxoDB.RequestFunds(ret.Address())
 	if err != nil {
-		glb.logger.Panicf("NewSignatureSchemeWithFunds: %v", err)
+		env.logger.Panicf("NewSignatureSchemeWithFunds: %v", err)
 	}
-	glb.AssertAddressBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 	return ret
+}
+
+func (env *Solo) MintTokens(wallet signaturescheme.SignatureScheme, amount int64) (balance.Color, error) {
+	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
+	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	require.NoError(env.T, err)
+
+	if err = txb.MintColor(wallet.Address(), balance.ColorIOTA, amount); err != nil {
+		return balance.Color{}, err
+	}
+	tx := txb.BuildValueTransactionOnly(false)
+	tx.Sign(wallet)
+
+	if err = env.utxoDB.AddTransaction(tx); err != nil {
+		return balance.Color{}, err
+	}
+	return balance.Color(tx.ID()), nil
+}
+
+func (env *Solo) DestroyColoredTokens(wallet signaturescheme.SignatureScheme, color balance.Color, amount int64) error {
+	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
+	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	require.NoError(env.T, err)
+
+	if err = txb.EraseColor(wallet.Address(), color, amount); err != nil {
+		return err
+	}
+	tx := txb.BuildValueTransactionOnly(false)
+	tx.Sign(wallet)
+
+	return env.utxoDB.AddTransaction(tx)
 }
