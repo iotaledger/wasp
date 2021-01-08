@@ -223,7 +223,18 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 	}
 	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 		// actually array
-		if (o.typeId &^ wasmhost.OBJTYPE_ARRAY) != typeId {
+		arrayTypeId := o.typeId &^ wasmhost.OBJTYPE_ARRAY
+		if typeId == wasmhost.OBJTYPE_BYTES {
+			switch arrayTypeId {
+			case wasmhost.OBJTYPE_ADDRESS:
+			case wasmhost.OBJTYPE_AGENT:
+			case wasmhost.OBJTYPE_BYTES:
+			case wasmhost.OBJTYPE_COLOR:
+			case wasmhost.OBJTYPE_HASH:
+			default:
+				o.Panic("validate: Invalid byte type")
+			}
+		} else if arrayTypeId != typeId {
 			o.Panic("validate: Invalid type")
 		}
 		//TODO validate keyId >=0 && <= length
