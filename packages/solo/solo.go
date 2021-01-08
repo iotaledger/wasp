@@ -301,6 +301,8 @@ func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	return ret
 }
 
+// MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
+// Returns the color of minted tokens: the hash of the transaction
 func (env *Solo) MintTokens(wallet signaturescheme.SignatureScheme, amount int64) (balance.Color, error) {
 	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
@@ -318,6 +320,7 @@ func (env *Solo) MintTokens(wallet signaturescheme.SignatureScheme, amount int64
 	return balance.Color(tx.ID()), nil
 }
 
+// DestroyColoredTokens uncolors specified amount of colored tokens, i.e. converts them into IOTAs
 func (env *Solo) DestroyColoredTokens(wallet signaturescheme.SignatureScheme, color balance.Color, amount int64) error {
 	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)

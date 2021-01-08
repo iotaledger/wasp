@@ -27,7 +27,7 @@ func TestExample2(t *testing.T) {
 	userWallet := glb.NewSignatureSchemeWithFunds()
 	userAddress := userWallet.Address()
 	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := glb.GetUtxodbBalance(userAddress, balance.ColorIOTA)
+	numIotas := glb.GetAddressBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 }
@@ -39,7 +39,7 @@ func TestExample3(t *testing.T) {
 	userWallet := glb.NewSignatureSchemeWithFunds()
 	userAddress := userWallet.Address()
 	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := glb.GetUtxodbBalance(userAddress, balance.ColorIOTA)
+	numIotas := glb.GetAddressBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 

@@ -11,17 +11,19 @@ have account on any chain.
 ISCP ensures that the tokens owned by the chain address may be moved to another
 location only by the entity represented by the corresponding agent ID.  The
 system requires cryptographically secure authorization to move funds between
-on-chain accounts.
+on-chain accounts. 
+
+Note that there's no any "superuser" or any other centralized entity which could move 
+tokens from chain accounts without authorisation of its owners.
 
 Some corollaries:
 
 - Any entity may move its tokens seamlessly from an address on the tangle to the account
   controlled by the same address on any chain.
 - Anyone can send tokens to the account of any smart contract on any chain.
-- An address may, at any time, withdraw it tokens from the chain, transfering
+- An address may, at any time, withdraw it tokens from the chain, transferring
   them to the address on the Tangle.
 - A contract may keep its funds on its native chain or on any other chain.
-
 
 ## How on-chain accounts work
 
@@ -45,7 +47,7 @@ authorized if called from the _agent ID_ of the owner of the account.
 The two most important functions of the `accounts` contract are:
 
 - `deposit`. Allows the caller to deposit its own funds on the chain.
-- `withdraw`. Allows to take back the funds from the on-chain account. If the caller
+- `withdraw`. Allows the caller to take back its funds from the on-chain account. If the caller
   is a wallet owned by an ordinary address, this means sending the funds from the on-chain
   account back to the address.
 

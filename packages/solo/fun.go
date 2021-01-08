@@ -236,16 +236,16 @@ func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord)
 	}, contracts
 }
 
-// GetUtxodbBalance returns number of tokens of given color contained in the given address
+// GetAddressBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (env *Solo) GetUtxodbBalance(addr address.Address, col balance.Color) int64 {
-	bals := env.GetUtxodbBalances(addr)
+func (env *Solo) GetAddressBalance(addr address.Address, col balance.Color) int64 {
+	bals := env.GetAddressBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
-// GetUtxodbBalances returns all colored balances of the address contained in the UTXODB ledger
-func (env *Solo) GetUtxodbBalances(addr address.Address) map[balance.Color]int64 {
+// GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
+func (env *Solo) GetAddressBalances(addr address.Address) map[balance.Color]int64 {
 	outs := env.utxoDB.GetAddressOutputs(addr)
 	ret, _ := waspconn.OutputBalancesByColor(outs)
 	return ret

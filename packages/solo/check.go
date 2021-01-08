@@ -17,7 +17,7 @@ import (
 
 // AssertAddressBalance asserts the UTXODB address balance of specific color in the address
 func (env *Solo) AssertAddressBalance(addr address.Address, col balance.Color, expected int64) {
-	require.EqualValues(env.T, expected, env.GetUtxodbBalance(addr, col))
+	require.EqualValues(env.T, expected, env.GetAddressBalance(addr, col))
 }
 
 // CheckChain checks fundamental integrity of the chain

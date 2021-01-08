@@ -354,7 +354,7 @@ func TestChainLogMultiple(t *testing.T) {
 
 	req = solo.NewCall(test_sandbox.Interface.Name,
 		test_sandbox.FuncEventLogGenericData,
-		test_sandbox.VarCounter, 333,
+		test_sandbox.VarCounter, 33333,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -380,5 +380,5 @@ func TestChainLogMultiple(t *testing.T) {
 	require.EqualValues(t, 2, strings.Count(strTest, "[req]"))
 	require.EqualValues(t, 1, strings.Count(strTest, "[GenericData]"))
 	require.EqualValues(t, 1, strings.Count(strTest, "[Event]"))
-	require.EqualValues(t, 1, strings.Count(strTest, "333"))
+	require.EqualValues(t, 1, strings.Count(strTest, "33333"))
 }
