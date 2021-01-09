@@ -62,3 +62,44 @@ Note that `example1` the Rust function associated with the full entry point take
 which gives full access to the sandbox and allows read-write access to the state. 
 In contrast, `getCounter` is a view entry point and its associated function has type `ScViewContext`, 
 which allows read-only access to the state.
+
+## Panic. Exception handler
+
+The following test posts a request to `example1` smart contract without expected parameter `paramString`. 
+The smart contract reacts to this exception by calling `panic` to the sandbox context.
+```go
+func TestSolo4(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "ex1")
+	// deploy the contract on chain
+	err := chain.DeployWasmContract(nil, "example1", "../pkg/example1_bg.wasm")
+	require.NoError(t, err)
+
+	// call contract incorrectly
+	req := solo.NewCall("example1", "storeString")
+	_, err = chain.PostRequest(req, nil)
+	require.Error(t, err)
+
+}
+```
+The fragment in the output of the test:
+```
+36:53.479	PANIC	TestSolo4.ex1	vmcontext/log.go:12	string parameter not found
+36:53.483	ERROR	TestSolo4.ex1	vmcontext/runreq.go:170	recovered from panic in VM: string parameter not found
+36:53.483	INFO	TestSolo4.ex1	vmcontext/runreq.go:177	eventlog -> '[req] [0]H6w8hoyFx8kEAWJU5arGANqUtoB91LVma9t7oWxC64KT: recovered from panic in VM: string parameter not found'
+36:53.483	INFO	TestSolo4.ex1	solo/run.go:75	state transition #3 --> #4. Requests in the block: 1. Posted: 0
+``` 
+It shows the panic occured indeed. Test pass because error was expected.
+
+Note that this test ends with the state `#4`, despite the fact that last request to the smart contract failed.
+This is important: whatever happens during the run of the smart contract's entry point, 
+processing of **each request always results in the state transition**. 
+
+The exceptions (panics) in the program are catched by the VM context and 
+consequences of it are recorded the state of the chain during the fallback processing, no matter if the panics
+was called by the logic of the smart contract or another runtime error occured. 
+
+In the case of `example1` the error event was recorded in the immutable event log of the chain, 
+but the data state of the smart contract wasn't modified.   
+In other cases the fallback actions may be more complex.
+   
