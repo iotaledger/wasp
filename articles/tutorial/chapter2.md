@@ -1,0 +1,49 @@
+Previous: [Exploring IOTA Smart Contracts](chapter1.md)
+
+ ## Tokens and the Value Tangle
+ The Pollen release of the Goshimmer node implements the _Value Tangle_, 
+ a distributed ledger of tokens. We won't go into the detail of the Value Tangle. The introduction 
+ of it can be found [here](../intro/utxo.md). We only have to know that Value Tangle contains
+ balances of colored tokens locked in addresses, like this: 
+ ```
+Address: Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K
+    IOTA: 1000
+    Red: 15
+    Green: 200
+```
+where `IOTA` is the color code of IOTA tokens and `Red` and `Green` are other color codes (color codes are 32-byte hashes). 
+Tokens can only be moved on the _Value Tangle_ by the private key of the corresponding address. 
+(In this tutorial we will use `private key`, `signature scheme` and `wallet` as synonyms).  
+
+The `Solo` environment implements in-memory Value Tangle ledger to the finest details. 
+For example, one can only move tokens by creating and submitting valid and signed transactions in Solo. 
+One can also create new wallets on the Value Tangle, request iotas from the faucet.
+
+The following code shows how to do it:
+```go
+func TestSolo2(t *testing.T) {
+	env := solo.New(t, false, false)
+	userWallet := env.NewSignatureSchemeWithFunds()   // create new wallet and request funds from genesis
+	userAddress := userWallet.Address()
+	t.Logf("Address of the userWallet is: %s", userAddress)
+	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA)  // how many iotas contains the address
+	t.Logf("balance of the userWallet is: %d iota", numIotas)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337) // assert the address has 1337 iotas
+}
+```
+ The output of the test:
+```
+=== RUN   TestSolo2
+    solo_test.go:29: Address of the userWallet is: WUwewZS3JFtEUtsfR5HcUANzyADv8pSmK7j6SuayNDRv
+    solo_test.go:31: balance of the userWallet is: 1337 iota
+--- PASS: TestSolo2 (0.00s)
+```
+ 
+The token ledger of the Value Tangle is shared among all chains deployed on the global environment `env`
+of the test. It serves as a medium for transactions between smart contracts on different chains. 
+It makes it possible to test transacting between chains on _Solo_.
+ 
+Note that in the test above we didn’t deploy any chains: the Value Tangle exists in the `env` variable, 
+outside of any chains.
+
+Next: [Creating a chain. Core contacts](chapter3.md)

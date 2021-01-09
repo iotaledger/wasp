@@ -1,23 +1,23 @@
 # Exploring IOTA Smart Contracts
 
 ## Purpose
-The document is an introductory documentation and tutorial of the IOTA Smart Contract 
+The document is an introductory tutorial of the IOTA Smart Contract 
 platform (ISCP) for developers. 
 
 The level of the document is technical. The target audience is software engineers who want 
-to understand ISCP and the direction it is taking, to develop their own dApps 
-and/or contribute to the development of the ISCP and the Wasp node itself. 
+to understand ISCP and the direction it is taking. in order to develop their own dApps 
+and/or contribute to the development of the ISCP and the Wasp node. 
 
 The approach in this tutorial is an introduction to main concepts through writing
-tests to example s,mart contracts. 
-For this, we use testing package codenamed [_Solo_](../../packages/solo/readme.md) in all examples in the tutorial.
+tests to example smart contracts. 
+For this, we use Go testing package codenamed [_Solo_](../../packages/solo/readme.md) in all examples in the tutorial.
 
 The knowledge of Go programming and basics of Rust programming is a prerequisite. 
 For detailed introduction into the ISCP architecture [follow the link](https://docs.google.com/document/d/1zNJZMdetCzwiBC85K6gWbnzgdT1RXuZCLsTclKdrVqc/edit?usp=sharing).
 
 ## The _Solo_ package
 Solo is a Go package for writing tests for IOTA smart contracts. 
-It allows the deployment of ISCP chains and smart contracts, provides tools to interact with the smart contracts, 
+It allows the deployment of ISCP chains and smart contracts, provides toolkit for interaction with smart contracts, 
 manipulate tokens and ledger accounts in an environment that is almost 
 identical to the distributed multi-chain environment of the ISCP. 
 
@@ -79,62 +79,16 @@ The output of the test will be something like this:
     solo_test.go:21:     Core contract 'eventlog': aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3::661aa7d8
 --- PASS: TestSolo1 (0.01s)
 ```
-The four core contracts listed (`root`, `accounts`, `blob`, `eventlog`) 
+The 4 core contracts listed in the log (`root`, `accounts`, `blob`, `eventlog`) 
 are automatically deployed on each new chain. You can see them listed in the test log together with their `contract IDs`.
  
-The log message `state transition #0 --> #1` means that the chain has transited its state from block 
+The log message `state transition #0 --> #1` means the state of the chain has changed from block 
 index 0 (the origin index of the empty state) to block index 1. 
-The state #0 is the empty origin state, the #1 always contains all core smart contracts as well as other 
+The state #0 is the empty origin state, the #1 always contains all core smart contracts deployed as well as other 
 initialization data of the chain.
 
 The `chainID` and `chain owner ID` are respectively ID of the deployed chain `YuyEwXdT9btMmJiHPmykR91hYSJVwRD9ciq5TZBXaffo`
- and the address of the wallet (the private key) which deployed that chain `A/Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K` 
- (with the prefix `/A` to indicate the address).
+and the address of the wallet (the private key) which deployed that chain `A/Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K` 
+(with the prefix `/A` to indicate that an address is the chain owner, not a smart contract).
  
- ## Tokens and the Value Tangle
- The Pollen release of the Goshimmer node implements the _Value Tangle_, 
- a distributed ledger of tokens. We won't go into the detail of the Value Tangle. The introdution 
- of it can be found [here](../intro/utxo.md). Here we have to know that Value Tangle contains
- balances of colored tokens locked in addresses, like this: 
- ```
-Address: Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K
-    IOTA: 1000
-    Red: 15
-    Green: 200
-```
-where `IOTA` is the color code of IOTA tokens and `Red` and `Green` are other color codes. 
-Tokens can only be moved on the _Value Tangle_ by the private of the corresponding address. We will use `private key`, 
-`signature scheme` and `wallet` as synonyms in this tutorial.  
-
-The `Solo` environment implements in-memory Value Tangle ledger to the finest details. 
-You can only move tokens by creating and submitting valid and signed transaction in Solo. 
-You also can create new wallets on the Value Tangle, request iotas from the faucet.
-
-The following code shows how to do that:
-```go
-func TestSolo2(t *testing.T) {
-	env := solo.New(t, false, false)
-	userWallet := env.NewSignatureSchemeWithFunds()   // create new wallet with 1337 iotas
-	userAddress := userWallet.Address()
-	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := env.GetUtxodbBalance(userAddress, balance.ColorIOTA)  // how many iotas contains the address
-	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337) // assert the address has 1337 iotas
-}
-```
- The output:
-```
-=== RUN   TestSolo2
-    solo_test.go:29: Address of the userWallet is: WUwewZS3JFtEUtsfR5HcUANzyADv8pSmK7j6SuayNDRv
-    solo_test.go:31: balance of the userWallet is: 1337 iota
---- PASS: TestSolo2 (0.00s)
-```
- 
-The Value Tangle token ledger is shared among all chains deployed on the global environment `env`
-of the test. It serves as a medium for transactions between smart contracts on different chains. 
-It makes it possible on _Solo_ to test transacting between chains: the on-tangle messaging.
- 
- Note that in the test above we didn’t deploy any chains: the Value Tangle exists in the `env` variable, 
-outside of any chains.
-
-# TODO (in progress)
+Next: [Tokens and the Value Tangle](chapter2.md)
