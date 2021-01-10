@@ -328,12 +328,12 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 	return feeColor, ownerFee, validatorFee
 }
 
-// GetChainLogRecords calls the view in the  'chainlog' core smart contract to retrieve
+// GetEventLogRecords calls the view in the  'eventlog' core smart contract to retrieve
 // latest up to 50 records for a given smart contract.
 // It returns records as array in time-descending order.
 //
 // More than 50 records may be retrieved by calling the view directly
-func (ch *Chain) GetChainLogRecords(name string) ([]datatypes.TimestampedLogRecord, error) {
+func (ch *Chain) GetEventLogRecords(name string) ([]datatypes.TimestampedLogRecord, error) {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
@@ -351,9 +351,9 @@ func (ch *Chain) GetChainLogRecords(name string) ([]datatypes.TimestampedLogReco
 	return ret, nil
 }
 
-// GetChainLogRecordsString return stringified response from GetChainLogRecords
-func (ch *Chain) GetChainLogRecordsString(name string) (string, error) {
-	recs, err := ch.GetChainLogRecords(name)
+// GetEventLogRecordsString return stringified response from GetEventLogRecords
+func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
+	recs, err := ch.GetEventLogRecords(name)
 	if err != nil {
 		return "", err
 	}
@@ -364,8 +364,8 @@ func (ch *Chain) GetChainLogRecordsString(name string) (string, error) {
 	return ret, nil
 }
 
-// GetChainLogNumRecords returns total number of chainlog records for the given contact.
-func (ch *Chain) GetChainLogNumRecords(name string) int {
+// GetEventLogNumRecords returns total number of eventlog records for the given contact.
+func (ch *Chain) GetEventLogNumRecords(name string) int {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
