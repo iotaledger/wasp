@@ -29,4 +29,4 @@ Chapters:
 * [Panic. Exception handling](5.md#panic-exception-handling)
 * [Invoking a smart contract](6.md)
     * [Sending a request](6.md)
-    * [Caling a view](7.md)
+    * [Calling a view](7.md)
