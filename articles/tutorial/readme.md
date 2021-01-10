@@ -27,3 +27,6 @@ Chapters:
     * [State](5.md#state)
     * [Entry points](5.md#entry-points)
 * [Panic. Exception handling](5.md#panic-exception-handling)
+* [Invoking a smart contract](6.md)
+    * [Sending a request](6.md)
+    * [Caling a view](7.md)

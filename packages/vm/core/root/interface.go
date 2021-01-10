@@ -90,16 +90,30 @@ const (
 	FuncRevokeDeploy           = "revokeDeployPermission"
 )
 
-// ContractRecord is a structure which contains metadata for a deployed contract
+// ContractRecord is a structure which contains metadata of the deployed contract instance
 type ContractRecord struct {
-	ProgramHash  hashing.HashValue
-	Description  string
-	Name         string
-	OwnerFee     int64 // owner part of the fee
+	// The ProgramHash uniquely defines the program of the smart contract
+	// It is interpreted either as one of builtin contracts (including examples)
+	// or a hash (reference) to the of the blob in 'blob' contract in the 'program binary' format,
+	// i.e. with at least 2 pre-defined fields:
+	//  - VarFieldVType
+	//  - VarFieldProgramBinary
+	ProgramHash hashing.HashValue
+	// Description of the instance
+	Description string
+	// Unique name of the contract on the chain. The real identity of the instance on the chain
+	// is hname(name) =  coretypes.Hn(name)
+	Name string
+	// Chain owner part of the fee. If it is 0, it means chain-global default is in effect
+	OwnerFee int64
+	// Validator part of the fee. If it is 0, it means chain-global default is in effect
 	ValidatorFee int64 // validator part of the fee
-	Creator      coretypes.AgentID
+	// The agentID of the entity which deployed the instance. It can be interpreted as
+	// an priviledged user of the instance, however it is up to the smart contract.
+	Creator coretypes.AgentID
 }
 
+// ChainInfo is an API structure which contains main properties of the chain in on place
 type ChainInfo struct {
 	ChainID             coretypes.ChainID
 	ChainOwnerID        coretypes.AgentID
