@@ -24,7 +24,7 @@ There are several ways to invoke the entry point of the smart contract: request,
 
 * _request_ can be sent to the target contract from the “outside”: a wallet  
 or from another smart contract, on the same or on another chain. 
-The Solo environment is the “outside” (see [Invoking smart contract](6.md)). 
+The Solo environment is the “outside” (see [Invoking smart contract](06.md)). 
 The _request_ itself is a transaction, it contains parameters and attached tokens. 
 The tokens are transferred to the smart contract together with parameters and become part of its account. 
 Requests can only be invoked (sent) with a private key which controls those tokens. 
