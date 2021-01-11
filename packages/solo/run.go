@@ -74,8 +74,7 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 
 	ch.Log.Infof("state transition #%d --> #%d. Requests in the block: %d. Posted: %d",
 		prevBlockIndex, ch.State.BlockIndex(), len(block.RequestIDs()), len(ch.StateTx.Requests()))
-	ch.Log.Debugf("Batch processed: %s",
-		prevBlockIndex, ch.State.BlockIndex(), batchShortStr(block.RequestIDs()))
+	ch.Log.Debugf("Batch processed: %s", batchShortStr(block.RequestIDs()))
 
 	ch.Env.ClockStep()
 

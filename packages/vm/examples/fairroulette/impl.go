@@ -216,12 +216,12 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 		ctx.Eventf("PostRequestToSelfWithDelay period = %d", period)
 
-		// send the timelocked Lock request to self. Timelock is for number of seconds taken from the state variable
+		// send the timelocked Lock request to self. TimeLock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
-		if ctx.PostRequest(vmtypes.NewRequestParams{
+		if ctx.PostRequest(vmtypes.PostRequestParams{
 			TargetContractID: ctx.ContractID(),
 			EntryPoint:       RequestLockBets,
-			Timelock:         uint32(period),
+			TimeLock:         uint32(period),
 		}) {
 			ctx.Eventf("play deadline is set after %d seconds", period)
 		} else {
@@ -278,7 +278,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 
 	// send request to self for playing the wheel with the entropy whicl will be known
 	// after signing this state update transaction therefore unpredictable
-	ctx.PostRequest(vmtypes.NewRequestParams{
+	ctx.PostRequest(vmtypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestPlayAndDistribute,
 	})

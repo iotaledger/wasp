@@ -94,7 +94,7 @@ func (s *sandbox) TransferCrossChain(targetAgentID coretypes.AgentID, targetChai
 	return s.vmctx.TransferCrossChain(targetAgentID, targetChainID, transfer)
 }
 
-func (s *sandbox) PostRequest(par vmtypes.NewRequestParams) bool {
+func (s *sandbox) PostRequest(par vmtypes.PostRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
 

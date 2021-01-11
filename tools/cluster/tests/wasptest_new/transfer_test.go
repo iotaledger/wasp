@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
@@ -70,26 +69,8 @@ func TestDepositWithdraw(t *testing.T) {
 		t.Fail()
 	}
 
-	// move 1 iota to another account on chain
-	colorIota := balance.ColorIOTA
-	reqTx2, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncMove), chainclient.PostRequestParams{
-		Args: codec.MakeDict(map[string]interface{}{
-			accounts.ParamAgentID: &origAgentId,
-			accounts.ParamColor:   &colorIota,
-			accounts.ParamAmount:  1,
-		}),
-	})
-	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)
-	check(err, t)
-
-	check(err, t)
-	checkLedger(t, chain)
-	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, depositIotas+1)
-	checkBalanceOnChain(t, chain, origAgentId, balance.ColorIOTA, 2)
-
 	// withdraw iotas back
-	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
+	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdrawToAddress))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx3, 30*time.Second)
 	check(err, t)
@@ -98,8 +79,8 @@ func TestDepositWithdraw(t *testing.T) {
 	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-1, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 1,
+	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount, map[balance.Color]int64{
+		balance.ColorIOTA: testutil.RequestFundsAmount,
 	}, "myAddress after withdraw") {
 		t.Fail()
 	}

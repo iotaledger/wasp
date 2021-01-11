@@ -58,7 +58,7 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 	// it deposits received funds to the target on behalf of the caller
 	par := dict.New()
 	par.Set(accounts.ParamAgentID, codec.EncodeAgentID(targetAgentID))
-	return vmctx.PostRequest(vmtypes.NewRequestParams{
+	return vmctx.PostRequest(vmtypes.PostRequestParams{
 		TargetContractID: coretypes.NewContractID(targetChainID, accounts.Interface.Hname()),
 		EntryPoint:       coretypes.Hn(accounts.FuncDeposit),
 		Params:           par,

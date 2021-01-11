@@ -148,7 +148,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-3)
 	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
 
-	req = solo.NewCall(accounts.Interface.Name, accounts.FuncWithdraw)
+	req = solo.NewCall(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
 	_, err = chain.PostRequest(req, user)
 	require.NoError(t, err)
 
