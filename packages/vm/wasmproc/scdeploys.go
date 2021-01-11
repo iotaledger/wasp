@@ -45,7 +45,7 @@ func (o *ScDeployInfo) Exists(keyId int32) bool {
 
 func (o *ScDeployInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyParams: func() WaspObject { return NewScDict(o.vm, nil) },
+		wasmhost.KeyParams: func() WaspObject { return NewScDict(o.vm) },
 	})
 }
 

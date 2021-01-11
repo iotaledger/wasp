@@ -62,18 +62,23 @@ type ScDict struct {
 	types     map[int32]int32
 }
 
-func NewScDict(vm *wasmProcessor, kvStore kv.KVStore) *ScDict {
+func NewScDict(vm *wasmProcessor) *ScDict {
+	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
+}
+
+func NewScDictFromKvStore(host *wasmhost.KvStoreHost, kvStore kv.KVStore) *ScDict {
 	o := &ScDict{}
-	o.host = &vm.KvStoreHost
-	if kvStore == nil {
-		kvStore = dict.New()
-	}
+	o.host = host
 	o.kvStore = kvStore
 	return o
 }
 
 func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
-	return &ScDict{host: host, id: 0, isRoot: true, name: "null"}
+	o := &ScSandboxObject{}
+	o.host = host
+	o.name = "null"
+	o.isRoot = true
+	return o
 }
 
 func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {

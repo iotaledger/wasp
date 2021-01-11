@@ -48,8 +48,8 @@ func (o *ScViewInfo) Exists(keyId int32) bool {
 
 func (o *ScViewInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyParams:  func() WaspObject { return NewScDict(o.vm, nil) },
-		wasmhost.KeyResults: func() WaspObject { return NewScDict(o.vm, nil) },
+		wasmhost.KeyParams:  func() WaspObject { return NewScDict(o.vm) },
+		wasmhost.KeyResults: func() WaspObject { return NewScDict(o.vm) },
 	})
 }
 
