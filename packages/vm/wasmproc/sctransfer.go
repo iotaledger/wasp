@@ -10,22 +10,53 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
-type ScTransfer struct {
-	ScDict
-	agent coretypes.AgentID
-	chain coretypes.ChainID
-	balances map[balance.Color]int64
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScTransfers struct {
+	ScSandboxObject
 }
 
-func (o *ScTransfer) Exists(keyId int32) bool {
+func NewScTransfers(vm *wasmProcessor) *ScTransfers {
+	o := &ScTransfers{}
+	o.vm = vm
+	return o
+}
+
+func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
+	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
+		return NewScTransferInfo(a.vm)
+	})
+}
+
+func (a *ScTransfers) SetString(keyId int32, value string) {
+	a.Panic("SetString: Invalid access")
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScTransferInfo struct {
+	ScSandboxObject
+	agent    coretypes.AgentID
+	balances map[balance.Color]int64
+	chain    coretypes.ChainID
+}
+
+func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
+	o := &ScTransferInfo{}
+	o.vm = vm
+	o.balances = make(map[balance.Color]int64)
+	return o
+}
+
+func (o *ScTransferInfo) Exists(keyId int32) bool {
 	return false
 }
 
-func (o *ScTransfer) GetTypeId(keyId int32) int32 {
+func (o *ScTransferInfo) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
-func (o *ScTransfer) Invoke() {
+func (o *ScTransferInfo) Invoke() {
 	// is this a local transfer?
 	if o.chain == o.vm.ctx.ChainID() {
 		for color, amount := range o.balances {
@@ -34,7 +65,7 @@ func (o *ScTransfer) Invoke() {
 		return
 	}
 	// is this a cross chain transfer?
-    if o.chain != coretypes.NilChainID {
+	if o.chain != coretypes.NilChainID {
 		o.vm.ctx.TransferCrossChain(o.agent, o.chain, cbalances.NewFromMap(o.balances))
 		return
 	}
@@ -46,7 +77,7 @@ func (o *ScTransfer) Invoke() {
 	o.Panic("Invoke: inconsistent agent id")
 }
 
-func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
+func (o *ScTransferInfo) SetBytes(keyId int32, value []byte) {
 	var err error
 	switch keyId {
 	case wasmhost.KeyAgent:
@@ -60,24 +91,24 @@ func (o *ScTransfer) SetBytes(keyId int32, value []byte) {
 			o.Panic("SetBytes: invalid chain: " + err.Error())
 		}
 	default:
-		o.Panic("SetBytes: invalid access")
+		o.invalidKey(keyId)
 	}
 }
 
-func (o *ScTransfer) SetInt(keyId int32, value int64) {
+func (o *ScTransferInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case wasmhost.KeyLength:
 		o.agent = coretypes.AgentID{}
 	default:
-		key := o.vm.GetKeyFromId(keyId)
+		key := o.host.GetKeyFromId(keyId)
 		color, _, err := balance.ColorFromBytes(key)
 		if err != nil {
 			o.Panic("SetInt: invalid color: " + err.Error())
 		}
 		if value > 0 {
 			o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.agent.String())
-            o.balances[color] = value
-            return
+			o.balances[color] = value
+			return
 		}
 		if value == -1 && color == balance.ColorNew {
 			o.Invoke()
@@ -85,20 +116,4 @@ func (o *ScTransfer) SetInt(keyId int32, value int64) {
 		}
 		o.Panic("SetInt: invalid amount: " + err.Error())
 	}
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-type ScTransfers struct {
-	ScDict
-}
-
-func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		return &ScTransfer{ balances: make(map[balance.Color]int64) }
-	})
-}
-
-func (a *ScTransfers) SetString(keyId int32, value string) {
-	a.Panic("SetString: Invalid access")
 }

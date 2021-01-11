@@ -6,7 +6,13 @@ package wasmproc
 import "github.com/iotaledger/wasp/packages/vm/wasmhost"
 
 type ScContract struct {
-	ScDict
+	ScSandboxObject
+}
+
+func NewScContract(vm *wasmProcessor) *ScContract {
+	o := &ScContract{}
+	o.vm = vm
+	return o
 }
 
 func (o *ScContract) Exists(keyId int32) bool {
@@ -28,7 +34,8 @@ func (o *ScContract) GetBytes(keyId int32) []byte {
 		id := o.vm.contractID()
 		return id[:]
 	}
-	return o.ScDict.GetBytes(keyId)
+	o.invalidKey(keyId)
+	return nil
 }
 
 func (o *ScContract) GetString(keyId int32) string {
@@ -39,7 +46,8 @@ func (o *ScContract) GetString(keyId int32) string {
 		return o.vm.GetDescription()
 	case wasmhost.KeyName: //TODO ask core contract for contract name?
 	}
-	return o.ScDict.GetString(keyId)
+	o.invalidKey(keyId)
+	return ""
 }
 
 func (o *ScContract) GetTypeId(keyId int32) int32 {

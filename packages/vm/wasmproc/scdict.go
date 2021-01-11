@@ -48,27 +48,39 @@ func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjF
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDict struct {
-	id      int32
-	isRoot  bool
-	keyId   int32
-	kvStore kv.KVStore
-	name    string
-	objects map[int32]int32
-	ownerId int32
-	typeId  int32
-	types   map[int32]int32
-	vm      *wasmProcessor
+	host      *wasmhost.KvStoreHost
+	id        int32
+	isMutable bool
+	isRoot    bool
+	keyId     int32
+	kvStore   kv.KVStore
+	length    int32
+	name      string
+	objects   map[int32]int32
+	ownerId   int32
+	typeId    int32
+	types     map[int32]int32
 }
 
-func NewNullObject(vm *wasmProcessor) WaspObject {
-	return &ScDict{vm: vm, id: 0, isRoot: true, name: "null"}
+func NewScDict(vm *wasmProcessor, kvStore kv.KVStore) *ScDict {
+	o := &ScDict{}
+	o.host = &vm.KvStoreHost
+	if kvStore == nil {
+		kvStore = dict.New()
+	}
+	o.kvStore = kvStore
+	return o
+}
+
+func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
+	return &ScDict{host: host, id: 0, isRoot: true, name: "null"}
 }
 
 func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.id = id
 	o.keyId = keyId
 	o.ownerId = owner.id
-	o.vm = owner.vm
+	o.host = owner.host
 	o.isRoot = o.kvStore != nil
 	if !o.isRoot {
 		o.kvStore = owner.kvStore
@@ -79,6 +91,14 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	if o.ownerId == 1 {
 		// strip off "root." prefix
 		o.name = o.name[5:]
+	}
+	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
+		key := o.NestedKey()[1:]
+		length, _, err := codec.DecodeInt64(o.kvStore.MustGet(kv.Key(key)))
+		if err != nil {
+			o.Panic("InitObj: %v", err)
+		}
+		o.length = int32(length)
 	}
 	o.Trace("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
@@ -98,7 +118,7 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 		return objId
 	}
 	newObject := factory()
-	objId = o.vm.TrackObject(newObject)
+	objId = o.host.TrackObject(newObject)
 	newObject.InitObj(objId, keyId, o)
 	o.objects[keyId] = objId
 	return objId
@@ -111,7 +131,7 @@ func (o *ScDict) GetBytes(keyId int32) []byte {
 
 func (o *ScDict) GetInt(keyId int32) int64 {
 	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && keyId == wasmhost.KeyLength {
-		return int64(len(o.objects))
+		return int64(o.length)
 	}
 	bytes := o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_INT))
 	value, _, err := codec.DecodeInt64(bytes)
@@ -170,7 +190,7 @@ func (o *ScDict) NestedKey() string {
 }
 
 func (o *ScDict) Owner() WaspObject {
-	return o.vm.FindObject(o.ownerId).(WaspObject)
+	return o.host.FindObject(o.ownerId).(WaspObject)
 }
 
 func (o *ScDict) Panic(format string, args ...interface{}) {
@@ -180,22 +200,32 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 }
 
 func (o *ScDict) SetBytes(keyId int32, value []byte) {
+	o.validateMutable(keyId)
 	//TODO what about AGENT/ADDRESS/COLOR?
 	o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_BYTES), value)
 }
 
 func (o *ScDict) SetInt(keyId int32, value int64) {
+	o.validateMutable(keyId)
 	switch keyId {
 	case wasmhost.KeyLength:
-		//TODO this goes wrong for state, should clear map instead
-		o.kvStore = dict.New()
+		if o.kvStore != nil {
+			//TODO this goes wrong for state, should clear map tree instead
+			o.kvStore = dict.New()
+			//if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+			//	key := o.NestedKey()[1:]
+			//	o.kvStore.Del(kv.Key(key))
+			//}
+		}
 		o.objects = make(map[int32]int32)
+		o.length = 0
 	default:
 		o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_INT), codec.EncodeInt64(value))
 	}
 }
 
 func (o *ScDict) SetString(keyId int32, value string) {
+	o.validateMutable(keyId)
 	o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_STRING), codec.EncodeString(value))
 }
 
@@ -203,15 +233,15 @@ func (o *ScDict) Suffix(keyId int32) string {
 	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 		return fmt.Sprintf(".%d", keyId)
 	}
-	bytes := o.vm.GetKeyFromId(keyId)
+	key := o.host.GetKeyFromId(keyId)
 	if (keyId & wasmhost.KeyFromString) != 0 {
-		return "." + string(bytes)
+		return "." + string(key)
 	}
-	return "." + base58.Encode(bytes)
+	return "." + base58.Encode(key)
 }
 
 func (o *ScDict) Trace(format string, a ...interface{}) {
-	o.vm.Trace(format, a...)
+	o.host.Trace(format, a...)
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {
@@ -237,7 +267,17 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 		} else if arrayTypeId != typeId {
 			o.Panic("validate: Invalid type")
 		}
-		//TODO validate keyId >=0 && <= length
+		if /*o.isMutable && */ keyId == o.length {
+			o.length++
+			if o.kvStore != nil {
+				key := o.NestedKey()[1:]
+				o.kvStore.Set(kv.Key(key), codec.EncodeInt64(int64(o.length)))
+			}
+			return
+		}
+		if keyId < 0 || keyId >= o.length {
+			o.Panic("validate: Invalid index")
+		}
 		return
 	}
 	fieldType, ok := o.types[keyId]
@@ -250,4 +290,11 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 	if fieldType != typeId {
 		o.Panic("validate: Invalid access")
 	}
+}
+
+func (o *ScDict) validateMutable(keyId int32) {
+	//TODO
+	//if !o.isMutable {
+	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
+	//}
 }

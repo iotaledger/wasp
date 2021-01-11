@@ -4,20 +4,20 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 type ScContext struct {
-	ScDict
+	ScSandboxObject
 }
 
 func NewScContext(vm *wasmProcessor) *ScContext {
 	o := &ScContext{}
+	o.vm = vm
+	o.host = &vm.KvStoreHost
 	o.name = "root"
 	o.id = 1
 	o.isRoot = true
-	o.vm = vm
 	o.objects = make(map[int32]int32)
 	return o
 }
@@ -31,16 +31,17 @@ func (o *ScContext) Exists(keyId int32) bool {
 
 func (o *ScContext) finalize() {
 	o.objects = make(map[int32]int32)
-	o.vm.ResetObjects()
+	o.host.ResetObjects()
 }
 
 func (o *ScContext) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case wasmhost.KeyCaller:
 		id := o.vm.ctx.Caller()
-		return id.Bytes()
+		return id[:]
 	}
-	return o.ScDict.GetBytes(keyId)
+	o.invalidKey(keyId)
+	return nil
 }
 
 func (o *ScContext) GetInt(keyId int32) int64 {
@@ -48,30 +49,32 @@ func (o *ScContext) GetInt(keyId int32) int64 {
 	case wasmhost.KeyTimestamp:
 		return o.vm.ctx.GetTimestamp()
 	}
-	return o.ScDict.GetInt(keyId)
+	o.invalidKey(keyId)
+	return 0
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	if keyId == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (after on_load) this cannot be called any more
-		return o.ScDict.GetObjectId(keyId, typeId)
+		o.invalidKey(keyId)
+		return 0
 	}
 
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyBalances:  func() WaspObject { return &ScBalances{} },
-		wasmhost.KeyCalls:     func() WaspObject { return &ScCalls{} },
-		wasmhost.KeyContract:  func() WaspObject { return &ScContract{} },
-		wasmhost.KeyDeploys:   func() WaspObject { return &ScDeploys{} },
-		wasmhost.KeyExports:   func() WaspObject { return &ScExports{} },
-		wasmhost.KeyIncoming:  func() WaspObject { return &ScBalances{incoming: true} },
-		wasmhost.KeyLogs:      func() WaspObject { return &ScLogs{} },
-		wasmhost.KeyParams:    func() WaspObject { return &ScDict{kvStore: o.vm.params()} },
-		wasmhost.KeyPosts:     func() WaspObject { return &ScPosts{} },
-		wasmhost.KeyResults:   func() WaspObject { return &ScDict{kvStore: dict.New()} },
-		wasmhost.KeyState:     func() WaspObject { return &ScDict{kvStore: o.vm.state()} },
-		wasmhost.KeyTransfers: func() WaspObject { return &ScTransfers{} },
-		wasmhost.KeyUtility:   func() WaspObject { return &ScUtility{} },
-		wasmhost.KeyViews:     func() WaspObject { return &ScViews{} },
+		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, false) },
+		wasmhost.KeyCalls:     func() WaspObject { return NewScCalls(o.vm) },
+		wasmhost.KeyContract:  func() WaspObject { return NewScContract(o.vm) },
+		wasmhost.KeyDeploys:   func() WaspObject { return NewScDeploys(o.vm) },
+		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
+		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, true) },
+		wasmhost.KeyLogs:      func() WaspObject { return NewScLogs(o.vm) },
+		wasmhost.KeyParams:    func() WaspObject { return NewScDict(o.vm, o.vm.params()) },
+		wasmhost.KeyPosts:     func() WaspObject { return NewScPosts(o.vm) },
+		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm, nil) },
+		wasmhost.KeyState:     func() WaspObject { return NewScDict(o.vm, o.vm.state()) },
+		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.vm) },
+		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.vm) },
+		wasmhost.KeyViews:     func() WaspObject { return NewScViews(o.vm) },
 	})
 }
 
@@ -121,5 +124,7 @@ func (o *ScContext) SetString(keyId int32, value string) {
 		o.vm.log().Debugf(value)
 	case wasmhost.KeyPanic:
 		o.vm.log().Panicf(value)
+	default:
+		o.invalidKey(keyId)
 	}
 }

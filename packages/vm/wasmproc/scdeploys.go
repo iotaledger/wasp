@@ -10,21 +10,33 @@ import (
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDeploys struct {
-	ScDict
+	ScSandboxObject
+}
+
+func NewScDeploys(vm *wasmProcessor) *ScDeploys {
+	o := &ScDeploys{}
+	o.vm = vm
+	return o
 }
 
 func (a *ScDeploys) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		return &ScDeployInfo{}
+		return NewScDeployInfo(a.vm)
 	})
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDeployInfo struct {
-	ScDict
+	ScSandboxObject
 	name        string
 	description string
+}
+
+func NewScDeployInfo(vm *wasmProcessor) *ScDeployInfo {
+	o := &ScDeployInfo{}
+	o.vm = vm
+	return o
 }
 
 func (o *ScDeployInfo) Exists(keyId int32) bool {
@@ -33,7 +45,7 @@ func (o *ScDeployInfo) Exists(keyId int32) bool {
 
 func (o *ScDeployInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyParams: func() WaspObject { return &ScDict{kvStore: dict.New()} },
+		wasmhost.KeyParams: func() WaspObject { return NewScDict(o.vm, nil) },
 	})
 }
 
@@ -54,7 +66,7 @@ func (o *ScDeployInfo) GetTypeId(keyId int32) int32 {
 func (o *ScDeployInfo) Invoke(programHash []byte) {
 	o.Trace("DEPLOY c'%s' f'%s'", o.name, o.description)
 	paramsId := o.GetObjectId(wasmhost.KeyParams, wasmhost.OBJTYPE_MAP)
-	params := o.vm.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
+	params := o.host.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
 		o.Trace("  PARAM '%s'", key)
 		return true
@@ -75,7 +87,7 @@ func (o *ScDeployInfo) SetBytes(keyId int32, value []byte) {
 	case wasmhost.KeyHash:
 		o.Invoke(value)
 	default:
-		o.ScDict.SetBytes(keyId, value)
+		o.invalidKey(keyId)
 	}
 }
 
@@ -85,7 +97,7 @@ func (o *ScDeployInfo) SetInt(keyId int32, value int64) {
 		o.description = ""
 		o.name = ""
 	default:
-		o.ScDict.SetInt(keyId, value)
+		o.invalidKey(keyId)
 	}
 }
 
@@ -96,6 +108,6 @@ func (o *ScDeployInfo) SetString(keyId int32, value string) {
 	case wasmhost.KeyName:
 		o.name = value
 	default:
-		o.ScDict.SetString(keyId, value)
+		o.invalidKey(keyId)
 	}
 }

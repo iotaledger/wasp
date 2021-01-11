@@ -4,7 +4,13 @@
 package wasmproc
 
 type ScExports struct {
-	ScDict
+	ScSandboxObject
+}
+
+func NewScExports(vm *wasmProcessor) *ScExports {
+	o := &ScExports{}
+	o.vm = vm
+	return o
 }
 
 func (o *ScExports) SetString(keyId int32, value string) {

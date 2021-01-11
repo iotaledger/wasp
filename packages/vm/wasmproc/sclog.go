@@ -11,7 +11,13 @@ import (
 )
 
 type ScLogs struct {
-	ScDict
+	ScSandboxObject
+}
+
+func NewScLogs(vm *wasmProcessor) *ScLogs {
+	o := &ScLogs{}
+	o.vm = vm
+	return o
 }
 
 func (o *ScLogs) Exists(keyId int32) bool {
@@ -21,7 +27,7 @@ func (o *ScLogs) Exists(keyId int32) bool {
 
 func (o *ScLogs) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		keyId: func() WaspObject { return &ScLog{} },
+		keyId: func() WaspObject { return NewScLog(o.vm) },
 	})
 }
 
@@ -32,18 +38,24 @@ func (o *ScLogs) GetTypeId(keyId int32) int32 {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScLog struct {
-	ScDict
+	ScSandboxObject
 	lines      *datatypes.MustTimestampedLog
 	logEntry   *ScLogEntry
 	logEntryId int32
 }
 
+func NewScLog(vm *wasmProcessor) *ScLog {
+	o := &ScLog{}
+	o.vm = vm
+	return o
+}
+
 func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
-	a.ScDict.InitObj(id, keyId, owner)
-	key := a.vm.GetKeyFromId(keyId)
+	a.ScSandboxObject.InitObj(id, keyId, owner)
+	key := a.host.GetKeyFromId(keyId)
 	a.lines = datatypes.NewMustTimestampedLog(a.vm.state(), kv.Key(key))
 	a.logEntry = &ScLogEntry{lines: a.lines, current: ^uint32(0)}
-	a.logEntryId = a.vm.TrackObject(a.logEntry)
+	a.logEntryId = a.host.TrackObject(a.logEntry)
 }
 
 func (a *ScLog) Exists(keyId int32) bool {
@@ -55,7 +67,8 @@ func (a *ScLog) GetInt(keyId int32) int64 {
 	case wasmhost.KeyLength:
 		return int64(a.lines.Len())
 	}
-	return a.ScDict.GetInt(keyId)
+	a.invalidKey(keyId)
+	return 0
 }
 
 func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
@@ -81,7 +94,7 @@ func (a *ScLog) GetTypeId(keyId int32) int32 {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScLogEntry struct {
-	ScDict
+	ScSandboxObject
 	current   uint32
 	lines     *datatypes.MustTimestampedLog
 	record    []byte
@@ -102,7 +115,7 @@ func (o *ScLogEntry) GetBytes(keyId int32) []byte {
 			return o.record[8:]
 		}
 	}
-	o.Panic("GetBytes: Invalid key")
+	o.invalidKey(keyId)
 	return nil
 }
 
@@ -113,7 +126,7 @@ func (o *ScLogEntry) GetInt(keyId int32) int64 {
 			return int64(util.MustUint64From8Bytes(o.record[:8]))
 		}
 	}
-	o.Panic("GetBytes: Invalid key")
+	o.invalidKey(keyId)
 	return 0
 }
 
@@ -140,23 +153,25 @@ func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {
 	switch keyId {
 	case wasmhost.KeyData:
 		// can only append
-		if o.current == o.lines.Len() {
-			o.lines.Append(o.timestamp, value)
-			o.current = ^uint32(0)
-			return
+		if o.current != o.lines.Len() {
+			o.Panic("SetBytes: Invalid log append index: %d", keyId)
 		}
+		o.lines.Append(o.timestamp, value)
+		o.current = ^uint32(0)
+	default:
+		o.invalidKey(keyId)
 	}
-	o.Panic("SetBytes: Invalid key")
 }
 
 func (o *ScLogEntry) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case wasmhost.KeyTimestamp:
 		// can only append
-		if o.current == o.lines.Len() {
-			o.timestamp = value
-			return
+		if o.current != o.lines.Len() {
+			o.Panic("SetInt: Invalid log append index: %d", keyId)
 		}
+		o.timestamp = value
+	default:
+		o.invalidKey(keyId)
 	}
-	o.Panic("SetInt: Invalid key")
 }

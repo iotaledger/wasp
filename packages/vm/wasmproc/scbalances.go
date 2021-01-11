@@ -8,9 +8,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type ScBalances struct {
-	ScDict
+	ScSandboxObject
 	incoming bool
+}
+
+func NewScBalances(vm *wasmProcessor, incoming bool) *ScBalances {
+	o := &ScBalances{}
+	o.vm = vm
+	o.incoming = incoming
+	return o
 }
 
 func (o *ScBalances) Exists(keyId int32) bool {
@@ -18,7 +27,7 @@ func (o *ScBalances) Exists(keyId int32) bool {
 }
 
 func (o *ScBalances) GetBytes(keyId int32) []byte {
-	key := o.vm.GetKeyFromId(keyId)
+	key := o.host.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
 		o.Panic("GetBytes: %v", err)
@@ -31,7 +40,7 @@ func (o *ScBalances) GetBytes(keyId int32) []byte {
 }
 
 func (o *ScBalances) GetInt(keyId int32) int64 {
-	key := o.vm.GetKeyFromId(keyId)
+	key := o.host.GetKeyFromId(keyId)
 	color, _, err := balance.ColorFromBytes(key)
 	if err != nil {
 		o.Panic("GetInt: %v", err)
@@ -48,7 +57,7 @@ func (o *ScBalances) GetInt(keyId int32) int64 {
 
 func (o *ScBalances) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyColor: func() WaspObject { return &ScBalanceColors{incoming: o.incoming} },
+		wasmhost.KeyColor: func() WaspObject { return NewScBalanceColors(o.vm, o.incoming) },
 	})
 }
 
@@ -62,9 +71,16 @@ func (o *ScBalances) GetTypeId(keyId int32) int32 {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScBalanceColors struct {
-	ScDict
-	incoming bool
+	ScSandboxObject
 	colors   []balance.Color
+	incoming bool
+}
+
+func NewScBalanceColors(vm *wasmProcessor, incoming bool) *ScBalanceColors {
+	o := &ScBalanceColors{}
+	o.vm = vm
+	o.incoming = incoming
+	return o
 }
 
 func (o *ScBalanceColors) Exists(keyId int32) bool {
@@ -74,9 +90,9 @@ func (o *ScBalanceColors) Exists(keyId int32) bool {
 
 func (o *ScBalanceColors) GetBytes(keyId int32) []byte {
 	if !o.Exists(keyId) {
-		o.Panic("GetBytes: invalid color index")
+		o.invalidKey(keyId)
 	}
-	return o.colors[keyId].Bytes()
+	return o.colors[keyId][:]
 }
 
 func (o *ScBalanceColors) GetTypeId(keyId int32) int32 {
