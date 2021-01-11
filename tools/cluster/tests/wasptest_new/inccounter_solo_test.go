@@ -53,7 +53,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 }
 
 func TestIncSoloResultsTest(t *testing.T) {
-	al := solo.New(t, true, true)
+	al := solo.New(t, false, true)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
