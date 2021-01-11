@@ -28,8 +28,8 @@ func NewLogger(t *testing.T, timeLayout ...string) *logger.Logger {
 // WithLevel returns a logger with a level increased.
 // Can be useful in tests to disable logging in some parts of the system.
 func WithLevel(log *logger.Logger, level logger.Level, printStackTrace bool) *logger.Logger {
-	if !printStackTrace {
+	if printStackTrace {
 		return log.Desugar().WithOptions(zap.IncreaseLevel(level), zap.AddStacktrace(zapcore.PanicLevel)).Sugar()
 	}
-	return log.Desugar().WithOptions(zap.IncreaseLevel(level)).Sugar()
+	return log.Desugar().WithOptions(zap.IncreaseLevel(level), zap.AddStacktrace(zapcore.FatalLevel)).Sugar()
 }

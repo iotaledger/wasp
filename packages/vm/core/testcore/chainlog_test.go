@@ -26,20 +26,20 @@ func TestChainLogBasic1(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	recs, err := chain.GetChainLogRecords(root.Interface.Name)
+	recs, err := chain.GetEventLogRecords(root.Interface.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 1) // 1 root::init request
 
-	num := chain.GetChainLogNumRecords(root.Interface.Name)
+	num := chain.GetEventLogNumRecords(root.Interface.Name)
 	require.EqualValues(t, 1, num)
 
-	num = chain.GetChainLogNumRecords(accounts.Interface.Name)
+	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetChainLogNumRecords(blob.Interface.Name)
+	num = chain.GetEventLogNumRecords(blob.Interface.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetChainLogNumRecords(eventlog.Interface.Name)
+	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
 	require.EqualValues(t, 0, num)
 }
 
@@ -49,19 +49,19 @@ func TestChainLogDeploy(t *testing.T) {
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
-	num := chain.GetChainLogNumRecords(root.Interface.Name)
+	num := chain.GetEventLogNumRecords(root.Interface.Name)
 	require.EqualValues(t, 1, num)
 
-	num = chain.GetChainLogNumRecords(accounts.Interface.Name)
+	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetChainLogNumRecords(eventlog.Interface.Name)
+	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetChainLogNumRecords(blob.Interface.Name)
+	num = chain.GetEventLogNumRecords(blob.Interface.Name)
 	require.EqualValues(t, 2, num)
 
-	recs, err := chain.GetChainLogRecords(blob.Interface.Name)
+	recs, err := chain.GetEventLogRecords(blob.Interface.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 2) // 1 root::init request
 	printLogRecords(t, recs, "blob")
@@ -70,22 +70,22 @@ func TestChainLogDeploy(t *testing.T) {
 	err = chain.DeployContract(nil, name, hwasm)
 	require.NoError(t, err)
 
-	num = chain.GetChainLogNumRecords(root.Interface.Name)
+	num = chain.GetEventLogNumRecords(root.Interface.Name)
 	require.EqualValues(t, 3, num)
 
-	num = chain.GetChainLogNumRecords(accounts.Interface.Name)
+	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetChainLogNumRecords(eventlog.Interface.Name)
+	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetChainLogNumRecords(blob.Interface.Name)
+	num = chain.GetEventLogNumRecords(blob.Interface.Name)
 	require.EqualValues(t, 2, num)
 
-	num = chain.GetChainLogNumRecords(name)
+	num = chain.GetEventLogNumRecords(name)
 	require.EqualValues(t, 0, num)
 
-	recs, err = chain.GetChainLogRecords(name)
+	recs, err = chain.GetEventLogRecords(name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 }
@@ -168,7 +168,7 @@ func TestChainLogEventData(t *testing.T) {
 
 	require.EqualValues(t, 2, array.Len())
 
-	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
 	t.Log(str)
 }
@@ -211,7 +211,7 @@ func TestChainlogDifferentCalls(t *testing.T) {
 	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
 	require.EqualValues(t, (2+3)*2, array.Len())
 
-	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -298,7 +298,7 @@ func TestChainLogGetNumRecords(t *testing.T) {
 	require.True(t, ok)
 	require.EqualValues(t, 2, v)
 
-	str, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -330,7 +330,7 @@ func TestChainLogSandboxDeploy(t *testing.T) {
 
 	require.EqualValues(t, 4, array.Len())
 
-	str, err := chain.GetChainLogRecordsString(root.Interface.Name)
+	str, err := chain.GetEventLogRecordsString(root.Interface.Name)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -368,13 +368,13 @@ func TestChainLogMultiple(t *testing.T) {
 	require.EqualValues(t, 4, array.Len())
 	//////////////////////////////////////
 
-	strRoot, err := chain.GetChainLogRecordsString(root.Interface.Name)
+	strRoot, err := chain.GetEventLogRecordsString(root.Interface.Name)
 	require.NoError(t, err)
 	t.Log(strRoot)
 	require.EqualValues(t, 2, strings.Count(strRoot, "[req]"))
 	require.EqualValues(t, 1, strings.Count(strRoot, "[deploy]"))
 
-	strTest, err := chain.GetChainLogRecordsString(test_sandbox.Interface.Name)
+	strTest, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
 	t.Log(strTest)
 	require.EqualValues(t, 2, strings.Count(strTest, "[req]"))

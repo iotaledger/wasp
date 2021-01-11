@@ -45,31 +45,32 @@
 //
 // The following example deploys chain and retrieves basic info from the deployed chain.
 // It is expected 4 core contracts deployed on it by default and the test prints them.
-//	func TestExample1(t *testing.T){
-//		glb := solo.New(t, false, false)
-//		chain := glb.NewChain(nil, "exampleChain")
+//  func TestSolo1(t *testing.T) {
+//    env := solo.New(t, false, false)
+//    chain := env.NewChain(nil, "ex1")
 //
-//		chainID, ownerID, coreContracts := chain.GetInfo()  // calls view root::GetInfo
+//    chainInfo, coreContracts := chain.GetInfo()   // calls view root::GetInfo
+//    require.EqualValues(t, 4, len(coreContracts)) // 4 core contracts deployed by default
 //
-//		require.EqualValues(t, 4, len(coreContracts))  // 4 core contracts deployed by default
-//		t.Logf("chainID: %s", chainID)
-//		t.Logf("chain owner ID: %s", ownerID)
-//		for _, rec := range coreContracts{
-//			t.Logf("    Contract: %s", rec.Name)
-//		}
-//	}
+//    t.Logf("chainID: %s", chainInfo.ChainID)
+//    t.Logf("chain owner ID: %s", chainInfo.ChainOwnerID)
+//    for hname, rec := range coreContracts {
+//       t.Logf("    Core contract '%s': %s", rec.Name, coretypes.NewContractID(chain.ChainID, hname))
+//    }
+//  }
 // will produce the following output:
-//  	=== RUN   TestExample1
-//	12:24:16.779	INFO	TestExample1	solo/solo.go:144	deploying new chain 'exampleChain'
-//	12:24:16.783	INFO	TestExample1.exampleChain	solo/run.go:75	state transition #0 --> #1. Requests in the block: 1. Posted: 0
-//	12:24:16.783	INFO	TestExample1	solo/clock.go:44	ClockStep: logical clock advanced by 1ms
-//	12:24:16.783	INFO	TestExample1.exampleChain	solo/solo.go:220	chain 'exampleChain' deployed. Chain ID: JG1UBRzEesdkTnLJBc7oK9HTm98ioNekdKLJ1f2ScK5Q
-//	12:24:16.783	INFO	TestExample1.exampleChain	solo/req.go:136	callView: root::getChainInfo
-//		example1_test.go:17: chainID: JG1UBRzEesdkTnLJBc7oK9HTm98ioNekdKLJ1f2ScK5Q
-//		example1_test.go:18: chain owner ID: A/SHRk4KG8ruMB7GwoqWVsaeHreQAKFCUc45bBCHwnrk5h
-//		example1_test.go:20:     Contract: accounts
-//		example1_test.go:20:     Contract: chainlog
-//		example1_test.go:20:     Contract: root
-//		example1_test.go:20:     Contract: blob
-//	--- PASS: TestExample1 (0.00s)
+//       === RUN   TestSolo1
+//  34:37.415	INFO	TestSolo1	solo/solo.go:153	deploying new chain 'ex1'
+//	34:37.419	INFO	TestSolo1.ex1	vmcontext/runreq.go:177	eventlog -> '[req] [0]Ei4d6oUbcgSPnmpTupeLaTNoNf1hRu8ZfZfmw2KFKzZm: Ok'
+//	34:37.420	INFO	TestSolo1.ex1	solo/run.go:75	state transition #0 --> #1. Requests in the block: 1. Posted: 0
+//	34:37.420	INFO	TestSolo1	solo/clock.go:44	ClockStep: logical clock advanced by 1ms
+//	34:37.420	INFO	TestSolo1.ex1	solo/solo.go:233	chain 'ex1' deployed. Chain ID: aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3
+//	34:37.420	INFO	TestSolo1.ex1	solo/req.go:145	callView: root::getChainInfo
+//	solo_test.go:18: chainID: aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3
+//	solo_test.go:19: chain owner ID: A/UrYEv4Yh7WU1M29cKq73tb2CUx8EYXfJt6JZn5srw19U
+//	solo_test.go:21:     Core contract 'accounts': aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3::3c4b5e02
+//	solo_test.go:21:     Core contract 'blob': aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3::fd91bc63
+//	solo_test.go:21:     Core contract 'root': aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3::cebf5908
+//	solo_test.go:21:     Core contract 'eventlog': aEbE2vX6jrGhQ3AKHCPmQmn2qa11CpCRzaEgtVJRAje3::661aa7d8
+//	--- PASS: TestSolo1 (0.01s)
 package solo
