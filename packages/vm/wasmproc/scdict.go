@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/mr-tron/base58"
+	"strings"
 )
 
 type ObjFactory func() WaspObject
@@ -93,9 +94,9 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	ownerObj := o.Owner()
 	o.typeId = ownerObj.GetTypeId(keyId)
 	o.name = owner.name + ownerObj.Suffix(keyId)
-	if o.ownerId == 1 {
+	if o.ownerId == 1 && strings.HasPrefix(o.name, "root.") {
 		// strip off "root." prefix
-		o.name = o.name[5:]
+		o.name = o.name[len("root."):]
 	}
 	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		key := o.NestedKey()[1:]
