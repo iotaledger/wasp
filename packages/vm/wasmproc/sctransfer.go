@@ -100,6 +100,10 @@ func (o *ScTransferInfo) SetInt(keyId int32, value int64) {
 	case wasmhost.KeyLength:
 		o.agent = coretypes.AgentID{}
 	default:
+		if value == 0 {
+			// nothing to transfer
+			return
+		}
 		key := o.host.GetKeyFromId(keyId)
 		color, _, err := balance.ColorFromBytes(key)
 		if err != nil {
@@ -110,10 +114,9 @@ func (o *ScTransferInfo) SetInt(keyId int32, value int64) {
 			o.balances[color] = value
 			return
 		}
-		if value == -1 && color == balance.ColorNew {
-			o.Invoke()
-			return
+		if value != -1 || color != balance.ColorNew {
+			o.Panic("SetInt: invalid amount: " + err.Error())
 		}
-		o.Panic("SetInt: invalid amount: " + err.Error())
+		o.Invoke()
 	}
 }
