@@ -22,7 +22,6 @@ type wasmProcessor struct {
 }
 
 const ViewCopyAllState = "copy_all_state"
-var hNameCopyAllState = coretypes.Hn(ViewCopyAllState)
 
 var GoWasmVM wasmhost.WasmVM
 
@@ -50,7 +49,7 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 
 	if host.function == ViewCopyAllState {
 		// dump copy of entire state into result
-		state := host.ctxView.State()
+		state := ctxView.State()
 		results := dict.New()
 		state.MustIterate("", func(key kv.Key, value []byte) bool {
 			results.Set(key, value)
