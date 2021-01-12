@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -36,14 +36,14 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
 		require.EqualValues(t, chain.Description, desc)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 
-		crBytes := contractRegistry.GetAt(root.Interface.Hname().Bytes())
+		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
 		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
 
-		crBytes = contractRegistry.GetAt(blob.Interface.Hname().Bytes())
+		crBytes = contractRegistry.MustGetAt(blob.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
@@ -53,7 +53,7 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, blob.Interface.Name, cr.Name)
 
-		crBytes = contractRegistry.GetAt(accounts.Interface.Hname().Bytes())
+		crBytes = contractRegistry.MustGetAt(accounts.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)

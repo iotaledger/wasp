@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/chains"
@@ -59,11 +59,11 @@ func handleChainContract(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		records := datatypes.NewMustArray(r, eventlog.ParamRecords)
-		result.Log = make([]*datatypes.TimestampedLogRecord, records.Len())
-		for i := uint16(0); i < records.Len(); i++ {
-			b := records.GetAt(i)
-			result.Log[i], err = datatypes.ParseRawLogRecord(b)
+		records := collections.NewArrayReadOnly(r, eventlog.ParamRecords)
+		result.Log = make([]*collections.TimestampedLogRecord, records.MustLen())
+		for i := uint16(0); i < records.MustLen(); i++ {
+			b := records.MustGetAt(i)
+			result.Log[i], err = collections.ParseRawLogRecord(b)
 			if err != nil {
 				return err
 			}
@@ -85,7 +85,7 @@ type ChainContractTemplateParams struct {
 	Hname   coretypes.Hname
 
 	ContractRecord *root.ContractRecord
-	Log            []*datatypes.TimestampedLogRecord
+	Log            []*collections.TimestampedLogRecord
 	RootInfo       RootInfo
 }
 

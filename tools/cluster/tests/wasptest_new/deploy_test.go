@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -44,8 +44,8 @@ func TestDeployChain(t *testing.T) {
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 4, contractRegistry.MustLen())
 		return true
 	})
 	checkRootsOutside(t, chain)
@@ -87,8 +87,8 @@ func TestDeployContractOnly(t *testing.T) {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		crBytes := contractRegistry.GetAt(hname.Bytes())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		crBytes := contractRegistry.MustGetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
@@ -158,9 +158,9 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.Len())
-		crBytes := contractRegistry.GetAt(hname.Bytes())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 5, contractRegistry.MustLen())
+		crBytes := contractRegistry.MustGetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
@@ -197,10 +197,10 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, 3, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 6, contractRegistry.Len())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 6, contractRegistry.MustLen())
 		//--
-		crBytes := contractRegistry.GetAt(accounts.Interface.Hname().Bytes())
+		crBytes := contractRegistry.MustGetAt(accounts.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
@@ -210,7 +210,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, accounts.Interface.Name, cr.Name)
 
 		//--
-		crBytes = contractRegistry.GetAt(hnameNew.Bytes())
+		crBytes = contractRegistry.MustGetAt(hnameNew.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err = root.DecodeContractRecord(crBytes)
 		check(err, t)

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -26,8 +26,8 @@ func getNumRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		return nil, err
 	}
 	ret := dict.New()
-	thelog := datatypes.NewMustTimestampedLog(ctx.State(), kv.Key(contractName.Bytes()))
-	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.Len())))
+	thelog := collections.NewTimestampedLogReadOnly(ctx.State(), kv.Key(contractName.Bytes()))
+	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.MustLen())))
 	return ret, nil
 }
 
@@ -65,18 +65,18 @@ func getLogRecords(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		toTs = ctx.GetTimestamp()
 	}
-	theLog := datatypes.NewMustTimestampedLog(ctx.State(), kv.Key(contractHname.Bytes()))
-	tts := theLog.TakeTimeSlice(fromTs, toTs)
+	theLog := collections.NewTimestampedLogReadOnly(ctx.State(), kv.Key(contractHname.Bytes()))
+	tts := theLog.MustTakeTimeSlice(fromTs, toTs)
 	if tts.IsEmpty() {
 		// empty time slice
 		return nil, nil
 	}
 	ret := dict.New()
 	first, last := tts.FromToIndicesCapped(uint32(maxLast))
-	data := theLog.LoadRecordsRaw(first, last, true) // descending
-	a := datatypes.NewMustArray(ret, ParamRecords)
+	data := theLog.MustLoadRecordsRaw(first, last, true) // descending
+	a := collections.NewArray(ret, ParamRecords)
 	for _, s := range data {
-		a.Push(s)
+		a.MustPush(s)
 	}
 	return ret, nil
 }

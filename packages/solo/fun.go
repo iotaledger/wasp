@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -226,7 +226,7 @@ func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 
-	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(res, root.VarContractRegistry))
+	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.VarContractRegistry))
 	require.NoError(ch.Env.T, err)
 	return ChainInfo{
 		ChainID:      chainID,
@@ -333,18 +333,18 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 // It returns records as array in time-descending order.
 //
 // More than 50 records may be retrieved by calling the view directly
-func (ch *Chain) GetEventLogRecords(name string) ([]datatypes.TimestampedLogRecord, error) {
+func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
 	if err != nil {
 		return nil, err
 	}
-	recs := datatypes.NewMustArray(res, eventlog.ParamRecords)
-	ret := make([]datatypes.TimestampedLogRecord, recs.Len())
-	for i := uint16(0); i < recs.Len(); i++ {
-		data := recs.GetAt(i)
-		rec, err := datatypes.ParseRawLogRecord(data)
+	recs := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
+	for i := uint16(0); i < recs.MustLen(); i++ {
+		data := recs.MustGetAt(i)
+		rec, err := collections.ParseRawLogRecord(data)
 		require.NoError(ch.Env.T, err)
 		ret[i] = *rec
 	}

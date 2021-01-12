@@ -6,15 +6,20 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 const varStateDirectory = "d"
 
-const valuesPrefix = "v"
-const sizesPrefix = "s"
+func valuesKey(blobHash hashing.HashValue) string {
+	return "v" + string(blobHash[:])
+}
+
+func sizesKey(blobHash hashing.HashValue) string {
+	return "s" + string(blobHash[:])
+}
 
 func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
 	kSorted := fields.KeysSorted() // mind determinism
@@ -36,27 +41,42 @@ func MustGetBlobHash(fields dict.Dict) hashing.HashValue {
 }
 
 // GetDirectory retrieves the blob directory from the state
-func GetDirectory(state kv.KVStore) *datatypes.MustMap {
-	return datatypes.NewMustMap(state, varStateDirectory)
+func GetDirectory(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, varStateDirectory)
+}
+
+// GetDirectoryR retrieves the blob directory from the read-only state
+func GetDirectoryR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, varStateDirectory)
 }
 
 // GetBlobValues retrieves the blob field-value map from the state
-func GetBlobValues(state kv.KVStore, blobHash hashing.HashValue) *datatypes.MustMap {
-	return datatypes.NewMustMap(state, valuesPrefix+string(blobHash[:]))
+func GetBlobValues(state kv.KVStore, blobHash hashing.HashValue) *collections.Map {
+	return collections.NewMap(state, valuesKey(blobHash))
 }
 
-// GetBlobSize retrieves the blob field-size map from the state
-func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *datatypes.MustMap {
-	return datatypes.NewMustMap(state, sizesPrefix+string(blobHash[:]))
+// GetBlobValuesR retrieves the blob field-value map from the read-only state
+func GetBlobValuesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, valuesKey(blobHash))
+}
+
+// GetBlobSizes retrieves the writeable blob field-size map from the state
+func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *collections.Map {
+	return collections.NewMap(state, sizesKey(blobHash))
+}
+
+// GetBlobSizesR retrieves the blob field-size map from the read-only state
+func GetBlobSizesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, sizesKey(blobHash))
 }
 
 func LocateProgram(state kv.KVStore, programHash hashing.HashValue) (string, []byte, error) {
 	blbValues := GetBlobValues(state, programHash)
-	programBinary := blbValues.GetAt([]byte(VarFieldProgramBinary))
+	programBinary := blbValues.MustGetAt([]byte(VarFieldProgramBinary))
 	if programBinary == nil {
 		return "", nil, fmt.Errorf("can't find program binary for hash %s", programHash.String())
 	}
-	v := blbValues.GetAt([]byte(VarFieldVMType))
+	v := blbValues.MustGetAt([]byte(VarFieldVMType))
 	vmType := "wasmtimevm"
 	if v != nil {
 		vmType = string(v)

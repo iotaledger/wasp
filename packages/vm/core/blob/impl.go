@@ -25,7 +25,7 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	blobHash, kSorted, values := mustGetBlobHash(params)
 
 	directory := GetDirectory(state)
-	if directory.HasAt(blobHash[:]) {
+	if directory.MustHasAt(blobHash[:]) {
 		// blob already exists
 		return nil, fmt.Errorf("blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
 	}
@@ -40,8 +40,8 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
 
-		blbValues.SetAt([]byte(k), values[i])
-		blbSizes.SetAt([]byte(k), EncodeSize(size))
+		blbValues.MustSetAt([]byte(k), values[i])
+		blbSizes.MustSetAt([]byte(k), EncodeSize(size))
 		sizes[i] = size
 		totalSize += size
 	}
@@ -49,7 +49,7 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ret := dict.New()
 	ret.Set(ParamHash, codec.EncodeHashValue(&blobHash))
 
-	directory.SetAt(blobHash[:], EncodeSize(totalSize))
+	directory.MustSetAt(blobHash[:], EncodeSize(totalSize))
 
 	ctx.Event(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes))
 
@@ -68,9 +68,9 @@ func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("paremeter 'blob hash' not found")
 	}
-	blbSizes := GetBlobSizes(state, *blobHash)
+	blbSizes := GetBlobSizesR(state, *blobHash)
 	ret := dict.New()
-	blbSizes.Iterate(func(field []byte, value []byte) bool {
+	blbSizes.MustIterate(func(field []byte, value []byte) bool {
 		ret.Set(kv.Key(field), value)
 		return true
 	})
@@ -94,11 +94,11 @@ func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		return nil, fmt.Errorf("parameter 'blob field' not found")
 	}
 
-	blbValues := GetBlobValues(state, *blobHash)
-	if blbValues.Len() == 0 {
+	blbValues := GetBlobValuesR(state, *blobHash)
+	if blbValues.MustLen() == 0 {
 		return nil, fmt.Errorf("blob with hash %s has not been found", blobHash.String())
 	}
-	value := blbValues.GetAt(field)
+	value := blbValues.MustGetAt(field)
 	if value == nil {
 		return nil, fmt.Errorf("'blob field %s value not found", string(field))
 	}
@@ -110,7 +110,7 @@ func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 func listBlobs(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
-	GetDirectory(ctx.State()).Iterate(func(hash []byte, totalSize []byte) bool {
+	GetDirectoryR(ctx.State()).MustIterate(func(hash []byte, totalSize []byte) bool {
 		ret.Set(kv.Key(hash), totalSize)
 		return true
 	})

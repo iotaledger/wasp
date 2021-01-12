@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -109,9 +109,9 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	reqId := ctx.RequestID()
 	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
 
-	registry := datatypes.NewMustMap(ctx.State(), VarStateTheRegistry)
+	registry := collections.NewMap(ctx.State(), VarStateTheRegistry)
 	// check for duplicated colors
-	if registry.GetAt(colorOfTheSupply[:]) != nil {
+	if registry.MustGetAt(colorOfTheSupply[:]) != nil {
 		// already exist
 		return fmt.Errorf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
 	}
@@ -154,7 +154,7 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 		return fmt.Errorf("TokenRegistry: inconsistency 3")
 	}
 	// put the metadata into the dictionary of the registry by color
-	registry.SetAt(colorOfTheSupply[:], data)
+	registry.MustSetAt(colorOfTheSupply[:], data)
 
 	// maintain the list all colors in the registry (dictionary keys)
 	// only used for assertion in tests

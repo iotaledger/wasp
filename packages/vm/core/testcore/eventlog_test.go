@@ -2,7 +2,7 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func printLogRecords(t *testing.T, recs []datatypes.TimestampedLogRecord, title string) {
+func printLogRecords(t *testing.T, recs []collections.TimestampedLogRecord, title string) {
 	t.Logf("------- Log records for '%s'", title)
 	for i := range recs {
 		t.Logf("%d: '%s'", recs[i].Timestamp, string(recs[i].Data))
@@ -113,8 +113,8 @@ func TestChainlogGetLast3(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
-	require.EqualValues(t, 3, array.Len())
+	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	require.EqualValues(t, 3, array.MustLen())
 }
 
 func TestChainlogGetBetweenTs(t *testing.T) {
@@ -142,8 +142,8 @@ func TestChainlogGetBetweenTs(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
-	require.EqualValues(t, 2, array.Len())
+	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	require.EqualValues(t, 2, array.MustLen())
 }
 
 func TestChainLogEventData(t *testing.T) {
@@ -157,6 +157,7 @@ func TestChainLogEventData(t *testing.T) {
 		test_sandbox.FuncEventLogEventData,
 	)
 	_, err = chain.PostRequest(req, nil)
+	require.NoError(t, err)
 
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
 		eventlog.ParamFromTs, 0,
@@ -164,9 +165,9 @@ func TestChainLogEventData(t *testing.T) {
 		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
+	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 
-	require.EqualValues(t, 2, array.Len())
+	require.EqualValues(t, 2, array.MustLen())
 
 	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
@@ -208,8 +209,8 @@ func TestChainlogDifferentCalls(t *testing.T) {
 		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
-	require.EqualValues(t, (2+3)*2, array.Len())
+	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	require.EqualValues(t, (2+3)*2, array.MustLen())
 
 	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
 	require.NoError(t, err)
@@ -326,9 +327,9 @@ func TestChainLogSandboxDeploy(t *testing.T) {
 		eventlog.ParamContractHname, root.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
+	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 
-	require.EqualValues(t, 4, array.Len())
+	require.EqualValues(t, 4, array.MustLen())
 
 	str, err := chain.GetEventLogRecordsString(root.Interface.Name)
 	require.NoError(t, err)
@@ -364,8 +365,8 @@ func TestChainLogMultiple(t *testing.T) {
 		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := datatypes.NewMustArray(res, eventlog.ParamRecords)
-	require.EqualValues(t, 4, array.Len())
+	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	require.EqualValues(t, 4, array.MustLen())
 	//////////////////////////////////////
 
 	strRoot, err := chain.GetEventLogRecordsString(root.Interface.Name)

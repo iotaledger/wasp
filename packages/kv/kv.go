@@ -17,11 +17,11 @@ func (k Key) HasPrefix(prefix Key) bool {
 // KVStore represents a key-value store
 // where both keys and values are arbitrary byte slices.
 type KVStore interface {
-	WriteableKVStore
-	ReadableKVStore
+	KVStoreWriter
+	KVStoreReader
 }
 
-type ReadableKVStore interface {
+type KVStoreReader interface {
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
 	Has(key Key) (bool, error)
@@ -35,7 +35,7 @@ type ReadableKVStore interface {
 	MustIterateKeys(prefix Key, f func(key Key) bool)
 }
 
-type WriteableKVStore interface {
+type KVStoreWriter interface {
 	Set(key Key, value []byte)
 	Del(key Key)
 
