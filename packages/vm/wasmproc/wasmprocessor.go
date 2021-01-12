@@ -21,6 +21,9 @@ type wasmProcessor struct {
 	scContext *ScContext
 }
 
+const ViewCopyAllState = "copy_all_state"
+var hNameCopyAllState = coretypes.Hn(ViewCopyAllState)
+
 var GoWasmVM wasmhost.WasmVM
 
 // NewWasmProcessor creates new wasm processor.
@@ -35,6 +38,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor
 	}
 	host.scContext = NewScContext(host)
 	host.Init(NewNullObject(&host.KvStoreHost), host.scContext, logger)
+	host.SetExport(0x8fff, ViewCopyAllState)
 	return host, nil
 }
 
@@ -42,6 +46,17 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	if host.function == "" {
 		// init function was missing, do nothing
 		return dict.New(), nil
+	}
+
+	if host.function == ViewCopyAllState {
+		// dump copy of entire state into result
+		state := host.ctxView.State()
+		results := dict.New()
+		state.MustIterate("", func(key kv.Key, value []byte) bool {
+			results.Set(key, value)
+			return true
+		})
+		return results, nil
 	}
 
 	saveCtx := host.ctx
