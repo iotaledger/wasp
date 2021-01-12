@@ -101,17 +101,14 @@ func (host *KvStoreHost) GetInt(objId int32, keyId int32) int64 {
 	return value
 }
 
-func (host *KvStoreHost) GetKeyIdFromBytes(bytes []byte) int32 {
-	encoded := base58.Encode(bytes)
-	if host.useBase58Keys {
-		// transform byte slice key into base58 string
-		// now all keys are byte slices from strings
-		bytes = []byte(encoded)
+func (host *KvStoreHost) getKeyFromId(keyId int32) []byte {
+	// find predefined key
+	if keyId < 0 {
+		return host.keyIdToKeyMap[-keyId]
 	}
 
-	keyId := host.getKeyId(bytes, false)
-	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyId)
-	return keyId
+	// find user-defined key
+	return host.keyIdToKey[keyId & ^KeyFromString]
 }
 
 func (host *KvStoreHost) GetKeyFromId(keyId int32) []byte {
@@ -125,22 +122,6 @@ func (host *KvStoreHost) GetKeyFromId(keyId int32) []byte {
 	// originally a string key
 	host.Trace("GetKeyFromId k%d='%s'", keyId, string(key))
 	return key
-}
-
-func (host *KvStoreHost) getKeyFromId(keyId int32) []byte {
-	// find predefined key
-	if keyId < 0 {
-		return host.keyIdToKeyMap[-keyId]
-	}
-
-	// find user-defined key
-	return host.keyIdToKey[keyId & ^KeyFromString]
-}
-
-func (host *KvStoreHost) GetKeyIdFromString(key string) int32 {
-	keyId := host.getKeyId([]byte(key), true)
-	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyId)
-	return keyId
 }
 
 func (host *KvStoreHost) getKeyId(key []byte, fromString bool) int32 {
@@ -169,6 +150,29 @@ func (host *KvStoreHost) getKeyId(key []byte, fromString bool) int32 {
 	host.keyToKeyId[keyString] = keyId
 	host.keyIdToKey = append(host.keyIdToKey, key)
 	return keyId
+}
+
+func (host *KvStoreHost) GetKeyIdFromBytes(bytes []byte) int32 {
+	encoded := base58.Encode(bytes)
+	if host.useBase58Keys {
+		// transform byte slice key into base58 string
+		// now all keys are byte slices from strings
+		bytes = []byte(encoded)
+	}
+
+	keyId := host.getKeyId(bytes, false)
+	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyId)
+	return keyId
+}
+
+func (host *KvStoreHost) GetKeyIdFromString(key string) int32 {
+	keyId := host.getKeyId([]byte(key), true)
+	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyId)
+	return keyId
+}
+
+func (host *KvStoreHost) GetKeyStringFromId(keyId int32) string {
+	return string(host.GetKeyFromId(keyId))
 }
 
 func (host *KvStoreHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
