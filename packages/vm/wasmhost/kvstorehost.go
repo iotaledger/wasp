@@ -23,8 +23,8 @@ const (
 
 const KeyFromString int32 = 0x4000
 
-var HostTracing = true
-var ExtendedHostTracing = true
+var HostTracing = false
+var ExtendedHostTracing = false
 
 type HostObject interface {
 	Exists(keyId int32) bool

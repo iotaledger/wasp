@@ -94,9 +94,15 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	ownerObj := o.Owner()
 	o.typeId = ownerObj.GetTypeId(keyId)
 	o.name = owner.name + ownerObj.Suffix(keyId)
-	if o.ownerId == 1 && strings.HasPrefix(o.name, "root.") {
-		// strip off "root." prefix
-		o.name = o.name[len("root."):]
+	if o.ownerId == 1 {
+		if strings.HasPrefix(o.name, "root.") {
+			// strip off "root." prefix
+			o.name = o.name[len("root."):]
+		}
+		if strings.HasPrefix(o.name, ".") {
+			// strip off "." prefix
+			o.name = o.name[1:]
+		}
 	}
 	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		key := o.NestedKey()[1:]
