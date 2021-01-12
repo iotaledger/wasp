@@ -99,11 +99,11 @@ func (o *ScPostInfo) Invoke() {
 	transfersId := o.GetObjectId(wasmhost.KeyTransfers, wasmhost.OBJTYPE_MAP)
 	transfers := o.host.FindObject(transfersId).(*ScCallTransfers).Transfers
 	balances := cbalances.NewFromMap(transfers)
-	if !o.vm.ctx.PostRequest(vmtypes.NewRequestParams{
+	if !o.vm.ctx.PostRequest(vmtypes.PostRequestParams{
 		TargetContractID: coretypes.NewContractID(chainId, contractCode),
 		EntryPoint:       functionCode,
 		Params:           params,
-		Timelock:         util.NanoSecToUnixSec(o.vm.ctx.GetTimestamp()) + o.delay,
+		TimeLock:         util.NanoSecToUnixSec(o.vm.ctx.GetTimestamp()) + o.delay,
 		Transfer:         balances,
 	}) {
 		o.Panic("failed to invoke post")

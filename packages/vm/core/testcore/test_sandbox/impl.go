@@ -2,9 +2,12 @@ package test_sandbox
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -161,17 +164,36 @@ func sendToAddress(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSendToAddress)
 	if ctx.Caller() != ctx.ContractCreator() {
 		ctx.Log().Panicf("-------- panic due to unauthorized call")
-		return nil, nil
 	}
 	targetAddress, ok, err := codec.DecodeAddress(ctx.Params().MustGet(ParamAddress))
 	if err != nil || !ok {
 		ctx.Log().Panicf("wrong parameter '%s'", ParamAddress)
-		return nil, nil
 	}
 	myTokens := ctx.Balances()
 	succ := ctx.TransferToAddress(targetAddress, myTokens)
 	if !succ {
 		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String())
 	}
+	return nil, nil
+}
+
+// calls withdrawToChain to the chain ID
+func withdrawToChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	ctx.Log().Infof(FuncWithdrawToChain)
+	targetChain, ok, err := codec.DecodeChainID(ctx.Params().MustGet(ParamChainID))
+	if err != nil || !ok {
+		ctx.Log().Panicf("wrong parameter '%s'", ParamChainID)
+	}
+	succ := ctx.PostRequest(vmtypes.PostRequestParams{
+		TargetContractID: accounts.Interface.ContractID(targetChain),
+		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
+		Transfer: cbalances.NewFromMap(map[balance.Color]int64{
+			balance.ColorIOTA: 2,
+		}),
+	})
+	if !succ {
+		return nil, fmt.Errorf("failed to post request")
+	}
+	ctx.Log().Infof("%s: success", FuncWithdrawToChain)
 	return nil, nil
 }

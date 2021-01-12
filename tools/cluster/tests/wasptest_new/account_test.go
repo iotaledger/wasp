@@ -285,7 +285,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
 	originatorClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
+	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdrawToAddress))
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)

@@ -53,17 +53,21 @@ type Sandbox interface {
 	IncomingTransfer() coretypes.ColoredBalances
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col balance.Color) int64
+
 	// MoveTokens moves specified colored tokens to the target account on the same chain
+	// Deprecated: equivalent to calling "deposit" to "accounts" on the same chain
 	MoveTokens(target coretypes.AgentID, col balance.Color, amount int64) bool
 
 	// Moving tokens outside of the current chain
-	// TransferToAddress send tokens to the L1 ledger address (not contract)
+	// TransferToAddress send tokens to the L1 ledger address
 	TransferToAddress(addr address.Address, transfer coretypes.ColoredBalances) bool
+
 	// TransferCrossChain send funds to the targetAgentID account cross chain
 	// syntactic sugar for sending "deposit" request to the "accounts" contract on the target chain
+	// Deprecated: it is just a syntactic sugar for PostRequest "deposit" to accounts
 	TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool
 	// PostRequest sends cross-chain request
-	PostRequest(par NewRequestParams) bool
+	PostRequest(par PostRequestParams) bool
 
 	// Log interface provides local logging on the machine
 	Log() LogInterface
@@ -74,10 +78,10 @@ type Sandbox interface {
 	Eventf(format string, args ...interface{})
 }
 
-type NewRequestParams struct {
+type PostRequestParams struct {
 	TargetContractID coretypes.ContractID
 	EntryPoint       coretypes.Hname
-	Timelock         uint32
+	TimeLock         uint32
 	Params           dict.Dict
 	Transfer         coretypes.ColoredBalances
 }

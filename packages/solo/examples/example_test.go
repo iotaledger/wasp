@@ -31,32 +31,3 @@ func TestExample2(t *testing.T) {
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 }
-
-func TestExample3(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ex3")
-
-	userWallet := glb.NewSignatureSchemeWithFunds()
-	userAddress := userWallet.Address()
-	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := glb.GetAddressBalance(userAddress, balance.ColorIOTA)
-	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-
-	// send 42 iotas to the own account on-chain
-	req := solo.NewCall("accounts", "deposit").
-		WithTransfer(balance.ColorIOTA, 42)
-	_, err := chain.PostRequest(req, userWallet)
-	require.NoError(t, err)
-
-	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 43) // 43!!
-
-	// withdraw back all iotas
-	req = solo.NewCall("accounts", "withdraw")
-	_, err = chain.PostRequest(req, userWallet)
-	require.NoError(t, err)
-
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0) // empty
-	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-}

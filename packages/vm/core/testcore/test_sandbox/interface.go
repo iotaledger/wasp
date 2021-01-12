@@ -41,6 +41,8 @@ func init() {
 		contract.Func(FuncDoNothing, doNothing),
 		contract.Func(FuncSendToAddress, sendToAddress),
 
+		contract.Func(FuncWithdrawToChain, withdrawToChain),
+
 		contract.ViewFunc(FuncJustView, testJustView),
 	})
 	examples.AddProcessor(Interface)
@@ -64,6 +66,8 @@ const (
 	FuncCallPanicFullEP         = "testCallPanicFullEP"
 	FuncCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
 	FuncCallPanicViewEPFromView = "testCallPanicViewEPFromView"
+
+	FuncWithdrawToChain = "withdrawToChain"
 
 	FuncDoNothing     = "doNothing"
 	FuncSendToAddress = "sendToAddress"

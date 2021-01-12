@@ -58,32 +58,32 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 
 // PostRequest creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
-func (vmctx *VMContext) PostRequest(par vmtypes.NewRequestParams) bool {
+func (vmctx *VMContext) PostRequest(par vmtypes.PostRequestParams) bool {
 	vmctx.log.Debugw("-- PostRequest",
 		"target", par.TargetContractID.String(),
 		"ep", par.EntryPoint.String(),
 		"transfer", cbalances.Str(par.Transfer),
 	)
-	toAgentID := vmctx.MyAgentID()
-	if !vmctx.debitFromAccount(toAgentID, cbalances.NewFromMap(map[balance.Color]int64{
+	myAgentID := vmctx.MyAgentID()
+	if !vmctx.debitFromAccount(myAgentID, cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
 		vmctx.log.Debugf("-- PostRequest: not enough funds for request token")
 		return false
 	}
-	if !vmctx.debitFromAccount(toAgentID, par.Transfer) {
+	if !vmctx.debitFromAccount(myAgentID, par.Transfer) {
 		vmctx.log.Debugf("-- PostRequest: not enough funds")
 		return false
 	}
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
-		WithTimelock(par.Timelock).
+		WithTimelock(par.TimeLock).
 		WithTransfer(par.Transfer).
 		WithArgs(par.Params)
 	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 }
 
 func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
-	return vmctx.PostRequest(vmtypes.NewRequestParams{
+	return vmctx.PostRequest(vmtypes.PostRequestParams{
 		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       reqCode,
 		Params:           params,
@@ -93,11 +93,11 @@ func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.D
 func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
-	return vmctx.PostRequest(vmtypes.NewRequestParams{
+	return vmctx.PostRequest(vmtypes.PostRequestParams{
 		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       entryPoint,
 		Params:           args,
-		Timelock:         timelock,
+		TimeLock:         timelock,
 	})
 }
 

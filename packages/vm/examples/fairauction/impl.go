@@ -343,10 +343,10 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	args := dict.FromGoMap(map[kv.Key][]byte{
 		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
 	})
-	ctx.PostRequest(vmtypes.NewRequestParams{
+	ctx.PostRequest(vmtypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestFinalizeAuction,
-		Timelock:         uint32(duration * 60),
+		TimeLock:         uint32(duration * 60),
 		Params:           args,
 	})
 	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
