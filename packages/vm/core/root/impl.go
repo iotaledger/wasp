@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -67,13 +67,13 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if err != nil {
 		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamOwnerFee, err)
 	}
-	contractRegistry := datatypes.NewMustMap(state, VarContractRegistry)
-	if contractRegistry.Len() != 0 {
+	contractRegistry := collections.NewMap(state, VarContractRegistry)
+	if contractRegistry.MustLen() != 0 {
 		ctx.Log().Panicf("root.initialize.fail: registry not empty")
 	}
 	// record for root
 	rec := NewContractRecord(Interface, coretypes.AgentID{})
-	contractRegistry.SetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
+	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
 	// deploy blob
 	rec = NewContractRecord(blob.Interface, ctx.Caller())
 	err = storeAndInitContract(ctx, &rec, nil)
@@ -227,10 +227,10 @@ func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
 	ret.Set(VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
 
-	src := datatypes.NewMustMap(ctx.State(), VarContractRegistry)
-	dst := datatypes.NewMustMap(ret, VarContractRegistry)
-	src.Iterate(func(elemKey []byte, value []byte) bool {
-		dst.SetAt(elemKey, value)
+	src := collections.NewMapReadOnly(ctx.State(), VarContractRegistry)
+	dst := collections.NewMap(ret, VarContractRegistry)
+	src.MustIterate(func(elemKey []byte, value []byte) bool {
+		dst.MustSetAt(elemKey, value)
 		return true
 	})
 	return ret, nil
@@ -387,7 +387,7 @@ func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("missing parameters")
 	}
 	rec.ValidatorFee = validatorFee
-	datatypes.NewMustMap(ctx.State(), VarContractRegistry).SetAt(hname.Bytes(), EncodeContractRecord(rec))
+	collections.NewMap(ctx.State(), VarContractRegistry).MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
 	return nil, nil
 }
 
@@ -406,7 +406,7 @@ func grantDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("parameter 'deployer' undefined")
 	}
 
-	datatypes.NewMustMap(ctx.State(), VarDeployAuthorisations).SetAt(deployer.Bytes(), []byte{0xFF})
+	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	return nil, nil
 }
 
@@ -424,6 +424,6 @@ func revokeDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !ok {
 		return nil, fmt.Errorf("parameter 'deployer' undefined")
 	}
-	datatypes.NewMustMap(ctx.State(), VarDeployAuthorisations).DelAt(deployer.Bytes())
+	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustDelAt(deployer.Bytes())
 	return nil, nil
 }

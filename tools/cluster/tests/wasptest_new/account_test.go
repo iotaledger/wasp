@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -75,10 +75,10 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain) {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.Len())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 5, contractRegistry.MustLen())
 
-		crBytes := contractRegistry.GetAt(hname.Bytes())
+		crBytes := contractRegistry.MustGetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
@@ -186,10 +186,10 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.Len())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 5, contractRegistry.MustLen())
 
-		crBytes := contractRegistry.GetAt(hname.Bytes())
+		crBytes := contractRegistry.MustGetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)

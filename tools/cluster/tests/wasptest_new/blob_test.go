@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -36,8 +36,8 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 1, blockIndex)
 		checkRoots(t, chain)
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.Len())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 4, contractRegistry.MustLen())
 		return true
 	})
 

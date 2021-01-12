@@ -3,7 +3,7 @@ package chain
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -12,7 +12,7 @@ func listContractsCmd(args []string) {
 	info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo, nil)
 	log.Check(err)
 
-	contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(info, root.VarContractRegistry))
+	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 	log.Check(err)
 
 	feeColor, defaultOwnerFee, defaultValidatorFee, err := root.GetDefaultFeeInfo(info)

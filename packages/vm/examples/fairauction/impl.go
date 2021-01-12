@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -310,8 +310,8 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	description = util.GentleTruncate(description, MaxDescription)
 
 	// find out if auction for this color already exist in the dictionary
-	auctions := datatypes.NewMustMap(ctx.State(), VarStateAuctions)
-	if b := auctions.GetAt(colorForSale.Bytes()); b != nil {
+	auctions := collections.NewMap(ctx.State(), VarStateAuctions)
+	if b := auctions.MustGetAt(colorForSale.Bytes()); b != nil {
 		// auction already exists. Ignore sale auction.
 		// refund iotas less fee
 		refundFromRequest(ctx, &balance.ColorIOTA, expectedDeposit/2)
@@ -333,7 +333,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 		TotalDeposit:    totalDeposit,
 		OwnerMargin:     ownerMargin,
 	})
-	auctions.SetAt(colorForSale.Bytes(), aiData)
+	auctions.MustSetAt(colorForSale.Bytes(), aiData)
 
 	ctx.Eventf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d duration %d minutes",
 		colorForSale.String(), tokensForSale, minimumBid, ownerMargin, duration)
@@ -403,8 +403,8 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	}
 
 	// find the auction
-	auctions := datatypes.NewMustMap(ctx.State(), VarStateAuctions)
-	data := auctions.GetAt(col.Bytes())
+	auctions := collections.NewMap(ctx.State(), VarStateAuctions)
+	data := auctions.MustGetAt(col.Bytes())
 	if data == nil {
 		// no such auction. refund everything
 		refundFromRequest(ctx, &balance.ColorIOTA, 0)
@@ -444,7 +444,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	}
 	// marshal the whole auction info and save it into the state (the dictionary of auctions)
 	data = util.MustBytes(ai)
-	auctions.SetAt(col.Bytes(), data)
+	auctions.MustSetAt(col.Bytes(), data)
 
 	ctx.Eventf("placeBid: success. Auction: '%s'", ai.Description)
 	return nil
@@ -487,8 +487,8 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// find the record of the auction by color
-	auctDict := datatypes.NewMustMap(ctx.State(), VarStateAuctions)
-	data := auctDict.GetAt(col.Bytes())
+	auctDict := collections.NewMap(ctx.State(), VarStateAuctions)
+	data := auctDict.MustGetAt(col.Bytes())
 	if data == nil {
 		// auction with this color does not exist. Inconsistency
 		return fmt.Errorf("finalizeAuction: exit 3")
@@ -591,7 +591,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 	}
 
 	// delete auction record
-	auctDict.DelAt(col.Bytes())
+	auctDict.MustDelAt(col.Bytes())
 
 	ctx.Eventf("finalizeAuction: success. Auction: '%s'", ai.Description)
 	return nil

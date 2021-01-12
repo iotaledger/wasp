@@ -3,7 +3,7 @@ package chain
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -33,7 +33,7 @@ func infoCmd(args []string) {
 		log.Check(err)
 		log.Printf("Description: %s\n", description)
 
-		contracts, err := root.DecodeContractRegistry(datatypes.NewMustMap(info, root.VarContractRegistry))
+		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 		log.Check(err)
 		log.Printf("#Contracts: %d\n", len(contracts))
 

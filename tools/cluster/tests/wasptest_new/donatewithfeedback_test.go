@@ -40,7 +40,7 @@ func TestDwfDonateOnce(t *testing.T) {
 	check(err, t)
 	require.EqualValues(t, 42*numDonations, total)
 
-	//donations := datatypes.NewMustArray(ret, "donations")
+	//donations := collections.NewMustArray(ret, "donations")
 	//for i := uint16(0); i < donations.Len(); i++ {
 	//	donation := donations.GetAt(i)
 	//	_ = donation

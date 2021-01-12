@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -103,7 +103,7 @@ func (dwf *DWFClient) FetchStatus() (*Status, error) {
 func decodeRecords(sliceData *statequery.TLogSliceDataResult) ([]*donatewithfeedback.DonationInfo, error) {
 	ret := make([]*donatewithfeedback.DonationInfo, len(sliceData.Values))
 	for i, data := range sliceData.Values {
-		lr, err := datatypes.ParseRawLogRecord(data)
+		lr, err := collections.ParseRawLogRecord(data)
 		if err != nil {
 			return nil, err
 		}
