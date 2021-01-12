@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -44,7 +44,7 @@ func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
 		return
 	}
 
-	ret.Contracts, err = root.DecodeContractRegistry(datatypes.NewMustMap(info, root.VarContractRegistry))
+	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 	if err != nil {
 		err = fmt.Errorf("DecodeContractRegistry() failed: %v", err)
 		return

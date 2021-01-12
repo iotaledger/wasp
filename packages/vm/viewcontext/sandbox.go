@@ -39,7 +39,11 @@ func (s *sandboxview) Params() dict.Dict {
 	return s.params
 }
 
-func (s *sandboxview) State() kv.KVStore {
+func (s *sandboxview) State() kv.KVStoreReader {
+	return s.state
+}
+
+func (s *sandboxview) WriteableState() kv.KVStore {
 	return s.state
 }
 

@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -30,13 +30,13 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 		return nil, ErrParamWrongOrNotFound
 	}
 
-	return getAccountBalanceDict(ctx, getAccount(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
+	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
 }
 
 // getTotalAssets returns total colored balances controlled by the chain
 func getTotalAssets(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("getTotalAssets")
-	return getAccountBalanceDict(ctx, getTotalAssetsAccount(ctx.State()), "getTotalAssets"), nil
+	return getAccountBalanceDict(ctx, getTotalAssetsAccountR(ctx.State()), "getTotalAssets"), nil
 }
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
@@ -167,12 +167,12 @@ func allow(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !ok {
 		return nil, ErrParamWrongOrNotFound
 	}
-	allowances := datatypes.NewMustMap(state, VarStateAllowances)
+	allowances := collections.NewMap(state, VarStateAllowances)
 	if amount <= 0 {
-		allowances.DelAt(agentID[:])
+		allowances.MustDelAt(agentID[:])
 		ctx.Log().Debugf("accounts.allow.success. %s is not allowed to withdrawToAddress funds", agentID.String())
 	} else {
-		allowances.SetAt(agentID[:], util.Uint64To8Bytes(uint64(amount)))
+		allowances.MustSetAt(agentID[:], util.Uint64To8Bytes(uint64(amount)))
 		ctx.Log().Debugf("accounts.allow.success. Allow %s to withdrawToAddress uo to %d", agentID.String(), amount)
 	}
 	return nil, nil

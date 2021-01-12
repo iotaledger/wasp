@@ -27,7 +27,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -157,7 +157,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	// entropy saved this way is derived (hashed) from the locking transaction hash
 	// we do this trick to be able to deterministically check if smart contract is really fair.
 	// The played color is a deterministic function of the hash of transaction which locked the bets
-	if datatypes.NewMustArray(state, StateVarLockedBets).Len() > 0 {
+	if collections.NewArray(state, StateVarLockedBets).MustLen() > 0 {
 		ok := state.MustHas(StateVarEntropyFromLocking)
 		if !ok {
 			ehv := ctx.GetEntropy()
@@ -181,7 +181,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	if !ok {
 		return fmt.Errorf("wrong request, no Color specified")
 	}
-	firstBet := datatypes.NewMustArray(state, StateVarBets).Len() == 0
+	firstBet := collections.NewArray(state, StateVarBets).MustLen() == 0
 
 	reqid := ctx.RequestID()
 	betInfo := &BetInfo{
@@ -192,7 +192,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	}
 
 	// save the bet info in the array
-	datatypes.NewMustArray(state, StateVarBets).Push(encodeBetInfo(betInfo))
+	collections.NewArray(state, StateVarBets).MustPush(encodeBetInfo(betInfo))
 
 	ctx.Eventf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
 
@@ -266,11 +266,11 @@ func lockBets(ctx vmtypes.Sandbox) error {
 	}
 	state := ctx.State()
 	// append all current bets to the locked bets array
-	lockedBets := datatypes.NewMustArray(state, StateVarLockedBets)
-	lockedBets.Extend(datatypes.NewMustArray(state, StateVarBets))
-	datatypes.NewMustArray(state, StateVarBets).Erase()
+	lockedBets := collections.NewArray(state, StateVarLockedBets)
+	lockedBets.MustExtend(collections.NewArrayReadOnly(state, StateVarBets))
+	collections.NewArray(state, StateVarBets).MustErase()
 
-	numLockedBets := lockedBets.Len()
+	numLockedBets := lockedBets.MustLen()
 	ctx.Eventf("lockBets: num = %d", numLockedBets)
 
 	// clear entropy to be picked in the next request
@@ -297,8 +297,8 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	}
 	state := ctx.State()
 
-	lockedBetsArray := datatypes.NewMustArray(state, StateVarLockedBets)
-	numLockedBets := lockedBetsArray.Len()
+	lockedBetsArray := collections.NewArray(state, StateVarLockedBets)
+	numLockedBets := lockedBetsArray.MustLen()
 	if numLockedBets == 0 {
 		// nothing to play. Should not happen
 		return fmt.Errorf("internal error. Nothing to play")
@@ -326,7 +326,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	totalLockedAmount := int64(0)
 	lockedBets := make([]*BetInfo, numLockedBets)
 	for i := range lockedBets {
-		bi, err := DecodeBetInfo(lockedBetsArray.GetAt(uint16(i)))
+		bi, err := DecodeBetInfo(lockedBetsArray.MustGetAt(uint16(i)))
 		if err != nil {
 			// inconsistency. Even more sad
 			panic(err)
@@ -348,7 +348,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	ctx.Eventf("$$$$$$$$$$ winningBets: %d", len(winningBets))
 
 	// locked bets neither entropy are not needed anymore
-	lockedBetsArray.Erase()
+	lockedBetsArray.MustErase()
 	state.Del(StateVarEntropyFromLocking)
 
 	if len(winningBets) == 0 {
@@ -385,18 +385,18 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 }
 
 func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
-	winsPerColorArray := datatypes.NewMustArray(ctx.State(), StateArrayWinsPerColor)
+	winsPerColorArray := collections.NewArray(ctx.State(), StateArrayWinsPerColor)
 
 	// first time? Initialize counters
-	if winsPerColorArray.Len() == 0 {
+	if winsPerColorArray.MustLen() == 0 {
 		for i := 0; i < NumColors; i++ {
-			winsPerColorArray.Push(util.Uint32To4Bytes(0))
+			winsPerColorArray.MustPush(util.Uint32To4Bytes(0))
 		}
 	}
 
-	winsb := winsPerColorArray.GetAt(uint16(winningColor))
+	winsb := winsPerColorArray.MustGetAt(uint16(winningColor))
 	wins := util.MustUint32From4Bytes(winsb)
-	winsPerColorArray.SetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
+	winsPerColorArray.MustSetAt(uint16(winningColor), util.Uint32To4Bytes(wins+1))
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
@@ -547,8 +547,8 @@ func (ps *PlayerStats) String() string {
 }
 
 func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
-	statsDict := datatypes.NewMustMap(ctx.State(), StateVarPlayerStats)
-	b := statsDict.GetAt(player.Bytes())
+	statsDict := collections.NewMap(ctx.State(), StateVarPlayerStats)
+	b := statsDict.MustGetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)
 	if err != nil {
 		return err
@@ -556,7 +556,7 @@ func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *
 
 	f(stats)
 
-	statsDict.SetAt(player.Bytes(), encodePlayerStats(stats))
+	statsDict.MustSetAt(player.Bytes(), encodePlayerStats(stats))
 
 	return nil
 }

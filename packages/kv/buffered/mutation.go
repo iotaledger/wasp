@@ -15,7 +15,7 @@ type Mutation interface {
 
 	String() string
 
-	ApplyTo(w kv.WriteableKVStore)
+	ApplyTo(w kv.KVStoreWriter)
 
 	// Key returns the key that is mutated
 	Key() kv.Key
@@ -46,7 +46,7 @@ type MutationSequence interface {
 
 	Add(mut Mutation)
 
-	ApplyTo(w kv.WriteableKVStore)
+	ApplyTo(w kv.KVStoreWriter)
 }
 
 const (
@@ -155,7 +155,7 @@ func (ms *mutationSequence) Add(mut Mutation) {
 	ms.latestByKey[mut.Key()] = &mut
 }
 
-func (ms *mutationSequence) ApplyTo(w kv.WriteableKVStore) {
+func (ms *mutationSequence) ApplyTo(w kv.KVStoreWriter) {
 	for _, mut := range ms.muts {
 		mut.ApplyTo(w)
 	}
@@ -244,7 +244,7 @@ func (m *mutationSet) Value() []byte {
 	return m.v
 }
 
-func (m *mutationSet) ApplyTo(w kv.WriteableKVStore) {
+func (m *mutationSet) ApplyTo(w kv.KVStoreWriter) {
 	w.Set(m.k, m.v)
 }
 
@@ -281,6 +281,6 @@ func (m *mutationDel) Value() []byte {
 	return nil
 }
 
-func (m *mutationDel) ApplyTo(w kv.WriteableKVStore) {
+func (m *mutationDel) ApplyTo(w kv.KVStoreWriter) {
 	w.Del(m.k)
 }

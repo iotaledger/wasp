@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -20,10 +20,10 @@ func logCmd(args []string) {
 	}))
 	log.Check(err)
 
-	records := datatypes.NewMustArray(r, eventlog.ParamRecords)
-	for i := uint16(0); i < records.Len(); i++ {
-		b := records.GetAt(i)
-		rec, err := datatypes.ParseRawLogRecord(b)
+	records := collections.NewArrayReadOnly(r, eventlog.ParamRecords)
+	for i := uint16(0); i < records.MustLen(); i++ {
+		b := records.MustGetAt(i)
+		rec, err := collections.ParseRawLogRecord(b)
 		log.Check(err)
 		log.Printf("%s %s\n", time.Unix(0, rec.Timestamp), string(rec.Data))
 	}

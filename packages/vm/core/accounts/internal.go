@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -20,16 +20,28 @@ const (
 	VarStateTotalAssets = "t"
 )
 
-func getAccountsMap(state kv.KVStore) *datatypes.MustMap {
-	return datatypes.NewMustMap(state, VarStateAccounts)
+func getAccountsMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, VarStateAccounts)
 }
 
-func getAccount(state kv.KVStore, agentID coretypes.AgentID) *datatypes.MustMap {
-	return datatypes.NewMustMap(state, string(agentID[:]))
+func getAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, VarStateAccounts)
 }
 
-func getTotalAssetsAccount(state kv.KVStore) *datatypes.MustMap {
-	return datatypes.NewMustMap(state, VarStateTotalAssets)
+func getAccount(state kv.KVStore, agentID coretypes.AgentID) *collections.Map {
+	return collections.NewMap(state, string(agentID[:]))
+}
+
+func getAccountR(state kv.KVStoreReader, agentID coretypes.AgentID) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, string(agentID[:]))
+}
+
+func getTotalAssetsAccount(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, VarStateTotalAssets)
+}
+
+func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, VarStateTotalAssets)
 }
 
 // CreditToAccount brings new funds to the on chain ledger.
@@ -42,7 +54,7 @@ func CreditToAccount(state kv.KVStore, agentID coretypes.AgentID, transfer coret
 }
 
 // creditToAccount internal
-func creditToAccount(state kv.KVStore, account *datatypes.MustMap, transfer coretypes.ColoredBalances) {
+func creditToAccount(state kv.KVStore, account *collections.Map, transfer coretypes.ColoredBalances) {
 	if transfer == nil || transfer.Len() == 0 {
 		return
 	}
@@ -50,11 +62,11 @@ func creditToAccount(state kv.KVStore, account *datatypes.MustMap, transfer core
 
 	transfer.Iterate(func(col balance.Color, bal int64) bool {
 		var currentBalance int64
-		v := account.GetAt(col[:])
+		v := account.MustGetAt(col[:])
 		if v != nil {
 			currentBalance = int64(util.MustUint64From8Bytes(v))
 		}
-		account.SetAt(col[:], util.Uint64To8Bytes(uint64(currentBalance+bal)))
+		account.MustSetAt(col[:], util.Uint64To8Bytes(uint64(currentBalance+bal)))
 		return true
 	})
 }
@@ -75,13 +87,13 @@ func DebitFromAccount(state kv.KVStore, agentID coretypes.AgentID, transfer core
 }
 
 // debitFromAccount internal
-func debitFromAccount(state kv.KVStore, account *datatypes.MustMap, transfer coretypes.ColoredBalances) bool {
+func debitFromAccount(state kv.KVStore, account *collections.Map, transfer coretypes.ColoredBalances) bool {
 	if transfer == nil || transfer.Len() == 0 {
 		return true
 	}
 	defer touchAccount(state, account)
 
-	current := getAccountBalances(account)
+	current := getAccountBalances(account.Immutable())
 
 	ok := true
 	transfer.Iterate(func(col balance.Color, transferAmount int64) bool {
@@ -99,9 +111,9 @@ func debitFromAccount(state kv.KVStore, account *datatypes.MustMap, transfer cor
 
 	for col, rem := range current {
 		if rem > 0 {
-			account.SetAt(col[:], util.Uint64To8Bytes(uint64(rem)))
+			account.MustSetAt(col[:], util.Uint64To8Bytes(uint64(rem)))
 		} else {
-			account.DelAt(col[:])
+			account.MustDelAt(col[:])
 		}
 	}
 	return true
@@ -122,21 +134,21 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID coretypes.Agen
 	return true
 }
 
-func touchAccount(state kv.KVStore, account *datatypes.MustMap) {
+func touchAccount(state kv.KVStore, account *collections.Map) {
 	if account.Name() == VarStateTotalAssets {
 		return
 	}
 	agentid := []byte(account.Name())
 	accounts := getAccountsMap(state)
-	if account.Len() == 0 {
-		accounts.DelAt(agentid)
+	if account.MustLen() == 0 {
+		accounts.MustDelAt(agentid)
 	} else {
-		accounts.SetAt(agentid, []byte{0xFF})
+		accounts.MustSetAt(agentid, []byte{0xFF})
 	}
 }
 
-func GetBalance(state kv.KVStore, agentID coretypes.AgentID, color balance.Color) int64 {
-	b := getAccount(state, agentID).GetAt(color[:])
+func GetBalance(state kv.KVStoreReader, agentID coretypes.AgentID, color balance.Color) int64 {
+	b := getAccountR(state, agentID).MustGetAt(color[:])
 	if b == nil {
 		return 0
 	}
@@ -144,16 +156,16 @@ func GetBalance(state kv.KVStore, agentID coretypes.AgentID, color balance.Color
 	return ret
 }
 
-func GetAccounts(state kv.KVStore) dict.Dict {
+func GetAccounts(state kv.KVStoreReader) dict.Dict {
 	ret := dict.New()
-	getAccountsMap(state).Iterate(func(agentID []byte, val []byte) bool {
+	getAccountsMapR(state).MustIterate(func(agentID []byte, val []byte) bool {
 		ret.Set(kv.Key(agentID), []byte{})
 		return true
 	})
 	return ret
 }
 
-func getAccountBalances(account *datatypes.MustMap) map[balance.Color]int64 {
+func getAccountBalances(account *collections.ImmutableMap) map[balance.Color]int64 {
 	ret := make(map[balance.Color]int64)
 	err := account.IterateBalances(func(col balance.Color, bal int64) bool {
 		ret[col] = bal
@@ -167,26 +179,26 @@ func getAccountBalances(account *datatypes.MustMap) map[balance.Color]int64 {
 
 // GetAccountBalances returns all colored balances belonging to the agentID on the state.
 // Normally, the state is the partition of the 'accountsc'
-func GetAccountBalances(state kv.KVStore, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
-	account := getAccount(state, agentID)
-	if account.Len() == 0 {
+func GetAccountBalances(state kv.KVStoreReader, agentID coretypes.AgentID) (map[balance.Color]int64, bool) {
+	account := getAccountR(state, agentID)
+	if account.MustLen() == 0 {
 		return nil, false
 	}
 	return getAccountBalances(account), true
 }
 
-func GetTotalAssets(state kv.KVStore) coretypes.ColoredBalances {
-	return cbalances.NewFromMap(getAccountBalances(getTotalAssetsAccount(state)))
+func GetTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
+	return cbalances.NewFromMap(getAccountBalances(getTotalAssetsAccountR(state)))
 }
 
-func CalcTotalAssets(state kv.KVStore) coretypes.ColoredBalances {
+func CalcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
 	ret := make(map[balance.Color]int64)
-	getAccountsMap(state).IterateKeys(func(key []byte) bool {
+	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := coretypes.NewAgentIDFromBytes([]byte(key))
 		if err != nil {
 			panic(err)
 		}
-		for col, b := range getAccountBalances(getAccount(state, agentID)) {
+		for col, b := range getAccountBalances(getAccountR(state, agentID)) {
 			ret[col] = ret[col] + b
 		}
 		return true
@@ -203,7 +215,7 @@ func MustCheckLedger(state kv.KVStore, checkpoint string) {
 	}
 }
 
-func getAccountBalanceDict(ctx vmtypes.SandboxView, account *datatypes.MustMap, event string) dict.Dict {
+func getAccountBalanceDict(ctx vmtypes.SandboxView, account *collections.ImmutableMap, event string) dict.Dict {
 	balances := getAccountBalances(account)
 	ctx.Log().Debugf("%s. balance = %s\n", event, cbalances.NewFromMap(balances).String())
 	return EncodeBalances(balances)

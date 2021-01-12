@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
@@ -88,13 +88,13 @@ func donate(ctx vmtypes.Sandbox) error {
 	feedback = util.GentleTruncate(feedback, maxComment)
 
 	stateAccess := ctx.State()
-	tlog := datatypes.NewMustTimestampedLog(stateAccess, donatewithfeedback.VarStateTheLog)
+	tlog := collections.NewTimestampedLog(stateAccess, donatewithfeedback.VarStateTheLog)
 
 	sender := ctx.Caller()
 	// determine sender of the request
 	// create donation info record
 	di := &donatewithfeedback.DonationInfo{
-		Seq:      int64(tlog.Len()),
+		Seq:      int64(tlog.MustLen()),
 		Id:       ctx.RequestID(),
 		Amount:   donated,
 		Sender:   sender,
@@ -115,7 +115,7 @@ func donate(ctx vmtypes.Sandbox) error {
 		di.Amount = 0
 	}
 	// store donation info record in the state (append to the timestamped log)
-	tlog.Append(ctx.GetTimestamp(), di.Bytes())
+	tlog.MustAppend(ctx.GetTimestamp(), di.Bytes())
 
 	// save total and maximum donations
 	maxd, _, _ := codec.DecodeInt64(stateAccess.MustGet(donatewithfeedback.VarStateMaxDonation))
@@ -127,9 +127,9 @@ func donate(ctx vmtypes.Sandbox) error {
 
 	// publish message for tracing
 	ctx.Eventf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
-		tlog.Len(),
-		time.Unix(0, tlog.Earliest()).Format("2006-01-02 15:04:05"),
-		time.Unix(0, tlog.Latest()).Format("2006-01-02 15:04:05"),
+		tlog.MustLen(),
+		time.Unix(0, tlog.MustEarliest()).Format("2006-01-02 15:04:05"),
+		time.Unix(0, tlog.MustLatest()).Format("2006-01-02 15:04:05"),
 	)
 	ctx.Eventf("DonateWithFeedback: donate. amount: %d, sender: %s, feedback: '%s', err: %s",
 		di.Amount, di.Sender.String(), di.Feedback, di.Error)

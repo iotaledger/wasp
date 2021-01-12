@@ -150,5 +150,7 @@ func (host *wasmProcessor) state() kv.KVStore {
 	if host.ctx != nil {
 		return host.ctx.State()
 	}
-	return host.ctxView.State()
+	// FIXME: WritableState() should not exist; instead we should call ctxView.State()
+	// which returns kv.KVStoreReader
+	return host.ctxView.WriteableState()
 }

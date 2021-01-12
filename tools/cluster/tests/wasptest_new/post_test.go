@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -33,8 +33,8 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 		require.EqualValues(t, 2, blockIndex)
 		checkRoots(t, chain)
 
-		contractRegistry := datatypes.NewMustMap(state, root.VarContractRegistry)
-		crBytes := contractRegistry.GetAt(hname.Bytes())
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		crBytes := contractRegistry.MustGetAt(hname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)

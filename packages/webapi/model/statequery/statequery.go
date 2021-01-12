@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/datatypes"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
 type Request struct {
@@ -300,7 +300,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		arr := datatypes.NewArray(vars, string(key))
+		arr := collections.NewArray(vars, string(key))
 
 		size, err := arr.Len()
 		if err != nil {
@@ -323,7 +323,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		m := datatypes.NewMap(vars, string(key))
+		m := collections.NewMap(vars, string(key))
 
 		entries := make([]KeyValuePair, 0)
 		err = m.Iterate(func(elemKey []byte, value []byte) bool {
@@ -346,7 +346,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		m := datatypes.NewMap(vars, string(key))
+		m := collections.NewMap(vars, string(key))
 
 		v, err := m.GetAt(params.Key)
 		if err != nil {
@@ -364,7 +364,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		tlog := datatypes.NewTimestampedLog(vars, key)
+		tlog := collections.NewTimestampedLog(vars, key)
 
 		tsl, err := tlog.TakeTimeSlice(params.FromTs, params.ToTs)
 		if err != nil {
@@ -388,7 +388,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		tlog := datatypes.NewTimestampedLog(vars, key)
+		tlog := collections.NewTimestampedLog(vars, key)
 
 		ret := TLogSliceDataResult{}
 		ret.Values, err = tlog.LoadRecordsRaw(params.FromIndex, params.ToIndex, params.Descending)

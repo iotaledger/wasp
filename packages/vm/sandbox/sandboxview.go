@@ -27,7 +27,11 @@ func (s sandboxView) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
-func (s sandboxView) State() kv.KVStore {
+func (s sandboxView) State() kv.KVStoreReader {
+	return s.vmctx.State()
+}
+
+func (s sandboxView) WriteableState() kv.KVStore {
 	return s.vmctx.State()
 }
 
