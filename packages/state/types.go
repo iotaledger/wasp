@@ -63,7 +63,7 @@ type Block interface {
 	Timestamp() int64
 	Size() uint16
 	RequestIDs() []*coretypes.RequestID
-	EssenceHash() *hashing.HashValue // except state transaction id
+	EssenceHash() hashing.HashValue // except state transaction id
 	String() string
 	Write(io.Writer) error
 	Read(io.Reader) error

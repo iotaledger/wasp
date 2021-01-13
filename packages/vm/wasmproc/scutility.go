@@ -73,7 +73,8 @@ func (o *ScUtility) GetInt(keyId int32) int64 {
 		i := o.nextRandom
 		if i+8 > len(o.random) {
 			// not enough bytes left, generate more bytes
-			o.random = hashing.HashData(o.random)[:]
+			h := hashing.HashData(o.random)
+			o.random = h[:]
 			i = 0
 		}
 		o.nextRandom = i + 8
@@ -109,7 +110,8 @@ func (o *ScUtility) SetBytes(keyId int32, value []byte) {
 	case wasmhost.KeyBase58:
 		o.base58Encoded = base58.Encode(value)
 	case wasmhost.KeyHash:
-		o.hash = hashing.HashData(value)[:]
+		h := hashing.HashData(value)
+		o.hash = h[:]
 	default:
 		o.invalidKey(keyId)
 	}

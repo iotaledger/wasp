@@ -23,7 +23,7 @@ var (
 	Interface = &contract.ContractInterface{
 		Name:        Name,
 		Description: description,
-		ProgramHash: *hashing.HashStrings(Name),
+		ProgramHash: hashing.HashStrings(Name),
 	}
 	ErrContractNotFound = errors.New("smart contract not found")
 )

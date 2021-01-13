@@ -23,5 +23,5 @@ func MustBytes(obj interface{ Write(io.Writer) error }) []byte {
 }
 
 func GetHashValue(obj interface{ Write(io.Writer) error }) hashing.HashValue {
-	return *hashing.HashData(MustBytes(obj))
+	return hashing.HashData(MustBytes(obj))
 }

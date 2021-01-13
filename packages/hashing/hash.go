@@ -1,9 +1,9 @@
 package hashing
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"github.com/mr-tron/base58"
+	"hash"
 	"io"
 
 	// github.com/mr-tron/base58
@@ -11,15 +11,12 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/crypto/sha3"
-	"hash"
 	"math/rand"
 )
 
-const HashSize = sha256.Size
+const HashSize = 32
 
 type HashValue [HashSize]byte
-type HashableBytes []byte
 
 var (
 	nilHash  HashValue
@@ -29,41 +26,32 @@ var (
 )
 
 func init() {
+	if getHash().Size() != HashSize {
+		panic("hash size != 32")
+	}
 	for i := range allFHash {
 		allFHash[i] = 0xFF
 	}
 }
 
-func (h *HashValue) Bytes() []byte {
-	return (*h)[:]
-}
-
-func (h *HashValue) String() string {
-	return base58.Encode(h[:])
-	//return hex.EncodeToString(h[:])
-}
-
-func (h *HashValue) Short() string {
-	return base58.Encode((*h)[:6]) + ".."
-	//return hex.EncodeToString((*h)[:6]) + ".."
-}
-
-func (h *HashValue) Shortest() string {
-	//return base58.Encode((*h)[:4])
-	return hex.EncodeToString((*h)[:4])
-}
-
-func (h *HashValue) Equal(h1 *HashValue) bool {
-	if h == h1 {
-		return true
+func getHash() hash.Hash {
+	h, err := blake2b.New256(nil)
+	if err != nil {
+		panic(err)
 	}
-	return *h == *h1
+	return h
 }
 
-func (h *HashValue) Clone() *HashValue {
-	var ret HashValue
-	copy(ret[:], h.Bytes())
-	return &ret
+func (h HashValue) String() string {
+	return base58.Encode(h[:])
+}
+
+func (h HashValue) Short() string {
+	return base58.Encode((h)[:6]) + ".."
+}
+
+func (h HashValue) Shortest() string {
+	return hex.EncodeToString((h)[:4])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {
@@ -80,7 +68,7 @@ func (h *HashValue) UnmarshalJSON(buf []byte) error {
 	if err != nil {
 		return err
 	}
-	copy(h.Bytes(), ret.Bytes())
+	copy(h[:], ret[:])
 	return nil
 }
 
@@ -89,7 +77,7 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 		return nilHash, errors.New("wrong HashValue bytes length")
 	}
 	var ret HashValue
-	copy(ret.Bytes(), b)
+	copy(ret[:], b)
 	return ret, nil
 }
 
@@ -101,34 +89,17 @@ func HashValueFromBase58(s string) (HashValue, error) {
 	return HashValueFromBytes(b)
 }
 
-func HashData(data ...[]byte) *HashValue {
-	return HashDataBlake2b(data...)
-	//return HashDataSha3(data...)
-}
-
-func HashDataBlake2b(data ...[]byte) *HashValue {
-	h, err := blake2b.New256(nil)
-	if err != nil {
-		panic(err)
-	}
-	return hashTheData(h, data)
-}
-
-func HashDataSha3(data ...[]byte) *HashValue {
-	h := sha3.New256()
-	return hashTheData(h, data)
-}
-
-func hashTheData(h hash.Hash, data [][]byte) *HashValue {
+// HashData Blake2b
+func HashData(data ...[]byte) (ret HashValue) {
+	h := getHash()
 	for _, d := range data {
 		h.Write(d)
 	}
-	var ret HashValue
 	copy(ret[:], h.Sum(nil))
-	return &ret
+	return
 }
 
-func HashStrings(str ...string) *HashValue {
+func HashStrings(str ...string) HashValue {
 	tarr := make([][]byte, len(str))
 	for i, s := range str {
 		tarr[i] = []byte(s)
@@ -143,25 +114,17 @@ func RandomHash(rnd *rand.Rand) *HashValue {
 	} else {
 		s = fmt.Sprintf("%d", rnd.Int())
 	}
-	return HashStrings(s, s, s)
-}
-
-func HashInList(h *HashValue, list []*HashValue) bool {
-	for _, h1 := range list {
-		if h.Equal(h1) {
-			return true
-		}
-	}
-	return false
+	ret := HashStrings(s, s, s)
+	return &ret
 }
 
 func (h *HashValue) Write(w io.Writer) error {
-	_, err := w.Write(h.Bytes())
+	_, err := w.Write(h[:])
 	return err
 }
 
 func (h *HashValue) Read(r io.Reader) error {
-	n, err := r.Read(h.Bytes())
+	n, err := r.Read(h[:])
 	if err != nil {
 		return err
 	}

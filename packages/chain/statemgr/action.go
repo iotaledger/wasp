@@ -11,10 +11,10 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 func (sm *stateManager) takeAction() {
@@ -141,7 +141,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// update state manager variables to the new state
 	sm.nextStateTransaction = nil
 	sm.pendingBlocks = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
-	sm.permutation.Shuffle(varStateHash.Bytes())
+	sm.permutation.Shuffle(varStateHash[:])
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
 	sm.consensusNotifiedOnStateTransition = false
 
