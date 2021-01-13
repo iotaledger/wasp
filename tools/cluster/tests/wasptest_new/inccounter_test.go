@@ -30,8 +30,9 @@ func checkCounter(t *testing.T, expected int) bool {
 
 func TestIncDeployment(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 0, nil)
+	defer counter.Close()
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
@@ -79,6 +80,7 @@ func TestInc5xNothing(t *testing.T) {
 
 func testNothing(t *testing.T, numRequests int) {
 	setupAndLoad(t, incName, incDescription, numRequests, nil)
+	defer counter.Close()
 
 	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
@@ -88,7 +90,7 @@ func testNothing(t *testing.T, numRequests int) {
 		check(err, t)
 	}
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
@@ -135,6 +137,7 @@ func TestInc5xIncrement(t *testing.T) {
 
 func testIncrement(t *testing.T, numRequests int) {
 	setupAndLoad(t, incName, incDescription, numRequests, nil)
+	defer counter.Close()
 
 	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
@@ -144,7 +147,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		check(err, t)
 	}
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 

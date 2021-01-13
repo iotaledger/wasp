@@ -43,7 +43,7 @@ func TestFrPlaceBet(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	err = wasps.ListenToMessages(map[string]int{
+	err = wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -114,7 +114,7 @@ func testFrPlaceBetsAndPlay(t *testing.T, nrOfBets int, wasps *cluster.Cluster) 
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	err = wasps.ListenToMessages(map[string]int{
+	err = wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

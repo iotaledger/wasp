@@ -21,7 +21,7 @@ import (
 
 func TestBasicAccounts(t *testing.T) {
 	setup(t, "test_cluster")
-	err := clu.ListenToMessages(map[string]int{
+	counter, err := clu.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -30,14 +30,16 @@ func TestBasicAccounts(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
+	defer counter.Close()
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
-	testBasicAccounts(t, chain)
+	testBasicAccounts(t, chain, counter)
 }
 
 func TestBasicAccountsN1(t *testing.T) {
-	setup(t, "test_cluster_n1")
-	err := clu.ListenToMessages(map[string]int{
+	setup(t, "test_cluster")
+	chainNodes := []int{0}
+	counter, err := cluster.NewMessageCounter(clu, chainNodes, map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -46,12 +48,14 @@ func TestBasicAccountsN1(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
-	chain, err := clu.DeployChain("single_node_chain", []int{0}, 1, []int{})
+	defer counter.Close()
+	chain, err := clu.DeployChain("single_node_chain", chainNodes, 1)
 	check(err, t)
-	testBasicAccounts(t, chain)
+	testBasicAccounts(t, chain, counter)
 }
 
-func testBasicAccounts(t *testing.T, chain *cluster.Chain) {
+func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
+	defer counter.Close()
 
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
@@ -64,7 +68,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain) {
 	})
 	check(err, t)
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
@@ -150,7 +154,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain) {
 func TestBasic2Accounts(t *testing.T) {
 	setup(t, "test_cluster")
 
-	err := clu.ListenToMessages(map[string]int{
+	counter, err := clu.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -159,6 +163,7 @@ func TestBasic2Accounts(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
+	defer counter.Close()
 
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
@@ -175,7 +180,7 @@ func TestBasic2Accounts(t *testing.T) {
 	})
 	check(err, t)
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 

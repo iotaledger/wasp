@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -26,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -34,18 +32,12 @@ import (
 )
 
 type Cluster struct {
+	Name         string
 	Config       *ClusterConfig
 	ConfigPath   string // where the cluster configuration is stored - read only
 	DataPath     string // where the cluster's volatile data lives
 	Started      bool
 	Level1Client level1.Level1Client
-	// reading publisher's output
-	messagesCh   chan *subscribe.HostMessage
-	stopReading  chan bool
-	expectations map[string]int
-	topics       []string
-	counters     map[string]map[string]int
-	testName     string
 }
 
 func New(configPath string, dataPath string) (*Cluster, error) {
@@ -84,17 +76,16 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChain("Default chain", committee, uint16(quorum), []int{})
+	return clu.DeployChain("Default chain", committee, uint16(quorum))
 }
 
-func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16, accessNodes []int) (*Chain, error) {
+func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16) (*Chain, error) {
 	ownerSeed := seed.NewSeed()
 
 	chain := &Chain{
 		Description:    description,
 		OriginatorSeed: ownerSeed,
 		CommitteeNodes: committeeNodes,
-		AccessNodes:    accessNodes,
 		Quorum:         quorum,
 		Cluster:        clu,
 	}
@@ -108,7 +99,6 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		Node:                  clu.Level1Client,
 		CommitteeApiHosts:     clu.WaspHosts(committeeNodes, (*WaspNodeConfig).ApiHost),
 		CommitteePeeringHosts: clu.WaspHosts(committeeNodes, (*WaspNodeConfig).PeeringHost),
-		AccessNodes:           clu.WaspHosts(accessNodes, (*WaspNodeConfig).PeeringHost),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
 		OriginatorSigScheme:   chain.OriginatorSigScheme(),
@@ -179,7 +169,7 @@ func fileExists(path string) (bool, error) {
 
 // Init creates in DataPath a directory with config.json for each node
 func (cluster *Cluster) Init(resetDataPath bool, name string) error {
-	cluster.testName = name
+	cluster.Name = name
 	exists, err := fileExists(cluster.DataPath)
 	if err != nil {
 		return err
@@ -498,107 +488,8 @@ func (cluster *Cluster) WaspHosts(nodeIndexes []int, getHost func(w *WaspNodeCon
 	return hosts
 }
 
-func (cluster *Cluster) ListenToMessages(expectations map[string]int) error {
-	allNodesNanomsg := cluster.WaspHosts(cluster.AllWaspNodes(), (*WaspNodeConfig).NanomsgHost)
-
-	cluster.expectations = expectations
-	cluster.messagesCh = make(chan *subscribe.HostMessage, 1000)
-	cluster.stopReading = make(chan bool)
-	cluster.counters = make(map[string]map[string]int)
-
-	cluster.topics = make([]string, 0)
-	for t := range expectations {
-		cluster.topics = append(cluster.topics, t)
-	}
-	sort.Strings(cluster.topics)
-
-	for _, host := range allNodesNanomsg {
-		cluster.counters[host] = make(map[string]int)
-		for msgType := range expectations {
-			cluster.counters[host][msgType] = 0
-		}
-	}
-
-	return subscribe.SubscribeMultiOld(allNodesNanomsg, cluster.messagesCh, cluster.stopReading, cluster.topics...)
-}
-
-func (cluster *Cluster) CollectMessages(duration time.Duration) {
-	fmt.Printf("[cluster] collecting publisher's messages for %v\n", duration)
-
-	deadline := time.Now().Add(duration)
-	for {
-		select {
-		case msg := <-cluster.messagesCh:
-			cluster.countMessage(msg)
-
-		case <-time.After(500 * time.Millisecond):
-		}
-		if time.Now().After(deadline) {
-			break
-		}
-	}
-}
-
-func (cluster *Cluster) WaitUntilExpectationsMet() bool {
-	fmt.Printf("[cluster] collecting publisher's messages\n")
-
-	for {
-		fail, pass, report := cluster.report()
-		if fail {
-			fmt.Printf("\n[cluster] Message expectations failed for '%s':\n%s\n", cluster.testName, report)
-			return false
-		}
-		if pass {
-			return true
-		}
-
-		select {
-		case msg := <-cluster.messagesCh:
-			cluster.countMessage(msg)
-		case <-time.After(90 * time.Second):
-			return cluster.Report()
-		}
-	}
-}
-
-func (cluster *Cluster) countMessage(msg *subscribe.HostMessage) {
-	cluster.counters[msg.Sender][msg.Message[0]] += 1
-}
-
-func (cluster *Cluster) Report() bool {
-	_, pass, report := cluster.report()
-	fmt.Printf("\n[cluster] Message statistics for '%s':\n%s\n", cluster.testName, report)
-	return pass
-}
-
-func (cluster *Cluster) report() (bool, bool, string) {
-	fail := false
-	pass := true
-	report := ""
-	for host, counters := range cluster.counters {
-		report += fmt.Sprintf("Node: %s\n", host)
-		for _, t := range cluster.topics {
-			res := counters[t]
-			exp := cluster.expectations[t]
-			e := "-"
-			f := ""
-			if exp >= 0 {
-				e = strconv.Itoa(exp)
-				if res == exp {
-					f = "ok"
-				} else {
-					f = "fail"
-					pass = false
-					if res > exp {
-						// got more messages than expected, no need to keep running
-						fail = true
-					}
-				}
-			}
-			report += fmt.Sprintf("          %s: %d (%s) %s\n", t, res, e, f)
-		}
-	}
-	return fail, pass, report
+func (cluster *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
+	return NewMessageCounter(cluster, cluster.AllWaspNodes(), expectations)
 }
 
 func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {

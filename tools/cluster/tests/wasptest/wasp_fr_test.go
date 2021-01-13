@@ -19,7 +19,7 @@ import (
 func TestSend1Bet(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend1Bet")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -89,7 +89,7 @@ func TestSend1Bet(t *testing.T) {
 func TestSend5Bets(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSend5Bets")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -158,7 +158,7 @@ func TestSend5Bets(t *testing.T) {
 func TestSendBetsAndPlay(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestSendBetsAndPlay")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -247,7 +247,7 @@ func TestSendBetsAndPlay(t *testing.T) {
 func TestFRStatus(t *testing.T) {
 	wasps := setup(t, "test_cluster", "TestFRStatus")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

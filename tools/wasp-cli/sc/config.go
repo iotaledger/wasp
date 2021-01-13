@@ -151,7 +151,6 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
-		AccessNodes:           []string{},
 		N:                     uint16(len(params.Committee)),
 		T:                     uint16(params.Quorum),
 		OriginatorSigScheme:   params.SigScheme,

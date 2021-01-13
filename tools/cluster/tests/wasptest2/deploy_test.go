@@ -91,7 +91,7 @@ const numRequests = 5
 func TestSend5ReqInc0SecDeploy(t *testing.T) {
 	wasps := setup(t, "TestSend5ReqInc0SecDeploy")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -150,7 +150,7 @@ const numRequestsInTheBlock = 100
 func TestSend100ReqMulti(t *testing.T) {
 	wasps := setup(t, "TestSend5ReqInc0SecDeploy")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

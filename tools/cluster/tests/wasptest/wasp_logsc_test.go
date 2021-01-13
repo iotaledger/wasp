@@ -20,7 +20,7 @@ import (
 func startLogSC(t *testing.T, expectations map[string]int) (*cluster.Cluster, *cluster.Chain) {
 	clu := setup(t, "logsc_cluster", "TestLogsc")
 
-	err := clu.ListenToMessages(expectations)
+	err := clu.StartMessageCounter(expectations)
 	check(err, t)
 
 	sc := &clu.SmartContractConfig[0]

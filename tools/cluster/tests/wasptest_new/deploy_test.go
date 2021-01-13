@@ -19,7 +19,7 @@ import (
 func TestDeployChain(t *testing.T) {
 	setup(t, "test_cluster")
 
-	err := clu.ListenToMessages(map[string]int{
+	counter, err := clu.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -28,11 +28,12 @@ func TestDeployChain(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
+	defer counter.Close()
 
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 	chainID, chainOwnerID := getChainInfo(t, chain)
@@ -54,7 +55,7 @@ func TestDeployChain(t *testing.T) {
 func TestDeployContractOnly(t *testing.T) {
 	setup(t, "test_cluster")
 
-	err := clu.ListenToMessages(map[string]int{
+	counter, err := clu.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -63,6 +64,7 @@ func TestDeployContractOnly(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
+	defer counter.Close()
 
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
@@ -79,7 +81,7 @@ func TestDeployContractOnly(t *testing.T) {
 	})
 	check(err, t)
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
@@ -126,7 +128,7 @@ func TestDeployContractOnly(t *testing.T) {
 func TestDeployContractAndSpawn(t *testing.T) {
 	setup(t, "test_cluster")
 
-	err := clu.ListenToMessages(map[string]int{
+	counter, err := clu.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -135,6 +137,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		"request_out":         2,
 	})
 	check(err, t)
+	defer counter.Close()
 
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
@@ -150,7 +153,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	})
 	check(err, t)
 
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 

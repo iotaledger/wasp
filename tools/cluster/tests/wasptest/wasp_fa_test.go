@@ -20,7 +20,7 @@ func TestFASetOwnerMargin(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFASetOwnerMargin")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -122,7 +122,7 @@ func TestFA1Color0Bids(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFA1Color0Bids")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -229,7 +229,7 @@ func TestFA2Color0Bids(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -360,7 +360,7 @@ func TestFA1Color1NonWinningBid(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -494,7 +494,7 @@ func TestFA1Color1Bidder5WinningBids(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFA1Color1Bidder5WinningBids")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2, // wasps.NumSmartContracts(),
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -632,7 +632,7 @@ func TestFA1Color2Bidders(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFA1Color2Bidders")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

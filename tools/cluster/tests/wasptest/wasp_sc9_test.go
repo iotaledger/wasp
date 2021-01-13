@@ -21,7 +21,7 @@ func TestSC9Requests5Sec1(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestFairAuction5Requests5Sec1")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

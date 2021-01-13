@@ -30,7 +30,6 @@ type Chain struct {
 	OriginatorSeed *seed.Seed
 
 	CommitteeNodes []int
-	AccessNodes    []int
 	Quorum         uint16
 	Address        address.Address
 
@@ -47,13 +46,6 @@ func (ch *Chain) ChainAddress() *address.Address {
 
 func (ch *Chain) ContractID(contractHname coretypes.Hname) coretypes.ContractID {
 	return coretypes.NewContractID(ch.ChainID, contractHname)
-}
-
-func (ch *Chain) AllNodes() []int {
-	r := make([]int, 0)
-	r = append(r, ch.CommitteeNodes...)
-	r = append(r, ch.AccessNodes...)
-	return r
 }
 
 func (ch *Chain) CommitteeApi() []string {
@@ -227,4 +219,8 @@ func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]
 		return nil, err
 	}
 	return ret, nil
+}
+
+func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
+	return NewMessageCounter(ch.Cluster, ch.CommitteeNodes, expectations)
 }
