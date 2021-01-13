@@ -38,22 +38,6 @@ func TestHashData(t *testing.T) {
 	}
 }
 
-func TestHashDataBlake2b(t *testing.T) {
-	var bytes = []byte{0, 1, 2, 3}
-	h := HashDataBlake2b(bytes)
-	if reflect.TypeOf(nilHash) != reflect.TypeOf(*h) {
-		t.Fatalf("failed to hash bytes array with blake 2b")
-	}
-}
-
-func TestHashDataSha3(t *testing.T) {
-	var bytes = []byte{0, 1, 2, 3}
-	h := HashDataSha3(bytes)
-	if reflect.TypeOf(nilHash) != reflect.TypeOf(*h) {
-		t.Fatalf("failed to hash bytes array with sha3")
-	}
-}
-
 func TestHashStrings(t *testing.T) {
 	var str = []string{"kuku", "mumu", "zuzu", "rrrr"}
 	h := HashStrings(str...)
@@ -70,26 +54,6 @@ func TestRandomHash(t *testing.T) {
 	h := RandomHash(rnd)
 	if reflect.TypeOf(nilHash) != reflect.TypeOf(*h) {
 		t.Fatalf("failed to generate random hash")
-	}
-}
-
-func TestHashInList(t *testing.T) {
-	var seed1 = HashStrings("alice").String()
-	var seed2 = HashStrings("bob").String()
-	var seed3 = HashStrings("crea").String()
-	var seed4 = HashStrings("david").String()
-	h1, _ := HashValueFromBase58(seed1)
-	h2, _ := HashValueFromBase58(seed2)
-	h3, _ := HashValueFromBase58(seed3)
-	h4, _ := HashValueFromBase58(seed4)
-	hashArray := []*HashValue{&h1, &h2, &h3}
-	res1 := HashInList(&h1, hashArray)
-	if !res1 {
-		t.Fatalf("failed to check")
-	}
-	res2 := HashInList(&h4, hashArray)
-	if res2 == true {
-		t.Fatalf("failed to check")
 	}
 }
 

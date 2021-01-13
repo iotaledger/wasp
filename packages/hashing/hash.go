@@ -11,15 +11,14 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/crypto/sha3"
-	"hash"
 	"math/rand"
 )
 
 const HashSize = sha256.Size
 
+const f = blake2b.Size
+
 type HashValue [HashSize]byte
-type HashableBytes []byte
 
 var (
 	nilHash  HashValue
@@ -101,25 +100,12 @@ func HashValueFromBase58(s string) (HashValue, error) {
 	return HashValueFromBytes(b)
 }
 
+// HashData Blake2b
 func HashData(data ...[]byte) *HashValue {
-	return HashDataBlake2b(data...)
-	//return HashDataSha3(data...)
-}
-
-func HashDataBlake2b(data ...[]byte) *HashValue {
 	h, err := blake2b.New256(nil)
 	if err != nil {
 		panic(err)
 	}
-	return hashTheData(h, data)
-}
-
-func HashDataSha3(data ...[]byte) *HashValue {
-	h := sha3.New256()
-	return hashTheData(h, data)
-}
-
-func hashTheData(h hash.Hash, data [][]byte) *HashValue {
 	for _, d := range data {
 		h.Write(d)
 	}
@@ -144,15 +130,6 @@ func RandomHash(rnd *rand.Rand) *HashValue {
 		s = fmt.Sprintf("%d", rnd.Int())
 	}
 	return HashStrings(s, s, s)
-}
-
-func HashInList(h *HashValue, list []*HashValue) bool {
-	for _, h1 := range list {
-		if h.Equal(h1) {
-			return true
-		}
-	}
-	return false
 }
 
 func (h *HashValue) Write(w io.Writer) error {
