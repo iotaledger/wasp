@@ -200,7 +200,7 @@ func (vmctx *VMContext) initRequestContext(reqRef vm.RequestRefWithFreeTokens, t
 	vmctx.timestamp = timestamp
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
-	vmctx.entropy = *hashing.HashData(vmctx.entropy[:])
+	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.remainingAfterFees = cbalances.NewFromMap(nil)
 
 	vmctx.contractRecord, _ = vmctx.findContractByHname(vmctx.reqHname)

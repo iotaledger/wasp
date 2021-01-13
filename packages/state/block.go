@@ -115,7 +115,7 @@ func (b *block) RequestIDs() []*coretypes.RequestID {
 }
 
 // hash of all data except state transaction hash
-func (b *block) EssenceHash() *hashing.HashValue {
+func (b *block) EssenceHash() hashing.HashValue {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
 		panic("EssenceHash")

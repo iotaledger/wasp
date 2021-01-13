@@ -20,7 +20,7 @@ func TestBasic(t *testing.T) {
 	t.Logf("Hname: %s", Interface.Hname())
 }
 
-var color = balance.Color(*hashing.HashStrings("dummy string"))
+var color = balance.Color(hashing.HashStrings("dummy string"))
 
 func checkLedger(t *testing.T, state dict.Dict, cp string) coretypes.ColoredBalances {
 	total := GetTotalAssets(state)

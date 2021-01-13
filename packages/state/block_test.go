@@ -13,13 +13,13 @@ import (
 )
 
 func TestBatches(t *testing.T) {
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
 	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	assert.EqualValues(t, *su1.RequestID(), reqid1)
 
-	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
+	txid2 := (transaction.ID)(hashing.HashStrings("test string 2"))
 	reqid2 := coretypes.NewRequestID(txid2, 2)
 	su2 := NewStateUpdate(&reqid2)
 
@@ -50,7 +50,7 @@ func TestBatches(t *testing.T) {
 }
 
 func TestBatchMarshaling(t *testing.T) {
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
 	reqid1 := coretypes.NewRequestID(txid1, 0)
 	reqid2 := coretypes.NewRequestID(txid1, 2)
 	su1 := NewStateUpdate(&reqid1)

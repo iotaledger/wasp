@@ -90,7 +90,7 @@ func (vs *virtualState) BlockIndex() uint32 {
 
 func (vs *virtualState) ApplyBlockIndex(blockIndex uint32) {
 	vh := vs.Hash()
-	vs.stateHash = *hashing.HashData(vh.Bytes(), util.Uint32To4Bytes(blockIndex))
+	vs.stateHash = hashing.HashData(vh[:], util.Uint32To4Bytes(blockIndex))
 	vs.empty = false
 	vs.blockIndex = blockIndex
 }
@@ -125,7 +125,7 @@ func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	vs.timestamp = stateUpd.Timestamp()
 	vh := vs.Hash()
 	sh := util.GetHashValue(stateUpd)
-	vs.stateHash = *hashing.HashData(vh.Bytes(), sh.Bytes(), util.Uint64To8Bytes(uint64(vs.timestamp)))
+	vs.stateHash = hashing.HashData(vh[:], sh[:], util.Uint64To8Bytes(uint64(vs.timestamp)))
 	vs.empty = false
 }
 
@@ -140,7 +140,7 @@ func (vs *virtualState) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, uint64(vs.timestamp)); err != nil {
 		return err
 	}
-	if _, err := w.Write(vs.stateHash.Bytes()); err != nil {
+	if _, err := w.Write(vs.stateHash[:]); err != nil {
 		return err
 	}
 	return nil

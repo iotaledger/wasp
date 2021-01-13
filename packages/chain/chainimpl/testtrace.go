@@ -43,7 +43,7 @@ func (c *chainObj) InitTestRound() {
 	msg := &chain.TestTraceMsg{
 		InitTime:      time.Now().UnixNano(),
 		InitPeerIndex: c.ownIndex,
-		Sequence:      util.NewPermutation16(c.NumPeers(), hashing.RandomHash(nil).Bytes()).GetArray(),
+		Sequence:      util.NewPermutation16(c.NumPeers(), hashing.RandomHash(nil)[:]).GetArray(),
 	}
 	// found own seqIndex in permutation
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)

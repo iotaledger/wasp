@@ -44,13 +44,13 @@ func TestVariableStateBasic(t *testing.T) {
 }
 
 func TestApply(t *testing.T) {
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
 	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
 	assert.EqualValues(t, *su1.RequestID(), reqid1)
 
-	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
+	txid2 := (transaction.ID)(hashing.HashStrings("test string 2"))
 	reqid2 := coretypes.NewRequestID(txid2, 2)
 	su2 := NewStateUpdate(&reqid2)
 	suwrong := NewStateUpdate(&reqid2)
@@ -97,7 +97,7 @@ func TestApply(t *testing.T) {
 }
 
 func TestApply2(t *testing.T) {
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
 	reqid1 := coretypes.NewRequestID(txid1, 0)
 	reqid2 := coretypes.NewRequestID(txid1, 2)
 	reqid3 := coretypes.NewRequestID(txid1, 5)
@@ -134,7 +134,7 @@ func TestApply2(t *testing.T) {
 }
 
 func TestApply3(t *testing.T) {
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
 	reqid1 := coretypes.NewRequestID(txid1, 0)
 	reqid2 := coretypes.NewRequestID(txid1, 2)
 
@@ -164,7 +164,7 @@ func TestCommit(t *testing.T) {
 
 	partition := db.WithRealm([]byte("2"))
 
-	txid1 := (transaction.ID)(*hashing.HashStrings("test string 1"))
+	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
 	reqid1 := coretypes.NewRequestID(txid1, 5)
 	su1 := NewStateUpdate(&reqid1)
 
@@ -202,7 +202,7 @@ func TestCommit(t *testing.T) {
 	v, _ = vs1_2.Variables().Get(kv.Key([]byte("x")))
 	assert.Equal(t, []byte{1}, v)
 
-	txid2 := (transaction.ID)(*hashing.HashStrings("test string 2"))
+	txid2 := (transaction.ID)(hashing.HashStrings("test string 2"))
 	reqid2 := coretypes.NewRequestID(txid2, 6)
 	su2 := NewStateUpdate(&reqid2)
 

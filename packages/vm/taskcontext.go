@@ -49,5 +49,5 @@ func BatchHash(reqids []coretypes.RequestID, ts int64, leaderIndex uint16) hashi
 	_ = util.WriteInt64(&buf, ts)
 	_ = util.WriteUint16(&buf, leaderIndex)
 
-	return *hashing.HashData(buf.Bytes())
+	return hashing.HashData(buf.Bytes())
 }

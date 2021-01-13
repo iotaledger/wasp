@@ -31,7 +31,7 @@ func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
 		all = append(all, v)
 		all = append(all, []byte(k))
 	}
-	return *hashing.HashData(all...), kSorted, values
+	return hashing.HashData(all...), kSorted, values
 }
 
 // MustGetBlobHash deterministically hashes map of binary values

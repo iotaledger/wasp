@@ -2,6 +2,7 @@ package hashing
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -25,7 +26,7 @@ func TestHashValueFromString(t *testing.T) {
 	if e != nil {
 		t.Fatalf("error occurs")
 	}
-	if !h2.Equal(h1) {
+	if h2 != h1 {
 		t.Fatalf("error occurs")
 	}
 }
@@ -33,7 +34,7 @@ func TestHashValueFromString(t *testing.T) {
 func TestHashData(t *testing.T) {
 	var bytes = []byte{0, 1, 2, 3}
 	h := HashData(bytes)
-	if reflect.TypeOf(nilHash) != reflect.TypeOf(*h) {
+	if reflect.TypeOf(nilHash) != reflect.TypeOf(h) {
 		t.Fatalf("failed to hash bytes array")
 	}
 }
@@ -41,9 +42,7 @@ func TestHashData(t *testing.T) {
 func TestHashStrings(t *testing.T) {
 	var str = []string{"kuku", "mumu", "zuzu", "rrrr"}
 	h := HashStrings(str...)
-	if reflect.TypeOf(nilHash) != reflect.TypeOf(*h) {
-		t.Fatalf("failed to hash string array")
-	}
+	require.EqualValues(t, reflect.TypeOf(nilHash), reflect.TypeOf(h))
 }
 
 func TestRandomHash(t *testing.T) {
@@ -52,42 +51,15 @@ func TestRandomHash(t *testing.T) {
 	}
 	var rnd = rand.New(src)
 	h := RandomHash(rnd)
-	if reflect.TypeOf(nilHash) != reflect.TypeOf(*h) {
-		t.Fatalf("failed to generate random hash")
-	}
-}
-
-func TestBytes(t *testing.T) {
-	var bytesArray []byte
-	var h1 = HashStrings("alice")
-	var bytes = h1.Bytes()
-	if reflect.TypeOf(bytesArray) != reflect.TypeOf(bytes) {
-		t.Fatalf("failed to convert hash to bytes array")
-	}
+	require.EqualValues(t, reflect.TypeOf(nilHash), reflect.TypeOf(*h))
 }
 
 func TestString(t *testing.T) {
 	var stringType string
 	var h1 = HashStrings("alice")
 	var stringified = h1.String()
-	if reflect.TypeOf(stringType) != reflect.TypeOf(stringified) {
-		t.Fatalf("failed to convert hash to bytes array")
-	}
-}
-
-func TestEqual(t *testing.T) {
-	var h1 = HashStrings("alice")
-	var h2 = HashStrings("alice")
-	isEqual := h1.Equal(h2)
-	if !isEqual {
-		t.Fatalf("failed to check")
-	}
-}
-
-func TestClone(t *testing.T) {
-	var h1 = HashStrings("alice")
-	var h2 = h1.Clone()
-	if *h1 != *h2 {
-		t.Fatalf("failed to check")
-	}
+	require.EqualValues(t, reflect.TypeOf(stringType), reflect.TypeOf(stringified))
+	require.EqualValues(t, h1.String(), (&h1).String())
+	require.EqualValues(t, h1.Short(), (&h1).Short())
+	require.EqualValues(t, h1.Shortest(), (&h1).Shortest())
 }

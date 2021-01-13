@@ -32,7 +32,8 @@ func checkDatabaseVersion() error {
 
 	var versiondata [1 + hashing.HashSize]byte
 	versiondata[0] = DBVersion
-	copy(versiondata[1:], hashing.HashStrings(fmt.Sprintf("dbversion = %d", DBVersion)).Bytes())
+	vh := hashing.HashStrings(fmt.Sprintf("dbversion = %d", DBVersion))
+	copy(versiondata[1:], vh[:])
 
 	if err == kvstore.ErrKeyNotFound {
 		// set the version in an empty DB

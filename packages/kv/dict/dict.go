@@ -253,7 +253,7 @@ func (d Dict) Hash() hashing.HashValue {
 		v, _ := d.Get(k)
 		data = append(data, v)
 	}
-	return *hashing.HashData(data...)
+	return hashing.HashData(data...)
 }
 
 // JSONDict is the JSON-compatible representation of a Dict

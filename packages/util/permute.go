@@ -34,7 +34,7 @@ func (perm *Permutation16) Shuffle(seed []byte) *Permutation16 {
 		copy(data[len(data)-2:], Uint16To2Bytes(uint16(i)))
 		tosort[i] = &idxToPermute{
 			idx:  uint16(i),
-			hash: *hashing.HashData(data),
+			hash: hashing.HashData(data),
 		}
 	}
 	sort.Slice(tosort, func(i, j int) bool {

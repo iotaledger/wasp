@@ -93,7 +93,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 		},
 		BatchHash:     batchHash,
 		OrigTimestamp: result.Timestamp,
-		EssenceHash:   *essenceHash,
+		EssenceHash:   essenceHash,
 		SigShare:      sigShare,
 	})
 
@@ -142,7 +142,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	op.leaderStatus.resultTx = result.ResultTransaction
 	op.leaderStatus.batch = result.ResultBlock
 	op.leaderStatus.signedResults[op.chain.OwnPeerIndex()] = &signedResult{
-		essenceHash: *essenceHash,
+		essenceHash: essenceHash,
 		sigShare:    sigShare,
 	}
 	op.setNextConsensusStage(consensusStageLeaderCalculationsFinished)
