@@ -45,6 +45,7 @@ func init() {
 		contract.Func(FuncCallOnChain, callOnChain),
 		contract.Func(FuncSetInt, setInt),
 		contract.ViewFunc(FuncGetInt, getInt),
+		contract.ViewFunc(FuncGetFibonacci, getFibonacci),
 
 		contract.ViewFunc(FuncJustView, testJustView),
 	})
@@ -76,9 +77,10 @@ const (
 	FuncSendToAddress = "sendToAddress"
 	FuncJustView      = "justView"
 
-	FuncCallOnChain = "callOnChain"
-	FuncSetInt      = "setInt"
-	FuncGetInt      = "getInt"
+	FuncCallOnChain  = "callOnChain"
+	FuncSetInt       = "setInt"
+	FuncGetInt       = "getInt"
+	FuncGetFibonacci = "fibonacci"
 
 	//Variables
 	VarCounter              = "counter"
@@ -96,7 +98,6 @@ const (
 	ParamAgentID         = "agentID"
 	ParamContractCreator = "contractCreator"
 	ParamCallOption      = "callOption"
-	ParamCallDepth       = "callDepth"
 	ParamIntParamName    = "intParamName"
 	ParamIntParamValue   = "intParamValue"
 	ParamHname           = "hname"
@@ -105,6 +106,4 @@ const (
 	MsgFullPanic = "========== panic FULL ENTRY POINT ========="
 	MsgViewPanic = "========== panic VIEW ========="
 	MsgDoNothing = "========== doing nothing"
-
-	CallOption1 = "callOption1"
 )

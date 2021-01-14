@@ -9,7 +9,7 @@ import (
 )
 
 // ParamCallOption
-// ParamCallDepth
+// ParamCallIntParam
 // ParamHname
 func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncCallOnChain)
@@ -20,12 +20,12 @@ func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !exists {
 		callOption = ""
 	}
-	callDepth, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamCallDepth))
+	callInt, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
 	}
 	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamCallDepth)
+		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamValue)
 	}
 	hname, exists, err := codec.DecodeHname(ctx.Params().MustGet(ParamHname))
 	if err != nil {
@@ -34,17 +34,55 @@ func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	if !exists {
 		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamHname)
 	}
-	ctx.Log().Infof("call depth = %d, option = %s, hname = %s", callDepth, callOption, hname)
-	if callDepth <= 0 {
+	ctx.Log().Infof("call depth = %d, option = %s, hname = %s", callInt, callOption, hname)
+	if callInt <= 0 {
 		return nil, nil
 	}
-	callDepth--
+	callInt--
 
 	return ctx.Call(hname, coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
-		ParamCallOption: []byte(callOption),
-		ParamCallDepth:  callDepth,
-		ParamHname:      hname,
+		ParamCallOption:    []byte(callOption),
+		ParamIntParamValue: callInt,
+		ParamHname:         hname,
 	}), nil)
+}
+
+func getFibonacci(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	callInt, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
+	if err != nil {
+		ctx.Log().Panicf("%v", err)
+	}
+	if !exists {
+		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamValue)
+	}
+	ctx.Log().Infof("fibonacci( %d )", callInt)
+	ret := dict.New()
+	if callInt == 0 || callInt == 1 {
+		ret.Set(ParamIntParamValue, codec.EncodeInt64(callInt))
+		return ret, nil
+	}
+	r1, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+		ParamIntParamValue: callInt - 1,
+	}))
+	if err != nil {
+		ctx.Log().Panicf("%v", err)
+	}
+	r1val, exists, err := codec.DecodeInt64(r1.MustGet(ParamIntParamValue))
+	if err != nil || !exists {
+		ctx.Log().Panicf("err != nil || exists #1: %v. %v", exists, err)
+	}
+	r2, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+		ParamIntParamValue: callInt - 2,
+	}))
+	if err != nil {
+		ctx.Log().Panicf("%v", err)
+	}
+	r2val, exists, err := codec.DecodeInt64(r2.MustGet(ParamIntParamValue))
+	if err != nil || !exists {
+		ctx.Log().Panicf("err != nil || !exists #2: %v, %v ", exists, err)
+	}
+	ret.Set(ParamIntParamValue, codec.EncodeInt64(r1val+r2val))
+	return ret, nil
 }
 
 // ParamIntParamName
