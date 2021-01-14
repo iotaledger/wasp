@@ -70,7 +70,7 @@ func runGC(shutdownSignal <-chan struct{}) {
 		return
 	}
 	// run the garbage collection with the given interval
-	timeutil.Ticker(func() {
+	timeutil.NewTicker(func() {
 		if err := db.GC(); err != nil {
 			log.Warnf("Garbage collection failed: %s", err)
 		}
