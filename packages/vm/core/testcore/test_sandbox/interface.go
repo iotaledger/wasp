@@ -42,6 +42,9 @@ func init() {
 		contract.Func(FuncSendToAddress, sendToAddress),
 
 		contract.Func(FuncWithdrawToChain, withdrawToChain),
+		contract.Func(FuncCallOnChain, callOnChain),
+		contract.Func(FuncSetInt, setInt),
+		contract.ViewFunc(FuncGetInt, getInt),
 
 		contract.ViewFunc(FuncJustView, testJustView),
 	})
@@ -73,6 +76,10 @@ const (
 	FuncSendToAddress = "sendToAddress"
 	FuncJustView      = "justView"
 
+	FuncCallOnChain = "callOnChain"
+	FuncSetInt      = "setInt"
+	FuncGetInt      = "getInt"
+
 	//Variables
 	VarCounter              = "counter"
 	VarChainOwner           = "chainOwner"
@@ -88,9 +95,16 @@ const (
 	ParamContractID      = "contractID"
 	ParamAgentID         = "agentID"
 	ParamContractCreator = "contractCreator"
+	ParamCallOption      = "callOption"
+	ParamCallDepth       = "callDepth"
+	ParamIntParamName    = "intParamName"
+	ParamIntParamValue   = "intParamValue"
+	ParamHname           = "hname"
 
 	// error fragments for testing
 	MsgFullPanic = "========== panic FULL ENTRY POINT ========="
 	MsgViewPanic = "========== panic VIEW ========="
 	MsgDoNothing = "========== doing nothing"
+
+	CallOption1 = "callOption1"
 )

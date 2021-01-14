@@ -21,7 +21,7 @@ type SandboxView interface {
 	Params() dict.Dict
 	// State is access to k/v store of the current call (in the context of the smart contract)
 	State() kv.KVStoreReader
-	// FIXME: Deprecated -- should be removed
+	//Deprecated: -- should be removed FIXME
 	WriteableState() kv.KVStore
 	// Balances is colored balances owned by the contract
 	Balances() coretypes.ColoredBalances

@@ -12,22 +12,8 @@ import (
 	"testing"
 )
 
-func setupForTransfer(t *testing.T) (*solo.Solo, *solo.Chain, coretypes.ContractID) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-
-	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox.Interface.Name))
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncDoNothing)
-	_, err = chain.PostRequest(req, nil)
-	require.NoError(t, err)
-	return glb, chain, deployed
-}
-
 func TestDoNothing(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncDoNothing).
 		WithTransfer(balance.ColorIOTA, 42)
@@ -41,7 +27,7 @@ func TestDoNothing(t *testing.T) {
 }
 
 func TestDoNothingUser(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := glb.NewSignatureSchemeWithFunds()
 	userAddress := user.Address()
@@ -61,7 +47,7 @@ func TestDoNothingUser(t *testing.T) {
 }
 
 func TestWithdrawToAddress(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	t.Logf("contract agentID: %s", cAID)
 
@@ -96,7 +82,7 @@ func TestWithdrawToAddress(t *testing.T) {
 }
 
 func TestDoPanicUser(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := glb.NewSignatureSchemeWithFunds()
 	userAddress := user.Address()
@@ -123,7 +109,7 @@ func TestDoPanicUser(t *testing.T) {
 }
 
 func TestDoPanicUserFeeless(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := glb.NewSignatureSchemeWithFunds()
 	userAddress := user.Address()
@@ -160,7 +146,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 }
 
 func TestDoPanicUserFee(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := glb.NewSignatureSchemeWithFunds()
 	userAddress := user.Address()
@@ -200,7 +186,7 @@ func TestDoPanicUserFee(t *testing.T) {
 }
 
 func TestRequestToView(t *testing.T) {
-	glb, chain, cID := setupForTransfer(t)
+	glb, chain, cID := setupForTestSandbox(t)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := glb.NewSignatureSchemeWithFunds()
 	userAddress := user.Address()
