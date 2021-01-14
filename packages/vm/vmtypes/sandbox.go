@@ -16,6 +16,7 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	// ChainID of the current chain
+	//   TODO: redundant? ChainID() == ContractID().ChainID()
 	ChainID() coretypes.ChainID
 	// ChainOwnerID AgentID of the current owner of the chain
 	ChainOwnerID() coretypes.AgentID
@@ -28,6 +29,7 @@ type Sandbox interface {
 	// ContractID is the ID of the current contract
 	ContractID() coretypes.ContractID
 	// AgentID is the AgentID representation of the ContractID
+	// TODO: redundant
 	AgentID() coretypes.AgentID
 	// ContractCreator agentID which deployed contract
 	ContractCreator() coretypes.AgentID
