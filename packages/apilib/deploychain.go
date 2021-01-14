@@ -28,7 +28,6 @@ type CreateChainParams struct {
 	Node                  level1.Level1Client
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
-	AccessNodes           []string
 	N                     uint16
 	T                     uint16
 	OriginatorSigScheme   signaturescheme.SignatureScheme
@@ -57,7 +56,7 @@ func ActivateChain(par ActivateChainParams) error {
 		_, errs := multicall.MultiCall(funs, 1*time.Second)
 		return multicall.WrapErrors(errs)
 	}
-	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, "state")
+	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, []string{"state"})
 	if err != nil {
 		return err
 	}
@@ -88,7 +87,7 @@ func DeactivateChain(par ActivateChainParams) error {
 		_, errs := multicall.MultiCall(funs, 1*time.Second)
 		return multicall.WrapErrors(errs)
 	}
-	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, "dismissed_committee")
+	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, []string{"dismissed_committee"})
 	if err != nil {
 		return err
 	}

@@ -27,7 +27,6 @@ func deployCmd(args []string) {
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(committee),
 		CommitteePeeringHosts: config.CommitteePeering(committee),
-		AccessNodes:           []string{},
 		N:                     uint16(len(committee)),
 		T:                     uint16(quorum),
 		OriginatorSigScheme:   wallet.Load().SignatureScheme(),

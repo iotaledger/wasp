@@ -79,7 +79,7 @@ func testNothing(t *testing.T, testName string, hash string, wasmPath string, de
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	err = wasps.ListenToMessages(map[string]int{
+	err = wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -146,7 +146,7 @@ func testIncrement(t *testing.T, testName string, increments int) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	err = wasps.ListenToMessages(map[string]int{
+	err = wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -206,7 +206,7 @@ func TestIncRepeatIncrement(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	err = wasps.ListenToMessages(map[string]int{
+	err = wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -270,7 +270,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	err = requestFunds(wasps, scOwnerAddr, "sc owner")
 	check(err, t)
 
-	err = wasps.ListenToMessages(map[string]int{
+	err = wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

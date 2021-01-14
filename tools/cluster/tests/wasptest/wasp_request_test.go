@@ -16,7 +16,7 @@ func TestSend1Request(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend1Request")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -67,7 +67,7 @@ func TestSend5Requests1Sec(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend5Requests1Sec")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -121,7 +121,7 @@ func TestSend10Requests0Sec(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -175,7 +175,7 @@ func TestSend60Requests500msec(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend60Requests")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,
@@ -229,7 +229,7 @@ func TestSend60Requests0Sec(t *testing.T) {
 	// setup
 	wasps := setup(t, "test_cluster", "TestSend10Requests0Sec")
 
-	err := wasps.ListenToMessages(map[string]int{
+	err := wasps.StartMessageCounter(map[string]int{
 		"chainrec":            2,
 		"active_committee":    1,
 		"dismissed_committee": 0,

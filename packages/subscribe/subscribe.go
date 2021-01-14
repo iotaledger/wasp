@@ -1,14 +1,8 @@
 package subscribe
 
 import (
-	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"go.nanomsg.org/mangos/v3"
@@ -69,32 +63,11 @@ type HostMessage struct {
 	Message []string
 }
 
-func SubscribeMultiOld(hosts []string, messages chan<- *HostMessage, done chan bool, topics ...string) error {
-	for _, host := range hosts {
-		hostMessages := make(chan []string)
-		err := Subscribe(host, hostMessages, done, false, topics...)
-		if err != nil {
-			return err
-		}
-		go func(host string) {
-			for {
-				select {
-				case <-done:
-					return
-				case msg := <-hostMessages:
-					messages <- &HostMessage{host, msg}
-				}
-			}
-		}(host)
-	}
-	return nil
-}
-
 type Subscription struct {
-	chHostMessages chan *HostMessage
-	chStopReading  chan bool
-	hosts          []string
-	numSubscribed  int
+	Hosts        []string
+	Topics       []string
+	HostMessages chan *HostMessage
+	stopReading  chan bool
 }
 
 const (
@@ -102,44 +75,49 @@ const (
 	channelLockTimeout = 1 * time.Second
 )
 
-func SubscribeMulti(hosts []string, topics string, quorum ...int) (*Subscription, error) {
+func SubscribeMulti(hosts []string, topics []string, quorum ...int) (*Subscription, error) {
 	if len(hosts) == 0 {
 		return nil, fmt.Errorf("SubscribeMulti: no nanomsg hosts provided")
 	}
 	quorumNodes := len(hosts)
 	if len(quorum) > 0 {
-		if quorum[0] > 0 || quorum[0] < len(hosts) {
-			quorumNodes = quorum[0]
+		if quorum[0] < 0 || quorum[0] >= len(hosts) {
+			panic("invalid quorum value")
 		}
+		quorumNodes = quorum[0]
 	}
 	ret := &Subscription{
-		chHostMessages: make(chan *HostMessage, channelBufferSize),
-		chStopReading:  make(chan bool),
-		hosts:          hosts,
+		Hosts:        hosts,
+		Topics:       topics,
+		HostMessages: make(chan *HostMessage, channelBufferSize),
+		stopReading:  make(chan bool),
 	}
+	numSubscribed := 0
 	for _, host := range hosts {
 		hostMessages := make(chan []string)
-		err := Subscribe(host, hostMessages, ret.chStopReading, false, []string{topics}...)
+		err := Subscribe(host, hostMessages, ret.stopReading, false, topics...)
 		if err != nil {
 			continue
 		}
-		ret.numSubscribed++
+		numSubscribed++
 		go func(host string) {
 			for {
 				select {
-				case <-ret.chStopReading:
+				case <-ret.stopReading:
 					return
 				case msg := <-hostMessages:
-					ret.chHostMessages <- &HostMessage{host, msg}
-				case <-time.After(channelLockTimeout):
-					// loosing the host message if buffer of chHostMessages is full
+					select {
+					case ret.HostMessages <- &HostMessage{host, msg}:
+					case <-time.After(channelLockTimeout):
+						// drop the host message if buffer of HostMessages is full
+					}
 				}
 			}
 		}(host)
 	}
-	if ret.numSubscribed < quorumNodes {
-		close(ret.chStopReading)
-		return nil, fmt.Errorf("SubscribeMulti: required %d nanomsg hosts, connected only to %d", quorumNodes, ret.numSubscribed)
+	if numSubscribed < quorumNodes {
+		close(ret.stopReading)
+		return nil, fmt.Errorf("SubscribeMulti: required %d nanomsg hosts, connected only to %d", quorumNodes, numSubscribed)
 	}
 	return ret, nil
 }
@@ -150,13 +128,13 @@ func (subs *Subscription) WaitForPattern(pattern []string, timeout time.Duration
 
 // WaitForPatterns waits until subscription receives all patterns from quorum of hosts
 func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Duration, quorum ...int) bool {
-	quorumNodes := len(subs.hosts)
+	quorumNodes := len(subs.Hosts)
 	if len(quorum) > 0 {
 		if quorum[0] > 0 {
 			quorumNodes = quorum[0]
 		}
-		if quorumNodes > len(subs.hosts) {
-			quorumNodes = len(subs.hosts)
+		if quorumNodes > len(subs.Hosts) {
+			quorumNodes = len(subs.Hosts)
 		}
 	}
 	received := make([]map[string]bool, len(patterns))
@@ -166,7 +144,7 @@ func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Dura
 	deadline := time.Now().Add(timeout)
 	for {
 		select {
-		case m := <-subs.chHostMessages:
+		case m := <-subs.HostMessages:
 			for i := range patterns {
 				_, ok := received[i][m.Sender]
 				if !ok {
@@ -197,54 +175,7 @@ func checkQuorum(m []map[string]bool, quorum int) bool {
 }
 
 func (subs *Subscription) Close() {
-	close(subs.chStopReading)
-}
-
-func subscribeAndWaitForPattern(host string, pattern []string, timeout time.Duration) (bool, error) {
-	if len(pattern) == 0 {
-		return false, fmt.Errorf("wrong pattern")
-	}
-	socket, err := sub.NewSocket()
-	if err != nil {
-		return false, err
-	}
-	err = socket.Dial("tcp://" + host)
-	if err != nil {
-		return false, fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
-	}
-	err = socket.SetOption(mangos.OptionSubscribe, []byte(""))
-	if err != nil {
-		return false, err
-	}
-
-	// nothing wrong closing socket twice
-	var exitTimeout int32
-
-	go func() {
-		time.Sleep(timeout)
-		atomic.AddInt32(&exitTimeout, 1)
-		socket.Close()
-	}()
-	defer socket.Close()
-
-	for {
-		var buf []byte
-		if buf, err = socket.Recv(); err != nil {
-			if atomic.LoadInt32(&exitTimeout) != 0 {
-				return false, nil
-			}
-			return false, err
-		}
-		if len(buf) > 0 {
-			s := string(buf)
-
-			data := strings.Split(s, " ")
-			match := matches(data, pattern)
-			if match {
-				return true, nil
-			}
-		}
-	}
+	close(subs.stopReading)
 }
 
 func matches(data, pattern []string) bool {
@@ -262,76 +193,4 @@ func matches(data, pattern []string) bool {
 		return false
 	}
 	return true
-}
-
-//noinspection GoUnhandledErrorResult
-func ListenForPatternMulti(hosts []string, pattern []string, onFinish func(bool), timeout time.Duration, w ...io.Writer) {
-	var errout io.Writer
-	errout = os.Stdout
-	if len(w) != 0 {
-		if w[0] == nil {
-			errout = ioutil.Discard
-		} else {
-			errout = w[0]
-		}
-	}
-	var wg sync.WaitGroup
-	var counter int32
-
-	wg.Add(len(hosts))
-
-	for _, host := range hosts {
-		go func(host string) {
-			found, err := subscribeAndWaitForPattern(host, pattern, timeout)
-			if err != nil {
-				fmt.Fprintf(errout, "[ListenForPatternMulti]: %v\n", err)
-			} else {
-				if found {
-					atomic.AddInt32(&counter, 1)
-				}
-			}
-			wg.Done()
-		}(host)
-	}
-	wg.Wait()
-
-	onFinish(counter == int32(len(hosts)))
-}
-
-var ErrorWaitPatternTimeout = errors.New("timeout in SubscribeRunAndWaitForPattern")
-
-func SubscribeRunAndWaitForPattern(hosts []string, topic string, timeout time.Duration, f func() ([]string, error)) error {
-	messages := make(chan *HostMessage)
-
-	done := make(chan bool)
-	defer func() { done <- true }()
-
-	err := SubscribeMultiOld(hosts, messages, done, topic)
-	if err != nil {
-		return err
-	}
-
-	pattern, err := f()
-	if err != nil {
-		return err
-	}
-
-	received := make(map[string]bool)
-	for {
-		select {
-		case m := <-messages:
-			_, ok := received[m.Sender]
-			if !ok {
-				if matches(m.Message, pattern) {
-					received[m.Sender] = true
-					if len(received) == len(hosts) {
-						return nil
-					}
-				}
-			}
-
-		case <-time.After(timeout):
-			return ErrorWaitPatternTimeout
-		}
-	}
 }

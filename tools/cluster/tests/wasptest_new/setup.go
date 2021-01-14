@@ -29,6 +29,7 @@ var (
 	chain       *cluster.Chain
 	clu         *cluster.Cluster
 	client      *chainclient.Client
+	counter     *cluster.MessageCounter
 	programHash hashing.HashValue
 	err         error
 )
@@ -96,7 +97,7 @@ func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretype
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	check(err, t)
-	if !clu.WaitUntilExpectationsMet() {
+	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 }
@@ -137,7 +138,10 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	for k, v := range expectedMessages {
 		expectations[k] = v
 	}
-	err := clu.ListenToMessages(expectations)
+
+	var err error
+
+	counter, err = clu.StartMessageCounter(expectations)
 	check(err, t)
 
 	chain, err = clu.DeployDefaultChain()
