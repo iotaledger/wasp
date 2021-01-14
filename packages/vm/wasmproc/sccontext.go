@@ -39,6 +39,18 @@ func (o *ScContext) GetBytes(keyId int32) []byte {
 	case wasmhost.KeyCaller:
 		id := o.vm.ctx.Caller()
 		return id[:]
+	case wasmhost.KeyChain:
+		id := o.vm.ctx.ChainID()
+		return id[:]
+	case wasmhost.KeyChainOwner:
+		id := o.vm.ctx.ChainOwnerID()
+		return id[:]
+	case wasmhost.KeyCreator:
+		id := o.vm.ctx.ContractCreator()
+		return id[:]
+	case wasmhost.KeyId:
+		id := o.vm.contractID()
+		return id[:]
 	}
 	o.invalidKey(keyId)
 	return nil
@@ -63,7 +75,6 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, false) },
 		wasmhost.KeyCalls:     func() WaspObject { return NewScCalls(o.vm) },
-		wasmhost.KeyContract:  func() WaspObject { return NewScContract(o.vm) },
 		wasmhost.KeyDeploys:   func() WaspObject { return NewScDeploys(o.vm) },
 		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
 		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, true) },
@@ -84,10 +95,16 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_MAP
 	case wasmhost.KeyCalls:
 		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyContract:
-		return wasmhost.OBJTYPE_MAP
+	case wasmhost.KeyChain:
+		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_ADDRESS
+	case wasmhost.KeyChainOwner:
+		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
+	case wasmhost.KeyCreator:
+		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	case wasmhost.KeyExports:
 		return wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY
+	case wasmhost.KeyId:
+		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyIncoming:
 		return wasmhost.OBJTYPE_MAP
 	case wasmhost.KeyLogs:
