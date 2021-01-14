@@ -101,7 +101,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
@@ -141,7 +141,7 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),

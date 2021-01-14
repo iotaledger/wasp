@@ -1,3 +1,10 @@
+package templates
+
+type GoshimmerConfigParams struct {
+	ApiPort int
+}
+
+const GoshimmerConfig = `
 {
   "analysis": {
     "client": {
@@ -117,7 +124,7 @@
       "privateKey": "",
       "username": "goshimmer"
     },
-    "bindAddress": "127.0.0.1:8080"
+    "bindAddress": "127.0.0.1:{{.ApiPort}}"
   },
   "networkdelay": {
     "originPublicKey": "9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd"
@@ -130,3 +137,4 @@
     "utxodbconfirmfirst": true
   }
 }
+`
