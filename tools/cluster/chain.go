@@ -48,8 +48,12 @@ func (ch *Chain) ContractID(contractHname coretypes.Hname) coretypes.ContractID 
 	return coretypes.NewContractID(ch.ChainID, contractHname)
 }
 
-func (ch *Chain) CommitteeApi() []string {
-	return ch.Cluster.WaspHosts(ch.CommitteeNodes, (*WaspNodeConfig).ApiHost)
+func (ch *Chain) ApiHosts() []string {
+	return ch.Cluster.Config.ApiHosts(ch.CommitteeNodes)
+}
+
+func (ch *Chain) PeeringHosts() []string {
+	return ch.Cluster.Config.PeeringHosts(ch.CommitteeNodes)
 }
 
 func (ch *Chain) OriginatorAddress() *address.Address {
@@ -72,7 +76,7 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 
 func (ch *Chain) Client(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
 	return chainclient.New(
-		ch.Cluster.Level1Client,
+		ch.Cluster.Level1Client(),
 		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
 		ch.ChainID,
 		sigScheme,
@@ -84,13 +88,13 @@ func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme signaturesche
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.CommitteeApi())
+	return multiclient.New(ch.ApiHosts())
 }
 
 func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
 	pass := true
-	for i, host := range ch.CommitteeApi() {
-		if !ch.Cluster.Config.Nodes[i].IsUp() {
+	for i, host := range ch.ApiHosts() {
+		if !ch.Cluster.IsNodeUp(i) {
 			continue
 		}
 		contractID := coretypes.NewContractID(ch.ChainID, hname)

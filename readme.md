@@ -47,6 +47,12 @@ Below are some articles describing the architecture:
 - [On-chain accounts](articles/docs/accounts.md)
 - [Wasp Publisher](articles/docs/publisher.md)
 
+## Tools
+
+- [`wasp-cli`](tools/wasp-cli/README.md): A CLI client for the Wasp node.
+- [`wasp-cluster`](tools/cluster/wasp-cluster/README.md): allows to easily run
+  a cluster of Wasp nodes, for testing.
+
 ## PoC smart contracts
 
 - [Main concepts with _DonateWithFeedback_](articles/intro/dwf.md)

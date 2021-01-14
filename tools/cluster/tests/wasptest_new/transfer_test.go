@@ -50,7 +50,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// deposit some iotas to the chain
 	depositIotas := int64(42)
-	chClient := chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, mySigScheme)
+	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
 	reqTx, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
 		Transfer: map[balance.Color]int64{
 			balance.ColorIOTA: depositIotas,

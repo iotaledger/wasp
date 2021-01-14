@@ -29,7 +29,7 @@ func NewMessageCounter(cluster *Cluster, nodes []int, expectations map[string]in
 	}
 	sort.Strings(topics)
 
-	allNodesNanomsg := cluster.WaspHosts(nodes, (*WaspNodeConfig).NanomsgHost)
+	allNodesNanomsg := cluster.Config.NanomsgHosts(nodes)
 	for _, host := range allNodesNanomsg {
 		m.counters[host] = make(map[string]int)
 		for msgType := range expectations {

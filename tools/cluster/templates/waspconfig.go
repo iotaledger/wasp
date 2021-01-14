@@ -1,3 +1,13 @@
+package templates
+
+type WaspConfigParams struct {
+	ApiPort       int
+	DashboardPort int
+	PeeringPort   int
+	NanomsgPort   int
+}
+
+const WaspConfig = `
 {
   "database": {
     "inMemory": true,
@@ -39,3 +49,4 @@
     "port": {{.NanomsgPort}}
   }
 }
+`

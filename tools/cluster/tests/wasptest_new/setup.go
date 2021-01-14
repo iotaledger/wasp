@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
-	"runtime"
 	"testing"
 	"time"
 
@@ -107,15 +107,14 @@ func setup(t *testing.T, configPath string) {
 		t.Skip("Skipping cluster test in short mode")
 	}
 
-	_, filename, _, _ := runtime.Caller(0)
+	config := cluster.DefaultConfig()
+	clu = cluster.New(t.Name(), config)
 
-	clu, err = cluster.New(path.Join(path.Dir(filename), "..", configPath), "cluster-data")
+	dataPath := path.Join(os.TempDir(), "wasp-cluster")
+	err := clu.InitDataPath(".", dataPath, true)
 	check(err, t)
 
-	err = clu.Init(true, t.Name())
-	check(err, t)
-
-	err = clu.Start()
+	err = clu.Start(dataPath)
 	check(err, t)
 
 	t.Cleanup(clu.Stop)
@@ -153,5 +152,5 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	err = requestFunds(clu, scOwnerAddr, "client")
 	check(err, t)
 
-	client = chainclient.New(clu.Level1Client, clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	client = chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
 }
