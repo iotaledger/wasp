@@ -126,13 +126,13 @@ func donate(ctx vmtypes.Sandbox) error {
 	stateAccess.Set(donatewithfeedback.VarStateTotalDonations, codec.EncodeInt64(total+di.Amount))
 
 	// publish message for tracing
-	ctx.Eventf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
+	ctx.Event(fmt.Sprintf("DonateWithFeedback: appended to tlog. Len: %d, Earliest: %v, Latest: %v",
 		tlog.MustLen(),
 		time.Unix(0, tlog.MustEarliest()).Format("2006-01-02 15:04:05"),
 		time.Unix(0, tlog.MustLatest()).Format("2006-01-02 15:04:05"),
-	)
-	ctx.Eventf("DonateWithFeedback: donate. amount: %d, sender: %s, feedback: '%s', err: %s",
-		di.Amount, di.Sender.String(), di.Feedback, di.Error)
+	))
+	ctx.Event(fmt.Sprintf("DonateWithFeedback: donate. amount: %d, sender: %s, feedback: '%s', err: %s",
+		di.Amount, di.Sender.String(), di.Feedback, di.Error))
 	return nil
 }
 

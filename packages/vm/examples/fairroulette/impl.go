@@ -446,8 +446,8 @@ func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmo
 	for i := range finalWinners {
 
 		available := ctx.Balance(balance.ColorIOTA)
-		ctx.Eventf("sending reward iotas %d to the winner %s. Available iotas: %d",
-			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available)
+		ctx.Event(fmt.Sprintf("sending reward iotas %d to the winner %s. Available iotas: %d",
+			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available))
 
 		if !ctx.MoveTokens(finalWinners[i], balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
 			return false

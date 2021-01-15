@@ -168,8 +168,8 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	}
 	stateAccess.Set(VarStateListColors, codec.EncodeString(lst))
 
-	ctx.Eventf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
-		colorOfTheSupply.String(), rec.Owner.String(), rec.Description, string(rec.UserDefined))
+	ctx.Event(fmt.Sprintf("TokenRegistry.mintSupply: success. Color: %s, Owner: %s, Description: '%s' User defined data: '%s'",
+		colorOfTheSupply.String(), rec.Owner.String(), rec.Description, string(rec.UserDefined)))
 	return nil
 }
 

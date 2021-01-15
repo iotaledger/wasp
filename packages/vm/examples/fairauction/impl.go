@@ -335,8 +335,8 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	})
 	auctions.MustSetAt(colorForSale.Bytes(), aiData)
 
-	ctx.Eventf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d duration %d minutes",
-		colorForSale.String(), tokensForSale, minimumBid, ownerMargin, duration)
+	ctx.Event(fmt.Sprintf("New auction record. color: %s, numTokens: %d, minBid: %d, ownerMargin: %d duration %d minutes",
+		colorForSale.String(), tokensForSale, minimumBid, ownerMargin, duration))
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
@@ -352,8 +352,8 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
 	//	tokensForSale, colorForSale.String(), minimumBid, duration))
 
-	ctx.Eventf("startAuction: success. Auction: '%s', color: %s, duration: %d",
-		description, colorForSale.String(), duration)
+	ctx.Event(fmt.Sprintf("startAuction: success. Auction: '%s', color: %s, duration: %d",
+		description, colorForSale.String(), duration))
 
 	return nil
 }

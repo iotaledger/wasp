@@ -4,7 +4,6 @@
 package sandbox
 
 import (
-	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -28,6 +27,34 @@ func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
 	}
 }
 
+func (s *sandbox) ChainOwnerID() coretypes.AgentID {
+	return s.vmctx.ChainOwnerID()
+}
+
+func (s *sandbox) ContractCreator() coretypes.AgentID {
+	return s.vmctx.ContractCreator()
+}
+
+func (s *sandbox) ContractID() coretypes.ContractID {
+	return s.vmctx.CurrentContractID()
+}
+
+func (s *sandbox) GetTimestamp() int64 {
+	return s.vmctx.Timestamp()
+}
+
+func (s *sandbox) Params() dict.Dict {
+	return s.vmctx.Params()
+}
+
+func (s *sandbox) State() kv.KVStore {
+	return s.vmctx.State()
+}
+
+func (s *sandbox) Caller() coretypes.AgentID {
+	return s.vmctx.Caller()
+}
+
 // CreateContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
 func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
@@ -39,47 +66,8 @@ func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname
 	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }
 
-// general
-func (s *sandbox) ChainID() coretypes.ChainID {
-	return s.vmctx.ChainID()
-}
-
-func (s *sandbox) ChainOwnerID() coretypes.AgentID {
-	return s.vmctx.ChainOwnerID()
-}
-
-func (s *sandbox) ContractCreator() coretypes.AgentID {
-	return s.vmctx.ContractCreator()
-}
-
-func (s *sandbox) State() kv.KVStore {
-	return s.vmctx.State()
-}
-
 func (s *sandbox) RequestID() coretypes.RequestID {
 	return s.vmctx.RequestID()
-}
-
-// call context
-
-func (s *sandbox) Params() dict.Dict {
-	return s.vmctx.Params()
-}
-
-func (s *sandbox) Caller() coretypes.AgentID {
-	return s.vmctx.Caller()
-}
-
-func (s *sandbox) ContractID() coretypes.ContractID {
-	return s.vmctx.CurrentContractID()
-}
-
-func (s *sandbox) AgentID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(s.vmctx.CurrentContractID())
-}
-
-func (s *sandbox) GetTimestamp() int64 {
-	return s.vmctx.Timestamp()
 }
 
 func (s *sandbox) GetEntropy() hashing.HashValue {
@@ -106,8 +94,4 @@ func (s *sandbox) Event(msg string) {
 	s.Log().Infof("eventlog -> '%s'", msg)
 	s.vmctx.StoreToEventLog(s.vmctx.CurrentContractHname(), []byte(msg))
 	s.vmctx.EventPublisher().Publish(msg)
-}
-
-func (s *sandbox) Eventf(format string, args ...interface{}) {
-	s.Event(fmt.Sprintf(format, args...))
 }
