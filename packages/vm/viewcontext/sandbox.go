@@ -67,6 +67,14 @@ func (s *sandboxview) ChainID() coretypes.ChainID {
 	return s.vctx.chainID
 }
 
+func (s *sandboxview) ChainOwnerID() coretypes.AgentID {
+	panic("Implement me")
+}
+
+func (s *sandboxview) ContractCreator() coretypes.AgentID {
+	panic("Implement me")
+}
+
 func (s *sandboxview) GetTimestamp() int64 {
 	return s.vctx.timestamp
 }

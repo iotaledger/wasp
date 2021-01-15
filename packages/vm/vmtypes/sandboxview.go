@@ -13,6 +13,10 @@ import (
 type SandboxView interface {
 	// ChainID of the current chain
 	ChainID() coretypes.ChainID
+	// ChainOwnerID AgentID of the current owner of the chain
+	ChainOwnerID() coretypes.AgentID
+	// ContractCreator agentID which deployed contract
+	ContractCreator() coretypes.AgentID
 	// ContractID is the ID of the current contract
 	ContractID() coretypes.ContractID
 	// GetTimestamp return timestamp of the current state
