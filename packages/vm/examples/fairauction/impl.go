@@ -101,7 +101,7 @@ func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.Entry
 func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
-		ctx.Eventf("error %v", err)
+		ctx.Event(fmt.Sprintf("error %v", err))
 	}
 	return nil, err
 }
@@ -446,7 +446,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 	data = util.MustBytes(ai)
 	auctions.MustSetAt(col.Bytes(), data)
 
-	ctx.Eventf("placeBid: success. Auction: '%s'", ai.Description)
+	ctx.Event(fmt.Sprintf("placeBid: success. Auction: '%s'", ai.Description))
 	return nil
 }
 
@@ -548,7 +548,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 
 	// take fee for the smart contract owner TODO
 	//feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
-	//ctx.Eventf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken)
+	//ctx.Event(fmt.Sprintf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken))
 
 	if winner != nil {
 		// send sold tokens to the winner
@@ -564,36 +564,36 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 		}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. Winning bid: %di", col.String(), winner.Total))
 
-		ctx.Eventf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total)
+		ctx.Event(fmt.Sprintf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total))
 	} else {
 		// return unsold tokens to auction owner
 		if ctx.MoveTokens(ai.AuctionOwner, ai.Color, ai.NumTokens) {
-			ctx.Eventf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens)
+			ctx.Event(fmt.Sprintf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens))
 		}
 
 		// return deposit less fees less 1 iota
 		if ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
-			ctx.Eventf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee)
+			ctx.Event(fmt.Sprintf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee))
 		}
 
 		// return bids to bidders
 		for _, bi := range ai.Bids {
 			if ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total) {
-				ctx.Eventf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String())
+				ctx.Event(fmt.Sprintf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String()))
 			} else {
 				avail := ctx.Balance(balance.ColorIOTA)
-				ctx.Eventf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail)
+				ctx.Event(fmt.Sprintf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail))
 			}
 		}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. No winner.", col.String()))
 
-		ctx.Eventf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids))
+		ctx.Event(fmt.Sprintf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids)))
 	}
 
 	// delete auction record
 	auctDict.MustDelAt(col.Bytes())
 
-	ctx.Eventf("finalizeAuction: success. Auction: '%s'", ai.Description)
+	ctx.Event(fmt.Sprintf("finalizeAuction: success. Auction: '%s'", ai.Description))
 	return nil
 }
 
@@ -619,7 +619,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 		margin = OwnerMarginMax
 	}
 	ctx.State().Set(VarStateOwnerMarginPromille, codec.EncodeInt64(margin))
-	ctx.Eventf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10)
+	ctx.Event(fmt.Sprintf("setOwnerMargin: success. ownerMargin set to %d%%", margin/10))
 	return nil
 }
 

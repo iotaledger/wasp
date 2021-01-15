@@ -15,25 +15,22 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
-	// ChainID of the current chain
-	// Deprecated:  TODO: redundant? ChainID() == ContractID().ChainID()
-	ChainID() coretypes.ChainID
 	// ChainOwnerID AgentID of the current owner of the chain
 	ChainOwnerID() coretypes.AgentID
-	// State is base level interface to access the key/value pairs in the virtual state
-	State() kv.KVStore
-	// Params access to parameters of the call
-	Params() dict.Dict
-	// Caller is the agentID of the caller of he SC function
-	Caller() coretypes.AgentID
-	// ContractID is the ID of the current contract
-	ContractID() coretypes.ContractID
-	// AgentID is the AgentID representation of the ContractID
-	// TODO: redundant
-	// Deprecated:
-	AgentID() coretypes.AgentID
 	// ContractCreator agentID which deployed contract
 	ContractCreator() coretypes.AgentID
+	// ContractID is the ID of the current contract
+	ContractID() coretypes.ContractID
+	// State is base level interface to access the key/value pairs in the virtual state
+	// GetTimestamp return current timestamp of the context
+	GetTimestamp() int64
+	// Params of the current call
+	Params() dict.Dict
+	// State k/v store of the current call (in the context of the smart contract)
+	State() kv.KVStore
+
+	// Caller is the agentID of the caller of he SC function
+	Caller() coretypes.AgentID
 
 	// CreateContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
@@ -44,8 +41,6 @@ type Sandbox interface {
 	Call(target coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
 	RequestID() coretypes.RequestID
-	// GetTimestamp return current timestamp of the context
-	GetTimestamp() int64
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 
@@ -74,11 +69,9 @@ type Sandbox interface {
 
 	// Log interface provides local logging on the machine
 	Log() LogInterface
-	// Event and Eventf publish "vmmsg" message through Publisher on nanomsg
+	// Event publishes "vmmsg" message through Publisher on nanomsg
 	// it also logs locally, but it is not the same thing
 	Event(msg string)
-	// Deprecated: use Event(fmt.Sprintf()) instead
-	Eventf(format string, args ...interface{})
 }
 
 type PostRequestParams struct {

@@ -58,7 +58,7 @@ func (o *ScTransferInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScTransferInfo) Invoke() {
 	// is this a local transfer?
-	if o.chain == o.vm.ctx.ChainID() {
+	if o.chain == o.vm.ctx.ContractID().ChainID() {
 		for color, amount := range o.balances {
 			o.vm.ctx.MoveTokens(o.agent, color, amount)
 		}

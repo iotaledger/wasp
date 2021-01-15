@@ -193,7 +193,7 @@ func isAuthorizedToDeploy(ctx vmtypes.Sandbox) bool {
 	}
 	if !ctx.Caller().IsAddress() {
 		// smart contract from the same chain is always authorize
-		return ctx.Caller().MustContractID().ChainID() == ctx.ChainID()
+		return ctx.Caller().MustContractID().ChainID() == ctx.ContractID().ChainID()
 	}
 	return collections.NewMap(ctx.State(), VarDeployAuthorisations).MustHasAt(ctx.Caller().Bytes())
 }

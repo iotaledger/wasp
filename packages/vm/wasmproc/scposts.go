@@ -78,7 +78,7 @@ func (o *ScPostInfo) GetTypeId(keyId int32) int32 {
 
 func (o *ScPostInfo) Invoke() {
 	o.Trace("POST c'%s' f'%s' d%d", o.contract, o.function, o.delay)
-	chainId := o.vm.ctx.ChainID()
+	chainId := o.vm.ctx.ContractID().ChainID()
 	if o.chainId != nil {
 		chainId = *o.chainId
 	}

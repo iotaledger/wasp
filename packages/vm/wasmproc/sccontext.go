@@ -39,14 +39,11 @@ func (o *ScContext) GetBytes(keyId int32) []byte {
 	case wasmhost.KeyCaller:
 		id := o.vm.ctx.Caller()
 		return id[:]
-	case wasmhost.KeyChain:
-		id := o.vm.ctx.ChainID()
-		return id[:]
 	case wasmhost.KeyChainOwner:
-		id := o.vm.ctx.ChainOwnerID()
+		id := o.vm.chainOwnerID()
 		return id[:]
 	case wasmhost.KeyCreator:
-		id := o.vm.ctx.ContractCreator()
+		id := o.vm.contractCreator()
 		return id[:]
 	case wasmhost.KeyId:
 		id := o.vm.contractID()
@@ -95,8 +92,6 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_MAP
 	case wasmhost.KeyCalls:
 		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyChain:
-		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_ADDRESS
 	case wasmhost.KeyChainOwner:
 		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	case wasmhost.KeyCreator:

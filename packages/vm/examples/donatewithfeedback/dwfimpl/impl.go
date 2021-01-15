@@ -52,7 +52,7 @@ func (v dwfProcessor) GetDescription() string {
 func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ret := ep(ctx)
 	if ret != nil {
-		ctx.Eventf("error %v", ret)
+		ctx.Event(fmt.Sprintf("error %v", ret))
 	}
 	return nil, ret
 }
@@ -77,7 +77,7 @@ const maxComment = 150
 // donate implements request 'donate'. It takes feedback text from the request
 // and adds it into the log of feedback messages
 func donate(ctx vmtypes.Sandbox) error {
-	ctx.Eventf("DonateWithFeedback: donate")
+	ctx.Event(fmt.Sprintf("DonateWithFeedback: donate"))
 	params := ctx.Params()
 
 	// how many iotas are sent by the request.
@@ -138,7 +138,7 @@ func donate(ctx vmtypes.Sandbox) error {
 
 // TODO implement withdrawal of other than IOTA colored tokens
 func withdraw(ctx vmtypes.Sandbox) error {
-	ctx.Eventf("DonateWithFeedback: withdraw")
+	ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw"))
 	params := ctx.Params()
 
 	// TODO refactor to the new account system
@@ -172,6 +172,6 @@ func withdraw(ctx vmtypes.Sandbox) error {
 	// transfer iotas to the owner address
 	// TODO refactor to new account system
 	//ctx.AccessSCAccount().MoveTokens(ctx.OriginatorAddress(), &balance.ColorIOTA, withdrawSum)
-	//ctx.Eventf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum)
+	//ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum))
 	return nil
 }

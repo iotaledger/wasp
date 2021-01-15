@@ -139,6 +139,20 @@ func (host *wasmProcessor) balances() coretypes.ColoredBalances {
 	return host.ctxView.Balances()
 }
 
+func (host *wasmProcessor) chainOwnerID() coretypes.AgentID {
+	if host.ctx != nil {
+		return host.ctx.ChainOwnerID()
+	}
+	return host.ctxView.ChainOwnerID()
+}
+
+func (host *wasmProcessor) contractCreator() coretypes.AgentID {
+	if host.ctx != nil {
+		return host.ctx.ContractCreator()
+	}
+	return host.ctxView.ContractCreator()
+}
+
 func (host *wasmProcessor) contractID() coretypes.ContractID {
 	if host.ctx != nil {
 		return host.ctx.ContractID()

@@ -130,7 +130,7 @@ func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
 func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	err := f(ctx)
 	if err != nil {
-		ctx.Eventf("error %v", err)
+		ctx.Event(fmt.Sprintf("error %v", err))
 	}
 	return nil, err
 }
@@ -194,7 +194,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 	// save the bet info in the array
 	collections.NewArray(state, StateVarBets).MustPush(encodeBetInfo(betInfo))
 
-	ctx.Eventf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short())
+	ctx.Event(fmt.Sprintf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short()))
 
 	err := withPlayerStats(ctx, &betInfo.Player, func(ps *PlayerStats) {
 		ps.Bets += 1
@@ -214,7 +214,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 		nextPlayTimestamp := (time.Duration(ctx.GetTimestamp())*time.Nanosecond + time.Duration(period)*time.Second).Nanoseconds()
 		state.Set(StateVarNextPlayTimestamp, codec.EncodeInt64(nextPlayTimestamp))
 
-		ctx.Eventf("PostRequestToSelfWithDelay period = %d", period)
+		ctx.Event(fmt.Sprintf("PostRequestToSelfWithDelay period = %d", period))
 
 		// send the timelocked Lock request to self. TimeLock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
@@ -223,9 +223,9 @@ func placeBet(ctx vmtypes.Sandbox) error {
 			EntryPoint:       RequestLockBets,
 			TimeLock:         uint32(period),
 		}) {
-			ctx.Eventf("play deadline is set after %d seconds", period)
+			ctx.Event(fmt.Sprintf("play deadline is set after %d seconds", period))
 		} else {
-			ctx.Eventf("failed to set play deadline")
+			ctx.Event(fmt.Sprintf("failed to set play deadline"))
 		}
 	}
 	return nil
@@ -250,7 +250,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 	}
 	ctx.State().Set(ReqVarPlayPeriodSec, codec.EncodeInt64(period))
 
-	ctx.Eventf("setPlayPeriod = %d", period)
+	ctx.Event(fmt.Sprintf("setPlayPeriod = %d", period))
 	return nil
 }
 
@@ -271,7 +271,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 	collections.NewArray(state, StateVarBets).MustErase()
 
 	numLockedBets := lockedBets.MustLen()
-	ctx.Eventf("lockBets: num = %d", numLockedBets)
+	ctx.Event(fmt.Sprintf("lockBets: num = %d", numLockedBets))
 
 	// clear entropy to be picked in the next request
 	state.Del(StateVarEntropyFromLocking)
@@ -318,7 +318,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	winningColor := byte(util.MustUint64From8Bytes(entropy[:8]) % NumColors)
 	ctx.State().Set(StateVarLastWinningColor, codec.EncodeInt64(int64(winningColor)))
 
-	ctx.Eventf("$$$$$$$$$$ winning color is = %d", winningColor)
+	ctx.Event(fmt.Sprintf("$$$$$$$$$$ winning color is = %d", winningColor))
 
 	addToWinsPerColor(ctx, winningColor)
 
@@ -335,7 +335,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		lockedBets[i] = bi
 	}
 
-	ctx.Eventf("$$$$$$$$$$ totalLockedAmount = %d", totalLockedAmount)
+	ctx.Event(fmt.Sprintf("$$$$$$$$$$ totalLockedAmount = %d", totalLockedAmount))
 
 	// select bets on winning Color
 	winningBets := lockedBets[:0] // same underlying array
@@ -345,7 +345,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		}
 	}
 
-	ctx.Eventf("$$$$$$$$$$ winningBets: %d", len(winningBets))
+	ctx.Event(fmt.Sprintf("$$$$$$$$$$ winningBets: %d", len(winningBets)))
 
 	// locked bets neither entropy are not needed anymore
 	lockedBetsArray.MustErase()
@@ -353,7 +353,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 
 	if len(winningBets) == 0 {
 
-		ctx.Eventf("$$$$$$$$$$ nobody wins: amount of %d stays in the smart contract", totalLockedAmount)
+		ctx.Event(fmt.Sprintf("$$$$$$$$$$ nobody wins: amount of %d stays in the smart contract", totalLockedAmount))
 
 		// nobody played on winning Color -> all sums stay in the smart contract
 		// move tokens to itself.
@@ -362,14 +362,14 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 		agent := coretypes.NewAgentIDFromContractID(ctx.ContractID())
 		if !ctx.MoveTokens(agent, balance.ColorIOTA, totalLockedAmount) {
 			// inconsistency. A disaster
-			ctx.Eventf("$$$$$$$$$$ something went wrong 1")
+			ctx.Event(fmt.Sprintf("$$$$$$$$$$ something went wrong 1"))
 			ctx.Log().Panicf("MoveTokens failed")
 		}
 	}
 
 	// distribute total staked amount to players
 	if !distributeLockedAmount(ctx, winningBets, totalLockedAmount) {
-		ctx.Eventf("$$$$$$$$$$ something went wrong 2")
+		ctx.Event(fmt.Sprintf("$$$$$$$$$$ something went wrong 2"))
 		ctx.Log().Panicf("distributeLockedAmount failed")
 	}
 

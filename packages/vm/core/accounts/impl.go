@@ -64,7 +64,7 @@ func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		targetAgentID = aid
 	}
 	// funds currently are at the disposition of accounts, they are moved to the target
-	if !MoveBetweenAccounts(state, ctx.AgentID(), targetAgentID, ctx.IncomingTransfer()) {
+	if !MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer()) {
 		return nil, fmt.Errorf("failed to deposit to %s", ctx.Caller().String())
 	}
 	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, ctx.IncomingTransfer().String())
@@ -121,12 +121,12 @@ func withdrawToChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	toWithdraw := cbalances.NewFromMap(bals)
 	callerContract := caller.MustContractID()
-	if callerContract.ChainID() == ctx.ChainID() {
+	if callerContract.ChainID() == ctx.ContractID().ChainID() {
 		// no need to move anything on the same chain
 		return nil, nil
 	}
 	// take to tokens here
-	succ := MoveBetweenAccounts(ctx.State(), caller, ctx.AgentID(), toWithdraw)
+	succ := MoveBetweenAccounts(ctx.State(), caller, coretypes.NewAgentIDFromContractID(ctx.ContractID()), toWithdraw)
 	if !succ {
 		ctx.Log().Panicf("accounts.withdrawToChain.failed to post 'deposit' request")
 	}

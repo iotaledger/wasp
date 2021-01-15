@@ -79,7 +79,7 @@ func (v tokenRegistryProcessor) GetDescription() string {
 func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
-		ctx.Eventf("error %v", err)
+		ctx.Event(fmt.Sprintf("error %v", err))
 	}
 	return nil, err
 }

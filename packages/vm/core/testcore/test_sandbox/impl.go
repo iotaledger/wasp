@@ -16,7 +16,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func testCheckContextFromFullEP(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	par := ctx.Params()
 	chainID, ok, err := codec.DecodeChainID(par.MustGet(ParamChainID))
-	if err != nil || !ok || chainID != ctx.ChainID() {
+	if err != nil || !ok || chainID != ctx.ContractID().ChainID() {
 		return nil, fmt.Errorf("wrong '%s'", ParamChainID)
 	}
 	chainOwnerID, ok, err := codec.DecodeAgentID(par.MustGet(ParamChainOwnerID))
@@ -32,7 +32,7 @@ func testCheckContextFromFullEP(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("wrong '%s'", ParamContractID)
 	}
 	agentID, ok, err := codec.DecodeAgentID(par.MustGet(ParamAgentID))
-	if err != nil || !ok || agentID != ctx.AgentID() {
+	if err != nil || !ok || agentID != coretypes.NewAgentIDFromContractID(ctx.ContractID()) {
 		return nil, fmt.Errorf("wrong '%s'", ParamAgentID)
 	}
 	contractCreator, ok, err := codec.DecodeAgentID(par.MustGet(ParamContractCreator))
@@ -45,7 +45,7 @@ func testCheckContextFromFullEP(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func testCheckContextFromViewEP(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	par := ctx.Params()
 	chainID, ok, err := codec.DecodeChainID(par.MustGet(ParamChainID))
-	if err != nil || !ok || chainID != ctx.ChainID() {
+	if err != nil || !ok || chainID != ctx.ContractID().ChainID() {
 		return nil, fmt.Errorf("wrong '%s'", ParamChainID)
 	}
 	contractID, ok, err := codec.DecodeContractID(par.MustGet(ParamContractID))
@@ -88,7 +88,7 @@ func testChainOwnerID(ctx vmtypes.Sandbox) (dict.Dict, error) {
 //The purpose of this function is to test Sandbox ChainID
 func testChainID(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
-	cCreator := ctx.ChainID()
+	cCreator := ctx.ContractID().ChainID()
 
 	ret := dict.New()
 	ret.Set(VarChainID, cCreator.Bytes())

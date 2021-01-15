@@ -61,7 +61,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("incCounter: %v", err)
 	}
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val))
-	ctx.Eventf("inccounter.init.success. counter = %d", val)
+	ctx.Event(fmt.Sprintf("inccounter.init.success. counter = %d", val))
 	return nil, nil
 }
 
