@@ -1,4 +1,4 @@
-package testcore
+package sandbox_tests
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -9,19 +9,9 @@ import (
 	"testing"
 )
 
-func TestBasic(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
-
-	chain.CheckChain()
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-}
-
 func TestMainCallsFromFullEP(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-	user := glb.NewSignatureSchemeWithFunds()
+	_, chain := setupChain(t, nil)
+	user := setupDeployer(t, chain)
 	userAddress := user.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
 
@@ -50,9 +40,9 @@ func TestMainCallsFromFullEP(t *testing.T) {
 }
 
 func TestMainCallsFromViewEP(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-	user := glb.NewSignatureSchemeWithFunds()
+	_, chain := setupChain(t, nil)
+	user := setupDeployer(t, chain)
+
 	userAddress := user.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
 

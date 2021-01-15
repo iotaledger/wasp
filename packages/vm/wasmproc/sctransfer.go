@@ -56,10 +56,6 @@ func (o *ScTransferInfo) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
-// TODO: by wrapping it all into one call is changing semantics of calls. It is not correct.
-//  also because MoveTokens is synchronous, TransferCrossChain requires non empty
-//  sender's balances and probably fees and TransferToAddress do not need it
-//  The deprecated methods will be removed anyway. Only TransferToAddress will stay in the sandbox
 func (o *ScTransferInfo) Invoke() {
 	// is this a local transfer?
 	if o.chain == o.vm.ctx.ChainID() {
