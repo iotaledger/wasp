@@ -24,7 +24,7 @@ func newView(vmctx *vmcontext.VMContext) vmtypes.SandboxView {
 }
 
 func (s sandboxView) ChainOwnerID() coretypes.AgentID {
-	panic("Implement me")
+	return s.vmctx.ChainOwnerID()
 }
 
 func (s sandboxView) ContractCreator() coretypes.AgentID {

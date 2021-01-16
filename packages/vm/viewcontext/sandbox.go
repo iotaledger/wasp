@@ -4,8 +4,10 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -18,20 +20,20 @@ func InitLogger() {
 }
 
 type sandboxview struct {
-	vctx       *viewcontext
-	params     dict.Dict
-	state      kv.KVStore
-	contractID coretypes.ContractID
-	events     vm.ContractEventPublisher
+	vctx          *viewcontext
+	contractHname coretypes.Hname
+	params        dict.Dict
+	state         kv.KVStore // TODO change to KVStoreReader when Writable store removed from wasmhost
+	events        vm.ContractEventPublisher
 }
 
-func newSandboxView(vctx *viewcontext, contractID coretypes.ContractID, params dict.Dict) *sandboxview {
+func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
-		vctx:       vctx,
-		params:     params,
-		state:      contractStateSubpartition(vctx.state, contractID.Hname()),
-		contractID: contractID,
-		events:     vm.NewContractEventPublisher(contractID, vctx.log),
+		vctx:          vctx,
+		contractHname: contractHname,
+		params:        params,
+		state:         contractStateSubpartition(vctx.state, contractHname),
+		events:        vm.NewContractEventPublisher(coretypes.NewContractID(vctx.chainID, contractHname), vctx.log),
 	}
 }
 
@@ -56,7 +58,7 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 }
 
 func (s *sandboxview) ContractID() coretypes.ContractID {
-	return s.contractID
+	return coretypes.NewContractID(s.vctx.chainID, s.contractHname)
 }
 
 func (s *sandboxview) Log() vmtypes.LogInterface {
@@ -67,12 +69,22 @@ func (s *sandboxview) ChainID() coretypes.ChainID {
 	return s.vctx.chainID
 }
 
+var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
+
 func (s *sandboxview) ChainOwnerID() coretypes.AgentID {
-	panic("Implement me")
+	r, err := s.Call(root.Interface.Hname(), getChainInfoHname, nil)
+	if err != nil {
+		s.Log().Panicf("ChainOwnerID: %v", err)
+	}
+	ret, exists, err := codec.DecodeAgentID(r.MustGet(root.VarChainOwnerID))
+	if err != nil || !exists {
+		s.Log().Panicf("ChainOwnerID: %v", err)
+	}
+	return ret
 }
 
 func (s *sandboxview) ContractCreator() coretypes.AgentID {
-	panic("Implement me")
+	return s.vctx.contractRecord.Creator
 }
 
 func (s *sandboxview) GetTimestamp() int64 {

@@ -82,6 +82,7 @@ func (i *ContractInterface) GetDescription() string {
 	return i.Description
 }
 
+// Hname caches the value
 func (i *ContractInterface) Hname() coretypes.Hname {
 	if i.hname == 0 {
 		i.hname = coretypes.Hn(i.Name)

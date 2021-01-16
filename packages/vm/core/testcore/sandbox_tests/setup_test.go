@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	RUN_WASM  = false
+	RUN_WASM  = true
 	WASM_FILE = "testcore_bg.wasm"
 )
 

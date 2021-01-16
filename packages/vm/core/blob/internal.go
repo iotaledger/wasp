@@ -70,8 +70,8 @@ func GetBlobSizesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collecti
 	return collections.NewMapReadOnly(state, sizesKey(blobHash))
 }
 
-func LocateProgram(state kv.KVStore, programHash hashing.HashValue) (string, []byte, error) {
-	blbValues := GetBlobValues(state, programHash)
+func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (string, []byte, error) {
+	blbValues := GetBlobValuesR(state, programHash)
 	programBinary := blbValues.MustGetAt([]byte(VarFieldProgramBinary))
 	if programBinary == nil {
 		return "", nil, fmt.Errorf("can't find program binary for hash %s", programHash.String())

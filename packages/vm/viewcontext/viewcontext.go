@@ -18,11 +18,12 @@ import (
 )
 
 type viewcontext struct {
-	processors *processors.ProcessorCache
-	state      kv.KVStore //buffered.BufferedKVStore
-	chainID    coretypes.ChainID
-	timestamp  int64
-	log        *logger.Logger
+	processors     *processors.ProcessorCache
+	state          kv.KVStore //buffered.BufferedKVStore
+	chainID        coretypes.ChainID
+	timestamp      int64
+	contractRecord *root.ContractRecord
+	log            *logger.Logger
 }
 
 func NewFromDB(chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
@@ -73,12 +74,13 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 }
 
 func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
-	rec, err := root.FindContract(contractStateSubpartition(v.state, root.Interface.Hname()), contractHname)
+	var err error
+	v.contractRecord, err = root.FindContract(contractStateSubpartition(v.state, root.Interface.Hname()), contractHname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
 	}
 
-	proc, err := v.processors.GetOrCreateProcessor(rec, func(programHash hashing.HashValue) (string, []byte, error) {
+	proc, err := v.processors.GetOrCreateProcessor(v.contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
 		if vmtype, ok := hardcoded.LocateHardcodedProgram(programHash); ok {
 			return vmtype, nil, nil
 		}
@@ -97,7 +99,7 @@ func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretyp
 		return nil, fmt.Errorf("only view entry point can be called in this context")
 	}
 
-	return ep.CallView(newSandboxView(v, coretypes.NewContractID(v.chainID, contractHname), params))
+	return ep.CallView(newSandboxView(v, contractHname, params))
 }
 
 func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStore {
