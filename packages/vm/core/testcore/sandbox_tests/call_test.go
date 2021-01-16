@@ -31,7 +31,6 @@ func TestGetSet(t *testing.T) {
 
 func TestCallRecursive(t *testing.T) {
 	if RUN_WASM {
-		// can't take hname in Rust
 		t.SkipNow()
 	}
 	_, chain := setupChain(t, nil)
@@ -50,7 +49,7 @@ func TestCallRecursive(t *testing.T) {
 	require.NoError(t, err)
 }
 
-const n = 15
+const n = 3
 
 func fibo(n int64) int64 {
 	if n == 0 || n == 1 {
@@ -61,7 +60,6 @@ func fibo(n int64) int64 {
 
 func TestCallFibonacci(t *testing.T) {
 	if RUN_WASM {
-		// can't call inside the view in Rust
 		t.SkipNow()
 	}
 	_, chain := setupChain(t, nil)

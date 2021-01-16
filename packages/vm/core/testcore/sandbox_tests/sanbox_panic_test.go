@@ -9,82 +9,49 @@ import (
 )
 
 func TestPanicFull(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
+	_, chain := setupChain(t, nil)
+	setupSC(t, chain, nil)
 
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicFullEP)
-	_, err = chain.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgFullPanic))
 }
 
-func TestPanicViewPost(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
-
-	_, err = chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncPanicViewEP)
-	require.Error(t, err)
-	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgViewPanic))
-}
-
 func TestPanicViewCall(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
+	_, chain := setupChain(t, nil)
+	setupSC(t, chain, nil)
 
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
-
-	_, err = chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncPanicViewEP)
+	_, err := chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncPanicViewEP)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgViewPanic))
 }
 
 func TestCallPanicFull(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
+	_, chain := setupChain(t, nil)
+	setupSC(t, chain, nil)
 
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicFullEP)
-	_, err = chain.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgFullPanic))
 }
 
 func TestCallPanicViewFromFull(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
-
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
+	_, chain := setupChain(t, nil)
+	setupSC(t, chain, nil)
 
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicViewEPFromFull)
-	_, err = chain.PostRequest(req, nil)
+	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgViewPanic))
 }
 
 func TestCallPanicViewFromView(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ch1")
+	_, chain := setupChain(t, nil)
+	setupSC(t, chain, nil)
 
-	err := chain.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
-
-	_, err = chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicViewEPFromView)
+	_, err := chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicViewEPFromView)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), test_sandbox.MsgViewPanic))
 }
