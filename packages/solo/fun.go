@@ -331,7 +331,6 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 // GetEventLogRecords calls the view in the  'eventlog' core smart contract to retrieve
 // latest up to 50 records for a given smart contract.
 // It returns records as array in time-descending order.
-//
 // More than 50 records may be retrieved by calling the view directly
 func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
@@ -352,6 +351,7 @@ func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRe
 }
 
 // GetEventLogRecordsString return stringified response from GetEventLogRecords
+// Returns latest 50 records from the log
 func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
 	recs, err := ch.GetEventLogRecords(name)
 	if err != nil {

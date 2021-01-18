@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -48,21 +48,24 @@ func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureSch
 	return user
 }
 
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) (coretypes.ContractID, int64) {
 	var err error
+	var extraToken int64
 	if RUN_WASM {
 		err = chain.DeployWasmContract(user, SandboxSCName, WASM_FILE_TESTCORE)
+		extraToken = 1
 	} else {
-		err = chain.DeployContract(user, SandboxSCName, test_sandbox.Interface.ProgramHash)
+		err = chain.DeployContract(user, SandboxSCName, test_sandbox_sc.Interface.ProgramHash)
+		extraToken = 0
 	}
 	require.NoError(t, err)
 
-	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox.Interface.Name))
-	req := solo.NewCall(SandboxSCName, test_sandbox.FuncDoNothing)
+	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox_sc.Interface.Name))
+	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncDoNothing)
 	_, err = chain.PostRequest(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", SandboxSCName, coretypes.Hn(SandboxSCName))
-	return deployed
+	return deployed, extraToken
 }
 
 func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
@@ -83,7 +86,7 @@ func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureS
 	)
 	require.NoError(t, err)
 
-	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox.Interface.Name))
+	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox_sc.Interface.Name))
 	t.Logf("deployed erc20'%s': %s --  %s", ERC20_NAME, coretypes.Hn(ERC20_NAME), deployed)
 	return deployed
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -15,12 +15,15 @@ import (
 )
 
 func TestEventlogGetLast3(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
 	for i := 1; i < 6; i++ {
-		req := solo.NewCall(SandboxSCName, test_sandbox.FuncEventLogGenericData,
-			test_sandbox.VarCounter, i,
+		req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncEventLogGenericData,
+			test_sandbox_sc.VarCounter, i,
 		)
 		_, err := chain.PostRequest(req, nil)
 		require.NoError(t, err)
@@ -37,6 +40,9 @@ func TestEventlogGetLast3(t *testing.T) {
 }
 
 func TestEventlogGetBetweenTs(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	env, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -44,8 +50,8 @@ func TestEventlogGetBetweenTs(t *testing.T) {
 	var err error
 	for i := 1; i < 6; i++ {
 		req := solo.NewCall(SandboxSCName,
-			test_sandbox.FuncEventLogGenericData,
-			test_sandbox.VarCounter, i,
+			test_sandbox_sc.FuncEventLogGenericData,
+			test_sandbox_sc.VarCounter, i,
 		)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)
@@ -55,7 +61,7 @@ func TestEventlogGetBetweenTs(t *testing.T) {
 		eventlog.ParamFromTs, 0,
 		eventlog.ParamToTs, chain.State.Timestamp()-int64(1500*time.Millisecond),
 		eventlog.ParamMaxLastRecords, 2,
-		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		eventlog.ParamContractHname, test_sandbox_sc.Interface.Hname(),
 	)
 	require.NoError(t, err)
 
@@ -64,11 +70,14 @@ func TestEventlogGetBetweenTs(t *testing.T) {
 }
 
 func TestEventLogEventData(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncEventLogEventData,
+	req := solo.NewCall(test_sandbox_sc.Interface.Name,
+		test_sandbox_sc.FuncEventLogEventData,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -76,19 +85,22 @@ func TestEventLogEventData(t *testing.T) {
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
 		eventlog.ParamFromTs, 0,
 		eventlog.ParamToTs, chain.State.Timestamp(),
-		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		eventlog.ParamContractHname, test_sandbox_sc.Interface.Hname(),
 	)
 	require.NoError(t, err)
 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 
 	require.EqualValues(t, 3, array.MustLen())
 
-	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
+	str, err := chain.GetEventLogRecordsString(test_sandbox_sc.Interface.Name)
 	require.NoError(t, err)
 	t.Log(str)
 }
 
 func TestEventLogDifferentCalls(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	env, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 	env.SetTimeStep(500 * time.Millisecond)
@@ -96,9 +108,9 @@ func TestEventLogDifferentCalls(t *testing.T) {
 	count := 1
 	// events
 	for i := 1; i <= 3; i++ {
-		req := solo.NewCall(test_sandbox.Interface.Name,
-			test_sandbox.FuncEventLogEventData,
-			test_sandbox.VarCounter, count,
+		req := solo.NewCall(test_sandbox_sc.Interface.Name,
+			test_sandbox_sc.FuncEventLogEventData,
+			test_sandbox_sc.VarCounter, count,
 		)
 		count++
 		_, err := chain.PostRequest(req, nil)
@@ -106,9 +118,9 @@ func TestEventLogDifferentCalls(t *testing.T) {
 	}
 	// generic
 	for i := 1; i <= 2; i++ {
-		req := solo.NewCall(test_sandbox.Interface.Name,
-			test_sandbox.FuncEventLogGenericData,
-			test_sandbox.VarCounter, count,
+		req := solo.NewCall(test_sandbox_sc.Interface.Name,
+			test_sandbox_sc.FuncEventLogGenericData,
+			test_sandbox_sc.VarCounter, count,
 		)
 		count++
 		_, err := chain.PostRequest(req, nil)
@@ -117,13 +129,13 @@ func TestEventLogDifferentCalls(t *testing.T) {
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
 		eventlog.ParamFromTs, 0,
 		eventlog.ParamToTs, chain.State.Timestamp(),
-		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		eventlog.ParamContractHname, test_sandbox_sc.Interface.Hname(),
 	)
 	require.NoError(t, err)
 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 	require.EqualValues(t, 11, array.MustLen())
 
-	str, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
+	str, err := chain.GetEventLogRecordsString(test_sandbox_sc.Interface.Name)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -133,18 +145,21 @@ func TestEventLogDifferentCalls(t *testing.T) {
 }
 
 func TestChainLogGetNumRecords(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCall(SandboxSCName,
-		test_sandbox.FuncEventLogGenericData,
-		test_sandbox.VarCounter, 1337,
+		test_sandbox_sc.FuncEventLogGenericData,
+		test_sandbox_sc.VarCounter, 1337,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
-		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		eventlog.ParamContractHname, test_sandbox_sc.Interface.Hname(),
 	)
 	require.NoError(t, err)
 
@@ -165,11 +180,14 @@ func TestChainLogGetNumRecords(t *testing.T) {
 }
 
 func TestChainLogSandboxDeploy(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncEventLogDeploy,
+	req := solo.NewCall(test_sandbox_sc.Interface.Name,
+		test_sandbox_sc.FuncEventLogDeploy,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -192,25 +210,28 @@ func TestChainLogSandboxDeploy(t *testing.T) {
 }
 
 func TestChainLogMultiple(t *testing.T) {
+	if RUN_WASM {
+		t.SkipNow()
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncEventLogEventData,
+	req := solo.NewCall(test_sandbox_sc.Interface.Name,
+		test_sandbox_sc.FuncEventLogEventData,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	req = solo.NewCall(test_sandbox.Interface.Name,
-		test_sandbox.FuncEventLogGenericData,
-		test_sandbox.VarCounter, 33333,
+	req = solo.NewCall(test_sandbox_sc.Interface.Name,
+		test_sandbox_sc.FuncEventLogGenericData,
+		test_sandbox_sc.VarCounter, 33333,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	/////Should return 4 logs records/////
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
-		eventlog.ParamContractHname, test_sandbox.Interface.Hname(),
+		eventlog.ParamContractHname, test_sandbox_sc.Interface.Hname(),
 	)
 	require.NoError(t, err)
 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
@@ -223,7 +244,7 @@ func TestChainLogMultiple(t *testing.T) {
 	require.EqualValues(t, 2, strings.Count(strRoot, "[req]"))
 	require.EqualValues(t, 1, strings.Count(strRoot, "[deploy]"))
 
-	strTest, err := chain.GetEventLogRecordsString(test_sandbox.Interface.Name)
+	strTest, err := chain.GetEventLogRecordsString(test_sandbox_sc.Interface.Name)
 	require.NoError(t, err)
 	t.Log(strTest)
 	require.EqualValues(t, 3, strings.Count(strTest, "[req]"))

@@ -1,4 +1,4 @@
-package test_sandbox
+package test_sandbox_sc
 
 import (
 	"fmt"

@@ -7,50 +7,44 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestDoNothing(t *testing.T) {
-	if RUN_WASM {
-		t.SkipNow()
-	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, extraToken := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncDoNothing).
+	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncDoNothing).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-42)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-42-extraToken)
 }
 
 func TestDoNothingUser(t *testing.T) {
-	if RUN_WASM {
-		t.SkipNow()
-	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, extraToken := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncDoNothing).
+	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncDoNothing).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
 	env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-1-42)
 }
 
@@ -59,7 +53,7 @@ func TestWithdrawToAddress(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, extraToken := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 	t.Logf("contract agentID: %s", cAID)
@@ -67,20 +61,20 @@ func TestWithdrawToAddress(t *testing.T) {
 	userAddress := user.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
 
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncDoNothing).
+	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncDoNothing).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-42)
 
-	req = solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncSendToAddress,
-		test_sandbox.ParamAddress, userAddress,
+	req = solo.NewCall(SandboxSCName, test_sandbox_sc.FuncSendToAddress,
+		test_sandbox_sc.ParamAddress, userAddress,
 	)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -98,7 +92,7 @@ func TestDoPanicUser(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, _ := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -112,7 +106,7 @@ func TestDoPanicUser(t *testing.T) {
 	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicFullEP).
+	req := solo.NewCall(test_sandbox_sc.Interface.Name, test_sandbox_sc.FuncPanicFullEP).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
@@ -130,7 +124,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, _ := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -144,7 +138,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicFullEP).
+	req := solo.NewCall(test_sandbox_sc.Interface.Name, test_sandbox_sc.FuncPanicFullEP).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
@@ -172,7 +166,7 @@ func TestDoPanicUserFee(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, _ := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -199,7 +193,7 @@ func TestDoPanicUserFee(t *testing.T) {
 	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-5)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
-	req = solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicFullEP).
+	req = solo.NewCall(test_sandbox_sc.Interface.Name, test_sandbox_sc.FuncPanicFullEP).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err = chain.PostRequest(req, user)
 	require.Error(t, err)
@@ -217,7 +211,7 @@ func TestRequestToView(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, _ := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -232,7 +226,7 @@ func TestRequestToView(t *testing.T) {
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 
 	// sending request to the view entry point should return an error and invoke fallback for tokens
-	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncJustView).
+	req := solo.NewCall(test_sandbox_sc.Interface.Name, test_sandbox_sc.FuncJustView).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)

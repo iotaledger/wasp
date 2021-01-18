@@ -1,4 +1,4 @@
-package test_sandbox
+package test_sandbox_sc
 
 import (
 	"fmt"
@@ -74,25 +74,33 @@ func testEventLogEventData(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-//The purpose of this function is to test Sandbox ChainOwnerID (It's not a ViewCall because ChainOwnerID is not in the SandboxView)
-func testChainOwnerID(ctx vmtypes.Sandbox) (dict.Dict, error) {
-
+func testChainOwnerIDView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
-
 	ret := dict.New()
 	ret.Set(VarChainOwner, cOwnerID.Bytes())
 
 	return ret, nil
 }
 
-//The purpose of this function is to test Sandbox ChainID
-func testChainID(ctx vmtypes.SandboxView) (dict.Dict, error) {
-
-	cCreator := ctx.ContractID().ChainID()
-
+func testChainOwnerIDFull(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(VarChainID, cCreator.Bytes())
+	ret.Set(VarChainOwner, cOwnerID.Bytes())
 
+	return ret, nil
+}
+
+func testContractIDView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+	cID := ctx.ContractID()
+	ret := dict.New()
+	ret.Set(VarContractID, cID[:])
+	return ret, nil
+}
+
+func testContractIDFull(ctx vmtypes.Sandbox) (dict.Dict, error) {
+	cID := ctx.ContractID()
+	ret := dict.New()
+	ret.Set(VarContractID, cID[:])
 	return ret, nil
 }
 
@@ -162,7 +170,7 @@ func doNothing(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func sendToAddress(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSendToAddress)
 	if ctx.Caller() != ctx.ContractCreator() {
-		ctx.Log().Panicf("-------- panic due to unauthorized call")
+		ctx.Log().Panicf(MsgPanicUnauthorized)
 	}
 	targetAddress, ok, err := codec.DecodeAddress(ctx.Params().MustGet(ParamAddress))
 	if err != nil || !ok {

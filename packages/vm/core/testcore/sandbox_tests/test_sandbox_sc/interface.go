@@ -1,5 +1,5 @@
 // smart contract for testing
-package test_sandbox
+package test_sandbox_sc
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -22,11 +22,14 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
+		contract.ViewFunc(FuncChainOwnerIDView, testChainOwnerIDView),
+		contract.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
+		contract.ViewFunc(FuncContractIDView, testContractIDView),
+		contract.Func(FuncContractIDFull, testContractIDFull),
+
 		contract.Func(FuncEventLogGenericData, testEventLogGenericData),
 		contract.Func(FuncEventLogEventData, testEventLogEventData),
-		contract.Func(FuncChainOwnerID, testChainOwnerID),
 		contract.Func(FuncEventLogDeploy, testEventLogDeploy),
-		contract.ViewFunc(FuncChainID, testChainID),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 
 		contract.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
@@ -59,8 +62,11 @@ const (
 	FuncEventLogDeploy      = "testEventLogDeploy"
 
 	//Function sandbox test
-	FuncChainOwnerID           = "testChainOwnerID"
-	FuncChainID                = "testChainID"
+	FuncChainOwnerIDView = "testChainOwnerIDView"
+	FuncChainOwnerIDFull = "testChainOwnerIDFull"
+	FuncContractIDView   = "testContractIDView"
+	FuncContractIDFull   = "testContractIDFull"
+
 	FuncSandboxCall            = "testSandboxCall"
 	FuncCheckContextFromFullEP = "testCheckContextFromFullEP"
 	FuncCheckContextFromViewEP = "testCheckContextFromViewEP"
@@ -85,7 +91,7 @@ const (
 	//Variables
 	VarCounter              = "counter"
 	VarChainOwner           = "chainOwner"
-	VarChainID              = "chainID"
+	VarContractID           = "contractID"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
 
@@ -103,7 +109,8 @@ const (
 	ParamHname           = "hname"
 
 	// error fragments for testing
-	MsgFullPanic = "========== panic FULL ENTRY POINT ========="
-	MsgViewPanic = "========== panic VIEW ========="
-	MsgDoNothing = "========== doing nothing"
+	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
+	MsgViewPanic         = "========== panic VIEW ========="
+	MsgDoNothing         = "========== doing nothing"
+	MsgPanicUnauthorized = "============== panic due to unauthorized call"
 )

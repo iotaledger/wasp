@@ -4,7 +4,6 @@
 package testcore
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -95,82 +94,4 @@ func TestAccountsDepositWithdrawToChainFail(t *testing.T) {
 	require.Error(t, err)
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+2)
 	glb.AssertAddressBalance(newOwner.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-42-2)
-}
-
-func Test2Chains(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain1 := env.NewChain(nil, "ch1")
-	chain2 := env.NewChain(nil, "ch2")
-	chain1.CheckAccountLedger()
-	chain2.CheckAccountLedger()
-
-	err := chain1.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain1.CheckChain()
-	contractID1 := coretypes.NewContractID(chain1.ChainID, test_sandbox.Interface.Hname())
-	contractAgentID1 := coretypes.NewAgentIDFromContractID(contractID1)
-
-	err = chain2.DeployContract(nil, test_sandbox.Interface.Name, test_sandbox.Interface.ProgramHash)
-	require.NoError(t, err)
-	chain2.CheckChain()
-	contractID2 := coretypes.NewContractID(chain2.ChainID, test_sandbox.Interface.Hname())
-	contractAgentID2 := coretypes.NewAgentIDFromContractID(contractID2)
-
-	userWallet := env.NewSignatureSchemeWithFunds()
-	userAddress := userWallet.Address()
-	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-
-	chain1.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
-
-	req := solo.NewCall(accounts.Interface.Name, accounts.FuncDeposit,
-		accounts.ParamAgentID, contractAgentID2,
-	).WithTransfer(
-		balance.ColorIOTA, 42,
-	)
-	_, err = chain1.PostRequest(req, userWallet)
-	require.NoError(t, err)
-
-	accountsAgentID1 := coretypes.NewAgentIDFromContractID(accounts.Interface.ContractID(chain1.ChainID))
-	accountsAgentID2 := coretypes.NewAgentIDFromContractID(accounts.Interface.ContractID(chain2.ChainID))
-
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-43)
-	chain1.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain2.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 42)
-	chain2.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
-
-	chain1.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
-
-	req = solo.NewCall(test_sandbox.Name, test_sandbox.FuncWithdrawToChain,
-		test_sandbox.ParamChainID, chain1.ChainID,
-	).WithTransfer(
-		balance.ColorIOTA, 3,
-	)
-	_, err = chain2.PostRequest(req, userWallet)
-	require.NoError(t, err)
-
-	chain1.WaitForEmptyBacklog()
-	chain2.WaitForEmptyBacklog()
-
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-47)
-	chain1.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain2.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain1.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 43)
-
-	chain1.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 1) // !!!! TODO
-	chain1.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 1) // !!!! TODO
-	chain2.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
 }

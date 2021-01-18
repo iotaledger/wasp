@@ -3,7 +3,7 @@ package sandbox_tests
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/test_sandbox"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -12,15 +12,15 @@ func TestGetSet(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(SandboxSCName, test_sandbox.FuncSetInt,
-		test_sandbox.ParamIntParamName, "ppp",
-		test_sandbox.ParamIntParamValue, 314,
+	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncSetInt,
+		test_sandbox_sc.ParamIntParamName, "ppp",
+		test_sandbox_sc.ParamIntParamValue, 314,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(SandboxSCName, test_sandbox.FuncGetInt,
-		test_sandbox.ParamIntParamName, "ppp")
+	ret, err := chain.CallView(SandboxSCName, test_sandbox_sc.FuncGetInt,
+		test_sandbox_sc.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
 	retInt, exists, err := codec.DecodeInt64(ret.MustGet("ppp"))
@@ -34,12 +34,12 @@ func TestCallRecursive(t *testing.T) {
 		t.SkipNow()
 	}
 	_, chain := setupChain(t, nil)
-	cID := setupTestSandboxSC(t, chain, nil)
+	cID, _ := setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(SandboxSCName, test_sandbox.FuncCallOnChain,
-		test_sandbox.ParamCallOption, "co",
-		test_sandbox.ParamIntParamValue, 50,
-		test_sandbox.ParamHname, cID.Hname(),
+	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncCallOnChain,
+		test_sandbox_sc.ParamCallOption, "co",
+		test_sandbox_sc.ParamIntParamValue, 50,
+		test_sandbox_sc.ParamHname, cID.Hname(),
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -65,11 +65,11 @@ func TestCallFibonacci(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallView(SandboxSCName, test_sandbox.FuncGetFibonacci,
-		test_sandbox.ParamIntParamValue, n,
+	ret, err := chain.CallView(SandboxSCName, test_sandbox_sc.FuncGetFibonacci,
+		test_sandbox_sc.ParamIntParamValue, n,
 	)
 	require.NoError(t, err)
-	val, exists, err := codec.DecodeInt64(ret.MustGet(test_sandbox.ParamIntParamValue))
+	val, exists, err := codec.DecodeInt64(ret.MustGet(test_sandbox_sc.ParamIntParamValue))
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.EqualValues(t, fibo(n), val)
