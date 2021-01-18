@@ -17,7 +17,7 @@ func TestDoNothing(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncDoNothing).
 		WithTransfer(balance.ColorIOTA, 42)
@@ -35,7 +35,7 @@ func TestDoNothingUser(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -59,7 +59,7 @@ func TestWithdrawToAddress(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 	t.Logf("contract agentID: %s", cAID)
@@ -98,7 +98,7 @@ func TestDoPanicUser(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -130,7 +130,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -172,7 +172,7 @@ func TestDoPanicUserFee(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 
@@ -217,7 +217,7 @@ func TestRequestToView(t *testing.T) {
 		t.SkipNow()
 	}
 	env, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 	cAID := coretypes.NewAgentIDFromContractID(cID)
 	user := setupDeployer(t, chain)
 

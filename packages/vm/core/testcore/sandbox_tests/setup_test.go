@@ -13,11 +13,22 @@ import (
 )
 
 const (
-	RUN_WASM  = true
-	WASM_FILE = "testcore_bg.wasm"
+	RUN_WASM           = false
+	WASM_FILE_TESTCORE = "testcore_bg.wasm"
+	WASM_FILE_ERC20    = "erc20_bg.wasm"
+	ERC20_NAME         = "erc20"
+	ERC20_SUPPLY       = 100000
+
+	// ERC20 constants
+	PARAM_SUPPLY     = "s"
+	PARAM_CREATOR    = "c"
+	PARAM_ACCOUNT    = "ac"
+	PARAM_DELEGATION = "d"
+	PARAM_AMOUNT     = "am"
+	PARAM_RECIPIENT  = "r"
 )
 
-var SCName = "test_sandbox"
+var SandboxSCName = "test_sandbox"
 
 func setupChain(t *testing.T, sigSchemeChain signaturescheme.SignatureScheme) (*solo.Solo, *solo.Chain) {
 	env := solo.New(t, false, false)
@@ -37,30 +48,60 @@ func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureSch
 	return user
 }
 
-func setupSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
 	var err error
 	if RUN_WASM {
-		err = chain.DeployWasmContract(user, SCName, WASM_FILE)
+		err = chain.DeployWasmContract(user, SandboxSCName, WASM_FILE_TESTCORE)
 	} else {
-		err = chain.DeployContract(user, SCName, test_sandbox.Interface.ProgramHash)
+		err = chain.DeployContract(user, SandboxSCName, test_sandbox.Interface.ProgramHash)
 	}
 	require.NoError(t, err)
 
 	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox.Interface.Name))
-	req := solo.NewCall(SCName, test_sandbox.FuncDoNothing)
+	req := solo.NewCall(SandboxSCName, test_sandbox.FuncDoNothing)
 	_, err = chain.PostRequest(req, user)
 	require.NoError(t, err)
-	t.Logf("deployed '%s': %s", SCName, coretypes.Hn(SCName))
+	t.Logf("deployed test_sandbox'%s': %s", SandboxSCName, coretypes.Hn(SandboxSCName))
+	return deployed
+}
+
+func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
+	var err error
+	if !RUN_WASM {
+		// only wasm test
+		t.SkipNow()
+	}
+	var userAgentID coretypes.AgentID
+	if user == nil {
+		userAgentID = chain.OriginatorAgentID
+	} else {
+		userAgentID = coretypes.NewAgentIDFromAddress(user.Address())
+	}
+	err = chain.DeployWasmContract(user, ERC20_NAME, WASM_FILE_ERC20,
+		PARAM_SUPPLY, 1000000,
+		PARAM_CREATOR, userAgentID,
+	)
+	require.NoError(t, err)
+
+	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(test_sandbox.Interface.Name))
+	t.Logf("deployed erc20'%s': %s --  %s", ERC20_NAME, coretypes.Hn(ERC20_NAME), deployed)
 	return deployed
 }
 
 func TestSetup1(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 }
 
 func TestSetup2(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	user := setupDeployer(t, chain)
-	setupSC(t, chain, user)
+	setupTestSandboxSC(t, chain, user)
+}
+
+func TestSetup3(t *testing.T) {
+	_, chain := setupChain(t, nil)
+	user := setupDeployer(t, chain)
+	setupTestSandboxSC(t, chain, user)
+	setupERC20(t, chain, user)
 }

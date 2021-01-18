@@ -148,10 +148,12 @@ func testCallPanicViewEPFromView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicViewEP), nil)
 }
 
-const FmtDoNothing = MsgDoNothing + " with transfer\n%s"
-
 func doNothing(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FmtDoNothing, ctx.IncomingTransfer().String())
+	if ctx.IncomingTransfer().Len() == 0 {
+		ctx.Log().Infof(MsgDoNothing)
+	} else {
+		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.IncomingTransfer().String())
+	}
 	return nil, nil
 }
 

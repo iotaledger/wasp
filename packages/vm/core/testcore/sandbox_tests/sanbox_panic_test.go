@@ -10,7 +10,7 @@ import (
 
 func TestPanicFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncPanicFullEP)
 	_, err := chain.PostRequest(req, nil)
@@ -20,7 +20,7 @@ func TestPanicFull(t *testing.T) {
 
 func TestPanicViewCall(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
 	_, err := chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncPanicViewEP)
 	require.Error(t, err)
@@ -29,7 +29,7 @@ func TestPanicViewCall(t *testing.T) {
 
 func TestCallPanicFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicFullEP)
 	_, err := chain.PostRequest(req, nil)
@@ -39,7 +39,7 @@ func TestCallPanicFull(t *testing.T) {
 
 func TestCallPanicViewFromFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCall(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicViewEPFromFull)
 	_, err := chain.PostRequest(req, nil)
@@ -49,7 +49,7 @@ func TestCallPanicViewFromFull(t *testing.T) {
 
 func TestCallPanicViewFromView(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
 	_, err := chain.CallView(test_sandbox.Interface.Name, test_sandbox.FuncCallPanicViewEPFromView)
 	require.Error(t, err)

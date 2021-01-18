@@ -13,7 +13,7 @@ import (
 
 const (
 	VMType             = "builtinvm"
-	printCoreContracts = false
+	printCoreContracts = true
 )
 
 func init() {

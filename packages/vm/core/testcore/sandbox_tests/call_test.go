@@ -10,16 +10,16 @@ import (
 
 func TestGetSet(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(SCName, test_sandbox.FuncSetInt,
+	req := solo.NewCall(SandboxSCName, test_sandbox.FuncSetInt,
 		test_sandbox.ParamIntParamName, "ppp",
 		test_sandbox.ParamIntParamValue, 314,
 	)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(SCName, test_sandbox.FuncGetInt,
+	ret, err := chain.CallView(SandboxSCName, test_sandbox.FuncGetInt,
 		test_sandbox.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
@@ -34,9 +34,9 @@ func TestCallRecursive(t *testing.T) {
 		t.SkipNow()
 	}
 	_, chain := setupChain(t, nil)
-	cID := setupSC(t, chain, nil)
+	cID := setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCall(SCName, test_sandbox.FuncCallOnChain,
+	req := solo.NewCall(SandboxSCName, test_sandbox.FuncCallOnChain,
 		test_sandbox.ParamCallOption, "co",
 		test_sandbox.ParamIntParamValue, 50,
 		test_sandbox.ParamHname, cID.Hname(),
@@ -63,9 +63,9 @@ func TestCallFibonacci(t *testing.T) {
 		t.SkipNow()
 	}
 	_, chain := setupChain(t, nil)
-	setupSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallView(SCName, test_sandbox.FuncGetFibonacci,
+	ret, err := chain.CallView(SandboxSCName, test_sandbox.FuncGetFibonacci,
 		test_sandbox.ParamIntParamValue, n,
 	)
 	require.NoError(t, err)
