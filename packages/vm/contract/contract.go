@@ -27,7 +27,8 @@ func Funcs(init Handler, fns []ContractFunctionInterface) map[coretypes.Hname]Co
 		coretypes.EntryPointInit: Func("init", init),
 	}
 	for _, f := range fns {
-		if _, ok := ret[f.Hname()]; ok {
+		hname := f.Hname()
+		if _, ok := ret[hname]; ok {
 			panic(fmt.Sprintf("Duplicate function: %s", f.Name))
 		}
 
@@ -42,7 +43,7 @@ func Funcs(init Handler, fns []ContractFunctionInterface) map[coretypes.Hname]Co
 			panic("Exactly one of Handler, ViewHandler must be set")
 		}
 
-		ret[f.Hname()] = f
+		ret[hname] = f
 	}
 	return ret
 }
