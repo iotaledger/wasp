@@ -20,9 +20,9 @@ type ScPosts struct {
 }
 
 func NewScPosts(vm *wasmProcessor) *ScPosts {
-	o := &ScPosts{}
-	o.vm = vm
-	return o
+	a := &ScPosts{}
+	a.vm = vm
+	return a
 }
 
 func (a *ScPosts) GetObjectId(keyId int32, typeId int32) int32 {

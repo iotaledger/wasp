@@ -45,9 +45,9 @@ type ScLog struct {
 }
 
 func NewScLog(vm *wasmProcessor) *ScLog {
-	o := &ScLog{}
-	o.vm = vm
-	return o
+	a := &ScLog{}
+	a.vm = vm
+	return a
 }
 
 func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {

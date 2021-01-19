@@ -76,13 +76,13 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
 		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, true) },
 		wasmhost.KeyLogs:      func() WaspObject { return NewScLogs(o.vm) },
+		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.vm) },
 		wasmhost.KeyParams:    func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.params()) },
 		wasmhost.KeyPosts:     func() WaspObject { return NewScPosts(o.vm) },
 		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm) },
 		wasmhost.KeyState:     func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.state()) },
 		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.vm) },
 		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.vm) },
-		wasmhost.KeyViews:     func() WaspObject { return NewScViews(o.vm) },
 	})
 }
 
@@ -104,6 +104,8 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_MAP
 	case wasmhost.KeyLogs:
 		return wasmhost.OBJTYPE_MAP
+	case wasmhost.KeyMaps:
+		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
 	case wasmhost.KeyParams:
 		return wasmhost.OBJTYPE_MAP
 	case wasmhost.KeyPosts:
@@ -120,8 +122,6 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
 	case wasmhost.KeyUtility:
 		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyViews:
-		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
 	}
 	return 0
 }

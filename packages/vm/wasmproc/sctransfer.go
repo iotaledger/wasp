@@ -17,9 +17,9 @@ type ScTransfers struct {
 }
 
 func NewScTransfers(vm *wasmProcessor) *ScTransfers {
-	o := &ScTransfers{}
-	o.vm = vm
-	return o
+	a := &ScTransfers{}
+	a.vm = vm
+	return a
 }
 
 func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {

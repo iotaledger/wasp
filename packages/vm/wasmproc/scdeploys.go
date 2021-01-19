@@ -14,9 +14,9 @@ type ScDeploys struct {
 }
 
 func NewScDeploys(vm *wasmProcessor) *ScDeploys {
-	o := &ScDeploys{}
-	o.vm = vm
-	return o
+	a := &ScDeploys{}
+	a.vm = vm
+	return a
 }
 
 func (a *ScDeploys) GetObjectId(keyId int32, typeId int32) int32 {
