@@ -5,6 +5,7 @@ package wasmproc
 
 import (
 	"encoding/binary"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/mr-tron/base58"
@@ -17,8 +18,9 @@ type ScUtility struct {
 	base58Decoded []byte
 	base58Encoded string
 	hash          []byte
-	random        []byte
+	hname         coretypes.Hname
 	nextRandom    int
+	random        []byte
 }
 
 func NewScUtility(vm *wasmProcessor) *ScUtility {
@@ -43,6 +45,7 @@ func (o *ScUtility) Exists(keyId int32) bool {
 	switch keyId {
 	case wasmhost.KeyBase58:
 	case wasmhost.KeyHash:
+	case wasmhost.KeyName:
 	case wasmhost.KeyRandom:
 	default:
 		return false
@@ -63,6 +66,8 @@ func (o *ScUtility) GetBytes(keyId int32) []byte {
 
 func (o *ScUtility) GetInt(keyId int32) int64 {
 	switch keyId {
+	case wasmhost.KeyName:
+		return int64(o.hname)
 	case wasmhost.KeyRandom:
 		if o.random == nil {
 			// need to initialize pseudo-random generator with
@@ -119,6 +124,8 @@ func (o *ScUtility) SetBytes(keyId int32, value []byte) {
 
 func (o *ScUtility) SetString(keyId int32, value string) {
 	switch keyId {
+	case wasmhost.KeyName:
+		o.hname = coretypes.Hn(value)
 	case wasmhost.KeyBase58:
 		o.base58Decoded, _ = base58.Decode(value)
 	default:
