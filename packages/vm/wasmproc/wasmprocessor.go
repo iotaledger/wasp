@@ -69,7 +69,8 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 		host.nesting--
 		if host.nesting == 0 {
 			host.Trace("Finalizing calls")
-			host.scContext.finalize()
+			host.scContext.objects = make(map[int32]int32)
+			host.PushFrame()
 		}
 		host.ctx = saveCtx
 		host.ctxView = saveCtxView
@@ -82,12 +83,16 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	}
 
 	host.Trace("Calling " + host.function)
+	frame := host.PushFrame()
+	frameObjects := host.scContext.objects
+	host.scContext.objects = make(map[int32]int32)
 	err := host.RunScFunction(host.function)
 	if err != nil {
 		return nil, err
 	}
-
 	results := host.FindSubObject(nil, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP).(*ScDict).kvStore.(dict.Dict)
+	host.scContext.objects = frameObjects
+	host.PopFrame(frame)
 	return results, nil
 }
 

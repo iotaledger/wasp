@@ -201,8 +201,18 @@ func (host *KvStoreHost) getString(objId int32, keyId int32) *string {
 	return &value
 }
 
-func (host *KvStoreHost) ResetObjects() {
-	host.objIdToObj = host.objIdToObj[:2]
+func (host *KvStoreHost) PopFrame(frame []HostObject) {
+	host.objIdToObj = frame
+}
+
+func (host *KvStoreHost) PushFrame() []HostObject {
+	// reset frame to contain only null and root object
+	// create a fresh slice to allow garbage collection
+	// it's up to the caller to save and/or restore the old frame
+	pushed := host.objIdToObj
+	host.objIdToObj = make([]HostObject, 2)
+	copy(host.objIdToObj, pushed[:2])
+	return pushed
 }
 
 func (host *KvStoreHost) SetBytes(objId int32, keyId int32, bytes []byte) {

@@ -29,11 +29,6 @@ func (o *ScContext) Exists(keyId int32) bool {
 	return o.GetTypeId(keyId) > 0
 }
 
-func (o *ScContext) finalize() {
-	o.objects = make(map[int32]int32)
-	o.host.ResetObjects()
-}
-
 func (o *ScContext) GetBytes(keyId int32) []byte {
 	switch keyId {
 	case wasmhost.KeyCaller:
