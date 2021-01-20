@@ -1,4 +1,5 @@
 ![Wasp logo](WASP_logo_dark.png)
+
 # Welcome to the Wasp repository!
 
 [Wasp](https://github.com/iotaledger/wasp) is a node software developed by the
@@ -32,7 +33,7 @@ commercial settings or whenever processing of critical data is involved._
 
 ## Test
 
-- Run all tests (including `tools/cluster` tests which may take several minutes): `go test ./...`
+- Run all tests (including `tools/cluster` tests which may take several minutes): `go test -timeout 20m ./...`
 - Run only unit tests: `go test -short ./...`
 
 ## Run

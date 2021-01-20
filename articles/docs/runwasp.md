@@ -21,17 +21,39 @@ $ cd goshimmer
 $ go install  
 ```
 
-Next, follow [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-(Joining-the-pollen-testnet))
-to configure and run the goshimmer node connected to the Pollen network.
+Next, start the Goshimmer node connected to the Pollen network with the following command:
+
+```
+goshimmer \
+        --skip-config=true \
+        --analysis.client.serverAddress=ressims.iota.cafe:21888 \
+        --autopeering.port=14626 \
+        --dashboard.bindAddress=0.0.0.0:8081 \
+        --gossip.port=14666 \
+        --webapi.bindAddress=0.0.0.0:8080 \
+        --profiling.bindAddress=0.0.0.0:6061 \
+        --networkdelay.originPublicKey=9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd \
+        --fpc.bindAddress=0.0.0.0:10895 \
+        --prometheus.bindAddress=0.0.0.0:9311 \
+        --autopeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626,5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entrynode.alphanet.einfachiota.de:14656 \
+        --node.disablePlugins= \
+        --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,waspconn \
+        --logger.level=info \
+        --logger.disableEvents=false \
+        --logger.remotelog.serverAddress=ressims.iota.cafe:5213 \
+        --drng.pollen.instanceId=1 \
+        --drng.pollen.threshold=3 \
+        --drng.pollen.committeeMembers=AheLpbhRs1XZsRF8t8VBwuyQh9mqPHXQvthV5rsHytDG,FZ28bSTidszUBn8TTCAT9X1nVMwFNnoYBmZ1xfafez2z,GT3UxryW4rA9RN9ojnMGmZgE2wP7psagQxgVdA4B9L1P,4pB5boPvvk2o5MbMySDhqsmC2CtUdXyotPPEpb7YQPD7,64wCsTZpmKjRVHtBKXiFojw7uw3GszumfvC4kHdWsHga \
+        --drng.xteam.instanceId=1339 \
+        --drng.xteam.threshold=4 \
+        --drng.xteam.committeeMembers=GUdTwLDb6t6vZ7X5XzEnjFNDEVPteU7tVQ9nzKLfPjdo,68vNzBFE9HpmWLb2x4599AUUQNuimuhwn3XahTZZYUHt,Dc9n3JxYecaX3gpxVnWb4jS3KVz1K1SgSK1KpV1dzqT1,75g6r4tqGZhrgpDYZyZxVje1Qo54ezFYkCw94ELTLhPs,CN1XLXLHT9hv7fy3qNhpgNMD6uoHFkHtaNNKyNVCKybf,7SmttyqrKMkLo5NPYaiFoHs8LE6s7oCoWCQaZhui8m16,CypSmrHpTe3WQmCw54KP91F5gTmrQEL7EmTX38YStFXx
+```
+
+Note: argument values are adapted from [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-%28Joining-the-pollen-testnet%29).
+We do not provide Docker images yet.
 
 Note: by default the WaspConn plugin will be listening for Wasp connections on port `5000`.
-To change this setting include the following section in `config.json`:
-
-```
-"waspconn": {
-  "port": 12345
-}
-```
+To change this setting you can add the argument `--waspconn.port: 12345`.
 
 ## Run Wasp
 
@@ -53,7 +75,7 @@ Clone the `develop` branch:
 $ git clone -b develop https://github.com/iotaledger/wasp.git
 ```
 
-Compile and install Wasp binaries:
+Compile and install Wasp binaries (`wasp`, `wasp-cli`):
 
 ```
 $ cd wasp
@@ -78,9 +100,9 @@ $ wasp
 
 ### Wasp settings
 
-Below we explain some settings in `config.json` you may need to adjust. You may
-need to adjust ports especially if you plan to run several nodes in the same
-host.
+Below we explain some settings in `config.json` you may need to adjust. You
+will need to adjust ports especially if you plan to run several nodes in the
+same host.
 
 #### Peering
 
