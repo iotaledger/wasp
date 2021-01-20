@@ -60,9 +60,6 @@ func TestContractIDFull(t *testing.T) {
 }
 
 func TestSandboxCall(t *testing.T) {
-	if RUN_WASM {
-		t.SkipNow()
-	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
