@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -35,6 +36,7 @@ func (a *ScCalls) GetObjectId(keyId int32, typeId int32) int32 {
 
 type ScCallInfo struct {
 	ScSandboxObject
+	chainId   coretypes.ChainID
 	contract  coretypes.Hname
 	function  coretypes.Hname
 	params    int32
@@ -53,12 +55,14 @@ func (o *ScCallInfo) Exists(keyId int32) bool {
 
 func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm) },
+		wasmhost.KeyResults: func() WaspObject { return NewScDict(o.vm) },
 	})
 }
 
 func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
+	case wasmhost.KeyChain:
+		return wasmhost.OBJTYPE_BYTES // TODO CHAINID
 	case wasmhost.KeyContract:
 		return wasmhost.OBJTYPE_INT // TODO HNAME
 	case wasmhost.KeyDelay:
@@ -75,8 +79,7 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
-func (o *ScCallInfo) Invoke() {
-	o.Trace("CALL c'%s' f'%s'", o.contract.String(), o.function.String())
+func (o *ScCallInfo) Invoke(delay int64) {
 	if o.contract == 0 {
 		o.contract = o.vm.contractID().Hname()
 	}
@@ -85,23 +88,43 @@ func (o *ScCallInfo) Invoke() {
 		o.Trace("  PARAM '%s'", key)
 		return true
 	})
-	transfers := o.host.FindObject(o.transfers).(*ScDict).kvStore.(dict.Dict)
 
-	xfers := make(map[balance.Color]int64)
-	transfers.MustIterate("", func(key kv.Key, value []byte) bool {
+	transfer := make(map[balance.Color]int64)
+	transferDict := o.host.FindObject(o.transfers).(*ScDict).kvStore.(dict.Dict)
+	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		color, _, err := codec.DecodeColor([]byte(key))
-		if err != nil { o.Panic(err.Error())}
-		amount,_,err := codec.DecodeInt64(value)
-		if err != nil { o.Panic(err.Error())}
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		amount, _, err := codec.DecodeInt64(value)
+		if err != nil {
+			o.Panic(err.Error())
+		}
 		o.Trace("  XFER %d '%s'", amount, color.String())
-		xfers[color] = amount
+		transfer[color] = amount
 		return true
 	})
-	balances := cbalances.NewFromMap(xfers)
+
+	if delay >= 0 {
+		o.Trace("POST ch'%s' c'%s' f'%s'", o.chainId.String(), o.contract.String(), o.function.String())
+        if o.chainId == coretypes.NilChainID {
+        	o.chainId = o.vm.contractID().ChainID()
+		}
+		o.vm.ctx.PostRequest(vmtypes.PostRequestParams{
+			TargetContractID: coretypes.NewContractID(o.chainId, o.contract),
+			EntryPoint:       o.function,
+			TimeLock:         uint32(delay),
+			Params:           params,
+			Transfer:         cbalances.NewFromMap(transfer),
+		})
+		return
+	}
+
+	o.Trace("CALL c'%s' f'%s'", o.contract.String(), o.function.String())
 	var err error
 	var results dict.Dict
 	if o.vm.ctx != nil {
-		results, err = o.vm.ctx.Call(o.contract, o.function, params, balances)
+		results, err = o.vm.ctx.Call(o.contract, o.function, params, cbalances.NewFromMap(transfer))
 	} else {
 		results, err = o.vm.ctxView.Call(o.contract, o.function, params)
 	}
@@ -112,6 +135,17 @@ func (o *ScCallInfo) Invoke() {
 	o.host.FindObject(resultsId).(*ScDict).kvStore = results
 }
 
+func (o *ScCallInfo) SetBytes(keyId int32, value []byte) {
+	switch keyId {
+	case wasmhost.KeyChain:
+		var err error
+		o.chainId, err = coretypes.NewChainIDFromBytes(value)
+		if err != nil {
+			o.Panic(err.Error())
+		}
+	}
+}
+
 func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
 	case wasmhost.KeyLength:
@@ -120,10 +154,10 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 		o.params = 0
 		o.transfers = 0
 	case wasmhost.KeyDelay:
-		if value != -1 {
+		if value < -1 {
 			o.Panic("Unexpected delay: %d", value)
 		}
-		o.Invoke()
+		o.Invoke(value)
 	case wasmhost.KeyContract:
 		o.contract = coretypes.Hname(value)
 	case wasmhost.KeyFunction:

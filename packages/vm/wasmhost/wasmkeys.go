@@ -29,17 +29,16 @@ const (
 	KeyName        = int32(-25)
 	KeyPanic       = int32(-26)
 	KeyParams      = int32(-27)
-	KeyPosts       = int32(-28)
-	KeyRandom      = int32(-29)
-	KeyResults     = int32(-30)
-	KeyState       = int32(-31)
-	KeyTimestamp   = int32(-32)
-	KeyTrace       = int32(-33)
-	KeyTransfers   = int32(-34)
-	KeyUtility     = int32(-35)
+	KeyRandom      = int32(-28)
+	KeyResults     = int32(-29)
+	KeyState       = int32(-30)
+	KeyTimestamp   = int32(-31)
+	KeyTrace       = int32(-32)
+	KeyTransfers   = int32(-33)
+	KeyUtility     = int32(-34)
 	// treat this like a version number when anything changes to the keys
 	// make sure the client side in wasplib is updated accordingly
-	KeyZzzzzzz     = int32(-100)
+	KeyZzzzzzz     = int32(-99)
 )
 // @formatter:on
 
@@ -71,7 +70,6 @@ var keyMap = map[string]int32{
 	"name":        KeyName,
 	"panic":       KeyPanic,
 	"params":      KeyParams,
-	"posts":       KeyPosts,
 	"random":      KeyRandom,
 	"results":     KeyResults,
 	"state":       KeyState,
