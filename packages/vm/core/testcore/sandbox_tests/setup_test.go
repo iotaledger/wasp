@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	RUN_WASM           = false
+	RUN_WASM           = true
 	WASM_FILE_TESTCORE = "testcore_bg.wasm"
 	WASM_FILE_ERC20    = "erc20_bg.wasm"
 	ERC20_NAME         = "erc20"
