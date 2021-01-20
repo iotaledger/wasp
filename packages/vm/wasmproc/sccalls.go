@@ -83,32 +83,38 @@ func (o *ScCallInfo) Invoke(delay int64) {
 	if o.contract == 0 {
 		o.contract = o.vm.contractID().Hname()
 	}
-	params := o.host.FindObject(o.params).(*ScDict).kvStore.(dict.Dict)
-	params.MustIterate("", func(key kv.Key, value []byte) bool {
-		o.Trace("  PARAM '%s'", key)
-		return true
-	})
+	params := dict.New()
+	if o.params != 0 {
+		params = o.host.FindObject(o.params).(*ScDict).kvStore.(dict.Dict)
+		params.MustIterate("", func(key kv.Key, value []byte) bool {
+			o.Trace("  PARAM '%s'", key)
+			return true
+		})
+	}
 
-	transfer := make(map[balance.Color]int64)
-	transferDict := o.host.FindObject(o.transfers).(*ScDict).kvStore.(dict.Dict)
-	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		color, _, err := codec.DecodeColor([]byte(key))
-		if err != nil {
-			o.Panic(err.Error())
-		}
-		amount, _, err := codec.DecodeInt64(value)
-		if err != nil {
-			o.Panic(err.Error())
-		}
-		o.Trace("  XFER %d '%s'", amount, color.String())
-		transfer[color] = amount
-		return true
-	})
+	transfer := map[balance.Color]int64(nil)
+	if o.transfers != 0 {
+		transfer = make(map[balance.Color]int64)
+		transferDict := o.host.FindObject(o.transfers).(*ScDict).kvStore.(dict.Dict)
+		transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
+			color, _, err := codec.DecodeColor([]byte(key))
+			if err != nil {
+				o.Panic(err.Error())
+			}
+			amount, _, err := codec.DecodeInt64(value)
+			if err != nil {
+				o.Panic(err.Error())
+			}
+			o.Trace("  XFER %d '%s'", amount, color.String())
+			transfer[color] = amount
+			return true
+		})
+	}
 
 	if delay >= 0 {
 		o.Trace("POST ch'%s' c'%s' f'%s'", o.chainId.String(), o.contract.String(), o.function.String())
-        if o.chainId == coretypes.NilChainID {
-        	o.chainId = o.vm.contractID().ChainID()
+		if o.chainId == coretypes.NilChainID {
+			o.chainId = o.vm.contractID().ChainID()
 		}
 		o.vm.ctx.PostRequest(vmtypes.PostRequestParams{
 			TargetContractID: coretypes.NewContractID(o.chainId, o.contract),
