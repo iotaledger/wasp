@@ -4,9 +4,12 @@
 package wasmproc
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -28,67 +31,47 @@ func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (a *ScTransfers) SetString(keyId int32, value string) {
-	a.Panic("SetString: Invalid access")
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScTransferInfo struct {
 	ScSandboxObject
-	agent    coretypes.AgentID
-	balances map[balance.Color]int64
-	chain    coretypes.ChainID
+	address address.Address
 }
 
 func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
 	o := &ScTransferInfo{}
 	o.vm = vm
-	o.balances = make(map[balance.Color]int64)
 	return o
 }
 
-func (o *ScTransferInfo) Exists(keyId int32) bool {
-	return false
-}
-
-func (o *ScTransferInfo) GetTypeId(keyId int32) int32 {
-	return 0
-}
-
-func (o *ScTransferInfo) Invoke() {
-	// is this a local transfer?
-	if o.chain == o.vm.ctx.ContractID().ChainID() {
-		for color, amount := range o.balances {
-			o.vm.ctx.MoveTokens(o.agent, color, amount)
+func (o *ScTransferInfo) Invoke(balances int32) {
+	transfers := make(map[balance.Color]int64)
+	balancesDict := o.host.FindObject(balances).(*ScDict).kvStore.(dict.Dict)
+	balancesDict.MustIterate("", func(key kv.Key, value []byte) bool {
+		color, _, err := codec.DecodeColor([]byte(key))
+		if err != nil {
+			o.Panic(err.Error())
 		}
-		return
+		amount, _, err := codec.DecodeInt64(value)
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
+		transfers[color] = amount
+		return true
+	})
+	if !o.vm.ctx.TransferToAddress(o.address, cbalances.NewFromMap(transfers)) {
+		o.Panic("failed to transfer to %s", o.address.String())
 	}
-	// is this a cross chain transfer?
-	if o.chain != coretypes.NilChainID {
-		o.vm.ctx.TransferCrossChain(o.agent, o.chain, cbalances.NewFromMap(o.balances))
-		return
-	}
-	// should be transfer to Tangle ledger address
-	if o.agent.IsAddress() {
-		o.vm.ctx.TransferToAddress(o.agent.MustAddress(), cbalances.NewFromMap(o.balances))
-		return
-	}
-	o.Panic("Invoke: inconsistent agent id")
 }
 
 func (o *ScTransferInfo) SetBytes(keyId int32, value []byte) {
 	var err error
 	switch keyId {
-	case wasmhost.KeyAgent:
-		o.agent, err = coretypes.NewAgentIDFromBytes(value)
+	case wasmhost.KeyAddress:
+		o.address, _, err = address.FromBytes(value)
 		if err != nil {
-			o.Panic("SetBytes: invalid agent: " + err.Error())
-		}
-	case wasmhost.KeyChain:
-		o.chain, err = coretypes.NewChainIDFromBytes(value)
-		if err != nil {
-			o.Panic("SetBytes: invalid chain: " + err.Error())
+			o.Panic("SetBytes: invalid address: " + err.Error())
 		}
 	default:
 		o.invalidKey(keyId)
@@ -97,26 +80,9 @@ func (o *ScTransferInfo) SetBytes(keyId int32, value []byte) {
 
 func (o *ScTransferInfo) SetInt(keyId int32, value int64) {
 	switch keyId {
-	case wasmhost.KeyLength:
-		o.agent = coretypes.AgentID{}
+	case wasmhost.KeyBalances:
+		o.Invoke(int32(value))
 	default:
-		if value == 0 {
-			// nothing to transfer
-			return
-		}
-		key := o.host.GetKeyFromId(keyId)
-		color, _, err := balance.ColorFromBytes(key)
-		if err != nil {
-			o.Panic("SetInt: invalid color: " + err.Error())
-		}
-		if value > 0 {
-			o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.agent.String())
-			o.balances[color] = value
-			return
-		}
-		if value != -1 || color != balance.ColorNew {
-			o.Panic("SetInt: invalid amount: " + err.Error())
-		}
-		o.Invoke()
+		o.invalidKey(keyId)
 	}
 }
