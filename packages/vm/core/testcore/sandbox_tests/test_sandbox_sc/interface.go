@@ -50,6 +50,9 @@ func init() {
 		contract.ViewFunc(FuncGetInt, getInt),
 		contract.ViewFunc(FuncGetFibonacci, getFibonacci),
 
+		contract.Func(FuncPassTypesFull, passTypesFull),
+		contract.ViewFunc(FuncPassTypesView, passTypesView),
+
 		contract.ViewFunc(FuncJustView, testJustView),
 	})
 	examples.AddProcessor(Interface)
@@ -88,6 +91,9 @@ const (
 	FuncGetInt       = "getInt"
 	FuncGetFibonacci = "fibonacci"
 
+	FuncPassTypesFull = "passTypesFull"
+	FuncPassTypesView = "passTypesView"
+
 	//Variables
 	VarCounter              = "counter"
 	VarChainOwner           = "chainOwner"
@@ -113,4 +119,7 @@ const (
 	MsgViewPanic         = "========== panic VIEW ========="
 	MsgDoNothing         = "========== doing nothing"
 	MsgPanicUnauthorized = "============== panic due to unauthorized call"
+
+	// call options for FuncCallOnChain
+	CallOptionForward = "forward"
 )

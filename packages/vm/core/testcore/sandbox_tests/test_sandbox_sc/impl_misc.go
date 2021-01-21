@@ -12,15 +12,15 @@ import (
 // ParamCallIntParam
 // ParamHname
 func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncCallOnChain)
+	ctx.Log().Debugf(FuncCallOnChain)
 	callOption, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamCallOption))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
 	}
 	if !exists {
-		callOption = ""
+		ctx.Log().Panicf("callOption not specified")
 	}
-	callInt, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
+	callDepth, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
 	}
@@ -32,19 +32,35 @@ func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("%v", err)
 	}
 	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamHname)
+		// default is self
+		hname = ctx.ContractID().Hname()
 	}
-	ctx.Log().Infof("call depth = %d, option = %s, hname = %s", callInt, callOption, hname)
-	if callInt <= 0 {
-		return nil, nil
+	counter, exists, err := codec.DecodeInt64(ctx.State().MustGet(VarCounter))
+	if err != nil {
+		ctx.Log().Panicf("%v", err)
 	}
-	callInt--
+	if !exists {
+		counter = 0
+	}
+	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
 
-	return ctx.Call(hname, coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
-		ParamCallOption:    []byte(callOption),
-		ParamIntParamValue: callInt,
-		ParamHname:         hname,
-	}), nil)
+	ctx.Log().Infof("call depth = %d, option = %s, hname = %s counter = %d", callDepth, callOption, hname, counter)
+	if callDepth <= 0 {
+		ret := dict.New()
+		ret.Set(VarCounter, codec.EncodeInt64(counter))
+		return ret, nil
+	}
+	callDepth--
+
+	switch callOption {
+	case CallOptionForward:
+		return ctx.Call(hname, coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
+			ParamCallOption:    CallOptionForward,
+			ParamIntParamValue: callDepth,
+		}), nil)
+	}
+	ctx.Log().Panicf("unknown call option '%s'", callOption)
+	return nil, nil
 }
 
 func getFibonacci(ctx vmtypes.SandboxView) (dict.Dict, error) {

@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	DEBUG              = false
 	RUN_WASM           = false
 	WASM_FILE_TESTCORE = "testcore_bg.wasm"
 	WASM_FILE_ERC20    = "erc20_bg.wasm"
@@ -31,7 +32,7 @@ const (
 var SandboxSCName = "test_sandbox"
 
 func setupChain(t *testing.T, sigSchemeChain signaturescheme.SignatureScheme) (*solo.Solo, *solo.Chain) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, DEBUG, false)
 	chain := env.NewChain(sigSchemeChain, "ch1")
 	return env, chain
 }

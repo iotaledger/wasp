@@ -19,7 +19,7 @@ type Sandbox interface {
 	ChainOwnerID() coretypes.AgentID
 	// ContractCreator agentID which deployed contract
 	ContractCreator() coretypes.AgentID
-	// ContractID is the ID of the current contract
+	// ContractID is the ID of the current contract. Take chainID with ctx.ContractID().ChainID()
 	ContractID() coretypes.ContractID
 	// State is base level interface to access the key/value pairs in the virtual state
 	// GetTimestamp return current timestamp of the context
