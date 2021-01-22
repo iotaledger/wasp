@@ -128,7 +128,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
-		return nil, fmt.Errorf("root.deployContract: not permitted for %s", ctx.Caller())
+		return nil, fmt.Errorf("root.deployContract: not permitted for: %s", ctx.Caller())
 	}
 	params := ctx.Params()
 	proghash, ok, err := codec.DecodeHashValue(params.MustGet(ParamProgramHash))
