@@ -407,6 +407,7 @@ func grantDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 
 	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
 	return nil, nil
 }
 
@@ -425,5 +426,6 @@ func revokeDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("parameter 'deployer' undefined")
 	}
 	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustDelAt(deployer.Bytes())
+	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
 }
