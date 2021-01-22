@@ -6,10 +6,10 @@ package wasmproc
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -45,22 +45,37 @@ func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
 }
 
 func (o *ScTransferInfo) Invoke(balances int32) {
-	transfers := make(map[balance.Color]int64)
-	balancesDict := o.host.FindObject(balances).(*ScDict).kvStore.(dict.Dict)
-	balancesDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		color, _, err := codec.DecodeColor([]byte(key))
-		if err != nil {
-			o.Panic(err.Error())
+	var transfer coretypes.ColoredBalances
+	balancesObj := o.host.FindObject(balances)
+	switch balancesObj.(type) {
+	case *ScDict:
+		balancesMap := make(map[balance.Color]int64)
+		balancesDict := balancesObj.(*ScDict).kvStore
+		balancesDict.MustIterate("", func(key kv.Key, value []byte) bool {
+			color, _, err := codec.DecodeColor([]byte(key))
+			if err != nil {
+				o.Panic(err.Error())
+			}
+			amount, _, err := codec.DecodeInt64(value)
+			if err != nil {
+				o.Panic(err.Error())
+			}
+			o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
+			balancesMap[color] = amount
+			return true
+		})
+		transfer = cbalances.NewFromMap(balancesMap)
+	case *ScBalances:
+		scBalances := balancesObj.(*ScBalances)
+		if scBalances.incoming {
+			transfer = o.vm.ctx.IncomingTransfer()
+			break
 		}
-		amount, _, err := codec.DecodeInt64(value)
-		if err != nil {
-			o.Panic(err.Error())
-		}
-		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
-		transfers[color] = amount
-		return true
-	})
-	if !o.vm.ctx.TransferToAddress(o.address, cbalances.NewFromMap(transfers)) {
+		transfer = o.vm.balances()
+	default:
+		o.Panic("Unexpected object type")
+	}
+	if !o.vm.ctx.TransferToAddress(o.address, transfer) {
 		o.Panic("failed to transfer to %s", o.address.String())
 	}
 }
