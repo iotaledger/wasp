@@ -143,7 +143,12 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 // and 'paramValue' must be of type accepted by the 'codec' package
 func (ch *Chain) CallView(scName string, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log.Infof("callView: %s::%s", scName, funName)
-	return ch.callViewFull(NewCall(scName, funName, params...))
+	ret, err := ch.callViewFull(NewCall(scName, funName, params...))
+	if err != nil {
+		ch.Log.Errorf("callView: %s::%s: %v", scName, funName, err)
+		return nil, err
+	}
+	return ret, nil
 }
 
 // WaitForEmptyBacklog waits until the backlog queue of the chain becomes empty.
