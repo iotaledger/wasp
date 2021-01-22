@@ -29,6 +29,8 @@ func (vmctx *VMContext) RunTheRequest(reqRef vm.RequestRefWithFreeTokens, timest
 
 	if vmctx.contractRecord == nil {
 		// sc does not exist, stop here
+		vmctx.lastResult = nil
+		vmctx.lastError = fmt.Errorf("smart contract '%s' does not exist", vmctx.reqHname)
 		return
 	}
 	// snapshot state baseline for rollback in case of panic

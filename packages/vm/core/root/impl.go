@@ -128,7 +128,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
-		return nil, fmt.Errorf("root.deployContract.deployContract: not permitted")
+		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
 	}
 	params := ctx.Params()
 	proghash, ok, err := codec.DecodeHashValue(params.MustGet(ParamProgramHash))
@@ -407,6 +407,7 @@ func grantDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 
 	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
 	return nil, nil
 }
 
@@ -425,5 +426,6 @@ func revokeDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("parameter 'deployer' undefined")
 	}
 	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustDelAt(deployer.Bytes())
+	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
 }
