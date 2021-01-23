@@ -59,6 +59,6 @@ func (s sandboxView) Balances() coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 
-func (s sandboxView) Log() vmtypes.LogInterface {
+func (s sandboxView) Log() coretypes.LogInterface {
 	return s.vmctx
 }

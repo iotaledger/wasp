@@ -31,5 +31,5 @@ type SandboxView interface {
 	// Balances is colored balances owned by the contract
 	Balances() coretypes.ColoredBalances
 	// Log interface provides local logging on the machine
-	Log() LogInterface
+	Log() coretypes.LogInterface
 }

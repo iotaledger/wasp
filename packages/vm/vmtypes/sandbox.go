@@ -68,7 +68,7 @@ type Sandbox interface {
 	PostRequest(par PostRequestParams) bool
 
 	// Log interface provides local logging on the machine
-	Log() LogInterface
+	Log() coretypes.LogInterface
 	// Event publishes "vmmsg" message through Publisher on nanomsg
 	// it also logs locally, but it is not the same thing
 	Event(msg string)
@@ -80,10 +80,4 @@ type PostRequestParams struct {
 	TimeLock         uint32
 	Params           dict.Dict
 	Transfer         coretypes.ColoredBalances
-}
-
-type LogInterface interface {
-	Infof(format string, param ...interface{})
-	Debugf(format string, param ...interface{})
-	Panicf(format string, param ...interface{})
 }

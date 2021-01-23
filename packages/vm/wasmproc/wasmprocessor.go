@@ -158,7 +158,7 @@ func (host *wasmProcessor) contractID() coretypes.ContractID {
 	return host.ctxView.ContractID()
 }
 
-func (host *wasmProcessor) log() vmtypes.LogInterface {
+func (host *wasmProcessor) log() coretypes.LogInterface {
 	if host.ctx != nil {
 		return host.ctx.Log()
 	}

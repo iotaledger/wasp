@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 var (
@@ -61,7 +60,7 @@ func (s *sandboxview) ContractID() coretypes.ContractID {
 	return coretypes.NewContractID(s.vctx.chainID, s.contractHname)
 }
 
-func (s *sandboxview) Log() vmtypes.LogInterface {
+func (s *sandboxview) Log() coretypes.LogInterface {
 	return s.vctx
 }
 

@@ -86,7 +86,7 @@ func (s *sandbox) PostRequest(par vmtypes.PostRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) Log() vmtypes.LogInterface {
+func (s *sandbox) Log() coretypes.LogInterface {
 	return s.vmctx
 }
 
