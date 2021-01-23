@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // program hash: the ID of the code
@@ -23,7 +22,7 @@ const Description = "DonateWithFeedback, a PoC smart contract"
 // implementation of 'vmtypes.Processor' and 'vmtypes.EntryPoint' interfaces
 type dwfProcessor map[coretypes.Hname]dwfEntryPoint
 
-type dwfEntryPoint func(ctx vmtypes.Sandbox) error
+type dwfEntryPoint func(ctx coretypes.Sandbox) error
 
 // the processor implementation is a map of entry points: one for each request
 var entryPoints = dwfProcessor{
@@ -32,13 +31,13 @@ var entryPoints = dwfProcessor{
 }
 
 // point of attachment of hard coded code to the rest of Wasp
-func GetProcessor() vmtypes.Processor {
+func GetProcessor() coretypes.Processor {
 	return entryPoints
 }
 
 // GetEntryPoint implements EntryPoint interfaces. It resolves request code to the
 // function
-func (v dwfProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (v dwfProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -49,7 +48,7 @@ func (v dwfProcessor) GetDescription() string {
 }
 
 // Run calls the function wrapped into the EntryPoint
-func (ep dwfEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func (ep dwfEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ret := ep(ctx)
 	if ret != nil {
 		ctx.Event(fmt.Sprintf("error %v", ret))
@@ -63,12 +62,12 @@ func (ep dwfEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep dwfEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func (ep dwfEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
 // not used
-func (ep dwfEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (ep dwfEntryPoint) WithGasLimit(_ int) coretypes.EntryPoint {
 	return ep
 }
 
@@ -76,7 +75,7 @@ const maxComment = 150
 
 // donate implements request 'donate'. It takes feedback text from the request
 // and adds it into the log of feedback messages
-func donate(ctx vmtypes.Sandbox) error {
+func donate(ctx coretypes.Sandbox) error {
 	ctx.Event(fmt.Sprintf("DonateWithFeedback: donate"))
 	params := ctx.Params()
 
@@ -137,7 +136,7 @@ func donate(ctx vmtypes.Sandbox) error {
 }
 
 // TODO implement withdrawal of other than IOTA colored tokens
-func withdraw(ctx vmtypes.Sandbox) error {
+func withdraw(ctx coretypes.Sandbox) error {
 	ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw"))
 	params := ctx.Params()
 

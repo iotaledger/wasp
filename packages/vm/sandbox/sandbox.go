@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type sandbox struct {
@@ -21,7 +20,7 @@ func init() {
 	vmcontext.NewSandbox = new
 }
 
-func new(vmctx *vmcontext.VMContext) vmtypes.Sandbox {
+func new(vmctx *vmcontext.VMContext) coretypes.Sandbox {
 	return &sandbox{
 		vmctx: vmctx,
 	}
@@ -82,7 +81,7 @@ func (s *sandbox) TransferCrossChain(targetAgentID coretypes.AgentID, targetChai
 	return s.vmctx.TransferCrossChain(targetAgentID, targetChainID, transfer)
 }
 
-func (s *sandbox) PostRequest(par vmtypes.PostRequestParams) bool {
+func (s *sandbox) PostRequest(par coretypes.PostRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
 

@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -29,7 +28,7 @@ import (
 // - ParamDescription string defaults to "N/A"
 // - ParamFeeColor balance.Color fee color code. Defaults to IOTA color. It cannot be changed
 // - ParamOwnerFee int64 globally set default fee value. Defaults to 0
-func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	params := ctx.Params()
 	state := ctx.State()
@@ -125,7 +124,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
-func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
 		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
@@ -185,7 +184,7 @@ func deployContract(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamHname
 // Output:
 // - ParamData
-func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := ctx.Params()
 	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
 	if err != nil {
@@ -212,7 +211,7 @@ func findContract(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // - VarChainOwnerID - AgentID
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
-func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	info, err := GetChainInfo(ctx.State())
 	if err != nil {
 		return nil, err
@@ -239,7 +238,7 @@ func getChainInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // delegateChainOwnership stores next possible (delegated) chain owner to another agentID
 // checks authorisation by the current owner
 // Two step process allow/change is in order to avoid mistakes
-func delegateChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.delegateChainOwnership: not authorized")
@@ -259,7 +258,7 @@ func delegateChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // claimChainOwnership changes the chain owner to the delegated agentID (if any)
 // Checks authorisation if the caller is the one to which the ownership is delegated
 // Note that ownership is only changed by the successful call to  claimChainOwnership
-func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	state := ctx.State()
 	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
@@ -289,7 +288,7 @@ func claimChainOwnership(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamFeeColor balance.Color color of tokens accepted for fees
 // - ParamValidatorFee int64 minimum fee for contract
 // Note: return default chain values if contract doesn't exist
-func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := ctx.Params()
 	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
 	if err != nil {
@@ -310,7 +309,7 @@ func getFeeInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // Input:
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
-func setDefaultFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.setDefaultFee: not authorized")
 	}
@@ -353,7 +352,7 @@ func setDefaultFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // - ParamHname coretypes.Hname smart contract ID
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
-func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.setContractFee: not authorized")
 	}
@@ -394,7 +393,7 @@ func setContractFee(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // grantDeployPermission grants permission to deploy contracts
 // Input:
 //  - ParamDeployer coretypes.AgentID
-func grantDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.grantDeployer: not authorized")
 	}
@@ -414,7 +413,7 @@ func grantDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // grantDeployPermission revokes permission to deploy contracts
 // Input:
 //  - ParamDeployer coretypes.AgentID
-func revokeDeployPermission(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
 		return nil, fmt.Errorf("root.revokeDeployer: not authorized")
 	}

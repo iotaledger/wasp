@@ -2,16 +2,16 @@ package examples
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
 )
 
 const VMType = "examplevm"
 
 var (
-	allExamples      = make(map[hashing.HashValue]vmtypes.Processor)
+	allExamples      = make(map[hashing.HashValue]coretypes.Processor)
 	allExamplesMutex = &sync.Mutex{}
 )
 
@@ -27,7 +27,7 @@ func AddProcessor(c *contract.ContractInterface) {
 }
 
 // GetExampleProcessor retrieves smart contract processor (VM) by the hash (whith existence flag)
-func GetExampleProcessor(progHash hashing.HashValue) (vmtypes.Processor, bool) {
+func GetExampleProcessor(progHash hashing.HashValue) (coretypes.Processor, bool) {
 	ret, ok := allExamples[progHash]
 	if !ok {
 		return nil, false

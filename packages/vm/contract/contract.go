@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type ContractInterface struct {
@@ -62,8 +61,8 @@ func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
 	}
 }
 
-type Handler func(ctx vmtypes.Sandbox) (dict.Dict, error)
-type ViewHandler func(ctx vmtypes.SandboxView) (dict.Dict, error)
+type Handler func(ctx coretypes.Sandbox) (dict.Dict, error)
+type ViewHandler func(ctx coretypes.SandboxView) (dict.Dict, error)
 
 func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunctionInterface) {
 	i.Functions = Funcs(init, funcs)
@@ -74,7 +73,7 @@ func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface
 	return &f, ok
 }
 
-func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
 	f, ok := i.Functions[code]
 	return &f, ok
 }
@@ -99,13 +98,13 @@ func (f *ContractFunctionInterface) Hname() coretypes.Hname {
 	return coretypes.Hn(f.Name)
 }
 
-func (f *ContractFunctionInterface) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (f *ContractFunctionInterface) WithGasLimit(_ int) coretypes.EntryPoint {
 	return f
 }
 
-func (f *ContractFunctionInterface) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func (f *ContractFunctionInterface) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if f.IsView() {
-		return nil, vmtypes.ErrWrongTypeEntryPoint
+		return nil, coretypes.ErrWrongTypeEntryPoint
 	}
 	ret, err := f.Handler(ctx)
 	if err != nil {
@@ -114,9 +113,9 @@ func (f *ContractFunctionInterface) Call(ctx vmtypes.Sandbox) (dict.Dict, error)
 	return ret, err
 }
 
-func (f *ContractFunctionInterface) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func (f *ContractFunctionInterface) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if !f.IsView() {
-		return nil, vmtypes.ErrWrongTypeEntryPoint
+		return nil, coretypes.ErrWrongTypeEntryPoint
 	}
 	ret, err := f.ViewHandler(ctx)
 	if err != nil {

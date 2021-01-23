@@ -1,12 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package vmtypes
+package coretypes
 
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -14,7 +13,7 @@ import (
 
 // Processor is a abstract interface to the VM processor instance.
 type Processor interface {
-	GetEntryPoint(code coretypes.Hname) (EntryPoint, bool)
+	GetEntryPoint(code Hname) (EntryPoint, bool)
 	GetDescription() string
 }
 

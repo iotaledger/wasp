@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 func init() {
@@ -19,7 +18,7 @@ type sandboxView struct {
 	vmctx *vmcontext.VMContext
 }
 
-func newView(vmctx *vmcontext.VMContext) vmtypes.SandboxView {
+func newView(vmctx *vmcontext.VMContext) coretypes.SandboxView {
 	return sandboxView{vmctx}
 }
 

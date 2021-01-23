@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/examples"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -53,7 +52,7 @@ func init() {
 	examples.AddProcessor(Interface)
 }
 
-func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.ContractID().Hname().String())
 	params := ctx.Params()
 	val, _, err := codec.DecodeInt64(params.MustGet(VarCounter))
@@ -65,7 +64,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func incCounter(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.ContractID().Hname().String())
 	params := ctx.Params()
 	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
@@ -82,14 +81,14 @@ func incCounter(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func incCounterAndRepeatOnce(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	if !ctx.PostRequest(vmtypes.PostRequestParams{
+	if !ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       coretypes.Hn(FuncIncCounter),
 		TimeLock:         5 * 60,
@@ -100,7 +99,7 @@ func incCounterAndRepeatOnce(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func incCounterAndRepeatMany(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
@@ -126,7 +125,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
-	if ctx.PostRequest(vmtypes.PostRequestParams{
+	if ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       coretypes.Hn(FuncIncAndRepeatMany),
 		TimeLock:         1 * 60,
@@ -139,7 +138,7 @@ func incCounterAndRepeatMany(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 // spawn deploys new contract and calls it
-func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func spawn(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.spawn")
 	state := ctx.State()
 
@@ -177,7 +176,7 @@ func spawn(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func getCounter(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getCounter(ctx coretypes.SandboxView) (dict.Dict, error) {
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 	ret := dict.New()

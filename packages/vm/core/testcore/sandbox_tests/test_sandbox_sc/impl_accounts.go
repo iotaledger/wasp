@@ -8,17 +8,16 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // calls withdrawToChain to the chain ID
-func withdrawToChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncWithdrawToChain)
 	targetChain, ok, err := codec.DecodeChainID(ctx.Params().MustGet(ParamChainID))
 	if err != nil || !ok {
 		ctx.Log().Panicf("wrong parameter '%s'", ParamChainID)
 	}
-	succ := ctx.PostRequest(vmtypes.PostRequestParams{
+	succ := ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: accounts.Interface.ContractID(targetChain),
 		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
 		Transfer: cbalances.NewFromMap(map[balance.Color]int64{

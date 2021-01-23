@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 func (vmctx *VMContext) GetIncoming() coretypes.ColoredBalances {
@@ -58,7 +57,7 @@ func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targ
 	// it deposits received funds to the target on behalf of the caller
 	par := dict.New()
 	par.Set(accounts.ParamAgentID, codec.EncodeAgentID(targetAgentID))
-	return vmctx.PostRequest(vmtypes.PostRequestParams{
+	return vmctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: coretypes.NewContractID(targetChainID, accounts.Interface.Hname()),
 		EntryPoint:       coretypes.Hn(accounts.FuncDeposit),
 		Params:           par,

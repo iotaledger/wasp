@@ -2,11 +2,11 @@ package test_init_fail
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/examples"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -28,7 +28,7 @@ func init() {
 	examples.AddProcessor(Interface)
 }
 
-func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if p, err := ctx.Params().Get(ParamFail); err == nil && p != nil {
 		return nil, fmt.Errorf("failing on purpose")
 	}

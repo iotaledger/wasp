@@ -30,13 +30,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // implement Processor and EntryPoint interfaces
 type fairRouletteProcessor map[coretypes.Hname]fairRouletteEntryPoint
 
-type fairRouletteEntryPoint func(ctx vmtypes.Sandbox) error
+type fairRouletteEntryPoint func(ctx coretypes.Sandbox) error
 
 // ID of the smart contract program
 const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
@@ -109,11 +108,11 @@ type PlayerStats struct {
 }
 
 // coonnection of the SC program with the Wasp node
-func GetProcessor() vmtypes.Processor {
+func GetProcessor() coretypes.Processor {
 	return entryPoints
 }
 
-func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
 	ep, ok := entryPoints[code]
 	return ep, ok
 }
@@ -123,11 +122,11 @@ func (v fairRouletteProcessor) GetDescription() string {
 }
 
 // WithGasLimit: not implemented, has no effect
-func (f fairRouletteEntryPoint) WithGasLimit(i int) vmtypes.EntryPoint {
+func (f fairRouletteEntryPoint) WithGasLimit(i int) coretypes.EntryPoint {
 	return f
 }
 
-func (f fairRouletteEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func (f fairRouletteEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := f(ctx)
 	if err != nil {
 		ctx.Event(fmt.Sprintf("error %v", err))
@@ -141,12 +140,12 @@ func (ep fairRouletteEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep fairRouletteEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func (ep fairRouletteEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
 // the request places bet into the smart contract
-func placeBet(ctx vmtypes.Sandbox) error {
+func placeBet(ctx coretypes.Sandbox) error {
 	ctx.Event("placeBet")
 	params := ctx.Params()
 
@@ -218,7 +217,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 
 		// send the timelocked Lock request to self. TimeLock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
-		if ctx.PostRequest(vmtypes.PostRequestParams{
+		if ctx.PostRequest(coretypes.PostRequestParams{
 			TargetContractID: ctx.ContractID(),
 			EntryPoint:       RequestLockBets,
 			TimeLock:         uint32(period),
@@ -232,7 +231,7 @@ func placeBet(ctx vmtypes.Sandbox) error {
 }
 
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
-func setPlayPeriod(ctx vmtypes.Sandbox) error {
+func setPlayPeriod(ctx coretypes.Sandbox) error {
 	ctx.Event("setPlayPeriod")
 	params := ctx.Params()
 
@@ -256,7 +255,7 @@ func setPlayPeriod(ctx vmtypes.Sandbox) error {
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
-func lockBets(ctx vmtypes.Sandbox) error {
+func lockBets(ctx coretypes.Sandbox) error {
 	ctx.Event("lockBets")
 
 	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
@@ -278,7 +277,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 
 	// send request to self for playing the wheel with the entropy whicl will be known
 	// after signing this state update transaction therefore unpredictable
-	ctx.PostRequest(vmtypes.PostRequestParams{
+	ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestPlayAndDistribute,
 	})
@@ -287,7 +286,7 @@ func lockBets(ctx vmtypes.Sandbox) error {
 }
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
-func playAndDistribute(ctx vmtypes.Sandbox) error {
+func playAndDistribute(ctx coretypes.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
 	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
@@ -384,7 +383,7 @@ func playAndDistribute(ctx vmtypes.Sandbox) error {
 	return nil
 }
 
-func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
+func addToWinsPerColor(ctx coretypes.Sandbox, winningColor byte) {
 	winsPerColorArray := collections.NewArray(ctx.State(), StateArrayWinsPerColor)
 
 	// first time? Initialize counters
@@ -400,7 +399,7 @@ func addToWinsPerColor(ctx vmtypes.Sandbox, winningColor byte) {
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
-func distributeLockedAmount(ctx vmtypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
+func distributeLockedAmount(ctx coretypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
 	sumsByPlayers := make(map[coretypes.AgentID]int64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
@@ -546,7 +545,7 @@ func (ps *PlayerStats) String() string {
 	return fmt.Sprintf("[bets: %d - wins: %d]", ps.Bets, ps.Wins)
 }
 
-func withPlayerStats(ctx vmtypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
+func withPlayerStats(ctx coretypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
 	statsDict := collections.NewMap(ctx.State(), StateVarPlayerStats)
 	b := statsDict.MustGetAt(player.Bytes())
 	stats, err := DecodePlayerStats(b)

@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // FindContract is an internal utility function which finds a contract in the KVStore
@@ -169,7 +168,7 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID coretypes.AgentID)
 }
 
 // storeAndInitContract internal utility function
-func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
+func storeAndInitContract(ctx coretypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
 	if contractRegistry.MustHasAt(hname.Bytes()) {
@@ -186,7 +185,7 @@ func storeAndInitContract(ctx vmtypes.Sandbox, rec *ContractRecord, initParams d
 }
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
-func isAuthorizedToDeploy(ctx vmtypes.Sandbox) bool {
+func isAuthorizedToDeploy(ctx coretypes.Sandbox) bool {
 	if ctx.Caller() == ctx.ChainOwnerID() {
 		// chain owner is always authorized
 		return true

@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 func (vmctx *VMContext) ChainID() coretypes.ChainID {
@@ -58,7 +57,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 
 // PostRequest creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
-func (vmctx *VMContext) PostRequest(par vmtypes.PostRequestParams) bool {
+func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 	vmctx.log.Debugw("-- PostRequest",
 		"target", par.TargetContractID.String(),
 		"ep", par.EntryPoint.String(),
@@ -83,7 +82,7 @@ func (vmctx *VMContext) PostRequest(par vmtypes.PostRequestParams) bool {
 }
 
 func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
-	return vmctx.PostRequest(vmtypes.PostRequestParams{
+	return vmctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       reqCode,
 		Params:           params,
@@ -93,7 +92,7 @@ func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.D
 func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 
-	return vmctx.PostRequest(vmtypes.PostRequestParams{
+	return vmctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: vmctx.CurrentContractID(),
 		EntryPoint:       entryPoint,
 		Params:           args,

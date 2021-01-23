@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
@@ -118,7 +117,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		if !debug {
 			glbLogger = testutil.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
-		wasmtimeConstructor := func(binary []byte) (vmtypes.Processor, error) {
+		wasmtimeConstructor := func(binary []byte) (coretypes.Processor, error) {
 			return wasmproc.GetProcessor(binary, glbLogger)
 		}
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmtimeConstructor)

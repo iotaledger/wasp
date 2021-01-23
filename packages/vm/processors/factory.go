@@ -2,11 +2,11 @@ package processors
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"sync"
 )
 
-type VMConstructor func(binaryCode []byte) (vmtypes.Processor, error)
+type VMConstructor func(binaryCode []byte) (coretypes.Processor, error)
 
 var (
 	vmconstructors = make(map[string]VMConstructor)
@@ -29,7 +29,7 @@ func RegisterVMType(vmtype string, constructor VMConstructor) error {
 }
 
 // NewProcessorFromBinary creates an instance of the processor by its VM type and the binary code
-func NewProcessorFromBinary(vmtype string, binaryCode []byte) (vmtypes.Processor, error) {
+func NewProcessorFromBinary(vmtype string, binaryCode []byte) (coretypes.Processor, error) {
 	vmfactoryMutex.Lock()
 	defer vmfactoryMutex.Unlock()
 

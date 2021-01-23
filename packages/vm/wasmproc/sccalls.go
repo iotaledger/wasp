@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -116,7 +115,7 @@ func (o *ScCallInfo) Invoke(delay int64) {
 		if o.chainId == coretypes.NilChainID {
 			o.chainId = o.vm.contractID().ChainID()
 		}
-		o.vm.ctx.PostRequest(vmtypes.PostRequestParams{
+		o.vm.ctx.PostRequest(coretypes.PostRequestParams{
 			TargetContractID: coretypes.NewContractID(o.chainId, o.contract),
 			EntryPoint:       o.function,
 			TimeLock:         uint32(delay),

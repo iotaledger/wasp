@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/mr-tron/base58"
 )
 
@@ -27,7 +26,7 @@ const Description = "FairAuction, a PoC smart contract"
 
 type fairAuctionProcessor map[coretypes.Hname]fairAuctionEntryPoint
 
-type fairAuctionEntryPoint func(ctx vmtypes.Sandbox) error
+type fairAuctionEntryPoint func(ctx coretypes.Sandbox) error
 
 var (
 	RequestStartAuction    = coretypes.Hn("startAuction")
@@ -85,7 +84,7 @@ func init() {
 }
 
 // statical link point to the Wasp node
-func GetProcessor() vmtypes.Processor {
+func GetProcessor() coretypes.Processor {
 	return entryPoints
 }
 
@@ -93,12 +92,12 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func (ep fairAuctionEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
 		ctx.Event(fmt.Sprintf("error %v", err))
@@ -112,11 +111,11 @@ func (ep fairAuctionEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep fairAuctionEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func (ep fairAuctionEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
-func (ep fairAuctionEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (ep fairAuctionEntryPoint) WithGasLimit(_ int) coretypes.EntryPoint {
 	return ep
 }
 
@@ -201,7 +200,7 @@ func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 // Request transaction must contain at least number of iotas >= of current owner margin from the minimum bid
 // (not including node reward with request token)
 // Tokens for sale must be included into the request transaction
-func startAuction(ctx vmtypes.Sandbox) error {
+func startAuction(ctx coretypes.Sandbox) error {
 	ctx.Event("startAuction begin")
 	params := ctx.Params()
 
@@ -343,7 +342,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 	args := dict.FromGoMap(map[kv.Key][]byte{
 		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
 	})
-	ctx.PostRequest(vmtypes.PostRequestParams{
+	ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestFinalizeAuction,
 		TimeLock:         uint32(duration * 60),
@@ -365,7 +364,7 @@ func startAuction(ctx vmtypes.Sandbox) error {
 // a rise of the bid and are added to the total
 // Arguments:
 // - VarReqAuctionColor: color of the tokens for sale
-func placeBid(ctx vmtypes.Sandbox) error {
+func placeBid(ctx coretypes.Sandbox) error {
 	ctx.Event("placeBid: begin")
 	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
@@ -456,7 +455,7 @@ func placeBid(ctx vmtypes.Sandbox) error {
 // not by the smart contract instance itself
 // Arguments:
 // - VarReqAuctionColor: color of the auction
-func finalizeAuction(ctx vmtypes.Sandbox) error {
+func finalizeAuction(ctx coretypes.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
@@ -600,7 +599,7 @@ func finalizeAuction(ctx vmtypes.Sandbox) error {
 // setOwnerMargin is a request to set the service fee to place a bid
 // Arguments:
 // - VarReqOwnerMargin: the margin value in promilles
-func setOwnerMargin(ctx vmtypes.Sandbox) error {
+func setOwnerMargin(ctx coretypes.Sandbox) error {
 	ctx.Event("setOwnerMargin: begin")
 	params := ctx.Params()
 
@@ -625,7 +624,7 @@ func setOwnerMargin(ctx vmtypes.Sandbox) error {
 
 // TODO implement universal 'refund' function to be used in rollback situations
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
-func refundFromRequest(ctx vmtypes.Sandbox, color *balance.Color, harvest int64) {
+func refundFromRequest(ctx coretypes.Sandbox, color *balance.Color, harvest int64) {
 	// TODO
 	//account := ctx.AccessSCAccount()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)

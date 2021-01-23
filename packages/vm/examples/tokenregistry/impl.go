@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // program hash is an ID of the smart contract program
@@ -41,7 +40,7 @@ const (
 
 type tokenRegistryProcessor map[coretypes.Hname]tokenRegistryEntryPoint
 
-type tokenRegistryEntryPoint func(ctx vmtypes.Sandbox) error
+type tokenRegistryEntryPoint func(ctx coretypes.Sandbox) error
 
 // the processor is a map of entry points
 var entryPoints = tokenRegistryProcessor{
@@ -62,11 +61,11 @@ type TokenMetadata struct {
 }
 
 // Point to link statically with the Wasp
-func GetProcessor() vmtypes.Processor {
+func GetProcessor() coretypes.Processor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -76,7 +75,7 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func (ep tokenRegistryEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
 		ctx.Event(fmt.Sprintf("error %v", err))
@@ -90,19 +89,19 @@ func (ep tokenRegistryEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep tokenRegistryEntryPoint) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func (ep tokenRegistryEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
 // WithGasLimit not used
-func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) coretypes.EntryPoint {
 	return ep
 }
 
 const maxDescription = 150
 
 // mintSupply implements 'mint supply' request
-func mintSupply(ctx vmtypes.Sandbox) error {
+func mintSupply(ctx coretypes.Sandbox) error {
 	ctx.Event("TokenRegistry: mintSupply")
 	params := ctx.Params()
 
@@ -173,12 +172,12 @@ func mintSupply(ctx vmtypes.Sandbox) error {
 	return nil
 }
 
-func updateMetadata(ctx vmtypes.Sandbox) error {
+func updateMetadata(ctx coretypes.Sandbox) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: updateMetadata not implemented")
 }
 
-func transferOwnership(ctx vmtypes.Sandbox) error {
+func transferOwnership(ctx coretypes.Sandbox) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: transferOwnership not implemented")
 }

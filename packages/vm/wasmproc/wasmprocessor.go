@@ -8,14 +8,13 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 type wasmProcessor struct {
 	wasmhost.WasmHost
-	ctx       vmtypes.Sandbox
-	ctxView   vmtypes.SandboxView
+	ctx       coretypes.Sandbox
+	ctxView   coretypes.SandboxView
 	function  string
 	nesting   int
 	scContext *ScContext
@@ -41,7 +40,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor
 	return host, nil
 }
 
-func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView) (dict.Dict, error) {
+func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.SandboxView) (dict.Dict, error) {
 	if host.function == "" {
 		// init function was missing, do nothing
 		return dict.New(), nil
@@ -96,11 +95,11 @@ func (host *wasmProcessor) call(ctx vmtypes.Sandbox, ctxView vmtypes.SandboxView
 	return results, nil
 }
 
-func (host *wasmProcessor) Call(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func (host *wasmProcessor) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return host.call(ctx, nil)
 }
 
-func (host *wasmProcessor) CallView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func (host *wasmProcessor) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return host.call(nil, ctx)
 }
 
@@ -108,7 +107,7 @@ func (host *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoint, bool) {
+func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
 	function := host.FunctionFromCode(uint32(code))
 	if function == "" && code != coretypes.EntryPointInit {
 		return nil, false
@@ -117,7 +116,7 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (vmtypes.EntryPoi
 	return host, true
 }
 
-func GetProcessor(binaryCode []byte, logger *logger.Logger) (vmtypes.Processor, error) {
+func GetProcessor(binaryCode []byte, logger *logger.Logger) (coretypes.Processor, error) {
 	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), logger)
 	if err != nil {
 		return nil, err
@@ -133,7 +132,7 @@ func (host *wasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
-func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
+func (host *wasmProcessor) WithGasLimit(_ int) coretypes.EntryPoint {
 	return host
 }
 

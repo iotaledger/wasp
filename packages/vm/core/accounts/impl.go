@@ -8,11 +8,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // initialize the init call
-func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -20,7 +19,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // getBalance returns colored balances of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
-func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("getBalance")
 	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
 	if err != nil {
@@ -34,13 +33,13 @@ func getBalance(ctx vmtypes.SandboxView) (dict.Dict, error) {
 }
 
 // getTotalAssets returns total colored balances controlled by the chain
-func getTotalAssets(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getTotalAssets(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("getTotalAssets")
 	return getAccountBalanceDict(ctx, getTotalAssetsAccountR(ctx.State()), "getTotalAssets"), nil
 }
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
-func getAccounts(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return GetAccounts(ctx.State()), nil
 }
 
@@ -49,7 +48,7 @@ func getAccounts(ctx vmtypes.SandboxView) (dict.Dict, error) {
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit on own account
 //   in case ParamAgentID. == ctx.Caller() and it is a call, it means NOP
-func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	MustCheckLedger(state, "accounts.deposit.begin")
 	defer MustCheckLedger(state, "accounts.deposit.exit")
@@ -73,7 +72,7 @@ func deposit(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 // withdrawToAddress sends caller's funds to the caller, the address on L1.
 // caller must be an address
-func withdrawToAddress(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	MustCheckLedger(state, "accounts.withdrawToAddress.begin")
 	defer MustCheckLedger(state, "accounts.withdrawToAddress.exit")
@@ -102,7 +101,7 @@ func withdrawToAddress(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 // withdrawToChain sends caller's funds to the caller via account::deposit.
-func withdrawToChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	MustCheckLedger(state, "accounts.withdrawToChain.begin")
 	defer MustCheckLedger(state, "accounts.withdrawToChain.exit")
@@ -132,7 +131,7 @@ func withdrawToChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	}
 	// TODO accounts and other core contracts don't need tokens
 	//  possible policy: if caller is core contract, accrue it all to the chain owner
-	succ = ctx.PostRequest(vmtypes.PostRequestParams{
+	succ = ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: Interface.ContractID(callerContract.ChainID()),
 		EntryPoint:       coretypes.Hn(FuncDeposit),
 		Params: codec.MakeDict(map[string]interface{}{
@@ -148,7 +147,7 @@ func withdrawToChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 
 // allow is similar to the ERC-20 allow function.
 // TODO not tested
-func allow(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func allow(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	MustCheckLedger(state, "accounts.allow.begin")
 	defer MustCheckLedger(state, "accounts.allow.exit")

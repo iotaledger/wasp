@@ -2,14 +2,14 @@ package blob
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -17,7 +17,7 @@ func initialize(ctx vmtypes.Sandbox) (dict.Dict, error) {
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
-func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.storeBlob.begin")
 	state := ctx.State()
 	params := ctx.Params()
@@ -58,7 +58,7 @@ func storeBlob(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 // getBlobInfo return lengths of all fields in the blob
-func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getBlobInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 	state := ctx.State()
 	blobHash, ok, err := codec.DecodeHashValue(ctx.Params().MustGet(ParamHash))
@@ -77,7 +77,7 @@ func getBlobInfo(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getBlobField(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
 
@@ -107,7 +107,7 @@ func getBlobField(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func listBlobs(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func listBlobs(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
 	GetDirectoryR(ctx.State()).MustIterate(func(hash []byte, totalSize []byte) bool {

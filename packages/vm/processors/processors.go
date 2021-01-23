@@ -2,24 +2,24 @@ package processors
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/examples"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"sync"
 )
 
 // ProcessorCache is an object maintained by each chain
 type ProcessorCache struct {
 	*sync.Mutex
-	processors map[hashing.HashValue]vmtypes.Processor
+	processors map[hashing.HashValue]coretypes.Processor
 }
 
 func MustNew() *ProcessorCache {
 	ret := &ProcessorCache{
 		Mutex:      &sync.Mutex{},
-		processors: make(map[hashing.HashValue]vmtypes.Processor),
+		processors: make(map[hashing.HashValue]coretypes.Processor),
 	}
 	// default builtin processor has root contract hash
 	err := ret.NewProcessor(root.Interface.ProgramHash, nil, core.VMType)
@@ -38,7 +38,7 @@ func (cps *ProcessorCache) NewProcessor(programHash hashing.HashValue, programCo
 }
 
 func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
-	var proc vmtypes.Processor
+	var proc coretypes.Processor
 	var ok bool
 	var err error
 
@@ -72,11 +72,11 @@ func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
 	return ok
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
+func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.Processor, error) {
 	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (vmtypes.Processor, error) {
+func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.Processor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 

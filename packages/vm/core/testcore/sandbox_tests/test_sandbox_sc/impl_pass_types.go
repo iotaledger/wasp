@@ -5,10 +5,9 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-func passTypesFull(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func passTypesFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ret := dict.New()
 	s, exists, err := codec.DecodeString(ctx.Params().MustGet("string"))
 	checkFull(ctx, exists, err)
@@ -60,7 +59,7 @@ func passTypesFull(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func passTypesView(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func passTypesView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	s, exists, err := codec.DecodeString(ctx.Params().MustGet("string"))
 	checkView(ctx, exists, err)
 	if s != "string" {
@@ -105,7 +104,7 @@ func passTypesView(ctx vmtypes.SandboxView) (dict.Dict, error) {
 	return nil, nil
 }
 
-func checkFull(ctx vmtypes.Sandbox, exists bool, err error) {
+func checkFull(ctx coretypes.Sandbox, exists bool, err error) {
 	if err != nil {
 		ctx.Log().Panicf("Full sandbox: %v", err)
 	}
@@ -114,7 +113,7 @@ func checkFull(ctx vmtypes.Sandbox, exists bool, err error) {
 	}
 }
 
-func checkView(ctx vmtypes.SandboxView, exists bool, err error) {
+func checkView(ctx coretypes.SandboxView, exists bool, err error) {
 	if err != nil {
 		ctx.Log().Panicf("View sandbox: %v", err)
 	}

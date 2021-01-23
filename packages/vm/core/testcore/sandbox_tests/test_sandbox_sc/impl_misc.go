@@ -5,13 +5,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // ParamCallOption
 // ParamCallIntParam
 // ParamHname
-func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func callOnChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf(FuncCallOnChain)
 	callOption, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamCallOption))
 	if err != nil {
@@ -63,7 +62,7 @@ func callOnChain(ctx vmtypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func getFibonacci(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
 	callInt, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
@@ -103,7 +102,7 @@ func getFibonacci(ctx vmtypes.SandboxView) (dict.Dict, error) {
 
 // ParamIntParamName
 // ParamIntParamValue
-func setInt(ctx vmtypes.Sandbox) (dict.Dict, error) {
+func setInt(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSetInt)
 	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
 	if err != nil {
@@ -124,7 +123,7 @@ func setInt(ctx vmtypes.Sandbox) (dict.Dict, error) {
 }
 
 // ParamIntParamName
-func getInt(ctx vmtypes.SandboxView) (dict.Dict, error) {
+func getInt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof(FuncGetInt)
 	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
 	if err != nil {

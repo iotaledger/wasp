@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -33,7 +32,7 @@ func printReservedHnames() {
 	fmt.Printf("--------------- reserved hnames ------------------\n")
 }
 
-func GetProcessor(programHash hashing.HashValue) (vmtypes.Processor, error) {
+func GetProcessor(programHash hashing.HashValue) (coretypes.Processor, error) {
 	switch programHash {
 	case root.Interface.ProgramHash:
 		return root.Interface, nil

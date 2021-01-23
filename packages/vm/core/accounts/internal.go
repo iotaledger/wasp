@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const (
@@ -215,7 +214,7 @@ func MustCheckLedger(state kv.KVStore, checkpoint string) {
 	}
 }
 
-func getAccountBalanceDict(ctx vmtypes.SandboxView, account *collections.ImmutableMap, event string) dict.Dict {
+func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, event string) dict.Dict {
 	balances := getAccountBalances(account)
 	ctx.Log().Debugf("%s. balance = %s\n", event, cbalances.NewFromMap(balances).String())
 	return EncodeBalances(balances)
