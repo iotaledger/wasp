@@ -137,13 +137,6 @@ func (host *wasmProcessor) WithGasLimit(_ int) vmtypes.EntryPoint {
 	return host
 }
 
-func (host *wasmProcessor) balances() coretypes.ColoredBalances {
-	if host.ctx != nil {
-		return host.ctx.Balances()
-	}
-	return host.ctxView.Balances()
-}
-
 func (host *wasmProcessor) chainOwnerID() coretypes.AgentID {
 	if host.ctx != nil {
 		return host.ctx.ChainOwnerID()
