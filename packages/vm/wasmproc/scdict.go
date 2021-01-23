@@ -166,7 +166,7 @@ func (o *ScDict) GetString(keyId int32) string {
 	bytes := o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_STRING))
 	value, _, err := codec.DecodeString(bytes)
 	if err != nil {
-		o.Panic("MustGetString: %v", err)
+		o.Panic("GetString: %v", err)
 	}
 	return value
 }
@@ -306,6 +306,6 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 func (o *ScDict) validateMutable(keyId int32) {
 	//TODO
 	//if !o.isMutable {
-	//	o.panic("validate: Immutable field: %s key %d", o.name, keyId)
+	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
 	//}
 }
