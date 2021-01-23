@@ -86,11 +86,11 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 func (host *KvStoreHost) GetBytes(objId int32, keyId int32) []byte {
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
-		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
+		host.Trace("MustGetBytes o%d k%d missing key", objId, keyId)
 		return nil
 	}
 	value := obj.GetBytes(keyId)
-	host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(value))
+	host.Trace("MustGetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(value))
 	return value
 }
 
@@ -193,11 +193,11 @@ func (host *KvStoreHost) GetString(objId int32, keyId int32) string {
 func (host *KvStoreHost) getString(objId int32, keyId int32) *string {
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
-		host.Trace("GetString o%d k%d missing key", objId, keyId)
+		host.Trace("MustGetString o%d k%d missing key", objId, keyId)
 		return nil
 	}
 	value := obj.GetString(keyId)
-	host.Trace("GetString o%d k%d = '%s'", objId, keyId, value)
+	host.Trace("MustGetString o%d k%d = '%s'", objId, keyId, value)
 	return &value
 }
 

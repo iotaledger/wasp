@@ -124,7 +124,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		return
 	}
 	if op.iAmCurrentLeader() {
-		// TODO should not happen. Probably redundant. Panic?
+		// TODO should not happen. Probably redundant. panic?
 		op.log.Warnw("EventStartProcessingBatchMsg: ignored",
 			"sender", msg.SenderIndex,
 			"state index", stateIndex,
@@ -137,7 +137,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 	reqs := op.takeFromIds(msg.RequestIds)
 	if len(reqs) != numOrig {
 		// some request were filtered out because not messages didn't reach the node yet.
-		// can't happen? Redundant? Panic?
+		// can't happen? Redundant? panic?
 		op.log.Warnf("node can't process the batch: some requests are not known to the node")
 		return
 	}

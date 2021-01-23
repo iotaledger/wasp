@@ -8,10 +8,13 @@ package root
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -30,7 +33,6 @@ import (
 // - ParamOwnerFee int64 globally set default fee value. Defaults to 0
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
-	params := ctx.Params()
 	state := ctx.State()
 	if state.MustGet(VarStateInitialized) != nil {
 		// can't be initialized twice
@@ -38,59 +40,39 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	// retrieving init parameters
 	// -- chain ID
-	chainID, ok, err := codec.DecodeChainID(params.MustGet(ParamChainID))
-	if !ok || err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainID, err)
-	}
-	chainColor, ok, err := codec.DecodeColor(params.MustGet(ParamChainColor))
-	if !ok || err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainColor, err)
-	}
-	chainAddress, ok, err := codec.DecodeAddress(params.MustGet(ParamChainAddress))
-	if !ok || err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %v", ParamChainAddress, err)
-	}
-	// -- description
-	chainDescription, ok, err := codec.DecodeString(params.MustGet(ParamDescription))
-	if err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamDescription, err)
-	}
-	if !ok {
-		chainDescription = "N/A"
-	}
-	feeColor, feeColorSet, err := codec.DecodeColor(params.MustGet(ParamFeeColor))
-	if err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamFeeColor, err)
-	}
-	defaultFee, defaultFeeSet, err := codec.DecodeInt64(params.MustGet(ParamOwnerFee))
-	if err != nil {
-		ctx.Log().Panicf("root.initialize.fail: can't read expected request argument '%s': %s", ParamOwnerFee, err)
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	a := coreutil.NewAssert(ctx.Log())
+
+	chainID := params.MustGetChainID(ParamChainID)
+	chainColor := params.MustGetColor(ParamChainColor)
+	chainAddress := params.MustGetAddress(ParamChainAddress)
+	chainDescription := params.MustGetString(ParamDescription, "N/A")
+	feeColor := params.MustGetColor(ParamFeeColor, balance.ColorIOTA)
+	feeColorSet := feeColor != balance.ColorIOTA
+	defaultFee := params.MustGetInt64(ParamOwnerFee, 0)
+	defaultFeeSet := defaultFee > 0
+
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
-	if contractRegistry.MustLen() != 0 {
-		ctx.Log().Panicf("root.initialize.fail: registry not empty")
-	}
-	// record for root
+	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
+
 	rec := NewContractRecord(Interface, coretypes.AgentID{})
 	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
+
 	// deploy blob
 	rec = NewContractRecord(blob.Interface, ctx.Caller())
-	err = storeAndInitContract(ctx, &rec, nil)
-	if err != nil {
-		ctx.Log().Panicf("root.init.fail: %v", err)
-	}
-	// deploy accountsc
+	err := storeAndInitContract(ctx, &rec, nil)
+	a.Require(err == nil, "root.init.fail: %v", err)
+
+	// deploy accounts
 	rec = NewContractRecord(accounts.Interface, ctx.Caller())
 	err = storeAndInitContract(ctx, &rec, nil)
-	if err != nil {
-		ctx.Log().Panicf("root.init.fail: %v", err)
-	}
+	a.Require(err == nil, "root.init.fail: %v", err)
+
 	// deploy chainlog
 	rec = NewContractRecord(eventlog.Interface, ctx.Caller())
 	err = storeAndInitContract(ctx, &rec, nil)
-	if err != nil {
-		ctx.Log().Panicf("root.init.fail: %v", err)
-	}
+	a.Require(err == nil, "root.init.fail: %v", err)
+
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.Set(VarChainID, codec.EncodeChainID(chainID))
 	state.Set(VarChainColor, codec.EncodeColor(chainColor))
@@ -129,53 +111,34 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if !isAuthorizedToDeploy(ctx) {
 		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
 	}
-	params := ctx.Params()
-	proghash, ok, err := codec.DecodeHashValue(params.MustGet(ParamProgramHash))
-	if err != nil {
-		return nil, fmt.Errorf("root.deployContract.wrong.param %s: %v", ParamProgramHash, err)
-	}
-	if !ok {
-		return nil, fmt.Errorf("root.deployContract.error: ProgramHash undefined")
-	}
-	description, ok, err := codec.DecodeString(params.MustGet(ParamDescription))
-	if err != nil {
-		return nil, fmt.Errorf("root.deployContract.wrong.param %s: %v", ParamDescription, err)
-	}
-	if !ok {
-		description = "N/A"
-	}
-	name, ok, err := codec.DecodeString(params.MustGet(ParamName))
-	if err != nil {
-		return nil, fmt.Errorf("root.deployContract.wrong.param %s: %v", ParamName, err)
-	}
-	if !ok || name == "" {
-		return nil, fmt.Errorf("root.deployContract.fail: wrong contract name")
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	a := coreutil.NewAssert(ctx.Log())
+
+	progHash := params.MustGetHashValue(ParamProgramHash)
+	description := params.MustGetString(ParamDescription, "N/A")
+	name := params.MustGetString(ParamName)
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
-	for key, value := range params {
+	for key, value := range ctx.Params() {
 		if key != ParamProgramHash && key != ParamName && key != ParamDescription {
 			initParams.Set(key, value)
 		}
 	}
 	// calls to loads VM from binary to check if it loads successfully
-	err = ctx.DeployContract(*proghash, "", "", nil)
-	if err != nil {
-		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
-	}
+	err := ctx.DeployContract(progHash, "", "", nil)
+	a.Require(err == nil, "root.deployContract.fail: %v", err)
+
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	err = storeAndInitContract(ctx, &ContractRecord{
-		ProgramHash: *proghash,
+		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
 		Creator:     ctx.Caller(),
 	}, initParams)
-	if err != nil {
-		return nil, fmt.Errorf("root.deployContract.fail: %v", err)
-	}
+	a.Require(err == nil, "root.deployContract.fail: %v", err)
 
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
-		name, coretypes.Hn(name), proghash.String(), description))
+		name, coretypes.Hn(name), progHash.String(), description))
 	return nil, nil
 }
 
@@ -185,13 +148,10 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Output:
 // - ParamData
 func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
-	params := ctx.Params()
-	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
+	params := kvdecoder.New(ctx.Params())
+	hname, err := params.GetHname(ParamHname)
 	if err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
 	rec, err := FindContract(ctx.State(), hname)
 	if err != nil {
@@ -240,16 +200,11 @@ func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 // Two step process allow/change is in order to avoid mistakes
 func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
-	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
-		return nil, fmt.Errorf("root.delegateChainOwnership: not authorized")
-	}
-	newOwnerID, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamChainOwner))
-	if err != nil {
-		return nil, fmt.Errorf("root.delegateChainOwnership: wrong parameter: %v", err)
-	}
-	if !ok {
-		return nil, fmt.Errorf("root.delegateChainOwnership.fail: wrong parameter")
-	}
+	a := coreutil.NewAssert(ctx.Log())
+	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.delegateChainOwnership: not authorized")
+
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	newOwnerID := params.MustGetAgentID(ParamChainOwner)
 	ctx.State().Set(VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
 	ctx.Log().Debugf("root.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil, nil
@@ -261,19 +216,15 @@ func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	state := ctx.State()
-	currentOwner, _, _ := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
-	nextOwner, ok, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerIDDelegated))
-	if err != nil || !ok {
-		return nil, fmt.Errorf("root.claimChainOwnership: not delegated to another chain owner")
-	}
-	if nextOwner == currentOwner {
-		// no need to change
-		return nil, nil
-	}
-	if nextOwner != ctx.Caller() {
-		// can be changed only by the caller to which ownership is delegated
-		return nil, fmt.Errorf("root.delegateChainOwnership: not authorized")
-	}
+	a := coreutil.NewAssert(ctx.Log())
+
+	stateDecoder := kvdecoder.New(state, ctx.Log())
+	currentOwner := stateDecoder.MustGetAgentID(VarChainOwnerID)
+	nextOwner := stateDecoder.MustGetAgentID(VarChainOwnerIDDelegated, currentOwner)
+
+	a.Require(nextOwner != currentOwner, "root.claimChainOwnership: not delegated to another chain owner")
+	a.Require(nextOwner == ctx.Caller(), "root.claimChainOwnership: not authorized")
+
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(VarChainOwnerIDDelegated)
 	ctx.Log().Debugf("root.chainChainOwner.success: chain owner changed: %s --> %s",
@@ -289,13 +240,10 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamValidatorFee int64 minimum fee for contract
 // Note: return default chain values if contract doesn't exist
 func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
-	params := ctx.Params()
-	hname, ok, err := codec.DecodeHname(params.MustGet(ParamHname))
+	params := kvdecoder.New(ctx.Params())
+	hname, err := params.GetHname(ParamHname)
 	if err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'hname' undefined")
 	}
 	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx.State(), hname)
 	ret := dict.New()
@@ -310,34 +258,26 @@ func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
-		return nil, fmt.Errorf("root.setDefaultFee: not authorized")
-	}
-	ownerFee, ownerFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamOwnerFee))
-	if err != nil {
-		return nil, err
-	}
-	if ownerFeeOk && ownerFee < 0 {
-		return nil, fmt.Errorf("parameter 'owner fee' is invalid")
-	}
-	validatorFee, validatorFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamValidatorFee))
-	if err != nil {
-		return nil, err
-	}
-	if validatorFeeOk && validatorFee < 0 {
-		return nil, fmt.Errorf("parameter 'validator fee' is invalid")
-	}
-	if !ownerFeeOk && !validatorFeeOk {
-		return nil, fmt.Errorf("missing parameters")
-	}
-	if ownerFeeOk {
+	a := coreutil.NewAssert(ctx.Log())
+	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setDefaultFee: not authorized")
+
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	ownerFee := params.MustGetInt64(ParamOwnerFee, -1)
+	ownerFeeSet := ownerFee >= 0
+	validatorFee := params.MustGetInt64(ParamValidatorFee, -1)
+	validatorFeeSet := validatorFee >= 0
+
+	a.Require(ownerFeeSet || validatorFeeSet, "root.setDefaultFee: wrong parameters")
+
+	if ownerFeeSet {
 		if ownerFee > 0 {
 			ctx.State().Set(VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
 		} else {
 			ctx.State().Del(VarDefaultOwnerFee)
 		}
 	}
-	if validatorFeeOk {
+	if validatorFeeSet {
 		if validatorFee > 0 {
 			ctx.State().Set(VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
 		} else {
@@ -353,39 +293,29 @@ func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
-		return nil, fmt.Errorf("root.setContractFee: not authorized")
-	}
-	hname, ok, err := codec.DecodeHname(ctx.Params().MustGet(ParamHname))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'hname' undefined")
-	}
+	a := coreutil.NewAssert(ctx.Log())
+	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
+
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	hname := params.MustGetHname(ParamHname)
 	rec, err := FindContract(ctx.State(), hname)
 	if err != nil {
 		return nil, err
 	}
-	ownerFee, ownerFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamOwnerFee))
-	if err != nil {
-		return nil, err
+
+	ownerFee := params.MustGetInt64(ParamOwnerFee, -1)
+	ownerFeeSet := ownerFee >= 0
+	validatorFee := params.MustGetInt64(ParamValidatorFee, -1)
+	validatorFeeSet := validatorFee >= 0
+
+	a.Require(ownerFeeSet || validatorFeeSet, "root.setContractFee: wrong parameters")
+	if ownerFeeSet {
+		rec.OwnerFee = ownerFee
 	}
-	if ownerFeeOk && ownerFee < 0 {
-		return nil, fmt.Errorf("parameter 'owner fee' is invalid")
+	if validatorFeeSet {
+		rec.ValidatorFee = validatorFee
 	}
-	rec.OwnerFee = ownerFee
-	validatorFee, validatorFeeOk, err := codec.DecodeInt64(ctx.Params().MustGet(ParamValidatorFee))
-	if err != nil {
-		return nil, err
-	}
-	if validatorFeeOk && validatorFee < 0 {
-		return nil, fmt.Errorf("parameter 'validator fee' is invalid")
-	}
-	if !ownerFeeOk && !validatorFeeOk {
-		return nil, fmt.Errorf("missing parameters")
-	}
-	rec.ValidatorFee = validatorFee
 	collections.NewMap(ctx.State(), VarContractRegistry).MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
 	return nil, nil
 }
@@ -394,18 +324,13 @@ func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Input:
 //  - ParamDeployer coretypes.AgentID
 func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
-		return nil, fmt.Errorf("root.grantDeployer: not authorized")
-	}
-	deployer, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamDeployer))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'deployer' undefined")
-	}
+	a := coreutil.NewAssert(ctx.Log())
+	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.grantDeployPermissions: not authorized")
 
-	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	deployer := params.MustGetAgentID(ParamDeployer)
+
+	collections.NewMap(ctx.State(), VarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
 	return nil, nil
 }
@@ -414,17 +339,13 @@ func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Input:
 //  - ParamDeployer coretypes.AgentID
 func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if !CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()) {
-		return nil, fmt.Errorf("root.revokeDeployer: not authorized")
-	}
-	deployer, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamDeployer))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'deployer' undefined")
-	}
-	collections.NewMap(ctx.State(), VarDeployAuthorisations).MustDelAt(deployer.Bytes())
+	a := coreutil.NewAssert(ctx.Log())
+	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.revokeDeployPermissions: not authorized")
+
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	deployer := params.MustGetAgentID(ParamDeployer)
+
+	collections.NewMap(ctx.State(), VarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
 }

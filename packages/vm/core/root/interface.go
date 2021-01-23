@@ -56,7 +56,7 @@ const (
 	VarChainOwnerIDDelegated = "n"
 	VarContractRegistry      = "r"
 	VarDescription           = "d"
-	VarDeployAuthorisations  = "dep"
+	VarDeployPermissions     = "dep"
 )
 
 // param variables

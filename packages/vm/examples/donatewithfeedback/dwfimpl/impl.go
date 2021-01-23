@@ -149,7 +149,7 @@ func withdraw(ctx coretypes.Sandbox) error {
 	bal := ctx.Balance(balance.ColorIOTA)
 	withdrawSum, amountGiven, err := codec.DecodeInt64(params.MustGet(donatewithfeedback.VarReqWithdrawSum))
 	if err != nil {
-		// the error from GetInt64 means binary data sent as a value of the variable
+		// the error from MustGetInt64 means binary data sent as a value of the variable
 		// cannot be interpreted as int64
 		// return everything TODO RefundAll function ?
 		sender := ctx.Caller()
