@@ -44,24 +44,19 @@ _caller_ (either an ordinary wallet or another smart contract) and authorizes
 the call.  For example, a call to the `withdraw` function will only be
 authorized if called from the _agent ID_ of the owner of the account.
 
-The two most important functions of the `accounts` contract are:
+The most important functions of the `accounts` contract are:
 
-- `deposit`. Allows the caller to deposit its own funds on the chain.
-- `withdraw`. Allows the caller to take back its funds from the on-chain account. If the caller
-  is a wallet owned by an ordinary address, this means sending the funds from the on-chain
-  account back to the address.
+- `deposit`. Allows the caller to deposit its own funds to any target account on the chain.
+- `withdrawToAddress`. Allows a L1 address (a wallet) to take funds from its on-chain account back to the address. 
+- `withdrawToChain`. Allows a smart contract take back its funds from another chain to its native chain. 
 
 By sending requests to the `accounts` contract on a chain, the sender is in
-full control on its on-chain funds. Nobody else can move those funds because
-the state of the chain can be modified only by the smart contract under the
-consensus of the chain's committee of validators.
+full control on its on-chain funds. 
 
-The `Sandbox` interface provides two methods for a smart contract to interact
-with accounts (behind scenes it results in direct calls or on-tangle requests
-to the `accounts` smart contract):
+The `Sandbox` interface provides `TransferToAddress` method for the smart contract 
+to transfer its funds to any address on the Tangle.
 
-- `TransferToAddress` allows the smart contract to transfer its funds to any address on the Tangle
-- `TransferCrossChain` allows the smart contract to transfer its funds to any on-chain account on any chain.
+For more information see [accounts contract](../tutorial/accounts.md).
 
 ## How secure are the on-chain accounts?
 
@@ -69,12 +64,10 @@ On-chain accounts are as secure as the chain they are residing on.
 
 ## Node fees
 
-The retainment of node fees uses on-chain accounts following this logic:
+The node fees are charged by using the following logic:
 
 - if fees are enabled, they are accrued to the on-chain account of
   `ChainOwnerID`, the _agent ID_ that represents the owner of the chain.
 - if fees are disabled, the request tokens (1 mandatory token contained in each request)
   are always accrued to the on-chain account controlled by the sender of the request.
-  The requester may withdraw at any time. If never withdrawn and deposited separately,
-  the account will contain a number of iotas equal to the numebr of requests sent by
-  that requester.
+  The requester may withdraw it at any time. 

@@ -14,7 +14,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
 )
 
-// context for one request
+// VMContext represents state of the chain during one run of the VM while processing
+// a batch of requests. VMContext object mutates with each request in the bathc.
+// The VMContext is created from immutable vm.VMTask object and UTXO state of the
+// chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
 	chainID      coretypes.ChainID
@@ -29,18 +32,17 @@ type VMContext struct {
 	feeColor           balance.Color
 	ownerFee           int64
 	validatorFee       int64
-	// transfer
-	remainingAfterFees coretypes.ColoredBalances
 	// request context
-	entropy        hashing.HashValue // mutates with each request
-	reqRef         vm.RequestRefWithFreeTokens
-	reqHname       coretypes.Hname
-	contractRecord *root.ContractRecord
-	timestamp      int64
-	stateUpdate    state.StateUpdate
-	lastError      error     // mutated
-	lastResult     dict.Dict // mutated. Used only by 'alone'
-	callStack      []*callContext
+	remainingAfterFees coretypes.ColoredBalances
+	entropy            hashing.HashValue // mutates with each request
+	reqRef             vm.RequestRefWithFreeTokens
+	reqHname           coretypes.Hname
+	contractRecord     *root.ContractRecord
+	timestamp          int64
+	stateUpdate        state.StateUpdate
+	lastError          error     // mutated
+	lastResult         dict.Dict // mutated. Used only by 'solo'
+	callStack          []*callContext
 }
 
 type callContext struct {
@@ -51,11 +53,7 @@ type callContext struct {
 	transfer         coretypes.ColoredBalances // transfer passed
 }
 
-// NewVMContext:
-// - creates state block in the tx builder, including moving the SC token
-// - handles request tokens by moving them either to the
-// reward address or sending it back to the requester
-// All request tokens are handled for the whole block
+// NewVMContext a constructor
 func NewVMContext(task *vm.VMTask, txb *statetxbuilder.Builder) (*VMContext, error) {
 	ret := &VMContext{
 		processors:   task.Processors,
