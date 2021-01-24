@@ -110,7 +110,8 @@ func donate(ctx coretypes.Sandbox) error {
 	if len(di.Error) != 0 && donated > 0 {
 		// if error occurred, return all donated tokens back to the sender
 		// in this case error message will be recorded in the donation record
-		ctx.MoveTokens(sender, balance.ColorIOTA, donated)
+
+		//ctx.MoveTokens(sender, balance.ColorIOTA, donated)
 		di.Amount = 0
 	}
 	// store donation info record in the state (append to the timestamped log)
@@ -152,9 +153,10 @@ func withdraw(ctx coretypes.Sandbox) error {
 		// the error from MustGetInt64 means binary data sent as a value of the variable
 		// cannot be interpreted as int64
 		// return everything TODO RefundAll function ?
-		sender := ctx.Caller()
-		sent := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
-		ctx.MoveTokens(sender, balance.ColorIOTA, sent)
+		//
+		//sender := ctx.Caller()
+		//sent := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
+		//ctx.MoveTokens(sender, balance.ColorIOTA, sent)
 		return fmt.Errorf("DonateWithFeedback: withdraw wrong argument %v", err)
 	}
 	// determine how much we can withdraw

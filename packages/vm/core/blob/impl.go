@@ -3,6 +3,8 @@ package blob
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -25,10 +27,9 @@ func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
 	blobHash, kSorted, values := mustGetBlobHash(params)
 
 	directory := GetDirectory(state)
-	if directory.MustHasAt(blobHash[:]) {
-		// blob already exists
-		return nil, fmt.Errorf("blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
-	}
+	coreutil.NewAssert(ctx.Log()).Require(!directory.MustHasAt(blobHash[:]),
+		"blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
+
 	// get a record by blob hash
 	blbValues := GetBlobValues(state, blobHash)
 	blbSizes := GetBlobSizes(state, blobHash)
@@ -52,23 +53,17 @@ func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
 	directory.MustSetAt(blobHash[:], EncodeSize(totalSize))
 
 	ctx.Event(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes))
-
-	ctx.Log().Debugf("blob.storeBlob.success hash = %s", blobHash.String())
 	return ret, nil
 }
 
 // getBlobInfo return lengths of all fields in the blob
 func getBlobInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
-	state := ctx.State()
-	blobHash, ok, err := codec.DecodeHashValue(ctx.Params().MustGet(ParamHash))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'blob hash' not found")
-	}
-	blbSizes := GetBlobSizesR(state, *blobHash)
+
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	blobHash := params.MustGetHashValue(ParamHash)
+
+	blbSizes := GetBlobSizesR(ctx.State(), blobHash)
 	ret := dict.New()
 	blbSizes.MustIterate(func(field []byte, value []byte) bool {
 		ret.Set(kv.Key(field), value)
@@ -81,24 +76,15 @@ func getBlobField(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
 
-	blobHash, ok, err := codec.DecodeHashValue(ctx.Params().MustGet(ParamHash))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("paremeter 'blob hash' not found")
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	blobHash := params.MustGetHashValue(ParamHash)
+	field := params.MustGetBytes(ParamField)
 
-	field := ctx.Params().MustGet(ParamField)
-	if field == nil {
-		return nil, fmt.Errorf("parameter 'blob field' not found")
-	}
-
-	blbValues := GetBlobValuesR(state, *blobHash)
-	if blbValues.MustLen() == 0 {
+	blobValues := GetBlobValuesR(state, blobHash)
+	if blobValues.MustLen() == 0 {
 		return nil, fmt.Errorf("blob with hash %s has not been found", blobHash.String())
 	}
-	value := blbValues.MustGetAt(field)
+	value := blobValues.MustGetAt(field)
 	if value == nil {
 		return nil, fmt.Errorf("'blob field %s value not found", string(field))
 	}

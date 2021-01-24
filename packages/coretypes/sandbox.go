@@ -51,18 +51,10 @@ type Sandbox interface {
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col balance.Color) int64
 
-	// MoveTokens moves specified colored tokens to the target account on the same chain
-	// Deprecated: equivalent to calling "deposit" to "accounts" on the same chain
-	MoveTokens(target AgentID, col balance.Color, amount int64) bool
-
 	// Moving tokens outside of the current chain
 	// TransferToAddress send tokens to the L1 ledger address
 	TransferToAddress(addr address.Address, transfer ColoredBalances) bool
 
-	// TransferCrossChain send funds to the targetAgentID account cross chain
-	// syntactic sugar for sending "deposit" request to the "accounts" contract on the target chain
-	// Deprecated: it is just a syntactic sugar for PostRequest "deposit" to accounts
-	TransferCrossChain(targetAgentID AgentID, targetChainID ChainID, transfer ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	PostRequest(par PostRequestParams) bool
 

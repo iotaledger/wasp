@@ -19,7 +19,3 @@ func (s *sandbox) Balance(col balance.Color) int64 {
 func (s *sandbox) Balances() coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
-
-func (s *sandbox) MoveTokens(target coretypes.AgentID, col balance.Color, amount int64) bool {
-	return s.vmctx.DoMoveBalance(target, col, amount)
-}

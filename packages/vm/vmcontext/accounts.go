@@ -5,8 +5,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -20,10 +18,6 @@ func (vmctx *VMContext) GetBalance(col balance.Color) int64 {
 
 func (vmctx *VMContext) GetMyBalances() coretypes.ColoredBalances {
 	return vmctx.getMyBalances()
-}
-
-func (vmctx *VMContext) DoMoveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool {
-	return vmctx.moveBalance(target, col, amount)
 }
 
 // TransferToAddress includes output of colored tokens into the transaction
@@ -42,25 +36,4 @@ func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer c
 		}
 	}
 	return vmctx.txBuilder.TransferToAddress(targetAddr, transfer) == nil
-}
-
-// TransferCrossChain moves the whole transfer to another chain to the target account
-// 1 request token should not be included into the transfer parameter but it is transferred automatically
-// as a request token from the caller's account on top of specified transfer. It will be taken as a fee or accrued
-// to the caller's account
-// node fee is deducted from the transfer by the target
-func (vmctx *VMContext) TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool {
-	if targetChainID == vmctx.ChainID() {
-		return false
-	}
-	// the transfer is performed by the accountsc contract on another chain
-	// it deposits received funds to the target on behalf of the caller
-	par := dict.New()
-	par.Set(accounts.ParamAgentID, codec.EncodeAgentID(targetAgentID))
-	return vmctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: coretypes.NewContractID(targetChainID, accounts.Interface.Hname()),
-		EntryPoint:       coretypes.Hn(accounts.FuncDeposit),
-		Params:           par,
-		Transfer:         transfer,
-	})
 }

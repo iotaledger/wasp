@@ -214,9 +214,9 @@ func MustCheckLedger(state kv.KVStore, checkpoint string) {
 	}
 }
 
-func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, event string) dict.Dict {
+func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
 	balances := getAccountBalances(account)
-	ctx.Log().Debugf("%s. balance = %s\n", event, cbalances.NewFromMap(balances).String())
+	ctx.Log().Debugf("%s. balance = %s\n", tag, cbalances.NewFromMap(balances).String())
 	return EncodeBalances(balances)
 }
 

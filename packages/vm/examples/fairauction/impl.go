@@ -509,7 +509,7 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 	}
 
 	var winner *BidInfo
-	var winnerIndex int
+	//var winnerIndex int
 
 	// SC owner takes OwnerMargin (promille) fee from either minimum bid or from winning sum but not less than 1i
 	ownerFee := (ai.MinimumBid * ai.OwnerMargin) / 1000
@@ -537,12 +537,12 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 			return winners[i].When < winners[j].When
 		})
 		winner = winners[0]
-		for i, bi := range ai.Bids {
-			if bi == winner {
-				winnerIndex = i
-				break
-			}
-		}
+		//for i, bi := range ai.Bids {
+		//	if bi == winner {
+		//		//winnerIndex = i
+		//		break
+		//	}
+		//}
 	}
 
 	// take fee for the smart contract owner TODO
@@ -551,39 +551,41 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 
 	if winner != nil {
 		// send sold tokens to the winner
-		ctx.MoveTokens(ai.Bids[winnerIndex].Bidder, ai.Color, ai.NumTokens)
-		// send winning amount and return deposit sum less fees to the owner of the auction
-		ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
-
-		for i, bi := range ai.Bids {
-			if i != winnerIndex {
-				// return staked sum to the non-winner
-				ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total)
-			}
-		}
+		//
+		//ctx.MoveTokens(ai.Bids[winnerIndex].Bidder, ai.Color, ai.NumTokens)
+		//// send winning amount and return deposit sum less fees to the owner of the auction
+		//ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
+		//
+		//for i, bi := range ai.Bids {
+		//	if i != winnerIndex {
+		//		// return staked sum to the non-winner
+		//		ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total)
+		//	}
+		//}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. Winning bid: %di", col.String(), winner.Total))
 
 		ctx.Event(fmt.Sprintf("finalizeAuction: winner is %s, winning amount = %d", winner.Bidder.String(), winner.Total))
 	} else {
 		// return unsold tokens to auction owner
-		if ctx.MoveTokens(ai.AuctionOwner, ai.Color, ai.NumTokens) {
-			ctx.Event(fmt.Sprintf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens))
-		}
 
-		// return deposit less fees less 1 iota
-		if ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
-			ctx.Event(fmt.Sprintf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee))
-		}
+		//if ctx.MoveTokens(ai.AuctionOwner, ai.Color, ai.NumTokens) {
+		//	ctx.Event(fmt.Sprintf("returned unsold tokens to auction owner. %s: %d", ai.Color.String(), ai.NumTokens))
+		//}
+		//
+		//// return deposit less fees less 1 iota
+		//if ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
+		//	ctx.Event(fmt.Sprintf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee))
+		//}
 
 		// return bids to bidders
-		for _, bi := range ai.Bids {
-			if ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total) {
-				ctx.Event(fmt.Sprintf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String()))
-			} else {
-				avail := ctx.Balance(balance.ColorIOTA)
-				ctx.Event(fmt.Sprintf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail))
-			}
-		}
+		//for _, bi := range ai.Bids {
+		//	if ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total) {
+		//		ctx.Event(fmt.Sprintf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String()))
+		//	} else {
+		//		avail := ctx.Balance(balance.ColorIOTA)
+		//		ctx.Event(fmt.Sprintf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail))
+		//	}
+		//}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. No winner.", col.String()))
 
 		ctx.Event(fmt.Sprintf("finalizeAuction: winner wasn't selected out of %d bids", len(ai.Bids)))
