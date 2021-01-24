@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -20,21 +22,18 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamAgentID
 func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("getBalance")
-	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
+	ctx.Log().Debugf("accounts.getBalance")
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	aid, err := params.GetAgentID(ParamAgentID)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		return nil, ErrParamWrongOrNotFound
-	}
-
 	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
 }
 
 // getTotalAssets returns total colored balances controlled by the chain
 func getTotalAssets(ctx coretypes.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("getTotalAssets")
+	ctx.Log().Debugf("accounts.getTotalAssets")
 	return getAccountBalanceDict(ctx, getTotalAssetsAccountR(ctx.State()), "getTotalAssets"), nil
 }
 
@@ -49,23 +48,20 @@ func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit on own account
 //   in case ParamAgentID. == ctx.Caller() and it is a call, it means NOP
 func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
+
 	state := ctx.State()
 	MustCheckLedger(state, "accounts.deposit.begin")
 	defer MustCheckLedger(state, "accounts.deposit.exit")
 
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
-	targetAgentID := ctx.Caller()
-	aid, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		targetAgentID = aid
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	targetAgentID := params.MustGetAgentID(ParamAgentID, ctx.Caller())
+
 	// funds currently are at the disposition of accounts, they are moved to the target
-	if !MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer()) {
-		return nil, fmt.Errorf("failed to deposit to %s", ctx.Caller().String())
-	}
+	succ := MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer())
+	coreutil.NewAssert(ctx.Log()).Require(succ,
+		"internal error: failed to deposit to %s", ctx.Caller().String())
+
 	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, ctx.IncomingTransfer().String())
 	return nil, nil
 }
@@ -77,10 +73,11 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	MustCheckLedger(state, "accounts.withdrawToAddress.begin")
 	defer MustCheckLedger(state, "accounts.withdrawToAddress.exit")
 
+	a := coreutil.NewAssert(ctx.Log())
+
 	caller := ctx.Caller()
-	if !caller.IsAddress() {
-		ctx.Log().Panicf("caller must be and address")
-	}
+	a.Require(caller.IsAddress(), "caller must be an address")
+
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
 		// empty balance, nothing to withdraw
@@ -88,15 +85,19 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	ctx.Log().Debugf("accounts.withdrawToAddress.begin: caller agentID: %s myContractId: %s",
 		caller.String(), ctx.ContractID().String())
-	send := cbalances.NewFromMap(bals)
+
+	sendTokens := cbalances.NewFromMap(bals)
 	addr := caller.MustAddress()
-	if !DebitFromAccount(state, caller, send) {
-		return nil, fmt.Errorf("accounts.withdrawToAddress.fail. Inconsistency 2: DebitFromAccount failed")
-	}
-	if !ctx.TransferToAddress(addr, send) {
-		return nil, fmt.Errorf("accounts.withdrawToAddress.fail: TransferToAddress failed")
-	}
-	ctx.Log().Debugf("accounts.withdrawToAddress.success. Sent to address %s -- %s", addr.String(), send.String())
+
+	// remove tokens from the chain ledger
+	a.Require(DebitFromAccount(state, caller, sendTokens),
+		"accounts.withdrawToAddress.inconsistency. failed to remove tokens from the chain")
+	// send tokens to address
+	a.Require(ctx.TransferToAddress(addr, sendTokens),
+		"accounts.withdrawToAddress.inconsistency: failed to transfer tokens to address")
+
+	ctx.Log().Debugf("accounts.withdrawToAddress.success. Sent to address %s -- %s",
+		addr.String(), sendTokens.String())
 	return nil, nil
 }
 
@@ -106,13 +107,14 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	MustCheckLedger(state, "accounts.withdrawToChain.begin")
 	defer MustCheckLedger(state, "accounts.withdrawToChain.exit")
 
+	a := coreutil.NewAssert(ctx.Log())
+
 	caller := ctx.Caller()
 	ctx.Log().Debugf("accounts.withdrawToChain.begin: caller agentID: %s myContractId: %s",
 		caller.String(), ctx.ContractID().String())
 
-	if caller.IsAddress() {
-		ctx.Log().Panicf("caller must be a smart contract")
-	}
+	a.Require(!caller.IsAddress(), "caller must be a smart contract")
+
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
 		// empty balance, nothing to withdraw
@@ -124,13 +126,13 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 		// no need to move anything on the same chain
 		return nil, nil
 	}
-	// take to tokens here
+
+	// take to tokens here to 'accounts' from the caller
 	succ := MoveBetweenAccounts(ctx.State(), caller, coretypes.NewAgentIDFromContractID(ctx.ContractID()), toWithdraw)
-	if !succ {
-		ctx.Log().Panicf("accounts.withdrawToChain.failed to post 'deposit' request")
-	}
+	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
+
 	// TODO accounts and other core contracts don't need tokens
-	//  possible policy: if caller is core contract, accrue it all to the chain owner
+	//  possible policy: if caller is a core contract, accrue it all to the chain owner
 	succ = ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: Interface.ContractID(callerContract.ChainID()),
 		EntryPoint:       coretypes.Hn(FuncDeposit),
@@ -139,9 +141,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 		}),
 		Transfer: toWithdraw,
 	})
-	if !succ {
-		return nil, fmt.Errorf("accounts.withdrawToChain.failed to post 'deposit' request")
-	}
+	a.Require(succ, "accounts.withdrawToChain.inconsistency: failed to post 'deposit' request")
 	return nil, nil
 }
 

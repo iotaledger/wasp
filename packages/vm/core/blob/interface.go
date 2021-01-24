@@ -7,7 +7,6 @@ import (
 
 const (
 	Name        = "blob"
-	Version     = "0.1"
 	description = "Blob Contract"
 )
 
@@ -39,7 +38,6 @@ const (
 	VarFieldProgramBinary      = "p"
 	VarFieldVMType             = "v"
 	VarFieldProgramDescription = "d"
-	VarFieldProgramSource      = "s"
 
 	// function names
 	FuncGetBlobInfo  = "getBlobInfo"

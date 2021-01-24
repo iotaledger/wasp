@@ -9,6 +9,9 @@ import (
 )
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+	if p, err := ctx.Params().Get(ParamFail); err == nil && p != nil {
+		return nil, fmt.Errorf("failing on purpose")
+	}
 	return nil, nil
 }
 

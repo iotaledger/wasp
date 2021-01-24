@@ -1,9 +1,9 @@
 package eventlog
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -20,12 +20,13 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
 func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
-	contractName, err := getHnameParameter(ctx.Params())
+	params := kvdecoder.New(ctx.Params())
+	contractHname, err := params.GetHname(ParamContractHname)
 	if err != nil {
 		return nil, err
 	}
 	ret := dict.New()
-	thelog := collections.NewTimestampedLogReadOnly(ctx.State(), kv.Key(contractName.Bytes()))
+	thelog := collections.NewTimestampedLogReadOnly(ctx.State(), kv.Key(contractHname.Bytes()))
 	ret.Set(ParamNumRecords, codec.EncodeInt64(int64(thelog.MustLen())))
 	return ret, nil
 }
@@ -38,32 +39,25 @@ func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 //  - ParamToTs To Interval. Defaults to now (if both are missing means all)
 //  - ParamMaxLastRecords Max amount of records that you want to return. Defaults to 50
 func getLogRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
-	contractHname, err := getHnameParameter(ctx.Params())
+	params := kvdecoder.New(ctx.Params())
+
+	contractHname, err := params.GetHname(ParamContractHname)
 	if err != nil {
 		return nil, err
 	}
-	maxLast, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamMaxLastRecords))
+	maxLast, err := params.GetInt64(ParamMaxLastRecords, DefaultMaxNumberOfRecords)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		// taking default
-		maxLast = DefaultMaxNumberOfRecords
-	}
-	fromTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamFromTs))
+	fromTs, err := params.GetInt64(ParamFromTs, 0)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		fromTs = 0
-	}
-	toTs, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamToTs))
+	toTs, err := params.GetInt64(ParamToTs, ctx.GetTimestamp())
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		toTs = ctx.GetTimestamp()
-	}
+
 	theLog := collections.NewTimestampedLogReadOnly(ctx.State(), kv.Key(contractHname.Bytes()))
 	tts := theLog.MustTakeTimeSlice(fromTs, toTs)
 	if tts.IsEmpty() {
@@ -78,16 +72,4 @@ func getLogRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 		a.MustPush(s)
 	}
 	return ret, nil
-}
-
-// getHnameParameter internal utility function to parse and validate params
-func getHnameParameter(params dict.Dict) (coretypes.Hname, error) {
-	contractName, ok, err := codec.DecodeHname(params.MustGet(ParamContractHname))
-	if err != nil {
-		return 0, err
-	}
-	if !ok {
-		return 0, fmt.Errorf("parameter 'contractHname' not found")
-	}
-	return contractName, nil
 }

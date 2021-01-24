@@ -15,7 +15,6 @@ import (
 
 const (
 	Name        = "root"
-	Version     = "0.1"
 	description = "Root Contract"
 )
 

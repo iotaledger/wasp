@@ -5,6 +5,7 @@ package sandbox
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -77,10 +78,6 @@ func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretyp
 	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
 
-func (s *sandbox) TransferCrossChain(targetAgentID coretypes.AgentID, targetChainID coretypes.ChainID, transfer coretypes.ColoredBalances) bool {
-	return s.vmctx.TransferCrossChain(targetAgentID, targetChainID, transfer)
-}
-
 func (s *sandbox) PostRequest(par coretypes.PostRequestParams) bool {
 	return s.vmctx.PostRequest(par)
 }
@@ -93,4 +90,16 @@ func (s *sandbox) Event(msg string) {
 	s.Log().Infof("eventlog::%s -> '%s'", s.vmctx.CurrentContractHname(), msg)
 	s.vmctx.StoreToEventLog(s.vmctx.CurrentContractHname(), []byte(msg))
 	s.vmctx.EventPublisher().Publish(msg)
+}
+
+func (s *sandbox) IncomingTransfer() coretypes.ColoredBalances {
+	return s.vmctx.GetIncoming()
+}
+
+func (s *sandbox) Balance(col balance.Color) int64 {
+	return s.vmctx.GetBalance(col)
+}
+
+func (s *sandbox) Balances() coretypes.ColoredBalances {
+	return s.vmctx.GetMyBalances()
 }

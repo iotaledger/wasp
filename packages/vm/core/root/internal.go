@@ -8,11 +8,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 // FindContract is an internal utility function which finds a contract in the KVStore
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
-// It is not exposed to the sandbox
+// It is not directly exposed to the sandbox
 func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecord, error) {
 	contractRegistry := collections.NewMapReadOnly(state, VarContractRegistry)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
@@ -32,54 +33,20 @@ func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecor
 	return ret, nil
 }
 
-// GetChainInfo return global variables of the chain
-func GetChainInfo(state kv.KVStoreReader) (*ChainInfo, error) {
-	ret := &ChainInfo{}
-	var err error
-	ret.ChainID, _, err = codec.DecodeChainID(state.MustGet(VarChainID))
-	if err != nil {
-		return nil, err
+// MustGetChainInfo return global variables of the chain
+func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
+	d := kvdecoder.New(state)
+	ret := ChainInfo{
+		ChainID:             d.MustGetChainID(VarChainID),
+		ChainOwnerID:        d.MustGetAgentID(VarChainOwnerID),
+		ChainColor:          d.MustGetColor(VarChainColor),
+		ChainAddress:        d.MustGetAddress(VarChainAddress),
+		Description:         d.MustGetString(VarDescription),
+		FeeColor:            d.MustGetColor(VarFeeColor, balance.ColorIOTA),
+		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),
+		DefaultValidatorFee: d.MustGetInt64(VarDefaultValidatorFee, 0),
 	}
-	ret.ChainOwnerID, _, err = codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
-	if err != nil {
-		return nil, err
-	}
-	ret.ChainColor, _, err = codec.DecodeColor(state.MustGet(VarChainColor))
-	if err != nil {
-		return nil, err
-	}
-	ret.ChainAddress, _, err = codec.DecodeAddress(state.MustGet(VarChainAddress))
-	if err != nil {
-		return nil, err
-	}
-	ret.Description, _, err = codec.DecodeString(state.MustGet(VarDescription))
-	if err != nil {
-		return nil, err
-	}
-	feeColor, ok, err := codec.DecodeColor(state.MustGet(VarFeeColor))
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		ret.FeeColor = feeColor
-	} else {
-		ret.FeeColor = balance.ColorIOTA
-	}
-	defaultOwnerFee, ok, err := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		ret.DefaultOwnerFee = defaultOwnerFee
-	}
-	defaultValidatorFee, ok, err := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		ret.DefaultValidatorFee = defaultValidatorFee
-	}
-	return ret, nil
+	return ret
 }
 
 // GetFeeInfo is an internal utility function which returns fee info for the contract

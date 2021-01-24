@@ -102,6 +102,7 @@ const (
 	VarContractNameDeployed = "exampleDeployTR"
 
 	// parameters
+	ParamFail            = "initFailParam"
 	ParamAddress         = "address"
 	ParamChainID         = "chainid"
 	ParamChainOwnerID    = "chainOwnerID"

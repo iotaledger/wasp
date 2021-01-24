@@ -25,12 +25,13 @@ import (
 // - stores chain ID and chain description in the state
 // - sets state ownership to the caller
 // - creates record in the registry for the 'root' itself
-// - deploys other core contracts: 'accountsc', 'blob' by creating records in the registry and calling constructors
+// - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
 // Input:
 // - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
+// - ParamChainColor balance.Color
+// - ParamChainAddress address.Address
 // - ParamDescription string defaults to "N/A"
 // - ParamFeeColor balance.Color fee color code. Defaults to IOTA color. It cannot be changed
-// - ParamOwnerFee int64 globally set default fee value. Defaults to 0
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	state := ctx.State()
@@ -49,8 +50,6 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	chainDescription := params.MustGetString(ParamDescription, "N/A")
 	feeColor := params.MustGetColor(ParamFeeColor, balance.ColorIOTA)
 	feeColorSet := feeColor != balance.ColorIOTA
-	defaultFee := params.MustGetInt64(ParamOwnerFee, 0)
-	defaultFeeSet := defaultFee > 0
 
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
@@ -82,14 +81,6 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if feeColorSet {
 		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
-	if defaultFeeSet {
-		if defaultFee < 0 {
-			defaultFee = 0
-		}
-		if defaultFee > 0 {
-			state.Set(VarDefaultOwnerFee, codec.EncodeInt64(defaultFee))
-		}
-	}
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname().String())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname().String())
@@ -102,7 +93,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // If call to the constructor returns an error or an other error occurs,
 // removes smart contract form the registry as if it was never attempted to deploy
 // Inputs:
-// - ParamName string, the unique name of the contract in the chain. Latter used as a hname
+// - ParamName string, the unique name of the contract in the chain. Later used as hname
 // - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
@@ -117,6 +108,8 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 	progHash := params.MustGetHashValue(ParamProgramHash)
 	description := params.MustGetString(ParamDescription, "N/A")
 	name := params.MustGetString(ParamName)
+	a.Require(name != "", "wrong name")
+
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
 	for key, value := range ctx.Params() {
@@ -172,10 +165,7 @@ func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
 func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
-	info, err := GetChainInfo(ctx.State())
-	if err != nil {
-		return nil, err
-	}
+	info := MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))

@@ -358,12 +358,13 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 		// move tokens to itself.
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
-		agent := coretypes.NewAgentIDFromContractID(ctx.ContractID())
-		if !ctx.MoveTokens(agent, balance.ColorIOTA, totalLockedAmount) {
-			// inconsistency. A disaster
-			ctx.Event(fmt.Sprintf("$$$$$$$$$$ something went wrong 1"))
-			ctx.Log().Panicf("MoveTokens failed")
-		}
+
+		//agent := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+		//if !ctx.MoveTokens(agent, balance.ColorIOTA, totalLockedAmount) {
+		//	// inconsistency. A disaster
+		//	ctx.Event(fmt.Sprintf("$$$$$$$$$$ something went wrong 1"))
+		//	ctx.Log().Panicf("MoveTokens failed")
+		//}
 	}
 
 	// distribute total staked amount to players
@@ -448,9 +449,9 @@ func distributeLockedAmount(ctx coretypes.Sandbox, bets []*BetInfo, totalLockedA
 		ctx.Event(fmt.Sprintf("sending reward iotas %d to the winner %s. Available iotas: %d",
 			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available))
 
-		if !ctx.MoveTokens(finalWinners[i], balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
-			return false
-		}
+		//if !ctx.MoveTokens(finalWinners[i], balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
+		//	return false
+		//}
 	}
 	return true
 }

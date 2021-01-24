@@ -8,7 +8,6 @@ import (
 
 const (
 	Name        = "accounts"
-	Version     = "0.1"
 	description = "Chain account ledger contract"
 )
 
@@ -43,9 +42,7 @@ const (
 	FuncAccounts          = "accounts"
 
 	ParamAgentID = "a"
-	ParamColor   = "c"
 	ParamAmount  = "t"
-	ParamChainID = "i"
 )
 
 var (
