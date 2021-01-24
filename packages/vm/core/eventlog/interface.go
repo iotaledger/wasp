@@ -7,7 +7,6 @@ import (
 
 const (
 	Name        = "eventlog"
-	Version     = "0.1"
 	description = "Event log Contract"
 )
 

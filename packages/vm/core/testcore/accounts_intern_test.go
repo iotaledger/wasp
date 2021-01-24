@@ -14,7 +14,6 @@ import (
 
 func TestBasic(t *testing.T) {
 	t.Logf("Name: %s", accounts.Name)
-	t.Logf("Version: %s", accounts.Version)
 	t.Logf("Full name: %s", accounts.Interface.Name)
 	t.Logf("Description: %s", accounts.Interface.Description)
 	t.Logf("Program hash: %s", accounts.Interface.ProgramHash.String())
