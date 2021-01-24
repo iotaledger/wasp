@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/mr-tron/base58"
 )
@@ -55,6 +56,8 @@ func (o *ScUtility) Exists(keyId int32) bool {
 
 func (o *ScUtility) GetBytes(keyId int32) []byte {
 	switch keyId {
+	case wasmhost.KeyName:
+		return codec.EncodeHname(o.hname)
 	case wasmhost.KeyBase58:
 		return o.base58Decoded
 	case wasmhost.KeyHash:
@@ -66,8 +69,6 @@ func (o *ScUtility) GetBytes(keyId int32) []byte {
 
 func (o *ScUtility) GetInt(keyId int32) int64 {
 	switch keyId {
-	case wasmhost.KeyName:
-		return int64(o.hname)
 	case wasmhost.KeyRandom:
 		if o.random == nil {
 			// need to initialize pseudo-random generator with

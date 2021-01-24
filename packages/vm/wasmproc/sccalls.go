@@ -141,13 +141,19 @@ func (o *ScCallInfo) Invoke(delay int64) {
 }
 
 func (o *ScCallInfo) SetBytes(keyId int32, value []byte) {
+	var err error
 	switch keyId {
 	case wasmhost.KeyChain:
-		var err error
 		o.chainId, err = coretypes.NewChainIDFromBytes(value)
-		if err != nil {
-			o.Panic(err.Error())
-		}
+	case wasmhost.KeyContract:
+		o.contract, _, err = codec.DecodeHname(value)
+	case wasmhost.KeyFunction:
+		o.function, _, err = codec.DecodeHname(value)
+	default:
+		o.invalidKey(keyId)
+	}
+	if err != nil {
+		o.Panic(err.Error())
 	}
 }
 
@@ -163,10 +169,6 @@ func (o *ScCallInfo) SetInt(keyId int32, value int64) {
 			o.Panic("Unexpected delay: %d", value)
 		}
 		o.Invoke(value)
-	case wasmhost.KeyContract:
-		o.contract = coretypes.Hname(value)
-	case wasmhost.KeyFunction:
-		o.function = coretypes.Hname(value)
 	case wasmhost.KeyParams:
 		o.params = int32(value)
 	case wasmhost.KeyTransfers:
