@@ -172,10 +172,7 @@ func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
 func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
-	info, err := GetChainInfo(ctx.State())
-	if err != nil {
-		return nil, err
-	}
+	info := MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))

@@ -56,11 +56,11 @@ func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*roo
 	return ret, true
 }
 
-func (vmctx *VMContext) getChainInfo() (*root.ChainInfo, error) {
+func (vmctx *VMContext) mustGetChainInfo() root.ChainInfo {
 	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.GetChainInfo(vmctx.State())
+	return root.MustGetChainInfo(vmctx.State())
 }
 
 func (vmctx *VMContext) getFeeInfo() (balance.Color, int64, int64) {
