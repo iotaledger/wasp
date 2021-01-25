@@ -14,7 +14,7 @@ import (
 
 const (
 	DEBUG              = false
-	RUN_WASM           = false
+	RUN_WASM           = true
 	WASM_FILE_TESTCORE = "testcore_bg.wasm"
 	WASM_FILE_ERC20    = "erc20_bg.wasm"
 	ERC20_NAME         = "erc20"
@@ -72,8 +72,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.Si
 func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
 	var err error
 	if !RUN_WASM {
-		// only wasm test
-		t.SkipNow()
+		t.Skipf("Only for Wasm tests, always loads %s", WASM_FILE_ERC20)
 	}
 	var userAgentID coretypes.AgentID
 	if user == nil {
