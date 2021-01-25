@@ -29,7 +29,6 @@ const (
 // NetImpl implements a peering.NetworkProvider interface.
 type NetImpl struct {
 	myNetID     string // NetID of this node.
-	myUDPAddr   *net.UDPAddr
 	myUDPConn   *net.UDPConn
 	port        int              // Port to use for peering.
 	peers       map[string]*peer // By NetID
@@ -51,17 +50,12 @@ func NewNetworkProvider(myNetID string, port int, nodeKeyPair *key.Pair, suite S
 		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
 		return nil, err
 	}
-	var myUDPAddr *net.UDPAddr
-	if myUDPAddr, err = net.ResolveUDPAddr("udp", myNetID); err != nil {
-		return nil, err
-	}
 	var myUDPConn *net.UDPConn
-	if myUDPConn, err = net.ListenUDP("udp", myUDPAddr); err != nil {
+	if myUDPConn, err = net.ListenUDP("udp", &net.UDPAddr{Port: port}); err != nil {
 		return nil, err
 	}
 	n := NetImpl{
 		myNetID:     myNetID,
-		myUDPAddr:   myUDPAddr,
 		myUDPConn:   myUDPConn,
 		port:        port,
 		peers:       make(map[string]*peer),
