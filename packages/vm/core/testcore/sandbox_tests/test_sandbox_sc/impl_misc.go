@@ -2,74 +2,60 @@ package test_sandbox_sc
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 // ParamCallOption
 // ParamCallIntParam
-// ParamHname
+// ParamHnameContract
 func callOnChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf(FuncCallOnChain)
-	callOption, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamCallOption))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		ctx.Log().Panicf("callOption not specified")
-	}
-	callDepth, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamValue)
-	}
-	hname, exists, err := codec.DecodeHname(ctx.Params().MustGet(ParamHname))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		// default is self
-		hname = ctx.ContractID().Hname()
-	}
-	counter, exists, err := codec.DecodeInt64(ctx.State().MustGet(VarCounter))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		counter = 0
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	paramIn := params.MustGetInt64(ParamIntParamValue)
+	hnameContract := params.MustGetHname(ParamHnameContract, ctx.ContractID().Hname())
+	hnameEP := params.MustGetHname(ParamHnameEP, coretypes.Hn(FuncCallOnChain))
+
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	counter := state.MustGetInt64(VarCounter, 0)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
 
-	ctx.Log().Infof("call depth = %d, option = %s, hname = %s counter = %d", callDepth, callOption, hname, counter)
-	if callDepth <= 0 {
-		ret := dict.New()
-		ret.Set(VarCounter, codec.EncodeInt64(counter))
-		return ret, nil
-	}
-	callDepth--
+	ctx.Log().Infof("param IN = %d, hnameContract = %s hnameEP = %s counter = %d",
+		paramIn, hnameContract, hnameEP, counter)
 
-	switch callOption {
-	case CallOptionForward:
-		return ctx.Call(hname, coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
-			ParamCallOption:    CallOptionForward,
-			ParamIntParamValue: callDepth,
-		}), nil)
+	return ctx.Call(hnameContract, hnameEP, codec.MakeDict(map[string]interface{}{
+		ParamIntParamValue: paramIn,
+	}), nil)
+}
+
+func getCounter(ctx coretypes.SandboxView) (dict.Dict, error) {
+	ret := dict.New()
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	counter := state.MustGetInt64(VarCounter, 0)
+	ret.Set(VarCounter, codec.EncodeInt64(counter))
+	return ret, nil
+}
+
+func runRecursion(ctx coretypes.Sandbox) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	depth := params.MustGetInt64(ParamIntParamValue)
+	if depth <= 0 {
+		return nil, nil
 	}
-	ctx.Log().Panicf("unknown call option '%s'", callOption)
-	return nil, nil
+	return ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
+		ParamHnameEP:       coretypes.Hn(FuncRunRecursion),
+		ParamIntParamValue: depth - 1,
+	}), nil)
 }
 
 func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
-	callInt, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamValue)
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	a := coreutil.NewAssert(ctx.Log())
+
+	callInt := params.MustGetInt64(ParamIntParamValue)
 	ctx.Log().Infof("fibonacci( %d )", callInt)
 	ret := dict.New()
 	if callInt == 0 || callInt == 1 {
@@ -79,23 +65,16 @@ func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
 	r1, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 1,
 	}))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	r1val, exists, err := codec.DecodeInt64(r1.MustGet(ParamIntParamValue))
-	if err != nil || !exists {
-		ctx.Log().Panicf("err != nil || exists #1: %v. %v", exists, err)
-	}
+	a.RequireNoError(err)
+	result := kvdecoder.New(r1, ctx.Log())
+	r1val := result.MustGetInt64(ParamIntParamValue)
+
 	r2, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 2,
 	}))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	r2val, exists, err := codec.DecodeInt64(r2.MustGet(ParamIntParamValue))
-	if err != nil || !exists {
-		ctx.Log().Panicf("err != nil || !exists #2: %v, %v ", exists, err)
-	}
+	a.RequireNoError(err)
+	result = kvdecoder.New(r2, ctx.Log())
+	r2val := result.MustGetInt64(ParamIntParamValue)
 	ret.Set(ParamIntParamValue, codec.EncodeInt64(r1val+r2val))
 	return ret, nil
 }

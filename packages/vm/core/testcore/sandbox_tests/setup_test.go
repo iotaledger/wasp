@@ -14,7 +14,6 @@ import (
 
 const (
 	DEBUG              = false
-	RUN_WASM           = true
 	WASM_FILE_TESTCORE = "testcore_bg.wasm"
 	WASM_FILE_ERC20    = "erc20_bg.wasm"
 	ERC20_NAME         = "erc20"
@@ -49,10 +48,19 @@ func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureSch
 	return user
 }
 
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) (coretypes.ContractID, int64) {
+func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
+	test(t, false)
+	if len(skipWasm) == 0 || !skipWasm[0] {
+		test(t, true)
+	} else {
+		t.Logf("skipped wasm version of '%s'", t.Name())
+	}
+}
+
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, runWasm bool) (coretypes.ContractID, int64) {
 	var err error
 	var extraToken int64
-	if RUN_WASM {
+	if runWasm {
 		err = chain.DeployWasmContract(user, SandboxSCName, WASM_FILE_TESTCORE)
 		extraToken = 1
 	} else {
@@ -69,10 +77,11 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.Si
 	return deployed, extraToken
 }
 
-func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme) coretypes.ContractID {
+func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, w bool) coretypes.ContractID {
 	var err error
-	if !RUN_WASM {
-		t.Skipf("Only for Wasm tests, always loads %s", WASM_FILE_ERC20)
+	if !w {
+		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WASM_FILE_ERC20)
+		return coretypes.ContractID{}
 	}
 	var userAgentID coretypes.AgentID
 	if user == nil {
@@ -91,20 +100,23 @@ func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureS
 	return deployed
 }
 
-func TestSetup1(t *testing.T) {
+func TestSetup1(t *testing.T) { run2(t, testSetup1) }
+func testSetup1(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil)
+	setupTestSandboxSC(t, chain, nil, w)
 }
 
-func TestSetup2(t *testing.T) {
+func TestSetup2(t *testing.T) { run2(t, testSetup2) }
+func testSetup2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	user := setupDeployer(t, chain)
-	setupTestSandboxSC(t, chain, user)
+	setupTestSandboxSC(t, chain, user, w)
 }
 
-func TestSetup3(t *testing.T) {
+func TestSetup3(t *testing.T) { run2(t, testSetup3) }
+func testSetup3(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	user := setupDeployer(t, chain)
-	setupTestSandboxSC(t, chain, user)
-	setupERC20(t, chain, user)
+	setupTestSandboxSC(t, chain, user, w)
+	setupERC20(t, chain, user, w)
 }

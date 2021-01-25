@@ -25,3 +25,7 @@ func (a assert) Require(cond bool, format string, args ...interface{}) {
 	}
 	a.log.Panicf(format, args...)
 }
+
+func (a assert) RequireNoError(err error) {
+	a.Require(err == nil, fmt.Sprintf("%v", err))
+}

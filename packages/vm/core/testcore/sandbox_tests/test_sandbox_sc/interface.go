@@ -49,6 +49,8 @@ func init() {
 		contract.Func(FuncSetInt, setInt),
 		contract.ViewFunc(FuncGetInt, getInt),
 		contract.ViewFunc(FuncGetFibonacci, getFibonacci),
+		contract.ViewFunc(FuncGetCounter, getCounter),
+		contract.Func(FuncRunRecursion, runRecursion),
 
 		contract.Func(FuncPassTypesFull, passTypesFull),
 		contract.ViewFunc(FuncPassTypesView, passTypesView),
@@ -90,6 +92,8 @@ const (
 	FuncSetInt       = "setInt"
 	FuncGetInt       = "getInt"
 	FuncGetFibonacci = "fibonacci"
+	FuncGetCounter   = "getCounter"
+	FuncRunRecursion = "runRecursion"
 
 	FuncPassTypesFull = "passTypesFull"
 	FuncPassTypesView = "passTypesView"
@@ -110,17 +114,14 @@ const (
 	ParamContractID      = "contractID"
 	ParamAgentID         = "agentID"
 	ParamContractCreator = "contractCreator"
-	ParamCallOption      = "callOption"
 	ParamIntParamName    = "intParamName"
 	ParamIntParamValue   = "intParamValue"
-	ParamHname           = "hname"
+	ParamHnameContract   = "hnameContract"
+	ParamHnameEP         = "hnameEP"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
 	MsgViewPanic         = "========== panic VIEW ========="
 	MsgDoNothing         = "========== doing nothing"
 	MsgPanicUnauthorized = "============== panic due to unauthorized call"
-
-	// call options for FuncCallOnChain
-	CallOptionForward = "forward"
 )
