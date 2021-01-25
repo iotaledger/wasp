@@ -157,11 +157,11 @@ func (vm *WasmVmBase) SaveMemory() {
 		// this vm implementation does not communicate via mem pool
 		return
 	}
-	firstNonZero := 0
+	firstNonZero := -1
 	lastNonZero := 0
 	for i, b := range ptr {
 		if b != 0 {
-			if firstNonZero == 0 {
+			if firstNonZero < 0 {
 				firstNonZero = i
 			}
 			lastNonZero = i
@@ -170,7 +170,7 @@ func (vm *WasmVmBase) SaveMemory() {
 
 	// save copy of initialized data range
 	vm.memoryNonZero = len(ptr)
-	if ptr[firstNonZero] != 0 {
+	if firstNonZero >= 0 {
 		vm.memoryNonZero = firstNonZero
 		size := lastNonZero + 1 - firstNonZero
 		vm.memoryCopy = make([]byte, size)

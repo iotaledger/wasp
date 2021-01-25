@@ -16,6 +16,7 @@ func testTypesFull(t *testing.T, w bool) {
 
 	req := solo.NewCall(SandboxSCName, test_sandbox_sc.FuncPassTypesFull,
 		"string", "string",
+		"string-0", "",
 		"int64", 42,
 		"int64-0", 0,
 		"Hash", hashing.HashStrings("Hash"),
@@ -37,6 +38,7 @@ func testTypesView(t *testing.T, w bool) {
 
 	_, err := chain.CallView(SandboxSCName, test_sandbox_sc.FuncPassTypesView,
 		"string", "string",
+		"string-0", "",
 		"int64", 42,
 		"int64-0", 0,
 		"Hash", hashing.HashStrings("Hash"),

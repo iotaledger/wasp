@@ -31,7 +31,7 @@ func loadBalances(o *ScDict, balances coretypes.ColoredBalances) *ScDict {
 	index := 0
 	balances.IterateDeterministic(func(color balance.Color, balance int64) bool {
 		o.kvStore.Set(kv.Key(color[:]), codec.EncodeInt64(balance))
-		o.kvStore.Set(kv.Key("color." + strconv.Itoa(index)), color[:])
+		o.kvStore.Set(kv.Key("color."+strconv.Itoa(index)), color[:])
 		index++
 		return true
 	})
