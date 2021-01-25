@@ -85,12 +85,12 @@ func (n *Node) GenerateDistributedKey(
 	//
 	// Some validationfor the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
-		return nil, fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold)
+		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}
 	if threshold < peerCount/2+1 {
 		// Quorum t must be larger than half size in order to avoid more than one valid quorum in committee.
 		// For the DKG itself it is enough to have t >= 2
-		return nil, fmt.Errorf("wrong DKG parameters: for N = %d value T must be at least %d", peerCount, peerCount/2+1)
+		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: for N = %d value T must be at least %d", peerCount, peerCount/2+1))
 	}
 	//
 	// Setup network connections.
