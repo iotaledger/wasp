@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -88,6 +89,9 @@ func handleDKSharesPost(c echo.Context) error {
 		time.Duration(req.TimeoutMS)*time.Millisecond,
 	)
 	if err != nil {
+		if _, ok := err.(dkg_pkg.InvalidParamsError); ok {
+			return httperrors.BadRequest(err.Error())
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
