@@ -20,7 +20,7 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.ViewFunc(FuncGetLogRecords, getLogRecords),
+		contract.ViewFunc(FuncGetRecords, getRecords),
 		contract.ViewFunc(FuncGetNumRecords, getNumRecords),
 	})
 }
@@ -35,7 +35,7 @@ const (
 	ParamRecords        = "records"
 
 	// function names
-	FuncGetLogRecords = "getLogRecords"
+	FuncGetRecords    = "getRecords"
 	FuncGetNumRecords = "getNumRecords"
 
 	DefaultMaxNumberOfRecords = 50

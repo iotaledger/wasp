@@ -29,6 +29,6 @@ type SandboxView interface {
 	Call(contractHname Hname, entryPoint Hname, params dict.Dict) (dict.Dict, error)
 	// Balances is colored balances owned by the contract
 	Balances() ColoredBalances
-	// Log interface provides local logging on the machine
+	// Log interface provides local logging on the machine. It includes Panicf method
 	Log() LogInterface
 }
