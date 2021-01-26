@@ -31,14 +31,14 @@ func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-// getLogRecords returns records between timestamp interval for the hname
+// getRecords returns records between timestamp interval for the hname
 // In time descending order
 // Parameters:
 //	- ParamContractHname Filter param, Hname of the contract to view the logs
 //  - ParamFromTs From interval. Defaults to 0
 //  - ParamToTs To Interval. Defaults to now (if both are missing means all)
 //  - ParamMaxLastRecords Max amount of records that you want to return. Defaults to 50
-func getLogRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 
 	contractHname, err := params.GetHname(ParamContractHname)

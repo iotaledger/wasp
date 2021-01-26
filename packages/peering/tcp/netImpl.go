@@ -6,6 +6,7 @@ package tcp
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -159,6 +160,11 @@ func (n *NetImpl) SendMsg(msg *peering.PeerMessage) {
 // IsAlive implements peering.PeerSender for the Self() node.
 func (n *NetImpl) IsAlive() bool {
 	return true // This node is alive.
+}
+
+// Await implements peering.PeerSender for the Self() node.
+func (n *NetImpl) Await(timeout time.Duration) error {
+	return nil // This node is alive.
 }
 
 // Close implements peering.PeerSender for the Self() node.

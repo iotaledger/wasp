@@ -65,7 +65,6 @@ type NetworkProvider interface {
 type GroupProvider interface {
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByNetID(peerNetID string) (uint16, error)
-	PeerIndexByPubKey(peerPub kyber.Point) (uint16, error)
 	SendMsgByIndex(peerIdx uint16, msg *PeerMessage)
 	Broadcast(msg *PeerMessage, includingSelf bool)
 	ExchangeRound(
@@ -85,10 +84,31 @@ type GroupProvider interface {
 
 // PeerSender represents an interface to some remote peer.
 type PeerSender interface {
+
+	// NetID identifies the peer.
 	NetID() string
+
+	// PubKey of the peer is only available, when it is
+	// authenticated, therefore it can return nil, if pub
+	// key is not known yet. You can call await before calling
+	// this function to ensure the public key is already resolved.
 	PubKey() kyber.Point
+
+	// SendMsg works in an asynchronous way, and therefore the
+	// errors are not returned here.
 	SendMsg(msg *PeerMessage)
+
+	// IsAlive indicates, if there is a working connection with the peer.
+	// It is always an approximate state.
 	IsAlive() bool
+
+	// Await for the connection to be established, handshaked, and the
+	// public key resolved.
+	Await(timeout time.Duration) error
+
+	// Close releases the reference to the peer, this informs the network
+	// implementation, that it can disconnect, cleanup resources, etc.
+	// You need to get new reference to the peer (PeerSender) to use it again.
 	Close()
 }
 

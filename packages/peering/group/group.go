@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
-	"go.dedis.ch/kyber/v3"
 )
 
 const NotInGroup uint16 = 0xFFFF
@@ -46,7 +45,7 @@ func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peerin
 
 // PeerIndex implements peering.GroupProvider.
 func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
-	return g.PeerIndexByPubKey(peer.PubKey())
+	return g.PeerIndexByNetID(peer.NetID())
 }
 
 // PeerIndexByNetID implements peering.GroupProvider.
@@ -57,17 +56,6 @@ func (g *groupImpl) PeerIndexByNetID(peerNetID string) (uint16, error) {
 		}
 	}
 	return uint16(NotInGroup), errors.New("peer_not_found_by_net_id")
-}
-
-// PeerIndexByPubKey implements peering.GroupProvider.
-func (g *groupImpl) PeerIndexByPubKey(peerPub kyber.Point) (uint16, error) {
-	for i := range g.nodes {
-		pubKey := g.nodes[i].PubKey()
-		if pubKey != nil && pubKey.Equal(peerPub) {
-			return uint16(i), nil
-		}
-	}
-	return uint16(NotInGroup), errors.New("peer_not_found_by_pub_key")
 }
 
 // SendMsgByIndex implements peering.GroupProvider.

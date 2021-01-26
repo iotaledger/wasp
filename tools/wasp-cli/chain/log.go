@@ -15,7 +15,7 @@ func logCmd(args []string) {
 	if len(args) != 1 {
 		log.Fatal("Usage: %s chain log <name>", os.Args[0])
 	}
-	r, err := SCClient(eventlog.Interface.Hname()).CallView(eventlog.FuncGetLogRecords, codec.MakeDict(map[string]interface{}{
+	r, err := SCClient(eventlog.Interface.Hname()).CallView(eventlog.FuncGetRecords, codec.MakeDict(map[string]interface{}{
 		eventlog.ParamContractHname: codec.EncodeHname(coretypes.Hn(args[0])),
 	}))
 	log.Check(err)
