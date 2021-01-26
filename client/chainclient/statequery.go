@@ -1,3 +1,5 @@
+// +build ignore
+
 package chainclient
 
 import "github.com/iotaledger/wasp/packages/webapi/model/statequery"

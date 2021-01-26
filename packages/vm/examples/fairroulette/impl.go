@@ -1,3 +1,5 @@
+// +build ignore
+
 // FairRoulette is a PoC smart contract for IOTA Smart Contracts and the Wasp node
 // In this package smart contract is implemented as a hardcoded Go program.
 // The program is wrapped into the VM wrapper interfaces and uses exactly the same sandbox interface

@@ -13,14 +13,12 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
 )
 
 type operator struct {
@@ -216,18 +214,4 @@ func (op *operator) getFeeDestination() coretypes.AgentID {
 	// TODO
 	// temporary to the chain owner's account
 	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accounts.Interface.Hname()))
-}
-
-func (op *operator) getMinimumReward() int64 {
-	if _, ok := op.blockIndex(); !ok {
-		return 0
-	}
-	vt, ok, err := codec.DecodeInt64(op.currentState.Variables().MustGet(vmconst.VarNameMinimumReward))
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		return 0
-	}
-	return vt
 }

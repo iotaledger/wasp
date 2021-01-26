@@ -1,3 +1,5 @@
+// +build ignore
+
 // DonateWithFeedback is a smart contract which handles donation account and log of feedback messages
 // sent together with the donations
 package donatewithfeedback
