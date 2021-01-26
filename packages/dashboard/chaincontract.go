@@ -53,7 +53,7 @@ func handleChainContract(c echo.Context) error {
 			return err
 		}
 
-		r, err = callView(chain, eventlog.Interface.Hname(), eventlog.FuncGetLogRecords, codec.MakeDict(map[string]interface{}{
+		r, err = callView(chain, eventlog.Interface.Hname(), eventlog.FuncGetRecords, codec.MakeDict(map[string]interface{}{
 			eventlog.ParamContractHname: codec.EncodeHname(hname),
 		}))
 		if err != nil {

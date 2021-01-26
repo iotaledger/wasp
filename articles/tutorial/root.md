@@ -3,9 +3,8 @@
 The `root` contract is one of 4 [core contracts](coresc.md) on each ISCP chain. 
 Functions of the `root` contract:
 
-- initialize the state of the chain during the deployment of the chain. 
- The part of state initialization is 
-deployment of all 4 core contracts, to make them just usual smart contract from the point of view of the chain user.
+- it is the first smart contract deployed on the chain. It initializes the state of the chain.
+The part of state initialization is deployment of all 4 core contracts.
 
 - be a smart contract factory for the chain: deploy other smart contracts and maintain on-chain registry of smart contracts
 
@@ -20,7 +19,7 @@ Initially both are set to 0.
 The following are the functions / entry points of the `root` contract. Some of them may require authorisation, i.e.
 can only be invoked by specific caller, for example _chain owner_.  
  
-* **init** Constructor. First call to the chain.
+* **init** the constructor. Automatically called immediately after deployment, as the first call.
    * Initializes base values of the chain according to parameters: chainID, chain color, chain address
    * sets _chain owner_ to the caller 
    * sets chain fee color (default is _IOTA color_)

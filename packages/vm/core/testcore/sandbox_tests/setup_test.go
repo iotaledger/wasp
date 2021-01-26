@@ -77,9 +77,9 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.Si
 	return deployed, extraToken
 }
 
-func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, w bool) coretypes.ContractID {
+func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, runWasm bool) coretypes.ContractID {
 	var err error
-	if !w {
+	if !runWasm {
 		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WASM_FILE_ERC20)
 		return coretypes.ContractID{}
 	}

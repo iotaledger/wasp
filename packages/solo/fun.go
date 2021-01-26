@@ -333,7 +333,7 @@ func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
 // It returns records as array in time-descending order.
 // More than 50 records may be retrieved by calling the view directly
 func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
-	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetLogRecords,
+	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),
 	)
 	if err != nil {
