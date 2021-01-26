@@ -3,7 +3,6 @@ package state
 import (
 	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -16,8 +15,6 @@ type VirtualState interface {
 	// index 0 means origin state
 	BlockIndex() uint32
 	ApplyBlockIndex(uint32)
-	// check if state contains record with the given owner address
-	InitiatedBy(*address.Address) bool
 	// timestamp
 	Timestamp() int64
 	// updates state without changing state index

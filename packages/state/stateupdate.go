@@ -10,10 +10,9 @@ import (
 )
 
 type stateUpdate struct {
-	batchIndex uint16
-	requestID  coretypes.RequestID
-	timestamp  int64
-	mutations  buffered.MutationSequence
+	requestID coretypes.RequestID
+	timestamp int64
+	mutations buffered.MutationSequence
 }
 
 func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {

@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path"
 	"testing"
 	"time"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
+	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,21 +102,7 @@ func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretype
 }
 
 func setup(t *testing.T, configPath string) {
-	if testing.Short() {
-		t.Skip("Skipping cluster test in short mode")
-	}
-
-	config := cluster.DefaultConfig()
-	clu = cluster.New(t.Name(), config)
-
-	dataPath := path.Join(os.TempDir(), "wasp-cluster")
-	err := clu.InitDataPath(".", dataPath, true)
-	check(err, t)
-
-	err = clu.Start(dataPath)
-	check(err, t)
-
-	t.Cleanup(clu.Stop)
+	clu = clutest.NewCluster(t)
 }
 
 func setupAndLoad(t *testing.T, name string, description string, nrOfRequests int, expectedMessages map[string]int) {

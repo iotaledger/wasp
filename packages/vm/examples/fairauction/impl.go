@@ -1,3 +1,5 @@
+// +build ignore
+
 // hard coded implementation of the FairAuction smart contract
 // The auction dApp is automatically run by committee, a distributed market for colored tokens
 package fairauction

@@ -12,7 +12,7 @@ func listCmd(args []string) {
 	client := config.WaspClient()
 	chains, err := client.GetChainRecordList()
 	log.Check(err)
-	log.Printf("Total %d chains in wasp node %s\n", len(chains), client.BaseURL())
+	log.Printf("Total %d chain(s) in wasp node %s\n", len(chains), client.BaseURL())
 	showChainList(chains)
 }
 

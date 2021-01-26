@@ -1,3 +1,5 @@
+// +build ignore
+
 // hard coded smart contract code implements DonateWithFeedback
 package dwfimpl
 
