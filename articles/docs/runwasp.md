@@ -4,15 +4,6 @@ Here we describe step by step instructions how to run Wasp nodes on the Pollen n
 
 ## Run Goshimmer with WaspConn
 
-To run a Wasp node you need a Goshimmer instance with the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/wasp/dapps/waspconn)
-plugin. This version of Goshimmer is located in the
-[`wasp` branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp).
-
-The only difference between standard Goshimmer (the `develop` branch) and the
-`wasp` branch is the `WaspConn` plugin, which accepts connections from Wasp
-nodes.
-
 First, clone and compile the Goshimmer version from the `wasp` branch.
 
 ```
@@ -86,17 +77,21 @@ Create an empty directory, copy the [`config.json`](https://github.com/iotaledge
 file, and change it as needed:
 
 ```
-$ mkdir wasp-instance
-$ cp config.json wasp-instance
-$ <edit wasp-instance/config.json>
+$ mkdir wasp-node
+$ cp config.json wasp-node
+$ <edit wasp-node/config.json>
 ```
 
 Finally, start the Wasp node:
 
 ```
-$ cd wasp-instance
+$ cd wasp-node
 $ wasp
 ```
+
+That's it! Repeat this process to launch as many nodes as you want for your
+committee, then use [`wasp-cli`](../../tools/wasp-cli/README.md) to deploy
+smart contracts.
 
 ### Wasp settings
 
