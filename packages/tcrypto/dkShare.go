@@ -99,12 +99,18 @@ func (s *DKShare) Write(w io.Writer) error {
 	if err = util.WriteMarshaled(w, s.SharedPublic); err != nil {
 		return err
 	}
-	for i := uint16(0); i < s.N-1; i++ {
+	if err = util.WriteUint16(w, uint16(len(s.PublicCommits))); err != nil {
+		return err
+	}
+	for i := 0; i < len(s.PublicCommits); i++ {
 		if err = util.WriteMarshaled(w, s.PublicCommits[i]); err != nil {
 			return err
 		}
 	}
-	for i := uint16(0); i < s.N; i++ {
+	if err = util.WriteUint16(w, uint16(len(s.PublicShares))); err != nil {
+		return err
+	}
+	for i := 0; i < len(s.PublicShares); i++ {
 		if err = util.WriteMarshaled(w, s.PublicShares[i]); err != nil {
 			return err
 		}
@@ -119,6 +125,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	var err error
 	var addr address.Address
 	var addrBytes []byte
+	var arrLen uint16
 	if addrBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
@@ -141,20 +148,32 @@ func (s *DKShare) Read(r io.Reader) error {
 	if err = util.ReadMarshaled(r, s.SharedPublic); err != nil {
 		return err
 	}
-	s.PublicCommits = make([]kyber.Point, s.N-1)
-	for i := uint16(0); i < s.N-1; i++ {
+	//
+	// PublicCommits
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	s.PublicCommits = make([]kyber.Point, arrLen)
+	for i := uint16(0); i < arrLen; i++ {
 		s.PublicCommits[i] = s.suite.Point()
 		if err = util.ReadMarshaled(r, s.PublicCommits[i]); err != nil {
 			return err
 		}
 	}
-	s.PublicShares = make([]kyber.Point, s.N)
-	for i := uint16(0); i < s.N; i++ {
+	//
+	// PublicShares
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	s.PublicShares = make([]kyber.Point, arrLen)
+	for i := uint16(0); i < arrLen; i++ {
 		s.PublicShares[i] = s.suite.Point()
 		if err = util.ReadMarshaled(r, s.PublicShares[i]); err != nil {
 			return err
 		}
 	}
+	//
+	// Private share.
 	s.PrivateShare = s.suite.Scalar()
 	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
 		return err
