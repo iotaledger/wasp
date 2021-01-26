@@ -111,7 +111,12 @@ func (n *Node) GenerateDistributedKey(
 		// Take the public keys from the peering network, if they were not specified.
 		peerPubs = make([]kyber.Point, peerCount)
 		for i, n := range netGroup.AllNodes() {
-			peerPubs[i] = n.PubKey()
+			if err = n.Await(timeout); err != nil {
+				return nil, err
+			}
+			if peerPubs[i] = n.PubKey(); peerPubs[i] == nil {
+				return nil, fmt.Errorf("Have no public key for %v", n.NetID())
+			}
 		}
 	}
 	//

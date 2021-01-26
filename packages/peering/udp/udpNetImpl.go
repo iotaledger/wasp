@@ -185,6 +185,11 @@ func (n *NetImpl) IsAlive() bool {
 	return true // This node is alive.
 }
 
+// Await implements peering.PeerSender for the Self() node.
+func (n *NetImpl) Await(timeout time.Duration) error {
+	return nil // This node is alive immediately.
+}
+
 // Close implements peering.PeerSender for the Self() node.
 func (n *NetImpl) Close() {
 	// We will con close the connection of the own node.

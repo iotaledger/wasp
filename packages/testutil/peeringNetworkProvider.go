@@ -5,6 +5,7 @@ package testutil
 
 import (
 	"errors"
+	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -285,6 +286,11 @@ func (p *peeringSender) SendMsg(msg *peering.PeerMessage) {
 // IsAlive implements peering.PeerSender.
 func (p *peeringSender) IsAlive() bool {
 	return true // Not needed in tests.
+}
+
+// Await implements peering.PeerSender.
+func (p *peeringSender) Await(timeout time.Duration) error {
+	return nil
 }
 
 // IsInbound implements peering.PeerStatusProvider.

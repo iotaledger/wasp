@@ -5,6 +5,7 @@ package udp
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -166,8 +167,9 @@ func (p *peer) NetID() string {
 }
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
+// This function tries to await for the public key to be resolves for some time, but with no guarantees.
 func (p *peer) PubKey() kyber.Point {
-	p.waitReady.Wait()
+	_ = p.waitReady.WaitTimeout(sendMsgSyncTimeout)
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
 	return p.remotePubKey
@@ -210,6 +212,14 @@ func (p *peer) IsAlive() bool {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
 	return p.remotePubKey != nil && p.lastMsgRecv.After(time.Now().Add(-inactiveDeadline))
+}
+
+// Await implements peering.PeerSender interface for the remote peers.
+func (p *peer) Await(timeout time.Duration) error {
+	if p.waitReady.WaitTimeout(timeout) {
+		return nil
+	}
+	return fmt.Errorf("timeout waiting for %v to become ready", p.remoteNetID)
 }
 
 // IsInbound implements peering.PeerStatusProvider.

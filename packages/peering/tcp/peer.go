@@ -85,6 +85,12 @@ func (p *peer) IsAlive() bool {
 	return p.peerconn != nil && p.handshakeOk
 }
 
+// IsAlive implements peering.PeerSender interface for the remote peers.
+func (p *peer) Await(timeout time.Duration) error {
+	p.waitReady.Wait() // TODO: Use other locking to consider the timeout.
+	return nil
+}
+
 // IsInbound implements peering.PeerStatusProvider.
 // It is used in the dashboard.
 func (p *peer) IsInbound() bool {
