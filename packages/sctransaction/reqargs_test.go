@@ -13,10 +13,10 @@ import (
 
 func TestRequestArguments1(t *testing.T) {
 	r := NewRequestArguments()
-	r.AddArgument("arg1", []byte("data1"))
-	r.AddArgument("arg2", []byte("data2"))
-	r.AddArgument("arg3", []byte("data3"))
-	r.AddArgumentAsBlobHash("arg4", []byte("data4"))
+	r.Add("arg1", []byte("data1"))
+	r.Add("arg2", []byte("data2"))
+	r.Add("arg3", []byte("data3"))
+	r.AddAsBlobHash("arg4", []byte("data4"))
 
 	require.Len(t, r, 4)
 	require.EqualValues(t, r["-arg1"], "data1")
@@ -37,10 +37,10 @@ func TestRequestArguments1(t *testing.T) {
 
 func TestRequestArguments2(t *testing.T) {
 	r := NewRequestArguments()
-	r.AddArgument("arg1", []byte("data1"))
-	r.AddArgument("arg2", []byte("data2"))
-	r.AddArgument("arg3", []byte("data3"))
-	r.AddArgumentAsBlobHash("arg4", []byte("data4"))
+	r.Add("arg1", []byte("data1"))
+	r.Add("arg2", []byte("data2"))
+	r.Add("arg3", []byte("data3"))
+	r.AddAsBlobHash("arg4", []byte("data4"))
 
 	h := hashing.HashStrings("data4")
 
@@ -68,9 +68,9 @@ func TestRequestArguments2(t *testing.T) {
 
 func TestRequestArguments3(t *testing.T) {
 	r := NewRequestArguments()
-	r.AddArgument("arg1", []byte("data1"))
-	r.AddArgument("arg2", []byte("data2"))
-	r.AddArgument("arg3", []byte("data3"))
+	r.Add("arg1", []byte("data1"))
+	r.Add("arg2", []byte("data2"))
+	r.Add("arg3", []byte("data3"))
 
 	require.Len(t, r, 3)
 	require.EqualValues(t, r["-arg1"], "data1")
@@ -100,11 +100,11 @@ func TestRequestArguments3(t *testing.T) {
 
 func TestRequestArguments4(t *testing.T) {
 	r := NewRequestArguments()
-	r.AddArgument("arg1", []byte("data1"))
-	r.AddArgument("arg2", []byte("data2"))
-	r.AddArgument("arg3", []byte("data3"))
+	r.Add("arg1", []byte("data1"))
+	r.Add("arg2", []byte("data2"))
+	r.Add("arg3", []byte("data3"))
 	data := []byte("data4")
-	r.AddArgumentAsBlobHash("arg4", data)
+	r.AddAsBlobHash("arg4", data)
 	h := hashing.HashData(data)
 
 	require.Len(t, r, 4)
@@ -124,11 +124,11 @@ func TestRequestArguments4(t *testing.T) {
 
 func TestRequestArguments5(t *testing.T) {
 	r := NewRequestArguments()
-	r.AddArgument("arg1", []byte("data1"))
-	r.AddArgument("arg2", []byte("data2"))
-	r.AddArgument("arg3", []byte("data3"))
+	r.Add("arg1", []byte("data1"))
+	r.Add("arg2", []byte("data2"))
+	r.Add("arg3", []byte("data3"))
 	data := []byte("data4-data4-data4-data4-data4-data4-data4")
-	r.AddArgumentAsBlobHash("arg4", data)
+	r.AddAsBlobHash("arg4", data)
 	h := hashing.HashData(data)
 
 	require.Len(t, r, 4)
@@ -141,8 +141,9 @@ func TestRequestArguments5(t *testing.T) {
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
 
-	err := reg.PutBlob(data)
+	hback, err := reg.PutBlob(data)
 	require.NoError(t, err)
+	require.EqualValues(t, h, hback)
 
 	back, ok, err := r.DecodeRequestArguments(reg)
 	require.NoError(t, err)

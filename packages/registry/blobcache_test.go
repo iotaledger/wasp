@@ -16,8 +16,9 @@ func TestBlobPutGet(t *testing.T) {
 	data := []byte("data-data-data-data-data-data-data-data-data")
 	h := hashing.HashData(data)
 
-	err := reg.PutBlob(data)
+	hback, err := reg.PutBlob(data)
 	require.NoError(t, err)
+	require.EqualValues(t, h, hback)
 
 	back, ok, err := reg.GetBlob(h)
 	require.NoError(t, err)

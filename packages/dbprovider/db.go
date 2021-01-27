@@ -65,8 +65,7 @@ func (dbp *DBProvider) GetRegistryPartition() kvstore.KVStore {
 	return dbp.GetPartition(&coretypes.NilChainID)
 }
 
-func (dbp *DBProvider) Close(shutdownSignal <-chan struct{}) {
-	<-shutdownSignal
+func (dbp *DBProvider) Close() {
 	dbp.log.Infof("Syncing database to disk...")
 	if err := dbp.db.Close(); err != nil {
 		dbp.log.Errorf("Failed to flush the database: %s", err)

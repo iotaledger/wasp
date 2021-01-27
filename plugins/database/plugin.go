@@ -42,20 +42,19 @@ func configure(_ *node.Plugin) {
 	// we open the database in the configure, so we must also make sure it's closed here
 	err = daemon.BackgroundWorker(pluginName, func(shutdownSignal <-chan struct{}) {
 		<-shutdownSignal
-		log.Infof("Syncing database to disk...")
-		dbProvider.Close(shutdownSignal)
-		log.Infof("Syncing database to disk... done")
+		log.Infof("syncing database to disk...")
+		dbProvider.Close()
+		log.Infof("syncing database to disk... done")
 	}, parameters.PriorityDatabase)
 	if err != nil {
-		log.Panicf("Failed to start a daemon: %s", err)
+		log.Panicf("failed to start a daemon: %s", err)
 	}
 }
 
 func run(_ *node.Plugin) {
-	if err := daemon.BackgroundWorker(pluginName+"[GC]", func(shutdownSignal <-chan struct{}) {
-		dbProvider.RunGC(shutdownSignal)
-	}, parameters.PriorityBadgerGarbageCollection); err != nil {
-		log.Errorf("Failed to start as daemon: %s", err)
+	err := daemon.BackgroundWorker(pluginName+"[GC]", dbProvider.RunGC, parameters.PriorityBadgerGarbageCollection)
+	if err != nil {
+		log.Errorf("failed to start as daemon: %s", err)
 	}
 }
 

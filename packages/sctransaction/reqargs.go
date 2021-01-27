@@ -16,20 +16,20 @@ func NewRequestArguments() RequestArguments {
 	return RequestArguments(dict.New())
 }
 
-// AddArgument add new ordinary argument. Encodes the key as "normal"
-func (a RequestArguments) AddArgument(name string, data []byte) {
+// Add add new ordinary argument. Encodes the key as "normal"
+func (a RequestArguments) Add(name string, data []byte) {
 	a[kv.Key("-"+name)] = data
 }
 
-// AddArgumentAsBlobHash adds argument with the data hash instead of data itself.
+// AddAsBlobHash adds argument with the data hash instead of data itself.
 // Encodes key as "blob reference"
-func (a RequestArguments) AddArgumentAsBlobHash(name string, data []byte) {
+func (a RequestArguments) AddAsBlobHash(name string, data []byte) {
 	h := hashing.HashData(data)
 	a[kv.Key("*"+name)] = h[:]
 }
 
-// HasBlogRef return if request arguments contain at least one blog reference
-func (a RequestArguments) HasBlogRef() bool {
+// HasBlobRef return if request arguments contain at least one blob reference
+func (a RequestArguments) HasBlobRef() bool {
 	var ret bool
 	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
 		ret = []byte(key)[0] == '*'
@@ -49,7 +49,7 @@ func (a RequestArguments) Read(r io.Reader) error {
 	return (dict.Dict(a)).Read(r)
 }
 
-// DecodeRequestArguments decodes RequestArguments. For each blog reference encoded it
+// DecodeRequestArguments decodes RequestArguments. For each blob reference encoded it
 // looks for the data by hash into the registry and replaces dict entry with the data
 // It returns ok flag == false if at least one blob hash don't have data in the registry
 func (a RequestArguments) DecodeRequestArguments(reg *registry.Impl) (dict.Dict, bool, error) {

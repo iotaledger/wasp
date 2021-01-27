@@ -11,9 +11,13 @@ func dbKeyForBlob(h hashing.HashValue) []byte {
 }
 
 // Writes data into the registry with the key of its hash
-func (r *Impl) PutBlob(data []byte) error {
+func (r *Impl) PutBlob(data []byte) (hashing.HashValue, error) {
 	h := hashing.HashData(data)
-	return r.dbProvider.GetRegistryPartition().Set(dbKeyForBlob(h), data)
+	err := r.dbProvider.GetRegistryPartition().Set(dbKeyForBlob(h), data)
+	if err != nil {
+		return hashing.HashValue{}, err
+	}
+	return h, nil
 }
 
 // Reads data from registry by hash. Returns existence flag
