@@ -3,13 +3,16 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
@@ -81,6 +84,20 @@ func (w *WaspCliTest) Pipe(in []string, args ...string) []string {
 	})
 }
 
+func (w *WaspCliTest) copyFile(fname string) {
+	source, err := os.Open(fname)
+	require.NoError(w.t, err)
+	defer source.Close()
+
+	dst := path.Join(w.dir, path.Base(fname))
+	destination, err := os.Create(dst)
+	require.NoError(w.t, err)
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	require.NoError(w.t, err)
+}
+
 func TestWaspCliNoChains(t *testing.T) {
 	w := NewWaspCliTest(t)
 
@@ -150,4 +167,72 @@ func TestWaspCli1Chain(t *testing.T) {
 	// test the chainlog
 	out = w.Run("chain", "log", "root")
 	require.Len(t, out, 1)
+}
+
+func TestWaspCliContract(t *testing.T) {
+	w := NewWaspCliTest(t)
+	w.Run("init")
+	w.Run("request-funds")
+	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
+
+	vmtype := "wasmtimevm"
+	name := "inccounter"
+	description := "inccounter SC"
+	file := "inccounter_bg.wasm"
+
+	w.copyFile(path.Join("wasm", file))
+
+	// test chain deploy-contract command
+	w.Run("chain", "deploy-contract", vmtype, name, description, file)
+
+	out := w.Run("chain", "list-contracts")
+	require.Contains(t, out[0], "Total 5 contracts")
+
+	// test chain call-view command
+	out = w.Run("chain", "call-view", name, "increment_view_counter")
+	out = w.Pipe(out, "decode", "string", "counter", "int")
+	require.Regexp(t, "(?m)counter:[[:space:]]+0$", out[0])
+
+	// test chain post-request command
+	w.Run("chain", "post-request", name, "increment")
+
+	out = w.Run("chain", "call-view", name, "increment_view_counter")
+	out = w.Pipe(out, "decode", "string", "counter", "int")
+	require.Regexp(t, "(?m)counter:[[:space:]]+1$", out[0])
+}
+
+func TestWaspCliBlob(t *testing.T) {
+	w := NewWaspCliTest(t)
+	w.Run("init")
+	w.Run("request-funds")
+	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
+
+	// test chain list-blobs command
+	out := w.Run("chain", "list-blobs")
+	require.Contains(t, out[0], "Total 0 blob(s)")
+
+	vmtype := "wasmtimevm"
+	description := "inccounter SC"
+	file := "inccounter_bg.wasm"
+	w.copyFile(path.Join("wasm", file))
+
+	// test chain store-blob command
+	w.Run(
+		"chain", "store-blob",
+		"string", blob.VarFieldProgramBinary, "file", file,
+		"string", blob.VarFieldVMType, "string", vmtype,
+		"string", blob.VarFieldProgramDescription, "string", description,
+	)
+
+	out = w.Run("chain", "list-blobs")
+	require.Contains(t, out[0], "Total 1 blob(s)")
+
+	blobHash := regexp.MustCompile(`(?m)([[:alnum:]]+)[[:space:]]`).FindStringSubmatch(out[4])[1]
+	require.NotEmpty(t, blobHash)
+	t.Logf("Blob hash: %s", blobHash)
+
+	// test chain show-blob command
+	out = w.Run("chain", "show-blob", blobHash)
+	out = w.Pipe(out, "decode", "string", blob.VarFieldProgramDescription, "string")
+	require.Contains(t, out[0], description)
 }
