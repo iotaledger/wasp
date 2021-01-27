@@ -1,4 +1,4 @@
-package main
+package wasptest
 
 import (
 	"bytes"
@@ -81,7 +81,7 @@ func (w *WaspCliTest) Pipe(in []string, args ...string) []string {
 	})
 }
 
-func TestNoChains(t *testing.T) {
+func TestWaspCliNoChains(t *testing.T) {
 	w := NewWaspCliTest(t)
 
 	w.Run("init")
@@ -96,7 +96,7 @@ func TestNoChains(t *testing.T) {
 	require.Contains(t, out[0], "Total 0 chain(s)")
 }
 
-func Test1Chain(t *testing.T) {
+func TestWaspCli1Chain(t *testing.T) {
 	w := NewWaspCliTest(t)
 
 	w.Run("init")
