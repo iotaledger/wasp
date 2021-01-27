@@ -44,11 +44,6 @@ func NewPersistentDBProvider(dbDir string, log *logger.Logger) *DBProvider {
 	return newDBProvider(db, log)
 }
 
-// storeRealm is a factory method for a different realm backed by the KVStore instance.
-func (dbp *DBProvider) storeRealm(realm kvstore.Realm) kvstore.KVStore {
-	return dbp.store.WithRealm(realm)
-}
-
 // GetPartition returns a Partition, which is a KVStore prefixed with the chain ID.
 func (dbp *DBProvider) GetPartition(chainID *coretypes.ChainID) kvstore.KVStore {
 	dbp.partitionsMutex.RLock()
@@ -62,7 +57,7 @@ func (dbp *DBProvider) GetPartition(chainID *coretypes.ChainID) kvstore.KVStore 
 	dbp.partitionsMutex.Lock()
 	defer dbp.partitionsMutex.Unlock()
 
-	dbp.partitions[*chainID] = dbp.storeRealm(chainID[:])
+	dbp.partitions[*chainID] = dbp.store.WithRealm(chainID[:])
 	return dbp.partitions[*chainID]
 }
 
