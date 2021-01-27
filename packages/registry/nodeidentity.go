@@ -5,9 +5,9 @@ package registry
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/database"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 )
@@ -23,10 +23,10 @@ type NodeIdentityProvider interface {
 func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
 	var err error
 	var pair *key.Pair
-	var dbKey []byte = dbKeyForNodeIdentity()
+	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
-	partition := database.GetRegistryPartition()
+	partition := r.dbProvider.GetRegistryPartition()
 	exists, err = partition.Has(dbKey)
 	if !exists {
 		pair = key.NewKeyPair(r.suite)
@@ -57,7 +57,7 @@ func (r *Impl) GetNodePublicKey() (kyber.Point, error) {
 }
 
 func dbKeyForNodeIdentity() []byte {
-	return database.MakeKey(database.ObjectTypeNodeIdentity)
+	return dbprovider.MakeKey(dbprovider.ObjectTypeNodeIdentity)
 }
 
 func keyPairToBytes(pair *key.Pair) ([]byte, error) {
