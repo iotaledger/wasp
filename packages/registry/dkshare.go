@@ -5,6 +5,7 @@ package registry
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -33,7 +34,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 
 // LoadDKShare implements dkg.RegistryProvider.
 func (r *Impl) LoadDKShare(sharedAddress *address.Address) (*tcrypto.DKShare, error) {
-	data, err := database.GetRegistryPartition().Get(dbKeyForDKShare(sharedAddress))
+	data, err := r.dbProvider.GetRegistryPartition().Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		return nil, err
 	}
@@ -41,5 +42,5 @@ func (r *Impl) LoadDKShare(sharedAddress *address.Address) (*tcrypto.DKShare, er
 }
 
 func dbKeyForDKShare(sharedAddress *address.Address) []byte {
-	return database.MakeKey(database.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
+	return dbprovider.MakeKey(dbprovider.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
 }

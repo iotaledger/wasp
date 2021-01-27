@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -178,7 +179,7 @@ func (b *block) readEssence(r io.Reader) error {
 }
 
 func dbkeyBatch(stateIndex uint32) []byte {
-	return database.MakeKey(database.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
+	return dbprovider.MakeKey(dbprovider.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
 func LoadBlock(chainID *coretypes.ChainID, stateIndex uint32) (Block, error) {

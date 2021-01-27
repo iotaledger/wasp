@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -28,7 +29,7 @@ var (
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
 	db := GetPartition(&coretypes.NilChainID)
-	ver, err := db.Get(MakeKey(ObjectTypeDBSchemaVersion))
+	ver, err := db.Get(dbprovider.MakeKey(dbprovider.ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte
 	versiondata[0] = DBVersion
@@ -37,7 +38,7 @@ func checkDatabaseVersion() error {
 
 	if err == kvstore.ErrKeyNotFound {
 		// set the version in an empty DB
-		return db.Set(MakeKey(ObjectTypeDBSchemaVersion), versiondata[:])
+		return db.Set(dbprovider.MakeKey(dbprovider.ObjectTypeDBSchemaVersion), versiondata[:])
 	}
 	if err != nil {
 		return err

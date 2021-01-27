@@ -3,6 +3,7 @@ package registry
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -24,7 +25,7 @@ type ChainRecord struct {
 }
 
 func dbkeyChainRecord(chainID *coretypes.ChainID) []byte {
-	return database.MakeKey(database.ObjectTypeChainRecord, chainID[:])
+	return dbprovider.MakeKey(dbprovider.ObjectTypeChainRecord, chainID[:])
 }
 
 func SaveChainRecord(bd *ChainRecord) error {
@@ -101,7 +102,7 @@ func GetChainRecords() ([]*ChainRecord, error) {
 	db := database.GetRegistryPartition()
 	ret := make([]*ChainRecord, 0)
 
-	err := db.Iterate([]byte{database.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
+	err := db.Iterate([]byte{dbprovider.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
 		bd := new(ChainRecord)
 		if err := bd.Read(bytes.NewReader(value)); err == nil {
 			ret = append(ret, bd)

@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -31,7 +32,7 @@ func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualSta
 	return &virtualState{
 		chainID:   *chainID,
 		db:        db,
-		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{database.ObjectTypeStateVariable})),
+		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable})),
 		empty:     true,
 	}
 }
@@ -175,10 +176,10 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	if err != nil {
 		return err
 	}
-	varStateDbkey := database.MakeKey(database.ObjectTypeSolidState)
+	varStateDbkey := dbprovider.MakeKey(dbprovider.ObjectTypeSolidState)
 
 	solidStateValue := util.Uint32To4Bytes(vs.BlockIndex())
-	solidStateKey := database.MakeKey(database.ObjectTypeSolidStateIndex)
+	solidStateKey := dbprovider.MakeKey(dbprovider.ObjectTypeSolidStateIndex)
 
 	keys := [][]byte{varStateDbkey, batchDbKey, solidStateKey}
 	values := [][]byte{varStateData, batchData, solidStateValue}
@@ -212,7 +213,7 @@ func LoadSolidState(chainID *coretypes.ChainID) (VirtualState, Block, bool, erro
 }
 
 func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
-	stateIndexBin, err := db.Get(database.MakeKey(database.ObjectTypeSolidStateIndex))
+	stateIndexBin, err := db.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil, false, nil
 	}
@@ -220,7 +221,7 @@ func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualStat
 		return nil, nil, false, err
 	}
 	values, err := util.DbGetMulti(db, [][]byte{
-		database.MakeKey(database.ObjectTypeSolidState),
+		dbprovider.MakeKey(dbprovider.ObjectTypeSolidState),
 		dbkeyBatch(util.MustUint32From4Bytes(stateIndexBin)),
 	})
 	if err != nil {
@@ -243,11 +244,11 @@ func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualStat
 }
 
 func dbkeyStateVariable(key kv.Key) []byte {
-	return database.MakeKey(database.ObjectTypeStateVariable, []byte(key))
+	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
 func dbkeyRequest(reqid *coretypes.RequestID) []byte {
-	return database.MakeKey(database.ObjectTypeProcessedRequestId, reqid[:])
+	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
 func IsRequestCompleted(addr *coretypes.ChainID, reqid *coretypes.RequestID) (bool, error) {
