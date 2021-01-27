@@ -50,7 +50,7 @@ func handleChain(c echo.Context) error {
 	}
 
 	if result.ChainRecord != nil && result.ChainRecord.Active {
-		_, result.Block, _, err = state.LoadSolidState(&chainid)
+		result.VirtualState, result.Block, _, err = state.LoadSolidState(&chainid)
 		if err != nil {
 			return err
 		}
@@ -124,13 +124,14 @@ type ChainTemplateParams struct {
 
 	ChainID coretypes.ChainID
 
-	ChainRecord *registry.ChainRecord
-	Block       state.Block
-	RootInfo    RootInfo
-	Accounts    []coretypes.AgentID
-	TotalAssets map[balance.Color]int64
-	Blobs       map[hashing.HashValue]uint32
-	Committee   struct {
+	ChainRecord  *registry.ChainRecord
+	Block        state.Block
+	VirtualState state.VirtualState
+	RootInfo     RootInfo
+	Accounts     []coretypes.AgentID
+	TotalAssets  map[balance.Color]int64
+	Blobs        map[hashing.HashValue]uint32
+	Committee    struct {
 		Size       uint16
 		Quorum     uint16
 		NumPeers   uint16
@@ -150,7 +151,7 @@ const tplChain = `
 		{{ $desc := trim 50 $rootinfo.Description }}
 
 		<div class="card fluid">
-			<h2 class="section">{{if $desc}}{{$desc}}{{else}}<tt>{{$chainid}}</tt>{{end}}</h2>
+			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid}}</tt>{{end}}</h2>
 
 			<dl>
 				<dt>ChainID</dt><dd><tt>{{.ChainRecord.ChainID}}</tt></dd>
@@ -222,30 +223,12 @@ const tplChain = `
 			</div>
 
 			<div class="card fluid">
-				<h3 class="section">Block</h3>
+				<h3 class="section">State</h3>
 				<dl>
-				<dt>State index</dt><dd><tt>{{.Block.StateIndex}}</tt></dd>
-				<dt>State Transaction ID</dt><dd><tt>{{.Block.StateTransactionID}}</tt></dd>
-				<dt>Timestamp</dt><dd><tt>{{formatTimestamp .Block.Timestamp}}</tt></dd>
-				<dt>Essence Hash</dt><dd><tt>{{.Block.EssenceHash}}</tt></dd>
+					<dt>State index</dt><dd><tt>{{.Block.StateIndex}}</tt></dd>
+					<dt>State hash</dt><dd><tt>{{.VirtualState.Hash}}</tt></dd>
+					<dt>Last updated</dt><dd><tt>{{formatTimestamp .Block.Timestamp}}</tt> in transaction <tt>{{.Block.StateTransactionID}}</tt></dd>
 				</dl>
-				<div>
-					<table>
-						<caption>Requests</caption>
-						<thead>
-							<tr>
-								<th>RequestID</th>
-							</tr>
-						</thead>
-						<tbody>
-						{{range $_, $reqId := .Block.RequestIDs}}
-							<tr>
-								<td><tt>{{$reqId}}</tt></td>
-							</tr>
-						{{end}}
-						</tbody>
-					</table>
-				</div>
 			</div>
 
 			<div class="card fluid">
@@ -256,8 +239,8 @@ const tplChain = `
 				<dt>NumPeers</dt>  <dd><tt>{{.Committee.NumPeers}}</tt></dd>
 				<dt>HasQuorum</dt> <dd><tt>{{.Committee.HasQuorum}}</tt></dd>
 				</dl>
+				<h4>Peer status</h4>
 				<table>
-				<caption>Peer status</caption>
 				<thead>
 					<tr>
 						<th>Index</th>
