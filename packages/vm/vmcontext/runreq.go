@@ -154,7 +154,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 
 	// calling only non vew entry points. Calling the view will trigger error and fallback
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		vmctx.reqHname, req.EntryPointCode(), req.Args(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
+		vmctx.reqHname, req.EntryPointCode(), req.SolidArgs(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {

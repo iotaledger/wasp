@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/registry"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -283,6 +284,10 @@ func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 		ret = append(ret, status)
 	}
 	return ret
+}
+
+func (c *chainObj) BlobRegistry() registry.BlobRegistryProvider {
+	return c.blobProvider
 }
 
 func (c *chainObj) GetRequestProcessingStatus(reqID *coretypes.RequestID) chain.RequestProcessingStatus {

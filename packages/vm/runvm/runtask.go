@@ -56,6 +56,9 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 	// the result accumulates in the VMContext and in the list of stateUpdates
 	timestamp := task.Timestamp
 	for _, reqRef := range task.Requests {
+		if reqRef.RequestSection().SolidArgs() == nil {
+			task.Log.Panicf("inconsistency: request args have not been solidified")
+		}
 		vmctx.RunTheRequest(reqRef, timestamp)
 		lastStateUpdate, lastResult, lastErr = vmctx.GetResult()
 

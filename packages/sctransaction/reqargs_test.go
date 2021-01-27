@@ -81,7 +81,7 @@ func TestRequestArguments3(t *testing.T) {
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
 
-	d, ok, err := r.DecodeRequestArguments(reg)
+	d, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -117,7 +117,7 @@ func TestRequestArguments4(t *testing.T) {
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
 
-	_, ok, err := r.DecodeRequestArguments(reg)
+	_, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
 	require.False(t, ok)
 }
@@ -145,7 +145,7 @@ func TestRequestArguments5(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, h, hback)
 
-	back, ok, err := r.DecodeRequestArguments(reg)
+	back, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
 	require.True(t, ok)
 

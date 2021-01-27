@@ -107,7 +107,7 @@ func (ch *Chain) PostRequest(req *CallParams, sigScheme signaturescheme.Signatur
 
 	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
 		WithTransfer(req.transfer).
-		WithArgs(req.params)
+		AddArgs(req.params)
 	err = txb.AddRequestSection(reqSect)
 	require.NoError(ch.Env.T, err)
 

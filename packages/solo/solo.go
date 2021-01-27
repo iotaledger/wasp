@@ -12,6 +12,8 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
@@ -38,6 +40,7 @@ type Solo struct {
 	T           *testing.T
 	logger      *logger.Logger
 	utxoDB      *utxodb.UtxoDB
+	registry    registry.BlobRegistryProvider
 	glbMutex    *sync.Mutex
 	logicalTime time.Time
 	timeStep    time.Duration
@@ -123,10 +126,12 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmtimeConstructor)
 		require.NoError(t, err)
 	})
+	reg := registry.NewRegistry(nil, glbLogger.Named("registry"), dbprovider.NewInMemoryDBProvider(glbLogger))
 	ret := &Solo{
 		T:           t,
 		logger:      glbLogger,
 		utxoDB:      utxodb.New(),
+		registry:    reg,
 		glbMutex:    &sync.Mutex{},
 		logicalTime: time.Now(),
 		timeStep:    DefaultTimeStep,

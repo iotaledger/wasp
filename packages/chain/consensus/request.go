@@ -43,6 +43,12 @@ func (op *operator) requestFromId(reqId coretypes.RequestID) (*request, bool) {
 
 // request record retrieved (or created) by request message
 func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
+	// TODO ------------- temporary
+	ok, err := reqMsg.RequestBlock().SolidifyArgs(op.chain.BlobRegistry())
+	if !ok || err != nil {
+		op.log.Panicf("inconsistency: can't solidify args")
+	}
+
 	reqId := reqMsg.RequestId()
 	if op.isRequestProcessed(reqId) {
 		return nil, false

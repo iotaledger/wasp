@@ -32,6 +32,7 @@ type Chain interface {
 	InitTestRound()
 	HasQuorum() bool
 	PeerStatus() []*PeerStatus
+	BlobRegistry() registry.BlobRegistryProvider
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
@@ -96,6 +97,7 @@ var ConstructorNew func(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
+	blobProvider registry.BlobRegistryProvider,
 	onActivation func(),
 ) Chain
 
@@ -104,7 +106,8 @@ func New(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
+	blobProvider registry.BlobRegistryProvider,
 	onActivation func(),
 ) Chain {
-	return ConstructorNew(chr, log, netProvider, dksProvider, onActivation)
+	return ConstructorNew(chr, log, netProvider, dksProvider, blobProvider, onActivation)
 }

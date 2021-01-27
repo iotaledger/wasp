@@ -6,6 +6,11 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
+type BlobRegistryProvider interface {
+	PutBlob(data []byte) (hashing.HashValue, error)
+	GetBlob(h hashing.HashValue) ([]byte, bool, error)
+}
+
 func dbKeyForBlob(h hashing.HashValue) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeBlob, h[:])
 }
