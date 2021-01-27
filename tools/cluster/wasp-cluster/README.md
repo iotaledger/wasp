@@ -47,11 +47,12 @@ By default the cluster contains 4 Wasp nodes. You can change this with the
 `-n` parameter. E.g.: `wasp-cluster init my-cluster -n 2`.
 
 If you need to change the default configuration of the nodes, you can do so
-now, by editing `my-cluster/wasp<n>/config.json`.
+now, by editing the `config.json` files.
 
-Note: by default, all nodes are configured to store the database in main
-memory. If you don't change this setting, all transactions and changes will be
-lost after stopping the cluster.
+Note: by default `wasp-cluster` configures all nodes to store the database in
+main memory: all data will be lost when the cluster is stopped (remember that
+this tool is used primarily for testing). If you need a persistent database,
+change the `inMemory` setting in all `config.json` files.
 
 ## Start the cluster
 
@@ -64,7 +65,7 @@ wasp-cluster start
 
 When done using the cluster, press `Ctrl-C` to stop it.
 
-## Connecting to a Goshimmer cluster
+## Connecting to an existing Goshimmer network
 
 By default, the cluster includes a single Goshimmer node configured in such a
 way that the ledger can be operated without the need for consensus. This is
@@ -97,3 +98,16 @@ wasp-cluster init my-cluster -n 4 -g
 $ cd my-cluster
 $ wasp-cluster start
 ```
+
+## Running a disposable cluster
+
+If you just need to do a quick test, you can run a disposable cluster of nodes
+with the default configuration with the command:
+
+```
+wasp-cluster start -d
+```
+
+No need to call `init` first; this command will automatically initialize the
+cluster configuration in a temporary directory, which will be removed when the
+cluster is stopped.

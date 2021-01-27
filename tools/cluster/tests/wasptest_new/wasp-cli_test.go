@@ -27,7 +27,7 @@ type WaspCliTest struct {
 func NewWaspCliTest(t *testing.T) *WaspCliTest {
 	clu := testutil.NewCluster(t)
 
-	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test")
+	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)
 	require.NoError(t, err)
 	t.Cleanup(func() {
