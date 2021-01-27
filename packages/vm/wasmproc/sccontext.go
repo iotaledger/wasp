@@ -90,6 +90,8 @@ func (o *ScContext) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
 	case wasmhost.KeyCreator:
 		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
+	case wasmhost.KeyDeploys:
+		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
 	case wasmhost.KeyExports:
 		return wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY
 	case wasmhost.KeyId:
