@@ -44,25 +44,22 @@ func (vm *WasmVmBase) HostFdWrite(fd int32, iovs int32, size int32, written int3
 	return int32(siz)
 }
 
-func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, stringRef int32, size int32) int32 {
+func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, stringRef int32, size int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetBytes(o%d,k%d,r%d,s%d)", objId, keyId, stringRef, size)
+	host.TraceAll("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
 
 	// negative size means only check for existence
 	if size < 0 {
-		if objId < 0 {
-			objId = -objId
-		}
-		if host.Exists(objId, keyId) {
+		if host.Exists(objId, keyId, OBJTYPE_BYTES) {
 			return 0
 		}
 		// missing key is indicated by -1
 		return -1
 	}
 
-	if objId < 0 {
+	if typeId == OBJTYPE_STRING {
 		// negative objId means get string
-		value := host.getString(-objId, keyId)
+		value := host.getString(objId, keyId)
 		// missing key is indicated by -1
 		if value == nil {
 			return -1
@@ -70,7 +67,7 @@ func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, stringRef int32, si
 		return vm.vmSetBytes(stringRef, size, []byte(*value))
 	}
 
-	bytes := host.GetBytes(objId, keyId)
+	bytes := host.GetBytes(objId, keyId, OBJTYPE_BYTES)
 	if bytes == nil {
 		return -1
 	}
@@ -109,15 +106,15 @@ func (vm *WasmVmBase) HostGetObjectId(objId int32, keyId int32, typeId int32) in
 	return host.GetObjectId(objId, keyId, typeId)
 }
 
-func (vm *WasmVmBase) HostSetBytes(objId int32, keyId int32, stringRef int32, size int32) {
+func (vm *WasmVmBase) HostSetBytes(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
 	host := vm.host
-	host.TraceAll("HostSetBytes(o%d,k%d,r%d,s%d)", objId, keyId, stringRef, size)
+	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
 	bytes := vm.vmGetBytes(stringRef, size)
-	if objId < 0 {
-		host.SetString(-objId, keyId, string(bytes))
+	if typeId == OBJTYPE_STRING {
+		host.SetString(objId, keyId, string(bytes))
 		return
 	}
-	host.SetBytes(objId, keyId, bytes)
+	host.SetBytes(objId, keyId, OBJTYPE_BYTES, bytes)
 }
 
 func (vm *WasmVmBase) HostSetInt(objId int32, keyId int32, value int64) {

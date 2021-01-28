@@ -66,7 +66,7 @@ func (host *KvStoreHost) Init(null HostObject, root HostObject, log *logger.Logg
 	host.TrackObject(root)
 }
 
-func (host *KvStoreHost) Exists(objId int32, keyId int32) bool {
+func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
 	return host.FindObject(objId).Exists(keyId)
 }
 
@@ -86,7 +86,7 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 	return host.FindObject(obj.GetObjectId(keyId, typeId))
 }
 
-func (host *KvStoreHost) GetBytes(objId int32, keyId int32) []byte {
+func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
 		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
@@ -185,14 +185,6 @@ func (host *KvStoreHost) GetObjectId(objId int32, keyId int32, typeId int32) int
 	return subId
 }
 
-func (host *KvStoreHost) GetString(objId int32, keyId int32) string {
-	value := host.getString(objId, keyId)
-	if value == nil {
-		return ""
-	}
-	return *value
-}
-
 func (host *KvStoreHost) getString(objId int32, keyId int32) *string {
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
@@ -218,7 +210,7 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	return pushed
 }
 
-func (host *KvStoreHost) SetBytes(objId int32, keyId int32, bytes []byte) {
+func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
 	host.FindObject(objId).SetBytes(keyId, bytes)
 	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
 
