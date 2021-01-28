@@ -6,15 +6,12 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/plugins/database"
 )
 
@@ -62,14 +59,6 @@ func (vs *virtualState) Clone() VirtualState {
 		stateHash:  vs.stateHash,
 		variables:  vs.variables.Clone(),
 	}
-}
-
-func (vs *virtualState) InitiatedBy(ownerAddr *address.Address) bool {
-	addr, ok, err := codec.DecodeAddress(vs.Variables().MustGet(vmconst.VarNameOwnerAddress))
-	if !ok || err != nil {
-		return false
-	}
-	return addr == *ownerAddr
 }
 
 func (vs *virtualState) DangerouslyConvertToString() string {

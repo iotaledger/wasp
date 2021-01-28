@@ -29,8 +29,9 @@ func (a *ScDeploys) GetObjectId(keyId int32, typeId int32) int32 {
 
 type ScDeployInfo struct {
 	ScSandboxObject
-	name        string
 	description string
+	name        string
+	params      int32
 }
 
 func NewScDeployInfo(vm *wasmProcessor) *ScDeployInfo {
@@ -43,12 +44,6 @@ func (o *ScDeployInfo) Exists(keyId int32) bool {
 	return o.GetTypeId(keyId) > 0
 }
 
-func (o *ScDeployInfo) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyParams: func() WaspObject { return NewScDict(o.vm) },
-	})
-}
-
 func (o *ScDeployInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case wasmhost.KeyDescription:
@@ -58,24 +53,26 @@ func (o *ScDeployInfo) GetTypeId(keyId int32) int32 {
 	case wasmhost.KeyName:
 		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyParams:
-		return wasmhost.OBJTYPE_MAP
+		return wasmhost.OBJTYPE_INT
 	}
 	return 0
 }
 
 func (o *ScDeployInfo) Invoke(programHash []byte) {
-	o.Trace("DEPLOY c'%s' f'%s'", o.name, o.description)
-	paramsId := o.GetObjectId(wasmhost.KeyParams, wasmhost.OBJTYPE_MAP)
-	params := o.host.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
-	params.MustIterate("", func(key kv.Key, value []byte) bool {
-		o.Trace("  PARAM '%s'", key)
-		return true
-	})
+	params := dict.New()
+	if o.params != 0 {
+		params = o.host.FindObject(o.params).(*ScDict).kvStore.(dict.Dict)
+		params.MustIterate("", func(key kv.Key, value []byte) bool {
+			o.Trace("  PARAM '%s'", key)
+			return true
+		})
+	}
 
 	progHash, err := hashing.HashValueFromBytes(programHash)
 	if err != nil {
 		o.Panic("invalid hash: %v", err)
 	}
+	o.Trace("DEPLOY c'%s' f'%s'", o.name, o.description)
 	err = o.vm.ctx.DeployContract(progHash, o.name, o.description, params)
 	if err != nil {
 		o.Panic("failed to deploy: %v", err)
@@ -96,6 +93,8 @@ func (o *ScDeployInfo) SetInt(keyId int32, value int64) {
 	case wasmhost.KeyLength:
 		o.description = ""
 		o.name = ""
+	case wasmhost.KeyParams:
+		o.params = int32(value)
 	default:
 		o.invalidKey(keyId)
 	}

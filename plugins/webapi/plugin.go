@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -70,7 +69,7 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 			if c.Request().Method == http.MethodHead { // Issue #608
 				err = c.NoContent(he.Code)
 			} else {
-				err = c.JSON(he.Code, model.NewHTTPError(he.Code, he.Error()))
+				err = c.JSON(he.Code, he)
 			}
 		}
 	}

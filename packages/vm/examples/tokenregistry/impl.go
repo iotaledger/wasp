@@ -1,3 +1,5 @@
+// +build ignore
+
 // smart contract code implements Token Registry. User can mint any number of new colored tokens to own address
 // and in the same transaction can register the whole Supply of new tokens in the TokenRegistry.
 // TokenRegistry contains metadata of the supply minted this way. It can be changed by the owner of the record

@@ -6,6 +6,7 @@ package testcore
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/solo"
@@ -52,7 +53,7 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-const wasmFile = "../../../../tools/cluster/tests/wasptest_new/wasm/inccounter_bg.wasm"
+var wasmFile = wasmhost.WasmPath("inccounter_bg.wasm")
 
 func TestDeploy(t *testing.T) {
 	glb := solo.New(t, false, false)

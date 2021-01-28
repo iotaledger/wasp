@@ -23,7 +23,6 @@ func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP) {
 	addShutdownEndpoint(adm)
 	addChainRecordEndpoints(adm)
 	addChainEndpoints(adm)
-	addStateEndpoints(adm)
 	addDKSharesEndpoints(adm)
 }
 

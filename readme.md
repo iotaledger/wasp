@@ -26,6 +26,10 @@ _Disclaimer: Wasp node and articles is a work in progress, and most likely will
 always be.  The software presented in this repository is not ready for use in
 commercial settings or whenever processing of critical data is involved._
 
+## Prerequisites
+
+- Go 1.15
+
 ## Compile
 
 - Build the `wasp` binary (Wasp node): `go build`
@@ -38,7 +42,16 @@ commercial settings or whenever processing of critical data is involved._
 
 ## Run
 
-- [How to run a Wasp node](articles/docs/runwasp.md)
+To run a Wasp node you need at least one Goshimmer node with the
+[WaspConn](https://github.com/iotaledger/goshimmer/tree/wasp/dapps/waspconn)
+plugin. This version of Goshimmer is located in the
+[`wasp` branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp).
+
+The only difference between standard Goshimmer (the `develop` branch) and the
+`wasp` branch is the `WaspConn` plugin, which accepts connections from Wasp
+nodes.
+
+- [How to run a Wasp node on Pollen](articles/docs/runwasp.md)
 
 ## Develop
 

@@ -11,14 +11,17 @@ import (
 const (
 	OBJTYPE_ARRAY int32 = 0x20
 
-	OBJTYPE_ADDRESS int32 = 1
-	OBJTYPE_AGENT   int32 = 2
-	OBJTYPE_BYTES   int32 = 3
-	OBJTYPE_COLOR   int32 = 4
-	OBJTYPE_HASH    int32 = 5
-	OBJTYPE_INT     int32 = 6
-	OBJTYPE_MAP     int32 = 7
-	OBJTYPE_STRING  int32 = 8
+	OBJTYPE_ADDRESS  int32 = 1
+	OBJTYPE_AGENT    int32 = 2
+	OBJTYPE_BYTES    int32 = 3
+	OBJTYPE_COLOR    int32 = 4
+	OBJTYPE_HASH     int32 = 5
+	OBJTYPE_INT      int32 = 6
+	OBJTYPE_MAP      int32 = 7
+	OBJTYPE_STRING   int32 = 8
+	OBJTYPE_HNAME    int32 = 9
+	OBJTYPE_CHAIN    int32 = 10
+	OBJTYPE_CONTRACT int32 = 11
 )
 
 const KeyFromString int32 = 0x4000
@@ -63,7 +66,7 @@ func (host *KvStoreHost) Init(null HostObject, root HostObject, log *logger.Logg
 	host.TrackObject(root)
 }
 
-func (host *KvStoreHost) Exists(objId int32, keyId int32) bool {
+func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
 	return host.FindObject(objId).Exists(keyId)
 }
 
@@ -83,7 +86,12 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 	return host.FindObject(obj.GetObjectId(keyId, typeId))
 }
 
-func (host *KvStoreHost) GetBytes(objId int32, keyId int32) []byte {
+func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
+    if typeId == OBJTYPE_STRING {
+    	value := host.getString(objId, keyId)
+    	if value == nil { return nil }
+    	return []byte(*value)
+	}
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
 		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
@@ -182,14 +190,6 @@ func (host *KvStoreHost) GetObjectId(objId int32, keyId int32, typeId int32) int
 	return subId
 }
 
-func (host *KvStoreHost) GetString(objId int32, keyId int32) string {
-	value := host.getString(objId, keyId)
-	if value == nil {
-		return ""
-	}
-	return *value
-}
-
 func (host *KvStoreHost) getString(objId int32, keyId int32) *string {
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
@@ -215,21 +215,21 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	return pushed
 }
 
-func (host *KvStoreHost) SetBytes(objId int32, keyId int32, bytes []byte) {
+func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
+	if typeId == OBJTYPE_STRING {
+		value := string(bytes)
+		host.FindObject(objId).SetString(keyId, value)
+		host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
+		return
+	}
 	host.FindObject(objId).SetBytes(keyId, bytes)
 	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
-
 }
 
 func (host *KvStoreHost) SetInt(objId int32, keyId int32, value int64) {
 	host.TraceAll("SetInt(o%d,k%d)", objId, keyId)
 	host.FindObject(objId).SetInt(keyId, value)
 	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
-}
-
-func (host *KvStoreHost) SetString(objId int32, keyId int32, value string) {
-	host.FindObject(objId).SetString(keyId, value)
-	host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
 }
 
 func (host *KvStoreHost) Trace(format string, a ...interface{}) {

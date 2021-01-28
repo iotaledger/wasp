@@ -1,3 +1,5 @@
+// +build ignore
+
 package fairauction
 
 func GetOwnerMarginPromille(ownerMargin int64, ok bool, err error) int64 {

@@ -22,9 +22,6 @@ type SandboxView interface {
 	Params() dict.Dict
 	// State immutable k/v store of the current call (in the context of the smart contract)
 	State() kv.KVStoreReader
-	//Deprecated: -- should be removed FIXME
-	WriteableState() kv.KVStore
-
 	// Call calls another contract. Only calls view entry points
 	Call(contractHname Hname, entryPoint Hname, params dict.Dict) (dict.Dict, error)
 	// Balances is colored balances owned by the contract

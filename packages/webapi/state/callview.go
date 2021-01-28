@@ -17,8 +17,6 @@ import (
 )
 
 func AddEndpoints(server echoswagger.ApiRouter) {
-	addStateQueryEndpoint(server)
-
 	dictExample := dict.Dict{
 		kv.Key("key1"): []byte("value1"),
 	}.JSONDict()

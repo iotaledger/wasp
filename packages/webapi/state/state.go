@@ -1,3 +1,5 @@
+// +build ignore
+
 // access to the solid state of the smart contract
 package state
 
@@ -6,10 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"

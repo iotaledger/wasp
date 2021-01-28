@@ -41,7 +41,7 @@ func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
 		ChainOwnerID:        d.MustGetAgentID(VarChainOwnerID),
 		ChainColor:          d.MustGetColor(VarChainColor),
 		ChainAddress:        d.MustGetAddress(VarChainAddress),
-		Description:         d.MustGetString(VarDescription),
+		Description:         d.MustGetString(VarDescription, ""),
 		FeeColor:            d.MustGetColor(VarFeeColor, balance.ColorIOTA),
 		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),
 		DefaultValidatorFee: d.MustGetInt64(VarDefaultValidatorFee, 0),
