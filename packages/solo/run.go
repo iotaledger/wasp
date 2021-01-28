@@ -34,7 +34,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 		Processors:         ch.proc,
 		ChainID:            ch.ChainID,
 		Color:              ch.ChainColor,
-		Entropy:            *hashing.RandomHash(nil),
+		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Balances:           waspconn.OutputsToBalances(ch.Env.utxoDB.GetAddressOutputs(ch.ChainAddress)),
 		Requests:           batch,

@@ -56,7 +56,7 @@ func TestBase(t *testing.T) {
 }
 
 func TestRequestID(t *testing.T) {
-	txid := (valuetransaction.ID)(*hashing.RandomHash(nil))
+	txid := (valuetransaction.ID)(hashing.RandomHash(nil))
 	reqid := NewRequestID(txid, 3)
 
 	t.Logf("txid = %s", txid.String())

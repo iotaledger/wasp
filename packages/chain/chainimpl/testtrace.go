@@ -40,10 +40,11 @@ func (c *chainObj) testTrace(msg *chain.TestTraceMsg) {
 }
 
 func (c *chainObj) InitTestRound() {
+	seed := hashing.RandomHash(nil)
 	msg := &chain.TestTraceMsg{
 		InitTime:      time.Now().UnixNano(),
 		InitPeerIndex: c.ownIndex,
-		Sequence:      util.NewPermutation16(c.NumPeers(), hashing.RandomHash(nil)[:]).GetArray(),
+		Sequence:      util.NewPermutation16(c.NumPeers(), seed[:]).GetArray(),
 	}
 	// found own seqIndex in permutation
 	seqIndex := c.mustFindIndexOf(c.ownIndex, msg.Sequence)

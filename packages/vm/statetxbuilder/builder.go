@@ -50,7 +50,7 @@ func (txb *Builder) Clone() *Builder {
 	return ret
 }
 
-func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashValue, timestamp int64) error {
+func (txb *Builder) SetStateParams(stateIndex uint32, stateHash hashing.HashValue, timestamp int64) error {
 	txb.stateSection.WithStateParams(stateIndex, stateHash, timestamp)
 	return nil
 }

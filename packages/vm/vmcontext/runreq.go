@@ -210,7 +210,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	return s.Target().Hname() == root.Interface.Hname() && s.EntryPointCode() == coretypes.EntryPointInit
 }
 
-func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash *hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {
+func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash hashing.HashValue, timestamp int64) (*sctransaction.Transaction, error) {
 	// add state block
 	err := vmctx.txBuilder.SetStateParams(blockIndex, stateHash, timestamp)
 	if err != nil {

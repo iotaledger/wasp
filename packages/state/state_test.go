@@ -19,7 +19,7 @@ func TestVariableStateBasic(t *testing.T) {
 	chainID := coretypes.ChainID{1, 3, 3, 7}
 	vs1 := NewVirtualState(mapdb.NewMapDB(), &chainID)
 	h1 := vs1.Hash()
-	assert.EqualValues(t, *hashing.NilHash, *h1)
+	assert.EqualValues(t, hashing.NilHash, h1)
 	assert.Equal(t, vs1.BlockIndex(), uint32(0))
 
 	vs2 := vs1.Clone()

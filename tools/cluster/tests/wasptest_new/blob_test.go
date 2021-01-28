@@ -87,7 +87,7 @@ func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.Hash
 func TestBlobDeployChain(t *testing.T) {
 	chain := setupBlobTest(t)
 
-	ret := getBlobInfo(t, chain, *hashing.NilHash)
+	ret := getBlobInfo(t, chain, hashing.NilHash)
 	require.Zero(t, len(ret))
 }
 

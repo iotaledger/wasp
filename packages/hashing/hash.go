@@ -3,7 +3,6 @@ package hashing
 import (
 	"encoding/hex"
 	"github.com/mr-tron/base58"
-	"hash"
 	"io"
 
 	// github.com/mr-tron/base58
@@ -19,27 +18,22 @@ const HashSize = 32
 type HashValue [HashSize]byte
 
 var (
-	nilHash  HashValue
-	NilHash  = &nilHash
-	allFHash HashValue
-	AllFHash = &allFHash
+	NilHash  = HashValue{}
+	AllFHash = makeAllFHash()
 )
 
 func init() {
-	if getHash().Size() != HashSize {
-		panic("hash size != 32")
-	}
-	for i := range allFHash {
-		allFHash[i] = 0xFF
-	}
 }
 
-func getHash() hash.Hash {
-	h, err := blake2b.New256(nil)
-	if err != nil {
-		panic(err)
+func makeAllFHash() (h HashValue) {
+	for i := range h {
+		h[i] = 0xFF
 	}
-	return h
+	return
+}
+
+func (h HashValue) Bytes() []byte {
+	return h[:]
 }
 
 func (h HashValue) String() string {
@@ -74,7 +68,7 @@ func (h *HashValue) UnmarshalJSON(buf []byte) error {
 
 func HashValueFromBytes(b []byte) (HashValue, error) {
 	if len(b) != HashSize {
-		return nilHash, errors.New("wrong HashValue bytes length")
+		return NilHash, errors.New("wrong HashValue bytes length")
 	}
 	var ret HashValue
 	copy(ret[:], b)
@@ -84,16 +78,25 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 func HashValueFromBase58(s string) (HashValue, error) {
 	b, err := base58.Decode(s)
 	if err != nil {
-		return nilHash, err
+		return NilHash, err
 	}
 	return HashValueFromBytes(b)
 }
 
 // HashData Blake2b
 func HashData(data ...[]byte) (ret HashValue) {
-	h := getHash()
+	h, err := blake2b.New256(nil)
+	if err != nil {
+		panic(err)
+	}
+	if h.Size() != HashSize {
+		panic("hash size != 32")
+	}
 	for _, d := range data {
-		h.Write(d)
+		_, err = h.Write(d)
+		if err != nil {
+			panic(err)
+		}
 	}
 	copy(ret[:], h.Sum(nil))
 	return
@@ -107,7 +110,7 @@ func HashStrings(str ...string) HashValue {
 	return HashData(tarr...)
 }
 
-func RandomHash(rnd *rand.Rand) *HashValue {
+func RandomHash(rnd *rand.Rand) HashValue {
 	s := ""
 	if rnd == nil {
 		s = fmt.Sprintf("%d", rand.Int())
@@ -115,7 +118,7 @@ func RandomHash(rnd *rand.Rand) *HashValue {
 		s = fmt.Sprintf("%d", rnd.Int())
 	}
 	ret := HashStrings(s, s, s)
-	return &ret
+	return ret
 }
 
 func (h *HashValue) Write(w io.Writer) error {
