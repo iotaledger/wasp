@@ -8,14 +8,13 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const (
 	DEBUG              = false
-	WASM_FILE_TESTCORE = "../../../../../tools/cluster/tests/wasptest_new/wasm/testcore_bg.wasm"
-	WASM_FILE_ERC20    = "../../../../../tools/cluster/tests/wasptest_new/wasm/erc20_bg.wasm"
 	ERC20_NAME         = "erc20"
 	ERC20_SUPPLY       = 100000
 
@@ -27,6 +26,9 @@ const (
 	PARAM_AMOUNT     = "am"
 	PARAM_RECIPIENT  = "r"
 )
+
+var WasmFileTestcore = wasmhost.WasmPath("testcore_bg.wasm")
+var WasmFileErc20 = wasmhost.WasmPath("erc20_bg.wasm")
 
 var SandboxSCName = "test_sandbox"
 
@@ -61,7 +63,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.Si
 	var err error
 	var extraToken int64
 	if runWasm {
-		err = chain.DeployWasmContract(user, SandboxSCName, WASM_FILE_TESTCORE)
+		err = chain.DeployWasmContract(user, SandboxSCName, WasmFileTestcore)
 		extraToken = 1
 	} else {
 		err = chain.DeployContract(user, SandboxSCName, test_sandbox_sc.Interface.ProgramHash)
@@ -80,7 +82,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.Si
 func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, runWasm bool) coretypes.ContractID {
 	var err error
 	if !runWasm {
-		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WASM_FILE_ERC20)
+		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WasmFileErc20)
 		return coretypes.ContractID{}
 	}
 	var userAgentID coretypes.AgentID
@@ -89,7 +91,7 @@ func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureS
 	} else {
 		userAgentID = coretypes.NewAgentIDFromAddress(user.Address())
 	}
-	err = chain.DeployWasmContract(user, ERC20_NAME, WASM_FILE_ERC20,
+	err = chain.DeployWasmContract(user, ERC20_NAME, WasmFileErc20,
 		PARAM_SUPPLY, 1000000,
 		PARAM_CREATOR, userAgentID,
 	)

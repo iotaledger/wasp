@@ -3,6 +3,7 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"io"
 	"io/ioutil"
 	"os"
@@ -84,8 +85,8 @@ func (w *WaspCliTest) Pipe(in []string, args ...string) []string {
 	})
 }
 
-func (w *WaspCliTest) copyFile(fname string) {
-	source, err := os.Open(fname)
+func (w *WaspCliTest) copyFile(srcFile string, fname string) {
+	source, err := os.Open(srcFile)
 	require.NoError(w.t, err)
 	defer source.Close()
 
@@ -179,8 +180,8 @@ func TestWaspCliContract(t *testing.T) {
 	name := "inccounter"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-
-	w.copyFile(path.Join("wasm", file))
+	srcFile := wasmhost.WasmPath(file)
+	w.copyFile(srcFile, path.Join("wasm", file))
 
 	// test chain deploy-contract command
 	w.Run("chain", "deploy-contract", vmtype, name, description, file)
@@ -214,7 +215,8 @@ func TestWaspCliBlob(t *testing.T) {
 	vmtype := "wasmtimevm"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-	w.copyFile(path.Join("wasm", file))
+	srcFile := wasmhost.WasmPath(file)
+	w.copyFile(srcFile, path.Join("wasm", file))
 
 	// test chain store-blob command
 	w.Run(

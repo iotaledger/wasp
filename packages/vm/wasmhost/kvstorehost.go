@@ -87,6 +87,11 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 }
 
 func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
+    if typeId == OBJTYPE_STRING {
+    	value := host.getString(objId, keyId)
+    	if value == nil { return nil }
+    	return []byte(*value)
+	}
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
 		host.Trace("GetBytes o%d k%d missing key", objId, keyId)

@@ -6,12 +6,13 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const dwfName = "donatewithfeedback"
-const dwfFile = "wasm/donatewithfeedback_bg.wasm"
+var dwfFile = wasmhost.WasmPath("donatewithfeedback_bg.wasm")
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 
 var dwfHname = coretypes.Hn(dwfName)

@@ -3,14 +3,14 @@ package erc20
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-const (
-	erc20name = "erc20test"
-	erc20file = "../../../../../tools/cluster/tests/wasptest_new/wasm/erc20_bg.wasm"
-)
+const erc20name = "erc20test"
+
+var erc20file = wasmhost.WasmPath("erc20_bg.wasm")
 
 func TestDeployErc20(t *testing.T) {
 	glb := solo.New(t, false, false)

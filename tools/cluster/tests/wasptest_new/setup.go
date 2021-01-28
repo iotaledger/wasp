@@ -3,6 +3,7 @@ package wasptest
 import (
 	"flag"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -55,7 +56,7 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 	}
 
 	if !*useWasp {
-		wasm, err := ioutil.ReadFile("wasm/" + wasmPath)
+		wasm, err := ioutil.ReadFile(wasmhost.WasmPath(wasmPath))
 		if err != nil {
 			return err
 		}

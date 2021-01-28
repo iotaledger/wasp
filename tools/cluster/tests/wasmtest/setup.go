@@ -63,7 +63,7 @@ func loadWasmIntoWasps(wasps *cluster.Cluster, wasmName string, scDescription st
 		time.Sleep(time.Second)
 		wasmPath = wasmName + "_go.wasm"
 	}
-	wasm, err := ioutil.ReadFile(wasmPath)
+	wasm, err := ioutil.ReadFile(wasmhost.WasmPath(wasmPath))
 	if err != nil {
 		return err
 	}
