@@ -12,7 +12,9 @@ import (
 )
 
 const dwfName = "donatewithfeedback"
+
 var dwfFile = wasmhost.WasmPath("donatewithfeedback_bg.wasm")
+
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 
 var dwfHname = coretypes.Hn(dwfName)
@@ -26,7 +28,7 @@ func TestDwfDonateOnce(t *testing.T) {
 
 	for i := 0; i < numDonations; i++ {
 		feedback := fmt.Sprintf("Donation #%d: well done, I give you 42 iotas", i)
-		req := solo.NewCall(dwfName, "donate", "feedback", feedback).
+		req := solo.NewCallParams(dwfName, "donate", "feedback", feedback).
 			WithTransfer(balance.ColorIOTA, 42)
 		_, err = chain.PostRequest(req, nil)
 		require.NoError(t, err)

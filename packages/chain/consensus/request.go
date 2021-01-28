@@ -43,12 +43,6 @@ func (op *operator) requestFromId(reqId coretypes.RequestID) (*request, bool) {
 
 // request record retrieved (or created) by request message
 func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
-	// TODO ------------- temporary
-	ok, err := reqMsg.RequestBlock().SolidifyArgs(op.chain.BlobRegistry())
-	if !ok || err != nil {
-		op.log.Panicf("inconsistency: can't solidify args")
-	}
-
 	reqId := reqMsg.RequestId()
 	if op.isRequestProcessed(reqId) {
 		return nil, false
@@ -56,13 +50,13 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	ret, ok := op.requests[*reqId]
 	msgFirstTime := !ok || ret.reqTx == nil
 
-	publish := false
+	newMsg := false
 	if ok {
 		if msgFirstTime {
 			ret.reqTx = reqMsg.Transaction
 			ret.freeTokens = reqMsg.FreeTokens
 			ret.whenMsgReceived = time.Now()
-			publish = true
+			newMsg = true
 		}
 	} else {
 		ret = op.newRequest(*reqId)
@@ -71,9 +65,19 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 		ret.freeTokens = reqMsg.FreeTokens
 		op.requests[*reqId] = ret
 		op.addRequestIdConcurrent(reqId)
-		publish = true
+		newMsg = true
 	}
-	if publish {
+	if newMsg {
+		// solidify arguments by resolving blob references from the registry
+		// the request will not be selected for processing until ret.argsSolid == true
+		ok, err := reqMsg.RequestBlock().SolidifyArgs(op.chain.BlobRegistry())
+		if err != nil {
+			ret.log.Errorf("inconsistency: can't solidify args: %v", err)
+		} else {
+			ret.argsSolid = ok
+		}
+	}
+	if newMsg {
 		publisher.Publish("request_in",
 			op.chain.ID().String(),
 			reqMsg.Transaction.ID().String(),

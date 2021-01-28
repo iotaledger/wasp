@@ -33,7 +33,7 @@ func TestBase(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
 	)
@@ -50,7 +50,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
 	)
@@ -76,7 +76,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 2,
 	)

@@ -34,4 +34,7 @@ const (
 
 	// maximum time difference allowed between leader and local clocks for consensus
 	MaxClockDifferenceAllowed = 3 * time.Second
+
+	// check arg solidification period
+	CheckArgSolidificationEvery = 1 * time.Second
 )

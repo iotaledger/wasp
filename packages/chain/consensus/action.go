@@ -18,17 +18,38 @@ import (
 // IF IT IS REQUIRED BY THE STATE (for example if deadline achieved, if needed data is not here and similar .
 // Is called from timer ticks, also when messages received
 func (op *operator) takeAction() {
-	// notify leader about backlog
+	op.solidifyRequestArgsIfNeeded()
 	op.sendRequestNotificationsToLeader()
-	// start calculations as a leader
 	op.startCalculationsAsLeader()
 	op.checkQuorum()
 	op.rotateLeader()
 	op.pullInclusionLevel()
 }
 
+// solidifyRequestArgsIfNeeded runs through all requests and, if needed, attempts to solidify args
+func (op *operator) solidifyRequestArgsIfNeeded() {
+	if time.Now().Before(op.nextArgSolidificationDeadline) {
+		return
+	}
+	for _, req := range op.requests {
+		if req.reqTx == nil {
+			continue
+		}
+		if req.argsSolid {
+			continue
+		}
+		ok, err := req.reqTx.Requests()[req.reqId.Index()].SolidifyArgs(op.chain.BlobRegistry())
+		if err != nil {
+			req.log.Errorf("failed to solidify args: %v", err)
+		} else {
+			req.argsSolid = ok
+		}
+	}
+	op.nextArgSolidificationDeadline = time.Now().Add(chain.CheckArgSolidificationEvery)
+}
+
 // pullInclusionLevel if it is known that result transaction was posted by the leader,
-// some updates from goshimmer are expected about the status (inclusion level) of the transaction
+// some updates from Goshimmer are expected about the status (inclusion level) of the transaction
 // If the update about the tx state didn't come as expected (timeout), send the query about it
 // to the goshimmer (pull)
 func (op *operator) pullInclusionLevel() {

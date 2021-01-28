@@ -25,7 +25,7 @@ func TestIncSoloInc(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCall(incName, "increment").
+	req := solo.NewCallParams(incName, "increment").
 		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCall(incName, "increment_repeat_many", varNumRepeats, 2).
+	req := solo.NewCallParams(incName, "increment_repeat_many", varNumRepeats, 2).
 		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestIncSoloResultsTest(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCall(incName, "results_test").
+	req := solo.NewCallParams(incName, "results_test").
 		WithTransfer(balance.ColorIOTA, 1)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestIncSoloStateTest(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCall(incName, "state_test").
+	req := solo.NewCallParams(incName, "state_test").
 		WithTransfer(balance.ColorIOTA, 1)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)

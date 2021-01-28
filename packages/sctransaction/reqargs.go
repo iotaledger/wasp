@@ -25,8 +25,13 @@ func (a RequestArguments) Add(name kv.Key, data []byte) {
 // Encodes key as "blob reference"
 func (a RequestArguments) AddAsBlobHash(name kv.Key, data []byte) hashing.HashValue {
 	h := hashing.HashData(data)
-	a["*"+name] = h[:]
+	a.AddBlobRef(name, h)
 	return h
+}
+
+// AddBlobRef adds hash as data and marks it is a blob reference
+func (a RequestArguments) AddBlobRef(name kv.Key, hash hashing.HashValue) {
+	a["*"+name] = hash[:]
 }
 
 // HasBlobRef return if request arguments contain at least one blob reference

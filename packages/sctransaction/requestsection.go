@@ -3,6 +3,7 @@ package sctransaction
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/registry"
 	"io"
 	"time"
@@ -89,18 +90,40 @@ func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestSection) AddArgs(args dict.Dict) *RequestSection {
-	for k, v := range args {
-		req.args.Add(k, v)
-	}
+func (req *RequestSection) WithArgs(args RequestArguments) *RequestSection {
+	req.args = args
 	return req
 }
 
-func (req *RequestSection) AddArgsAsBlobHash(args dict.Dict) []hashing.HashValue {
-	ret := make([]hashing.HashValue, 0, len(args))
-	for k, v := range args {
-		ret = append(ret, req.args.AddAsBlobHash(k, v))
+func (req *RequestSection) AddArg(key kv.Key, value []byte) *RequestSection {
+	req.args.Add(key, value)
+	return req
+}
+
+func (req *RequestSection) AddArgAsBlobHash(key kv.Key, value []byte) hashing.HashValue {
+	return req.args.AddAsBlobHash(key, value)
+}
+
+func (req *RequestSection) AddArgs(args dict.Dict) {
+	args.ForEach(func(key kv.Key, value []byte) bool {
+		req.AddArg(key, value)
+		return true
+	})
+}
+
+func (req *RequestSection) AddArgsOptimized(optSize int, args dict.Dict) map[kv.Key]hashing.HashValue {
+	if optSize < 32 {
+		optSize = 32
 	}
+	ret := make(map[kv.Key]hashing.HashValue, 0)
+	args.ForEach(func(key kv.Key, value []byte) bool {
+		if len(value) <= optSize {
+			req.AddArg(key, value)
+		} else {
+			ret[key] = req.AddArgAsBlobHash(key, value)
+		}
+		return true
+	})
 	return ret
 }
 
@@ -119,6 +142,9 @@ func (req *RequestSection) SolidifyArgs(reg registry.BlobRegistryProvider) (bool
 		return ok, err
 	}
 	req.solidArgs = solid
+	if req.solidArgs == nil {
+		panic("req.solidArgs == nil")
+	}
 	return true, nil
 }
 

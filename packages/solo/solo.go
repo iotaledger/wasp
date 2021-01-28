@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
@@ -299,9 +300,7 @@ func (ch *Chain) backlogLen() int {
 func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	_, err := env.utxoDB.RequestFunds(ret.Address())
-	if err != nil {
-		env.logger.Panicf("NewSignatureSchemeWithFunds: %v", err)
-	}
+	require.NoError(env.T, err)
 	env.AssertAddressBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 	return ret
 }
@@ -338,4 +337,11 @@ func (env *Solo) DestroyColoredTokens(wallet signaturescheme.SignatureScheme, co
 	tx.Sign(wallet)
 
 	return env.utxoDB.AddTransaction(tx)
+}
+
+func (env *Solo) PutBlobDataIntoRegistry(data []byte) hashing.HashValue {
+	h, err := env.registry.PutBlob(data)
+	require.NoError(env.T, err)
+	env.logger.Infof("Solo::PutBlobDataIntoRegistry: len = %d, hash = %s", len(data), h)
+	return h
 }

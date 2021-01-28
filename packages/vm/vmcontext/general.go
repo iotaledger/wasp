@@ -76,8 +76,8 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 	}
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
 		WithTimelock(par.TimeLock).
-		WithTransfer(par.Transfer).
-		AddArgs(par.Params)
+		WithTransfer(par.Transfer)
+	reqSection.AddArgs(par.Params)
 	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 }
 

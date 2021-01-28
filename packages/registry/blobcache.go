@@ -9,6 +9,7 @@ import (
 type BlobRegistryProvider interface {
 	PutBlob(data []byte) (hashing.HashValue, error)
 	GetBlob(h hashing.HashValue) ([]byte, bool, error)
+	HasBlob(h hashing.HashValue) (bool, error)
 }
 
 func dbKeyForBlob(h hashing.HashValue) []byte {
@@ -32,4 +33,8 @@ func (r *Impl) GetBlob(h hashing.HashValue) ([]byte, bool, error) {
 		return nil, false, nil
 	}
 	return ret, ret != nil && err == nil, err
+}
+
+func (r *Impl) HasBlob(h hashing.HashValue) (bool, error) {
+	return r.dbProvider.GetRegistryPartition().Has(dbKeyForBlob(h))
 }
