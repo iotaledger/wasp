@@ -14,8 +14,8 @@ import (
 
 const (
 	DEBUG              = false
-	WASM_FILE_TESTCORE = "testcore_bg.wasm"
-	WASM_FILE_ERC20    = "erc20_bg.wasm"
+	WASM_FILE_TESTCORE = "../../../../../tools/cluster/tests/wasptest_new/wasm/testcore_bg.wasm"
+	WASM_FILE_ERC20    = "../../../../../tools/cluster/tests/wasptest_new/wasm/erc20_bg.wasm"
 	ERC20_NAME         = "erc20"
 	ERC20_SUPPLY       = 100000
 

@@ -9,7 +9,7 @@ import (
 
 const (
 	erc20name = "erc20test"
-	erc20file = "../pkg/erc20_bg.wasm"
+	erc20file = "../../../../../tools/cluster/tests/wasptest_new/wasm/erc20_bg.wasm"
 )
 
 func TestDeployErc20(t *testing.T) {

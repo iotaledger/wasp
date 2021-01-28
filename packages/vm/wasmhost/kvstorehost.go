@@ -211,20 +211,20 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 }
 
 func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
+	if typeId == OBJTYPE_STRING {
+		value := string(bytes)
+		host.FindObject(objId).SetString(keyId, value)
+		host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
+		return
+	}
 	host.FindObject(objId).SetBytes(keyId, bytes)
 	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
-
 }
 
 func (host *KvStoreHost) SetInt(objId int32, keyId int32, value int64) {
 	host.TraceAll("SetInt(o%d,k%d)", objId, keyId)
 	host.FindObject(objId).SetInt(keyId, value)
 	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
-}
-
-func (host *KvStoreHost) SetString(objId int32, keyId int32, value string) {
-	host.FindObject(objId).SetString(keyId, value)
-	host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
 }
 
 func (host *KvStoreHost) Trace(format string, a ...interface{}) {

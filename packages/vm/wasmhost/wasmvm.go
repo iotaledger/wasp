@@ -110,11 +110,7 @@ func (vm *WasmVmBase) HostSetBytes(objId int32, keyId int32, typeId int32, strin
 	host := vm.host
 	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
 	bytes := vm.vmGetBytes(stringRef, size)
-	if typeId == OBJTYPE_STRING {
-		host.SetString(objId, keyId, string(bytes))
-		return
-	}
-	host.SetBytes(objId, keyId, OBJTYPE_BYTES, bytes)
+	host.SetBytes(objId, keyId, typeId, bytes)
 }
 
 func (vm *WasmVmBase) HostSetInt(objId int32, keyId int32, value int64) {
