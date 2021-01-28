@@ -23,6 +23,13 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
+	// solidify arguments
+	for _, reqRef := range batch {
+		if ok, err := reqRef.RequestSection().SolidifyArgs(ch.Env.registry); err != nil || !ok {
+			return nil, fmt.Errorf("solo inconsistency: failed to solidify request args")
+		}
+	}
+
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		ChainID:            ch.ChainID,

@@ -60,7 +60,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 			WithTimelock(sectPar.Timelock).
 			WithTransfer(cbalances.NewFromMap(sectPar.Transfer))
 
-		reqSect.WithArgs(sectPar.Vars)
+		reqSect.AddArgs(sectPar.Vars)
 
 		err = txb.AddRequestSection(reqSect)
 		if err != nil {

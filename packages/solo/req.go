@@ -4,6 +4,8 @@
 package solo
 
 import (
+	"fmt"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 
@@ -25,10 +27,10 @@ type CallParams struct {
 	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
-	params     dict.Dict
+	args       sctransaction.RequestArguments
 }
 
-// NewCall creates structure which wraps in one object call parameters, used in PostRequest and callViewFull
+// NewCallParams creates structure which wraps in one object call parameters, used in PostRequest and callViewFull
 // calls:
 //  - 'scName' is a a name of the target smart contract
 //  - 'funName' is a name of the target entry point (the function) of he smart contract program
@@ -36,15 +38,45 @@ type CallParams struct {
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
 // With the WithTransfers the CallParams structure may be complemented with attached colored
 // tokens sent together with the request
-func NewCall(scName, funName string, params ...interface{}) *CallParams {
+func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	ret := &CallParams{
 		targetName: scName,
 		target:     coretypes.Hn(scName),
 		epName:     funName,
 		entryPoint: coretypes.Hn(funName),
 	}
-	ret.withParams(params...)
+	d := codec.MakeDict(toMap(params...))
+	ret.args = sctransaction.NewRequestArguments()
+	d.ForEach(func(key kv.Key, value []byte) bool {
+		ret.args.Add(key, value)
+		return true
+	})
 	return ret
+}
+
+func NewCallParamsOptimized(scName, funName string, optSize int, params ...interface{}) (*CallParams, map[kv.Key][]byte) {
+	if optSize <= 32 {
+		optSize = 32
+	}
+	ret := &CallParams{
+		targetName: scName,
+		target:     coretypes.Hn(scName),
+		epName:     funName,
+		entryPoint: coretypes.Hn(funName),
+	}
+	d := codec.MakeDict(toMap(params...))
+	ret.args = sctransaction.NewRequestArguments()
+	retOptimized := make(map[kv.Key][]byte)
+	d.ForEach(func(key kv.Key, value []byte) bool {
+		if len(value) <= optSize {
+			ret.args.Add(key, value)
+		} else {
+			ret.args.AddAsBlobHash(key, value)
+			retOptimized[key] = value
+		}
+		return true
+	})
+	return ret, retOptimized
 }
 
 // WithTransfer is a shorthand for the most often used case where only
@@ -60,6 +92,7 @@ func (r *CallParams) WithTransfers(transfer map[balance.Color]int64) *CallParams
 	return r
 }
 
+// makes map without hashing
 func toMap(params ...interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
 	if len(params) == 0 {
@@ -76,11 +109,6 @@ func toMap(params ...interface{}) map[string]interface{} {
 		par[key] = params[2*i+1]
 	}
 	return par
-}
-
-func (r *CallParams) withParams(params ...interface{}) *CallParams {
-	r.params = codec.MakeDict(toMap(params...))
-	return r
 }
 
 // PostRequest posts a request sent by the test program to the smart contract on the same or another chain:
@@ -107,7 +135,8 @@ func (ch *Chain) PostRequest(req *CallParams, sigScheme signaturescheme.Signatur
 
 	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
 		WithTransfer(req.transfer).
-		WithArgs(req.params)
+		WithArgs(req.args)
+
 	err = txb.AddRequestSection(reqSect)
 	require.NoError(ch.Env.T, err)
 
@@ -135,7 +164,11 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	defer ch.runVMMutex.Unlock()
 
 	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.proc, ch.Log)
-	return vctx.CallView(req.target, req.entryPoint, req.params)
+	a, ok, err := req.args.SolidifyRequestArguments(ch.Env.registry)
+	if err != nil || !ok {
+		return nil, fmt.Errorf("solo.internal error: can't solidify args")
+	}
+	return vctx.CallView(req.target, req.entryPoint, a)
 }
 
 // CallView calls the view entry point of the smart contract.
@@ -143,7 +176,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 // and 'paramValue' must be of type accepted by the 'codec' package
 func (ch *Chain) CallView(scName string, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log.Infof("callView: %s::%s", scName, funName)
-	ret, err := ch.callViewFull(NewCall(scName, funName, params...))
+	ret, err := ch.callViewFull(NewCallParams(scName, funName, params...))
 	if err != nil {
 		ch.Log.Errorf("callView: %s::%s: %v", scName, funName, err)
 		return nil, err

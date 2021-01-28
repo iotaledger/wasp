@@ -2,6 +2,9 @@ package sctransaction
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/registry"
 	"io"
 	"time"
 
@@ -33,8 +36,11 @@ type RequestSection struct {
 	// settles the request is greater or equal to the request timelock.
 	// 0 timelock naturally means it has no effect
 	timelock uint32
-	// input arguments in the form of variable/value pairs
-	args dict.Dict
+	// request arguments, not decoded yet wrt blobRefs
+	args RequestArguments
+	// decoded args, if not nil. If nil, it means it wasn't
+	// successfully decoded yet and can't be used in the batch for calculations in VM
+	solidArgs dict.Dict
 	// all tokens transferred with the request EXCEPT the 1 minted request token
 	transfer coretypes.ColoredBalances
 }
@@ -50,7 +56,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		senderContractHname: senderContractHname,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
-		args:                dict.New(),
+		args:                NewRequestArguments(),
 		transfer:            cbalances.NewFromMap(nil),
 	}
 }
@@ -84,15 +90,62 @@ func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestSection) WithArgs(args dict.Dict) *RequestSection {
-	if args != nil {
-		req.args = args.Clone()
-	}
+func (req *RequestSection) WithArgs(args RequestArguments) *RequestSection {
+	req.args = args
 	return req
 }
 
-func (req *RequestSection) Args() dict.Dict {
-	return req.args
+func (req *RequestSection) AddArg(key kv.Key, value []byte) *RequestSection {
+	req.args.Add(key, value)
+	return req
+}
+
+func (req *RequestSection) AddArgAsBlobHash(key kv.Key, value []byte) hashing.HashValue {
+	return req.args.AddAsBlobHash(key, value)
+}
+
+func (req *RequestSection) AddArgs(args dict.Dict) {
+	args.ForEach(func(key kv.Key, value []byte) bool {
+		req.AddArg(key, value)
+		return true
+	})
+}
+
+func (req *RequestSection) AddArgsOptimized(optSize int, args dict.Dict) map[kv.Key]hashing.HashValue {
+	if optSize < 32 {
+		optSize = 32
+	}
+	ret := make(map[kv.Key]hashing.HashValue, 0)
+	args.ForEach(func(key kv.Key, value []byte) bool {
+		if len(value) <= optSize {
+			req.AddArg(key, value)
+		} else {
+			ret[key] = req.AddArgAsBlobHash(key, value)
+		}
+		return true
+	})
+	return ret
+}
+
+// SolidArgs returns solid args is decoded already or nil otherwise
+func (req *RequestSection) SolidArgs() dict.Dict {
+	return req.solidArgs
+}
+
+// SolidifyArgs return true if solidified successfully
+func (req *RequestSection) SolidifyArgs(reg registry.BlobRegistryProvider) (bool, error) {
+	if req.solidArgs != nil {
+		return true, nil
+	}
+	solid, ok, err := req.args.SolidifyRequestArguments(reg)
+	if err != nil || !ok {
+		return ok, err
+	}
+	req.solidArgs = solid
+	if req.solidArgs == nil {
+		panic("req.solidArgs == nil")
+	}
+	return true, nil
 }
 
 func (req *RequestSection) EntryPointCode() coretypes.Hname {
@@ -161,7 +214,7 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.entryPoint.Read(r); err != nil {
 		return err
 	}
-	req.args = dict.New()
+	req.args = NewRequestArguments()
 	if err := req.args.Read(r); err != nil {
 		return err
 	}
@@ -193,7 +246,7 @@ func (ref *RequestRef) SenderAddress() *address.Address {
 
 func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) {
 	if _, ok := ref.Tx.State(); !ok {
-		err = fmt.Errorf("request not sent by the smart contract: %s", ref.RequestID().String())
+		err = fmt.Errorf("request wasn't sent by the smart contract: %s", ref.RequestID().String())
 		return
 	}
 	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())

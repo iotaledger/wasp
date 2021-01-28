@@ -38,6 +38,8 @@ func (op *operator) selectRequestsToProcess() []*request {
 	if candidates = op.filterRequestsNotSeenQuorumTimes(candidates); len(candidates) == 0 {
 		return nil
 	}
+
+	// redundant. Managed by requestCandidateList
 	if candidates = op.filterNotReadyYet(candidates); len(candidates) == 0 {
 		return nil
 	}
@@ -61,7 +63,10 @@ func (op *operator) selectRequestsToProcess() []*request {
 	return ret
 }
 
-// all requests from the backlog which has known messages and are not timelocked
+// all requests from the backlog which:
+// - has known messages
+// - has solid arguments
+// - are not timelocked
 // sort by arrival time
 func (op *operator) requestCandidateList() []*request {
 	ret := make([]*request, 0, len(op.requests))
@@ -69,6 +74,9 @@ func (op *operator) requestCandidateList() []*request {
 	nowis := time.Now()
 	for _, req := range op.requests {
 		if req.reqTx == nil {
+			continue
+		}
+		if !req.argsSolid {
 			continue
 		}
 		if req.isTimelocked(nowis) {
@@ -150,13 +158,18 @@ func (op *operator) filterNotReadyYet(reqs []*request) []*request {
 	before := len(ret)
 	ret = filterTimelocked(ret)
 	after := len(ret)
-
 	op.log.Debugf("Number of timelocked requests filtered out: %d", before-after)
+
+	before = len(ret)
+	ret = filterNotSolidArgs(ret)
+	after = len(ret)
+	op.log.Debugf("Number of requests with non-solid args filtered out: %d", before-after)
 	return ret
 }
 
 // filterOutRequestsWithoutTokens leaves only those first requests
 // which has corresponding request tokens.
+// TODO redundant? It is checked by tx.Properties
 func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 	if op.balances == nil {
 		return nil
@@ -164,7 +177,7 @@ func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
 	byColor, _ := txutil.BalancesByColor(op.balances)
 	ret := reqs[:0]
 	for _, req := range reqs {
-		col := (balance.Color)(*req.reqId.TransactionID())
+		col := balance.Color(*req.reqId.TransactionID())
 		v, _ := byColor[col]
 		if v <= 0 {
 			continue
@@ -188,6 +201,22 @@ func (op *operator) checkChainToken(balances map[valuetransaction.ID][]*balance.
 		}
 	}
 	return nil
+}
+
+func filterNotSolidArgs(reqs []*request) []*request {
+	ret := reqs[:0]
+	for _, req := range reqs {
+		if req.reqTx == nil {
+			// just in case??
+			continue
+		}
+		if !req.argsSolid {
+			req.log.Debugf("not solid args: filtered out")
+			continue
+		}
+		ret = append(ret, req)
+	}
+	return ret
 }
 
 func filterTimelocked(reqs []*request) []*request {

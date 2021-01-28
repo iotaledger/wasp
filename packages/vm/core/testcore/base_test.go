@@ -11,7 +11,7 @@ func TestNoContractPost(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall("dummyContract", "dummyEP")
+	req := solo.NewCallParams("dummyContract", "dummyEP")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
@@ -28,7 +28,7 @@ func TestNoEPPost(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, "dummyEP")
+	req := solo.NewCallParams(root.Interface.Name, "dummyEP")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }

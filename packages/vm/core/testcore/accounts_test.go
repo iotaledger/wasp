@@ -24,7 +24,7 @@ func TestAccountsBase(t *testing.T) {
 func TestAccountsRepeatInit(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	req := solo.NewCall(accounts.Interface.Name, "init")
+	req := solo.NewCallParams(accounts.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 	chain.CheckAccountLedger()
@@ -37,7 +37,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := solo.NewCall(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
@@ -45,7 +45,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
 	chain.CheckAccountLedger()
 
-	req = solo.NewCall(root.Interface.Name, root.FuncClaimChainOwnership)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
@@ -61,14 +61,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := solo.NewCall(accounts.Interface.Name, accounts.FuncDeposit).
+	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
 
-	req = solo.NewCall(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
 	_, err = chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 0)
@@ -82,14 +82,14 @@ func TestAccountsDepositWithdrawToChainFail(t *testing.T) {
 
 	newOwner := glb.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
-	req := solo.NewCall(accounts.Interface.Name, accounts.FuncDeposit).
+	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequest(req, newOwner)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+1)
 
-	req = solo.NewCall(accounts.Interface.Name, accounts.FuncWithdrawToChain)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToChain)
 	_, err = chain.PostRequest(req, newOwner)
 	require.Error(t, err)
 	chain.AssertAccountBalance(newOwnerAgentID, balance.ColorIOTA, 42+2)

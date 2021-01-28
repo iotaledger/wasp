@@ -54,7 +54,7 @@ func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
 func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
 
-	// TODO here redundant. Should be checked in the dispatcher (?)
+	// TODO here redundant. Should be checked in the dispatcher by tx.Properties (?)
 	if err := op.checkChainToken(reqMsg.Balances); err != nil {
 		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
 		return

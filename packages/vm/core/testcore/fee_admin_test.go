@@ -34,7 +34,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 
 	user := glb.NewSignatureSchemeWithFunds()
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
 
@@ -49,7 +49,7 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 
 	user := glb.NewSignatureSchemeWithFunds()
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
 
@@ -62,7 +62,7 @@ func TestSetDefaultOwnerFeeOk(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
 	_, err := chain.PostRequest(req, nil)
@@ -76,7 +76,7 @@ func TestSetDefaultValidatorFeeOk(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamValidatorFee, 499,
 	)
 	_, err := chain.PostRequest(req, nil)
@@ -90,7 +90,7 @@ func TestSetDefaultFeeOk(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 		root.ParamValidatorFee, 499,
 	)
@@ -105,7 +105,7 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, -2)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, -2)
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 
@@ -118,7 +118,7 @@ func TestSetDefaultFeeFailNegative2(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, -100)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, -100)
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 
@@ -131,7 +131,7 @@ func TestSetContractValidatorFeeOk(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamValidatorFee, 1000,
 	)
@@ -147,7 +147,7 @@ func TestSetContractOwnerFeeOk(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, accounts.Interface.Hname(),
 		root.ParamOwnerFee, 499,
 	)
@@ -163,7 +163,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamValidatorFee, 1000,
 	)
@@ -174,7 +174,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 1000)
 
-	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 499,
 	)
 	_, err = chain.PostRequest(req, nil)
@@ -184,7 +184,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, accounts.Interface.Name, 499, 0)
 	checkFees(chain, blob.Interface.Name, 499, 1000)
 
-	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999)
 	//.WithTransfers(
 	//		map[balance.Color]int64{
 	//			balance.ColorIOTA: 800,
@@ -202,7 +202,7 @@ func TestFeeNotEnough(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, root.Interface.Hname(),
 		root.ParamValidatorFee, 499,
 	)
@@ -214,7 +214,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
 	user := glb.NewSignatureSchemeWithFunds()
-	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
 	_, err = chain.PostRequest(req, user)
@@ -229,7 +229,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
 
-	req := solo.NewCall(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, root.Interface.Hname(),
 		root.ParamValidatorFee, 499,
 	)
@@ -240,7 +240,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
-	req = solo.NewCall(root.Interface.Name, root.FuncSetDefaultFee,
+	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
 	_, err = chain.PostRequest(req, nil)

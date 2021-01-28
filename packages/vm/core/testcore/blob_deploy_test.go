@@ -17,7 +17,7 @@ import (
 func TestBlobRepeatInit(t *testing.T) {
 	glb := solo.New(t, false, false)
 	chain := glb.NewChain(nil, "chain1")
-	req := solo.NewCall(blob.Interface.Name, "init")
+	req := solo.NewCallParams(blob.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
@@ -108,7 +108,7 @@ func TestDeployGrant(t *testing.T) {
 	user1 := glb.NewSignatureSchemeWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
-	req := solo.NewCall(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
 	_, err := chain.PostRequest(req, nil)
@@ -133,7 +133,7 @@ func TestRevokeDeploy(t *testing.T) {
 	user1 := glb.NewSignatureSchemeWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
-	req := solo.NewCall(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
 	_, err := chain.PostRequest(req, nil)
@@ -145,7 +145,7 @@ func TestRevokeDeploy(t *testing.T) {
 	_, contacts := chain.GetInfo()
 	require.EqualValues(t, 5, len(contacts))
 
-	req = solo.NewCall(root.Interface.Name, root.FuncRevokeDeploy,
+	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
 	_, err = chain.PostRequest(req, nil)
@@ -164,7 +164,7 @@ func TestDeployGrantFail(t *testing.T) {
 	user1 := glb.NewSignatureSchemeWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
-	req := solo.NewCall(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
 	_, err := chain.PostRequest(req, user1)

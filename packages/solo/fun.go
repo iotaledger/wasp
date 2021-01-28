@@ -98,7 +98,7 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		return expectedHash, nil
 	}
 
-	req := NewCall(blob.Interface.Name, blob.FuncStoreBlob, params...)
+	req := NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
 	require.EqualValues(ch.Env.T, feeColor, balance.ColorIOTA)
 	totalFee := ownerFee + validatorFee
@@ -126,12 +126,70 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 	return
 }
 
+// UploadBlobOptimized does the same as UploadBlob, only better but more complicated
+// It allows  big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put
+// The data itself must be uploaded to the node (in this case into Solo environment, separately
+// Before running the request in VM, the hash references contained in the request transaction are resolved with
+// the real data, previously uploaded directly.
+func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
+	par := toMap(params...)
+	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	if _, ok := ch.GetBlobInfo(expectedHash); ok {
+		// blob exists, return hash of existing
+		return expectedHash, nil
+	}
+	// creates call parameters by optimizing big data chunks, the ones larger than optimalSize.
+	// The call returns map of keys/value pairs which were replaced by hashes. These data must be uploaded
+	// separately
+	req, toUpload := NewCallParamsOptimized(blob.Interface.Name, blob.FuncStoreBlob, optimalSize, params...)
+	// the too big data we first upload into the registry
+	for _, v := range toUpload {
+		ch.Env.PutBlobDataIntoRegistry(v)
+	}
+	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
+	require.EqualValues(ch.Env.T, feeColor, balance.ColorIOTA)
+	totalFee := ownerFee + validatorFee
+	if totalFee > 0 {
+		req.WithTransfer(balance.ColorIOTA, totalFee)
+	}
+	var res dict.Dict
+	res, err = ch.PostRequest(req, sigScheme)
+	if err != nil {
+		return
+	}
+	resBin := res.MustGet(blob.ParamHash)
+	var r *hashing.HashValue
+	var ok bool
+	r, ok, err = codec.DecodeHashValue(resBin)
+	if err != nil {
+		return
+	}
+	if !ok {
+		err = fmt.Errorf("internal error: no hash returned")
+		return
+	}
+	ret = *r
+	require.EqualValues(ch.Env.T, expectedHash, ret)
+	return
+}
+
+const (
+	OptimizeUpload  = true
+	OptimalBlobSize = 512
+)
+
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
 //  parameter 'binaryCode' is the binary of Wasm smart contract program
 //
 // The blob for the Wasm binary used fixed field names which are statically known by the .
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
 func (ch *Chain) UploadWasm(sigScheme signaturescheme.SignatureScheme, binaryCode []byte) (ret hashing.HashValue, err error) {
+	if OptimizeUpload {
+		return ch.UploadBlobOptimized(OptimalBlobSize, sigScheme,
+			blob.VarFieldVMType, wasmtimevm.VMType,
+			blob.VarFieldProgramBinary, binaryCode,
+		)
+	}
 	return ch.UploadBlob(sigScheme,
 		blob.VarFieldVMType, wasmtimevm.VMType,
 		blob.VarFieldProgramBinary, binaryCode,
@@ -180,7 +238,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
-	req := NewCall(root.Interface.Name, root.FuncDeployContract, par...)
+	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...)
 	_, err := ch.PostRequest(req, sigScheme)
 	return err
 }

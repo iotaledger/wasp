@@ -51,6 +51,8 @@ type operator struct {
 	postedResultTxid       *valuetransaction.ID
 	nextPullInclusionLevel time.Time // if postedResultTxid != nil
 
+	nextArgSolidificationDeadline time.Time
+
 	log *logger.Logger
 
 	// data for concurrent access, from APIs mostly
@@ -99,6 +101,8 @@ type request struct {
 	whenMsgReceived time.Time
 	// notification vector for the current currentState
 	notifications []bool
+	// true if arguments were decoded/solidified already. If not, the request in not eligible for the batch
+	argsSolid bool
 
 	log *logger.Logger
 }

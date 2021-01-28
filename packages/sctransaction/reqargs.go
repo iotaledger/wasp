@@ -17,15 +17,21 @@ func NewRequestArguments() RequestArguments {
 }
 
 // Add add new ordinary argument. Encodes the key as "normal"
-func (a RequestArguments) Add(name string, data []byte) {
-	a[kv.Key("-"+name)] = data
+func (a RequestArguments) Add(name kv.Key, data []byte) {
+	a["-"+name] = data
 }
 
 // AddAsBlobHash adds argument with the data hash instead of data itself.
 // Encodes key as "blob reference"
-func (a RequestArguments) AddAsBlobHash(name string, data []byte) {
+func (a RequestArguments) AddAsBlobHash(name kv.Key, data []byte) hashing.HashValue {
 	h := hashing.HashData(data)
-	a[kv.Key("*"+name)] = h[:]
+	a.AddBlobRef(name, h)
+	return h
+}
+
+// AddBlobRef adds hash as data and marks it is a blob reference
+func (a RequestArguments) AddBlobRef(name kv.Key, hash hashing.HashValue) {
+	a["*"+name] = hash[:]
 }
 
 // HasBlobRef return if request arguments contain at least one blob reference
@@ -41,6 +47,14 @@ func (a RequestArguments) HasBlobRef() bool {
 	return ret
 }
 
+func (a RequestArguments) String() string {
+	return (dict.Dict(a)).String()
+}
+
+func (a RequestArguments) Clone() RequestArguments {
+	return RequestArguments((dict.Dict(a)).Clone())
+}
+
 func (a RequestArguments) Write(w io.Writer) error {
 	return (dict.Dict(a)).Write(w)
 }
@@ -49,10 +63,10 @@ func (a RequestArguments) Read(r io.Reader) error {
 	return (dict.Dict(a)).Read(r)
 }
 
-// DecodeRequestArguments decodes RequestArguments. For each blob reference encoded it
+// SolidifyRequestArguments decodes RequestArguments. For each blob reference encoded it
 // looks for the data by hash into the registry and replaces dict entry with the data
 // It returns ok flag == false if at least one blob hash don't have data in the registry
-func (a RequestArguments) DecodeRequestArguments(reg *registry.Impl) (dict.Dict, bool, error) {
+func (a RequestArguments) SolidifyRequestArguments(reg registry.BlobRegistryProvider) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error
