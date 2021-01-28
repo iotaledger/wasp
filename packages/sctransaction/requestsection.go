@@ -111,23 +111,7 @@ func (req *RequestSection) AddArgs(args dict.Dict) {
 	})
 }
 
-func (req *RequestSection) AddArgsOptimized(optSize int, args dict.Dict) map[kv.Key]hashing.HashValue {
-	if optSize < 32 {
-		optSize = 32
-	}
-	ret := make(map[kv.Key]hashing.HashValue, 0)
-	args.ForEach(func(key kv.Key, value []byte) bool {
-		if len(value) <= optSize {
-			req.AddArg(key, value)
-		} else {
-			ret[key] = req.AddArgAsBlobHash(key, value)
-		}
-		return true
-	})
-	return ret
-}
-
-// SolidArgs returns solid args is decoded already or nil otherwise
+// SolidArgs returns solid args if decoded already or nil otherwise
 func (req *RequestSection) SolidArgs() dict.Dict {
 	return req.solidArgs
 }
