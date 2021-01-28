@@ -3,7 +3,6 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,7 +12,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
@@ -85,12 +86,13 @@ func (w *WaspCliTest) Pipe(in []string, args ...string) []string {
 	})
 }
 
-func (w *WaspCliTest) copyFile(srcFile string, fname string) {
+// copyFile copies the given file into the temp directory
+func (w *WaspCliTest) copyFile(srcFile string) {
 	source, err := os.Open(srcFile)
 	require.NoError(w.t, err)
 	defer source.Close()
 
-	dst := path.Join(w.dir, path.Base(fname))
+	dst := path.Join(w.dir, path.Base(srcFile))
 	destination, err := os.Create(dst)
 	require.NoError(w.t, err)
 	defer destination.Close()
@@ -181,7 +183,7 @@ func TestWaspCliContract(t *testing.T) {
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
 	srcFile := wasmhost.WasmPath(file)
-	w.copyFile(srcFile, path.Join("wasm", file))
+	w.copyFile(srcFile)
 
 	// test chain deploy-contract command
 	w.Run("chain", "deploy-contract", vmtype, name, description, file)
@@ -202,7 +204,7 @@ func TestWaspCliContract(t *testing.T) {
 	require.Regexp(t, "(?m)counter:[[:space:]]+1$", out[0])
 }
 
-func TestWaspCliBlob(t *testing.T) {
+func TestWaspCliBlobContract(t *testing.T) {
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")
@@ -215,8 +217,7 @@ func TestWaspCliBlob(t *testing.T) {
 	vmtype := "wasmtimevm"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-	srcFile := wasmhost.WasmPath(file)
-	w.copyFile(srcFile, path.Join("wasm", file))
+	w.copyFile(wasmhost.WasmPath(file))
 
 	// test chain store-blob command
 	w.Run(
@@ -237,4 +238,24 @@ func TestWaspCliBlob(t *testing.T) {
 	out = w.Run("chain", "show-blob", blobHash)
 	out = w.Pipe(out, "decode", "string", blob.VarFieldProgramDescription, "string")
 	require.Contains(t, out[0], description)
+}
+
+func TestWaspCliBlobRegistry(t *testing.T) {
+	w := NewWaspCliTest(t)
+
+	// test that `blob has` returns false
+	out := w.Run("blob", "has", hashing.RandomHash(nil).String())
+	require.Contains(t, out[0], "false")
+
+	// test `blob put` command
+	file := "inccounter_bg.wasm"
+	w.copyFile(wasmhost.WasmPath(file))
+	out = w.Run("blob", "put", file)
+	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+	require.NotEmpty(t, blobHash)
+	t.Logf("Blob hash: %s", blobHash)
+
+	// test that `blob has` returns true
+	out = w.Run("blob", "has", blobHash)
+	require.Contains(t, out[0], "true")
 }

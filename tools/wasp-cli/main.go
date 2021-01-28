@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/iotaledger/wasp/tools/wasp-cli/blob"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
@@ -33,6 +34,7 @@ func main() {
 	wallet.InitCommands(commands, flags)
 	chain.InitCommands(commands, flags)
 	decode.InitCommands(commands, flags)
+	blob.InitCommands(commands, flags)
 
 	log.Check(flags.Parse(os.Args[1:]))
 

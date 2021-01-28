@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
+	"github.com/iotaledger/wasp/packages/webapi/blob"
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/request"
 	"github.com/iotaledger/wasp/packages/webapi/state"
@@ -20,6 +21,7 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	server.SetResponseContentType("application/json")
 
 	pub := server.Group("public", "").SetDescription("Public endpoints")
+	blob.AddEndpoints(pub)
 	info.AddEndpoints(pub)
 	request.AddEndpoints(pub)
 	state.AddEndpoints(pub)

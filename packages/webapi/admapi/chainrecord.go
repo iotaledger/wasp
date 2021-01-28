@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -38,7 +38,6 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
 
 func handlePutChainRecord(c echo.Context) error {
 	var req model.ChainRecord
-	var err error
 
 	if err := c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body")
