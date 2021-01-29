@@ -8,34 +8,65 @@ import (
 	"io"
 )
 
-// RequestArguments encodes request parameters taking into account hashes of data blobs
-type RequestArguments dict.Dict
+// RequestArgs encodes request parameters taking into account hashes of data blobs
+type RequestArgs dict.Dict
 
-// NewRequestArguments constructor
-func NewRequestArguments() RequestArguments {
-	return RequestArguments(dict.New())
+// NewRequestArgs constructor
+func NewRequestArgs() RequestArgs {
+	return RequestArgs(dict.New())
+}
+
+func NewRequestArgsFromDict(d dict.Dict) RequestArgs {
+	ret := NewRequestArgs()
+	for k, v := range d {
+		ret.Add(k, v)
+	}
+	return ret
+}
+
+const optimalSize = 32
+
+func NewOptimizedRequestArgs(d dict.Dict, optSize ...int) (RequestArgs, map[kv.Key][]byte) {
+	var osize int
+	if len(optSize) > 0 {
+		osize = optSize[0]
+	}
+	if osize <= optimalSize {
+		osize = optimalSize
+	}
+	ret := NewRequestArgs()
+	retOptimized := make(map[kv.Key][]byte)
+	for k, v := range d {
+		if len(v) <= osize {
+			ret.Add(k, v)
+		} else {
+			ret.AddAsBlobHash(k, v)
+			retOptimized[k] = v
+		}
+	}
+	return ret, retOptimized
 }
 
 // Add add new ordinary argument. Encodes the key as "normal"
-func (a RequestArguments) Add(name kv.Key, data []byte) {
+func (a RequestArgs) Add(name kv.Key, data []byte) {
 	a["-"+name] = data
 }
 
 // AddAsBlobHash adds argument with the data hash instead of data itself.
 // Encodes key as "blob reference"
-func (a RequestArguments) AddAsBlobHash(name kv.Key, data []byte) hashing.HashValue {
+func (a RequestArgs) AddAsBlobHash(name kv.Key, data []byte) hashing.HashValue {
 	h := hashing.HashData(data)
 	a.AddBlobRef(name, h)
 	return h
 }
 
 // AddBlobRef adds hash as data and marks it is a blob reference
-func (a RequestArguments) AddBlobRef(name kv.Key, hash hashing.HashValue) {
+func (a RequestArgs) AddBlobRef(name kv.Key, hash hashing.HashValue) {
 	a["*"+name] = hash[:]
 }
 
 // HasBlobRef return if request arguments contain at least one blob reference
-func (a RequestArguments) HasBlobRef() bool {
+func (a RequestArgs) HasBlobRef() bool {
 	var ret bool
 	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
 		ret = []byte(key)[0] == '*'
@@ -47,26 +78,26 @@ func (a RequestArguments) HasBlobRef() bool {
 	return ret
 }
 
-func (a RequestArguments) String() string {
+func (a RequestArgs) String() string {
 	return (dict.Dict(a)).String()
 }
 
-func (a RequestArguments) Clone() RequestArguments {
-	return RequestArguments((dict.Dict(a)).Clone())
+func (a RequestArgs) Clone() RequestArgs {
+	return RequestArgs((dict.Dict(a)).Clone())
 }
 
-func (a RequestArguments) Write(w io.Writer) error {
+func (a RequestArgs) Write(w io.Writer) error {
 	return (dict.Dict(a)).Write(w)
 }
 
-func (a RequestArguments) Read(r io.Reader) error {
+func (a RequestArgs) Read(r io.Reader) error {
 	return (dict.Dict(a)).Read(r)
 }
 
-// SolidifyRequestArguments decodes RequestArguments. For each blob reference encoded it
+// SolidifyRequestArguments decodes RequestArgs. For each blob reference encoded it
 // looks for the data by hash into the registry and replaces dict entry with the data
 // It returns ok flag == false if at least one blob hash don't have data in the registry
-func (a RequestArguments) SolidifyRequestArguments(reg registry.BlobRegistryProvider) (dict.Dict, bool, error) {
+func (a RequestArgs) SolidifyRequestArguments(reg registry.BlobRegistryProvider) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error

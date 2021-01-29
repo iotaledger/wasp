@@ -12,7 +12,7 @@ import (
 )
 
 func TestRequestArguments1(t *testing.T) {
-	r := NewRequestArguments()
+	r := NewRequestArgs()
 	r.Add("arg1", []byte("data1"))
 	r.Add("arg2", []byte("data2"))
 	r.Add("arg3", []byte("data3"))
@@ -30,13 +30,13 @@ func TestRequestArguments1(t *testing.T) {
 	require.NoError(t, err)
 
 	rdr := bytes.NewReader(buf.Bytes())
-	back := NewRequestArguments()
+	back := NewRequestArgs()
 	err = back.Read(rdr)
 	require.NoError(t, err)
 }
 
 func TestRequestArguments2(t *testing.T) {
-	r := NewRequestArguments()
+	r := NewRequestArgs()
 	r.Add("arg1", []byte("data1"))
 	r.Add("arg2", []byte("data2"))
 	r.Add("arg3", []byte("data3"))
@@ -55,7 +55,7 @@ func TestRequestArguments2(t *testing.T) {
 	require.NoError(t, err)
 
 	rdr := bytes.NewReader(buf.Bytes())
-	back := NewRequestArguments()
+	back := NewRequestArgs()
 	err = back.Read(rdr)
 	require.NoError(t, err)
 
@@ -67,7 +67,7 @@ func TestRequestArguments2(t *testing.T) {
 }
 
 func TestRequestArguments3(t *testing.T) {
-	r := NewRequestArguments()
+	r := NewRequestArgs()
 	r.Add("arg1", []byte("data1"))
 	r.Add("arg2", []byte("data2"))
 	r.Add("arg3", []byte("data3"))
@@ -99,7 +99,7 @@ func TestRequestArguments3(t *testing.T) {
 }
 
 func TestRequestArguments4(t *testing.T) {
-	r := NewRequestArguments()
+	r := NewRequestArgs()
 	r.Add("arg1", []byte("data1"))
 	r.Add("arg2", []byte("data2"))
 	r.Add("arg3", []byte("data3"))
@@ -123,7 +123,7 @@ func TestRequestArguments4(t *testing.T) {
 }
 
 func TestRequestArguments5(t *testing.T) {
-	r := NewRequestArguments()
+	r := NewRequestArgs()
 	r.Add("arg1", []byte("data1"))
 	r.Add("arg2", []byte("data2"))
 	r.Add("arg3", []byte("data3"))

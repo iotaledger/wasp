@@ -53,7 +53,7 @@ func ActivateChain(par ActivateChainParams) error {
 		})
 	}
 	if !par.WaitForCompletion {
-		_, errs := multicall.MultiCall(funs, 1*time.Second)
+		errs := multicall.MultiCall(funs, 1*time.Second)
 		return multicall.WrapErrors(errs)
 	}
 	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, []string{"state"})
@@ -61,7 +61,7 @@ func ActivateChain(par ActivateChainParams) error {
 		return err
 	}
 	defer subs.Close()
-	_, errs := multicall.MultiCall(funs, 1*time.Second)
+	errs := multicall.MultiCall(funs, 1*time.Second)
 	err = multicall.WrapErrors(errs)
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func DeactivateChain(par ActivateChainParams) error {
 		})
 	}
 	if !par.WaitForCompletion {
-		_, errs := multicall.MultiCall(funs, 1*time.Second)
+		errs := multicall.MultiCall(funs, 1*time.Second)
 		return multicall.WrapErrors(errs)
 	}
 	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, []string{"dismissed_committee"})
@@ -92,7 +92,7 @@ func DeactivateChain(par ActivateChainParams) error {
 		return err
 	}
 	defer subs.Close()
-	_, errs := multicall.MultiCall(funs, 1*time.Second)
+	errs := multicall.MultiCall(funs, 1*time.Second)
 	err = multicall.WrapErrors(errs)
 	if err != nil {
 		return err

@@ -13,7 +13,7 @@ func TestPutBlobData(t *testing.T) {
 	h := env.PutBlobDataIntoRegistry(data)
 	require.EqualValues(t, h, hashing.HashData(data))
 
-	p := sctransaction.NewRequestArguments()
+	p := sctransaction.NewRequestArgs()
 	h1 := p.AddAsBlobHash("dataName", data)
 	require.EqualValues(env.T, h, h1)
 

@@ -31,16 +31,22 @@ func New(hosts []string, httpClient ...func() http.Client) *MultiClient {
 	return m
 }
 
+func (m *MultiClient) Len() int {
+	return len(m.nodes)
+}
+
 // Do executes a callback once for each node in parallel, then wraps all error results into a single one
 func (m *MultiClient) Do(f func(int, *client.WaspClient) error) error {
+	return m.DoWithQuorum(f, len(m.nodes))
+}
+
+// Do executes a callback once for each node in parallel, then wraps all error results into a single one
+func (m *MultiClient) DoWithQuorum(f func(int, *client.WaspClient) error, quorum int) error {
 	funs := make([]func() error, len(m.nodes))
 	for i := range m.nodes {
 		j := i // duplicate variable for closure
 		funs[j] = func() error { return f(j, m.nodes[j]) }
 	}
-	ok, errs := multicall.MultiCall(funs, m.Timeout)
-	if !ok {
-		return multicall.WrapErrors(errs)
-	}
-	return nil
+	errs := multicall.MultiCall(funs, m.Timeout)
+	return multicall.WrapErrorsWithQuorum(errs, quorum)
 }
