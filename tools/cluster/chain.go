@@ -165,14 +165,14 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
 	if err != nil {
-		return nil, *hashing.NilHash, err
+		return nil, hashing.NilHash, err
 	}
 	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
 	if err != nil {
-		return nil, *hashing.NilHash, err
+		return nil, hashing.NilHash, err
 	}
 	if !bytes.Equal(progBinary, progBinaryBack) {
-		return nil, *hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
+		return nil, hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
 	}
 	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
 
@@ -192,12 +192,12 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 		},
 	)
 	if err != nil {
-		return nil, *hashing.NilHash, err
+		return nil, hashing.NilHash, err
 	}
 
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	if err != nil {
-		return nil, *hashing.NilHash, err
+		return nil, hashing.NilHash, err
 	}
 
 	return tx, programHash, nil

@@ -49,7 +49,7 @@ func (txb *Builder) Clone() *Builder {
 // - initializes origin state transaction of the chain with originAddress in the builder.
 // - mints chain token, sets origin state hash
 // - sets state index and timestamp to 0
-func (txb *Builder) CreateOriginStateSection(stateHash *hashing.HashValue, originAddress *address.Address) error {
+func (txb *Builder) CreateOriginStateSection(stateHash hashing.HashValue, originAddress *address.Address) error {
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
@@ -59,13 +59,13 @@ func (txb *Builder) CreateOriginStateSection(stateHash *hashing.HashValue, origi
 	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
 		Color:      balance.ColorNew,
 		BlockIndex: 0,
-		StateHash:  *stateHash,
+		StateHash:  stateHash,
 		Timestamp:  0,
 	})
 	return nil
 }
 
-func (txb *Builder) SetStateParams(stateIndex uint32, stateHash *hashing.HashValue, timestamp int64) error {
+func (txb *Builder) SetStateParams(stateIndex uint32, stateHash hashing.HashValue, timestamp int64) error {
 	if txb.stateBlock == nil {
 		return fmt.Errorf("state block not set")
 	}

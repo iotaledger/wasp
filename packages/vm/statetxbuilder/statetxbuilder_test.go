@@ -13,11 +13,11 @@ import (
 func TestBasic(t *testing.T) {
 	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair())
 	chAddr := chSig.Address()
-	col1, _, err := balance.ColorFromBytes(hashing.RandomHash(nil)[:])
+	col1, _, err := balance.ColorFromBytes(hashing.RandomHash(nil).Bytes())
 	require.NoError(t, err)
-	txid1, _, err := transaction.IDFromBytes(hashing.RandomHash(nil)[:])
+	txid1, _, err := transaction.IDFromBytes(hashing.RandomHash(nil).Bytes())
 	require.NoError(t, err)
-	txid2, _, err := transaction.IDFromBytes(hashing.RandomHash(nil)[:])
+	txid2, _, err := transaction.IDFromBytes(hashing.RandomHash(nil).Bytes())
 	require.NoError(t, err)
 
 	inps := map[transaction.ID][]*balance.Balance{
@@ -45,11 +45,11 @@ func TestBasic(t *testing.T) {
 
 func TestClone(t *testing.T) {
 	chAddr := signaturescheme.ED25519(ed25519.GenerateKeyPair()).Address()
-	col1, _, err := balance.ColorFromBytes(hashing.RandomHash(nil)[:])
+	col1, _, err := balance.ColorFromBytes(hashing.RandomHash(nil).Bytes())
 	require.NoError(t, err)
-	txid1, _, err := transaction.IDFromBytes(hashing.RandomHash(nil)[:])
+	txid1, _, err := transaction.IDFromBytes(hashing.RandomHash(nil).Bytes())
 	require.NoError(t, err)
-	txid2, _, err := transaction.IDFromBytes(hashing.RandomHash(nil)[:])
+	txid2, _, err := transaction.IDFromBytes(hashing.RandomHash(nil).Bytes())
 	require.NoError(t, err)
 
 	inps := map[transaction.ID][]*balance.Balance{

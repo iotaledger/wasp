@@ -281,13 +281,13 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
-	pb, ok := sm.pendingBlocks[*vh]
+	pb, ok := sm.pendingBlocks[vh]
 	if !ok || pb.block.StateTransactionID() == niltxid {
 		pb = &pendingBlock{
 			block:     block,
 			nextState: stateToApprove,
 		}
-		sm.pendingBlocks[*vh] = pb
+		sm.pendingBlocks[vh] = pb
 	}
 
 	sm.log.Debugw("added new pending block",

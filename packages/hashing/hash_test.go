@@ -34,7 +34,7 @@ func TestHashValueFromString(t *testing.T) {
 func TestHashData(t *testing.T) {
 	var bytes = []byte{0, 1, 2, 3}
 	h := HashData(bytes)
-	if reflect.TypeOf(nilHash) != reflect.TypeOf(h) {
+	if reflect.TypeOf(NilHash) != reflect.TypeOf(h) {
 		t.Fatalf("failed to hash bytes array")
 	}
 }
@@ -42,7 +42,7 @@ func TestHashData(t *testing.T) {
 func TestHashStrings(t *testing.T) {
 	var str = []string{"kuku", "mumu", "zuzu", "rrrr"}
 	h := HashStrings(str...)
-	require.EqualValues(t, reflect.TypeOf(nilHash), reflect.TypeOf(h))
+	require.EqualValues(t, reflect.TypeOf(NilHash), reflect.TypeOf(h))
 }
 
 func TestRandomHash(t *testing.T) {
@@ -51,7 +51,7 @@ func TestRandomHash(t *testing.T) {
 	}
 	var rnd = rand.New(src)
 	h := RandomHash(rnd)
-	require.EqualValues(t, reflect.TypeOf(nilHash), reflect.TypeOf(*h))
+	require.EqualValues(t, reflect.TypeOf(NilHash), reflect.TypeOf(h))
 }
 
 func TestString(t *testing.T) {

@@ -25,7 +25,7 @@ type VirtualState interface {
 	CommitToDb(batch Block) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
-	Hash() *hashing.HashValue
+	Hash() hashing.HashValue
 	// the storage of variable/value pairs
 	Variables() buffered.BufferedKVStore
 	Clone() VirtualState

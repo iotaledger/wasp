@@ -72,9 +72,9 @@ func (sb *StateSection) StateHash() hashing.HashValue {
 	return sb.stateHash
 }
 
-func (sb *StateSection) WithStateParams(stateIndex uint32, h *hashing.HashValue, ts int64) *StateSection {
+func (sb *StateSection) WithStateParams(stateIndex uint32, h hashing.HashValue, ts int64) *StateSection {
 	sb.blockIndex = stateIndex
-	sb.stateHash = *h
+	sb.stateHash = h
 	sb.timestamp = ts
 	return sb
 }
