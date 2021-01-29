@@ -4,6 +4,7 @@
 package wasmhost
 
 import (
+	"encoding/binary"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/mr-tron/base58"
 )
@@ -87,10 +88,20 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 }
 
 func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
-    if typeId == OBJTYPE_STRING {
-    	value := host.getString(objId, keyId)
-    	if value == nil { return nil }
-    	return []byte(*value)
+	if typeId == OBJTYPE_INT {
+		value := host.FindObject(objId).GetInt(keyId)
+		host.Trace("GetInt o%d k%d = %d", objId, keyId, value)
+		//TODO if value == nil { return nil }
+		bytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bytes, uint64(value))
+		return bytes
+	}
+	if typeId == OBJTYPE_STRING {
+		value := host.getString(objId, keyId)
+		if value == nil {
+			return nil
+		}
+		return []byte(*value)
 	}
 	obj := host.FindObject(objId)
 	if !obj.Exists(keyId) {
@@ -99,13 +110,6 @@ func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte
 	}
 	value := obj.GetBytes(keyId)
 	host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(value))
-	return value
-}
-
-func (host *KvStoreHost) GetInt(objId int32, keyId int32) int64 {
-	host.TraceAll("GetInt(o%d,k%d)", objId, keyId)
-	value := host.FindObject(objId).GetInt(keyId)
-	host.Trace("GetInt o%d k%d = %d", objId, keyId, value)
 	return value
 }
 
@@ -216,6 +220,12 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 }
 
 func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
+	if typeId == OBJTYPE_INT {
+		value := int64(binary.LittleEndian.Uint64(bytes))
+		host.FindObject(objId).SetInt(keyId, value)
+		host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
+		return
+	}
 	if typeId == OBJTYPE_STRING {
 		value := string(bytes)
 		host.FindObject(objId).SetString(keyId, value)
@@ -224,12 +234,6 @@ func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes 
 	}
 	host.FindObject(objId).SetBytes(keyId, bytes)
 	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
-}
-
-func (host *KvStoreHost) SetInt(objId int32, keyId int32, value int64) {
-	host.TraceAll("SetInt(o%d,k%d)", objId, keyId)
-	host.FindObject(objId).SetInt(keyId, value)
-	host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
 }
 
 func (host *KvStoreHost) Trace(format string, a ...interface{}) {

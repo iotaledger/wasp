@@ -33,20 +33,6 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("wasplib", "hostGetInt",
-		func(objId int32, keyId int32) int64 {
-			return vm.HostGetInt(objId, keyId)
-		})
-	if err != nil {
-		return err
-	}
-	err = vm.linker.DefineFunc("wasplib", "hostGetIntRef",
-		func(objId int32, keyId int32, intRef int32) {
-			vm.HostGetIntRef(objId, keyId, intRef)
-		})
-	if err != nil {
-		return err
-	}
 	err = vm.linker.DefineFunc("wasplib", "hostGetKeyId",
 		func(keyRef int32, size int32) int32 {
 			return vm.HostGetKeyId(keyRef, size)
@@ -64,20 +50,6 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	err = vm.linker.DefineFunc("wasplib", "hostSetBytes",
 		func(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
 			vm.HostSetBytes(objId, keyId, typeId, stringRef, size)
-		})
-	if err != nil {
-		return err
-	}
-	err = vm.linker.DefineFunc("wasplib", "hostSetInt",
-		func(objId int32, keyId int32, value int64) {
-			vm.HostSetInt(objId, keyId, value)
-		})
-	if err != nil {
-		return err
-	}
-	err = vm.linker.DefineFunc("wasplib", "hostSetIntRef",
-		func(objId int32, keyId int32, intRef int32) {
-			vm.HostSetIntRef(objId, keyId, intRef)
 		})
 	if err != nil {
 		return err

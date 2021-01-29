@@ -39,8 +39,9 @@ const (
 	KeyUtility     = int32(-35)
 	// treat this like a version number when anything changes to the keys
 	// make sure the client side in wasplib is updated accordingly
-	KeyZzzzzzz     = int32(-98)
+	KeyZzzzzzz = int32(-98)
 )
+
 // @formatter:on
 
 var keyMap = map[string]int32{

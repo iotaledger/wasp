@@ -50,40 +50,18 @@ func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, strin
 
 	// negative size means only check for existence
 	if size < 0 {
-		if host.Exists(objId, keyId, OBJTYPE_BYTES) {
+		if host.Exists(objId, keyId, typeId) {
 			return 0
 		}
 		// missing key is indicated by -1
 		return -1
 	}
 
-	if typeId == OBJTYPE_STRING {
-		// negative objId means get string
-		value := host.getString(objId, keyId)
-		// missing key is indicated by -1
-		if value == nil {
-			return -1
-		}
-		return vm.vmSetBytes(stringRef, size, []byte(*value))
-	}
-
-	bytes := host.GetBytes(objId, keyId, OBJTYPE_BYTES)
+	bytes := host.GetBytes(objId, keyId, typeId)
 	if bytes == nil {
 		return -1
 	}
 	return vm.vmSetBytes(stringRef, size, bytes)
-}
-
-func (vm *WasmVmBase) HostGetInt(objId int32, keyId int32) int64 {
-	host := vm.host
-	host.TraceAll("HostGetInt(o%d,k%d)", objId, keyId)
-	return host.GetInt(objId, keyId)
-}
-
-func (vm *WasmVmBase) HostGetIntRef(objId int32, keyId int32, intRef int32) {
-	host := vm.host
-	host.TraceAll("HostGetIntRef(o%d,k%d,r%d)", objId, keyId, intRef)
-	vm.vmSetInt(intRef, host.GetInt(objId, keyId))
 }
 
 func (vm *WasmVmBase) HostGetKeyId(keyRef int32, size int32) int32 {
@@ -111,18 +89,6 @@ func (vm *WasmVmBase) HostSetBytes(objId int32, keyId int32, typeId int32, strin
 	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
 	bytes := vm.vmGetBytes(stringRef, size)
 	host.SetBytes(objId, keyId, typeId, bytes)
-}
-
-func (vm *WasmVmBase) HostSetInt(objId int32, keyId int32, value int64) {
-	host := vm.host
-	host.TraceAll("HostSetInt(o%d,k%d,v%d)", objId, keyId, value)
-	host.SetInt(objId, keyId, value)
-}
-
-func (vm *WasmVmBase) HostSetIntRef(objId int32, keyId int32, intRef int32) {
-	host := vm.host
-	host.TraceAll("HostSetIntRef(o%d,k%d,r%d)", objId, keyId, intRef)
-	host.SetInt(objId, keyId, vm.vmGetInt(intRef))
 }
 
 func (vm *WasmVmBase) PreCall() []byte {
