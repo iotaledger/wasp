@@ -4,8 +4,33 @@
 package wasmproc
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
+
+var typeIds = map[int32]int32{
+	wasmhost.KeyBalances:   wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyCaller:     wasmhost.OBJTYPE_AGENT,
+	wasmhost.KeyCalls:      wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyChainOwner: wasmhost.OBJTYPE_AGENT,
+	wasmhost.KeyCreator:    wasmhost.OBJTYPE_AGENT,
+	wasmhost.KeyDeploys:    wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyEvent:      wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyExports:    wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyId:         wasmhost.OBJTYPE_CONTRACT,
+	wasmhost.KeyIncoming:   wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyLog:        wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyLogs:       wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyMaps:       wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyPanic:      wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyParams:     wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyResults:    wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyState:      wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyTimestamp:  wasmhost.OBJTYPE_INT,
+	wasmhost.KeyTrace:      wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyTransfers:  wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyUtility:    wasmhost.OBJTYPE_MAP,
+}
 
 type ScContext struct {
 	ScSandboxObject
@@ -22,39 +47,28 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 	return o
 }
 
-func (o *ScContext) Exists(keyId int32) bool {
+func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 	if keyId == wasmhost.KeyExports {
 		return o.vm.ctx == nil && o.vm.ctxView == nil
 	}
 	return o.GetTypeId(keyId) > 0
 }
 
-func (o *ScContext) GetBytes(keyId int32) []byte {
+func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
 	case wasmhost.KeyCaller:
-		id := o.vm.ctx.Caller()
-		return id[:]
+		return o.vm.ctx.Caller().Bytes()
 	case wasmhost.KeyChainOwner:
-		id := o.vm.chainOwnerID()
-		return id[:]
+		return o.vm.chainOwnerID().Bytes()
 	case wasmhost.KeyCreator:
-		id := o.vm.contractCreator()
-		return id[:]
+		return o.vm.contractCreator().Bytes()
 	case wasmhost.KeyId:
-		id := o.vm.contractID()
-		return id[:]
+		return o.vm.contractID().Bytes()
+	case wasmhost.KeyTimestamp:
+		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
 	}
 	o.invalidKey(keyId)
 	return nil
-}
-
-func (o *ScContext) GetInt(keyId int32) int64 {
-	switch keyId {
-	case wasmhost.KeyTimestamp:
-		return o.vm.ctx.GetTimestamp()
-	}
-	o.invalidKey(keyId)
-	return 0
 }
 
 func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
@@ -81,55 +95,19 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (o *ScContext) GetTypeId(keyId int32) int32 {
-	switch keyId {
-	case wasmhost.KeyBalances:
-		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyCalls:
-		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyChainOwner:
-		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
-	case wasmhost.KeyCreator:
-		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
-	case wasmhost.KeyDeploys:
-		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyExports:
-		return wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyId:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyIncoming:
-		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyLogs:
-		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyMaps:
-		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyParams:
-		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyResults:
-		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyCaller:
-		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_AGENT
-	case wasmhost.KeyState:
-		return wasmhost.OBJTYPE_MAP
-	case wasmhost.KeyTimestamp:
-		return wasmhost.OBJTYPE_INT
-	case wasmhost.KeyTransfers:
-		return wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY
-	case wasmhost.KeyUtility:
-		return wasmhost.OBJTYPE_MAP
-	}
-	return 0
+	return typeIds[keyId]
 }
 
-func (o *ScContext) SetString(keyId int32, value string) {
+func (o *ScContext) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	switch keyId {
 	case wasmhost.KeyEvent:
-		o.vm.ctx.Event(value)
+		o.vm.ctx.Event(string(bytes))
 	case wasmhost.KeyLog:
-		o.vm.log().Infof(value)
+		o.vm.log().Infof(string(bytes))
 	case wasmhost.KeyTrace:
-		o.vm.log().Debugf(value)
+		o.vm.log().Debugf(string(bytes))
 	case wasmhost.KeyPanic:
-		o.vm.log().Panicf(value)
+		o.vm.log().Panicf(string(bytes))
 	default:
 		o.invalidKey(keyId)
 	}

@@ -68,23 +68,16 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 	}
 }
 
-func (o *ScTransferInfo) SetBytes(keyId int32, value []byte) {
+func (o *ScTransferInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	var err error
 	switch keyId {
 	case wasmhost.KeyAddress:
-		o.address, _, err = address.FromBytes(value)
+		o.address, _, err = address.FromBytes(bytes)
 		if err != nil {
 			o.Panic("SetBytes: invalid address: " + err.Error())
 		}
-	default:
-		o.invalidKey(keyId)
-	}
-}
-
-func (o *ScTransferInfo) SetInt(keyId int32, value int64) {
-	switch keyId {
 	case wasmhost.KeyBalances:
-		o.Invoke(int32(value))
+		o.Invoke(int32(o.MustInt64(bytes)))
 	default:
 		o.invalidKey(keyId)
 	}

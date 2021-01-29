@@ -1,6 +1,9 @@
 package wasmproc
 
-import "github.com/iotaledger/wasp/packages/vm/wasmhost"
+import (
+	"encoding/binary"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+)
 
 type ScSandboxObject struct {
 	ScDict
@@ -11,17 +14,14 @@ func (o *ScSandboxObject) invalidKey(keyId int32) {
 	o.Panic("Invalid key: %d", keyId)
 }
 
-func (o *ScSandboxObject) GetBytes(keyId int32) []byte {
-	o.invalidKey(keyId)
-	return nil
-}
-
-func (o *ScSandboxObject) GetInt(keyId int32) int64 {
+func (o *ScSandboxObject) GetBytes(keyId int32, typeId int32) []byte {
 	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && keyId == wasmhost.KeyLength {
-		return int64(o.length)
+		bytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bytes, uint64(o.length))
+		return bytes
 	}
 	o.invalidKey(keyId)
-	return 0
+	return nil
 }
 
 func (o *ScSandboxObject) GetObjectId(keyId int32, typeId int32) int32 {
@@ -34,7 +34,7 @@ func (o *ScSandboxObject) GetString(keyId int32) string {
 	return ""
 }
 
-func (o *ScSandboxObject) SetBytes(keyId int32, value []byte) {
+func (o *ScSandboxObject) SetBytes(keyId int32, typeId int32, value []byte) {
 	o.invalidKey(keyId)
 }
 

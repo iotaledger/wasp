@@ -4,9 +4,9 @@
 package wasmproc
 
 import (
+	"encoding/binary"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -20,7 +20,7 @@ func NewScLogs(vm *wasmProcessor) *ScLogs {
 	return o
 }
 
-func (o *ScLogs) Exists(keyId int32) bool {
+func (o *ScLogs) Exists(keyId int32, typeId int32) bool {
 	_, ok := o.objects[keyId]
 	return ok
 }
@@ -58,17 +58,19 @@ func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
 	a.logEntryId = a.host.TrackObject(a.logEntry)
 }
 
-func (a *ScLog) Exists(keyId int32) bool {
+func (a *ScLog) Exists(keyId int32, typeId int32) bool {
 	return uint32(keyId) <= a.lines.MustLen()
 }
 
-func (a *ScLog) GetInt(keyId int32) int64 {
+func (a *ScLog) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
 	case wasmhost.KeyLength:
-		return int64(a.lines.MustLen())
+		bytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bytes, uint64(a.lines.MustLen()))
+		return bytes
 	}
 	a.invalidKey(keyId)
-	return 0
+	return nil
 }
 
 func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
@@ -85,7 +87,7 @@ func (a *ScLog) GetObjectId(keyId int32, typeId int32) int32 {
 }
 
 func (a *ScLog) GetTypeId(keyId int32) int32 {
-	if a.Exists(keyId) {
+	if a.Exists(keyId, 0) {
 		return wasmhost.OBJTYPE_MAP
 	}
 	return 0
@@ -101,33 +103,26 @@ type ScLogEntry struct {
 	timestamp int64
 }
 
-func (o *ScLogEntry) Exists(keyId int32) bool {
+func (o *ScLogEntry) Exists(keyId int32, typeId int32) bool {
 	if o.current < o.lines.MustLen() {
 		return o.GetTypeId(keyId) > 0
 	}
 	return false
 }
 
-func (o *ScLogEntry) GetBytes(keyId int32) []byte {
+func (o *ScLogEntry) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
 	case wasmhost.KeyData:
 		if o.current < o.lines.MustLen() {
 			return o.record[8:]
 		}
-	}
-	o.invalidKey(keyId)
-	return nil
-}
-
-func (o *ScLogEntry) GetInt(keyId int32) int64 {
-	switch keyId {
 	case wasmhost.KeyTimestamp:
 		if o.current < o.lines.MustLen() {
-			return int64(util.MustUint64From8Bytes(o.record[:8]))
+			return o.record[:8]
 		}
 	}
 	o.invalidKey(keyId)
-	return 0
+	return nil
 }
 
 func (o *ScLogEntry) GetTypeId(keyId int32) int32 {
@@ -149,28 +144,21 @@ func (o *ScLogEntry) LoadRecord(index uint32) {
 	}
 }
 
-func (o *ScLogEntry) SetBytes(keyId int32, value []byte) {
+func (o *ScLogEntry) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	switch keyId {
 	case wasmhost.KeyData:
 		// can only append
 		if o.current != o.lines.MustLen() {
 			o.Panic("SetBytes: Invalid log append index: %d", keyId)
 		}
-		o.lines.Append(o.timestamp, value)
+		o.lines.Append(o.timestamp, bytes)
 		o.current = ^uint32(0)
-	default:
-		o.invalidKey(keyId)
-	}
-}
-
-func (o *ScLogEntry) SetInt(keyId int32, value int64) {
-	switch keyId {
 	case wasmhost.KeyTimestamp:
 		// can only append
 		if o.current != o.lines.MustLen() {
-			o.Panic("SetInt: Invalid log append index: %d", keyId)
+			o.Panic("SetBytes: Invalid log append index: %d", keyId)
 		}
-		o.timestamp = value
+		o.timestamp = o.MustInt64(bytes)
 	default:
 		o.invalidKey(keyId)
 	}

@@ -82,6 +82,11 @@ const (
 	short_format = "%s..::%s"
 )
 
+// Bytes contract ID as byte slice
+func (scid ContractID) Bytes() []byte {
+	return scid[:]
+}
+
 // String human readable representation of the contract ID <chainID>::<hanme>
 func (scid ContractID) String() string {
 	return fmt.Sprintf(long_format, scid.ChainID().String(), scid.Hname().String())

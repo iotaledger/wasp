@@ -40,7 +40,7 @@ func NewScDeployInfo(vm *wasmProcessor) *ScDeployInfo {
 	return o
 }
 
-func (o *ScDeployInfo) Exists(keyId int32) bool {
+func (o *ScDeployInfo) Exists(keyId int32, typeId int32) bool {
 	return o.GetTypeId(keyId) > 0
 }
 
@@ -49,7 +49,7 @@ func (o *ScDeployInfo) GetTypeId(keyId int32) int32 {
 	case wasmhost.KeyDescription:
 		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyHash:
-		return wasmhost.OBJTYPE_BYTES //TODO OBJTYPE_HASH
+		return wasmhost.OBJTYPE_HASH
 	case wasmhost.KeyName:
 		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyParams:
@@ -58,7 +58,7 @@ func (o *ScDeployInfo) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
-func (o *ScDeployInfo) Invoke(programHash []byte) {
+func (o *ScDeployInfo) Invoke(programHash hashing.HashValue) {
 	params := dict.New()
 	if o.params != 0 {
 		params = o.host.FindObject(o.params).(*ScDict).kvStore.(dict.Dict)
@@ -68,44 +68,25 @@ func (o *ScDeployInfo) Invoke(programHash []byte) {
 		})
 	}
 
-	progHash, err := hashing.HashValueFromBytes(programHash)
-	if err != nil {
-		o.Panic("invalid hash: %v", err)
-	}
 	o.Trace("DEPLOY c'%s' f'%s'", o.name, o.description)
-	err = o.vm.ctx.DeployContract(progHash, o.name, o.description, params)
+	err := o.vm.ctx.DeployContract(programHash, o.name, o.description, params)
 	if err != nil {
 		o.Panic("failed to deploy: %v", err)
 	}
 }
 
-func (o *ScDeployInfo) SetBytes(keyId int32, value []byte) {
-	switch keyId {
-	case wasmhost.KeyHash:
-		o.Invoke(value)
-	default:
-		o.invalidKey(keyId)
-	}
-}
-
-func (o *ScDeployInfo) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case wasmhost.KeyLength:
-		o.description = ""
-		o.name = ""
-	case wasmhost.KeyParams:
-		o.params = int32(value)
-	default:
-		o.invalidKey(keyId)
-	}
-}
-
-func (o *ScDeployInfo) SetString(keyId int32, value string) {
+func (o *ScDeployInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	switch keyId {
 	case wasmhost.KeyDescription:
-		o.description = value
+		o.description = string(bytes)
+	case wasmhost.KeyHash:
+		hash,err := hashing.HashValueFromBytes(bytes)
+		if err != nil { o.Panic(err.Error())}
+		o.Invoke(hash)
 	case wasmhost.KeyName:
-		o.name = value
+		o.name = string(bytes)
+	case wasmhost.KeyParams:
+		o.params = int32(o.MustInt64(bytes))
 	default:
 		o.invalidKey(keyId)
 	}

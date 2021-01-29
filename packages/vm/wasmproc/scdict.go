@@ -4,6 +4,7 @@
 package wasmproc
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -25,7 +26,7 @@ type WaspObject interface {
 }
 
 func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
-	if !arrayObj.Exists(index) {
+	if !arrayObj.Exists(index, typeId) {
 		arrayObj.Panic("GetArrayObjectId: Invalid index")
 	}
 	if typeId != arrayObj.GetTypeId(index) {
@@ -116,11 +117,11 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.types = make(map[int32]int32)
 }
 
-func (o *ScDict) Exists(keyId int32) bool {
+func (o *ScDict) Exists(keyId int32, typeId int32) bool {
 	if o.typeId == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
 		return uint32(keyId) <= uint32(len(o.objects))
 	}
-	return o.kvStore.MustHas(o.key(keyId, -1))
+	return o.kvStore.MustHas(o.key(keyId, typeId))
 }
 
 func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
@@ -135,21 +136,13 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	return objId
 }
 
-func (o *ScDict) GetBytes(keyId int32) []byte {
-	//TODO what about AGENT/ADDRESS/COLOR?
-	return o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_BYTES))
-}
-
-func (o *ScDict) GetInt(keyId int32) int64 {
+func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
 	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && keyId == wasmhost.KeyLength {
-		return int64(o.length)
+		bytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bytes, uint64(o.length))
+		return bytes
 	}
-	bytes := o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_INT))
-	value, _, err := codec.DecodeInt64(bytes)
-	if err != nil {
-		o.Panic("GetInt: %v", err)
-	}
-	return value
+	return o.kvStore.MustGet(o.key(keyId, typeId))
 }
 
 func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
@@ -160,15 +153,6 @@ func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: func() WaspObject { return &ScDict{} },
 	})
-}
-
-func (o *ScDict) GetString(keyId int32) string {
-	bytes := o.kvStore.MustGet(o.key(keyId, wasmhost.OBJTYPE_STRING))
-	value, _, err := codec.DecodeString(bytes)
-	if err != nil {
-		o.Panic("GetString: %v", err)
-	}
-	return value
 }
 
 func (o *ScDict) GetTypeId(keyId int32) int32 {
@@ -192,6 +176,13 @@ func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 	return kv.Key(key[1:])
 }
 
+func (o *ScDict) MustInt64(bytes []byte) int64 {
+	if len(bytes) != 8 {
+		o.Panic("invalid int64 length")
+	}
+	return int64(binary.LittleEndian.Uint64(bytes))
+}
+
 func (o *ScDict) NestedKey() string {
 	if o.isRoot {
 		return ""
@@ -210,16 +201,13 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 	panic(err)
 }
 
-func (o *ScDict) SetBytes(keyId int32, value []byte) {
-	o.validateMutable(keyId)
-	//TODO what about AGENT/ADDRESS/COLOR?
-	o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_BYTES), value)
-}
+func (o *ScDict) SetBytes(keyId int32, typeId int32, value []byte) {
+	//TODO
+	//if !o.isMutable {
+	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
+	//}
 
-func (o *ScDict) SetInt(keyId int32, value int64) {
-	o.validateMutable(keyId)
-	switch keyId {
-	case wasmhost.KeyLength:
+	if keyId == wasmhost.KeyLength {
 		if o.kvStore != nil {
 			//TODO this goes wrong for state, should clear map tree instead
 			o.kvStore = dict.New()
@@ -230,14 +218,9 @@ func (o *ScDict) SetInt(keyId int32, value int64) {
 		}
 		o.objects = make(map[int32]int32)
 		o.length = 0
-	default:
-		o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_INT), codec.EncodeInt64(value))
+		return
 	}
-}
-
-func (o *ScDict) SetString(keyId int32, value string) {
-	o.validateMutable(keyId)
-	o.kvStore.Set(o.key(keyId, wasmhost.OBJTYPE_STRING), codec.EncodeString(value))
+	o.kvStore.Set(o.key(keyId, typeId), value)
 }
 
 func (o *ScDict) Suffix(keyId int32) string {
@@ -301,11 +284,4 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 	if fieldType != typeId {
 		o.Panic("validate: Invalid access")
 	}
-}
-
-func (o *ScDict) validateMutable(keyId int32) {
-	//TODO
-	//if !o.isMutable {
-	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
-	//}
 }

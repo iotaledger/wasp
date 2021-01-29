@@ -4,7 +4,6 @@
 package wasmhost
 
 import (
-	"encoding/binary"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/mr-tron/base58"
 )
@@ -31,15 +30,11 @@ var HostTracing = false
 var ExtendedHostTracing = false
 
 type HostObject interface {
-	Exists(keyId int32) bool
-	GetBytes(keyId int32) []byte
-	GetInt(keyId int32) int64
+	Exists(keyId int32, typeId int32) bool
+	GetBytes(keyId int32, typeId int32) []byte
 	GetObjectId(keyId int32, typeId int32) int32
-	GetString(keyId int32) string
 	GetTypeId(keyId int32) int32
-	SetBytes(keyId int32, value []byte)
-	SetInt(keyId int32, value int64)
-	SetString(keyId int32, value string)
+	SetBytes(keyId int32, typeId int32, value []byte)
 }
 
 // KvStoreHost implements WaspLib.client.ScHost interface
@@ -68,7 +63,7 @@ func (host *KvStoreHost) Init(null HostObject, root HostObject, log *logger.Logg
 }
 
 func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
-	return host.FindObject(objId).Exists(keyId)
+	return host.FindObject(objId).Exists(keyId, typeId)
 }
 
 func (host *KvStoreHost) FindObject(objId int32) HostObject {
@@ -88,27 +83,12 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 }
 
 func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
-	if typeId == OBJTYPE_INT {
-		value := host.FindObject(objId).GetInt(keyId)
-		host.Trace("GetInt o%d k%d = %d", objId, keyId, value)
-		//TODO if value == nil { return nil }
-		bytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bytes, uint64(value))
-		return bytes
-	}
-	if typeId == OBJTYPE_STRING {
-		value := host.getString(objId, keyId)
-		if value == nil {
-			return nil
-		}
-		return []byte(*value)
-	}
 	obj := host.FindObject(objId)
-	if !obj.Exists(keyId) {
+	if !obj.Exists(keyId, typeId) {
 		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
 		return nil
 	}
-	value := obj.GetBytes(keyId)
+	value := obj.GetBytes(keyId, typeId)
 	host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(value))
 	return value
 }
@@ -194,17 +174,6 @@ func (host *KvStoreHost) GetObjectId(objId int32, keyId int32, typeId int32) int
 	return subId
 }
 
-func (host *KvStoreHost) getString(objId int32, keyId int32) *string {
-	obj := host.FindObject(objId)
-	if !obj.Exists(keyId) {
-		host.Trace("GetString o%d k%d missing key", objId, keyId)
-		return nil
-	}
-	value := obj.GetString(keyId)
-	host.Trace("GetString o%d k%d = '%s'", objId, keyId, value)
-	return &value
-}
-
 func (host *KvStoreHost) PopFrame(frame []HostObject) {
 	host.objIdToObj = frame
 }
@@ -220,19 +189,7 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 }
 
 func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
-	if typeId == OBJTYPE_INT {
-		value := int64(binary.LittleEndian.Uint64(bytes))
-		host.FindObject(objId).SetInt(keyId, value)
-		host.Trace("SetInt o%d k%d v=%d", objId, keyId, value)
-		return
-	}
-	if typeId == OBJTYPE_STRING {
-		value := string(bytes)
-		host.FindObject(objId).SetString(keyId, value)
-		host.Trace("SetString o%d k%d v='%s'", objId, keyId, value)
-		return
-	}
-	host.FindObject(objId).SetBytes(keyId, bytes)
+	host.FindObject(objId).SetBytes(keyId, typeId, bytes)
 	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
 }
 

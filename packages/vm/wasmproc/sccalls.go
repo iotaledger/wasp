@@ -48,7 +48,7 @@ func NewScCallInfo(vm *wasmProcessor) *ScCallInfo {
 	return o
 }
 
-func (o *ScCallInfo) Exists(keyId int32) bool {
+func (o *ScCallInfo) Exists(keyId int32, typeId int32) bool {
 	return o.GetTypeId(keyId) > 0
 }
 
@@ -61,13 +61,13 @@ func (o *ScCallInfo) GetObjectId(keyId int32, typeId int32) int32 {
 func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 	switch keyId {
 	case wasmhost.KeyChain:
-		return wasmhost.OBJTYPE_BYTES // TODO CHAINID
+		return wasmhost.OBJTYPE_CHAIN
 	case wasmhost.KeyContract:
-		return wasmhost.OBJTYPE_INT // TODO HNAME
+		return wasmhost.OBJTYPE_HNAME
 	case wasmhost.KeyDelay:
 		return wasmhost.OBJTYPE_INT
 	case wasmhost.KeyFunction:
-		return wasmhost.OBJTYPE_INT // TODO HNAME
+		return wasmhost.OBJTYPE_HNAME
 	case wasmhost.KeyParams:
 		return wasmhost.OBJTYPE_INT
 	case wasmhost.KeyResults:
@@ -79,9 +79,6 @@ func (o *ScCallInfo) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScCallInfo) Invoke(delay int64) {
-	if o.contract == 0 {
-		o.contract = o.vm.contractID().Hname()
-	}
 	params := dict.New()
 	if o.params != 0 {
 		params = o.host.FindObject(o.params).(*ScDict).kvStore.(dict.Dict)
@@ -112,9 +109,6 @@ func (o *ScCallInfo) Invoke(delay int64) {
 
 	if delay >= 0 {
 		o.Trace("POST ch'%s' c'%s' f'%s'", o.chainId.String(), o.contract.String(), o.function.String())
-		if o.chainId == coretypes.NilChainID {
-			o.chainId = o.vm.contractID().ChainID()
-		}
 		o.vm.ctx.PostRequest(coretypes.PostRequestParams{
 			TargetContractID: coretypes.NewContractID(o.chainId, o.contract),
 			EntryPoint:       o.function,
@@ -140,40 +134,29 @@ func (o *ScCallInfo) Invoke(delay int64) {
 	o.host.FindObject(resultsId).(*ScDict).kvStore = results
 }
 
-func (o *ScCallInfo) SetBytes(keyId int32, value []byte) {
+func (o *ScCallInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	var err error
 	switch keyId {
 	case wasmhost.KeyChain:
-		o.chainId, err = coretypes.NewChainIDFromBytes(value)
+		o.chainId, err = coretypes.NewChainIDFromBytes(bytes)
 	case wasmhost.KeyContract:
-		o.contract, _, err = codec.DecodeHname(value)
+		o.contract, err = coretypes.NewHnameFromBytes(bytes)
 	case wasmhost.KeyFunction:
-		o.function, _, err = codec.DecodeHname(value)
+		o.function, err = coretypes.NewHnameFromBytes(bytes)
+	case wasmhost.KeyDelay:
+		value := o.MustInt64(bytes)
+		if value < -1 {
+			o.Panic("invalid delay: %d", value)
+		}
+		o.Invoke(value)
+	case wasmhost.KeyParams:
+		o.params = int32(o.MustInt64(bytes))
+	case wasmhost.KeyTransfers:
+		o.transfers = int32(o.MustInt64(bytes))
 	default:
 		o.invalidKey(keyId)
 	}
 	if err != nil {
 		o.Panic(err.Error())
-	}
-}
-
-func (o *ScCallInfo) SetInt(keyId int32, value int64) {
-	switch keyId {
-	case wasmhost.KeyLength:
-		o.contract = 0
-		o.function = 0
-		o.params = 0
-		o.transfers = 0
-	case wasmhost.KeyDelay:
-		if value < -1 {
-			o.Panic("Unexpected delay: %d", value)
-		}
-		o.Invoke(value)
-	case wasmhost.KeyParams:
-		o.params = int32(value)
-	case wasmhost.KeyTransfers:
-		o.transfers = int32(value)
-	default:
-		o.invalidKey(keyId)
 	}
 }
