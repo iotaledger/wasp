@@ -1,7 +1,6 @@
 package wasmproc
 
 import (
-	"encoding/binary"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -15,10 +14,8 @@ func (o *ScSandboxObject) invalidKey(keyId int32) {
 }
 
 func (o *ScSandboxObject) GetBytes(keyId int32, typeId int32) []byte {
-	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && keyId == wasmhost.KeyLength {
-		bytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bytes, uint64(o.length))
-		return bytes
+	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+		return o.Int64Bytes(int64(o.length))
 	}
 	o.invalidKey(keyId)
 	return nil

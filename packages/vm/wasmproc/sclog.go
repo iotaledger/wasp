@@ -4,7 +4,6 @@
 package wasmproc
 
 import (
-	"encoding/binary"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -59,15 +58,12 @@ func (a *ScLog) InitObj(id int32, keyId int32, owner *ScDict) {
 }
 
 func (a *ScLog) Exists(keyId int32, typeId int32) bool {
-	return uint32(keyId) <= a.lines.MustLen()
+	return keyId == wasmhost.KeyLength || uint32(keyId) <= a.lines.MustLen()
 }
 
 func (a *ScLog) GetBytes(keyId int32, typeId int32) []byte {
-	switch keyId {
-	case wasmhost.KeyLength:
-		bytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bytes, uint64(a.lines.MustLen()))
-		return bytes
+	if keyId == wasmhost.KeyLength {
+		return a.Int64Bytes(int64(a.lines.MustLen()))
 	}
 	a.invalidKey(keyId)
 	return nil

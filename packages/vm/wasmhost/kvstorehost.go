@@ -88,9 +88,9 @@ func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte
 		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
 		return nil
 	}
-	value := obj.GetBytes(keyId, typeId)
-	host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(value))
-	return value
+	bytes := obj.GetBytes(keyId, typeId)
+	host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(bytes))
+	return bytes
 }
 
 func (host *KvStoreHost) getKeyFromId(keyId int32) []byte {

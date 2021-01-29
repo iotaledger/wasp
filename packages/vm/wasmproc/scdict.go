@@ -118,6 +118,9 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 }
 
 func (o *ScDict) Exists(keyId int32, typeId int32) bool {
+	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+		return true
+	}
 	if o.typeId == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
 		return uint32(keyId) <= uint32(len(o.objects))
 	}
@@ -137,10 +140,8 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 }
 
 func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
-	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && keyId == wasmhost.KeyLength {
-		bytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bytes, uint64(o.length))
-		return bytes
+	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+		return o.Int64Bytes(int64(o.length))
 	}
 	return o.kvStore.MustGet(o.key(keyId, typeId))
 }
@@ -165,6 +166,12 @@ func (o *ScDict) GetTypeId(keyId int32) int32 {
 		return typeId
 	}
 	return 0
+}
+
+func (o *ScDict) Int64Bytes(value int64) []byte {
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, uint64(value))
+	return bytes
 }
 
 func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
