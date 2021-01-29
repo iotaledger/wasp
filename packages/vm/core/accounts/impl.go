@@ -146,26 +146,16 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // allow is similar to the ERC-20 allow function.
-// TODO not tested
+// TODO not tested. Not finished
 func allow(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	MustCheckLedger(state, "accounts.allow.begin")
 	defer MustCheckLedger(state, "accounts.allow.exit")
 
-	agentID, ok, err := codec.DecodeAgentID(ctx.Params().MustGet(ParamAgentID))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, ErrParamWrongOrNotFound
-	}
-	amount, ok, err := codec.DecodeInt64(ctx.Params().MustGet(ParamAgentID))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, ErrParamWrongOrNotFound
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	agentID := params.MustGetAgentID(ParamAgentID)
+	amount := params.MustGetInt64(ParamAmount)
+
 	allowances := collections.NewMap(state, VarStateAllowances)
 	if amount <= 0 {
 		allowances.MustDelAt(agentID[:])
