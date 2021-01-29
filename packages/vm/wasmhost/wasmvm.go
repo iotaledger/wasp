@@ -144,20 +144,10 @@ func (vm *WasmVmBase) vmGetBytes(offset int32, size int32) []byte {
 	return bytes
 }
 
-func (vm *WasmVmBase) vmGetInt(offset int32) int64 {
-	ptr := vm.impl.UnsafeMemory()
-	return int64(binary.LittleEndian.Uint64(ptr[offset : offset+8]))
-}
-
 func (vm *WasmVmBase) vmSetBytes(offset int32, size int32, bytes []byte) int32 {
 	if size != 0 {
 		ptr := vm.impl.UnsafeMemory()
 		copy(ptr[offset:offset+size], bytes)
 	}
 	return int32(len(bytes))
-}
-
-func (vm *WasmVmBase) vmSetInt(offset int32, value int64) {
-	ptr := vm.impl.UnsafeMemory()
-	binary.LittleEndian.PutUint64(ptr[offset:offset+8], uint64(value))
 }

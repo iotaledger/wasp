@@ -80,8 +80,10 @@ func (o *ScDeployInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	case wasmhost.KeyDescription:
 		o.description = string(bytes)
 	case wasmhost.KeyHash:
-		hash,err := hashing.HashValueFromBytes(bytes)
-		if err != nil { o.Panic(err.Error())}
+		hash, err := hashing.HashValueFromBytes(bytes)
+		if err != nil {
+			o.Panic(err.Error())
+		}
 		o.Invoke(hash)
 	case wasmhost.KeyName:
 		o.name = string(bytes)

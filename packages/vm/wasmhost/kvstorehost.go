@@ -34,7 +34,7 @@ type HostObject interface {
 	GetBytes(keyId int32, typeId int32) []byte
 	GetObjectId(keyId int32, typeId int32) int32
 	GetTypeId(keyId int32) int32
-	SetBytes(keyId int32, typeId int32, value []byte)
+	SetBytes(keyId int32, typeId int32, bytes []byte)
 }
 
 // KvStoreHost implements WaspLib.client.ScHost interface

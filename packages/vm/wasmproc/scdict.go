@@ -201,7 +201,7 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 	panic(err)
 }
 
-func (o *ScDict) SetBytes(keyId int32, typeId int32, value []byte) {
+func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	//TODO
 	//if !o.isMutable {
 	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
@@ -220,7 +220,7 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, value []byte) {
 		o.length = 0
 		return
 	}
-	o.kvStore.Set(o.key(keyId, typeId), value)
+	o.kvStore.Set(o.key(keyId, typeId), bytes)
 }
 
 func (o *ScDict) Suffix(keyId int32) string {

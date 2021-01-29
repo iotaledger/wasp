@@ -29,19 +29,6 @@ func (o *ScSandboxObject) GetObjectId(keyId int32, typeId int32) int32 {
 	return 0
 }
 
-func (o *ScSandboxObject) GetString(keyId int32) string {
-	o.invalidKey(keyId)
-	return ""
-}
-
-func (o *ScSandboxObject) SetBytes(keyId int32, typeId int32, value []byte) {
-	o.invalidKey(keyId)
-}
-
-func (o *ScSandboxObject) SetInt(keyId int32, value int64) {
-	o.invalidKey(keyId)
-}
-
-func (o *ScSandboxObject) SetString(keyId int32, value string) {
+func (o *ScSandboxObject) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	o.invalidKey(keyId)
 }
