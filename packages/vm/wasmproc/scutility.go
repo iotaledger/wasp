@@ -17,7 +17,7 @@ type ScUtility struct {
 	ScSandboxObject
 	base58Decoded []byte
 	base58Encoded string
-	hash          []byte
+	hash          hashing.HashValue
 	hname         coretypes.Hname
 	nextRandom    int
 	random        []byte
@@ -47,14 +47,14 @@ func (o *ScUtility) Exists(keyId int32, typeId int32) bool {
 
 func (o *ScUtility) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
-	case wasmhost.KeyName:
-		return codec.EncodeHname(o.hname)
 	case wasmhost.KeyBase58Bytes:
 		return o.base58Decoded
 	case wasmhost.KeyBase58String:
 		return []byte(o.base58Encoded)
 	case wasmhost.KeyHash:
-		return o.hash
+		return o.hash.Bytes()
+	case wasmhost.KeyHname:
+		return codec.EncodeHname(o.hname)
 	case wasmhost.KeyRandom:
 		return o.getRandom8Bytes()
 	}
@@ -90,6 +90,8 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_HASH
 	case wasmhost.KeyHname:
 		return wasmhost.OBJTYPE_HNAME
+	case wasmhost.KeyName:
+		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyRandom:
 		return wasmhost.OBJTYPE_INT
 	}
@@ -104,9 +106,8 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	case wasmhost.KeyBase58String:
 		o.base58Decoded, err = base58.Decode(string(bytes))
 	case wasmhost.KeyHash:
-		h := hashing.HashData(bytes)
-		o.hash = h[:]
-	case wasmhost.KeyHname:
+		o.hash = hashing.HashData(bytes)
+	case wasmhost.KeyName:
 		o.hname = coretypes.Hn(string(bytes))
 	default:
 		o.invalidKey(keyId)

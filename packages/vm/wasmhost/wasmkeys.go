@@ -1,6 +1,5 @@
 package wasmhost
 
-// @formatter:off
 const (
 	KeyAddress      = int32(-1)
 	KeyAgent        = int32(-2)
@@ -39,12 +38,12 @@ const (
 	KeyTrace        = int32(-35)
 	KeyTransfers    = int32(-36)
 	KeyUtility      = int32(-37)
-	// treat this like a version number when anything changes to the keys
-	// make sure the client side in wasplib is updated accordingly
+
+	// Treat this one like a version number. When anything changes
+	// to the keys give this one a different value and make sure
+	// the client side in wasplib is updated accordingly
 	KeyZzzzzzz = int32(-97)
 )
-
-// @formatter:on
 
 var keyMap = map[string]int32{
 	"address":      KeyAddress,
