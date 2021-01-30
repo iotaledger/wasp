@@ -33,8 +33,7 @@ func (vm *WasmVmBase) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmVmBase) HostFdWrite(fd int32, iovs int32, size int32, written int32) int32 {
-	host := vm.host
-	host.TraceAll("HostFdWrite(...)")
+	vm.host.TraceAll("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := vm.impl.UnsafeMemory()
 	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])

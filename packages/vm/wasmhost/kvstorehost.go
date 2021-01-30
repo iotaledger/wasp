@@ -38,7 +38,8 @@ type HostObject interface {
 }
 
 // KvStoreHost implements WaspLib.client.ScHost interface
-// it allows access to
+// it allows wasplib/govm to bypass Wasm and access the sandbox
+// directly so that it is possible to debug into SC code
 type KvStoreHost struct {
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
@@ -69,7 +70,6 @@ func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
 func (host *KvStoreHost) FindObject(objId int32) HostObject {
 	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
 		panic("FindObject: invalid objId")
-		objId = 0
 	}
 	return host.objIdToObj[objId]
 }

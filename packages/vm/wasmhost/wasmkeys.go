@@ -6,8 +6,8 @@ const (
 	KeyBalances     = int32(-3)
 	KeyBase58Bytes  = int32(-4)
 	KeyBase58String = int32(-5)
-	KeyCaller       = int32(-6)
-	KeyCalls        = int32(-7)
+	KeyCall         = int32(-6)
+	KeyCaller       = int32(-7)
 	KeyChain        = int32(-8)
 	KeyChainOwner   = int32(-9)
 	KeyColor        = int32(-10)
@@ -15,7 +15,7 @@ const (
 	KeyCreator      = int32(-12)
 	KeyData         = int32(-13)
 	KeyDelay        = int32(-14)
-	KeyDeploys      = int32(-15)
+	KeyDeploy       = int32(-15)
 	KeyDescription  = int32(-16)
 	KeyEvent        = int32(-17)
 	KeyExports      = int32(-18)
@@ -31,18 +31,20 @@ const (
 	KeyName         = int32(-28)
 	KeyPanic        = int32(-29)
 	KeyParams       = int32(-30)
-	KeyRandom       = int32(-31)
-	KeyResults      = int32(-32)
-	KeyState        = int32(-33)
-	KeyTimestamp    = int32(-34)
-	KeyTrace        = int32(-35)
-	KeyTransfers    = int32(-36)
-	KeyUtility      = int32(-37)
+	KeyPost         = int32(-31)
+	KeyRandom       = int32(-32)
+	KeyResults      = int32(-33)
+	KeyReturn       = int32(-34)
+	KeyState        = int32(-35)
+	KeyTimestamp    = int32(-36)
+	KeyTrace        = int32(-37)
+	KeyTransfers    = int32(-38)
+	KeyUtility      = int32(-39)
 
 	// Treat this one like a version number. When anything changes
 	// to the keys give this one a different value and make sure
 	// the client side in wasplib is updated accordingly
-	KeyZzzzzzz = int32(-97)
+	KeyZzzzzzz = int32(-99)
 )
 
 var keyMap = map[string]int32{
@@ -51,8 +53,8 @@ var keyMap = map[string]int32{
 	"balances":     KeyBalances,
 	"base58decode": KeyBase58Bytes,
 	"base58encode": KeyBase58String,
+	"call":         KeyCall,
 	"caller":       KeyCaller,
-	"calls":        KeyCalls,
 	"chain":        KeyChain,
 	"chain_owner":  KeyChainOwner,
 	"color":        KeyColor,
@@ -60,7 +62,7 @@ var keyMap = map[string]int32{
 	"creator":      KeyCreator,
 	"data":         KeyData,
 	"delay":        KeyDelay,
-	"deploys":      KeyDeploys,
+	"deploy":       KeyDeploy,
 	"description":  KeyDescription,
 	"event":        KeyEvent,
 	"exports":      KeyExports,
@@ -76,8 +78,10 @@ var keyMap = map[string]int32{
 	"name":         KeyName,
 	"panic":        KeyPanic,
 	"params":       KeyParams,
+	"post":         KeyPost,
 	"random":       KeyRandom,
 	"results":      KeyResults,
+	"return":       KeyReturn,
 	"state":        KeyState,
 	"timestamp":    KeyTimestamp,
 	"trace":        KeyTrace,
