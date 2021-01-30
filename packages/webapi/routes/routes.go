@@ -20,6 +20,18 @@ func StateQuery(chainID string) string {
 	return "/chain/" + chainID + "/state/query"
 }
 
+func PutBlob() string {
+	return "/blob/put"
+}
+
+func GetBlob(hash string) string {
+	return "/blob/get/" + hash
+}
+
+func HasBlob(hash string) string {
+	return "/blob/has/" + hash
+}
+
 func ActivateChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/activate"
 }

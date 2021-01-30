@@ -37,7 +37,7 @@ type RequestSection struct {
 	// 0 timelock naturally means it has no effect
 	timelock uint32
 	// request arguments, not decoded yet wrt blobRefs
-	args RequestArguments
+	args RequestArgs
 	// decoded args, if not nil. If nil, it means it wasn't
 	// successfully decoded yet and can't be used in the batch for calculations in VM
 	solidArgs dict.Dict
@@ -56,7 +56,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		senderContractHname: senderContractHname,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
-		args:                NewRequestArguments(),
+		args:                NewRequestArgs(),
 		transfer:            cbalances.NewFromMap(nil),
 	}
 }
@@ -90,7 +90,7 @@ func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestSection) WithArgs(args RequestArguments) *RequestSection {
+func (req *RequestSection) WithArgs(args RequestArgs) *RequestSection {
 	req.args = args
 	return req
 }
@@ -198,7 +198,7 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.entryPoint.Read(r); err != nil {
 		return err
 	}
-	req.args = NewRequestArguments()
+	req.args = NewRequestArgs()
 	if err := req.args.Read(r); err != nil {
 		return err
 	}

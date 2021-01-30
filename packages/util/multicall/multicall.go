@@ -11,7 +11,7 @@ var ErrTimeout = errors.New("MultiCall: timeout")
 
 // MultiCall call functions is parallel goroutines with overall timeout.
 // returns array of results and error value
-func MultiCall(funs []func() error, timeout time.Duration) (bool, []error) {
+func MultiCall(funs []func() error, timeout time.Duration) []error {
 	results := make([]error, len(funs))
 
 	var wg sync.WaitGroup
@@ -34,26 +34,26 @@ func MultiCall(funs []func() error, timeout time.Duration) (bool, []error) {
 	}
 
 	wg.Wait()
-
-	success := true
-	for i := range results {
-		if results[i] != nil {
-			success = false
-		}
-	}
-	return success, results
+	return results
 }
 
 func WrapErrors(errs []error) error {
+	return WrapErrorsWithQuorum(errs, len(errs))
+}
+
+func WrapErrorsWithQuorum(errs []error, quorum int) error {
 	ret := ""
-	numErrors := 0
+	numSuccess := 0
 	for i, err := range errs {
-		if err != nil {
-			ret += fmt.Sprintf("#%d: %v\n", i, err)
-			numErrors++
+		ret += fmt.Sprintf("#%d: %v\n", i, err)
+		if err == nil {
+			numSuccess++
 		}
 	}
-	if numErrors == 0 {
+	if quorum >= len(errs) {
+		quorum = len(errs)
+	}
+	if numSuccess >= quorum {
 		return nil
 	}
 	return errors.New(ret)

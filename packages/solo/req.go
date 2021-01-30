@@ -27,7 +27,7 @@ type CallParams struct {
 	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
-	args       sctransaction.RequestArguments
+	args       sctransaction.RequestArgs
 }
 
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequest and callViewFull
@@ -46,7 +46,7 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 		entryPoint: coretypes.Hn(funName),
 	}
 	d := codec.MakeDict(toMap(params...))
-	ret.args = sctransaction.NewRequestArguments()
+	ret.args = sctransaction.NewRequestArgs()
 	d.ForEach(func(key kv.Key, value []byte) bool {
 		ret.args.Add(key, value)
 		return true
@@ -65,17 +65,8 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 		entryPoint: coretypes.Hn(funName),
 	}
 	d := codec.MakeDict(toMap(params...))
-	ret.args = sctransaction.NewRequestArguments()
-	retOptimized := make(map[kv.Key][]byte)
-	d.ForEach(func(key kv.Key, value []byte) bool {
-		if len(value) <= optSize {
-			ret.args.Add(key, value)
-		} else {
-			ret.args.AddAsBlobHash(key, value)
-			retOptimized[key] = value
-		}
-		return true
-	})
+	var retOptimized map[kv.Key][]byte
+	ret.args, retOptimized = sctransaction.NewOptimizedRequestArgs(d)
 	return ret, retOptimized
 }
 
