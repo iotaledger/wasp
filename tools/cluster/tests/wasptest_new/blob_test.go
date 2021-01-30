@@ -2,6 +2,7 @@ package wasptest
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -88,17 +89,17 @@ func TestBlobDeployChain(t *testing.T) {
 	chain := setupBlobTest(t)
 
 	ret := getBlobInfo(t, chain, hashing.NilHash)
-	require.Zero(t, len(ret))
+	require.Len(t, ret, 0)
 }
 
 func TestBlobStoreSmallBlob(t *testing.T) {
 	chain := setupBlobTest(t)
 
 	description := "testing the blob"
-	blobFieldValues := map[string]interface{}{
+	fv := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldProgramDescription: []byte(description),
-	}
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
+	})
+	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
@@ -106,7 +107,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(blobFieldValues),
+			Args: requestargs.New().AddEncodeSimpleMany(fv),
 		},
 	)
 	check(err, t)
@@ -123,7 +124,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	require.EqualValues(t, []byte(description), retBin)
 }
 
-func TestBlobStoreManyBlobs(t *testing.T) {
+func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	chain := setupBlobTest(t)
 
 	var err error
@@ -137,8 +138,8 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 	for i, fn := range fileNames {
 		blobFieldValues[fn] = blobs[i]
 	}
-
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
+	fv := codec.MakeDict(blobFieldValues)
+	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
@@ -146,7 +147,7 @@ func TestBlobStoreManyBlobs(t *testing.T) {
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(blobFieldValues),
+			Args: requestargs.New().AddEncodeSimpleMany(fv),
 		},
 	)
 	check(err, t)

@@ -40,6 +40,10 @@ func NewFromMap(m map[balance.Color]int64) coretypes.ColoredBalances {
 	return coloredBalances(ret)
 }
 
+func NewIotasOnly(amount int64) coretypes.ColoredBalances {
+	return NewFromMap(map[balance.Color]int64{balance.ColorIOTA: amount})
+}
+
 // NewFromBalances from balances in the form of transaction output
 func NewFromBalances(bals []*balance.Balance) coretypes.ColoredBalances {
 	if bals == nil {

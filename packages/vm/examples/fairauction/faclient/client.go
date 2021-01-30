@@ -69,7 +69,7 @@ func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.Transa
 		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
+			ArgsRaw: codec.MakeDict(map[string]interface{}{fairauction.VarReqOwnerMargin: margin}),
 		},
 	)
 }
@@ -110,7 +110,7 @@ func (fc *FairAuctionClient) StartAuction(
 				balance.ColorIOTA: fee,
 				*color:            tokensForSale,
 			},
-			Args: codec.MakeDict(map[string]interface{}{
+			ArgsRaw: codec.MakeDict(map[string]interface{}{
 				fairauction.VarReqAuctionColor:                color.String(),
 				fairauction.VarReqStartAuctionDescription:     description,
 				fairauction.VarReqStartAuctionMinimumBid:      minimumBid,
@@ -126,7 +126,7 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 		fairauction.RequestPlaceBid,
 		chainclient.PostRequestParams{
 			Transfer: map[balance.Color]int64{balance.ColorIOTA: amountIotas},
-			Args:     codec.MakeDict(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
+			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
 		},
 	)
 }

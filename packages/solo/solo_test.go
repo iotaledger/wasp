@@ -2,7 +2,7 @@ package solo
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -13,8 +13,8 @@ func TestPutBlobData(t *testing.T) {
 	h := env.PutBlobDataIntoRegistry(data)
 	require.EqualValues(t, h, hashing.HashData(data))
 
-	p := sctransaction.NewRequestArgs()
-	h1 := p.AddAsBlobHash("dataName", data)
+	p := requestargs.New(nil)
+	h1 := p.AddAsBlobRef("dataName", data)
 	require.EqualValues(env.T, h, h1)
 
 	sargs, ok, err := p.SolidifyRequestArguments(env.registry)

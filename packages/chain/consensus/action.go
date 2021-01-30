@@ -31,17 +31,16 @@ func (op *operator) solidifyRequestArgsIfNeeded() {
 	if time.Now().Before(op.nextArgSolidificationDeadline) {
 		return
 	}
-	for _, req := range op.requests {
-		if req.reqTx == nil {
-			continue
-		}
-		if req.argsSolid {
-			continue
-		}
+	reqs := op.allRequests()
+	reqs = filterRequests(reqs, func(r *request) bool {
+		return r.hasMessage() && !r.hasSolidArgs()
+	})
+	for _, req := range reqs {
 		ok, err := req.reqTx.Requests()[req.reqId.Index()].SolidifyArgs(op.chain.BlobRegistry())
 		if err != nil {
 			req.log.Errorf("failed to solidify args: %v", err)
 		} else {
+			req.log.Infof("solidified arguments")
 			req.argsSolid = ok
 		}
 	}

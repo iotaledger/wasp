@@ -7,7 +7,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
@@ -72,12 +72,12 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sc
 	}
 	rootContractID := coretypes.NewContractID(par.ChainID, root.Interface.Hname())
 	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointInit)
-	args := dict.New()
-	args.Set(root.ParamChainID, codec.EncodeChainID(par.ChainID))
-	args.Set(root.ParamChainColor, codec.EncodeColor(par.ChainColor))
-	args.Set(root.ParamChainAddress, codec.EncodeAddress(par.ChainAddress))
-	args.Set(root.ParamDescription, codec.EncodeString(par.Description))
-	initRequest.AddArgs(args)
+	args := requestargs.New(nil)
+	args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(par.ChainID))
+	args.AddEncodeSimple(root.ParamChainColor, codec.EncodeColor(par.ChainColor))
+	args.AddEncodeSimple(root.ParamChainAddress, codec.EncodeAddress(par.ChainAddress))
+	args.AddEncodeSimple(root.ParamDescription, codec.EncodeString(par.Description))
+	initRequest.WithArgs(args)
 
 	if err := txb.AddRequestSection(initRequest); err != nil {
 		return nil, err

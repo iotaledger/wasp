@@ -5,13 +5,9 @@
 package consensus
 
 import (
-	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"sort"
 	"time"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/txutil"
 )
 
 // selectRequestsToProcess select requests to process in the batch.
@@ -25,25 +21,9 @@ func (op *operator) selectRequestsToProcess() []*request {
 	if len(candidates) == 0 {
 		return nil
 	}
-	before := takeIds(candidates)
-	candidates = op.filterOutRequestsWithoutTokens(candidates)
-	after := takeIds(candidates)
-	if len(before) != len(after) {
-		op.log.Warnf("filtered out requests without tokens: %+v -> %+v", idsShortStr(before), idsShortStr(after))
-		op.log.Debugf("\nbalances dumped: %s\n", txutil.BalancesToString(op.balances))
-	}
-	if len(candidates) == 0 {
-		return nil
-	}
 	if candidates = op.filterRequestsNotSeenQuorumTimes(candidates); len(candidates) == 0 {
 		return nil
 	}
-
-	// redundant. Managed by requestCandidateList
-	if candidates = op.filterNotReadyYet(candidates); len(candidates) == 0 {
-		return nil
-	}
-
 	ret := []*request{candidates[0]}
 	intersection := make([]bool, op.size())
 	copy(intersection, candidates[0].notifications)
@@ -60,6 +40,15 @@ func (op *operator) selectRequestsToProcess() []*request {
 	if len(ret) == 0 {
 		return nil
 	}
+	op.log.Debugf("requests selected for process: %d out of total %d", len(ret), len(op.requests))
+	return ret
+}
+
+func (op *operator) allRequests() []*request {
+	ret := make([]*request, 0, len(op.requests))
+	for _, req := range op.requests {
+		ret = append(ret, req)
+	}
 	return ret
 }
 
@@ -69,28 +58,18 @@ func (op *operator) selectRequestsToProcess() []*request {
 // - are not timelocked
 // sort by arrival time
 func (op *operator) requestCandidateList() []*request {
-	ret := make([]*request, 0, len(op.requests))
-
+	ret := op.allRequests()
 	nowis := time.Now()
-	for _, req := range op.requests {
-		if req.reqTx == nil {
-			continue
-		}
-		if !req.argsSolid {
-			continue
-		}
-		if req.isTimelocked(nowis) {
-			continue
-		}
-		ret = append(ret, req)
-	}
+	ret = filterRequests(ret, func(r *request) bool {
+		return r.hasMessage() && !r.isTimeLocked(nowis) && r.hasSolidArgs()
+	})
 	sort.Slice(ret, func(i, j int) bool {
 		return ret[i].whenMsgReceived.Before(ret[j].whenMsgReceived)
 	})
 	return ret
 }
 
-func (op *operator) requestTimelocked() []*request {
+func (op *operator) requestsTimeLocked() []*request {
 	ret := make([]*request, 0, len(op.requests))
 
 	nowis := time.Now()
@@ -98,7 +77,7 @@ func (op *operator) requestTimelocked() []*request {
 		if req.reqTx == nil {
 			continue
 		}
-		if !req.isTimelocked(nowis) {
+		if !req.isTimeLocked(nowis) {
 			continue
 		}
 		ret = append(ret, req)
@@ -135,6 +114,23 @@ func (op *operator) filterRequestsNotSeenQuorumTimes(candidates []*request) []*r
 	return ret
 }
 
+func (op *operator) collectProcessableBatch(reqIds []coretypes.RequestID) []*request {
+	nowis := time.Now()
+	return filterRequests(op.takeFromIds(reqIds), func(r *request) bool {
+		return r.hasMessage() && !r.isTimeLocked(nowis) && r.hasSolidArgs()
+	})
+}
+
+func filterRequests(reqs []*request, fn func(r *request) bool) []*request {
+	ret := reqs[:0]
+	for _, r := range reqs {
+		if fn(r) {
+			ret = append(ret, r)
+		}
+	}
+	return ret
+}
+
 // filterNotReadyYet checks all ids and returns list of corresponding request records
 // return empty list if not all requests in the list can be processed by the node atm
 // note, that filter out criteria are temporary, so the same request may be ready next time
@@ -142,104 +138,105 @@ func (op *operator) filterRequestsNotSeenQuorumTimes(candidates []*request) []*r
 //  - which has not received message with request transaction yet (the ID is known from peer only)
 //  - the user defined request while processor is not ready yet
 //  - the request is timelocked yet
-func (op *operator) filterNotReadyYet(reqs []*request) []*request {
-	if len(reqs) == 0 {
-		return nil
-	}
-	ret := reqs[:0] // same underlying array, different slice
-
-	for _, req := range reqs {
-		if req.reqTx == nil {
-			op.log.Debugf("request %s not yet known to the node: can't be processed", req.reqId.Short())
-			continue
-		}
-		ret = append(ret, req)
-	}
-	before := len(ret)
-	ret = filterTimelocked(ret)
-	after := len(ret)
-	op.log.Debugf("Number of timelocked requests filtered out: %d", before-after)
-
-	before = len(ret)
-	ret = filterNotSolidArgs(ret)
-	after = len(ret)
-	op.log.Debugf("Number of requests with non-solid args filtered out: %d", before-after)
-	return ret
-}
+//func (op *operator) filterNotReadyYet(reqs []*request) []*request {
+//	if len(reqs) == 0 {
+//		return nil
+//	}
+//	ret := reqs[:0] // same underlying array, different slice
+//
+//	for _, req := range reqs {
+//		if req.reqTx == nil {
+//			op.log.Debugf("request %s not yet known to the node: can't be processed", req.reqId.Short())
+//			continue
+//		}
+//		ret = append(ret, req)
+//	}
+//	before := len(ret)
+//	ret = filterTimelocked(ret)
+//	after := len(ret)
+//	op.log.Debugf("Number of time locked requests filtered out: %d", before-after)
+//
+//	before = len(ret)
+//	ret = filterNotSolidArgs(ret)
+//	after = len(ret)
+//	op.log.Debugf("Number of requests with non-solid args filtered out: %d", before-after)
+//	op.log.Debugf("Number of selected requests: %d", len(ret))
+//	return ret
+//}
 
 // filterOutRequestsWithoutTokens leaves only those first requests
 // which has corresponding request tokens.
-// TODO redundant? It is checked by tx.Properties
-func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
-	if op.balances == nil {
-		return nil
-	}
-	byColor, _ := txutil.BalancesByColor(op.balances)
-	ret := reqs[:0]
-	for _, req := range reqs {
-		col := balance.Color(*req.reqId.TransactionID())
-		v, _ := byColor[col]
-		if v <= 0 {
-			continue
-		}
-		byColor[col] = v - 1
-		ret = append(ret, req)
-	}
-	return ret
-}
+//// TODO redundant? It is checked by tx.Properties
+//func (op *operator) filterOutRequestsWithoutTokens(reqs []*request) []*request {
+//	if op.balances == nil {
+//		return nil
+//	}
+//	byColor, _ := txutil.BalancesByColor(op.balances)
+//	ret := reqs[:0]
+//	for _, req := range reqs {
+//		col := balance.Color(*req.reqId.TransactionID())
+//		v, _ := byColor[col]
+//		if v <= 0 {
+//			continue
+//		}
+//		byColor[col] = v - 1
+//		ret = append(ret, req)
+//	}
+//	return ret
+//}
 
 // checkChainToken validates if the NFT, the chain token, is among balances, as expected
-func (op *operator) checkChainToken(balances map[valuetransaction.ID][]*balance.Balance) error {
-	sum := int64(0)
-	color := *op.chain.Color()
-	for _, bals := range balances {
-		sum += txutil.BalanceOfColor(bals, color)
-	}
-	if stateIndex, ok := op.blockIndex(); ok && stateIndex > 0 {
-		if sum != 1 {
-			return fmt.Errorf("must be exactly 1 SC token of color %s. Found %d instead", color.String(), sum)
-		}
-	}
-	return nil
-}
+//func (op *operator) checkChainToken(balances map[valuetransaction.ID][]*balance.Balance) error {
+//	sum := int64(0)
+//	color := *op.chain.Color()
+//	for _, bals := range balances {
+//		sum += txutil.BalanceOfColor(bals, color)
+//	}
+//	if stateIndex, ok := op.blockIndex(); ok && stateIndex > 0 {
+//		if sum != 1 {
+//			return fmt.Errorf("must be exactly 1 SC token of color %s. Found %d instead", color.String(), sum)
+//		}
+//	}
+//	return nil
+//}
 
-func filterNotSolidArgs(reqs []*request) []*request {
-	ret := reqs[:0]
-	for _, req := range reqs {
-		if req.reqTx == nil {
-			// just in case??
-			continue
-		}
-		if !req.argsSolid {
-			req.log.Debugf("not solid args: filtered out")
-			continue
-		}
-		ret = append(ret, req)
-	}
-	return ret
-}
-
-func filterTimelocked(reqs []*request) []*request {
-	ret := reqs[:0]
-	nowis := time.Now()
-	for _, req := range reqs {
-		if req.reqTx == nil {
-			// just in case??
-			continue
-		}
-		if req.isTimelocked(nowis) {
-			if req.timelock() > 0 {
-				req.log.Debugf("timelocked until %d: filtered out. nowis %d", req.timelock(), nowis.Unix())
-			}
-			continue
-		}
-		if req.timelock() > 0 {
-			req.log.Debugf("timelocked until %d: pass. nowis %d", req.timelock(), nowis.Unix())
-		}
-		ret = append(ret, req)
-	}
-	return ret
-}
+//func filterNotSolidArgs(reqs []*request) []*request {
+//	ret := reqs[:0]
+//	for _, req := range reqs {
+//		if req.reqTx == nil {
+//			// just in case??
+//			continue
+//		}
+//		if !req.argsSolid {
+//			req.log.Debugf("not solid args: filtered out")
+//			continue
+//		}
+//		ret = append(ret, req)
+//	}
+//	return ret
+//}
+//
+//func filterTimelocked(reqs []*request) []*request {
+//	ret := reqs[:0]
+//	nowis := time.Now()
+//	for _, req := range reqs {
+//		if req.reqTx == nil {
+//			// just in case??
+//			continue
+//		}
+//		if req.isTimeLocked(nowis) {
+//			if req.timelock() > 0 {
+//				req.log.Debugf("timelocked until %d: filtered out. nowis %d", req.timelock(), nowis.Unix())
+//			}
+//			continue
+//		}
+//		if req.timelock() > 0 {
+//			req.log.Debugf("timelocked until %d: pass. nowis %d", req.timelock(), nowis.Unix())
+//		}
+//		ret = append(ret, req)
+//	}
+//	return ret
+//}
 
 func numTrue(bs []bool) uint16 {
 	ret := uint16(0)

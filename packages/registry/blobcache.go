@@ -23,6 +23,7 @@ func (r *Impl) PutBlob(data []byte) (hashing.HashValue, error) {
 	if err != nil {
 		return hashing.HashValue{}, err
 	}
+	r.log.Infof("data blob has been stored. size: %d bytes, hash: %s", len(data), h)
 	return h, nil
 }
 

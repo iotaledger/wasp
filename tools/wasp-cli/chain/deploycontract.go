@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -34,7 +35,7 @@ func deployContractCmd(args []string) {
 			blob.Interface.Hname(),
 			coretypes.Hn(blob.FuncStoreBlob),
 			chainclient.PostRequestParams{
-				Args: codec.MakeDict(blobFieldValues),
+				Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
 			},
 		)
 	})
@@ -46,11 +47,11 @@ func deployContractCmd(args []string) {
 			root.Interface.Hname(),
 			coretypes.Hn(root.FuncDeployContract),
 			chainclient.PostRequestParams{
-				Args: codec.MakeDict(map[string]interface{}{
+				Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 					root.ParamName:        name,
 					root.ParamDescription: description,
 					root.ParamProgramHash: progHash,
-				}),
+				})),
 			},
 		)
 	})

@@ -6,6 +6,7 @@ package solo
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 
@@ -27,7 +28,7 @@ type CallParams struct {
 	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
-	args       sctransaction.RequestArgs
+	args       requestargs.RequestArgs
 }
 
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequest and callViewFull
@@ -46,11 +47,10 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 		entryPoint: coretypes.Hn(funName),
 	}
 	d := codec.MakeDict(toMap(params...))
-	ret.args = sctransaction.NewRequestArgs()
-	d.ForEach(func(key kv.Key, value []byte) bool {
-		ret.args.Add(key, value)
-		return true
-	})
+	ret.args = requestargs.New(nil)
+	for k, v := range d {
+		ret.args.AddEncodeSimple(k, v)
+	}
 	return ret
 }
 
@@ -66,7 +66,7 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 	}
 	d := codec.MakeDict(toMap(params...))
 	var retOptimized map[kv.Key][]byte
-	ret.args, retOptimized = sctransaction.NewOptimizedRequestArgs(d)
+	ret.args, retOptimized = requestargs.NewOptimizedRequestArgs(d)
 	return ret, retOptimized
 }
 

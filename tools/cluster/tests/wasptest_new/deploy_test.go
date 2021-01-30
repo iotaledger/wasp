@@ -1,6 +1,7 @@
 package wasptest
 
 import (
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"testing"
 	"time"
 
@@ -186,10 +187,10 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
 	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
-		Args: codec.MakeDict(map[string]interface{}{
+		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarName:        nameNew,
 			inccounter.VarDescription: dscrNew,
-		}),
+		})),
 	})
 	check(err, t)
 
