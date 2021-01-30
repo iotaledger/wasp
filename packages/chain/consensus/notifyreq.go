@@ -27,7 +27,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	}
 	currentLeaderPeerIndex, _ := op.currentLeader()
 	reqs := op.requestCandidateList()
-	reqs = op.filterOutRequestsWithoutTokens(reqs)
+	//reqs = op.filterOutRequestsWithoutTokens(reqs)
 
 	// get not time-locked requests with the message known
 	if len(reqs) == 0 {

@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -18,7 +19,7 @@ func postRequestCmd(args []string) {
 		return SCClient(coretypes.Hn(args[0])).PostRequest(
 			args[1],
 			chainclient.PostRequestParams{
-				Args: util.EncodeParams(args[2:]),
+				Args: requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
 			},
 		)
 	})

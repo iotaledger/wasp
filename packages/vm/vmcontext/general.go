@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -74,10 +75,12 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 		vmctx.log.Debugf("-- PostRequest: not enough funds")
 		return false
 	}
+	reqParams := requestargs.New(nil)
+	reqParams.AddEncodeSimpleMany(par.Params)
 	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
 		WithTimelock(par.TimeLock).
-		WithTransfer(par.Transfer)
-	reqSection.AddArgs(par.Params)
+		WithTransfer(par.Transfer).
+		WithArgs(reqParams)
 	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 }
 

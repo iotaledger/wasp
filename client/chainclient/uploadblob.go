@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"time"
 )
@@ -24,7 +24,7 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 	if osize < optimalSize {
 		osize = optimalSize
 	}
-	argsEncoded, optimizedBlobs := sctransaction.NewOptimizedRequestArgs(fields)
+	argsEncoded, optimizedBlobs := requestargs.NewOptimizedRequestArgs(fields)
 	fieldValues := make([][]byte, 0, len(fields))
 	for _, v := range optimizedBlobs {
 		fieldValues = append(fieldValues, v)
@@ -39,7 +39,7 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		PostRequestParams{
-			Args: dict.Dict(argsEncoded),
+			Args: argsEncoded,
 		},
 	)
 	if err != nil {

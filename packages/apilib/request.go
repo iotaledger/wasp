@@ -5,15 +5,11 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/requestargs"
 
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 )
@@ -21,16 +17,15 @@ import (
 type RequestSectionParams struct {
 	TargetContractID coretypes.ContractID
 	EntryPointCode   coretypes.Hname
-	Timelock         uint32
-	Transfer         map[balance.Color]int64 // should not not include request token. It is added automatically
-	Vars             dict.Dict
+	TimeLock         uint32
+	Transfer         coretypes.ColoredBalances // should not not include request token. It is added automatically
+	Args             requestargs.RequestArgs
 }
 
 type CreateRequestTransactionParams struct {
 	Level1Client         level1.Level1Client
 	SenderSigScheme      signaturescheme.SignatureScheme
 	RequestSectionParams []RequestSectionParams
-	Mint                 map[address.Address]int64
 	Post                 bool
 	WaitForConfirmation  bool
 }
@@ -47,20 +42,12 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		return nil, err
 	}
 
-	for targetAddress, amount := range par.Mint {
-		// TODO: check that targetAddress is not any target address in request blocks
-		err = txb.MintColor(targetAddress, balance.ColorIOTA, amount)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	for _, sectPar := range par.RequestSectionParams {
 		reqSect := sctransaction.NewRequestSectionByWallet(sectPar.TargetContractID, sectPar.EntryPointCode).
-			WithTimelock(sectPar.Timelock).
-			WithTransfer(cbalances.NewFromMap(sectPar.Transfer))
+			WithTimelock(sectPar.TimeLock).
+			WithTransfer(sectPar.Transfer)
 
-		reqSect.AddArgs(sectPar.Vars)
+		reqSect.WithArgs(sectPar.Args)
 
 		err = txb.AddRequestSection(reqSect)
 		if err != nil {

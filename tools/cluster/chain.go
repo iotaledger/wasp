@@ -3,6 +3,7 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
@@ -132,22 +133,69 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(params),
+			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
-
 	return tx, nil
 }
 
 func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, hashing.HashValue, error) {
+	blobFieldValues := codec.MakeDict(map[string]interface{}{
+		blob.VarFieldVMType:             wasmtimevm.VMType,
+		blob.VarFieldProgramBinary:      progBinary,
+		blob.VarFieldProgramDescription: description,
+	})
+
+	quorum := (2*len(ch.ApiHosts()))/3 + 1
+	programHash, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.ApiHosts(), quorum, 256)
+	if err != nil {
+		return nil, hashing.HashValue{}, err
+	}
+	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
+	if err != nil {
+		return nil, hashing.NilHash, err
+	}
+	if !bytes.Equal(progBinary, progBinaryBack) {
+		return nil, hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
+	}
+	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
+
+	params := make(map[string]interface{})
+	for k, v := range initParams {
+		params[k] = v
+	}
+	params[root.ParamName] = name
+	params[root.ParamProgramHash] = programHash
+	params[root.ParamDescription] = description
+
+	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
+	tx, err := ch.OriginatorClient().PostRequest(
+		root.Interface.Hname(),
+		coretypes.Hn(root.FuncDeployContract),
+		chainclient.PostRequestParams{
+			Args: args,
+		},
+	)
+	if err != nil {
+		return nil, hashing.NilHash, err
+	}
+
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	if err != nil {
+		return nil, hashing.NilHash, err
+	}
+
+	return tx, programHash, nil
+}
+
+func (ch *Chain) DeployWasmContractOld(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, hashing.HashValue, error) {
 	// upload binary to the chain
 	blobFieldValues := map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,
@@ -160,7 +208,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(blobFieldValues),
+			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
 		},
 	)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
@@ -188,7 +236,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(params),
+			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 		},
 	)
 	if err != nil {

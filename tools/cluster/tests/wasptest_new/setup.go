@@ -3,6 +3,9 @@ package wasptest
 import (
 	"flag"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"io/ioutil"
 	"testing"
@@ -12,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/cluster"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
@@ -91,8 +93,8 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 
 func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
 	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
-		Transfer: transfer,
-		Args:     codec.MakeDict(params),
+		Transfer: cbalances.NewFromMap(transfer),
+		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
@@ -114,8 +116,8 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 		"active_committee":    1,
 		"dismissed_committee": 0,
 		//"state":               3 + nrOfRequests,
-		"request_in":  2 + nrOfRequests,
-		"request_out": 3 + nrOfRequests,
+		"request_in": 2 + nrOfRequests,
+		//"request_out": 3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
 	}
 	if nrOfRequests == 1 {
 		expectations["state"] = 4

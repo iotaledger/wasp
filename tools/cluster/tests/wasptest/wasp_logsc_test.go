@@ -51,7 +51,7 @@ func TestLogsc1(t *testing.T) {
 	reqs := []*waspapi.RequestSectionParams{{
 		Address:     sc.Address,
 		RequestCode: logsc.RequestCodeAddLog,
-		Vars: map[string]interface{}{
+		ArgsEncoded: map[string]interface{}{
 			"message": "message 0",
 		},
 	}}

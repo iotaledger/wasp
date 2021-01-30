@@ -1,4 +1,4 @@
-package sctransaction
+package requestargs
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,21 +11,20 @@ import (
 // RequestArgs encodes request parameters taking into account hashes of data blobs
 type RequestArgs dict.Dict
 
-// NewRequestArgs constructor
-func NewRequestArgs() RequestArgs {
-	return RequestArgs(dict.New())
-}
-
-func NewRequestArgsFromDict(d dict.Dict) RequestArgs {
-	ret := NewRequestArgs()
-	for k, v := range d {
-		ret.Add(k, v)
+// New makes new object taking 'as is', without encoding
+func New(d ...dict.Dict) RequestArgs {
+	if len(d) == 0 || len(d[0]) == 0 {
+		return RequestArgs(dict.New())
 	}
-	return ret
+	if len(d) > 1 {
+		panic("len(d) > 1")
+	}
+	return RequestArgs(d[0].Clone())
 }
 
 const optimalSize = 32
 
+// NewOptimizedRequestArgs takes dictionary and encodes it
 func NewOptimizedRequestArgs(d dict.Dict, optSize ...int) (RequestArgs, map[kv.Key][]byte) {
 	var osize int
 	if len(optSize) > 0 {
@@ -34,35 +33,44 @@ func NewOptimizedRequestArgs(d dict.Dict, optSize ...int) (RequestArgs, map[kv.K
 	if osize <= optimalSize {
 		osize = optimalSize
 	}
-	ret := NewRequestArgs()
+	ret := New(nil)
 	retOptimized := make(map[kv.Key][]byte)
 	for k, v := range d {
 		if len(v) <= osize {
-			ret.Add(k, v)
+			ret.AddEncodeSimple(k, v)
 		} else {
-			ret.AddAsBlobHash(k, v)
+			ret.AddAsBlobRef(k, v)
 			retOptimized[k] = v
 		}
 	}
 	return ret, retOptimized
 }
 
-// Add add new ordinary argument. Encodes the key as "normal"
-func (a RequestArgs) Add(name kv.Key, data []byte) {
+// AddEncodeSimple add new ordinary argument. Encodes the key as "normal"
+func (a RequestArgs) AddEncodeSimple(name kv.Key, data []byte) RequestArgs {
 	a["-"+name] = data
+	return a
 }
 
-// AddAsBlobHash adds argument with the data hash instead of data itself.
+// AddEncodeBlobRef adds hash as data and marks it is a blob reference
+func (a RequestArgs) AddEncodeBlobRef(name kv.Key, hash hashing.HashValue) RequestArgs {
+	a["*"+name] = hash[:]
+	return a
+}
+
+// AddAsBlobRef adds argument with the data hash instead of data itself.
 // Encodes key as "blob reference"
-func (a RequestArgs) AddAsBlobHash(name kv.Key, data []byte) hashing.HashValue {
+func (a RequestArgs) AddAsBlobRef(name kv.Key, data []byte) hashing.HashValue {
 	h := hashing.HashData(data)
-	a.AddBlobRef(name, h)
+	a.AddEncodeBlobRef(name, h)
 	return h
 }
 
-// AddBlobRef adds hash as data and marks it is a blob reference
-func (a RequestArgs) AddBlobRef(name kv.Key, hash hashing.HashValue) {
-	a["*"+name] = hash[:]
+func (a RequestArgs) AddEncodeSimpleMany(d dict.Dict) RequestArgs {
+	for k, v := range d {
+		a.AddEncodeSimple(k, v)
+	}
+	return a
 }
 
 // HasBlobRef return if request arguments contain at least one blob reference

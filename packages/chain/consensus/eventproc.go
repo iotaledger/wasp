@@ -50,15 +50,15 @@ func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.eventBalancesMsgCh <- reqMsg
 }
 
-// eventBalancesMsg internal event jandler
+// eventBalancesMsg internal event handler
 func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
 
 	// TODO here redundant. Should be checked in the dispatcher by tx.Properties (?)
-	if err := op.checkChainToken(reqMsg.Balances); err != nil {
-		op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
-		return
-	}
+	//if err := op.checkChainToken(reqMsg.Balances); err != nil {
+	//	op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
+	//	return
+	//}
 	op.balances = reqMsg.Balances
 	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
 	op.takeAction()
@@ -134,19 +134,21 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		return
 	}
 	numOrig := len(msg.RequestIds)
-	reqs := op.takeFromIds(msg.RequestIds)
+	reqs := op.collectProcessableBatch(msg.RequestIds)
 	if len(reqs) != numOrig {
 		// some request were filtered out because not messages didn't reach the node yet.
 		// can't happen? Redundant? panic?
 		op.log.Warnf("node can't process the batch: some requests are not known to the node")
 		return
 	}
-	reqs = op.filterNotReadyYet(reqs)
-	if len(reqs) != numOrig {
-		// do not start processing batch if some of it's requests are not ready yet
-		op.log.Warn("node is not ready to process the batch")
-		return
-	}
+	// TODO remove
+	//reqs = op.filterNotReadyYet(reqs)
+	//if len(reqs) != numOrig {
+	//	// do not start processing batch if some of it's requests are not ready yet
+	//	op.log.Warn("node is not ready to process the batch")
+	//	return
+	//}
+
 	// check timestamp. If the local clock is different from the timestamp from the leader more
 	// tha threshold, ignore command from the leader.
 	// Note that if leader's clock is ot synced with the peers clock significantly, committee
@@ -315,7 +317,7 @@ func (op *operator) eventTimerMsg(msg chain.TimerTick) {
 			"req backlog", len(op.requests),
 			"leader", leader,
 			"selection", len(op.selectRequestsToProcess()),
-			"timelocked", timelockedToString(op.requestTimelocked()),
+			"timelocked", timelockedToString(op.requestsTimeLocked()),
 			"notif backlog", len(op.notificationsBacklog),
 		)
 	}

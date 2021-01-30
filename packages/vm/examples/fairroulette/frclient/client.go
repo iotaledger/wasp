@@ -160,7 +160,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transa
 		fairroulette.RequestPlaceBet,
 		chainclient.PostRequestParams{
 			Transfer: map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
-			Args:     codec.MakeDict(map[string]interface{}{fairroulette.ReqVarColor: int64(color)}),
+			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairroulette.ReqVarColor: int64(color)}),
 		},
 	)
 }
@@ -170,7 +170,7 @@ func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transactio
 		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(map[string]interface{}{fairroulette.ReqVarPlayPeriodSec: int64(seconds)}),
+			ArgsRaw: codec.MakeDict(map[string]interface{}{fairroulette.ReqVarPlayPeriodSec: int64(seconds)}),
 		},
 	)
 }

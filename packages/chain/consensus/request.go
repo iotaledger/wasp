@@ -88,7 +88,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	ret.notifications[op.peerIndex()] = true
 
 	tl := ""
-	if msgFirstTime && ret.isTimelocked(time.Now()) {
+	if msgFirstTime && ret.isTimeLocked(time.Now()) {
 		tl = fmt.Sprintf(". Time locked until %d (nowis = %d)", ret.timelock(), util.TimeNowUnix())
 	}
 	ret.log.Infof("NEW REQUEST from msg%s", tl)
@@ -104,8 +104,16 @@ func (req *request) timelock() uint32 {
 	return req.reqTx.Requests()[req.reqId.Index()].Timelock()
 }
 
-func (req *request) isTimelocked(nowis time.Time) bool {
+func (req *request) isTimeLocked(nowis time.Time) bool {
 	return req.timelock() > uint32(nowis.Unix())
+}
+
+func (req *request) hasMessage() bool {
+	return req.reqTx != nil
+}
+
+func (req *request) hasSolidArgs() bool {
+	return req.argsSolid
 }
 
 func (op *operator) isRequestProcessed(reqid *coretypes.RequestID) bool {

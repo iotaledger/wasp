@@ -2,9 +2,8 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"io"
 	"time"
 
@@ -37,7 +36,7 @@ type RequestSection struct {
 	// 0 timelock naturally means it has no effect
 	timelock uint32
 	// request arguments, not decoded yet wrt blobRefs
-	args RequestArgs
+	args requestargs.RequestArgs
 	// decoded args, if not nil. If nil, it means it wasn't
 	// successfully decoded yet and can't be used in the batch for calculations in VM
 	solidArgs dict.Dict
@@ -56,7 +55,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		senderContractHname: senderContractHname,
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
-		args:                NewRequestArgs(),
+		args:                requestargs.New(nil),
 		transfer:            cbalances.NewFromMap(nil),
 	}
 }
@@ -90,25 +89,10 @@ func (req *RequestSection) Target() coretypes.ContractID {
 	return req.targetContractID
 }
 
-func (req *RequestSection) WithArgs(args RequestArgs) *RequestSection {
+// WithArgs sets encoded args
+func (req *RequestSection) WithArgs(args requestargs.RequestArgs) *RequestSection {
 	req.args = args
 	return req
-}
-
-func (req *RequestSection) AddArg(key kv.Key, value []byte) *RequestSection {
-	req.args.Add(key, value)
-	return req
-}
-
-func (req *RequestSection) AddArgAsBlobHash(key kv.Key, value []byte) hashing.HashValue {
-	return req.args.AddAsBlobHash(key, value)
-}
-
-func (req *RequestSection) AddArgs(args dict.Dict) {
-	args.ForEach(func(key kv.Key, value []byte) bool {
-		req.AddArg(key, value)
-		return true
-	})
 }
 
 // SolidArgs returns solid args if decoded already or nil otherwise
@@ -198,7 +182,7 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.entryPoint.Read(r); err != nil {
 		return err
 	}
-	req.args = NewRequestArgs()
+	req.args = requestargs.New(nil)
 	if err := req.args.Read(r); err != nil {
 		return err
 	}

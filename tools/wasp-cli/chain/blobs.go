@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/requestargs"
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -20,7 +21,9 @@ func storeBlobCmd(args []string) {
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return SCClient(blob.Interface.Hname()).PostRequest(
 			blob.FuncStoreBlob,
-			chainclient.PostRequestParams{Args: util.EncodeParams(args)},
+			chainclient.PostRequestParams{
+				Args: requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args)),
+			},
 		)
 	})
 }
