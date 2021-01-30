@@ -21,7 +21,7 @@ var dwfHname = coretypes.Hn(dwfName)
 
 func TestDwfDonateOnce(t *testing.T) {
 	const numDonations = 1
-	al := solo.New(t, false, true)
+	al := solo.New(t, false, false)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, dwfName, dwfFile)
 	require.NoError(t, err)
