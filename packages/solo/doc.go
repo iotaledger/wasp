@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package 'solo' is a development tool for writing unit tests for IOTA Smart Contracts (ISCP).
+// Package 'solo' is a development tool to write unit tests for IOTA Smart Contracts (ISCP).
 //
 // A development tool
 //
