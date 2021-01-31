@@ -1,9 +1,11 @@
 package nodeconn
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/peering"
 )
 
@@ -71,6 +73,10 @@ func PostTransactionToNode(tx *valuetransaction.Transaction, fromSc *address.Add
 	})
 	if err != nil {
 		return err
+	}
+	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
+		return fmt.Errorf("size if serialized tx %s is %d --> exceeds maximum size of %d bytes",
+			tx.ID(), len(data), parameters.MaxSerializedTransactionToGoshimmer)
 	}
 	if err = SendDataToNode(data); err != nil {
 		return err

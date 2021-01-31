@@ -2,6 +2,7 @@ package goshimmer
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client"
@@ -86,14 +87,22 @@ func (api *goshimmerClient) GetConfirmedAccountOutputs(address *address.Address)
 	return ret, nil
 }
 
-func (api *goshimmerClient) PostTransaction(tx *valuetransaction.Transaction) error {
-	_, err := api.goshimmerClient.SendTransaction(tx.Bytes())
+func (api *goshimmerClient) sendTx(tx *valuetransaction.Transaction) error {
+	data := tx.Bytes()
+	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
+		return fmt.Errorf("goshimmerClient: size of serialized transation %d bytes > max of %d bytes: %s",
+			len(data), parameters.MaxSerializedTransactionToGoshimmer, tx.ID())
+	}
+	_, err := api.goshimmerClient.SendTransaction(data)
 	return err
 }
 
+func (api *goshimmerClient) PostTransaction(tx *valuetransaction.Transaction) error {
+	return api.sendTx(tx)
+}
+
 func (api *goshimmerClient) PostAndWaitForConfirmation(tx *valuetransaction.Transaction) error {
-	_, err := api.goshimmerClient.SendTransaction(tx.Bytes())
-	if err != nil {
+	if err := api.sendTx(tx); err != nil {
 		return err
 	}
 	return api.WaitForConfirmation(tx.ID())

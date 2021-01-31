@@ -13,6 +13,7 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 
 	fs := pflag.NewFlagSet("chain", pflag.ExitOnError)
 	initDeployFlags(fs)
+	initUploadFlags(fs)
 	initAliasFlags(fs)
 	flags.AddFlagSet(fs)
 }

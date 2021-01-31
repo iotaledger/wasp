@@ -2,13 +2,11 @@ package chain
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"os"
 
-	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -18,14 +16,20 @@ func storeBlobCmd(args []string) {
 	if len(args) == 0 {
 		log.Fatal("Usage: %s chain store-blob [type field type value ...]", os.Args[0])
 	}
-	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
-		return SCClient(blob.Interface.Hname()).PostRequest(
-			blob.FuncStoreBlob,
-			chainclient.PostRequestParams{
-				Args: requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args)),
-			},
-		)
-	})
+	blobHash, err := Client().UploadBlob(util.EncodeParams(args), config.CommitteeApi(uploadNodes), uploadQuorum)
+	if err != nil {
+		log.Fatal("%v", err)
+	}
+	log.Printf("uploaded blob to chain: %s", blobHash)
+	//
+	//util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
+	//	return SCClient(blob.Interface.Hname()).PostRequest(
+	//		blob.FuncStoreBlob,
+	//		chainclient.PostRequestParams{
+	//			Args: requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args)),
+	//		},
+	//	)
+	//})
 }
 
 func showBlobCmd(args []string) {

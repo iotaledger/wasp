@@ -2,6 +2,7 @@ package chain
 
 import (
 	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -24,23 +25,26 @@ func deployContractCmd(args []string) {
 	description := args[2]
 	filename := args[3]
 
-	blobFieldValues := map[string]interface{}{
+	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:             vmtype,
 		blob.VarFieldProgramDescription: description,
 		blob.VarFieldProgramBinary:      util.ReadFile(filename),
-	}
-
-	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
-		return Client().PostRequest(
-			blob.Interface.Hname(),
-			coretypes.Hn(blob.FuncStoreBlob),
-			chainclient.PostRequestParams{
-				Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
-			},
-		)
 	})
-
-	progHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
+	progHash, err := Client().UploadBlob(blobFieldValues, config.CommitteeApi(uploadNodes), uploadQuorum)
+	if err != nil {
+		log.Fatal("%v", err)
+	}
+	log.Printf("uploaded blob %s\n", progHash)
+	//util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
+	//	return Client().PostRequest(
+	//		blob.Interface.Hname(),
+	//		coretypes.Hn(blob.FuncStoreBlob),
+	//		chainclient.PostRequestParams{
+	//			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
+	//		},
+	//	)
+	//})
+	//progHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return Client().PostRequest(

@@ -1,6 +1,8 @@
 package testutil
 
 import (
+	"fmt"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -32,11 +34,25 @@ func (api *utxodbclient) GetConfirmedAccountOutputs(address *address.Address) (m
 	return nodeapi.GetAccountOutputs(api.goshimmerHost, address)
 }
 
+func checkTxSize(tx *transaction.Transaction) error {
+	data := tx.Bytes()
+	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
+		return fmt.Errorf("utxodbclient: size of serialized transaction %d bytes > max of %d bytes: %s",
+			len(data), parameters.MaxSerializedTransactionToGoshimmer, tx.ID())
+	}
+	return nil
+}
 func (api *utxodbclient) PostTransaction(tx *transaction.Transaction) error {
+	if err := checkTxSize(tx); err != nil {
+		return err
+	}
 	return nodeapi.PostTransaction(api.goshimmerHost, tx)
 }
 
 func (api *utxodbclient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
+	if err := checkTxSize(tx); err != nil {
+		return err
+	}
 	err := nodeapi.PostTransaction(api.goshimmerHost, tx)
 	if err != nil {
 		return err

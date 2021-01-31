@@ -38,10 +38,12 @@ func (op *operator) solidifyRequestArgsIfNeeded() {
 	for _, req := range reqs {
 		ok, err := req.reqTx.Requests()[req.reqId.Index()].SolidifyArgs(op.chain.BlobRegistry())
 		if err != nil {
-			req.log.Errorf("failed to solidify args: %v", err)
+			req.log.Errorf("failed to solidify request arguments: %v", err)
 		} else {
-			req.log.Infof("solidified arguments")
 			req.argsSolid = ok
+			if ok {
+				req.log.Infof("solidified request arguments")
+			}
 		}
 	}
 	op.nextArgSolidificationDeadline = time.Now().Add(chain.CheckArgSolidificationEvery)
