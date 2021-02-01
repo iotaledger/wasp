@@ -27,7 +27,7 @@ func (s sandboxView) ChainOwnerID() coretypes.AgentID {
 }
 
 func (s sandboxView) ContractCreator() coretypes.AgentID {
-	panic("Implement me")
+	return s.vmctx.ContractCreator()
 }
 
 func (s sandboxView) ContractID() coretypes.ContractID {

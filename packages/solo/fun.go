@@ -229,8 +229,8 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 }
 
 // DeployContract deploys contract with the given name by its 'programHash'. 'sigScheme' represents
-// the private key of the creator (nil defaults to chain originator). The creator becomes the
-// initial owner of the chain.
+// the private key of the creator (nil defaults to chain originator). The 'creator' becomes an immutable
+// property of the contract instance.
 // The parameter 'programHash' can be one of the following:
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"

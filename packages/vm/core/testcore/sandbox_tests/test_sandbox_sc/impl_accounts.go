@@ -5,18 +5,16 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // calls withdrawToChain to the chain ID
 func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncWithdrawToChain)
-	targetChain, ok, err := codec.DecodeChainID(ctx.Params().MustGet(ParamChainID))
-	if err != nil || !ok {
-		ctx.Log().Panicf("wrong parameter '%s'", ParamChainID)
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	targetChain := params.MustGetChainID(ParamChainID)
 	succ := ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: accounts.Interface.ContractID(targetChain),
 		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),

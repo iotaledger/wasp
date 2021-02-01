@@ -55,10 +55,10 @@ func (s *sandbox) Caller() coretypes.AgentID {
 	return s.vmctx.Caller()
 }
 
-// CreateContract deploys contract by the binary hash
+// DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
 func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
-	return s.vmctx.CreateContract(programHash, name, description, initParams)
+	return s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
 // Call calls an entry point of contact, passes parameters and funds

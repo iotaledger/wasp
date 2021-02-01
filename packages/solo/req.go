@@ -149,7 +149,7 @@ func (ch *Chain) PostRequest(req *CallParams, sigScheme signaturescheme.Signatur
 }
 
 // callViewFull calls the view entry point of the smart contract
-// with params wrapped into the CallParams object. The transfer part, is any, is ignored
+// with params wrapped into the CallParams object. The transfer part, fs any, is ignored
 func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
@@ -167,12 +167,14 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 // and 'paramValue' must be of type accepted by the 'codec' package
 func (ch *Chain) CallView(scName string, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log.Infof("callView: %s::%s", scName, funName)
-	ret, err := ch.callViewFull(NewCallParams(scName, funName, params...))
-	if err != nil {
-		ch.Log.Errorf("callView: %s::%s: %v", scName, funName, err)
-		return nil, err
-	}
-	return ret, nil
+
+	p := codec.MakeDict(toMap(params...))
+
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.proc, ch.Log)
+	return vctx.CallView(coretypes.Hn(scName), coretypes.Hn(funName), p)
 }
 
 // WaitForEmptyBacklog waits until the backlog queue of the chain becomes empty.

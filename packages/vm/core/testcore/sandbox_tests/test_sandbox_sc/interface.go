@@ -32,9 +32,6 @@ func init() {
 		contract.Func(FuncEventLogDeploy, testEventLogDeploy),
 		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
 
-		contract.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
-		contract.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
-
 		contract.Func(FuncPanicFullEP, testPanicFullEP),
 		contract.ViewFunc(FuncPanicViewEP, testPanicViewEP),
 		contract.Func(FuncCallPanicFullEP, testCallPanicFullEP),
@@ -54,6 +51,8 @@ func init() {
 
 		contract.Func(FuncPassTypesFull, passTypesFull),
 		contract.ViewFunc(FuncPassTypesView, passTypesView),
+		contract.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
+		contract.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
 
 		contract.ViewFunc(FuncJustView, testJustView),
 	})
@@ -73,8 +72,8 @@ const (
 	FuncContractIDFull   = "testContractIDFull"
 
 	FuncSandboxCall            = "testSandboxCall"
-	FuncCheckContextFromFullEP = "testCheckContextFromFullEP"
-	FuncCheckContextFromViewEP = "testCheckContextFromViewEP"
+	FuncCheckContextFromFullEP = "checkContextFromFullEP"
+	FuncCheckContextFromViewEP = "checkContextFromViewEP"
 
 	FuncPanicFullEP             = "testPanicFullEP"
 	FuncPanicViewEP             = "testPanicViewEP"

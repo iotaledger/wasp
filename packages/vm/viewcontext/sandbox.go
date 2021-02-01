@@ -3,9 +3,10 @@ package viewcontext
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -72,18 +73,19 @@ var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
 
 func (s *sandboxview) ChainOwnerID() coretypes.AgentID {
 	r, err := s.Call(root.Interface.Hname(), getChainInfoHname, nil)
-	if err != nil {
-		s.Log().Panicf("ChainOwnerID: %v", err)
-	}
-	ret, exists, err := codec.DecodeAgentID(r.MustGet(root.VarChainOwnerID))
-	if err != nil || !exists {
-		s.Log().Panicf("ChainOwnerID: %v", err)
-	}
+	a := coreutil.NewAssert(s.Log())
+	a.RequireNoError(err)
+	res := kvdecoder.New(r, s.Log())
+	ret := res.MustGetAgentID(root.VarChainOwnerID)
 	return ret
 }
 
 func (s *sandboxview) ContractCreator() coretypes.AgentID {
-	return s.vctx.contractRecord.Creator
+	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.state, root.Interface.Hname()), s.contractHname)
+	if err != nil {
+		s.Log().Panicf("failed to find contract %s: %v", s.contractHname, err)
+	}
+	return contractRecord.Creator
 }
 
 func (s *sandboxview) GetTimestamp() int64 {
