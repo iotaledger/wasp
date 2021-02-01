@@ -21,8 +21,8 @@ func checkCounter(e *solo.Chain, expected int64) {
 }
 
 func TestDeployInc(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
@@ -35,8 +35,8 @@ func TestDeployInc(t *testing.T) {
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
@@ -46,8 +46,8 @@ func TestDeployIncInitParams(t *testing.T) {
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
@@ -61,8 +61,8 @@ func TestIncDefaultParam(t *testing.T) {
 }
 
 func TestIncParam(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
@@ -77,8 +77,8 @@ func TestIncParam(t *testing.T) {
 }
 
 func TestIncWith1Post(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -89,7 +89,7 @@ func TestIncWith1Post(t *testing.T) {
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	// advance logical clock to unlock that timelocked request
-	glb.AdvanceClockBy(6 * time.Second)
+	env.AdvanceClockBy(6 * time.Second)
 
 	chain.WaitForEmptyBacklog()
 	checkCounter(chain, 19)

@@ -17,11 +17,11 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 1)
-	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
 
 	checkFees(chain, blob.Interface.Name, 0, 0)
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -30,8 +30,8 @@ func TestInit(t *testing.T) {
 }
 
 func TestBase(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
@@ -41,14 +41,14 @@ func TestBase(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 }
 
 func TestFeeIsEnough1(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
@@ -58,7 +58,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 
@@ -69,12 +69,12 @@ func TestFeeIsEnough1(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
-	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
 }
 
 func TestFeeIsEnough2(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
@@ -84,11 +84,11 @@ func TestFeeIsEnough2(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	checkFees(chain, blob.Interface.Name, 2, 0)
 
-	user := glb.NewSignatureSchemeWithFunds()
+	user := env.NewSignatureSchemeWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	_, err = chain.UploadBlob(user,
 		blob.VarFieldVMType, "dummyType",
@@ -97,8 +97,8 @@ func TestFeeIsEnough2(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
-	glb.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
 
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	glb.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
 }

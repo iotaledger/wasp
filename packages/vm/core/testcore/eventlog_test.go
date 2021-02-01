@@ -19,8 +19,8 @@ func printLogRecords(t *testing.T, recs []collections.TimestampedLogRecord, titl
 }
 
 func TestChainLogBasic1(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	recs, err := chain.GetEventLogRecords(root.Interface.Name)
 	require.NoError(t, err)
@@ -40,8 +40,8 @@ func TestChainLogBasic1(t *testing.T) {
 }
 
 func TestChainLogDeploy(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 

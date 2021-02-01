@@ -9,8 +9,8 @@ import (
 )
 
 func TestExample1(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "ex1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "ex1")
 
 	chainInfo, coreContracts := chain.GetInfo()   // calls view root::GetInfo
 	require.EqualValues(t, 4, len(coreContracts)) // 4 core contracts deployed by default
@@ -23,11 +23,11 @@ func TestExample1(t *testing.T) {
 }
 
 func TestExample2(t *testing.T) {
-	glb := solo.New(t, false, false)
-	userWallet := glb.NewSignatureSchemeWithFunds()
+	env := solo.New(t, false, false)
+	userWallet := env.NewSignatureSchemeWithFunds()
 	userAddress := userWallet.Address()
 	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := glb.GetAddressBalance(userAddress, balance.ColorIOTA)
+	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	glb.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 }

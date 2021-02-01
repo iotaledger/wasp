@@ -8,8 +8,8 @@ import (
 )
 
 func TestNoContractPost(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams("dummyContract", "dummyEP")
 	_, err := chain.PostRequest(req, nil)
@@ -17,16 +17,16 @@ func TestNoContractPost(t *testing.T) {
 }
 
 func TestNoContractView(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	_, err := chain.CallView("dummyContract", "dummyEP")
 	require.Error(t, err)
 }
 
 func TestNoEPPost(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, "dummyEP")
 	_, err := chain.PostRequest(req, nil)
@@ -34,8 +34,8 @@ func TestNoEPPost(t *testing.T) {
 }
 
 func TestNoEPView(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 
 	_, err := chain.CallView(root.Interface.Name, "dummyEP")
 	require.Error(t, err)

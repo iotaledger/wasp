@@ -16,8 +16,8 @@ import (
 )
 
 func TestRootBasic(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckChain()
@@ -25,8 +25,8 @@ func TestRootBasic(t *testing.T) {
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckChain()
@@ -37,8 +37,8 @@ func TestRootRepeatInit(t *testing.T) {
 }
 
 func TestGetInfo(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	info, contracts := chain.GetInfo()
@@ -62,8 +62,8 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
@@ -98,8 +98,8 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
@@ -133,11 +133,11 @@ func TestDeployDouble(t *testing.T) {
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	newOwner := glb.NewSignatureSchemeWithFunds()
+	newOwner := env.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, nil)
@@ -155,11 +155,11 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	defer chain.WaitForEmptyBacklog()
 
-	newOwner := glb.NewSignatureSchemeWithFunds()
+	newOwner := env.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequest(req, newOwner)

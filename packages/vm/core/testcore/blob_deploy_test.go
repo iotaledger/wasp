@@ -15,16 +15,16 @@ import (
 )
 
 func TestBlobRepeatInit(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	req := solo.NewCallParams(blob.Interface.Name, "init")
 	_, err := chain.PostRequest(req, nil)
 	require.Error(t, err)
 }
 
 func TestBlobUpload(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	binary := []byte("supposed to be wasm")
 	hwasm, err := chain.UploadWasm(nil, binary)
 	require.NoError(t, err)
@@ -36,8 +36,8 @@ func TestBlobUpload(t *testing.T) {
 }
 
 func TestBlobUploadTwice(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	binary := []byte("supposed to be wasm")
 	hwasm1, err := chain.UploadWasm(nil, binary)
 	require.NoError(t, err)
@@ -56,8 +56,8 @@ func TestBlobUploadTwice(t *testing.T) {
 var wasmFile = wasmhost.WasmPath("inccounter_bg.wasm")
 
 func TestDeploy(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
@@ -66,15 +66,15 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestDeployWasm(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
 	require.NoError(t, err)
 }
 
 func TestDeployRubbish(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	name := "testInccounter"
 	err := chain.DeployWasmContract(nil, name, "blob_deploy_test.go")
 	require.Error(t, err)
@@ -84,8 +84,8 @@ func TestDeployRubbish(t *testing.T) {
 }
 
 func TestListBlobs(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
 	require.NoError(t, err)
 
@@ -95,17 +95,17 @@ func TestListBlobs(t *testing.T) {
 }
 
 func TestDeployNotAuthorized(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
-	user1 := glb.NewSignatureSchemeWithFunds()
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+	user1 := env.NewSignatureSchemeWithFunds()
 	err := chain.DeployWasmContract(user1, "testInccounter", wasmFile)
 	require.Error(t, err)
 }
 
 func TestDeployGrant(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
-	user1 := glb.NewSignatureSchemeWithFunds()
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+	user1 := env.NewSignatureSchemeWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
@@ -128,9 +128,9 @@ func TestDeployGrant(t *testing.T) {
 }
 
 func TestRevokeDeploy(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
-	user1 := glb.NewSignatureSchemeWithFunds()
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+	user1 := env.NewSignatureSchemeWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
@@ -159,9 +159,9 @@ func TestRevokeDeploy(t *testing.T) {
 }
 
 func TestDeployGrantFail(t *testing.T) {
-	glb := solo.New(t, false, false)
-	chain := glb.NewChain(nil, "chain1")
-	user1 := glb.NewSignatureSchemeWithFunds()
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+	user1 := env.NewSignatureSchemeWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
