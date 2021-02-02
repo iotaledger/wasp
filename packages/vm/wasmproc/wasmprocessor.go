@@ -173,3 +173,10 @@ func (host *wasmProcessor) state() kv.KVStore {
 	}
 	return NewScViewState(host.ctxView)
 }
+
+func (host *wasmProcessor) utils() coretypes.Utils {
+	if host.ctx != nil {
+		return host.ctx.Utils()
+	}
+	return host.ctxView.Utils()
+}

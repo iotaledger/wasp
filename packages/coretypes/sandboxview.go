@@ -28,4 +28,6 @@ type SandboxView interface {
 	Balances() ColoredBalances
 	// Log interface provides local logging on the machine. It includes Panicf method
 	Log() LogInterface
+	//
+	Utils() Utils
 }

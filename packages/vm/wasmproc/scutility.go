@@ -113,7 +113,7 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 }
 
 func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
-	utils := o.vm.ctx.Utils()
+	utils := o.vm.utils()
 	var err error
 	switch keyId {
 	case wasmhost.KeyBase58Bytes:
