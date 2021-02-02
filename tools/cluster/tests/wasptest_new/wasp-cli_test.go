@@ -192,14 +192,14 @@ func TestWaspCliContract(t *testing.T) {
 	require.Contains(t, out[0], "Total 5 contracts")
 
 	// test chain call-view command
-	out = w.Run("chain", "call-view", name, "increment_view_counter")
+	out = w.Run("chain", "call-view", name, "get_counter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
 	require.Regexp(t, "(?m)counter:[[:space:]]+0$", out[0])
 
 	// test chain post-request command
 	w.Run("chain", "post-request", name, "increment")
 
-	out = w.Run("chain", "call-view", name, "increment_view_counter")
+	out = w.Run("chain", "call-view", name, "get_counter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
 	require.Regexp(t, "(?m)counter:[[:space:]]+1$", out[0])
 }

@@ -29,7 +29,7 @@ func TestIncSoloInc(t *testing.T) {
 		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	ret, err := chain.CallView(incName, "increment_view_counter")
+	ret, err := chain.CallView(incName, "get_counter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)
@@ -41,12 +41,12 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCallParams(incName, "increment_repeat_many", varNumRepeats, 2).
+	req := solo.NewCallParams(incName, "repeat_many", varNumRepeats, 2).
 		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	chain.WaitForEmptyBacklog()
-	ret, err := chain.CallView(incName, "increment_view_counter")
+	ret, err := chain.CallView(incName, "get_counter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)

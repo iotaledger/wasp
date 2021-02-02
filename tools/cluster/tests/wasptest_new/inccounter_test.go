@@ -226,7 +226,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 func TestIncCallIncrement1(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coretypes.Hn("increment_call_increment")
+	entryPoint := coretypes.Hn("call_increment")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 2)
@@ -235,7 +235,7 @@ func TestIncCallIncrement1(t *testing.T) {
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coretypes.Hn("increment_call_increment_recurse5x")
+	entryPoint := coretypes.Hn("call_increment_recurse5x")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 6)
@@ -244,7 +244,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 func TestIncPostIncrement(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 3, nil)
 
-	entryPoint := coretypes.Hn("increment_post_increment")
+	entryPoint := coretypes.Hn("post_increment")
 	postRequest(t, incHname, entryPoint, 1, nil)
 
 	checkCounter(t, 2)
@@ -254,7 +254,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
 	setupAndLoad(t, incName, incDescription, numRepeats+2, nil)
 
-	entryPoint := coretypes.Hn("increment_repeat_many")
+	entryPoint := coretypes.Hn("repeat_many")
 	postRequest(t, incHname, entryPoint, numRepeats, map[string]interface{}{
 		varNumRepeats: numRepeats,
 	})
@@ -270,21 +270,21 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 func TestIncLocalStateInternalCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coretypes.Hn("increment_local_state_internal_call")
+	entryPoint := coretypes.Hn("local_state_internal_call")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
-	entryPoint := coretypes.Hn("increment_local_state_sandbox_call")
+	entryPoint := coretypes.Hn("local_state_sandbox_call")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 5, nil)
-	entryPoint := coretypes.Hn("increment_local_state_post")
+	entryPoint := coretypes.Hn("local_state_post")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)
 }
@@ -296,7 +296,7 @@ func TestIncViewCounter(t *testing.T) {
 	checkCounter(t, 1)
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ContractID(incHname),
-		"increment_view_counter",
+		"get_counter",
 		nil,
 	)
 	check(err, t)

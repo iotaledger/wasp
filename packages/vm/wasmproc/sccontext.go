@@ -155,7 +155,7 @@ func (o *ScContext) processCall(bytes []byte) {
 
 func (o *ScContext) processDeploy(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-    programHash,err := hashing.HashValueFromBytes(decode.Bytes())
+	programHash, err := hashing.HashValueFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
