@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 )
@@ -27,24 +26,16 @@ func init() {
 		contract.Func(FuncDeposit, deposit),
 		contract.Func(FuncWithdrawToAddress, withdrawToAddress),
 		contract.Func(FuncWithdrawToChain, withdrawToChain),
-		contract.Func(FuncAllow, allow),
 	})
 }
 
 const (
-	FuncBalance     = "balance"
-	FuncTotalAssets = "totalAssets"
-	FuncDeposit     = "deposit"
-
-	FuncAllow             = "allow"
+	FuncBalance           = "balance"
+	FuncTotalAssets       = "totalAssets"
+	FuncDeposit           = "deposit"
 	FuncWithdrawToAddress = "withdrawToAddress"
 	FuncWithdrawToChain   = "withdrawToChain"
 	FuncAccounts          = "accounts"
 
 	ParamAgentID = "a"
-	ParamAmount  = "t"
-)
-
-var (
-	ErrParamWrongOrNotFound = fmt.Errorf("wrong parameters: agent ID is wrong or not found")
 )

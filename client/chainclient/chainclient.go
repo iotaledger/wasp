@@ -2,7 +2,7 @@ package chainclient
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client"

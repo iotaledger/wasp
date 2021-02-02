@@ -1,7 +1,7 @@
 package wasptest
 
 import (
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"testing"
 	"time"
 

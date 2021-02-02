@@ -5,7 +5,7 @@ package apilib
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client/level1"

@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"os"
 
 	"github.com/iotaledger/wasp/client/chainclient"

@@ -3,7 +3,7 @@ package wasptest
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"io/ioutil"
 	"testing"
 	"time"

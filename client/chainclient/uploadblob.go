@@ -3,9 +3,9 @@ package chainclient
 import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"time"
 )

@@ -5,8 +5,8 @@ package solo
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/requestargs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"time"
 

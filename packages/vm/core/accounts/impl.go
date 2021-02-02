@@ -6,10 +6,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // initialize the init call
@@ -39,7 +37,7 @@ func getTotalAssets(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 // getAccounts returns list of all accounts as keys of the ImmutableCodec
 func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
-	return GetAccounts(ctx.State()), nil
+	return getAccountsIntern(ctx.State()), nil
 }
 
 // deposit moves transfer to the specified account on the chain
@@ -51,8 +49,8 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
 
 	state := ctx.State()
-	MustCheckLedger(state, "accounts.deposit.begin")
-	defer MustCheckLedger(state, "accounts.deposit.exit")
+	mustCheckLedger(state, "accounts.deposit.begin")
+	defer mustCheckLedger(state, "accounts.deposit.exit")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetAgentID := params.MustGetAgentID(ParamAgentID, ctx.Caller())
@@ -70,8 +68,8 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 // caller must be an address
 func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	MustCheckLedger(state, "accounts.withdrawToAddress.begin")
-	defer MustCheckLedger(state, "accounts.withdrawToAddress.exit")
+	mustCheckLedger(state, "accounts.withdrawToAddress.begin")
+	defer mustCheckLedger(state, "accounts.withdrawToAddress.exit")
 
 	a := coreutil.NewAssert(ctx.Log())
 
@@ -104,8 +102,8 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 // withdrawToChain sends caller's funds to the caller via account::deposit.
 func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	MustCheckLedger(state, "accounts.withdrawToChain.begin")
-	defer MustCheckLedger(state, "accounts.withdrawToChain.exit")
+	mustCheckLedger(state, "accounts.withdrawToChain.begin")
+	defer mustCheckLedger(state, "accounts.withdrawToChain.exit")
 
 	a := coreutil.NewAssert(ctx.Log())
 
@@ -131,8 +129,6 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	succ := MoveBetweenAccounts(ctx.State(), caller, coretypes.NewAgentIDFromContractID(ctx.ContractID()), toWithdraw)
 	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
 
-	// TODO accounts and other core contracts don't need tokens
-	//  possible policy: if caller is a core contract, accrue it all to the chain owner
 	succ = ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: Interface.ContractID(callerContract.ChainID()),
 		EntryPoint:       coretypes.Hn(FuncDeposit),
@@ -142,27 +138,5 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 		Transfer: toWithdraw,
 	})
 	a.Require(succ, "accounts.withdrawToChain.inconsistency: failed to post 'deposit' request")
-	return nil, nil
-}
-
-// allow is similar to the ERC-20 allow function.
-// TODO not tested. Not finished
-func allow(ctx coretypes.Sandbox) (dict.Dict, error) {
-	state := ctx.State()
-	MustCheckLedger(state, "accounts.allow.begin")
-	defer MustCheckLedger(state, "accounts.allow.exit")
-
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	agentID := params.MustGetAgentID(ParamAgentID)
-	amount := params.MustGetInt64(ParamAmount)
-
-	allowances := collections.NewMap(state, VarStateAllowances)
-	if amount <= 0 {
-		allowances.MustDelAt(agentID[:])
-		ctx.Log().Debugf("accounts.allow.success. %s is not allowed to withdrawToAddress funds", agentID.String())
-	} else {
-		allowances.MustSetAt(agentID[:], util.Uint64To8Bytes(uint64(amount)))
-		ctx.Log().Debugf("accounts.allow.success. Allow %s to withdrawToAddress uo to %d", agentID.String(), amount)
-	}
 	return nil, nil
 }

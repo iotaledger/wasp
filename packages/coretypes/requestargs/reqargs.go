@@ -1,6 +1,7 @@
 package requestargs
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -102,9 +103,11 @@ func (a RequestArgs) Read(r io.Reader) error {
 	return (dict.Dict(a)).Read(r)
 }
 
-// SolidifyRequestArguments decodes RequestArgs. For each blob reference encoded it
-// looks for the data by hash into the registry and replaces dict entry with the data
-// It returns ok flag == false if at least one blob hash don't have data in the registry
+// SolidifyRequestArguments decodes RequestArgs.
+// each value treated according to the value of the first byte:
+//  - if the value is '*' the data is a content reference. First 32 bytes always treated as data hash.
+//    The rest (if any) is a content address. It will be treated by a downloader
+//  - otherwise it is a raw data
 func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
@@ -114,25 +117,34 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dic
 	reqArgsDict := dict.Dict(a)
 	reqArgsDict.ForEach(func(key kv.Key, value []byte) bool {
 		d := []byte(key)
-		if d[0] == '*' {
-			h, err = hashing.HashValueFromBytes(value)
-			if err != nil {
-				ok = false
-				return false
-			}
-			data, ok, err = reg.GetBlob(h)
-			if err != nil {
-				ok = false
-				return false
-			}
-			if !ok {
-				ok = false
-				return false
-			}
-			ret.Set(kv.Key(d[1:]), data)
-		} else {
-			ret.Set(kv.Key(d[1:]), value)
+		if len(d) == 0 {
+			err = fmt.Errorf("wrong request argument key '%s'", key)
+			return false
 		}
+		if d[0] != '*' {
+			ret.Set(kv.Key(d[1:]), value)
+			return true
+		}
+		// d[0] == '*'
+		if len(value) < hashing.HashSize {
+			err = fmt.Errorf("wrong request argument '%s'", key)
+			return false
+		}
+		h, err = hashing.HashValueFromBytes(value[:hashing.HashSize])
+		if err != nil {
+			ok = false
+			return false
+		}
+		data, ok, err = reg.GetBlob(h)
+		if err != nil {
+			ok = false
+			return false
+		}
+		if !ok {
+			ok = false
+			return false
+		}
+		ret.Set(kv.Key(d[1:]), data)
 		return true
 	})
 	if err != nil || !ok {

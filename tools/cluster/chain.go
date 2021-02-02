@@ -3,7 +3,7 @@ package cluster
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
