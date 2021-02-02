@@ -258,7 +258,7 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 		if typeId == wasmhost.OBJTYPE_BYTES {
 			switch arrayTypeId {
 			case wasmhost.OBJTYPE_ADDRESS:
-			case wasmhost.OBJTYPE_AGENT:
+			case wasmhost.OBJTYPE_AGENT_ID:
 			case wasmhost.OBJTYPE_BYTES:
 			case wasmhost.OBJTYPE_COLOR:
 			case wasmhost.OBJTYPE_HASH:

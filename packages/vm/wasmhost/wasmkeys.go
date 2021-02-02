@@ -1,90 +1,84 @@
 package wasmhost
 
 const (
-	KeyAddress      = int32(-1)
-	KeyAgent        = int32(-2)
-	KeyBalances     = int32(-3)
-	KeyBase58Bytes  = int32(-4)
-	KeyBase58String = int32(-5)
-	KeyCall         = int32(-6)
-	KeyCaller       = int32(-7)
-	KeyChain        = int32(-8)
-	KeyChainOwner   = int32(-9)
-	KeyColor        = int32(-10)
-	KeyContract     = int32(-11)
-	KeyCreator      = int32(-12)
-	KeyData         = int32(-13)
-	KeyDelay        = int32(-14)
-	KeyDeploy       = int32(-15)
-	KeyDescription  = int32(-16)
-	KeyEvent        = int32(-17)
-	KeyExports      = int32(-18)
-	KeyFunction     = int32(-19)
-	KeyHash         = int32(-20)
-	KeyHname        = int32(-21)
-	KeyId           = int32(-22)
-	KeyIncoming     = int32(-23)
-	KeyLength       = int32(-24)
-	KeyLog          = int32(-25)
-	KeyLogs         = int32(-26)
-	KeyMaps         = int32(-27)
-	KeyName         = int32(-28)
-	KeyPanic        = int32(-29)
-	KeyParams       = int32(-30)
-	KeyPost         = int32(-31)
-	KeyRandom       = int32(-32)
-	KeyResults      = int32(-33)
-	KeyReturn       = int32(-34)
-	KeyState        = int32(-35)
-	KeyTimestamp    = int32(-36)
-	KeyTrace        = int32(-37)
-	KeyTransfers    = int32(-38)
-	KeyUtility      = int32(-39)
+	KeyAddress         = int32(-1)
+	KeyBalances        = int32(-2)
+	KeyBase58Bytes     = int32(-3)
+	KeyBase58String    = int32(-4)
+	KeyCall            = int32(-5)
+	KeyCaller          = int32(-6)
+	KeyChainOwnerId    = int32(-7)
+	KeyColor           = int32(-8)
+	KeyContractCreator = int32(-9)
+	KeyContractId      = int32(-10)
+	KeyData            = int32(-11)
+	KeyDeploy          = int32(-12)
+	KeyEvent           = int32(-13)
+	KeyExports         = int32(-14)
+	KeyHashBlake2b     = int32(-15)
+	KeyHashSha3        = int32(-16)
+	KeyHname           = int32(-17)
+	KeyIncoming        = int32(-18)
+	KeyLength          = int32(-19)
+	KeyLog             = int32(-20)
+	KeyLogs            = int32(-21)
+	KeyMaps            = int32(-22)
+	KeyName            = int32(-23)
+	KeyPanic           = int32(-24)
+	KeyParams          = int32(-25)
+	KeyPost            = int32(-26)
+	KeyRandom          = int32(-27)
+	KeyResults         = int32(-28)
+	KeyReturn          = int32(-29)
+	KeyState           = int32(-30)
+	KeyTimestamp       = int32(-31)
+	KeyTrace           = int32(-32)
+	KeyTransfers       = int32(-33)
+	KeyUtility         = int32(-34)
+	KeyValid           = int32(-35)
+	KeyValidEd25519    = int32(-36)
 
 	// Treat this one like a version number. When anything changes
 	// to the keys give this one a different value and make sure
 	// the client side in wasplib is updated accordingly
-	KeyZzzzzzz = int32(-99)
+	KeyZzzzzzz = int32(-95)
 )
 
 var keyMap = map[string]int32{
-	"address":      KeyAddress,
-	"agent":        KeyAgent,
-	"balances":     KeyBalances,
-	"base58decode": KeyBase58Bytes,
-	"base58encode": KeyBase58String,
-	"call":         KeyCall,
-	"caller":       KeyCaller,
-	"chain":        KeyChain,
-	"chain_owner":  KeyChainOwner,
-	"color":        KeyColor,
-	"contract":     KeyContract,
-	"creator":      KeyCreator,
-	"data":         KeyData,
-	"delay":        KeyDelay,
-	"deploy":       KeyDeploy,
-	"description":  KeyDescription,
-	"event":        KeyEvent,
-	"exports":      KeyExports,
-	"function":     KeyFunction,
-	"hash":         KeyHash,
-	"hname":        KeyHname,
-	"id":           KeyId,
-	"incoming":     KeyIncoming,
-	"length":       KeyLength,
-	"log":          KeyLog,
-	"logs":         KeyLogs,
-	"maps":         KeyMaps,
-	"name":         KeyName,
-	"panic":        KeyPanic,
-	"params":       KeyParams,
-	"post":         KeyPost,
-	"random":       KeyRandom,
-	"results":      KeyResults,
-	"return":       KeyReturn,
-	"state":        KeyState,
-	"timestamp":    KeyTimestamp,
-	"trace":        KeyTrace,
-	"transfers":    KeyTransfers,
-	"utility":      KeyUtility,
+	"address":         KeyAddress,
+	"balances":        KeyBalances,
+	"base58Bytes":     KeyBase58Bytes,
+	"base58String":    KeyBase58String,
+	"call":            KeyCall,
+	"caller":          KeyCaller,
+	"chainOwnerId":    KeyChainOwnerId,
+	"color":           KeyColor,
+	"contractCreator": KeyContractCreator,
+	"contractId":      KeyContractId,
+	"data":            KeyData,
+	"deploy":          KeyDeploy,
+	"event":           KeyEvent,
+	"exports":         KeyExports,
+	"hashBlake2b":     KeyHashBlake2b,
+	"hashSha3":        KeyHashSha3,
+	"hname":           KeyHname,
+	"incoming":        KeyIncoming,
+	"length":          KeyLength,
+	"log":             KeyLog,
+	"logs":            KeyLogs,
+	"maps":            KeyMaps,
+	"name":            KeyName,
+	"panic":           KeyPanic,
+	"params":          KeyParams,
+	"post":            KeyPost,
+	"random":          KeyRandom,
+	"results":         KeyResults,
+	"return":          KeyReturn,
+	"state":           KeyState,
+	"timestamp":       KeyTimestamp,
+	"trace":           KeyTrace,
+	"transfers":       KeyTransfers,
+	"utility":         KeyUtility,
+	"valid":           KeyValid,
+	"validEd25519":    KeyValidEd25519,
 }

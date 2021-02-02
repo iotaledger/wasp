@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/mr-tron/base58"
 )
 
 var TestMode = false
@@ -21,6 +20,7 @@ type ScUtility struct {
 	hname         coretypes.Hname
 	nextRandom    int
 	random        []byte
+	valid         bool
 }
 
 func NewScUtility(vm *wasmProcessor) *ScUtility {
@@ -51,12 +51,20 @@ func (o *ScUtility) GetBytes(keyId int32, typeId int32) []byte {
 		return o.base58Decoded
 	case wasmhost.KeyBase58String:
 		return []byte(o.base58Encoded)
-	case wasmhost.KeyHash:
+	case wasmhost.KeyHashBlake2b:
+		return o.hash.Bytes()
+	case wasmhost.KeyHashSha3:
 		return o.hash.Bytes()
 	case wasmhost.KeyHname:
 		return codec.EncodeHname(o.hname)
 	case wasmhost.KeyRandom:
 		return o.getRandom8Bytes()
+	case wasmhost.KeyValid:
+		bytes := make([]byte, 8)
+		if o.valid {
+			bytes[0] = 1
+		}
+		return bytes
 	}
 	o.invalidKey(keyId)
 	return nil
@@ -86,7 +94,9 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyBase58String:
 		return wasmhost.OBJTYPE_STRING
-	case wasmhost.KeyHash:
+	case wasmhost.KeyHashBlake2b:
+		return wasmhost.OBJTYPE_HASH
+	case wasmhost.KeyHashSha3:
 		return wasmhost.OBJTYPE_HASH
 	case wasmhost.KeyHname:
 		return wasmhost.OBJTYPE_HNAME
@@ -94,25 +104,42 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyRandom:
 		return wasmhost.OBJTYPE_INT
+	case wasmhost.KeyValid:
+		return wasmhost.OBJTYPE_INT
+	case wasmhost.KeyValidEd25519:
+		return wasmhost.OBJTYPE_BYTES
 	}
 	return 0
 }
 
 func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
+	utils := o.vm.ctx.Utils()
 	var err error
 	switch keyId {
 	case wasmhost.KeyBase58Bytes:
-		o.base58Encoded = base58.Encode(bytes)
+		o.base58Encoded = utils.Base58Encode(bytes)
 	case wasmhost.KeyBase58String:
-		o.base58Decoded, err = base58.Decode(string(bytes))
-	case wasmhost.KeyHash:
-		o.hash = hashing.HashData(bytes)
+		o.base58Decoded, err = utils.Base58Decode(string(bytes))
+	case wasmhost.KeyHashBlake2b:
+		o.hash = utils.HashBlake2b(bytes)
+	case wasmhost.KeyHashSha3:
+		o.hash = utils.HashSha3(bytes)
 	case wasmhost.KeyName:
-		o.hname = coretypes.Hn(string(bytes))
+		o.hname = utils.Hname(string(bytes))
+	case wasmhost.KeyValidEd25519:
+		o.valid = o.ValidED25519Signature(bytes)
 	default:
 		o.invalidKey(keyId)
 	}
 	if err != nil {
 		o.Panic(err.Error())
 	}
+}
+
+func (o *ScUtility) ValidED25519Signature(bytes []byte) bool {
+	decode := NewBytesDecoder(bytes)
+	data := decode.Bytes()
+	pubKey := decode.Bytes()
+	signature := decode.Bytes()
+	return o.vm.ctx.Utils().ValidED25519Signature(data, pubKey, signature)
 }

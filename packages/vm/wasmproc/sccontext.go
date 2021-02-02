@@ -15,21 +15,21 @@ import (
 )
 
 var typeIds = map[int32]int32{
-	wasmhost.KeyBalances:   wasmhost.OBJTYPE_MAP,
-	wasmhost.KeyCall:       wasmhost.OBJTYPE_BYTES,
-	wasmhost.KeyCaller:     wasmhost.OBJTYPE_AGENT,
-	wasmhost.KeyChainOwner: wasmhost.OBJTYPE_AGENT,
-	wasmhost.KeyCreator:    wasmhost.OBJTYPE_AGENT,
-	wasmhost.KeyDeploy:     wasmhost.OBJTYPE_BYTES,
-	wasmhost.KeyEvent:      wasmhost.OBJTYPE_STRING,
-	wasmhost.KeyExports:    wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY,
-	wasmhost.KeyId:         wasmhost.OBJTYPE_CONTRACT,
-	wasmhost.KeyIncoming:   wasmhost.OBJTYPE_MAP,
-	wasmhost.KeyLog:        wasmhost.OBJTYPE_STRING,
-	wasmhost.KeyLogs:       wasmhost.OBJTYPE_MAP,
-	wasmhost.KeyMaps:       wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
-	wasmhost.KeyPanic:      wasmhost.OBJTYPE_STRING,
-	wasmhost.KeyParams:     wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyBalances:        wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyCall:            wasmhost.OBJTYPE_BYTES,
+	wasmhost.KeyCaller:          wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyChainOwnerId:    wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyContractCreator: wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyDeploy:          wasmhost.OBJTYPE_BYTES,
+	wasmhost.KeyEvent:           wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyExports:         wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyContractId:              wasmhost.OBJTYPE_CONTRACT_ID,
+	wasmhost.KeyIncoming:        wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyLog:             wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyLogs:            wasmhost.OBJTYPE_MAP,
+	wasmhost.KeyMaps:            wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
+	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:       wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyResults:    wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:     wasmhost.OBJTYPE_MAP,
@@ -66,11 +66,11 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
 	case wasmhost.KeyCaller:
 		return o.vm.ctx.Caller().Bytes()
-	case wasmhost.KeyChainOwner:
+	case wasmhost.KeyChainOwnerId:
 		return o.vm.chainOwnerID().Bytes()
-	case wasmhost.KeyCreator:
+	case wasmhost.KeyContractCreator:
 		return o.vm.contractCreator().Bytes()
-	case wasmhost.KeyId:
+	case wasmhost.KeyContractId:
 		return o.vm.contractID().Bytes()
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
