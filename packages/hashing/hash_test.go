@@ -63,3 +63,8 @@ func TestString(t *testing.T) {
 	require.EqualValues(t, h1.Short(), (&h1).Short())
 	require.EqualValues(t, h1.Shortest(), (&h1).Shortest())
 }
+
+func TestSha3(t *testing.T) {
+	data := []byte("data-data-data-data-data-data-data-data-data")
+	HashSha3(data, data, data)
+}

@@ -22,6 +22,10 @@ func newView(vmctx *vmcontext.VMContext) coretypes.SandboxView {
 	return sandboxView{vmctx}
 }
 
+func (s sandboxView) Utils() coretypes.Utils {
+	return coretypes.NewUtils()
+}
+
 func (s sandboxView) ChainOwnerID() coretypes.AgentID {
 	return s.vmctx.ChainOwnerID()
 }

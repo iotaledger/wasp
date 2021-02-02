@@ -1,5 +1,6 @@
 # TODO
 
+- [ ] gas and/or time budgets for VM entry point calls
 - [ ] wasp-cli: separate binaries for admin/client operations
 - [ ] dwf: allow withdrawing colored tokens
 - [ ] BufferedKVStore: Cache DB reads (which should not change in the DB during
@@ -10,8 +11,8 @@
 - [ ] discuss market for iota/colored coins + trustless oracle for every chain
 
 ### To discuss/RFC
--  [ ] TODO accounts and other core contracts don't need tokens. 
-Possible policy: if caller is a core contract, accrue it all to the chain owner
+-  [ ] accounts and other core contracts don't need tokens. 
+    Possible policy: if caller is a core contract, accrue it all to the chain owner
 - [ ] optimize SC ledger database. Currently, key/value is stored twice: in the virtual state and in the batch which
 last updated the value. For small virtual states it is OK. For big ones (data Oracle) it would be better
 to for virtual state keep reference to the last updating mutatation in the batch/state update 

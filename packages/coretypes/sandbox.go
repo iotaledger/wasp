@@ -52,6 +52,8 @@ type Sandbox interface {
 	Log() LogInterface
 	// Event publishes "vmmsg" message through Publisher on nanomsg. It also logs locally, but it is not the same thing
 	Event(msg string)
+	//
+	Utils() Utils
 }
 
 // PostRequestParams is parameters of the PostRequest call

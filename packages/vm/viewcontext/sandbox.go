@@ -37,6 +37,10 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 	}
 }
 
+func (s *sandboxview) Utils() coretypes.Utils {
+	return coretypes.NewUtils()
+}
+
 func (s *sandboxview) Params() dict.Dict {
 	return s.params
 }

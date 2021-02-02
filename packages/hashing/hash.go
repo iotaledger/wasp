@@ -3,6 +3,8 @@ package hashing
 import (
 	"encoding/hex"
 	"github.com/mr-tron/base58"
+	"golang.org/x/crypto/sha3"
+	"hash"
 	"io"
 
 	// github.com/mr-tron/base58
@@ -84,22 +86,51 @@ func HashValueFromBase58(s string) (HashValue, error) {
 }
 
 // HashData Blake2b
-func HashData(data ...[]byte) (ret HashValue) {
-	h, err := blake2b.New256(nil)
-	if err != nil {
-		panic(err)
-	}
-	if h.Size() != HashSize {
-		panic("hash size != 32")
-	}
+func HashData(data ...[]byte) HashValue {
+	return HashDataBlake2b(data...)
+}
+
+func HashDataBlake2b(data ...[]byte) (ret HashValue) {
+	h := hashBlake2b()
 	for _, d := range data {
-		_, err = h.Write(d)
+		_, err := h.Write(d)
 		if err != nil {
 			panic(err)
 		}
 	}
 	copy(ret[:], h.Sum(nil))
 	return
+}
+
+func hashBlake2b() hash.Hash {
+	h, err := blake2b.New256(nil)
+	if err != nil {
+		panic(err)
+	}
+	if h.Size() != HashSize {
+		panic("blake2b: hash size != 32")
+	}
+	return h
+}
+
+func HashSha3(data ...[]byte) (ret HashValue) {
+	h := hashSha3()
+	for _, d := range data {
+		_, err := h.Write(d)
+		if err != nil {
+			panic(err)
+		}
+	}
+	copy(ret[:], h.Sum(nil))
+	return
+}
+
+func hashSha3() hash.Hash {
+	h := sha3.New256()
+	if h.Size() != HashSize {
+		panic("sha3: hash size != 32")
+	}
+	return h
 }
 
 func HashStrings(str ...string) HashValue {
