@@ -132,10 +132,6 @@ func (host *wasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
-func (host *wasmProcessor) WithGasLimit(_ int) coretypes.EntryPoint {
-	return host
-}
-
 func (host *wasmProcessor) chainOwnerID() coretypes.AgentID {
 	if host.ctx != nil {
 		return host.ctx.ChainOwnerID()

@@ -70,7 +70,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	if newMsg {
 		// solidify arguments by resolving blob references from the registry
 		// the request will not be selected for processing until ret.argsSolid == true
-		ok, err := reqMsg.RequestBlock().SolidifyArgs(op.chain.BlobRegistry())
+		ok, err := reqMsg.RequestBlock().SolidifyArgs(op.chain.BlobCache())
 		if err != nil {
 			ret.log.Errorf("inconsistency: can't solidify args: %v", err)
 		} else {

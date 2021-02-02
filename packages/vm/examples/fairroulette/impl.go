@@ -123,11 +123,6 @@ func (v fairRouletteProcessor) GetDescription() string {
 	return "FairRoulette hard coded smart contract processor"
 }
 
-// WithGasLimit: not implemented, has no effect
-func (f fairRouletteEntryPoint) WithGasLimit(i int) coretypes.EntryPoint {
-	return f
-}
-
 func (f fairRouletteEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := f(ctx)
 	if err != nil {

@@ -2,26 +2,43 @@ package registry
 
 import (
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/blobcache"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"time"
 )
 
-type BlobRegistryProvider interface {
-	PutBlob(data []byte) (hashing.HashValue, error)
-	GetBlob(h hashing.HashValue) ([]byte, bool, error)
-	HasBlob(h hashing.HashValue) (bool, error)
-}
+// implements BlobCacheProvide interface
+
+// TODO blob cache cleanup
 
 func dbKeyForBlob(h hashing.HashValue) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeBlob, h[:])
+	return dbprovider.MakeKey(dbprovider.ObjectTypeBlobCache, h[:])
 }
 
-// Writes data into the registry with the key of its hash
-func (r *Impl) PutBlob(data []byte) (hashing.HashValue, error) {
+func dbKeyForBlobTTL(h hashing.HashValue) []byte {
+	return dbprovider.MakeKey(dbprovider.ObjectTypeBlobCacheTTL)
+}
+
+// PutBlob Writes data into the registry with the key of its hash
+// Also stores TTL if provided
+func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, error) {
 	h := hashing.HashData(data)
 	err := r.dbProvider.GetRegistryPartition().Set(dbKeyForBlob(h), data)
 	if err != nil {
 		return hashing.HashValue{}, err
+	}
+	nowis := time.Now()
+	cleanAfter := nowis.Add(blobcache.DefaultTTL).UnixNano()
+	if len(ttl) > 0 {
+		cleanAfter = nowis.Add(ttl[0]).UnixNano()
+	}
+	if cleanAfter > 0 {
+		err = r.dbProvider.GetRegistryPartition().Set(dbKeyForBlobTTL(h), codec.EncodeInt64(cleanAfter))
+		if err != nil {
+			return hashing.HashValue{}, err
+		}
 	}
 	r.log.Infof("data blob has been stored. size: %d bytes, hash: %s", len(data), h)
 	return h, nil

@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/blobcache"
 	"sync"
 	"time"
 
@@ -52,7 +53,7 @@ type chainObj struct {
 	netProvider           peering.NetworkProvider
 	peersAttachRef        interface{}
 	dksProvider           tcrypto.RegistryProvider
-	blobProvider          registry.BlobRegistryProvider
+	blobProvider          blobcache.BlobCache
 }
 
 func requestIDCaller(handler interface{}, params ...interface{}) {
@@ -64,7 +65,7 @@ func newCommitteeObj(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
-	blobProvider registry.BlobRegistryProvider,
+	blobProvider blobcache.BlobCache,
 	onActivation func(),
 ) chain.Chain {
 	var err error

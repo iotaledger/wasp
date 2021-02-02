@@ -13,7 +13,8 @@ const (
 	ObjectTypeStateVariable
 	ObjectTypeProgramMetadata
 	ObjectTypeNodeIdentity
-	ObjectTypeBlob
+	ObjectTypeBlobCache
+	ObjectTypeBlobCacheTTL
 )
 
 // MakeKey makes key within the partition. It consists to one byte for object type

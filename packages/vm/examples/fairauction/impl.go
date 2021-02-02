@@ -117,10 +117,6 @@ func (ep fairAuctionEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, 
 	panic("implement me")
 }
 
-func (ep fairAuctionEntryPoint) WithGasLimit(_ int) coretypes.EntryPoint {
-	return ep
-}
-
 // AuctionInfo describes active auction
 type AuctionInfo struct {
 	// color of the tokens for sale. Max one auction per color at same time is allowed

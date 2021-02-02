@@ -68,11 +68,6 @@ func (ep dwfEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
-// not used
-func (ep dwfEntryPoint) WithGasLimit(_ int) coretypes.EntryPoint {
-	return ep
-}
-
 const maxComment = 150
 
 // donate implements request 'donate'. It takes feedback text from the request

@@ -2,7 +2,7 @@ package sctransaction
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/blobcache"
 	"github.com/iotaledger/wasp/packages/requestargs"
 	"io"
 	"time"
@@ -101,7 +101,7 @@ func (req *RequestSection) SolidArgs() dict.Dict {
 }
 
 // SolidifyArgs return true if solidified successfully
-func (req *RequestSection) SolidifyArgs(reg registry.BlobRegistryProvider) (bool, error) {
+func (req *RequestSection) SolidifyArgs(reg blobcache.BlobCache) (bool, error) {
 	if req.solidArgs != nil {
 		return true, nil
 	}

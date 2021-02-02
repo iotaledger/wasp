@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/blobcache"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -41,7 +42,7 @@ type Solo struct {
 	T           *testing.T
 	logger      *logger.Logger
 	utxoDB      *utxodb.UtxoDB
-	registry    registry.BlobRegistryProvider
+	registry    blobcache.BlobCacheFull
 	glbMutex    *sync.Mutex
 	logicalTime time.Time
 	timeStep    time.Duration

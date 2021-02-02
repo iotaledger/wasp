@@ -5,6 +5,7 @@ package chain
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/blobcache"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -32,7 +33,7 @@ type Chain interface {
 	InitTestRound()
 	HasQuorum() bool
 	PeerStatus() []*PeerStatus
-	BlobRegistry() registry.BlobRegistryProvider
+	BlobCache() blobcache.BlobCache
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
@@ -97,7 +98,7 @@ var ConstructorNew func(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
-	blobProvider registry.BlobRegistryProvider,
+	blobProvider blobcache.BlobCache,
 	onActivation func(),
 ) Chain
 
@@ -106,7 +107,7 @@ func New(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
-	blobProvider registry.BlobRegistryProvider,
+	blobProvider blobcache.BlobCache,
 	onActivation func(),
 ) Chain {
 	return ConstructorNew(chr, log, netProvider, dksProvider, blobProvider, onActivation)

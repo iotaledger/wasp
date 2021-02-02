@@ -20,9 +20,8 @@ type Processor interface {
 // EntryPoint is an abstract interface by which VM is called by passing
 // the Sandbox interface
 type EntryPoint interface {
-	WithGasLimit(int) EntryPoint
-	Call(ctx Sandbox) (dict.Dict, error)
 	IsView() bool
+	Call(ctx Sandbox) (dict.Dict, error)
 	CallView(ctx SandboxView) (dict.Dict, error)
 }
 
@@ -37,10 +36,6 @@ var (
 	// NilEntryPointView represents empty view entry point
 	NilEntryPointView = nilEntryPoint(true)
 )
-
-func (n nilEntryPoint) WithGasLimit(_ int) EntryPoint {
-	return n
-}
 
 func (n nilEntryPoint) Call(_ Sandbox) (dict.Dict, error) {
 	if n {

@@ -95,11 +95,6 @@ func (ep tokenRegistryEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict
 	panic("implement me")
 }
 
-// WithGasLimit not used
-func (ep tokenRegistryEntryPoint) WithGasLimit(_ int) coretypes.EntryPoint {
-	return ep
-}
-
 const maxDescription = 150
 
 // mintSupply implements 'mint supply' request

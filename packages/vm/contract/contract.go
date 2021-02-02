@@ -98,10 +98,6 @@ func (f *ContractFunctionInterface) Hname() coretypes.Hname {
 	return coretypes.Hn(f.Name)
 }
 
-func (f *ContractFunctionInterface) WithGasLimit(_ int) coretypes.EntryPoint {
-	return f
-}
-
 func (f *ContractFunctionInterface) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if f.IsView() {
 		return nil, coretypes.ErrWrongTypeEntryPoint

@@ -36,7 +36,7 @@ func (op *operator) solidifyRequestArgsIfNeeded() {
 		return r.hasMessage() && !r.hasSolidArgs()
 	})
 	for _, req := range reqs {
-		ok, err := req.reqTx.Requests()[req.reqId.Index()].SolidifyArgs(op.chain.BlobRegistry())
+		ok, err := req.reqTx.Requests()[req.reqId.Index()].SolidifyArgs(op.chain.BlobCache())
 		if err != nil {
 			req.log.Errorf("failed to solidify request arguments: %v", err)
 		} else {
