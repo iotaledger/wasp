@@ -1,7 +1,7 @@
 package requestargs
 
 import (
-	"github.com/iotaledger/wasp/packages/blobcache"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -105,7 +105,7 @@ func (a RequestArgs) Read(r io.Reader) error {
 // SolidifyRequestArguments decodes RequestArgs. For each blob reference encoded it
 // looks for the data by hash into the registry and replaces dict entry with the data
 // It returns ok flag == false if at least one blob hash don't have data in the registry
-func (a RequestArgs) SolidifyRequestArguments(reg blobcache.BlobCache) (dict.Dict, bool, error) {
+func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error

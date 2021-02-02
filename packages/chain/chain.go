@@ -5,8 +5,6 @@ package chain
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/blobcache"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/events"
@@ -33,7 +31,7 @@ type Chain interface {
 	InitTestRound()
 	HasQuorum() bool
 	PeerStatus() []*PeerStatus
-	BlobCache() blobcache.BlobCache
+	BlobCache() coretypes.BlobCache
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
@@ -98,7 +96,7 @@ var ConstructorNew func(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
-	blobProvider blobcache.BlobCache,
+	blobProvider coretypes.BlobCache,
 	onActivation func(),
 ) Chain
 
@@ -107,7 +105,7 @@ func New(
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
-	blobProvider blobcache.BlobCache,
+	blobProvider coretypes.BlobCache,
 	onActivation func(),
 ) Chain {
 	return ConstructorNew(chr, log, netProvider, dksProvider, blobProvider, onActivation)

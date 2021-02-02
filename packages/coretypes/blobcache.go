@@ -1,4 +1,4 @@
-package blobcache
+package coretypes
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"

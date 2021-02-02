@@ -5,7 +5,6 @@ package chainimpl
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/blobcache"
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -286,7 +285,7 @@ func (c *chainObj) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *chainObj) BlobCache() blobcache.BlobCache {
+func (c *chainObj) BlobCache() coretypes.BlobCache {
 	return c.blobProvider
 }
 

@@ -2,7 +2,7 @@ package registry
 
 import (
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/blobcache"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -30,7 +30,7 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 		return hashing.HashValue{}, err
 	}
 	nowis := time.Now()
-	cleanAfter := nowis.Add(blobcache.DefaultTTL).UnixNano()
+	cleanAfter := nowis.Add(coretypes.DefaultTTL).UnixNano()
 	if len(ttl) > 0 {
 		cleanAfter = nowis.Add(ttl[0]).UnixNano()
 	}
