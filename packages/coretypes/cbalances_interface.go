@@ -27,6 +27,8 @@ type ColoredBalances interface {
 	NonNegative() bool
 	// AddToMap adds balances to the map color by color
 	AddToMap(m map[balance.Color]int64)
+	// TakeOutColor takes out balance with specified color
+	TakeOutColor(col balance.Color) ColoredBalances
 	// String human readable representation of the map
 	String() string
 }
