@@ -23,7 +23,7 @@ func newView(vmctx *vmcontext.VMContext) coretypes.SandboxView {
 }
 
 func (s sandboxView) Utils() coretypes.Utils {
-	return coretypes.NewUtils()
+	return coretypes.NewUtils(s.Log())
 }
 
 func (s sandboxView) ChainOwnerID() coretypes.AgentID {

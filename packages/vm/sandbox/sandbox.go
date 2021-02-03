@@ -28,7 +28,7 @@ func new(vmctx *vmcontext.VMContext) coretypes.Sandbox {
 }
 
 func (s *sandbox) Utils() coretypes.Utils {
-	return coretypes.NewUtils()
+	return coretypes.NewUtils(s.Log())
 }
 
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {
