@@ -5,9 +5,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-// Deposit calls "deposit" entry point of the accounts contract.
+// Accrue calls "deposit" entry point of the accounts contract.
 // Can only be called from full sandbox context
-func Deposit(ctx coretypes.Sandbox, target coretypes.AgentID, tokens coretypes.ColoredBalances) error {
+func Accrue(ctx coretypes.Sandbox, target coretypes.AgentID, tokens coretypes.ColoredBalances) error {
+	if tokens == nil || tokens.Len() == 0 {
+		return nil
+	}
 	p := codec.MakeDict(map[string]interface{}{
 		ParamAgentID: target,
 	})

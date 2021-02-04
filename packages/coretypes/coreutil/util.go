@@ -5,18 +5,18 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-type assert struct {
+type Assert struct {
 	log coretypes.LogInterface
 }
 
-func NewAssert(log ...coretypes.LogInterface) assert {
+func NewAssert(log ...coretypes.LogInterface) Assert {
 	if len(log) == 0 {
-		return assert{}
+		return Assert{}
 	}
-	return assert{log: log[0]}
+	return Assert{log: log[0]}
 }
 
-func (a assert) Require(cond bool, format string, args ...interface{}) {
+func (a Assert) Require(cond bool, format string, args ...interface{}) {
 	if cond {
 		return
 	}
@@ -26,6 +26,6 @@ func (a assert) Require(cond bool, format string, args ...interface{}) {
 	a.log.Panicf(format, args...)
 }
 
-func (a assert) RequireNoError(err error) {
+func (a Assert) RequireNoError(err error) {
 	a.Require(err == nil, fmt.Sprintf("%v", err))
 }

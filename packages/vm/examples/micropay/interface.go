@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
 	"github.com/iotaledger/wasp/packages/vm/examples"
+	"time"
 )
 
 const (
@@ -24,8 +25,11 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncOpenChannel, openChannel),
-		contract.ViewFunc(FuncGetChannelInfo, getChannelInfo),
+		contract.Func(FuncPublicKey, publicKey),
+		contract.Func(FuncAddWarrant, addWarrant),
+		contract.Func(FuncRevokeWarrant, revokeWarrant),
+		contract.Func(FuncCloseWarrant, closeWarrant),
+		contract.ViewFunc(FuncGetChannelInfo, getWarrantInfo),
 	})
 	examples.AddProcessor(Interface)
 }
@@ -33,8 +37,20 @@ func init() {
 const (
 	MinimumWarrantIotas = 500
 
-	FuncOpenChannel    = "openChannel"
-	FuncGetChannelInfo = "getChannelInfo"
+	FuncPublicKey      = "publicKey"
+	FuncAddWarrant     = "addWarrant"
+	FuncRevokeWarrant  = "revokeWarrant"
+	FuncCloseWarrant   = "closeWarrant"
+	FuncGetChannelInfo = "getWarrantInfo"
 
+	ParamPublicKey      = "pk"
+	ParamPayerAddress   = "pa"
 	ParamServiceAddress = "sa"
+
+	ParamWarrant = "wa"
+	ParamRevoked = "re"
+
+	StateVarPublicKeys = "k"
+
+	WarrantRevokePeriod = 1 * time.Hour
 )

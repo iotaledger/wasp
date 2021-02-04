@@ -242,10 +242,24 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 func (ch *Chain) readRequestsLoop() {
 	for r := range ch.chInRequest {
-		ch.backlogMutex.Lock()
-		ch.backlog = append(ch.backlog, r)
+		ch.addToBacklog(r)
+	}
+}
+
+func (ch *Chain) addToBacklog(r sctransaction.RequestRef) {
+	ch.backlogMutex.Lock()
+	defer func() {
 		ch.backlogMutex.Unlock()
 		ch.chPosted.Done()
+	}()
+	ch.backlog = append(ch.backlog, r)
+	tl := r.RequestSection().Timelock()
+	if tl == 0 {
+		ch.Log.Infof("added to backlog: %s", r.RequestID().String())
+	} else {
+		tlTime := time.Unix(int64(tl), 0)
+		ch.Log.Infof("added to backlog: %s. Time locked for: %v",
+			r.RequestID().Short(), tlTime.Sub(ch.Env.LogicalTime()))
 	}
 }
 
@@ -296,13 +310,22 @@ func (ch *Chain) backlogLen() int {
 }
 
 // NewSignatureSchemeWithFunds generates new ed25519 signature scheme and requests funds (1337 iotas)
-// from the UTXODB faucet
+// from the UTXODB faucet.
 func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
-	ret := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	ret, _ := env.NewSignatureSchemeWithFundsAndPubKey()
+	return ret
+}
+
+// NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme and requests funds (1337 iotas)
+// from the UTXODB faucet.
+// Returns signature scheme interface and public ey in binary form
+func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.SignatureScheme, []byte) {
+	keypair := ed25519.GenerateKeyPair()
+	ret := signaturescheme.ED25519(keypair)
 	_, err := env.utxoDB.RequestFunds(ret.Address())
 	require.NoError(env.T, err)
 	env.AssertAddressBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
-	return ret
+	return ret, keypair.PublicKey.Bytes()
 }
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
