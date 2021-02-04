@@ -1,11 +1,12 @@
 package examples
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestExample1(t *testing.T) {
@@ -30,4 +31,14 @@ func TestExample2(t *testing.T) {
 	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
+}
+
+func TestExample3(t *testing.T) {
+	env := solo.New(t, false, false)
+	userWallet := env.NewSignatureScheme()
+	userAddress := userWallet.Address()
+	t.Logf("Address of the userWallet is: %s", userAddress)
+	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA)
+	t.Logf("balance of the userWallet is: %d iota", numIotas)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 0)
 }
