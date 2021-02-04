@@ -29,6 +29,7 @@ func init() {
 		contract.Func(FuncAddWarrant, addWarrant),
 		contract.Func(FuncRevokeWarrant, revokeWarrant),
 		contract.Func(FuncCloseWarrant, closeWarrant),
+		contract.Func(FuncSettle, settle),
 		contract.ViewFunc(FuncGetChannelInfo, getWarrantInfo),
 	})
 	examples.AddProcessor(Interface)
@@ -41,16 +42,19 @@ const (
 	FuncAddWarrant     = "addWarrant"
 	FuncRevokeWarrant  = "revokeWarrant"
 	FuncCloseWarrant   = "closeWarrant"
+	FuncSettle         = "settle"
 	FuncGetChannelInfo = "getWarrantInfo"
 
 	ParamPublicKey      = "pk"
 	ParamPayerAddress   = "pa"
 	ParamServiceAddress = "sa"
+	ParamPayments       = "m"
 
 	ParamWarrant = "wa"
 	ParamRevoked = "re"
 
 	StateVarPublicKeys = "k"
+	StateVarLastOrdNum = "o"
 
 	WarrantRevokePeriod = 1 * time.Hour
 )

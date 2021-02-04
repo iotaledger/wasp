@@ -121,6 +121,29 @@ func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+// Params:
+// - ParamPayerAddress address.address
+// - ParamPayments - array of encoded payments
+func settle(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := coreutil.NewAssert(ctx.Log())
+	a.Require(ctx.Caller().IsAddress(), "caller must be an address")
+	targetAddr := ctx.Caller().MustAddress()
+
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	payerAddr := par.MustGetAddress(ParamPayerAddress)
+	payerPubKeyBin := getPublicKey(ctx.State(), payerAddr, a)
+	a.Require(payerPubKeyBin != nil, "public key unknown for %s", payerAddr)
+
+	payments := decodePayments(ctx.Params(), a)
+	settledSum, notSettled := processPayments(ctx, payments, payerAddr, targetAddr, payerPubKeyBin)
+	ctx.Event(fmt.Sprintf("[micropay.settle] settled %d i, num payments: %d, not settled payments: %d, payer: %s, target %s",
+		settledSum, len(payments)-len(notSettled), len(notSettled), payerAddr, targetAddr))
+	if len(notSettled) > 0 {
+		return nil, fmt.Errorf("number of payments failed to settle: %d", len(notSettled))
+	}
+	return nil, nil
+}
+
 // getWarrantInfo return warrant info for given payer and services addresses
 // Params:
 // - ParamServiceAddress address.Address
@@ -191,4 +214,60 @@ func getRevokeKey(service address.Address) []byte {
 
 func getRevokeDeadline(nowis int64) time.Time {
 	return time.Unix(0, nowis).Add(WarrantRevokePeriod)
+}
+
+func decodePayments(state kv.KVStoreReader, a coreutil.Assert) []*Payment {
+	payments := collections.NewArrayReadOnly(state, ParamPayments)
+	n := payments.MustLen()
+	a.Require(n > 0, "no payments found")
+
+	ret := make([]*Payment, n)
+	for i := range ret {
+		data, err := payments.GetAt(uint16(i))
+		a.RequireNoError(err)
+		ret[i], err = NewPaymentFromBytes(data)
+		a.RequireNoError(err)
+	}
+	return ret
+}
+
+func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targetAddr address.Address, payerPubKey []byte) (int64, []*Payment) {
+	a := coreutil.NewAssert(ctx.Log())
+	lastOrd, ok, err := codec.DecodeInt64(ctx.State().MustGet(StateVarLastOrdNum))
+	a.RequireNoError(err)
+	if !ok {
+		lastOrd = 0
+	}
+	remainingWarrant, _ := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
+	a.Require(remainingWarrant > 0, "warrant == 0, can't settle payments")
+
+	notSettled := make([]*Payment, 0)
+	settledSum := int64(0)
+	for i, p := range payments {
+		if int64(p.Ord) <= lastOrd {
+			// wrong order
+			notSettled = append(notSettled, p)
+			continue
+		}
+		data := paymentEssence(p.Ord, p.Amount, payerAddr, targetAddr)
+		lastOrd = int64(p.Ord)
+		if !ctx.Utils().ValidED25519Signature(data, payerPubKey, p.SignatureShort) {
+			ctx.Log().Infof("wrong signature")
+			notSettled = append(notSettled, p)
+			continue
+		}
+		if remainingWarrant < p.Amount {
+			notSettled = append(notSettled, payments[i:]...)
+			break
+		}
+		remainingWarrant -= p.Amount
+		settledSum += p.Amount
+		lastOrd = int64(p.Ord)
+	}
+	if settledSum > 0 {
+		ctx.TransferToAddress(targetAddr, cbalances.NewIotasOnly(settledSum))
+	}
+	setWarrant(ctx.State(), payerAddr, targetAddr, remainingWarrant)
+	ctx.State().Set(StateVarLastOrdNum, codec.EncodeInt64(lastOrd))
+	return settledSum, notSettled
 }

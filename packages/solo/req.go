@@ -31,6 +31,20 @@ type CallParams struct {
 	args       requestargs.RequestArgs
 }
 
+func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
+	ret := &CallParams{
+		targetName: scName,
+		target:     coretypes.Hn(scName),
+		epName:     funName,
+		entryPoint: coretypes.Hn(funName),
+	}
+	ret.args = requestargs.New(nil)
+	for k, v := range par {
+		ret.args.AddEncodeSimple(k, v)
+	}
+	return ret
+}
+
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequest and callViewFull
 // calls:
 //  - 'scName' is a a name of the target smart contract
@@ -40,18 +54,7 @@ type CallParams struct {
 // With the WithTransfers the CallParams structure may be complemented with attached colored
 // tokens sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
-	ret := &CallParams{
-		targetName: scName,
-		target:     coretypes.Hn(scName),
-		epName:     funName,
-		entryPoint: coretypes.Hn(funName),
-	}
-	d := codec.MakeDict(toMap(params...))
-	ret.args = requestargs.New(nil)
-	for k, v := range d {
-		ret.args.AddEncodeSimple(k, v)
-	}
-	return ret
+	return NewCallParamsFromDic(scName, funName, codec.MakeDict(toMap(params...)))
 }
 
 func NewCallParamsOptimized(scName, funName string, optSize int, params ...interface{}) (*CallParams, map[kv.Key][]byte) {
