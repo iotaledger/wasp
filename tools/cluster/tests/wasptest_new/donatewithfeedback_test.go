@@ -34,12 +34,12 @@ func TestDwfDonateOnce(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	ret, err := chain.CallView(dwfName, "view_donations")
+	ret, err := chain.CallView(dwfName, "donations")
 	require.NoError(t, err)
-	largest, _, err := codec.DecodeInt64(ret.MustGet("max_donation"))
+	largest, _, err := codec.DecodeInt64(ret.MustGet("maxDonation"))
 	check(err, t)
 	require.EqualValues(t, 42, largest)
-	total, _, err := codec.DecodeInt64(ret.MustGet("total_donation"))
+	total, _, err := codec.DecodeInt64(ret.MustGet("totalDonation"))
 	check(err, t)
 	require.EqualValues(t, 42*numDonations, total)
 

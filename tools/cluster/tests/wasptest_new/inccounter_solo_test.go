@@ -18,7 +18,7 @@ const incDescription = "IncCounter, a PoC smart contract"
 var incHname = coretypes.Hn(incName)
 
 const varCounter = "counter"
-const varNumRepeats = "num_repeats"
+const varNumRepeats = "numRepeats"
 
 func TestIncSoloInc(t *testing.T) {
 	al := solo.New(t, false, false)
@@ -29,7 +29,7 @@ func TestIncSoloInc(t *testing.T) {
 		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	ret, err := chain.CallView(incName, "get_counter")
+	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)
@@ -41,12 +41,12 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCallParams(incName, "repeat_many", varNumRepeats, 2).
+	req := solo.NewCallParams(incName, "repeatMany", varNumRepeats, 2).
 		WithTransfer(balance.ColorIOTA, 1)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
 	chain.WaitForEmptyBacklog()
-	ret, err := chain.CallView(incName, "get_counter")
+	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestIncSoloResultsTest(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCallParams(incName, "results_test").
+	req := solo.NewCallParams(incName, "resultsTest").
 		WithTransfer(balance.ColorIOTA, 1)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
@@ -72,11 +72,11 @@ func TestIncSoloStateTest(t *testing.T) {
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
-	req := solo.NewCallParams(incName, "state_test").
+	req := solo.NewCallParams(incName, "stateTest").
 		WithTransfer(balance.ColorIOTA, 1)
 	ret, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	ret, err = chain.CallView(incName, "state_check")
+	ret, err = chain.CallView(incName, "stateCheck")
 	require.NoError(t, err)
 	require.EqualValues(t, 0, len(ret))
 }

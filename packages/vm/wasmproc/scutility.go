@@ -14,6 +14,7 @@ var TestMode = false
 
 type ScUtility struct {
 	ScSandboxObject
+	aggregatedBls []byte
 	base58Decoded []byte
 	base58Encoded string
 	hash          hashing.HashValue
@@ -47,6 +48,8 @@ func (o *ScUtility) Exists(keyId int32, typeId int32) bool {
 
 func (o *ScUtility) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
+	case wasmhost.KeyAggregateBls:
+		return o.aggregatedBls
 	case wasmhost.KeyBase58Bytes:
 		return o.base58Decoded
 	case wasmhost.KeyBase58String:
@@ -90,6 +93,8 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 
 func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	switch keyId {
+	case wasmhost.KeyAggregateBls:
+		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyBase58Bytes:
 		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyBase58String:
@@ -106,6 +111,8 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 		return wasmhost.OBJTYPE_INT
 	case wasmhost.KeyValid:
 		return wasmhost.OBJTYPE_INT
+	case wasmhost.KeyValidBls:
+		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyValidEd25519:
 		return wasmhost.OBJTYPE_BYTES
 	}
@@ -116,6 +123,8 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	utils := o.vm.utils()
 	var err error
 	switch keyId {
+	case wasmhost.KeyAggregateBls:
+		o.aggregatedBls = o.aggregateBLSSignatures(bytes)
 	case wasmhost.KeyBase58Bytes:
 		o.base58Encoded = utils.Base58Encode(bytes)
 	case wasmhost.KeyBase58String:
@@ -126,8 +135,10 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 		o.hash = utils.HashSha3(bytes)
 	case wasmhost.KeyName:
 		o.hname = utils.Hname(string(bytes))
+	case wasmhost.KeyValidBls:
+		o.valid = o.validBLSSignature(bytes)
 	case wasmhost.KeyValidEd25519:
-		o.valid = o.ValidED25519Signature(bytes)
+		o.valid = o.validED25519Signature(bytes)
 	default:
 		o.invalidKey(keyId)
 	}
@@ -136,10 +147,34 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	}
 }
 
-func (o *ScUtility) ValidED25519Signature(bytes []byte) bool {
+func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
+	decode := NewBytesDecoder(bytes)
+	count := int(decode.Int())
+	pubKeysBin := make([][]byte, count)
+	for i := 0; i < count; i++ {
+		pubKeysBin[i] = decode.Bytes()
+	}
+	count = int(decode.Int())
+	sigsBin := make([][]byte, count)
+	for i := 0; i < count; i++ {
+		sigsBin[i] = decode.Bytes()
+	}
+	pubKeyBin, sigBin := o.vm.utils().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	return NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
+}
+
+func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	decode := NewBytesDecoder(bytes)
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.ctx.Utils().ValidED25519Signature(data, pubKey, signature)
+	return o.vm.utils().ValidBLSSignature(data, pubKey, signature)
+}
+
+func (o *ScUtility) validED25519Signature(bytes []byte) bool {
+	decode := NewBytesDecoder(bytes)
+	data := decode.Bytes()
+	pubKey := decode.Bytes()
+	signature := decode.Bytes()
+	return o.vm.utils().ValidED25519Signature(data, pubKey, signature)
 }
