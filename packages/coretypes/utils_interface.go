@@ -79,7 +79,7 @@ func (u utilImpl) ValidBLSSignature(data []byte, pubKeyBin []byte, sigBin []byte
 
 // AggregateBLSSignatures
 // TODO: optimize redundant binary manipulation.
-//   Implement more flexible access to parts of Signature
+//   Implement more flexible access to parts of SignatureShort
 func (u utilImpl) AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte) {
 	if len(sigsBin) == 0 || len(pubKeysBin) != len(sigsBin) {
 		u.log.Panicf("number of publik keys must be equal to the number of signatures and not empty")

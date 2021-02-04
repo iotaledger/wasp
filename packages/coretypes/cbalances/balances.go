@@ -175,6 +175,18 @@ func (b coloredBalances) AddToMap(m map[balance.Color]int64) {
 	})
 }
 
+// TakeColor takes out all tokens with specific color
+// return what has left
+func (b coloredBalances) TakeOutColor(col balance.Color) coretypes.ColoredBalances {
+	bal := b.Balance(col)
+	if bal == 0 {
+		return b
+	}
+	ret := map[balance.Color]int64{col: -bal}
+	b.AddToMap(ret)
+	return NewFromMap(ret)
+}
+
 //goland:noinspection ALL
 func WriteColoredBalances(w io.Writer, b coretypes.ColoredBalances) error {
 	l := uint16(0)
