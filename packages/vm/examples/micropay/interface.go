@@ -52,6 +52,7 @@ const (
 
 	ParamWarrant = "wa"
 	ParamRevoked = "re"
+	ParamLastOrd = "lo"
 
 	StateVarPublicKeys = "k"
 	StateVarLastOrdNum = "o"

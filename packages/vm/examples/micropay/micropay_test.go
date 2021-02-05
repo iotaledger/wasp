@@ -145,6 +145,10 @@ func TestOpenChannelTwice(t *testing.T) {
 	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
 	require.NoError(t, err)
 	require.False(t, exists)
+
+	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamLastOrd))
+	require.NoError(t, err)
+	require.False(t, exists)
 }
 
 func TestRevokeWarrant(t *testing.T) {
@@ -230,6 +234,10 @@ func TestRevokeWarrant(t *testing.T) {
 	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
 	require.NoError(t, err)
 	require.False(t, exists)
+
+	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamLastOrd))
+	require.NoError(t, err)
+	require.False(t, exists)
 }
 
 func TestPayment(t *testing.T) {
@@ -263,25 +271,26 @@ func TestPayment(t *testing.T) {
 	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
 	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, 1337-600-2)
 
-	ret, err := chain.CallView("micropay", FuncGetChannelInfo,
+	res, err := chain.CallView("micropay", FuncGetChannelInfo,
 		ParamPayerAddress, payerAddr,
 		ParamServiceAddress, providerAddr,
 	)
 	var ok bool
 	var w int64
 	require.NoError(t, err)
-	w, ok, err = codec.DecodeInt64(ret.MustGet(ParamWarrant))
+	w, ok, err = codec.DecodeInt64(res.MustGet(ParamWarrant))
 	require.NoError(t, err)
 	require.True(t, ok)
 	require.EqualValues(t, 600, w)
 
-	_, ok, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
+	_, ok, err = codec.DecodeInt64(res.MustGet(ParamRevoked))
 	require.NoError(t, err)
 	require.False(t, ok)
 
 	pay1 := NewPayment(uint32(time.Now().Unix()), 42, providerAddr, payer).Bytes()
 	time.Sleep(1 * time.Second)
-	pay2 := NewPayment(uint32(time.Now().Unix()), 41, providerAddr, payer).Bytes()
+	last := uint32(time.Now().Unix())
+	pay2 := NewPayment(last, 41, providerAddr, payer).Bytes()
 	par := dict.New()
 	par.Set(ParamPayerAddress, codec.EncodeAddress(payerAddr))
 	arr := collections.NewArray(par, ParamPayments)
@@ -292,4 +301,23 @@ func TestPayment(t *testing.T) {
 	require.NoError(t, err)
 
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, 1337+42+41-1)
+
+	res, err = chain.CallView("micropay", FuncGetChannelInfo,
+		ParamPayerAddress, payerAddr,
+		ParamServiceAddress, providerAddr,
+	)
+	require.NoError(t, err)
+	warrant, exists, err := codec.DecodeInt64(res.MustGet(ParamWarrant))
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.EqualValues(t, 600-42-41, warrant)
+
+	_, exists, err = codec.DecodeInt64(res.MustGet(ParamRevoked))
+	require.NoError(t, err)
+	require.False(t, exists)
+
+	lastOrd, exists, err := codec.DecodeInt64(res.MustGet(ParamLastOrd))
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.EqualValues(t, last, lastOrd)
 }

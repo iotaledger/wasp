@@ -55,10 +55,11 @@ func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	addWarrant := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
 	a.Require(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
 
-	warrant, revoke := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
+	warrant, revoke, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
 	a.Require(revoke == 0, fmt.Sprintf("warrant of %s for %s is being revoked", payerAddr, serviceAddr))
 
-	setWarrant(ctx.State(), payerAddr, serviceAddr, warrant+addWarrant)
+	payerInfo := collections.NewMap(ctx.State(), string(payerAddr[:]))
+	setWarrant(payerInfo, serviceAddr, warrant+addWarrant)
 
 	// all non-iota token accrue on-chain to the caller
 	sendBack := ctx.IncomingTransfer().TakeOutColor(balance.ColorIOTA)
@@ -82,12 +83,13 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	payerAddr := ctx.Caller().MustAddress()
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
 
-	w, r := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
+	w, r, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
 	a.Require(w > 0, fmt.Sprintf("warrant of %s to %s does not exist", payerAddr, serviceAddr))
 	a.Require(r == 0, fmt.Sprintf("warrant of %s to %s is already being revoked", payerAddr, serviceAddr))
 
 	revokeDeadline := getRevokeDeadline(ctx.GetTimestamp())
-	setWarrantRevoke(ctx.State(), payerAddr, serviceAddr, revokeDeadline.Unix())
+	payerInfo := collections.NewMap(ctx.State(), string(payerAddr[:]))
+	setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 
 	succ := ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
@@ -112,7 +114,7 @@ func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	payerAddr := par.MustGetAddress(ParamPayerAddress)
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	warrant, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, coreutil.NewAssert(ctx.Log()))
+	warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, coreutil.NewAssert(ctx.Log()))
 	if warrant > 0 {
 		succ := ctx.TransferToAddress(payerAddr, cbalances.NewIotasOnly(warrant))
 		a.Require(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
@@ -155,7 +157,7 @@ func getWarrantInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	payerAddr := par.MustGetAddress(ParamPayerAddress)
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	warrant, revoke := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, coreutil.NewAssert(ctx.Log()))
+	warrant, revoke, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, coreutil.NewAssert(ctx.Log()))
 	ret := dict.New()
 	if warrant > 0 {
 		ret.Set(ParamWarrant, codec.EncodeInt64(warrant))
@@ -163,12 +165,15 @@ func getWarrantInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if revoke > 0 {
 		ret.Set(ParamRevoked, codec.EncodeInt64(revoke))
 	}
+	if lastOrd > 0 {
+		ret.Set(ParamLastOrd, codec.EncodeInt64(lastOrd))
+	}
 	return ret, nil
 }
 
 //  utility
 
-func getWarrantInfoIntern(state kv.KVStoreReader, payer, service address.Address, a coreutil.Assert) (int64, int64) {
+func getWarrantInfoIntern(state kv.KVStoreReader, payer, service address.Address, a coreutil.Assert) (int64, int64, int64) {
 	payerInfo := collections.NewMapReadOnly(state, string(payer[:]))
 	warrantBin, err := payerInfo.GetAt(service[:])
 	a.RequireNoError(err)
@@ -182,23 +187,31 @@ func getWarrantInfoIntern(state kv.KVStoreReader, payer, service address.Address
 	if !exists {
 		revoke = 0
 	}
-	return warrant, revoke
+	lastOrdBin, err := payerInfo.GetAt(getLastOrdKey(service))
+	lastOrd, exists, err := codec.DecodeInt64(lastOrdBin)
+	if !exists {
+		lastOrd = 0
+	}
+	return warrant, revoke, lastOrd
 }
 
-func setWarrant(state kv.KVStore, payer, service address.Address, value int64) {
-	payerInfo := collections.NewMap(state, string(payer[:]))
-	payerInfo.MustSetAt(service[:], codec.EncodeInt64(value))
+func setWarrant(payerAccount *collections.Map, service address.Address, value int64) {
+	payerAccount.MustSetAt(service[:], codec.EncodeInt64(value))
 }
 
-func setWarrantRevoke(state kv.KVStore, payer, service address.Address, deadline int64) {
-	payerInfo := collections.NewMap(state, string(payer[:]))
-	payerInfo.MustSetAt(getRevokeKey(service), codec.EncodeInt64(deadline))
+func setWarrantRevoke(payerAccount *collections.Map, service address.Address, deadline int64) {
+	payerAccount.MustSetAt(getRevokeKey(service), codec.EncodeInt64(deadline))
+}
+
+func setLastOrd(payerAccount *collections.Map, service address.Address, lastOrd int64) {
+	payerAccount.MustSetAt(getLastOrdKey(service), codec.EncodeInt64(lastOrd))
 }
 
 func deleteWarrant(state kv.KVStore, payer, service address.Address) {
 	payerInfo := collections.NewMap(state, string(payer[:]))
 	payerInfo.MustDelAt(service[:])
 	payerInfo.MustDelAt(getRevokeKey(service))
+	payerInfo.MustDelAt(getLastOrdKey(service))
 }
 
 func getPublicKey(state kv.KVStoreReader, addr address.Address, a coreutil.Assert) []byte {
@@ -214,6 +227,10 @@ func getRevokeKey(service address.Address) []byte {
 
 func getRevokeDeadline(nowis int64) time.Time {
 	return time.Unix(0, nowis).Add(WarrantRevokePeriod)
+}
+
+func getLastOrdKey(service address.Address) []byte {
+	return []byte(string(service[:]) + "-last")
 }
 
 func decodePayments(state kv.KVStoreReader, a coreutil.Assert) []*Payment {
@@ -233,12 +250,7 @@ func decodePayments(state kv.KVStoreReader, a coreutil.Assert) []*Payment {
 
 func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targetAddr address.Address, payerPubKey []byte) (int64, []*Payment) {
 	a := coreutil.NewAssert(ctx.Log())
-	lastOrd, ok, err := codec.DecodeInt64(ctx.State().MustGet(StateVarLastOrdNum))
-	a.RequireNoError(err)
-	if !ok {
-		lastOrd = 0
-	}
-	remainingWarrant, _ := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
+	remainingWarrant, _, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
 	a.Require(remainingWarrant > 0, "warrant == 0, can't settle payments")
 
 	notSettled := make([]*Payment, 0)
@@ -267,7 +279,8 @@ func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targ
 	if settledSum > 0 {
 		ctx.TransferToAddress(targetAddr, cbalances.NewIotasOnly(settledSum))
 	}
-	setWarrant(ctx.State(), payerAddr, targetAddr, remainingWarrant)
-	ctx.State().Set(StateVarLastOrdNum, codec.EncodeInt64(lastOrd))
+	payerInfo := collections.NewMap(ctx.State(), string(payerAddr[:]))
+	setWarrant(payerInfo, targetAddr, remainingWarrant)
+	setLastOrd(payerInfo, targetAddr, lastOrd)
 	return settledSum, notSettled
 }
