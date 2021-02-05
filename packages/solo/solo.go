@@ -319,7 +319,7 @@ func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme and requests funds (1337 iotas)
 // from the UTXODB faucet.
-// Returns signature scheme interface and public ey in binary form
+// Returns signature scheme interface and public key in binary form
 func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.SignatureScheme, []byte) {
 	ret, pubKeyBytes := env.NewSignatureSchemeAndPubKey()
 	_, err := env.utxoDB.RequestFunds(ret.Address())
@@ -328,15 +328,13 @@ func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.Signatu
 }
 
 // NewSignatureScheme generates new ed25519 signature scheme
-// from the UTXODB faucet.
 func (env *Solo) NewSignatureScheme() signaturescheme.SignatureScheme {
 	ret, _ := env.NewSignatureSchemeAndPubKey()
 	return ret
 }
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
-// from the UTXODB faucet.
-// Returns signature scheme interface and public ey in binary form
+// Returns signature scheme interface and public key in binary form
 func (env *Solo) NewSignatureSchemeAndPubKey() (signaturescheme.SignatureScheme, []byte) {
 	keypair := ed25519.GenerateKeyPair()
 	ret := signaturescheme.ED25519(keypair)
