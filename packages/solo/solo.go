@@ -4,6 +4,10 @@
 package solo
 
 import (
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -27,9 +31,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
-	"sync"
-	"testing"
-	"time"
 )
 
 // DefaultTimeStep is a default step for the logical clock for each PostRequest call.
@@ -318,13 +319,26 @@ func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme and requests funds (1337 iotas)
 // from the UTXODB faucet.
-// Returns signature scheme interface and public ey in binary form
+// Returns signature scheme interface and public key in binary form
 func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.SignatureScheme, []byte) {
-	keypair := ed25519.GenerateKeyPair()
-	ret := signaturescheme.ED25519(keypair)
+	ret, pubKeyBytes := env.NewSignatureSchemeAndPubKey()
 	_, err := env.utxoDB.RequestFunds(ret.Address())
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(ret.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	return ret, pubKeyBytes
+}
+
+// NewSignatureScheme generates new ed25519 signature scheme
+func (env *Solo) NewSignatureScheme() signaturescheme.SignatureScheme {
+	ret, _ := env.NewSignatureSchemeAndPubKey()
+	return ret
+}
+
+// NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
+// Returns signature scheme interface and public key in binary form
+func (env *Solo) NewSignatureSchemeAndPubKey() (signaturescheme.SignatureScheme, []byte) {
+	keypair := ed25519.GenerateKeyPair()
+	ret := signaturescheme.ED25519(keypair)
+	env.AssertAddressBalance(ret.Address(), balance.ColorIOTA, 0)
 	return ret, keypair.PublicKey.Bytes()
 }
 
