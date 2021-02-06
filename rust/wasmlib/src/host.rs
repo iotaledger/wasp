@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::client::*;
+use crate::keys::*;
 
 // all TYPE_* values should exactly match the counterpart OBJTYPE_* values on the host!
 pub const TYPE_ARRAY: i32 = 0x20;

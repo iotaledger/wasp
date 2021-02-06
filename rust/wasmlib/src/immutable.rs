@@ -5,10 +5,10 @@
 
 use std::convert::TryInto;
 
-use super::context::*;
-use super::hashtypes::*;
-use super::host::*;
-use super::keys::*;
+use crate::context::*;
+use crate::hashtypes::*;
+use crate::host::*;
+use crate::keys::*;
 
 pub struct ScImmutableAddress {
     obj_id: i32,

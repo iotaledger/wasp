@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use super::host::*;
+use crate::host::*;
 
 pub trait MapKey {
     fn get_id(&self) -> Key32;

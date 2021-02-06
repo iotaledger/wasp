@@ -3,11 +3,11 @@
 
 // encapsulates standard host entities into a simple interface
 
-use super::bytes::*;
-use super::hashtypes::*;
-use super::immutable::*;
-use super::keys::*;
-use super::mutable::*;
+use crate::bytes::*;
+use crate::hashtypes::*;
+use crate::immutable::*;
+use crate::keys::*;
+use crate::mutable::*;
 
 pub struct PostRequestParams {
     pub contract_id: ScContractId,

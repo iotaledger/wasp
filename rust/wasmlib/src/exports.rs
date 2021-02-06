@@ -3,9 +3,9 @@
 
 // encapsulates standard host entities into a simple interface
 
-use super::context::*;
-use super::keys::*;
-use super::mutable::*;
+use crate::context::*;
+use crate::keys::*;
+use crate::mutable::*;
 
 static mut CALLS: Vec<fn(&ScCallContext)> = vec![];
 static mut VIEWS: Vec<fn(&ScViewContext)> = vec![];

@@ -5,11 +5,11 @@
 
 use std::convert::TryInto;
 
-use super::context::*;
-use super::hashtypes::*;
-use super::host::*;
-use super::immutable::*;
-use super::keys::*;
+use crate::context::*;
+use crate::hashtypes::*;
+use crate::host::*;
+use crate::immutable::*;
+use crate::keys::*;
 
 pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: 1 };
 

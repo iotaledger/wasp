@@ -7,3 +7,5 @@ dist/
 .vscode/
 *.bak
 wasp-cli.json
+*/pkg/
+**/target/
