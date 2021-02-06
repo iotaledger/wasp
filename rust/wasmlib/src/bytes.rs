@@ -16,7 +16,7 @@ impl BytesDecoder<'_> {
         ScAddress::from_bytes(self.bytes())
     }
 
-    pub fn agent(&mut self) -> ScAgentId {
+    pub fn agent_id(&mut self) -> ScAgentId {
         ScAgentId::from_bytes(self.bytes())
     }
 
@@ -97,7 +97,7 @@ impl BytesEncoder {
         self
     }
 
-    pub fn agent(&mut self, value: &ScAgentId) -> &BytesEncoder {
+    pub fn agent_id(&mut self, value: &ScAgentId) -> &BytesEncoder {
         self.bytes(value.to_bytes());
         self
     }
