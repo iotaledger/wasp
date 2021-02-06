@@ -15,7 +15,7 @@ func (d *BytesDecoder) Address() *ScAddress {
 	return NewScAddressFromBytes(d.Bytes())
 }
 
-func (d *BytesDecoder) Agent() *ScAgentId {
+func (d *BytesDecoder) AgentId() *ScAgentId {
 	return NewScAgentIdFromBytes(d.Bytes())
 }
 
@@ -93,7 +93,7 @@ func (e *BytesEncoder) Address(value *ScAddress) *BytesEncoder {
 	return e.Bytes(value.Bytes())
 }
 
-func (e *BytesEncoder) Agent(value *ScAgentId) *BytesEncoder {
+func (e *BytesEncoder) AgentId(value *ScAgentId) *BytesEncoder {
 	return e.Bytes(value.Bytes())
 }
 
