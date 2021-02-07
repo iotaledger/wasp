@@ -4,10 +4,14 @@
 package generator
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"os"
+	"regexp"
 )
+
+var funcRegexp = regexp.MustCompile("^pub fn (\\w+).+$")
 
 var rustTypes = StringMap{
 	"Address":    "ScAddress",
@@ -40,7 +44,124 @@ func (s *Schema) GenerateRust() error {
 	if err != nil {
 		return err
 	}
-	return s.GenerateRustTypes()
+	err = s.GenerateRustTypes()
+	if err != nil {
+		return err
+	}
+	return s.GenerateRustFuncs()
+}
+
+func (s *Schema) GenerateRustFunc(file *os.File, funcDef *FuncDef, isView bool) error {
+	funcName := snake(funcDef.Name)
+	funcKind := "Call"
+	if isView { funcKind = "View" }
+	fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext) {\n", funcName, funcKind)
+	fmt.Fprintf(file, "    ctx.log(\"calling %s\");\n", funcDef.Name)
+	fmt.Fprintf(file, "}\n")
+	return nil
+}
+
+func (s *Schema) GenerateRustFuncs() error {
+	scFileName := s.Name + ".rs"
+	file, err := os.Open(scFileName)
+	if err != nil {
+		return s.GenerateRustFuncsNew(scFileName)
+	}
+	lines, existing, err := s.GenerateRustFuncScanner(file)
+	if err != nil {
+		return err
+	}
+
+	// save old one from overwrite
+	err = os.Rename(scFileName, s.Name + ".bak")
+	if err != nil {
+		return err
+	}
+	file, err = os.Create(scFileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// make copy of file
+	for _,line := range lines {
+		fmt.Fprintln(file, line)
+	}
+
+	// append any new funcs
+	for _, funcDef := range s.Funcs {
+		name := snake(funcDef.Name)
+		if existing[name] == "" {
+			err = s.GenerateRustFunc(file, funcDef, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// append any new views
+	for _, viewDef := range s.Views {
+		name := snake(viewDef.Name)
+		if existing[name] == "" {
+			err = s.GenerateRustFunc(file, viewDef, true)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Schema) GenerateRustFuncScanner(file *os.File) ([]string, StringMap, error) {
+	defer file.Close()
+	existing := make(StringMap)
+	lines := make([]string, 0)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := funcRegexp.FindStringSubmatch(line)
+		if matches != nil {
+			existing[matches[1]] = line
+		}
+		lines = append(lines, line)
+	}
+	err := scanner.Err()
+	if err != nil {
+		return nil, nil, err
+	}
+	return lines, existing, nil
+}
+
+func (s *Schema) GenerateRustFuncsNew(scFileName string) error {
+	file, err := os.Create(scFileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write file header
+	fmt.Fprintln(file, copyright(false))
+	fmt.Fprintf(file, "use wasmlib::*;\n\n")
+
+	fmt.Fprintf(file, "use schema::*;\n")
+	if len(s.Types) != 0 {
+		fmt.Fprintf(file, "use types::*;\n")
+	}
+
+	for _,funcDef := range s.Funcs {
+		err = s.GenerateRustFunc(file, funcDef, false)
+		if err != nil {
+			return err
+		}
+	}
+	for _,viewDef := range s.Views {
+		err = s.GenerateRustFunc(file, viewDef, true)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Schema) GenerateRustLib() error {

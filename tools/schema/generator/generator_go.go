@@ -49,7 +49,19 @@ func (s *Schema) GenerateGo() error {
 	if err != nil {
 		return err
 	}
-	return s.GenerateGoTypes()
+	err = s.GenerateGoTypes()
+	if err != nil {
+		return err
+	}
+	err = s.GenerateGoFuncs()
+	if err != nil {
+		return err
+	}
+	return s.GenerateGoTests()
+}
+
+func (s *Schema) GenerateGoFuncs() error {
+	return nil
 }
 
 func (s *Schema) GenerateGoOnLoad() error {
@@ -141,6 +153,10 @@ func (s *Schema) GenerateGoSchema() error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Schema) GenerateGoTests() error {
 	return nil
 }
 
