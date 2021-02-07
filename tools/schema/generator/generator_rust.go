@@ -188,7 +188,6 @@ func (s *Schema) GenerateRustFuncsNew(scFileName string) error {
 	fmt.Fprintf(file, "use wasmlib::*;\n\n")
 
 	fmt.Fprintf(file, "use crate::*;\n")
-	fmt.Fprintf(file, "use crate::schema::*;\n")
 	if len(s.Types) != 0 {
 		fmt.Fprintf(file, "use crate::types::*;\n")
 	}
