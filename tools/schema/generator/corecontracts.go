@@ -26,13 +26,13 @@ func GenerateGoCoreContractsSchema(coreSchemas []*Schema) error {
 		fmt.Fprintf(file, "\nconst Core%s = ScHname(0x%s)\n", scName, scHname.String())
 		for _, funcDef := range schema.Funcs {
 			funcHname := coretypes.Hn(funcDef.Name)
-			funcName := capitalize(funcDef.Name)
-			fmt.Fprintf(file, "const Core%sFunc%s = ScHname(0x%s)\n", scName, funcName, funcHname.String())
+			funcName := capitalize(funcDef.FullName)
+			fmt.Fprintf(file, "const Core%s%s = ScHname(0x%s)\n", scName, funcName, funcHname.String())
 		}
 		for _, viewDef := range schema.Views {
 			viewHname := coretypes.Hn(viewDef.Name)
-			viewName := capitalize(viewDef.Name)
-			fmt.Fprintf(file, "const Core%sView%s = ScHname(0x%s)\n", scName, viewName, viewHname.String())
+			viewName := capitalize(viewDef.FullName)
+			fmt.Fprintf(file, "const Core%s%s = ScHname(0x%s)\n", scName, viewName, viewHname.String())
 		}
 
 		if len(schema.Params) != 0 {
@@ -64,13 +64,13 @@ func GenerateRustCoreContractsSchema(coreSchemas []*Schema) error {
 		fmt.Fprintf(file, "\npub const CORE_%s: ScHname = ScHname(0x%s);\n", scName, scHname.String())
 		for _, funcDef := range schema.Funcs {
 			funcHname := coretypes.Hn(funcDef.Name)
-			funcName := upper(snake(funcDef.Name))
-			fmt.Fprintf(file, "pub const CORE_%s_FUNC_%s: ScHname = ScHname(0x%s);\n", scName, funcName, funcHname.String())
+			funcName := upper(snake(funcDef.FullName))
+			fmt.Fprintf(file, "pub const CORE_%s_%s: ScHname = ScHname(0x%s);\n", scName, funcName, funcHname.String())
 		}
 		for _, viewDef := range schema.Views {
 			viewHname := coretypes.Hn(viewDef.Name)
-			viewName := upper(snake(viewDef.Name))
-			fmt.Fprintf(file, "pub const CORE_%s_VIEW_%s: ScHname = ScHname(0x%s);\n", scName, viewName, viewHname.String())
+			viewName := upper(snake(viewDef.FullName))
+			fmt.Fprintf(file, "pub const CORE_%s_%s: ScHname = ScHname(0x%s);\n", scName, viewName, viewHname.String())
 		}
 
 		if len(schema.Params) != 0 {

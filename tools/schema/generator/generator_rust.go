@@ -48,18 +48,56 @@ func (s *Schema) GenerateRust() error {
 	if err != nil {
 		return err
 	}
-	return s.GenerateRustFuncs()
+	err = s.GenerateRustFuncs()
+	if err != nil {
+		return err
+	}
+	return s.GenerateRustCargo()
 }
 
-func (s *Schema) GenerateRustFunc(file *os.File, funcDef *FuncDef, isView bool) error {
-	funcName := "func_"
+func (s *Schema) GenerateRustCargo() error {
+	file, err := os.Open("../Cargo.toml")
+	if err == nil {
+		// already exists
+		file.Close()
+		return nil
+	}
+
+	file, err = os.Create("../Cargo.toml")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Fprintf(file, "[package]\n")
+	fmt.Fprintf(file, "name = \"%s\"\n", s.Name)
+	fmt.Fprintf(file, "description = \"%s\"\n", s.Description)
+	fmt.Fprintf(file, "license = \"Apache-2.0\"\n")
+	fmt.Fprintf(file, "version = \"0.1.0\"\n")
+	fmt.Fprintf(file, "authors = [\"Eric Hop <eric@iota.org>\"]\n")
+	fmt.Fprintf(file, "edition = \"2018\"\n")
+	fmt.Fprintf(file, "repository = \"https://%s\"\n", ModuleName)
+	fmt.Fprintf(file, "\n[lib]\n")
+	fmt.Fprintf(file, "crate-type = [\"cdylib\", \"rlib\"]\n")
+	fmt.Fprintf(file, "\n[features]\n")
+	fmt.Fprintf(file, "default = [\"console_error_panic_hook\"]\n")
+	fmt.Fprintf(file, "\n[dependencies]\n")
+	fmt.Fprintf(file, "wasmlib = { git = \"https://github.com/iotaledger/wasp\", branch = \"develop\" }\n")
+	fmt.Fprintf(file, "console_error_panic_hook = { version = \"0.1.6\", optional = true }\n")
+	fmt.Fprintf(file, "wee_alloc = { version = \"0.4.5\", optional = true }\n")
+	fmt.Fprintf(file, "\n[dev-dependencies]\n")
+	fmt.Fprintf(file, "wasm-bindgen-test = \"0.3.13\"\n")
+
+	return nil
+}
+
+func (s *Schema) GenerateRustFunc(file *os.File, funcDef *FuncDef) error {
+	funcName := snake(funcDef.FullName)
 	funcKind := "Call"
-	if isView {
-		funcName = "view_"
+	if funcName[:4] == "view" {
 		funcKind = "View"
 	}
-	funcName += snake(funcDef.Name)
-	fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext) {\n", funcName, funcKind)
+	fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext, params: &%sParams) {\n", funcName, funcKind, capitalize(funcDef.FullName))
 	fmt.Fprintf(file, "    ctx.log(\"calling %s\");\n", funcDef.Name)
 	fmt.Fprintf(file, "}\n")
 	return nil
@@ -95,9 +133,9 @@ func (s *Schema) GenerateRustFuncs() error {
 
 	// append any new funcs
 	for _, funcDef := range s.Funcs {
-		name := snake(funcDef.Name)
+		name := snake(funcDef.FullName)
 		if existing[name] == "" {
-			err = s.GenerateRustFunc(file, funcDef, false)
+			err = s.GenerateRustFunc(file, funcDef)
 			if err != nil {
 				return err
 			}
@@ -106,9 +144,9 @@ func (s *Schema) GenerateRustFuncs() error {
 
 	// append any new views
 	for _, viewDef := range s.Views {
-		name := snake(viewDef.Name)
+		name := snake(viewDef.FullName)
 		if existing[name] == "" {
-			err = s.GenerateRustFunc(file, viewDef, true)
+			err = s.GenerateRustFunc(file, viewDef)
 			if err != nil {
 				return err
 			}
@@ -149,19 +187,20 @@ func (s *Schema) GenerateRustFuncsNew(scFileName string) error {
 	fmt.Fprintln(file, copyright(false))
 	fmt.Fprintf(file, "use wasmlib::*;\n\n")
 
-	fmt.Fprintf(file, "use schema::*;\n")
+	fmt.Fprintf(file, "use crate::*;\n")
+	fmt.Fprintf(file, "use crate::schema::*;\n")
 	if len(s.Types) != 0 {
-		fmt.Fprintf(file, "use types::*;\n")
+		fmt.Fprintf(file, "use crate::types::*;\n")
 	}
 
 	for _, funcDef := range s.Funcs {
-		err = s.GenerateRustFunc(file, funcDef, false)
+		err = s.GenerateRustFunc(file, funcDef)
 		if err != nil {
 			return err
 		}
 	}
 	for _, viewDef := range s.Views {
-		err = s.GenerateRustFunc(file, viewDef, true)
+		err = s.GenerateRustFunc(file, viewDef)
 		if err != nil {
 			return err
 		}
@@ -192,17 +231,22 @@ func (s *Schema) GenerateRustLib() error {
 	fmt.Fprintf(file, "fn on_load() {\n")
 	fmt.Fprintf(file, "    let exports = ScExports::new();\n")
 	for _, funcDef := range s.Funcs {
-		name := snake(funcDef.Name)
-		fmt.Fprintf(file, "    exports.add_call(FUNC_%s, func_%s);\n", upper(name), name)
+		name := snake(funcDef.FullName)
+		fmt.Fprintf(file, "    exports.add_call(%s, %s_thunk);\n", upper(name), name)
 	}
 	for _, viewDef := range s.Views {
-		name := snake(viewDef.Name)
-		fmt.Fprintf(file, "    exports.add_view(VIEW_%s, view_%s);\n", upper(name), name)
+		name := snake(viewDef.FullName)
+		fmt.Fprintf(file, "    exports.add_view(%s, %s_thunk);\n", upper(name), name)
 	}
 	fmt.Fprintf(file, "}\n")
 
-	//TODO generate parameter checks
-
+	// generate parameter structs and thunks to set up and check parameters
+	for _, funcDef := range s.Funcs {
+		s.GenerateRustThunk(file, funcDef)
+	}
+	for _, viewDef := range s.Views {
+		s.GenerateRustThunk(file, viewDef)
+	}
 	return nil
 }
 
@@ -245,27 +289,57 @@ func (s *Schema) GenerateRustSchema() error {
 	if len(s.Funcs)+len(s.Views) != 0 {
 		fmt.Fprintln(file)
 		for _, funcDef := range s.Funcs {
-			name := upper(snake(funcDef.Name))
-			fmt.Fprintf(file, "pub const FUNC_%s: &str = \"%s\";\n", name, funcDef.Name)
+			name := upper(snake(funcDef.FullName))
+			fmt.Fprintf(file, "pub const %s: &str = \"%s\";\n", name, funcDef.Name)
 		}
 		for _, viewDef := range s.Views {
-			name := upper(snake(viewDef.Name))
-			fmt.Fprintf(file, "pub const VIEW_%s: &str = \"%s\";\n", name, viewDef.Name)
+			name := upper(snake(viewDef.FullName))
+			fmt.Fprintf(file, "pub const %s: &str = \"%s\";\n", name, viewDef.Name)
 		}
 
 		fmt.Fprintln(file)
 		for _, funcDef := range s.Funcs {
-			name := upper(snake(funcDef.Name))
+			name := upper(snake(funcDef.FullName))
 			hName = coretypes.Hn(funcDef.Name)
-			fmt.Fprintf(file, "pub const HFUNC_%s: ScHname = ScHname(0x%s);\n", name, hName.String())
+			fmt.Fprintf(file, "pub const H%s: ScHname = ScHname(0x%s);\n", name, hName.String())
 		}
 		for _, viewDef := range s.Views {
-			name := upper(snake(viewDef.Name))
+			name := upper(snake(viewDef.FullName))
 			hName = coretypes.Hn(viewDef.Name)
-			fmt.Fprintf(file, "pub const HVIEW_%s: ScHname = ScHname(0x%s);\n", name, hName.String())
+			fmt.Fprintf(file, "pub const H%s: ScHname = ScHname(0x%s);\n", name, hName.String())
 		}
 	}
 	return nil
+}
+
+func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
+	funcName := capitalize(funcDef.FullName)
+	funcKind := "Call"
+	if funcDef.FullName[:4] == "view" {
+		funcKind = "View"
+	}
+	fmt.Fprintf(file, "\npub struct %sParams {\n", funcName)
+	for _, param := range funcDef.Params {
+		name := snake(param.Name)
+		fmt.Fprintf(file, "    pub %s: ScImmutable%s,\n", name, param.Type)
+	}
+	fmt.Fprintf(file, "}\n")
+	fmt.Fprintf(file, "\nfn %s_thunk(ctx: &Sc%sContext) {\n", snake(funcDef.FullName), funcKind)
+	if len(funcDef.Params) != 0 {
+		fmt.Fprintf(file, "    let p = ctx.params();\n")
+	}
+	fmt.Fprintf(file, "    let params = %sParams {\n", funcName)
+	for _, param := range funcDef.Params {
+		name := snake(param.Name)
+		fmt.Fprintf(file, "        %s: p.get_%s(PARAM_%s),\n", name, snake(param.Type), upper(name))
+	}
+	fmt.Fprintf(file, "    };\n")
+	for _, param := range funcDef.Params {
+		name := snake(param.Name)
+		fmt.Fprintf(file, "    ctx.require(params.%s.exists(), \"missing mandatory %s\");\n", name, param.Name)
+	}
+	fmt.Fprintf(file, "    %s(ctx, &params);\n", snake(funcDef.FullName))
+	fmt.Fprintf(file, "}\n")
 }
 
 func (s *Schema) GenerateRustTypes() error {

@@ -25,6 +25,7 @@ type JsonSchema struct {
 
 type FuncDef struct {
 	Name        string
+	FullName    string
 	Annotations StringMap
 	Params      []*Field
 }
@@ -82,6 +83,8 @@ func (s *Schema) CompileField(fldName string, fldType string) (*Field, error) {
 }
 
 func (s *Schema) compileFuncs(jsonSchema *JsonSchema, views bool) error {
+	//TODO check for clashing Hnames
+
 	jsonFuncs := jsonSchema.Funcs
 	if views {
 		jsonFuncs = jsonSchema.Views
@@ -93,6 +96,10 @@ func (s *Schema) compileFuncs(jsonSchema *JsonSchema, views bool) error {
 		paramMap := jsonFuncs[funcName]
 		funcDef := &FuncDef{}
 		funcDef.Name = funcName
+		funcDef.FullName = "func" + capitalize(funcDef.Name)
+		if views {
+			funcDef.FullName = "view" + funcDef.FullName[4:]
+		}
 		funcDef.Annotations = make(StringMap)
 		fieldNames := make(StringMap)
 		fieldAliases := make(StringMap)

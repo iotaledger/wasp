@@ -29,8 +29,6 @@ var goTypes = StringMap{
 	"String":     "string",
 }
 
-//TODO check for clashing Hnames
-
 func (s *Schema) GenerateGo() error {
 	err := os.MkdirAll("test", 0755)
 	if err != nil {
@@ -64,15 +62,13 @@ func (s *Schema) GenerateGo() error {
 	return s.GenerateGoTests()
 }
 
-func (s *Schema) GenerateGoFunc(file *os.File, funcDef *FuncDef, isView bool) error {
-	funcName := "func"
+func (s *Schema) GenerateGoFunc(file *os.File, funcDef *FuncDef) error {
+	funcName := funcDef.FullName
 	funcKind := "Call"
-	if isView {
-		funcName = "view"
+	if funcName[:4] == "view" {
 		funcKind = "View"
 	}
-	funcName += capitalize(funcDef.Name)
-	fmt.Fprintf(file, "\nfunc %s(ctx *wasmlib.Sc%sContext) {\n", funcName, funcKind)
+	fmt.Fprintf(file, "\nfunc %s(ctx *wasmlib.Sc%sContext, params *%sParams) {\n", funcName, funcKind, capitalize(funcName))
 	fmt.Fprintf(file, "    ctx.Log(\"calling %s\")\n", funcDef.Name)
 	fmt.Fprintf(file, "}\n")
 	return nil
@@ -108,9 +104,8 @@ func (s *Schema) GenerateGoFuncs() error {
 
 	// append any new funcs
 	for _, funcDef := range s.Funcs {
-		name := "func" + capitalize(funcDef.Name)
-		if existing[name] == "" {
-			err = s.GenerateGoFunc(file, funcDef, false)
+		if existing[funcDef.FullName] == "" {
+			err = s.GenerateGoFunc(file, funcDef)
 			if err != nil {
 				return err
 			}
@@ -119,9 +114,8 @@ func (s *Schema) GenerateGoFuncs() error {
 
 	// append any new views
 	for _, viewDef := range s.Views {
-		name := "view" + capitalize(viewDef.Name)
-		if existing[name] == "" {
-			err = s.GenerateGoFunc(file, viewDef, true)
+		if existing[viewDef.FullName] == "" {
+			err = s.GenerateGoFunc(file, viewDef)
 			if err != nil {
 				return err
 			}
@@ -164,13 +158,13 @@ func (s *Schema) GenerateGoFuncsNew(scFileName string) error {
 	fmt.Fprintln(file, importWasmLib)
 
 	for _, funcDef := range s.Funcs {
-		err = s.GenerateGoFunc(file, funcDef, false)
+		err = s.GenerateGoFunc(file, funcDef)
 		if err != nil {
 			return err
 		}
 	}
 	for _, viewDef := range s.Views {
-		err = s.GenerateGoFunc(file, viewDef, true)
+		err = s.GenerateGoFunc(file, viewDef)
 		if err != nil {
 			return err
 		}
@@ -193,17 +187,22 @@ func (s *Schema) GenerateGoOnLoad() error {
 	fmt.Fprintf(file, "func OnLoad() {\n")
 	fmt.Fprintf(file, "    exports := wasmlib.NewScExports()\n")
 	for _, funcDef := range s.Funcs {
-		name := capitalize(funcDef.Name)
-		fmt.Fprintf(file, "    exports.AddCall(Func%s, func%s)\n", name, name)
+		name := capitalize(funcDef.FullName)
+		fmt.Fprintf(file, "    exports.AddCall(%s, %sThunk)\n", name, funcDef.FullName)
 	}
 	for _, viewDef := range s.Views {
-		name := capitalize(viewDef.Name)
-		fmt.Fprintf(file, "    exports.AddView(View%s, view%s)\n", name, name)
+		name := capitalize(viewDef.FullName)
+		fmt.Fprintf(file, "    exports.AddView(%s, %sThunk)\n", name, viewDef.FullName)
 	}
 	fmt.Fprintf(file, "}\n")
 
-	//TODO generate parameter checks
-
+	// generate parameter structs and thunks to set up and check parameters
+	for _, funcDef := range s.Funcs {
+		s.GenerateGoThunk(file, funcDef)
+	}
+	for _, viewDef := range s.Views {
+		s.GenerateGoThunk(file, viewDef)
+	}
 	return nil
 }
 
@@ -246,24 +245,24 @@ func (s *Schema) GenerateGoSchema() error {
 	if len(s.Funcs)+len(s.Views) != 0 {
 		fmt.Fprintln(file)
 		for _, funcDef := range s.Funcs {
-			name := capitalize(funcDef.Name)
-			fmt.Fprintf(file, "const Func%s = \"%s\"\n", name, funcDef.Name)
+			name := capitalize(funcDef.FullName)
+			fmt.Fprintf(file, "const %s = \"%s\"\n", name, funcDef.Name)
 		}
 		for _, viewDef := range s.Views {
-			name := capitalize(viewDef.Name)
-			fmt.Fprintf(file, "const View%s = \"%s\"\n", name, viewDef.Name)
+			name := capitalize(viewDef.FullName)
+			fmt.Fprintf(file, "const %s = \"%s\"\n", name, viewDef.Name)
 		}
 
 		fmt.Fprintln(file)
 		for _, funcDef := range s.Funcs {
-			name := capitalize(funcDef.Name)
+			name := capitalize(funcDef.FullName)
 			hName = coretypes.Hn(funcDef.Name)
-			fmt.Fprintf(file, "const HFunc%s = wasmlib.ScHname(0x%s)\n", name, hName.String())
+			fmt.Fprintf(file, "const H%s = wasmlib.ScHname(0x%s)\n", name, hName.String())
 		}
 		for _, viewDef := range s.Views {
-			name := capitalize(viewDef.Name)
+			name := capitalize(viewDef.FullName)
 			hName = coretypes.Hn(viewDef.Name)
-			fmt.Fprintf(file, "const HView%s = wasmlib.ScHname(0x%s)\n", name, hName.String())
+			fmt.Fprintf(file, "const H%s = wasmlib.ScHname(0x%s)\n", name, hName.String())
 		}
 	}
 
@@ -271,7 +270,38 @@ func (s *Schema) GenerateGoSchema() error {
 }
 
 func (s *Schema) GenerateGoTests() error {
+	//TODO
 	return nil
+}
+
+func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
+	funcName := capitalize(funcDef.FullName)
+	funcKind := "Call"
+	if funcDef.FullName[:4] == "view" {
+		funcKind = "View"
+	}
+	fmt.Fprintf(file, "\ntype %sParams struct {\n", funcName)
+	for _, param := range funcDef.Params {
+		name := capitalize(param.Name)
+		fmt.Fprintf(file, "    %s wasmlib.ScImmutable%s\n", name, param.Type)
+	}
+	fmt.Fprintf(file, "}\n")
+	fmt.Fprintf(file, "\nfunc %sThunk(ctx *wasmlib.Sc%sContext) {\n", funcDef.FullName, funcKind)
+	if len(funcDef.Params) != 0 {
+		fmt.Fprintf(file, "    p := ctx.Params()\n")
+	}
+	fmt.Fprintf(file, "    params := &%sParams {\n", funcName)
+	for _, param := range funcDef.Params {
+		name := capitalize(param.Name)
+		fmt.Fprintf(file, "        %s: p.Get%s(Param%s),\n", name, param.Type, name)
+	}
+	fmt.Fprintf(file, "    }\n")
+	for _, param := range funcDef.Params {
+		name := capitalize(param.Name)
+		fmt.Fprintf(file, "    ctx.Require(params.%s.Exists(), \"missing mandatory %s\")\n", name, param.Name)
+	}
+	fmt.Fprintf(file, "    %s(ctx, params)\n", funcDef.FullName)
+	fmt.Fprintf(file, "}\n")
 }
 
 func (s *Schema) GenerateGoTypes() error {

@@ -101,7 +101,5 @@ var javaTypes = StringMap{
 //		fmt.Fprintf(file, "}\n")
 //	}
 //
-//	//TODO write on_types function
-//
 //	return nil
 //}
