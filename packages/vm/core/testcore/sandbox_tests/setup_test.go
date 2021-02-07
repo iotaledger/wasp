@@ -6,9 +6,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -19,18 +19,15 @@ const (
 	ERC20_SUPPLY = 100000
 
 	// ERC20 constants
-	PARAM_SUPPLY     = "s"
-	PARAM_CREATOR    = "c"
-	PARAM_ACCOUNT    = "ac"
-	PARAM_DELEGATION = "d"
-	PARAM_AMOUNT     = "am"
-	PARAM_RECIPIENT  = "r"
+	PARAM_SUPPLY  = "s"
+	PARAM_CREATOR = "c"
 )
 
-var WasmFileTestcore = wasmhost.WasmPath("testcore_bg.wasm")
-var WasmFileErc20 = wasmhost.WasmPath("erc20_bg.wasm")
-
-var SandboxSCName = "test_sandbox"
+var (
+	WasmFileTestcore = util.LocateFile("testcore_bg.wasm", "contracts/wasm")
+	WasmFileErc20    = util.LocateFile("erc20_bg.wasm", "contracts/wasm")
+	SandboxSCName    = "test_sandbox"
+)
 
 func setupChain(t *testing.T, sigSchemeChain signaturescheme.SignatureScheme) (*solo.Solo, *solo.Chain) {
 	env := solo.New(t, DEBUG, false)

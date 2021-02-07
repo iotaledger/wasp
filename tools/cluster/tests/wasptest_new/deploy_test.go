@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/contracts/examples/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/examples/inccounter"
 	"github.com/stretchr/testify/require"
 )
 

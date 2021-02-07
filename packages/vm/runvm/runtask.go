@@ -14,6 +14,7 @@ import (
 )
 
 // RunComputationsAsync runs computations for the batch of requests in the background
+// This is the main entry point to the VM
 func RunComputationsAsync(ctx *vm.VMTask) error {
 	if len(ctx.Requests) == 0 {
 		return fmt.Errorf("RunComputationsAsync: must be at least 1 request")
@@ -29,7 +30,6 @@ func RunComputationsAsync(ctx *vm.VMTask) error {
 	// TODO 2 timeout for VM. Gas limit
 
 	go runTask(ctx, txb)
-
 	return nil
 }
 

@@ -5,8 +5,8 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/solo"
@@ -53,7 +53,7 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-var wasmFile = wasmhost.WasmPath("inccounter_bg.wasm")
+var wasmFile = util.LocateFile("testcore_bg.wasm", "contracts/wasm")
 
 func TestDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
@@ -61,21 +61,21 @@ func TestDeploy(t *testing.T) {
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
-	err = chain.DeployContract(nil, "testInccounter", hwasm)
+	err = chain.DeployContract(nil, "testCore", hwasm)
 	require.NoError(t, err)
 }
 
 func TestDeployWasm(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
+	err := chain.DeployWasmContract(nil, "testCore", wasmFile)
 	require.NoError(t, err)
 }
 
 func TestDeployRubbish(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	name := "testInccounter"
+	name := "testCore"
 	err := chain.DeployWasmContract(nil, name, "blob_deploy_test.go")
 	require.Error(t, err)
 
@@ -86,7 +86,7 @@ func TestDeployRubbish(t *testing.T) {
 func TestListBlobs(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, "testInccounter", wasmFile)
+	err := chain.DeployWasmContract(nil, "testCore", wasmFile)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(blob.Interface.Name, blob.FuncListBlobs)
@@ -98,7 +98,7 @@ func TestDeployNotAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1 := env.NewSignatureSchemeWithFunds()
-	err := chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	err := chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.Error(t, err)
 }
 
@@ -114,7 +114,7 @@ func TestDeployGrant(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	err = chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
 	_, contacts := chain.GetInfo()
@@ -139,7 +139,7 @@ func TestRevokeDeploy(t *testing.T) {
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
 
-	err = chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
 	_, contacts := chain.GetInfo()
@@ -170,6 +170,6 @@ func TestDeployGrantFail(t *testing.T) {
 	_, err := chain.PostRequest(req, user1)
 	require.Error(t, err)
 
-	err = chain.DeployWasmContract(user1, "testInccounter", wasmFile)
+	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.Error(t, err)
 }

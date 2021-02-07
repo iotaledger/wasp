@@ -86,7 +86,15 @@ func (host *WasmHost) SetExport(index int32, functionName string) {
 	host.funcToIndex[functionName] = index
 }
 
-func WasmPath(fileName string) string {
+// Deprecated: use utils.LocateFile instead
+func WasmPath(fileName string, relativePath ...string) string {
+	var relPath string
+
+	if len(relativePath) > 0 {
+		relPath = relativePath[0]
+	} else {
+		relPath = "wasm"
+	}
 	// check if this file exists
 	exists, err := fs.Exists(fileName)
 	if err != nil {
@@ -97,16 +105,19 @@ func WasmPath(fileName string) string {
 	}
 
 	// walk up the directory tree to find the Wasm repo folder
-	path := "wasm"
+	path := relPath
 	exists, err = fs.Exists(path)
 	if err != nil {
 		panic(err)
 	}
-	for !exists {
+	for i := 0; i < 10; i++ {
 		path = "../" + path
 		exists, err = fs.Exists(path)
 		if err != nil {
 			panic(err)
+		}
+		if exists {
+			break
 		}
 	}
 

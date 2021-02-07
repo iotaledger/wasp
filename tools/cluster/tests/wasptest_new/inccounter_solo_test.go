@@ -5,12 +5,12 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-var incFile = wasmhost.WasmPath("inccounter_bg.wasm")
+var incFile = util.LocateFile("inccounter_bg.wasm", "contracts/wasm")
 
 const incName = "inccounter"
 const incDescription = "IncCounter, a PoC smart contract"

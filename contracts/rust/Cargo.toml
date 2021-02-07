@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "wasmlib",
+    "erc20",
+    "example-tutorial",
+    "testcore",
+]
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
+
