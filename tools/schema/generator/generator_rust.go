@@ -11,7 +11,7 @@ import (
 	"regexp"
 )
 
-var funcRegexp = regexp.MustCompile("^pub fn (\\w+).+$")
+var rustFuncRegexp = regexp.MustCompile("^pub fn (\\w+).+$")
 
 var rustTypes = StringMap{
 	"Address":    "ScAddress",
@@ -52,9 +52,13 @@ func (s *Schema) GenerateRust() error {
 }
 
 func (s *Schema) GenerateRustFunc(file *os.File, funcDef *FuncDef, isView bool) error {
-	funcName := snake(funcDef.Name)
+	funcName := "func_"
 	funcKind := "Call"
-	if isView { funcKind = "View" }
+	if isView {
+		funcName = "view_"
+		funcKind = "View"
+	}
+	funcName += snake(funcDef.Name)
 	fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext) {\n", funcName, funcKind)
 	fmt.Fprintf(file, "    ctx.log(\"calling %s\");\n", funcDef.Name)
 	fmt.Fprintf(file, "}\n")
@@ -73,7 +77,8 @@ func (s *Schema) GenerateRustFuncs() error {
 	}
 
 	// save old one from overwrite
-	err = os.Rename(scFileName, s.Name + ".bak")
+	scOriginal := s.Name + ".bak"
+	err = os.Rename(scFileName, scOriginal)
 	if err != nil {
 		return err
 	}
@@ -84,7 +89,7 @@ func (s *Schema) GenerateRustFuncs() error {
 	defer file.Close()
 
 	// make copy of file
-	for _,line := range lines {
+	for _, line := range lines {
 		fmt.Fprintln(file, line)
 	}
 
@@ -110,7 +115,7 @@ func (s *Schema) GenerateRustFuncs() error {
 		}
 	}
 
-	return nil
+	return os.Remove(scOriginal)
 }
 
 func (s *Schema) GenerateRustFuncScanner(file *os.File) ([]string, StringMap, error) {
@@ -120,7 +125,7 @@ func (s *Schema) GenerateRustFuncScanner(file *os.File) ([]string, StringMap, er
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := funcRegexp.FindStringSubmatch(line)
+		matches := rustFuncRegexp.FindStringSubmatch(line)
 		if matches != nil {
 			existing[matches[1]] = line
 		}
@@ -149,13 +154,13 @@ func (s *Schema) GenerateRustFuncsNew(scFileName string) error {
 		fmt.Fprintf(file, "use types::*;\n")
 	}
 
-	for _,funcDef := range s.Funcs {
+	for _, funcDef := range s.Funcs {
 		err = s.GenerateRustFunc(file, funcDef, false)
 		if err != nil {
 			return err
 		}
 	}
-	for _,viewDef := range s.Views {
+	for _, viewDef := range s.Views {
 		err = s.GenerateRustFunc(file, viewDef, true)
 		if err != nil {
 			return err

@@ -4,14 +4,18 @@
 package generator
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"os"
+	"regexp"
 	"strings"
 )
 
 const importWasmLib = "import \"github.com/iotaledger/wasp/packages/vm/wasmlib\"\n"
 const importWasmClient = "import \"github.com/iotaledger/wasp/packages/vm/wasmclient\"\n"
+
+var goFuncRegexp = regexp.MustCompile("^func (\\w+).+$")
 
 var goTypes = StringMap{
 	"Address":    "*wasmlib.ScAddress",
@@ -60,7 +64,117 @@ func (s *Schema) GenerateGo() error {
 	return s.GenerateGoTests()
 }
 
+func (s *Schema) GenerateGoFunc(file *os.File, funcDef *FuncDef, isView bool) error {
+	funcName := "func"
+	funcKind := "Call"
+	if isView {
+		funcName = "view"
+		funcKind = "View"
+	}
+	funcName += capitalize(funcDef.Name)
+	fmt.Fprintf(file, "\nfunc %s(ctx *wasmlib.Sc%sContext) {\n", funcName, funcKind)
+	fmt.Fprintf(file, "    ctx.Log(\"calling %s\")\n", funcDef.Name)
+	fmt.Fprintf(file, "}\n")
+	return nil
+}
+
 func (s *Schema) GenerateGoFuncs() error {
+	scFileName := s.Name + ".go"
+	file, err := os.Open(scFileName)
+	if err != nil {
+		return s.GenerateGoFuncsNew(scFileName)
+	}
+	lines, existing, err := s.GenerateGoFuncScanner(file)
+	if err != nil {
+		return err
+	}
+
+	// save old one from overwrite
+	scOriginal := s.Name + ".bak"
+	err = os.Rename(scFileName, scOriginal)
+	if err != nil {
+		return err
+	}
+	file, err = os.Create(scFileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// make copy of file
+	for _, line := range lines {
+		fmt.Fprintln(file, line)
+	}
+
+	// append any new funcs
+	for _, funcDef := range s.Funcs {
+		name := "func" + capitalize(funcDef.Name)
+		if existing[name] == "" {
+			err = s.GenerateGoFunc(file, funcDef, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// append any new views
+	for _, viewDef := range s.Views {
+		name := "view" + capitalize(viewDef.Name)
+		if existing[name] == "" {
+			err = s.GenerateGoFunc(file, viewDef, true)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return os.Remove(scOriginal)
+}
+
+func (s *Schema) GenerateGoFuncScanner(file *os.File) ([]string, StringMap, error) {
+	defer file.Close()
+	existing := make(StringMap)
+	lines := make([]string, 0)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := goFuncRegexp.FindStringSubmatch(line)
+		if matches != nil {
+			existing[matches[1]] = line
+		}
+		lines = append(lines, line)
+	}
+	err := scanner.Err()
+	if err != nil {
+		return nil, nil, err
+	}
+	return lines, existing, nil
+}
+
+func (s *Schema) GenerateGoFuncsNew(scFileName string) error {
+	file, err := os.Create(scFileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write file header
+	fmt.Fprintln(file, copyright(false))
+	fmt.Fprintf(file, "package %s\n\n", s.Name)
+	fmt.Fprintln(file, importWasmLib)
+
+	for _, funcDef := range s.Funcs {
+		err = s.GenerateGoFunc(file, funcDef, false)
+		if err != nil {
+			return err
+		}
+	}
+	for _, viewDef := range s.Views {
+		err = s.GenerateGoFunc(file, viewDef, true)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
