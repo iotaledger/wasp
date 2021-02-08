@@ -187,7 +187,7 @@ func TestTutorial8(t *testing.T) {
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0) // empty on-chain
 
-	// the chain owner (default) send a request to the root contract to grant right toi deploy
+	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, userAgentID)
 	_, err := chain.PostRequest(req, nil)

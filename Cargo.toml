@@ -2,7 +2,7 @@
 members = [
     "contracts/rust/wasmlib",
     "contracts/rust/erc20",
-    "contracts/rust/example-tutorial",
+    "articles/tutorial/example-tutorial",
     "contracts/rust/testcore",
 ]
 
