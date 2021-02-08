@@ -281,12 +281,50 @@ func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 		funcKind = "View"
 	}
 	fmt.Fprintf(file, "\ntype %sParams struct {\n", funcName)
+	nameLen := 0
+	typeLen := 0
 	for _, param := range funcDef.Params {
-		name := capitalize(param.Name)
-		fmt.Fprintf(file, "    %s wasmlib.ScImmutable%s\n", name, param.Type)
+		fldName := param.Name
+		if nameLen < len(fldName) {
+			nameLen = len(fldName)
+		}
+		fldType := param.Type
+		if typeLen < len(fldType) {
+			typeLen = len(fldType)
+		}
+	}
+	for _, param := range funcDef.Params {
+		fldName := pad(capitalize(param.Name), nameLen)
+		fldType := pad(param.Type, typeLen)
+		fmt.Fprintf(file, "    %s wasmlib.ScImmutable%s%s\n", fldName, fldType, param.Comment)
 	}
 	fmt.Fprintf(file, "}\n")
 	fmt.Fprintf(file, "\nfunc %sThunk(ctx *wasmlib.Sc%sContext) {\n", funcDef.FullName, funcKind)
+	grant := funcDef.Annotations["#grant"]
+	if grant != "" {
+		index := strings.Index(grant, "//")
+		if index >= 0 {
+			fmt.Fprintf(file, "    %s\n", grant[index:])
+			grant = strings.TrimSpace(grant[:index])
+		}
+		switch grant {
+		case "self":
+			grant = "ctx.ContractId().AsAgentId()"
+		case "owner":
+			grant = "ctx.ChainOwnerId()"
+		case "creator":
+			grant = "ctx.ContractCreator()"
+		default:
+			fmt.Fprintf(file, "    grantee := ctx.State().GetAgentId(wasmlib.Key(\"%s\"))\n", grant)
+			fmt.Fprintf(file, "    if !grantee.Exists() {\n")
+			fmt.Fprintf(file, "        ctx.Panic(\"grantee not set: %s\")\n", grant)
+			fmt.Fprintf(file, "    }\n")
+			grant = fmt.Sprintf("grantee.Value()")
+		}
+		fmt.Fprintf(file, "    if !ctx.From(%s) {\n", grant)
+		fmt.Fprintf(file, "        ctx.Panic(\"no permission\")\n")
+		fmt.Fprintf(file, "    }\n\n")
+	}
 	if len(funcDef.Params) != 0 {
 		fmt.Fprintf(file, "    p := ctx.Params()\n")
 	}
@@ -297,8 +335,10 @@ func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 	}
 	fmt.Fprintf(file, "    }\n")
 	for _, param := range funcDef.Params {
-		name := capitalize(param.Name)
-		fmt.Fprintf(file, "    ctx.Require(params.%s.Exists(), \"missing mandatory %s\")\n", name, param.Name)
+		if !param.Optional {
+			name := capitalize(param.Name)
+			fmt.Fprintf(file, "    ctx.Require(params.%s.Exists(), \"missing mandatory %s\")\n", name, param.Name)
+		}
 	}
 	fmt.Fprintf(file, "    %s(ctx, params)\n", funcDef.FullName)
 	fmt.Fprintf(file, "}\n")
@@ -326,12 +366,13 @@ func (s *Schema) GenerateGoTypes() error {
 		nameLen := 0
 		typeLen := 0
 		for _, field := range typeDef.Fields {
-			if nameLen < len(field.Name) {
-				nameLen = len(field.Name)
+			fldName := field.Name
+			if nameLen < len(fldName) {
+				nameLen = len(fldName)
 			}
-			goType := goTypes[field.Type]
-			if typeLen < len(goType) {
-				typeLen = len(goType)
+			fldType := goTypes[field.Type]
+			if typeLen < len(fldType) {
+				typeLen = len(fldType)
 			}
 		}
 		for _, field := range typeDef.Fields {

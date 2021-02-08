@@ -106,7 +106,7 @@ func (s *Schema) compileFuncs(jsonSchema *JsonSchema, views bool) error {
 		for _, fldName := range sortedKeys(paramMap) {
 			fldType := paramMap[fldName]
 			if strings.HasPrefix(fldName, "#") {
-				funcDef.Annotations[fldName] = fldType
+				funcDef.Annotations[fldName] = strings.TrimSpace(fldType)
 				continue
 			}
 			param, err := s.CompileField(fldName, fldType)

@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var rustFuncRegexp = regexp.MustCompile("^pub fn (\\w+).+$")
@@ -317,13 +318,49 @@ func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
 	if funcDef.FullName[:4] == "view" {
 		funcKind = "View"
 	}
-	fmt.Fprintf(file, "\npub struct %sParams {\n", funcName)
+	fmt.Fprintf(file, "\n//@formatter:off\n")
+	fmt.Fprintf(file, "pub struct %sParams {\n", funcName)
+	nameLen := 0
+	typeLen := 0
 	for _, param := range funcDef.Params {
-		name := snake(param.Name)
-		fmt.Fprintf(file, "    pub %s: ScImmutable%s,\n", name, param.Type)
+		fldName := snake(param.Name)
+		if nameLen < len(fldName) { nameLen = len(fldName) }
+		fldType := param.Type
+		if typeLen < len(fldType) { typeLen = len(fldType) }
+	}
+	for _, param := range funcDef.Params {
+		fldName := pad(snake(param.Name) + ":", nameLen+1)
+		fldType := pad(param.Type + ",", typeLen+1)
+		fmt.Fprintf(file, "    pub %s ScImmutable%s%s\n", fldName, fldType, param.Comment)
 	}
 	fmt.Fprintf(file, "}\n")
+	fmt.Fprintf(file, "//@formatter:on\n")
 	fmt.Fprintf(file, "\nfn %s_thunk(ctx: &Sc%sContext) {\n", snake(funcDef.FullName), funcKind)
+	grant := funcDef.Annotations["#grant"]
+	if grant != "" {
+		index := strings.Index(grant, "//")
+		if index >= 0 {
+			fmt.Fprintf(file, "    %s\n", grant[index:])
+			grant = strings.TrimSpace(grant[:index])
+		}
+		switch grant {
+		case "self":
+			grant = "ctx.contract_id().as_agent_id()"
+		case "owner":
+			grant = "ctx.chain_owner_id()"
+		case "creator":
+			grant = "ctx.contract_creator()"
+		default:
+			fmt.Fprintf(file, "    let grantee = ctx.state().get_agent_id(\"%s\");\n", grant)
+			fmt.Fprintf(file, "    if !grantee.exists() {\n")
+			fmt.Fprintf(file, "        ctx.panic(\"grantee not set: %s\");\n", grant)
+			fmt.Fprintf(file, "    }\n")
+			grant = fmt.Sprintf("grantee.value()")
+		}
+		fmt.Fprintf(file, "    if !ctx.from(&%s) {\n", grant)
+		fmt.Fprintf(file, "        ctx.panic(\"no permission\");\n")
+		fmt.Fprintf(file, "    }\n\n")
+	}
 	if len(funcDef.Params) != 0 {
 		fmt.Fprintf(file, "    let p = ctx.params();\n")
 	}
@@ -334,8 +371,10 @@ func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
 	}
 	fmt.Fprintf(file, "    };\n")
 	for _, param := range funcDef.Params {
-		name := snake(param.Name)
-		fmt.Fprintf(file, "    ctx.require(params.%s.exists(), \"missing mandatory %s\");\n", name, param.Name)
+		if !param.Optional {
+			name := snake(param.Name)
+			fmt.Fprintf(file, "    ctx.require(params.%s.exists(), \"missing mandatory %s\");\n", name, param.Name)
+		}
 	}
 	fmt.Fprintf(file, "    %s(ctx, &params);\n", snake(funcDef.FullName))
 	fmt.Fprintf(file, "}\n")
@@ -366,13 +405,13 @@ func (s *Schema) GenerateRustTypes() error {
 		for _, field := range typeDef.Fields {
 			fldName := snake(field.Name)
 			if nameLen < len(fldName) { nameLen = len(fldName) }
-			rustType := rustTypes[field.Type]
-			if typeLen < len(rustType) { typeLen = len(rustType) }
+			fldType := rustTypes[field.Type]
+			if typeLen < len(fldType) { typeLen = len(fldType) }
 		}
 		for _, field := range typeDef.Fields {
 			fldName := pad(snake(field.Name) + ":", nameLen+1)
-			rfldType := pad(rustTypes[field.Type] + ",", typeLen+1)
-			fmt.Fprintf(file, "    pub %s %s%s\n", fldName, rfldType, field.Comment)
+			fldType := pad(rustTypes[field.Type] + ",", typeLen+1)
+			fmt.Fprintf(file, "    pub %s %s%s\n", fldName, fldType, field.Comment)
 		}
 		fmt.Fprintf(file, "}\n")
 		fmt.Fprintf(file, "//@formatter:on\n")
