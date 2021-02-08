@@ -313,28 +313,41 @@ func (s *Schema) GenerateRustSchema() error {
 }
 
 func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
+	// calculate padding
+	nameLen := 0
+	typeLen := 0
+	for _, param := range funcDef.Params {
+		fldName := snake(param.Name)
+		if nameLen < len(fldName) {
+			nameLen = len(fldName)
+		}
+		fldType := param.Type
+		if typeLen < len(fldType) {
+			typeLen = len(fldType)
+		}
+	}
+
 	funcName := capitalize(funcDef.FullName)
 	funcKind := "Call"
 	if funcDef.FullName[:4] == "view" {
 		funcKind = "View"
 	}
-	fmt.Fprintf(file, "\n//@formatter:off\n")
-	fmt.Fprintf(file, "pub struct %sParams {\n", funcName)
-	nameLen := 0
-	typeLen := 0
-	for _, param := range funcDef.Params {
-		fldName := snake(param.Name)
-		if nameLen < len(fldName) { nameLen = len(fldName) }
-		fldType := param.Type
-		if typeLen < len(fldType) { typeLen = len(fldType) }
+
+	fmt.Fprintln(file)
+	if len(funcDef.Params) > 1 {
+		fmt.Fprintf(file, "//@formatter:off\n")
 	}
+	fmt.Fprintf(file, "pub struct %sParams {\n", funcName)
 	for _, param := range funcDef.Params {
 		fldName := pad(snake(param.Name) + ":", nameLen+1)
 		fldType := pad(param.Type + ",", typeLen+1)
 		fmt.Fprintf(file, "    pub %s ScImmutable%s%s\n", fldName, fldType, param.Comment)
 	}
 	fmt.Fprintf(file, "}\n")
-	fmt.Fprintf(file, "//@formatter:on\n")
+	if len(funcDef.Params) > 1 {
+		fmt.Fprintf(file, "//@formatter:on\n")
+	}
+
 	fmt.Fprintf(file, "\nfn %s_thunk(ctx: &Sc%sContext) {\n", snake(funcDef.FullName), funcKind)
 	grant := funcDef.Annotations["#grant"]
 	if grant != "" {
@@ -398,47 +411,61 @@ func (s *Schema) GenerateRustTypes() error {
 
 	// write structs
 	for _, typeDef := range s.Types {
-		fmt.Fprintf(file, "\n//@formatter:off\n")
-		fmt.Fprintf(file, "pub struct %s {\n", typeDef.Name)
+		// calculate padding
 		nameLen := 0
 		typeLen := 0
 		for _, field := range typeDef.Fields {
 			fldName := snake(field.Name)
-			if nameLen < len(fldName) { nameLen = len(fldName) }
+			if nameLen < len(fldName) {
+				nameLen = len(fldName)
+			}
 			fldType := rustTypes[field.Type]
-			if typeLen < len(fldType) { typeLen = len(fldType) }
+			if typeLen < len(fldType) {
+				typeLen = len(fldType)
+			}
 		}
+
+		// write struct
+		if len(typeDef.Fields) > 1 {
+			fmt.Fprintf(file, "\n//@formatter:off\n")
+		}
+		fmt.Fprintf(file, "pub struct %s {\n", typeDef.Name)
 		for _, field := range typeDef.Fields {
 			fldName := pad(snake(field.Name) + ":", nameLen+1)
 			fldType := pad(rustTypes[field.Type] + ",", typeLen+1)
 			fmt.Fprintf(file, "    pub %s %s%s\n", fldName, fldType, field.Comment)
 		}
 		fmt.Fprintf(file, "}\n")
-		fmt.Fprintf(file, "//@formatter:on\n")
-	}
+		if len(typeDef.Fields) > 1 {
+			fmt.Fprintf(file, "//@formatter:on\n")
+		}
 
-	// write encoder and decoder for structs
-	for _, typeDef := range s.Types {
-		funcName := lower(snake(typeDef.Name))
-		fmt.Fprintf(file, "\npub fn encode_%s(o: &%s) -> Vec<u8> {\n", funcName, typeDef.Name)
-		fmt.Fprintf(file, "    let mut encode = BytesEncoder::new();\n")
+		// write encoder and decoder for struct
+		fmt.Fprintf(file, "\nimpl %s {\n", typeDef.Name)
+
+		fmt.Fprintf(file, "    pub fn from_bytes(bytes: &[u8]) -> %s {\n", typeDef.Name)
+		fmt.Fprintf(file, "        let mut decode = BytesDecoder::new(bytes);\n")
+		fmt.Fprintf(file, "        %s {\n", typeDef.Name)
+		for _, field := range typeDef.Fields {
+			name := snake(field.Name)
+			fmt.Fprintf(file, "            %s: decode.%s(),\n", name, snake(field.Type))
+		}
+		fmt.Fprintf(file, "        }\n")
+		fmt.Fprintf(file, "    }\n\n")
+
+		fmt.Fprintf(file, "    pub fn to_bytes(&self) -> Vec<u8> {\n")
+		fmt.Fprintf(file, "        let mut encode = BytesEncoder::new();\n")
 		for _, field := range typeDef.Fields {
 			name := snake(field.Name)
 			ref := "&"
 			if field.Type == "Int" || field.Type == "Hname" {
 				ref = ""
 			}
-			fmt.Fprintf(file, "    encode.%s(%so.%s);\n", snake(field.Type), ref, name)
+			fmt.Fprintf(file, "        encode.%s(%sself.%s);\n", snake(field.Type), ref, name)
 		}
-		fmt.Fprintf(file, "    return encode.data();\n}\n")
-
-		fmt.Fprintf(file, "\npub fn decode_%s(bytes: &[u8]) -> %s {\n", funcName, typeDef.Name)
-		fmt.Fprintf(file, "    let mut decode = BytesDecoder::new(bytes);\n    %s {\n", typeDef.Name)
-		for _, field := range typeDef.Fields {
-			name := snake(field.Name)
-			fmt.Fprintf(file, "        %s: decode.%s(),\n", name, snake(field.Type))
-		}
-		fmt.Fprintf(file, "    }\n}\n")
+		fmt.Fprintf(file, "        return encode.data();\n")
+		fmt.Fprintf(file, "    }\n")
+		fmt.Fprintf(file, "}\n")
 	}
 
 	return nil

@@ -362,7 +362,7 @@ func (s *Schema) GenerateGoTypes() error {
 
 	// write structs
 	for _, typeDef := range s.Types {
-		fmt.Fprintf(file, "\ntype %s struct {\n", typeDef.Name)
+		// calculate padding
 		nameLen := 0
 		typeLen := 0
 		for _, field := range typeDef.Fields {
@@ -375,31 +375,31 @@ func (s *Schema) GenerateGoTypes() error {
 				typeLen = len(fldType)
 			}
 		}
+
+		fmt.Fprintf(file, "\ntype %s struct {\n", typeDef.Name)
 		for _, field := range typeDef.Fields {
 			fldName := pad(capitalize(field.Name), nameLen)
 			fldType := pad(goTypes[field.Type], typeLen)
 			fmt.Fprintf(file, "\t%s %s%s\n", fldName, fldType, field.Comment)
 		}
 		fmt.Fprintf(file, "}\n")
-	}
 
-	// write encoder and decoder for structs
-	for _, typeDef := range s.Types {
-		fmt.Fprintf(file, "\nfunc Encode%s(o *%s) []byte {\n", typeDef.Name, typeDef.Name)
-		fmt.Fprintf(file, "\treturn wasmlib.NewBytesEncoder().\n")
-		for _, field := range typeDef.Fields {
-			name := capitalize(field.Name)
-			fmt.Fprintf(file, "\t\t%s(o.%s).\n", field.Type, name)
-		}
-		fmt.Fprintf(file, "\t\tData()\n}\n")
-
-		fmt.Fprintf(file, "\nfunc Decode%s(bytes []byte) *%s {\n", typeDef.Name, typeDef.Name)
+		// write encoder and decoder for struct
+		fmt.Fprintf(file, "\nfunc New%sFromBytes(bytes []byte) *%s {\n", typeDef.Name, typeDef.Name)
 		fmt.Fprintf(file, "\tdecode := wasmlib.NewBytesDecoder(bytes)\n\tdata := &%s{}\n", typeDef.Name)
 		for _, field := range typeDef.Fields {
 			name := capitalize(field.Name)
 			fmt.Fprintf(file, "\tdata.%s = decode.%s()\n", name, field.Type)
 		}
 		fmt.Fprintf(file, "\treturn data\n}\n")
+
+		fmt.Fprintf(file, "\nfunc (o *%s) Bytes() []byte {\n", typeDef.Name)
+		fmt.Fprintf(file, "\treturn wasmlib.NewBytesEncoder().\n")
+		for _, field := range typeDef.Fields {
+			name := capitalize(field.Name)
+			fmt.Fprintf(file, "\t\t%s(o.%s).\n", field.Type, name)
+		}
+		fmt.Fprintf(file, "\t\tData()\n}\n")
 	}
 
 	return nil
