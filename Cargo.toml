@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "contracts/rust/wasmlib",
-    "contracts/rust/t/dummy",
     "contracts/rust/erc20",
     "contracts/rust/example-tutorial",
     "contracts/rust/testcore",

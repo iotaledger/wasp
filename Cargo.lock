@@ -29,16 +29,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dummy"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen-test",
- "wasmlib",
- "wee_alloc",
-]
-
-[[package]]
 name = "erc20"
 version = "0.1.0"
 dependencies = [
@@ -49,7 +39,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "example1"
+name = "example_tutorial"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
