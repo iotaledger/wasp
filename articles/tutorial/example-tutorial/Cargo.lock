@@ -208,7 +208,7 @@ dependencies = [
 [[package]]
 name = "wasmlib"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/wasp?branch=vmtest#8769fa9f544d55030056bcd22666ec742398a13d"
+source = "git+https://github.com/iotaledger/wasp?branch=develop#38595bd3d3a1eb5dbb6ba0cd293d3460161090cd"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
