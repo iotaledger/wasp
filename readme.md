@@ -47,7 +47,7 @@ To run a Wasp node you need at least one Goshimmer node with the
 plugin. This version of Goshimmer is located in the
 [`master+wasp` branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/master+wasp).
 
-The only difference between standard Goshimmer (the `develop` branch) and the
+The only difference between standard Goshimmer (`master` branch) and the
 `master+wasp` branch is the `WaspConn` plugin, which accepts connections from Wasp
 nodes.
 
@@ -65,12 +65,4 @@ Below are some articles describing the architecture:
 
 - [`wasp-cli`](tools/wasp-cli/README.md): A CLI client for the Wasp node.
 - [`wasp-cluster`](tools/cluster/wasp-cluster/README.md): allows to easily run
-  a cluster of Wasp nodes, for testing.
-
-## PoC smart contracts
-
-- [Main concepts with _DonateWithFeedback_](articles/intro/dwf.md)
-- [Deployment of the smart contract](articles/intro/deploy.md)
-- [Handling tagged tokens with _TokenRegistry_ and _FairAuction_ smart contracts](articles/intro/tr-fa.md)
-- [Short intoduction to UTXO ledger and digital assets](articles/intro/utxo.md)
-
+  a network of Wasp nodes, for testing.

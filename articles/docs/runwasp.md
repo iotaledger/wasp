@@ -2,17 +2,40 @@
 
 Here we describe step by step instructions how to run Wasp nodes on the Pollen network.
 
-## Run Goshimmer with WaspConn
+## Step 1: Compile & install
 
-First, clone and compile the Goshimmer version from the `master+wasp` branch.
+Clone the `develop` branch:
 
 ```
-$ git clone -b wasp https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install  
+$ git clone -b develop https://github.com/iotaledger/wasp.git
 ```
 
-Next, start the Goshimmer node connected to the Pollen network with the following command:
+Compile and install all needed binaries (`wasp`, `wasp-cli`, `goshimmer`):
+
+```
+$ cd wasp
+$ go install ./...
+```
+
+Note: the compiled `goshimmer` command corresponds to the
+`goshimmer/master+wasp` branch, which includes the `waspconn` plugin.
+
+## Step 2: Run Goshimmer connected to the Pollen network
+
+Create an empty working directory for Goshimmer:
+
+```
+$ mkdir goshimmer-pollen
+$ cd goshimmer-pollen
+```
+
+Download the `snapshot.bin` file needed for bootstrap:
+
+```
+$ curl 'https://github.com/iotaledger/goshimmer/raw/master%2Bwasp/snapshot.bin' -O snapshot.bin
+```
+
+Start the Goshimmer node:
 
 ```
 goshimmer \
@@ -26,7 +49,7 @@ goshimmer \
         --networkdelay.originPublicKey=9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd \
         --fpc.bindAddress=0.0.0.0:10895 \
         --prometheus.bindAddress=0.0.0.0:9311 \
-        --autopeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626,5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entrynode.alphanet.einfachiota.de:14656 \
+        --autopeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626,5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entryshimmer.tanglebay.com:14646 \
         --node.disablePlugins= \
         --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,waspconn \
         --logger.level=info \
@@ -60,20 +83,8 @@ Also, for testing purposes, all Wasp nodes can be connected to the same
 Goshimmer instance.  In normal operation, it is recommended for each Wasp node
 to connect to a different Goshimmer instance.
 
-Clone the `develop` branch:
-
-```
-$ git clone -b develop https://github.com/iotaledger/wasp.git
-```
-
-Compile and install Wasp binaries (`wasp`, `wasp-cli`):
-
-```
-$ cd wasp
-$ go install ./...
-```
-
-Create an empty directory, copy the [`config.json`](https://github.com/iotaledger/wasp/blob/develop/config.json)
+Create an empty working directory for the Wasp node, copy the
+[`config.json`](https://github.com/iotaledger/wasp/blob/develop/config.json)
 file, and change it as needed:
 
 ```
