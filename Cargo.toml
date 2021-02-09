@@ -1,10 +1,9 @@
 [workspace]
 members = [
-    "rust/wasmlib",
-    "rust/contracts/dummy",
-    "rust/contracts/erc20",
-    "rust/contracts/example1",
-    "rust/contracts/testcore",
+    "contracts/rust/wasmlib",
+    "contracts/rust/erc20",
+    "articles/tutorial/example-tutorial",
+    "contracts/rust/testcore",
 ]
 
 [profile.release]

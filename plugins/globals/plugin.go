@@ -3,7 +3,7 @@ package globals
 
 import (
 	"github.com/iotaledger/hive.go/node"
-	_ "github.com/iotaledger/wasp/packages/vm/examples/inccounter"
+	_ "github.com/iotaledger/wasp/contracts/examples/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 

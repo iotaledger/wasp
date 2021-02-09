@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"io/ioutil"
 	"os"
@@ -173,7 +173,7 @@ func inccounterScript(w *WaspCli) {
 	vmtype := "wasmtimevm"
 	name := "inccounter"
 	description := "inccounter SC"
-	file := wasmhost.WasmPath("inccounter_bg.wasm")
+	file := util.LocateFile("inccounter_bg.wasm", "contracts/wasm")
 
 	w.copyFile(path.Join("wasm", file))
 

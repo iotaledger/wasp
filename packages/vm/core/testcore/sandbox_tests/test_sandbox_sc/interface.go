@@ -2,9 +2,9 @@
 package test_sandbox_sc
 
 import (
+	"github.com/iotaledger/wasp/contracts"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/contract"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 )
 
 const (
@@ -56,7 +56,7 @@ func init() {
 
 		contract.ViewFunc(FuncJustView, testJustView),
 	})
-	examples.AddProcessor(Interface)
+	contracts.AddProcessor(Interface)
 }
 
 const (

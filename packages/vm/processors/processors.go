@@ -2,11 +2,11 @@ package processors
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/contracts"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/examples"
 	"sync"
 )
 
@@ -52,8 +52,8 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 			return err
 		}
 
-	case examples.VMType:
-		if proc, ok = examples.GetExampleProcessor(programHash); !ok {
+	case contracts.VMType:
+		if proc, ok = contracts.GetExampleProcessor(programHash); !ok {
 			return fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
 		}
 

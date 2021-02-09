@@ -3,6 +3,7 @@ package wasptest
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
@@ -182,7 +182,7 @@ func TestWaspCliContract(t *testing.T) {
 	name := "inccounter"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-	srcFile := wasmhost.WasmPath(file)
+	srcFile := util.LocateFile(file, "contracts/wasm")
 	w.copyFile(srcFile)
 
 	// test chain deploy-contract command
@@ -217,7 +217,7 @@ func TestWaspCliBlobContract(t *testing.T) {
 	vmtype := "wasmtimevm"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-	w.copyFile(wasmhost.WasmPath(file))
+	w.copyFile(util.LocateFile(file, "contracts/wasm"))
 
 	// test chain store-blob command
 	w.Run(
@@ -249,7 +249,7 @@ func TestWaspCliBlobRegistry(t *testing.T) {
 
 	// test `blob put` command
 	file := "inccounter_bg.wasm"
-	w.copyFile(wasmhost.WasmPath(file))
+	w.copyFile(util.LocateFile(file, "contracts/wasm"))
 	out = w.Run("blob", "put", file)
 	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
 	require.NotEmpty(t, blobHash)

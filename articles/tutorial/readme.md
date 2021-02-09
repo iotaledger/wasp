@@ -15,7 +15,7 @@ We use Go testing package codenamed [_Solo_](../../packages/solo/readme.md) in a
 The knowledge of Go programming and basics of Rust programming is a prerequisite. 
 For detailed introduction into the ISCP architecture [follow the link](https://docs.google.com/document/d/1zNJZMdetCzwiBC85K6gWbnzgdT1RXuZCLsTclKdrVqc/edit?usp=sharing).
 
-Chapters:
+## Chapters
 
 * [The _Solo_ package](01.md)
 * [First example](01.md#first-example)
@@ -34,4 +34,13 @@ Chapters:
     * [Sending and receiving tokens with the address](08.md#sending-and-receiving-tokens-with-the-address)
     * [Sending tokens to the smart contract](09.md#sending-tokens-to-the-smart-contract)
     * [Return of tokens in case of failure](10.md#return-of-tokens-in-case-of-failure)
+    * [Sending iotas from smart contract to address](11.md) 
 * [ISCP on-chain accounts. Controlling token balances](iscp_accounts.md)
+
+## Annexes
+
+* [`root` contract](root.md)
+* [`accounts` contract](accounts.md)
+* [`blob` contract](blob.md)
+* [`eventlog` contract](eventlog.md)
+

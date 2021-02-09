@@ -44,7 +44,7 @@ func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 // can be send as request or can be called
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit on own account
-//   in case ParamAgentID. == ctx.Caller() and it is a call, it means NOP
+//   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
 func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
 

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/util"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -57,7 +57,7 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 	}
 
 	if !*useWasp {
-		wasm, err := ioutil.ReadFile(wasmhost.WasmPath(wasmPath))
+		wasm, err := ioutil.ReadFile(util.LocateFile(wasmPath, "contracts/wasm"))
 		if err != nil {
 			return err
 		}
