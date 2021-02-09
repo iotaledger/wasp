@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"time"
 )
 
 const optimalSize = 32
@@ -18,7 +18,7 @@ const optimalSize = 32
 // - uploads big binary data chunks to blob caches of at least `quorum` of `waspHosts` directly
 // - posts a 'storeBlob' request to the 'blob' contract with optimized parameters
 // - the chain reconstructs original parameters upn settlement of the request
-func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, error) {
+func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, *sctransaction.Transaction, error) {
 	var osize int
 	if len(optSize) > 0 {
 		osize = optSize[0]
@@ -33,7 +33,7 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 	}
 	nodesMultiApi := multiclient.New(waspHosts)
 	if err := nodesMultiApi.UploadData(fieldValues, quorum); err != nil {
-		return hashing.HashValue{}, err
+		return hashing.HashValue{}, nil, err
 	}
 	blobHash := blob.MustGetBlobHash(fields)
 
@@ -44,12 +44,5 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 			Args: argsEncoded,
 		},
 	)
-	if err != nil {
-		return hashing.HashValue{}, err
-	}
-	err = c.WaspClient.WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
-	if err != nil {
-		return hashing.HashValue{}, err
-	}
-	return blobHash, nil
+	return blobHash, reqTx, err
 }

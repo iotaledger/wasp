@@ -154,10 +154,15 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	})
 
 	quorum := (2*len(ch.ApiHosts()))/3 + 1
-	programHash, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.ApiHosts(), quorum, 256)
+	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.ApiHosts(), quorum, 256)
 	if err != nil {
 		return nil, hashing.HashValue{}, err
 	}
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	if err != nil {
+		return nil, hashing.HashValue{}, err
+	}
+
 	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
 	if err != nil {
 		return nil, hashing.NilHash, err
@@ -176,7 +181,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	params[root.ParamDescription] = description
 
 	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
-	tx, err := ch.OriginatorClient().PostRequest(
+	tx, err = ch.OriginatorClient().PostRequest(
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
@@ -186,7 +191,6 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
-
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	if err != nil {
 		return nil, hashing.NilHash, err

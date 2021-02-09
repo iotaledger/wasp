@@ -145,7 +145,9 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 
 	fv := codec.MakeDict(blobFieldValues)
 	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
-	expectedHash, err := chClient.UploadBlob(fv, clu.Config.ApiHosts(clu.Config.AllNodes()), int(chain.Quorum))
+	expectedHash, tx, err := chClient.UploadBlob(fv, clu.Config.ApiHosts(clu.Config.AllNodes()), int(chain.Quorum))
+	require.NoError(t, err)
+	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	require.NoError(t, err)
 	t.Logf("expected hash: %s", expectedHash.String())
 
