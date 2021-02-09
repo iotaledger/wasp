@@ -43,12 +43,12 @@ commercial settings or whenever processing of critical data is involved._
 ## Run
 
 To run a Wasp node you need at least one Goshimmer node with the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/wasp/dapps/waspconn)
+[WaspConn](https://github.com/iotaledger/goshimmer/tree/master+wasp/dapps/waspconn)
 plugin. This version of Goshimmer is located in the
-[`wasp` branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/wasp).
+[`master+wasp` branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/master+wasp).
 
 The only difference between standard Goshimmer (the `develop` branch) and the
-`wasp` branch is the `WaspConn` plugin, which accepts connections from Wasp
+`master+wasp` branch is the `WaspConn` plugin, which accepts connections from Wasp
 nodes.
 
 - [How to run a Wasp node on Pollen](articles/docs/runwasp.md)

@@ -4,7 +4,7 @@ Here we describe step by step instructions how to run Wasp nodes on the Pollen n
 
 ## Run Goshimmer with WaspConn
 
-First, clone and compile the Goshimmer version from the `wasp` branch.
+First, clone and compile the Goshimmer version from the `master+wasp` branch.
 
 ```
 $ git clone -b wasp https://github.com/iotaledger/goshimmer.git

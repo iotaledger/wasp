@@ -15,7 +15,7 @@ recommended way to run a cluster in a production environment.
    * `wasp-cli` (CLI client for the Wasp node)
    * `wasp-cluster` (this tool)
 
-2. Run `go install` in the Goshimmer repository (`wasp` branch) to install the
+2. Run `go install` in the Goshimmer repository (`master+wasp` branch) to install the
    `goshimmer` command.
 
 ## Initialize the cluster configuration
@@ -74,7 +74,7 @@ environment.
 
 To connect the cluster to a more realistic environment (e.g. to be able to
 persist the ledger), you can use the `docker-network-waspconn` tool available
-in the Goshimmer repository (`wasp` branch) in order to operate a cluster of
+in the Goshimmer repository (`master+wasp` branch) in order to operate a cluster of
 Goshimmer nodes.
 
 Example steps:
