@@ -365,14 +365,10 @@ func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
 			grant = "ctx.contract_creator()"
 		default:
 			fmt.Fprintf(file, "    let grantee = ctx.state().get_agent_id(\"%s\");\n", grant)
-			fmt.Fprintf(file, "    if !grantee.exists() {\n")
-			fmt.Fprintf(file, "        ctx.panic(\"grantee not set: %s\");\n", grant)
-			fmt.Fprintf(file, "    }\n")
+			fmt.Fprintf(file, "    ctx.require(grantee.exists(), \"grantee not set: %s\");\n", grant)
 			grant = fmt.Sprintf("grantee.value()")
 		}
-		fmt.Fprintf(file, "    if !ctx.from(&%s) {\n", grant)
-		fmt.Fprintf(file, "        ctx.panic(\"no permission\");\n")
-		fmt.Fprintf(file, "    }\n\n")
+		fmt.Fprintf(file, "    ctx.require(ctx.from(&%s), \"no permission\");\n\n", grant)
 	}
 	if len(funcDef.Params) != 0 {
 		fmt.Fprintf(file, "    let p = ctx.params();\n")

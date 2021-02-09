@@ -316,14 +316,10 @@ func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 			grant = "ctx.ContractCreator()"
 		default:
 			fmt.Fprintf(file, "    grantee := ctx.State().GetAgentId(wasmlib.Key(\"%s\"))\n", grant)
-			fmt.Fprintf(file, "    if !grantee.Exists() {\n")
-			fmt.Fprintf(file, "        ctx.Panic(\"grantee not set: %s\")\n", grant)
-			fmt.Fprintf(file, "    }\n")
+			fmt.Fprintf(file, "    ctx.Require(grantee.Exists(), \"grantee not set: %s\")\n", grant)
 			grant = fmt.Sprintf("grantee.Value()")
 		}
-		fmt.Fprintf(file, "    if !ctx.From(%s) {\n", grant)
-		fmt.Fprintf(file, "        ctx.Panic(\"no permission\")\n")
-		fmt.Fprintf(file, "    }\n\n")
+		fmt.Fprintf(file, "    ctx.Require(ctx.From(%s), \"no permission\")\n\n", grant)
 	}
 	if len(funcDef.Params) != 0 {
 		fmt.Fprintf(file, "    p := ctx.Params()\n")
