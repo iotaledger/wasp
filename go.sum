@@ -385,8 +385,9 @@ github.com/hydrogen18/memlistener v0.0.0-20141126152155-54553eb933fb/go.mod h1:q
 github.com/imkira/go-interpol v1.1.0/go.mod h1:z0h2/2T3XF8kyEPpRgJ3kmNv+C43p+I/CoI+jC3w2iA=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
-github.com/iotaledger/goshimmer v0.3.5-0.20210209143825-41ab769cb1f5 h1:dWpkQW/fElXP4S+90fsCOsvnTSBuzlTrv8aja559AUA=
-github.com/iotaledger/goshimmer v0.3.5-0.20210209143825-41ab769cb1f5/go.mod h1:RpWdaMRD+pmu+5zjH5hC+6dZOTaq92foK/xBg8lt8RM=
+github.com/iotaledger/goshimmer v0.3.6-0.20210209184824-8abbcfdeeb4c h1:Ts91iA+PvJN4KvZ3R0jX++5jLt95VrYtJ3PW2nBjHyk=
+github.com/iotaledger/goshimmer v0.3.6-0.20210209184824-8abbcfdeeb4c/go.mod h1:vLuGalqrZr51rdv9azuAUhpFLW0SCmIqklM9+CQZ/UM=
+github.com/iotaledger/hive.go v0.0.0-20210107100912-23832b944f60/go.mod h1:dFt9vuTF3FdDPx7ve+uSDiNrX2PW2eV8sq7N06jeaFw=
 github.com/iotaledger/hive.go v0.0.0-20210125215505-ab692478030f h1:/H96EjsLzfyd097BaVwrJ/EUACz+TNe7+r4IPpNRDJg=
 github.com/iotaledger/hive.go v0.0.0-20210125215505-ab692478030f/go.mod h1:dFt9vuTF3FdDPx7ve+uSDiNrX2PW2eV8sq7N06jeaFw=
 github.com/ipfs/go-cid v0.0.1/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
