@@ -94,10 +94,7 @@ func (s *Schema) GenerateRustCargo() error {
 
 func (s *Schema) GenerateRustFunc(file *os.File, funcDef *FuncDef) error {
 	funcName := snake(funcDef.FullName)
-	funcKind := "Call"
-	if funcName[:4] == "view" {
-		funcKind = "View"
-	}
+	funcKind := capitalize(funcDef.FullName[:4])
 	fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext, params: &%sParams) {\n", funcName, funcKind, capitalize(funcDef.FullName))
 	fmt.Fprintf(file, "    ctx.log(\"calling %s\");\n", funcDef.Name)
 	fmt.Fprintf(file, "}\n")
@@ -232,7 +229,7 @@ func (s *Schema) GenerateRustLib() error {
 	fmt.Fprintf(file, "    let exports = ScExports::new();\n")
 	for _, funcDef := range s.Funcs {
 		name := snake(funcDef.FullName)
-		fmt.Fprintf(file, "    exports.add_call(%s, %s_thunk);\n", upper(name), name)
+		fmt.Fprintf(file, "    exports.add_func(%s, %s_thunk);\n", upper(name), name)
 	}
 	for _, viewDef := range s.Views {
 		name := snake(viewDef.FullName)
@@ -328,10 +325,7 @@ func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
 	}
 
 	funcName := capitalize(funcDef.FullName)
-	funcKind := "Call"
-	if funcDef.FullName[:4] == "view" {
-		funcKind = "View"
-	}
+	funcKind := capitalize(funcDef.FullName[:4])
 
 	fmt.Fprintln(file)
 	if len(funcDef.Params) > 1 {

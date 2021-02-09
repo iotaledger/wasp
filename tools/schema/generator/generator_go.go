@@ -64,10 +64,7 @@ func (s *Schema) GenerateGo() error {
 
 func (s *Schema) GenerateGoFunc(file *os.File, funcDef *FuncDef) error {
 	funcName := funcDef.FullName
-	funcKind := "Call"
-	if funcName[:4] == "view" {
-		funcKind = "View"
-	}
+	funcKind := capitalize(funcDef.FullName[:4])
 	fmt.Fprintf(file, "\nfunc %s(ctx *wasmlib.Sc%sContext, params *%sParams) {\n", funcName, funcKind, capitalize(funcName))
 	fmt.Fprintf(file, "    ctx.Log(\"calling %s\")\n", funcDef.Name)
 	fmt.Fprintf(file, "}\n")
@@ -188,7 +185,7 @@ func (s *Schema) GenerateGoOnLoad() error {
 	fmt.Fprintf(file, "    exports := wasmlib.NewScExports()\n")
 	for _, funcDef := range s.Funcs {
 		name := capitalize(funcDef.FullName)
-		fmt.Fprintf(file, "    exports.AddCall(%s, %sThunk)\n", name, funcDef.FullName)
+		fmt.Fprintf(file, "    exports.AddFunc(%s, %sThunk)\n", name, funcDef.FullName)
 	}
 	for _, viewDef := range s.Views {
 		name := capitalize(viewDef.FullName)
@@ -276,10 +273,7 @@ func (s *Schema) GenerateGoTests() error {
 
 func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 	funcName := capitalize(funcDef.FullName)
-	funcKind := "Call"
-	if funcDef.FullName[:4] == "view" {
-		funcKind = "View"
-	}
+	funcKind := capitalize(funcDef.FullName[:4])
 	fmt.Fprintf(file, "\ntype %sParams struct {\n", funcName)
 	nameLen := 0
 	typeLen := 0
