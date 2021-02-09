@@ -9,8 +9,8 @@ key/value data and token storage where smart contract properties, request parame
 token balances and the smart contract state can be accessed in a universal, consistent way.
 
 The _wasmlib_ folder provides the interface to the VM sandbox provided by the Wasp node 
-through _ScCallContext_ and _ScViewContext_.
+through _ScFuncContext_ and _ScViewContext_.
 
 The folder also contains a number of example smart contracts that can be
-used to learn how to use _ScCallContext_ and _ScViewContext_ properly.
+used to learn how to use _ScFuncContext_ and _ScViewContext_ properly.
 

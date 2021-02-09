@@ -182,12 +182,12 @@ impl ScUtility {
 
 // wrapper for simplified use by hashtypes
 pub(crate) fn base58_encode(bytes: &[u8]) -> String {
-    ScCallContext {}.utility().base58_encode(bytes)
+    ScFuncContext {}.utility().base58_encode(bytes)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// shared interface part of ScCallContext and ScViewContext
+// shared interface part of ScFuncContext and ScViewContext
 pub trait ScBaseContext {
     // access the current balances for all token colors
     fn balances(&self) -> ScBalances {
@@ -255,11 +255,11 @@ pub trait ScBaseContext {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // smart contract interface with mutable access to state
-pub struct ScCallContext {}
+pub struct ScFuncContext {}
 
-impl ScBaseContext for ScCallContext {}
+impl ScBaseContext for ScFuncContext {}
 
-impl ScCallContext {
+impl ScFuncContext {
     // calls a smart contract function
     pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<Box<dyn Balances>>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();

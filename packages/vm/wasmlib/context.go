@@ -172,12 +172,12 @@ func (ctx ScUtility) ValidED25519Signature(data []byte, pubKey []byte, signature
 
 // wrapper for simplified use by hashtypes
 func base58Encode(bytes []byte) string {
-	return ScCallContext{}.Utility().Base58Encode(bytes)
+	return ScFuncContext{}.Utility().Base58Encode(bytes)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// shared interface part of ScCallContext and ScViewContext
+// shared interface part of ScFuncContext and ScViewContext
 type ScBaseContext struct {
 }
 
@@ -246,14 +246,14 @@ func (ctx ScBaseContext) Utility() ScUtility {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // smart contract interface with mutable access to state
-type ScCallContext struct {
+type ScFuncContext struct {
 	ScBaseContext
 }
 
 //TODO parameter type checks
 
 // calls a smart contract function
-func (ctx ScCallContext) Call(hContract ScHname, hFunction ScHname, params *ScMutableMap, transfer balances) ScImmutableMap {
+func (ctx ScFuncContext) Call(hContract ScHname, hFunction ScHname, params *ScMutableMap, transfer balances) ScImmutableMap {
 	encode := NewBytesEncoder()
 	encode.Hname(hContract)
 	encode.Hname(hFunction)
@@ -272,17 +272,17 @@ func (ctx ScCallContext) Call(hContract ScHname, hFunction ScHname, params *ScMu
 }
 
 // retrieve the agent id of the caller of the smart contract
-func (ctx ScCallContext) Caller() *ScAgentId {
+func (ctx ScFuncContext) Caller() *ScAgentId {
 	return Root.GetAgentId(KeyCaller).Value()
 }
 
 // calls a smart contract function on the current contract
-func (ctx ScCallContext) CallSelf(hFunction ScHname, params *ScMutableMap, transfer balances) ScImmutableMap {
+func (ctx ScFuncContext) CallSelf(hFunction ScHname, params *ScMutableMap, transfer balances) ScImmutableMap {
 	return ctx.Call(ctx.ContractId().Hname(), hFunction, params, transfer)
 }
 
 // deploys a smart contract
-func (ctx ScCallContext) Deploy(programHash *ScHash, name string, description string, params *ScMutableMap) {
+func (ctx ScFuncContext) Deploy(programHash *ScHash, name string, description string, params *ScMutableMap) {
 	encode := NewBytesEncoder()
 	encode.Hash(programHash)
 	encode.String(name)
@@ -301,17 +301,17 @@ func (ctx ScBaseContext) Event(text string) {
 }
 
 // quick check to see if the caller of the smart contract was the specified originator agent
-func (ctx ScCallContext) From(originator *ScAgentId) bool {
+func (ctx ScFuncContext) From(originator *ScAgentId) bool {
 	return ctx.Caller().Equals(originator)
 }
 
 // access the incoming balances for all token colors
-func (ctx ScCallContext) Incoming() ScBalances {
+func (ctx ScFuncContext) Incoming() ScBalances {
 	return ScBalances{Root.GetMap(KeyIncoming).Immutable()}
 }
 
 // (delayed) posts a smart contract function
-func (ctx ScCallContext) Post(par *PostRequestParams) {
+func (ctx ScFuncContext) Post(par *PostRequestParams) {
 	encode := NewBytesEncoder()
 	encode.ContractId(par.ContractId)
 	encode.Hname(par.Function)
@@ -330,17 +330,17 @@ func (ctx ScCallContext) Post(par *PostRequestParams) {
 }
 
 // access to mutable state storage
-func (ctx ScCallContext) State() ScMutableMap {
+func (ctx ScFuncContext) State() ScMutableMap {
 	return Root.GetMap(KeyState)
 }
 
 // access to mutable named timestamped log
-func (ctx ScCallContext) TimestampedLog(key MapKey) ScLog {
+func (ctx ScFuncContext) TimestampedLog(key MapKey) ScLog {
 	return ScLog{Root.GetMap(KeyLogs).GetMapArray(key)}
 }
 
 // transfer colored token amounts to the specified Tangle ledger address
-func (ctx ScCallContext) TransferToAddress(address *ScAddress, transfer balances) {
+func (ctx ScFuncContext) TransferToAddress(address *ScAddress, transfer balances) {
 	transfers := Root.GetMapArray(KeyTransfers)
 	tx := transfers.GetMap(transfers.Length())
 	tx.GetAddress(KeyAddress).SetValue(address)

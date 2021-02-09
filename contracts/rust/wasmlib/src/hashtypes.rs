@@ -241,7 +241,7 @@ pub struct ScHname(pub u32);
 
 impl ScHname {
     pub fn new(name: &str) -> ScHname {
-        ScCallContext {}.utility().hname(name)
+        ScFuncContext {}.utility().hname(name)
     }
 
     pub fn from_bytes(bytes: &[u8]) -> ScHname {

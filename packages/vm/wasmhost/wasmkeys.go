@@ -43,7 +43,7 @@ const (
 	// Treat this one like a version number. When anything changes
 	// to the keys give this one a different value and make sure
 	// the client side in wasplib is updated accordingly
-	KeyZzzzzzz = int32(-96)
+	KeyZzzzzzz = int32(-97)
 )
 
 var keyMap = map[string]int32{

@@ -63,5 +63,5 @@ pub const KEY_UTILITY          : Key32 = Key32(-35);
 pub const KEY_VALID            : Key32 = Key32(-36);
 pub const KEY_VALID_BLS        : Key32 = Key32(-37);
 pub const KEY_VALID_ED25519    : Key32 = Key32(-38);
-pub const KEY_ZZZZZZZ          : Key32 = Key32(-96);
+pub const KEY_ZZZZZZZ          : Key32 = Key32(-97);
 // @formatter:on

@@ -60,5 +60,5 @@ const (
 	KeyValid           = Key32(-36)
 	KeyValidBls        = Key32(-37)
 	KeyValidEd25519    = Key32(-38)
-	KeyZzzzzzz         = Key32(-96)
+	KeyZzzzzzz         = Key32(-97)
 )

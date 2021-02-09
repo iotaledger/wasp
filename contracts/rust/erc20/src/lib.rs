@@ -22,13 +22,13 @@ const PARAM_RECIPIENT: &str = "r";
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_call("init", on_init);
+    exports.add_func("init", on_init);
     exports.add_view("total_supply", total_supply);
     exports.add_view("balance_of", balance_of);
     exports.add_view("allowance", allowance);
-    exports.add_call("transfer", transfer);
-    exports.add_call("approve", approve);
-    exports.add_call("transfer_from", transfer_from);
+    exports.add_func("transfer", transfer);
+    exports.add_func("approve", approve);
+    exports.add_func("transfer_from", transfer_from);
 }
 
 // TODO would be awesome to have some less syntactically cumbersome way to check and validate parameters.
@@ -38,7 +38,7 @@ fn on_load() {
 // - input:
 //   -- PARAM_SUPPLY must be nonzero positive integer. Mandatory
 //   -- PARAM_CREATOR is the AgentID where initial supply is placed. Mandatory
-fn on_init(ctx: &ScCallContext) {
+fn on_init(ctx: &ScFuncContext) {
     ctx.trace("erc20.on_init.begin");
     // validate parameters
     // supply
@@ -107,7 +107,7 @@ fn allowance(ctx: &ScViewContext) {
 // Input:
 // - PARAM_ACCOUNT: agentID
 // - PARAM_AMOUNT: i64
-fn transfer(ctx: &ScCallContext) {
+fn transfer(ctx: &ScFuncContext) {
     ctx.trace("erc20.transfer");
 
     // validate params
@@ -139,7 +139,7 @@ fn transfer(ctx: &ScCallContext) {
 // inputs:
 //  - PARAM_DELEGATION: agentID
 //  - PARAM_AMOUNT: i64
-fn approve(ctx: &ScCallContext) {
+fn approve(ctx: &ScFuncContext) {
     ctx.trace("erc20.approve");
 
     // validate parameters
@@ -162,7 +162,7 @@ fn approve(ctx: &ScCallContext) {
 // - PARAM_ACCOUNT: agentID   the spender
 // - PARAM_RECIPIENT: agentID   the target
 // - PARAM_AMOUNT: i64
-fn transfer_from(ctx: &ScCallContext) {
+fn transfer_from(ctx: &ScFuncContext) {
     ctx.trace("erc20.transfer_from");
 
     // validate parameters

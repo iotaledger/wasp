@@ -4,7 +4,7 @@
 package wasmlib
 
 var (
-	calls []func(ctx *ScCallContext)
+	funcs []func(ctx *ScFuncContext)
 	views []func(ctx *ScViewContext)
 )
 
@@ -14,7 +14,7 @@ func ScCallEntrypoint(index int32) {
 		views[index&0x7fff](&ScViewContext{})
 		return
 	}
-	calls[index](&ScCallContext{})
+	funcs[index](&ScFuncContext{})
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -31,9 +31,9 @@ func NewScExports() ScExports {
 	return ScExports{exports: exports}
 }
 
-func (ctx ScExports) AddCall(name string, f func(ctx *ScCallContext)) {
-	index := int32(len(calls))
-	calls = append(calls, f)
+func (ctx ScExports) AddFunc(name string, f func(ctx *ScFuncContext)) {
+	index := int32(len(funcs))
+	funcs = append(funcs, f)
 	ctx.exports.GetString(index).SetValue(name)
 }
 
@@ -41,8 +41,4 @@ func (ctx ScExports) AddView(name string, f func(ctx *ScViewContext)) {
 	index := int32(len(views))
 	views = append(views, f)
 	ctx.exports.GetString(index | 0x8000).SetValue(name)
-}
-
-func Nothing(ctx *ScCallContext) {
-	ctx.Log("Doing nothing as requested. Oh, wait...")
 }

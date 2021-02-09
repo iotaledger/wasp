@@ -7,7 +7,7 @@ use crate::context::*;
 use crate::keys::*;
 use crate::mutable::*;
 
-static mut CALLS: Vec<fn(&ScCallContext)> = vec![];
+static mut FUNCS: Vec<fn(&ScFuncContext)> = vec![];
 static mut VIEWS: Vec<fn(&ScViewContext)> = vec![];
 
 #[no_mangle]
@@ -18,7 +18,7 @@ fn on_call_entrypoint(index: i32) {
             return;
         }
 
-        CALLS[index as usize](&ScCallContext {});
+        FUNCS[index as usize](&ScFuncContext {});
     }
 }
 
@@ -37,10 +37,10 @@ impl ScExports {
         ScExports { exports: exports }
     }
 
-    pub fn add_call(&self, name: &str, f: fn(&ScCallContext)) {
+    pub fn add_func(&self, name: &str, f: fn(&ScFuncContext)) {
         unsafe {
-            let index = CALLS.len() as i32;
-            CALLS.push(f);
+            let index = FUNCS.len() as i32;
+            FUNCS.push(f);
             self.exports.get_string(index).set_value(name);
         }
     }
@@ -51,10 +51,6 @@ impl ScExports {
             VIEWS.push(f);
             self.exports.get_string(index | 0x8000).set_value(name);
         }
-    }
-
-    pub fn nothing(ctx: &ScCallContext) {
-        ctx.log("Doing nothing as requested. Oh, wait...");
     }
 }
 

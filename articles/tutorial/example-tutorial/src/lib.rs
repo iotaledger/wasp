@@ -10,15 +10,15 @@ const VAR_STRING: &str = "storedString";
 fn on_load() {
     // declare entry points of the smart contract
     let exports = ScExports::new();
-    exports.add_call("storeString", store_string);
+    exports.add_func("storeString", store_string);
     exports.add_view("getString", get_string);
-    exports.add_call("withdrawIota", withdraw_iota);
+    exports.add_func("withdrawIota", withdraw_iota);
 }
 
 // storeString entry point stores a string provided as parameters
 // in the state as a value of the key 'storedString'
 // panics if parameter is not provided
-fn store_string(ctx: &ScCallContext) {
+fn store_string(ctx: &ScFuncContext) {
     // take parameter paramString
     let par = ctx.params().get_string(PARAM_STRING);
     // require parameter exists
@@ -46,7 +46,7 @@ fn get_string(ctx: &ScViewContext) {
 // Panics of the caller is not an address
 // Panics if the address is not the creator of the contract is the caller
 // The caller will be address only if request is sent from the wallet on the L1, not a smart contract
-fn withdraw_iota(ctx: &ScCallContext) {
+fn withdraw_iota(ctx: &ScFuncContext) {
     let creator = ctx.contract_creator();
     let caller = ctx.caller();
 

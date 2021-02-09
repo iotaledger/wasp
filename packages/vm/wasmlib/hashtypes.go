@@ -248,7 +248,7 @@ func (o *ScHash) String() string {
 type ScHname uint32
 
 func NewScHname(name string) ScHname {
-	return ScCallContext{}.Utility().Hname(name)
+	return ScFuncContext{}.Utility().Hname(name)
 }
 
 func NewScHnameFromBytes(bytes []byte) ScHname {
