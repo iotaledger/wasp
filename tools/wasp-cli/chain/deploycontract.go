@@ -39,7 +39,7 @@ func deployContractCmd(args []string) {
 			log.Printf("uploaded blob %s\n", progHash)
 		}
 		return
-	})
+	}, true)
 
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return Client().PostRequest(

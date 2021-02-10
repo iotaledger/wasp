@@ -51,6 +51,7 @@ func byOutputId(outs map[valuetransaction.OutputID][]*balance.Balance) int64 {
 		log.Printf("    output ID %s:\n", outputID)
 		for _, bal := range bals {
 			log.Printf("      %s: %d\n", bal.Color.String(), bal.Value)
+			total += bal.Value
 		}
 	}
 	return total

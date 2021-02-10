@@ -26,11 +26,13 @@ func WithTransaction(f func() (*transaction.Transaction, error)) *transaction.Tr
 	return tx
 }
 
-func WithSCTransaction(f func() (*sctransaction.Transaction, error)) *sctransaction.Transaction {
+func WithSCTransaction(f func() (*sctransaction.Transaction, error), forceWait ...bool) *sctransaction.Transaction {
 	tx, err := f()
 	log.Check(err)
 
-	if config.WaitForCompletion {
+	log.Printf("Posted transaction %s\n", tx.ID())
+	if config.WaitForCompletion || (len(forceWait) > 0) {
+		log.Printf("Waiting for tx requests to be processed...\n")
 		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(tx, 1*time.Minute))
 	}
 

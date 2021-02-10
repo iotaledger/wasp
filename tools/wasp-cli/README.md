@@ -58,7 +58,7 @@ Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
 Example:
 
 ```
-wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3
+wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3 --description="My chain"
 ```
 
 * Set the chain alias for future commands (automatically done after deploying a chain): `wasp-cli set chain <alias>`
@@ -67,13 +67,13 @@ wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3
 
 * List all accounts in the chain: `wasp-cli chain list-accounts`
 
-* Display the in-chain balance of an agentid: `wasp-cli chain balance <agentid (base58 format)>`
+* Display the in-chain balance of an agentid: `wasp-cli chain balance <agentid>`
 
 ## Working with contracts
 
 * Deploy a contract: `wasp-cli chain deploy-contract <vmtype> <sc-name> <description> <wasm-file>`
 
-Example: `wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" inccounter.wasm`
+Example: `wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" contracts/wasm/inccounter_bg.wasm`
 
 * Post a request: `wasp-cli chain post-request <sc-name> <func-name> [args...]`
 
