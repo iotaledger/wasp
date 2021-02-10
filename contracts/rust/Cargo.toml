@@ -1,8 +1,16 @@
 [workspace]
 members = [
-    "wasmlib",
+    "dividend",
+    "donatewithfeedback",
+    "dummy",
     "erc20",
+    "example1",
+    "fairauction",
+    "fairroulette",
+    "helloworld",
+    "inccounter",
     "testcore",
+    "tokenregistry",
 ]
 
 [profile.release]

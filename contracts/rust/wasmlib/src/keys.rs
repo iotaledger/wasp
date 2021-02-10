@@ -13,6 +13,12 @@ impl MapKey for str {
     }
 }
 
+impl MapKey for String {
+    fn get_id(&self) -> Key32 {
+        get_key_id_from_string(self)
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Key32(pub i32);
 
