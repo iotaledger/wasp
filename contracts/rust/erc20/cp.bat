@@ -1,1 +1,1 @@
-copy pkg\*_bg.wasm ..\..\..\wasp\wasm
+copy pkg\*_bg.wasm ..\..\\wasm

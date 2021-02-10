@@ -39,7 +39,7 @@ func TestTutorial3(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex3")
 	// deploy the contract on chain
-	err := chain.DeployWasmContract(nil, "example1", "../pkg/example_tutorial_bg.wasm")
+	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// call contract to store string
@@ -60,7 +60,7 @@ func TestTutorial4(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex4")
 	// deploy the contract on chain
-	err := chain.DeployWasmContract(nil, "example1", "../pkg/example_tutorial_bg.wasm")
+	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// call contract incorrectly
@@ -113,7 +113,7 @@ func TestTutorial6(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex6")
 
-	err := chain.DeployWasmContract(nil, "example1", "../pkg/example_tutorial_bg.wasm")
+	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// global ID of the deployed contract
@@ -143,7 +143,7 @@ func TestTutorial7(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex7")
 
-	err := chain.DeployWasmContract(nil, "example1", "../pkg/example_tutorial_bg.wasm")
+	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// global ID of the deployed contract
@@ -195,7 +195,7 @@ func TestTutorial8(t *testing.T) {
 
 	// user deploys wasm smart contract on the chain under the name "example1"
 	// the wasm binary is in the file
-	err = chain.DeployWasmContract(userWallet, "example1", "../pkg/example_tutorial_bg.wasm")
+	err = chain.DeployWasmContract(userWallet, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// global ID of the deployed contract
