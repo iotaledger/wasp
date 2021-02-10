@@ -93,7 +93,7 @@ func WasmPath(fileName string, relativePath ...string) string {
 	if len(relativePath) > 0 {
 		relPath = relativePath[0]
 	} else {
-		relPath = "wasm"
+		relPath = "pkg"
 	}
 	// check if this file exists
 	exists, err := fs.Exists(fileName)

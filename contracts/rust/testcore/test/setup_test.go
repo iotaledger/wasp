@@ -29,7 +29,7 @@ const (
 )
 
 var WasmFileTestcore = wasmhost.WasmPath("testcore_bg.wasm")
-var WasmFileErc20 = wasmhost.WasmPath("erc20_bg.wasm")
+var WasmFileErc20 = wasmhost.WasmPath("erc20_bg.wasm", "erc20/pkg")
 
 var SandboxSCName = "test_sandbox"
 

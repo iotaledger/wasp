@@ -53,7 +53,7 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-var wasmFile = util.LocateFile("testcore_bg.wasm", "contracts/wasm")
+var wasmFile = util.LocateFile("testcore_bg.wasm", "contracts/rust/testcore/pkg")
 
 func TestDeploy(t *testing.T) {
 	env := solo.New(t, false, false)

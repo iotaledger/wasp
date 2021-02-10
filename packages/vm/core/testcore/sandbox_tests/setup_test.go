@@ -24,8 +24,8 @@ const (
 )
 
 var (
-	WasmFileTestcore = util.LocateFile("testcore_bg.wasm", "contracts/wasm")
-	WasmFileErc20    = util.LocateFile("erc20_bg.wasm", "contracts/wasm")
+	WasmFileTestcore = util.LocateFile("testcore_bg.wasm", "contracts/rust/testcore/pkg")
+	WasmFileErc20    = util.LocateFile("erc20_bg.wasm", "contracts/rust/erc20/pkg")
 	SandboxSCName    = "test_sandbox"
 )
 

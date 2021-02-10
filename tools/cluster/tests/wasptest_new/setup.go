@@ -57,7 +57,7 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 	}
 
 	if !*useWasp {
-		wasm, err := ioutil.ReadFile(util.LocateFile(wasmPath, "contracts/wasm"))
+		wasm, err := ioutil.ReadFile(util.LocateFile(wasmPath, "contracts/rust/" + wasmName + "/pkg"))
 		if err != nil {
 			return err
 		}

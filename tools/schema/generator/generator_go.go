@@ -66,7 +66,7 @@ func (s *Schema) GenerateGoFunc(file *os.File, funcDef *FuncDef) error {
 	funcName := funcDef.FullName
 	funcKind := capitalize(funcDef.FullName[:4])
 	fmt.Fprintf(file, "\nfunc %s(ctx *wasmlib.Sc%sContext, params *%sParams) {\n", funcName, funcKind, capitalize(funcName))
-	fmt.Fprintf(file, "    ctx.Log(\"calling %s\")\n", funcDef.Name)
+	fmt.Fprintf(file, "\tctx.Log(\"calling %s\")\n", funcDef.Name)
 	fmt.Fprintf(file, "}\n")
 	return nil
 }
@@ -182,14 +182,14 @@ func (s *Schema) GenerateGoOnLoad() error {
 	fmt.Fprintln(file, importWasmLib)
 
 	fmt.Fprintf(file, "func OnLoad() {\n")
-	fmt.Fprintf(file, "    exports := wasmlib.NewScExports()\n")
+	fmt.Fprintf(file, "\texports := wasmlib.NewScExports()\n")
 	for _, funcDef := range s.Funcs {
 		name := capitalize(funcDef.FullName)
-		fmt.Fprintf(file, "    exports.AddFunc(%s, %sThunk)\n", name, funcDef.FullName)
+		fmt.Fprintf(file, "\texports.AddFunc(%s, %sThunk)\n", name, funcDef.FullName)
 	}
 	for _, viewDef := range s.Views {
 		name := capitalize(viewDef.FullName)
-		fmt.Fprintf(file, "    exports.AddView(%s, %sThunk)\n", name, viewDef.FullName)
+		fmt.Fprintf(file, "\texports.AddView(%s, %sThunk)\n", name, viewDef.FullName)
 	}
 	fmt.Fprintf(file, "}\n")
 
@@ -272,9 +272,7 @@ func (s *Schema) GenerateGoTests() error {
 }
 
 func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
-	funcName := capitalize(funcDef.FullName)
-	funcKind := capitalize(funcDef.FullName[:4])
-	fmt.Fprintf(file, "\ntype %sParams struct {\n", funcName)
+	// calculate padding
 	nameLen := 0
 	typeLen := 0
 	for _, param := range funcDef.Params {
@@ -287,10 +285,17 @@ func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 			typeLen = len(fldType)
 		}
 	}
+
+	funcName := capitalize(funcDef.FullName)
+	funcKind := capitalize(funcDef.FullName[:4])
+	fmt.Fprintf(file, "\ntype %sParams struct {\n", funcName)
 	for _, param := range funcDef.Params {
 		fldName := pad(capitalize(param.Name), nameLen)
-		fldType := pad(param.Type, typeLen)
-		fmt.Fprintf(file, "    %s wasmlib.ScImmutable%s%s\n", fldName, fldType, param.Comment)
+		fldType := param.Type
+		if param.Comment != "" {
+			fldType = pad(fldType, typeLen)
+		}
+		fmt.Fprintf(file, "\t%s wasmlib.ScImmutable%s%s\n", fldName, fldType, param.Comment)
 	}
 	fmt.Fprintf(file, "}\n")
 	fmt.Fprintf(file, "\nfunc %sThunk(ctx *wasmlib.Sc%sContext) {\n", funcDef.FullName, funcKind)
@@ -298,7 +303,7 @@ func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 	if grant != "" {
 		index := strings.Index(grant, "//")
 		if index >= 0 {
-			fmt.Fprintf(file, "    %s\n", grant[index:])
+			fmt.Fprintf(file, "\t%s\n", grant[index:])
 			grant = strings.TrimSpace(grant[:index])
 		}
 		switch grant {
@@ -309,28 +314,29 @@ func (s *Schema) GenerateGoThunk(file *os.File, funcDef *FuncDef) {
 		case "creator":
 			grant = "ctx.ContractCreator()"
 		default:
-			fmt.Fprintf(file, "    grantee := ctx.State().GetAgentId(wasmlib.Key(\"%s\"))\n", grant)
-			fmt.Fprintf(file, "    ctx.Require(grantee.Exists(), \"grantee not set: %s\")\n", grant)
+			fmt.Fprintf(file, "\tgrantee := ctx.State().GetAgentId(wasmlib.Key(\"%s\"))\n", grant)
+			fmt.Fprintf(file, "\tctx.Require(grantee.Exists(), \"grantee not set: %s\")\n", grant)
 			grant = fmt.Sprintf("grantee.Value()")
 		}
-		fmt.Fprintf(file, "    ctx.Require(ctx.From(%s), \"no permission\")\n\n", grant)
+		fmt.Fprintf(file, "\tctx.Require(ctx.From(%s), \"no permission\")\n\n", grant)
 	}
 	if len(funcDef.Params) != 0 {
-		fmt.Fprintf(file, "    p := ctx.Params()\n")
+		fmt.Fprintf(file, "\tp := ctx.Params()\n")
 	}
-	fmt.Fprintf(file, "    params := &%sParams {\n", funcName)
+	fmt.Fprintf(file, "\tparams := &%sParams{\n", funcName)
 	for _, param := range funcDef.Params {
 		name := capitalize(param.Name)
-		fmt.Fprintf(file, "        %s: p.Get%s(Param%s),\n", name, param.Type, name)
+		field := pad(name+":", nameLen+1)
+		fmt.Fprintf(file, "\t\t%s p.Get%s(Param%s),\n", field, param.Type, name)
 	}
-	fmt.Fprintf(file, "    }\n")
+	fmt.Fprintf(file, "\t}\n")
 	for _, param := range funcDef.Params {
 		if !param.Optional {
 			name := capitalize(param.Name)
-			fmt.Fprintf(file, "    ctx.Require(params.%s.Exists(), \"missing mandatory %s\")\n", name, param.Name)
+			fmt.Fprintf(file, "\tctx.Require(params.%s.Exists(), \"missing mandatory %s\")\n", name, param.Name)
 		}
 	}
-	fmt.Fprintf(file, "    %s(ctx, params)\n", funcDef.FullName)
+	fmt.Fprintf(file, "\t%s(ctx, params)\n", funcDef.FullName)
 	fmt.Fprintf(file, "}\n")
 }
 
@@ -369,7 +375,10 @@ func (s *Schema) GenerateGoTypes() error {
 		fmt.Fprintf(file, "\ntype %s struct {\n", typeDef.Name)
 		for _, field := range typeDef.Fields {
 			fldName := pad(capitalize(field.Name), nameLen)
-			fldType := pad(goTypes[field.Type], typeLen)
+			fldType := goTypes[field.Type]
+			if field.Comment != "" {
+				fldType = pad(fldType, typeLen)
+			}
 			fmt.Fprintf(file, "\t%s %s%s\n", fldName, fldType, field.Comment)
 		}
 		fmt.Fprintf(file, "}\n")

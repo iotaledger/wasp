@@ -173,7 +173,7 @@ func inccounterScript(w *WaspCli) {
 	vmtype := "wasmtimevm"
 	name := "inccounter"
 	description := "inccounter SC"
-	file := util.LocateFile("inccounter_bg.wasm", "contracts/wasm")
+	file := util.LocateFile("inccounter_bg.wasm", "contracts/rust/inccounter/pkg")
 
 	w.copyFile(path.Join("wasm", file))
 

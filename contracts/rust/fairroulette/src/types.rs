@@ -11,9 +11,9 @@ use wasmlib::*;
 
 //@formatter:off
 pub struct Bet {
-    pub amount: i64,      
+    pub amount: i64,
     pub better: ScAgentId,
-    pub number: i64,      
+    pub number: i64,
 }
 //@formatter:on
 

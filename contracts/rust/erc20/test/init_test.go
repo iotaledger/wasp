@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	erc20file = util.LocateFile("erc20_bg.wasm", "contracts/wasm")
+	erc20file = util.LocateFile("erc20_bg.wasm", "pkg")
 )
 
 func TestDeployErc20(t *testing.T) {

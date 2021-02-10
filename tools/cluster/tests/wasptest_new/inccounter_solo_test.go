@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-var incFile = util.LocateFile("inccounter_bg.wasm", "contracts/wasm")
+var incFile = util.LocateFile("inccounter_bg.wasm", "contracts/rust/inccounter/pkg")
 
 const incName = "inccounter"
 const incDescription = "IncCounter, a PoC smart contract"

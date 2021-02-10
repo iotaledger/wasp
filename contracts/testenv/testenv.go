@@ -201,7 +201,7 @@ func DeployGoContract(chain *solo.Chain, sigScheme signaturescheme.SignatureSche
 	if WasmRunner == WasmRunnerGo {
 		wasmFile = strings.Replace(wasmFile, "_bg", "_go", -1)
 	}
-	wasmFile = wasmhost.WasmPath(wasmFile)
+	wasmFile = wasmhost.WasmPath(wasmFile, contractName + "/pkg")
 	return chain.DeployWasmContract(sigScheme, name, wasmFile, filterKeys(params...)...)
 }
 

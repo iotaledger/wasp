@@ -182,7 +182,7 @@ func TestWaspCliContract(t *testing.T) {
 	name := "inccounter"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-	srcFile := util.LocateFile(file, "contracts/wasm")
+	srcFile := util.LocateFile(file, "contracts/rust/inccounter/pkg")
 	w.copyFile(srcFile)
 
 	// test chain deploy-contract command
@@ -217,7 +217,7 @@ func TestWaspCliBlobContract(t *testing.T) {
 	vmtype := "wasmtimevm"
 	description := "inccounter SC"
 	file := "inccounter_bg.wasm"
-	w.copyFile(util.LocateFile(file, "contracts/wasm"))
+	w.copyFile(util.LocateFile(file, "contracts/rust/inccounter/pkg"))
 
 	// test chain store-blob command
 	w.Run(
@@ -249,7 +249,7 @@ func TestWaspCliBlobRegistry(t *testing.T) {
 
 	// test `blob put` command
 	file := "inccounter_bg.wasm"
-	w.copyFile(util.LocateFile(file, "contracts/wasm"))
+	w.copyFile(util.LocateFile(file, "contracts/rust/inccounter/pkg"))
 	out = w.Run("blob", "put", file)
 	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
 	require.NotEmpty(t, blobHash)

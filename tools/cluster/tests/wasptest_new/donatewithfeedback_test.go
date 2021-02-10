@@ -13,7 +13,7 @@ import (
 
 const dwfName = "donatewithfeedback"
 
-var dwfFile = util.LocateFile("donatewithfeedback_bg.wasm", "contracts/wasm")
+var dwfFile = util.LocateFile("donatewithfeedback_bg.wasm", "contracts/rust/donatewithfeedback/pkg")
 
 const dwfDescription = "Donate with feedback, a PoC smart contract"
 

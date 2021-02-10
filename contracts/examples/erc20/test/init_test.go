@@ -10,7 +10,7 @@ import (
 
 const erc20name = "erc20test"
 
-var erc20file = util.LocateFile("erc20_bg.wasm", "contracts/wasm")
+var erc20file = util.LocateFile("erc20_bg.wasm", "contracts/rust/erc20/pkg")
 
 func TestDeployErc20(t *testing.T) {
 	env := solo.New(t, false, false)

@@ -261,7 +261,7 @@ func (s *Schema) GenerateRustSchema() error {
 
 	fmt.Fprintf(file, "pub const SC_NAME: &str = \"%s\";\n", s.Name)
 	if s.Description != "" {
-		fmt.Fprintf(file, "pub const SC_DESCRIPTION: &str =  \"%s\";\n", s.Description)
+		fmt.Fprintf(file, "pub const SC_DESCRIPTION: &str = \"%s\";\n", s.Description)
 	}
 	hName := coretypes.Hn(s.Name)
 	fmt.Fprintf(file, "pub const SC_HNAME: ScHname = ScHname(0x%s);\n", hName.String())
@@ -326,16 +326,21 @@ func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
 
 	funcName := capitalize(funcDef.FullName)
 	funcKind := capitalize(funcDef.FullName[:4])
-
 	fmt.Fprintln(file)
 	if len(funcDef.Params) > 1 {
 		fmt.Fprintf(file, "//@formatter:off\n")
 	}
-	fmt.Fprintf(file, "pub struct %sParams {\n", funcName)
-	for _, param := range funcDef.Params {
-		fldName := pad(snake(param.Name) + ":", nameLen+1)
-		fldType := pad(param.Type + ",", typeLen+1)
-		fmt.Fprintf(file, "    pub %s ScImmutable%s%s\n", fldName, fldType, param.Comment)
+	fmt.Fprintf(file, "pub struct %sParams {", funcName)
+	if len(funcDef.Params) != 0 {
+		fmt.Fprintln(file)
+		for _, param := range funcDef.Params {
+			fldName := pad(snake(param.Name) + ":", nameLen+1)
+			fldType := param.Type + ","
+			if param.Comment != "" {
+				fldType= pad(fldType, typeLen+1)
+			}
+			fmt.Fprintf(file, "    pub %s ScImmutable%s%s\n", fldName, fldType, param.Comment)
+		}
 	}
 	fmt.Fprintf(file, "}\n")
 	if len(funcDef.Params) > 1 {
@@ -367,12 +372,16 @@ func (s *Schema) GenerateRustThunk(file *os.File, funcDef *FuncDef) {
 	if len(funcDef.Params) != 0 {
 		fmt.Fprintf(file, "    let p = ctx.params();\n")
 	}
-	fmt.Fprintf(file, "    let params = %sParams {\n", funcName)
-	for _, param := range funcDef.Params {
-		name := snake(param.Name)
-		fmt.Fprintf(file, "        %s: p.get_%s(PARAM_%s),\n", name, snake(param.Type), upper(name))
+	fmt.Fprintf(file, "    let params = %sParams {", funcName)
+	if len(funcDef.Params) != 0 {
+		fmt.Fprintln(file)
+		for _, param := range funcDef.Params {
+			name := snake(param.Name)
+			fmt.Fprintf(file, "        %s: p.get_%s(PARAM_%s),\n", name, snake(param.Type), upper(name))
+		}
+		fmt.Fprintf(file, "    ")
 	}
-	fmt.Fprintf(file, "    };\n")
+	fmt.Fprintf(file, "};\n")
 	for _, param := range funcDef.Params {
 		if !param.Optional {
 			name := snake(param.Name)
@@ -422,7 +431,10 @@ func (s *Schema) GenerateRustTypes() error {
 		fmt.Fprintf(file, "pub struct %s {\n", typeDef.Name)
 		for _, field := range typeDef.Fields {
 			fldName := pad(snake(field.Name) + ":", nameLen+1)
-			fldType := pad(rustTypes[field.Type] + ",", typeLen+1)
+			fldType := rustTypes[field.Type] + ","
+			if field.Comment != "" {
+				fldType= pad(fldType, typeLen+1)
+			}
 			fmt.Fprintf(file, "    pub %s %s%s\n", fldName, fldType, field.Comment)
 		}
 		fmt.Fprintf(file, "}\n")

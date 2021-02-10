@@ -5,8 +5,8 @@
 //////// DO NOT CHANGE THIS FILE! ////////
 // Change the json schema instead
 
-use schema::*;
 use testcore::*;
+use schema::*;
 use wasmlib::*;
 
 mod testcore;
@@ -49,7 +49,7 @@ fn on_load() {
 pub struct FuncCallOnChainParams {
     pub hname_contract: ScImmutableHname,
     pub hname_ep:       ScImmutableHname,
-    pub int_value:      ScImmutableInt,  
+    pub int_value:      ScImmutableInt,
 }
 //@formatter:on
 
@@ -66,11 +66,11 @@ fn func_call_on_chain_thunk(ctx: &ScFuncContext) {
 
 //@formatter:off
 pub struct FuncCheckContextFromFullEPParams {
-    pub agent_id:         ScImmutableAgentId,   
-    pub caller:           ScImmutableAgentId,   
-    pub chain_id:         ScImmutableChainId,   
-    pub chain_owner_id:   ScImmutableAgentId,   
-    pub contract_creator: ScImmutableAgentId,   
+    pub agent_id:         ScImmutableAgentId,
+    pub caller:           ScImmutableAgentId,
+    pub chain_id:         ScImmutableChainId,
+    pub chain_owner_id:   ScImmutableAgentId,
+    pub contract_creator: ScImmutableAgentId,
     pub contract_id:      ScImmutableContractId,
 }
 //@formatter:on
@@ -110,11 +110,11 @@ fn func_init_thunk(ctx: &ScFuncContext) {
 
 //@formatter:off
 pub struct FuncPassTypesFullParams {
-    pub hash:        ScImmutableHash,  
-    pub hname:       ScImmutableHname, 
-    pub hname_zero:  ScImmutableHname, 
-    pub int64:       ScImmutableInt,   
-    pub int64_zero:  ScImmutableInt,   
+    pub hash:        ScImmutableHash,
+    pub hname:       ScImmutableHname,
+    pub hname_zero:  ScImmutableHname,
+    pub int64:       ScImmutableInt,
+    pub int64_zero:  ScImmutableInt,
     pub string:      ScImmutableString,
     pub string_zero: ScImmutableString,
 }
@@ -171,7 +171,7 @@ fn func_send_to_address_thunk(ctx: &ScFuncContext) {
 
 //@formatter:off
 pub struct FuncSetIntParams {
-    pub int_value: ScImmutableInt,   
+    pub int_value: ScImmutableInt,
     pub name:      ScImmutableString,
 }
 //@formatter:on
@@ -264,10 +264,10 @@ fn func_withdraw_to_chain_thunk(ctx: &ScFuncContext) {
 
 //@formatter:off
 pub struct ViewCheckContextFromViewEPParams {
-    pub agent_id:         ScImmutableAgentId,   
-    pub chain_id:         ScImmutableChainId,   
-    pub chain_owner_id:   ScImmutableAgentId,   
-    pub contract_creator: ScImmutableAgentId,   
+    pub agent_id:         ScImmutableAgentId,
+    pub chain_id:         ScImmutableChainId,
+    pub chain_owner_id:   ScImmutableAgentId,
+    pub contract_creator: ScImmutableAgentId,
     pub contract_id:      ScImmutableContractId,
 }
 //@formatter:on
@@ -331,11 +331,11 @@ fn view_just_view_thunk(ctx: &ScViewContext) {
 
 //@formatter:off
 pub struct ViewPassTypesViewParams {
-    pub hash:        ScImmutableHash,  
-    pub hname:       ScImmutableHname, 
-    pub hname_zero:  ScImmutableHname, 
-    pub int64:       ScImmutableInt,   
-    pub int64_zero:  ScImmutableInt,   
+    pub hash:        ScImmutableHash,
+    pub hname:       ScImmutableHname,
+    pub hname_zero:  ScImmutableHname,
+    pub int64:       ScImmutableInt,
+    pub int64_zero:  ScImmutableInt,
     pub string:      ScImmutableString,
     pub string_zero: ScImmutableString,
 }
