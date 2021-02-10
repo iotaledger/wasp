@@ -2,21 +2,19 @@ package goshimmer
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"time"
-
 	"github.com/iotaledger/goshimmer/client"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/client/level1"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
+	"time"
 )
 
 // NewGoshimmerClient returns a Level1Client that sends the requests to a Goshimmer node
 func NewGoshimmerClient(goshimmerHost string) level1.Level1Client {
-	fmt.Printf("using Goshimmer host %s\n", goshimmerHost)
 	return &goshimmerClient{client.NewGoShimmerAPI("http://" + goshimmerHost)}
 }
 

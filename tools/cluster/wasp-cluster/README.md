@@ -70,9 +70,9 @@ way that the ledger can be operated without the need for consensus. This is
 good for quick tests, but is far from how Goshimmer works in a production
 environment.
 
-To connect the cluster to a more realistic environment (e.g. to be able to
-persist the ledger), you can use the `docker-network-waspconn` tool available
-in the Goshimmer repository (`master+wasp` branch) in order to operate a cluster of
+To connect the Wasp cluster to a more realistic environment (e.g. to be able to
+persist the ledger), you can use the `docker-network` tool available
+in the Goshimmer repository (`master+wasp` branch) in order to start a cluster of
 Goshimmer nodes.
 
 Example steps:
@@ -80,8 +80,8 @@ Example steps:
 1. Start a Goshimmer network of 2 nodes:
 
 ```
-cd <goshimmer>/tools/docker-network-waspconn
-./run.sh 2
+cd <goshimmer>/tools/docker-network
+./run.sh 2 0
 ```
 
 2. In another console, initialize a cluster of 4 Wasp nodes (`-n 4`) with no Goshimmer node (`-g`).

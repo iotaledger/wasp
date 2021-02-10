@@ -69,13 +69,16 @@ func Utxodb() bool {
 }
 
 func GoshimmerClient() level1.Level1Client {
+	log.Verbose("using Goshimmer host %s\n", GoshimmerApi())
 	if Utxodb() {
+		log.Verbose("using utxodb\n")
 		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
 	}
 	return goshimmer.NewGoshimmerClient(GoshimmerApi())
 }
 
 func WaspClient() *client.WaspClient {
+	log.Verbose("using Wasp host %s\n", WaspApi())
 	return client.NewWaspClient(WaspApi())
 }
 
