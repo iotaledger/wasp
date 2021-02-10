@@ -8,9 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/contracts/rust/dividend"
 	"github.com/iotaledger/wasp/contracts/rust/donatewithfeedback"
-	"github.com/iotaledger/wasp/contracts/rust/dummy"
 	"github.com/iotaledger/wasp/contracts/rust/erc20"
-	"github.com/iotaledger/wasp/contracts/rust/example1"
 	"github.com/iotaledger/wasp/contracts/rust/fairauction"
 	"github.com/iotaledger/wasp/contracts/rust/fairroulette"
 	"github.com/iotaledger/wasp/contracts/rust/helloworld"
@@ -48,9 +46,7 @@ var WasmRunner = 0
 var ScForGoVM = map[string]func(){
 	"dividend":           dividend.OnLoad,
 	"donatewithfeedback": donatewithfeedback.OnLoad,
-	"dummy":              dummy.OnLoad,
 	"erc20":              erc20.OnLoad,
-	"example1":           example1.OnLoad,
 	"fairauction":        fairauction.OnLoad,
 	"fairroulette":       fairroulette.OnLoad,
 	"helloworld":         helloworld.OnLoad,
