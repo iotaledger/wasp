@@ -18,9 +18,9 @@ var ConfigPath string
 var WaitForCompletion bool
 
 const (
-	hostKindApi     = "api"
-	hostKindPeering = "peering"
-	hostKindNanomsg = "nanomsg"
+	HostKindApi     = "api"
+	HostKindPeering = "peering"
+	HostKindNanomsg = "nanomsg"
 )
 
 func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
@@ -53,7 +53,7 @@ func Read() {
 }
 
 func GoshimmerApiConfigVar() string {
-	return "goshimmer." + hostKindApi
+	return "goshimmer." + HostKindApi
 }
 
 func GoshimmerApi() string {
@@ -78,36 +78,47 @@ func GoshimmerClient() level1.Level1Client {
 }
 
 func WaspClient() *client.WaspClient {
+	// TODO: add authentication for /adm
 	log.Verbose("using Wasp host %s\n", WaspApi())
 	return client.NewWaspClient(WaspApi())
 }
 
 func WaspApi() string {
-	r := viper.GetString("wasp." + hostKindApi)
+	r := viper.GetString("wasp." + HostKindApi)
 	if r != "" {
 		return r
 	}
-	return committeeHost(hostKindApi, 0)
+	return committeeHost(HostKindApi, 0)
 }
 
 func WaspNanomsg() string {
-	r := viper.GetString("wasp." + hostKindNanomsg)
+	r := viper.GetString("wasp." + HostKindNanomsg)
 	if r != "" {
 		return r
 	}
-	return committeeHost(hostKindNanomsg, 0)
+	return committeeHost(HostKindNanomsg, 0)
+}
+
+func FindNodeBy(kind string, v string) int {
+	for i := 0; i < 100; i++ {
+		if committeeHost(kind, i) == v {
+			return i
+		}
+	}
+	log.Fatal("Cannot find node with %q = %q in configuration", kind, v)
+	return 0
 }
 
 func CommitteeApi(indices []int) []string {
-	return committee(hostKindApi, indices)
+	return committee(HostKindApi, indices)
 }
 
 func CommitteePeering(indices []int) []string {
-	return committee(hostKindPeering, indices)
+	return committee(HostKindPeering, indices)
 }
 
 func CommitteeNanomsg(indices []int) []string {
-	return committee(hostKindNanomsg, indices)
+	return committee(HostKindNanomsg, indices)
 }
 
 func committee(kind string, indices []int) []string {
@@ -123,15 +134,15 @@ func committeeConfigVar(kind string, i int) string {
 }
 
 func CommitteeApiConfigVar(i int) string {
-	return committeeConfigVar(hostKindApi, i)
+	return committeeConfigVar(HostKindApi, i)
 }
 
 func CommitteePeeringConfigVar(i int) string {
-	return committeeConfigVar(hostKindPeering, i)
+	return committeeConfigVar(HostKindPeering, i)
 }
 
 func CommitteeNanomsgConfigVar(i int) string {
-	return committeeConfigVar(hostKindNanomsg, i)
+	return committeeConfigVar(HostKindNanomsg, i)
 }
 
 func committeeHost(kind string, i int) string {
@@ -145,11 +156,11 @@ func committeeHost(kind string, i int) string {
 
 func defaultWaspPort(kind string, i int) int {
 	switch kind {
-	case hostKindNanomsg:
+	case HostKindNanomsg:
 		return 5550 + i
-	case hostKindPeering:
+	case HostKindPeering:
 		return 4000 + i
-	case hostKindApi:
+	case HostKindApi:
 		return 9090 + i
 	}
 	panic(fmt.Sprintf("no handler for kind %s", kind))
