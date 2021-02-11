@@ -1,6 +1,10 @@
+_Obsolete. To be adjusted to the new version_
+
+----
+
 # Handling tagged tokens with _TokenRegistry_ and _FairAuction_
 
-Tagged tokens, (a.k.a. colored tokens) is a powerful feature of the [UTXO ledger](utxo.md).
+Tagged tokens, (a.k.a. colored tokens) is a powerful feature of the [UTXO ledger](../utxo.md).
 Two PoC smart contracts, _TokenRegistry_ and _FairAuction_ demonstrates how smart contract can manipulate them and 
 extend their functions. The demo dashboards can be found [here](http://waspdev01.iota.cafe:10000).
 
