@@ -3,12 +3,9 @@ package chain
 import (
 	"os"
 
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -32,14 +29,8 @@ func deployContractCmd(args []string) {
 		blob.VarFieldProgramDescription: description,
 		blob.VarFieldProgramBinary:      util.ReadFile(filename),
 	})
-	var progHash hashing.HashValue
-	util.WithSCTransaction(func() (tx *sctransaction.Transaction, err error) {
-		progHash, tx, err = Client().UploadBlob(blobFieldValues, config.CommitteeApi(uploadNodes), uploadQuorum)
-		if err == nil {
-			log.Printf("uploaded blob %s\n", progHash)
-		}
-		return
-	}, true)
+
+	progHash := uploadBlob(blobFieldValues, true)
 
 	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
 		return Client().PostRequest(

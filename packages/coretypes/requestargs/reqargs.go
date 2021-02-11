@@ -9,6 +9,8 @@ import (
 	"io"
 )
 
+// TODO: extend '*' option in RequestArgs with download options (web, IPFS)
+
 // RequestArgs encodes request parameters taking into account hashes of data blobs
 type RequestArgs dict.Dict
 
