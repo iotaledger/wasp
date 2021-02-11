@@ -1,3 +1,7 @@
+_Obsolete. To be adjusted to the new version_
+
+----
+
 # Committees and deployment of the smart contract
 
 ## The committee

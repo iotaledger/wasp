@@ -1,3 +1,7 @@
+_Obsolete. To be adjusted to the new version_
+
+----
+
 # Main concepts with _DonateWithFeedback_
 We will explain main concepts of IOTA smart contracts using deployed PoC smart contract called _DonateWithFeedback_.
 We wrote this article as a part of the _PoC release of the Wasp_. 
@@ -116,7 +120,7 @@ both donated iotas and the feedback message in a single transaction.
 
 SC transactions are value transactions, i.e. they move tokens from addresses to addresses. 
 It is because ISCP is a protocol on top of the Goshimmer's Value Tangle, an UTXO ledger.
-Here you can find a [short introduction](utxo.md) to main concepts of it.
+Here you can find a [short introduction](../utxo.md) to main concepts of it.
 
 The smart contract account balance consists of all UTXOs contained in the smart contract address. 
 On the demo dashboards it is displayed in the simplified 1-dimensional form by skipping the containing transaction 
