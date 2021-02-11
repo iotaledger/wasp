@@ -22,23 +22,18 @@ Note: the compiled `goshimmer` command corresponds to the
 
 ## Step 2: Run Goshimmer connected to the Pollen network
 
-Create an empty working directory for Goshimmer:
+Create an empty working directory for Goshimmer, and download the `snapshot.bin` file needed for bootstrap:
 
 ```
 $ mkdir goshimmer-pollen
 $ cd goshimmer-pollen
-```
-
-Download the `snapshot.bin` file needed for bootstrap:
-
-```
-$ curl 'https://github.com/iotaledger/goshimmer/raw/master%2Bwasp/snapshot.bin' -O snapshot.bin
+$ curl 'https://github.com/iotaledger/goshimmer/raw/master%2Bwasp/snapshot.bin' -O
 ```
 
 Start the Goshimmer node:
 
 ```
-goshimmer \
+$ goshimmer \
         --skip-config=true \
         --analysis.client.serverAddress=ressims.iota.cafe:21888 \
         --autopeering.port=14626 \
@@ -51,7 +46,8 @@ goshimmer \
         --prometheus.bindAddress=0.0.0.0:9311 \
         --autopeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626,5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entryshimmer.tanglebay.com:14646 \
         --node.disablePlugins= \
-        --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,waspconn \
+        --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,faucet,waspconn \
+        --faucet.seed=7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih \
         --logger.level=info \
         --logger.disableEvents=false \
         --logger.remotelog.serverAddress=ressims.iota.cafe:5213 \
@@ -100,9 +96,11 @@ $ cd wasp-node
 $ wasp
 ```
 
+You can check that your node is running by opening the dashboard with a web
+browser at `127.0.0.1:7000`.
+
 That's it! Repeat this process to launch as many nodes as you want for your
-committee, then use [`wasp-cli`](../../tools/wasp-cli/README.md) to deploy
-smart contracts.
+committee.
 
 ### Wasp settings
 
@@ -142,3 +140,9 @@ can subscribe to these messages. More about the Publisher [here](./publisher.md)
 
 `dashboard.bindAddress` specifies the bind address/port for the node dashboard,
 which can be accessed with a web browser.
+
+## Now what?
+
+Now that you have one or more Wasp nodes you can use the
+[`wasp-cli`](../../tools/wasp-cli/README.md) tool to [deploy a chain and smart
+contracts](./deploy.md).

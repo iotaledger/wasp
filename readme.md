@@ -29,34 +29,38 @@ commercial settings or whenever processing of critical data is involved._
 ## Prerequisites
 
 - Go 1.15
+- The `goshimmer` command, compiled from [Goshimmer `master+wasp` branch](https://github.com/iotaledger/goshimmer/tree/master+wasp)
+ 
+Note: The only difference between standard Goshimmer (`master` branch) and the
+`master+wasp` branch is the
+[WaspConn](https://github.com/iotaledger/goshimmer/tree/master+wasp/dapps/waspconn)
+plugin, which accepts connections from Wasp nodes.
 
 ## Compile
 
 - Build the `wasp` binary (Wasp node): `go build`
 - Build the `wasp-cli` binary (CLI client): `go build ./tools/wasp-cli`
 
+Alternatively, build and install everything with `go install ./...`
+
 ## Test
 
-- Run all tests (including `tools/cluster` tests which may take several minutes): `go test -timeout 20m ./...`
+- Run all tests (including integration tests which may take several minutes): `go test -timeout 20m ./...`
 - Run only unit tests: `go test -short ./...`
+
+Note: integration tests require the `goshimmer`, `wasp` and `wasp-cli` commands
+in the system path (i.e. you need to run `go install ./...` before running
+tests).
 
 ## Run
 
-To run a Wasp node you need at least one Goshimmer node with the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/master+wasp/dapps/waspconn)
-plugin. This version of Goshimmer is located in the
-[`master+wasp` branch of the Goshimmer repository](https://github.com/iotaledger/goshimmer/tree/master+wasp).
-
-The only difference between standard Goshimmer (`master` branch) and the
-`master+wasp` branch is the `WaspConn` plugin, which accepts connections from Wasp
-nodes.
-
 - [How to run a Wasp node on Pollen](articles/docs/runwasp.md)
+- [Using `wasp-cli` to deploy a chain and a contract](articles/docs/deploy.md)
 
-## Develop
+## Learn
 
-Below are some articles describing the architecture:
-
+- [Exploring IOTA Smart Contracts](articles/tutorial/readme.md)
+- [UTXO ledger and digital assets](articles/intro/utxo.md)
 - [Core types](articles/docs/coretypes.md)
 - [On-chain accounts](articles/docs/accounts.md)
 - [Wasp Publisher](articles/docs/publisher.md)
