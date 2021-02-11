@@ -19,8 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	"github.com/iotaledger/wasp/packages/subscribe"
-	"github.com/iotaledger/wasp/packages/util/multicall"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -34,75 +32,6 @@ type CreateChainParams struct {
 	Description           string
 	Textout               io.Writer
 	Prefix                string
-}
-
-type ActivateChainParams struct {
-	ChainID           coretypes.ChainID
-	ApiHosts          []string
-	WaitForCompletion bool
-	PublisherHosts    []string
-	Timeout           time.Duration
-}
-
-func ActivateChain(par ActivateChainParams) error {
-	funs := make([]func() error, 0)
-	for _, host := range par.ApiHosts {
-		h := host
-		funs = append(funs, func() error {
-			return client.NewWaspClient(h).ActivateChain(&par.ChainID)
-		})
-	}
-	if !par.WaitForCompletion {
-		errs := multicall.MultiCall(funs, 1*time.Second)
-		return multicall.WrapErrors(errs)
-	}
-	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, []string{"state"})
-	if err != nil {
-		return err
-	}
-	defer subs.Close()
-	errs := multicall.MultiCall(funs, 1*time.Second)
-	err = multicall.WrapErrors(errs)
-	if err != nil {
-		return err
-	}
-	// Chain is initialized when it reaches state index #1
-	patterns := [][]string{{"state", par.ChainID.String(), "1"}}
-	succ := subs.WaitForPatterns(patterns, par.Timeout)
-	if !succ {
-		return fmt.Errorf("didn't receive activation message in %v", par.Timeout)
-	}
-	return nil
-}
-
-func DeactivateChain(par ActivateChainParams) error {
-	funs := make([]func() error, 0)
-	for _, host := range par.ApiHosts {
-		h := host
-		funs = append(funs, func() error {
-			return client.NewWaspClient(h).DeactivateChain(&par.ChainID)
-		})
-	}
-	if !par.WaitForCompletion {
-		errs := multicall.MultiCall(funs, 1*time.Second)
-		return multicall.WrapErrors(errs)
-	}
-	subs, err := subscribe.SubscribeMulti(par.PublisherHosts, []string{"dismissed_committee"})
-	if err != nil {
-		return err
-	}
-	defer subs.Close()
-	errs := multicall.MultiCall(funs, 1*time.Second)
-	err = multicall.WrapErrors(errs)
-	if err != nil {
-		return err
-	}
-	patterns := [][]string{{"dismissed_committee", par.ChainID.String(), "1"}}
-	succ := subs.WaitForPatterns(patterns, par.Timeout)
-	if !succ {
-		return fmt.Errorf("didn't receive deactivation message in %v", par.Timeout)
-	}
-	return nil
 }
 
 // DeployChain performs all actions needed to deploy the chain
@@ -197,7 +126,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 
 	// ------------- activate chain
-	err = committee.ActivateChain(&chainID)
+	err = committee.ActivateChain(chainID)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {

@@ -32,6 +32,8 @@ var subcmds = map[string]func([]string){
 	"log":             logCmd,
 	"post-request":    postRequestCmd,
 	"call-view":       callViewCmd,
+	"activate":        activateCmd,
+	"deactivate":      deactivateCmd,
 }
 
 func chainCmd(args []string) {
