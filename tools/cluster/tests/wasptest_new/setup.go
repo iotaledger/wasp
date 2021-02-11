@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -51,13 +50,13 @@ func check(err error, t *testing.T) {
 }
 
 func deployContract(wasmName string, scDescription string, initParams map[string]interface{}) error {
-	wasmPath := wasmName + "_bg.wasm"
+	wasmPath := "wasm/" + wasmName + "_bg.wasm"
 	if *useGo {
-		wasmPath = wasmName + "_go.wasm"
+		wasmPath = "wasm/" + wasmName + "_go.wasm"
 	}
 
 	if !*useWasp {
-		wasm, err := ioutil.ReadFile(util.LocateFile(wasmPath, "contracts/rust/" + wasmName + "/pkg"))
+		wasm, err := ioutil.ReadFile(wasmPath)
 		if err != nil {
 			return err
 		}

@@ -3,7 +3,6 @@ package erc20
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -13,7 +12,7 @@ const (
 )
 
 var (
-	erc20file = util.LocateFile("erc20_bg.wasm", "pkg")
+	erc20file = "erc20_bg.wasm"
 )
 
 func TestDeployErc20(t *testing.T) {

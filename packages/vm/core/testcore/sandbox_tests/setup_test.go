@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sandbox_tests/test_sandbox_sc"
 	"github.com/stretchr/testify/require"
@@ -24,8 +23,8 @@ const (
 )
 
 var (
-	WasmFileTestcore = util.LocateFile("testcore_bg.wasm", "contracts/rust/testcore/pkg")
-	WasmFileErc20    = util.LocateFile("erc20_bg.wasm", "contracts/rust/erc20/pkg")
+	WasmFileTestcore = "test_sandbox_sc/testcore_bg.wasm"
+	WasmFileErc20    = "test_sandbox_sc/erc20_bg.wasm"
 	SandboxSCName    = "test_sandbox"
 )
 
@@ -117,5 +116,5 @@ func testSetup3(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	user := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
-	setupERC20(t, chain, user, w)
+	//setupERC20(t, chain, user, w)
 }

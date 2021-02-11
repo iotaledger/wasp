@@ -5,7 +5,6 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"testing"
 
@@ -53,7 +52,7 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-var wasmFile = util.LocateFile("testcore_bg.wasm", "contracts/rust/testcore/pkg")
+var wasmFile = "sandbox_tests/test_sandbox_sc/testcore_bg.wasm"
 
 func TestDeploy(t *testing.T) {
 	env := solo.New(t, false, false)

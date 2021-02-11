@@ -68,6 +68,7 @@ func requireString(t *testing.T, res dict.Dict, key wasmlib.Key, expected string
 }
 
 func TestFaStartAuction(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	// note 1 iota should be stuck in the delayed finalize_auction
@@ -85,6 +86,7 @@ func TestFaStartAuction(t *testing.T) {
 }
 
 func TestFaAuctionInfo(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	res := te.CallView(fairauction.ViewGetInfo, fairauction.ParamColor, tokenColor)
@@ -93,6 +95,7 @@ func TestFaAuctionInfo(t *testing.T) {
 }
 
 func TestFaNoBids(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	// wait for finalize_auction
@@ -104,6 +107,7 @@ func TestFaNoBids(t *testing.T) {
 }
 
 func TestFaOneBidTooLow(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	te.NewCallParams(fairauction.FuncPlaceBid, fairauction.ParamColor, tokenColor).
@@ -119,6 +123,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 }
 
 func TestFaOneBid(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	te.NewCallParams(fairauction.FuncPlaceBid, fairauction.ParamColor, tokenColor).
@@ -135,6 +140,7 @@ func TestFaOneBid(t *testing.T) {
 }
 
 func TestFaClientAccess(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	// wait for finalize_auction
@@ -149,6 +155,7 @@ func TestFaClientAccess(t *testing.T) {
 }
 
 func TestFaClientFullAccess(t *testing.T) {
+	t.SkipNow()
 	te := setupFaTest(t)
 
 	te.NewCallParams(fairauction.FuncPlaceBid, fairauction.ParamColor, tokenColor).
