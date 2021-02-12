@@ -50,24 +50,6 @@ func (ctx ScBalances) Minted() *ScColor {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-type ScLog struct {
-	log ScMutableMapArray
-}
-
-// appends the specified timestamp and data to the timestamped log
-func (ctx ScLog) Append(timestamp int64, data []byte) {
-	logEntry := ctx.log.GetMap(ctx.log.Length())
-	logEntry.GetInt(KeyTimestamp).SetValue(timestamp)
-	logEntry.GetBytes(KeyData).SetValue(data)
-}
-
-// number of items in the timestamped log
-func (ctx ScLog) Length() int32 {
-	return ctx.log.Length()
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 type ScTransfers struct {
 	transfers ScMutableMap
 }
@@ -334,11 +316,6 @@ func (ctx ScFuncContext) State() ScMutableMap {
 	return Root.GetMap(KeyState)
 }
 
-// access to mutable named timestamped log
-func (ctx ScFuncContext) TimestampedLog(key MapKey) ScLog {
-	return ScLog{Root.GetMap(KeyLogs).GetMapArray(key)}
-}
-
 // transfer colored token amounts to the specified Tangle ledger address
 func (ctx ScFuncContext) TransferToAddress(address *ScAddress, transfer balances) {
 	transfers := Root.GetMapArray(KeyTransfers)
@@ -377,9 +354,4 @@ func (ctx ScViewContext) CallSelf(function ScHname, params *ScMutableMap) ScImmu
 // access to immutable state storage
 func (ctx ScViewContext) State() ScImmutableMap {
 	return Root.GetMap(KeyState).Immutable()
-}
-
-// access to immutable named timestamped log
-func (ctx ScViewContext) TimestampedLog(key MapKey) ScImmutableMapArray {
-	return Root.GetMap(KeyLogs).GetMapArray(key).Immutable()
 }
