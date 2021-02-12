@@ -50,8 +50,7 @@ type Sandbox interface {
 	PostRequest(par PostRequestParams) bool
 	// Log interface provides local logging on the machine. It also includes Panicf methods which logs and panics
 	Log() LogInterface
-	// Event publishes "vmmsg" message through Publisher on nanomsg.
-	// It also logs into the chain log and into the node's log
+	// Event publishes "vmmsg" message through Publisher on nanomsg. It also logs locally, but it is not the same thing
 	Event(msg string)
 	//
 	Utils() Utils

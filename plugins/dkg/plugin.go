@@ -27,7 +27,7 @@ func Init(suite dkg_pkg.Suite) *hive_node.Plugin {
 		var err error
 		var keyPair *key.Pair
 		if keyPair, err = registry.GetNodeIdentity(); err != nil {
-			logger.Panicf("cannot get the node key")
+			panic("cannot get the node key")
 		}
 		defaultNode = dkg_pkg.NewNode(
 			keyPair.Private,
