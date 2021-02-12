@@ -246,10 +246,12 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 				continue
 			}
 			n.log.Warnf("Error while reading from UDP socket, reason=%v", err)
+			continue
 		}
 		var peerMsg *peering.PeerMessage
 		if peerMsg, err = peering.NewPeerMessageFromBytes(buf); err != nil {
 			n.log.Warnf("Error while decoding a UDP message, reason=%v", err)
+			continue
 		}
 		switch peerMsg.MsgType {
 		case peering.MsgTypeReserved:
@@ -258,6 +260,7 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 			var h *handshakeMsg
 			if h, err = handshakeMsgFromBytes(peerMsg.MsgData, n.suite); err != nil {
 				n.log.Warnf("Error while decoding a UDP handshake, reason=%v", err)
+				continue
 			}
 			n.peersLock.Lock()
 			if p, ok := n.peers[h.netID]; ok {
@@ -269,6 +272,8 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 			} else {
 				if p, err = newPeerFromHandshake(h, peerUDPAddr, n); err != nil {
 					n.log.Warnf("Error while creating a peer based on UDP handshake, reason=%v", err)
+					n.peersLock.Unlock()
+					continue
 				}
 				n.peers[p.NetID()] = p
 				n.peersByAddr[p.remoteUDPAddr.String()] = p
@@ -282,6 +287,7 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 				var reconstructedMsg *peering.PeerMessage
 				if reconstructedMsg, err = peering.NewPeerMessageFromChunks(peerMsg.MsgData, maxChunkSize, p.msgChopper); err != nil {
 					n.log.Warnf("Error while decoding chunked message, reason=%v", err)
+					continue
 				}
 				if reconstructedMsg != nil {
 					n.receiveUserMsg(reconstructedMsg, peerUDPAddr)
@@ -289,6 +295,7 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 			} else {
 				n.peersLock.RUnlock()
 				n.log.Warnf("Dropping received message from unknown peer=%v", remoteUDPAddrStr)
+				continue
 			}
 		default:
 			n.receiveUserMsg(peerMsg, peerUDPAddr)
