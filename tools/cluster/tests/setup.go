@@ -1,4 +1,4 @@
-package wasptest
+package tests
 
 import (
 	"flag"
