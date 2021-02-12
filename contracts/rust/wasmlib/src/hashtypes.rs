@@ -252,7 +252,7 @@ impl MapKey for ScHash {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // container object for 4-byte name hash
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Clone)]
 pub struct ScHname(pub u32);
 
 impl ScHname {

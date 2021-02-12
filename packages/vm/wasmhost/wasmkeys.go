@@ -12,38 +12,36 @@ const (
 	KeyColor           = int32(-9)
 	KeyContractCreator = int32(-10)
 	KeyContractId      = int32(-11)
-	KeyData            = int32(-12)
-	KeyDeploy          = int32(-13)
-	KeyEvent           = int32(-14)
-	KeyExports         = int32(-15)
-	KeyHashBlake2b     = int32(-16)
-	KeyHashSha3        = int32(-17)
-	KeyHname           = int32(-18)
-	KeyIncoming        = int32(-19)
-	KeyLength          = int32(-20)
-	KeyLog             = int32(-21)
-	KeyLogs            = int32(-22)
-	KeyMaps            = int32(-23)
-	KeyName            = int32(-24)
-	KeyPanic           = int32(-25)
-	KeyParams          = int32(-26)
-	KeyPost            = int32(-27)
-	KeyRandom          = int32(-28)
-	KeyResults         = int32(-29)
-	KeyReturn          = int32(-30)
-	KeyState           = int32(-31)
-	KeyTimestamp       = int32(-32)
-	KeyTrace           = int32(-33)
-	KeyTransfers       = int32(-34)
-	KeyUtility         = int32(-35)
-	KeyValid           = int32(-36)
-	KeyValidBls        = int32(-37)
-	KeyValidEd25519    = int32(-38)
+	KeyDeploy          = int32(-12)
+	KeyEvent           = int32(-13)
+	KeyExports         = int32(-14)
+	KeyHashBlake2b     = int32(-15)
+	KeyHashSha3        = int32(-16)
+	KeyHname           = int32(-17)
+	KeyIncoming        = int32(-18)
+	KeyLength          = int32(-19)
+	KeyLog             = int32(-20)
+	KeyMaps            = int32(-21)
+	KeyName            = int32(-22)
+	KeyPanic           = int32(-23)
+	KeyParams          = int32(-24)
+	KeyPost            = int32(-25)
+	KeyRandom          = int32(-26)
+	KeyResults         = int32(-27)
+	KeyReturn          = int32(-28)
+	KeyState           = int32(-29)
+	KeyTimestamp       = int32(-30)
+	KeyTrace           = int32(-31)
+	KeyTransfers       = int32(-32)
+	KeyUtility         = int32(-33)
+	KeyValid           = int32(-34)
+	KeyValidBls        = int32(-35)
+	KeyValidEd25519    = int32(-36)
 
 	// Treat this one like a version number. When anything changes
 	// to the keys give this one a different value and make sure
 	// the client side in wasplib is updated accordingly
-	KeyZzzzzzz = int32(-97)
+	KeyZzzzzzz = int32(-37)
 )
 
 var keyMap = map[string]int32{
@@ -58,7 +56,6 @@ var keyMap = map[string]int32{
 	"color":           KeyColor,
 	"contractCreator": KeyContractCreator,
 	"contractId":      KeyContractId,
-	"data":            KeyData,
 	"deploy":          KeyDeploy,
 	"event":           KeyEvent,
 	"exports":         KeyExports,
@@ -68,7 +65,6 @@ var keyMap = map[string]int32{
 	"incoming":        KeyIncoming,
 	"length":          KeyLength,
 	"log":             KeyLog,
-	"logs":            KeyLogs,
 	"maps":            KeyMaps,
 	"name":            KeyName,
 	"panic":           KeyPanic,
