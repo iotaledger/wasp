@@ -28,11 +28,6 @@ impl ScAddress {
         a
     }
 
-    // equality check
-    pub fn equals(&self, other: &ScAddress) -> bool {
-        self.id == other.id
-    }
-
     // convert to byte array representation
     pub fn to_bytes(&self) -> &[u8] {
         &self.id
