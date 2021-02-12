@@ -1,3 +1,8 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// +build wasmtest
+
 package wasptest
 
 import (
@@ -8,20 +13,17 @@ import (
 )
 
 func TestIncrementDeploy(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	checkStateCounter(te, nil)
 }
 
 func TestIncrementOnce(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncIncrement).Post(0)
 	checkStateCounter(te, 1)
 }
 
 func TestIncrementTwice(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncIncrement).Post(0)
 	_ = te.NewCallParams(inccounter.FuncIncrement).Post(0)
@@ -29,7 +31,6 @@ func TestIncrementTwice(t *testing.T) {
 }
 
 func TestIncrementRepeatThrice(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncRepeatMany,
 		inccounter.ParamNumRepeats, 3).
@@ -39,21 +40,18 @@ func TestIncrementRepeatThrice(t *testing.T) {
 }
 
 func TestIncrementCallIncrement(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncCallIncrement).Post(0)
 	checkStateCounter(te, 2)
 }
 
 func TestIncrementCallIncrementRecurse5x(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncCallIncrementRecurse5x).Post(0)
 	checkStateCounter(te, 6)
 }
 
 func TestIncrementPostIncrement(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncPostIncrement).
 		Post(1) // !!! posts to self
@@ -62,14 +60,12 @@ func TestIncrementPostIncrement(t *testing.T) {
 }
 
 func TestIncrementLocalStateInternalCall(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncLocalStateInternalCall).Post(0)
 	checkStateCounter(te, 2)
 }
 
 func TestIncrementLocalStateSandboxCall(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncLocalStateSandboxCall).Post(0)
 	if testenv.WasmRunner == testenv.WasmRunnerGoDirect {
@@ -82,7 +78,6 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncrementLocalStatePost(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncLocalStatePost).
 		Post(1)
@@ -97,7 +92,6 @@ func TestIncrementLocalStatePost(t *testing.T) {
 }
 
 func TestIncrementViewCounter(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	_ = te.NewCallParams(inccounter.FuncIncrement).Post(0)
 	checkStateCounter(te, 1)
@@ -110,7 +104,6 @@ func TestIncrementViewCounter(t *testing.T) {
 }
 
 func TestIncResultsTest(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	ret := te.NewCallParams(inccounter.FuncResultsTest).Post(0)
 	//ret = te.CallView( inccounter.ViewResultsCheck)
@@ -118,7 +111,6 @@ func TestIncResultsTest(t *testing.T) {
 }
 
 func TestIncStateTest(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, inccounter.ScName)
 	ret := te.NewCallParams(inccounter.FuncStateTest).Post(0)
 	ret = te.CallView(inccounter.ViewStateCheck)

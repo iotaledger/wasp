@@ -1,3 +1,8 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// +build wasmtest
+
 package test
 
 import (
@@ -14,7 +19,6 @@ func setupDwfTest(t *testing.T) *testenv.TestEnv {
 }
 
 func TestDwfDeploy(t *testing.T) {
-	t.SkipNow()
 	te := setupDwfTest(t)
 	ret := te.CallView(donatewithfeedback.ViewDonations)
 	results := te.Results(ret)
@@ -25,7 +29,6 @@ func TestDwfDeploy(t *testing.T) {
 }
 
 func TestDonateOnce(t *testing.T) {
-	t.SkipNow()
 	te := setupDwfTest(t)
 	te.NewCallParams(donatewithfeedback.FuncDonate,
 		donatewithfeedback.ParamFeedback, "Nice work!").
@@ -46,7 +49,6 @@ func TestDonateOnce(t *testing.T) {
 }
 
 func TestDonateTwice(t *testing.T) {
-	t.SkipNow()
 	te := setupDwfTest(t)
 	te.NewCallParams(donatewithfeedback.FuncDonate,
 		donatewithfeedback.ParamFeedback, "Nice work!").
