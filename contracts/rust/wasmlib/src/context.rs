@@ -9,16 +9,23 @@ use crate::immutable::*;
 use crate::keys::*;
 use crate::mutable::*;
 
+// all access to the objects in host's object tree starts here
+pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: 1 };
+
+// parameter structure required for ctx.post()
 pub struct PostRequestParams {
-    pub contract_id: ScContractId,
-    pub function: ScHname,
-    pub params: Option<ScMutableMap>,
-    pub transfer: Option<Box<dyn Balances>>,
-    pub delay: i64,
+    //@formatter:off
+    pub contract_id: ScContractId,              // full contract id (chain id + contract Hname)
+    pub function:    ScHname,                   // Hname of the contract func or view to call
+    pub params:      Option<ScMutableMap>,      // an optional map of parameters to pass to the function
+    pub transfer:    Option<Box<dyn Balances>>, // optional balances to transfer as part of the call
+    pub delay:       i64,                       // delay in seconds before the function will be run
+    //@formatter:on
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// defines which map objects can be passed as a map of transfers to a function call or post
 pub trait Balances {
     fn map_id(&self) -> i32;
 }
@@ -45,6 +52,7 @@ impl ScBalances {
     }
 }
 
+// ScBalances can be used to transfer tokens to a function call
 impl Balances for ScBalances {
     fn map_id(&self) -> i32 {
         self.balances.obj_id
@@ -53,47 +61,31 @@ impl Balances for ScBalances {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScLog {
-    log: ScMutableMapArray,
-}
-
-impl ScLog {
-    // appends the specified timestamp and data to the timestamped log
-    pub fn append(&self, timestamp: i64, data: &[u8]) {
-        let log_entry = self.log.get_map(self.log.length());
-        log_entry.get_int(&KEY_TIMESTAMP).set_value(timestamp);
-        log_entry.get_bytes(&KEY_DATA).set_value(data);
-    }
-
-    // number of items in the timestamped log
-    pub fn length(&self) -> i32 {
-        self.log.length()
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
+// used to pass token transfer information to a function call
 pub struct ScTransfers {
     transfers: ScMutableMap,
 }
 
 impl ScTransfers {
+    // create a new transfers object and initialize it with the specified token transfer
     pub fn new(color: &ScColor, amount: i64) -> ScTransfers {
         let balance = ScTransfers::new_transfers();
         balance.add(color, amount);
         balance
     }
 
+    // create a new transfer object ready to add token transfers
     pub fn new_transfers() -> ScTransfers {
         ScTransfers { transfers: ScMutableMap::new() }
     }
 
-    // appends the specified timestamp and data to the timestamped log
+    // add the specified token transfer to the transfer object
     pub fn add(&self, color: &ScColor, amount: i64) {
         self.transfers.get_int(color).set_value(amount);
     }
 }
 
+// ScTransfers can be used to transfer tokens to a function call
 impl Balances for ScTransfers {
     fn map_id(&self) -> i32 {
         self.transfers.obj_id
@@ -102,11 +94,13 @@ impl Balances for ScTransfers {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// provide access to utility functions that are handled by the host
 pub struct ScUtility {
     utility: ScMutableMap,
 }
 
 impl ScUtility {
+    // aggregates the specified multiple BLS signatures and public keys into a single one
     pub fn aggregate_bls_signatures(&self, pub_keys_bin: &[&[u8]], sigs_bin: &[&[u8]]) -> (Vec<u8>, Vec<u8>) {
         let mut encode = BytesEncoder::new();
         encode.int(pub_keys_bin.len() as i64);
@@ -150,6 +144,7 @@ impl ScUtility {
         ScHash::from_bytes(&hash.value())
     }
 
+    // calculates 32-bit hash for the specified name string
     pub fn hname(&self, value: &str) -> ScHname {
         self.utility.get_string(&KEY_NAME).set_value(value);
         ScHname::from_bytes(&self.utility.get_bytes(&KEY_HNAME).value())
@@ -161,6 +156,7 @@ impl ScUtility {
         (rnd as u64 % max as u64) as i64
     }
 
+    // checks if the specified BLS signature is valid
     pub fn valid_bls_signature(&self, data: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
         let mut encode = BytesEncoder::new();
         encode.bytes(data);
@@ -170,6 +166,7 @@ impl ScUtility {
         self.utility.get_int(&KEY_VALID).value() != 0
     }
 
+    // checks if the specified ED25519 signature is valid
     pub fn valid_ed25519_signature(&self, data: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
         let mut encode = BytesEncoder::new();
         encode.bytes(data);
@@ -180,7 +177,7 @@ impl ScUtility {
     }
 }
 
-// wrapper for simplified use by hashtypes
+// wrapper function for simplified internal access to base58 encoding
 pub(crate) fn base58_encode(bytes: &[u8]) -> String {
     ScFuncContext {}.utility().base58_encode(bytes)
 }
@@ -219,19 +216,19 @@ pub trait ScBaseContext {
         ROOT.get_string(&KEY_PANIC).set_value(text)
     }
 
-    // retrieve parameters passed to the smart contract function that was called
+    // retrieve parameters that were passed to the smart contract function
     fn params(&self) -> ScImmutableMap {
         ROOT.get_map(&KEY_PARAMS).immutable()
     }
 
-    // panics if condition is not satisfied
+    // panicswith specified message if specified condition is not satisfied
     fn require(&self, cond: bool, msg: &str) {
         if !cond {
             self.panic(msg)
         }
     }
 
-    // any results returned by the smart contract function call are returned here
+    // map that holds any results returned by the smart contract function
     fn results(&self) -> ScMutableMap {
         ROOT.get_map(&KEY_RESULTS)
     }
@@ -257,10 +254,12 @@ pub trait ScBaseContext {
 // smart contract interface with mutable access to state
 pub struct ScFuncContext {}
 
+// shared part of interface
 impl ScBaseContext for ScFuncContext {}
 
 impl ScFuncContext {
-    // calls a smart contract function
+    // synchronously calls the specified smart contract function,
+    // passing the provided parameters and token transfers to it
     pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<Box<dyn Balances>>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
         encode.hname(&hcontract);
@@ -282,12 +281,13 @@ impl ScFuncContext {
     // retrieve the agent id of the caller of the smart contract
     pub fn caller(&self) -> ScAgentId { ROOT.get_agent_id(&KEY_CALLER).value() }
 
-    // calls a smart contract function on the current contract
+    // shorthand to synchronously call a smart contract function on the current contract
     pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<Box<dyn Balances>>) -> ScImmutableMap {
         self.call(self.contract_id().hname(), hfunction, params, transfer)
     }
 
-    // deploys a smart contract
+    // deploys a new instance of the specified smart contract on the current chain
+    // the provided parameters are passed to the smart contract "init" function
     pub fn deploy(&self, program_hash: &ScHash, name: &str, description: &str, params: Option<ScMutableMap>) {
         let mut encode = BytesEncoder::new();
         encode.hash(program_hash);
@@ -306,7 +306,7 @@ impl ScFuncContext {
         ROOT.get_string(&KEY_EVENT).set_value(text)
     }
 
-    // quick check to see if the caller of the smart contract was the specified originator agent
+    // quick check to see if the caller of the smart contract was the specified originator
     pub fn from(&self, originator: &ScAgentId) -> bool {
         self.caller().equals(originator)
     }
@@ -316,7 +316,8 @@ impl ScFuncContext {
         ScBalances { balances: ROOT.get_map(&KEY_INCOMING).immutable() }
     }
 
-    // (delayed) posts a smart contract function
+    // posts a request to asynchronously invoke the specified smart
+    // contract function according to the specified request parameters
     pub fn post(&self, par: &PostRequestParams) {
         let mut encode = BytesEncoder::new();
         encode.contract_id(&par.contract_id);
@@ -340,12 +341,7 @@ impl ScFuncContext {
         ROOT.get_map(&KEY_STATE)
     }
 
-    // access to mutable named timestamped log
-    pub fn timestamped_log<T: MapKey + ?Sized>(&self, key: &T) -> ScLog {
-        ScLog { log: ROOT.get_map(&KEY_LOGS).get_map_array(key) }
-    }
-
-    // transfer colored token amounts to the specified Tangle ledger address
+    // transfers the specified tokens to the specified Tangle ledger address
     pub fn transfer_to_address<T: Balances + ?Sized>(&self, address: &ScAddress, transfer: &T) {
         let transfers = ROOT.get_map_array(&KEY_TRANSFERS);
         let tx = transfers.get_map(transfers.length());
@@ -359,10 +355,12 @@ impl ScFuncContext {
 // smart contract interface with immutable access to state
 pub struct ScViewContext {}
 
+// shared part of interface
 impl ScBaseContext for ScViewContext {}
 
 impl ScViewContext {
-    // calls a smart contract function
+    // synchronously calls the specified smart contract view,
+    // passing the provided parameters to it
     pub fn call(&self, contract: ScHname, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
         encode.hname(&contract);
@@ -377,7 +375,7 @@ impl ScViewContext {
         ROOT.get_map(&KEY_RETURN).immutable()
     }
 
-    // calls a smart contract function on the current contract
+    // shorthand to synchronously call a smart contract view on the current contract
     pub fn call_self(&self, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
         self.call(self.contract_id().hname(), function, params)
     }
@@ -385,10 +383,5 @@ impl ScViewContext {
     // access to immutable state storage
     pub fn state(&self) -> ScImmutableMap {
         ROOT.get_map(&KEY_STATE).immutable()
-    }
-
-    // access to immutable named timestamped log
-    pub fn timestamped_log<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableMapArray {
-        ROOT.get_map(&KEY_LOGS).get_map_array(key).immutable()
     }
 }
