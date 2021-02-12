@@ -4,7 +4,7 @@ build:
 	go build ./...
 
 test:
-	go install
+	go install ./...
 	go clean -testcache
 	go test ./... -timeout 20m
 
