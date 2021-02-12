@@ -124,7 +124,7 @@ pub fn func_set_owner_margin(ctx: &ScFuncContext, params: &FuncSetOwnerMarginPar
 
 pub fn func_start_auction(ctx: &ScFuncContext, params: &FuncStartAuctionParams) {
     let color = params.color.value();
-    if color.equals(&ScColor::IOTA) || color.equals(&ScColor::MINT) {
+    if color == ScColor::IOTA || color == ScColor::MINT {
         ctx.panic("Reserved auction token color");
     }
     let num_tokens = ctx.incoming().balance(&color);
