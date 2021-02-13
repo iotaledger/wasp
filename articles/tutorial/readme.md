@@ -13,7 +13,6 @@ unit tests of example smart contracts.
 We use Go testing package codenamed [_Solo_](../../packages/solo/readme.md) in all examples of the tutorial.
 
 The knowledge of Go programming and basics of Rust programming is a prerequisite. 
-For detailed introduction into the ISCP architecture [follow the link](https://docs.google.com/document/d/1zNJZMdetCzwiBC85K6gWbnzgdT1RXuZCLsTclKdrVqc/edit?usp=sharing).
 
 ## Chapters
 
