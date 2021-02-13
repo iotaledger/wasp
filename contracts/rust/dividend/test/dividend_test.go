@@ -1,3 +1,8 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// +build wasmtest
+
 package test
 
 import (
@@ -8,14 +13,12 @@ import (
 )
 
 func TestDeployDividend(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, dividend.ScName)
 	_, err := te.Chain.FindContract(dividend.ScName)
 	require.NoError(t, err)
 }
 
 func TestAddMemberOk(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, dividend.ScName)
 	user1 := te.Env.NewSignatureSchemeWithFunds()
 	_ = te.NewCallParams(dividend.FuncMember,
@@ -25,7 +28,6 @@ func TestAddMemberOk(t *testing.T) {
 }
 
 func TestAddMemberFailMissingAddress(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, dividend.ScName)
 	_ = te.NewCallParams(dividend.FuncMember,
 		dividend.ParamFactor, 100,
@@ -33,7 +35,6 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
-	t.SkipNow()
 	te := testenv.NewTestEnv(t, dividend.ScName)
 	user1 := te.Env.NewSignatureSchemeWithFunds()
 	_ = te.NewCallParams(dividend.FuncMember,

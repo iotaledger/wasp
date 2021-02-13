@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
@@ -201,7 +202,7 @@ func DeployGoContract(chain *solo.Chain, sigScheme signaturescheme.SignatureSche
 	if WasmRunner == WasmRunnerGo {
 		wasmFile = strings.Replace(wasmFile, "_bg", "_go", -1)
 	}
-	wasmFile = wasmhost.WasmPath(wasmFile, contractName + "/pkg")
+	wasmFile = util.LocateFile(wasmFile, contractName + "/pkg")
 	return chain.DeployWasmContract(sigScheme, name, wasmFile, filterKeys(params...)...)
 }
 

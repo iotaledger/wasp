@@ -5,7 +5,6 @@ package wasmhost
 
 import (
 	"errors"
-	"github.com/drand/drand/fs"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
@@ -84,51 +83,4 @@ func (host *WasmHost) SetExport(index int32, functionName string) {
 	host.codeToFunc[hashedName] = functionName
 	host.funcToCode[functionName] = hashedName
 	host.funcToIndex[functionName] = index
-}
-
-// Deprecated: use utils.LocateFile instead
-func WasmPath(fileName string, relativePath ...string) string {
-	var relPath string
-
-	if len(relativePath) > 0 {
-		relPath = relativePath[0]
-	} else {
-		relPath = "pkg"
-	}
-	// check if this file exists
-	exists, err := fs.Exists(fileName)
-	if err != nil {
-		panic(err)
-	}
-	if exists {
-		return fileName
-	}
-
-	// walk up the directory tree to find the Wasm repo folder
-	path := relPath
-	exists, err = fs.Exists(path)
-	if err != nil {
-		panic(err)
-	}
-	for i := 0; i < 10; i++ {
-		path = "../" + path
-		exists, err = fs.Exists(path)
-		if err != nil {
-			panic(err)
-		}
-		if exists {
-			break
-		}
-	}
-
-	// check if file is in Wasm repo
-	path = path + "/" + fileName
-	exists, err = fs.Exists(path)
-	if err != nil {
-		panic(err)
-	}
-	if !exists {
-		panic("Missing wasm file: " + fileName)
-	}
-	return path
 }

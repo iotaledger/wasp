@@ -1,4 +1,4 @@
-package wasptest
+package tests
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
