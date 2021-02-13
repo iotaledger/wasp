@@ -1,4 +1,4 @@
-package wasptest
+package tests
 
 import (
 	"fmt"
@@ -129,7 +129,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	chain := setupBlobTest(t)
 
 	var err error
-	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go", "donatewithfeedback_test.go"}
+	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
 	blobs := make([][]byte, len(fileNames))
 	for i := range fileNames {
 		blobs[i], err = ioutil.ReadFile(fileNames[i])
@@ -168,7 +168,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 func TestBlobRefConsensus(t *testing.T) {
 	chain := setupBlobTest(t)
 
-	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go", "donatewithfeedback_test.go"}
+	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
 	blobs := make([][]byte, len(fileNames))
 	for i := range fileNames {
 		blobs[i], err = ioutil.ReadFile(fileNames[i])

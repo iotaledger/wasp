@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"strconv"
 )
 
@@ -29,12 +30,13 @@ func NewScBalances(vm *wasmProcessor, incoming bool) *ScDict {
 
 func loadBalances(o *ScDict, balances coretypes.ColoredBalances) *ScDict {
 	index := 0
+	key := o.host.GetKeyStringFromId(wasmhost.KeyColor)
 	balances.IterateDeterministic(func(color balance.Color, balance int64) bool {
 		o.kvStore.Set(kv.Key(color[:]), codec.EncodeInt64(balance))
-		o.kvStore.Set(kv.Key("color."+strconv.Itoa(index)), color[:])
+		o.kvStore.Set(kv.Key(key+"."+strconv.Itoa(index)), color[:])
 		index++
 		return true
 	})
-	o.kvStore.Set("color", codec.EncodeInt64(int64(index)))
+	o.kvStore.Set(kv.Key(key), codec.EncodeInt64(int64(index)))
 	return o
 }
