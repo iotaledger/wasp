@@ -1,6 +1,8 @@
 package util
 
-import "github.com/drand/drand/fs"
+import (
+	"os"
+)
 
 // TODO get rid of drand dependency
 
@@ -12,7 +14,7 @@ func LocateFile(fileName string, relativePath ...string) string {
 		relPath = relativePath[0]
 	}
 	// check if this file exists
-	exists, err := fs.Exists(fileName)
+	exists, err := ExistsFilePath(fileName)
 	if err != nil {
 		panic(err)
 	}
@@ -22,13 +24,13 @@ func LocateFile(fileName string, relativePath ...string) string {
 
 	// walk up the directory tree to find the Wasm repo folder
 	path := relPath
-	exists, err = fs.Exists(path)
+	exists, err = ExistsFilePath(path)
 	if err != nil {
 		panic(err)
 	}
 	for i := 0; i < 10; i++ {
 		path = "../" + path
-		exists, err = fs.Exists(path)
+		exists, err = ExistsFilePath(path)
 		if err != nil {
 			panic(err)
 		}
@@ -39,7 +41,7 @@ func LocateFile(fileName string, relativePath ...string) string {
 
 	// check if file is in Wasm repo
 	path = path + "/" + fileName
-	exists, err = fs.Exists(path)
+	exists, err = ExistsFilePath(path)
 	if err != nil {
 		panic(err)
 	}
@@ -47,4 +49,16 @@ func LocateFile(fileName string, relativePath ...string) string {
 		panic("Missing wasm file: " + fileName)
 	}
 	return path
+}
+
+// Exists returns whether the given file or directory exists.
+func ExistsFilePath(filePath string) (bool, error) {
+	_, err := os.Stat(filePath)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
