@@ -36,6 +36,10 @@ import (
 // DefaultTimeStep is a default step for the logical clock for each PostRequest call.
 const DefaultTimeStep = 1 * time.Millisecond
 
+// default supply of tokens returned by the UTXODB faucet
+// which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
+const Supply = 1337
+
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
@@ -144,7 +148,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 
 // NewChain deploys new chain instance.
 //
-//   If 'chainOriginator' is nil, new one is generated and 1337 iotas is are loaded from the faucet of the UTXODB.
+//   If 'chainOriginator' is nil, new one is generated and solo.Supply (=1337) iotas are loaded from the UTXODB faucet.
 //   If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
 // To deploy the chai instance the following steps are performed:
 //    - chain signature scheme (private key), chain address and chain ID are created
@@ -310,15 +314,15 @@ func (ch *Chain) backlogLen() int {
 	return len(ch.backlog)
 }
 
-// NewSignatureSchemeWithFunds generates new ed25519 signature scheme and requests funds (1337 iotas)
-// from the UTXODB faucet.
+// NewSignatureSchemeWithFunds generates new ed25519 signature scheme and requests funds
+// (equal to solo.Supply (=1337) iotas) from the UTXODB faucet.
 func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	ret, _ := env.NewSignatureSchemeWithFundsAndPubKey()
 	return ret
 }
 
-// NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme and requests funds (1337 iotas)
-// from the UTXODB faucet.
+// NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme and requests funds
+// (equal to solo.Supply (=1337) iotas) from the UTXODB faucet.
 // Returns signature scheme interface and public key in binary form
 func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.SignatureScheme, []byte) {
 	ret, pubKeyBytes := env.NewSignatureSchemeAndPubKey()

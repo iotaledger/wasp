@@ -51,31 +51,3 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 3, counter)
 }
-
-func TestIncSoloResultsTest(t *testing.T) {
-	al := solo.New(t, false, false)
-	chain := al.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, incName, incFile)
-	require.NoError(t, err)
-	req := solo.NewCallParams(incName, "resultsTest").
-		WithTransfer(balance.ColorIOTA, 1)
-	ret, err := chain.PostRequest(req, nil)
-	require.NoError(t, err)
-	//ret, err = chain.CallView(incName, "results_check")
-	//require.NoError(t, err)
-	require.EqualValues(t, 8, len(ret))
-}
-
-func TestIncSoloStateTest(t *testing.T) {
-	al := solo.New(t, false, false)
-	chain := al.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, incName, incFile)
-	require.NoError(t, err)
-	req := solo.NewCallParams(incName, "stateTest").
-		WithTransfer(balance.ColorIOTA, 1)
-	ret, err := chain.PostRequest(req, nil)
-	require.NoError(t, err)
-	ret, err = chain.CallView(incName, "stateCheck")
-	require.NoError(t, err)
-	require.EqualValues(t, 0, len(ret))
-}
