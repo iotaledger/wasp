@@ -12,8 +12,7 @@ func (ch *Chain) GrantDeployPermission(sigScheme signaturescheme.SignatureScheme
 		sigScheme = ch.OriginatorSigScheme
 	}
 
-	par := []interface{}{root.ParamDeployer, deployerAgentID}
-	req := NewCallParams(root.Interface.Name, root.FuncGrantDeploy, par...)
+	req := NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, deployerAgentID)
 	_, err := ch.PostRequest(req, sigScheme)
 	return err
 }
@@ -24,8 +23,7 @@ func (ch *Chain) RevokeDeployPermission(sigScheme signaturescheme.SignatureSchem
 		sigScheme = ch.OriginatorSigScheme
 	}
 
-	par := []interface{}{root.ParamDeployer, deployerAgentID}
-	req := NewCallParams(root.Interface.Name, root.FuncRevokeDeploy, par...)
+	req := NewCallParams(root.Interface.Name, root.FuncRevokeDeploy, root.ParamDeployer, deployerAgentID)
 	_, err := ch.PostRequest(req, sigScheme)
 	return err
 }
