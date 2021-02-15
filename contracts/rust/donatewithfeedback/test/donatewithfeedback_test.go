@@ -1,43 +1,42 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// +build wasmtest
-
 package test
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/contracts/rust/donatewithfeedback"
 	"github.com/iotaledger/wasp/contracts/testenv"
+	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func setupDwfTest(t *testing.T) *testenv.TestEnv {
-	te := testenv.NewTestEnv(t, donatewithfeedback.ScName)
+	te := testenv.NewTestEnv(t, ScName)
 	return te
 }
 
 func TestDwfDeploy(t *testing.T) {
 	te := setupDwfTest(t)
-	ret := te.CallView(donatewithfeedback.ViewDonations)
+	ret := te.CallView(ViewDonations)
 	results := te.Results(ret)
-	max := results.GetInt(donatewithfeedback.VarMaxDonation)
+	max := results.GetInt(wasmlib.Key(VarMaxDonation))
 	require.EqualValues(t, 0, max.Value())
-	tot := results.GetInt(donatewithfeedback.VarTotalDonation)
+	tot := results.GetInt(wasmlib.Key(VarTotalDonation))
 	require.EqualValues(t, 0, tot.Value())
 }
 
 func TestDonateOnce(t *testing.T) {
 	te := setupDwfTest(t)
-	te.NewCallParams(donatewithfeedback.FuncDonate,
-		donatewithfeedback.ParamFeedback, "Nice work!").
+	te.NewCallParams(FuncDonate,
+		ParamFeedback, "Nice work!").
 		Post(42, te.Wallet(0))
-	ret := te.CallView(donatewithfeedback.ViewDonations)
+	ret := te.CallView(ViewDonations)
 	results := te.Results(ret)
-	max := results.GetInt(donatewithfeedback.VarMaxDonation)
+	max := results.GetInt(wasmlib.Key(VarMaxDonation))
 	require.EqualValues(t, 42, max.Value())
-	tot := results.GetInt(donatewithfeedback.VarTotalDonation)
+	tot := results.GetInt(wasmlib.Key(VarTotalDonation))
 	require.EqualValues(t, 42, tot.Value())
 
 	// 42 iota transferred from wallet to contract plus 1 used for transaction
@@ -50,17 +49,17 @@ func TestDonateOnce(t *testing.T) {
 
 func TestDonateTwice(t *testing.T) {
 	te := setupDwfTest(t)
-	te.NewCallParams(donatewithfeedback.FuncDonate,
-		donatewithfeedback.ParamFeedback, "Nice work!").
+	te.NewCallParams(FuncDonate,
+		ParamFeedback, "Nice work!").
 		Post(42, te.Wallet(0))
-	te.NewCallParams(donatewithfeedback.FuncDonate,
-		donatewithfeedback.ParamFeedback, "Exactly what I needed!").
+	te.NewCallParams(FuncDonate,
+		ParamFeedback, "Exactly what I needed!").
 		Post(69, te.Wallet(1))
-	ret := te.CallView(donatewithfeedback.ViewDonations)
+	ret := te.CallView(ViewDonations)
 	results := te.Results(ret)
-	max := results.GetInt(donatewithfeedback.VarMaxDonation)
+	max := results.GetInt(wasmlib.Key(VarMaxDonation))
 	require.EqualValues(t, 69, max.Value())
-	tot := results.GetInt(donatewithfeedback.VarTotalDonation)
+	tot := results.GetInt(wasmlib.Key(VarTotalDonation))
 	require.EqualValues(t, 42+69, tot.Value())
 
 	// 42 iota transferred from wallet to contract plus 1 used for transaction

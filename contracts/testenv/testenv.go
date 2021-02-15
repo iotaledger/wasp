@@ -6,15 +6,6 @@ package testenv
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/contracts/rust/dividend"
-	"github.com/iotaledger/wasp/contracts/rust/donatewithfeedback"
-	"github.com/iotaledger/wasp/contracts/rust/erc20"
-	"github.com/iotaledger/wasp/contracts/rust/fairauction"
-	"github.com/iotaledger/wasp/contracts/rust/fairroulette"
-	"github.com/iotaledger/wasp/contracts/rust/helloworld"
-	"github.com/iotaledger/wasp/contracts/rust/inccounter"
-	"github.com/iotaledger/wasp/contracts/rust/testcore"
-	"github.com/iotaledger/wasp/contracts/rust/tokenregistry"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -45,15 +36,6 @@ const (
 var WasmRunner = 0
 
 var ScForGoVM = map[string]func(){
-	"dividend":           dividend.OnLoad,
-	"donatewithfeedback": donatewithfeedback.OnLoad,
-	"erc20":              erc20.OnLoad,
-	"fairauction":        fairauction.OnLoad,
-	"fairroulette":       fairroulette.OnLoad,
-	"helloworld":         helloworld.OnLoad,
-	"inccounter":         inccounter.OnLoad,
-	"testcore":           testcore.OnLoad,
-	"tokenregistry":      tokenregistry.OnLoad,
 }
 
 type TestEnv struct {

@@ -1,4 +1,4 @@
-package erc20
+package test
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"

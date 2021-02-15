@@ -1,4 +1,4 @@
-package erc20
+package test
 
 const (
 	PARAM_SUPPLY     = "s"
