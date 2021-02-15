@@ -41,7 +41,7 @@ func TestDonateOnce(t *testing.T) {
 	require.EqualValues(t, 42, tot.Value())
 
 	// 42 iota transferred from wallet to contract plus 1 used for transaction
-	te.Env.AssertAddressBalance(te.Wallet(0).Address(), balance.ColorIOTA, 1337-42-1)
+	te.Env.AssertAddressBalance(te.Wallet(0).Address(), balance.ColorIOTA, solo.Supply-42-1)
 	// 42 iota transferred to contract
 	te.Chain.AssertAccountBalance(te.ContractAccount, balance.ColorIOTA, 42)
 	// returned 1 used for transaction to wallet account
@@ -64,9 +64,9 @@ func TestDonateTwice(t *testing.T) {
 	require.EqualValues(t, 42+69, tot.Value())
 
 	// 42 iota transferred from wallet to contract plus 1 used for transaction
-	te.Env.AssertAddressBalance(te.Wallet(0).Address(), balance.ColorIOTA, 1337-42-1)
+	te.Env.AssertAddressBalance(te.Wallet(0).Address(), balance.ColorIOTA, solo.Supply-42-1)
 	// 69 iota transferred from wallet to contract plus 1 used for transaction
-	te.Env.AssertAddressBalance(te.Wallet(1).Address(), balance.ColorIOTA, 1337-69-1)
+	te.Env.AssertAddressBalance(te.Wallet(1).Address(), balance.ColorIOTA, solo.Supply-69-1)
 	// 42+69 iota transferred to contract
 	te.Chain.AssertAccountBalance(te.ContractAccount, balance.ColorIOTA, 42+69)
 	// returned 1 used for transaction to wallet accounts

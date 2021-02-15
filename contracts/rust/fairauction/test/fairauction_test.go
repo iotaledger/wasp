@@ -37,7 +37,7 @@ func setupFaTest(t *testing.T) *testenv.TestEnv {
 	var err error
 	tokenColor, err = te.Env.MintTokens(auctioneerWallet, 10)
 	require.NoError(t, err)
-	te.Env.AssertAddressBalance(auctioneerWallet.Address(), balance.ColorIOTA, 1337-10)
+	te.Env.AssertAddressBalance(auctioneerWallet.Address(), balance.ColorIOTA, solo.Supply-10)
 	te.Env.AssertAddressBalance(auctioneerWallet.Address(), tokenColor, 10)
 
 	te.NewCallParams(fairauction.FuncStartAuction,
@@ -80,7 +80,7 @@ func TestFaStartAuction(t *testing.T) {
 	te.Chain.AssertAccountBalance(contractAgentId, tokenColor, 10)
 
 	// auctioneer sent 25 deposit + 10 tokenColor + used 1 for request
-	te.Env.AssertAddressBalance(auctioneerWallet.Address(), balance.ColorIOTA, 1337-35-1)
+	te.Env.AssertAddressBalance(auctioneerWallet.Address(), balance.ColorIOTA, solo.Supply-35-1)
 
 	//TODO: it seems silly to force auctioneer to withdraw this 1 iota from chain account?
 	// also look at how to send this back/retrieve it when auctioneer was SC on other chain
