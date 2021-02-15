@@ -4,27 +4,39 @@
 package test
 
 import (
-	"github.com/iotaledger/wasp/contracts/testenv"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/contracts/common"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func TestDeployHelloWorld(t *testing.T) {
-	te := testenv.NewTestEnv(t, ScName)
-	_, err := te.Chain.FindContract(ScName)
+func setupTest(t *testing.T) *solo.Chain {
+	return common.DeployContract(t, ScName)
+}
+
+func TestDeploy(t *testing.T) {
+	chain := common.DeployContract(t, ScName)
+	_, err := chain.FindContract(ScName)
 	require.NoError(t, err)
 }
 
-func TestHelloWorld(t *testing.T) {
-	te := testenv.NewTestEnv(t, ScName)
-	_ = te.NewCallParams(FuncHelloWorld).Post(0)
+func TestFuncHelloWorld(t *testing.T) {
+	chain := setupTest(t)
+
+	req := solo.NewCallParams(ScName, FuncHelloWorld)
+	_, err := chain.PostRequest(req, nil)
+	require.NoError(t, err)
 }
 
-func TestGetHelloWorld(t *testing.T) {
-	te := testenv.NewTestEnv(t, ScName)
-	res := te.CallView(ViewGetHelloWorld)
-	result := te.Results(res)
-	hw := result.GetString(wasmlib.Key(VarHelloWorld))
-	require.EqualValues(t, "Hello, world!", hw.Value())
+func TestViewGetHelloWorld(t *testing.T) {
+	chain := setupTest(t)
+
+	res, err := chain.CallView(
+		ScName, ViewGetHelloWorld,
+	)
+	require.NoError(t, err)
+	hw, _, err := codec.DecodeString(res[VarHelloWorld])
+	require.NoError(t, err)
+	require.EqualValues(t, "Hello, world!", hw)
 }

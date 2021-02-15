@@ -6,6 +6,7 @@ package coretypes
 import (
 	"bytes"
 	"errors"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"io"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -34,6 +35,11 @@ func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
 func NewAgentIDFromAddress(addr address.Address) AgentID {
 	// 0 is a reserved hname
 	return NewAgentIDFromContractID(NewContractID(ChainID(addr), 0))
+}
+
+// NewAgentIDFromSigScheme makes AgentID from signaturescheme.SignatureScheme
+func NewAgentIDFromSigScheme(sigScheme signaturescheme.SignatureScheme) AgentID {
+	return NewAgentIDFromAddress(sigScheme.Address())
 }
 
 // NewAgentIDFromBytes makes an AgentID from binary representation

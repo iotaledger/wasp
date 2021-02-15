@@ -61,7 +61,7 @@ contracts](../tutorial/coresc.md).
 We can now deploy a Wasm contract to ur chain:
 
 ```
-$ wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" tools/cluster/tests/wasptest_new/wasm/inccounter_bg.wasm
+$ wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
 ```
 
 The `inccounter_bg.wasm` file is a precompiled Wasm contract included as an
