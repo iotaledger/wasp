@@ -3,7 +3,7 @@
 Once you have one or more Wasp nodes you can use the
 [`wasp-cli`](../../tools/wasp-cli/README.md) tool to interact with it.  Here is
 an example set of commands that will deploy one chain and the example
-[`inccounter`](https://github.com/iotaledger/wasp/tree/develop/contracts/rust/inccounter/src)
+[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/rust/inccounter/src)
 contract to the chain.
 
 ---
@@ -74,7 +74,7 @@ Check again in the dashboard that the `inccounter` contract is listed in the cha
 We can interact with a contract by calling its exposed functions and views.
 
 For instance, the
-[`inccounter`](https://github.com/iotaledger/wasp/tree/develop/contracts/rust/inccounter/src)
+[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/rust/inccounter/src)
 contract exposes the `increment` function, which simply increments a counter
 stored in the state. Also we have the `getCounter` view that returns the
 current value of the counter.
