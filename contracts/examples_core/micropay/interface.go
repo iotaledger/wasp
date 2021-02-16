@@ -5,8 +5,8 @@ package micropay
 
 import (
 	"github.com/iotaledger/wasp/contracts"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 	"time"
 )
 
@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	Interface = &contract.ContractInterface{
+	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
 		ProgramHash: hashing.HashStrings(Name),
@@ -24,15 +24,15 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncPublicKey, publicKey),
-		contract.Func(FuncAddWarrant, addWarrant),
-		contract.Func(FuncRevokeWarrant, revokeWarrant),
-		contract.Func(FuncCloseWarrant, closeWarrant),
-		contract.Func(FuncSettle, settle),
-		contract.ViewFunc(FuncGetChannelInfo, getWarrantInfo),
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.Func(FuncPublicKey, publicKey),
+		coreutil.Func(FuncAddWarrant, addWarrant),
+		coreutil.Func(FuncRevokeWarrant, revokeWarrant),
+		coreutil.Func(FuncCloseWarrant, closeWarrant),
+		coreutil.Func(FuncSettle, settle),
+		coreutil.ViewFunc(FuncGetChannelInfo, getWarrantInfo),
 	})
-	contracts.AddProcessor(Interface)
+	contracts.AddExampleProcessor(Interface)
 }
 
 const (

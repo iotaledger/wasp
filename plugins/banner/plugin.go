@@ -11,7 +11,7 @@ const PluginName = "Banner"
 
 const (
 	// AppVersion version number
-	AppVersion = "v0.0.1"
+	AppVersion = "v0.1.0"
 
 	// AppName app code name
 	AppName = "Wasp"
@@ -36,10 +36,8 @@ func configure(ctx *node.Plugin) {
 	fmt.Println()
 
 	// TODO embed build time see https://stackoverflow.com/questions/53031035/generate-build-timestamp-in-go/53045029
-	ctx.Node.Logger.Infof("------------------------ Starting Wasp version %s ---------------------------", AppVersion)
 	ctx.Node.Logger.Info("Loading plugins ...")
 }
 
-func run(ctx *node.Plugin) {
-
+func run(_ *node.Plugin) {
 }

@@ -1,4 +1,9 @@
-package contract
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// package coreutil provides functions to describe interface of the core contract
+// in a compact way
+package coreutil
 
 import (
 	"fmt"
@@ -7,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
+// ContractInterface represents smart contract interface
 type ContractInterface struct {
 	Name        string
 	hname       coretypes.Hname
@@ -15,12 +21,14 @@ type ContractInterface struct {
 	Functions   map[coretypes.Hname]ContractFunctionInterface
 }
 
+// ContractFunctionInterface represents entry point interface
 type ContractFunctionInterface struct {
 	Name        string
 	Handler     Handler
 	ViewHandler ViewHandler
 }
 
+// Funcs declares init entry point and a list of full and view entry points
 func Funcs(init Handler, fns []ContractFunctionInterface) map[coretypes.Hname]ContractFunctionInterface {
 	ret := map[coretypes.Hname]ContractFunctionInterface{
 		coretypes.EntryPointInit: Func("init", init),
@@ -47,6 +55,7 @@ func Funcs(init Handler, fns []ContractFunctionInterface) map[coretypes.Hname]Co
 	return ret
 }
 
+// Func declares a full entry point: its name and its handler
 func Func(name string, handler Handler) ContractFunctionInterface {
 	return ContractFunctionInterface{
 		Name:    name,
@@ -54,6 +63,7 @@ func Func(name string, handler Handler) ContractFunctionInterface {
 	}
 }
 
+// Func declares a view entry point: its name and its handler
 func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
 	return ContractFunctionInterface{
 		Name:        name,

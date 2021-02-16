@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -42,7 +42,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	// retrieving init parameters
 	// -- chain ID
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 
 	chainID := params.MustGetChainID(ParamChainID)
 	chainColor := params.MustGetColor(ParamChainColor)
@@ -103,7 +103,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
 	}
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 
 	progHash := params.MustGetHashValue(ParamProgramHash)
 	description := params.MustGetString(ParamDescription, "N/A")
@@ -190,7 +190,7 @@ func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 // Two step process allow/change is in order to avoid mistakes
 func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.delegateChainOwnership: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -206,7 +206,7 @@ func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	state := ctx.State()
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 
 	stateDecoder := kvdecoder.New(state, ctx.Log())
 	currentOwner := stateDecoder.MustGetAgentID(VarChainOwnerID)
@@ -248,7 +248,7 @@ func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setDefaultFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -283,7 +283,7 @@ func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -314,7 +314,7 @@ func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Input:
 //  - ParamDeployer coretypes.AgentID
 func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.grantDeployPermissions: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -329,7 +329,7 @@ func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Input:
 //  - ParamDeployer coretypes.AgentID
 func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.revokeDeployPermissions: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())

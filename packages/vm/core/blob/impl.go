@@ -3,7 +3,7 @@ package blob
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -27,7 +27,7 @@ func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
 	blobHash, kSorted, values := mustGetBlobHash(params)
 
 	directory := GetDirectory(state)
-	coreutil.NewAssert(ctx.Log()).Require(!directory.MustHasAt(blobHash[:]),
+	assert.NewAssert(ctx.Log()).Require(!directory.MustHasAt(blobHash[:]),
 		"blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
 
 	// get a record by blob hash

@@ -1,8 +1,8 @@
 package eventlog
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	Interface = &contract.ContractInterface{
+	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
 		ProgramHash: hashing.HashStrings(Name),
@@ -19,9 +19,9 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.ViewFunc(FuncGetRecords, getRecords),
-		contract.ViewFunc(FuncGetNumRecords, getNumRecords),
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.ViewFunc(FuncGetRecords, getRecords),
+		coreutil.ViewFunc(FuncGetNumRecords, getNumRecords),
 	})
 }
 

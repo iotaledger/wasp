@@ -1,8 +1,8 @@
 package accounts
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	Interface = &contract.ContractInterface{
+	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
 		ProgramHash: hashing.HashStrings(Name),
@@ -19,13 +19,13 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.ViewFunc(FuncBalance, getBalance),
-		contract.ViewFunc(FuncTotalAssets, getTotalAssets),
-		contract.ViewFunc(FuncAccounts, getAccounts),
-		contract.Func(FuncDeposit, deposit),
-		contract.Func(FuncWithdrawToAddress, withdrawToAddress),
-		contract.Func(FuncWithdrawToChain, withdrawToChain),
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.ViewFunc(FuncBalance, getBalance),
+		coreutil.ViewFunc(FuncTotalAssets, getTotalAssets),
+		coreutil.ViewFunc(FuncAccounts, getAccounts),
+		coreutil.Func(FuncDeposit, deposit),
+		coreutil.Func(FuncWithdrawToAddress, withdrawToAddress),
+		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
 	})
 }
 

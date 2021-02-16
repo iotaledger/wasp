@@ -1,4 +1,4 @@
-package coreutil
+package assert
 
 import (
 	"fmt"

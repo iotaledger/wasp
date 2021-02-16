@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/contracts"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	Interface = &contract.ContractInterface{
+	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
 		ProgramHash: hashing.HashStrings(Name),
@@ -24,12 +24,12 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncIncCounter, incCounter),
-		contract.Func(FuncIncAndRepeatOnceAfter5s, incCounterAndRepeatOnce),
-		contract.Func(FuncIncAndRepeatMany, incCounterAndRepeatMany),
-		contract.Func(FuncSpawn, spawn),
-		contract.ViewFunc(FuncGetCounter, getCounter),
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.Func(FuncIncCounter, incCounter),
+		coreutil.Func(FuncIncAndRepeatOnceAfter5s, incCounterAndRepeatOnce),
+		coreutil.Func(FuncIncAndRepeatMany, incCounterAndRepeatMany),
+		coreutil.Func(FuncSpawn, spawn),
+		coreutil.ViewFunc(FuncGetCounter, getCounter),
 	})
 }
 
@@ -49,7 +49,7 @@ const (
 )
 
 func init() {
-	contracts.AddProcessor(Interface)
+	contracts.AddExampleProcessor(Interface)
 }
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {

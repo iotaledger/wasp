@@ -11,26 +11,8 @@ import (
 )
 
 const (
-	VMType             = "builtinvm"
-	printCoreContracts = true
+	VMType = "builtinvm"
 )
-
-func init() {
-	if printCoreContracts {
-		printReservedHnames()
-	}
-}
-
-// for debugging
-func printReservedHnames() {
-	fmt.Printf("--------------- reserved hnames ------------------\n")
-	fmt.Printf("    %10s: '%s'\n", root.Interface.Hname().String(), root.Interface.Name)
-	fmt.Printf("    %10s: '%s'\n", accounts.Interface.Hname().String(), accounts.Interface.Name)
-	fmt.Printf("    %10s: '%s'\n", blob.Interface.Hname().String(), blob.Interface.Name)
-	fmt.Printf("    %10s: '%s'\n", eventlog.Interface.Hname().String(), eventlog.Interface.Name)
-	fmt.Printf("    %10s: '%s'\n", coretypes.EntryPointInit.String(), coretypes.FuncInit)
-	fmt.Printf("--------------- reserved hnames ------------------\n")
-}
 
 func GetProcessor(programHash hashing.HashValue) (coretypes.Processor, error) {
 	switch programHash {

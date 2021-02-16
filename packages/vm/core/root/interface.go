@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	Interface = &contract.ContractInterface{
+	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
 		ProgramHash: hashing.HashStrings(Name),
@@ -28,17 +28,17 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.Func(FuncDeployContract, deployContract),
-		contract.ViewFunc(FuncFindContract, findContract),
-		contract.Func(FuncClaimChainOwnership, claimChainOwnership),
-		contract.Func(FuncDelegateChainOwnership, delegateChainOwnership),
-		contract.ViewFunc(FuncGetChainInfo, getChainInfo),
-		contract.ViewFunc(FuncGetFeeInfo, getFeeInfo),
-		contract.Func(FuncSetDefaultFee, setDefaultFee),
-		contract.Func(FuncSetContractFee, setContractFee),
-		contract.Func(FuncGrantDeploy, grantDeployPermission),
-		contract.Func(FuncRevokeDeploy, revokeDeployPermission),
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.Func(FuncDeployContract, deployContract),
+		coreutil.ViewFunc(FuncFindContract, findContract),
+		coreutil.Func(FuncClaimChainOwnership, claimChainOwnership),
+		coreutil.Func(FuncDelegateChainOwnership, delegateChainOwnership),
+		coreutil.ViewFunc(FuncGetChainInfo, getChainInfo),
+		coreutil.ViewFunc(FuncGetFeeInfo, getFeeInfo),
+		coreutil.Func(FuncSetDefaultFee, setDefaultFee),
+		coreutil.Func(FuncSetContractFee, setContractFee),
+		coreutil.Func(FuncGrantDeploy, grantDeployPermission),
+		coreutil.Func(FuncRevokeDeploy, revokeDeployPermission),
 	})
 }
 
@@ -184,7 +184,7 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-func NewContractRecord(itf *contract.ContractInterface, creator coretypes.AgentID) (ret ContractRecord) {
+func NewContractRecord(itf *coreutil.ContractInterface, creator coretypes.AgentID) (ret ContractRecord) {
 	ret = ContractRecord{
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,
