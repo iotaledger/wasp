@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/wasp/packages/dbprovider"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -26,17 +28,17 @@ var (
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
-	var niladdr address.Address
-	db := GetPartition(&niladdr)
-	ver, err := db.Get(MakeKey(ObjectTypeDBSchemaVersion))
+	db := GetPartition(&coretypes.NilChainID)
+	ver, err := db.Get(dbprovider.MakeKey(dbprovider.ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte
 	versiondata[0] = DBVersion
-	copy(versiondata[1:], hashing.HashStrings(fmt.Sprintf("dbversion = %d", DBVersion)).Bytes())
+	vh := hashing.HashStrings(fmt.Sprintf("dbversion = %d", DBVersion))
+	copy(versiondata[1:], vh[:])
 
 	if err == kvstore.ErrKeyNotFound {
 		// set the version in an empty DB
-		return db.Set(MakeKey(ObjectTypeDBSchemaVersion), versiondata[:])
+		return db.Set(dbprovider.MakeKey(dbprovider.ObjectTypeDBSchemaVersion), versiondata[:])
 	}
 	if err != nil {
 		return err

@@ -18,6 +18,7 @@ func main() {
 	if len(os.Args) >= 4 {
 		node = os.Args[3]
 	}
+	fmt.Printf("using %s\n", node)
 
 	switch os.Args[1] {
 	case "tx":
@@ -45,7 +46,7 @@ func PrintTransactionById(node string, txidBase58 string) {
 	}
 	fmt.Printf("-- Outputs:\n")
 	for _, outp := range resp.Transaction.Outputs {
-		fmt.Printf("    Address: %s\n", outp.Address)
+		fmt.Printf("    Target: %s\n", outp.Address)
 		for _, bal := range outp.Balances {
 			fmt.Printf("        %s: %d\n", bal.Color, bal.Value)
 		}

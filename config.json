@@ -5,7 +5,7 @@
   "logger": {
     "level": "debug",
     "disableCaller": false,
-    "disableStacktrace": false,
+    "disableStacktrace": true,
     "encoding": "console",
     "outputPaths": [
       "stdout",
@@ -22,12 +22,24 @@
     "enablePlugins": []
   },
   "webapi": {
-    "bindAddress": "127.0.0.1:8080"
+    "bindAddress": "127.0.0.1:9090"
+  },
+  "dashboard": {
+    "auth": {
+      "scheme": "basic",
+      "username": "wasp",
+      "password": "wasp"
+    },
+    "bindAddress": "127.0.0.1:7000"
   },
   "peering":{
-    "port": 31415
+    "port": 4000,
+    "netid": "127.0.0.1:4000"
   },
   "nodeconn": {
     "address": "127.0.0.1:5000"
+  },
+  "nanomsg":{
+    "port": 5550
   }
 }

@@ -20,29 +20,6 @@ func ContainsDuplicates(lst []string) bool {
 	return false
 }
 
-func IntersectsLists(lst1, lst2 []string) bool {
-	if len(lst1) == 0 || len(lst2) == 0 {
-		return false
-	}
-	for _, s1 := range lst1 {
-		for _, s2 := range lst2 {
-			if s1 == s2 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func ContainsInList(elem string, lst []string) bool {
-	for _, s := range lst {
-		if s == elem {
-			return true
-		}
-	}
-	return false
-}
-
 func NanoSecToUnixSec(ts int64) uint32 {
 	return uint32(ts / int64(time.Second))
 }

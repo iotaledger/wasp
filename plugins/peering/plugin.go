@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package peering
 
 import (
@@ -5,47 +8,59 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"go.uber.org/atomic"
+	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
+	"github.com/iotaledger/wasp/plugins/registry"
+	"go.dedis.ch/kyber/v3/pairing"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
-// PluginName is the name of the database plugin.
-const PluginName = "Peering"
+const (
+	pluginName = "Peering"
+)
 
 var (
-	log         *logger.Logger
-	initialized atomic.Bool
+	defaultNetworkProvider *peering_udp.NetImpl // A singleton instance.
 )
 
-func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+// Init is an entry point for this plugin.
+func Init(suite *pairing.SuiteBn256) *node.Plugin {
+	configure := func(_ *node.Plugin) {
+		var err error
+		var log = logger.NewLogger(pluginName)
+		var nodeKeyPair *key.Pair
+		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
+			panic(err)
+		}
+		defaultNetworkProvider, err = peering_udp.NewNetworkProvider(
+			parameters.GetString(parameters.PeeringMyNetId),
+			parameters.GetInt(parameters.PeeringPort),
+			nodeKeyPair,
+			suite,
+			log,
+		)
+		if err != nil {
+			panic(err)
+		}
+		log.Infof(
+			"--------------------------------- NetID is %s -----------------------------------",
+			defaultNetworkProvider.Self().NetID(),
+		)
+	}
+	run := func(_ *node.Plugin) {
+		err := daemon.BackgroundWorker(
+			"WaspPeering",
+			defaultNetworkProvider.Run,
+			parameters.PriorityPeering,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return node.NewPlugin(pluginName, node.Enabled, configure, run)
 }
 
-func configure(_ *node.Plugin) {
-	log = logger.NewLogger(PluginName)
-	if err := checkMyNetworkID(); err != nil {
-		// can't continue because netid parameter is not correct
-		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
-		return
-	}
-	log.Infof("--------------------------------- netid is %s -----------------------------------", MyNetworkId())
-	initialized.Store(true)
-}
-
-func run(_ *node.Plugin) {
-	if !initialized.Load() {
-		return
-	}
-	if err := daemon.BackgroundWorker("WaspPeering", func(shutdownSignal <-chan struct{}) {
-
-		go connectOutboundLoop()
-		go connectInboundLoop()
-
-		<-shutdownSignal
-
-		log.Info("Closing all connections with peers...")
-		closeAll()
-		log.Info("Closing all connections with peers... done")
-	}, parameters.PriorityPeering); err != nil {
-		panic(err)
-	}
+// DefaultNetworkProvider returns the default network provider implementation.
+func DefaultNetworkProvider() peering_pkg.NetworkProvider {
+	return defaultNetworkProvider
 }
