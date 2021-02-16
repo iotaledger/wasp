@@ -28,7 +28,7 @@ func setupTest(t *testing.T) *solo.Chain {
 	auctioneer = chain.Env.NewSignatureSchemeWithFunds()
 	newColor, err := chain.Env.MintTokens(auctioneer, 10)
 	require.NoError(t, err)
-	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Supply-10)
+	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Saldo-10)
 	chain.Env.AssertAddressBalance(auctioneer.Address(), newColor, 10)
 	tokenColor = newColor
 
@@ -60,7 +60,7 @@ func TestFaStartAuction(t *testing.T) {
 	chain.AssertAccountBalance(common.ContractAccount, tokenColor, 10)
 
 	// auctioneer sent 25 deposit + 10 tokenColor + used 1 for request
-	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Supply-35-1)
+	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Saldo-35-1)
 	// 1 used for request was sent back to auctioneer's account on chain
 	account := coretypes.NewAgentIDFromSigScheme(auctioneer)
 	chain.AssertAccountBalance(account, balance.ColorIOTA, 1)

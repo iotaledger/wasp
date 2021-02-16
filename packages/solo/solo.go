@@ -36,9 +36,9 @@ import (
 // DefaultTimeStep is a default step for the logical clock for each PostRequest call.
 const DefaultTimeStep = 1 * time.Millisecond
 
-// default supply of tokens returned by the UTXODB faucet
+// Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
-const Supply = 1337
+const Saldo = 1337
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
@@ -148,17 +148,17 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 
 // NewChain deploys new chain instance.
 //
-//   If 'chainOriginator' is nil, new one is generated and solo.Supply (=1337) iotas are loaded from the UTXODB faucet.
-//   If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
+// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
+// If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
 // To deploy the chai instance the following steps are performed:
-//    - chain signature scheme (private key), chain address and chain ID are created
-//    - empty virtual state is initialized
-//    - origin transaction is created by the originator and added to the UTXODB
-//    - 'init' request transaction to the 'root' contract is created and added to UTXODB
-//    - backlog processing threads (goroutines) are started
-//    - VM processor cache is initialized
-//    - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//      'blob', 'accountsc', 'chainlog'
+//  - chain signature scheme (private key), chain address and chain ID are created
+//  - empty virtual state is initialized
+//  - origin transaction is created by the originator and added to the UTXODB
+//  - 'init' request transaction to the 'root' contract is created and added to UTXODB
+//  - backlog processing threads (goroutines) are started
+//  - VM processor cache is initialized
+//  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
+//    'blob', 'accountsc', 'chainlog'
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	env.logger.Infof("deploying new chain '%s'", name)
@@ -291,7 +291,7 @@ func (ch *Chain) collateBatch() []vm.RequestRefWithFreeTokens {
 	return ret
 }
 
-// batchLoop mimics leaders's behavior in the Wasp committee
+// batchLoop mimics leader's behavior in the Wasp committee
 func (ch *Chain) batchLoop() {
 	for {
 		batch := ch.collateBatch()
@@ -314,15 +314,17 @@ func (ch *Chain) backlogLen() int {
 	return len(ch.backlog)
 }
 
-// NewSignatureSchemeWithFunds generates new ed25519 signature scheme and requests funds
-// (equal to solo.Supply (=1337) iotas) from the UTXODB faucet.
+// NewSignatureSchemeWithFunds generates new ed25519 signature scheme
+// and requests some tokens from the UTXODB faucet.
+// The amount of tokens is equal to solo.Saldo (=1337) iotas
 func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	ret, _ := env.NewSignatureSchemeWithFundsAndPubKey()
 	return ret
 }
 
-// NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme and requests funds
-// (equal to solo.Supply (=1337) iotas) from the UTXODB faucet.
+// NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
+// and requests some tokens from the UTXODB faucet.
+// The amount of tokens is equal to solo.Saldo (=1337) iotas
 // Returns signature scheme interface and public key in binary form
 func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.SignatureScheme, []byte) {
 	ret, pubKeyBytes := env.NewSignatureSchemeAndPubKey()

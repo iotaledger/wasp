@@ -30,7 +30,7 @@ func TestExample2(t *testing.T) {
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Supply)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 }
 
 func TestExample3(t *testing.T) {
