@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/plugins/config"
 	flag "github.com/spf13/pflag"
 )
 
@@ -42,7 +43,7 @@ func printUsage() {
 	)
 	flag.PrintDefaults()
 
-	_, _ = fmt.Fprintf(os.Stderr, "\nThe following plugins are enabled by default and can be disabled with -%s:\n  %s\n", node.CFG_DISABLE_PLUGINS, getList(enabledPlugins))
-	_, _ = fmt.Fprintf(os.Stderr, "The following plugins are disabled by default and can be enabled with -%s:\n  %s\n", node.CFG_ENABLE_PLUGINS, getList(disabledPlugins))
-	_, _ = fmt.Fprintf(os.Stderr, "The enabled/disabled plugins can be overridden by altering %s/%s inside config.json\n\n", node.CFG_ENABLE_PLUGINS, node.CFG_DISABLE_PLUGINS)
+	_, _ = fmt.Fprintf(os.Stderr, "\nThe following plugins are enabled by default and can be disabled with -%s:\n  %s\n", config.CfgDisablePlugins, getList(enabledPlugins))
+	_, _ = fmt.Fprintf(os.Stderr, "The following plugins are disabled by default and can be enabled with -%s:\n  %s\n", config.CfgEnablePlugins, getList(disabledPlugins))
+	_, _ = fmt.Fprintf(os.Stderr, "The enabled/disabled plugins can be overridden by altering %s/%s inside config.json\n\n", config.CfgEnablePlugins, config.CfgDisablePlugins)
 }

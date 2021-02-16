@@ -1,3 +1,8 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// Package dispatcher router goshimmer node messages to the corresponding
+// components in the wasp node.
 package dispatcher
 
 import (
@@ -6,13 +11,11 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	_ "github.com/iotaledger/wasp/packages/committee/commiteeimpl" // activate init
+	_ "github.com/iotaledger/wasp/packages/chain/chainimpl" // activate init
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/plugins/committees"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 const PluginName = "Dispatcher"
@@ -39,12 +42,6 @@ func run(_ *node.Plugin) {
 			chNodeMsg <- msg
 		})
 
-		processPeerMsgClosure := events.NewClosure(func(msg *peering.PeerMessage) {
-			if committee := committees.CommitteeByAddress(msg.Address); committee != nil {
-				committee.ReceiveMessage(msg)
-			}
-		})
-
 		err := daemon.BackgroundWorker("wasp dispatcher", func(shutdownSignal <-chan struct{}) {
 			// goroutine to read incoming messages from the node
 			go func() {
@@ -58,7 +55,6 @@ func run(_ *node.Plugin) {
 			log.Infof("Stopping %s..", PluginName)
 			go func() {
 				nodeconn.EventMessageReceived.Detach(processNodeMsgClosure)
-				peering.EventPeerMessageReceived.Detach(processPeerMsgClosure)
 
 				close(chNodeMsg)
 				log.Infof("Stopping %s.. Done", PluginName)
@@ -72,8 +68,6 @@ func run(_ *node.Plugin) {
 		// event attachments
 		// receiving events from NodeConn --> producing dispatcher events
 		nodeconn.EventMessageReceived.Attach(processNodeMsgClosure)
-		// receiving messages from peering --> send to respective committees
-		peering.EventPeerMessageReceived.Attach(processPeerMsgClosure)
 
 		log.Infof("dispatcher started")
 

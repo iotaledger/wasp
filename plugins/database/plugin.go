@@ -3,36 +3,33 @@ package database
 
 import (
 	"errors"
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"sync"
-	"time"
 
-	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/daemon"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/hive.go/timeutil"
 )
 
-// Database is the name of the database plugin.
-const PluginName = "Database"
+const pluginName = "Database"
 
 var (
 	log *logger.Logger
 
-	db        database.DB
-	store     kvstore.KVStore
-	storeOnce sync.Once
+	dbProvider *dbprovider.DBProvider
+	doOnce     sync.Once
 )
 
+// Init is an entry point for the plugin.
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
-	// assure that the store is initialized
-	_ = storeInstance()
+	log = logger.NewLogger(pluginName)
 
 	err := checkDatabaseVersion()
 	if errors.Is(err, ErrDBVersionIncompatible) {
@@ -43,35 +40,45 @@ func configure(_ *node.Plugin) {
 	}
 
 	// we open the database in the configure, so we must also make sure it's closed here
-	err = daemon.BackgroundWorker(PluginName, closeDB, parameters.PriorityDatabase)
+	err = daemon.BackgroundWorker(pluginName, func(shutdownSignal <-chan struct{}) {
+		<-shutdownSignal
+		log.Infof("syncing database to disk...")
+		dbProvider.Close()
+		log.Infof("syncing database to disk... done")
+	}, parameters.PriorityDatabase)
 	if err != nil {
-		log.Panicf("Failed to start as daemon: %s", err)
+		log.Panicf("failed to start a daemon: %s", err)
 	}
 }
 
 func run(_ *node.Plugin) {
-	if err := daemon.BackgroundWorker(PluginName+"[GC]", runGC, parameters.PriorityBadgerGarbageCollection); err != nil {
-		log.Errorf("Failed to start as daemon: %s", err)
+	err := daemon.BackgroundWorker(pluginName+"[GC]", dbProvider.RunGC, parameters.PriorityBadgerGarbageCollection)
+	if err != nil {
+		log.Errorf("failed to start as daemon: %s", err)
 	}
 }
 
-func closeDB(shutdownSignal <-chan struct{}) {
-	<-shutdownSignal
-	log.Infof("Syncing database to disk...")
-	if err := db.Close(); err != nil {
-		log.Errorf("Failed to flush the database: %s", err)
-	}
-	log.Infof("Syncing database to disk... done")
+func GetInstance() *dbprovider.DBProvider {
+	doOnce.Do(createInstance)
+	return dbProvider
 }
 
-func runGC(shutdownSignal <-chan struct{}) {
-	if !db.RequiresGC() {
-		return
+func createInstance() {
+	if parameters.GetBool(parameters.DatabaseInMemory) {
+		log.Infof("IN MEMORY DATABASE")
+		dbProvider = dbprovider.NewInMemoryDBProvider(log)
+	} else {
+		dbDir := parameters.GetString(parameters.DatabaseDir)
+		dbProvider = dbprovider.NewPersistentDBProvider(dbDir, log)
 	}
-	// run the garbage collection with the given interval
-	timeutil.Ticker(func() {
-		if err := db.GC(); err != nil {
-			log.Warnf("Garbage collection failed: %s", err)
-		}
-	}, 5*time.Minute, shutdownSignal)
+}
+
+// each key in DB is prefixed with `chainID` | `SC index` | `object type byte`
+// GetPartition returns a Partition, which is a KVStore prefixed with the chain ID.
+func GetPartition(chainID *coretypes.ChainID) kvstore.KVStore {
+	return GetInstance().GetPartition(chainID)
+}
+
+func GetRegistryPartition() kvstore.KVStore {
+	return GetInstance().GetRegistryPartition()
 }

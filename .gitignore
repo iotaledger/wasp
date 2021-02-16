@@ -1,4 +1,11 @@
 wasp.log
+wasp
 waspdb/
 cluster-data/
 dist/
+.idea/
+.vscode/
+*.bak
+wasp-cli.json
+*/pkg/
+**/target/

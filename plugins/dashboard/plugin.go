@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package dashboard
 
 import (
@@ -12,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 const PluginName = "Dashboard"
@@ -38,20 +41,8 @@ func configure(*node.Plugin) {
 	}))
 	Server.Use(middleware.Recover())
 	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.DashboardAuth))
-	dashboard.UseHTMLErrorHandler(Server)
 
-	renderer := Renderer{}
-	Server.Renderer = renderer
-
-	addNavPage := func(navPage NavPage) {
-		navPages = append(navPages, navPage)
-		navPage.AddTemplates(renderer)
-		navPage.AddEndpoints(Server)
-	}
-
-	addNavPage(initConfig())
-	addNavPage(initPeering())
-	addNavPage(initSc())
+	dashboard.Init(Server)
 }
 
 func run(_ *node.Plugin) {
@@ -65,14 +56,12 @@ func worker(shutdownSignal <-chan struct{}) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
-
 		bindAddr := parameters.GetString(parameters.DashboardBindAddress)
+		log.Infof("%s started, bind address=%s", PluginName, bindAddr)
 		if err := Server.Start(bindAddr); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				log.Errorf("Error serving: %s", err)
 			}
-		} else {
-			log.Infof("%s started, bind address=%s", PluginName, bindAddr)
 		}
 	}()
 

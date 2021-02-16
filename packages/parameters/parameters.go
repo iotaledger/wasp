@@ -24,9 +24,6 @@ const (
 	DashboardExploreAddressUrl = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
-	VMBinaryDir     = "vm.binaries"
-	VMDefaultVmType = "vm.defaultvm"
-
 	NodeAddress = "nodeconn.address"
 
 	PeeringMyNetId = "peering.netid"
@@ -54,9 +51,6 @@ func InitFlags() {
 	flag.String(DashboardExploreAddressUrl, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
 
-	flag.String(VMBinaryDir, "wasm", "path where Wasm binaries are located (using file:// schema")
-	flag.String(VMDefaultVmType, "dummmy", "default VM type")
-
 	flag.String(NodeAddress, "127.0.0.1:5000", "node host address")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
@@ -66,21 +60,21 @@ func InitFlags() {
 }
 
 func GetBool(name string) bool {
-	return config.Node.GetBool(name)
+	return config.Node.Bool(name)
 }
 
 func GetString(name string) string {
-	return config.Node.GetString(name)
+	return config.Node.String(name)
 }
 
 func GetStringSlice(name string) []string {
-	return config.Node.GetStringSlice(name)
+	return config.Node.Strings(name)
 }
 
 func GetInt(name string) int {
-	return config.Node.GetInt(name)
+	return config.Node.Int(name)
 }
 
 func GetStringToString(name string) map[string]string {
-	return config.Node.GetStringMapString(name)
+	return config.Node.StringMap(name)
 }

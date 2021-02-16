@@ -4,7 +4,7 @@ const (
 	ending = "[..]"
 )
 
-func GentleCut(s string, length int) string {
+func GentleTruncate(s string, length int) string {
 	if len(s) <= length {
 		return s
 	}

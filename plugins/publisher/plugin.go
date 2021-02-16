@@ -2,12 +2,15 @@ package publisher
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
 	_ "go.nanomsg.org/mangos/v3/transport/all"
@@ -17,9 +20,7 @@ import (
 const PluginName = "Publisher"
 
 var (
-	log      *logger.Logger
-	socket   mangos.Socket
-	messages = make(chan []byte, 100)
+	log *logger.Logger
 )
 
 func Init() *node.Plugin {
@@ -31,14 +32,17 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	port := parameters.GetInt(parameters.NanomsgPublisherPort)
-	if err := openSocket(port); err != nil {
-		log.Errorf("failed to initialize publisher: %v", err)
-	} else {
-		log.Infof("nanomsg publisher is running on port %d", port)
-	}
+	messages := make(chan []byte, 100)
 
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+	port := parameters.GetInt(parameters.NanomsgPublisherPort)
+	socket, err := openSocket(port)
+	if err != nil {
+		log.Errorf("failed to initialize publisher: %v", err)
+		return
+	}
+	log.Infof("nanomsg publisher is running on port %d", port)
+
+	err = daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		for {
 			select {
 			case msg := <-messages:
@@ -60,32 +64,26 @@ func run(_ *node.Plugin) {
 	if err != nil {
 		panic(err)
 	}
+
+	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+		msg := msgType + " " + strings.Join(parts, " ")
+		select {
+		case messages <- []byte(msg):
+		case <-time.After(1 * time.Second):
+			log.Warnf("Failed to publish message: [%s]", msg)
+		}
+	}))
 }
 
-func openSocket(port int) error {
-	var err error
-	socket, err = pub.NewSocket()
+func openSocket(port int) (mangos.Socket, error) {
+	socket, err := pub.NewSocket()
 	if err != nil {
-		socket = nil
-		return err
+		return nil, err
 	}
 
 	url := fmt.Sprintf("tcp://:%d", port)
 	if err = socket.Listen(url); err != nil {
-		socket = nil
-		return err
+		return nil, err
 	}
-	return nil
-}
-
-func Publish(msgType string, parts ...string) {
-	msg := msgType
-	for _, s := range parts {
-		msg = msg + " " + s
-	}
-	select {
-	case messages <- []byte(msg):
-	case <-time.After(1 * time.Second):
-		log.Warnf("Failed to publish message: [%s]", msg)
-	}
+	return socket, nil
 }

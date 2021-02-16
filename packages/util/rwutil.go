@@ -1,14 +1,15 @@
 package util
 
 import (
+	"encoding"
 	"encoding/binary"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"io"
+	"time"
+
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
-	"io"
-	"time"
 )
 
 func WriteByte(w io.Writer, val byte) error {
@@ -32,7 +33,7 @@ func Uint16To2Bytes(val uint16) []byte {
 	return tmp2[:]
 }
 
-func Uint16From2Bytes(b []byte) uint16 {
+func MustUint16From2Bytes(b []byte) uint16 {
 	if len(b) != 2 {
 		panic("len(b) != 2")
 	}
@@ -46,18 +47,41 @@ func Uint32To4Bytes(val uint32) []byte {
 	return tmp4[:]
 }
 
-func Uint32From4Bytes(b []byte) uint32 {
+func Uint32From4Bytes(b []byte) (uint32, error) {
 	if len(b) != 4 {
-		panic("len(b) != 4")
+		return 0, errors.New("len(b) != 4")
 	}
-	return binary.LittleEndian.Uint32(b[:])
+	return binary.LittleEndian.Uint32(b[:]), nil
 }
 
-func Uint64From8Bytes(b []byte) uint64 {
+func MustUint32From4Bytes(b []byte) uint32 {
+	n, err := Uint32From4Bytes(b)
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
+func MustUint64From8Bytes(b []byte) uint64 {
 	if len(b) != 8 {
 		panic("len(b) != 8")
 	}
 	return binary.LittleEndian.Uint64(b[:])
+}
+
+func Uint64From8Bytes(b []byte) (uint64, error) {
+	if len(b) != 8 {
+		return 0, errors.New("len(b) != 8")
+	}
+	return binary.LittleEndian.Uint64(b[:]), nil
+}
+
+func Int64From8Bytes(b []byte) (int64, error) {
+	ret, err := Uint64From8Bytes(b)
+	if err != nil {
+		return 0, err
+	}
+	return int64(ret), nil
 }
 
 func Uint64To8Bytes(val uint64) []byte {
@@ -92,7 +116,7 @@ func ReadUint32(r io.Reader, pval *uint32) error {
 	if err != nil {
 		return err
 	}
-	*pval = Uint32From4Bytes(tmp4[:])
+	*pval = MustUint32From4Bytes(tmp4[:])
 	return nil
 }
 
@@ -205,15 +229,6 @@ func ReadBoolByte(r io.Reader, cond *bool) error {
 	return nil
 }
 
-func Uint16InList(v uint16, lst []uint16) bool {
-	for _, vl := range lst {
-		if v == vl {
-			return true
-		}
-	}
-	return false
-}
-
 func WriteTime(w io.Writer, ts time.Time) error {
 	return WriteUint64(w, uint64(ts.UnixNano()))
 }
@@ -281,17 +296,6 @@ func ReadTransactionId(r io.Reader, txid *transaction.ID) error {
 	return nil
 }
 
-func ReadAddress(r io.Reader, addr *address.Address) error {
-	n, err := r.Read(addr[:])
-	if err != nil {
-		return err
-	}
-	if n != address.Length {
-		return errors.New("error while reading address")
-	}
-	return nil
-}
-
 func ReadColor(r io.Reader, color *balance.Color) error {
 	n, err := r.Read(color[:])
 	if err != nil {
@@ -310,6 +314,32 @@ func ReadHashValue(r io.Reader, h *hashing.HashValue) error {
 	}
 	if n != hashing.HashSize {
 		return errors.New("error while reading hash")
+	}
+	return nil
+}
+
+// WriteMarshaled supports kyber.Point, kyber.Scalar and similar.
+func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
+	var err error
+	var bin []byte
+	if bin, err = val.MarshalBinary(); err != nil {
+		return err
+	}
+	if err = WriteBytes16(w, bin); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ReadMarshaled supports kyber.Point, kyber.Scalar and similar.
+func ReadMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
+	var err error
+	var bin []byte
+	if bin, err = ReadBytes16(r); err != nil {
+		return err
+	}
+	if err = val.UnmarshalBinary(bin); err != nil {
+		return err
 	}
 	return nil
 }
