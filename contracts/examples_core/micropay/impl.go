@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -22,7 +22,7 @@ func initialize(_ coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 	a.Require(ctx.Caller().IsAddress(), "micropay.publicKey: caller must be an address")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -43,7 +43,7 @@ func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamServiceAddress address.Address
 func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 
 	a.Require(ctx.Caller().IsAddress(), "payer must be an address")
 	payerAddr := ctx.Caller().MustAddress()
@@ -77,7 +77,7 @@ func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamServiceAddress address.Address
 func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 
 	a.Require(ctx.Caller().IsAddress(), "payer must be an address")
 	payerAddr := ctx.Caller().MustAddress()
@@ -108,13 +108,13 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamServiceAddress address.Address
 // - ParamPayerAddress address.Address
 func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 	a.Require(ctx.Caller() == coretypes.NewAgentIDFromContractID(ctx.ContractID()), "caller must be self")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	payerAddr := par.MustGetAddress(ParamPayerAddress)
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, coreutil.NewAssert(ctx.Log()))
+	warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 	if warrant > 0 {
 		succ := ctx.TransferToAddress(payerAddr, cbalances.NewIotasOnly(warrant))
 		a.Require(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
@@ -127,7 +127,7 @@ func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamPayerAddress address.address
 // - ParamPayments - array of encoded payments
 func settle(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 	a.Require(ctx.Caller().IsAddress(), "caller must be an address")
 	targetAddr := ctx.Caller().MustAddress()
 
@@ -157,7 +157,7 @@ func getWarrantInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	payerAddr := par.MustGetAddress(ParamPayerAddress)
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	warrant, revoke, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, coreutil.NewAssert(ctx.Log()))
+	warrant, revoke, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 	ret := dict.New()
 	if warrant > 0 {
 		ret.Set(ParamWarrant, codec.EncodeInt64(warrant))
@@ -173,7 +173,7 @@ func getWarrantInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 //  utility
 
-func getWarrantInfoIntern(state kv.KVStoreReader, payer, service address.Address, a coreutil.Assert) (int64, int64, int64) {
+func getWarrantInfoIntern(state kv.KVStoreReader, payer, service address.Address, a assert.Assert) (int64, int64, int64) {
 	payerInfo := collections.NewMapReadOnly(state, string(payer[:]))
 	warrantBin, err := payerInfo.GetAt(service[:])
 	a.RequireNoError(err)
@@ -214,7 +214,7 @@ func deleteWarrant(state kv.KVStore, payer, service address.Address) {
 	payerInfo.MustDelAt(getLastOrdKey(service))
 }
 
-func getPublicKey(state kv.KVStoreReader, addr address.Address, a coreutil.Assert) []byte {
+func getPublicKey(state kv.KVStoreReader, addr address.Address, a assert.Assert) []byte {
 	pkRegistry := collections.NewMapReadOnly(state, StateVarPublicKeys)
 	ret, err := pkRegistry.GetAt(addr[:])
 	a.RequireNoError(err)
@@ -233,7 +233,7 @@ func getLastOrdKey(service address.Address) []byte {
 	return []byte(string(service[:]) + "-last")
 }
 
-func decodePayments(state kv.KVStoreReader, a coreutil.Assert) []*Payment {
+func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
 	payments := collections.NewArrayReadOnly(state, ParamPayments)
 	n := payments.MustLen()
 	a.Require(n > 0, "no payments found")
@@ -249,7 +249,7 @@ func decodePayments(state kv.KVStoreReader, a coreutil.Assert) []*Payment {
 }
 
 func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targetAddr address.Address, payerPubKey []byte) (int64, []*Payment) {
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 	remainingWarrant, _, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
 	a.Require(remainingWarrant > 0, "warrant == 0, can't settle payments")
 

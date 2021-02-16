@@ -2,7 +2,7 @@ package test_sandbox_sc
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -53,7 +53,7 @@ func runRecursion(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 
 	callInt := params.MustGetInt64(ParamIntParamValue)
 	ctx.Log().Infof("fibonacci( %d )", callInt)

@@ -1,6 +1,7 @@
 package sandbox_tests
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -47,11 +48,15 @@ func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureSch
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
-	test(t, false)
+	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
+		test(t, false)
+	})
 	if len(skipWasm) == 0 || !skipWasm[0] {
-		test(t, true)
+		t.Run(fmt.Sprintf("run WASM version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
 	} else {
-		t.Logf("skipped wasm version of '%s'", t.Name())
+		t.Logf("skipped WASM version of '%s'", t.Name())
 	}
 }
 

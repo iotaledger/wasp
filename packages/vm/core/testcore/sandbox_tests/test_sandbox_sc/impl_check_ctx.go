@@ -2,7 +2,7 @@ package test_sandbox_sc
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -11,7 +11,7 @@ import (
 
 func testCheckContextFromFullEP(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 
 	a.Require(par.MustGetChainID(ParamChainID) == ctx.ContractID().ChainID(), "fail: chainID")
 	a.Require(par.MustGetAgentID(ParamChainOwnerID) == ctx.ChainOwnerID(), "fail: chainOwnerID")
@@ -24,7 +24,7 @@ func testCheckContextFromFullEP(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func testCheckContextFromViewEP(ctx coretypes.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := coreutil.NewAssert(ctx.Log())
+	a := assert2.NewAssert(ctx.Log())
 
 	a.Require(par.MustGetChainID(ParamChainID) == ctx.ContractID().ChainID(), "fail: chainID")
 	a.Require(par.MustGetAgentID(ParamChainOwnerID) == ctx.ChainOwnerID(), "fail: chainOwnerID")

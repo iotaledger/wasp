@@ -3,8 +3,8 @@ package contracts
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 	"sync"
 )
 
@@ -15,18 +15,18 @@ var (
 	allExamplesMutex = &sync.Mutex{}
 )
 
-// AddProcessor adds new processor to the runtime registry of example processors.
+// AddExampleProcessor adds new processor to the runtime registry of example processors.
 // The 'proc' represents executable of the specific smart contract.
-// It must implement vmtypes.Processor
-func AddProcessor(c *contract.ContractInterface) {
+// It must implement coretypes.Processor
+func AddExampleProcessor(c *coreutil.ContractInterface) {
 	allExamplesMutex.Lock()
 	defer allExamplesMutex.Unlock()
 	allExamples[c.ProgramHash] = c
-	fmt.Printf("added example processor name: '%s', program hash: %s, dscr: '%s'\n",
+	fmt.Printf("----- AddExampleProcessor: name: '%s', program hash: %s, description: '%s'\n",
 		c.Name, c.ProgramHash.String(), c.Description)
 }
 
-// GetExampleProcessor retrieves smart contract processor (VM) by the hash (whith existence flag)
+// GetExampleProcessor retrieves smart contract processor (VM) by the hash (with existence flag)
 func GetExampleProcessor(progHash hashing.HashValue) (coretypes.Processor, bool) {
 	ret, ok := allExamples[progHash]
 	if !ok {

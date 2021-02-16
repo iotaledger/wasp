@@ -3,8 +3,8 @@ package test_sandbox_sc
 
 import (
 	"github.com/iotaledger/wasp/contracts"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/contract"
 )
 
 const (
@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	Interface = &contract.ContractInterface{
+	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
 		ProgramHash: hashing.HashStrings(Name),
@@ -21,42 +21,42 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []contract.ContractFunctionInterface{
-		contract.ViewFunc(FuncChainOwnerIDView, testChainOwnerIDView),
-		contract.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
-		contract.ViewFunc(FuncContractIDView, testContractIDView),
-		contract.Func(FuncContractIDFull, testContractIDFull),
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.ViewFunc(FuncChainOwnerIDView, testChainOwnerIDView),
+		coreutil.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
+		coreutil.ViewFunc(FuncContractIDView, testContractIDView),
+		coreutil.Func(FuncContractIDFull, testContractIDFull),
 
-		contract.Func(FuncEventLogGenericData, testEventLogGenericData),
-		contract.Func(FuncEventLogEventData, testEventLogEventData),
-		contract.Func(FuncEventLogDeploy, testEventLogDeploy),
-		contract.ViewFunc(FuncSandboxCall, testSandboxCall),
+		coreutil.Func(FuncEventLogGenericData, testEventLogGenericData),
+		coreutil.Func(FuncEventLogEventData, testEventLogEventData),
+		coreutil.Func(FuncEventLogDeploy, testEventLogDeploy),
+		coreutil.ViewFunc(FuncSandboxCall, testSandboxCall),
 
-		contract.Func(FuncPanicFullEP, testPanicFullEP),
-		contract.ViewFunc(FuncPanicViewEP, testPanicViewEP),
-		contract.Func(FuncCallPanicFullEP, testCallPanicFullEP),
-		contract.Func(FuncCallPanicViewEPFromFull, testCallPanicViewEPFromFull),
-		contract.ViewFunc(FuncCallPanicViewEPFromView, testCallPanicViewEPFromView),
+		coreutil.Func(FuncPanicFullEP, testPanicFullEP),
+		coreutil.ViewFunc(FuncPanicViewEP, testPanicViewEP),
+		coreutil.Func(FuncCallPanicFullEP, testCallPanicFullEP),
+		coreutil.Func(FuncCallPanicViewEPFromFull, testCallPanicViewEPFromFull),
+		coreutil.ViewFunc(FuncCallPanicViewEPFromView, testCallPanicViewEPFromView),
 
-		contract.Func(FuncDoNothing, doNothing),
-		contract.Func(FuncSendToAddress, sendToAddress),
+		coreutil.Func(FuncDoNothing, doNothing),
+		coreutil.Func(FuncSendToAddress, sendToAddress),
 
-		contract.Func(FuncWithdrawToChain, withdrawToChain),
-		contract.Func(FuncCallOnChain, callOnChain),
-		contract.Func(FuncSetInt, setInt),
-		contract.ViewFunc(FuncGetInt, getInt),
-		contract.ViewFunc(FuncGetFibonacci, getFibonacci),
-		contract.ViewFunc(FuncGetCounter, getCounter),
-		contract.Func(FuncRunRecursion, runRecursion),
+		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
+		coreutil.Func(FuncCallOnChain, callOnChain),
+		coreutil.Func(FuncSetInt, setInt),
+		coreutil.ViewFunc(FuncGetInt, getInt),
+		coreutil.ViewFunc(FuncGetFibonacci, getFibonacci),
+		coreutil.ViewFunc(FuncGetCounter, getCounter),
+		coreutil.Func(FuncRunRecursion, runRecursion),
 
-		contract.Func(FuncPassTypesFull, passTypesFull),
-		contract.ViewFunc(FuncPassTypesView, passTypesView),
-		contract.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
-		contract.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
+		coreutil.Func(FuncPassTypesFull, passTypesFull),
+		coreutil.ViewFunc(FuncPassTypesView, passTypesView),
+		coreutil.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
+		coreutil.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
 
-		contract.ViewFunc(FuncJustView, testJustView),
+		coreutil.ViewFunc(FuncJustView, testJustView),
 	})
-	contracts.AddProcessor(Interface)
+	contracts.AddExampleProcessor(Interface)
 }
 
 const (
