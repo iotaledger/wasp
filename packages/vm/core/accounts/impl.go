@@ -3,7 +3,7 @@ package accounts
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -57,7 +57,7 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// funds currently are at the disposition of accounts, they are moved to the target
 	succ := MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer())
-	assert2.NewAssert(ctx.Log()).Require(succ,
+	assert.NewAssert(ctx.Log()).Require(succ,
 		"internal error: failed to deposit to %s", ctx.Caller().String())
 
 	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, ctx.IncomingTransfer().String())
@@ -71,7 +71,7 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	mustCheckLedger(state, "accounts.withdrawToAddress.begin")
 	defer mustCheckLedger(state, "accounts.withdrawToAddress.exit")
 
-	a := assert2.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 
 	caller := ctx.Caller()
 	a.Require(caller.IsAddress(), "caller must be an address")
@@ -105,7 +105,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	mustCheckLedger(state, "accounts.withdrawToChain.begin")
 	defer mustCheckLedger(state, "accounts.withdrawToChain.exit")
 
-	a := assert2.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 
 	caller := ctx.Caller()
 	ctx.Log().Debugf("accounts.withdrawToChain.begin: caller agentID: %s myContractId: %s",

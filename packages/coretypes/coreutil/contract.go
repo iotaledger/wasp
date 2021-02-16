@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // package coreutil provides functions to describe interface of the core contract
 // in a compact way
 package coreutil
