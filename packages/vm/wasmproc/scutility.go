@@ -126,15 +126,15 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	case wasmhost.KeyAggregateBls:
 		o.aggregatedBls = o.aggregateBLSSignatures(bytes)
 	case wasmhost.KeyBase58Bytes:
-		o.base58Encoded = utils.Base58Encode(bytes)
+		o.base58Encoded = utils.Base58().Encode(bytes)
 	case wasmhost.KeyBase58String:
-		o.base58Decoded, err = utils.Base58Decode(string(bytes))
+		o.base58Decoded, err = utils.Base58().Decode(string(bytes))
 	case wasmhost.KeyHashBlake2b:
-		o.hash = utils.HashBlake2b(bytes)
+		o.hash = utils.Hashing().Blake2b(bytes)
 	case wasmhost.KeyHashSha3:
-		o.hash = utils.HashSha3(bytes)
+		o.hash = utils.Hashing().Sha3(bytes)
 	case wasmhost.KeyName:
-		o.hname = utils.Hname(string(bytes))
+		o.hname = utils.Hashing().Hname(string(bytes))
 	case wasmhost.KeyValidBls:
 		o.valid = o.validBLSSignature(bytes)
 	case wasmhost.KeyValidEd25519:
@@ -159,7 +159,11 @@ func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()
 	}
-	pubKeyBin, sigBin := o.vm.utils().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	pubKeyBin, sigBin, err := o.vm.utils().BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	if err != nil {
+		// TODO return error
+		o.Panic(err.Error())
+	}
 	return NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
 }
 
@@ -168,7 +172,12 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().ValidBLSSignature(data, pubKey, signature)
+	ok, err := o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
+	if err != nil {
+		// TODO return error
+		o.Panic(err.Error())
+	}
+	return ok
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
@@ -176,5 +185,10 @@ func (o *ScUtility) validED25519Signature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().ValidED25519Signature(data, pubKey, signature)
+	ok, err := o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
+	if err != nil {
+		// TODO return error
+		o.Panic(err.Error())
+	}
+	return ok
 }

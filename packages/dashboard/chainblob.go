@@ -8,8 +8,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -124,12 +124,12 @@ const tplChainBlob = `
 {{define "body"}}
 	{{if .Blob}}
 		{{ $chainid := .ChainID }}
-		{{ $hash := .Hash }}
+		{{ $hash := .Hashing }}
 
 		<div class="card fluid">
 			<h2 class="section">Blob</h2>
 			<dl>
-				<dt>Hash</dt><dd><tt>{{hashref $hash}}</tt></dd>
+				<dt>Hashing</dt><dd><tt>{{hashref $hash}}</tt></dd>
 			</dl>
 		</div>
 		<div class="card fluid">

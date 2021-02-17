@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/sb_utils"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -28,7 +29,7 @@ func new(vmctx *vmcontext.VMContext) coretypes.Sandbox {
 }
 
 func (s *sandbox) Utils() coretypes.Utils {
-	return coretypes.NewUtils(s.Log())
+	return sb_utils.NewUtils()
 }
 
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {

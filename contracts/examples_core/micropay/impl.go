@@ -263,7 +263,8 @@ func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targ
 		}
 		data := paymentEssence(p.Ord, p.Amount, payerAddr, targetAddr)
 		lastOrd = int64(p.Ord)
-		if !ctx.Utils().ValidED25519Signature(data, payerPubKey, p.SignatureShort) {
+		ok, err := ctx.Utils().ED25519().ValidSignature(data, payerPubKey, p.SignatureShort)
+		if !ok || err != nil {
 			ctx.Log().Infof("wrong signature")
 			notSettled = append(notSettled, p)
 			continue
