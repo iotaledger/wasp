@@ -207,7 +207,7 @@ const tplChain = `
 				<table>
 					<thead>
 						<tr>
-							<th style="flex: 2">Hashing</th>
+							<th style="flex: 2">Hash</th>
 							<th>Size (bytes)</th>
 						</tr>
 					</thead>
@@ -226,7 +226,7 @@ const tplChain = `
 				<h3 class="section">State</h3>
 				<dl>
 					<dt>State index</dt><dd><tt>{{.Block.StateIndex}}</tt></dd>
-					<dt>State hash</dt><dd><tt>{{.VirtualState.Hashing}}</tt></dd>
+					<dt>State hash</dt><dd><tt>{{.VirtualState.Hash}}</tt></dd>
 					<dt>Last updated</dt><dd><tt>{{formatTimestamp .Block.Timestamp}}</tt> in transaction <tt>{{.Block.StateTransactionID}}</tt></dd>
 				</dl>
 			</div>

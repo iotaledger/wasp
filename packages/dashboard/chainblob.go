@@ -124,12 +124,12 @@ const tplChainBlob = `
 {{define "body"}}
 	{{if .Blob}}
 		{{ $chainid := .ChainID }}
-		{{ $hash := .Hashing }}
+		{{ $hash := .Hash }}
 
 		<div class="card fluid">
 			<h2 class="section">Blob</h2>
 			<dl>
-				<dt>Hashing</dt><dd><tt>{{hashref $hash}}</tt></dd>
+				<dt>Hash</dt><dd><tt>{{hashref $hash}}</tt></dd>
 			</dl>
 		</div>
 		<div class="card fluid">
