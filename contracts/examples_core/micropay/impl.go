@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
@@ -28,9 +27,8 @@ func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	pubKeyBin := par.MustGetBytes(ParamPublicKey)
-	pubKey, _, err := ed25519.PublicKeyFromBytes(pubKeyBin)
+	addr, err := ctx.Utils().ED25519().AddressFromPublicKey(pubKeyBin)
 	a.RequireNoError(err)
-	addr := address.FromED25519PubKey(pubKey)
 	a.Require(addr == ctx.Caller().MustAddress(), "public key does not correspond to the caller's address")
 
 	pkRegistry := collections.NewMap(ctx.State(), StateVarPublicKeys)
@@ -263,7 +261,8 @@ func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targ
 		}
 		data := paymentEssence(p.Ord, p.Amount, payerAddr, targetAddr)
 		lastOrd = int64(p.Ord)
-		if !ctx.Utils().ValidED25519Signature(data, payerPubKey, p.SignatureShort) {
+		ok, err := ctx.Utils().ED25519().ValidSignature(data, payerPubKey, p.SignatureShort)
+		if !ok || err != nil {
 			ctx.Log().Infof("wrong signature")
 			notSettled = append(notSettled, p)
 			continue
