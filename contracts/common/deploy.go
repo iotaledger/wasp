@@ -22,7 +22,7 @@ var (
 	CreatorWallet   signaturescheme.SignatureScheme
 )
 
-func DeployContract(t *testing.T, scName string) *solo.Chain {
+func StartChainAndDeployWasmContractByName(t *testing.T, scName string) *solo.Chain {
 	wasmhost.HostTracing = TraceHost
 	env := solo.New(t, Debug, StackTrace)
 	CreatorWallet = env.NewSignatureSchemeWithFunds()

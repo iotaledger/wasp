@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -22,13 +21,13 @@ var auctioneer signaturescheme.SignatureScheme
 var tokenColor balance.Color
 
 func setupTest(t *testing.T) *solo.Chain {
-	chain := common.DeployContract(t, ScName)
+	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
 
 	// set up auctioneer account and mint some tokens to auction off
 	auctioneer = chain.Env.NewSignatureSchemeWithFunds()
 	newColor, err := chain.Env.MintTokens(auctioneer, 10)
 	require.NoError(t, err)
-	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Supply-10)
+	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Saldo-10)
 	chain.Env.AssertAddressBalance(auctioneer.Address(), newColor, 10)
 	tokenColor = newColor
 
@@ -47,7 +46,7 @@ func setupTest(t *testing.T) *solo.Chain {
 }
 
 func TestDeploy(t *testing.T) {
-	chain := common.DeployContract(t, ScName)
+	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
 	_, err := chain.FindContract(ScName)
 	require.NoError(t, err)
 }
@@ -60,7 +59,7 @@ func TestFaStartAuction(t *testing.T) {
 	chain.AssertAccountBalance(common.ContractAccount, tokenColor, 10)
 
 	// auctioneer sent 25 deposit + 10 tokenColor + used 1 for request
-	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Supply-35-1)
+	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Saldo-35-1)
 	// 1 used for request was sent back to auctioneer's account on chain
 	account := coretypes.NewAgentIDFromSigScheme(auctioneer)
 	chain.AssertAccountBalance(account, balance.ColorIOTA, 1)
@@ -140,21 +139,21 @@ func TestFaOneBid(t *testing.T) {
 	requireAgent(t, res, VarHighestBidder, coretypes.NewAgentIDFromSigScheme(bidder))
 }
 
-func requireAgent(t *testing.T, res dict.Dict, key wasmlib.Key, expected coretypes.AgentID) {
+func requireAgent(t *testing.T, res dict.Dict, key string, expected coretypes.AgentID) {
 	actual, exists, err := codec.DecodeAgentID(res.MustGet(kv.Key(key)))
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.EqualValues(t, expected, actual)
 }
 
-func requireInt64(t *testing.T, res dict.Dict, key wasmlib.Key, expected int64) {
+func requireInt64(t *testing.T, res dict.Dict, key string, expected int64) {
 	actual, exists, err := codec.DecodeInt64(res.MustGet(kv.Key(key)))
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.EqualValues(t, expected, actual)
 }
 
-func requireString(t *testing.T, res dict.Dict, key wasmlib.Key, expected string) {
+func requireString(t *testing.T, res dict.Dict, key string, expected string) {
 	actual, exists, err := codec.DecodeString(res.MustGet(kv.Key(key)))
 	require.NoError(t, err)
 	require.True(t, exists)
