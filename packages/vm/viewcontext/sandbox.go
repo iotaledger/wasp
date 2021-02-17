@@ -4,12 +4,12 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/coretypes/sb_utils"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
 var (
@@ -39,7 +39,7 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 }
 
 func (s *sandboxview) Utils() coretypes.Utils {
-	return sb_utils.NewUtils()
+	return sandbox_utils.NewUtils()
 }
 
 func (s *sandboxview) Params() dict.Dict {
