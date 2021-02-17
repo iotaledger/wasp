@@ -17,7 +17,7 @@ it as an example.
 _DonateWithFeedback_ is a dApp which performs a very common function: it handles an IOTA donation 
 address and user’s feedback log for the owner of a web page.  
 
-_(You may want to follow the Go [code of this smart contract](https://github.com/iotaledger/wasp/blob/develop/packages/vm/examples/donatewithfeedback/dwfimpl/impl.go) 
+_(You may want to follow the Go [code of this smart contract](https://github.com/iotaledger/wasp/blob/master/packages/vm/examples/donatewithfeedback/dwfimpl/impl.go) 
 which currently is embedded right into the Wasp. This approach is not typical for the smart contracts 
 in general, however it is very convenient for testing the protocol. 
 In the future all smart contract programs will be run on wasm VM)_   

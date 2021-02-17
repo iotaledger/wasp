@@ -20,7 +20,7 @@ The _TokenRegistry_ is a simple smart contract which keeps a registry of tagged 
 It also keeps cryptographical proof when, how many and which address minted the tagged tokens. 
 
 The program Go code with program hash `8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p` of the smart contract
-can be found [in repository](https://github.com/iotaledger/wasp/blob/develop/packages/vm/examples/tokenregistry/impl.go).
+can be found [in repository](https://github.com/iotaledger/wasp/blob/master/packages/vm/examples/tokenregistry/impl.go).
 
 The following command mints 3 tokens into the same address of the wallet.
  

@@ -4,21 +4,25 @@ Here we describe step by step instructions how to run Wasp nodes on the Pollen n
 
 ## Step 1: Compile & install
 
-Clone the `develop` branch:
+You will need the `wasp`, `wasp-cli` and `goshimmer` commands installed in
+the system.
+
+The `goshimmer` command must be compiled from the Goshimmer repository,
+branch `master+wasp` (which includes the `waspconn` plugin):
 
 ```
-$ git clone -b develop https://github.com/iotaledger/wasp.git
+$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
+$ cd goshimmer
+$ go install
 ```
 
-Compile and install all needed binaries (`wasp`, `wasp-cli`, `goshimmer`):
+The `wasp` and `wasp-cli` commands can be installed from this repository:
 
 ```
+$ git clone https://github.com/iotaledger/wasp.git
 $ cd wasp
 $ go install ./...
 ```
-
-Note: the compiled `goshimmer` command corresponds to the
-`goshimmer/master+wasp` branch, which includes the `waspconn` plugin.
 
 ## Step 2: Run Goshimmer connected to the Pollen network
 
@@ -80,7 +84,7 @@ Goshimmer instance.  In normal operation, it is recommended for each Wasp node
 to connect to a different Goshimmer instance.
 
 Create an empty working directory for the Wasp node, copy the
-[`config.json`](https://github.com/iotaledger/wasp/blob/develop/config.json)
+[`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
 file, and change it as needed:
 
 ```
