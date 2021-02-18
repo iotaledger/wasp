@@ -4,7 +4,7 @@
 package micropay
 
 import (
-	"github.com/iotaledger/wasp/contracts"
+	"github.com/iotaledger/wasp/contracts/examples_core"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
@@ -32,7 +32,7 @@ func init() {
 		coreutil.Func(FuncSettle, settle),
 		coreutil.ViewFunc(FuncGetChannelInfo, getWarrantInfo),
 	})
-	contracts.AddExampleProcessor(Interface)
+	examples_core.AddProcessor(Interface)
 }
 
 const (

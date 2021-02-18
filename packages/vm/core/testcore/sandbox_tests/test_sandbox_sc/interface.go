@@ -2,7 +2,7 @@
 package test_sandbox_sc
 
 import (
-	"github.com/iotaledger/wasp/contracts"
+	"github.com/iotaledger/wasp/contracts/examples_core"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
@@ -56,7 +56,7 @@ func init() {
 
 		coreutil.ViewFunc(FuncJustView, testJustView),
 	})
-	contracts.AddExampleProcessor(Interface)
+	examples_core.AddProcessor(Interface)
 }
 
 const (
