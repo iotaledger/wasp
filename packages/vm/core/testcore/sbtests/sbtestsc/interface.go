@@ -2,7 +2,7 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/contracts/examples_core"
+	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
@@ -56,7 +56,7 @@ func init() {
 
 		coreutil.ViewFunc(FuncJustView, testJustView),
 	})
-	examples_core.AddProcessor(Interface)
+	native.AddProcessor(Interface)
 }
 
 const (
