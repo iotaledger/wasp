@@ -1,5 +1,5 @@
 // smart contract for testing
-package test_sandbox_sc
+package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/contracts/examples_core"

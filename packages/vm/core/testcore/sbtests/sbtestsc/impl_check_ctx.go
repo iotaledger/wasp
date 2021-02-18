@@ -1,4 +1,4 @@
-package test_sandbox_sc
+package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"

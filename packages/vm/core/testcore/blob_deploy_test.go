@@ -52,7 +52,7 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-var wasmFile = "sandbox_tests/test_sandbox_sc/testcore_bg.wasm"
+var wasmFile = "sbtests/sbtestsc/testcore_bg.wasm"
 
 func TestDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
