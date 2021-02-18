@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package contracts
+package examples_core
 
 import (
 	"fmt"
@@ -18,19 +18,19 @@ var (
 	allExamplesMutex = &sync.Mutex{}
 )
 
-// AddExampleProcessor adds new processor to the runtime registry of example processors.
+// AddProcessor adds new processor to the runtime registry of example processors.
 // The 'proc' represents executable of the specific smart contract.
 // It must implement coretypes.Processor
-func AddExampleProcessor(c *coreutil.ContractInterface) {
+func AddProcessor(c *coreutil.ContractInterface) {
 	allExamplesMutex.Lock()
 	defer allExamplesMutex.Unlock()
 	allExamples[c.ProgramHash] = c
-	fmt.Printf("----- AddExampleProcessor: name: '%s', program hash: %s, description: '%s'\n",
+	fmt.Printf("----- AddProcessor: name: '%s', program hash: %s, description: '%s'\n",
 		c.Name, c.ProgramHash.String(), c.Description)
 }
 
-// GetExampleProcessor retrieves smart contract processor (VM) by the hash (with existence flag)
-func GetExampleProcessor(progHash hashing.HashValue) (coretypes.Processor, bool) {
+// GetProcessor retrieves smart contract processor (VM) by the hash (with existence flag)
+func GetProcessor(progHash hashing.HashValue) (coretypes.Processor, bool) {
 	ret, ok := allExamples[progHash]
 	if !ok {
 		return nil, false

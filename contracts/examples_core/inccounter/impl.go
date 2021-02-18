@@ -2,7 +2,7 @@ package inccounter
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/contracts"
+	"github.com/iotaledger/wasp/contracts/examples_core"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -49,7 +49,7 @@ const (
 )
 
 func init() {
-	contracts.AddExampleProcessor(Interface)
+	examples_core.AddProcessor(Interface)
 }
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {

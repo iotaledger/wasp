@@ -1,4 +1,4 @@
-package test_sandbox_sc
+package sbtestsc
 
 import (
 	"fmt"
