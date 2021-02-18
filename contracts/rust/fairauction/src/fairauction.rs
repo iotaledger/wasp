@@ -15,6 +15,7 @@ const OWNER_MARGIN_MIN: i64 = 5;
 const OWNER_MARGIN_MAX: i64 = 100;
 
 pub fn func_finalize_auction(ctx: &ScFuncContext) {
+    ctx.log("fairauction.finalize");
     // only SC itself can invoke this function
     ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
 
@@ -65,9 +66,11 @@ pub fn func_finalize_auction(ctx: &ScFuncContext) {
     transfer(ctx, &ctx.contract_creator(), &ScColor::IOTA, owner_fee - 1);
     transfer(ctx, &auction.highest_bidder, &auction.color, auction.num_tokens);
     transfer(ctx, &auction.creator, &ScColor::IOTA, auction.deposit + auction.highest_bid - owner_fee);
+    ctx.log("fairauction.finalize ok");
 }
 
 pub fn func_place_bid(ctx: &ScFuncContext) {
+    ctx.log("fairauction.placeBid");
     let p = ctx.params();
     let param_color = p.get_color(PARAM_COLOR);
 
@@ -113,9 +116,11 @@ pub fn func_place_bid(ctx: &ScFuncContext) {
         auction.highest_bidder = caller;
         auction_info.set_value(&auction.to_bytes());
     }
+    ctx.log("fairauction.placeBid ok");
 }
 
 pub fn func_set_owner_margin(ctx: &ScFuncContext) {
+    ctx.log("fairauction.setOwnerMargin");
     // only SC creator can set owner margin
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
@@ -132,10 +137,11 @@ pub fn func_set_owner_margin(ctx: &ScFuncContext) {
         owner_margin = OWNER_MARGIN_MAX;
     }
     ctx.state().get_int(VAR_OWNER_MARGIN).set_value(owner_margin);
-    ctx.log("Updated owner margin");
+    ctx.log("fairauction.setOwnerMargin ok");
 }
 
 pub fn func_start_auction(ctx: &ScFuncContext) {
+    ctx.log("fairauction.startAuction");
     let p = ctx.params();
     let param_color = p.get_color(PARAM_COLOR);
     let param_description = p.get_string(PARAM_DESCRIPTION);
@@ -224,10 +230,11 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
         transfer: None,
         delay: duration * 60,
     });
-    ctx.log("New auction started");
+    ctx.log("fairauction.startAuction ok");
 }
 
 pub fn view_get_info(ctx: &ScViewContext) {
+    ctx.log("fairauction.getInfo");
     let p = ctx.params();
     let param_color = p.get_color(PARAM_COLOR);
 
@@ -257,6 +264,7 @@ pub fn view_get_info(ctx: &ScViewContext) {
 
     let bidder_list = current_auction.get_agent_id_array(VAR_BIDDER_LIST);
     results.get_int(VAR_BIDDERS).set_value(bidder_list.length() as i64);
+    ctx.log("fairauction.getInfo ok");
 }
 
 fn transfer(ctx: &ScFuncContext, agent: &ScAgentId, color: &ScColor, amount: i64) {

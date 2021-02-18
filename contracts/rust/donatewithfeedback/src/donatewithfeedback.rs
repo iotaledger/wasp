@@ -7,6 +7,7 @@ use crate::*;
 use crate::types::*;
 
 pub fn func_donate(ctx: &ScFuncContext) {
+    ctx.log("dwf.donate");
     let p = ctx.params();
     let mut donation = Donation {
         amount: ctx.incoming().balance(&ScColor::IOTA),
@@ -16,7 +17,7 @@ pub fn func_donate(ctx: &ScFuncContext) {
         timestamp: ctx.timestamp(),
     };
     if donation.amount == 0 || donation.feedback.len() == 0 {
-        donation.error = "error: empty feedback or donated amount = 0. The donated amount has been returned (if any)".to_string();
+        donation.error = "error: empty feedback or donated amount = 0".to_string();
         if donation.amount > 0 {
             ctx.transfer_to_address(&donation.donator.address(), &ScTransfers::new(&ScColor::IOTA, donation.amount));
             donation.amount = 0;
@@ -32,9 +33,12 @@ pub fn func_donate(ctx: &ScFuncContext) {
         largest_donation.set_value(donation.amount);
     }
     total_donated.set_value(total_donated.value() + donation.amount);
+    ctx.log("dwf.donate ok");
 }
 
 pub fn func_withdraw(ctx: &ScFuncContext) {
+    ctx.log("dwf.withdraw");
+
     // only SC creator can withdraw donated funds
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
@@ -45,15 +49,19 @@ pub fn func_withdraw(ctx: &ScFuncContext) {
         amount = balance;
     }
     if amount == 0 {
-        ctx.log("DonateWithFeedback: nothing to withdraw");
+        ctx.log("dwf.withdraw: nothing to withdraw");
         return;
     }
 
     let sc_creator = ctx.contract_creator().address();
     ctx.transfer_to_address(&sc_creator, &ScTransfers::new(&ScColor::IOTA, amount));
+
+    ctx.log("dwf.withdraw ok");
 }
 
 pub fn view_donations(ctx: &ScViewContext) {
+    ctx.log("dwf.donations");
+
     let state = ctx.state();
     let largest_donation = state.get_int(VAR_MAX_DONATION);
     let total_donated = state.get_int(VAR_TOTAL_DONATION);
@@ -72,4 +80,6 @@ pub fn view_donations(ctx: &ScViewContext) {
         donation.get_string(VAR_FEEDBACK).set_value(&di.feedback);
         donation.get_int(VAR_TIMESTAMP).set_value(di.timestamp);
     }
+
+    ctx.log("dwf.donations ok");
 }

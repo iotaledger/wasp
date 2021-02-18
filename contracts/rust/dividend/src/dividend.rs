@@ -7,6 +7,7 @@ use crate::*;
 use crate::types::*;
 
 pub fn func_divide(ctx: &ScFuncContext) {
+    ctx.log("dividend.divide");
     let amount = ctx.balances().balance(&ScColor::IOTA);
     if amount == 0 {
         ctx.panic("Nothing to divide");
@@ -32,9 +33,11 @@ pub fn func_divide(ctx: &ScFuncContext) {
         let remainder = amount - parts;
         ctx.log(&("Remainder in contract: ".to_string() + &remainder.to_string()));
     }
+    ctx.log("dividend.divide ok");
 }
 
 pub fn func_member(ctx: &ScFuncContext) {
+    ctx.log("dividend.member");
     // only creator can add members
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
@@ -67,4 +70,5 @@ pub fn func_member(ctx: &ScFuncContext) {
     total_factor.set_value(total);
     members.get_bytes(size).set_value(&member.to_bytes());
     ctx.log(&("Appended: ".to_string() + &member.address.to_string()));
+    ctx.log("dividend.member ok");
 }
