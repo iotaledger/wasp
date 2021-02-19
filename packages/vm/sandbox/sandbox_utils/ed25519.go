@@ -12,16 +12,16 @@ import (
 type ed25519Util struct {
 }
 
-func (u ed25519Util) ValidSignature(data []byte, pubKey []byte, signature []byte) (bool, error) {
+func (u ed25519Util) ValidSignature(data []byte, pubKey []byte, signature []byte) bool {
 	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
 	if err != nil {
-		return false, fmt.Errorf("ED255519Util: wrong public key bytes")
+		return false
 	}
 	sig, _, err := ed25519.SignatureFromBytes(signature)
 	if err != nil {
-		return false, fmt.Errorf("ED255519Util: wrong signature bytes")
+		return false
 	}
-	return pk.VerifySignature(data, sig), nil
+	return pk.VerifySignature(data, sig)
 }
 
 func (u ed25519Util) AddressFromPublicKey(pubKey []byte) (address.Address, error) {
