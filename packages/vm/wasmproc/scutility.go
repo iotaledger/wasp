@@ -185,11 +185,7 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	ok, err := o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
-	if err != nil {
-		o.Panic(err.Error())
-	}
-	return ok
+	return o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
@@ -197,9 +193,5 @@ func (o *ScUtility) validED25519Signature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	ok, err := o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
-	if err != nil {
-		o.Panic(err.Error())
-	}
-	return ok
+	return o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
 }

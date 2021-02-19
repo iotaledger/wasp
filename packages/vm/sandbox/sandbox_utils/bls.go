@@ -16,13 +16,13 @@ type blsUtil struct {
 
 var suite = bn256.NewSuite()
 
-func (u blsUtil) ValidSignature(data []byte, pubKeyBin []byte, signature []byte) (bool, error) {
+func (u blsUtil) ValidSignature(data []byte, pubKeyBin []byte, signature []byte) bool {
 	pubKey := suite.G2().Point()
 	var err error
 	if err = pubKey.UnmarshalBinary(pubKeyBin); err != nil {
-		return false, fmt.Errorf("BLSUtil: wrong public key bytes")
+		return false
 	}
-	return bdn.Verify(suite, pubKey, data, signature) == nil, nil
+	return bdn.Verify(suite, pubKey, data, signature) == nil
 }
 
 func (u blsUtil) AddressFromPublicKey(pubKeyBin []byte) (address.Address, error) {
