@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use testcore::*;
 use consts::*;
+use testcore::*;
 use wasmlib::*;
 
 mod testcore;
