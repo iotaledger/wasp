@@ -41,7 +41,7 @@ func deployErc20(t *testing.T) *solo.Chain {
 func checkErc20Balance(e *solo.Chain, account coretypes.AgentID, amount int64) {
 	res, err := e.CallView(ScName, ViewBalanceOf,
 		ParamAccount, account,
-		)
+	)
 	require.NoError(e.Env.T, err)
 	sup, ok, err := codec.DecodeInt64(res.MustGet(ParamAmount))
 	require.NoError(e.Env.T, err)
@@ -53,7 +53,7 @@ func checkErc20Allowance(e *solo.Chain, account coretypes.AgentID, delegation co
 	res, err := e.CallView(ScName, ViewAllowance,
 		ParamAccount, account,
 		ParamDelegation, delegation,
-		)
+	)
 	require.NoError(e.Env.T, err)
 	del, ok, err := codec.DecodeInt64(res.MustGet(ParamAmount))
 	require.NoError(e.Env.T, err)
@@ -93,7 +93,7 @@ func TestTransferOk2(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncTransfer,
 		ParamAccount, userAgentID,
 		ParamAmount, amount,
-		)
+	)
 	_, err := chain.PostRequest(req, creator)
 	require.NoError(t, err)
 
@@ -103,7 +103,7 @@ func TestTransferOk2(t *testing.T) {
 	req = solo.NewCallParams(ScName, FuncTransfer,
 		ParamAccount, creatorAgentID,
 		ParamAmount, amount,
-		)
+	)
 	_, err = chain.PostRequest(req, user)
 	require.NoError(t, err)
 
@@ -124,7 +124,7 @@ func TestTransferNotEnoughFunds1(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncTransfer,
 		ParamAccount, userAgentID,
 		ParamAmount, amount,
-		)
+	)
 	_, err := chain.PostRequest(req, creator)
 	require.Error(t, err)
 
@@ -145,7 +145,7 @@ func TestTransferNotEnoughFunds2(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncTransfer,
 		ParamAccount, creatorAgentID,
 		ParamAmount, amount,
-		)
+	)
 	_, err := chain.PostRequest(req, user)
 	require.Error(t, err)
 
@@ -168,7 +168,7 @@ func TestApprove(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncApprove,
 		ParamDelegation, userAgentID,
 		ParamAmount, 100,
-		)
+	)
 	_, err := chain.PostRequest(req, creator)
 	require.NoError(t, err)
 
@@ -185,7 +185,7 @@ func TestTransferFromOk1(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncApprove,
 		ParamDelegation, userAgentID,
 		ParamAmount, 100,
-		)
+	)
 	_, err := chain.PostRequest(req, creator)
 	require.NoError(t, err)
 
@@ -214,7 +214,7 @@ func TestTransferFromOk2(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncApprove,
 		ParamDelegation, userAgentID,
 		ParamAmount, 100,
-		)
+	)
 	_, err := chain.PostRequest(req, creator)
 	require.NoError(t, err)
 
@@ -243,7 +243,7 @@ func TestTransferFromFail(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncApprove,
 		ParamDelegation, userAgentID,
 		ParamAmount, 100,
-		)
+	)
 	_, err := chain.PostRequest(req, creator)
 	require.NoError(t, err)
 

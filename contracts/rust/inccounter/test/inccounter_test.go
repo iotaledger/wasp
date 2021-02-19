@@ -24,51 +24,51 @@ func TestDeploy(t *testing.T) {
 
 func TestStateAfterDeploy(t *testing.T) {
 	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
-	
+
 	checkStateCounter(t, chain, nil)
 }
 
 func TestIncrementOnce(t *testing.T) {
 	chain := setupTest(t)
-	
+
 	req := solo.NewCallParams(ScName, FuncIncrement)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	
+
 	checkStateCounter(t, chain, 1)
 }
 
 func TestIncrementTwice(t *testing.T) {
 	chain := setupTest(t)
-	
+
 	req := solo.NewCallParams(ScName, FuncIncrement)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	
+
 	req = solo.NewCallParams(ScName, FuncIncrement)
 	_, err = chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	
+
 	checkStateCounter(t, chain, 2)
 }
 
 func TestIncrementRepeatThrice(t *testing.T) {
 	chain := setupTest(t)
-	
+
 	req := solo.NewCallParams(ScName, FuncRepeatMany,
 		ParamNumRepeats, 3,
 	).WithTransfer(balance.ColorIOTA, 1) // !!! posts to self
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)
-	
+
 	chain.WaitForEmptyBacklog()
-	
+
 	checkStateCounter(t, chain, 4)
 }
 
 func TestIncrementCallIncrement(t *testing.T) {
 	chain := setupTest(t)
-	
+
 	req := solo.NewCallParams(ScName, FuncCallIncrement)
 	_, err := chain.PostRequest(req, nil)
 	require.NoError(t, err)

@@ -32,7 +32,7 @@ pub fn func_increment(ctx: &ScFuncContext) {
 
 pub fn func_init(ctx: &ScFuncContext) {
     let p = ctx.params();
-    let param_counter= p.get_int(PARAM_COUNTER);
+    let param_counter = p.get_int(PARAM_COUNTER);
     if !param_counter.exists() {
         return;
     }
@@ -103,7 +103,7 @@ pub fn func_post_increment(ctx: &ScFuncContext) {
 
 pub fn func_repeat_many(ctx: &ScFuncContext) {
     let p = ctx.params();
-    let param_num_repeats= p.get_int(PARAM_NUM_REPEATS);
+    let param_num_repeats = p.get_int(PARAM_NUM_REPEATS);
 
     let counter = ctx.state().get_int(VAR_COUNTER);
     let value = counter.value();

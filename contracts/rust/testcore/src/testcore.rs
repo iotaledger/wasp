@@ -139,7 +139,8 @@ pub fn func_send_to_address(ctx: &ScFuncContext) {
 
     ctx.require(param_address.exists(), "missing mandatory address");
 
-    ctx.transfer_to_address(&param_address.value(), &ctx.balances());
+    let balances = ScTransfers::new_transfers_from_balances(ctx.balances());
+    ctx.transfer_to_address(&param_address.value(), balances);
     ctx.log("testcore.sendToAddress ok");
 }
 
@@ -230,7 +231,7 @@ pub fn func_withdraw_to_chain(ctx: &ScFuncContext) {
         contract_id: target_contract_id,
         function: CORE_ACCOUNTS_FUNC_WITHDRAW_TO_CHAIN,
         params: None,
-        transfer: Some(Box::new(transfers)),
+        transfer: Some(transfers),
         delay: 0,
     });
     // TODO how to check if post was successful
