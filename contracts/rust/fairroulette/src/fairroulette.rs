@@ -10,6 +10,7 @@ const MAX_NUMBER: i64 = 5;
 const DEFAULT_PLAY_PERIOD: i64 = 120;
 
 pub fn func_lock_bets(ctx: &ScFuncContext) {
+    ctx.log("fairroulette.lockBets");
     // only SC itself can invoke this function
     ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
 
@@ -31,9 +32,11 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
         transfer: None,
         delay: 0,
     });
+    ctx.log("fairroulette.lockBets ok");
 }
 
 pub fn func_pay_winners(ctx: &ScFuncContext) {
+    ctx.log("fairroulette.payWinners");
     // only SC itself can invoke this function
     ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
 
@@ -87,9 +90,11 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
         ctx.log(&text);
         ctx.transfer_to_address(&sc_id.address(), &ScTransfers::new(&ScColor::IOTA, remainder));
     }
+    ctx.log("fairroulette.payWinners ok");
 }
 
 pub fn func_place_bet(ctx: &ScFuncContext) {
+    ctx.log("fairroulette.placeBet");
     let p = ctx.params();
     let param_number = p.get_int(PARAM_NUMBER);
 
@@ -127,9 +132,11 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
             delay: play_period,
         });
     }
+    ctx.log("fairroulette.placeBet ok");
 }
 
 pub fn func_play_period(ctx: &ScFuncContext) {
+    ctx.log("fairroulette.playPeriod");
     // only SC creator can update the play period
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
@@ -144,4 +151,5 @@ pub fn func_play_period(ctx: &ScFuncContext) {
     }
 
     ctx.state().get_int(VAR_PLAY_PERIOD).set_value(play_period);
+    ctx.log("fairroulette.playPeriod ok");
 }

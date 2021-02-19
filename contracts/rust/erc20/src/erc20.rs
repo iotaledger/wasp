@@ -158,25 +158,30 @@ pub fn view_allowance(ctx: &ScViewContext) {
     let allowances = ctx.state().get_map(&param_account.value());
     let allow = allowances.get_int(&param_delegation.value()).value();
     ctx.results().get_int(PARAM_AMOUNT).set_value(allow);
+    ctx.trace("erc20.allowance ok");
 }
 
 // the view returns balance of the token held in the account
 // Input:
 // - PARAM_ACCOUNT: agentID
 pub fn view_balance_of(ctx: &ScViewContext) {
+    ctx.trace("erc20.balanceOf");
     let p = ctx.params();
     let param_account = p.get_agent_id(PARAM_ACCOUNT);
     ctx.require(param_account.exists(), "missing mandatory account");
 
     let balances = ctx.state().get_map(VAR_BALANCES);
     let balance = balances.get_int(&param_account.value()).value();
-    ctx.results().get_int(PARAM_AMOUNT).set_value(balance)
+    ctx.results().get_int(PARAM_AMOUNT).set_value(balance);
+    ctx.trace("erc20.balanceOf ok");
 }
 
 // the view returns total supply set when creating the contract (a constant).
 // Output:
 // - PARAM_SUPPLY: i64
 pub fn view_total_supply(ctx: &ScViewContext) {
+    ctx.trace("erc20.totalSupply");
     let supply = ctx.state().get_int(VAR_SUPPLY).value();
     ctx.results().get_int(PARAM_SUPPLY).set_value(supply);
+    ctx.trace("erc20.totalSupply ok");
 }
