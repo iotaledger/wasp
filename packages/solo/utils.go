@@ -13,7 +13,7 @@ func (ch *Chain) GrantDeployPermission(sigScheme signaturescheme.SignatureScheme
 	}
 
 	req := NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, deployerAgentID)
-	_, err := ch.PostRequest(req, sigScheme)
+	_, err := ch.PostRequestSync(req, sigScheme)
 	return err
 }
 
@@ -24,6 +24,6 @@ func (ch *Chain) RevokeDeployPermission(sigScheme signaturescheme.SignatureSchem
 	}
 
 	req := NewCallParams(root.Interface.Name, root.FuncRevokeDeploy, root.ParamDeployer, deployerAgentID)
-	_, err := ch.PostRequest(req, sigScheme)
+	_, err := ch.PostRequestSync(req, sigScheme)
 	return err
 }

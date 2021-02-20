@@ -106,7 +106,7 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
 	var res dict.Dict
-	res, err = ch.PostRequest(req, sigScheme)
+	res, err = ch.PostRequestSync(req, sigScheme)
 	if err != nil {
 		return
 	}
@@ -153,7 +153,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.
 		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
 	var res dict.Dict
-	res, err = ch.PostRequest(req, sigScheme)
+	res, err = ch.PostRequestSync(req, sigScheme)
 	if err != nil {
 		return
 	}
@@ -239,7 +239,7 @@ func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name 
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
 	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...)
-	_, err := ch.PostRequest(req, sigScheme)
+	_, err := ch.PostRequestSync(req, sigScheme)
 	return err
 }
 

@@ -283,6 +283,12 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
     ctx.log("testcore.fibonacci ok");
 }
 
+pub fn func_inc_counter(ctx: &ScFuncContext) {
+    ctx.log("testcore.incCounter");
+    ctx.state().get_int(VAR_COUNTER).set_value(ctx.state().get_int(VAR_COUNTER).value()+1);
+    ctx.log("testcore.incCounter ok");
+}
+
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
     let counter = ctx.state().get_int(VAR_COUNTER);

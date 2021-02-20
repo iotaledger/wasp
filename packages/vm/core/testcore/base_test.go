@@ -12,7 +12,7 @@ func TestNoContractPost(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams("dummyContract", "dummyEP")
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
 
@@ -29,7 +29,7 @@ func TestNoEPPost(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, "dummyEP")
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
 

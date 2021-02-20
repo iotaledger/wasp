@@ -31,6 +31,13 @@ func callOnChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}), nil)
 }
 
+func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	counter := state.MustGetInt64(VarCounter, 0)
+	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
+	return nil, nil
+}
+
 func getCounter(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	state := kvdecoder.New(ctx.State(), ctx.Log())

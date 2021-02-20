@@ -32,6 +32,7 @@ fn on_load() {
     exports.add_view(VIEW_FIBONACCI, view_fibonacci);
     exports.add_view(VIEW_GET_COUNTER, view_get_counter);
     exports.add_view(VIEW_GET_INT, view_get_int);
+    exports.add_func(FUNC_INC_COUNTER, func_inc_counter);
     exports.add_view(VIEW_JUST_VIEW, view_just_view);
     exports.add_view(VIEW_PASS_TYPES_VIEW, view_pass_types_view);
     exports.add_view(VIEW_TEST_CALL_PANIC_VIEW_EPFROM_VIEW, view_test_call_panic_view_epfrom_view);

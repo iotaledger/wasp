@@ -59,7 +59,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 // PostRequest creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
 func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
-	vmctx.log.Debugw("-- PostRequest",
+	vmctx.log.Debugw("-- PostRequestSync",
 		"target", par.TargetContractID.String(),
 		"ep", par.EntryPoint.String(),
 		"transfer", cbalances.Str(par.Transfer),
@@ -68,11 +68,11 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 	if !vmctx.debitFromAccount(myAgentID, cbalances.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
-		vmctx.log.Debugf("-- PostRequest: not enough funds for request token")
+		vmctx.log.Debugf("-- PostRequestSync: not enough funds for request token")
 		return false
 	}
 	if !vmctx.debitFromAccount(myAgentID, par.Transfer) {
-		vmctx.log.Debugf("-- PostRequest: not enough funds")
+		vmctx.log.Debugf("-- PostRequestSync: not enough funds")
 		return false
 	}
 	reqParams := requestargs.New(nil)
@@ -109,4 +109,8 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 
 func (vmctx *VMContext) RequestID() coretypes.RequestID {
 	return *vmctx.reqRef.RequestID()
+}
+
+func (vmctx *VMContext) NumFreeMinted() int64 {
+	return vmctx.reqRef.Tx.MustProperties().NumFreeMintedTokens()
 }

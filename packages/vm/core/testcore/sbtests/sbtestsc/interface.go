@@ -46,6 +46,7 @@ func init() {
 		coreutil.Func(FuncSetInt, setInt),
 		coreutil.ViewFunc(FuncGetInt, getInt),
 		coreutil.ViewFunc(FuncGetFibonacci, getFibonacci),
+		coreutil.Func(FuncIncCounter, incCounter),
 		coreutil.ViewFunc(FuncGetCounter, getCounter),
 		coreutil.Func(FuncRunRecursion, runRecursion),
 
@@ -92,6 +93,7 @@ const (
 	FuncGetInt       = "getInt"
 	FuncGetFibonacci = "fibonacci"
 	FuncGetCounter   = "getCounter"
+	FuncIncCounter   = "incCounter"
 	FuncRunRecursion = "runRecursion"
 
 	FuncPassTypesFull = "passTypesFull"

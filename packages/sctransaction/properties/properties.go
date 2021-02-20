@@ -205,7 +205,7 @@ func (prop *properties) analyzeRequestBlocks(tx *sctransaction.Transaction) erro
 			return true
 		}
 		if diff.Balance(balance.ColorNew) != 0 {
-			// semantical rule: we require number of minted tokens to the target chain exactly equal
+			// semantic rule: we require number of minted tokens to the target chain exactly equal
 			// to the number of requests to that chain
 			err = fmt.Errorf("wrong number of minted tokens in the output to the address %s", addr.String())
 			return false

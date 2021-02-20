@@ -32,7 +32,7 @@ func TestRootRepeatInit(t *testing.T) {
 	chain.CheckChain()
 
 	req := solo.NewCallParams(root.Interface.Name, "init")
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
 
@@ -140,14 +140,14 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	newOwner := env.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	info, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership)
-	_, err = chain.PostRequest(req, newOwner)
+	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
 	info, _ = chain.GetInfo()
@@ -162,7 +162,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	newOwner := env.NewSignatureSchemeWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
-	_, err := chain.PostRequest(req, newOwner)
+	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 
 	info, _ := chain.GetInfo()

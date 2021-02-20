@@ -51,6 +51,7 @@ pub const FUNC_TEST_PANIC_FULL_EP: &str = "testPanicFullEP";
 pub const FUNC_WITHDRAW_TO_CHAIN: &str = "withdrawToChain";
 pub const VIEW_CHECK_CONTEXT_FROM_VIEW_EP: &str = "checkContextFromViewEP";
 pub const VIEW_FIBONACCI: &str = "fibonacci";
+pub const FUNC_INC_COUNTER: &str = "incCounter";
 pub const VIEW_GET_COUNTER: &str = "getCounter";
 pub const VIEW_GET_INT: &str = "getInt";
 pub const VIEW_JUST_VIEW: &str = "justView";
