@@ -35,6 +35,8 @@ func (prop *properties) MustStateColor() *balance.Color {
 }
 
 // NumFreeMintedTokens return total minted tokens minus number of requests
+// all of those tokens will be minted to other addresses than chain address
+// after all requests will be settled, the remaining minted tokens will be free minted tokens.
 func (prop *properties) NumFreeMintedTokens() int64 {
 	if prop.isOrigin {
 		return 0

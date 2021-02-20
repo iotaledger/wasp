@@ -63,7 +63,6 @@ func calcProperties(tx *sctransaction.Transaction) (coretypes.SCTransactionPrope
 		dataPayloadSize:     tx.DataPayloadSize(),
 		freeTokensByAddress: make(map[address.Address]coretypes.ColoredBalances),
 	}
-
 	if !tx.SignaturesValid() {
 		return nil, fmt.Errorf("invalid signatures")
 	}
@@ -80,6 +79,10 @@ func calcProperties(tx *sctransaction.Transaction) (coretypes.SCTransactionPrope
 		return nil, err
 	}
 	ret.calcNumMinted(tx)
+
+	if int64(ret.numRequests) > ret.numTotalMintedTokens {
+		panic("int64(prop.numRequests) > prop.numTotalMintedTokens")
+	}
 	return ret, nil
 }
 
@@ -202,17 +205,21 @@ func (prop *properties) analyzeRequestBlocks(tx *sctransaction.Transaction) erro
 			return true
 		}
 		if diff.Balance(balance.ColorNew) != 0 {
+			// semantical rule: we require number of minted tokens to the target chain exactly equal
+			// to the number of requests to that chain
 			err = fmt.Errorf("wrong number of minted tokens in the output to the address %s", addr.String())
 			return false
 		}
 		if !diff.NonNegative() {
+			// metadata of transfer in the request ir wrong
 			err = fmt.Errorf("mismatch between request metadata and outputs for address %s", addr.String())
 			return false
 		}
-		// there are some free tokens for the address
+		// there are some free tokens for the address, i.e.
+		// there are more tokens in the outputs of the value transaction than tokens in the
+		// metadata. The Vm has to do something about it, otherwise they will become inaccessible
 		prop.freeTokensByAddress[addr] = diff
 		return true
 	})
 	return err
-	// TODO free minted tokens
 }
