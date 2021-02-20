@@ -1,4 +1,7 @@
-// implement smart contract transaction.
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// implements smart contract transaction.
 // smart contract transaction is value transaction with special payload
 package sctransaction
 
@@ -9,6 +12,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 )
@@ -17,10 +21,13 @@ import (
 // the stateSection and requestSection are parsed from the dataPayload of the value transaction
 type Transaction struct {
 	*valuetransaction.Transaction
-	stateSection   *StateSection
-	requestSection []*RequestSection
-	properties     *Properties // cached properties. If nil, transaction is semantically validated and properties are calculated
+	stateSection     *StateSection
+	requestSection   []*RequestSection
+	cachedProperties coretypes.SCTransactionProperties // cached cachedProperties. If nil, transaction is semantically validated and cachedProperties are calculated
 }
+
+// function which analyzes the transaction and calculates properties of it
+var NewProperties func(transaction *Transaction) (coretypes.SCTransactionProperties, error)
 
 // creates new sc transaction. It is immutable, i.e. tx hash is stable
 func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateSection, requestBlocks []*RequestSection) (*Transaction, error) {
@@ -55,17 +62,17 @@ func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, err
 	return ret, nil
 }
 
-// Properties returns valid properties if sc transaction is semantically correct
-func (tx *Transaction) Properties() (*Properties, error) {
-	if tx.properties != nil {
-		return tx.properties, nil
+// Properties returns valid cachedProperties if sc transaction is semantically correct
+func (tx *Transaction) Properties() (coretypes.SCTransactionProperties, error) {
+	if tx.cachedProperties != nil {
+		return tx.cachedProperties, nil
 	}
 	var err error
-	tx.properties, err = tx.calcProperties()
-	return tx.properties, err
+	tx.cachedProperties, err = NewProperties(tx)
+	return tx.cachedProperties, err
 }
 
-func (tx *Transaction) MustProperties() *Properties {
+func (tx *Transaction) MustProperties() coretypes.SCTransactionProperties {
 	ret, err := tx.Properties()
 	if err != nil {
 		panic(err)

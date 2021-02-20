@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 )
 
