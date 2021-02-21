@@ -48,6 +48,7 @@ type Solo struct {
 	registry    coretypes.BlobCacheFull
 	glbMutex    *sync.RWMutex
 	ledgerMutex *sync.RWMutex
+	clockMutex  *sync.RWMutex
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[coretypes.ChainID]*Chain
@@ -137,6 +138,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		utxoDB:      utxodb.New(),
 		registry:    reg,
 		glbMutex:    &sync.RWMutex{},
+		clockMutex:  &sync.RWMutex{},
 		ledgerMutex: &sync.RWMutex{},
 		logicalTime: time.Now(),
 		timeStep:    DefaultTimeStep,

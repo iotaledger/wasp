@@ -97,8 +97,8 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 		prevBlockIndex, ch.State.BlockIndex(), len(block.RequestIDs()), len(ch.StateTx.Requests()))
 	ch.Log.Debugf("Batch processed: %s", batchShortStr(block.RequestIDs()))
 
-	ch.Env.ClockStep()
 	ch.Env.EnqueueRequests(ch.StateTx)
+	ch.Env.ClockStep()
 }
 
 func batchShortStr(reqIds []*coretypes.RequestID) string {
