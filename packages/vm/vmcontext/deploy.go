@@ -26,7 +26,7 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name strin
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
 	par := initParams.Clone()
-	par.Set(root.ParamProgramHash, codec.EncodeHashValue(&programHash))
+	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
 	par.Set(root.ParamDescription, codec.EncodeString(description))
 	_, err = vmctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncDeployContract), par, nil)

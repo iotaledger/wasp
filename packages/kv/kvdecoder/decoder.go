@@ -101,10 +101,10 @@ func (p *decoder) GetHashValue(key kv.Key, def ...hashing.HashValue) (hashing.Ha
 		return [32]byte{}, fmt.Errorf("GetHashValue: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
-		return *v, nil
+		return v, nil
 	}
 	if len(def) == 0 {
-		return hashing.HashValue{}, fmt.Errorf("GetHashValue: mandatory parameter '%s' does not exist", key)
+		return hashing.NilHash, fmt.Errorf("GetHashValue: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }

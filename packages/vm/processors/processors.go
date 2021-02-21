@@ -42,7 +42,7 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 	var ok bool
 	var err error
 
-	if cps.ExistsProcessor(&programHash) {
+	if cps.ExistsProcessor(programHash) {
 		return nil
 	}
 	switch vmtype {
@@ -67,8 +67,8 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 	return nil
 }
 
-func (cps *ProcessorCache) ExistsProcessor(h *hashing.HashValue) bool {
-	_, ok := cps.processors[*h]
+func (cps *ProcessorCache) ExistsProcessor(h hashing.HashValue) bool {
+	_, ok := cps.processors[h]
 	return ok
 }
 
@@ -97,8 +97,8 @@ func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.Ha
 }
 
 // RemoveProcessor deletes processor from cache
-func (cps *ProcessorCache) RemoveProcessor(h *hashing.HashValue) {
+func (cps *ProcessorCache) RemoveProcessor(h hashing.HashValue) {
 	cps.Lock()
 	defer cps.Unlock()
-	delete(cps.processors, *h)
+	delete(cps.processors, h)
 }
