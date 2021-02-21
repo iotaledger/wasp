@@ -164,7 +164,7 @@ pub fn func_get_minted_supply(ctx: &ScFuncContext) {
     // TODO implement sandbox call
     //  ctx.get_minted_supply() -> i64
 
-    let minted_supply = 42; // dummy
+    let minted_supply = 42; // dummy for the core test to pass
     ctx.results().get_int(PARAM_MINTED_SUPPLY).set_value(minted_supply);
     ctx.log("testcore.setInt ok");
 }
