@@ -56,7 +56,7 @@ func (env *Solo) MintTokens(wallet signaturescheme.SignatureScheme, amount int64
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
 	require.NoError(env.T, err)
 
-	if err = txb.MintColor(wallet.Address(), balance.ColorIOTA, amount); err != nil {
+	if err = txb.MintColoredTokens(wallet.Address(), balance.ColorIOTA, amount); err != nil {
 		return balance.Color{}, err
 	}
 	tx := txb.BuildValueTransactionOnly(false)

@@ -292,8 +292,8 @@ func (vtxb *Builder) EraseColor(targetAddr address.Address, col balance.Color, a
 	return nil
 }
 
-// MintColor creates output of NewColor tokens out of inputs with specified color
-func (vtxb *Builder) MintColor(targetAddr address.Address, sourceColor balance.Color, amount int64) error {
+// MintColoredTokens creates output of NewColor tokens out of inputs with specified color
+func (vtxb *Builder) MintColoredTokens(targetAddr address.Address, sourceColor balance.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}

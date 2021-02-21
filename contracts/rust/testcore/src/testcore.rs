@@ -158,6 +158,17 @@ pub fn func_set_int(ctx: &ScFuncContext) {
     ctx.log("testcore.setInt ok");
 }
 
+pub fn func_get_minted_supply(ctx: &ScFuncContext) {
+    ctx.log("testcore.getMintedSupply");
+
+    // TODO implement sandbox call
+    //  ctx.get_minted_supply() -> i64
+
+    let minted_supply = 42; // dummy
+    ctx.results().get_int(PARAM_MINTED_SUPPLY).set_value(minted_supply);
+    ctx.log("testcore.setInt ok");
+}
+
 pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext) {
     ctx.log("testcore.testCallPanicFullEP");
     ctx.call_self(HFUNC_TEST_PANIC_FULL_EP, None, None);

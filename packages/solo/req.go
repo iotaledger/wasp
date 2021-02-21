@@ -5,6 +5,7 @@ package solo
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -28,6 +29,7 @@ type CallParams struct {
 	epName     string
 	entryPoint coretypes.Hname
 	transfer   coretypes.ColoredBalances
+	mint       map[address.Address]int64
 	args       requestargs.RequestArgs
 }
 
@@ -86,6 +88,17 @@ func (r *CallParams) WithTransfers(transfer map[balance.Color]int64) *CallParams
 	return r
 }
 
+// WithMinting adds minting part to the request transaction
+// in the map <address>: <amount> all addresses should be different from the
+// address of the target chain and amounts must be positive
+func (r *CallParams) WithMinting(mint map[address.Address]int64) *CallParams {
+	r.mint = make(map[address.Address]int64)
+	for addr, amount := range mint {
+		r.mint[addr] = amount
+	}
+	return r
+}
+
 // makes map without hashing
 func toMap(params ...interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
@@ -126,6 +139,8 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signatures
 	err = txb.AddRequestSection(reqSect)
 	require.NoError(ch.Env.T, err)
 
+	txb.AddMinting(req.mint)
+
 	tx, err := txb.Build(false)
 	require.NoError(ch.Env.T, err)
 
@@ -155,6 +170,11 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signatures
 // It makes it possible step-by-step debug of the smart contract logic.
 // The call should be used only from the main thread (goroutine)
 func (ch *Chain) PostRequestSync(req *CallParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
+	_, ret, err := ch.PostRequestSyncTx(req, sigScheme)
+	return ret, err
+}
+
+func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.SignatureScheme) (*sctransaction.Transaction, dict.Dict, error) {
 	tx := ch.RequestFromParamsToLedger(req, sigScheme)
 
 	reqID := coretypes.NewRequestID(tx.ID(), 0)
@@ -162,7 +182,11 @@ func (ch *Chain) PostRequestSync(req *CallParams, sigScheme signaturescheme.Sign
 
 	r := vm.RequestRefWithFreeTokens{}
 	r.Tx = tx
-	return ch.runBatch([]vm.RequestRefWithFreeTokens{r}, "post")
+	ret, err := ch.runBatch([]vm.RequestRefWithFreeTokens{r}, "post")
+	if err != nil {
+		return nil, nil, err
+	}
+	return tx, ret, nil
 }
 
 // callViewFull calls the view entry point of the smart contract

@@ -16,6 +16,7 @@ type Builder struct {
 	*vtxbuilder.Builder
 	stateBlock    *sctransaction.StateSection
 	requestBlocks []*sctransaction.RequestSection
+	mint          map[address.Address]int64
 }
 
 var (
@@ -30,6 +31,7 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 	return &Builder{
 		Builder:       vtxb,
 		requestBlocks: make([]*sctransaction.RequestSection, 0),
+		mint:          make(map[address.Address]int64),
 	}, nil
 }
 
@@ -38,9 +40,13 @@ func (txb *Builder) Clone() *Builder {
 		Builder:       txb.Builder.Clone(),
 		stateBlock:    txb.stateBlock.Clone(),
 		requestBlocks: make([]*sctransaction.RequestSection, len(txb.requestBlocks)),
+		mint:          make(map[address.Address]int64),
 	}
 	for i := range ret.requestBlocks {
 		ret.requestBlocks[i] = txb.requestBlocks[i].Clone()
+	}
+	for addr, amount := range txb.mint {
+		ret.mint[addr] = amount
 	}
 	return ret
 }
@@ -53,7 +59,7 @@ func (txb *Builder) CreateOriginStateSection(stateHash hashing.HashValue, origin
 	if txb.stateBlock != nil {
 		return errors.New("can't set state block twice")
 	}
-	if err := txb.MintColor(*originAddress, balance.ColorIOTA, 1); err != nil {
+	if err := txb.MintColoredTokens(*originAddress, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
 	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
@@ -77,7 +83,7 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash hashing.HashValu
 // token and adds respective outputs for the colored transfers
 func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
 	targetAddr := (address.Address)(req.Target().ChainID())
-	if err := txb.MintColor(targetAddr, balance.ColorIOTA, 1); err != nil {
+	if err := txb.MintColoredTokens(targetAddr, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
 	var err error
@@ -94,7 +100,39 @@ func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
 	return nil
 }
 
+// AddMinting adds amounts to be minted from iotas to respective addresses
+func (txb *Builder) AddMinting(mint map[address.Address]int64) {
+	for addr, amount := range mint {
+		if amount <= 0 {
+			continue
+		}
+		a, _ := txb.mint[addr]
+		txb.mint[addr] = a + amount
+	}
+}
+
+func (txb *Builder) mintNewTokens() error {
+	for addr, amount := range txb.mint {
+		if amount <= 0 {
+			panic("mintNewTokens: internal error")
+		}
+		for _, reqBlk := range txb.requestBlocks {
+			targetAddr := address.Address(reqBlk.Target().ChainID())
+			if addr == targetAddr {
+				return fmt.Errorf("mintNewTokens: new tokens cannot be minted to the request's target address")
+			}
+		}
+		if err := txb.Builder.MintColoredTokens(addr, balance.ColorIOTA, amount); err != nil {
+			return fmt.Errorf("mintNewTokens: %v", err)
+		}
+	}
+	return nil
+}
+
 func (txb *Builder) Build(useAllInputs bool) (*sctransaction.Transaction, error) {
+	if err := txb.mintNewTokens(); err != nil {
+		return nil, err
+	}
 	return sctransaction.NewTransaction(
 		txb.Builder.Build(useAllInputs),
 		txb.stateBlock,

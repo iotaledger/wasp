@@ -37,7 +37,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
-const Saldo = 1337
+const Saldo = int64(1337)
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {

@@ -26,6 +26,7 @@ func init() {
 		coreutil.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
 		coreutil.ViewFunc(FuncContractIDView, testContractIDView),
 		coreutil.Func(FuncContractIDFull, testContractIDFull),
+		coreutil.Func(FuncGetMintedSupply, getMintedSupply),
 
 		coreutil.Func(FuncEventLogGenericData, testEventLogGenericData),
 		coreutil.Func(FuncEventLogEventData, testEventLogEventData),
@@ -75,6 +76,7 @@ const (
 	FuncSandboxCall            = "testSandboxCall"
 	FuncCheckContextFromFullEP = "checkContextFromFullEP"
 	FuncCheckContextFromViewEP = "checkContextFromViewEP"
+	FuncGetMintedSupply        = "getMintedSupply"
 
 	FuncPanicFullEP             = "testPanicFullEP"
 	FuncPanicViewEP             = "testPanicViewEP"
@@ -101,10 +103,10 @@ const (
 
 	//Variables
 	VarCounter              = "counter"
-	VarChainOwner           = "chainOwner"
 	VarContractID           = "contractID"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
+	VarMintedSupply         = "mintedSupply"
 
 	// parameters
 	ParamFail            = "initFailParam"

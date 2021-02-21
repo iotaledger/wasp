@@ -35,7 +35,7 @@ type Sandbox interface {
 	// RequestID of the request in the context of which is the current call
 	RequestID() RequestID
 	// MintedSupply is number of free minted tokens, i.e. minted tokens which are sent to addresses
-	// other than chain address. It is a prove of how many tokens has been minted with the
+	// other than chain address. It is a proof of how many tokens has been minted with the
 	// color of the transaction (after un-coloring all request tokens)
 	// It may be used in use-cases such as Token Registry.
 	// The color of the supply can be extracted from the RequestID
