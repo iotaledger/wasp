@@ -59,7 +59,7 @@ func passTypesFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	hash, exists, err := codec.DecodeHashValue(ctx.Params().MustGet("Hash"))
 	checkFull(ctx, exists, err)
-	if *hash != hashing.HashStrings("Hash") {
+	if hash != hashing.HashStrings("Hash") {
 		ctx.Log().Panicf("wrong hash")
 	}
 	hname, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
@@ -104,7 +104,7 @@ func passTypesView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	}
 	hash, exists, err := codec.DecodeHashValue(ctx.Params().MustGet("Hash"))
 	checkView(ctx, exists, err)
-	if *hash != hashing.HashStrings("Hash") {
+	if hash != hashing.HashStrings("Hash") {
 		ctx.Log().Panicf("wrong hash")
 	}
 	hname, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))

@@ -27,7 +27,7 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 	h := hashing.HashData(data)
 	err := r.dbProvider.GetRegistryPartition().Set(dbKeyForBlob(h), data)
 	if err != nil {
-		return hashing.HashValue{}, err
+		return hashing.NilHash, err
 	}
 	nowis := time.Now()
 	cleanAfter := nowis.Add(coretypes.DefaultTTL).UnixNano()
@@ -37,7 +37,7 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 	if cleanAfter > 0 {
 		err = r.dbProvider.GetRegistryPartition().Set(dbKeyForBlobTTL(h), codec.EncodeInt64(cleanAfter))
 		if err != nil {
-			return hashing.HashValue{}, err
+			return hashing.NilHash, err
 		}
 	}
 	r.log.Infof("data blob has been stored. size: %d bytes, hash: %s", len(data), h)

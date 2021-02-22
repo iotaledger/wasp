@@ -156,8 +156,8 @@ func placeBet(ctx coretypes.Sandbox) error {
 	if collections.NewArray(state, StateVarLockedBets).MustLen() > 0 {
 		ok := state.MustHas(StateVarEntropyFromLocking)
 		if !ok {
-			ehv := ctx.GetEntropy()
-			state.Set(StateVarEntropyFromLocking, codec.EncodeHashValue(&ehv))
+			entropy := codec.EncodeHashValue(ctx.GetEntropy())
+			state.Set(StateVarEntropyFromLocking, entropy)
 		}
 	}
 
@@ -305,8 +305,7 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 	// the current context
 	entropy, ok, _ := codec.DecodeHashValue(state.MustGet(StateVarEntropyFromLocking))
 	if !ok {
-		h := ctx.GetEntropy()
-		entropy = &h
+		entropy = ctx.GetEntropy()
 	}
 
 	// 'playing the wheel' means taking first 8 bytes of the entropy as uint64 number and
