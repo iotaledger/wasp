@@ -40,7 +40,7 @@ func setupTest(t *testing.T) *solo.Chain {
 		balance.ColorIOTA: 25, // deposit, must be >=minimum*margin
 		tokenColor:        10, // the tokens to auction
 	})
-	_, err = chain.PostRequest(req, auctioneer)
+	_, err = chain.PostRequestSync(req, auctioneer)
 	require.NoError(t, err)
 	return chain
 }
@@ -99,7 +99,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncPlaceBid,
 		ParamColor, tokenColor,
 	).WithTransfer(balance.ColorIOTA, 100)
-	_, err := chain.PostRequest(req, auctioneer)
+	_, err := chain.PostRequestSync(req, auctioneer)
 	require.Error(t, err)
 
 	// wait for finalize_auction
@@ -122,7 +122,7 @@ func TestFaOneBid(t *testing.T) {
 	req := solo.NewCallParams(ScName, FuncPlaceBid,
 		ParamColor, tokenColor,
 	).WithTransfer(balance.ColorIOTA, 500)
-	_, err := chain.PostRequest(req, bidder)
+	_, err := chain.PostRequestSync(req, bidder)
 	require.NoError(t, err)
 
 	// wait for finalize_auction

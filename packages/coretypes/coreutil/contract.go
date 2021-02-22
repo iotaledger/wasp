@@ -36,7 +36,7 @@ func Funcs(init Handler, fns []ContractFunctionInterface) map[coretypes.Hname]Co
 	for _, f := range fns {
 		hname := f.Hname()
 		if _, ok := ret[hname]; ok {
-			panic(fmt.Sprintf("Duplicate function: %s", f.Name))
+			panic(fmt.Sprintf("Duplicate function: %s (%s)", f.Name, hname.String()))
 		}
 
 		handlers := 0

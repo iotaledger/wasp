@@ -75,6 +75,10 @@ func (s *sandbox) RequestID() coretypes.RequestID {
 	return s.vmctx.RequestID()
 }
 
+func (s *sandbox) MintedSupply() int64 {
+	return s.vmctx.NumFreeMinted()
+}
+
 func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }

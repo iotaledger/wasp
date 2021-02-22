@@ -26,6 +26,7 @@ func init() {
 		coreutil.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
 		coreutil.ViewFunc(FuncContractIDView, testContractIDView),
 		coreutil.Func(FuncContractIDFull, testContractIDFull),
+		coreutil.Func(FuncGetMintedSupply, getMintedSupply),
 
 		coreutil.Func(FuncEventLogGenericData, testEventLogGenericData),
 		coreutil.Func(FuncEventLogEventData, testEventLogEventData),
@@ -46,6 +47,7 @@ func init() {
 		coreutil.Func(FuncSetInt, setInt),
 		coreutil.ViewFunc(FuncGetInt, getInt),
 		coreutil.ViewFunc(FuncGetFibonacci, getFibonacci),
+		coreutil.Func(FuncIncCounter, incCounter),
 		coreutil.ViewFunc(FuncGetCounter, getCounter),
 		coreutil.Func(FuncRunRecursion, runRecursion),
 
@@ -74,6 +76,7 @@ const (
 	FuncSandboxCall            = "testSandboxCall"
 	FuncCheckContextFromFullEP = "checkContextFromFullEP"
 	FuncCheckContextFromViewEP = "checkContextFromViewEP"
+	FuncGetMintedSupply        = "getMintedSupply"
 
 	FuncPanicFullEP             = "testPanicFullEP"
 	FuncPanicViewEP             = "testPanicViewEP"
@@ -92,6 +95,7 @@ const (
 	FuncGetInt       = "getInt"
 	FuncGetFibonacci = "fibonacci"
 	FuncGetCounter   = "getCounter"
+	FuncIncCounter   = "incCounter"
 	FuncRunRecursion = "runRecursion"
 
 	FuncPassTypesFull = "passTypesFull"
@@ -99,10 +103,10 @@ const (
 
 	//Variables
 	VarCounter              = "counter"
-	VarChainOwner           = "chainOwner"
 	VarContractID           = "contractID"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
+	VarMintedSupply         = "mintedSupply"
 
 	// parameters
 	ParamFail            = "initFailParam"

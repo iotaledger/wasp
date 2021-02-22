@@ -5,12 +5,14 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
 	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
 )
 
@@ -26,6 +28,7 @@ type CreateRequestTransactionParams struct {
 	Level1Client         level1.Level1Client
 	SenderSigScheme      signaturescheme.SignatureScheme
 	RequestSectionParams []RequestSectionParams
+	Mint                 map[address.Address]int64 // free tokens to be minted from IOTA color
 	Post                 bool
 	WaitForConfirmation  bool
 }
@@ -54,6 +57,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 			return nil, err
 		}
 	}
+	txb.AddMinting(par.Mint)
 	tx, err := txb.Build(false)
 
 	//dump := txb.Dump()

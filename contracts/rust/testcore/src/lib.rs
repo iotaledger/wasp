@@ -19,6 +19,7 @@ fn on_load() {
     exports.add_func(FUNC_RUN_RECURSION, func_run_recursion);
     exports.add_func(FUNC_SEND_TO_ADDRESS, func_send_to_address);
     exports.add_func(FUNC_SET_INT, func_set_int);
+    exports.add_func(FUNC_GET_MINTED_SUPPLY, func_get_minted_supply);
     exports.add_func(FUNC_TEST_CALL_PANIC_FULL_EP, func_test_call_panic_full_ep);
     exports.add_func(FUNC_TEST_CALL_PANIC_VIEW_EPFROM_FULL, func_test_call_panic_view_epfrom_full);
     exports.add_func(FUNC_TEST_CHAIN_OWNER_IDFULL, func_test_chain_owner_idfull);
@@ -32,6 +33,7 @@ fn on_load() {
     exports.add_view(VIEW_FIBONACCI, view_fibonacci);
     exports.add_view(VIEW_GET_COUNTER, view_get_counter);
     exports.add_view(VIEW_GET_INT, view_get_int);
+    exports.add_func(FUNC_INC_COUNTER, func_inc_counter);
     exports.add_view(VIEW_JUST_VIEW, view_just_view);
     exports.add_view(VIEW_PASS_TYPES_VIEW, view_pass_types_view);
     exports.add_view(VIEW_TEST_CALL_PANIC_VIEW_EPFROM_VIEW, view_test_call_panic_view_epfrom_view);

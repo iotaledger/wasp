@@ -111,3 +111,10 @@ func TestHname(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, hn1, hn1back)
 }
+
+func TestHnameCollision(t *testing.T) {
+	hn1 := Hn("doNothing")
+	hn2 := Hn("incCounter")
+
+	require.NotEqualValues(t, hn1, hn2)
+}

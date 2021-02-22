@@ -35,7 +35,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 	user := env.NewSignatureSchemeWithFunds()
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
-	_, err := chain.PostRequest(req, user)
+	_, err := chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -50,7 +50,7 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 	user := env.NewSignatureSchemeWithFunds()
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
-	_, err := chain.PostRequest(req, user)
+	_, err := chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -65,7 +65,7 @@ func TestSetDefaultOwnerFeeOk(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkFees(chain, root.Interface.Name, 1000, 0)
 	checkFees(chain, accounts.Interface.Name, 1000, 0)
@@ -79,7 +79,7 @@ func TestSetDefaultValidatorFeeOk(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamValidatorFee, 499,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkFees(chain, root.Interface.Name, 0, 499)
 	checkFees(chain, accounts.Interface.Name, 0, 499)
@@ -94,7 +94,7 @@ func TestSetDefaultFeeOk(t *testing.T) {
 		root.ParamOwnerFee, 1000,
 		root.ParamValidatorFee, 499,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkFees(chain, root.Interface.Name, 1000, 499)
 	checkFees(chain, accounts.Interface.Name, 1000, 499)
@@ -106,7 +106,7 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, -2)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -119,7 +119,7 @@ func TestSetDefaultFeeFailNegative2(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, -100)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -135,7 +135,7 @@ func TestSetContractValidatorFeeOk(t *testing.T) {
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamValidatorFee, 1000,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -151,7 +151,7 @@ func TestSetContractOwnerFeeOk(t *testing.T) {
 		root.ParamHname, accounts.Interface.Hname(),
 		root.ParamOwnerFee, 499,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -167,7 +167,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamValidatorFee, 1000,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -177,7 +177,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 499,
 	)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 499, 0)
@@ -190,7 +190,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	//			balance.ColorIOTA: 800,
 	//		},
 	//	)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 499, 1999)
@@ -206,7 +206,7 @@ func TestFeeNotEnough(t *testing.T) {
 		root.ParamHname, root.Interface.Hname(),
 		root.ParamValidatorFee, 499,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 499)
@@ -217,7 +217,7 @@ func TestFeeNotEnough(t *testing.T) {
 	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
-	_, err = chain.PostRequest(req, user)
+	_, err = chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 499)
@@ -233,7 +233,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 		root.ParamHname, root.Interface.Hname(),
 		root.ParamValidatorFee, 499,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 0, 499)
@@ -243,7 +243,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	checkFees(chain, root.Interface.Name, 1000, 499)

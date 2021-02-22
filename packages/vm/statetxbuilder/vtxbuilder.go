@@ -139,9 +139,13 @@ func (vtxb *vtxBuilder) sortInputBalancesById() {
 }
 
 // GetInputBalance what remains available in inputs
-func (vtxb *vtxBuilder) GetInputBalance(col balance.Color) int64 {
+func (vtxb *vtxBuilder) GetInputBalance(col balance.Color, filterTxid ...valuetransaction.ID) int64 {
+	takeFromTransaction := len(filterTxid) > 0
 	ret := int64(0)
 	for _, inp := range vtxb.inputBalancesByOutput {
+		if takeFromTransaction && inp.outputId.TransactionID() != filterTxid[0] {
+			continue
+		}
 		ret += txutil.BalanceOfColor(inp.remain, col)
 	}
 	return ret
@@ -183,13 +187,17 @@ func addAmount(bals []*balance.Balance, col balance.Color, amount int64) []*bala
 }
 
 // don't do any validation, may panic
-func (vtxb *vtxBuilder) moveAmount(targetAddr address.Address, origColor, targetColor balance.Color, amountToConsume int64) {
+func (vtxb *vtxBuilder) moveAmount(targetAddr address.Address, origColor, targetColor balance.Color, amountToConsume int64, filterTxid ...valuetransaction.ID) {
+	takeFromTransaction := len(filterTxid) > 0
 	saveAmount := amountToConsume
 	if amountToConsume == 0 {
 		return
 	}
 	var consumedAmount int64
 	for i := range vtxb.inputBalancesByOutput {
+		if takeFromTransaction && vtxb.inputBalancesByOutput[i].outputId.TransactionID() != filterTxid[0] {
+			continue
+		}
 		consumedAmount, amountToConsume = subtractAmount(vtxb.inputBalancesByOutput[i].remain, origColor, amountToConsume)
 		vtxb.inputBalancesByOutput[i].consumed = addAmount(vtxb.inputBalancesByOutput[i].consumed, origColor, consumedAmount)
 		if amountToConsume == 0 {
@@ -213,30 +221,30 @@ func (vtxb *vtxBuilder) addToOutputs(targetAddr address.Address, col balance.Col
 }
 
 // MoveTokens move token without changing color
-func (vtxb *vtxBuilder) MoveTokens(targetAddr address.Address, col balance.Color, amount int64) error {
-	if vtxb.GetInputBalance(col) < amount {
+func (vtxb *vtxBuilder) MoveTokens(targetAddr address.Address, col balance.Color, amount int64, filterTxid ...valuetransaction.ID) error {
+	if vtxb.GetInputBalance(col, filterTxid...) < amount {
 		return errorNotEnoughBalance
 	}
-	vtxb.moveAmount(targetAddr, col, col, amount)
+	vtxb.moveAmount(targetAddr, col, col, amount, filterTxid...)
 	return nil
 }
 
-func (vtxb *vtxBuilder) EraseColor(targetAddr address.Address, col balance.Color, amount int64) error {
-	actualBalance := vtxb.GetInputBalance(col)
+func (vtxb *vtxBuilder) EraseColor(targetAddr address.Address, col balance.Color, amount int64, filterTxid ...valuetransaction.ID) error {
+	actualBalance := vtxb.GetInputBalance(col, filterTxid...)
 	if actualBalance < amount {
 		return fmt.Errorf("EraseColor: not enough balance: need %d, found %d, color %s",
 			amount, actualBalance, col.String())
 	}
-	vtxb.moveAmount(targetAddr, col, balance.ColorIOTA, amount)
+	vtxb.moveAmount(targetAddr, col, balance.ColorIOTA, amount, filterTxid...)
 	return nil
 }
 
 // MintColor creates output of NewColor tokens out of inputs with specified color
-func (vtxb *vtxBuilder) MintColor(targetAddr address.Address, sourceColor balance.Color, amount int64) error {
-	if vtxb.GetInputBalance(sourceColor) < amount {
+func (vtxb *vtxBuilder) MintColor(targetAddr address.Address, sourceColor balance.Color, amount int64, filterTxid ...valuetransaction.ID) error {
+	if vtxb.GetInputBalance(sourceColor, filterTxid...) < amount {
 		return errorNotEnoughBalance
 	}
-	vtxb.moveAmount(targetAddr, sourceColor, balance.ColorNew, amount)
+	vtxb.moveAmount(targetAddr, sourceColor, balance.ColorNew, amount, filterTxid...)
 	return nil
 }
 

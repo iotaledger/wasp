@@ -48,7 +48,7 @@ func TestColor(t *testing.T) {
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.MintColor(targetAddress, balance.ColorIOTA, 10)
+	err = txb.MintColoredTokens(targetAddress, balance.ColorIOTA, 10)
 	assert.NoError(t, err)
 
 	tx := txb.Build(false)
