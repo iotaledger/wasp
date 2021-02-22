@@ -58,9 +58,6 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 		}
 	}
 	txb.AddMinting(par.Mint)
-	//for addr, amount := range par.Mint{
-	//	txb.MintColoredTokens
-	//}
 	tx, err := txb.Build(false)
 
 	//dump := txb.Dump()

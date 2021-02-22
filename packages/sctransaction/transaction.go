@@ -23,7 +23,7 @@ type Transaction struct {
 	*valuetransaction.Transaction
 	stateSection     *StateSection
 	requestSection   []*RequestSection
-	cachedProperties coretypes.SCTransactionProperties // cached cachedProperties. If nil, transaction is semantically validated and cachedProperties are calculated
+	cachedProperties coretypes.SCTransactionProperties
 }
 
 // function which analyzes the transaction and calculates properties of it
@@ -62,7 +62,7 @@ func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, err
 	return ret, nil
 }
 
-// Properties returns valid cachedProperties if sc transaction is semantically correct
+// Properties returns valid properties if sc transaction is semantically correct
 func (tx *Transaction) Properties() (coretypes.SCTransactionProperties, error) {
 	if tx.cachedProperties != nil {
 		return tx.cachedProperties, nil

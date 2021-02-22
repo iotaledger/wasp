@@ -63,7 +63,7 @@ type Sandbox interface {
 	Utils() Utils
 }
 
-// PostRequestParams is parameters of the PostRequestSync call
+// PostRequestParams is parameters of the PostRequest call
 type PostRequestParams struct {
 	TargetContractID ContractID
 	EntryPoint       Hname
