@@ -60,7 +60,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 		require.NoError(ch.Env.T, err)
 		callRes = callResult
 		callErr = callError
-		ch.reqCounter.Add(int64(-len(task.Requests)))
+		ch.reqCounter.Add(int32(-len(task.Requests)))
 		wg.Done()
 	}
 

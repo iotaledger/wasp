@@ -4,7 +4,7 @@
 package solo
 
 import (
-	"github.com/streadway/handy/atomic"
+	"go.uber.org/atomic"
 	"sync"
 	"testing"
 	"time"
@@ -106,7 +106,7 @@ type Chain struct {
 
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
-	reqCounter   atomic.Int
+	reqCounter   atomic.Int32
 	chInRequest  chan sctransaction.RequestRef
 	backlog      []sctransaction.RequestRef
 	backlogMutex *sync.RWMutex
@@ -275,7 +275,7 @@ func (env *Solo) EnqueueRequests(tx *sctransaction.Transaction) {
 			env.logger.Infof("dispatching requests. Unknown chain: %s", chid.String())
 			continue
 		}
-		chain.reqCounter.Add(int64(len(reqs)))
+		chain.reqCounter.Add(int32(len(reqs)))
 		for _, reqRef := range reqs {
 			chain.chInRequest <- reqRef
 		}
@@ -342,5 +342,5 @@ func (ch *Chain) batchLoop() {
 
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
-	return int(ch.reqCounter.Get())
+	return int(ch.reqCounter.Load())
 }
