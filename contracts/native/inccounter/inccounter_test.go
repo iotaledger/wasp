@@ -54,7 +54,7 @@ func TestIncDefaultParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	_, err = chain.PostRequest(solo.NewCallParams(incName, FuncIncCounter), nil)
+	_, err = chain.PostRequestSync(solo.NewCallParams(incName, FuncIncCounter), nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
 	chain.CheckAccountLedger()
@@ -69,7 +69,7 @@ func TestIncParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	_, err = chain.PostRequest(solo.NewCallParams(incName, FuncIncCounter, VarCounter, 3), nil)
+	_, err = chain.PostRequestSync(solo.NewCallParams(incName, FuncIncCounter, VarCounter, 3), nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
 
@@ -86,7 +86,7 @@ func TestIncWith1Post(t *testing.T) {
 
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s).
 		WithTransfer(balance.ColorIOTA, 1)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	// advance logical clock to unlock that timelocked request
 	env.AdvanceClockBy(6 * time.Second)

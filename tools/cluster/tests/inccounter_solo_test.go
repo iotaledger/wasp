@@ -26,7 +26,7 @@ func TestIncSoloInc(t *testing.T) {
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "increment").
 		WithTransfer(balance.ColorIOTA, 1)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
@@ -42,7 +42,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "repeatMany", varNumRepeats, 2).
 		WithTransfer(balance.ColorIOTA, 1)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	chain.WaitForEmptyBacklog()
 	ret, err := chain.CallView(incName, "getCounter")

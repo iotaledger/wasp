@@ -17,7 +17,7 @@ func TestBlobRepeatInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	req := solo.NewCallParams(blob.Interface.Name, "init")
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
 
@@ -110,7 +110,7 @@ func TestDeployGrant(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -135,7 +135,7 @@ func TestRevokeDeploy(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -147,7 +147,7 @@ func TestRevokeDeploy(t *testing.T) {
 	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
@@ -166,7 +166,7 @@ func TestDeployGrantFail(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequest(req, user1)
+	_, err := chain.PostRequestSync(req, user1)
 	require.Error(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)

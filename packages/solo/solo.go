@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"go.uber.org/atomic"
 	"sync"
 	"testing"
 	"time"
@@ -17,11 +18,10 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -33,12 +33,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// DefaultTimeStep is a default step for the logical clock for each PostRequest call.
+// DefaultTimeStep is a default step for the logical clock for each PostRequestSync call.
 const DefaultTimeStep = 1 * time.Millisecond
 
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
-const Saldo = 1337
+const Saldo = int64(1337)
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
@@ -47,7 +47,9 @@ type Solo struct {
 	logger      *logger.Logger
 	utxoDB      *utxodb.UtxoDB
 	registry    coretypes.BlobCacheFull
-	glbMutex    *sync.Mutex
+	glbMutex    *sync.RWMutex
+	ledgerMutex *sync.RWMutex
+	clockMutex  *sync.RWMutex
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[coretypes.ChainID]*Chain
@@ -104,12 +106,10 @@ type Chain struct {
 
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
-	chPosted     sync.WaitGroup
+	reqCounter   atomic.Int32
 	chInRequest  chan sctransaction.RequestRef
 	backlog      []sctransaction.RequestRef
-	backlogMutex *sync.Mutex
-	batch        []*sctransaction.RequestRef
-	batchMutex   *sync.Mutex
+	backlogMutex *sync.RWMutex
 }
 
 var (
@@ -138,7 +138,9 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		logger:      glbLogger,
 		utxoDB:      utxodb.New(),
 		registry:    reg,
-		glbMutex:    &sync.Mutex{},
+		glbMutex:    &sync.RWMutex{},
+		clockMutex:  &sync.RWMutex{},
+		ledgerMutex: &sync.RWMutex{},
 		logicalTime: time.Now(),
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[coretypes.ChainID]*Chain),
@@ -191,9 +193,7 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		runVMMutex:   &sync.Mutex{},
 		chInRequest:  make(chan sctransaction.RequestRef),
 		backlog:      make([]sctransaction.RequestRef, 0),
-		backlogMutex: &sync.Mutex{},
-		batch:        nil,
-		batchMutex:   &sync.Mutex{},
+		backlogMutex: &sync.RWMutex{},
 	}
 	env.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 	var err error
@@ -238,11 +238,48 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 	r := vm.RequestRefWithFreeTokens{}
 	r.Tx = initTx
+	ret.reqCounter.Add(1)
 	_, err = ret.runBatch([]vm.RequestRefWithFreeTokens{r}, "new")
 	require.NoError(env.T, err)
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID)
 	return ret
+}
+
+// AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
+// invalid or double spend
+func (env *Solo) AddToLedger(tx *sctransaction.Transaction) error {
+	return env.utxoDB.AddTransaction(tx.Transaction)
+}
+
+// EnqueueRequests dispatches requests contained in the transaction among chains
+func (env *Solo) EnqueueRequests(tx *sctransaction.Transaction) {
+	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
+	for i, rsect := range tx.Requests() {
+		chid := rsect.Target().ChainID()
+		_, ok := reqRefByChain[chid]
+		if !ok {
+			reqRefByChain[chid] = make([]sctransaction.RequestRef, 0)
+		}
+		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction.RequestRef{
+			Tx:    tx,
+			Index: uint16(i),
+		})
+	}
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+
+	for chid, reqs := range reqRefByChain {
+		chain, ok := env.chains[chid]
+		if !ok {
+			env.logger.Infof("dispatching requests. Unknown chain: %s", chid.String())
+			continue
+		}
+		chain.reqCounter.Add(int32(len(reqs)))
+		for _, reqRef := range reqs {
+			chain.chInRequest <- reqRef
+		}
+	}
 }
 
 func (ch *Chain) readRequestsLoop() {
@@ -253,14 +290,11 @@ func (ch *Chain) readRequestsLoop() {
 
 func (ch *Chain) addToBacklog(r sctransaction.RequestRef) {
 	ch.backlogMutex.Lock()
-	defer func() {
-		ch.backlogMutex.Unlock()
-		ch.chPosted.Done()
-	}()
+	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)
 	tl := r.RequestSection().Timelock()
 	if tl == 0 {
-		ch.Log.Infof("added to backlog: %s", r.RequestID().String())
+		ch.Log.Infof("added to backlog: %s len: %d", r.RequestID().String(), len(ch.backlog))
 	} else {
 		tlTime := time.Unix(int64(tl), 0)
 		ch.Log.Infof("added to backlog: %s. Time locked for: %v",
@@ -308,83 +342,5 @@ func (ch *Chain) batchLoop() {
 
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
-	ch.chPosted.Wait()
-	ch.backlogMutex.Lock()
-	defer ch.backlogMutex.Unlock()
-	return len(ch.backlog)
-}
-
-// NewSignatureSchemeWithFunds generates new ed25519 signature scheme
-// and requests some tokens from the UTXODB faucet.
-// The amount of tokens is equal to solo.Saldo (=1337) iotas
-func (env *Solo) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
-	ret, _ := env.NewSignatureSchemeWithFundsAndPubKey()
-	return ret
-}
-
-// NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
-// and requests some tokens from the UTXODB faucet.
-// The amount of tokens is equal to solo.Saldo (=1337) iotas
-// Returns signature scheme interface and public key in binary form
-func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (signaturescheme.SignatureScheme, []byte) {
-	ret, pubKeyBytes := env.NewSignatureSchemeAndPubKey()
-	_, err := env.utxoDB.RequestFunds(ret.Address())
-	require.NoError(env.T, err)
-	return ret, pubKeyBytes
-}
-
-// NewSignatureScheme generates new ed25519 signature scheme
-func (env *Solo) NewSignatureScheme() signaturescheme.SignatureScheme {
-	ret, _ := env.NewSignatureSchemeAndPubKey()
-	return ret
-}
-
-// NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
-// Returns signature scheme interface and public key in binary form
-func (env *Solo) NewSignatureSchemeAndPubKey() (signaturescheme.SignatureScheme, []byte) {
-	keypair := ed25519.GenerateKeyPair()
-	ret := signaturescheme.ED25519(keypair)
-	env.AssertAddressBalance(ret.Address(), balance.ColorIOTA, 0)
-	return ret, keypair.PublicKey.Bytes()
-}
-
-// MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
-// Returns the color of minted tokens: the hash of the transaction
-func (env *Solo) MintTokens(wallet signaturescheme.SignatureScheme, amount int64) (balance.Color, error) {
-	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
-	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	require.NoError(env.T, err)
-
-	if err = txb.MintColor(wallet.Address(), balance.ColorIOTA, amount); err != nil {
-		return balance.Color{}, err
-	}
-	tx := txb.BuildValueTransactionOnly(false)
-	tx.Sign(wallet)
-
-	if err = env.utxoDB.AddTransaction(tx); err != nil {
-		return balance.Color{}, err
-	}
-	return balance.Color(tx.ID()), nil
-}
-
-// DestroyColoredTokens uncolors specified amount of colored tokens, i.e. converts them into IOTAs
-func (env *Solo) DestroyColoredTokens(wallet signaturescheme.SignatureScheme, color balance.Color, amount int64) error {
-	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
-	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-	require.NoError(env.T, err)
-
-	if err = txb.EraseColor(wallet.Address(), color, amount); err != nil {
-		return err
-	}
-	tx := txb.BuildValueTransactionOnly(false)
-	tx.Sign(wallet)
-
-	return env.utxoDB.AddTransaction(tx)
-}
-
-func (env *Solo) PutBlobDataIntoRegistry(data []byte) hashing.HashValue {
-	h, err := env.registry.PutBlob(data)
-	require.NoError(env.T, err)
-	env.logger.Infof("Solo::PutBlobDataIntoRegistry: len = %d, hash = %s", len(data), h)
-	return h
+	return int(ch.reqCounter.Load())
 }

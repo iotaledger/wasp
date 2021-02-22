@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
@@ -172,6 +173,7 @@ func TestWaspCli1Chain(t *testing.T) {
 }
 
 func TestWaspCliContract(t *testing.T) {
+
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")

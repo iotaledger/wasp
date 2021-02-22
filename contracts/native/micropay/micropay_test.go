@@ -32,7 +32,7 @@ func TestSubmitPk(t *testing.T) {
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
 	)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 }
 
@@ -53,7 +53,7 @@ func TestOpenChannelFail(t *testing.T) {
 	req := solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
 		WithTransfer(balance.ColorIOTA, 600)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.Error(t, err)
 
 	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
@@ -75,7 +75,7 @@ func TestOpenChannelOk(t *testing.T) {
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
 	)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	provider := env.NewSignatureSchemeWithFunds()
@@ -85,7 +85,7 @@ func TestOpenChannelOk(t *testing.T) {
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
 		WithTransfer(balance.ColorIOTA, 600)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
@@ -107,7 +107,7 @@ func TestOpenChannelTwice(t *testing.T) {
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
 	)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	provider := env.NewSignatureSchemeWithFunds()
@@ -120,13 +120,13 @@ func TestOpenChannelTwice(t *testing.T) {
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
 		WithTransfer(balance.ColorIOTA, 600)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
 	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-600-2)
 
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600+600)
@@ -164,7 +164,7 @@ func TestRevokeWarrant(t *testing.T) {
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
 	)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	provider := env.NewSignatureSchemeWithFunds()
@@ -177,7 +177,7 @@ func TestRevokeWarrant(t *testing.T) {
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
 		WithTransfer(balance.ColorIOTA, 600)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
@@ -200,7 +200,7 @@ func TestRevokeWarrant(t *testing.T) {
 	req = solo.NewCallParams("micropay", FuncRevokeWarrant,
 		ParamServiceAddress, providerAddr,
 	)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	env.AdvanceClockBy(30 * time.Minute)
@@ -253,7 +253,7 @@ func TestPayment(t *testing.T) {
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
 	)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	provider := env.NewSignatureSchemeWithFunds()
@@ -263,7 +263,7 @@ func TestPayment(t *testing.T) {
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
 		WithTransfer(balance.ColorIOTA, 600)
-	_, err = chain.PostRequest(req, payer)
+	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
@@ -297,7 +297,7 @@ func TestPayment(t *testing.T) {
 	_ = arr.Push(pay1)
 	_ = arr.Push(pay2)
 	req = solo.NewCallParamsFromDic("micropay", FuncSettle, par)
-	_, err = chain.PostRequest(req, provider)
+	_, err = chain.PostRequestSync(req, provider)
 	require.NoError(t, err)
 
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo+42+41-1)

@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	chain.ConstructorNew = newCommitteeObj
+	chain.RegisterChainConstructor(newCommitteeObj)
 }
 
 func (c *chainObj) IsOpenQueue() bool {

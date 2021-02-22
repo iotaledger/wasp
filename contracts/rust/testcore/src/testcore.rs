@@ -158,6 +158,17 @@ pub fn func_set_int(ctx: &ScFuncContext) {
     ctx.log("testcore.setInt ok");
 }
 
+pub fn func_get_minted_supply(ctx: &ScFuncContext) {
+    ctx.log("testcore.getMintedSupply");
+
+    // TODO implement sandbox call
+    //  ctx.minted_supply() -> i64
+
+    let minted_supply = 42; // dummy for the core test to pass
+    ctx.results().get_int(PARAM_MINTED_SUPPLY).set_value(minted_supply);
+    ctx.log("testcore.setInt ok");
+}
+
 pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext) {
     ctx.log("testcore.testCallPanicFullEP");
     ctx.call_self(HFUNC_TEST_PANIC_FULL_EP, None, None);
@@ -281,6 +292,12 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
 
     ctx.results().get_int(PARAM_INT_VALUE).set_value(n1 + n2);
     ctx.log("testcore.fibonacci ok");
+}
+
+pub fn func_inc_counter(ctx: &ScFuncContext) {
+    ctx.log("testcore.incCounter");
+    ctx.state().get_int(VAR_COUNTER).set_value(ctx.state().get_int(VAR_COUNTER).value()+1);
+    ctx.log("testcore.incCounter ok");
 }
 
 pub fn view_get_counter(ctx: &ScViewContext) {

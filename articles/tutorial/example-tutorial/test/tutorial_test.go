@@ -44,7 +44,7 @@ func TestTutorial3(t *testing.T) {
 
 	// call contract to store string
 	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!")
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	// call the contract to extract value of the 'paramString' and check
@@ -65,7 +65,7 @@ func TestTutorial4(t *testing.T) {
 
 	// call contract incorrectly
 	req := solo.NewCallParams("example1", "storeString")
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
 
@@ -91,7 +91,7 @@ func TestTutorial5(t *testing.T) {
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Name, accounts.FuncDeposit).
 		WithTransfer(balance.ColorIOTA, 42)
-	_, err := chain.PostRequest(req, userWallet)
+	_, err := chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// check address balance: must be 43 (!) iotas less
@@ -101,7 +101,7 @@ func TestTutorial5(t *testing.T) {
 
 	// withdraw back all iotas
 	req = solo.NewCallParams(accounts.Name, accounts.FuncWithdrawToAddress)
-	_, err = chain.PostRequest(req, userWallet)
+	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
@@ -131,7 +131,7 @@ func TestTutorial6(t *testing.T) {
 
 	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").
 		WithTransfer(balance.ColorIOTA, 42)
-	_, err = chain.PostRequest(req, userWallet)
+	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 42)
@@ -162,7 +162,7 @@ func TestTutorial7(t *testing.T) {
 	// missing parameter, will panic
 	req := solo.NewCallParams("example1", "storeString").
 		WithTransfer(balance.ColorIOTA, 42)
-	_, err = chain.PostRequest(req, userWallet)
+	_, err = chain.PostRequestSync(req, userWallet)
 	require.Error(t, err)
 
 	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0)
@@ -190,7 +190,7 @@ func TestTutorial8(t *testing.T) {
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, userAgentID)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	// user deploys wasm smart contract on the chain under the name "example1"
@@ -217,7 +217,7 @@ func TestTutorial8(t *testing.T) {
 	// Result is 42 iotas moved to the smart contract's account
 	req = solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").
 		WithTransfer(balance.ColorIOTA, 42)
-	_, err = chain.PostRequest(req, userWallet)
+	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 42)
@@ -228,7 +228,7 @@ func TestTutorial8(t *testing.T) {
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
 	// is accrued to the user on chain
 	req = solo.NewCallParams("example1", "withdrawIota")
-	_, err = chain.PostRequest(req, userWallet)
+	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0)
