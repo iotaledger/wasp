@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
+	"sync"
 )
 
 // Smart contract transaction wraps value transaction
@@ -27,7 +28,19 @@ type Transaction struct {
 }
 
 // function which analyzes the transaction and calculates properties of it
-var NewProperties func(transaction *Transaction) (coretypes.SCTransactionProperties, error)
+type constructorNew func(transaction *Transaction) (coretypes.SCTransactionProperties, error)
+
+var newProperties constructorNew
+var newPropertiesMutex sync.Mutex
+
+func RegisterSemanticAnalyzerConstructor(constr constructorNew) {
+	newPropertiesMutex.Lock()
+	defer newPropertiesMutex.Unlock()
+	if newProperties != nil {
+		panic("RegisterSemanticAnalyzerConstructor: already registered")
+	}
+	newProperties = constr
+}
 
 // creates new sc transaction. It is immutable, i.e. tx hash is stable
 func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateSection, requestBlocks []*RequestSection) (*Transaction, error) {
@@ -68,7 +81,7 @@ func (tx *Transaction) Properties() (coretypes.SCTransactionProperties, error) {
 		return tx.cachedProperties, nil
 	}
 	var err error
-	tx.cachedProperties, err = NewProperties(tx)
+	tx.cachedProperties, err = newProperties(tx)
 	return tx.cachedProperties, err
 }
 

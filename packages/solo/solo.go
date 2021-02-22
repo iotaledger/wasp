@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/streadway/handy/atomic"
 	"sync"
 	"testing"
 	"time"
@@ -105,7 +106,7 @@ type Chain struct {
 
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
-	chPosted     sync.WaitGroup
+	reqCounter   atomic.Int
 	chInRequest  chan sctransaction.RequestRef
 	backlog      []sctransaction.RequestRef
 	backlogMutex *sync.RWMutex
@@ -237,6 +238,7 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 	r := vm.RequestRefWithFreeTokens{}
 	r.Tx = initTx
+	ret.reqCounter.Add(1)
 	_, err = ret.runBatch([]vm.RequestRefWithFreeTokens{r}, "new")
 	require.NoError(env.T, err)
 
@@ -273,7 +275,7 @@ func (env *Solo) EnqueueRequests(tx *sctransaction.Transaction) {
 			env.logger.Infof("dispatching requests. Unknown chain: %s", chid.String())
 			continue
 		}
-		chain.chPosted.Add(len(reqs))
+		chain.reqCounter.Add(int64(len(reqs)))
 		for _, reqRef := range reqs {
 			chain.chInRequest <- reqRef
 		}
@@ -288,10 +290,7 @@ func (ch *Chain) readRequestsLoop() {
 
 func (ch *Chain) addToBacklog(r sctransaction.RequestRef) {
 	ch.backlogMutex.Lock()
-	defer func() {
-		ch.backlogMutex.Unlock()
-		ch.chPosted.Done()
-	}()
+	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)
 	tl := r.RequestSection().Timelock()
 	if tl == 0 {
@@ -343,8 +342,5 @@ func (ch *Chain) batchLoop() {
 
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
-	ch.chPosted.Wait()
-	ch.backlogMutex.RLock()
-	defer ch.backlogMutex.RUnlock()
-	return len(ch.backlog)
+	return int(ch.reqCounter.Get())
 }

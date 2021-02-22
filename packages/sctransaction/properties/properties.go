@@ -53,7 +53,7 @@ type properties struct {
 }
 
 func init() {
-	sctransaction.NewProperties = calcProperties
+	sctransaction.RegisterSemanticAnalyzerConstructor(calcProperties)
 }
 
 // CalcProperties analyzes the transaction and returns its properties

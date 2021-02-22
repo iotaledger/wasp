@@ -14,6 +14,7 @@ require (
 	github.com/prometheus/common v0.10.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
+	github.com/streadway/handy v0.0.0-20190108123426-d5acb3125c2a
 	github.com/stretchr/testify v1.6.1
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.nanomsg.org/mangos/v3 v3.0.1

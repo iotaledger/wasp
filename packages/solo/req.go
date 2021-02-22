@@ -182,6 +182,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.Si
 
 	r := vm.RequestRefWithFreeTokens{}
 	r.Tx = tx
+	ch.reqCounter.Add(1)
 	ret, err := ch.runBatch([]vm.RequestRefWithFreeTokens{r}, "post")
 	if err != nil {
 		return nil, nil, err
@@ -239,16 +240,23 @@ func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 			ch.Log.Infof("backlog length = %d", ch.backlogLen())
 		}
 		counter++
+		time.Sleep(200 * time.Millisecond)
 		if ch.backlogLen() > 0 {
-			time.Sleep(200 * time.Millisecond)
 			if time.Now().After(deadline) {
 				ch.Log.Warnf("exit due to timeout of max wait for %v", maxw)
-				break
+				return
 			}
 		} else {
-			time.Sleep(10 * time.Millisecond)
-			if ch.backlogLen() == 0 {
-				break
+			emptyCounter := 0
+			for i := 0; i < 5; i++ {
+				time.Sleep(100 * time.Millisecond)
+				if ch.backlogLen() != 0 {
+					break
+				}
+				emptyCounter++
+			}
+			if emptyCounter >= 5 {
+				return
 			}
 		}
 	}

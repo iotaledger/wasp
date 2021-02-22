@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"sync"
 )
 
 type Chain interface {
@@ -91,7 +92,7 @@ type Operator interface {
 	IsRequestInBacklog(*coretypes.RequestID) bool
 }
 
-var ConstructorNew func(
+type chainConstructor func(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
@@ -99,6 +100,19 @@ var ConstructorNew func(
 	blobProvider coretypes.BlobCache,
 	onActivation func(),
 ) Chain
+
+var constructorNew chainConstructor
+var constructorNewMutex sync.Mutex
+
+func RegisterChainConstructor(constr chainConstructor) {
+	constructorNewMutex.Lock()
+	defer constructorNewMutex.Unlock()
+
+	if constructorNew != nil {
+		panic("RegisterChainConstructor: already registered")
+	}
+	constructorNew = constr
+}
 
 func New(
 	chr *registry.ChainRecord,
@@ -108,5 +122,5 @@ func New(
 	blobProvider coretypes.BlobCache,
 	onActivation func(),
 ) Chain {
-	return ConstructorNew(chr, log, netProvider, dksProvider, blobProvider, onActivation)
+	return constructorNew(chr, log, netProvider, dksProvider, blobProvider, onActivation)
 }
