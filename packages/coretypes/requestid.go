@@ -45,7 +45,7 @@ func NewRequestIDFromBytes(data []byte) (ret RequestID, err error) {
 }
 
 // Bytes returns requestID as a byte slice
-func (rid *RequestID) Bytes() []byte {
+func (rid RequestID) Bytes() []byte {
 	return rid[:]
 }
 

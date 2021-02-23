@@ -27,9 +27,11 @@ var typeIds = map[int32]int32{
 	wasmhost.KeyIncoming:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyLog:             wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyMaps:            wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyMinted:          wasmhost.OBJTYPE_INT,
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
+	wasmhost.KeyRequestId:       wasmhost.OBJTYPE_REQUEST_ID,
 	wasmhost.KeyResults:         wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyState:           wasmhost.OBJTYPE_MAP,
@@ -71,6 +73,10 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 		return o.vm.contractCreator().Bytes()
 	case wasmhost.KeyContractId:
 		return o.vm.contractID().Bytes()
+	case wasmhost.KeyMinted:
+		return codec.EncodeInt64(o.vm.ctx.MintedSupply())
+	case wasmhost.KeyRequestId:
+		return o.vm.ctx.RequestID().Bytes()
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
 	}

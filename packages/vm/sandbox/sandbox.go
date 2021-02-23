@@ -75,6 +75,7 @@ func (s *sandbox) RequestID() coretypes.RequestID {
 	return s.vmctx.RequestID()
 }
 
+// note: MintedColor() is RequestID().Bytes()[:32]
 func (s *sandbox) MintedSupply() int64 {
 	return s.vmctx.NumFreeMinted()
 }
