@@ -57,19 +57,12 @@ pub fn func_local_state_post(ctx: &ScFuncContext) {
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = false;
     }
-    let request = PostRequestParams {
-        contract_id: ctx.contract_id(),
-        function: HFUNC_WHEN_MUST_INCREMENT,
-        params: None,
-        transfer: None,
-        delay: 0,
-    };
-    ctx.post(&request);
+    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, None, 0);
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = true;
     }
-    ctx.post(&request);
-    ctx.post(&request);
+    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, None, 0);
+    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, None, 0);
     // counter ends up as 0
 }
 
@@ -91,13 +84,7 @@ pub fn func_post_increment(ctx: &ScFuncContext) {
     let value = counter.value();
     counter.set_value(value + 1);
     if value == 0 {
-        ctx.post(&PostRequestParams {
-            contract_id: ctx.contract_id(),
-            function: HFUNC_POST_INCREMENT,
-            params: None,
-            transfer: None,
-            delay: 0,
-        });
+        ctx.post_self(HFUNC_POST_INCREMENT, None, None, 0);
     }
 }
 
@@ -117,13 +104,7 @@ pub fn func_repeat_many(ctx: &ScFuncContext) {
         }
     }
     state_repeats.set_value(repeats - 1);
-    ctx.post(&PostRequestParams {
-        contract_id: ctx.contract_id(),
-        function: HFUNC_REPEAT_MANY,
-        params: None,
-        transfer: None,
-        delay: 0,
-    });
+    ctx.post_self(HFUNC_REPEAT_MANY, None, None, 0);
 }
 
 pub fn func_when_must_increment(ctx: &ScFuncContext) {

@@ -12,17 +12,6 @@ use crate::mutable::*;
 // all access to the objects in host's object tree starts here
 pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: 1 };
 
-// parameter structure required for ctx.post()
-pub struct PostRequestParams {
-    //@formatter:off
-    pub contract_id: ScContractId,         // full contract id (chain id + contract Hname)
-    pub function:    ScHname,              // Hname of the contract func or view to call
-    pub params:      Option<ScMutableMap>, // an optional map of parameters to pass to the function
-    pub transfer:    Option<ScTransfers>,  // optional balances to transfer as part of the call
-    pub delay:       i64,                  // delay in seconds before the function will be run
-    //@formatter:on
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // used to retrieve any information that is related to colored token balances
@@ -318,24 +307,29 @@ impl ScFuncContext {
         ROOT.get_int(&KEY_MINTED).value()
     }
 
-    // posts a request to asynchronously invoke the specified smart
-    // contract function according to the specified request parameters
-    pub fn post(&self, req: &PostRequestParams) {
+    // asynchronously calls the specified smart contract function,
+    // passing the provided parameters and token transfers to it
+    pub fn post(&self, contract_id: &ScContractId, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
         let mut encode = BytesEncoder::new();
-        encode.contract_id(&req.contract_id);
-        encode.hname(&req.function);
-        if let Some(params) = &req.params {
+        encode.contract_id(contract_id);
+        encode.hname(&function);
+        if let Some(params) = &params {
             encode.int(params.obj_id as i64);
         } else {
             encode.int(0);
         }
-        if let Some(transfer) = &req.transfer {
+        if let Some(transfer) = &transfer {
             encode.int(transfer.transfers.obj_id as i64);
         } else {
             encode.int(0);
         }
-        encode.int(req.delay);
+        encode.int(delay);
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
+    }
+
+    // shorthand to asynchronously call a smart contract function on the current contract
+    pub fn post_self(&self, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+        self.post(&self.contract_id(), function, params, transfer, delay);
     }
 
     // retrieve the request id of this transaction

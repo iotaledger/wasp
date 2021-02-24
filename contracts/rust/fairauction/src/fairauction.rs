@@ -223,13 +223,7 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
 
     let finalize_params = ScMutableMap::new();
     finalize_params.get_color(VAR_COLOR).set_value(&auction.color);
-    ctx.post(&PostRequestParams {
-        contract_id: ctx.contract_id(),
-        function: HFUNC_FINALIZE_AUCTION,
-        params: Some(finalize_params),
-        transfer: None,
-        delay: duration * 60,
-    });
+    ctx.post_self(HFUNC_FINALIZE_AUCTION, Some(finalize_params), None, duration * 60);
     ctx.log("fairauction.startAuction ok");
 }
 

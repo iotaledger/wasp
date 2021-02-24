@@ -238,13 +238,7 @@ pub fn func_withdraw_to_chain(ctx: &ScFuncContext) {
     //Deploy the same contract with another name
     let target_contract_id = ScContractId::new(&param_chain_id.value(), &CORE_ACCOUNTS);
     let transfers = ScTransfers::new(&ScColor::IOTA, 2);
-    ctx.post(&PostRequestParams {
-        contract_id: target_contract_id,
-        function: CORE_ACCOUNTS_FUNC_WITHDRAW_TO_CHAIN,
-        params: None,
-        transfer: Some(transfers),
-        delay: 0,
-    });
+    ctx.post(&target_contract_id, CORE_ACCOUNTS_FUNC_WITHDRAW_TO_CHAIN, None, Some(transfers), 0);
     // TODO how to check if post was successful
     ctx.log("testcore.withdrawToChain ok");
 }
@@ -296,7 +290,7 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
 
 pub fn func_inc_counter(ctx: &ScFuncContext) {
     ctx.log("testcore.incCounter");
-    ctx.state().get_int(VAR_COUNTER).set_value(ctx.state().get_int(VAR_COUNTER).value()+1);
+    ctx.state().get_int(VAR_COUNTER).set_value(ctx.state().get_int(VAR_COUNTER).value() + 1);
     ctx.log("testcore.incCounter ok");
 }
 

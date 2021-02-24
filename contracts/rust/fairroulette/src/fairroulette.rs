@@ -25,13 +25,7 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
     }
     bets.clear();
 
-    ctx.post(&PostRequestParams {
-        contract_id: ctx.contract_id(),
-        function: HFUNC_PAY_WINNERS,
-        params: None,
-        transfer: None,
-        delay: 0,
-    });
+    ctx.post_self(HFUNC_PAY_WINNERS, None, None, 0);
     ctx.log("fairroulette.lockBets ok");
 }
 
@@ -124,13 +118,7 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         if play_period < 10 {
             play_period = DEFAULT_PLAY_PERIOD;
         }
-        ctx.post(&PostRequestParams {
-            contract_id: ctx.contract_id(),
-            function: HFUNC_LOCK_BETS,
-            params: None,
-            transfer: None,
-            delay: play_period,
-        });
+        ctx.post_self(HFUNC_LOCK_BETS, None, None, play_period);
     }
     ctx.log("fairroulette.placeBet ok");
 }
