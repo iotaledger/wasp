@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-var downloads map[string]bool // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
+var downloads map[string]bool = make(map[string]bool) // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
 var downloadsMutex = &sync.Mutex{}
 
 func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCacheFull) error {
