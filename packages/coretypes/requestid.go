@@ -85,7 +85,7 @@ func (rid *RequestID) Short() string {
 	return rid.String()[:8] + ".."
 }
 
-func (rid RequestID) MarshalJSON() ([]byte, error) {
+func (rid *RequestID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(rid.Base58())
 }
 

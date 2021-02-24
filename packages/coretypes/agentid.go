@@ -92,17 +92,13 @@ func (a AgentID) MustContractID() (ret ContractID) {
 	return
 }
 
-// Deprecated: use a[:] instead
-func (a AgentID) Bytes() []byte {
-	return a[:]
-}
-
 // String human readable string
 func (a AgentID) String() string {
 	if a.IsAddress() {
 		return "A/" + a.MustAddress().String()
 	}
-	return "C/" + a.MustContractID().String()
+	cid := a.MustContractID()
+	return "C/" + cid.String()
 }
 
 // NewAgentIDFromString parses the human-readable string representation

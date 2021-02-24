@@ -544,7 +544,7 @@ func (ps *PlayerStats) String() string {
 
 func withPlayerStats(ctx coretypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
 	statsDict := collections.NewMap(ctx.State(), StateVarPlayerStats)
-	b := statsDict.MustGetAt(player.Bytes())
+	b := statsDict.MustGetAt(player[:])
 	stats, err := DecodePlayerStats(b)
 	if err != nil {
 		return err
@@ -552,7 +552,7 @@ func withPlayerStats(ctx coretypes.Sandbox, player *coretypes.AgentID, f func(ps
 
 	f(stats)
 
-	statsDict.MustSetAt(player.Bytes(), encodePlayerStats(stats))
+	statsDict.MustSetAt(player[:], encodePlayerStats(stats))
 
 	return nil
 }

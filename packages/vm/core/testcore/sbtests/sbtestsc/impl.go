@@ -37,7 +37,7 @@ func testEventLogEventData(ctx coretypes.Sandbox) (dict.Dict, error) {
 func testChainOwnerIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
+	ret.Set(ParamChainOwnerID, cOwnerID[:])
 
 	return ret, nil
 }
@@ -45,7 +45,7 @@ func testChainOwnerIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
 func testChainOwnerIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
+	ret.Set(ParamChainOwnerID, cOwnerID[:])
 
 	return ret, nil
 }
