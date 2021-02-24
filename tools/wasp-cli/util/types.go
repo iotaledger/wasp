@@ -23,7 +23,7 @@ func ValueFromString(vtype string, s string) []byte {
 	case "agentid":
 		agentid, err := coretypes.NewAgentIDFromString(s)
 		log.Check(err)
-		return agentid.Bytes()
+		return agentid[:]
 	case "file":
 		return ReadFile(s)
 	case "string":

@@ -41,7 +41,7 @@ func balanceCmd(args []string) {
 	log.Check(err)
 
 	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
-		accounts.ParamAgentID: agentID.Bytes(),
+		accounts.ParamAgentID: agentID[:],
 	}))
 	log.Check(err)
 

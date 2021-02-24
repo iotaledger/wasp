@@ -57,8 +57,7 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// funds currently are at the disposition of accounts, they are moved to the target
 	succ := MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(succ,
-		"internal error: failed to deposit to %s", ctx.Caller().String())
+	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", ctx.Caller().String())
 
 	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, ctx.IncomingTransfer().String())
 	return nil, nil
@@ -73,22 +72,22 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	a := assert.NewAssert(ctx.Log())
 
-	caller := ctx.Caller()
-	a.Require(caller.IsAddress(), "caller must be an address")
+	a.Require(ctx.Caller().IsAddress(), "caller must be an address")
 
-	bals, ok := GetAccountBalances(state, caller)
+	bals, ok := GetAccountBalances(state, ctx.Caller())
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
+	cid := ctx.ContractID()
 	ctx.Log().Debugf("accounts.withdrawToAddress.begin: caller agentID: %s myContractId: %s",
-		caller.String(), ctx.ContractID().String())
+		ctx.Caller().String(), cid.String())
 
 	sendTokens := cbalances.NewFromMap(bals)
-	addr := caller.MustAddress()
+	addr := ctx.Caller().MustAddress()
 
 	// remove tokens from the chain ledger
-	a.Require(DebitFromAccount(state, caller, sendTokens),
+	a.Require(DebitFromAccount(state, ctx.Caller(), sendTokens),
 		"accounts.withdrawToAddress.inconsistency. failed to remove tokens from the chain")
 	// send tokens to address
 	a.Require(ctx.TransferToAddress(addr, sendTokens),
@@ -108,8 +107,9 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
 	caller := ctx.Caller()
+	cid := ctx.ContractID()
 	ctx.Log().Debugf("accounts.withdrawToChain.begin: caller agentID: %s myContractId: %s",
-		caller.String(), ctx.ContractID().String())
+		caller.String(), cid.String())
 
 	a.Require(!caller.IsAddress(), "caller must be a smart contract")
 

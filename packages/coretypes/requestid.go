@@ -44,12 +44,7 @@ func NewRequestIDFromBytes(data []byte) (ret RequestID, err error) {
 	return
 }
 
-// Bytes returns requestID as a byte slice
-func (rid RequestID) Bytes() []byte {
-	return rid[:]
-}
-
-// TransactionID of the request ID
+// TransactionID of the request ID (copy)
 func (rid *RequestID) TransactionID() *valuetransaction.ID {
 	var ret valuetransaction.ID
 	copy(ret[:], rid[:valuetransaction.IDLength])
@@ -62,7 +57,7 @@ func (rid *RequestID) Index() uint16 {
 }
 
 func (rid *RequestID) Write(w io.Writer) error {
-	_, err := w.Write(rid.Bytes())
+	_, err := w.Write(rid[:])
 	return err
 }
 
@@ -83,14 +78,14 @@ func (rid *RequestID) String() string {
 }
 
 func (rid *RequestID) Base58() string {
-	return base58.Encode(rid.Bytes())
+	return base58.Encode(rid[:])
 }
 
 func (rid *RequestID) Short() string {
 	return rid.String()[:8] + ".."
 }
 
-func (rid RequestID) MarshalJSON() ([]byte, error) {
+func (rid *RequestID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(rid.Base58())
 }
 
