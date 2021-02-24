@@ -153,13 +153,15 @@ func storeAndInitContract(ctx coretypes.Sandbox, rec *ContractRecord, initParams
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx coretypes.Sandbox) bool {
-	if ctx.Caller() == ctx.ChainOwnerID() {
+	caller := ctx.Caller()
+	if caller == ctx.ChainOwnerID() {
 		// chain owner is always authorized
 		return true
 	}
-	if !ctx.Caller().IsAddress() {
+	if !caller.IsAddress() {
 		// smart contract from the same chain is always authorize
-		return ctx.Caller().MustContractID().ChainID() == ctx.ContractID().ChainID()
+		return caller.MustContractID().ChainID() == ctx.ContractID().ChainID()
 	}
-	return collections.NewMap(ctx.State(), VarDeployPermissions).MustHasAt(ctx.Caller().Bytes())
+
+	return collections.NewMap(ctx.State(), VarDeployPermissions).MustHasAt(caller[:])
 }

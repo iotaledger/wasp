@@ -63,7 +63,7 @@ func TestRequestID(t *testing.T) {
 	t.Logf("reqid = %s", reqid.String())
 	t.Logf("reqidShort = %s", reqid.Short())
 
-	reqidback, err := NewRequestIDFromBytes(reqid.Bytes())
+	reqidback, err := NewRequestIDFromBytes(reqid[:])
 	assert.NoError(t, err)
 	assert.EqualValues(t, reqid, reqidback)
 
