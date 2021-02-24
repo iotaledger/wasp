@@ -48,11 +48,6 @@ func NewRandomChainID() ChainID {
 	return ChainID(address.RandomOfType(address.VersionBLS))
 }
 
-// Bytes returns the ChainID as byte slice.
-func (chid ChainID) Bytes() []byte {
-	return chid[:]
-}
-
 // String human readable form (base58 encoding)
 func (chid ChainID) String() string {
 	return address.Address(chid).String()

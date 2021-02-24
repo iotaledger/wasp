@@ -82,7 +82,7 @@ const (
 	short_format = "%s..::%s"
 )
 
-// Bytes contract ID as byte slice
+// Deprecated: use scid[:] instead
 func (scid ContractID) Bytes() []byte {
 	return scid[:]
 }
@@ -97,7 +97,7 @@ func (scid ContractID) Short() string {
 	return fmt.Sprintf(short_format, scid.ChainID().String()[:8], scid.Hname().String())
 }
 
-// Read from reated
+// Read from reader
 func (scid *ContractID) Read(r io.Reader) error {
 	n, err := r.Read(scid[:])
 	if err != nil {

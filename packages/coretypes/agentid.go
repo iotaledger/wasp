@@ -92,7 +92,7 @@ func (a AgentID) MustContractID() (ret ContractID) {
 	return
 }
 
-// Bytes AgentID as byte slice
+// Deprecated: use a[:] instead
 func (a AgentID) Bytes() []byte {
 	return a[:]
 }
