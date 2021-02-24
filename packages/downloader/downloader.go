@@ -7,16 +7,19 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
+
+var log *logger.Logger = logger.NewLogger("Downloader")
 
 var downloads map[string]bool = make(map[string]bool) // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
 var downloadsMutex = &sync.Mutex{}
 
 func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCacheFull) error {
 	if contains(uri) {
-		//TODO log
+		log.Warnf("File %s is already being downloaded. Skipping it.", uri)
 		return nil
 	} else {
 		markStarted(uri)
@@ -25,7 +28,7 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 
 			var split []string = strings.SplitN(uri, "://", 2)
 			if len(split) != 2 {
-				//TODO log
+				log.Errorf("File uri %s is invalid.", uri)
 				return
 			}
 
@@ -39,12 +42,12 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			case "http":
 				download, err = DonwloadFromHttp(uri)
 			default:
-				//TODO log
+				log.Errorf("Unknown protocol %s of uri %s.", protocol, uri)
 				return
 			}
 
 			if err != nil {
-				//TODO log
+				log.Errorf("Error retrieving file %s: %s.", uri, err)
 				return
 			}
 
@@ -52,12 +55,12 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			cacheHash, err = cache.PutBlob(download)
 
 			if err != nil {
-				//TODO log
+				log.Errorf("Error putting file %s to cache: %s.", uri, err)
 				return
 			}
 
 			if hash != cacheHash {
-				//TODO log
+				log.Errorf("File %s hash mismatch!!! Expected hash: %s, hash, recieved from cache: %s.", uri, hash.String(), cacheHash.String())
 				return
 			}
 
