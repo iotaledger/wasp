@@ -21,7 +21,8 @@ const (
 	OBJTYPE_HNAME       int32 = 8
 	OBJTYPE_INT         int32 = 9
 	OBJTYPE_MAP         int32 = 10
-	OBJTYPE_STRING      int32 = 11
+	OBJTYPE_REQUEST_ID  int32 = 11
+	OBJTYPE_STRING      int32 = 12
 )
 
 const KeyFromString int32 = 0x4000
