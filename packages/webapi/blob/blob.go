@@ -101,7 +101,13 @@ func handleDownloadBlob(c echo.Context) error {
 func donwloadBlobFromHttp(c echo.Context, url string) error {
 	var hash hashing.HashValue
 	var err error
-	hash, err = downloader.DonwloadBlobFromHttp(url)
+	var blob []byte
+	blob, err = downloader.DonwloadFromHttp(url)
+	if err != nil {
+		return err
+	}
+
+	hash, err = registry.DefaultRegistry().PutBlob(blob)
 	if err != nil {
 		return err
 	}
