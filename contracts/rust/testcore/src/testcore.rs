@@ -15,7 +15,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
     let p = ctx.params();
     let param_hname_contract = p.get_hname(PARAM_HNAME_CONTRACT);
     let param_hname_ep = p.get_hname(PARAM_HNAME_EP);
-    let param_int_value = p.get_int(PARAM_INT_VALUE);
+    let param_int_value = p.get_int64(PARAM_INT_VALUE);
 
     ctx.require(param_int_value.exists(), "missing mandatory intValue");
 
@@ -31,7 +31,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
         target_ep = param_hname_ep.value()
     }
 
-    let var_counter = ctx.state().get_int(VAR_COUNTER);
+    let var_counter = ctx.state().get_int64(VAR_COUNTER);
     let counter = var_counter.value();
     var_counter.set_value(counter + 1);
 
@@ -39,11 +39,11 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
                      param_int, &target_contract.to_string(), &target_ep.to_string(), counter));
 
     let params = ScMutableMap::new();
-    params.get_int(PARAM_INT_VALUE).set_value(param_int);
+    params.get_int64(PARAM_INT_VALUE).set_value(param_int);
     let ret = ctx.call(target_contract, target_ep, Some(params), None);
 
-    let ret_val = ret.get_int(PARAM_INT_VALUE);
-    ctx.results().get_int(PARAM_INT_VALUE).set_value(ret_val.value());
+    let ret_val = ret.get_int64(PARAM_INT_VALUE);
+    ctx.results().get_int64(PARAM_INT_VALUE).set_value(ret_val.value());
     ctx.log("testcore.callOnChain ok");
 }
 
@@ -84,8 +84,8 @@ pub fn func_pass_types_full(ctx: &ScFuncContext) {
     let param_hash = p.get_hash(PARAM_HASH);
     let param_hname = p.get_hname(PARAM_HNAME);
     let param_hname_zero = p.get_hname(PARAM_HNAME_ZERO);
-    let param_int64 = p.get_int(PARAM_INT64);
-    let param_int64_zero = p.get_int(PARAM_INT64_ZERO);
+    let param_int64 = p.get_int64(PARAM_INT64);
+    let param_int64_zero = p.get_int64(PARAM_INT64_ZERO);
     let param_string = p.get_string(PARAM_STRING);
     let param_string_zero = p.get_string(PARAM_STRING_ZERO);
 
@@ -111,7 +111,7 @@ pub fn func_run_recursion(ctx: &ScFuncContext) {
     ctx.log("testcore.runRecursion");
 
     let p = ctx.params();
-    let param_int_value = p.get_int(PARAM_INT_VALUE);
+    let param_int_value = p.get_int64(PARAM_INT_VALUE);
 
     ctx.require(param_int_value.exists(), "missing mandatory intValue");
 
@@ -121,11 +121,11 @@ pub fn func_run_recursion(ctx: &ScFuncContext) {
     }
 
     let params = ScMutableMap::new();
-    params.get_int(PARAM_INT_VALUE).set_value(depth - 1);
+    params.get_int64(PARAM_INT_VALUE).set_value(depth - 1);
     params.get_hname(PARAM_HNAME_EP).set_value(HFUNC_RUN_RECURSION);
     ctx.call_self(HFUNC_CALL_ON_CHAIN, Some(params), None);
     // TODO how would I return result of the call ???
-    ctx.results().get_int(PARAM_INT_VALUE).set_value(depth - 1);
+    ctx.results().get_int64(PARAM_INT_VALUE).set_value(depth - 1);
     ctx.log("testcore.runRecursion ok");
 }
 
@@ -148,13 +148,13 @@ pub fn func_set_int(ctx: &ScFuncContext) {
     ctx.log("testcore.setInt");
 
     let p = ctx.params();
-    let param_int_value = p.get_int(PARAM_INT_VALUE);
+    let param_int_value = p.get_int64(PARAM_INT_VALUE);
     let param_name = p.get_string(PARAM_NAME);
 
     ctx.require(param_int_value.exists(), "missing mandatory intValue");
     ctx.require(param_name.exists(), "missing mandatory name");
 
-    ctx.state().get_int(&param_name.value()).set_value(param_int_value.value());
+    ctx.state().get_int64(&param_name.value()).set_value(param_int_value.value());
     ctx.log("testcore.setInt ok");
 }
 
@@ -165,7 +165,7 @@ pub fn func_get_minted_supply(ctx: &ScFuncContext) {
     //  ctx.minted_supply() -> i64
 
     let minted_supply = 42; // dummy for the core test to pass
-    ctx.results().get_int(PARAM_MINTED_SUPPLY).set_value(minted_supply);
+    ctx.results().get_int64(PARAM_MINTED_SUPPLY).set_value(minted_supply);
     ctx.log("testcore.setInt ok");
 }
 
@@ -212,7 +212,7 @@ pub fn func_test_event_log_generic_data(ctx: &ScFuncContext) {
     ctx.log("testcore.testEventLogGenericData");
 
     let p = ctx.params();
-    let param_counter = p.get_int(PARAM_COUNTER);
+    let param_counter = p.get_int64(PARAM_COUNTER);
 
     ctx.require(param_counter.exists(), "missing mandatory counter");
 
@@ -265,39 +265,39 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
     ctx.log("testcore.fibonacci");
 
     let p = ctx.params();
-    let param_int_value = p.get_int(PARAM_INT_VALUE);
+    let param_int_value = p.get_int64(PARAM_INT_VALUE);
 
     ctx.require(param_int_value.exists(), "missing mandatory intValue");
 
     let n = param_int_value.value();
     if n == 0 || n == 1 {
-        ctx.results().get_int(PARAM_INT_VALUE).set_value(n);
+        ctx.results().get_int64(PARAM_INT_VALUE).set_value(n);
         return;
     }
     let params1 = ScMutableMap::new();
-    params1.get_int(PARAM_INT_VALUE).set_value(n - 1);
+    params1.get_int64(PARAM_INT_VALUE).set_value(n - 1);
     let results1 = ctx.call_self(HVIEW_FIBONACCI, Some(params1));
-    let n1 = results1.get_int(PARAM_INT_VALUE).value();
+    let n1 = results1.get_int64(PARAM_INT_VALUE).value();
 
     let params2 = ScMutableMap::new();
-    params2.get_int(PARAM_INT_VALUE).set_value(n - 2);
+    params2.get_int64(PARAM_INT_VALUE).set_value(n - 2);
     let results2 = ctx.call_self(HVIEW_FIBONACCI, Some(params2));
-    let n2 = results2.get_int(PARAM_INT_VALUE).value();
+    let n2 = results2.get_int64(PARAM_INT_VALUE).value();
 
-    ctx.results().get_int(PARAM_INT_VALUE).set_value(n1 + n2);
+    ctx.results().get_int64(PARAM_INT_VALUE).set_value(n1 + n2);
     ctx.log("testcore.fibonacci ok");
 }
 
 pub fn func_inc_counter(ctx: &ScFuncContext) {
     ctx.log("testcore.incCounter");
-    ctx.state().get_int(VAR_COUNTER).set_value(ctx.state().get_int(VAR_COUNTER).value() + 1);
+    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
     ctx.log("testcore.incCounter ok");
 }
 
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
-    let counter = ctx.state().get_int(VAR_COUNTER);
-    ctx.results().get_int(VAR_COUNTER).set_value(counter.value());
+    let counter = ctx.state().get_int64(VAR_COUNTER);
+    ctx.results().get_int64(VAR_COUNTER).set_value(counter.value());
     ctx.log("testcore.getCounter ok");
 }
 
@@ -310,9 +310,9 @@ pub fn view_get_int(ctx: &ScViewContext) {
     ctx.require(param_name.exists(), "missing mandatory name");
 
     let name = param_name.value();
-    let value = ctx.state().get_int(&name);
+    let value = ctx.state().get_int64(&name);
     ctx.require(value.exists(), "param 'value' not found");
-    ctx.results().get_int(&name).set_value(value.value());
+    ctx.results().get_int64(&name).set_value(value.value());
     ctx.log("testcore.getInt ok");
 }
 
@@ -328,8 +328,8 @@ pub fn view_pass_types_view(ctx: &ScViewContext) {
     let param_hash = p.get_hash(PARAM_HASH);
     let param_hname = p.get_hname(PARAM_HNAME);
     let param_hname_zero = p.get_hname(PARAM_HNAME_ZERO);
-    let param_int64 = p.get_int(PARAM_INT64);
-    let param_int64_zero = p.get_int(PARAM_INT64_ZERO);
+    let param_int64 = p.get_int64(PARAM_INT64);
+    let param_int64_zero = p.get_int64(PARAM_INT64_ZERO);
     let param_string = p.get_string(PARAM_STRING);
     let param_string_zero = p.get_string(PARAM_STRING_ZERO);
 

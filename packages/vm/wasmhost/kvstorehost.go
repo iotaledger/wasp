@@ -19,7 +19,7 @@ const (
 	OBJTYPE_CONTRACT_ID int32 = 6
 	OBJTYPE_HASH        int32 = 7
 	OBJTYPE_HNAME       int32 = 8
-	OBJTYPE_INT         int32 = 9
+	OBJTYPE_INT64       int32 = 9
 	OBJTYPE_MAP         int32 = 10
 	OBJTYPE_REQUEST_ID  int32 = 11
 	OBJTYPE_STRING      int32 = 12

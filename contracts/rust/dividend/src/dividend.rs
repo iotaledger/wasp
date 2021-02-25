@@ -13,7 +13,7 @@ pub fn func_divide(ctx: &ScFuncContext) {
         ctx.panic("Nothing to divide");
     }
     let state = ctx.state();
-    let total_factor = state.get_int(VAR_TOTAL_FACTOR);
+    let total_factor = state.get_int64(VAR_TOTAL_FACTOR);
     let total = total_factor.value();
     let members = state.get_bytes_array(VAR_MEMBERS);
     let mut parts = 0_i64;
@@ -43,7 +43,7 @@ pub fn func_member(ctx: &ScFuncContext) {
 
     let p = ctx.params();
     let address = p.get_address(PARAM_ADDRESS);
-    let factor = p.get_int(PARAM_FACTOR);
+    let factor = p.get_int64(PARAM_FACTOR);
     ctx.require(address.exists(), "missing mandatory address");
     ctx.require(factor.exists(), "missing mandatory factor");
     let member = Member {
@@ -51,7 +51,7 @@ pub fn func_member(ctx: &ScFuncContext) {
         factor: factor.value(),
     };
     let state = ctx.state();
-    let total_factor = state.get_int(VAR_TOTAL_FACTOR);
+    let total_factor = state.get_int64(VAR_TOTAL_FACTOR);
     let mut total = total_factor.value();
     let members = state.get_bytes_array(VAR_MEMBERS);
     let size = members.length();
