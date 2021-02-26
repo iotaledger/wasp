@@ -248,14 +248,14 @@ func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 			}
 		} else {
 			emptyCounter := 0
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 3; i++ {
 				time.Sleep(100 * time.Millisecond)
 				if ch.backlogLen() != 0 {
 					break
 				}
 				emptyCounter++
 			}
-			if emptyCounter >= 5 {
+			if emptyCounter >= 3 {
 				return
 			}
 		}
