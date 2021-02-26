@@ -122,9 +122,9 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	case wasmhost.KeyName:
 		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyRandom:
-		return wasmhost.OBJTYPE_INT
+		return wasmhost.OBJTYPE_INT64
 	case wasmhost.KeyValid:
-		return wasmhost.OBJTYPE_INT
+		return wasmhost.OBJTYPE_INT64
 	}
 	return 0
 }
@@ -163,12 +163,12 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 
 func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	decode := NewBytesDecoder(bytes)
-	count := int(decode.Int())
+	count := int(decode.Int64())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		pubKeysBin[i] = decode.Bytes()
 	}
-	count = int(decode.Int())
+	count = int(decode.Int64())
 	sigsBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()

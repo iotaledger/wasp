@@ -27,7 +27,7 @@ var typeIds = map[int32]int32{
 	wasmhost.KeyIncoming:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyLog:             wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyMaps:            wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
-	wasmhost.KeyMinted:          wasmhost.OBJTYPE_INT,
+	wasmhost.KeyMinted:          wasmhost.OBJTYPE_INT64,
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
@@ -35,7 +35,7 @@ var typeIds = map[int32]int32{
 	wasmhost.KeyResults:         wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyState:           wasmhost.OBJTYPE_MAP,
-	wasmhost.KeyTimestamp:       wasmhost.OBJTYPE_INT,
+	wasmhost.KeyTimestamp:       wasmhost.OBJTYPE_INT64,
 	wasmhost.KeyTrace:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyTransfers:       wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
 	wasmhost.KeyUtility:         wasmhost.OBJTYPE_MAP,
@@ -146,8 +146,8 @@ func (o *ScContext) processCall(bytes []byte) {
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	params := o.getParams(int32(decode.Int()))
-	transfer := o.getTransfer(int32(decode.Int()))
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
 
 	o.Trace("CALL c'%s' f'%s'", contract.String(), function.String())
 	var results dict.Dict
@@ -171,7 +171,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	}
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
-	params := o.getParams(int32(decode.Int()))
+	params := o.getParams(int32(decode.Int64()))
 	o.Trace("DEPLOY c'%s' f'%s'", name, description)
 	err = o.vm.ctx.DeployContract(programHash, name, description, params)
 	if err != nil {
@@ -190,9 +190,9 @@ func (o *ScContext) processPost(bytes []byte) {
 		o.Panic(err.Error())
 	}
 	o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
-	params := o.getParams(int32(decode.Int()))
-	transfer := o.getTransfer(int32(decode.Int()))
-	delay := decode.Int()
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
+	delay := decode.Int64()
 	if delay < -1 {
 		o.Panic("invalid delay: %d", delay)
 	}

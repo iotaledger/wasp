@@ -25,13 +25,7 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
     }
     bets.clear();
 
-    ctx.post(&PostRequestParams {
-        contract_id: ctx.contract_id(),
-        function: HFUNC_PAY_WINNERS,
-        params: None,
-        transfer: None,
-        delay: 0,
-    });
+    ctx.post_self(HFUNC_PAY_WINNERS, None, None, 0);
     ctx.log("fairroulette.lockBets ok");
 }
 
@@ -43,7 +37,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     let sc_id = ctx.contract_id().as_agent_id();
     let winning_number = ctx.utility().random(5) + 1;
     let state = ctx.state();
-    state.get_int(VAR_LAST_WINNING_NUMBER).set_value(winning_number);
+    state.get_int64(VAR_LAST_WINNING_NUMBER).set_value(winning_number);
 
     // gather all winners and calculate some totals
     let mut total_bet_amount = 0_i64;
@@ -96,7 +90,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
 pub fn func_place_bet(ctx: &ScFuncContext) {
     ctx.log("fairroulette.placeBet");
     let p = ctx.params();
-    let param_number = p.get_int(PARAM_NUMBER);
+    let param_number = p.get_int64(PARAM_NUMBER);
 
     ctx.require(param_number.exists(), "missing mandatory number");
 
@@ -120,17 +114,11 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     let bet_nr = bets.length();
     bets.get_bytes(bet_nr).set_value(&bet.to_bytes());
     if bet_nr == 0 {
-        let mut play_period = state.get_int(VAR_PLAY_PERIOD).value();
+        let mut play_period = state.get_int64(VAR_PLAY_PERIOD).value();
         if play_period < 10 {
             play_period = DEFAULT_PLAY_PERIOD;
         }
-        ctx.post(&PostRequestParams {
-            contract_id: ctx.contract_id(),
-            function: HFUNC_LOCK_BETS,
-            params: None,
-            transfer: None,
-            delay: play_period,
-        });
+        ctx.post_self(HFUNC_LOCK_BETS, None, None, play_period);
     }
     ctx.log("fairroulette.placeBet ok");
 }
@@ -141,7 +129,7 @@ pub fn func_play_period(ctx: &ScFuncContext) {
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
     let p = ctx.params();
-    let param_play_period = p.get_int(PARAM_PLAY_PERIOD);
+    let param_play_period = p.get_int64(PARAM_PLAY_PERIOD);
 
     ctx.require(param_play_period.exists(), "missing mandatory playPeriod");
 
@@ -150,6 +138,6 @@ pub fn func_play_period(ctx: &ScFuncContext) {
         ctx.panic("Invalid play period...");
     }
 
-    ctx.state().get_int(VAR_PLAY_PERIOD).set_value(play_period);
+    ctx.state().get_int64(VAR_PLAY_PERIOD).set_value(play_period);
     ctx.log("fairroulette.playPeriod ok");
 }

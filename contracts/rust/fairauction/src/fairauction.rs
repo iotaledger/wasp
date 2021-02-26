@@ -125,7 +125,7 @@ pub fn func_set_owner_margin(ctx: &ScFuncContext) {
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
     let p = ctx.params();
-    let param_owner_margin = p.get_int(PARAM_OWNER_MARGIN);
+    let param_owner_margin = p.get_int64(PARAM_OWNER_MARGIN);
 
     ctx.require(param_owner_margin.exists(), "missing mandatory ownerMargin");
 
@@ -136,7 +136,7 @@ pub fn func_set_owner_margin(ctx: &ScFuncContext) {
     if owner_margin > OWNER_MARGIN_MAX {
         owner_margin = OWNER_MARGIN_MAX;
     }
-    ctx.state().get_int(VAR_OWNER_MARGIN).set_value(owner_margin);
+    ctx.state().get_int64(VAR_OWNER_MARGIN).set_value(owner_margin);
     ctx.log("fairauction.setOwnerMargin ok");
 }
 
@@ -145,8 +145,8 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
     let p = ctx.params();
     let param_color = p.get_color(PARAM_COLOR);
     let param_description = p.get_string(PARAM_DESCRIPTION);
-    let param_duration = p.get_int(PARAM_DURATION);
-    let param_minimum_bid = p.get_int(PARAM_MINIMUM_BID);
+    let param_duration = p.get_int64(PARAM_DURATION);
+    let param_minimum_bid = p.get_int64(PARAM_MINIMUM_BID);
 
     ctx.require(param_color.exists(), "missing mandatory color");
     ctx.require(param_minimum_bid.exists(), "missing mandatory minimumBid");
@@ -184,7 +184,7 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
     }
 
     let state = ctx.state();
-    let mut owner_margin = state.get_int(VAR_OWNER_MARGIN).value();
+    let mut owner_margin = state.get_int64(VAR_OWNER_MARGIN).value();
     if owner_margin == 0 {
         owner_margin = OWNER_MARGIN_DEFAULT;
     }
@@ -223,13 +223,7 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
 
     let finalize_params = ScMutableMap::new();
     finalize_params.get_color(VAR_COLOR).set_value(&auction.color);
-    ctx.post(&PostRequestParams {
-        contract_id: ctx.contract_id(),
-        function: HFUNC_FINALIZE_AUCTION,
-        params: Some(finalize_params),
-        transfer: None,
-        delay: duration * 60,
-    });
+    ctx.post_self(HFUNC_FINALIZE_AUCTION, Some(finalize_params), None, duration * 60);
     ctx.log("fairauction.startAuction ok");
 }
 
@@ -252,18 +246,18 @@ pub fn view_get_info(ctx: &ScViewContext) {
     let results = ctx.results();
     results.get_color(VAR_COLOR).set_value(&auction.color);
     results.get_agent_id(VAR_CREATOR).set_value(&auction.creator);
-    results.get_int(VAR_DEPOSIT).set_value(auction.deposit);
+    results.get_int64(VAR_DEPOSIT).set_value(auction.deposit);
     results.get_string(VAR_DESCRIPTION).set_value(&auction.description);
-    results.get_int(VAR_DURATION).set_value(auction.duration);
-    results.get_int(VAR_HIGHEST_BID).set_value(auction.highest_bid);
+    results.get_int64(VAR_DURATION).set_value(auction.duration);
+    results.get_int64(VAR_HIGHEST_BID).set_value(auction.highest_bid);
     results.get_agent_id(VAR_HIGHEST_BIDDER).set_value(&auction.highest_bidder);
-    results.get_int(VAR_MINIMUM_BID).set_value(auction.minimum_bid);
-    results.get_int(VAR_NUM_TOKENS).set_value(auction.num_tokens);
-    results.get_int(VAR_OWNER_MARGIN).set_value(auction.owner_margin);
-    results.get_int(VAR_WHEN_STARTED).set_value(auction.when_started);
+    results.get_int64(VAR_MINIMUM_BID).set_value(auction.minimum_bid);
+    results.get_int64(VAR_NUM_TOKENS).set_value(auction.num_tokens);
+    results.get_int64(VAR_OWNER_MARGIN).set_value(auction.owner_margin);
+    results.get_int64(VAR_WHEN_STARTED).set_value(auction.when_started);
 
     let bidder_list = current_auction.get_agent_id_array(VAR_BIDDER_LIST);
-    results.get_int(VAR_BIDDERS).set_value(bidder_list.length() as i64);
+    results.get_int64(VAR_BIDDERS).set_value(bidder_list.length() as i64);
     ctx.log("fairauction.getInfo ok");
 }
 
