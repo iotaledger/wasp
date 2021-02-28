@@ -3,74 +3,47 @@
 
 // package semantically analyzes parsed smart contract transaction
 // return object with transaction properties or error if semantically incorrect
-package properties
+package sctransaction
 
 import (
 	"errors"
 	"fmt"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"golang.org/x/xerrors"
+	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/txutil"
 )
 
-// properties represents result of analysis and semantic check of the SC transaction
-// SC transaction is a value transaction with successfully parsed data payload
+// properties represents result of analysis and semantic check of the SC transaction essence
+
 type properties struct {
-	// transaction ID
-	txid valuetransaction.ID
-	// senderAddress of the SC transaction. It is the only
-	senderAddress address.Address
-	// is it state transaction (== does it contain valid stateSection)
 	isState bool
 	// if isState == true it states if it is the origin transaction, otherwise uninterpreted
 	isOrigin bool
 	// if isState == true: chainID
 	chainID coretypes.ChainID
 	// chainAddress == chainID
-	chainAddress address.Address
-	// if isState == true: smart contract color
-	stateColor balance.Color
-	// timestamp from state section
-	timestamp int64
+	chainAddress ledgerstate.Address
+	// if isState == true: smart contract NFT color.
+	stateColor ledgerstate.Color
 	// stateHash from state section
 	stateHash hashing.HashValue
 	// number of requests
 	numRequests int
-	// data payload len
+	// serialized data payload size
 	dataPayloadSize uint32
-	// number of minted tokens to any address - number of requests
-	numTotalMintedTokens int64
-	// free tokens: tokens with output to chain address - tokens transferred by requests - request tokens - chain token
-	// In most cases it is empty, because all tokens should be transferred with requests
-	// Free tokens normally should be returned to the sender
-	freeTokensByAddress map[address.Address]coretypes.ColoredBalances
-}
-
-func init() {
-	sctransaction.RegisterSemanticAnalyzerConstructor(calcProperties)
 }
 
 // CalcProperties analyzes the transaction and returns its properties
-func calcProperties(tx *sctransaction.Transaction) (coretypes.SCTransactionProperties, error) {
+func calcProperties(tx *TransactionEssence) (coretypes.SCTransactionProperties, error) {
 	ret := &properties{
-		txid:                tx.ID(),
-		dataPayloadSize:     tx.DataPayloadSize(),
-		freeTokensByAddress: make(map[address.Address]coretypes.ColoredBalances),
-	}
-	if !tx.SignaturesValid() {
-		return nil, fmt.Errorf("invalid signatures")
-	}
-	if len(tx.Signatures()) > 1 {
-		return nil, fmt.Errorf("number of signatures > 1")
-	}
-	if err := ret.analyzeSender(tx); err != nil {
-		return nil, err
+		dataPayloadSize: uint32(len(tx.TransactionEssence.Payload().Bytes())),
 	}
 	if err := ret.analyzeStateBlock(tx); err != nil {
 		return nil, err
@@ -78,56 +51,24 @@ func calcProperties(tx *sctransaction.Transaction) (coretypes.SCTransactionPrope
 	if err := ret.analyzeRequestBlocks(tx); err != nil {
 		return nil, err
 	}
-	ret.calcNumMinted(tx)
-
-	if int64(ret.numRequests) > ret.numTotalMintedTokens {
-		panic("int64(prop.numRequests) > prop.numTotalMintedTokens")
-	}
 	return ret, nil
 }
 
-func (prop *properties) calcNumMinted(tx *sctransaction.Transaction) {
-	prop.numTotalMintedTokens = 0
-	tx.Transaction.Outputs().ForEach(func(addr address.Address, bals []*balance.Balance) bool {
-		prop.numTotalMintedTokens += txutil.BalanceOfColor(bals, balance.ColorNew)
-		return true
-	})
-}
-
-func (prop *properties) analyzeSender(tx *sctransaction.Transaction) error {
-	// check if the senderAddress is exactly one
-	// only value transaction with one input address can be parsed as smart contract transactions
-	// because we always need to deterministically identify the senderAddress
-	senderFound := false
-	var err error
-	tx.Transaction.Inputs().ForEachAddress(func(addr address.Address) bool {
-		if senderFound {
-			err = errors.New("smart contract transaction must contain exactly 1 input address")
-			return false
-		}
-		prop.senderAddress = addr
-		senderFound = true
-		return true
-	})
-	return err
-}
-
-func (prop *properties) analyzeStateBlock(tx *sctransaction.Transaction) error {
+func (prop *properties) analyzeStateBlock(tx *TransactionEssence) error {
 	stateSection, ok := tx.State()
 	prop.isState = ok
 	if !ok {
 		return nil
 	}
 
-	prop.timestamp = stateSection.Timestamp()
 	prop.stateHash = stateSection.StateHash()
 
 	var err error
 
-	prop.isOrigin = stateSection.Color() == balance.ColorNew
+	prop.isOrigin = stateSection.Color() == ledgerstate.ColorMint
 	sectionColor := stateSection.Color()
-	if sectionColor == balance.ColorIOTA {
-		return fmt.Errorf("state section color can't be IOTAColor")
+	if sectionColor == ledgerstate.ColorIOTA {
+		return xerrors.New("state section color can't be IOTAColor")
 	}
 
 	// must contain exactly one output with sectionColor. It can be NewColor for origin
@@ -157,7 +98,7 @@ func (prop *properties) analyzeStateBlock(tx *sctransaction.Transaction) error {
 	return nil
 }
 
-func (prop *properties) analyzeRequestBlocks(tx *sctransaction.Transaction) error {
+func (prop *properties) analyzeRequestBlocks(tx *TransactionEssence) error {
 	if !prop.isState && len(tx.Requests()) == 0 {
 		return errors.New("smart contract transaction which does not contain state block must contain at least one request")
 	}
@@ -222,4 +163,42 @@ func (prop *properties) analyzeRequestBlocks(tx *sctransaction.Transaction) erro
 		return true
 	})
 	return err
+}
+
+func (prop *properties) SenderAddress() *ledgerstate.Address {
+	return &prop.senderAddress
+}
+
+func (prop *properties) IsState() bool {
+	return prop.isState
+}
+
+func (prop *properties) IsOrigin() bool {
+	return prop.isState
+}
+
+func (prop *properties) MustChainID() *coretypes.ChainID {
+	if !prop.isState {
+		panic("MustChainID: must be a state transaction")
+	}
+	return &prop.chainID
+}
+
+func (prop *properties) MustStateColor() *ledgerstate.Color {
+	if !prop.isState {
+		panic("MustStateColor: must be a state transaction")
+	}
+	return &prop.stateColor
+}
+
+func (prop *properties) String() string {
+	ret := "---- TransactionEssence:\n"
+	ret += fmt.Sprintf("   requests: %d\n", prop.numRequests)
+	ret += fmt.Sprintf("   senderAddress: %s\n", prop.senderAddress.String())
+	ret += fmt.Sprintf("   isState: %v\n   isOrigin: %v\n", prop.isState, prop.isOrigin)
+	ret += fmt.Sprintf("   chainAddress: %s\n", prop.chainAddress.String())
+	ret += fmt.Sprintf("   chainID: %s\n   stateColor: %s\n", prop.chainID.String(), prop.stateColor.String())
+	ret += fmt.Sprintf("   timestamp: %d\n    stateHash: %s\n", prop.timestamp, prop.stateHash.String())
+	ret += fmt.Sprintf("   data payload size: %d\n", prop.dataPayloadSize)
+	return ret
 }

@@ -44,7 +44,7 @@ func (c *Client) PostRequest(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
 	params ...PostRequestParams,
-) (*sctransaction.Transaction, error) {
+) (*sctransaction.TransactionEssence, error) {
 	par := PostRequestParams{}
 	if len(params) > 0 {
 		par = params[0]

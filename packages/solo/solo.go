@@ -93,7 +93,7 @@ type Chain struct {
 	ValidatorFeeTarget coretypes.AgentID
 
 	// StateTx is the anchor transaction of the current state of the chain
-	StateTx *sctransaction.Transaction
+	StateTx *sctransaction.TransactionEssence
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State state.VirtualState
@@ -248,12 +248,12 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
 // invalid or double spend
-func (env *Solo) AddToLedger(tx *sctransaction.Transaction) error {
+func (env *Solo) AddToLedger(tx *sctransaction.TransactionEssence) error {
 	return env.utxoDB.AddTransaction(tx.Transaction)
 }
 
 // EnqueueRequests dispatches requests contained in the transaction among chains
-func (env *Solo) EnqueueRequests(tx *sctransaction.Transaction) {
+func (env *Solo) EnqueueRequests(tx *sctransaction.TransactionEssence) {
 	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
 	for i, rsect := range tx.Requests() {
 		chid := rsect.Target().ChainID()

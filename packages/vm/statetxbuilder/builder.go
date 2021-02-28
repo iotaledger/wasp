@@ -90,9 +90,9 @@ func (txb *Builder) Erase1TokenToChain(col balance.Color) bool {
 	return txb.vtxb.EraseColor(txb.chainAddress, col, 1) == nil
 }
 
-func (txb *Builder) Build() (*sctransaction.Transaction, error) {
+func (txb *Builder) Build() (*sctransaction.TransactionEssence, error) {
 	txb.MustValidate()
-	return sctransaction.NewTransaction(
+	return sctransaction.NewTransactionEssence(
 		txb.vtxb.build(),
 		txb.stateSection,
 		txb.requestSections,

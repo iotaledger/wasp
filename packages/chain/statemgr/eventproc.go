@@ -161,7 +161,7 @@ func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg)
 	sm.eventStateTransactionMsgCh <- msg
 }
 func (sm *stateManager) eventStateTransactionMsg(msg *chain.StateTransactionMsg) {
-	stateBlock, ok := msg.Transaction.State()
+	stateBlock, ok := msg.TransactionEssence.State()
 	if !ok {
 		// should not happen: must have state block
 		return
@@ -174,7 +174,7 @@ func (sm *stateManager) eventStateTransactionMsg(msg *chain.StateTransactionMsg)
 		"state hash", vh.String(),
 	)
 
-	//prop, err := msg.Transaction.Properties()
+	//prop, err := msg.TransactionEssence.Properties()
 	//if err != nil{
 	//	sm.log.Errorf("EventStateTransactionMsg: %v", err)
 	//	return
@@ -203,7 +203,7 @@ func (sm *stateManager) eventStateTransactionMsg(msg *chain.StateTransactionMsg)
 			}
 		}
 	}
-	sm.nextStateTransaction = msg.Transaction
+	sm.nextStateTransaction = msg.TransactionEssence
 
 	sm.takeAction()
 }

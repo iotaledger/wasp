@@ -32,7 +32,7 @@ func deployContractCmd(args []string) {
 
 	progHash := uploadBlob(blobFieldValues, true)
 
-	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
+	util.WithSCTransaction(func() (*sctransaction.TransactionEssence, error) {
 		return Client().PostRequest(
 			root.Interface.Hname(),
 			coretypes.Hn(root.FuncDeployContract),

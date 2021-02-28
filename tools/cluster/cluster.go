@@ -451,7 +451,7 @@ func (cluster *Cluster) StartMessageCounter(expectations map[string]int) (*Messa
 	return NewMessageCounter(cluster, cluster.Config.AllNodes(), expectations)
 }
 
-func (cluster *Cluster) PostTransaction(tx *sctransaction.Transaction) error {
+func (cluster *Cluster) PostTransaction(tx *sctransaction.TransactionEssence) error {
 	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
 	err := cluster.Level1Client().PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {

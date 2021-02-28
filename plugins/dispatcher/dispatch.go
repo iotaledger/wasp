@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/chains"
 )
 
-func dispatchState(tx *sctransaction.Transaction) {
+func dispatchState(tx *sctransaction.TransactionEssence) {
 	txProp := tx.MustProperties() // should be validate while parsing
 	if !txProp.IsState() {
 		// not state transaction
@@ -29,7 +29,7 @@ func dispatchState(tx *sctransaction.Transaction) {
 	)
 
 	cmt.ReceiveMessage(&chain.StateTransactionMsg{
-		Transaction: tx,
+		TransactionEssence: tx,
 	})
 }
 
@@ -40,7 +40,7 @@ func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*bala
 	}
 }
 
-func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.Transaction) {
+func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.TransactionEssence) {
 	log.Debugw("dispatchAddressUpdate", "addr", addr.String())
 
 	cmt := chains.GetChain((coretypes.ChainID)(addr))
@@ -60,7 +60,7 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	if txProp.IsState() && *txProp.MustChainID() == (coretypes.ChainID)(addr) {
 		// it is a state update to addr. Send it
 		cmt.ReceiveMessage(&chain.StateTransactionMsg{
-			Transaction: tx,
+			TransactionEssence: tx,
 		})
 		log.Debugf("state tx msg posted: %s", tx.ID().String())
 	}
@@ -75,9 +75,9 @@ func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.I
 	for i, reqBlk := range tx.Requests() {
 		if reqBlk.Target().ChainID() == (coretypes.ChainID)(addr) {
 			cmt.ReceiveMessage(&chain.RequestMsg{
-				Transaction: tx,
-				Index:       (uint16)(i),
-				FreeTokens:  freeTokens,
+				TransactionEssence: tx,
+				Index:              (uint16)(i),
+				FreeTokens:         freeTokens,
 			})
 			freeTokens = nil
 		}

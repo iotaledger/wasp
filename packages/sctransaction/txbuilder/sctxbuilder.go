@@ -129,11 +129,11 @@ func (txb *Builder) mintNewTokens() error {
 	return nil
 }
 
-func (txb *Builder) Build(useAllInputs bool) (*sctransaction.Transaction, error) {
+func (txb *Builder) Build(useAllInputs bool) (*sctransaction.TransactionEssence, error) {
 	if err := txb.mintNewTokens(); err != nil {
 		return nil, err
 	}
-	return sctransaction.NewTransaction(
+	return sctransaction.NewTransactionEssence(
 		txb.Builder.Build(useAllInputs),
 		txb.stateBlock,
 		txb.requestBlocks,

@@ -38,7 +38,7 @@ func (trc *TokenRegistryClient) OwnerAddress() address.Address {
 
 // MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
-func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.Transaction, error) {
+func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.TransactionEssence, error) {
 	args := make(map[string]interface{})
 	args[tokenregistry.VarReqDescription] = par.Description
 	if par.UserDefinedData != nil {

@@ -15,7 +15,7 @@ func postRequestCmd(args []string) {
 	if len(args) < 2 {
 		log.Fatal("Usage: %s chain post-request <name> <funcname> [params]", os.Args[0])
 	}
-	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
+	util.WithSCTransaction(func() (*sctransaction.TransactionEssence, error) {
 		return SCClient(coretypes.Hn(args[0])).PostRequest(
 			args[1],
 			chainclient.PostRequestParams{

@@ -40,10 +40,10 @@ type stateManager struct {
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
-	nextStateTransaction *sctransaction.Transaction
+	nextStateTransaction *sctransaction.TransactionEssence
 
 	// state transaction which approves current state
-	approvingTransaction *sctransaction.Transaction
+	approvingTransaction *sctransaction.TransactionEssence
 
 	// was state transition message of the current state sent to the consensus operator
 	consensusNotifiedOnStateTransition bool

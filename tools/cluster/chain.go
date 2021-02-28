@@ -115,7 +115,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 	return pass
 }
 
-func (ch *Chain) DeployContract(name string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.Transaction, error) {
+func (ch *Chain) DeployContract(name string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.TransactionEssence, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.TransactionEssence, hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,
 		blob.VarFieldProgramBinary:      progBinary,
@@ -199,7 +199,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	return tx, programHash, nil
 }
 
-func (ch *Chain) DeployWasmContractOld(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.Transaction, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContractOld(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.TransactionEssence, hashing.HashValue, error) {
 	// upload binary to the chain
 	blobFieldValues := map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,

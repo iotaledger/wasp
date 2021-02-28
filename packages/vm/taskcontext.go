@@ -36,7 +36,7 @@ type VMTask struct {
 	// call when finished
 	OnFinish func(callResult dict.Dict, callError error, vmError error)
 	// outputs
-	ResultTransaction *sctransaction.Transaction
+	ResultTransaction *sctransaction.TransactionEssence
 	ResultBlock       state.Block
 }
 

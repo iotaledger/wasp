@@ -4,8 +4,8 @@ go 1.15
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/iotaledger/goshimmer v0.3.7-0.20210214081859-29e3f77b4364
-	github.com/iotaledger/hive.go v0.0.0-20210209113323-87572778f0d9
+	github.com/iotaledger/goshimmer v0.3.7-0.20210227174102-3b6f1dae40e1
+	github.com/iotaledger/hive.go v0.0.0-20210224233715-cb935d64415d
 	github.com/knadh/koanf v0.14.0
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/mr-tron/base58 v1.2.0
@@ -21,5 +21,5 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
-	golang.org/x/tools v0.0.0-20201218024724-ae774e9781d2 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )

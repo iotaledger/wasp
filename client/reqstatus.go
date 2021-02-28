@@ -37,7 +37,7 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainId *coretypes.ChainID, reqId
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
-func (c *WaspClient) WaitUntilAllRequestsProcessed(tx *sctransaction.Transaction, timeout time.Duration) error {
+func (c *WaspClient) WaitUntilAllRequestsProcessed(tx *sctransaction.TransactionEssence, timeout time.Duration) error {
 	for i, req := range tx.Requests() {
 		chainId := req.Target().ChainID()
 		reqId := coretypes.NewRequestID(tx.ID(), uint16(i))

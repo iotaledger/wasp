@@ -131,7 +131,7 @@ type StateTransitionMsg struct {
 	// new variable state
 	VariableState state.VirtualState
 	// corresponding state transaction
-	AnchorTransaction *sctransaction.Transaction
+	AnchorTransaction *sctransaction.TransactionEssence
 	// processed requests
 	RequestIDs []*coretypes.RequestID
 	// is the state index last seen

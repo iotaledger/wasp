@@ -79,7 +79,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
+func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.TransactionEssence) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 

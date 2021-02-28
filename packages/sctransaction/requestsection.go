@@ -2,13 +2,12 @@ package sctransaction
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"io"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -39,12 +38,12 @@ type RequestSection struct {
 	// decoded args, if not nil. If nil, it means it wasn't
 	// successfully decoded yet and can't be used in the batch for calculations in VM
 	solidArgs dict.Dict
-	// all tokens transferred with the request EXCEPT the 1 minted request token
-	transfer coretypes.ColoredBalances
+	// references corresponding output with all attached tokens.
+	output uint16
 }
 
 type RequestRef struct {
-	Tx    *Transaction
+	Tx    *TransactionEssence
 	Index uint16
 }
 
@@ -55,13 +54,7 @@ func NewRequestSection(senderContractHname coretypes.Hname, targetContract coret
 		targetContractID:    targetContract,
 		entryPoint:          entryPointCode,
 		args:                requestargs.New(nil),
-		transfer:            cbalances.NewFromMap(nil),
 	}
-}
-
-// NewRequestSectionByWallet same as NewRequestSection but assumes senderAddress index is 0
-func NewRequestSectionByWallet(targetContract coretypes.ContractID, entryPointCode coretypes.Hname) *RequestSection {
-	return NewRequestSection(0, targetContract, entryPointCode)
 }
 
 func (req *RequestSection) String() string {
@@ -73,11 +66,15 @@ func (req *RequestSection) Clone() *RequestSection {
 	if req == nil {
 		return nil
 	}
-	ret := NewRequestSection(req.senderContractHname, req.targetContractID, req.entryPoint).
-		WithTimelock(req.timelock).
-		WithTransfer(req.transfer)
-	ret.args = req.args.Clone()
-	return ret
+	return &RequestSection{
+		senderContractHname: req.senderContractHname,
+		targetContractID:    req.targetContractID,
+		entryPoint:          req.entryPoint,
+		timelock:            req.timelock,
+		args:                req.args.Clone(),
+		solidArgs:           req.solidArgs.Clone(),
+		output:              req.output,
+	}
 }
 
 func (req *RequestSection) SenderContractHname() coretypes.Hname {
@@ -123,25 +120,22 @@ func (req *RequestSection) Timelock() uint32 {
 	return req.timelock
 }
 
-func (req *RequestSection) Transfer() coretypes.ColoredBalances {
-	return req.transfer
+func (req *RequestSection) OutputIndex() uint16 {
+	return req.output
 }
 
-func (req *RequestSection) WithTimelock(tl uint32) *RequestSection {
+func (req *RequestSection) WithTimeLock(tl uint32) *RequestSection {
 	req.timelock = tl
 	return req
 }
 
-func (req *RequestSection) WithTransfer(transfer coretypes.ColoredBalances) *RequestSection {
-	if transfer == nil {
-		transfer = cbalances.NewFromMap(nil)
-	}
-	req.transfer = transfer
+func (req *RequestSection) WithOutputIndex(index uint16) *RequestSection {
+	req.output = index
 	return req
 }
 
-func (req *RequestSection) WithTimelockUntil(deadline time.Time) *RequestSection {
-	return req.WithTimelock(uint32(deadline.Unix()))
+func (req *RequestSection) WithTimeLockUntil(deadline time.Time) *RequestSection {
+	return req.WithTimeLock(uint32(deadline.Unix()))
 }
 
 // encoding
@@ -162,7 +156,7 @@ func (req *RequestSection) Write(w io.Writer) error {
 	if err := req.args.Write(w); err != nil {
 		return err
 	}
-	if err := cbalances.WriteColoredBalances(w, req.transfer); err != nil {
+	if err := util.WriteUint16(w, req.output); err != nil {
 		return err
 	}
 	return nil
@@ -185,8 +179,7 @@ func (req *RequestSection) Read(r io.Reader) error {
 	if err := req.args.Read(r); err != nil {
 		return err
 	}
-	var err error
-	if req.transfer, err = cbalances.ReadColoredBalance(r); err != nil {
+	if err := util.ReadUint16(r, &req.output); err != nil {
 		return err
 	}
 	return nil
@@ -207,7 +200,7 @@ func (ref *RequestRef) SenderContractHname() coretypes.Hname {
 	return ref.RequestSection().senderContractHname
 }
 
-func (ref *RequestRef) SenderAddress() *address.Address {
+func (ref *RequestRef) SenderAddress() *ledgerstate.Address {
 	return ref.Tx.MustProperties().SenderAddress()
 }
 

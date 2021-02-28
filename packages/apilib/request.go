@@ -33,7 +33,7 @@ type CreateRequestTransactionParams struct {
 	WaitForConfirmation  bool
 }
 
-func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.Transaction, error) {
+func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.TransactionEssence, error) {
 	senderAddr := par.SenderSigScheme.Address()
 	allOuts, err := par.Level1Client.GetConfirmedAccountOutputs(&senderAddr)
 	if err != nil {

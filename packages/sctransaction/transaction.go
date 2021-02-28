@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// implements smart contract transaction.
+// package sctransaction implements smart contract transaction.
 // smart contract transaction is value transaction with special payload
 package sctransaction
 
@@ -9,62 +9,60 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/tangle/payload"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 	"io"
-	"sync"
 )
 
-// Smart contract transaction wraps value transaction
-// the stateSection and requestSection are parsed from the dataPayload of the value transaction
-type Transaction struct {
-	*valuetransaction.Transaction
-	stateSection     *StateSection
-	requestSection   []*RequestSection
+// TransactionEssence represents essence of ISCP transaction.
+// ISCP transaction is a value transaction as defined by Goshimmer's ledgerstate.TransactionEssence
+// Its payload contains metadata of the ISCP transaction essence.
+// The payload is parsed and the checked validity of its semantic. The parsed payload contains information
+// how elements of the overall value transaction are interpreted
+type TransactionEssence struct {
+	// value transaction with metadata as a payload (payload.GenericDataPayload)
+	*ledgerstate.TransactionEssence
+
+	// ------ metadata of the value transaction
+	// if stateSection != nil, state section of the state anchor.
+	// if stateSection == nil, the transaction is not a state anchor (it may contain requests)
+	stateSection *StateSection
+	// requestSection list of request sections.
+	// it stateSection == nil, requestSection must contain at least 1 request section
+	requestSection []*RequestSection
+
+	// cachedProperties cached data of semantic analysis, for faster access
 	cachedProperties coretypes.SCTransactionProperties
 }
 
-// function which analyzes the transaction and calculates properties of it
-type constructorNew func(transaction *Transaction) (coretypes.SCTransactionProperties, error)
-
-var newProperties constructorNew
-var newPropertiesMutex sync.Mutex
-
-func RegisterSemanticAnalyzerConstructor(constr constructorNew) {
-	newPropertiesMutex.Lock()
-	defer newPropertiesMutex.Unlock()
-	if newProperties != nil {
-		panic("RegisterSemanticAnalyzerConstructor: already registered")
-	}
-	newProperties = constr
-}
-
-// creates new sc transaction. It is immutable, i.e. tx hash is stable
-func NewTransaction(vtx *valuetransaction.Transaction, stateBlock *StateSection, requestBlocks []*RequestSection) (*Transaction, error) {
-	ret := &Transaction{
-		Transaction:    vtx,
-		stateSection:   stateBlock,
-		requestSection: requestBlocks,
+// NewTransactionEssence creates new sc transaction. It takes value transaction,
+// appends metadata to, serialized metadata and put it into the payload
+func NewTransactionEssence(vtx *ledgerstate.TransactionEssence, stateBlock *StateSection, requestBlocks []*RequestSection) (*TransactionEssence, error) {
+	ret := &TransactionEssence{
+		TransactionEssence: vtx,
+		stateSection:       stateBlock,
+		requestSection:     requestBlocks,
 	}
 	var buf bytes.Buffer
 	if err := ret.writeDataPayload(&buf); err != nil {
 		return nil, err
 	}
-	if err := vtx.SetDataPayload(buf.Bytes()); err != nil {
-		return nil, err
-	}
+	vtx.SetPayload(payload.NewGenericDataPayload(buf.Bytes()))
 	return ret, nil
 }
 
-// parses dataPayload. Error is returned only if pre-parsing succeeded and parsing failed
-// usually this can happen only due to targeted attack or
-func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, error) {
+// ParseValueTransaction parses dataPayload of the value transaction performs semantic analysis
+func ParseValueTransaction(vtx *ledgerstate.TransactionEssence) (*TransactionEssence, error) {
 	// parse data payload as smart contract metadata
-	rdr := bytes.NewReader(vtx.GetDataPayload())
-	ret := &Transaction{Transaction: vtx}
+	p, ok := vtx.Payload().(*payload.GenericDataPayload)
+	if !ok {
+		return nil, xerrors.New("wrong payload type")
+	}
+	rdr := bytes.NewReader(p.Blob())
+	ret := &TransactionEssence{TransactionEssence: vtx}
 	if err := ret.readDataPayload(rdr); err != nil {
 		return nil, err
 	}
@@ -76,16 +74,17 @@ func ParseValueTransaction(vtx *valuetransaction.Transaction) (*Transaction, err
 }
 
 // Properties returns valid properties if sc transaction is semantically correct
-func (tx *Transaction) Properties() (coretypes.SCTransactionProperties, error) {
+func (tx *TransactionEssence) Properties() (coretypes.SCTransactionProperties, error) {
 	if tx.cachedProperties != nil {
 		return tx.cachedProperties, nil
 	}
 	var err error
-	tx.cachedProperties, err = newProperties(tx)
+	tx.cachedProperties, err = calcProperties(tx)
 	return tx.cachedProperties, err
 }
 
-func (tx *Transaction) MustProperties() coretypes.SCTransactionProperties {
+// MustProperties returns valid properties if sc transaction is semantically correct or panics otherwise
+func (tx *TransactionEssence) MustProperties() coretypes.SCTransactionProperties {
 	ret, err := tx.Properties()
 	if err != nil {
 		panic(err)
@@ -93,47 +92,26 @@ func (tx *Transaction) MustProperties() coretypes.SCTransactionProperties {
 	return ret
 }
 
-func (tx *Transaction) State() (*StateSection, bool) {
+// State returns state section and existence flag
+func (tx *TransactionEssence) State() (*StateSection, bool) {
 	return tx.stateSection, tx.stateSection != nil
 }
 
-func (tx *Transaction) MustState() *StateSection {
+// MustState returns state section or panics if it does not exist
+func (tx *TransactionEssence) MustState() *StateSection {
 	if tx.stateSection == nil {
 		panic("MustState: state block expected")
 	}
 	return tx.stateSection
 }
 
-func (tx *Transaction) Requests() []*RequestSection {
+// Requests returns requests
+func (tx *TransactionEssence) Requests() []*RequestSection {
 	return tx.requestSection
 }
 
-// Sender returns first input address. It is the unique address, because
-// ParseValueTransaction doesn't allow other options
-func (tx *Transaction) Sender() *address.Address {
-	var ret address.Address
-	tx.Inputs().ForEachAddress(func(currentAddress address.Address) bool {
-		ret = currentAddress
-		return false
-	})
-	return &ret
-}
-
-func (tx *Transaction) OutputBalancesByAddress(addr address.Address) ([]*balance.Balance, bool) {
-	untyped, ok := tx.Outputs().Get(addr)
-	if !ok {
-		return nil, false
-	}
-
-	ret, ok := untyped.([]*balance.Balance)
-	if !ok {
-		panic("OutputBalancesByAddress: balances expected")
-	}
-	return ret, true
-}
-
 // function writes bytes of the SC transaction-specific part
-func (tx *Transaction) writeDataPayload(w io.Writer) error {
+func (tx *TransactionEssence) writeDataPayload(w io.Writer) error {
 	if tx.stateSection == nil && len(tx.requestSection) == 0 {
 		return errors.New("can't encode empty chain transaction")
 	}
@@ -162,7 +140,7 @@ func (tx *Transaction) writeDataPayload(w io.Writer) error {
 }
 
 // readDataPayload parses data stream of data payload to value transaction as smart contract meta data
-func (tx *Transaction) readDataPayload(r io.Reader) error {
+func (tx *TransactionEssence) readDataPayload(r io.Reader) error {
 	var hasState bool
 	var numRequests byte
 	if b, err := util.ReadByte(r); err != nil {
@@ -189,14 +167,14 @@ func (tx *Transaction) readDataPayload(r io.Reader) error {
 	return nil
 }
 
-func (tx *Transaction) String() string {
-	ret := fmt.Sprintf("TX: %s\n", tx.Transaction.ID().String())
+func (tx *TransactionEssence) String() string {
+	ret := ""
 	stateBlock, ok := tx.State()
 	if ok {
 		vh := stateBlock.StateHash()
-		ret += fmt.Sprintf("State: color: %s statehash: %s, ts: %d\n",
+		ret += fmt.Sprintf("State: color: %s statehash: %s, tx-ts: %s\n",
 			stateBlock.Color().String(),
-			vh.String(), stateBlock.Timestamp(),
+			vh.String(), tx.TransactionEssence.Timestamp(),
 		)
 	} else {
 		ret += "State: none\n"

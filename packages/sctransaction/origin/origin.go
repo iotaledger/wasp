@@ -24,7 +24,7 @@ type NewOriginTransactionParams struct {
 // - creates new origin transaction for the chain
 // - origin tx approves empty state
 // - origin tx mints chain token to the origin address. The address must be owned by the initial committee
-func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.Transaction, error) {
+func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.TransactionEssence, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ type NewRootInitRequestTransactionParams struct {
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
 // chain. At this moment it only is able to process this specific request
 // the request contains minimum data needed to bootstrap the chain
-// Transaction must be signed by the same address which created origin transaction
-func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sctransaction.Transaction, error) {
+// TransactionEssence must be signed by the same address which created origin transaction
+func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sctransaction.TransactionEssence, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
 	if err != nil {
 		return nil, err

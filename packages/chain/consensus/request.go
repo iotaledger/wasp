@@ -53,7 +53,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	newMsg := false
 	if ok {
 		if msgFirstTime {
-			ret.reqTx = reqMsg.Transaction
+			ret.reqTx = reqMsg.TransactionEssence
 			ret.freeTokens = reqMsg.FreeTokens
 			ret.whenMsgReceived = time.Now()
 			newMsg = true
@@ -61,7 +61,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	} else {
 		ret = op.newRequest(*reqId)
 		ret.whenMsgReceived = time.Now()
-		ret.reqTx = reqMsg.Transaction
+		ret.reqTx = reqMsg.TransactionEssence
 		ret.freeTokens = reqMsg.FreeTokens
 		op.requests[*reqId] = ret
 		op.addRequestIdConcurrent(reqId)
@@ -80,7 +80,7 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	if newMsg {
 		publisher.Publish("request_in",
 			op.chain.ID().String(),
-			reqMsg.Transaction.ID().String(),
+			reqMsg.TransactionEssence.ID().String(),
 			fmt.Sprintf("%d", reqMsg.Index),
 		)
 	}

@@ -121,7 +121,7 @@ func toMap(params ...interface{}) map[string]interface{} {
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signaturescheme.SignatureScheme) *sctransaction.Transaction {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signaturescheme.SignatureScheme) *sctransaction.TransactionEssence {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
@@ -174,7 +174,7 @@ func (ch *Chain) PostRequestSync(req *CallParams, sigScheme signaturescheme.Sign
 	return ret, err
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.SignatureScheme) (*sctransaction.Transaction, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.SignatureScheme) (*sctransaction.TransactionEssence, dict.Dict, error) {
 	tx := ch.RequestFromParamsToLedger(req, sigScheme)
 
 	reqID := coretypes.NewRequestID(tx.ID(), 0)

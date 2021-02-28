@@ -11,7 +11,7 @@ import (
 )
 
 type StateTransactionMsg struct {
-	*sctransaction.Transaction
+	*sctransaction.TransactionEssence
 }
 
 type TransactionInclusionLevelMsg struct {
@@ -24,13 +24,13 @@ type BalancesMsg struct {
 }
 
 type RequestMsg struct {
-	*sctransaction.Transaction
+	*sctransaction.TransactionEssence
 	Index      uint16
 	FreeTokens coretypes.ColoredBalances
 }
 
 func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {
-	ret := coretypes.NewRequestID(reqMsg.Transaction.ID(), reqMsg.Index)
+	ret := coretypes.NewRequestID(reqMsg.TransactionEssence.ID(), reqMsg.Index)
 	return &ret
 }
 

@@ -27,7 +27,7 @@ type operator struct {
 	dkshare *tcrypto.DKShare
 	//currentState
 	currentState state.VirtualState
-	stateTx      *sctransaction.Transaction
+	stateTx      *sctransaction.TransactionEssence
 	balances     map[valuetransaction.ID][]*balance.Balance
 
 	// consensus stage
@@ -46,7 +46,7 @@ type operator struct {
 
 	leaderStatus            *leaderStatus
 	sentResultToLeaderIndex uint16
-	sentResultToLeader      *sctransaction.Transaction
+	sentResultToLeader      *sctransaction.TransactionEssence
 
 	postedResultTxid       *valuetransaction.ID
 	nextPullInclusionLevel time.Time // if postedResultTxid != nil
@@ -79,7 +79,7 @@ type leaderStatus struct {
 	batchHash     hashing.HashValue
 	timestamp     int64
 	balances      map[valuetransaction.ID][]*balance.Balance
-	resultTx      *sctransaction.Transaction
+	resultTx      *sctransaction.TransactionEssence
 	finalized     bool
 	signedResults []*signedResult
 }
@@ -94,7 +94,7 @@ type request struct {
 	// id of the hash of request tx id and request block index
 	reqId coretypes.RequestID
 	// from request message. nil if request message wasn't received yet
-	reqTx *sctransaction.Transaction
+	reqTx *sctransaction.TransactionEssence
 	// from request message. Not nil only if free tokens were attached to the request
 	freeTokens coretypes.ColoredBalances
 	// time when request message was received by the operator
