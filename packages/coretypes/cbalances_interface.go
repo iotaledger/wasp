@@ -3,9 +3,7 @@
 
 package coretypes
 
-import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-)
+import ()
 
 // ColoredBalances is an interface to immutable map of (color code: int64)
 //

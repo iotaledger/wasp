@@ -165,7 +165,7 @@ func (prop *properties) analyzeRequestBlocks(tx *TransactionEssence) error {
 	return err
 }
 
-func (prop *properties) SenderAddress() *ledgerstate.Address {
+func (prop *properties) SenderAddress() ledgerstate.Address {
 	return &prop.senderAddress
 }
 

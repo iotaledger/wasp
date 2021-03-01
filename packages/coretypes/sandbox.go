@@ -4,8 +4,7 @@
 package coretypes
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -50,9 +49,9 @@ type Sandbox interface {
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
 	IncomingTransfer() ColoredBalances
 	// Balance return number of tokens of specific color in the balance of the smart contract
-	Balance(col balance.Color) int64
+	Balance(col ledgerstate.Color) int64
 	// TransferToAddress send tokens to the L1 ledger address
-	TransferToAddress(addr address.Address, transfer ColoredBalances) bool
+	TransferToAddress(addr ledgerstate.Address, transfer ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	PostRequest(par PostRequestParams) bool
 	// Log interface provides local logging on the machine. It also includes Panicf methods which logs and panics

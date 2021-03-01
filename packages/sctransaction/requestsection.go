@@ -200,7 +200,7 @@ func (ref *RequestRef) SenderContractHname() coretypes.Hname {
 	return ref.RequestSection().senderContractHname
 }
 
-func (ref *RequestRef) SenderAddress() *ledgerstate.Address {
+func (ref *RequestRef) SenderAddress() ledgerstate.Address {
 	return ref.Tx.MustProperties().SenderAddress()
 }
 
@@ -209,7 +209,7 @@ func (ref *RequestRef) SenderContractID() (ret coretypes.ContractID, err error) 
 		err = fmt.Errorf("request wasn't sent by the smart contract: %s", ref.RequestID().String())
 		return
 	}
-	ret = coretypes.NewContractID((coretypes.ChainID)(*ref.SenderAddress()), ref.SenderContractHname())
+	ret = coretypes.NewContractID(ref.SenderAddress().Array(), ref.SenderContractHname())
 	return
 }
 

@@ -49,6 +49,10 @@ func (hn Hname) Bytes() []byte {
 	return ret
 }
 
+func (hn Hname) Clone() Hname {
+	return hn
+}
+
 func (hn Hname) String() string {
 	return fmt.Sprintf("%08x", (int)(hn))
 }

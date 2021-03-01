@@ -11,7 +11,7 @@ import (
 // syntactically and semantically valid smart contract transaction.
 type SCTransactionProperties interface {
 	// address of the transaction sender. It may be address of the wallet or chain address
-	SenderAddress() *ledgerstate.Address
+	SenderAddress() ledgerstate.Address
 	// is it state transaction, i.e. transaction with the valid state section
 	IsState() bool
 	// is it origin transaction

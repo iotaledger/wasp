@@ -13,17 +13,19 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-// ContractIDLength size of the contract ID in bytes
-const ContractIDLength = ChainIDLength + HnameLength
-
-// ContractID global identifier of the smart contract. It consists of chainID and the hname of the contract on the chain
-type ContractID [ContractIDLength]byte
+// ContractID global identifier of the smart contract.
+// It consists of chainID and the hname of the contract on the chain
+type ContractID struct {
+	chainID       ChainID
+	contractHname Hname
+}
 
 // NewContractID creates new ContractID from chainID and contract hname
 func NewContractID(chid ChainID, contractHn Hname) (ret ContractID) {
-	copy(ret[:ChainIDLength], chid[:])
-	copy(ret[ChainIDLength:], contractHn.Bytes())
-	return
+	return ContractID{
+		chainID:       chid,
+		contractHname: contractHn,
+	}
 }
 
 // NewContractIDFromBytes creates contract ID frm its binary representation
@@ -60,21 +62,26 @@ func NewContractIDFromString(s string) (ret ContractID, err error) {
 	return
 }
 
+func (scid ContractID) Clone() ContractID {
+	return scid
+}
+
 // ChainID returns ID of the native chain of the contract
-func (scid ContractID) ChainID() (ret ChainID) {
-	copy(ret[:ChainIDLength], scid[:ChainIDLength])
-	return
+func (scid ContractID) ChainID() ChainID {
+	return scid.chainID
 }
 
 // Hname returns hashed name of the contract, local ID on the chain
 func (scid ContractID) Hname() Hname {
-	ret, _ := NewHnameFromBytes(scid[ChainIDLength:])
-	return ret
+	return scid.contractHname
 }
 
 // Base58 base58 representation of the binary representation
 func (scid ContractID) Base58() string {
-	return base58.Encode(scid[:])
+	var buf bytes.Buffer
+	buf.Write(scid.chainID[:])
+	buf.Write(scid.contractHname.Bytes())
+	return base58.Encode(buf.Bytes())
 }
 
 const (
@@ -94,18 +101,22 @@ func (scid *ContractID) Short() string {
 
 // Read from reader
 func (scid *ContractID) Read(r io.Reader) error {
-	n, err := r.Read(scid[:])
-	if err != nil {
+	if err := scid.chainID.Read(r); err != nil {
 		return err
 	}
-	if n != ContractIDLength {
-		return ErrWrongDataLength
+	if err := scid.contractHname.Read(r); err != nil {
+		return err
 	}
 	return nil
 }
 
 // Write to writer
 func (scid *ContractID) Write(w io.Writer) error {
-	_, err := w.Write(scid[:])
-	return err
+	if _, err := w.Write(scid.chainID[:]); err != nil {
+		return err
+	}
+	if _, err := w.Write(scid.contractHname.Bytes()); err != nil {
+		return err
+	}
+	return nil
 }

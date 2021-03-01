@@ -4,17 +4,11 @@
 package coretypes
 
 import (
-	"bytes"
 	"errors"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"golang.org/x/xerrors"
 	"io"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/mr-tron/base58"
 )
-
-// AgentIDLength is the size of AgentID in bytes
-const AgentIDLength = ContractIDLength // max(ContractIDLength, address.Length)
 
 // AgentID represents exactly one of two types of entities on the ISCP ledger in one ID:
 //  - It can represent an address on the Tangle (controlled by some private key). In this case it can be
@@ -23,33 +17,20 @@ const AgentIDLength = ContractIDLength // max(ContractIDLength, address.Length)
 //    a coretypes.ContractID type (see MustContractID)
 // Type of ID represented by the AgentID can be recognized with IsAddress call.
 // An attempt to interpret the AgentID in the wrong way invokes panic
-type AgentID [AgentIDLength]byte
+type AgentID struct {
+	a interface{} // one of 2: *ContractID or *ledgerstate.Address
+}
 
 // NewAgentIDFromContractID makes AgentID from ContractID
-func NewAgentIDFromContractID(id ContractID) (ret AgentID) {
-	copy(ret[:], id[:])
-	return
+func NewAgentIDFromContractID(id ContractID) AgentID {
+	ret := id.Clone()
+	return AgentID{&ret}
 }
 
 // NewAgentIDFromAddress makes AgentID from address.Address
-func NewAgentIDFromAddress(addr address.Address) AgentID {
+func NewAgentIDFromAddress(addr ledgerstate.Address) AgentID {
 	// 0 is a reserved hname
-	return NewAgentIDFromContractID(NewContractID(ChainID(addr), 0))
-}
-
-// NewAgentIDFromSigScheme makes AgentID from signaturescheme.SignatureScheme
-func NewAgentIDFromSigScheme(sigScheme signaturescheme.SignatureScheme) AgentID {
-	return NewAgentIDFromAddress(sigScheme.Address())
-}
-
-// NewAgentIDFromBytes makes an AgentID from binary representation
-func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
-	if len(data) != AgentIDLength {
-		err = ErrWrongDataLength
-		return
-	}
-	copy(ret[:], data)
-	return
+	return NewAgentIDFromContractID(NewContractID(NewChainIDFromAddress(addr), 0))
 }
 
 // NewRandomAgentID creates random AgentID
@@ -59,37 +40,26 @@ func NewRandomAgentID() AgentID {
 	return NewAgentIDFromContractID(NewContractID(chainID, hname))
 }
 
-func (a *AgentID) chainIDField() []byte {
-	return a[:ChainIDLength]
-}
-
-func (a *AgentID) hnameField() []byte {
-	return a[ChainIDLength : ChainIDLength+HnameLength]
-}
-
 // IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 // This is based on the assumption that fro coretypes.Hname 0 is a reserved value
 func (a AgentID) IsAddress() bool {
-	var z [4]byte
-	return bytes.Equal(a.hnameField(), z[:])
+	switch a.a.(type) {
+	case *ContractID:
+		return false
+	case *ledgerstate.Address:
+		return true
+	}
+	panic("wrong type behind AgentID")
 }
 
 // MustAddress takes address or panic if not address
-func (a AgentID) MustAddress() (ret address.Address) {
-	if !a.IsAddress() {
-		panic("not an address")
-	}
-	copy(ret[:], a.chainIDField())
-	return
+func (a AgentID) MustAddress() ledgerstate.Address {
+	return a.a.(ledgerstate.Address)
 }
 
 // MustContractID takes contract ID or panics if not a contract ID
-func (a AgentID) MustContractID() (ret ContractID) {
-	if a.IsAddress() {
-		panic("not a contract")
-	}
-	copy(ret[:], a[:])
-	return
+func (a AgentID) MustContractID() ContractID {
+	return *a.a.(*ContractID)
 }
 
 // String human readable string
@@ -109,8 +79,8 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 	}
 	switch s[:2] {
 	case "A/":
-		var addr address.Address
-		addr, err = address.FromBase58(s[2:])
+		var addr ledgerstate.Address
+		addr, err = ledgerstate.AddressFromBase58EncodedString(s[2:])
 		if err != nil {
 			return
 		}
@@ -130,16 +100,29 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 
 // ReadAgentID decodes from binary representation
 func ReadAgentID(r io.Reader, agentID *AgentID) error {
-	n, err := r.Read(agentID[:])
-	if err != nil {
-		return err
+	var b [1]byte
+	if n, err := r.Read(b[:]); err != nil || n != 1 {
+		return ErrWrongDataLength
 	}
-	if n != AgentIDLength {
-		return errors.New("error while reading agent ID")
+	switch b[0] {
+	case 'A':
+		var a [ledgerstate.AddressLength]byte
+		if n, err := r.Read(a[:]); err != nil || n != ledgerstate.AddressLength {
+			return ErrWrongDataLength
+		}
+		addr, _, err := ledgerstate.AddressFromBytes(a[:])
+		if err != nil {
+			return err
+		}
+		agentID.a = addr
+	case 'C':
+		var cid ContractID
+		if err := cid.Read(r); err != nil {
+			return err
+		}
+		agentID.a = &cid
+	default:
+		return xerrors.New("error while reading AgentID")
 	}
 	return nil
-}
-
-func (a AgentID) Base58() string {
-	return base58.Encode(a[:])
 }

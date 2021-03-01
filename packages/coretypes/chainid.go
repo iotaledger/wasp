@@ -5,35 +5,39 @@ package coretypes
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/mr-tron/base58"
+	"golang.org/x/xerrors"
 	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
 // ChainIDLength size of the ChainID in bytes
-const ChainIDLength = address.Length
+const ChainIDLength = ledgerstate.AddressLength
 
 // ChainID represents the global identifier of the chain
 //
 // Currently it is an alias for the chain address (type address.Address)
 // In the future it will be refactored as an alias for chain color (type balance.Color)
-type ChainID address.Address
+type ChainID [ChainIDLength]byte
 
 var NilChainID = ChainID{}
 
+// NewChainIDFromAddress temporary
+func NewChainIDFromAddress(addr ledgerstate.Address) (ret ChainID) {
+	copy(ret[:], addr.Bytes())
+	return
+}
+
 // NewChainIDFromBase58 constructor decodes base58 string to the ChainID
 func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
-	var b []byte
-	b, err = base58.Decode(b58)
+	addr, err := ledgerstate.AddressFromBase58EncodedString(b58)
 	if err != nil {
 		return
 	}
-	if len(b) != ChainIDLength {
-		err = ErrWrongDataLength
-		return
-	}
-	copy(ret[:], b)
+	copy(ret[:], addr.Bytes())
 	return
 }
 
@@ -44,13 +48,25 @@ func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 }
 
 // NewRandomChainID creates a random chain ID.
-func NewRandomChainID() ChainID {
-	return ChainID(address.RandomOfType(address.VersionBLS))
+func NewRandomChainID(seed ...[]byte) (ret ChainID) {
+	var h hashing.HashValue
+	if len(seed) > 0 {
+		h = hashing.HashData(seed[0])
+	} else {
+		h = hashing.RandomHash(nil)
+	}
+	copy(ret[:], ledgerstate.NewED25519Address(ed25519.NewSeed(h[:]).KeyPair(0).PublicKey).Bytes())
+	return
+}
+
+func (chid ChainID) Clone() ChainID {
+	return chid
 }
 
 // String human readable form (base58 encoding)
 func (chid ChainID) String() string {
-	return address.Address(chid).String()
+
+	return "$/" + base58.Encode(chid[:])
 }
 
 // Write to writer
@@ -69,4 +85,13 @@ func (chid *ChainID) Read(r io.Reader) error {
 		return ErrWrongDataLength
 	}
 	return nil
+}
+
+// AsAddress Temporary
+func (chid *ChainID) AsAddress() ledgerstate.Address {
+	ret, _, err := ledgerstate.AddressFromBytes(chid[:])
+	if err != nil {
+		panic(xerrors.Errorf("ChainID.MustAsAddress: %v", err))
+	}
+	return ret
 }
