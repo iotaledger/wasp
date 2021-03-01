@@ -1,7 +1,7 @@
 package coretypes
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
@@ -27,11 +27,11 @@ type Base58 interface {
 
 type ED25519 interface {
 	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
-	AddressFromPublicKey(pubKey []byte) (address.Address, error)
+	AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error)
 }
 
 type BLS interface {
 	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
-	AddressFromPublicKey(pubKey []byte) (address.Address, error)
+	AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error)
 	AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error)
 }

@@ -3,7 +3,6 @@ package vmcontext
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -62,10 +61,10 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 	vmctx.log.Debugw("-- PostRequestSync",
 		"target", par.TargetContractID.String(),
 		"ep", par.EntryPoint.String(),
-		"transfer", cbalances.Str(par.Transfer),
+		"transfer", coretypes.Str(par.Transfer),
 	)
 	myAgentID := vmctx.MyAgentID()
-	if !vmctx.debitFromAccount(myAgentID, cbalances.NewFromMap(map[balance.Color]int64{
+	if !vmctx.debitFromAccount(myAgentID, coretypes.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
 		vmctx.log.Debugf("-- PostRequestSync: not enough funds for request token")

@@ -63,10 +63,13 @@ func (chid ChainID) Clone() ChainID {
 	return chid
 }
 
+func (chid ChainID) Base58() string {
+	return base58.Encode(chid[:])
+}
+
 // String human readable form (base58 encoding)
 func (chid ChainID) String() string {
-
-	return "$/" + base58.Encode(chid[:])
+	return "$/" + chid.Base58()
 }
 
 // Write to writer

@@ -35,7 +35,7 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer coretypes.ColoredBalances
+	Transfer coretypes.ColoredBalancesOld
 	Args     requestargs.RequestArgs
 }
 

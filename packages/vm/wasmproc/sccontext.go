@@ -6,7 +6,6 @@ package wasmproc
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -217,9 +216,9 @@ func (o *ScContext) getParams(paramsId int32) dict.Dict {
 	return params
 }
 
-func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalances {
+func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalancesOld {
 	if transferId == 0 {
-		return cbalances.NewFromMap(nil)
+		return coretypes.NewFromMap(nil)
 	}
 	transfer := make(map[balance.Color]int64)
 	transferDict := o.host.FindObject(transferId).(*ScDict).kvStore
@@ -236,5 +235,5 @@ func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalances {
 		transfer[color] = amount
 		return true
 	})
-	return cbalances.NewFromMap(transfer)
+	return coretypes.NewFromMap(transfer)
 }

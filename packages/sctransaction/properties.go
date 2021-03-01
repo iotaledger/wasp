@@ -8,16 +8,13 @@ package sctransaction
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"golang.org/x/xerrors"
-	"time"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/txutil"
+	"golang.org/x/xerrors"
 )
 
 // properties represents result of analysis and semantic check of the SC transaction essence
@@ -132,7 +129,7 @@ func (prop *properties) analyzeRequestBlocks(tx *TransactionEssence) error {
 			// ignore outputs to outside addresses
 			return true
 		}
-		diff := cbalances.NewFromBalances(bals).Diff(cbalances.NewFromMap(m))
+		diff := coretypes.NewFromBalances(bals).Diff(coretypes.NewFromMap(m))
 		if prop.isState && addr == prop.chainAddress {
 			if diff.Len() != 1 && diff.Balance(prop.stateColor) != 1 {
 				// output to the self in the state transaction can't contain free tokens

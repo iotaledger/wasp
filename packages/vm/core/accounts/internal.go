@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -43,14 +42,14 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // CreditToAccount brings new funds to the on chain ledger.
-func CreditToAccount(state kv.KVStore, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+func CreditToAccount(state kv.KVStore, agentID coretypes.AgentID, transfer coretypes.ColoredBalancesOld) {
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
 	mustCheckLedger(state, "CreditToAccount")
 }
 
 // creditToAccount internal
-func creditToAccount(state kv.KVStore, account *collections.Map, transfer coretypes.ColoredBalances) {
+func creditToAccount(state kv.KVStore, account *collections.Map, transfer coretypes.ColoredBalancesOld) {
 	if transfer == nil || transfer.Len() == 0 {
 		return
 	}
@@ -68,7 +67,7 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer corety
 }
 
 // DebitFromAccount removes funds from the chain ledger.
-func DebitFromAccount(state kv.KVStore, agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+func DebitFromAccount(state kv.KVStore, agentID coretypes.AgentID, transfer coretypes.ColoredBalancesOld) bool {
 	if !debitFromAccount(state, getAccount(state, agentID), transfer) {
 		return false
 	}
@@ -80,7 +79,7 @@ func DebitFromAccount(state kv.KVStore, agentID coretypes.AgentID, transfer core
 }
 
 // debitFromAccount internal
-func debitFromAccount(state kv.KVStore, account *collections.Map, transfer coretypes.ColoredBalances) bool {
+func debitFromAccount(state kv.KVStore, account *collections.Map, transfer coretypes.ColoredBalancesOld) bool {
 	if transfer == nil || transfer.Len() == 0 {
 		return true
 	}
@@ -112,7 +111,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer coret
 	return true
 }
 
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalancesOld) bool {
 	if fromAgentID == toAgentID {
 		// no need to move
 		return true
@@ -178,11 +177,11 @@ func GetAccountBalances(state kv.KVStoreReader, agentID coretypes.AgentID) (map[
 	return getAccountBalances(account), true
 }
 
-func getTotalAssetsIntern(state kv.KVStoreReader) coretypes.ColoredBalances {
-	return cbalances.NewFromMap(getAccountBalances(getTotalAssetsAccountR(state)))
+func getTotalAssetsIntern(state kv.KVStoreReader) coretypes.ColoredBalancesOld {
+	return coretypes.NewFromMap(getAccountBalances(getTotalAssetsAccountR(state)))
 }
 
-func calcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
+func calcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalancesOld {
 	ret := make(map[balance.Color]int64)
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := coretypes.NewAgentIDFromBytes([]byte(key))
@@ -194,7 +193,7 @@ func calcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
 		}
 		return true
 	})
-	return cbalances.NewFromMap(ret)
+	return coretypes.NewFromMap(ret)
 }
 
 func mustCheckLedger(state kv.KVStore, checkpoint string) {
@@ -207,7 +206,7 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 
 func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
 	balances := getAccountBalances(account)
-	ctx.Log().Debugf("%s. balance = %s\n", tag, cbalances.NewFromMap(balances).String())
+	ctx.Log().Debugf("%s. balance = %s\n", tag, coretypes.NewFromMap(balances).String())
 	return EncodeBalances(balances)
 }
 

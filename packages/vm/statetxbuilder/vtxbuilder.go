@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"sort"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
@@ -331,14 +331,14 @@ func (vtxb *vtxBuilder) validate() {
 			inOutputs[col] = s + val
 		}
 	}
-	orig := cbalances.NewFromMap(vtxb.originalBalances)
-	rem := cbalances.NewFromMap(remaining)
-	cons := cbalances.NewFromMap(consumed)
+	orig := coretypes.NewFromMap(vtxb.originalBalances)
+	rem := coretypes.NewFromMap(remaining)
+	cons := coretypes.NewFromMap(consumed)
 
 	sumMap := make(map[balance.Color]int64)
 	rem.AddToMap(sumMap)
 	cons.AddToMap(sumMap)
-	sum := cbalances.NewFromMap(sumMap)
+	sum := coretypes.NewFromMap(sumMap)
 	if !sum.Equal(orig) {
 		panic("invalid sums")
 	}

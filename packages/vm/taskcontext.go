@@ -16,7 +16,7 @@ import (
 
 type RequestRefWithFreeTokens struct {
 	sctransaction.RequestRef
-	FreeTokens coretypes.ColoredBalances
+	FreeTokens coretypes.ColoredBalancesOld
 }
 
 // task context (for batch of requests)

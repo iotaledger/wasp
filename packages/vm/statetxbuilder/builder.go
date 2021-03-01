@@ -70,7 +70,7 @@ func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
 	return nil
 }
 
-func (txb *Builder) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) error {
+func (txb *Builder) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalancesOld) error {
 	var err error
 	transfer.Iterate(func(col balance.Color, bal int64) bool {
 		err = txb.vtxb.MoveTokens(targetAddr, col, bal)

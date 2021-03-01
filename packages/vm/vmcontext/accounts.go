@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func (vmctx *VMContext) GetIncoming() coretypes.ColoredBalances {
+func (vmctx *VMContext) GetIncoming() coretypes.ColoredBalancesOld {
 	return vmctx.getCallContext().transfer
 }
 
@@ -16,13 +16,13 @@ func (vmctx *VMContext) GetBalance(col balance.Color) int64 {
 	return vmctx.getBalance(col)
 }
 
-func (vmctx *VMContext) GetMyBalances() coretypes.ColoredBalances {
+func (vmctx *VMContext) GetMyBalances() coretypes.ColoredBalancesOld {
 	return vmctx.getMyBalances()
 }
 
 // TransferToAddress includes output of colored tokens into the transaction
 // i.e. it is a transfer of tokens from chain to layer 1 ledger
-func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+func (vmctx *VMContext) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalancesOld) bool {
 	privileged := vmctx.CurrentContractHname() == accounts.Interface.Hname()
 	fmt.Printf("TransferToAddress: %s privileged = %v\n", targetAddr.String(), privileged)
 	if !privileged {

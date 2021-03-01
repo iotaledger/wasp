@@ -28,7 +28,7 @@ func NewScBalances(vm *wasmProcessor, incoming bool) *ScDict {
 	return loadBalances(o, vm.ctxView.Balances())
 }
 
-func loadBalances(o *ScDict, balances coretypes.ColoredBalances) *ScDict {
+func loadBalances(o *ScDict, balances coretypes.ColoredBalancesOld) *ScDict {
 	index := 0
 	key := o.host.GetKeyStringFromId(wasmhost.KeyColor)
 	balances.IterateDeterministic(func(color balance.Color, balance int64) bool {

@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -199,7 +198,7 @@ func printAccounts(t *testing.T, chain *cluster.Chain, title string) {
 	fmt.Println(s)
 }
 
-func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBalances {
+func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBalancesOld {
 	balances := getBalancesOnChain(t, chain)
 	sum := make(map[balance.Color]int64)
 	for _, bal := range balances {
@@ -209,8 +208,8 @@ func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBa
 		}
 	}
 
-	total := cbalances.NewFromMap(getTotalBalance(t, chain))
-	return cbalances.NewFromMap(sum).Diff(total)
+	total := coretypes.NewFromMap(getTotalBalance(t, chain))
+	return coretypes.NewFromMap(sum).Diff(total)
 }
 
 func checkLedger(t *testing.T, chain *cluster.Chain) {

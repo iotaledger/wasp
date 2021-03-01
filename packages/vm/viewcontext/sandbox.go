@@ -54,7 +54,7 @@ func (s *sandboxview) WriteableState() kv.KVStore {
 	return s.state
 }
 
-func (s *sandboxview) Balances() coretypes.ColoredBalances {
+func (s *sandboxview) Balances() coretypes.ColoredBalancesOld {
 	panic("not implemented") // TODO: Implement
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -18,7 +17,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	succ := ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: accounts.Interface.ContractID(targetChain),
 		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
-		Transfer: cbalances.NewFromMap(map[balance.Color]int64{
+		Transfer: coretypes.NewFromMap(map[balance.Color]int64{
 			balance.ColorIOTA: 2,
 		}),
 	})

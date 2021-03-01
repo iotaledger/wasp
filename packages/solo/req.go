@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -28,7 +27,7 @@ type CallParams struct {
 	target     coretypes.Hname
 	epName     string
 	entryPoint coretypes.Hname
-	transfer   coretypes.ColoredBalances
+	transfer   coretypes.ColoredBalancesOld
 	mint       map[address.Address]int64
 	args       requestargs.RequestArgs
 }
@@ -84,7 +83,7 @@ func (r *CallParams) WithTransfer(color balance.Color, amount int64) *CallParams
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
 func (r *CallParams) WithTransfers(transfer map[balance.Color]int64) *CallParams {
-	r.transfer = cbalances.NewFromMap(transfer)
+	r.transfer = coretypes.NewFromMap(transfer)
 	return r
 }
 

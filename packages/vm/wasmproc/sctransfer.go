@@ -6,7 +6,7 @@ package wasmproc
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -62,7 +62,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		balancesMap[color] = amount
 		return true
 	})
-	transfer := cbalances.NewFromMap(balancesMap)
+	transfer := coretypes.NewFromMap(balancesMap)
 	if !o.vm.ctx.TransferToAddress(o.address, transfer) {
 		o.Panic("failed to transfer to %s", o.address.String())
 	}

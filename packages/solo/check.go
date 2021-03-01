@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -64,7 +63,7 @@ func (ch *Chain) CheckAccountLedger() {
 	for _, acc := range accounts {
 		ch.GetAccountBalance(acc).AddToMap(sum)
 	}
-	require.True(ch.Env.T, total.Equal(cbalances.NewFromMap(sum)))
+	require.True(ch.Env.T, total.Equal(coretypes.NewFromMap(sum)))
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color

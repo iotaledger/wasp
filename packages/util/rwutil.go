@@ -3,11 +3,10 @@ package util
 import (
 	"encoding"
 	"encoding/binary"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 )
@@ -285,23 +284,12 @@ func ReadStrings16(r io.Reader) ([]string, error) {
 	return ret, nil
 }
 
-func ReadTransactionId(r io.Reader, txid *transaction.ID) error {
-	n, err := r.Read(txid[:])
-	if err != nil {
-		return err
-	}
-	if n != transaction.IDLength {
-		return errors.New("error while reading txid")
-	}
-	return nil
-}
-
-func ReadColor(r io.Reader, color *balance.Color) error {
+func ReadColor(r io.Reader, color *ledgerstate.Color) error {
 	n, err := r.Read(color[:])
 	if err != nil {
 		return err
 	}
-	if n != balance.ColorLength {
+	if n != ledgerstate.ColorLength {
 		return errors.New("error while reading color code")
 	}
 	return nil

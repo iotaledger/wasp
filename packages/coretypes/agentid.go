@@ -29,8 +29,7 @@ func NewAgentIDFromContractID(id ContractID) AgentID {
 
 // NewAgentIDFromAddress makes AgentID from address.Address
 func NewAgentIDFromAddress(addr ledgerstate.Address) AgentID {
-	// 0 is a reserved hname
-	return NewAgentIDFromContractID(NewContractID(NewChainIDFromAddress(addr), 0))
+	return AgentID{addr.Clone()}
 }
 
 // NewRandomAgentID creates random AgentID
@@ -46,7 +45,7 @@ func (a AgentID) IsAddress() bool {
 	switch a.a.(type) {
 	case *ContractID:
 		return false
-	case *ledgerstate.Address:
+	case ledgerstate.Address:
 		return true
 	}
 	panic("wrong type behind AgentID")
@@ -65,7 +64,7 @@ func (a AgentID) MustContractID() ContractID {
 // String human readable string
 func (a AgentID) String() string {
 	if a.IsAddress() {
-		return "A/" + a.MustAddress().String()
+		return "A/" + a.MustAddress().Base58()
 	}
 	cid := a.MustContractID()
 	return "C/" + cid.String()

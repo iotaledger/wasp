@@ -91,12 +91,18 @@ const (
 
 // String human readable representation of the contract ID <chainID>::<hanme>
 func (scid *ContractID) String() string {
-	return fmt.Sprintf(long_format, scid.ChainID().String(), scid.Hname().String())
+	return fmt.Sprintf(long_format, scid.ChainID().Base58(), scid.Hname().String())
 }
 
 // Short human readable representation in short form
 func (scid *ContractID) Short() string {
-	return fmt.Sprintf(short_format, scid.ChainID().String()[:8], scid.Hname().String())
+	return fmt.Sprintf(short_format, scid.ChainID().Base58()[:8], scid.Hname().String())
+}
+
+func (scid *ContractID) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = scid.Write(&buf)
+	return buf.Bytes()
 }
 
 // Read from reader

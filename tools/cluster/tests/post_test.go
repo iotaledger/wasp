@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"testing"
 	"time"
@@ -150,7 +149,7 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
-		Transfer: cbalances.NewIotasOnly(1),
+		Transfer: coretypes.NewIotasOnly(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		})),

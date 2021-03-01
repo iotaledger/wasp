@@ -67,7 +67,7 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, des
 }
 
 // Call calls an entry point of contact, passes parameters and funds
-func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
+func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalancesOld) (dict.Dict, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }
 
@@ -84,7 +84,7 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalances) bool {
+func (s *sandbox) TransferToAddress(targetAddr address.Address, transfer coretypes.ColoredBalancesOld) bool {
 	return s.vmctx.TransferToAddress(targetAddr, transfer)
 }
 
@@ -102,7 +102,7 @@ func (s *sandbox) Event(msg string) {
 	s.vmctx.EventPublisher().Publish(msg)
 }
 
-func (s *sandbox) IncomingTransfer() coretypes.ColoredBalances {
+func (s *sandbox) IncomingTransfer() coretypes.ColoredBalancesOld {
 	return s.vmctx.GetIncoming()
 }
 
@@ -110,6 +110,6 @@ func (s *sandbox) Balance(col balance.Color) int64 {
 	return s.vmctx.GetBalance(col)
 }
 
-func (s *sandbox) Balances() coretypes.ColoredBalances {
+func (s *sandbox) Balances() coretypes.ColoredBalancesOld {
 	return s.vmctx.GetMyBalances()
 }

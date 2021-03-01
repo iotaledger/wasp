@@ -33,7 +33,7 @@ type VMContext struct {
 	ownerFee           int64
 	validatorFee       int64
 	// request context
-	remainingAfterFees coretypes.ColoredBalances
+	remainingAfterFees coretypes.ColoredBalancesOld
 	entropy            hashing.HashValue // mutates with each request
 	reqRef             vm.RequestRefWithFreeTokens
 	reqHname           coretypes.Hname
@@ -46,11 +46,11 @@ type VMContext struct {
 }
 
 type callContext struct {
-	isRequestContext bool                      // is called from the request (true) or from another SC (false)
-	caller           coretypes.AgentID         // calling agent
-	contract         coretypes.Hname           // called contract
-	params           dict.Dict                 // params passed
-	transfer         coretypes.ColoredBalances // transfer passed
+	isRequestContext bool                         // is called from the request (true) or from another SC (false)
+	caller           coretypes.AgentID            // calling agent
+	contract         coretypes.Hname              // called contract
+	params           dict.Dict                    // params passed
+	transfer         coretypes.ColoredBalancesOld // transfer passed
 }
 
 // NewVMContext a constructor

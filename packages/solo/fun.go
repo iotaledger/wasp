@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -316,10 +315,10 @@ func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	return ret
 }
 
-func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalances {
+func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalancesOld {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return cbalances.Nil
+		return coretypes.Nil
 	}
 	ret := make(map[balance.Color]int64)
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
@@ -331,19 +330,19 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 		return true
 	})
 	require.NoError(ch.Env.T, err)
-	return cbalances.NewFromMap(ret)
+	return coretypes.NewFromMap(ret)
 }
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalancesOld {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
 	)
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
+func (ch *Chain) GetTotalAssets() coretypes.ColoredBalancesOld {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
 	)

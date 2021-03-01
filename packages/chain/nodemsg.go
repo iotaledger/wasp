@@ -26,7 +26,7 @@ type BalancesMsg struct {
 type RequestMsg struct {
 	*sctransaction.TransactionEssence
 	Index      uint16
-	FreeTokens coretypes.ColoredBalances
+	FreeTokens coretypes.ColoredBalancesOld
 }
 
 func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {

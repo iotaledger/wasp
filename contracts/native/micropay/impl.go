@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -114,7 +113,7 @@ func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
 	warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 	if warrant > 0 {
-		succ := ctx.TransferToAddress(payerAddr, cbalances.NewIotasOnly(warrant))
+		succ := ctx.TransferToAddress(payerAddr, coretypes.NewIotasOnly(warrant))
 		a.Require(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
 	}
 	deleteWarrant(ctx.State(), payerAddr, serviceAddr)
@@ -275,7 +274,7 @@ func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targ
 		lastOrd = int64(p.Ord)
 	}
 	if settledSum > 0 {
-		ctx.TransferToAddress(targetAddr, cbalances.NewIotasOnly(settledSum))
+		ctx.TransferToAddress(targetAddr, coretypes.NewIotasOnly(settledSum))
 	}
 	payerInfo := collections.NewMap(ctx.State(), string(payerAddr[:]))
 	setWarrant(payerInfo, targetAddr, remainingWarrant)

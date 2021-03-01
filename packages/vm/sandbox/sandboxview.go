@@ -59,7 +59,7 @@ func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hn
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) Balances() coretypes.ColoredBalances {
+func (s sandboxView) Balances() coretypes.ColoredBalancesOld {
 	return s.vmctx.GetMyBalances()
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -75,7 +74,7 @@ func (vmctx *VMContext) mustHandleRequestToken() {
 		vmctx.log.Panicf("mustHandleRequestToken: can't erase request token: %s", reqColor.String())
 	}
 	// always accrue 1 uncolored iota to the sender on-chain. This makes completely fee-less requests possible
-	vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), cbalances.NewFromMap(map[balance.Color]int64{
+	vmctx.creditToAccount(vmctx.reqRef.SenderAgentID(), coretypes.NewFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	}))
 	vmctx.remainingAfterFees = vmctx.reqRef.RequestSection().Transfer()
@@ -102,17 +101,17 @@ func (vmctx *VMContext) mustHandleFees() {
 		vmctx.creditToAccount(sender, transfer)
 		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Transfer accrued to %s",
 			vmctx.reqRef.RequestID().Short(), sender.String())
-		vmctx.remainingAfterFees = cbalances.NewFromMap(nil)
+		vmctx.remainingAfterFees = coretypes.NewFromMap(nil)
 		return
 	}
 	// enough fees. Split between owner and validator
 	if vmctx.ownerFee > 0 {
-		vmctx.creditToAccount(vmctx.ChainOwnerID(), cbalances.NewFromMap(map[balance.Color]int64{
+		vmctx.creditToAccount(vmctx.ChainOwnerID(), coretypes.NewFromMap(map[balance.Color]int64{
 			vmctx.feeColor: vmctx.ownerFee,
 		}))
 	}
 	if vmctx.validatorFee > 0 {
-		vmctx.creditToAccount(vmctx.validatorFeeTarget, cbalances.NewFromMap(map[balance.Color]int64{
+		vmctx.creditToAccount(vmctx.validatorFeeTarget, coretypes.NewFromMap(map[balance.Color]int64{
 			vmctx.feeColor: vmctx.validatorFee,
 		}))
 	}
@@ -121,7 +120,7 @@ func (vmctx *VMContext) mustHandleFees() {
 		vmctx.feeColor: -totalFee,
 	}
 	transfer.AddToMap(remaining)
-	vmctx.remainingAfterFees = cbalances.NewFromMap(remaining)
+	vmctx.remainingAfterFees = coretypes.NewFromMap(remaining)
 }
 
 // mustHandleFreeTokens free tokens accrued to the chain owner
@@ -200,7 +199,7 @@ func (vmctx *VMContext) initRequestContext(reqRef vm.RequestRefWithFreeTokens, t
 	vmctx.stateUpdate = state.NewStateUpdate(reqRef.RequestID()).WithTimestamp(timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
-	vmctx.remainingAfterFees = cbalances.NewFromMap(nil)
+	vmctx.remainingAfterFees = coretypes.NewFromMap(nil)
 
 	vmctx.contractRecord, _ = vmctx.findContractByHname(vmctx.reqHname)
 }

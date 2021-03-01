@@ -96,7 +96,7 @@ type request struct {
 	// from request message. nil if request message wasn't received yet
 	reqTx *sctransaction.TransactionEssence
 	// from request message. Not nil only if free tokens were attached to the request
-	freeTokens coretypes.ColoredBalances
+	freeTokens coretypes.ColoredBalancesOld
 	// time when request message was received by the operator
 	whenMsgReceived time.Time
 	// notification vector for the current currentState

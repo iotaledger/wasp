@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -46,7 +45,7 @@ func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit on own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
 func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
+	ctx.Log().Debugf("accounts.deposit.begin -- %s", coretypes.Str(ctx.IncomingTransfer()))
 
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.deposit.begin")
@@ -83,7 +82,7 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.withdrawToAddress.begin: caller agentID: %s myContractId: %s",
 		ctx.Caller().String(), cid.String())
 
-	sendTokens := cbalances.NewFromMap(bals)
+	sendTokens := coretypes.NewFromMap(bals)
 	addr := ctx.Caller().MustAddress()
 
 	// remove tokens from the chain ledger
@@ -118,7 +117,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	toWithdraw := cbalances.NewFromMap(bals)
+	toWithdraw := coretypes.NewFromMap(bals)
 	callerContract := caller.MustContractID()
 	if callerContract.ChainID() == ctx.ContractID().ChainID() {
 		// no need to move anything on the same chain

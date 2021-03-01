@@ -3,7 +3,6 @@ package tests
 import (
 	"flag"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"io/ioutil"
@@ -91,7 +90,7 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 
 func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
 	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
-		Transfer: cbalances.NewFromMap(transfer),
+		Transfer: coretypes.NewFromMap(transfer),
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)

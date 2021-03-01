@@ -20,7 +20,7 @@ type RequestSectionParams struct {
 	TargetContractID coretypes.ContractID
 	EntryPointCode   coretypes.Hname
 	TimeLock         uint32
-	Transfer         coretypes.ColoredBalances // should not not include request token. It is added automatically
+	Transfer         coretypes.ColoredBalancesOld // should not not include request token. It is added automatically
 	Args             requestargs.RequestArgs
 }
 

@@ -2,8 +2,7 @@ package kvdecoder
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -117,21 +116,21 @@ func (p *decoder) MustGetHashValue(key kv.Key, def ...hashing.HashValue) hashing
 	return ret
 }
 
-func (p *decoder) GetAddress(key kv.Key, def ...address.Address) (address.Address, error) {
+func (p *decoder) GetAddress(key kv.Key, def ...ledgerstate.Address) (ledgerstate.Address, error) {
 	v, exists, err := codec.DecodeAddress(p.kv.MustGet(key))
 	if err != nil {
-		return address.Address{}, fmt.Errorf("GetAddress: decoding parameter '%s': %v", key, err)
+		return nil, fmt.Errorf("GetAddress: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return address.Address{}, fmt.Errorf("GetAddress: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetAddress: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }
 
-func (p *decoder) MustGetAddress(key kv.Key, def ...address.Address) address.Address {
+func (p *decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgerstate.Address {
 	ret, err := p.GetAddress(key, def...)
 	if err != nil {
 		p.panic(err)
@@ -205,21 +204,21 @@ func (p *decoder) MustGetChainID(key kv.Key, def ...coretypes.ChainID) coretypes
 	return ret
 }
 
-func (p *decoder) GetColor(key kv.Key, def ...balance.Color) (balance.Color, error) {
+func (p *decoder) GetColor(key kv.Key, def ...ledgerstate.Color) (ledgerstate.Color, error) {
 	v, exists, err := codec.DecodeColor(p.kv.MustGet(key))
 	if err != nil {
-		return balance.Color{}, fmt.Errorf("GetColor: decoding parameter '%s': %v", key, err)
+		return ledgerstate.Color{}, fmt.Errorf("GetColor: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return balance.Color{}, fmt.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
+		return ledgerstate.Color{}, fmt.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }
 
-func (p *decoder) MustGetColor(key kv.Key, def ...balance.Color) balance.Color {
+func (p *decoder) MustGetColor(key kv.Key, def ...ledgerstate.Color) ledgerstate.Color {
 	ret, err := p.GetColor(key, def...)
 	if err != nil {
 		p.panic(err)
