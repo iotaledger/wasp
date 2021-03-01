@@ -19,6 +19,10 @@ type StateSection struct {
 	blockIndex uint32
 	// stateHash is hash of the state it is locked in the transaction
 	stateHash hashing.HashValue
+	// index of the chain output
+	chainOutput uint16
+	// index of the account output
+	accountOutput uint16
 }
 
 func NewStateSection(color ledgerstate.Color, blockIndex uint32, stateHash hashing.HashValue) *StateSection {
@@ -70,6 +74,12 @@ func (sb *StateSection) Write(w io.Writer) error {
 	if err := sb.stateHash.Write(w); err != nil {
 		return err
 	}
+	if err := util.WriteUint16(w, sb.chainOutput); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, sb.accountOutput); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -85,6 +95,12 @@ func (sb *StateSection) Read(r io.Reader) error {
 		return err
 	}
 	if err := sb.stateHash.Read(r); err != nil {
+		return err
+	}
+	if err := util.ReadUint16(r, &sb.chainOutput); err != nil {
+		return err
+	}
+	if err := util.ReadUint16(r, &sb.accountOutput); err != nil {
 		return err
 	}
 	return nil

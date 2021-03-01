@@ -104,23 +104,23 @@ func TestAgentID(t *testing.T) {
 	t.Logf("contract agent ID = %s", aid1.String())
 }
 
-//func TestHname(t *testing.T) {
-//	hn1 := Hn("first")
-//
-//	hn1bytes := hn1.Bytes()
-//	hn1back, err := NewHnameFromBytes(hn1bytes)
-//	require.NoError(t, err)
-//	require.EqualValues(t, hn1, hn1back)
-//
-//	s := hn1.String()
-//	hn1back, err = HnameFromString(s)
-//	require.NoError(t, err)
-//	require.EqualValues(t, hn1, hn1back)
-//}
-//
-//func TestHnameCollision(t *testing.T) {
-//	hn1 := Hn("doNothing")
-//	hn2 := Hn("incCounter")
-//
-//	require.NotEqualValues(t, hn1, hn2)
-//}
+func TestHname(t *testing.T) {
+	hn1 := Hn("first")
+
+	hn1bytes := hn1.Bytes()
+	hn1back, err := NewHnameFromBytes(hn1bytes)
+	require.NoError(t, err)
+	require.EqualValues(t, hn1, hn1back)
+
+	s := hn1.String()
+	hn1back, err = HnameFromString(s)
+	require.NoError(t, err)
+	require.EqualValues(t, hn1, hn1back)
+}
+
+func TestHnameCollision(t *testing.T) {
+	hn1 := Hn("doNothing")
+	hn2 := Hn("incCounter")
+
+	require.NotEqualValues(t, hn1, hn2)
+}
