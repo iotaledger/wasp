@@ -72,6 +72,16 @@ func (b *Builder) WithOutputCompression(compress bool) *Builder {
 	return b
 }
 
+func (b *Builder) addOutput(out ledgerstate.Output) error {
+	for _, o := range b.outputs {
+		if out.Compare(o) == 0 {
+			return xerrors.New("duplicate outputs not allowed")
+		}
+	}
+	b.outputs = append(b.outputs, out)
+	return nil
+}
+
 // AddIOTAOutput adds output with iotas by consuming inputs
 // supports minting (coloring) of part of consumed iotas
 func (b *Builder) AddIOTAOutput(targetAddress ledgerstate.Address, amount uint64, mint ...uint64) (uint16, error) {
@@ -96,7 +106,9 @@ func (b *Builder) AddIOTAOutput(targetAddress ledgerstate.Address, amount uint64
 	} else {
 		output = ledgerstate.NewSigLockedSingleOutput(amount, targetAddress)
 	}
-	b.outputs = append(b.outputs, output)
+	if err := b.addOutput(output); err != nil {
+		return 0, err
+	}
 	return uint16(len(b.outputs) - 1), nil
 }
 
@@ -127,12 +139,11 @@ func (b *Builder) AddOutput(targetAddress ledgerstate.Address, amounts map[ledge
 		}
 	}
 	bals := ledgerstate.NewColoredBalances(amountsCopy)
-	b.outputs = append(b.outputs, ledgerstate.NewSigLockedColoredOutput(bals, targetAddress))
+	output := ledgerstate.NewSigLockedColoredOutput(bals, targetAddress)
+	if err := b.addOutput(output); err != nil {
+		return 0, err
+	}
 	return uint16(len(b.outputs) - 1), nil
-}
-
-func (b *Builder) areUntouched(indices []uint16) bool {
-	return true
 }
 
 // AddTransferFromUnconsumedInputs this is used by VM.
@@ -155,45 +166,61 @@ func (b *Builder) AddTransferFromUnconsumedInputs(targetAddress ledgerstate.Addr
 	if output == nil {
 		output = ledgerstate.NewSigLockedColoredOutput(ledgerstate.NewColoredBalances(transferredTotals), targetAddress)
 	}
-	b.outputs = append(b.outputs, output)
+	if err := b.addOutput(output); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (b *Builder) addReminderOutput() []*ConsumableOutput {
+func (b *Builder) addReminderOutput() ([]*ConsumableOutput, error) {
 	inputConsumables := b.consumables
 	if !b.compress {
 		inputConsumables = SelectConsumed(b.consumables...)
 	}
 	reminderBalances := ConsumeRemaining(inputConsumables...)
 	if len(reminderBalances) != 0 {
+		var output ledgerstate.Output
 		if numIotas, ok := reminderBalances[ledgerstate.ColorIOTA]; ok && len(reminderBalances) == 1 {
-			b.outputs = append(b.outputs, ledgerstate.NewSigLockedSingleOutput(numIotas, b.senderAddress))
+			output = ledgerstate.NewSigLockedSingleOutput(numIotas, b.senderAddress)
 		} else {
 			bals := ledgerstate.NewColoredBalances(reminderBalances)
-			b.outputs = append(b.outputs, ledgerstate.NewSigLockedColoredOutput(bals, b.senderAddress))
+			output = ledgerstate.NewSigLockedColoredOutput(bals, b.senderAddress)
+		}
+		if err := b.addOutput(output); err != nil {
+			return nil, err
 		}
 	}
-	return inputConsumables
+	return inputConsumables, nil
 }
 
-func (b *Builder) BuildEssence() *ledgerstate.TransactionEssence {
-	inputConsumables := b.addReminderOutput()
+func (b *Builder) BuildEssence() (*ledgerstate.TransactionEssence, error) {
+	inputConsumables, err := b.addReminderOutput()
+	if err != nil {
+		return nil, err
+	}
 	// NewOutputs sorts the outputs and changes indices -> impossible to know index of a particular output
 	//outputs := ledgerstate.NewOutputs(b.outputs...)
-	outputs := ledgerstate.Outputs(b.outputs)
+	outputs, _, err := NewOutputs(b.outputs...)
+	if err != nil {
+		return nil, err
+	}
 	inputs := MakeUTXOInputs(inputConsumables...)
-	return ledgerstate.NewTransactionEssence(b.version, b.timestamp, b.accessPledgeID, b.consensusPledgeID, inputs, outputs)
+	ret := ledgerstate.NewTransactionEssence(b.version, b.timestamp, b.accessPledgeID, b.consensusPledgeID, inputs, outputs)
+	return ret, nil
 }
 
-func (b *Builder) BuildWithED25519(keyPair *ed25519.KeyPair) *ledgerstate.Transaction {
-	essence := b.BuildEssence()
+func (b *Builder) BuildWithED25519(keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, error) {
+	essence, err := b.BuildEssence()
+	if err != nil {
+		return nil, err
+	}
 	data := essence.Bytes()
 	signature := ledgerstate.NewED25519Signature(keyPair.PublicKey, keyPair.PrivateKey.Sign(data))
 	if !signature.AddressSignatureValid(b.senderAddress, data) {
 		panic("BuildWithED25519: internal error, signature invalid")
 	}
 	unlockBlocks := unlockBlocksFromSignature(signature, len(essence.Inputs()))
-	return ledgerstate.NewTransaction(essence, unlockBlocks)
+	return ledgerstate.NewTransaction(essence, unlockBlocks), nil
 }
 
 func unlockBlocksFromSignature(signature ledgerstate.Signature, n int) ledgerstate.UnlockBlocks {

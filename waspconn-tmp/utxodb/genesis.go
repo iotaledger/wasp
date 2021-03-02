@@ -79,7 +79,11 @@ func (u *UtxoDB) mustRequestFundsTx(target ledgerstate.Address) *ledgerstate.Tra
 	if _, err := builder.AddIOTAOutput(target, RequestFundsAmount); err != nil {
 		panic(err)
 	}
-	return builder.BuildWithED25519(u.genesisKeyPair)
+	ret, err := builder.BuildWithED25519(u.genesisKeyPair)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 // RequestFunds implements faucet: it sends 1337 IOTA tokens from genesis to the given address.
