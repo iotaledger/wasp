@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/ipfs"
 )
 
 var log *logger.Logger = logger.NewLogger("Downloader")
@@ -17,6 +18,13 @@ var log *logger.Logger = logger.NewLogger("Downloader")
 var downloads map[string]bool = make(map[string]bool) // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
 var downloadsMutex = &sync.Mutex{}
 
+// Accepted URIs:
+//  * http://<url of the contents>
+//          e.g. http://some.place.lt/some/contents.txt
+//  * https://<url of the contents>
+//          e.g. https://some.place.lt/some/contents.txt
+//  * ipfs://<cid of the contents>
+//          e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ
 func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCacheFull) error {
 	if contains(uri) {
 		log.Warnf("File %s is already being downloaded. Skipping it.", uri)
@@ -38,8 +46,10 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			var err error
 			switch protocol {
 			case "ipfs":
-				download, err = DonwloadFromHttp("https://ipfs.io/ipfs/" + path)
+				download, err = ipfs.Download(path)
 			case "http":
+				download, err = DonwloadFromHttp(uri)
+			case "https":
 				download, err = DonwloadFromHttp(uri)
 			default:
 				log.Errorf("Unknown protocol %s of uri %s.", protocol, uri)
