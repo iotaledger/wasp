@@ -17,7 +17,7 @@ WasmLib provides direct support for the following value data types:
 The first three are basic value data types found in all programming languages,
 whereas the other types are ISCP-specific value data types. More detailed
 explanations about their specific use can be found in the [documentation of the
-ISCP](../../../../articles/docs/coretypes.md). Each of these value data types has the ability to serialize into and
+ISCP](../../../../docs/docs/coretypes.md). Each of these value data types has the ability to serialize into and
 deserialize from a byte array. Each value data type can also be used as a key to
 our key/value proxy objects.
 
