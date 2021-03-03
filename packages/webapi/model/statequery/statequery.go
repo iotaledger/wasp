@@ -219,7 +219,7 @@ func (r *QueryResult) MustAddress() address.Address {
 	return v
 }
 
-func (r *QueryResult) MustHashValue() *hashing.HashValue {
+func (r *QueryResult) MustHashValue() hashing.HashValue {
 	v, _, err := codec.DecodeHashValue(r.MustBytes())
 	if err != nil {
 		panic(err)

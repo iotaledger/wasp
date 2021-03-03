@@ -34,6 +34,13 @@ type Sandbox interface {
 	Call(target Hname, entryPoint Hname, params dict.Dict, transfer ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
 	RequestID() RequestID
+	// MintedSupply is number of free minted tokens, i.e. minted tokens which are sent to addresses
+	// other than chain address. It is a proof of how many tokens has been minted with the
+	// color of the transaction (after un-coloring all request tokens)
+	// It may be used in use-cases such as Token Registry.
+	// The color of the supply can be extracted from the RequestID
+	// It is read-only method, it returns same value for all requests and all calls in the context of the transaction
+	MintedSupply() int64
 	// GetTimestamp return current timestamp of the context
 	GetTimestamp() int64
 	// GetEntropy 32 random bytes based on the hash of the current state transaction

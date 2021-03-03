@@ -4,6 +4,7 @@
 package wasmproc
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -14,6 +15,7 @@ var TestMode = false
 
 type ScUtility struct {
 	ScSandboxObject
+	address       address.Address
 	aggregatedBls []byte
 	base58Decoded []byte
 	base58Encoded string
@@ -48,7 +50,9 @@ func (o *ScUtility) Exists(keyId int32, typeId int32) bool {
 
 func (o *ScUtility) GetBytes(keyId int32, typeId int32) []byte {
 	switch keyId {
-	case wasmhost.KeyAggregateBls:
+	case wasmhost.KeyAddress:
+		return o.address.Bytes()
+	case wasmhost.KeyBlsAggregate:
 		return o.aggregatedBls
 	case wasmhost.KeyBase58Bytes:
 		return o.base58Decoded
@@ -93,12 +97,22 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 
 func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	switch keyId {
-	case wasmhost.KeyAggregateBls:
+	case wasmhost.KeyAddress:
+		return wasmhost.OBJTYPE_ADDRESS
+	case wasmhost.KeyBlsAddress:
+		return wasmhost.OBJTYPE_BYTES
+	case wasmhost.KeyBlsAggregate:
+		return wasmhost.OBJTYPE_BYTES
+	case wasmhost.KeyBlsValid:
 		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyBase58Bytes:
 		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyBase58String:
 		return wasmhost.OBJTYPE_STRING
+	case wasmhost.KeyEd25519Address:
+		return wasmhost.OBJTYPE_BYTES
+	case wasmhost.KeyEd25519Valid:
+		return wasmhost.OBJTYPE_BYTES
 	case wasmhost.KeyHashBlake2b:
 		return wasmhost.OBJTYPE_HASH
 	case wasmhost.KeyHashSha3:
@@ -108,13 +122,9 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 	case wasmhost.KeyName:
 		return wasmhost.OBJTYPE_STRING
 	case wasmhost.KeyRandom:
-		return wasmhost.OBJTYPE_INT
+		return wasmhost.OBJTYPE_INT64
 	case wasmhost.KeyValid:
-		return wasmhost.OBJTYPE_INT
-	case wasmhost.KeyValidBls:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyValidEd25519:
-		return wasmhost.OBJTYPE_BYTES
+		return wasmhost.OBJTYPE_INT64
 	}
 	return 0
 }
@@ -123,21 +133,25 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	utils := o.vm.utils()
 	var err error
 	switch keyId {
-	case wasmhost.KeyAggregateBls:
+	case wasmhost.KeyBlsAddress:
+		o.address, err = utils.BLS().AddressFromPublicKey(bytes)
+	case wasmhost.KeyEd25519Address:
+		o.address, err = utils.ED25519().AddressFromPublicKey(bytes)
+	case wasmhost.KeyBlsAggregate:
 		o.aggregatedBls = o.aggregateBLSSignatures(bytes)
 	case wasmhost.KeyBase58Bytes:
-		o.base58Encoded = utils.Base58Encode(bytes)
+		o.base58Encoded = utils.Base58().Encode(bytes)
 	case wasmhost.KeyBase58String:
-		o.base58Decoded, err = utils.Base58Decode(string(bytes))
+		o.base58Decoded, err = utils.Base58().Decode(string(bytes))
 	case wasmhost.KeyHashBlake2b:
-		o.hash = utils.HashBlake2b(bytes)
+		o.hash = utils.Hashing().Blake2b(bytes)
 	case wasmhost.KeyHashSha3:
-		o.hash = utils.HashSha3(bytes)
+		o.hash = utils.Hashing().Sha3(bytes)
 	case wasmhost.KeyName:
-		o.hname = utils.Hname(string(bytes))
-	case wasmhost.KeyValidBls:
+		o.hname = utils.Hashing().Hname(string(bytes))
+	case wasmhost.KeyBlsValid:
 		o.valid = o.validBLSSignature(bytes)
-	case wasmhost.KeyValidEd25519:
+	case wasmhost.KeyEd25519Valid:
 		o.valid = o.validED25519Signature(bytes)
 	default:
 		o.invalidKey(keyId)
@@ -149,17 +163,20 @@ func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
 
 func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	decode := NewBytesDecoder(bytes)
-	count := int(decode.Int())
+	count := int(decode.Int64())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		pubKeysBin[i] = decode.Bytes()
 	}
-	count = int(decode.Int())
+	count = int(decode.Int64())
 	sigsBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()
 	}
-	pubKeyBin, sigBin := o.vm.utils().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	pubKeyBin, sigBin, err := o.vm.utils().BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	if err != nil {
+		o.Panic(err.Error())
+	}
 	return NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
 }
 
@@ -168,7 +185,7 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().ValidBLSSignature(data, pubKey, signature)
+	return o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
@@ -176,5 +193,5 @@ func (o *ScUtility) validED25519Signature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().ValidED25519Signature(data, pubKey, signature)
+	return o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
 }

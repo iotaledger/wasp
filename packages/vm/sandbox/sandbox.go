@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -28,7 +29,7 @@ func new(vmctx *vmcontext.VMContext) coretypes.Sandbox {
 }
 
 func (s *sandbox) Utils() coretypes.Utils {
-	return coretypes.NewUtils(s.Log())
+	return sandbox_utils.NewUtils()
 }
 
 func (s *sandbox) ChainOwnerID() coretypes.AgentID {
@@ -72,6 +73,11 @@ func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname
 
 func (s *sandbox) RequestID() coretypes.RequestID {
 	return s.vmctx.RequestID()
+}
+
+// note: MintedColor() is RequestID().TransactionID()
+func (s *sandbox) MintedSupply() int64 {
+	return s.vmctx.NumFreeMinted()
 }
 
 func (s *sandbox) GetEntropy() hashing.HashValue {

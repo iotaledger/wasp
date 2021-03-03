@@ -19,20 +19,7 @@ const HashSize = 32
 
 type HashValue [HashSize]byte
 
-var (
-	NilHash  = HashValue{}
-	AllFHash = makeAllFHash()
-)
-
-func init() {
-}
-
-func makeAllFHash() (h HashValue) {
-	for i := range h {
-		h[i] = 0xFF
-	}
-	return
-}
+var NilHash = HashValue{}
 
 func (h HashValue) Bytes() []byte {
 	return h[:]

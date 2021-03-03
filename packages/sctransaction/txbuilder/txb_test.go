@@ -1,6 +1,10 @@
 package txbuilder
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
@@ -82,6 +86,104 @@ func TestWithRequest(t *testing.T) {
 		sum += txutil.BalanceOfColor(bals, (balance.Color)(tx.ID()))
 	}
 	assert.Equal(t, int64(2), sum)
+}
+
+func TestRequestSimple(t *testing.T) {
+	u := utxodb.New()
+	chainSigScheme := signaturescheme.RandBLS()
+	wallet := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	_, err := u.RequestFunds(wallet.Address())
+	assert.NoError(t, err)
+
+	outs := u.GetAddressOutputs(wallet.Address())
+	txb, err := NewFromOutputBalances(outs)
+	assert.NoError(t, err)
+
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
+	assert.NoError(t, err)
+
+	tx, err := txb.Build(false)
+	assert.NoError(t, err)
+
+	tx.Sign(wallet)
+	assert.True(t, tx.SignaturesValid())
+
+	err = u.AddTransaction(tx.Transaction)
+	assert.NoError(t, err)
+
+	outs = u.GetAddressOutputs(wallet.Address())
+	bals, _ := waspconn.OutputBalancesByColor(outs)
+	require.NotPanics(t, func() {
+		require.EqualValues(t, utxodb.RequestFundsAmount-1, bals[balance.ColorIOTA])
+	})
+
+	outs = u.GetAddressOutputs(chainSigScheme.Address())
+	bals, _ = waspconn.OutputBalancesByColor(outs)
+	require.NotPanics(t, func() {
+		require.EqualValues(t, 1, bals[balance.Color(tx.ID())])
+	})
+}
+
+func TestMintOk(t *testing.T) {
+	u := utxodb.New()
+	chainSigScheme := signaturescheme.RandBLS()
+	wallet := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	_, err := u.RequestFunds(wallet.Address())
+	assert.NoError(t, err)
+
+	outs := u.GetAddressOutputs(wallet.Address())
+	txb, err := NewFromOutputBalances(outs)
+	assert.NoError(t, err)
+
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
+	assert.NoError(t, err)
+
+	txb.AddMinting(map[address.Address]int64{
+		wallet.Address(): 5,
+	})
+
+	tx, err := txb.Build(false)
+	assert.NoError(t, err)
+
+	tx.Sign(wallet)
+	assert.True(t, tx.SignaturesValid())
+
+	err = u.AddTransaction(tx.Transaction)
+	assert.NoError(t, err)
+
+	outs = u.GetAddressOutputs(wallet.Address())
+	bals, _ := waspconn.OutputBalancesByColor(outs)
+	require.NotPanics(t, func() {
+		require.EqualValues(t, utxodb.RequestFundsAmount-1-5, bals[balance.ColorIOTA])
+		require.EqualValues(t, 5, bals[balance.Color(tx.ID())])
+	})
+
+	outs = u.GetAddressOutputs(chainSigScheme.Address())
+	bals, _ = waspconn.OutputBalancesByColor(outs)
+	require.NotPanics(t, func() {
+		require.EqualValues(t, 1, bals[balance.Color(tx.ID())])
+	})
+}
+
+func TestMintFail(t *testing.T) {
+	u := utxodb.New()
+	chainSigScheme := signaturescheme.RandBLS()
+	wallet := signaturescheme.ED25519(ed25519.GenerateKeyPair())
+	_, err := u.RequestFunds(wallet.Address())
+	assert.NoError(t, err)
+
+	outs := u.GetAddressOutputs(wallet.Address())
+	txb, err := NewFromOutputBalances(outs)
+	assert.NoError(t, err)
+
+	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
+	assert.NoError(t, err)
+
+	txb.AddMinting(map[address.Address]int64{
+		chainSigScheme.Address(): 5,
+	})
+	_, err = txb.Build(false)
+	assert.Error(t, err)
 }
 
 func TestNextState(t *testing.T) {

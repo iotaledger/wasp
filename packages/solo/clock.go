@@ -7,15 +7,15 @@ import "time"
 
 // LogicalTime return current logical clock time on the 'solo' instance
 func (env *Solo) LogicalTime() time.Time {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.clockMutex.RLock()
+	defer env.clockMutex.RUnlock()
 	return env.logicalTime
 }
 
 // AdvanceClockTo advances logical clock to the specific time moment in the (logical) future
 func (env *Solo) AdvanceClockTo(ts time.Time) {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.clockMutex.Lock()
+	defer env.clockMutex.Unlock()
 	env.advanceClockTo(ts)
 }
 
@@ -28,8 +28,8 @@ func (env *Solo) advanceClockTo(ts time.Time) {
 
 // AdvanceClockBy advances logical clock by time step
 func (env *Solo) AdvanceClockBy(step time.Duration) {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.clockMutex.Lock()
+	defer env.clockMutex.Unlock()
 
 	env.advanceClockTo(env.logicalTime.Add(step))
 	env.logger.Infof("AdvanceClockBy: logical clock advanced by %v", step)
@@ -37,8 +37,8 @@ func (env *Solo) AdvanceClockBy(step time.Duration) {
 
 // ClockStep advances logical clock by time step set by SetTimeStep
 func (env *Solo) ClockStep() {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.clockMutex.Lock()
+	defer env.clockMutex.Unlock()
 
 	env.advanceClockTo(env.logicalTime.Add(env.timeStep))
 	env.logger.Infof("ClockStep: logical clock advanced by %v", env.timeStep)
@@ -46,7 +46,7 @@ func (env *Solo) ClockStep() {
 
 // SetTimeStep sets default time step for the 'solo' instance
 func (env *Solo) SetTimeStep(step time.Duration) {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.clockMutex.Lock()
+	defer env.clockMutex.Unlock()
 	env.timeStep = step
 }

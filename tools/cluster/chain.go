@@ -156,11 +156,11 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	quorum := (2*len(ch.ApiHosts()))/3 + 1
 	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.ApiHosts(), quorum, 256)
 	if err != nil {
-		return nil, hashing.HashValue{}, err
+		return nil, hashing.NilHash, err
 	}
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
 	if err != nil {
-		return nil, hashing.HashValue{}, err
+		return nil, hashing.NilHash, err
 	}
 
 	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)

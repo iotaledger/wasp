@@ -37,7 +37,7 @@ func TestBase(t *testing.T) {
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
@@ -54,7 +54,7 @@ func TestFeeIsEnough1(t *testing.T) {
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
@@ -80,7 +80,7 @@ func TestFeeIsEnough2(t *testing.T) {
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 2,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)

@@ -44,7 +44,7 @@ type VMTask struct {
 func BatchHash(reqids []coretypes.RequestID, ts int64, leaderIndex uint16) hashing.HashValue {
 	var buf bytes.Buffer
 	for i := range reqids {
-		buf.Write(reqids[i].Bytes())
+		buf.Write(reqids[i][:])
 	}
 	_ = util.WriteInt64(&buf, ts)
 	_ = util.WriteUint16(&buf, leaderIndex)

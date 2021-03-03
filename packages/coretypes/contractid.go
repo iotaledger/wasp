@@ -82,22 +82,17 @@ const (
 	short_format = "%s..::%s"
 )
 
-// Bytes contract ID as byte slice
-func (scid ContractID) Bytes() []byte {
-	return scid[:]
-}
-
 // String human readable representation of the contract ID <chainID>::<hanme>
-func (scid ContractID) String() string {
+func (scid *ContractID) String() string {
 	return fmt.Sprintf(long_format, scid.ChainID().String(), scid.Hname().String())
 }
 
 // Short human readable representation in short form
-func (scid ContractID) Short() string {
+func (scid *ContractID) Short() string {
 	return fmt.Sprintf(short_format, scid.ChainID().String()[:8], scid.Hname().String())
 }
 
-// Read from reated
+// Read from reader
 func (scid *ContractID) Read(r io.Reader) error {
 	n, err := r.Read(scid[:])
 	if err != nil {

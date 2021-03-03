@@ -18,10 +18,20 @@ import (
 	"sync"
 )
 
+func (ch *Chain) validateBatch(batch []vm.RequestRefWithFreeTokens) {
+	for _, reqRef := range batch {
+		_, err := reqRef.Tx.Properties()
+		require.NoError(ch.Env.T, err)
+	}
+}
+
 func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
+
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
+
+	ch.validateBatch(batch)
 
 	// solidify arguments
 	for _, reqRef := range batch {
@@ -50,6 +60,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 		require.NoError(ch.Env.T, err)
 		callRes = callResult
 		callErr = callError
+		ch.reqCounter.Add(int32(-len(task.Requests)))
 		wg.Done()
 	}
 
@@ -60,12 +71,16 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	wg.Wait()
 	task.ResultTransaction.Sign(ch.ChainSigScheme)
 
+	// check semantic validity of the transaction
+	_, err = task.ResultTransaction.Properties()
+	require.NoError(ch.Env.T, err)
+
 	ch.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
 	return callRes, callErr
 }
 
 func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
-	err := ch.Env.utxoDB.AddTransaction(stateTx.Transaction)
+	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 
 	err = newState.ApplyBlock(block)
@@ -83,35 +98,8 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 		prevBlockIndex, ch.State.BlockIndex(), len(block.RequestIDs()), len(ch.StateTx.Requests()))
 	ch.Log.Debugf("Batch processed: %s", batchShortStr(block.RequestIDs()))
 
+	ch.Env.EnqueueRequests(ch.StateTx)
 	ch.Env.ClockStep()
-
-	// dispatch requests among chains
-	ch.Env.glbMutex.Lock()
-	defer ch.Env.glbMutex.Unlock()
-
-	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
-	for i, rsect := range ch.StateTx.Requests() {
-		chid := rsect.Target().ChainID()
-		_, ok := reqRefByChain[chid]
-		if !ok {
-			reqRefByChain[chid] = make([]sctransaction.RequestRef, 0)
-		}
-		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction.RequestRef{
-			Tx:    stateTx,
-			Index: uint16(i),
-		})
-	}
-	for chid, reqs := range reqRefByChain {
-		chain, ok := ch.Env.chains[chid]
-		if !ok {
-			ch.Log.Infof("dispatching requests. Unknown chain: %s", chid.String())
-			continue
-		}
-		chain.chPosted.Add(len(reqs))
-		for _, reqRef := range reqs {
-			chain.chInRequest <- reqRef
-		}
-	}
 }
 
 func batchShortStr(reqIds []*coretypes.RequestID) string {

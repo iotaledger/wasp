@@ -22,7 +22,7 @@ func NewColoredTokensTransaction(client level1.Level1Client, sigScheme signature
 	if err != nil {
 		return nil, err
 	}
-	if err := txb.MintColor(addr, balance.ColorIOTA, amount); err != nil {
+	if err := txb.MintColoredTokens(addr, balance.ColorIOTA, amount); err != nil {
 		return nil, err
 	}
 	tx := txb.Build(false)

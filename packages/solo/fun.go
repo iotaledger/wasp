@@ -105,15 +105,12 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 	if totalFee > 0 {
 		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
-	var res dict.Dict
-	res, err = ch.PostRequest(req, sigScheme)
+	res, err := ch.PostRequestSync(req, sigScheme)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	var r *hashing.HashValue
-	var ok bool
-	r, ok, err = codec.DecodeHashValue(resBin)
+	ret, ok, err := codec.DecodeHashValue(resBin)
 	if err != nil {
 		return
 	}
@@ -121,7 +118,6 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		err = fmt.Errorf("interbal error: no hash returned")
 		return
 	}
-	ret = *r
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return
 }
@@ -152,15 +148,12 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.
 	if totalFee > 0 {
 		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
-	var res dict.Dict
-	res, err = ch.PostRequest(req, sigScheme)
+	res, err := ch.PostRequestSync(req, sigScheme)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	var r *hashing.HashValue
-	var ok bool
-	r, ok, err = codec.DecodeHashValue(resBin)
+	ret, ok, err := codec.DecodeHashValue(resBin)
 	if err != nil {
 		return
 	}
@@ -168,7 +161,6 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.
 		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
-	ret = *r
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return
 }
@@ -239,7 +231,7 @@ func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name 
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
 	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...)
-	_, err := ch.PostRequest(req, sigScheme)
+	_, err := ch.PostRequestSync(req, sigScheme)
 	return err
 }
 

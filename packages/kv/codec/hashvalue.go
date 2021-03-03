@@ -4,15 +4,14 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-// TODO return value not pointer
-func DecodeHashValue(b []byte) (*hashing.HashValue, bool, error) {
+func DecodeHashValue(b []byte) (hashing.HashValue, bool, error) {
 	if b == nil {
-		return nil, false, nil
+		return hashing.NilHash, false, nil
 	}
-	ret, err := hashing.HashValueFromBytes(b)
-	return &ret, err == nil, err
+	r, err := hashing.HashValueFromBytes(b)
+	return r, err == nil, err
 }
 
-func EncodeHashValue(value *hashing.HashValue) []byte {
+func EncodeHashValue(value hashing.HashValue) []byte {
 	return value[:]
 }
