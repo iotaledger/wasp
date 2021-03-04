@@ -7,6 +7,5 @@ const (
 	PriorityNodeConnection
 	PriorityDispatcher
 	PriorityWebAPI
-	PriorityIpfs
 	PriorityBadgerGarbageCollection
 )
