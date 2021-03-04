@@ -32,8 +32,8 @@ pub fn func_member(ctx: &ScFuncContext) {
     let p = ctx.params();
 
     // Create an ScImmutableAddress proxy to the 'address' parameter that is still stored
-    // in the map on the host. Note that we use constants defined in consts.rs to prevent
-    // typos in name strings. This is good practice and will save time in the long run.
+    // in the params map on the host. Note that we use constants defined in consts.rs to
+    // prevent typos in name strings. This is good practice and will save time in the long run.
     let param_address = p.get_address(PARAM_ADDRESS);
 
     // Require that the mandatory 'address' parameter actually exists in the map on the host.

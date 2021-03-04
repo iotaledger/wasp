@@ -39,4 +39,4 @@ much on the requirements for the smart contract.
 It is important to think these security measures through before deploying a
 smart contract on a chain.
 
-Next: [View Functions](Views.md)
+Next: [View-Only Functions](Views.md)
