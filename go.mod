@@ -4,18 +4,11 @@ go 1.15
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/hsanjuan/ipfs-lite v1.1.18
 	github.com/iotaledger/goshimmer v0.3.7-0.20210214081859-29e3f77b4364
 	github.com/iotaledger/hive.go v0.0.0-20210209113323-87572778f0d9
-	github.com/ipfs/go-cid v0.0.7
-	github.com/ipfs/go-datastore v0.4.5
-	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/knadh/koanf v0.14.0
 	github.com/labstack/echo/v4 v4.1.13
-	github.com/libp2p/go-libp2p-core v0.8.0
-	github.com/libp2p/go-libp2p-kad-dht v0.11.1
 	github.com/mr-tron/base58 v1.2.0
-	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0

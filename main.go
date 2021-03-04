@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dispatcher"
 	"github.com/iotaledger/wasp/plugins/dkg"
+	"github.com/iotaledger/wasp/plugins/downloader"
 	"github.com/iotaledger/wasp/plugins/globals"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
-	"github.com/iotaledger/wasp/plugins/ipfs"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -38,7 +38,7 @@ func main() {
 		logger.Init(),
 		gracefulshutdown.Init(),
 		webapi.Init(),
-		ipfs.Init(),
+		downloader.Init(),
 		cli.Init(),
 		database.Init(),
 		registry.Init(suite),

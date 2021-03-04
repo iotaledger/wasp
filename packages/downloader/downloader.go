@@ -10,13 +10,18 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/ipfs"
 )
 
-var log *logger.Logger = logger.NewLogger("Downloader")
+var log *logger.Logger
 
-var downloads map[string]bool = make(map[string]bool) // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
-var downloadsMutex = &sync.Mutex{}
+var downloads map[string]bool  // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
+var downloadsMutex *sync.Mutex
+
+func Init(inLog *logger.Logger) {
+    log = inLog
+    downloads = make(map[string]bool)
+    downloadsMutex = &sync.Mutex{}
+}
 
 // Accepted URIs:
 //  * http://<url of the contents>
@@ -41,12 +46,12 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			}
 
 			var protocol string = split[0]
-			var path string = split[1]
+			//var path string = split[1]
 			var download []byte
 			var err error
 			switch protocol {
 			case "ipfs":
-				download, err = ipfs.Download(path)
+				//TODO: download, err = ipfs.Download(path)
 			case "http":
 				download, err = DonwloadFromHttp(uri)
 			case "https":
