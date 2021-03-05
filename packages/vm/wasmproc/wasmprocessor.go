@@ -24,6 +24,8 @@ const ViewCopyAllState = "copy_all_state"
 
 var GoWasmVM wasmhost.WasmVM
 
+//TODO make sure that init function can only be called once, or only be called by contract creator
+
 // NewWasmProcessor creates new wasm processor.
 func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
