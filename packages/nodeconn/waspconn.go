@@ -9,13 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/goshimmer/packages/tangle"
+	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 const (
@@ -29,9 +28,9 @@ const (
 var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetries(dialRetries))
 
 // dials outbound address and established connection
-func nodeConnect() {
+func (n *NodeConn) nodeConnect() {
 	addr := parameters.GetString(parameters.NodeAddress)
-	log.Infof("connecting with node at %s", addr)
+	n.log.Infof("connecting with node at %s", addr)
 
 	var conn net.Conn
 	if err := backoff.Retry(dialRetryPolicy, func() error {
@@ -42,87 +41,83 @@ func nodeConnect() {
 		}
 		return nil
 	}); err != nil {
-		log.Warn(err)
+		n.log.Warn(err)
 
-		retryNodeConnect()
+		n.retryNodeConnect()
 		return
 	}
 
-	bconnMutex.Lock()
-	bconn = buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize)
-	bconnMutex.Unlock()
+	n.bconnMutex.Lock()
+	n.bconn = buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize)
+	n.bconnMutex.Unlock()
 
-	log.Debugf("established connection with node at %s", addr)
+	n.log.Debugf("established connection with node at %s", addr)
 
 	dataReceivedClosure := events.NewClosure(func(data []byte) {
-		msgDataToEvent(data)
+		n.msgDataToEvent(data)
 	})
 
-	bconn.Events.ReceiveMessage.Attach(dataReceivedClosure)
-	bconn.Events.Close.Attach(events.NewClosure(func() {
-		log.Errorf("lost connection with %s", addr)
+	n.bconn.Events.ReceiveMessage.Attach(dataReceivedClosure)
+	n.bconn.Events.Close.Attach(events.NewClosure(func() {
+		n.log.Errorf("lost connection with %s", addr)
 		go func() {
-			bconnMutex.Lock()
-			bconnSave := bconn
-			bconn = nil
-			bconnMutex.Unlock()
+			n.bconnMutex.Lock()
+			bconnSave := n.bconn
+			n.bconn = nil
+			n.bconnMutex.Unlock()
 			bconnSave.Events.ReceiveMessage.Detach(dataReceivedClosure)
 		}()
 	}))
 
-	if err := SendWaspIdToNode(); err == nil {
-		log.Debugf("sent own wasp id to node: %s", peering.DefaultNetworkProvider().Self().NetID())
+	if err := n.SendWaspIdToNode(); err == nil {
+		n.log.Debugf("sent own wasp id to node: %s", n.netID)
 	} else {
-		log.Errorf("failed to send wasp id to node: %v", err)
+		n.log.Errorf("failed to send wasp id to node: %v", err)
 	}
 
 	// read loop
-	if err := bconn.Read(); err != nil {
+	if err := n.bconn.Read(); err != nil {
 		if err != io.EOF && !strings.Contains(err.Error(), "use of closed network connection") {
-			log.Warnw("Permanent error", "err", err)
+			n.log.Warnw("Permanent error", "err", err)
 		}
 	}
 	// try to reconnect after some time
-	log.Debugf("disconnected from node. Will try to reconnect after %v", retryAfter)
+	n.log.Debugf("disconnected from node. Will try to reconnect after %v", retryAfter)
 
-	retryNodeConnect()
+	n.retryNodeConnect()
 }
 
-func IsConnected() bool {
-	bconnMutex.Lock()
-	defer bconnMutex.Unlock()
-	return bconn != nil
+func (n *NodeConn) IsConnected() bool {
+	n.bconnMutex.Lock()
+	defer n.bconnMutex.Unlock()
+	return n.bconn != nil
 }
 
-func retryNodeConnect() {
-	log.Infof("will retry connecting to the node after %v", retryAfter)
+func (n *NodeConn) retryNodeConnect() {
+	n.log.Infof("will retry connecting to the node after %v", retryAfter)
 	time.Sleep(retryAfter)
-	go nodeConnect()
+	go n.nodeConnect()
 }
 
-func SendDataToNode(data []byte) error {
-	choppedData, chopped, err := msgChopper.ChopData(data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
+func (n *NodeConn) SendDataToNode(data []byte) error {
+	choppedData, chopped, err := n.msgChopper.ChopData(data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
 	if err != nil {
 		return err
 	}
-	bconnMutex.Lock()
-	defer bconnMutex.Unlock()
+	n.bconnMutex.Lock()
+	defer n.bconnMutex.Unlock()
 
-	if bconn == nil {
+	if n.bconn == nil {
 		return fmt.Errorf("SendDataToNode: not connected to node")
 	}
 	if !chopped {
-		_, err = bconn.Write(data)
+		_, err = n.bconn.Write(data)
 	} else {
 		for _, piece := range choppedData {
-			var d []byte
-			d, err = waspconn.EncodeMsg(&waspconn.WaspMsgChunk{
+			d := waspconn.EncodeMsg(&waspconn.WaspMsgChunk{
 				Data: piece,
 			})
-			if err != nil {
-				break
-			}
-			_, err = bconn.Write(d)
+			_, err = n.bconn.Write(d)
 			if err != nil {
 				break
 			}

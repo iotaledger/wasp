@@ -1,17 +1,12 @@
 package nodeconn
 
 import (
-	"sync"
-	"time"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -19,12 +14,6 @@ const PluginName = "NodeConn"
 
 var (
 	log *logger.Logger
-
-	bconn             *buffconn.BufferedConnection
-	bconnMutex        = &sync.Mutex{}
-	subscriptions     = make(map[address.Address]balance.Color)
-	msgChopper        = chopper.NewChopper()
-	subscriptionsSent bool
 )
 
 func Init() *node.Plugin {
@@ -37,51 +26,14 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		go nodeConnect()
-		go keepSendingSubscriptionIfNeeded(shutdownSignal)
-		go keepSendingSubscriptionForced(shutdownSignal)
+		n := nodeconn.New(peering.DefaultNetworkProvider().Self().NetID(), log)
+		defer n.Close()
 
 		<-shutdownSignal
 
 		log.Info("Stopping node connection..")
-		go func() {
-			bconnMutex.Lock()
-			defer bconnMutex.Unlock()
-
-			if bconn != nil {
-				log.Infof("Closing connection with node..")
-				_ = bconn.Close()
-				log.Infof("Closing connection with node.. Done")
-			}
-		}()
-
 	}, parameters.PriorityNodeConnection)
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
-	}
-}
-
-// checking if need to be sent every second
-func keepSendingSubscriptionIfNeeded(shutdownSignal <-chan struct{}) {
-	for {
-		select {
-		case <-shutdownSignal:
-			return
-		case <-time.After(1 * time.Second):
-			sendSubscriptions(false)
-		}
-	}
-}
-
-// will be sending subscriptions every minute to pull backlog
-// needed in case node is not synced
-func keepSendingSubscriptionForced(shutdownSignal <-chan struct{}) {
-	for {
-		select {
-		case <-shutdownSignal:
-			return
-		case <-time.After(1 * time.Minute):
-			sendSubscriptions(true)
-		}
 	}
 }
