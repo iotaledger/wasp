@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/downloader"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // PluginName is the name of the web API plugin.
