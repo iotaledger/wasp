@@ -74,7 +74,7 @@ environment.
 
 To connect the Wasp cluster to a more realistic environment (e.g. to be able to
 persist the ledger), you can use the `docker-network` tool available
-in the Goshimmer repository (`master+wasp` branch) in order to start a cluster of
+in the Goshimmer repository (`develop+wasp` branch) in order to start a cluster of
 Goshimmer nodes.
 
 Example steps:

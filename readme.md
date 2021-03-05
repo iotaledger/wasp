@@ -29,17 +29,17 @@ commercial settings or whenever processing of critical data is involved._
 ## Prerequisites
 
 - Go 1.15
-- The `goshimmer` command, compiled from [Goshimmer `master+wasp` branch](https://github.com/iotaledger/goshimmer/tree/master+wasp)
+- The `goshimmer` command, compiled from [Goshimmer `develop+wasp` branch](https://github.com/iotaledger/goshimmer/tree/develop+wasp)
 
 ```
-$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
+$ git clone -b develop+wasp https://github.com/iotaledger/goshimmer.git
 $ cd goshimmer
 $ go install
 ```
 
 Note: The only difference between standard Goshimmer (`master` branch) and the
-`master+wasp` branch is the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/master+wasp/dapps/waspconn)
+`develop+wasp` branch is the
+[WaspConn](https://github.com/iotaledger/goshimmer/tree/develop+wasp/dapps/waspconn)
 plugin, which accepts connections from Wasp nodes.
 
 ## Compile

@@ -8,10 +8,10 @@ You will need the `wasp`, `wasp-cli` and `goshimmer` commands installed in
 the system.
 
 The `goshimmer` command must be compiled from the Goshimmer repository,
-branch `master+wasp` (which includes the `waspconn` plugin):
+branch `develop+wasp` (which includes the `waspconn` plugin):
 
 ```
-$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
+$ git clone -b develop+wasp https://github.com/iotaledger/goshimmer.git
 $ cd goshimmer
 $ go install
 ```
@@ -31,7 +31,7 @@ Create an empty working directory for Goshimmer, and download the `snapshot.bin`
 ```
 $ mkdir goshimmer-pollen
 $ cd goshimmer-pollen
-$ curl 'https://github.com/iotaledger/goshimmer/raw/master%2Bwasp/snapshot.bin' -O
+$ curl 'https://github.com/iotaledger/goshimmer/raw/develop%2Bwasp/snapshot.bin' -O
 ```
 
 Start the Goshimmer node:

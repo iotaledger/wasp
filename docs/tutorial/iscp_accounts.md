@@ -55,9 +55,9 @@ For an address it will be `A/`: `A/P6ZxYXA2nhmXRyUgW5Vzvju7M7m8sFCoobreWo4C8s78`
 
 For a smart contract it will be `C/`: `C/Pmc7iH8bXj6kpb2tv5bR3d3etPLgKKqJJzUxu8FvJPmm::cebf5908` 
 
-Address is a data type [defined by Goshimmer](https://github.com/iotaledger/goshimmer/blob/87d0cbb172c1b3432b1dddcbabacd76cad66f1f3/dapps/valuetransfers/packages/address/address.go#L23).
+Address is a data type [defined by Goshimmer](https://github.com/iotaledger/goshimmer/blob/master/packages/ledgerstate/address.go#L43).
  
-The `AgentID` type is [defined by Wasp](https://github.com/iotaledger/wasp/blob/0d7f84820d69227da503550e2924a64e6438b679/packages/coretypes/agentid.go#L25): 
+The `AgentID` type is [defined by Wasp](https://github.com/iotaledger/wasp/blob/master/packages/coretypes/agentid.go#L25): 
 The _agent ID_ value contains information which one of two it represents: address or contract ID.
 
 ### On-chain accounts
