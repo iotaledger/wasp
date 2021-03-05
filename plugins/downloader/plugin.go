@@ -17,7 +17,7 @@ func Init() *node.Plugin {
 	var configure, run func(*node.Plugin)
 	configure = func(*node.Plugin) {
 		var log *logger.Logger = logger.NewLogger(PluginName)
-		downloader.Init(log)
+		downloader.Init(log, parameters.GetString(parameters.IpfsGatewayAddress))
 	}
 	run = func(*node.Plugin) {
 		// Nothing to run here

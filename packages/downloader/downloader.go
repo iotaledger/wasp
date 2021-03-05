@@ -10,16 +10,17 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 var log *logger.Logger
+var ipfsGateway string
 
 var downloads map[string]bool // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
 var downloadsMutex *sync.Mutex
 
-func Init(inLog *logger.Logger) {
+func Init(inLog *logger.Logger, inIpfsGateway string) {
 	log = inLog
+	ipfsGateway = inIpfsGateway
 	downloads = make(map[string]bool)
 	downloadsMutex = &sync.Mutex{}
 }
@@ -52,7 +53,7 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			var err error
 			switch protocol {
 			case "ipfs":
-				download, err = DonwloadFromHttp(parameters.IpfsGatewayAddress + "/ipfs/" + path)
+				download, err = DonwloadFromHttp(ipfsGateway + "/ipfs/" + path)
 			case "http":
 				download, err = DonwloadFromHttp(uri)
 			case "https":
