@@ -222,7 +222,7 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// getFeeInfo returns fee information for the contact.
+// getFeeInfo returns fee information for the contract.
 // Input:
 // - ParamHname coretypes.Hname contract id
 // Output:

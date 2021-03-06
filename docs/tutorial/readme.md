@@ -19,7 +19,7 @@ The knowledge of Go programming and basics of Rust programming is a prerequisite
 * [The _Solo_ package](01.md)
 * [First example](01.md#first-example)
 * [Tokens and the Value Tangle](02.md#tokens-and-the-value-tangle)
-* [Creating a chain. Core contacts](03.md#creating-a-chain-core-contacts)
+* [Creating a chain. Core contracts](03.md#creating-a-chain-core-contracts)
 * [Writing and compiling first Rust smart contract](03.md#writing-and-compiling-first-rust-smart-contract)
 * [Deploying and running Rust smart contract](04.md#deploying-and-running-rust-smart-contract)
 * [Structure of the smart contract](05.md#structure-of-the-smart-contract)

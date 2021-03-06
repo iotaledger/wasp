@@ -46,7 +46,7 @@ In the beginning both are 0.
 default value on the chain level.
 
 ### Views
-Can be called from outside of the chain. Calling a view does not modify state of the smart contact.
+Can be called from outside of the chain. Calling a view does not modify state of the smart contract.
 
 * **findContract** returns the data of the particular smart contract (if it exists) in marshalled binary form.
 
