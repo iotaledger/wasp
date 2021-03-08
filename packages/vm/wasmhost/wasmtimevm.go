@@ -86,12 +86,12 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) error {
 	return nil
 }
 
-func (vm *WasmTimeVM) RunFunction(functionName string) error {
+func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {
 	export := vm.instance.GetExport(functionName)
 	if export == nil {
 		return errors.New("unknown export function: '" + functionName + "'")
 	}
-	_, err := export.Func().Call()
+	_, err := export.Func().Call(args...)
 	return err
 }
 

@@ -102,6 +102,7 @@ pub fn func_pass_types_full(ctx: &ScFuncContext) {
     ctx.require(param_int64.value() == 42, "int64 wrong");
     ctx.require(param_int64_zero.value() == 0, "int64-0 wrong");
     ctx.require(param_string.value() == PARAM_STRING, "string wrong");
+    ctx.require(param_string_zero.value() == "", "string-0 wrong");
     ctx.require(param_hname.value() == ScHname::new(PARAM_HNAME), "Hname wrong");
     ctx.require(param_hname_zero.value() == ScHname(0), "Hname-0 wrong");
     ctx.log("testcore.passTypesFull ok");
