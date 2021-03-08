@@ -66,7 +66,7 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, des
 	return s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
-// Call calls an entry point of contact, passes parameters and funds
+// Call calls an entry point of contract, passes parameters and funds
 func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
 }

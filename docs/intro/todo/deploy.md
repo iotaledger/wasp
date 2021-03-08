@@ -35,7 +35,7 @@ The _state transition_ can occur only if the condition above is satisfied.
 
 For example, for the demo deployment of _FairAuction_ smart contract the quorum factor is set to 8. 
 It means at least 8 out of 15 nodes must produce and sign with their private keys bit-by-bit equal computation 
-results for that result to be accepted as a valid smart contact state update. 
+results for that result to be accepted as a valid smart contract state update. 
 
 After the quorum agrees on the result, the opinion of the rest of nodes is unimportant: 
 those nodes may be down, faulty or malicious. 
@@ -96,7 +96,7 @@ minted (colored) to a new non-fungible token transferred to the smart contract a
 It will remain there for its lifetime. Another iota will be returned back to the owner's balance after 
 SC instance will be fully intialized.
 
-The following command will deploy an instance of _DonateWithFeedback_ smart contact on the committee 
+The following command will deploy an instance of _DonateWithFeedback_ smart contract on the committee 
 specified in the `wasp-cli.json`:
 
 `wasp-cli dwf admin deploy` 

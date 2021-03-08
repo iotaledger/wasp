@@ -47,7 +47,7 @@ The agent ID is an identifier which generalizes and represents one of the two in
 either an address on the Value Tangle or a smart _contract ID_. 
 
 It is easily possible to determine which one is represented by the particular agent ID: 
-is it an address or a smart contact.
+is it an address or a smart contract.
 
 In the human readable string representation, the agent ID has prefixes which indicates its types:
 

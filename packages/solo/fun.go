@@ -226,7 +226,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 // The parameter 'programHash' can be one of the following:
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
-//     smart contact must be made available with the call examples.AddProcessor
+//     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
@@ -354,8 +354,8 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
-	hname := coretypes.Hn(contactName)
+func (ch *Chain) GetFeeInfo(contractName string) (balance.Color, int64, int64) {
+	hname := coretypes.Hn(contractName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
@@ -414,7 +414,7 @@ func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
 	return ret, nil
 }
 
-// GetEventLogNumRecords returns total number of eventlog records for the given contact.
+// GetEventLogNumRecords returns total number of eventlog records for the given contract.
 func (ch *Chain) GetEventLogNumRecords(name string) int {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),
