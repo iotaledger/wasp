@@ -12,17 +12,20 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-var log *logger.Logger
-var ipfsGateway string
+type Downloader struct {
+	log            *logger.Logger
+	ipfsGateway    string
+	downloads      map[string]bool // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
+	downloadsMutex *sync.Mutex
+}
 
-var downloads map[string]bool // Just a HashSet. The value of the element is not important. The existence of key in the map is what counts.
-var downloadsMutex *sync.Mutex
-
-func Init(inLog *logger.Logger, inIpfsGateway string) {
-	log = inLog
-	ipfsGateway = inIpfsGateway
-	downloads = make(map[string]bool)
-	downloadsMutex = &sync.Mutex{}
+func New(log *logger.Logger, ipfsGateway string) *Downloader {
+	return &Downloader{
+		log:            log,
+		ipfsGateway:    ipfsGateway,
+		downloads:      make(map[string]bool),
+		downloadsMutex: &sync.Mutex{},
+	}
 }
 
 // Accepted URIs:
@@ -32,18 +35,18 @@ func Init(inLog *logger.Logger, inIpfsGateway string) {
 //          e.g. https://some.place.lt/some/contents.txt
 //  * ipfs://<cid of the contents>
 //          e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ
-func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCacheFull) error {
-	if contains(uri) {
-		log.Warnf("File %s is already being downloaded. Skipping it.", uri)
+func (this *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCacheFull) error {
+	if this.contains(uri) {
+		this.log.Warnf("File %s is already being downloaded. Skipping it.", uri)
 		return nil
 	} else {
-		markStarted(uri)
+		this.markStarted(uri)
 		go func() {
-			defer markCompleted(uri)
+			defer this.markCompleted(uri)
 
 			var split []string = strings.SplitN(uri, "://", 2)
 			if len(split) != 2 {
-				log.Errorf("File uri %s is invalid.", uri)
+				this.log.Errorf("File uri %s is invalid.", uri)
 				return
 			}
 
@@ -53,18 +56,18 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			var err error
 			switch protocol {
 			case "ipfs":
-				download, err = DonwloadFromHttp(ipfsGateway + "/ipfs/" + path)
+				download, err = this.DonwloadFromHttp(this.ipfsGateway + "/ipfs/" + path)
 			case "http":
-				download, err = DonwloadFromHttp(uri)
+				download, err = this.DonwloadFromHttp(uri)
 			case "https":
-				download, err = DonwloadFromHttp(uri)
+				download, err = this.DonwloadFromHttp(uri)
 			default:
-				log.Errorf("Unknown protocol %s of uri %s.", protocol, uri)
+				this.log.Errorf("Unknown protocol %s of uri %s.", protocol, uri)
 				return
 			}
 
 			if err != nil {
-				log.Errorf("Error retrieving file %s: %s.", uri, err)
+				this.log.Errorf("Error retrieving file %s: %s.", uri, err)
 				return
 			}
 
@@ -72,12 +75,12 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 			cacheHash, err = cache.PutBlob(download)
 
 			if err != nil {
-				log.Errorf("Error putting file %s to cache: %s.", uri, err)
+				this.log.Errorf("Error putting file %s to cache: %s.", uri, err)
 				return
 			}
 
 			if hash != cacheHash {
-				log.Errorf("File %s hash mismatch!!! Expected hash: %s, hash, recieved from cache: %s.", uri, hash.String(), cacheHash.String())
+				this.log.Errorf("File %s hash mismatch!!! Expected hash: %s, hash, recieved from cache: %s.", uri, hash.String(), cacheHash.String())
 				return
 			}
 
@@ -87,27 +90,27 @@ func DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCa
 	}
 }
 
-func contains(uri string) bool {
+func (this *Downloader) contains(uri string) bool {
 	var ok bool
-	downloadsMutex.Lock()
-	_, ok = downloads[uri]
-	downloadsMutex.Unlock()
+	this.downloadsMutex.Lock()
+	_, ok = this.downloads[uri]
+	this.downloadsMutex.Unlock()
 	return ok
 }
 
-func markStarted(uri string) {
-	downloadsMutex.Lock()
-	downloads[uri] = true
-	downloadsMutex.Unlock()
+func (this *Downloader) markStarted(uri string) {
+	this.downloadsMutex.Lock()
+	this.downloads[uri] = true
+	this.downloadsMutex.Unlock()
 }
 
-func markCompleted(uri string) {
-	downloadsMutex.Lock()
-	delete(downloads, uri)
-	downloadsMutex.Unlock()
+func (this *Downloader) markCompleted(uri string) {
+	this.downloadsMutex.Lock()
+	delete(this.downloads, uri)
+	this.downloadsMutex.Unlock()
 }
 
-func DonwloadFromHttp(url string) ([]byte, error) {
+func (this *Downloader) DonwloadFromHttp(url string) ([]byte, error) {
 	var response *http.Response
 	var err error
 	response, err = http.Get(url)

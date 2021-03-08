@@ -32,10 +32,6 @@ func HasBlob(hash string) string {
 	return "/blob/has/" + hash
 }
 
-func DownloadBlob() string {
-	return "/blob/dowload"
-}
-
 func ActivateChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/activate"
 }

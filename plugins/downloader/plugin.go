@@ -11,14 +11,14 @@ import (
 const PluginName = "Downloader"
 
 var (
-	log *logger.Logger // Logger for Downloader functionality
+	defaultDownloader *downloader.Downloader
 )
 
 func Init() *node.Plugin {
 	var configure, run func(*node.Plugin)
 	configure = func(*node.Plugin) {
 		var log *logger.Logger = logger.NewLogger(PluginName)
-		downloader.Init(log, parameters.GetString(parameters.IpfsGatewayAddress))
+		defaultDownloader = downloader.New(log, parameters.GetString(parameters.IpfsGatewayAddress))
 	}
 	run = func(*node.Plugin) {
 		// Nothing to run here
@@ -26,4 +26,8 @@ func Init() *node.Plugin {
 
 	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
 	return Plugin
+}
+
+func GetDefaultDownloader() *downloader.Downloader {
+	return defaultDownloader
 }

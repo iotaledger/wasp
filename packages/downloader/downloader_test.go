@@ -60,7 +60,7 @@ func stopMockServer(e *echo.Echo) {
 func TestIpfsDownload(t *testing.T) {
 	var log *logger.Logger = testutil.NewLogger(t)
 
-	Init(log, "http://localhost"+MOCK_SERVER_PORT)
+	var downloader *Downloader = New(log, "http://localhost"+MOCK_SERVER_PORT)
 	var server *echo.Echo = startMockServer()
 	time.Sleep(100 * time.Millisecond) // Time to wait for server start
 
@@ -74,7 +74,7 @@ func TestIpfsDownload(t *testing.T) {
 	result, err = reg.HasBlob(hash)
 	require.NoError(t, err)
 	require.False(t, result, "The file should not be part of the registry before the download")
-	err = DownloadAndStore(hash, "ipfs://"+FILE_CID, reg)
+	err = downloader.DownloadAndStore(hash, "ipfs://"+FILE_CID, reg)
 	require.NoError(t, err)
 	time.Sleep(100 * time.Millisecond) // Time to wait for download completion
 	result, err = reg.HasBlob(hash)

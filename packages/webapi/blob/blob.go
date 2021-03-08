@@ -3,9 +3,7 @@ package blob
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -32,12 +30,6 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 		AddParamPath("", "hash", "Blob hash (base64)").
 		SetSummary("Find out if a blob exists in the registry").
 		AddResponse(http.StatusOK, "Blob properties", example, nil)
-
-	server.GET(routes.DownloadBlob(), handleDownloadBlob).
-		AddParamPath("", "uri", "Uri of the file to download").
-		SetSummary("Download the blob from the uri and put it in the registry").
-		AddResponse(http.StatusOK, "Blob data", example, nil).
-		AddResponse(http.StatusNotFound, "Not found", httperrors.NotFound("Not found"), nil)
 }
 
 func handlePutBlob(c echo.Context) error {
@@ -77,39 +69,4 @@ func handleHasBlob(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, model.NewBlobInfo(ok, hash))
-}
-
-func handleDownloadBlob(c echo.Context) error {
-	var uri string = c.QueryParam("uri")
-	var split []string = strings.SplitN(uri, "://", 2)
-	if len(split) != 2 {
-		return httperrors.BadRequest("Illegal uri " + uri)
-	}
-
-	var protocol string = split[0]
-	var path string = split[1]
-	switch protocol {
-	case "ipfs":
-		return donwloadBlobFromHttp(c, "https://ipfs.io/ipfs/"+path)
-	case "http":
-		return donwloadBlobFromHttp(c, uri)
-	default:
-		return httperrors.BadRequest("Unsupported uri protocol " + protocol)
-	}
-}
-
-func donwloadBlobFromHttp(c echo.Context, url string) error {
-	var hash hashing.HashValue
-	var err error
-	var blob []byte
-	blob, err = downloader.DonwloadFromHttp(url)
-	if err != nil {
-		return err
-	}
-
-	hash, err = registry.DefaultRegistry().PutBlob(blob)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, model.NewBlobInfo(true, hash))
 }
