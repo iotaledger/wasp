@@ -1,6 +1,7 @@
 package nodeconn
 
 import (
+	"net"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 type NodeConn struct {
 	netID                string
+	dial                 DialFunc
 	log                  *logger.Logger
 	bconn                *buffconn.BufferedConnection
 	bconnMutex           sync.Mutex
@@ -23,13 +25,16 @@ type NodeConn struct {
 	EventMessageReceived *events.Event
 }
 
+type DialFunc func() (addr string, conn net.Conn, err error)
+
 func param1Caller(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])
 }
 
-func New(netID string, log *logger.Logger) *NodeConn {
+func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 	n := &NodeConn{
 		netID:                netID,
+		dial:                 dial,
 		log:                  log,
 		subscriptions:        make(map[ledgerstate.Address]ledgerstate.Color),
 		msgChopper:           chopper.NewChopper(),

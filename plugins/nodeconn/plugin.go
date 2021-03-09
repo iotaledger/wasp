@@ -12,6 +12,8 @@ import (
 // PluginName is the name of the NodeConn plugin.
 const PluginName = "NodeConn"
 
+const dialTimeout = 1 * time.Second
+
 var (
 	log *logger.Logger
 )
@@ -26,7 +28,13 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		n := nodeconn.New(peering.DefaultNetworkProvider().Self().NetID(), log)
+		addr := parameters.GetString(parameters.NodeAddress)
+		dial := nodeconn.DialFunc(func() (string, net.Conn, error) {
+			log.Infof("connecting with node at %s", addr)
+			return addr, net.DialTimeout("tcp", addr, dialTimeout)
+		})
+
+		n := nodeconn.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
 		defer n.Close()
 
 		<-shutdownSignal

@@ -14,11 +14,9 @@ import (
 	"github.com/iotaledger/hive.go/backoff"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 const (
-	dialTimeout  = 1 * time.Second
 	dialRetries  = 10
 	backoffDelay = 500 * time.Millisecond
 	retryAfter   = 8 * time.Second
@@ -29,13 +27,11 @@ var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetr
 
 // dials outbound address and established connection
 func (n *NodeConn) nodeConnect() {
-	addr := parameters.GetString(parameters.NodeAddress)
-	n.log.Infof("connecting with node at %s", addr)
-
+	var addr string
 	var conn net.Conn
 	if err := backoff.Retry(dialRetryPolicy, func() error {
 		var err error
-		conn, err = net.DialTimeout("tcp", addr, dialTimeout)
+		addr, conn, err = n.dial()
 		if err != nil {
 			return fmt.Errorf("can't connect with the node: %v", err)
 		}
@@ -85,6 +81,19 @@ func (n *NodeConn) nodeConnect() {
 	n.log.Debugf("disconnected from node. Will try to reconnect after %v", retryAfter)
 
 	n.retryNodeConnect()
+}
+
+func (n *NodeConn) WaitForConnection(timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for {
+		if n.IsConnected() {
+			return true
+		}
+		if time.Now().After(deadline) {
+			return false
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func (n *NodeConn) IsConnected() bool {

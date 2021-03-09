@@ -18,9 +18,9 @@ func (n *NodeConn) SendWaspIdToNode() error {
 	return nil
 }
 
-func (n *NodeConn) RequestOutputsFromNode(addr *ledgerstate.Address) error {
+func (n *NodeConn) RequestOutputsFromNode(addr ledgerstate.Address) error {
 	data := waspconn.EncodeMsg(&waspconn.WaspToNodeGetOutputsMsg{
-		Address: *addr,
+		Address: addr,
 	})
 	if err := n.SendDataToNode(data); err != nil {
 		return err
@@ -28,9 +28,9 @@ func (n *NodeConn) RequestOutputsFromNode(addr *ledgerstate.Address) error {
 	return nil
 }
 
-func (n *NodeConn) RequestConfirmedTransactionFromNode(txid *ledgerstate.TransactionID) error {
+func (n *NodeConn) RequestConfirmedTransactionFromNode(txid ledgerstate.TransactionID) error {
 	data := waspconn.EncodeMsg(&waspconn.WaspToNodeGetConfirmedTransactionMsg{
-		TxId: *txid,
+		TxId: txid,
 	})
 	if err := n.SendDataToNode(data); err != nil {
 		return err
@@ -38,12 +38,12 @@ func (n *NodeConn) RequestConfirmedTransactionFromNode(txid *ledgerstate.Transac
 	return nil
 }
 
-func (n *NodeConn) RequestInclusionLevelFromNode(txid *ledgerstate.TransactionID, addr *ledgerstate.Address) error {
+func (n *NodeConn) RequestInclusionLevelFromNode(txid ledgerstate.TransactionID, addr ledgerstate.Address) error {
 	n.log.Debugf("RequestInclusionLevelFromNode. txid %s", txid.String())
 
 	data := waspconn.EncodeMsg(&waspconn.WaspToNodeGetBranchInclusionStateMsg{
-		TxId:      *txid,
-		SCAddress: *addr,
+		TxId:      txid,
+		SCAddress: addr,
 	})
 	if err := n.SendDataToNode(data); err != nil {
 		return err
@@ -52,10 +52,10 @@ func (n *NodeConn) RequestInclusionLevelFromNode(txid *ledgerstate.TransactionID
 
 }
 
-func (n *NodeConn) PostTransactionToNode(tx *ledgerstate.Transaction, fromSc *ledgerstate.Address, fromLeader uint16) error {
+func (n *NodeConn) PostTransactionToNode(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16) error {
 	data := waspconn.EncodeMsg(&waspconn.WaspToNodeTransactionMsg{
 		Tx:        tx,
-		SCAddress: *fromSc, // just for tracing
+		SCAddress: fromSc, // just for tracing
 		Leader:    fromLeader,
 	})
 	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
