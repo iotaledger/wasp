@@ -35,7 +35,7 @@ func New(log *logger.Logger, ipfsGateway string) *Downloader {
 //          e.g. https://some.place.lt/some/contents.txt
 //  * ipfs://<cid of the contents>
 //          e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ
-func (this *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCacheFull) error {
+func (this *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache) error {
 	if this.contains(uri) {
 		this.log.Warnf("File %s is already being downloaded. Skipping it.", uri)
 		return nil
