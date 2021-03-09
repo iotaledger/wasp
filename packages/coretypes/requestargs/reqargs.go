@@ -106,10 +106,11 @@ func (a RequestArgs) Read(r io.Reader) error {
 }
 
 // SolidifyRequestArguments decodes RequestArgs.
-// each value treated according to the value of the first byte:
-//  - if the value is '*' the data is a content reference. First 32 bytes always treated as data hash.
+// each key-value pair ir treated according to the first byte of the key:
+//  - if the key starts with '*' the value is a content reference.
+//    First 32 bytes of the value are always treated as data hash.
 //    The rest (if any) is a content address. It will be treated by a downloader
-//  - otherwise it is a raw data
+//  - otherwise, value is treated a raw data and the first byte of the key is ignored
 func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
