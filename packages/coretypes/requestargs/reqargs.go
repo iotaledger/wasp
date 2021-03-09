@@ -3,26 +3,31 @@ package requestargs
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	pkgDownloader "github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	plgDownloader "github.com/iotaledger/wasp/plugins/downloader"
 	"io"
 )
 
 // TODO: extend '*' option in RequestArgs with download options (web, IPFS)
 
 // RequestArgs encodes request parameters taking into account hashes of data blobs
-type RequestArgs dict.Dict
+type RequestArgs struct {
+	dict.Dict
+	getDownloader (func() *pkgDownloader.Downloader)
+}
 
 // New makes new object taking 'as is', without encoding
 func New(d ...dict.Dict) RequestArgs {
 	if len(d) == 0 || len(d[0]) == 0 {
-		return RequestArgs(dict.New())
+		return RequestArgs{dict.New(), plgDownloader.GetDefaultDownloader}
 	}
 	if len(d) > 1 {
 		panic("len(d) > 1")
 	}
-	return RequestArgs(d[0].Clone())
+	return RequestArgs{d[0].Clone(), plgDownloader.GetDefaultDownloader}
 }
 
 const optimalSize = 32
@@ -51,13 +56,13 @@ func NewOptimizedRequestArgs(d dict.Dict, optSize ...int) (RequestArgs, map[kv.K
 
 // AddEncodeSimple add new ordinary argument. Encodes the key as "normal"
 func (a RequestArgs) AddEncodeSimple(name kv.Key, data []byte) RequestArgs {
-	a["-"+name] = data
+	a.Dict["-"+name] = data
 	return a
 }
 
 // AddEncodeBlobRef adds hash as data and marks it is a blob reference
 func (a RequestArgs) AddEncodeBlobRef(name kv.Key, hash hashing.HashValue) RequestArgs {
-	a["*"+name] = hash[:]
+	a.Dict["*"+name] = hash[:]
 	return a
 }
 
@@ -79,7 +84,7 @@ func (a RequestArgs) AddEncodeSimpleMany(d dict.Dict) RequestArgs {
 // HasBlobRef return if request arguments contain at least one blob reference
 func (a RequestArgs) HasBlobRef() bool {
 	var ret bool
-	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
+	a.Dict.ForEach(func(key kv.Key, _ []byte) bool {
 		ret = []byte(key)[0] == '*'
 		if ret {
 			return false
@@ -90,19 +95,19 @@ func (a RequestArgs) HasBlobRef() bool {
 }
 
 func (a RequestArgs) String() string {
-	return (dict.Dict(a)).String()
+	return a.Dict.String()
 }
 
 func (a RequestArgs) Clone() RequestArgs {
-	return RequestArgs((dict.Dict(a)).Clone())
+	return RequestArgs{a.Dict.Clone(), a.getDownloader}
 }
 
 func (a RequestArgs) Write(w io.Writer) error {
-	return (dict.Dict(a)).Write(w)
+	return a.Dict.Write(w)
 }
 
 func (a RequestArgs) Read(r io.Reader) error {
-	return (dict.Dict(a)).Read(r)
+	return a.Dict.Read(r)
 }
 
 // SolidifyRequestArguments decodes RequestArgs.
@@ -117,8 +122,7 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dic
 	var err error
 	var data []byte
 	var h hashing.HashValue
-	reqArgsDict := dict.Dict(a)
-	reqArgsDict.ForEach(func(key kv.Key, value []byte) bool {
+	a.Dict.ForEach(func(key kv.Key, value []byte) bool {
 		d := []byte(key)
 		if len(d) == 0 {
 			err = fmt.Errorf("wrong request argument key '%s'", key)
@@ -144,6 +148,7 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dic
 			return false
 		}
 		if !ok {
+			a.getDownloader().DownloadAndStore(h, string(value[hashing.HashSize:]), reg)
 			ok = false
 			return false
 		}

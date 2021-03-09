@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -21,12 +22,12 @@ func TestRequestArguments1(t *testing.T) {
 	r.AddEncodeSimple("arg3", []byte("data3"))
 	r.AddAsBlobRef("arg4", []byte("data4"))
 
-	require.Len(t, r, 4)
-	require.EqualValues(t, r["-arg1"], "data1")
-	require.EqualValues(t, r["-arg2"], "data2")
-	require.EqualValues(t, r["-arg3"], "data3")
+	require.Len(t, r.Dict, 4)
+	require.EqualValues(t, r.Dict["-arg1"], "data1")
+	require.EqualValues(t, r.Dict["-arg2"], "data2")
+	require.EqualValues(t, r.Dict["-arg3"], "data3")
 	h := hashing.HashStrings("data4")
-	require.EqualValues(t, r["*arg4"], h[:])
+	require.EqualValues(t, r.Dict["*arg4"], h[:])
 
 	var buf bytes.Buffer
 	err := r.Write(&buf)
@@ -47,11 +48,11 @@ func TestRequestArguments2(t *testing.T) {
 
 	h := hashing.HashStrings("data4")
 
-	require.Len(t, r, 4)
-	require.EqualValues(t, r["-arg1"], "data1")
-	require.EqualValues(t, r["-arg2"], "data2")
-	require.EqualValues(t, r["-arg3"], "data3")
-	require.EqualValues(t, r["*arg4"], h[:])
+	require.Len(t, r.Dict, 4)
+	require.EqualValues(t, r.Dict["-arg1"], "data1")
+	require.EqualValues(t, r.Dict["-arg2"], "data2")
+	require.EqualValues(t, r.Dict["-arg3"], "data3")
+	require.EqualValues(t, r.Dict["*arg4"], h[:])
 
 	var buf bytes.Buffer
 	err := r.Write(&buf)
@@ -62,11 +63,11 @@ func TestRequestArguments2(t *testing.T) {
 	err = back.Read(rdr)
 	require.NoError(t, err)
 
-	require.Len(t, back, 4)
-	require.EqualValues(t, back["-arg1"], "data1")
-	require.EqualValues(t, back["-arg2"], "data2")
-	require.EqualValues(t, back["-arg3"], "data3")
-	require.EqualValues(t, back["*arg4"], h[:])
+	require.Len(t, back.Dict, 4)
+	require.EqualValues(t, back.Dict["-arg1"], "data1")
+	require.EqualValues(t, back.Dict["-arg2"], "data2")
+	require.EqualValues(t, back.Dict["-arg3"], "data3")
+	require.EqualValues(t, back.Dict["*arg4"], h[:])
 }
 
 func TestRequestArguments3(t *testing.T) {
@@ -75,10 +76,10 @@ func TestRequestArguments3(t *testing.T) {
 	r.AddEncodeSimple("arg2", []byte("data2"))
 	r.AddEncodeSimple("arg3", []byte("data3"))
 
-	require.Len(t, r, 3)
-	require.EqualValues(t, r["-arg1"], "data1")
-	require.EqualValues(t, r["-arg2"], "data2")
-	require.EqualValues(t, r["-arg3"], "data3")
+	require.Len(t, r.Dict, 3)
+	require.EqualValues(t, r.Dict["-arg1"], "data1")
+	require.EqualValues(t, r.Dict["-arg2"], "data2")
+	require.EqualValues(t, r.Dict["-arg3"], "data3")
 
 	log := testutil.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
@@ -102,7 +103,13 @@ func TestRequestArguments3(t *testing.T) {
 }
 
 func TestRequestArguments4(t *testing.T) {
+	log := testutil.NewLogger(t)
+	var testDownloader *downloader.Downloader = downloader.New(log, "http://some.fake.address.lt")
+
 	r := New(nil)
+	r.getDownloader = func() *downloader.Downloader {
+		return testDownloader
+	}
 	r.AddEncodeSimple("arg1", []byte("data1"))
 	r.AddEncodeSimple("arg2", []byte("data2"))
 	r.AddEncodeSimple("arg3", []byte("data3"))
@@ -110,13 +117,12 @@ func TestRequestArguments4(t *testing.T) {
 	r.AddAsBlobRef("arg4", data)
 	h := hashing.HashData(data)
 
-	require.Len(t, r, 4)
-	require.EqualValues(t, r["-arg1"], "data1")
-	require.EqualValues(t, r["-arg2"], "data2")
-	require.EqualValues(t, r["-arg3"], "data3")
-	require.EqualValues(t, r["*arg4"], h[:])
+	require.Len(t, r.Dict, 4)
+	require.EqualValues(t, r.Dict["-arg1"], "data1")
+	require.EqualValues(t, r.Dict["-arg2"], "data2")
+	require.EqualValues(t, r.Dict["-arg3"], "data3")
+	require.EqualValues(t, r.Dict["*arg4"], h[:])
 
-	log := testutil.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
 
@@ -134,11 +140,11 @@ func TestRequestArguments5(t *testing.T) {
 	r.AddAsBlobRef("arg4", data)
 	h := hashing.HashData(data)
 
-	require.Len(t, r, 4)
-	require.EqualValues(t, r["-arg1"], "data1")
-	require.EqualValues(t, r["-arg2"], "data2")
-	require.EqualValues(t, r["-arg3"], "data3")
-	require.EqualValues(t, r["*arg4"], h[:])
+	require.Len(t, r.Dict, 4)
+	require.EqualValues(t, r.Dict["-arg1"], "data1")
+	require.EqualValues(t, r.Dict["-arg2"], "data2")
+	require.EqualValues(t, r.Dict["-arg3"], "data3")
+	require.EqualValues(t, r.Dict["*arg4"], h[:])
 
 	log := testutil.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
