@@ -76,3 +76,9 @@ tests).
 - [`wasp-cli`](tools/wasp-cli/README.md): A CLI client for the Wasp node.
 - [`wasp-cluster`](tools/cluster/wasp-cluster/README.md): allows to easily run
   a network of Wasp nodes, for testing.
+
+## Contributing
+
+We are accepting pull requests! Please create your branch based on `develop`.
+You can also join our [Discord server](https://discord.iota.org/) and ping us
+in `#smartcontracts-dev`.
