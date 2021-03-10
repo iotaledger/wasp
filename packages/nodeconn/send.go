@@ -38,7 +38,7 @@ func (n *NodeConn) RequestConfirmedTransactionFromNode(txid ledgerstate.Transact
 	return nil
 }
 
-func (n *NodeConn) RequestInclusionLevelFromNode(txid ledgerstate.TransactionID, addr ledgerstate.Address) error {
+func (n *NodeConn) RequestBranchInclusionStateFromNode(txid ledgerstate.TransactionID, addr ledgerstate.Address) error {
 	n.log.Debugf("RequestInclusionLevelFromNode. txid %s", txid.String())
 
 	data := waspconn.EncodeMsg(&waspconn.WaspToNodeGetBranchInclusionStateMsg{

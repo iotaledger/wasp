@@ -77,15 +77,15 @@ func TestRequestOutputs(t *testing.T) {
 	require.NoError(t, err)
 
 	// request outputs for addr
-	var msg *waspconn.WaspFromNodeAddressOutputsMsg
-	doAndWaitForResponse(t, n, &msg, func() error {
+	var resp *waspconn.WaspFromNodeAddressOutputsMsg
+	doAndWaitForResponse(t, n, &resp, func() error {
 		return n.RequestOutputsFromNode(addr)
 	})
 
 	// assert response message
-	require.EqualValues(t, addr, msg.Address)
-	require.EqualValues(t, 1, len(msg.Balances))
-	for _, cb := range msg.Balances {
+	require.EqualValues(t, addr, resp.Address)
+	require.EqualValues(t, 1, len(resp.Balances))
+	for _, cb := range resp.Balances {
 		cb := cb.Map()
 		require.EqualValues(t, 1, len(cb))
 		require.EqualValues(t, 1337, cb[ledgerstate.ColorIOTA])
@@ -153,4 +153,28 @@ func TestPostTransaction(t *testing.T) {
 		return n.RequestConfirmedTransactionFromNode(tx.ID())
 	})
 	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
+}
+
+func TestRequestInclusionLevel(t *testing.T) {
+	tangle, n := start(t)
+
+	// transfer 1337 iotas to addr
+	seed := ed25519.NewSeed()
+	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
+	err := tangle.RequestFunds(addr)
+	require.NoError(t, err)
+
+	// find out tx id
+	var txID ledgerstate.TransactionID
+	for outID := range tangle.GetAddressOutputs(addr) {
+		txID = outID.TransactionID()
+	}
+	require.NotEqualValues(t, ledgerstate.TransactionID{}, txID)
+
+	// request inclusion level
+	var resp *waspconn.WaspFromNodeBranchInclusionStateMsg
+	doAndWaitForResponse(t, n, &resp, func() error {
+		return n.RequestBranchInclusionStateFromNode(txID, addr)
+	})
+	require.EqualValues(t, ledgerstate.Confirmed, resp.State)
 }
