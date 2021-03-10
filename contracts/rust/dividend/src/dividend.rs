@@ -202,8 +202,8 @@ pub fn func_divide(ctx: &ScFuncContext) {
 
             // Perform the actual transfer of tokens from the smart contract to the member
             // address. The transfer_to_address() method receives the address value and
-            // the proxy to the new transfers map on the host, and will call the
-            // corresponding host sandbox function with these values.
+            // the proxy to the new transfers map on the host, and will call the corresponding
+            // host sandbox function with these values.
             ctx.transfer_to_address(&address, transfers);
         }
     }
@@ -233,7 +233,7 @@ pub fn view_get_factor(ctx: &ScViewContext) {
     ctx.require(param_address.exists(), "missing mandatory address");
 
     // Now that we are sure that the 'address' parameter actually exists we can
-    // retrieve its actual value into an ScAddress value object
+    // retrieve its actual value into an ScAddress value object.
     let address = param_address.value();
 
     // Now that we have sorted out the parameter we will access the state storage on the host.

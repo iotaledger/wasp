@@ -16,4 +16,5 @@ fn on_load() {
     exports.add_func(FUNC_PAY_WINNERS, func_pay_winners);
     exports.add_func(FUNC_PLACE_BET, func_place_bet);
     exports.add_func(FUNC_PLAY_PERIOD, func_play_period);
+    exports.add_view(VIEW_LAST_WINNING_NUMBER, view_last_winning_number);
 }
