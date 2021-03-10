@@ -15,6 +15,7 @@ func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
 	initDeployFlags(fs)
 	initUploadFlags(fs)
 	initAliasFlags(fs)
+	initPostRequestFlags(fs)
 	flags.AddFlagSet(fs)
 }
 
