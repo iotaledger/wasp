@@ -330,7 +330,7 @@ pub fn func_play_period(ctx: &ScFuncContext) {
 
     // Require that the play period (in seconds) is not ridiculously low.
     // Otherwise panic out with an error message.
-    ctx.require(play_period >= 10,"invalid play period");
+    ctx.require(play_period >= 10, "invalid play period");
 
     // Now we set the corresponding state variable 'playPeriod' through the state
     // map proxy to the value we just got.

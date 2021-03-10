@@ -26,3 +26,4 @@ pub const HFUNC_LOCK_BETS: ScHname = ScHname(0xe163b43c);
 pub const HFUNC_PAY_WINNERS: ScHname = ScHname(0xfb2b0144);
 pub const HFUNC_PLACE_BET: ScHname = ScHname(0xdfba7d1b);
 pub const HFUNC_PLAY_PERIOD: ScHname = ScHname(0xcb94b293);
+pub const HVIEW_LAST_WINNING_NUMBER: ScHname = ScHname(0x2f5f09fe);
