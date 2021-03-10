@@ -92,6 +92,44 @@ func TestRequestOutputs(t *testing.T) {
 	}
 }
 
+func transfer(t *testing.T, tangle waspconn.ValueTangle, from *ed25519.KeyPair, toAddr ledgerstate.Address, transferAmount uint64) *ledgerstate.Transaction {
+	fromAddr := ledgerstate.NewED25519Address(from.PublicKey)
+
+	// find an unspent output with balance >= transferAmount
+	var outID ledgerstate.OutputID
+	var outBalance uint64
+	{
+		outs := tangle.GetAddressOutputs(fromAddr)
+		for id, bals := range outs {
+			outBalance = bals.Map()[ledgerstate.ColorIOTA]
+			outID = id
+			if outBalance >= transferAmount {
+				break
+			}
+		}
+		require.GreaterOrEqual(t, outBalance, transferAmount)
+	}
+
+	pledge, _ := identity.RandomID()
+	outputs := []ledgerstate.Output{
+		ledgerstate.NewSigLockedSingleOutput(uint64(transferAmount), toAddr),
+	}
+	if outBalance > transferAmount {
+		outputs = append(outputs, ledgerstate.NewSigLockedSingleOutput(uint64(outBalance-transferAmount), fromAddr))
+	}
+	txEssence := ledgerstate.NewTransactionEssence(
+		0,
+		time.Now(),
+		pledge,
+		pledge,
+		ledgerstate.NewInputs(ledgerstate.NewUTXOInput(outID)),
+		ledgerstate.NewOutputs(outputs...),
+	)
+	sig := ledgerstate.NewED25519Signature(from.PublicKey, ed25519.Signature(from.PrivateKey.Sign(txEssence.Bytes())))
+	unlockBlock := ledgerstate.NewSignatureUnlockBlock(sig)
+	return ledgerstate.NewTransaction(txEssence, ledgerstate.UnlockBlocks{unlockBlock})
+}
+
 func TestPostTransaction(t *testing.T) {
 	tangle, n := start(t)
 
@@ -101,44 +139,9 @@ func TestPostTransaction(t *testing.T) {
 	err := tangle.RequestFunds(addr)
 	require.NoError(t, err)
 
-	// request utxos for addr
-	var addrOutsMsg *waspconn.WaspFromNodeAddressOutputsMsg
-	doAndWaitForResponse(t, n, &addrOutsMsg, func() error {
-		return n.RequestOutputsFromNode(addr)
-	})
-	var outID ledgerstate.OutputID
-	for txID := range addrOutsMsg.Balances {
-		var txMsg *waspconn.WaspFromNodeConfirmedTransactionMsg
-		doAndWaitForResponse(t, n, &txMsg, func() error {
-			return n.RequestConfirmedTransactionFromNode(txID)
-		})
-		for _, out := range txMsg.Tx.Essence().Outputs() {
-			if out.Address().Array() != addr.Array() {
-				continue
-			}
-			require.EqualValues(t, 1337, out.Balances().Map()[ledgerstate.ColorIOTA])
-			outID = out.ID()
-		}
-	}
-	require.NotEqualValues(t, ledgerstate.EmptyOutputID, outID)
-
-	// transfer 1 iota from addr to addr2
+	// transfer 1 iota from fromAddr to addr2
 	addr2 := ledgerstate.NewED25519Address(seed.KeyPair(1).PublicKey)
-	pledge, _ := identity.RandomID()
-	txEssence := ledgerstate.NewTransactionEssence(
-		0,
-		time.Now(),
-		pledge,
-		pledge,
-		ledgerstate.NewInputs(ledgerstate.NewUTXOInput(outID)),
-		ledgerstate.NewOutputs(
-			ledgerstate.NewSigLockedSingleOutput(uint64(1), addr2),
-			ledgerstate.NewSigLockedSingleOutput(uint64(1336), addr),
-		),
-	)
-	sig := ledgerstate.NewED25519Signature(seed.KeyPair(0).PublicKey, ed25519.Signature(seed.KeyPair(0).PrivateKey.Sign(txEssence.Bytes())))
-	unlockBlock := ledgerstate.NewSignatureUnlockBlock(sig)
-	tx := ledgerstate.NewTransaction(txEssence, ledgerstate.UnlockBlocks{unlockBlock})
+	tx := transfer(t, tangle, seed.KeyPair(0), addr2, 1)
 
 	// post tx
 	err = n.PostTransactionToNode(tx, addr, 0)
