@@ -55,6 +55,18 @@ Sample smart contracts:
 
 ### How to create your own Rust smart contracts
 
+Prerequisites:
+
+* install the latest Rust tools, you can
+  [find them here](https://www.rust-lang.org/tools/install).
+* When installing under Windows the Rust installation program may tell you that
+  you need the Visual Studio C++ Build Tools, which you can
+  [download here](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+  Note that you only need to install the C++ build tools, which is the top left
+  selection.
+* install Wasm-pack, which can be
+  [downloaded here](https://rustwasm.github.io/wasm-pack/).
+  
 Building a Rust smart contract is very simple when using the Rust plugin in any
 IntelliJ based development environment. Open the _contracts/rust_ sub folder in
 your IntelliJ, which then provides you with the Rust workspace.
