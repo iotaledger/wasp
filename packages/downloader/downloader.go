@@ -19,6 +19,14 @@ type Downloader struct {
 	downloadsMutex *sync.Mutex
 }
 
+var (
+	defaultDownloader *Downloader
+)
+
+func Init(log *logger.Logger, ipfsGateway string) {
+	defaultDownloader = New(log, ipfsGateway)
+}
+
 func New(log *logger.Logger, ipfsGateway string) *Downloader {
 	return &Downloader{
 		log:            log,
@@ -26,6 +34,10 @@ func New(log *logger.Logger, ipfsGateway string) *Downloader {
 		downloads:      make(map[string]bool),
 		downloadsMutex: &sync.Mutex{},
 	}
+}
+
+func GetDefaultDownloader() *Downloader {
+	return defaultDownloader
 }
 
 // Accepted URIs:

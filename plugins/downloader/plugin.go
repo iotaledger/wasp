@@ -10,15 +10,11 @@ import (
 // PluginName is the name of the web API plugin.
 const PluginName = "Downloader"
 
-var (
-	defaultDownloader *downloader.Downloader
-)
-
 func Init() *node.Plugin {
 	var configure, run func(*node.Plugin)
 	configure = func(*node.Plugin) {
 		var log *logger.Logger = logger.NewLogger(PluginName)
-		defaultDownloader = downloader.New(log, parameters.GetString(parameters.IpfsGatewayAddress))
+		downloader.Init(log, parameters.GetString(parameters.IpfsGatewayAddress))
 	}
 	run = func(*node.Plugin) {
 		// Nothing to run here
@@ -26,8 +22,4 @@ func Init() *node.Plugin {
 
 	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
 	return Plugin
-}
-
-func GetDefaultDownloader() *downloader.Downloader {
-	return defaultDownloader
 }

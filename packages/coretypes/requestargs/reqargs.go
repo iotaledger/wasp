@@ -3,31 +3,27 @@ package requestargs
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	pkgDownloader "github.com/iotaledger/wasp/packages/downloader"
+	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	plgDownloader "github.com/iotaledger/wasp/plugins/downloader"
 	"io"
 )
 
 // TODO: extend '*' option in RequestArgs with download options (web, IPFS)
 
 // RequestArgs encodes request parameters taking into account hashes of data blobs
-type RequestArgs struct {
-	dict.Dict
-	getDownloader (func() *pkgDownloader.Downloader)
-}
+type RequestArgs dict.Dict
 
 // New makes new object taking 'as is', without encoding
 func New(d ...dict.Dict) RequestArgs {
 	if len(d) == 0 || len(d[0]) == 0 {
-		return RequestArgs{dict.New(), plgDownloader.GetDefaultDownloader}
+		return RequestArgs(dict.New())
 	}
 	if len(d) > 1 {
 		panic("len(d) > 1")
 	}
-	return RequestArgs{d[0].Clone(), plgDownloader.GetDefaultDownloader}
+	return RequestArgs(d[0].Clone())
 }
 
 const optimalSize = 32
@@ -56,13 +52,13 @@ func NewOptimizedRequestArgs(d dict.Dict, optSize ...int) (RequestArgs, map[kv.K
 
 // AddEncodeSimple add new ordinary argument. Encodes the key as "normal"
 func (a RequestArgs) AddEncodeSimple(name kv.Key, data []byte) RequestArgs {
-	a.Dict["-"+name] = data
+	a["-"+name] = data
 	return a
 }
 
 // AddEncodeBlobRef adds hash as data and marks it is a blob reference
 func (a RequestArgs) AddEncodeBlobRef(name kv.Key, hash hashing.HashValue) RequestArgs {
-	a.Dict["*"+name] = hash[:]
+	a["*"+name] = hash[:]
 	return a
 }
 
@@ -84,7 +80,7 @@ func (a RequestArgs) AddEncodeSimpleMany(d dict.Dict) RequestArgs {
 // HasBlobRef return if request arguments contain at least one blob reference
 func (a RequestArgs) HasBlobRef() bool {
 	var ret bool
-	a.Dict.ForEach(func(key kv.Key, _ []byte) bool {
+	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
 		ret = []byte(key)[0] == '*'
 		if ret {
 			return false
@@ -95,19 +91,19 @@ func (a RequestArgs) HasBlobRef() bool {
 }
 
 func (a RequestArgs) String() string {
-	return a.Dict.String()
+	return (dict.Dict(a)).String()
 }
 
 func (a RequestArgs) Clone() RequestArgs {
-	return RequestArgs{a.Dict.Clone(), a.getDownloader}
+	return RequestArgs((dict.Dict(a)).Clone())
 }
 
 func (a RequestArgs) Write(w io.Writer) error {
-	return a.Dict.Write(w)
+	return (dict.Dict(a)).Write(w)
 }
 
 func (a RequestArgs) Read(r io.Reader) error {
-	return a.Dict.Read(r)
+	return (dict.Dict(a)).Read(r)
 }
 
 // SolidifyRequestArguments decodes RequestArgs.
@@ -116,13 +112,14 @@ func (a RequestArgs) Read(r io.Reader) error {
 //    First 32 bytes of the value are always treated as data hash.
 //    The rest (if any) is a content address. It will be treated by a downloader
 //  - otherwise, value is treated a raw data and the first byte of the key is ignored
-func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dict, bool, error) {
+func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache, downloaderOpt ...*downloader.Downloader) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error
 	var data []byte
 	var h hashing.HashValue
-	a.Dict.ForEach(func(key kv.Key, value []byte) bool {
+	reqArgsDict := dict.Dict(a)
+	reqArgsDict.ForEach(func(key kv.Key, value []byte) bool {
 		d := []byte(key)
 		if len(d) == 0 {
 			err = fmt.Errorf("wrong request argument key '%s'", key)
@@ -148,7 +145,13 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dic
 			return false
 		}
 		if !ok {
-			a.getDownloader().DownloadAndStore(h, string(value[hashing.HashSize:]), reg)
+			var downloaderObj *downloader.Downloader
+			if len(downloaderOpt) > 0 {
+				downloaderObj = downloaderOpt[0]
+			} else {
+				downloaderObj = downloader.GetDefaultDownloader()
+			}
+			downloaderObj.DownloadAndStore(h, string(value[hashing.HashSize:]), reg)
 			ok = false
 			return false
 		}
