@@ -43,9 +43,10 @@ func (n *NodeConn) nodeConnect() {
 		return
 	}
 
-	n.bconnMutex.Lock()
-	n.bconn = buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize)
-	n.bconnMutex.Unlock()
+	n.bconn.Lock()
+	n.bconn.BufferedConnection = buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize)
+	n.bconn.Unlock()
+	n.Events.Connected.Trigger()
 
 	n.log.Debugf("established connection with node at %s", addr)
 
@@ -57,11 +58,11 @@ func (n *NodeConn) nodeConnect() {
 	n.bconn.Events.Close.Attach(events.NewClosure(func() {
 		n.log.Errorf("lost connection with %s", addr)
 		go func() {
-			n.bconnMutex.Lock()
-			bconnSave := n.bconn
-			n.bconn = nil
-			n.bconnMutex.Unlock()
-			bconnSave.Events.ReceiveMessage.Detach(dataReceivedClosure)
+			n.bconn.Lock()
+			bconnOld := n.bconn.BufferedConnection
+			defer bconnOld.Events.ReceiveMessage.Detach(dataReceivedClosure)
+			n.bconn.BufferedConnection = nil
+			n.bconn.Unlock()
 		}()
 	}))
 
@@ -84,22 +85,29 @@ func (n *NodeConn) nodeConnect() {
 }
 
 func (n *NodeConn) WaitForConnection(timeout time.Duration) bool {
-	deadline := time.Now().Add(timeout)
-	for {
-		if n.IsConnected() {
-			return true
-		}
-		if time.Now().After(deadline) {
-			return false
-		}
-		time.Sleep(1 * time.Second)
+	if n.IsConnected() {
+		return true
+	}
+
+	ok := make(chan bool)
+	cl := events.NewClosure(func() {
+		close(ok)
+	})
+	n.Events.Connected.Attach(cl)
+	defer n.Events.Connected.Detach(cl)
+
+	select {
+	case <-ok:
+		return true
+	case <-time.After(timeout):
+		return false
 	}
 }
 
 func (n *NodeConn) IsConnected() bool {
-	n.bconnMutex.Lock()
-	defer n.bconnMutex.Unlock()
-	return n.bconn != nil
+	n.bconn.Lock()
+	defer n.bconn.Unlock()
+	return n.bconn.BufferedConnection != nil
 }
 
 func (n *NodeConn) retryNodeConnect() {
@@ -113,10 +121,10 @@ func (n *NodeConn) SendDataToNode(data []byte) error {
 	if err != nil {
 		return err
 	}
-	n.bconnMutex.Lock()
-	defer n.bconnMutex.Unlock()
+	n.bconn.Lock()
+	defer n.bconn.Unlock()
 
-	if n.bconn == nil {
+	if n.bconn.BufferedConnection == nil {
 		return fmt.Errorf("SendDataToNode: not connected to node")
 	}
 	if !chopped {

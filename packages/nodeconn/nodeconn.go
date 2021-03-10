@@ -13,33 +13,47 @@ import (
 )
 
 type NodeConn struct {
-	netID                string
-	dial                 DialFunc
-	log                  *logger.Logger
-	bconn                *buffconn.BufferedConnection
-	bconnMutex           sync.Mutex
-	subscriptions        map[ledgerstate.Address]ledgerstate.Color
-	msgChopper           *chopper.Chopper
-	subscriptionsSent    bool
-	shutdown             chan bool
-	EventMessageReceived *events.Event
+	netID string
+	dial  DialFunc
+	log   *logger.Logger
+	bconn struct {
+		sync.Mutex
+		*buffconn.BufferedConnection
+	}
+	subscriptions     map[ledgerstate.Address]ledgerstate.Color
+	msgChopper        *chopper.Chopper
+	subscriptionsSent bool
+	shutdown          chan bool
+	Events            NodeConnEvents
+}
+
+type NodeConnEvents struct {
+	MessageReceived *events.Event
+	Connected       *events.Event
 }
 
 type DialFunc func() (addr string, conn net.Conn, err error)
 
-func param1Caller(handler interface{}, params ...interface{}) {
+func handleMessageReceived(handler interface{}, params ...interface{}) {
 	handler.(func(interface{}))(params[0])
+}
+
+func handleConnected(handler interface{}, params ...interface{}) {
+	handler.(func())()
 }
 
 func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 	n := &NodeConn{
-		netID:                netID,
-		dial:                 dial,
-		log:                  log,
-		subscriptions:        make(map[ledgerstate.Address]ledgerstate.Color),
-		msgChopper:           chopper.NewChopper(),
-		shutdown:             make(chan bool),
-		EventMessageReceived: events.NewEvent(param1Caller),
+		netID:         netID,
+		dial:          dial,
+		log:           log,
+		subscriptions: make(map[ledgerstate.Address]ledgerstate.Color),
+		msgChopper:    chopper.NewChopper(),
+		shutdown:      make(chan bool),
+		Events: NodeConnEvents{
+			MessageReceived: events.NewEvent(handleMessageReceived),
+			Connected:       events.NewEvent(handleConnected),
+		},
 	}
 	go n.nodeConnect()
 	go n.keepSendingSubscriptionIfNeeded()
@@ -49,16 +63,16 @@ func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 
 func (n *NodeConn) Close() {
 	go func() {
-		n.bconnMutex.Lock()
-		defer n.bconnMutex.Unlock()
-		if n.bconn != nil {
+		n.bconn.Lock()
+		defer n.bconn.Unlock()
+		if n.bconn.BufferedConnection != nil {
 			n.log.Infof("Closing connection with node..")
 			_ = n.bconn.Close()
 			n.log.Infof("Closing connection with node.. Done")
 		}
 	}()
 	close(n.shutdown)
-	n.EventMessageReceived.DetachAll()
+	n.Events.MessageReceived.DetachAll()
 }
 
 // checking if need to be sent every second

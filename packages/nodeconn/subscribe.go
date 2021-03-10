@@ -7,8 +7,8 @@ import (
 )
 
 func (n *NodeConn) Subscribe(addr ledgerstate.Address, color ledgerstate.Color) {
-	n.bconnMutex.Lock()
-	defer n.bconnMutex.Unlock()
+	n.bconn.Lock()
+	defer n.bconn.Unlock()
 
 	if _, ok := n.subscriptions[addr]; !ok {
 		n.subscriptionsSent = false
@@ -17,17 +17,17 @@ func (n *NodeConn) Subscribe(addr ledgerstate.Address, color ledgerstate.Color) 
 }
 
 func (n *NodeConn) Unsubscribe(addr ledgerstate.Address) {
-	n.bconnMutex.Lock()
-	defer n.bconnMutex.Unlock()
+	n.bconn.Lock()
+	defer n.bconn.Unlock()
 
 	delete(n.subscriptions, addr)
 }
 
 func (n *NodeConn) sendSubscriptions(forceSend bool) {
-	n.bconnMutex.Lock()
-	defer n.bconnMutex.Unlock()
+	n.bconn.Lock()
+	defer n.bconn.Unlock()
 
-	if n.bconn == nil {
+	if n.bconn.BufferedConnection == nil {
 		return
 	}
 	if len(n.subscriptions) == 0 {
@@ -54,8 +54,8 @@ func (n *NodeConn) sendSubscriptions(forceSend bool) {
 		if err := n.SendDataToNode(data); err != nil {
 			n.log.Errorf("sending subscriptions to %s: %v. Addrs: %+v",
 				parameters.GetString(parameters.NodeAddress), err, addrs)
-			n.bconnMutex.Lock()
-			defer n.bconnMutex.Unlock()
+			n.bconn.Lock()
+			defer n.bconn.Unlock()
 			n.subscriptionsSent = false
 		} else {
 			n.log.Infof("sent subscriptions to node %s for addresses %+v",

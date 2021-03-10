@@ -54,8 +54,8 @@ func doAndWaitForResponse(t *testing.T, n *NodeConn, val interface{}, send func(
 		}
 	})
 
-	n.EventMessageReceived.Attach(closure)
-	defer n.EventMessageReceived.Detach(closure)
+	n.Events.MessageReceived.Attach(closure)
+	defer n.Events.MessageReceived.Detach(closure)
 
 	err := send()
 	require.NoError(t, err)

@@ -30,6 +30,6 @@ func (n *NodeConn) msgDataToEvent(data []byte) {
 		n.log.Infof("PING %d response from node. Roundtrip %v", msg.Id, roundtrip)
 
 	default:
-		n.EventMessageReceived.Trigger(msg)
+		n.Events.MessageReceived.Trigger(msg)
 	}
 }
