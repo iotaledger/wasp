@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/mr-tron/base58"
 	"strings"
 )
 
@@ -238,8 +239,8 @@ func (o *ScDict) Suffix(keyId int32) string {
 		return fmt.Sprintf(".%d", keyId)
 	}
 	key := o.host.GetKeyFromId(keyId)
-	if (keyId & wasmhost.KeyFromString) != 0 {
-		return "." + string(key)
+	if wasmhost.HostTracing && (keyId & wasmhost.KeyFromString) == 0 {
+		return "." + base58.Encode(key)
 	}
 	return "." + string(key)
 }
