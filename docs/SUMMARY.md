@@ -1,0 +1,16 @@
+# Summary
+
+- [Welcome](./welcome.md)
+- [Tutorials](./tutorial/readme.md)
+    - [The Solo package](./tutorial/01.md)
+    - [Tokens and the Value Tangle](./tutorial/02.md)
+    - [Creating a chain. Core contacts](./tutorial/03.md)
+    - [Deploying and running Rust smart contract](./tutorial/04.md)
+    - [Structure of the smart contract](./tutorial/05.md)
+    - [Invoking smart contract. Sending a request](./tutorial/06.md)
+    - [Calling a view from the Solo environment](./tutorial/07.md)
+    - [Sending and receiving tokens with the address](./tutorial/08.md)
+    - [Sending tokens to the smart contract](./tutorial/09.md)
+    - [Return of tokens in case of failure](./tutorial/10.md)
+    - [Sending iotas from smart contract to address](./tutorial/11.md)
+- [Setup a private ISCP Cluster](./setup_wasp.md)

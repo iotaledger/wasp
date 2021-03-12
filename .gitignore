@@ -9,3 +9,4 @@ dist/
 wasp-cli.json
 */pkg/
 **/target/
+book
