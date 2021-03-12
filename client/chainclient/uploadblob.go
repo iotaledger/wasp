@@ -33,7 +33,7 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 	}
 	nodesMultiApi := multiclient.New(waspHosts)
 	if err := nodesMultiApi.UploadData(fieldValues, quorum); err != nil {
-		return hashing.HashValue{}, nil, err
+		return hashing.NilHash, nil, err
 	}
 	blobHash := blob.MustGetBlobHash(fields)
 

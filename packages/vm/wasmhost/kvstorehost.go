@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/mr-tron/base58"
 )
 
@@ -19,9 +20,10 @@ const (
 	OBJTYPE_CONTRACT_ID int32 = 6
 	OBJTYPE_HASH        int32 = 7
 	OBJTYPE_HNAME       int32 = 8
-	OBJTYPE_INT         int32 = 9
+	OBJTYPE_INT64       int32 = 9
 	OBJTYPE_MAP         int32 = 10
-	OBJTYPE_STRING      int32 = 11
+	OBJTYPE_REQUEST_ID  int32 = 11
+	OBJTYPE_STRING      int32 = 12
 )
 
 const KeyFromString int32 = 0x4000
@@ -89,7 +91,15 @@ func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte
 		return nil
 	}
 	bytes := obj.GetBytes(keyId, typeId)
-	host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(bytes))
+	switch typeId {
+	case OBJTYPE_INT64:
+		val, _, _ := codec.DecodeInt64(bytes)
+		host.Trace("GetBytes o%d k%d = %d", objId, keyId, val)
+	case OBJTYPE_STRING:
+		host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, string(bytes))
+	default:
+		host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(bytes))
+	}
 	return bytes
 }
 
@@ -190,7 +200,15 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 
 func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
 	host.FindObject(objId).SetBytes(keyId, typeId, bytes)
-	host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
+	switch typeId {
+	case OBJTYPE_INT64:
+		val, _, _ := codec.DecodeInt64(bytes)
+		host.Trace("SetBytes o%d k%d v=%d", objId, keyId, val)
+	case OBJTYPE_STRING:
+		host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, string(bytes))
+	default:
+		host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
+	}
 }
 
 func (host *KvStoreHost) Trace(format string, a ...interface{}) {

@@ -58,7 +58,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
+		o.Trace("TRANSFER #%d c'%s' a'%s'", amount, color.String(), o.address.String())
 		balancesMap[color] = amount
 		return true
 	})

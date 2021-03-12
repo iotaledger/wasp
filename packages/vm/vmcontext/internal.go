@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/hardcoded"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -71,7 +71,7 @@ func (vmctx *VMContext) getFeeInfo() (balance.Color, int64, int64) {
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
-	vmtype, ok := hardcoded.LocateHardcodedProgram(programHash)
+	vmtype, ok := processors.GetBuiltinProcessorType(programHash)
 	if ok {
 		return vmtype, nil, nil
 	}

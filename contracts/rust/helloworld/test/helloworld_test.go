@@ -12,11 +12,11 @@ import (
 )
 
 func setupTest(t *testing.T) *solo.Chain {
-	return common.DeployContract(t, ScName)
+	return common.StartChainAndDeployWasmContractByName(t, ScName)
 }
 
 func TestDeploy(t *testing.T) {
-	chain := common.DeployContract(t, ScName)
+	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
 	_, err := chain.FindContract(ScName)
 	require.NoError(t, err)
 }
@@ -25,7 +25,7 @@ func TestFuncHelloWorld(t *testing.T) {
 	chain := setupTest(t)
 
 	req := solo.NewCallParams(ScName, FuncHelloWorld)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
 var (
@@ -38,7 +39,7 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 }
 
 func (s *sandboxview) Utils() coretypes.Utils {
-	return coretypes.NewUtils(s.Log())
+	return sandbox_utils.NewUtils()
 }
 
 func (s *sandboxview) Params() dict.Dict {

@@ -17,7 +17,7 @@ func TestBlobRepeatInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	req := solo.NewCallParams(blob.Interface.Name, "init")
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
 
@@ -52,7 +52,7 @@ func TestBlobUploadTwice(t *testing.T) {
 	require.EqualValues(t, binary, binBack)
 }
 
-var wasmFile = "sandbox_tests/test_sandbox_sc/testcore_bg.wasm"
+var wasmFile = "sbtests/sbtestsc/testcore_bg.wasm"
 
 func TestDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
@@ -110,20 +110,20 @@ func TestDeployGrant(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	_, contacts := chain.GetInfo()
-	require.EqualValues(t, 5, len(contacts))
+	_, contracts := chain.GetInfo()
+	require.EqualValues(t, 5, len(contracts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
-	_, contacts = chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	_, contracts = chain.GetInfo()
+	require.EqualValues(t, 6, len(contracts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
@@ -135,26 +135,26 @@ func TestRevokeDeploy(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequest(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	_, contacts := chain.GetInfo()
-	require.EqualValues(t, 5, len(contacts))
+	_, contracts := chain.GetInfo()
+	require.EqualValues(t, 5, len(contracts))
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err = chain.PostRequest(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.Error(t, err)
 
-	_, contacts = chain.GetInfo()
-	require.EqualValues(t, 5, len(contacts))
+	_, contracts = chain.GetInfo()
+	require.EqualValues(t, 5, len(contracts))
 }
 
 func TestDeployGrantFail(t *testing.T) {
@@ -166,7 +166,7 @@ func TestDeployGrantFail(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequest(req, user1)
+	_, err := chain.PostRequestSync(req, user1)
 	require.Error(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)

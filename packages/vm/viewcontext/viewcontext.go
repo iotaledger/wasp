@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/hardcoded"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -79,7 +78,7 @@ func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretyp
 		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
-		if vmtype, ok := hardcoded.LocateHardcodedProgram(programHash); ok {
+		if vmtype, ok := processors.GetBuiltinProcessorType(programHash); ok {
 			return vmtype, nil, nil
 		}
 		return blob.LocateProgram(contractStateSubpartition(v.state, blob.Interface.Hname()), programHash)

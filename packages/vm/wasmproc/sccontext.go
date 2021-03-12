@@ -27,13 +27,15 @@ var typeIds = map[int32]int32{
 	wasmhost.KeyIncoming:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyLog:             wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyMaps:            wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyMinted:          wasmhost.OBJTYPE_INT64,
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
+	wasmhost.KeyRequestId:       wasmhost.OBJTYPE_REQUEST_ID,
 	wasmhost.KeyResults:         wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyState:           wasmhost.OBJTYPE_MAP,
-	wasmhost.KeyTimestamp:       wasmhost.OBJTYPE_INT,
+	wasmhost.KeyTimestamp:       wasmhost.OBJTYPE_INT64,
 	wasmhost.KeyTrace:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyTransfers:       wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
 	wasmhost.KeyUtility:         wasmhost.OBJTYPE_MAP,
@@ -62,15 +64,25 @@ func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 }
 
 func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
+	var aid coretypes.AgentID
 	switch keyId {
 	case wasmhost.KeyCaller:
-		return o.vm.ctx.Caller().Bytes()
+		aid = o.vm.ctx.Caller()
+		return aid[:]
 	case wasmhost.KeyChainOwnerId:
-		return o.vm.chainOwnerID().Bytes()
+		aid = o.vm.chainOwnerID()
+		return aid[:]
 	case wasmhost.KeyContractCreator:
-		return o.vm.contractCreator().Bytes()
+		aid = o.vm.contractCreator()
+		return aid[:]
 	case wasmhost.KeyContractId:
-		return o.vm.contractID().Bytes()
+		cid := o.vm.contractID()
+		return cid[:]
+	case wasmhost.KeyMinted:
+		return codec.EncodeInt64(o.vm.ctx.MintedSupply())
+	case wasmhost.KeyRequestId:
+		rid := o.vm.ctx.RequestID()
+		return rid[:]
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
 	}
@@ -134,8 +146,8 @@ func (o *ScContext) processCall(bytes []byte) {
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	params := o.getParams(int32(decode.Int()))
-	transfer := o.getTransfer(int32(decode.Int()))
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
 
 	o.Trace("CALL c'%s' f'%s'", contract.String(), function.String())
 	var results dict.Dict
@@ -159,7 +171,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	}
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
-	params := o.getParams(int32(decode.Int()))
+	params := o.getParams(int32(decode.Int64()))
 	o.Trace("DEPLOY c'%s' f'%s'", name, description)
 	err = o.vm.ctx.DeployContract(programHash, name, description, params)
 	if err != nil {
@@ -178,9 +190,9 @@ func (o *ScContext) processPost(bytes []byte) {
 		o.Panic(err.Error())
 	}
 	o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
-	params := o.getParams(int32(decode.Int()))
-	transfer := o.getTransfer(int32(decode.Int()))
-	delay := decode.Int()
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
+	delay := decode.Int64()
 	if delay < -1 {
 		o.Panic("invalid delay: %d", delay)
 	}

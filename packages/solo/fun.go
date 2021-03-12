@@ -105,15 +105,12 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 	if totalFee > 0 {
 		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
-	var res dict.Dict
-	res, err = ch.PostRequest(req, sigScheme)
+	res, err := ch.PostRequestSync(req, sigScheme)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	var r *hashing.HashValue
-	var ok bool
-	r, ok, err = codec.DecodeHashValue(resBin)
+	ret, ok, err := codec.DecodeHashValue(resBin)
 	if err != nil {
 		return
 	}
@@ -121,7 +118,6 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 		err = fmt.Errorf("interbal error: no hash returned")
 		return
 	}
-	ret = *r
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return
 }
@@ -152,15 +148,12 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.
 	if totalFee > 0 {
 		req.WithTransfer(balance.ColorIOTA, totalFee)
 	}
-	var res dict.Dict
-	res, err = ch.PostRequest(req, sigScheme)
+	res, err := ch.PostRequestSync(req, sigScheme)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	var r *hashing.HashValue
-	var ok bool
-	r, ok, err = codec.DecodeHashValue(resBin)
+	ret, ok, err := codec.DecodeHashValue(resBin)
 	if err != nil {
 		return
 	}
@@ -168,7 +161,6 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.
 		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
-	ret = *r
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return
 }
@@ -234,12 +226,12 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 // The parameter 'programHash' can be one of the following:
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
-//     smart contact must be made available with the call examples.AddProcessor
+//     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
 	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...)
-	_, err := ch.PostRequest(req, sigScheme)
+	_, err := ch.PostRequestSync(req, sigScheme)
 	return err
 }
 
@@ -362,8 +354,8 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
-	hname := coretypes.Hn(contactName)
+func (ch *Chain) GetFeeInfo(contractName string) (balance.Color, int64, int64) {
+	hname := coretypes.Hn(contractName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
@@ -422,7 +414,7 @@ func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
 	return ret, nil
 }
 
-// GetEventLogNumRecords returns total number of eventlog records for the given contact.
+// GetEventLogNumRecords returns total number of eventlog records for the given contract.
 func (ch *Chain) GetEventLogNumRecords(name string) int {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
 		eventlog.ParamContractHname, coretypes.Hn(name),

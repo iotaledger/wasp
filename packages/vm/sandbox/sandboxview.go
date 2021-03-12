@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -23,7 +24,7 @@ func newView(vmctx *vmcontext.VMContext) coretypes.SandboxView {
 }
 
 func (s sandboxView) Utils() coretypes.Utils {
-	return coretypes.NewUtils(s.Log())
+	return sandbox_utils.NewUtils()
 }
 
 func (s sandboxView) ChainOwnerID() coretypes.AgentID {

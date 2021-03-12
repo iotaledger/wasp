@@ -11,10 +11,12 @@ import (
 type WasmVM interface {
 	LinkHost(impl WasmVM, host *WasmHost) error
 	LoadWasm(wasmData []byte) error
-	RunFunction(functionName string) error
+	RunFunction(functionName string, args ...interface{}) error
 	RunScFunction(index int32) error
-	UnsafeMemory() []byte
 	SaveMemory()
+	UnsafeMemory() []byte
+	VmGetBytes(offset int32, size int32) []byte
+	VmSetBytes(offset int32, size int32, bytes []byte) int32
 }
 
 type WasmVmBase struct {
@@ -60,7 +62,7 @@ func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, strin
 	if bytes == nil {
 		return -1
 	}
-	return vm.vmSetBytes(stringRef, size, bytes)
+	return vm.impl.VmSetBytes(stringRef, size, bytes)
 }
 
 func (vm *WasmVmBase) HostGetKeyId(keyRef int32, size int32) int32 {
@@ -68,12 +70,12 @@ func (vm *WasmVmBase) HostGetKeyId(keyRef int32, size int32) int32 {
 	host.TraceAll("HostGetKeyId(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
-		bytes := vm.vmGetBytes(keyRef, size)
+		bytes := vm.impl.VmGetBytes(keyRef, size)
 		return host.GetKeyIdFromString(string(bytes))
 	}
 
 	// negative size means original key was a byte slice
-	bytes := vm.vmGetBytes(keyRef, -size-1)
+	bytes := vm.impl.VmGetBytes(keyRef, -size-1)
 	return host.GetKeyIdFromBytes(bytes)
 }
 
@@ -86,7 +88,7 @@ func (vm *WasmVmBase) HostGetObjectId(objId int32, keyId int32, typeId int32) in
 func (vm *WasmVmBase) HostSetBytes(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
 	host := vm.host
 	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
-	bytes := vm.vmGetBytes(stringRef, size)
+	bytes := vm.impl.VmGetBytes(stringRef, size)
 	host.SetBytes(objId, keyId, typeId, bytes)
 }
 
@@ -136,14 +138,14 @@ func (vm *WasmVmBase) SaveMemory() {
 	}
 }
 
-func (vm *WasmVmBase) vmGetBytes(offset int32, size int32) []byte {
+func (vm *WasmVmBase) VmGetBytes(offset int32, size int32) []byte {
 	ptr := vm.impl.UnsafeMemory()
 	bytes := make([]byte, size)
 	copy(bytes, ptr[offset:offset+size])
 	return bytes
 }
 
-func (vm *WasmVmBase) vmSetBytes(offset int32, size int32, bytes []byte) int32 {
+func (vm *WasmVmBase) VmSetBytes(offset int32, size int32, bytes []byte) int32 {
 	if size != 0 {
 		ptr := vm.impl.UnsafeMemory()
 		copy(ptr[offset:offset+size], bytes)

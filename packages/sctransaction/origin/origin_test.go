@@ -8,6 +8,7 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -222,7 +222,7 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// getFeeInfo returns fee information for the contact.
+// getFeeInfo returns fee information for the contract.
 // Input:
 // - ParamHname coretypes.Hname contract id
 // Output:
@@ -320,7 +320,7 @@ func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(ParamDeployer)
 
-	collections.NewMap(ctx.State(), VarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	collections.NewMap(ctx.State(), VarDeployPermissions).MustSetAt(deployer[:], []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
 	return nil, nil
 }
@@ -335,7 +335,7 @@ func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(ParamDeployer)
 
-	collections.NewMap(ctx.State(), VarDeployPermissions).MustDelAt(deployer.Bytes())
+	collections.NewMap(ctx.State(), VarDeployPermissions).MustDelAt(deployer[:])
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
 }

@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use inccounter::*;
 use consts::*;
+use inccounter::*;
 use wasmlib::*;
 
 mod inccounter;
