@@ -105,21 +105,24 @@ func (this *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cac
 func (this *Downloader) contains(uri string) bool {
 	var ok bool
 	this.downloadsMutex.Lock()
+	defer this.downloadsMutex.Unlock()
+
 	_, ok = this.downloads[uri]
-	this.downloadsMutex.Unlock()
 	return ok
 }
 
 func (this *Downloader) markStarted(uri string) {
 	this.downloadsMutex.Lock()
+	defer this.downloadsMutex.Unlock()
+
 	this.downloads[uri] = true
-	this.downloadsMutex.Unlock()
 }
 
 func (this *Downloader) markCompleted(uri string) {
 	this.downloadsMutex.Lock()
+	defer this.downloadsMutex.Unlock()
+
 	delete(this.downloads, uri)
-	this.downloadsMutex.Unlock()
 }
 
 func (this *Downloader) DonwloadFromHttp(url string) ([]byte, error) {
