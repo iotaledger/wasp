@@ -67,8 +67,8 @@ func (scid ContractID) Clone() ContractID {
 }
 
 // ChainID returns ID of the native chain of the contract
-func (scid ContractID) ChainID() ChainID {
-	return scid.chainID
+func (scid ContractID) ChainID() *ChainID {
+	return &scid.chainID
 }
 
 // Hname returns hashed name of the contract, local ID on the chain
@@ -78,10 +78,7 @@ func (scid ContractID) Hname() Hname {
 
 // Base58 base58 representation of the binary representation
 func (scid ContractID) Base58() string {
-	var buf bytes.Buffer
-	buf.Write(scid.chainID[:])
-	buf.Write(scid.contractHname.Bytes())
-	return base58.Encode(buf.Bytes())
+	return base58.Encode(scid.Bytes())
 }
 
 const (
@@ -118,7 +115,7 @@ func (scid *ContractID) Read(r io.Reader) error {
 
 // Write to writer
 func (scid *ContractID) Write(w io.Writer) error {
-	if _, err := w.Write(scid.chainID[:]); err != nil {
+	if _, err := w.Write(scid.chainID.Bytes()); err != nil {
 		return err
 	}
 	if _, err := w.Write(scid.contractHname.Bytes()); err != nil {

@@ -5,6 +5,7 @@ package coretypes
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestChainID(t *testing.T) {
 	chidString := chid.String()
 	t.Logf("chidString = %s", chidString)
 
-	chidback, err := NewChainIDFromBytes(chid[:])
+	chidback, err := NewChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
@@ -84,10 +85,14 @@ func TestAgentID(t *testing.T) {
 	chid58 := chid.String()
 	t.Logf("chid58 = %s", chid58)
 
-	addr := chid.AsAddress()
-	t.Logf("addr = %s", addr.String())
+	kp := ed25519.GenerateKeyPair()
+	addr := ledgerstate.NewED25519Address(kp.PublicKey)
 
-	aid := NewAgentIDFromAddress(addr)
+	aid, err := NewAgentIDFromAddress(chid.AsAddress())
+	require.Error(t, err)
+
+	aid, err = NewAgentIDFromAddress(addr)
+	require.NoError(t, err)
 	require.True(t, aid.IsAddress())
 
 	addr1 := aid.MustAddress()

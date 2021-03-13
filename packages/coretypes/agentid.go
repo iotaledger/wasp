@@ -18,7 +18,7 @@ import (
 // Type of ID represented by the AgentID can be recognized with IsAddress call.
 // An attempt to interpret the AgentID in the wrong way invokes panic
 type AgentID struct {
-	a interface{} // one of 2: *ContractID or *ledgerstate.Address
+	a interface{} // one of 2: *ContractID or ledgerstate.Address
 }
 
 // NewAgentIDFromContractID makes AgentID from ContractID
@@ -28,8 +28,11 @@ func NewAgentIDFromContractID(id ContractID) AgentID {
 }
 
 // NewAgentIDFromAddress makes AgentID from address.Address
-func NewAgentIDFromAddress(addr ledgerstate.Address) AgentID {
-	return AgentID{addr.Clone()}
+func NewAgentIDFromAddress(addr ledgerstate.Address) (AgentID, error) {
+	if addr.Type() == ledgerstate.AliasAddressType {
+		return AgentID{}, xerrors.New("AgentID cannot be based on AliasAddress")
+	}
+	return AgentID{addr.Clone()}, nil
 }
 
 // NewRandomAgentID creates random AgentID
@@ -83,7 +86,8 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 		if err != nil {
 			return
 		}
-		return NewAgentIDFromAddress(addr), nil
+		ret, err = NewAgentIDFromAddress(addr)
+		return
 	case "C/":
 		var cid ContractID
 		cid, err = NewContractIDFromString(s[2:])
