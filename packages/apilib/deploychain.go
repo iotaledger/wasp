@@ -5,6 +5,7 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -18,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction_old/origin"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -85,7 +85,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 
 	// ----------- create origin transaction
-	originTx, err := origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+	originTx, err := sctransaction.NewOriginTransaction(sctransaction.NewOriginTransactionParams{
 		OriginAddress:             chainAddr,
 		OriginatorSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:                 allOuts,
@@ -148,7 +148,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 
 	// NOTE: whoever send first init request, is an owner of the chain
 	// create root init transaction
-	reqTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
+	reqTx, err := sctransaction.NewRootInitRequestTransaction(sctransaction.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		ChainColor:           chainColor,
 		ChainAddress:         chainAddr,

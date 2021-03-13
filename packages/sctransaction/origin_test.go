@@ -1,4 +1,4 @@
-package origin
+package sctransaction
 
 import (
 	"testing"

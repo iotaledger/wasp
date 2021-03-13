@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"go.uber.org/atomic"
 	"sync"
 	"testing"
@@ -20,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction_old"
-	"github.com/iotaledger/wasp/packages/sctransaction_old/origin"
 	_ "github.com/iotaledger/wasp/packages/sctransaction_old/properties"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -197,7 +197,7 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 	}
 	env.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 	var err error
-	ret.StateTx, err = origin.NewOriginTransaction(origin.NewOriginTransactionParams{
+	ret.StateTx, err = sctransaction.NewOriginTransaction(sctransaction.NewOriginTransactionParams{
 		OriginAddress:             ret.ChainAddress,
 		OriginatorSignatureScheme: ret.OriginatorSigScheme,
 		AllInputs:                 env.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
@@ -215,7 +215,7 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 	err = ret.State.CommitToDb(originBlock)
 	require.NoError(env.T, err)
 
-	initTx, err := origin.NewRootInitRequestTransaction(origin.NewRootInitRequestTransactionParams{
+	initTx, err := sctransaction.NewRootInitRequestTransaction(sctransaction.NewRootInitRequestTransactionParams{
 		ChainID:              chainID,
 		ChainColor:           ret.ChainColor,
 		ChainAddress:         ret.ChainAddress,
