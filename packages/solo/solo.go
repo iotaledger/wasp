@@ -19,9 +19,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/origin"
-	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
+	"github.com/iotaledger/wasp/packages/sctransaction_old/origin"
+	_ "github.com/iotaledger/wasp/packages/sctransaction_old/properties"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -93,7 +93,7 @@ type Chain struct {
 	ValidatorFeeTarget coretypes.AgentID
 
 	// StateTx is the anchor transaction of the current state of the chain
-	StateTx *sctransaction.TransactionEssence
+	StateTx *sctransaction_old.TransactionEssence
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State state.VirtualState
@@ -107,8 +107,8 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	reqCounter   atomic.Int32
-	chInRequest  chan sctransaction.RequestRef
-	backlog      []sctransaction.RequestRef
+	chInRequest  chan sctransaction_old.RequestRef
+	backlog      []sctransaction_old.RequestRef
 	backlogMutex *sync.RWMutex
 }
 
@@ -191,8 +191,8 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 		Log:                 env.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
-		chInRequest:  make(chan sctransaction.RequestRef),
-		backlog:      make([]sctransaction.RequestRef, 0),
+		chInRequest:  make(chan sctransaction_old.RequestRef),
+		backlog:      make([]sctransaction_old.RequestRef, 0),
 		backlogMutex: &sync.RWMutex{},
 	}
 	env.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
@@ -248,20 +248,20 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
 // invalid or double spend
-func (env *Solo) AddToLedger(tx *sctransaction.TransactionEssence) error {
+func (env *Solo) AddToLedger(tx *sctransaction_old.TransactionEssence) error {
 	return env.utxoDB.AddTransaction(tx.Transaction)
 }
 
 // EnqueueRequests dispatches requests contained in the transaction among chains
-func (env *Solo) EnqueueRequests(tx *sctransaction.TransactionEssence) {
-	reqRefByChain := make(map[coretypes.ChainID][]sctransaction.RequestRef)
+func (env *Solo) EnqueueRequests(tx *sctransaction_old.TransactionEssence) {
+	reqRefByChain := make(map[coretypes.ChainID][]sctransaction_old.RequestRef)
 	for i, rsect := range tx.Requests() {
 		chid := rsect.Target().ChainID()
 		_, ok := reqRefByChain[chid]
 		if !ok {
-			reqRefByChain[chid] = make([]sctransaction.RequestRef, 0)
+			reqRefByChain[chid] = make([]sctransaction_old.RequestRef, 0)
 		}
-		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction.RequestRef{
+		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction_old.RequestRef{
 			Tx:    tx,
 			Index: uint16(i),
 		})
@@ -288,7 +288,7 @@ func (ch *Chain) readRequestsLoop() {
 	}
 }
 
-func (ch *Chain) addToBacklog(r sctransaction.RequestRef) {
+func (ch *Chain) addToBacklog(r sctransaction_old.RequestRef) {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)

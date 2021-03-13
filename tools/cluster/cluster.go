@@ -27,7 +27,7 @@ import (
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -451,7 +451,7 @@ func (cluster *Cluster) StartMessageCounter(expectations map[string]int) (*Messa
 	return NewMessageCounter(cluster, cluster.Config.AllNodes(), expectations)
 }
 
-func (cluster *Cluster) PostTransaction(tx *sctransaction.TransactionEssence) error {
+func (cluster *Cluster) PostTransaction(tx *sctransaction_old.TransactionEssence) error {
 	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
 	err := cluster.Level1Client().PostAndWaitForConfirmation(tx.Transaction)
 	if err != nil {

@@ -18,8 +18,6 @@ type SCTransactionProperties interface {
 	IsOrigin() bool
 	// chain ID of the state section or panic if not a state transaction
 	MustChainID() *ChainID
-	// color of the state section or panic if not a state transaction
-	MustStateColor() *ledgerstate.Color
 	// string representation
 	String() string
 }

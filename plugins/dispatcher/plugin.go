@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/chain/chainimpl" // activate init
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
@@ -82,7 +82,7 @@ func processNodeMsg(msg interface{}) {
 	switch msgt := msg.(type) {
 
 	case *waspconn.WaspFromNodeConfirmedTransactionMsg:
-		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
+		tx, err := sctransaction_old.ParseValueTransaction(msgt.Tx)
 		if err != nil {
 			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
 			// not a SC transaction. Ignore
@@ -94,7 +94,7 @@ func processNodeMsg(msg interface{}) {
 		dispatchBalances(msgt.Address, msgt.Balances)
 
 	case *waspconn.WaspFromNodeAddressUpdateMsg:
-		tx, err := sctransaction.ParseValueTransaction(msgt.Tx)
+		tx, err := sctransaction_old.ParseValueTransaction(msgt.Tx)
 		if err != nil {
 			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
 			// not a SC transaction. Ignore

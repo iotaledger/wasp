@@ -16,8 +16,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
+	"github.com/iotaledger/wasp/packages/sctransaction_old/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 )
@@ -120,7 +120,7 @@ func toMap(params ...interface{}) map[string]interface{} {
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signaturescheme.SignatureScheme) *sctransaction.TransactionEssence {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signaturescheme.SignatureScheme) *sctransaction_old.TransactionEssence {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
@@ -131,7 +131,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signatures
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
 	require.NoError(ch.Env.T, err)
 
-	reqSect := sctransaction.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
+	reqSect := sctransaction_old.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
 		WithTransfer(req.transfer).
 		WithArgs(req.args)
 
@@ -173,7 +173,7 @@ func (ch *Chain) PostRequestSync(req *CallParams, sigScheme signaturescheme.Sign
 	return ret, err
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.SignatureScheme) (*sctransaction.TransactionEssence, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.SignatureScheme) (*sctransaction_old.TransactionEssence, dict.Dict, error) {
 	tx := ch.RequestFromParamsToLedger(req, sigScheme)
 
 	reqID := coretypes.NewRequestID(tx.ID(), 0)

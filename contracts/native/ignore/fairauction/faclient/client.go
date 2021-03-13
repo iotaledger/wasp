@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -64,7 +64,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	return status, nil
 }
 
-func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction.TransactionEssence, error) {
+func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction_old.TransactionEssence, error) {
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
@@ -97,7 +97,7 @@ func (fc *FairAuctionClient) StartAuction(
 	tokensForSale int64,
 	minimumBid int64,
 	durationMinutes int64,
-) (*sctransaction.TransactionEssence, error) {
+) (*sctransaction_old.TransactionEssence, error) {
 	fee, err := fc.GetFeeAmount(minimumBid)
 	if err != nil {
 		return nil, fmt.Errorf("GetFeeAmount failed: %v", err)
@@ -120,7 +120,7 @@ func (fc *FairAuctionClient) StartAuction(
 	)
 }
 
-func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction.TransactionEssence, error) {
+func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction_old.TransactionEssence, error) {
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestPlaceBid,

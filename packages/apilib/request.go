@@ -11,9 +11,9 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
+	_ "github.com/iotaledger/wasp/packages/sctransaction_old/properties"
+	"github.com/iotaledger/wasp/packages/sctransaction_old/txbuilder"
 )
 
 type RequestSectionParams struct {
@@ -33,7 +33,7 @@ type CreateRequestTransactionParams struct {
 	WaitForConfirmation  bool
 }
 
-func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction.TransactionEssence, error) {
+func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction_old.TransactionEssence, error) {
 	senderAddr := par.SenderSigScheme.Address()
 	allOuts, err := par.Level1Client.GetConfirmedAccountOutputs(&senderAddr)
 	if err != nil {
@@ -46,7 +46,7 @@ func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransactio
 	}
 
 	for _, sectPar := range par.RequestSectionParams {
-		reqSect := sctransaction.NewRequestSectionByWallet(sectPar.TargetContractID, sectPar.EntryPointCode).
+		reqSect := sctransaction_old.NewRequestSectionByWallet(sectPar.TargetContractID, sectPar.EntryPointCode).
 			WithTimelock(sectPar.TimeLock).
 			WithTransfer(sectPar.Transfer)
 

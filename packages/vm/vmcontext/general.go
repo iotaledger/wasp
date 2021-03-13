@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -76,7 +76,7 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 	}
 	reqParams := requestargs.New(nil)
 	reqParams.AddEncodeSimpleMany(par.Params)
-	reqSection := sctransaction.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
+	reqSection := sctransaction_old.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
 		WithTimeLock(par.TimeLock).
 		WithTransfer(par.Transfer).
 		WithArgs(reqParams)

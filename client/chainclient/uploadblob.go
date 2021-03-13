@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
@@ -18,7 +18,7 @@ const optimalSize = 32
 // - uploads big binary data chunks to blob caches of at least `quorum` of `waspHosts` directly
 // - posts a 'storeBlob' request to the 'blob' contract with optimized parameters
 // - the chain reconstructs original parameters upn settlement of the request
-func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, *sctransaction.TransactionEssence, error) {
+func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, *sctransaction_old.TransactionEssence, error) {
 	var osize int
 	if len(optSize) > 0 {
 		osize = optSize[0]

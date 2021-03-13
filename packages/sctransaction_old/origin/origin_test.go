@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
+	_ "github.com/iotaledger/wasp/packages/sctransaction_old/properties"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +40,7 @@ func TestReadWrite(t *testing.T) {
 	vtx, _, err := valuetransaction.FromBytes(data)
 	assert.NoError(t, err)
 
-	txback, err := sctransaction.ParseValueTransaction(vtx)
+	txback, err := sctransaction_old.ParseValueTransaction(vtx)
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, tx.ID(), txback.ID())

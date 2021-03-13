@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 )
 
 // Client allows to send webapi requests to a specific chain in the node
@@ -44,7 +44,7 @@ func (c *Client) PostRequest(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
 	params ...PostRequestParams,
-) (*sctransaction.TransactionEssence, error) {
+) (*sctransaction_old.TransactionEssence, error) {
 	par := PostRequestParams{}
 	if len(params) > 0 {
 		par = params[0]

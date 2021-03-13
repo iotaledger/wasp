@@ -8,14 +8,14 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 type RequestRefWithFreeTokens struct {
-	sctransaction.RequestRef
+	sctransaction_old.RequestRef
 	FreeTokens coretypes.ColoredBalancesOld
 }
 
@@ -36,7 +36,7 @@ type VMTask struct {
 	// call when finished
 	OnFinish func(callResult dict.Dict, callError error, vmError error)
 	// outputs
-	ResultTransaction *sctransaction.TransactionEssence
+	ResultTransaction *sctransaction_old.TransactionEssence
 	ResultBlock       state.Block
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
-	_ "github.com/iotaledger/wasp/packages/sctransaction/properties"
+	_ "github.com/iotaledger/wasp/packages/sctransaction_old/properties"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

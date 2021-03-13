@@ -1,188 +1,143 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
-// package sctransaction implements smart contract transaction.
-// smart contract transaction is value transaction with special payload
 package sctransaction
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/tangle/payload"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
-	"io"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"time"
 )
 
-// TransactionEssence represents essence of ISCP transaction.
-// ISCP transaction is a value transaction as defined by Goshimmer's ledgerstate.TransactionEssence
-// Its payload contains metadata of the ISCP transaction essence.
-// The payload is parsed and the checked validity of its semantic. The parsed payload contains information
-// how elements of the overall value transaction are interpreted
-type TransactionEssence struct {
-	// value transaction with metadata as a payload (payload.GenericDataPayload)
-	*ledgerstate.TransactionEssence
+// region ParsedTransaction //////////////////////////////////////////////////////////////////
 
-	// ------ metadata of the value transaction
-	// if stateSection != nil, state section of the state anchor.
-	// if stateSection == nil, the transaction is not a state anchor (it may contain requests)
-	stateSection *StateSection
-	// requestSection list of request sections.
-	// it stateSection == nil, requestSection must contain at least 1 request section
-	requestSection []*RequestSection
-
-	// cachedProperties cached data of semantic analysis, for faster access
-	cachedProperties coretypes.SCTransactionProperties
+// ParsedTransaction is a wrapper of ledgerstate.Transaction. It provides additional validation
+// and methods for ISCP. Represents a set of pre-parsed outputs with target of specific chainID
+type ParsedTransaction struct{
+	*ledgerstate.Transaction
+	receivingChainID coretypes.ChainID
+	senderAddr       ledgerstate.Address
+	chainOutput      *ledgerstate.ChainOutput
+	requests         []RequestData
 }
 
-// NewTransactionEssence creates new sc transaction. It takes value transaction,
-// appends metadata to, serialized metadata and put it into the payload
-func NewTransactionEssence(vtx *ledgerstate.TransactionEssence, stateBlock *StateSection, requestBlocks []*RequestSection) (*TransactionEssence, error) {
-	ret := &TransactionEssence{
-		TransactionEssence: vtx,
-		stateSection:       stateBlock,
-		requestSection:     requestBlocks,
-	}
-	var buf bytes.Buffer
-	if err := ret.writeDataPayload(&buf); err != nil {
-		return nil, err
-	}
-	vtx.SetPayload(payload.NewGenericDataPayload(buf.Bytes()))
-	return ret, nil
-}
 
-// ParseValueTransaction parses dataPayload of the value transaction performs semantic analysis
-func ParseValueTransaction(vtx *ledgerstate.TransactionEssence) (*TransactionEssence, error) {
-	// parse data payload as smart contract metadata
-	p, ok := vtx.Payload().(*payload.GenericDataPayload)
-	if !ok {
-		return nil, xerrors.New("wrong payload type")
+// ParseNew
+func ParseNew(tx *ledgerstate.Transaction, sender ledgerstate.Address, receivingChainID coretypes.ChainID) *ParsedTransaction{
+	ret := &ParsedTransaction{
+		Transaction:      tx,
+		receivingChainID: receivingChainID,
+		senderAddr:       sender,
+		requests:         make([]RequestData, 0),
 	}
-	rdr := bytes.NewReader(p.Blob())
-	ret := &TransactionEssence{TransactionEssence: vtx}
-	if err := ret.readDataPayload(rdr); err != nil {
-		return nil, err
-	}
-	// semantic validation
-	if _, err := ret.Properties(); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-// Properties returns valid properties if sc transaction is semantically correct
-func (tx *TransactionEssence) Properties() (coretypes.SCTransactionProperties, error) {
-	if tx.cachedProperties != nil {
-		return tx.cachedProperties, nil
-	}
-	var err error
-	tx.cachedProperties, err = calcProperties(tx)
-	return tx.cachedProperties, err
-}
-
-// MustProperties returns valid properties if sc transaction is semantically correct or panics otherwise
-func (tx *TransactionEssence) MustProperties() coretypes.SCTransactionProperties {
-	ret, err := tx.Properties()
-	if err != nil {
-		panic(err)
+	for _, out := range tx.Essence().Outputs(){
+		if !out.Address().Equals(receivingChainID.AsAddress()){
+			continue
+		}
+		switch o := out.(type) {
+		case *ledgerstate.ExtendedLockedOutput:
+			ret.requests = append(ret.requests, RequestDataFromOutput(o))
+		case *ledgerstate.ChainOutput:
+			ret.chainOutput = o
+		default:
+			continue
+		}
 	}
 	return ret
 }
 
-// State returns state section and existence flag
-func (tx *TransactionEssence) State() (*StateSection, bool) {
-	return tx.stateSection, tx.stateSection != nil
+func (tx *ParsedTransaction) SenderAddress() ledgerstate.Address{
+	return tx.senderAddr
 }
 
-// MustState returns state section or panics if it does not exist
-func (tx *TransactionEssence) MustState() *StateSection {
-	if tx.stateSection == nil {
-		panic("MustState: state block expected")
-	}
-	return tx.stateSection
+func (tx *ParsedTransaction) Requests() []RequestData{
+	return tx.requests
 }
 
-// Requests returns requests
-func (tx *TransactionEssence) Requests() []*RequestSection {
-	return tx.requestSection
+
+// endregion /////////////////////////////////////////////////////////////////
+
+// region RequestData //////////////////////////////////////////////////////////////////
+
+type RequestData struct {
+	output *ledgerstate.ExtendedLockedOutput
+	parsedOk            bool
+	// senderAddress contract index
+	// - if state block present, it is hname of the sending contract in the chain of which state transaction it is
+	// - if state block is absent, it is uninterpreted (it means requests are sent by the wallet)
+	senderContractHname coretypes.Hname
+	// ID of the target smart contract
+	targetContractHname coretypes.Hname
+	// entry point code
+	entryPoint          coretypes.Hname
+	// request arguments, not decoded yet wrt blobRefs
+	args requestargs.RequestArgs
+	// decoded args, if not nil. If nil, it means it wasn't
+	// successfully decoded yet and can't be used in the batch for calculations in VM
+	solidArgs dict.Dict
 }
 
-// function writes bytes of the SC transaction-specific part
-func (tx *TransactionEssence) writeDataPayload(w io.Writer) error {
-	if tx.stateSection == nil && len(tx.requestSection) == 0 {
-		return errors.New("can't encode empty chain transaction")
+// RequestDataFromOutput
+func RequestDataFromOutput(output *ledgerstate.ExtendedLockedOutput) RequestData{
+	ret := RequestData{output: output}
+	if len(output.GetPayload()) < 3 * coretypes.HnameLength{
+		return ret
 	}
-	if len(tx.requestSection) > 127 {
-		return errors.New("max number of request sections 127 exceeded")
+	buf := bytes.NewReader(output.GetPayload())
+	_ = ret.senderContractHname.Read(buf)
+	_ = ret.targetContractHname.Read(buf)
+	_ = ret.entryPoint.Read(buf)
+	ret.args = requestargs.New(nil)
+	if err := ret.args.Read(buf); err != nil {
+		return ret
 	}
-	numRequests := byte(len(tx.requestSection))
-	b, err := encodeMetaByte(tx.stateSection != nil, numRequests)
-	if err != nil {
-		return err
-	}
-	if err = util.WriteByte(w, b); err != nil {
-		return err
-	}
-	if tx.stateSection != nil {
-		if err := tx.stateSection.Write(w); err != nil {
-			return err
-		}
-	}
-	for _, reqBlk := range tx.requestSection {
-		if err := reqBlk.Write(w); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// readDataPayload parses data stream of data payload to value transaction as smart contract meta data
-func (tx *TransactionEssence) readDataPayload(r io.Reader) error {
-	var hasState bool
-	var numRequests byte
-	if b, err := util.ReadByte(r); err != nil {
-		return err
-	} else {
-		hasState, numRequests = decodeMetaByte(b)
-	}
-	var stateBlock *StateSection
-	if hasState {
-		stateBlock = &StateSection{}
-		if err := stateBlock.Read(r); err != nil {
-			return err
-		}
-	}
-	reqBlks := make([]*RequestSection, numRequests)
-	for i := range reqBlks {
-		reqBlks[i] = &RequestSection{}
-		if err := reqBlks[i].Read(r); err != nil {
-			return err
-		}
-	}
-	tx.stateSection = stateBlock
-	tx.requestSection = reqBlks
-	return nil
-}
-
-func (tx *TransactionEssence) String() string {
-	ret := ""
-	stateBlock, ok := tx.State()
-	if ok {
-		vh := stateBlock.StateHash()
-		ret += fmt.Sprintf("State: color: %s statehash: %s, tx-ts: %s\n",
-			stateBlock.Color().String(),
-			vh.String(), tx.TransactionEssence.Timestamp(),
-		)
-	} else {
-		ret += "State: none\n"
-	}
-	for i, reqBlk := range tx.Requests() {
-		addr := reqBlk.Target()
-		ret += fmt.Sprintf("Req #%d: addr: %s code: %s\n", i,
-			util.Short(addr.String()), reqBlk.EntryPointCode().String())
-	}
+	ret.parsedOk = true
 	return ret
 }
+
+func (req *RequestData)Output() *ledgerstate.ExtendedLockedOutput{
+	return req.output
+}
+
+func (req *RequestData)ParsedOk() bool{
+	return req.parsedOk
+}
+
+func (req *RequestData)SenderContractHname() coretypes.Hname{
+	return req.senderContractHname
+}
+
+func (req *RequestData)TargetContractHname() coretypes.Hname{
+	return req.targetContractHname
+}
+
+func (req *RequestData)EntryPoint() coretypes.Hname{
+	return req.entryPoint
+}
+
+// SolidArgs returns solid args if decoded already or nil otherwise
+func (req *RequestData) SolidArgs() dict.Dict {
+	return req.solidArgs
+}
+
+// SolidifyArgs return true if solidified successfully
+func (req *RequestData) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
+	if req.solidArgs != nil {
+		return true, nil
+	}
+	solid, ok, err := req.args.SolidifyRequestArguments(reg)
+	if err != nil || !ok {
+		return ok, err
+	}
+	req.solidArgs = solid
+	if req.solidArgs == nil {
+		panic("req.solidArgs == nil")
+	}
+	return true, nil
+}
+
+func (req *RequestData)UnlockedNow(nowis time.Time) bool{
+	req.output.
+}
+
+// endregion /////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -22,7 +22,7 @@ func storeBlobCmd(args []string) {
 }
 
 func uploadBlob(fieldValues dict.Dict, forceWait bool) (hash hashing.HashValue) {
-	util.WithSCTransaction(func() (tx *sctransaction.TransactionEssence, err error) {
+	util.WithSCTransaction(func() (tx *sctransaction_old.TransactionEssence, err error) {
 		hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeApi(chainCommittee()), uploadQuorum)
 		if err == nil {
 			log.Printf("uploaded blob to chain -- hash: %s", hash)

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -79,7 +79,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.TransactionEssence) {
+func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction_old.TransactionEssence) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 

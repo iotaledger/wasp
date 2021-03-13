@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -209,7 +209,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	return s.Target().Hname() == root.Interface.Hname() && s.EntryPointCode() == coretypes.EntryPointInit
 }
 
-func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash hashing.HashValue, timestamp int64) (*sctransaction.TransactionEssence, error) {
+func (vmctx *VMContext) FinalizeTransactionEssence(blockIndex uint32, stateHash hashing.HashValue, timestamp int64) (*sctransaction_old.TransactionEssence, error) {
 	// add state block
 	err := vmctx.txBuilder.SetStateParams(blockIndex, stateHash, timestamp)
 	if err != nil {

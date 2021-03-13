@@ -3,7 +3,7 @@
 
 // package semantically analyzes parsed smart contract transaction
 // return object with transaction properties or error if semantically incorrect
-package sctransaction
+package sctransaction_old
 
 import (
 	"errors"

@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -40,10 +40,10 @@ type stateManager struct {
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
-	nextStateTransaction *sctransaction.TransactionEssence
+	nextStateTransaction *sctransaction_old.TransactionEssence
 
 	// state transaction which approves current state
-	approvingTransaction *sctransaction.TransactionEssence
+	approvingTransaction *sctransaction_old.TransactionEssence
 
 	// was state transition message of the current state sent to the consensus operator
 	consensusNotifiedOnStateTransition bool

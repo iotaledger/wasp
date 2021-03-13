@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -131,7 +131,7 @@ type StateTransitionMsg struct {
 	// new variable state
 	VariableState state.VirtualState
 	// corresponding state transaction
-	AnchorTransaction *sctransaction.TransactionEssence
+	AnchorTransaction *sctransaction_old.TransactionEssence
 	// processed requests
 	RequestIDs []*coretypes.RequestID
 	// is the state index last seen

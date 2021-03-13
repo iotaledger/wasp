@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -26,7 +26,7 @@ func WithTransaction(f func() (*transaction.Transaction, error)) *transaction.Tr
 	return tx
 }
 
-func WithSCTransaction(f func() (*sctransaction.TransactionEssence, error), forceWait ...bool) *sctransaction.TransactionEssence {
+func WithSCTransaction(f func() (*sctransaction_old.TransactionEssence, error), forceWait ...bool) *sctransaction_old.TransactionEssence {
 	tx, err := f()
 	log.Check(err)
 

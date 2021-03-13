@@ -1,4 +1,4 @@
-package sctransaction
+package sctransaction_old
 
 import (
 	"fmt"

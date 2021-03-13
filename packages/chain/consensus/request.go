@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -177,7 +177,7 @@ func takeRefs(reqs []*request) []vm.RequestRefWithFreeTokens {
 	ret := make([]vm.RequestRefWithFreeTokens, len(reqs))
 	for i := range ret {
 		ret[i] = vm.RequestRefWithFreeTokens{
-			RequestRef: sctransaction.RequestRef{
+			RequestRef: sctransaction_old.RequestRef{
 				Tx:    reqs[i].reqTx,
 				Index: reqs[i].reqId.Index(),
 			},

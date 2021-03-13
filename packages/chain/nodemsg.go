@@ -7,11 +7,11 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 )
 
 type StateTransactionMsg struct {
-	*sctransaction.TransactionEssence
+	*sctransaction_old.TransactionEssence
 }
 
 type TransactionInclusionLevelMsg struct {
@@ -24,7 +24,7 @@ type BalancesMsg struct {
 }
 
 type RequestMsg struct {
-	*sctransaction.TransactionEssence
+	*sctransaction_old.TransactionEssence
 	Index      uint16
 	FreeTokens coretypes.ColoredBalancesOld
 }
@@ -34,7 +34,7 @@ func (reqMsg *RequestMsg) RequestId() *coretypes.RequestID {
 	return &ret
 }
 
-func (reqMsg *RequestMsg) RequestBlock() *sctransaction.RequestSection {
+func (reqMsg *RequestMsg) RequestBlock() *sctransaction_old.RequestSection {
 	return reqMsg.Requests()[reqMsg.Index]
 }
 

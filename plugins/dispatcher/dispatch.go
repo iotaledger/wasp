@@ -9,11 +9,11 @@ import (
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/plugins/chains"
 )
 
-func dispatchState(tx *sctransaction.TransactionEssence) {
+func dispatchState(tx *sctransaction_old.TransactionEssence) {
 	txProp := tx.MustProperties() // should be validate while parsing
 	if !txProp.IsState() {
 		// not state transaction
@@ -40,7 +40,7 @@ func dispatchBalances(addr address.Address, bals map[valuetransaction.ID][]*bala
 	}
 }
 
-func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction.TransactionEssence) {
+func dispatchAddressUpdate(addr address.Address, balances map[valuetransaction.ID][]*balance.Balance, tx *sctransaction_old.TransactionEssence) {
 	log.Debugw("dispatchAddressUpdate", "addr", addr.String())
 
 	cmt := chains.GetChain((coretypes.ChainID)(addr))

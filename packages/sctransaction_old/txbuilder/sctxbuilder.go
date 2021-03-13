@@ -8,14 +8,14 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 )
 
 type Builder struct {
 	*vtxbuilder.Builder
-	stateBlock    *sctransaction.StateSection
-	requestBlocks []*sctransaction.RequestSection
+	stateBlock    *sctransaction_old.StateSection
+	requestBlocks []*sctransaction_old.RequestSection
 	mint          map[address.Address]int64
 }
 
@@ -30,7 +30,7 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 	}
 	return &Builder{
 		Builder:       vtxb,
-		requestBlocks: make([]*sctransaction.RequestSection, 0),
+		requestBlocks: make([]*sctransaction_old.RequestSection, 0),
 		mint:          make(map[address.Address]int64),
 	}, nil
 }
@@ -39,7 +39,7 @@ func (txb *Builder) Clone() *Builder {
 	ret := &Builder{
 		Builder:       txb.Builder.Clone(),
 		stateBlock:    txb.stateBlock.Clone(),
-		requestBlocks: make([]*sctransaction.RequestSection, len(txb.requestBlocks)),
+		requestBlocks: make([]*sctransaction_old.RequestSection, len(txb.requestBlocks)),
 		mint:          make(map[address.Address]int64),
 	}
 	for i := range ret.requestBlocks {
@@ -62,7 +62,7 @@ func (txb *Builder) CreateOriginStateSection(stateHash hashing.HashValue, origin
 	if err := txb.MintColoredTokens(*originAddress, balance.ColorIOTA, 1); err != nil {
 		return err
 	}
-	txb.stateBlock = sctransaction.NewStateSection(sctransaction.NewStateSectionParams{
+	txb.stateBlock = sctransaction_old.NewStateSection(sctransaction_old.NewStateSectionParams{
 		Color:      balance.ColorNew,
 		BlockIndex: 0,
 		StateHash:  stateHash,
@@ -81,7 +81,7 @@ func (txb *Builder) SetStateParams(stateIndex uint32, stateHash hashing.HashValu
 
 // AddRequestSectionWithTransfer adds request block with the request
 // token and adds respective outputs for the colored transfers
-func (txb *Builder) AddRequestSection(req *sctransaction.RequestSection) error {
+func (txb *Builder) AddRequestSection(req *sctransaction_old.RequestSection) error {
 	targetAddr := (address.Address)(req.Target().ChainID())
 	if err := txb.MintColoredTokens(targetAddr, balance.ColorIOTA, 1); err != nil {
 		return err
@@ -129,11 +129,11 @@ func (txb *Builder) mintNewTokens() error {
 	return nil
 }
 
-func (txb *Builder) Build(useAllInputs bool) (*sctransaction.TransactionEssence, error) {
+func (txb *Builder) Build(useAllInputs bool) (*sctransaction_old.TransactionEssence, error) {
 	if err := txb.mintNewTokens(); err != nil {
 		return nil, err
 	}
-	return sctransaction.NewTransactionEssence(
+	return sctransaction_old.NewTransactionEssence(
 		txb.Builder.Build(useAllInputs),
 		txb.stateBlock,
 		txb.requestBlocks,

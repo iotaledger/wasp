@@ -8,8 +8,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/sctransaction/txbuilder"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
+	"github.com/iotaledger/wasp/packages/sctransaction_old/txbuilder"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -24,7 +24,7 @@ type NewOriginTransactionParams struct {
 // - creates new origin transaction for the chain
 // - origin tx approves empty state
 // - origin tx mints chain token to the origin address. The address must be owned by the initial committee
-func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction.TransactionEssence, error) {
+func NewOriginTransaction(par NewOriginTransactionParams) (*sctransaction_old.TransactionEssence, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
 	if err != nil {
 		return nil, err
@@ -65,13 +65,13 @@ type NewRootInitRequestTransactionParams struct {
 // chain. At this moment it only is able to process this specific request
 // the request contains minimum data needed to bootstrap the chain
 // TransactionEssence must be signed by the same address which created origin transaction
-func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sctransaction.TransactionEssence, error) {
+func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*sctransaction_old.TransactionEssence, error) {
 	txb, err := txbuilder.NewFromOutputBalances(par.AllInputs)
 	if err != nil {
 		return nil, err
 	}
 	rootContractID := coretypes.NewContractID(par.ChainID, root.Interface.Hname())
-	initRequest := sctransaction.NewRequestSection(0, rootContractID, coretypes.EntryPointInit)
+	initRequest := sctransaction_old.NewRequestSection(0, rootContractID, coretypes.EntryPointInit)
 	args := requestargs.New(nil)
 	args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(par.ChainID))
 	args.AddEncodeSimple(root.ParamChainColor, codec.EncodeColor(par.ChainColor))

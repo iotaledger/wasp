@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -154,7 +154,7 @@ func decodePlayerStats(result *statequery.MapResult) (map[address.Address]*fairr
 	return playerStats, nil
 }
 
-func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.TransactionEssence, error) {
+func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction_old.TransactionEssence, error) {
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestPlaceBet,
@@ -165,7 +165,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transa
 	)
 }
 
-func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.TransactionEssence, error) {
+func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction_old.TransactionEssence, error) {
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,

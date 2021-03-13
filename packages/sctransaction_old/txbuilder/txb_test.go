@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +68,7 @@ func TestWithRequest(t *testing.T) {
 	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -99,7 +99,7 @@ func TestRequestSimple(t *testing.T) {
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
 	assert.NoError(t, err)
 
 	tx, err := txb.Build(false)
@@ -135,7 +135,7 @@ func TestMintOk(t *testing.T) {
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
 	assert.NoError(t, err)
 
 	txb.AddMinting(map[address.Address]int64{
@@ -176,7 +176,7 @@ func TestMintFail(t *testing.T) {
 	txb, err := NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(chainSigScheme.Address()), 0), 1))
 	assert.NoError(t, err)
 
 	txb.AddMinting(map[address.Address]int64{
@@ -203,7 +203,7 @@ func TestNextState(t *testing.T) {
 	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
 	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 5)
@@ -257,7 +257,7 @@ func TestNextState(t *testing.T) {
 	txb, err = NewFromOutputBalances(outs)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
 	tx, err = txb.Build(false)
@@ -302,7 +302,7 @@ func TestClone(t *testing.T) {
 	err = txb.CreateOriginStateSection(sh, &scAddress)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
@@ -342,7 +342,7 @@ func TestDeterminism(t *testing.T) {
 	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
 	txbClone := txb.Clone()
@@ -350,10 +350,10 @@ func TestDeterminism(t *testing.T) {
 	err = txb.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)
 	assert.NoError(t, err)
 
-	err = txb.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txb.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
-	err = txbClone.AddRequestSection(sctransaction.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
+	err = txbClone.AddRequestSection(sctransaction_old.NewRequestSection(0, coretypes.NewContractID(coretypes.ChainID(scAddress), 0), 1))
 	assert.NoError(t, err)
 
 	err = txbClone.MoveTokensToAddress(scAddress, balance.ColorIOTA, 50)

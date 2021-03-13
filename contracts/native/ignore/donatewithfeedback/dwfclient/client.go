@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )
@@ -27,7 +27,7 @@ func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *DWF
 	}
 }
 
-func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.TransactionEssence, error) {
+func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction_old.TransactionEssence, error) {
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
@@ -38,7 +38,7 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Tran
 	)
 }
 
-func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.TransactionEssence, error) {
+func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction_old.TransactionEssence, error) {
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestWithdraw,

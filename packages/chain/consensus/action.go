@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -277,7 +277,7 @@ func (op *operator) checkQuorum() {
 }
 
 // sets new currentState transaction and initializes respective variables
-func (op *operator) setNewSCState(stateTx *sctransaction.TransactionEssence, variableState state.VirtualState, synchronized bool) {
+func (op *operator) setNewSCState(stateTx *sctransaction_old.TransactionEssence, variableState state.VirtualState, synchronized bool) {
 	op.stateTx = stateTx
 	op.currentState = variableState
 	op.sentResultToLeader = nil

@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -221,7 +221,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx := [5]*sctransaction.TransactionEssence{}
+	tx := [5]*sctransaction_old.TransactionEssence{}
 	var err error
 
 	for i := 0; i < 5; i++ {

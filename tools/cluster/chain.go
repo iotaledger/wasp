@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -115,7 +115,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 	return pass
 }
 
-func (ch *Chain) DeployContract(name string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction.TransactionEssence, error) {
+func (ch *Chain) DeployContract(name string, progHashStr string, description string, initParams map[string]interface{}) (*sctransaction_old.TransactionEssence, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.TransactionEssence, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction_old.TransactionEssence, hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,
 		blob.VarFieldProgramBinary:      progBinary,
@@ -199,7 +199,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	return tx, programHash, nil
 }
 
-func (ch *Chain) DeployWasmContractOld(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction.TransactionEssence, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContractOld(name string, description string, progBinary []byte, initParams map[string]interface{}) (*sctransaction_old.TransactionEssence, hashing.HashValue, error) {
 	// upload binary to the chain
 	blobFieldValues := map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,

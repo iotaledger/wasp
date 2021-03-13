@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )
@@ -38,7 +38,7 @@ func (trc *TokenRegistryClient) OwnerAddress() address.Address {
 
 // MintAndRegister mints new Supply of colored tokens to some address and sends request
 // to register it in the TokenRegistry smart contract
-func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction.TransactionEssence, error) {
+func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sctransaction_old.TransactionEssence, error) {
 	args := make(map[string]interface{})
 	args[tokenregistry.VarReqDescription] = par.Description
 	if par.UserDefinedData != nil {
