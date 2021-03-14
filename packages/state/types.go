@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 
 	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
@@ -39,7 +40,7 @@ type VirtualState interface {
 // ResultBlock is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
-	RequestID() *coretypes.RequestID
+	RequestID() ledgerstate.OutputID
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values

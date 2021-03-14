@@ -53,8 +53,8 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 			Leader: par.leaderPeerIndex,
 		})
 	}
-	if err := runvm.RunComputationsAsync(ctx); err != nil {
-		op.log.Errorf("RunComputationsAsync: %v", err)
+	if err := runvm.MustRunComputationsAsync(ctx); err != nil {
+		op.log.Errorf("MustRunComputationsAsync: %v", err)
 	}
 }
 

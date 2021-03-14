@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"golang.org/x/crypto/blake2b"
 	"io"
 )
 
@@ -72,18 +73,22 @@ type Request struct {
 	output        *ledgerstate.ExtendedLockedOutput
 	senderAddress ledgerstate.Address
 	parsedOk      bool
+	minted        uint64
 	requestData   RequestMetadata
 	solidArgs     dict.Dict
 }
 
 // RequestDataFromOutput
-func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address) *Request {
+func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...uint64) *Request {
 	ret := &Request{output: output, senderAddress: senderAddr}
 	r, err := RequestPayloadFromBytes(output.GetPayload())
 	if err != nil {
 		return ret
 	}
 	ret.requestData = r
+	if len(minted) > 0 {
+		ret.minted = minted[0]
+	}
 	ret.parsedOk = true
 	return ret
 }
@@ -107,6 +112,14 @@ func (req *Request) GetMetadata() *RequestMetadata {
 	return &ret
 }
 
+func (req *Request) MintColor() ledgerstate.Color {
+	return blake2b.Sum256(req.Output().ID().Bytes())
+}
+
+func (req *Request) MintedAmount() uint64 {
+	return req.minted
+}
+
 // SolidArgs returns solid args if decoded already or nil otherwise
 func (req *Request) SolidArgs() dict.Dict {
 	return req.solidArgs
@@ -126,6 +139,14 @@ func (req *Request) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
 		panic("req.solidArgs == nil")
 	}
 	return true, nil
+}
+
+func OutputsFromRequests(requests ...*Request) []ledgerstate.Output {
+	ret := make([]ledgerstate.Output, len(requests))
+	for i, req := range requests {
+		ret[i] = req.Output()
+	}
+	return ret
 }
 
 // endregion /////////////////////////////////////////////////////////////////

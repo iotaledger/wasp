@@ -65,7 +65,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	}
 
 	wg.Add(1)
-	err = runvm.RunComputationsAsync(task)
+	err = runvm.MustRunComputationsAsync(task)
 	require.NoError(ch.Env.T, err)
 
 	wg.Wait()

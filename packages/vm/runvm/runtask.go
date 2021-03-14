@@ -2,48 +2,39 @@ package runvm
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-	"time"
-
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
-// RunComputationsAsync runs computations for the batch of requests in the background
+// MustRunComputationsAsync runs computations for the batch of requests in the background
 // This is the main entry point to the VM
-func RunComputationsAsync(ctx *vm.VMTask) error {
+// TODO timeout for VM. Gas limit
+func MustRunComputationsAsync(ctx *vm.VMTask) {
 	if len(ctx.Requests) == 0 {
-		return fmt.Errorf("RunComputationsAsync: must be at least 1 request")
+		panic("MustRunComputationsAsync: must be at least 1 request")
 	}
-
-	txb, err := statetxbuilder.New(address.Address(ctx.ChainID), ctx.Color, ctx.Balances)
-	if err != nil {
-		ctx.Log.Debugf("statetxbuilder.New: %v", err)
-		return err
-	}
-
-	// TODO 1 graceful shutdown of the running VM task (with daemon)
-	// TODO 2 timeout for VM. Gas limit
+	outputs := sctransaction.OutputsFromRequests(ctx.Requests...)
+	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)
 
 	go runTask(ctx, txb)
-	return nil
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
+func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	task.Log.Debugw("runTask IN",
-		"chainID", task.ChainID.String(),
+		"chainID", task.ChainInput.Address().Base58(),
 		"timestamp", task.Timestamp,
-		"state index", task.VirtualState.BlockIndex(),
+		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx, err := vmcontext.NewVMContext(task, txb)
+	vmctx, err := vmcontext.MustNewVMContext(task, txb)
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("runTask.createVMContext: %v", err))
+		task.OnFinish(nil, nil, fmt.Errorf("runTask.MustNewVMContext: %v", err))
 		return
 	}
 
@@ -54,12 +45,12 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
-	timestamp := task.Timestamp
-	for _, reqRef := range task.Requests {
-		if reqRef.RequestSection().SolidArgs() == nil {
+	timestamp := task.Timestamp.UnixNano()
+	for _, req := range task.Requests {
+		if req.SolidArgs() == nil {
 			task.Log.Panicf("inconsistency: request args have not been solidified")
 		}
-		vmctx.RunTheRequest(reqRef, timestamp)
+		vmctx.RunTheRequest(req, timestamp)
 		lastStateUpdate, lastResult, lastErr = vmctx.GetResult()
 
 		stateUpdates = append(stateUpdates, lastStateUpdate)
@@ -99,8 +90,8 @@ func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
 		"batch size", task.ResultBlock.Size(),
 		"block index", task.ResultBlock.StateIndex(),
 		"variable state hash", stateHash.String(),
-		"tx essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
-		"tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
+		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
+		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
 	)
 	task.OnFinish(lastResult, lastErr, nil)
 }

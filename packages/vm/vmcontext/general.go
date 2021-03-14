@@ -107,9 +107,9 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 }
 
 func (vmctx *VMContext) RequestID() coretypes.RequestID {
-	return *vmctx.reqRef.RequestID()
+	return *vmctx.req.RequestID()
 }
 
 func (vmctx *VMContext) NumFreeMinted() int64 {
-	return vmctx.reqRef.Tx.MustProperties().NumFreeMintedTokens()
+	return vmctx.req.Tx.MustProperties().NumFreeMintedTokens()
 }

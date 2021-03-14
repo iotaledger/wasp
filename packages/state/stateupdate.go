@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -10,18 +11,14 @@ import (
 )
 
 type stateUpdate struct {
-	requestID coretypes.RequestID
+	requestID ledgerstate.OutputID
 	timestamp int64
 	mutations buffered.MutationSequence
 }
 
-func NewStateUpdate(reqid *coretypes.RequestID) StateUpdate {
-	var req coretypes.RequestID
-	if reqid != nil {
-		req = *reqid
-	}
+func NewStateUpdate(reqid ledgerstate.OutputID) StateUpdate {
 	return &stateUpdate{
-		requestID: req,
+		requestID: reqid,
 		mutations: buffered.NewMutationSequence(),
 	}
 }
@@ -53,8 +50,8 @@ func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
 	return su
 }
 
-func (su *stateUpdate) RequestID() *coretypes.RequestID {
-	return &su.requestID
+func (su *stateUpdate) RequestID() ledgerstate.OutputID {
+	return su.requestID
 }
 
 func (su *stateUpdate) Mutations() buffered.MutationSequence {
@@ -62,7 +59,7 @@ func (su *stateUpdate) Mutations() buffered.MutationSequence {
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
-	if err := su.requestID.Write(w); err != nil {
+	if _, err := w.Write(su.requestID.Bytes()); err != nil {
 		return err
 	}
 	if err := su.mutations.Write(w); err != nil {
@@ -72,7 +69,8 @@ func (su *stateUpdate) Write(w io.Writer) error {
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
-	if err := su.requestID.Read(r); err != nil {
+	var rid ledgerstate.OutputID
+	if n, err := r.Read(rid[:]); err != nil || n != ledgerstate.OutputIDLength {
 		return err
 	}
 	if err := su.mutations.Read(r); err != nil {
