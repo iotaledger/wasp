@@ -85,7 +85,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	}
 
 	// ----------- create origin transaction
-	originTx, err := sctransaction.NewOriginTransaction(sctransaction.NewOriginTransactionParams{
+	originTx, err := sctransaction.NewChainOriginTransaction(sctransaction.NewChainOriginTransactionParams{
 		OriginAddress:             chainAddr,
 		OriginatorSignatureScheme: par.OriginatorSigScheme,
 		AllInputs:                 allOuts,

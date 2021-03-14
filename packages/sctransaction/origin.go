@@ -8,32 +8,37 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-// NewOriginTransactionParams parameters of the origin transaction
-type NewOriginTransactionParams struct {
+// NewChainOriginTransactionParams parameters of the origin transaction
+type NewChainOriginTransactionParams struct {
+	// ed25519 key pair used to spend inputs
+	KeyPair *ed25519.KeyPair
+	// state controller's address of the new chain.
 	StateAddress ledgerstate.Address
-	KeyPair      ed25519.KeyPair
-	AllInputs    []ledgerstate.Output
-	Balance      map[ledgerstate.Color]uint64
+	// all inputs to take tokens from. Compressed in the output
+	AllInputs []ledgerstate.Output
+	// Initial balance of the chain's state. Must be at least dust level
+	Balance map[ledgerstate.Color]uint64
 }
 
-// NewOriginTransaction creates new origin transaction for the chain
-// returns the transaction and newly minted
-func NewOriginTransaction(par NewOriginTransactionParams) (*ledgerstate.Transaction, coretypes.ChainID, error) {
+// NewChainOriginTransaction creates new origin transaction for the self-governed chain
+// returns the transaction and newly minted chain ID
+func NewChainOriginTransaction(par NewChainOriginTransactionParams) (*ledgerstate.Transaction, coretypes.ChainID, error) {
+	walletAddr := ledgerstate.NewED25519Address(par.KeyPair.PublicKey)
 	txb := utxoutil.NewBuilder(par.AllInputs...)
 	if err := txb.AddNewChainMint(par.Balance, par.StateAddress, hashing.NilHash[:]); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
-	addr := ledgerstate.NewED25519Address(par.KeyPair.PublicKey)
-	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
+	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
+	if err := txb.AddReminderOutputIfNeeded(walletAddr, nil, true); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
-	tx, err := txb.BuildWithED25519(&par.KeyPair)
+	tx, err := txb.BuildWithED25519(par.KeyPair)
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
+	// determine aliasAddress of the newly minted chain
 	chained, err := utxoutil.GetSingleChainedOutput(tx.Essence())
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
@@ -48,7 +53,7 @@ func NewOriginTransaction(par NewOriginTransactionParams) (*ledgerstate.Transact
 type NewRootInitRequestTransactionParams struct {
 	ChainID     coretypes.ChainID
 	Description string
-	KeyPair     ed25519.KeyPair
+	KeyPair     *ed25519.KeyPair
 	AllInputs   []ledgerstate.Output
 }
 
@@ -60,11 +65,15 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*le
 	txb := utxoutil.NewBuilder(par.AllInputs...)
 
 	args := requestargs.New(nil)
-	args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(par.ChainID))
-	args.AddEncodeSimple(root.ParamDescription, codec.EncodeString(par.Description))
 
-	data := RequestData{
-		TargetContractHname: root.Interface.Hname(),
+	const paramChainID = "$$chainid$$"
+	const paramDescription = "$$description$$"
+
+	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(par.ChainID))
+	args.AddEncodeSimple(paramDescription, codec.EncodeString(par.Description))
+
+	data := RequestMetadata{
+		TargetContractHname: coretypes.Hn("root"),
 		EntryPoint:          coretypes.EntryPointInit,
 		Args:                args,
 	}
@@ -78,7 +87,7 @@ func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*le
 	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
 		return nil, err
 	}
-	tx, err := txb.BuildWithED25519(&par.KeyPair)
+	tx, err := txb.BuildWithED25519(par.KeyPair)
 	if err != nil {
 		return nil, err
 	}

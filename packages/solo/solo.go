@@ -197,7 +197,7 @@ func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name 
 	}
 	env.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
 	var err error
-	ret.StateTx, err = sctransaction.NewOriginTransaction(sctransaction.NewOriginTransactionParams{
+	ret.StateTx, err = sctransaction.NewChainOriginTransaction(sctransaction.NewChainOriginTransactionParams{
 		OriginAddress:             ret.ChainAddress,
 		OriginatorSignatureScheme: ret.OriginatorSigScheme,
 		AllInputs:                 env.utxoDB.GetAddressOutputs(ret.OriginatorAddress),

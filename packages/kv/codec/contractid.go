@@ -13,5 +13,5 @@ func DecodeContractID(b []byte) (coretypes.ContractID, bool, error) {
 }
 
 func EncodeContractID(value coretypes.ContractID) []byte {
-	return value[:]
+	return value.Bytes()
 }

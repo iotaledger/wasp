@@ -72,7 +72,7 @@ type Request struct {
 	output        *ledgerstate.ExtendedLockedOutput
 	senderAddress ledgerstate.Address
 	parsedOk      bool
-	requestData   RequestData
+	requestData   RequestMetadata
 	solidArgs     dict.Dict
 }
 
@@ -83,7 +83,7 @@ func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledg
 	if err != nil {
 		return ret
 	}
-	ret.requestData = *r
+	ret.requestData = r
 	ret.parsedOk = true
 	return ret
 }
@@ -96,12 +96,12 @@ func (req *Request) ParsedOk() bool {
 	return req.parsedOk
 }
 
-func (req *Request) SetData(d *RequestData) {
+func (req *Request) SetMetadata(d *RequestMetadata) {
 	req.requestData = *d
 	req.requestData.Args = d.Args.Clone()
 }
 
-func (req *Request) GetData() *RequestData {
+func (req *Request) GetMetadata() *RequestMetadata {
 	ret := req.requestData
 	ret.Args = req.requestData.Args.Clone()
 	return &ret
@@ -130,7 +130,10 @@ func (req *Request) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
 
 // endregion /////////////////////////////////////////////////////////////////
 
-type RequestData struct {
+// region RequestMetadata  ///////////////////////////////////////////////////////
+
+// RequestMetadata represents content of the data payload of the output
+type RequestMetadata struct {
 	SenderContractHname coretypes.Hname
 	// ID of the target smart contract
 	TargetContractHname coretypes.Hname
@@ -140,21 +143,18 @@ type RequestData struct {
 	Args requestargs.RequestArgs
 }
 
-func RequestPayloadFromBytes(data []byte) (*RequestData, error) {
-	ret := &RequestData{}
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return ret, nil
+func RequestPayloadFromBytes(data []byte) (ret RequestMetadata, err error) {
+	err = ret.Read(bytes.NewReader(data))
+	return
 }
 
-func (p *RequestData) Bytes() []byte {
+func (p *RequestMetadata) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = p.Write(&buf)
 	return buf.Bytes()
 }
 
-func (p *RequestData) Write(w io.Writer) error {
+func (p *RequestMetadata) Write(w io.Writer) error {
 	if err := p.SenderContractHname.Write(w); err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (p *RequestData) Write(w io.Writer) error {
 	return nil
 }
 
-func (p *RequestData) Read(r io.Reader) error {
+func (p *RequestMetadata) Read(r io.Reader) error {
 	if err := p.SenderContractHname.Read(r); err != nil {
 		return err
 	}
@@ -185,3 +185,5 @@ func (p *RequestData) Read(r io.Reader) error {
 	}
 	return nil
 }
+
+// endregion

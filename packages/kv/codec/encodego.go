@@ -2,9 +2,8 @@ package codec
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
@@ -35,13 +34,11 @@ func Encode(v interface{}) []byte {
 		return EncodeHashValue(*vt)
 	case hashing.HashValue:
 		return EncodeHashValue(vt)
-	case *address.Address:
-		return EncodeAddress(*vt)
-	case address.Address:
+	case ledgerstate.Address:
 		return EncodeAddress(vt)
-	case *balance.Color:
+	case *ledgerstate.Color:
 		return EncodeColor(*vt)
-	case balance.Color:
+	case ledgerstate.Color:
 		return EncodeColor(vt)
 	case *coretypes.ChainID:
 		return EncodeChainID(*vt)

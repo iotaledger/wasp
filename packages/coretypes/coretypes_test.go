@@ -103,7 +103,7 @@ func TestAgentID(t *testing.T) {
 	require.True(t, !aid1.IsAddress())
 
 	contrIdBack := aid1.MustContractID()
-	require.EqualValues(t, contrId, contrIdBack)
+	require.EqualValues(t, contrId, *contrIdBack)
 
 	t.Logf("addr agent ID = %s", aid.String())
 	t.Logf("contract agent ID = %s", aid1.String())

@@ -4,8 +4,10 @@
 package coretypes
 
 import (
+	"bytes"
 	"errors"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 	"io"
 )
@@ -19,6 +21,11 @@ import (
 // An attempt to interpret the AgentID in the wrong way invokes panic
 type AgentID struct {
 	a interface{} // one of 2: *ContractID or ledgerstate.Address
+}
+
+func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
+	err = ret.Read(bytes.NewReader(data))
+	return
 }
 
 // NewAgentIDFromContractID makes AgentID from ContractID
@@ -42,9 +49,15 @@ func NewRandomAgentID() AgentID {
 	return NewAgentIDFromContractID(NewContractID(chainID, hname))
 }
 
+func (a *AgentID) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = a.Write(&buf)
+	return buf.Bytes()
+}
+
 // IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 // This is based on the assumption that fro coretypes.Hname 0 is a reserved value
-func (a AgentID) IsAddress() bool {
+func (a *AgentID) IsAddress() bool {
 	switch a.a.(type) {
 	case *ContractID:
 		return false
@@ -55,17 +68,17 @@ func (a AgentID) IsAddress() bool {
 }
 
 // MustAddress takes address or panic if not address
-func (a AgentID) MustAddress() ledgerstate.Address {
+func (a *AgentID) MustAddress() ledgerstate.Address {
 	return a.a.(ledgerstate.Address)
 }
 
 // MustContractID takes contract ID or panics if not a contract ID
-func (a AgentID) MustContractID() ContractID {
-	return *a.a.(*ContractID)
+func (a *AgentID) MustContractID() *ContractID {
+	return a.a.(*ContractID)
 }
 
 // String human readable string
-func (a AgentID) String() string {
+func (a *AgentID) String() string {
 	if a.IsAddress() {
 		return "A/" + a.MustAddress().Base58()
 	}
@@ -101,31 +114,43 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 	return
 }
 
-// ReadAgentID decodes from binary representation
-func ReadAgentID(r io.Reader, agentID *AgentID) error {
-	var b [1]byte
-	if n, err := r.Read(b[:]); err != nil || n != 1 {
-		return ErrWrongDataLength
+func (a *AgentID) Write(w io.Writer) error {
+	if err := util.WriteBoolByte(w, a.IsAddress()); err != nil {
+		return err
 	}
-	switch b[0] {
-	case 'A':
-		var a [ledgerstate.AddressLength]byte
-		if n, err := r.Read(a[:]); err != nil || n != ledgerstate.AddressLength {
+	if a.IsAddress() {
+		if _, err := w.Write(a.MustAddress().Bytes()); err != nil {
+			return err
+		}
+	} else {
+		if err := a.MustContractID().Write(w); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *AgentID) Read(r io.Reader) error {
+	var isAddress bool
+	if err := util.ReadBoolByte(r, &isAddress); err != nil {
+		return err
+	}
+	if isAddress {
+		var data [ledgerstate.AddressLength]byte
+		if n, err := r.Read(data[:]); err != nil || n != ledgerstate.AddressLength {
 			return ErrWrongDataLength
 		}
-		addr, _, err := ledgerstate.AddressFromBytes(a[:])
+		t, _, err := ledgerstate.AddressFromBytes(data[:])
 		if err != nil {
-			return err
+			return xerrors.Errorf("failed parsing address: %v", err)
 		}
-		agentID.a = addr
-	case 'C':
-		var cid ContractID
-		if err := cid.Read(r); err != nil {
-			return err
-		}
-		agentID.a = &cid
-	default:
-		return xerrors.New("error while reading AgentID")
+		a.a = t
+		return nil
 	}
+	cid := new(ContractID)
+	if err := cid.Read(r); err != nil {
+		return err
+	}
+	a.a = cid
 	return nil
 }

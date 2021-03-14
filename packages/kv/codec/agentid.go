@@ -13,5 +13,5 @@ func DecodeAgentID(b []byte) (coretypes.AgentID, bool, error) {
 }
 
 func EncodeAgentID(value coretypes.AgentID) []byte {
-	return value[:]
+	return value.Bytes()
 }
