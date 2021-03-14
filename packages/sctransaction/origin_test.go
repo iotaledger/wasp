@@ -18,12 +18,8 @@ func TestCreateOrigin(t *testing.T) {
 	require.EqualValues(t, utxodb.RequestFundsAmount, u.BalanceIOTA(addr))
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
 
-	tx, chainID, err := NewChainOriginTransaction(NewChainOriginTransactionParams{
-		KeyPair:      user,
-		StateAddress: stateAddr,
-		AllInputs:    u.GetAddressOutputs(addr),
-		Balance:      map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100},
-	})
+	bal100 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
 	t.Logf("New chain alias: %s", chainID.Base58())
@@ -43,12 +39,8 @@ func TestInitChain(t *testing.T) {
 	require.EqualValues(t, utxodb.RequestFundsAmount, u.BalanceIOTA(addr))
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
 
-	tx, chainID, err := NewChainOriginTransaction(NewChainOriginTransactionParams{
-		KeyPair:      user,
-		StateAddress: stateAddr,
-		AllInputs:    u.GetAddressOutputs(addr),
-		Balance:      map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100},
-	})
+	bal100 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
 	t.Logf("New chain alias: %s", chainID.Base58())
@@ -56,12 +48,7 @@ func TestInitChain(t *testing.T) {
 	err = u.AddTransaction(tx)
 	require.NoError(t, err)
 
-	tx, err = NewRootInitRequestTransaction(NewRootInitRequestTransactionParams{
-		ChainID:     chainID,
-		Description: "test chain",
-		KeyPair:     user,
-		AllInputs:   u.GetAddressOutputs(addr),
-	})
+	tx, err = NewRootInitRequestTransaction(user, chainID, "test chain", u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
 	err = u.AddTransaction(tx)

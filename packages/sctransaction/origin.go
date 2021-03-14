@@ -10,31 +10,23 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-// NewChainOriginTransactionParams parameters of the origin transaction
-type NewChainOriginTransactionParams struct {
-	// ed25519 key pair used to spend inputs
-	KeyPair *ed25519.KeyPair
-	// state controller's address of the new chain.
-	StateAddress ledgerstate.Address
-	// all inputs to take tokens from. Compressed in the output
-	AllInputs []ledgerstate.Output
-	// Initial balance of the chain's state. Must be at least dust level
-	Balance map[ledgerstate.Color]uint64
-}
-
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
-func NewChainOriginTransaction(par NewChainOriginTransactionParams) (*ledgerstate.Transaction, coretypes.ChainID, error) {
-	walletAddr := ledgerstate.NewED25519Address(par.KeyPair.PublicKey)
-	txb := utxoutil.NewBuilder(par.AllInputs...)
-	if err := txb.AddNewChainMint(par.Balance, par.StateAddress, hashing.NilHash[:]); err != nil {
+func NewChainOriginTransaction(
+	keyPair *ed25519.KeyPair,
+	stateAddress ledgerstate.Address,
+	balance map[ledgerstate.Color]uint64,
+	allInputs ...ledgerstate.Output) (*ledgerstate.Transaction, coretypes.ChainID, error) {
+	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
+	txb := utxoutil.NewBuilder(allInputs...)
+	if err := txb.AddNewChainMint(balance, stateAddress, hashing.NilHash[:]); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
 	if err := txb.AddReminderOutputIfNeeded(walletAddr, nil, true); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
-	tx, err := txb.BuildWithED25519(par.KeyPair)
+	tx, err := txb.BuildWithED25519(keyPair)
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
@@ -50,44 +42,41 @@ func NewChainOriginTransaction(par NewChainOriginTransactionParams) (*ledgerstat
 	return tx, chainID, nil
 }
 
-type NewRootInitRequestTransactionParams struct {
-	ChainID     coretypes.ChainID
-	Description string
-	KeyPair     *ed25519.KeyPair
-	AllInputs   []ledgerstate.Output
-}
-
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
 // chain. At this moment it only is able to process this specific request
 // the request contains minimum data needed to bootstrap the chain
 // TransactionEssence must be signed by the same address which created origin transaction
-func NewRootInitRequestTransaction(par NewRootInitRequestTransactionParams) (*ledgerstate.Transaction, error) {
-	txb := utxoutil.NewBuilder(par.AllInputs...)
+func NewRootInitRequestTransaction(
+	keyPair *ed25519.KeyPair,
+	chainID coretypes.ChainID,
+	description string,
+	allInputs ...ledgerstate.Output) (*ledgerstate.Transaction, error) {
+	txb := utxoutil.NewBuilder(allInputs...)
 
 	args := requestargs.New(nil)
 
 	const paramChainID = "$$chainid$$"
 	const paramDescription = "$$description$$"
 
-	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(par.ChainID))
-	args.AddEncodeSimple(paramDescription, codec.EncodeString(par.Description))
+	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(chainID))
+	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
 
 	data := RequestMetadata{
 		TargetContractHname: coretypes.Hn("root"),
 		EntryPoint:          coretypes.EntryPointInit,
 		Args:                args,
 	}
-	err := txb.AddExtendedOutputSimple(par.ChainID.AsAddress(), data.Bytes(), map[ledgerstate.Color]uint64{
+	err := txb.AddExtendedOutputSimple(chainID.AsAddress(), data.Bytes(), map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 1,
 	})
 	if err != nil {
 		return nil, err
 	}
-	addr := ledgerstate.NewED25519Address(par.KeyPair.PublicKey)
+	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
 		return nil, err
 	}
-	tx, err := txb.BuildWithED25519(par.KeyPair)
+	tx, err := txb.BuildWithED25519(keyPair)
 	if err != nil {
 		return nil, err
 	}
