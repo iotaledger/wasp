@@ -32,10 +32,12 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx, err := vmcontext.MustNewVMContext(task, txb)
+	vmctx := vmcontext.MustNewVMContext(task, txb)
+
+	err := txb.ConsumeChainInput(task.ChainInput.Address())
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("runTask.MustNewVMContext: %v", err))
-		return
+		// chain input must be present
+		task.Log.Panicf("runTask: %v", err)
 	}
 
 	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
@@ -46,9 +48,12 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
 	timestamp := task.Timestamp.UnixNano()
-	for _, req := range task.Requests {
+	for i, req := range task.Requests {
 		if req.SolidArgs() == nil {
 			task.Log.Panicf("inconsistency: request args have not been solidified")
+		}
+		if err = txb.ConsumeByIndex(i); err != nil {
+			task.Log.Panicf("runTask: %v", err)
 		}
 		vmctx.RunTheRequest(req, timestamp)
 		lastStateUpdate, lastResult, lastErr = vmctx.GetResult()

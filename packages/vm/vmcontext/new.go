@@ -21,7 +21,6 @@ import (
 type VMContext struct {
 	// same for the block
 	chainID      coretypes.ChainID
-	chainOutput  *ledgerstate.ChainOutput
 	chainOwnerID coretypes.AgentID
 	processors   *processors.ProcessorCache
 	txBuilder    *utxoutil.Builder  // mutated
@@ -58,13 +57,8 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) *VMContext {
 	if err != nil {
 		task.Log.Panicf("MustNewVMContext: %v", err)
 	}
-	chainOutput, err := txb.ConsumeChainInputToOutput(task.ChainInput.Address())
-	if err != nil {
-		task.Log.Panicf("MustNewVMContext: %v", err)
-	}
 	return &VMContext{
 		chainID:      chainID,
-		chainOutput:  chainOutput,
 		txBuilder:    txb,
 		virtualState: task.VirtualState.Clone(),
 		processors:   task.Processors,
