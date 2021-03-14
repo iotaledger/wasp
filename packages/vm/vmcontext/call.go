@@ -94,7 +94,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 
 func (vmctx *VMContext) callerIsRoot() bool {
 	caller := vmctx.Caller()
-	if caller.IsAddress() {
+	if caller.IsNonAliasAddress() {
 		return false
 	}
 	return caller.MustContractID().Hname() == root.Interface.Hname()

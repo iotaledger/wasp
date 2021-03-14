@@ -23,24 +23,25 @@ type VMContext struct {
 	chainID      coretypes.ChainID
 	chainOwnerID coretypes.AgentID
 	processors   *processors.ProcessorCache
-	txBuilder    *utxoutil.Builder  // mutated
-	virtualState state.VirtualState // mutated
+	txBuilder    *utxoutil.Builder         // mutated
+	virtualState state.VirtualState        // mutated
+	incoming     coretypes.ColoredBalances // after fees
 	log          *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
 	feeColor           ledgerstate.Color
-	ownerFee           int64
-	validatorFee       int64
+	ownerFee           uint64
+	validatorFee       uint64
 	// request context
-	entropy        hashing.HashValue // mutates with each request
-	req            *sctransaction.Request
-	reqHname       coretypes.Hname
-	contractRecord *root.ContractRecord
-	timestamp      int64
-	stateUpdate    state.StateUpdate
-	lastError      error     // mutated
-	lastResult     dict.Dict // mutated. Used only by 'solo'
-	callStack      []*callContext
+	entropy             hashing.HashValue // mutates with each request
+	req                 *sctransaction.Request
+	targetContractHname coretypes.Hname
+	contractRecord      *root.ContractRecord
+	timestamp           int64
+	stateUpdate         state.StateUpdate
+	lastError           error     // mutated
+	lastResult          dict.Dict // mutated. Used only by 'solo'
+	callStack           []*callContext
 }
 
 type callContext struct {
@@ -64,6 +65,7 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) *VMContext {
 		processors:   task.Processors,
 		log:          task.Log,
 		entropy:      task.Entropy,
+		timestamp:    task.Timestamp.UnixNano(),
 		callStack:    make([]*callContext, 0),
 	}
 }

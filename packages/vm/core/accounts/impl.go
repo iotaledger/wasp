@@ -71,7 +71,7 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(ctx.Caller().IsAddress(), "caller must be an address")
+	a.Require(ctx.Caller().IsNonAliasAddress(), "caller must be an address")
 
 	bals, ok := GetAccountBalances(state, ctx.Caller())
 	if !ok {
@@ -110,7 +110,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.withdrawToChain.begin: caller agentID: %s myContractId: %s",
 		caller.String(), cid.String())
 
-	a.Require(!caller.IsAddress(), "caller must be a smart contract")
+	a.Require(!caller.IsNonAliasAddress(), "caller must be a smart contract")
 
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {

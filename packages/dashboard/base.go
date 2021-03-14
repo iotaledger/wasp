@@ -90,7 +90,7 @@ const tplBase = `
 	{{ $chainid := index . 0 }}
 	{{ $agentid := index . 1 }}
 	<a href="{{ uri "chainAccount" $chainid (replace $agentid.String "/" ":" 1) }}"><tt>{{ $agentid }}</tt></a>
-	{{if $agentid.IsAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
+	{{if $agentid.IsNonAliasAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
 {{end}}
 
 {{define "balances"}}

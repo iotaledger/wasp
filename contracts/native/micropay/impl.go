@@ -21,7 +21,7 @@ func initialize(_ coretypes.Sandbox) (dict.Dict, error) {
 
 func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(ctx.Caller().IsAddress(), "micropay.publicKey: caller must be an address")
+	a.Require(ctx.Caller().IsNonAliasAddress(), "micropay.publicKey: caller must be an address")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
@@ -42,7 +42,7 @@ func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(ctx.Caller().IsAddress(), "payer must be an address")
+	a.Require(ctx.Caller().IsNonAliasAddress(), "payer must be an address")
 	payerAddr := ctx.Caller().MustAddress()
 
 	a.Require(getPublicKey(ctx.State(), payerAddr, a) != nil,
@@ -76,7 +76,7 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(ctx.Caller().IsAddress(), "payer must be an address")
+	a.Require(ctx.Caller().IsNonAliasAddress(), "payer must be an address")
 	payerAddr := ctx.Caller().MustAddress()
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
 
@@ -125,7 +125,7 @@ func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamPayments - array of encoded payments
 func settle(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(ctx.Caller().IsAddress(), "caller must be an address")
+	a.Require(ctx.Caller().IsNonAliasAddress(), "caller must be an address")
 	targetAddr := ctx.Caller().MustAddress()
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())

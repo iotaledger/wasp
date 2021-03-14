@@ -14,6 +14,10 @@ type ColoredBalances struct {
 	ledgerstate.ColoredBalances
 }
 
+func NewColoredBalances(b ledgerstate.ColoredBalances) ColoredBalances {
+	return ColoredBalances{ColoredBalances: *b.Clone()}
+}
+
 // NewFromMap new ColoredBalancesOld from map
 func NewFromMap(m map[ledgerstate.Color]uint64) ColoredBalances {
 	return ColoredBalances{*ledgerstate.NewColoredBalances(m)}

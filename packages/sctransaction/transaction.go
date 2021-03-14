@@ -97,6 +97,28 @@ func (req *Request) Output() *ledgerstate.ExtendedLockedOutput {
 	return req.output
 }
 
+func (req *Request) SenderAddress() ledgerstate.Address {
+	return req.senderAddress
+}
+
+func (req *Request) SenderAgentID() (ret coretypes.AgentID) {
+	if req.senderAddress.Type() == ledgerstate.AliasAddressType {
+		chainID, err := coretypes.NewChainIDFromAddress(req.senderAddress)
+		if err != nil {
+			panic(err)
+		}
+		senderContractID := coretypes.NewContractID(chainID, req.requestData.SenderContractHname)
+		ret = coretypes.NewAgentIDFromContractID(senderContractID)
+	} else {
+		var err error
+		ret, err = coretypes.NewAgentIDFromAddress(req.senderAddress)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return
+}
+
 func (req *Request) ParsedOk() bool {
 	return req.parsedOk
 }

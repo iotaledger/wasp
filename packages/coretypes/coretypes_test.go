@@ -93,14 +93,14 @@ func TestAgentID(t *testing.T) {
 
 	aid, err = NewAgentIDFromAddress(addr)
 	require.NoError(t, err)
-	require.True(t, aid.IsAddress())
+	require.True(t, aid.IsNonAliasAddress())
 
 	addr1 := aid.MustAddress()
 	require.EqualValues(t, addr.Array(), addr1.Array())
 
 	contrId := NewContractID(chid, Hn("22"))
 	aid1 := NewAgentIDFromContractID(contrId)
-	require.True(t, !aid1.IsAddress())
+	require.True(t, !aid1.IsNonAliasAddress())
 
 	contrIdBack := aid1.MustContractID()
 	require.EqualValues(t, contrId, *contrIdBack)

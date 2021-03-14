@@ -158,7 +158,7 @@ func isAuthorizedToDeploy(ctx coretypes.Sandbox) bool {
 		// chain owner is always authorized
 		return true
 	}
-	if !caller.IsAddress() {
+	if !caller.IsNonAliasAddress() {
 		// smart contract from the same chain is always authorize
 		return caller.MustContractID().ChainID() == ctx.ContractID().ChainID()
 	}

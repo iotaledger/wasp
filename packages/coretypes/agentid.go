@@ -17,7 +17,7 @@ import (
 //    interpreted as address.Address type (see MustAddress).
 //  - alternatively, it can represent a smart contract on the ISCP. In this case it can be interpreted as
 //    a coretypes.ContractID type (see MustContractID)
-// Type of ID represented by the AgentID can be recognized with IsAddress call.
+// Type of ID represented by the AgentID can be recognized with IsNonAliasAddress call.
 // An attempt to interpret the AgentID in the wrong way invokes panic
 type AgentID struct {
 	a interface{} // one of 2: *ContractID or ledgerstate.Address
@@ -55,9 +55,9 @@ func (a *AgentID) Bytes() []byte {
 	return buf.Bytes()
 }
 
-// IsAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
+// IsNonAliasAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 // This is based on the assumption that fro coretypes.Hname 0 is a reserved value
-func (a *AgentID) IsAddress() bool {
+func (a *AgentID) IsNonAliasAddress() bool {
 	switch a.a.(type) {
 	case *ContractID:
 		return false
@@ -79,7 +79,7 @@ func (a *AgentID) MustContractID() *ContractID {
 
 // String human readable string
 func (a *AgentID) String() string {
-	if a.IsAddress() {
+	if a.IsNonAliasAddress() {
 		return "A/" + a.MustAddress().Base58()
 	}
 	cid := a.MustContractID()
@@ -115,10 +115,10 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 }
 
 func (a *AgentID) Write(w io.Writer) error {
-	if err := util.WriteBoolByte(w, a.IsAddress()); err != nil {
+	if err := util.WriteBoolByte(w, a.IsNonAliasAddress()); err != nil {
 		return err
 	}
-	if a.IsAddress() {
+	if a.IsNonAliasAddress() {
 		if _, err := w.Write(a.MustAddress().Bytes()); err != nil {
 			return err
 		}

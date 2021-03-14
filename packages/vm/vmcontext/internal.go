@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -14,7 +15,7 @@ import (
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger
 // It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalancesOld) {
+func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
 	if len(vmctx.callStack) > 0 {
 		vmctx.log.Panicf("creditToAccount must be called only from request")
 	}
@@ -62,7 +63,7 @@ func (vmctx *VMContext) mustGetChainInfo() root.ChainInfo {
 	return root.MustGetChainInfo(vmctx.State())
 }
 
-func (vmctx *VMContext) getFeeInfo() (balance.Color, int64, int64) {
+func (vmctx *VMContext) getFeeInfo() (ledgerstate.Color, uint64, uint64) {
 	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
