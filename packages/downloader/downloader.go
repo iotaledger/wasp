@@ -51,12 +51,11 @@ func GetDefaultDownloader() *Downloader {
 // https://<url of the contents> (e.g. https://some.place.lt/some/contents.txt)
 // ipfs://<cid of the contents> (e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ)
 func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache) error {
-	if d.contains(uri) {
+	if d.containsOrMarkStarted(uri) {
 		d.log.Warnf("File %s is already being downloaded. Skipping it.", uri)
 		return nil
 	}
 
-	d.markStarted(uri)
 	go func() {
 		defer d.markCompleted(uri)
 
@@ -85,19 +84,18 @@ func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache 
 	return nil
 }
 
-func (d *Downloader) contains(uri string) bool {
+//containsOrMarkStarted returns if the string was part of downloads set before calling it.
+func (d *Downloader) containsOrMarkStarted(uri string) bool {
 	d.downloadsMutex.Lock()
 	defer d.downloadsMutex.Unlock()
 
 	_, ok := d.downloads[uri]
-	return ok
-}
-
-func (d *Downloader) markStarted(uri string) {
-	d.downloadsMutex.Lock()
-	defer d.downloadsMutex.Unlock()
+	if ok {
+		return true
+	}
 
 	d.downloads[uri] = true
+	return false
 }
 
 func (d *Downloader) markCompleted(uri string) {
