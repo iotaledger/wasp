@@ -15,7 +15,7 @@ import (
 )
 
 const constMockServerPort string = ":9999"
-const constFileCid string = "someunrealistichash12345"
+const constFileCID string = "someunrealistichash12345"
 
 var constVarFile []byte = []byte("some file for testing")
 
@@ -25,7 +25,7 @@ func startMockServer() *echo.Echo {
 		var response []byte
 		cid := c.Param("cid")
 		switch cid {
-		case constFileCid:
+		case constFileCID:
 			response = constVarFile
 		default:
 			return c.NoContent(http.StatusNotFound)
@@ -64,7 +64,7 @@ func TestIpfsDownload(t *testing.T) {
 	result, err := reg.HasBlob(hash)
 	require.NoError(t, err)
 	require.False(t, result, "The file should not be part of the registry before the download")
-	err = downloader.DownloadAndStore(hash, "ipfs://"+constFileCid, reg)
+	err = downloader.DownloadAndStore(hash, "ipfs://"+constFileCID, reg)
 	require.NoError(t, err)
 	time.Sleep(100 * time.Millisecond) // Time to wait for download completion
 	result, err = reg.HasBlob(hash)
