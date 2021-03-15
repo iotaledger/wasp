@@ -16,7 +16,7 @@ import (
 // TODO timeout for VM. Gas limit
 func MustRunComputationsAsync(ctx *vm.VMTask) {
 	if len(ctx.Requests) == 0 {
-		panic("MustRunComputationsAsync: must be at least 1 request")
+		ctx.Log.Panicf("MustRunComputationsAsync: must be at least 1 request")
 	}
 	outputs := sctransaction.OutputsFromRequests(ctx.Requests...)
 	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)
@@ -27,7 +27,7 @@ func MustRunComputationsAsync(ctx *vm.VMTask) {
 // runTask runs batch of requests on VM
 func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	task.Log.Debugw("runTask IN",
-		"chainID", task.ChainInput.Address().Base58(),
+		"chainID", task.ChainInput.Address().String(),
 		"timestamp", task.Timestamp,
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
@@ -69,13 +69,9 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 	stateHash := vsClone.Hash()
-	task.ResultTransaction, err = vmctx.FinalizeTransactionEssence(
-		task.VirtualState.BlockIndex()+1,
-		stateHash,
-		vsClone.Timestamp(),
-	)
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence()
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
+		task.OnFinish(nil, nil, fmt.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
 	// Note: can't take tx ID!!

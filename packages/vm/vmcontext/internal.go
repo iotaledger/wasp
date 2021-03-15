@@ -1,7 +1,6 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -27,14 +26,14 @@ func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer core
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalancesOld) bool {
+func (vmctx *VMContext) debitFromAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	return accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
 }
 
-func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalancesOld) bool {
+func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
 	if len(vmctx.callStack) == 0 {
 		vmctx.log.Panicf("moveBetweenAccounts can't be called from request context")
 	}
@@ -81,24 +80,24 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
-func (vmctx *VMContext) getBalance(col balance.Color) int64 {
+func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return accounts.GetBalance(vmctx.State(), vmctx.MyAgentID(), col)
 }
 
-func (vmctx *VMContext) getMyBalances() coretypes.ColoredBalancesOld {
+func (vmctx *VMContext) getMyBalances() coretypes.ColoredBalances {
 	agentID := vmctx.MyAgentID()
 
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	ret, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
-	return coretypes.NewFromMap(ret)
+	return coretypes.NewColoredBalancesFromMap(ret)
 }
 
-func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color, amount int64) bool {
+func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col ledgerstate.Color, amount uint64) bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -106,7 +105,7 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col balance.Color,
 		vmctx.State(),
 		vmctx.MyAgentID(),
 		target,
-		coretypes.NewFromMap(map[balance.Color]int64{col: amount}),
+		coretypes.NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{col: amount}),
 	)
 }
 

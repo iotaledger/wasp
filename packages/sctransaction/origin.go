@@ -61,12 +61,12 @@ func NewRootInitRequestTransaction(
 	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(chainID))
 	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
 
-	data := RequestMetadata{
-		TargetContractHname: coretypes.Hn("root"),
-		EntryPoint:          coretypes.EntryPointInit,
-		Args:                args,
-	}
-	err := txb.AddExtendedOutputSimple(chainID.AsAddress(), data.Bytes(), map[ledgerstate.Color]uint64{
+	metadata := NewRequestMetadata().
+		WithTarget(coretypes.Hn("root")).
+		WithEntryPoint(coretypes.EntryPointInit).
+		WithArgs(args).
+		Bytes()
+	err := txb.AddExtendedOutputSimple(chainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 1,
 	})
 	if err != nil {

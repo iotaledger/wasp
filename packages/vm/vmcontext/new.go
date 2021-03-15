@@ -20,28 +20,27 @@ import (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID      coretypes.ChainID
-	chainOwnerID coretypes.AgentID
-	processors   *processors.ProcessorCache
-	txBuilder    *utxoutil.Builder         // mutated
-	virtualState state.VirtualState        // mutated
-	incoming     coretypes.ColoredBalances // after fees
-	log          *logger.Logger
+	chainID            coretypes.ChainID
+	chainOwnerID       coretypes.AgentID
+	processors         *processors.ProcessorCache
+	txBuilder          *utxoutil.Builder
+	virtualState       state.VirtualState
+	remainingAfterFees coretypes.ColoredBalances
+	log                *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
 	feeColor           ledgerstate.Color
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
-	entropy             hashing.HashValue // mutates with each request
-	req                 *sctransaction.Request
-	targetContractHname coretypes.Hname
-	contractRecord      *root.ContractRecord
-	timestamp           int64
-	stateUpdate         state.StateUpdate
-	lastError           error     // mutated
-	lastResult          dict.Dict // mutated. Used only by 'solo'
-	callStack           []*callContext
+	req            *sctransaction.Request
+	entropy        hashing.HashValue // mutates with each request
+	contractRecord *root.ContractRecord
+	timestamp      int64
+	stateUpdate    state.StateUpdate
+	lastError      error     // mutated
+	lastResult     dict.Dict // mutated. Used only by 'solo'
+	callStack      []*callContext
 }
 
 type callContext struct {

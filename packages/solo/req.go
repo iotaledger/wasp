@@ -83,7 +83,7 @@ func (r *CallParams) WithTransfer(color balance.Color, amount int64) *CallParams
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
 func (r *CallParams) WithTransfers(transfer map[balance.Color]int64) *CallParams {
-	r.transfer = coretypes.NewFromMap(transfer)
+	r.transfer = coretypes.NewColoredBalancesFromMap(transfer)
 	return r
 }
 

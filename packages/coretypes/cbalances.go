@@ -18,13 +18,13 @@ func NewColoredBalances(b ledgerstate.ColoredBalances) ColoredBalances {
 	return ColoredBalances{ColoredBalances: *b.Clone()}
 }
 
-// NewFromMap new ColoredBalancesOld from map
-func NewFromMap(m map[ledgerstate.Color]uint64) ColoredBalances {
+// NewColoredBalancesFromMap new ColoredBalancesOld from map
+func NewColoredBalancesFromMap(m map[ledgerstate.Color]uint64) ColoredBalances {
 	return ColoredBalances{*ledgerstate.NewColoredBalances(m)}
 }
 
 func NewIotasOnly(amount uint64) ColoredBalances {
-	return NewFromMap(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: amount})
+	return NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: amount})
 }
 
 func (b ColoredBalances) Balance(col ledgerstate.Color) uint64 {
@@ -98,7 +98,7 @@ func MustToUint64(m map[ledgerstate.Color]int64) map[ledgerstate.Color]uint64 {
 func (b ColoredBalances) TakeOutColor(col ledgerstate.Color) ColoredBalances {
 	m := b.Map()
 	delete(m, col)
-	return NewFromMap(m)
+	return NewColoredBalancesFromMap(m)
 }
 
 func WriteColoredBalances(w io.Writer, b ColoredBalances) error {

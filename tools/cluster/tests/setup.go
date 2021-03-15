@@ -90,7 +90,7 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 
 func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
 	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
-		Transfer: coretypes.NewFromMap(transfer),
+		Transfer: coretypes.NewColoredBalancesFromMap(transfer),
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)

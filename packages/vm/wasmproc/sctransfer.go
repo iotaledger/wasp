@@ -62,7 +62,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		balancesMap[color] = amount
 		return true
 	})
-	transfer := coretypes.NewFromMap(balancesMap)
+	transfer := coretypes.NewColoredBalancesFromMap(balancesMap)
 	if !o.vm.ctx.TransferToAddress(o.address, transfer) {
 		o.Panic("failed to transfer to %s", o.address.String())
 	}

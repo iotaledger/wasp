@@ -64,7 +64,7 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 		"transfer", coretypes.Str(par.Transfer),
 	)
 	myAgentID := vmctx.MyAgentID()
-	if !vmctx.debitFromAccount(myAgentID, coretypes.NewFromMap(map[balance.Color]int64{
+	if !vmctx.debitFromAccount(myAgentID, coretypes.NewColoredBalancesFromMap(map[balance.Color]int64{
 		balance.ColorIOTA: 1,
 	})) {
 		vmctx.log.Debugf("-- PostRequestSync: not enough funds for request token")

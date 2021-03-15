@@ -50,6 +50,28 @@ func (p *decoder) MustGetInt64(key kv.Key, def ...int64) int64 {
 	return ret
 }
 
+func (p *decoder) GetUint64(key kv.Key, def ...uint64) (uint64, error) {
+	v, exists, err := codec.DecodeUint64(p.kv.MustGet(key))
+	if err != nil {
+		return 0, fmt.Errorf("GetUint64: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return 0, fmt.Errorf("GetUint64: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *decoder) MustGetUint64(key kv.Key, def ...uint64) uint64 {
+	ret, err := p.GetUint64(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
 func (p *decoder) GetString(key kv.Key, def ...string) (string, error) {
 	v, exists, err := codec.DecodeString(p.kv.MustGet(key))
 	if err != nil {

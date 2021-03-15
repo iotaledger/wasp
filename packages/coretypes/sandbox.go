@@ -14,13 +14,13 @@ import (
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	// ChainOwnerID AgentID of the current owner of the chain
-	ChainOwnerID() AgentID
+	ChainOwnerID() *AgentID
 	// ContractCreator agentID which deployed contract
-	ContractCreator() AgentID
+	ContractCreator() *AgentID
 	// ContractID is the ID of the current contract. Take chainID with ctx.ContractID().ChainID()
-	ContractID() ContractID
+	ContractID() *ContractID
 	// Caller is the agentID of the caller.
-	Caller() AgentID
+	Caller() *AgentID
 	// Params of the current call
 	Params() dict.Dict
 	// State k/v store of the current call (in the context of the smart contract)
@@ -30,7 +30,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target Hname, entryPoint Hname, params dict.Dict, transfer ColoredBalances) (dict.Dict, error)
+	Call(target Hname, entryPoint Hname, params dict.Dict, transfer *ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
 	RequestID() ledgerstate.OutputID
 	// MintedSupply is number of free minted tokens, i.e. minted tokens which are sent to addresses
@@ -45,13 +45,13 @@ type Sandbox interface {
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	// Balances returns colored balances owned by the smart contract
-	Balances() ColoredBalances
+	Balances() *ColoredBalances
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
-	IncomingTransfer() ColoredBalances
+	IncomingTransfer() *ColoredBalances
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col ledgerstate.Color) int64
 	// TransferToAddress send tokens to the L1 ledger address
-	TransferToAddress(addr ledgerstate.Address, transfer ColoredBalances) bool
+	TransferToAddress(addr ledgerstate.Address, transfer *ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	PostRequest(par PostRequestParams) bool
 	// Log interface provides local logging on the machine. It also includes Panicf methods which logs and panics

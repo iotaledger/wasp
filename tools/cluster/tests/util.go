@@ -208,8 +208,8 @@ func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) coretypes.ColoredBa
 		}
 	}
 
-	total := coretypes.NewFromMap(getTotalBalance(t, chain))
-	return coretypes.NewFromMap(sum).Diff(total)
+	total := coretypes.NewColoredBalancesFromMap(getTotalBalance(t, chain))
+	return coretypes.NewColoredBalancesFromMap(sum).Diff(total)
 }
 
 func checkLedger(t *testing.T, chain *cluster.Chain) {

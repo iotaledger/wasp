@@ -63,7 +63,7 @@ func (ch *Chain) CheckAccountLedger() {
 	for _, acc := range accounts {
 		ch.GetAccountBalance(acc).AddToMap(sum)
 	}
-	require.True(ch.Env.T, total.Equal(coretypes.NewFromMap(sum)))
+	require.True(ch.Env.T, total.Equal(coretypes.NewColoredBalancesFromMap(sum)))
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color

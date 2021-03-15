@@ -70,26 +70,20 @@ func (tx *ParsedTransaction) Requests() []*Request {
 // region Request //////////////////////////////////////////////////////////////////
 
 type Request struct {
-	output        *ledgerstate.ExtendedLockedOutput
-	senderAddress ledgerstate.Address
-	parsedOk      bool
-	minted        uint64
-	requestData   RequestMetadata
-	solidArgs     dict.Dict
+	output          *ledgerstate.ExtendedLockedOutput
+	senderAddress   ledgerstate.Address
+	minted          uint64
+	requestMetadata RequestMetadata
+	solidArgs       dict.Dict
 }
 
 // RequestDataFromOutput
 func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...uint64) *Request {
 	ret := &Request{output: output, senderAddress: senderAddr}
-	r, err := RequestPayloadFromBytes(output.GetPayload())
-	if err != nil {
-		return ret
-	}
-	ret.requestData = r
+	ret.requestMetadata = *RequestMetadataFromBytes(output.GetPayload())
 	if len(minted) > 0 {
 		ret.minted = minted[0]
 	}
-	ret.parsedOk = true
 	return ret
 }
 
@@ -107,31 +101,20 @@ func (req *Request) SenderAgentID() (ret coretypes.AgentID) {
 		if err != nil {
 			panic(err)
 		}
-		senderContractID := coretypes.NewContractID(chainID, req.requestData.SenderContractHname)
+		senderContractID := coretypes.NewContractID(chainID, req.requestMetadata.SenderContract())
 		ret = coretypes.NewAgentIDFromContractID(senderContractID)
 	} else {
-		var err error
-		ret, err = coretypes.NewAgentIDFromAddress(req.senderAddress)
-		if err != nil {
-			panic(err)
-		}
+		ret = coretypes.NewAgentIDFromAddress(req.senderAddress)
 	}
 	return
 }
 
-func (req *Request) ParsedOk() bool {
-	return req.parsedOk
-}
-
 func (req *Request) SetMetadata(d *RequestMetadata) {
-	req.requestData = *d
-	req.requestData.Args = d.Args.Clone()
+	req.requestMetadata = *d.Clone()
 }
 
 func (req *Request) GetMetadata() *RequestMetadata {
-	ret := req.requestData
-	ret.Args = req.requestData.Args.Clone()
-	return &ret
+	return &req.requestMetadata
 }
 
 func (req *Request) MintColor() ledgerstate.Color {
@@ -152,7 +135,7 @@ func (req *Request) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
 	if req.solidArgs != nil {
 		return true, nil
 	}
-	solid, ok, err := req.requestData.Args.SolidifyRequestArguments(reg)
+	solid, ok, err := req.requestMetadata.Args().SolidifyRequestArguments(reg)
 	if err != nil || !ok {
 		return ok, err
 	}
@@ -177,18 +160,86 @@ func OutputsFromRequests(requests ...*Request) []ledgerstate.Output {
 
 // RequestMetadata represents content of the data payload of the output
 type RequestMetadata struct {
-	SenderContractHname coretypes.Hname
+	parsedOk       bool
+	senderContract coretypes.Hname
 	// ID of the target smart contract
-	TargetContractHname coretypes.Hname
+	targetContract coretypes.Hname
 	// entry point code
-	EntryPoint coretypes.Hname
+	entryPoint coretypes.Hname
 	// request arguments, not decoded yet wrt blobRefs
-	Args requestargs.RequestArgs
+	args requestargs.RequestArgs
 }
 
-func RequestPayloadFromBytes(data []byte) (ret RequestMetadata, err error) {
-	err = ret.Read(bytes.NewReader(data))
-	return
+func NewRequestMetadata() *RequestMetadata {
+	return &RequestMetadata{
+		parsedOk: true,
+		args:     requestargs.RequestArgs(dict.New()),
+	}
+}
+
+func RequestMetadataFromBytes(data []byte) *RequestMetadata {
+	ret := NewRequestMetadata()
+	err := ret.Read(bytes.NewReader(data))
+	ret.parsedOk = err == nil
+	return ret
+}
+
+func (p *RequestMetadata) WithSender(s coretypes.Hname) *RequestMetadata {
+	p.senderContract = s
+	return p
+}
+
+func (p *RequestMetadata) WithTarget(t coretypes.Hname) *RequestMetadata {
+	p.targetContract = t
+	return p
+}
+
+func (p *RequestMetadata) WithEntryPoint(ep coretypes.Hname) *RequestMetadata {
+	p.entryPoint = ep
+	return p
+}
+
+func (p *RequestMetadata) WithArgs(args requestargs.RequestArgs) *RequestMetadata {
+	p.args = args.Clone()
+	return p
+}
+
+func (p *RequestMetadata) Clone() *RequestMetadata {
+	ret := *p
+	ret.args = p.args.Clone()
+	return &ret
+}
+
+func (p *RequestMetadata) ParsedOk() bool {
+	return p.parsedOk
+}
+
+func (p *RequestMetadata) SenderContract() coretypes.Hname {
+	if !p.parsedOk {
+		return 0
+	}
+	return p.senderContract
+}
+
+func (p *RequestMetadata) TargetContract() coretypes.Hname {
+	if !p.parsedOk {
+		return 0
+	}
+	return p.targetContract
+}
+
+func (p *RequestMetadata) EntryPoint() coretypes.Hname {
+	if !p.parsedOk {
+		return 0
+	}
+	return p.entryPoint
+}
+
+func (p *RequestMetadata) Args() requestargs.RequestArgs {
+	if !p.parsedOk {
+		return requestargs.RequestArgs(dict.New())
+	}
+	return p.args
 }
 
 func (p *RequestMetadata) Bytes() []byte {
@@ -198,32 +249,32 @@ func (p *RequestMetadata) Bytes() []byte {
 }
 
 func (p *RequestMetadata) Write(w io.Writer) error {
-	if err := p.SenderContractHname.Write(w); err != nil {
+	if err := p.senderContract.Write(w); err != nil {
 		return err
 	}
-	if err := p.TargetContractHname.Write(w); err != nil {
+	if err := p.targetContract.Write(w); err != nil {
 		return err
 	}
-	if err := p.EntryPoint.Write(w); err != nil {
+	if err := p.entryPoint.Write(w); err != nil {
 		return err
 	}
-	if err := p.Args.Write(w); err != nil {
+	if err := p.args.Write(w); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (p *RequestMetadata) Read(r io.Reader) error {
-	if err := p.SenderContractHname.Read(r); err != nil {
+	if err := p.senderContract.Read(r); err != nil {
 		return err
 	}
-	if err := p.TargetContractHname.Read(r); err != nil {
+	if err := p.targetContract.Read(r); err != nil {
 		return err
 	}
-	if err := p.EntryPoint.Read(r); err != nil {
+	if err := p.entryPoint.Read(r); err != nil {
 		return err
 	}
-	if err := p.Args.Read(r); err != nil {
+	if err := p.args.Read(r); err != nil {
 		return err
 	}
 	return nil

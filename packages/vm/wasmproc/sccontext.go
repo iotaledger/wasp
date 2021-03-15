@@ -218,7 +218,7 @@ func (o *ScContext) getParams(paramsId int32) dict.Dict {
 
 func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalancesOld {
 	if transferId == 0 {
-		return coretypes.NewFromMap(nil)
+		return coretypes.NewColoredBalancesFromMap(nil)
 	}
 	transfer := make(map[balance.Color]int64)
 	transferDict := o.host.FindObject(transferId).(*ScDict).kvStore
@@ -235,5 +235,5 @@ func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalancesOld {
 		transfer[color] = amount
 		return true
 	})
-	return coretypes.NewFromMap(transfer)
+	return coretypes.NewColoredBalancesFromMap(transfer)
 }

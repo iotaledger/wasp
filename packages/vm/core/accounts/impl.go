@@ -25,7 +25,7 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
+	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), &aid), fmt.Sprintf("getBalance for %s", &aid)), nil
 }
 
 // getTotalAssets returns total colored balances controlled by the chain
@@ -45,20 +45,23 @@ func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit on own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
 func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", coretypes.Str(ctx.IncomingTransfer()))
+	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.deposit.begin")
 	defer mustCheckLedger(state, "accounts.deposit.exit")
 
+	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentID := params.MustGetAgentID(ParamAgentID, ctx.Caller())
+	targetAgentID := params.MustGetAgentID(ParamAgentID, *caller)
 
 	// funds currently are at the disposition of accounts, they are moved to the target
-	succ := MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", ctx.Caller().String())
+	from := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	succ := MoveBetweenAccounts(state, &from, &targetAgentID, ctx.IncomingTransfer())
+	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", caller.String())
 
-	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, ctx.IncomingTransfer().String())
+	incoming := ctx.IncomingTransfer()
+	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, incoming.String())
 	return nil, nil
 }
 
@@ -71,7 +74,7 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(ctx.Caller().IsNonAliasAddress(), "caller must be an address")
+	a.Require(ctx.Caller().IsContract(), "caller must be an address")
 
 	bals, ok := GetAccountBalances(state, ctx.Caller())
 	if !ok {
@@ -82,14 +85,14 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.withdrawToAddress.begin: caller agentID: %s myContractId: %s",
 		ctx.Caller().String(), cid.String())
 
-	sendTokens := coretypes.NewFromMap(bals)
-	addr := ctx.Caller().MustAddress()
+	sendTokens := coretypes.NewColoredBalancesFromMap(bals)
+	addr := ctx.Caller().AsAddress()
 
 	// remove tokens from the chain ledger
-	a.Require(DebitFromAccount(state, ctx.Caller(), sendTokens),
+	a.Require(DebitFromAccount(state, ctx.Caller(), &sendTokens),
 		"accounts.withdrawToAddress.inconsistency. failed to remove tokens from the chain")
 	// send tokens to address
-	a.Require(ctx.TransferToAddress(addr, sendTokens),
+	a.Require(ctx.TransferToAddress(addr, &sendTokens),
 		"accounts.withdrawToAddress.inconsistency: failed to transfer tokens to address")
 
 	ctx.Log().Debugf("accounts.withdrawToAddress.success. Sent to address %s -- %s",
@@ -110,14 +113,14 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.withdrawToChain.begin: caller agentID: %s myContractId: %s",
 		caller.String(), cid.String())
 
-	a.Require(!caller.IsNonAliasAddress(), "caller must be a smart contract")
+	a.Require(caller.IsContract(), "caller must be a smart contract")
 
 	bals, ok := GetAccountBalances(state, caller)
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	toWithdraw := coretypes.NewFromMap(bals)
+	toWithdraw := coretypes.NewColoredBalancesFromMap(bals)
 	callerContract := caller.MustContractID()
 	if callerContract.ChainID() == ctx.ContractID().ChainID() {
 		// no need to move anything on the same chain
@@ -125,11 +128,12 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 
 	// take to tokens here to 'accounts' from the caller
-	succ := MoveBetweenAccounts(ctx.State(), caller, coretypes.NewAgentIDFromContractID(ctx.ContractID()), toWithdraw)
+	toAgentId := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	succ := MoveBetweenAccounts(ctx.State(), caller, &toAgentId, &toWithdraw)
 	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
 
 	succ = ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: Interface.ContractID(callerContract.ChainID()),
+		TargetContractID: Interface.ContractID(*callerContract.ChainID()),
 		EntryPoint:       coretypes.Hn(FuncDeposit),
 		Params: codec.MakeDict(map[string]interface{}{
 			ParamAgentID: caller,

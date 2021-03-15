@@ -330,7 +330,7 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 		return true
 	})
 	require.NoError(ch.Env.T, err)
-	return coretypes.NewFromMap(ret)
+	return coretypes.NewColoredBalancesFromMap(ret)
 }
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain

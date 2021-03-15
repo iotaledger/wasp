@@ -17,7 +17,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	succ := ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: accounts.Interface.ContractID(targetChain),
 		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
-		Transfer: coretypes.NewFromMap(map[balance.Color]int64{
+		Transfer: coretypes.NewColoredBalancesFromMap(map[balance.Color]int64{
 			balance.ColorIOTA: 2,
 		}),
 	})

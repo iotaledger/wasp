@@ -7,7 +7,7 @@ import (
 
 // Accrue calls "deposit" entry point of the accounts contract.
 // Can only be called from full sandbox context
-func Accrue(ctx coretypes.Sandbox, target coretypes.AgentID, tokens coretypes.ColoredBalancesOld) error {
+func Accrue(ctx coretypes.Sandbox, target coretypes.AgentID, tokens *coretypes.ColoredBalances) error {
 	if tokens == nil || tokens.Len() == 0 {
 		return nil
 	}
