@@ -102,7 +102,7 @@ func (req *Request) SenderAgentID() (ret coretypes.AgentID) {
 			panic(err)
 		}
 		senderContractID := coretypes.NewContractID(chainID, req.requestMetadata.SenderContract())
-		ret = coretypes.NewAgentIDFromContractID(senderContractID)
+		ret = coretypes.NewAgentIDFromContractID(&senderContractID)
 	} else {
 		ret = coretypes.NewAgentIDFromAddress(req.senderAddress)
 	}
@@ -144,6 +144,10 @@ func (req *Request) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
 		panic("req.solidArgs == nil")
 	}
 	return true, nil
+}
+
+func (req *Request) Short() string {
+	return req.output.ID().Base58()[:6] + ".."
 }
 
 func OutputsFromRequests(requests ...*Request) []ledgerstate.Output {

@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -19,21 +18,17 @@ import (
 // it is up to the node (not smart contract) to check authorizations to create/update this record
 type ChainRecord struct {
 	ChainID        coretypes.ChainID
-	Color          balance.Color // origin tx hash
-	CommitteeNodes []string      // "host_addr:port"
+	CommitteeNodes []string // "host_addr:port"
 	Active         bool
 }
 
 func dbkeyChainRecord(chainID *coretypes.ChainID) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeChainRecord, chainID[:])
+	return dbprovider.MakeKey(dbprovider.ObjectTypeChainRecord, chainID.Bytes())
 }
 
 func SaveChainRecord(bd *ChainRecord) error {
 	if bd.ChainID == coretypes.NilChainID {
 		return fmt.Errorf("can be empty chain id")
-	}
-	if bd.Color == balance.ColorNew || bd.Color == balance.ColorIOTA {
-		return fmt.Errorf("can't be IOTA or New color")
 	}
 	var buf bytes.Buffer
 	if err := bd.Write(&buf); err != nil {
@@ -42,7 +37,7 @@ func SaveChainRecord(bd *ChainRecord) error {
 	if err := database.GetRegistryPartition().Set(dbkeyChainRecord(&bd.ChainID), buf.Bytes()); err != nil {
 		return err
 	}
-	publisher.Publish("chainrec", bd.ChainID.String(), bd.Color.String())
+	publisher.Publish("chainrec", bd.ChainID.String(), bd.ChainID.String())
 	return nil
 }
 
@@ -118,9 +113,6 @@ func (bd *ChainRecord) Write(w io.Writer) error {
 	if err := bd.ChainID.Write(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(bd.Color[:]); err != nil {
-		return err
-	}
 	if err := util.WriteStrings16(w, bd.CommitteeNodes); err != nil {
 		return err
 	}
@@ -135,9 +127,6 @@ func (bd *ChainRecord) Read(r io.Reader) error {
 	if err = bd.ChainID.Read(r); err != nil {
 		return err
 	}
-	if err = util.ReadColor(r, &bd.Color); err != nil {
-		return err
-	}
 	if bd.CommitteeNodes, err = util.ReadStrings16(r); err != nil {
 		return err
 	}
@@ -148,8 +137,7 @@ func (bd *ChainRecord) Read(r io.Reader) error {
 }
 
 func (bd *ChainRecord) String() string {
-	ret := "      Target: " + bd.ChainID.String() + "\n"
-	ret += "      Color: " + bd.Color.String() + "\n"
+	ret := "ChainID: " + bd.ChainID.String() + "\n"
 	ret += fmt.Sprintf("      Committee nodes: %+v\n", bd.CommitteeNodes)
 	return ret
 }

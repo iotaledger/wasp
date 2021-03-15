@@ -157,7 +157,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// publish processed requests
 	for i, reqid := range pending.block.RequestIDs() {
 
-		sm.chain.EventRequestProcessed().Trigger(*reqid)
+		sm.chain.EventRequestProcessed().Trigger(reqid)
 
 		publisher.Publish("request_out",
 			sm.chain.ID().String(),

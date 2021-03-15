@@ -4,8 +4,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
@@ -56,11 +54,11 @@ type Block interface {
 	ForEach(func(uint16, StateUpdate) bool)
 	StateIndex() uint32
 	WithBlockIndex(uint32) Block
-	StateTransactionID() valuetransaction.ID
-	WithStateTransaction(valuetransaction.ID) Block
+	StateTransactionID() ledgerstate.TransactionID
+	WithStateTransaction(ledgerstate.TransactionID) Block
 	Timestamp() int64
 	Size() uint16
-	RequestIDs() []*coretypes.RequestID
+	RequestIDs() []ledgerstate.OutputID
 	EssenceHash() hashing.HashValue // except state transaction id
 	String() string
 	Write(io.Writer) error

@@ -13,10 +13,10 @@ package peering
 import (
 	"bytes"
 	"errors"
+	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"hash/crc32"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"

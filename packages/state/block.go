@@ -7,8 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -18,7 +16,7 @@ import (
 
 type block struct {
 	stateIndex   uint32
-	stateTxId    valuetransaction.ID
+	stateTxId    ledgerstate.TransactionID
 	stateUpdates []StateUpdate
 }
 
@@ -29,7 +27,7 @@ func NewBlock(stateUpdates []StateUpdate) (Block, error) {
 	}
 	for i, su := range stateUpdates {
 		for j := i + 1; j < len(stateUpdates); j++ {
-			if *su.RequestID() == *stateUpdates[j].RequestID() {
+			if su.RequestID() == stateUpdates[j].RequestID() {
 				return nil, fmt.Errorf("duplicate request id")
 			}
 		}
@@ -69,7 +67,7 @@ func (b *block) String() string {
 	return ret
 }
 
-func (b *block) StateTransactionID() valuetransaction.ID {
+func (b *block) StateTransactionID() ledgerstate.TransactionID {
 	return b.stateTxId
 }
 
@@ -87,7 +85,7 @@ func (b *block) WithBlockIndex(stateIndex uint32) Block {
 	return b
 }
 
-func (b *block) WithStateTransaction(vtxid valuetransaction.ID) Block {
+func (b *block) WithStateTransaction(vtxid ledgerstate.TransactionID) Block {
 	b.stateTxId = vtxid
 	return b
 }
@@ -104,8 +102,8 @@ func (b *block) Size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 
-func (b *block) RequestIDs() []*coretypes.RequestID {
-	ret := make([]*coretypes.RequestID, b.Size())
+func (b *block) RequestIDs() []ledgerstate.OutputID {
+	ret := make([]ledgerstate.OutputID, b.Size())
 	for i, su := range b.stateUpdates {
 		ret[i] = su.RequestID()
 	}

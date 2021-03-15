@@ -5,19 +5,17 @@ package solo
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
-	"github.com/iotaledger/wasp/packages/sctransaction_old/txbuilder"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 )
@@ -27,8 +25,8 @@ type CallParams struct {
 	target     coretypes.Hname
 	epName     string
 	entryPoint coretypes.Hname
-	transfer   coretypes.ColoredBalancesOld
-	mint       map[address.Address]int64
+	transfer   coretypes.ColoredBalances
+	mint       uint64
 	args       requestargs.RequestArgs
 }
 
@@ -76,25 +74,14 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 
 // WithTransfer is a shorthand for the most often used case where only
 // a single color is transferred by WithTransfers
-func (r *CallParams) WithTransfer(color balance.Color, amount int64) *CallParams {
-	return r.WithTransfers(map[balance.Color]int64{color: amount})
+func (r *CallParams) WithTransfer(color ledgerstate.Color, amount uint64) *CallParams {
+	return r.WithTransfers(map[ledgerstate.Color]uint64{color: amount})
 }
 
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
-func (r *CallParams) WithTransfers(transfer map[balance.Color]int64) *CallParams {
+func (r *CallParams) WithTransfers(transfer map[ledgerstate.Color]uint64) *CallParams {
 	r.transfer = coretypes.NewColoredBalancesFromMap(transfer)
-	return r
-}
-
-// WithMinting adds minting part to the request transaction
-// in the map <address>: <amount> all addresses should be different from the
-// address of the target chain and amounts must be positive
-func (r *CallParams) WithMinting(mint map[address.Address]int64) *CallParams {
-	r.mint = make(map[address.Address]int64)
-	for addr, amount := range mint {
-		r.mint[addr] = amount
-	}
 	return r
 }
 
@@ -120,32 +107,30 @@ func toMap(params ...interface{}) map[string]interface{} {
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signaturescheme.SignatureScheme) *sctransaction_old.TransactionEssence {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) *ledgerstate.Transaction {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
-	if sigScheme == nil {
-		sigScheme = ch.OriginatorKeyPair
+	if keyPair == nil {
+		keyPair = ch.OriginatorKeyPair
 	}
-	allOuts := ch.Env.utxoDB.GetAddressOutputs(sigScheme.Address())
-	txb, err := txbuilder.NewFromOutputBalances(allOuts)
+	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
+	allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
+
+	metadata := sctransaction.NewRequestMetadata().
+		WithTarget(req.target).
+		WithEntryPoint(req.entryPoint).
+		WithArgs(req.args).
+		Bytes()
+
+	txb := utxoutil.NewBuilder(allOuts...)
+	err := txb.AddExtendedOutputSimple(ch.ChainID.AsAddress(), metadata, req.transfer.Map())
 	require.NoError(ch.Env.T, err)
 
-	reqSect := sctransaction_old.NewRequestSectionByWallet(coretypes.NewContractID(ch.ChainID, req.target), req.entryPoint).
-		WithTransfer(req.transfer).
-		WithArgs(req.args)
-
-	err = txb.AddRequestSection(reqSect)
+	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
 	require.NoError(ch.Env.T, err)
 
-	txb.AddMinting(req.mint)
-
-	tx, err := txb.Build(false)
-	require.NoError(ch.Env.T, err)
-
-	tx.Sign(sigScheme)
-
-	_, err = tx.Properties()
+	tx, err := txb.BuildWithED25519(keyPair)
 	require.NoError(ch.Env.T, err)
 
 	err = ch.Env.AddToLedger(tx)
@@ -168,25 +153,20 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signatures
 // Unlike the real Wasp environment, the 'solo' environment makes PostRequestSync a synchronous call.
 // It makes it possible step-by-step debug of the smart contract logic.
 // The call should be used only from the main thread (goroutine)
-func (ch *Chain) PostRequestSync(req *CallParams, sigScheme signaturescheme.SignatureScheme) (dict.Dict, error) {
-	_, ret, err := ch.PostRequestSyncTx(req, sigScheme)
+func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+	_, ret, err := ch.PostRequestSyncTx(req, keyPair)
 	return ret, err
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, sigScheme signaturescheme.SignatureScheme) (*sctransaction_old.TransactionEssence, dict.Dict, error) {
-	tx := ch.RequestFromParamsToLedger(req, sigScheme)
+func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
+	tx := ch.RequestFromParamsToLedger(req, keyPair)
 
-	reqID := coretypes.NewRequestID(tx.ID(), 0)
-	ch.Log.Infof("PostRequestSync: %s::%s -- %s", req.targetName, req.epName, reqID.String())
-
-	r := vm.RequestRefWithFreeTokens{}
-	r.Tx = tx
+	initReq := ch.Env.RequestsForChain(tx, ch.ChainID)
 	ch.reqCounter.Add(1)
-	ret, err := ch.runBatch([]vm.RequestRefWithFreeTokens{r}, "post")
-	if err != nil {
-		return nil, nil, err
-	}
-	return tx, ret, nil
+	res, err := ch.runBatch(initReq, "post")
+	require.NoError(ch.Env.T, err)
+
+	return tx, res, nil
 }
 
 // callViewFull calls the view entry point of the smart contract

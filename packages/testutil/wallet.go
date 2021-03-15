@@ -2,8 +2,7 @@ package testutil
 
 import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/mr-tron/base58"
 )
 
@@ -20,9 +19,9 @@ func NewWallet(b58walletSeed string) *Wallet {
 	return &Wallet{seed: seed.NewSeed(seedBytes), index: 0}
 }
 
-func (w *Wallet) Address() *address.Address {
+func (w *Wallet) Address() ledgerstate.Address {
 	addr := w.seed.Address(w.index).Address
-	return &addr
+	return addr
 }
 
 func (w *Wallet) SigScheme() signaturescheme.SignatureScheme {

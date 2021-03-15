@@ -1,12 +1,11 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -36,7 +35,8 @@ func (vmctx *VMContext) CurrentContractID() coretypes.ContractID {
 }
 
 func (vmctx *VMContext) MyAgentID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+	t := vmctx.CurrentContractID()
+	return coretypes.NewAgentIDFromContractID(&t)
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {
@@ -61,15 +61,9 @@ func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 	vmctx.log.Debugw("-- PostRequestSync",
 		"target", par.TargetContractID.String(),
 		"ep", par.EntryPoint.String(),
-		"transfer", coretypes.Str(par.Transfer),
+		"transfer", par.Transfer.String(),
 	)
 	myAgentID := vmctx.MyAgentID()
-	if !vmctx.debitFromAccount(myAgentID, coretypes.NewColoredBalancesFromMap(map[balance.Color]int64{
-		balance.ColorIOTA: 1,
-	})) {
-		vmctx.log.Debugf("-- PostRequestSync: not enough funds for request token")
-		return false
-	}
 	if !vmctx.debitFromAccount(myAgentID, par.Transfer) {
 		vmctx.log.Debugf("-- PostRequestSync: not enough funds")
 		return false
@@ -106,10 +100,6 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 	return vm.NewContractEventPublisher(vmctx.CurrentContractID(), vmctx.log)
 }
 
-func (vmctx *VMContext) RequestID() coretypes.RequestID {
-	return *vmctx.req.RequestID()
-}
-
-func (vmctx *VMContext) NumFreeMinted() int64 {
-	return vmctx.req.Tx.MustProperties().NumFreeMintedTokens()
+func (vmctx *VMContext) RequestID() ledgerstate.OutputID {
+	return vmctx.req.Output().ID()
 }

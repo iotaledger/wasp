@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
@@ -176,7 +177,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	// store processed request IDs
 	// TODO store request IDs in the 'log' contract
 	for _, rid := range b.RequestIDs() {
-		keys = append(keys, dbkeyRequest(rid))
+		keys = append(keys, dbkeyRequest(&rid))
 		values = append(values, []byte{0})
 	}
 
@@ -236,10 +237,10 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid *coretypes.RequestID) []byte {
+func dbkeyRequest(reqid *ledgerstate.OutputID) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *coretypes.ChainID, reqid *coretypes.RequestID) (bool, error) {
+func IsRequestCompleted(addr *coretypes.ChainID, reqid *ledgerstate.OutputID) (bool, error) {
 	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

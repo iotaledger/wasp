@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
@@ -34,7 +33,10 @@ const DefaultTimeStep = 1 * time.Millisecond
 
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
-const Saldo = uint64(1337)
+const (
+	Saldo              = uint64(1337)
+	DustThresholdIotas = uint64(100)
+)
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
@@ -48,7 +50,7 @@ type Solo struct {
 	clockMutex  *sync.RWMutex
 	logicalTime time.Time
 	timeStep    time.Duration
-	chains      map[coretypes.ChainID]*Chain
+	chains      map[[33]byte]*Chain
 	doOnce      sync.Once
 }
 
@@ -82,9 +84,6 @@ type Chain struct {
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
 	ValidatorFeeTarget coretypes.AgentID
 
-	// StateTx is the anchor transaction of the current state of the chain
-	StateTx *ledgerstate.Transaction
-
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State state.VirtualState
 
@@ -97,8 +96,8 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	reqCounter   atomic.Int32
-	chInRequest  chan *ledgerstate.ExtendedLockedOutput
-	backlog      []*ledgerstate.ExtendedLockedOutput
+	chInRequest  chan *sctransaction.Request
+	backlog      []*sctransaction.Request
 	backlogMutex *sync.RWMutex
 }
 
@@ -133,7 +132,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		ledgerMutex: &sync.RWMutex{},
 		logicalTime: time.Now(),
 		timeStep:    DefaultTimeStep,
-		chains:      make(map[coretypes.ChainID]*Chain),
+		chains:      make(map[[33]byte]*Chain),
 	}
 	return ret
 }
@@ -185,7 +184,6 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		Env:                    env,
 		Name:                   name,
 		ChainID:                chainID,
-		StateTx:                originTx,
 		StateControllerKeyPair: &stateController,
 		StateControllerAddress: stateAddr,
 		OriginatorKeyPair:      chainOriginator,
@@ -197,12 +195,11 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		Log:                    env.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
-		chInRequest:  make(chan *ledgerstate.ExtendedLockedOutput),
-		backlog:      make([]*ledgerstate.ExtendedLockedOutput, 0),
+		chInRequest:  make(chan *sctransaction.Request),
+		backlog:      make([]*sctransaction.Request, 0),
 		backlogMutex: &sync.RWMutex{},
 	}
 	require.NoError(env.T, err)
-	require.NotNil(env.T, ret.StateTx)
 	require.NoError(env.T, err)
 
 	originBlock := state.MustNewOriginBlock(originTx.ID())
@@ -224,16 +221,15 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 
 	env.glbMutex.Lock()
-	env.chains[chainID] = ret
+	env.chains[chainID.Array()] = ret
 	env.glbMutex.Unlock()
 
 	go ret.readRequestsLoop()
 	go ret.batchLoop()
 
-	r := vm.RequestRefWithFreeTokens{}
-	r.Tx = initTx
+	initReq := env.RequestsForChain(initTx, chainID)
 	ret.reqCounter.Add(1)
-	_, err = ret.runBatch([]vm.RequestRefWithFreeTokens{r}, "new")
+	_, err = ret.runBatch(initReq, "new")
 	require.NoError(env.T, err)
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID)
@@ -242,29 +238,45 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
 // invalid or double spend
-func (env *Solo) AddToLedger(tx *sctransaction_old.TransactionEssence) error {
-	return env.utxoDB.AddTransaction(tx.Transaction)
+func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
+	return env.utxoDB.AddTransaction(tx)
+}
+
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) []*sctransaction.Request {
+	m := env.RequestsByChain(tx)
+	ret, _ := m[chid.Array()]
+	return ret
+}
+
+func (env *Solo) RequestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.Request {
+	sender, err := env.utxoDB.GetSingleSender(tx)
+	require.NoError(env.T, err)
+	ret := make(map[[33]byte][]*sctransaction.Request)
+	for _, out := range tx.Essence().Outputs() {
+		o, ok := out.(*ledgerstate.ExtendedLockedOutput)
+		if !ok {
+			continue
+		}
+		lst, ok := ret[o.Address().Array()]
+		if !ok {
+			lst = make([]*sctransaction.Request, 0)
+		}
+		ret[o.Address().Array()] = append(lst, sctransaction.RequestFromOutput(o, sender))
+	}
+	return ret
 }
 
 // EnqueueRequests dispatches requests contained in the transaction among chains
-func (env *Solo) EnqueueRequests(tx *sctransaction_old.TransactionEssence) {
-	reqRefByChain := make(map[coretypes.ChainID][]sctransaction_old.RequestRef)
-	for i, rsect := range tx.Requests() {
-		chid := rsect.Target().ChainID()
-		_, ok := reqRefByChain[chid]
-		if !ok {
-			reqRefByChain[chid] = make([]sctransaction_old.RequestRef, 0)
-		}
-		reqRefByChain[chid] = append(reqRefByChain[chid], sctransaction_old.RequestRef{
-			Tx:    tx,
-			Index: uint16(i),
-		})
-	}
+func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
+	requests := env.RequestsByChain(tx)
+
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
-	for chid, reqs := range reqRefByChain {
-		chain, ok := env.chains[chid]
+	for chidArr, reqs := range requests {
+		chid, err := coretypes.NewChainIDFromBytes(chidArr[:])
+		require.NoError(env.T, err)
+		chain, ok := env.chains[chidArr]
 		if !ok {
 			env.logger.Infof("dispatching requests. Unknown chain: %s", chid.String())
 			continue
@@ -276,43 +288,50 @@ func (env *Solo) EnqueueRequests(tx *sctransaction_old.TransactionEssence) {
 	}
 }
 
+func (ch *Chain) GetChainOutput() *ledgerstate.ChainOutput {
+	outs := ch.Env.utxoDB.GetChainOutputs(ch.ChainID.AsAddress())
+	require.EqualValues(ch.Env.T, 1, len(outs))
+
+	return outs[0]
+}
+
 func (ch *Chain) readRequestsLoop() {
 	for r := range ch.chInRequest {
 		ch.addToBacklog(r)
 	}
 }
 
-func (ch *Chain) addToBacklog(r sctransaction_old.RequestRef) {
+func (ch *Chain) addToBacklog(r *sctransaction.Request) {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)
-	tl := r.RequestSection().Timelock()
+	tl := r.Output().TimeLock()
 	if tl == 0 {
-		ch.Log.Infof("added to backlog: %s len: %d", r.RequestID().String(), len(ch.backlog))
+		ch.Log.Infof("added to backlog: %s len: %d", r.Output().ID().String(), len(ch.backlog))
 	} else {
 		tlTime := time.Unix(int64(tl), 0)
 		ch.Log.Infof("added to backlog: %s. Time locked for: %v",
-			r.RequestID().Short(), tlTime.Sub(ch.Env.LogicalTime()))
+			r.Output().ID().String(), tlTime.Sub(ch.Env.LogicalTime()))
 	}
 }
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []vm.RequestRefWithFreeTokens {
+func (ch *Chain) collateBatch() []*sctransaction.Request {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 
-	ret := make([]vm.RequestRefWithFreeTokens, 0)
+	ret := make([]*sctransaction.Request, 0)
 	remain := ch.backlog[:0]
-	for _, ref := range ch.backlog {
+	for _, req := range ch.backlog {
 		// using logical clock
-		if int64(ref.RequestSection().Timelock()) <= ch.Env.LogicalTime().Unix() {
-			if ref.RequestSection().Timelock() != 0 {
-				ch.Log.Infof("unlocked time-locked request %s", ref.RequestID().String())
+		if int64(req.Output().TimeLock()) <= ch.Env.LogicalTime().Unix() {
+			if req.Output().TimeLock() != 0 {
+				ch.Log.Infof("unlocked time-locked request %s", req.Output().ID().String())
 			}
-			ret = append(ret, vm.RequestRefWithFreeTokens{RequestRef: ref})
+			ret = append(ret, req)
 		} else {
-			remain = append(remain, ref)
+			remain = append(remain, req)
 		}
 	}
 	ch.backlog = remain

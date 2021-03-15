@@ -2,14 +2,11 @@ package testutil
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	nodeapi "github.com/iotaledger/goshimmer/dapps/waspconn/packages/apilib"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/wasp/client/level1"
 )
 
@@ -26,15 +23,15 @@ func NewGoshimmerUtxodbClient(host string) level1.Level1Client {
 	return &utxodbclient{host}
 }
 
-func (api *utxodbclient) RequestFunds(targetAddress *address.Address) error {
+func (api *utxodbclient) RequestFunds(targetAddress ledgerstate.Address) error {
 	return nodeapi.RequestFunds(api.goshimmerHost, targetAddress)
 }
 
-func (api *utxodbclient) GetConfirmedAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error) {
+func (api *utxodbclient) GetConfirmedAccountOutputs(address ledgerstate.Address) (map[transaction.OutputID][]*balance.Balance, error) {
 	return nodeapi.GetAccountOutputs(api.goshimmerHost, address)
 }
 
-func checkTxSize(tx *transaction.Transaction) error {
+func checkTxSize(tx *ledgerstate.Transaction) error {
 	data := tx.Bytes()
 	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
 		return fmt.Errorf("utxodbclient: size of serialized transaction %d bytes > max of %d bytes: %s",
@@ -42,14 +39,14 @@ func checkTxSize(tx *transaction.Transaction) error {
 	}
 	return nil
 }
-func (api *utxodbclient) PostTransaction(tx *transaction.Transaction) error {
+func (api *utxodbclient) PostTransaction(tx *ledgerstate.Transaction) error {
 	if err := checkTxSize(tx); err != nil {
 		return err
 	}
 	return nodeapi.PostTransaction(api.goshimmerHost, tx)
 }
 
-func (api *utxodbclient) PostAndWaitForConfirmation(tx *transaction.Transaction) error {
+func (api *utxodbclient) PostAndWaitForConfirmation(tx *ledgerstate.Transaction) error {
 	if err := checkTxSize(tx); err != nil {
 		return err
 	}
@@ -60,7 +57,7 @@ func (api *utxodbclient) PostAndWaitForConfirmation(tx *transaction.Transaction)
 	return api.WaitForConfirmation(tx.ID())
 }
 
-func (api *utxodbclient) WaitForConfirmation(txid transaction.ID) error {
+func (api *utxodbclient) WaitForConfirmation(txid ledgerstate.TransactionID) error {
 	for {
 		conf, err := nodeapi.IsConfirmed(api.goshimmerHost, &txid)
 		if err != nil {

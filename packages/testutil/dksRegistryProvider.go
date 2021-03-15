@@ -5,8 +5,8 @@ package testutil
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
@@ -36,7 +36,7 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.RegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(sharedAddress *address.Address) (*tcrypto.DKShare, error) {
+func (p *DkgRegistryProvider) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
 	var dkShareBytes = p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress)
