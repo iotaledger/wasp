@@ -32,7 +32,7 @@ type Sandbox interface {
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
 	Call(target Hname, entryPoint Hname, params dict.Dict, transfer ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
-	RequestID() RequestID
+	RequestID() ledgerstate.OutputID
 	// MintedSupply is number of free minted tokens, i.e. minted tokens which are sent to addresses
 	// other than chain address. It is a proof of how many tokens has been minted with the
 	// color of the transaction (after un-coloring all request tokens)

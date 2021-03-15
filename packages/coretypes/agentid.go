@@ -7,20 +7,16 @@ import (
 	"bytes"
 	"errors"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 	"io"
 )
 
-// AgentID represents exactly one of two types of entities on the ISCP ledger in one ID:
-//  - It can represent an address on the Tangle (controlled by some private key). In this case it can be
-//    interpreted as address.Address type (see MustAddress).
-//  - alternatively, it can represent a smart contract on the ISCP. In this case it can be interpreted as
-//    a coretypes.ContractID type (see MustContractID)
-// Type of ID represented by the AgentID can be recognized with IsNonAliasAddress call.
-// An attempt to interpret the AgentID in the wrong way invokes panic
+// AgentID represents address on the ledger with optional hname
+// If address is and alias address and hname is != 0 the agent id is interpreted as
+// ad contract id
 type AgentID struct {
-	a interface{} // one of 2: *ContractID or ledgerstate.Address
+	a ledgerstate.Address
+	h Hname
 }
 
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
@@ -30,16 +26,44 @@ func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 
 // NewAgentIDFromContractID makes AgentID from ContractID
 func NewAgentIDFromContractID(id ContractID) AgentID {
-	ret := id.Clone()
-	return AgentID{&ret}
+	return AgentID{
+		a: id.ChainID().AsAddress().Clone(),
+		h: id.Hname(),
+	}
 }
 
 // NewAgentIDFromAddress makes AgentID from address.Address
-func NewAgentIDFromAddress(addr ledgerstate.Address) (AgentID, error) {
-	if addr.Type() == ledgerstate.AliasAddressType {
-		return AgentID{}, xerrors.New("AgentID cannot be based on AliasAddress")
+func NewAgentIDFromAddress(addr ledgerstate.Address) AgentID {
+	return AgentID{
+		a: addr.Clone(),
 	}
-	return AgentID{addr.Clone()}, nil
+}
+
+// NewAgentIDFromString parses the human-readable string representation
+func NewAgentIDFromString(s string) (ret AgentID, err error) {
+	if len(s) < 2 {
+		err = errors.New("invalid length")
+		return
+	}
+	switch s[:2] {
+	case "A/":
+		var addr ledgerstate.Address
+		addr, err = ledgerstate.AddressFromBase58EncodedString(s[2:])
+		if err != nil {
+			return
+		}
+		ret = NewAgentIDFromAddress(addr)
+	case "C/":
+		var cid ContractID
+		cid, err = NewContractIDFromString(s[2:])
+		if err != nil {
+			return
+		}
+		ret = NewAgentIDFromContractID(cid)
+	default:
+		err = errors.New("invalid prefix")
+	}
+	return
 }
 
 // NewRandomAgentID creates random AgentID
@@ -57,100 +81,55 @@ func (a *AgentID) Bytes() []byte {
 
 // IsNonAliasAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 // This is based on the assumption that fro coretypes.Hname 0 is a reserved value
-func (a *AgentID) IsNonAliasAddress() bool {
-	switch a.a.(type) {
-	case *ContractID:
-		return false
-	case ledgerstate.Address:
-		return true
-	}
-	panic("wrong type behind AgentID")
+func (a *AgentID) IsContract() bool {
+	return a.a.Type() == ledgerstate.AliasAddressType && a.h != 0
 }
 
 // MustAddress takes address or panic if not address
-func (a *AgentID) MustAddress() ledgerstate.Address {
-	return a.a.(ledgerstate.Address)
+func (a *AgentID) AsAddress() ledgerstate.Address {
+	return a.a
 }
 
 // MustContractID takes contract ID or panics if not a contract ID
-func (a *AgentID) MustContractID() *ContractID {
-	return a.a.(*ContractID)
+func (a *AgentID) MustContractID() ContractID {
+	chainId, err := NewChainIDFromAddress(a.a)
+	if err != nil {
+		panic(err)
+	}
+	return NewContractID(chainId, a.h)
 }
 
 // String human readable string
 func (a *AgentID) String() string {
-	if a.IsNonAliasAddress() {
-		return "A/" + a.MustAddress().Base58()
+	if !a.IsContract() {
+		return "A/" + a.AsAddress().Base58()
 	}
 	cid := a.MustContractID()
 	return "C/" + cid.String()
 }
 
-// NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (ret AgentID, err error) {
-	if len(s) < 2 {
-		err = errors.New("invalid length")
-		return
-	}
-	switch s[:2] {
-	case "A/":
-		var addr ledgerstate.Address
-		addr, err = ledgerstate.AddressFromBase58EncodedString(s[2:])
-		if err != nil {
-			return
-		}
-		ret, err = NewAgentIDFromAddress(addr)
-		return
-	case "C/":
-		var cid ContractID
-		cid, err = NewContractIDFromString(s[2:])
-		if err != nil {
-			return
-		}
-		return NewAgentIDFromContractID(cid), nil
-	default:
-		err = errors.New("invalid prefix")
-	}
-	return
-}
-
 func (a *AgentID) Write(w io.Writer) error {
-	if err := util.WriteBoolByte(w, a.IsNonAliasAddress()); err != nil {
+	if _, err := w.Write(a.a.Bytes()); err != nil {
 		return err
 	}
-	if a.IsNonAliasAddress() {
-		if _, err := w.Write(a.MustAddress().Bytes()); err != nil {
-			return err
-		}
-	} else {
-		if err := a.MustContractID().Write(w); err != nil {
-			return err
-		}
+	if err := a.h.Write(w); err != nil {
+		return err
 	}
 	return nil
 }
 
 func (a *AgentID) Read(r io.Reader) error {
-	var isAddress bool
-	if err := util.ReadBoolByte(r, &isAddress); err != nil {
-		return err
+	var buf [ledgerstate.AddressLength]byte
+	if n, err := r.Read(buf[:]); err != nil || n != ledgerstate.AddressLength {
+		return xerrors.Errorf("error while parsing address. Err: %v", err)
 	}
-	if isAddress {
-		var data [ledgerstate.AddressLength]byte
-		if n, err := r.Read(data[:]); err != nil || n != ledgerstate.AddressLength {
-			return ErrWrongDataLength
-		}
-		t, _, err := ledgerstate.AddressFromBytes(data[:])
-		if err != nil {
-			return xerrors.Errorf("failed parsing address: %v", err)
-		}
+	if t, _, err := ledgerstate.AddressFromBytes(buf[:]); err != nil {
+		return err
+	} else {
 		a.a = t
-		return nil
 	}
-	cid := new(ContractID)
-	if err := cid.Read(r); err != nil {
+	if err := a.h.Read(r); err != nil {
 		return err
 	}
-	a.a = cid
 	return nil
 }
