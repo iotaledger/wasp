@@ -50,13 +50,17 @@ func GetDefaultDownloader() *Downloader {
 // http://<url of the contents> (e.g. http://some.place.lt/some/contents.txt)
 // https://<url of the contents> (e.g. https://some.place.lt/some/contents.txt)
 // ipfs://<cid of the contents> (e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ)
-func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache) error {
+func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache, completedChanOpt ...chan (bool)) error {
 	if d.containsOrMarkStarted(uri) {
 		d.log.Warnf("File %s is already being downloaded. Skipping it.", uri)
+		trueVar := true
+		go d.notifyCompletedIfNeeded(&trueVar, completedChanOpt...)
 		return nil
 	}
 
 	go func() {
+		success := false
+		defer d.notifyCompletedIfNeeded(&success, completedChanOpt...)
 		defer d.markCompleted(uri)
 
 		download, err := d.download(uri)
@@ -79,6 +83,7 @@ func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache 
 			return
 		}
 
+		success = true
 	}()
 
 	return nil
@@ -103,6 +108,12 @@ func (d *Downloader) markCompleted(uri string) {
 	defer d.downloadsMutex.Unlock()
 
 	delete(d.downloads, uri)
+}
+
+func (d *Downloader) notifyCompletedIfNeeded(success *bool, completedChanOpt ...chan (bool)) {
+	if len(completedChanOpt) > 0 {
+		completedChanOpt[0] <- *success
+	}
 }
 
 func (d *Downloader) download(uri string) ([]byte, error) {

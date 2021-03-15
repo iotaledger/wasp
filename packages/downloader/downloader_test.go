@@ -62,11 +62,17 @@ func TestIpfsDownload(t *testing.T) {
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
 	result, err := reg.HasBlob(hash)
+	chanDownloaded := make(chan bool)
 	require.NoError(t, err)
 	require.False(t, result, "The file should not be part of the registry before the download")
-	err = downloader.DownloadAndStore(hash, "ipfs://"+constFileCID, reg)
+	err = downloader.DownloadAndStore(hash, "ipfs://"+constFileCID, reg, chanDownloaded)
 	require.NoError(t, err)
-	time.Sleep(100 * time.Millisecond) // Time to wait for download completion
+	select {
+	case downloaded := <-chanDownloaded:
+		require.True(t, downloaded, "The downloader should successfully download the file")
+	case <-time.After(100 * time.Millisecond):
+		t.Fatalf("The download job of downloader timeouted")
+	}
 	result, err = reg.HasBlob(hash)
 	require.True(t, result, "The file must be part of the registry after the download")
 	require.NoError(t, err)
