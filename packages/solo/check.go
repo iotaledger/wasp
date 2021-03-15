@@ -4,8 +4,7 @@
 package solo
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -15,7 +14,7 @@ import (
 )
 
 // AssertAddressBalance asserts the UTXODB address balance of specific color in the address
-func (env *Solo) AssertAddressBalance(addr address.Address, col balance.Color, expected int64) {
+func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col ledgerstate.Color, expected uint64) {
 	require.EqualValues(env.T, expected, env.GetAddressBalance(addr, col))
 }
 
@@ -27,7 +26,7 @@ func (ch *Chain) CheckChain() {
 
 	rootRec, err := ch.FindContract(root.Interface.Name)
 	require.NoError(ch.Env.T, err)
-	emptyRootRecord := root.NewContractRecord(root.Interface, coretypes.AgentID{})
+	emptyRootRecord := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
 	require.EqualValues(ch.Env.T, root.EncodeContractRecord(&emptyRootRecord), root.EncodeContractRecord(rootRec))
 
 	accountsRec, err := ch.FindContract(accounts.Interface.Name)
@@ -58,15 +57,20 @@ func (ch *Chain) CheckChain() {
 // Sum of all accounts must be equal to total assets
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.GetTotalAssets()
-	accounts := ch.GetAccounts()
-	sum := make(map[balance.Color]int64)
-	for _, acc := range accounts {
-		ch.GetAccountBalance(acc).AddToMap(sum)
+	accs := ch.GetAccounts()
+	sum := make(map[ledgerstate.Color]uint64)
+	for _, acc := range accs {
+		bals := ch.GetAccountBalance(acc)
+		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
+			s, _ := sum[col]
+			sum[col] = s + bal
+			return true
+		})
 	}
 	require.True(ch.Env.T, total.Equal(coretypes.NewColoredBalancesFromMap(sum)))
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col balance.Color, bal int64) {
+func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col ledgerstate.Color, bal int64) {
 	require.EqualValues(ch.Env.T, bal, ch.GetAccountBalance(agentID).Balance(col))
 }

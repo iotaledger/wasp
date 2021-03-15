@@ -6,10 +6,8 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -29,22 +27,22 @@ import (
 //goland:noinspection ALL
 func (ch *Chain) String() string {
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID.String())
-	fmt.Fprintf(&buf, "Chain address: %s\n", ch.ChainAddress.String())
+	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
+	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress().String())
+	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
 	return string(buf.Bytes())
 }
 
 // DumpAccounts dumps all account balances into the human readable string
 func (ch *Chain) DumpAccounts() string {
-	info, _ := ch.GetInfo()
-	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID, info.ChainOwnerID)
+	_, chainOwnerID, _ := ch.GetInfo()
+	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID, chainOwnerID)
 	acc := ch.GetAccounts()
 	for _, aid := range acc {
 		ret += fmt.Sprintf("  %s:\n", aid)
 		bals := ch.GetAccountBalance(aid)
-		bals.IterateDeterministic(func(col balance.Color, bal int64) bool {
+		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
 			return true
 		})
@@ -89,7 +87,7 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 // Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
 //
 // The parameters must be in the form of sequence of pairs 'fieldName': 'fieldValue'
-func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	par := toMap(params...)
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
@@ -99,12 +97,12 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 
 	req := NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
-	require.EqualValues(ch.Env.T, feeColor, balance.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
-		req.WithTransfer(balance.ColorIOTA, totalFee)
+		req.WithTransfer(ledgerstate.ColorIOTA, totalFee)
 	}
-	res, err := ch.PostRequestSync(req, sigScheme)
+	res, err := ch.PostRequestSync(req, keyPair)
 	if err != nil {
 		return
 	}
@@ -126,7 +124,7 @@ func (ch *Chain) UploadBlob(sigScheme signaturescheme.SignatureScheme, params ..
 // The data itself must be uploaded to the node (in this case into Solo environment, separately
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
-func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.SignatureScheme, params ...interface{}) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	par := toMap(params...)
 	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
@@ -142,12 +140,12 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, sigScheme signaturescheme.
 		ch.Env.PutBlobDataIntoRegistry(v)
 	}
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
-	require.EqualValues(ch.Env.T, feeColor, balance.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
-		req.WithTransfer(balance.ColorIOTA, totalFee)
+		req.WithTransfer(ledgerstate.ColorIOTA, totalFee)
 	}
-	res, err := ch.PostRequestSync(req, sigScheme)
+	res, err := ch.PostRequestSync(req, keyPair)
 	if err != nil {
 		return
 	}
@@ -174,27 +172,27 @@ const (
 //
 // The blob for the Wasm binary used fixed field names which are statically known by the .
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
-func (ch *Chain) UploadWasm(sigScheme signaturescheme.SignatureScheme, binaryCode []byte) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
 	if OptimizeUpload {
-		return ch.UploadBlobOptimized(OptimalBlobSize, sigScheme,
+		return ch.UploadBlobOptimized(OptimalBlobSize, keyPair,
 			blob.VarFieldVMType, wasmtimevm.VMType,
 			blob.VarFieldProgramBinary, binaryCode,
 		)
 	}
-	return ch.UploadBlob(sigScheme,
+	return ch.UploadBlob(keyPair,
 		blob.VarFieldVMType, wasmtimevm.VMType,
 		blob.VarFieldProgramBinary, binaryCode,
 	)
 }
 
 // UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
-func (ch *Chain) UploadWasmFromFile(sigScheme signaturescheme.SignatureScheme, fileName string) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasmFromFile(keyPair *ed25519.KeyPair, fileName string) (ret hashing.HashValue, err error) {
 	var binary []byte
 	binary, err = ioutil.ReadFile(fileName)
 	if err != nil {
 		return
 	}
-	return ch.UploadWasm(sigScheme, binary)
+	return ch.UploadWasm(keyPair, binary)
 }
 
 // GetWasmBinary retrieves program binary in the format of Wasm blob from the chain by hash.
@@ -226,48 +224,33 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contact must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(sigScheme signaturescheme.SignatureScheme, name string, programHash hashing.HashValue, params ...interface{}) error {
+func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
 	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...)
-	_, err := ch.PostRequestSync(req, sigScheme)
+	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
 
 // DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
 // deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(sigScheme signaturescheme.SignatureScheme, name string, fname string, params ...interface{}) error {
-	hprog, err := ch.UploadWasmFromFile(sigScheme, fname)
+func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name string, fname string, params ...interface{}) error {
+	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
 	if err != nil {
 		return err
 	}
-	return ch.DeployContract(sigScheme, name, hprog, params...)
-}
-
-type ChainInfo struct {
-	ChainID      coretypes.ChainID
-	ChainOwnerID coretypes.AgentID
-	ChainColor   balance.Color
-	ChainAddress address.Address
+	return ch.DeployContract(keyPair, name, hprog, params...)
 }
 
 // GetInfo return main parameters of the chain:
 //  - chainID
 //  - agentID of the chain owner
 //  - registry of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Env.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
-
-	chainColor, ok, err := codec.DecodeColor(res.MustGet(root.VarChainColor))
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
-
-	chainAddress, ok, err := codec.DecodeAddress(res.MustGet(root.VarChainAddress))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 
@@ -277,27 +260,20 @@ func (ch *Chain) GetInfo() (ChainInfo, map[coretypes.Hname]*root.ContractRecord)
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.VarContractRegistry))
 	require.NoError(ch.Env.T, err)
-	return ChainInfo{
-		ChainID:      chainID,
-		ChainOwnerID: chainOwnerID,
-		ChainColor:   chainColor,
-		ChainAddress: chainAddress,
-	}, contracts
+	return chainID, chainOwnerID, contracts
 }
 
 // GetAddressBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (env *Solo) GetAddressBalance(addr address.Address, col balance.Color) int64 {
+func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
 	ret, _ := bals[col]
 	return ret
 }
 
 // GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
-func (env *Solo) GetAddressBalances(addr address.Address) map[balance.Color]int64 {
-	outs := env.utxoDB.GetAddressOutputs(addr)
-	ret, _ := waspconn.OutputBalancesByColor(outs)
-	return ret
+func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Color]uint64 {
+	return env.utxoDB.GetAddressBalances(addr)
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
@@ -315,16 +291,16 @@ func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	return ret
 }
 
-func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalancesOld {
+func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return coretypes.Nil
+		return coretypes.NewColoredBalancesFromMap(nil)
 	}
-	ret := make(map[balance.Color]int64)
+	ret := make(map[ledgerstate.Color]uint64)
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
 		col, _, err := codec.DecodeColor([]byte(key))
 		require.NoError(ch.Env.T, err)
-		val, _, err := codec.DecodeInt64(value)
+		val, _, err := codec.DecodeUint64(value)
 		require.NoError(ch.Env.T, err)
 		ret[col] = val
 		return true
@@ -335,14 +311,14 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalancesOld {
+func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
 	)
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() coretypes.ColoredBalancesOld {
+func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
 	)
@@ -353,7 +329,7 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalancesOld {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (balance.Color, int64, int64) {
+func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, int64, int64) {
 	hname := coretypes.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)

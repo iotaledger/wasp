@@ -125,7 +125,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signatures
 	defer ch.Env.ledgerMutex.Unlock()
 
 	if sigScheme == nil {
-		sigScheme = ch.OriginatorSigScheme
+		sigScheme = ch.OriginatorKeyPair
 	}
 	allOuts := ch.Env.utxoDB.GetAddressOutputs(sigScheme.Address())
 	txb, err := txbuilder.NewFromOutputBalances(allOuts)
@@ -155,7 +155,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, sigScheme signatures
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
 //  - creates a request transaction with the request block on it. The sigScheme is used to
-//    sign the inputs of the transaction or OriginatorSigScheme is used if parameter is nil
+//    sign the inputs of the transaction or OriginatorKeyPair is used if parameter is nil
 //  - adds request transaction to UTXODB
 //  - runs the request in the VM. It results in new updated virtual state and a new transaction
 //    which anchors the state.

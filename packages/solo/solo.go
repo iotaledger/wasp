@@ -4,24 +4,20 @@
 package solo
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"go.uber.org/atomic"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/utxodb"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
-	_ "github.com/iotaledger/wasp/packages/sctransaction_old/properties"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -38,7 +34,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
-const Saldo = int64(1337)
+const Saldo = uint64(1337)
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
@@ -65,26 +61,20 @@ type Chain struct {
 	// Name is the name of the chain
 	Name string
 
-	// ChainSigScheme signature scheme of the chain address, the one used to control funds owned by the chain.
+	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	ChainSigScheme signaturescheme.SignatureScheme
+	StateControllerKeyPair *ed25519.KeyPair
+	StateControllerAddress ledgerstate.Address
 
-	// OriginatorSigScheme the signature scheme used to create the chain (origin transaction).
+	// OriginatorKeyPair the signature scheme used to create the chain (origin transaction).
 	// It is a default signature scheme in many of 'solo' calls which require private key.
-	OriginatorSigScheme signaturescheme.SignatureScheme
+	OriginatorKeyPair *ed25519.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID coretypes.ChainID
 
-	// ChainAddress is the alias of ChainSigScheme.Address()
-	ChainAddress address.Address
-
-	// ChainColor is the color of the non-fungible token of the chain.
-	// It is equal to the hash of the origin transaction of the chain
-	ChainColor balance.Color
-
-	// OriginatorAddress is the alias for OriginatorSigScheme.Address()
-	OriginatorAddress address.Address
+	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
+	OriginatorAddress ledgerstate.Address
 
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
 	OriginatorAgentID coretypes.AgentID
@@ -93,7 +83,7 @@ type Chain struct {
 	ValidatorFeeTarget coretypes.AgentID
 
 	// StateTx is the anchor transaction of the current state of the chain
-	StateTx *sctransaction_old.TransactionEssence
+	StateTx *ledgerstate.Transaction
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State state.VirtualState
@@ -107,8 +97,8 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	reqCounter   atomic.Int32
-	chInRequest  chan sctransaction_old.RequestRef
-	backlog      []sctransaction_old.RequestRef
+	chInRequest  chan *ledgerstate.ExtendedLockedOutput
+	backlog      []*ledgerstate.ExtendedLockedOutput
 	backlogMutex *sync.RWMutex
 }
 
@@ -162,71 +152,75 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 //    'blob', 'accountsc', 'chainlog'
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator signaturescheme.SignatureScheme, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
+func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	env.logger.Infof("deploying new chain '%s'", name)
-	chSig := signaturescheme.ED25519(ed25519.GenerateKeyPair()) // chain address will be ED25519, not BLS
+	stateController := ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
+	stateAddr := ledgerstate.NewED25519Address(stateController.PublicKey)
+
+	var originatorAddr ledgerstate.Address
 	if chainOriginator == nil {
-		chainOriginator = signaturescheme.ED25519(ed25519.GenerateKeyPair())
-		_, err := env.utxoDB.RequestFunds(chainOriginator.Address())
+		kp := ed25519.GenerateKeyPair()
+		chainOriginator = &kp
+		originatorAddr = ledgerstate.NewED25519Address(kp.PublicKey)
+		_, err := env.utxoDB.RequestFunds(originatorAddr)
 		require.NoError(env.T, err)
+	} else {
+		originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
 	}
-	chainID := coretypes.ChainID(chSig.Address())
-	originatorAgentID := coretypes.NewAgentIDFromAddress(chainOriginator.Address())
+	originatorAgentID := coretypes.NewAgentIDFromAddress(originatorAddr)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
 		feeTarget = validatorFeeTarget[0]
 	}
+
+	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
+	originTx, chainID, err := sctransaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, inputs...)
+	require.NoError(env.T, err)
+	err = env.utxoDB.AddTransaction(originTx)
+	require.NoError(env.T, err)
+	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, testutil.RequestFundsAmount-100)
+
 	ret := &Chain{
-		Env:                 env,
-		Name:                name,
-		ChainSigScheme:      chSig,
-		OriginatorSigScheme: chainOriginator,
-		ChainAddress:        chSig.Address(),
-		OriginatorAddress:   chainOriginator.Address(),
-		OriginatorAgentID:   originatorAgentID,
-		ValidatorFeeTarget:  feeTarget,
-		ChainID:             chainID,
-		State:               state.NewVirtualState(mapdb.NewMapDB(), &chainID),
-		proc:                processors.MustNew(),
-		Log:                 env.logger.Named(name),
+		Env:                    env,
+		Name:                   name,
+		ChainID:                chainID,
+		StateTx:                originTx,
+		StateControllerKeyPair: &stateController,
+		StateControllerAddress: stateAddr,
+		OriginatorKeyPair:      chainOriginator,
+		OriginatorAddress:      originatorAddr,
+		OriginatorAgentID:      originatorAgentID,
+		ValidatorFeeTarget:     feeTarget,
+		State:                  state.NewVirtualState(mapdb.NewMapDB(), &chainID),
+		proc:                   processors.MustNew(),
+		Log:                    env.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
-		chInRequest:  make(chan sctransaction_old.RequestRef),
-		backlog:      make([]sctransaction_old.RequestRef, 0),
+		chInRequest:  make(chan *ledgerstate.ExtendedLockedOutput),
+		backlog:      make([]*ledgerstate.ExtendedLockedOutput, 0),
 		backlogMutex: &sync.RWMutex{},
 	}
-	env.AssertAddressBalance(ret.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
-	var err error
-	ret.StateTx, err = sctransaction.NewChainOriginTransaction(sctransaction.NewChainOriginTransactionParams{
-		OriginAddress:             ret.ChainAddress,
-		OriginatorSignatureScheme: ret.OriginatorSigScheme,
-		AllInputs:                 env.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
-	})
 	require.NoError(env.T, err)
 	require.NotNil(env.T, ret.StateTx)
-	err = env.utxoDB.AddTransaction(ret.StateTx.Transaction)
 	require.NoError(env.T, err)
 
-	ret.ChainColor = balance.Color(ret.StateTx.ID())
-
-	originBlock := state.MustNewOriginBlock(&ret.ChainColor)
+	originBlock := state.MustNewOriginBlock(originTx.ID())
 	err = ret.State.ApplyBlock(originBlock)
 	require.NoError(env.T, err)
 	err = ret.State.CommitToDb(originBlock)
 	require.NoError(env.T, err)
 
-	initTx, err := sctransaction.NewRootInitRequestTransaction(sctransaction.NewRootInitRequestTransactionParams{
-		ChainID:              chainID,
-		ChainColor:           ret.ChainColor,
-		ChainAddress:         ret.ChainAddress,
-		Description:          "'solo' testing chain",
-		OwnerSignatureScheme: ret.OriginatorSigScheme,
-		AllInputs:            env.utxoDB.GetAddressOutputs(ret.OriginatorAddress),
-	})
+	initTx, err := sctransaction.NewRootInitRequestTransaction(
+		ret.OriginatorKeyPair,
+		chainID,
+		"'solo' testing chain",
+		env.utxoDB.GetAddressOutputs(ret.OriginatorAddress)...,
+	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
 
-	err = env.utxoDB.AddTransaction(initTx.Transaction)
+	err = env.utxoDB.AddTransaction(initTx)
 	require.NoError(env.T, err)
 
 	env.glbMutex.Lock()

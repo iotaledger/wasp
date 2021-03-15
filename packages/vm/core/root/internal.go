@@ -20,7 +20,7 @@ func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecor
 	if retBin == nil {
 		if hname == Interface.Hname() {
 			// if not found and it is root, it means it is chain init --> return empty root record
-			rec := NewContractRecord(Interface, coretypes.AgentID{})
+			rec := NewContractRecord(Interface, &coretypes.AgentID{})
 			return &rec, nil
 		}
 		return nil, ErrContractNotFound
@@ -124,12 +124,12 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[cor
 	return ret, err
 }
 
-func CheckAuthorizationByChainOwner(state kv.KVStore, agentID coretypes.AgentID) bool {
+func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *coretypes.AgentID) bool {
 	currentOwner, _, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
 	if err != nil {
 		panic(err)
 	}
-	return currentOwner == agentID
+	return currentOwner == *agentID
 }
 
 // storeAndInitContract internal utility function

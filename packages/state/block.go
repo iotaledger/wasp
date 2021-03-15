@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
@@ -47,16 +48,12 @@ func NewBlockFromBytes(data []byte) (Block, error) {
 }
 
 // block with empty state update and nil state hash
-func MustNewOriginBlock(color *balance.Color) Block {
-	ret, err := NewBlock([]StateUpdate{NewStateUpdate(nil)})
+func MustNewOriginBlock(originTxID ledgerstate.TransactionID) Block {
+	ret, err := NewBlock([]StateUpdate{NewStateUpdate(ledgerstate.OutputID{})})
 	if err != nil {
 		log.Panic(err)
 	}
-	var col balance.Color
-	if color != nil {
-		col = *color
-	}
-	return ret.WithStateTransaction((valuetransaction.ID)(col))
+	return ret.WithStateTransaction(originTxID)
 }
 
 func (b *block) String() string {

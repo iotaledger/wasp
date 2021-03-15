@@ -5,11 +5,10 @@ package solo
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -18,14 +17,10 @@ import (
 	"sync"
 )
 
-func (ch *Chain) validateBatch(batch []vm.RequestRefWithFreeTokens) {
-	for _, reqRef := range batch {
-		_, err := reqRef.Tx.Properties()
-		require.NoError(ch.Env.T, err)
-	}
+func (ch *Chain) validateBatch(batch []*sctransaction.Request) {
 }
 
-func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (dict.Dict, error) {
+func (ch *Chain) runBatch(batch []*sctransaction.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
 
 	ch.runVMMutex.Lock()
@@ -69,7 +64,7 @@ func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (di
 	require.NoError(ch.Env.T, err)
 
 	wg.Wait()
-	task.ResultTransaction.Sign(ch.ChainSigScheme)
+	task.ResultTransaction.Sign(ch.StateControllerKeyPair)
 
 	// check semantic validity of the transaction
 	_, err = task.ResultTransaction.Properties()

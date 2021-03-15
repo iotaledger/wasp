@@ -52,7 +52,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
-	rec := NewContractRecord(Interface, coretypes.AgentID{})
+	rec := NewContractRecord(Interface, &coretypes.AgentID{})
 	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
 
 	// deploy blob
@@ -122,7 +122,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
-		Creator:     ctx.Caller(),
+		Creator:     *ctx.Caller(),
 	}, initParams)
 	a.Require(err == nil, "root.deployContract.fail: %v", err)
 
@@ -164,7 +164,7 @@ func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	info := MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
-	ret.Set(VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
+	ret.Set(VarChainOwnerID, codec.EncodeAgentID(&info.ChainOwnerID))
 	ret.Set(VarDescription, codec.EncodeString(info.Description))
 	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
@@ -189,7 +189,7 @@ func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	newOwnerID := params.MustGetAgentID(ParamChainOwner)
-	ctx.State().Set(VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
+	ctx.State().Set(VarChainOwnerIDDelegated, codec.EncodeAgentID(&newOwnerID))
 	ctx.Log().Debugf("root.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil, nil
 }
@@ -206,10 +206,10 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	currentOwner := stateDecoder.MustGetAgentID(VarChainOwnerID)
 	nextOwner := stateDecoder.MustGetAgentID(VarChainOwnerIDDelegated, currentOwner)
 
-	a.Require(nextOwner != currentOwner, "root.claimChainOwnership: not delegated to another chain owner")
-	a.Require(nextOwner == ctx.Caller(), "root.claimChainOwnership: not authorized")
+	a.Require(!nextOwner.Equals(&currentOwner), "root.claimChainOwnership: not delegated to another chain owner")
+	a.Require(nextOwner.Equals(ctx.Caller()), "root.claimChainOwnership: not authorized")
 
-	state.Set(VarChainOwnerID, codec.EncodeAgentID(nextOwner))
+	state.Set(VarChainOwnerID, codec.EncodeAgentID(&nextOwner))
 	state.Del(VarChainOwnerIDDelegated)
 	ctx.Log().Debugf("root.chainChainOwner.success: chain owner changed: %s --> %s",
 		currentOwner.String(), nextOwner.String())

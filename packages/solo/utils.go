@@ -9,7 +9,7 @@ import (
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
 func (ch *Chain) GrantDeployPermission(sigScheme signaturescheme.SignatureScheme, deployerAgentID coretypes.AgentID) error {
 	if sigScheme == nil {
-		sigScheme = ch.OriginatorSigScheme
+		sigScheme = ch.OriginatorKeyPair
 	}
 
 	req := NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, deployerAgentID)
@@ -20,7 +20,7 @@ func (ch *Chain) GrantDeployPermission(sigScheme signaturescheme.SignatureScheme
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
 func (ch *Chain) RevokeDeployPermission(sigScheme signaturescheme.SignatureScheme, deployerAgentID coretypes.AgentID) error {
 	if sigScheme == nil {
-		sigScheme = ch.OriginatorSigScheme
+		sigScheme = ch.OriginatorKeyPair
 	}
 
 	req := NewCallParams(root.Interface.Name, root.FuncRevokeDeploy, root.ParamDeployer, deployerAgentID)

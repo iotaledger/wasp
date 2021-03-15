@@ -80,6 +80,16 @@ func (a *AgentID) Bytes() []byte {
 	return buf.Bytes()
 }
 
+func (a *AgentID) Equals(a1 *AgentID) bool {
+	if !a.a.Equals(a1.a) {
+		return false
+	}
+	if a.h != a1.h {
+		return false
+	}
+	return true
+}
+
 // IsNonAliasAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
 // This is based on the assumption that fro coretypes.Hname 0 is a reserved value
 func (a *AgentID) IsContract() bool {
