@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -15,28 +14,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const MOCK_SERVER_PORT string = ":9999"
-const FILE_CID string = "someunrealistichash12345"
+const constMockServerPort string = ":9999"
+const constFileCid string = "someunrealistichash12345"
 
-var FILE []byte = []byte{'s', 'o', 'm', 'e', ' ', 'f', 'i', 'l', 'e', ' ', 'f', 'o', 'r', ' ', 't', 'e', 's', 't', 'i', 'n', 'g'} // should be constant, but...
+var constVarFile []byte = []byte("some file for testing")
 
 func startMockServer() *echo.Echo {
-	var e *echo.Echo
-	e = echo.New()
+	e := echo.New()
 	e.GET("/ipfs/:cid", func(c echo.Context) error {
-		var cid string
 		var response []byte
-		cid = c.Param("cid")
+		cid := c.Param("cid")
 		switch cid {
-		case FILE_CID:
-			response = FILE
+		case constFileCid:
+			response = constVarFile
 		default:
 			return c.NoContent(http.StatusNotFound)
 		}
 		return c.Blob(http.StatusOK, "text/plain", response)
 	})
 	go func() {
-		var err error = e.Start(MOCK_SERVER_PORT)
+		err := e.Start(constMockServerPort)
 		if err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal(err)
 		}
@@ -45,41 +42,32 @@ func startMockServer() *echo.Echo {
 }
 
 func stopMockServer(e *echo.Echo) {
-	var ctx context.Context
-	var cancel context.CancelFunc
-	var err error
-
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = e.Shutdown(ctx)
+	err := e.Shutdown(ctx)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 }
 
 func TestIpfsDownload(t *testing.T) {
-	var log *logger.Logger = testutil.NewLogger(t)
+	log := testutil.NewLogger(t)
 
-	var downloader *Downloader = New(log, "http://localhost"+MOCK_SERVER_PORT)
-	var server *echo.Echo = startMockServer()
+	downloader := New(log, "http://localhost"+constMockServerPort)
+	server := startMockServer()
+	defer stopMockServer(server)
+
 	time.Sleep(100 * time.Millisecond) // Time to wait for server start
-
-	var hash hashing.HashValue = hashing.HashData(FILE)
-
-	var db *dbprovider.DBProvider = dbprovider.NewInMemoryDBProvider(log)
-	var reg *registry.Impl = registry.NewRegistry(nil, log, db)
-	var result bool
-	var err error
-
-	result, err = reg.HasBlob(hash)
+	hash := hashing.HashData(constVarFile)
+	db := dbprovider.NewInMemoryDBProvider(log)
+	reg := registry.NewRegistry(nil, log, db)
+	result, err := reg.HasBlob(hash)
 	require.NoError(t, err)
 	require.False(t, result, "The file should not be part of the registry before the download")
-	err = downloader.DownloadAndStore(hash, "ipfs://"+FILE_CID, reg)
+	err = downloader.DownloadAndStore(hash, "ipfs://"+constFileCid, reg)
 	require.NoError(t, err)
 	time.Sleep(100 * time.Millisecond) // Time to wait for download completion
 	result, err = reg.HasBlob(hash)
 	require.True(t, result, "The file must be part of the registry after the download")
 	require.NoError(t, err)
-
-	stopMockServer(server)
 }

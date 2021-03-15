@@ -7,16 +7,16 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
-// PluginName is the name of the web API plugin.
+// PluginName is the name of the downloader plugin.
 const PluginName = "Downloader"
 
+//Init inits the plugin.
 func Init() *node.Plugin {
-	var configure, run func(*node.Plugin)
-	configure = func(*node.Plugin) {
-		var log *logger.Logger = logger.NewLogger(PluginName)
+	configure := func(*node.Plugin) {
+		log := logger.NewLogger(PluginName)
 		downloader.Init(log, parameters.GetString(parameters.IpfsGatewayAddress))
 	}
-	run = func(*node.Plugin) {
+	run := func(*node.Plugin) {
 		// Nothing to run here
 	}
 
