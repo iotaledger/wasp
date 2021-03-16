@@ -120,7 +120,7 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 //}
 
 func (env *Solo) PutBlobDataIntoRegistry(data []byte) hashing.HashValue {
-	h, err := env.registry.PutBlob(data)
+	h, err := env.blobCache.PutBlob(data)
 	require.NoError(env.T, err)
 	env.logger.Infof("Solo::PutBlobDataIntoRegistry: len = %d, hash = %s", len(data), h)
 	return h

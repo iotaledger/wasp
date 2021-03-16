@@ -37,10 +37,10 @@ func (ch *Chain) String() string {
 // DumpAccounts dumps all account balances into the human readable string
 func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
-	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID, chainOwnerID)
+	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
 	acc := ch.GetAccounts()
 	for _, aid := range acc {
-		ret += fmt.Sprintf("  %s:\n", aid)
+		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(aid)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
@@ -51,7 +51,7 @@ func (ch *Chain) DumpAccounts() string {
 }
 
 // FindContract is a view call to the 'root' smart contract on the chain.
-// It returns registry record of the deployed smart contract with the given name
+// It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	retDict, err := ch.CallView(root.Interface.Name, root.FuncFindContract,
 		root.ParamHname, coretypes.Hn(scName),
@@ -135,7 +135,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 	// The call returns map of keys/value pairs which were replaced by hashes. These data must be uploaded
 	// separately
 	req, toUpload := NewCallParamsOptimized(blob.Interface.Name, blob.FuncStoreBlob, optimalSize, params...)
-	// the too big data we first upload into the registry
+	// the too big data we first upload into the blobCache
 	for _, v := range toUpload {
 		ch.Env.PutBlobDataIntoRegistry(v)
 	}
@@ -245,7 +245,7 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name string, fname
 // GetInfo return main parameters of the chain:
 //  - chainID
 //  - agentID of the chain owner
-//  - registry of contract deployed on the chain in the form of map 'contract hname': 'contract record'
+//  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Env.T, err)

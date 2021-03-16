@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/testlogger"
 	"go.uber.org/atomic"
 	"sync"
 	"testing"
@@ -16,10 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
@@ -36,6 +34,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 const (
 	Saldo              = uint64(1337)
 	DustThresholdIotas = uint64(100)
+	RequestFundsAmount = 1337 // avoid dependency from testutil
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -44,7 +43,7 @@ type Solo struct {
 	T           *testing.T
 	logger      *logger.Logger
 	utxoDB      *utxodb.UtxoDB
-	registry    coretypes.BlobCacheFull
+	blobCache   coretypes.BlobCacheFull
 	glbMutex    *sync.RWMutex
 	ledgerMutex *sync.RWMutex
 	clockMutex  *sync.RWMutex
@@ -111,9 +110,9 @@ var (
 //   'printStackTrace' controls printing stack trace in case of errors
 func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
-		glbLogger = testutil.NewLogger(t, "04:05.000")
+		glbLogger = testlogger.NewLogger(t, "04:05.000")
 		if !debug {
-			glbLogger = testutil.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
+			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
 		wasmtimeConstructor := func(binary []byte) (coretypes.Processor, error) {
 			return wasmproc.GetProcessor(binary, glbLogger)
@@ -121,12 +120,11 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmtimeConstructor)
 		require.NoError(t, err)
 	})
-	reg := registry.NewRegistry(nil, glbLogger.Named("registry"), dbprovider.NewInMemoryDBProvider(glbLogger))
 	ret := &Solo{
 		T:           t,
 		logger:      glbLogger,
 		utxoDB:      utxodb.New(),
-		registry:    reg,
+		blobCache:   newDummyBlobCache(),
 		glbMutex:    &sync.RWMutex{},
 		clockMutex:  &sync.RWMutex{},
 		ledgerMutex: &sync.RWMutex{},
@@ -178,7 +176,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, testutil.RequestFundsAmount-100)
+	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, RequestFundsAmount-100)
 
 	ret := &Chain{
 		Env:                    env,

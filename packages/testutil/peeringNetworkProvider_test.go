@@ -4,6 +4,7 @@
 package testutil_test
 
 import (
+	"github.com/iotaledger/wasp/packages/testlogger"
 	"testing"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func TestFakeNetwork(t *testing.T) {
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	doneCh := make(chan bool)
 	chain1 := coretypes.NewRandomChainID()

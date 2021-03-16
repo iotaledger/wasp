@@ -9,6 +9,7 @@ package dkg_test
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/testlogger"
 	"testing"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 
 // TestBasic checks if DKG procedure is executed successfully in a common case.
 func TestBasic(t *testing.T) {
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
@@ -44,7 +45,7 @@ func TestBasic(t *testing.T) {
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerPubs, peerSecs, 10000,
 		testutil.NewPeeringNetReliable(),
-		testutil.WithLevel(log, logger.LevelWarn, false),
+		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
@@ -54,7 +55,7 @@ func TestBasic(t *testing.T) {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
-			testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
+			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
 	//
@@ -75,7 +76,7 @@ func TestBasic(t *testing.T) {
 // TestNoPubs checks, if public keys are taken from the peering network successfully.
 // See a NOTE in the test case bellow.
 func TestNoPubs(t *testing.T) {
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
@@ -95,7 +96,7 @@ func TestNoPubs(t *testing.T) {
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerPubs, peerSecs, 10000,
 		testutil.NewPeeringNetReliable(),
-		testutil.WithLevel(log, logger.LevelWarn, false),
+		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
@@ -105,7 +106,7 @@ func TestNoPubs(t *testing.T) {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
-			testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
+			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
 	//
@@ -129,7 +130,7 @@ func TestUnreliableNet(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
@@ -152,9 +153,9 @@ func TestUnreliableNet(t *testing.T) {
 			80,                                         // Delivered %
 			20,                                         // Duplicated %
 			10*time.Millisecond, 1000*time.Millisecond, // Delays (from, till)
-			testutil.WithLevel(log.Named("UnreliableNet"), logger.LevelDebug, false),
+			testlogger.WithLevel(log.Named("UnreliableNet"), logger.LevelDebug, false),
 		),
-		testutil.WithLevel(log, logger.LevelInfo, false),
+		testlogger.WithLevel(log, logger.LevelInfo, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 	//
@@ -164,7 +165,7 @@ func TestUnreliableNet(t *testing.T) {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
 			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
-			testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
+			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
 	//
@@ -184,7 +185,7 @@ func TestUnreliableNet(t *testing.T) {
 
 // TestLowN checks, if the DKG works with N=1 and other low values. N=1 is a special case.
 func TestLowN(t *testing.T) {
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
@@ -205,7 +206,7 @@ func TestLowN(t *testing.T) {
 		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 			peerNetIDs, peerPubs, peerSecs, 10000,
 			testutil.NewPeeringNetReliable(),
-			testutil.WithLevel(log, logger.LevelWarn, false),
+			testlogger.WithLevel(log, logger.LevelWarn, false),
 		)
 		var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
 		//
@@ -215,7 +216,7 @@ func TestLowN(t *testing.T) {
 			registry := testutil.NewDkgRegistryProvider(suite)
 			dkgNodes[i] = dkg.NewNode(
 				peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
-				testutil.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
+				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 			)
 		}
 		//

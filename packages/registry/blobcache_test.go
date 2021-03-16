@@ -3,13 +3,13 @@ package registry
 import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testlogger"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestBlobPutGet(t *testing.T) {
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := NewRegistry(nil, log, db)
 

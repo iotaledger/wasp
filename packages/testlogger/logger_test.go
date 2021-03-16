@@ -1,4 +1,4 @@
-package testutil
+package testlogger
 
 import (
 	"github.com/stretchr/testify/require"

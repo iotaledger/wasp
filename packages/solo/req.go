@@ -176,7 +176,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	defer ch.runVMMutex.Unlock()
 
 	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.proc, ch.Log)
-	a, ok, err := req.args.SolidifyRequestArguments(ch.Env.registry)
+	a, ok, err := req.args.SolidifyRequestArguments(ch.Env.blobCache)
 	if err != nil || !ok {
 		return nil, fmt.Errorf("solo.internal error: can't solidify args")
 	}

@@ -32,7 +32,7 @@ func (ch *Chain) runBatch(batch []*sctransaction.Request, trace string) (dict.Di
 
 	// solidify arguments
 	for _, req := range batch {
-		if ok, err := req.SolidifyArgs(ch.Env.registry); err != nil || !ok {
+		if ok, err := req.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
 			return nil, fmt.Errorf("solo inconsistency: failed to solidify request args")
 		}
 	}
@@ -95,10 +95,11 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	ch.Env.ClockStep()
 }
 
-func batchShortStr(reqIds []*sctransaction.Request) string {
+func batchShortStr(reqIds []ledgerstate.OutputID) string {
 	ret := make([]string, len(reqIds))
 	for i, r := range reqIds {
-		ret[i] = r.Short()
+		s := r.Base58()
+		ret[i] = s[:6] + ".."
 	}
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }

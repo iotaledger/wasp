@@ -4,13 +4,13 @@
 package tcp_test
 
 import (
+	"github.com/iotaledger/wasp/packages/testlogger"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/tcp"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/util/key"
@@ -18,7 +18,7 @@ import (
 
 func TestBasic(t *testing.T) {
 	suite := pairing.NewSuiteBn256()
-	log := testutil.NewLogger(t)
+	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	var err0, err1, err2 error
 	doneCh := make(chan bool)
