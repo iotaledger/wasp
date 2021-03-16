@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -24,7 +23,7 @@ func NewStateUpdate(reqid ledgerstate.OutputID) StateUpdate {
 }
 
 func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
-	ret := NewStateUpdate(nil).(*stateUpdate)
+	ret := NewStateUpdate(ledgerstate.OutputID{}).(*stateUpdate)
 	return ret, ret.Read(r)
 }
 

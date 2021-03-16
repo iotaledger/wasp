@@ -101,8 +101,7 @@ func (req *Request) SenderAgentID() (ret coretypes.AgentID) {
 		if err != nil {
 			panic(err)
 		}
-		senderContractID := coretypes.NewContractID(chainID, req.requestMetadata.SenderContract())
-		ret = coretypes.NewAgentIDFromContractID(&senderContractID)
+		ret = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, req.requestMetadata.SenderContract()))
 	} else {
 		ret = coretypes.NewAgentIDFromAddress(req.senderAddress)
 	}

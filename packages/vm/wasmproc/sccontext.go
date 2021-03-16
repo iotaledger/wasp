@@ -4,6 +4,7 @@
 package wasmproc
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -69,15 +70,16 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 		return aid.Bytes()
 	case wasmhost.KeyChainOwnerId:
 		aid = o.vm.chainOwnerID()
-		return aid[:]
+		return aid.Bytes()
 	case wasmhost.KeyContractCreator:
 		aid = o.vm.contractCreator()
-		return aid[:]
+		return aid.Bytes()
 	case wasmhost.KeyContractId:
 		cid := o.vm.contractID()
-		return cid[:]
+		return cid.Bytes()
 	case wasmhost.KeyMinted:
-		return codec.EncodeInt64(o.vm.ctx.MintedSupply())
+		_, m := o.vm.ctx.Minted()
+		return codec.EncodeUint64(m)
 	case wasmhost.KeyRequestId:
 		rid := o.vm.ctx.RequestID()
 		return rid[:]
@@ -198,7 +200,7 @@ func (o *ScContext) processPost(bytes []byte) {
 		TargetContractID: contract,
 		EntryPoint:       function,
 		Params:           params,
-		Transfer:         transfer,
+		Transfer:         *transfer,
 		TimeLock:         uint32(delay),
 	})
 }
@@ -215,18 +217,19 @@ func (o *ScContext) getParams(paramsId int32) dict.Dict {
 	return params
 }
 
-func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalancesOld {
+func (o *ScContext) getTransfer(transferId int32) *coretypes.ColoredBalances {
 	if transferId == 0 {
-		return coretypes.NewColoredBalancesFromMap(nil)
+		r := coretypes.NewColoredBalancesFromMap(nil)
+		return &r
 	}
-	transfer := make(map[balance.Color]int64)
+	transfer := make(map[ledgerstate.Color]uint64)
 	transferDict := o.host.FindObject(transferId).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		color, _, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		amount, _, err := codec.DecodeInt64(value)
+		amount, _, err := codec.DecodeUint64(value)
 		if err != nil {
 			o.Panic(err.Error())
 		}
@@ -234,5 +237,6 @@ func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalancesOld {
 		transfer[color] = amount
 		return true
 	})
-	return coretypes.NewColoredBalancesFromMap(transfer)
+	r := coretypes.NewColoredBalancesFromMap(transfer)
+	return &r
 }

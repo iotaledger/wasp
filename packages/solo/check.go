@@ -72,5 +72,6 @@ func (ch *Chain) CheckAccountLedger() {
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
 func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col ledgerstate.Color, bal int64) {
-	require.EqualValues(ch.Env.T, bal, ch.GetAccountBalance(agentID).Balance(col))
+	bals := ch.GetAccountBalance(agentID)
+	require.EqualValues(ch.Env.T, bal, bals.Balance(col))
 }

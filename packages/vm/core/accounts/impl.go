@@ -56,7 +56,7 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	targetAgentID := params.MustGetAgentID(ParamAgentID, *caller)
 
 	// funds currently are at the disposition of accounts, they are moved to the target
-	from := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	from := coretypes.NewAgentIDFromContractID(*ctx.ContractID())
 	succ := MoveBetweenAccounts(state, &from, &targetAgentID, ctx.IncomingTransfer())
 	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", caller.String())
 
@@ -128,7 +128,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 
 	// take to tokens here to 'accounts' from the caller
-	toAgentId := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	toAgentId := coretypes.NewAgentIDFromContractID(*ctx.ContractID())
 	succ := MoveBetweenAccounts(ctx.State(), caller, &toAgentId, &toWithdraw)
 	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
 

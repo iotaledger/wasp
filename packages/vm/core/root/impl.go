@@ -288,9 +288,9 @@ func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 		return nil, err
 	}
 
-	ownerFee := params.MustGetUint64(ParamOwnerFee, -1)
+	ownerFee := params.MustGetUint64(ParamOwnerFee, 0)
 	ownerFeeSet := ownerFee >= 0
-	validatorFee := params.MustGetUint64(ParamValidatorFee, -1)
+	validatorFee := params.MustGetUint64(ParamValidatorFee, 0)
 	validatorFeeSet := validatorFee >= 0
 
 	a.Require(ownerFeeSet || validatorFeeSet, "root.setContractFee: wrong parameters")

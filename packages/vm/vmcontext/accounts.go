@@ -6,7 +6,7 @@ import (
 )
 
 func (vmctx *VMContext) GetIncoming() *coretypes.ColoredBalances {
-	return &vmctx.getCallContext().transfer
+	return vmctx.getCallContext().transfer
 }
 
 func (vmctx *VMContext) GetBalance(col ledgerstate.Color) uint64 {

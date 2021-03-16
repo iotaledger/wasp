@@ -28,6 +28,8 @@ type sandboxview struct {
 	events        vm.ContractEventPublisher
 }
 
+var _ coretypes.SandboxView = &sandboxview{}
+
 func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
 		vctx:          vctx,
@@ -54,7 +56,7 @@ func (s *sandboxview) WriteableState() kv.KVStore {
 	return s.state
 }
 
-func (s *sandboxview) Balances() coretypes.ColoredBalances {
+func (s *sandboxview) Balances() *coretypes.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -62,35 +64,36 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 
-func (s *sandboxview) ContractID() coretypes.ContractID {
-	return coretypes.NewContractID(s.vctx.chainID, s.contractHname)
+func (s *sandboxview) ContractID() *coretypes.ContractID {
+	r := coretypes.NewContractID(s.vctx.chainID, s.contractHname)
+	return &r
 }
 
 func (s *sandboxview) Log() coretypes.LogInterface {
 	return s.vctx
 }
 
-func (s *sandboxview) ChainID() coretypes.ChainID {
-	return s.vctx.chainID
+func (s *sandboxview) ChainID() *coretypes.ChainID {
+	return &s.vctx.chainID
 }
 
 var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
 
-func (s *sandboxview) ChainOwnerID() coretypes.AgentID {
+func (s *sandboxview) ChainOwnerID() *coretypes.AgentID {
 	r, err := s.Call(root.Interface.Hname(), getChainInfoHname, nil)
 	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
 	ret := res.MustGetAgentID(root.VarChainOwnerID)
-	return ret
+	return &ret
 }
 
-func (s *sandboxview) ContractCreator() coretypes.AgentID {
+func (s *sandboxview) ContractCreator() *coretypes.AgentID {
 	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.state, root.Interface.Hname()), s.contractHname)
 	if err != nil {
 		s.Log().Panicf("failed to find contract %s: %v", s.contractHname, err)
 	}
-	return contractRecord.Creator
+	return &contractRecord.Creator
 }
 
 func (s *sandboxview) GetTimestamp() int64 {

@@ -34,7 +34,7 @@ func (vmctx *VMContext) CurrentContractID() *coretypes.ContractID {
 }
 
 func (vmctx *VMContext) MyAgentID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+	return coretypes.NewAgentIDFromContractID(*vmctx.CurrentContractID())
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {

@@ -291,10 +291,11 @@ func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	return ret
 }
 
-func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBalances {
+func (ch *Chain) getAccountBalance(d dict.Dict, err error) *coretypes.ColoredBalances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return coretypes.NewColoredBalancesFromMap(nil)
+		ret := coretypes.NewColoredBalancesFromMap(nil)
+		return &ret
 	}
 	ret := make(map[ledgerstate.Color]uint64)
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
@@ -306,19 +307,20 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) coretypes.ColoredBala
 		return true
 	})
 	require.NoError(ch.Env.T, err)
-	return coretypes.NewColoredBalancesFromMap(ret)
+	r := coretypes.NewColoredBalancesFromMap(ret)
+	return &r
 }
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) coretypes.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) *coretypes.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
 	)
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
+func (ch *Chain) GetTotalAssets() *coretypes.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
 	)

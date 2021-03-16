@@ -57,7 +57,7 @@ func (dbp *DBProvider) GetPartition(chainID *coretypes.ChainID) kvstore.KVStore 
 	dbp.partitionsMutex.Lock()
 	defer dbp.partitionsMutex.Unlock()
 
-	dbp.partitions[*chainID] = dbp.store.WithRealm(chainID[:])
+	dbp.partitions[*chainID] = dbp.store.WithRealm(chainID.Bytes())
 	return dbp.partitions[*chainID]
 }
 
