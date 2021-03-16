@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +21,13 @@ const constFileCID string = "someunrealistichash12345"
 var constVarFile []byte = []byte("some file for testing")
 
 func startMockServer() *echo.Echo {
+	l, err := net.Listen("tcp", constMockServerPort)
 	e := echo.New()
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+	e.Listener = l
+
 	e.GET("/ipfs/:cid", func(c echo.Context) error {
 		var response []byte
 		cid := c.Param("cid")
@@ -33,7 +40,7 @@ func startMockServer() *echo.Echo {
 		return c.Blob(http.StatusOK, "text/plain", response)
 	})
 	go func() {
-		err := e.Start(constMockServerPort)
+		err := e.Start("")
 		if err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal(err)
 		}
@@ -57,7 +64,6 @@ func TestIpfsDownload(t *testing.T) {
 	server := startMockServer()
 	defer stopMockServer(server)
 
-	time.Sleep(100 * time.Millisecond) // Time to wait for server start
 	hash := hashing.HashData(constVarFile)
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
