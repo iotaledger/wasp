@@ -58,6 +58,7 @@ func (n *NodeConn) PostTransactionToNode(tx *ledgerstate.Transaction, fromSc led
 		SCAddress: fromSc, // just for tracing
 		Leader:    fromLeader,
 	})
+	n.log.Debugf("XXX labas %v", parameters.MaxSerializedTransactionToGoshimmer)
 	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
 		return fmt.Errorf("size if serialized tx %s is %d --> exceeds maximum size of %d bytes",
 			tx.ID(), len(data), parameters.MaxSerializedTransactionToGoshimmer)
