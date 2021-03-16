@@ -52,7 +52,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
-	rec := NewContractRecord(Interface, &coretypes.AgentID{})
+	rec := NewContractRecord(Interface, ctx.Caller())
 	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
 
 	// deploy blob

@@ -17,7 +17,7 @@ var (
 func deployErc20(t *testing.T) *solo.Chain {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	creator = env.NewSignatureSchemeWithFunds()
+	creator = env.NewKeyPairWithFunds()
 	creatorAgentID = coretypes.NewAgentIDFromAddress(creator.Address())
 	err := chain.DeployWasmContract(nil, ScName, erc20file,
 		ParamSupply, solo.Saldo,
@@ -68,7 +68,7 @@ func TestInitial(t *testing.T) {
 func TestTransferOk1(t *testing.T) {
 	chain := deployErc20(t)
 
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	amount := int64(42)
 
@@ -86,7 +86,7 @@ func TestTransferOk1(t *testing.T) {
 func TestTransferOk2(t *testing.T) {
 	chain := deployErc20(t)
 
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	amount := int64(42)
 
@@ -114,7 +114,7 @@ func TestTransferOk2(t *testing.T) {
 func TestTransferNotEnoughFunds1(t *testing.T) {
 	chain := deployErc20(t)
 
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	amount := int64(1338)
 
@@ -135,7 +135,7 @@ func TestTransferNotEnoughFunds1(t *testing.T) {
 func TestTransferNotEnoughFunds2(t *testing.T) {
 	chain := deployErc20(t)
 
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	amount := int64(1338)
 
@@ -155,14 +155,14 @@ func TestTransferNotEnoughFunds2(t *testing.T) {
 
 func TestNoAllowance(t *testing.T) {
 	chain := deployErc20(t)
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 	checkErc20Allowance(chain, creatorAgentID, userAgentID, 0)
 }
 
 func TestApprove(t *testing.T) {
 	chain := deployErc20(t)
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 
 	req := solo.NewCallParams(ScName, FuncApprove,
@@ -179,7 +179,7 @@ func TestApprove(t *testing.T) {
 
 func TestTransferFromOk1(t *testing.T) {
 	chain := deployErc20(t)
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 
 	req := solo.NewCallParams(ScName, FuncApprove,
@@ -208,7 +208,7 @@ func TestTransferFromOk1(t *testing.T) {
 
 func TestTransferFromOk2(t *testing.T) {
 	chain := deployErc20(t)
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 
 	req := solo.NewCallParams(ScName, FuncApprove,
@@ -237,7 +237,7 @@ func TestTransferFromOk2(t *testing.T) {
 
 func TestTransferFromFail(t *testing.T) {
 	chain := deployErc20(t)
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
 
 	req := solo.NewCallParams(ScName, FuncApprove,

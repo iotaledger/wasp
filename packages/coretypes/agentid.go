@@ -19,6 +19,20 @@ type AgentID struct {
 	h Hname
 }
 
+var NilAgentID AgentID
+
+func init() {
+	var b [ledgerstate.AddressLength]byte
+	nilAddr, _, err := ledgerstate.AddressFromBytes(b[:])
+	if err != nil {
+		panic(err)
+	}
+	NilAgentID = AgentID{
+		a: nilAddr,
+		h: 0,
+	}
+}
+
 func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
@@ -127,8 +141,15 @@ func (a *AgentID) String() string {
 }
 
 func (a *AgentID) Write(w io.Writer) error {
-	if _, err := w.Write(a.a.Bytes()); err != nil {
-		return err
+	if a.a == nil {
+		var t [ledgerstate.AddressLength]byte
+		if _, err := w.Write(t[:]); err != nil {
+			return err
+		}
+	} else {
+		if _, err := w.Write(a.a.Bytes()); err != nil {
+			return err
+		}
 	}
 	if err := a.h.Write(w); err != nil {
 		return err

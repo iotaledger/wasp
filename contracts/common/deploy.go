@@ -25,7 +25,7 @@ var (
 func StartChainAndDeployWasmContractByName(t *testing.T, scName string) *solo.Chain {
 	wasmhost.HostTracing = TraceHost
 	env := solo.New(t, Debug, StackTrace)
-	CreatorWallet = env.NewSignatureSchemeWithFunds()
+	CreatorWallet = env.NewKeyPairWithFunds()
 	chain := env.NewChain(CreatorWallet, "chain1")
 	wasmFile := scName + "_bg.wasm"
 	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)

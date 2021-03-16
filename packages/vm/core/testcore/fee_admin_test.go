@@ -32,7 +32,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	user := env.NewSignatureSchemeWithFunds()
+	user := env.NewKeyPairWithFunds()
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequestSync(req, user)
@@ -47,7 +47,7 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	user := env.NewSignatureSchemeWithFunds()
+	user := env.NewKeyPairWithFunds()
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequestSync(req, user)
@@ -213,7 +213,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
-	user := env.NewSignatureSchemeWithFunds()
+	user := env.NewKeyPairWithFunds()
 	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
 	)

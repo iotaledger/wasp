@@ -14,7 +14,7 @@ func TestMintOk(t *testing.T) {
 
 	chain.CheckChain()
 
-	wallet := env.NewSignatureSchemeWithFunds()
+	wallet := env.NewKeyPairWithFunds()
 	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 
 	color1, err := env.MintTokens(wallet, 1000)
@@ -35,7 +35,7 @@ func TestMintFail(t *testing.T) {
 
 	chain.CheckChain()
 
-	wallet := env.NewSignatureSchemeWithFunds()
+	wallet := env.NewKeyPairWithFunds()
 	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 
 	color1, err := env.MintTokens(wallet, 1000)
@@ -55,7 +55,7 @@ func TestMintFail(t *testing.T) {
 //
 //	chain.CheckChain()
 //
-//	wallet := env.NewSignatureSchemeWithFunds()
+//	wallet := env.NewKeyPairWithFunds()
 //	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
@@ -75,7 +75,7 @@ func TestMintFail(t *testing.T) {
 //
 //	chain.CheckChain()
 //
-//	wallet := env.NewSignatureSchemeWithFunds()
+//	wallet := env.NewKeyPairWithFunds()
 //	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
@@ -95,7 +95,7 @@ func TestMintFail(t *testing.T) {
 //
 //	chain.CheckChain()
 //
-//	wallet := env.NewSignatureSchemeWithFunds()
+//	wallet := env.NewKeyPairWithFunds()
 //	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 //
 //	color1, err := env.MintTokens(wallet, 1000)

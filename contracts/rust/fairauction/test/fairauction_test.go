@@ -24,7 +24,7 @@ func setupTest(t *testing.T) *solo.Chain {
 	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
 
 	// set up auctioneer account and mint some tokens to auction off
-	auctioneer = chain.Env.NewSignatureSchemeWithFunds()
+	auctioneer = chain.Env.NewKeyPairWithFunds()
 	newColor, err := chain.Env.MintTokens(auctioneer, 10)
 	require.NoError(t, err)
 	chain.Env.AssertAddressBalance(auctioneer.Address(), balance.ColorIOTA, solo.Saldo-10)
@@ -118,7 +118,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 func TestFaOneBid(t *testing.T) {
 	chain := setupTest(t)
 
-	bidder := chain.Env.NewSignatureSchemeWithFunds()
+	bidder := chain.Env.NewKeyPairWithFunds()
 	req := solo.NewCallParams(ScName, FuncPlaceBid,
 		ParamColor, tokenColor,
 	).WithTransfer(balance.ColorIOTA, 500)

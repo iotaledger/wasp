@@ -8,42 +8,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// NewSignatureSchemeWithFunds generates new ed25519 signature scheme
-// and requests some tokens from the UTXODB faucet.
-// The amount of tokens is equal to solo.Saldo (=1337) iotas
-func (env *Solo) NewSignatureSchemeWithFunds() *ed25519.KeyPair {
-	ret, _ := env.NewSignatureSchemeWithFundsAndPubKey()
-	return ret
-}
-
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
 // and requests some tokens from the UTXODB faucet.
 // The amount of tokens is equal to solo.Saldo (=1337) iotas
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewSignatureSchemeWithFundsAndPubKey() (*ed25519.KeyPair, []byte) {
+func (env *Solo) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address) {
+	keyPair, addr := env.NewKeyPair()
+
 	env.ledgerMutex.Lock()
 	defer env.ledgerMutex.Unlock()
 
-	ret, pubKeyBytes := env.NewSignatureSchemeAndPubKey()
-	addr := ledgerstate.NewED25519Address(ret.PublicKey)
 	_, err := env.utxoDB.RequestFunds(addr)
 	require.NoError(env.T, err)
-	return ret, pubKeyBytes
-}
+	env.AssertAddressBalance(addr, ledgerstate.ColorIOTA, Saldo)
 
-// NewSignatureScheme generates new ed25519 signature scheme
-func (env *Solo) NewSignatureScheme() *ed25519.KeyPair {
-	ret, _ := env.NewSignatureSchemeAndPubKey()
-	return ret
+	return keyPair, addr
 }
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewSignatureSchemeAndPubKey() (*ed25519.KeyPair, []byte) {
+func (env *Solo) NewKeyPair() (*ed25519.KeyPair, ledgerstate.Address) {
 	keyPair := ed25519.GenerateKeyPair()
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	env.AssertAddressBalance(addr, ledgerstate.ColorIOTA, 0)
-	return &keyPair, keyPair.PublicKey.Bytes()
+	return &keyPair, ledgerstate.NewED25519Address(keyPair.PublicKey)
 }
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)

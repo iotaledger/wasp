@@ -30,11 +30,10 @@ import (
 const DefaultTimeStep = 1 * time.Millisecond
 
 // Saldo is the default amount of tokens returned by the UTXODB faucet
-// which is therefore the amount returned by NewSignatureSchemeWithFunds() and such
+// which is therefore the amount returned by NewKeyPairWithFunds() and such
 const (
 	Saldo              = uint64(1337)
 	DustThresholdIotas = uint64(100)
-	RequestFundsAmount = 1337 // avoid dependency from testutil
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -176,7 +175,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, RequestFundsAmount-100)
+	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100)
 
 	ret := &Chain{
 		Env:                    env,

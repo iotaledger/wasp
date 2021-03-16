@@ -42,11 +42,11 @@ func TestOpenChannelFail(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer := env.NewSignatureSchemeWithFunds()
+	payer := env.NewKeyPairWithFunds()
 	payerAddr := payer.Address()
 	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
 
-	provider := env.NewSignatureSchemeWithFunds()
+	provider := env.NewKeyPairWithFunds()
 	providerAddr := provider.Address()
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
 
@@ -78,7 +78,7 @@ func TestOpenChannelOk(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
+	provider := env.NewKeyPairWithFunds()
 	providerAddr := provider.Address()
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
 
@@ -110,7 +110,7 @@ func TestOpenChannelTwice(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
+	provider := env.NewKeyPairWithFunds()
 	providerAddr := provider.Address()
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
 
@@ -167,7 +167,7 @@ func TestRevokeWarrant(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
+	provider := env.NewKeyPairWithFunds()
 	providerAddr := provider.Address()
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
 
@@ -256,7 +256,7 @@ func TestPayment(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
+	provider := env.NewKeyPairWithFunds()
 	providerAddr := provider.Address()
 	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
 

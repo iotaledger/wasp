@@ -36,7 +36,7 @@ func setupChain(t *testing.T, sigSchemeChain signaturescheme.SignatureScheme) (*
 }
 
 func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureScheme {
-	user := chain.Env.NewSignatureSchemeWithFunds()
+	user := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,

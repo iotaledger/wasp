@@ -27,7 +27,7 @@ func TestTutorial1(t *testing.T) {
 
 func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false)
-	userWallet := env.NewSignatureSchemeWithFunds() // create new wallet with 1337 iotas
+	userWallet := env.NewKeyPairWithFunds() // create new wallet with 1337 iotas
 	userAddress := userWallet.Address()
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA) // how many iotas contains the address
@@ -76,7 +76,7 @@ func TestTutorial5(t *testing.T) {
 	// create wallet with 1337 iotas.
 	// wallet has address and it is globally identified through
 	// universal identifier: the agent ID
-	userWallet := env.NewSignatureSchemeWithFunds()
+	userWallet := env.NewKeyPairWithFunds()
 	userAddress := userWallet.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
 
@@ -121,7 +121,7 @@ func TestTutorial6(t *testing.T) {
 	// contract id in the form of the agent ID
 	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
 
-	userWallet := env.NewSignatureSchemeWithFunds()
+	userWallet := env.NewKeyPairWithFunds()
 	userAddress := userWallet.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userWallet.Address())
 
@@ -151,7 +151,7 @@ func TestTutorial7(t *testing.T) {
 	// contract id in the form of the agent ID
 	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
 
-	userWallet := env.NewSignatureSchemeWithFunds()
+	userWallet := env.NewKeyPairWithFunds()
 	userAddress := userWallet.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userWallet.Address())
 
@@ -179,7 +179,7 @@ func TestTutorial8(t *testing.T) {
 
 	// create a user's wallet (private key) and request 1337 iotas from the faucet.
 	// It corresponds to L1 address
-	userWallet := env.NewSignatureSchemeWithFunds()
+	userWallet := env.NewKeyPairWithFunds()
 	userAddress := userWallet.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userWallet.Address())
 	t.Logf("userAgentID: %s", userAgentID)

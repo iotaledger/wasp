@@ -96,7 +96,7 @@ func TestListBlobs(t *testing.T) {
 func TestDeployNotAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewSignatureSchemeWithFunds()
+	user1 := env.NewKeyPairWithFunds()
 	err := chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.Error(t, err)
 }
@@ -104,7 +104,7 @@ func TestDeployNotAuthorized(t *testing.T) {
 func TestDeployGrant(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewSignatureSchemeWithFunds()
+	user1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
@@ -129,7 +129,7 @@ func TestDeployGrant(t *testing.T) {
 func TestRevokeDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewSignatureSchemeWithFunds()
+	user1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
@@ -160,7 +160,7 @@ func TestRevokeDeploy(t *testing.T) {
 func TestDeployGrantFail(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewSignatureSchemeWithFunds()
+	user1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,

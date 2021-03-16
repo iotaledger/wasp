@@ -43,7 +43,7 @@ func TestStateAfterDeploy(t *testing.T) {
 func TestDonateOnce(t *testing.T) {
 	chain := setupTest(t)
 
-	donator1 := chain.Env.NewSignatureSchemeWithFunds()
+	donator1 := chain.Env.NewKeyPairWithFunds()
 	req := solo.NewCallParams(ScName, FuncDonate,
 		ParamFeedback, "Nice work!",
 	).WithTransfer(balance.ColorIOTA, 42)
@@ -75,14 +75,14 @@ func TestDonateOnce(t *testing.T) {
 func TestDonateTwice(t *testing.T) {
 	chain := setupTest(t)
 
-	donator1 := chain.Env.NewSignatureSchemeWithFunds()
+	donator1 := chain.Env.NewKeyPairWithFunds()
 	req := solo.NewCallParams(ScName, FuncDonate,
 		ParamFeedback, "Nice work!",
 	).WithTransfer(balance.ColorIOTA, 42)
 	_, err := chain.PostRequestSync(req, donator1)
 	require.NoError(t, err)
 
-	donator2 := chain.Env.NewSignatureSchemeWithFunds()
+	donator2 := chain.Env.NewKeyPairWithFunds()
 	req = solo.NewCallParams(ScName, FuncDonate,
 		ParamFeedback, "Exactly what I needed!",
 	).WithTransfer(balance.ColorIOTA, 69)

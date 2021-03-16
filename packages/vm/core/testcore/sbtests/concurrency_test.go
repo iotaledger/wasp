@@ -89,7 +89,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	}
 	for r, n := range repeats {
 		go func(r, n int) {
-			users[r] = chain.Env.NewSignatureSchemeWithFunds()
+			users[r] = chain.Env.NewKeyPairWithFunds()
 			for i := 0; i < n; i++ {
 				tx := chain.RequestFromParamsToLedger(req, users[r])
 				chain.Env.EnqueueRequests(tx)

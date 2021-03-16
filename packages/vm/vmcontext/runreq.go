@@ -76,10 +76,11 @@ func (vmctx *VMContext) mustSetUpRequestContext(req *sctransaction.Request, inpu
 	vmctx.timestamp += 1
 	t := time.Unix(0, vmctx.timestamp)
 	if input.TimeLockedNow(t) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked", err)
+		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
 	}
-	if input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked", err)
+	if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
+			t, input.String(), vmctx.chainID.String())
 	}
 
 	vmctx.remainingAfterFees = coretypes.NewColoredBalances(*req.Output().Balances())
@@ -193,7 +194,7 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 	if err != nil {
 		e = err.Error()
 	}
-	msg := fmt.Sprintf("[req] %s: %s", vmctx.req.Output().ID().String(), e)
+	msg := fmt.Sprintf("[req] %s: %s", vmctx.req.Output().ID().Base58(), e)
 	vmctx.log.Infof("eventlog -> '%s'", msg)
 	vmctx.StoreToEventLog(vmctx.req.GetMetadata().TargetContract(), []byte(msg))
 }

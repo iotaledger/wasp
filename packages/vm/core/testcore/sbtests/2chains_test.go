@@ -24,7 +24,7 @@ func test2Chains(t *testing.T, w bool) {
 	contractAgentID1 := coretypes.NewAgentIDFromContractID(contractID1)
 	contractAgentID2 := coretypes.NewAgentIDFromContractID(contractID2)
 
-	userWallet := env.NewSignatureSchemeWithFunds()
+	userWallet := env.NewKeyPairWithFunds()
 	userAddress := userWallet.Address()
 	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)

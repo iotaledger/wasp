@@ -35,7 +35,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := env.NewSignatureSchemeWithFunds()
+	newOwner := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, nil)
@@ -59,7 +59,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := env.NewSignatureSchemeWithFunds()
+	newOwner := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(balance.ColorIOTA, 42)
@@ -80,7 +80,7 @@ func TestAccountsDepositWithdrawToChainFail(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 
-	newOwner := env.NewSignatureSchemeWithFunds()
+	newOwner := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(balance.ColorIOTA, 42)

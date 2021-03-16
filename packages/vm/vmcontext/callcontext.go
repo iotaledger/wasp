@@ -40,12 +40,15 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Di
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	}
+	if transfer != nil {
+		transfer = transfer.Clone()
+	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
 		caller:           *caller.Clone(),
 		contract:         contract,
 		params:           params.Clone(),
-		transfer:         transfer.Clone(),
+		transfer:         transfer,
 	})
 }
 

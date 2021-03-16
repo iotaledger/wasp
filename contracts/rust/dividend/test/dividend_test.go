@@ -23,7 +23,7 @@ func TestDeploy(t *testing.T) {
 func TestAddMemberOk(t *testing.T) {
 	chain := setupTest(t)
 
-	member1 := chain.Env.NewSignatureSchemeWithFunds()
+	member1 := chain.Env.NewKeyPairWithFunds()
 	req := solo.NewCallParams(ScName, FuncMember,
 		ParamAddress, member1.Address(),
 		ParamFactor, 100,
@@ -45,7 +45,7 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 func TestAddMemberFailMissingFactor(t *testing.T) {
 	chain := setupTest(t)
 
-	member1 := chain.Env.NewSignatureSchemeWithFunds()
+	member1 := chain.Env.NewKeyPairWithFunds()
 	req := solo.NewCallParams(ScName, FuncMember,
 		ParamAddress, member1.Address(),
 	)
