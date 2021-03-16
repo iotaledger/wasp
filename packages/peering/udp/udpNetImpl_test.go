@@ -4,7 +4,7 @@
 package udp_test
 
 import (
-	"github.com/iotaledger/wasp/packages/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"

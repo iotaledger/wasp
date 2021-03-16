@@ -4,7 +4,7 @@
 package testutil_test
 
 import (
-	"github.com/iotaledger/wasp/packages/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 

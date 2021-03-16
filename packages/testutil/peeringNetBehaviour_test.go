@@ -4,7 +4,7 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
-	"github.com/iotaledger/wasp/packages/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 

@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"go.uber.org/atomic"
 	"sync"
 	"testing"

@@ -9,7 +9,7 @@ package dkg_test
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 
