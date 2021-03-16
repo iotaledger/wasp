@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type NodeConn struct {
@@ -42,7 +43,7 @@ func handleConnected(handler interface{}, params ...interface{}) {
 	handler.(func())()
 }
 
-func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
+func New(netID string, log *logger.Logger, dial DialFunc, goshimerNodeAddressOpt ...string) *NodeConn {
 	n := &NodeConn{
 		netID:         netID,
 		dial:          dial,
@@ -55,9 +56,15 @@ func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 			Connected:       events.NewEvent(handleConnected),
 		},
 	}
+	var goshimerNodeAddress string
+	if len(goshimerNodeAddressOpt) > 0 {
+		goshimerNodeAddress = goshimerNodeAddressOpt[0]
+	} else {
+		goshimerNodeAddress = parameters.GetString(parameters.NodeAddress)
+	}
 	go n.nodeConnect()
-	go n.keepSendingSubscriptionIfNeeded()
-	go n.keepSendingSubscriptionForced()
+	go n.keepSendingSubscriptionIfNeeded(goshimerNodeAddress)
+	go n.keepSendingSubscriptionForced(goshimerNodeAddress)
 	return n
 }
 
@@ -76,26 +83,26 @@ func (n *NodeConn) Close() {
 }
 
 // checking if need to be sent every second
-func (n *NodeConn) keepSendingSubscriptionIfNeeded() {
+func (n *NodeConn) keepSendingSubscriptionIfNeeded(goshimerNodeAddress string) {
 	for {
 		select {
 		case <-n.shutdown:
 			return
 		case <-time.After(1 * time.Second):
-			n.sendSubscriptions(false)
+			n.sendSubscriptions(false, goshimerNodeAddress)
 		}
 	}
 }
 
 // will be sending subscriptions every minute to pull backlog
 // needed in case node is not synced
-func (n *NodeConn) keepSendingSubscriptionForced() {
+func (n *NodeConn) keepSendingSubscriptionForced(goshimerNodeAddress string) {
 	for {
 		select {
 		case <-n.shutdown:
 			return
 		case <-time.After(1 * time.Minute):
-			n.sendSubscriptions(true)
+			n.sendSubscriptions(true, goshimerNodeAddress)
 		}
 	}
 }

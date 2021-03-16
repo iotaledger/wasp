@@ -3,7 +3,6 @@ package nodeconn
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func (n *NodeConn) Subscribe(addr ledgerstate.Address, color ledgerstate.Color) {
@@ -23,7 +22,7 @@ func (n *NodeConn) Unsubscribe(addr ledgerstate.Address) {
 	delete(n.subscriptions, addr)
 }
 
-func (n *NodeConn) sendSubscriptions(forceSend bool) {
+func (n *NodeConn) sendSubscriptions(forceSend bool, goshimerNodeAddress string) {
 	n.bconn.Lock()
 	defer n.bconn.Unlock()
 
@@ -52,14 +51,12 @@ func (n *NodeConn) sendSubscriptions(forceSend bool) {
 			AddressesWithColors: addrsWithColors,
 		})
 		if err := n.SendDataToNode(data); err != nil {
-			n.log.Errorf("sending subscriptions to %s: %v. Addrs: %+v",
-				parameters.GetString(parameters.NodeAddress), err, addrs)
+			n.log.Errorf("sending subscriptions to %s: %v. Addrs: %+v", goshimerNodeAddress, err, addrs)
 			n.bconn.Lock()
 			defer n.bconn.Unlock()
 			n.subscriptionsSent = false
 		} else {
-			n.log.Infof("sent subscriptions to node %s for addresses %+v",
-				parameters.GetString(parameters.NodeAddress), addrs)
+			n.log.Infof("sent subscriptions to node %s for addresses %+v", goshimerNodeAddress, addrs)
 		}
 	}()
 }

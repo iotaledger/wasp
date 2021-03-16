@@ -29,7 +29,7 @@ func start(t *testing.T) (waspconn.ValueTangle, *NodeConn) {
 		return "pipe", conn1, nil
 	})
 
-	n := New("test", logger.NewExampleLogger("nodeconn"), dial)
+	n := New("test", logger.NewExampleLogger("nodeconn"), dial, "goshimerTest")
 	t.Cleanup(n.Close)
 
 	ok := n.WaitForConnection(10 * time.Second)
@@ -177,4 +177,31 @@ func TestRequestInclusionLevel(t *testing.T) {
 		return n.RequestBranchInclusionStateFromNode(txID, addr)
 	})
 	require.EqualValues(t, ledgerstate.Confirmed, resp.State)
+}
+
+func TestSubscribe(t *testing.T) {
+	tangle, n := start(t)
+
+	// transfer 1337 iotas to addr
+	seed := ed25519.NewSeed()
+	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
+	err := tangle.RequestFunds(addr)
+	require.NoError(t, err)
+
+	// subscribe to addr
+	n.Subscribe(addr, ledgerstate.ColorIOTA)
+	n.log.Debugf("XXX before")
+	time.Sleep(5 * time.Second)
+	n.log.Debugf("XXX after")
+
+	// transfer 1 iota from fromAddr to addr2
+	addr2 := ledgerstate.NewED25519Address(seed.KeyPair(1).PublicKey)
+	tx := transfer(t, tangle, seed.KeyPair(0), addr2, 1)
+
+	// request tx
+	var txMsg *waspconn.WaspFromNodeAddressUpdateMsg
+	doAndWaitForResponse(t, n, &txMsg, func() error {
+		return n.PostTransactionToNode(tx, addr, 0)
+	})
+	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
 }
