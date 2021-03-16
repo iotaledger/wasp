@@ -134,7 +134,7 @@ func (host *wasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
-func (host *wasmProcessor) chainOwnerID() coretypes.AgentID {
+func (host *wasmProcessor) chainOwnerID() *coretypes.AgentID {
 	if host.ctx != nil {
 		return host.ctx.ChainOwnerID()
 	}

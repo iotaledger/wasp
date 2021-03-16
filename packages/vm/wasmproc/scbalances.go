@@ -4,7 +4,6 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -28,7 +27,7 @@ func NewScBalances(vm *wasmProcessor, incoming bool) *ScDict {
 	return loadBalances(o, vm.ctxView.Balances())
 }
 
-func loadBalances(o *ScDict, balances coretypes.ColoredBalancesOld) *ScDict {
+func loadBalances(o *ScDict, balances *coretypes.ColoredBalances) *ScDict {
 	index := 0
 	key := o.host.GetKeyStringFromId(wasmhost.KeyColor)
 	balances.IterateDeterministic(func(color balance.Color, balance int64) bool {

@@ -329,7 +329,7 @@ func (ch *Chain) GetTotalAssets() coretypes.ColoredBalances {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, int64, int64) {
+func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint64) {
 	hname := coretypes.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
@@ -340,12 +340,12 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, int64, int64
 	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamValidatorFee))
+	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.ParamValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.True(ch.Env.T, validatorFee >= 0)
 
-	ownerFee, ok, err := codec.DecodeInt64(ret.MustGet(root.ParamOwnerFee))
+	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.ParamOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.True(ch.Env.T, ownerFee >= 0)

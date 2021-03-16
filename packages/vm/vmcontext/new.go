@@ -44,11 +44,11 @@ type VMContext struct {
 }
 
 type callContext struct {
-	isRequestContext bool                      // is called from the request (true) or from another SC (false)
-	caller           coretypes.AgentID         // calling agent
-	contract         coretypes.Hname           // called contract
-	params           dict.Dict                 // params passed
-	transfer         coretypes.ColoredBalances // transfer passed
+	isRequestContext bool                       // is called from the request (true) or from another SC (false)
+	caller           coretypes.AgentID          // calling agent
+	contract         coretypes.Hname            // called contract
+	params           dict.Dict                  // params passed
+	transfer         *coretypes.ColoredBalances // transfer passed
 }
 
 // MustNewVMContext a constructor

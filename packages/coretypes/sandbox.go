@@ -33,27 +33,32 @@ type Sandbox interface {
 	Call(target Hname, entryPoint Hname, params dict.Dict, transfer *ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
 	RequestID() ledgerstate.OutputID
-	// MintedSupply is number of free minted tokens, i.e. minted tokens which are sent to addresses
-	// other than chain address. It is a proof of how many tokens has been minted with the
-	// color of the transaction (after un-coloring all request tokens)
-	// It may be used in use-cases such as Token Registry.
-	// The color of the supply can be extracted from the RequestID
-	// It is read-only method, it returns same value for all requests and all calls in the context of the transaction
-	MintedSupply() int64
 	// GetTimestamp return current timestamp of the context
 	GetTimestamp() int64
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	// Balances returns colored balances owned by the smart contract
+	// Balances returns all colored balances at the disposition of the smart contract
 	Balances() *ColoredBalances
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
 	IncomingTransfer() *ColoredBalances
+	// MintedSupply is number of new tokens minted in the request and newly minted color
+	Minted() (ledgerstate.Color, uint64)
+	// TODO proofs of ownership and mint - special collection of methods
 	// Balance return number of tokens of specific color in the balance of the smart contract
-	Balance(col ledgerstate.Color) int64
+	Balance(col ledgerstate.Color) uint64
+
 	// TransferToAddress send tokens to the L1 ledger address
+	// Deprecated: use Send instead
 	TransferToAddress(addr ledgerstate.Address, transfer *ColoredBalances) bool
 	// PostRequest sends cross-chain request
+	// Deprecated: use Send instead
 	PostRequest(par PostRequestParams) bool
+
+	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
+	// replaces TransferToAddress and PostRequest
+	Send(target ledgerstate.Address, tokens *ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
+
 	// Log interface provides local logging on the machine. It also includes Panicf methods which logs and panics
 	Log() LogInterface
 	// Event publishes "vmmsg" message through Publisher on nanomsg. It also logs locally, but it is not the same thing
@@ -63,10 +68,24 @@ type Sandbox interface {
 }
 
 // PostRequestParams is parameters of the PostRequest call
+// Deprecated: use SendTransfer instead
 type PostRequestParams struct {
 	TargetContractID ContractID
 	EntryPoint       Hname
-	TimeLock         uint32
+	TimeLock         uint32 // unix seconds
 	Params           dict.Dict
 	Transfer         ColoredBalances
+}
+
+type SendOptions struct {
+	TimeLock         uint32 // unix seconds
+	FallbackAddress  ledgerstate.Address
+	FallbackDeadline uint32 // unix seconds
+}
+
+// RequestMetadata represents content of the data payload of the output
+type SendMetadata struct {
+	TargetContract Hname
+	EntryPoint     Hname
+	Args           dict.Dict
 }

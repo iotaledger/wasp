@@ -14,7 +14,7 @@ import (
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger
 // It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) {
+func (vmctx *VMContext) creditToAccount(agentID *coretypes.AgentID, transfer *coretypes.ColoredBalances) {
 	if len(vmctx.callStack) > 0 {
 		vmctx.log.Panicf("creditToAccount must be called only from request")
 	}
@@ -26,14 +26,14 @@ func (vmctx *VMContext) creditToAccount(agentID coretypes.AgentID, transfer core
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+func (vmctx *VMContext) debitFromAccount(agentID *coretypes.AgentID, transfer *coretypes.ColoredBalances) bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	return accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
 }
 
-func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID coretypes.AgentID, transfer coretypes.ColoredBalances) bool {
+func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *coretypes.AgentID, transfer *coretypes.ColoredBalances) bool {
 	if len(vmctx.callStack) == 0 {
 		vmctx.log.Panicf("moveBetweenAccounts can't be called from request context")
 	}
@@ -84,29 +84,28 @@ func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return accounts.GetBalance(vmctx.State(), vmctx.MyAgentID(), col)
+	aid := vmctx.MyAgentID()
+	return accounts.GetBalance(vmctx.State(), &aid, col)
 }
 
-func (vmctx *VMContext) getMyBalances() coretypes.ColoredBalances {
+func (vmctx *VMContext) getMyBalances() *coretypes.ColoredBalances {
 	agentID := vmctx.MyAgentID()
 
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	ret, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
-	return coretypes.NewColoredBalancesFromMap(ret)
+	r, _ := accounts.GetAccountBalances(vmctx.State(), &agentID)
+	ret := coretypes.NewColoredBalancesFromMap(r)
+	return &ret
 }
 
 func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col ledgerstate.Color, amount uint64) bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return accounts.MoveBetweenAccounts(
-		vmctx.State(),
-		vmctx.MyAgentID(),
-		target,
-		coretypes.NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{col: amount}),
-	)
+	aid := vmctx.MyAgentID()
+	bals := coretypes.NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{col: amount})
+	return accounts.MoveBetweenAccounts(vmctx.State(), &aid, &target, &bals)
 }
 
 func (vmctx *VMContext) StoreToEventLog(contract coretypes.Hname, data []byte) {

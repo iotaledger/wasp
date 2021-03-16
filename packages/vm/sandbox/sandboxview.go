@@ -12,30 +12,30 @@ import (
 )
 
 func init() {
-	vmcontext.NewSandboxView = newView
+	vmcontext.NewSandboxView = func(vmctx *vmcontext.VMContext) coretypes.SandboxView {
+		return sandboxView{vmctx}
+	}
 }
 
 type sandboxView struct {
 	vmctx *vmcontext.VMContext
 }
 
-func newView(vmctx *vmcontext.VMContext) coretypes.SandboxView {
-	return sandboxView{vmctx}
-}
+var _ coretypes.SandboxView = sandboxView{}
 
 func (s sandboxView) Utils() coretypes.Utils {
 	return sandbox_utils.NewUtils()
 }
 
-func (s sandboxView) ChainOwnerID() coretypes.AgentID {
+func (s sandboxView) ChainOwnerID() *coretypes.AgentID {
 	return s.vmctx.ChainOwnerID()
 }
 
-func (s sandboxView) ContractCreator() coretypes.AgentID {
+func (s sandboxView) ContractCreator() *coretypes.AgentID {
 	return s.vmctx.ContractCreator()
 }
 
-func (s sandboxView) ContractID() coretypes.ContractID {
+func (s sandboxView) ContractID() *coretypes.ContractID {
 	return s.vmctx.CurrentContractID()
 }
 
@@ -59,7 +59,7 @@ func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hn
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) Balances() coretypes.ColoredBalancesOld {
+func (s sandboxView) Balances() *coretypes.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 

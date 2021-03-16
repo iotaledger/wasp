@@ -4,7 +4,6 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -63,11 +62,11 @@ func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 }
 
 func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
-	var aid coretypes.AgentID
+	var aid *coretypes.AgentID
 	switch keyId {
 	case wasmhost.KeyCaller:
 		aid = o.vm.ctx.Caller()
-		return aid[:]
+		return aid.Bytes()
 	case wasmhost.KeyChainOwnerId:
 		aid = o.vm.chainOwnerID()
 		return aid[:]

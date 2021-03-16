@@ -3,7 +3,7 @@ package viewcontext
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -54,7 +54,7 @@ func (s *sandboxview) WriteableState() kv.KVStore {
 	return s.state
 }
 
-func (s *sandboxview) Balances() coretypes.ColoredBalancesOld {
+func (s *sandboxview) Balances() coretypes.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -78,7 +78,7 @@ var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
 
 func (s *sandboxview) ChainOwnerID() coretypes.AgentID {
 	r, err := s.Call(root.Interface.Hname(), getChainInfoHname, nil)
-	a := assert2.NewAssert(s.Log())
+	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
 	ret := res.MustGetAgentID(root.VarChainOwnerID)

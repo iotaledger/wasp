@@ -7,14 +7,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalancesOld) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances) error {
 	if transfer != nil {
 		agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), contract))
 		if len(vmctx.callStack) == 0 {
-			vmctx.creditToAccount(agentID, transfer)
+			vmctx.creditToAccount(&agentID, transfer)
 		} else {
 			fromAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname()))
-			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
+			if !vmctx.moveBetweenAccounts(&fromAgentID, &agentID, transfer) {
 				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
 			}
 		}
@@ -25,7 +25,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalancesOld) {
+func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances) {
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}
@@ -35,17 +35,17 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Di
 		// request context
 		caller = vmctx.req.SenderAgentID()
 	} else {
-		caller = coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+		caller = coretypes.NewAgentIDFromContractID(*vmctx.CurrentContractID())
 	}
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
-		caller:           caller,
+		caller:           *caller.Clone(),
 		contract:         contract,
-		params:           params,
-		transfer:         transfer,
+		params:           params.Clone(),
+		transfer:         transfer.Clone(),
 	})
 }
 

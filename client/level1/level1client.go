@@ -1,18 +1,16 @@
 package level1
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
 // Level1Client is an interface to interact with the IOTA level 1 ledger
 type Level1Client interface {
 	// RequestFunds requests some funds from the testnet Faucet
-	RequestFunds(targetAddress *address.Address) error
+	RequestFunds(targetAddress ledgerstate.Address) error
 
 	// GetConfirmedAccountOutputs fetches all confirmed outputs belonging to the given address
-	GetConfirmedAccountOutputs(address *address.Address) (map[transaction.OutputID][]*balance.Balance, error)
+	GetConfirmedAccountOutputs(address ledgerstate.Address) (map[transaction.OutputID][]*balance.Balance, error)
 
 	// PostTransaction posts a transaction to the ledger
 	PostTransaction(tx *transaction.Transaction) error

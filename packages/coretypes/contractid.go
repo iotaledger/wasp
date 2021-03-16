@@ -63,7 +63,10 @@ func NewContractIDFromString(s string) (ret ContractID, err error) {
 }
 
 func (scid ContractID) Clone() ContractID {
-	return scid
+	return ContractID{
+		chainID:       scid.chainID.Clone(),
+		contractHname: scid.contractHname,
+	}
 }
 
 // ChainID returns ID of the native chain of the contract

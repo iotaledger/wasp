@@ -25,7 +25,7 @@ func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
 }
 
 // NewAgentIDFromContractID makes AgentID from ContractID
-func NewAgentIDFromContractID(id *ContractID) AgentID {
+func NewAgentIDFromContractID(id ContractID) AgentID {
 	return AgentID{
 		a: id.ChainID().AsAddress().Clone(),
 		h: id.Hname(),
@@ -59,7 +59,7 @@ func NewAgentIDFromString(s string) (ret AgentID, err error) {
 		if err != nil {
 			return
 		}
-		ret = NewAgentIDFromContractID(&cid)
+		ret = NewAgentIDFromContractID(cid)
 	default:
 		err = errors.New("invalid prefix")
 	}
@@ -71,7 +71,14 @@ func NewRandomAgentID() AgentID {
 	chainID := NewRandomChainID()
 	hname := Hn("testFunction")
 	cid := NewContractID(chainID, hname)
-	return NewAgentIDFromContractID(&cid)
+	return NewAgentIDFromContractID(cid)
+}
+
+func (a *AgentID) Clone() *AgentID {
+	return &AgentID{
+		a: a.a.Clone(),
+		h: a.h,
+	}
 }
 
 func (a *AgentID) Bytes() []byte {

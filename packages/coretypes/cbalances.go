@@ -27,16 +27,20 @@ func NewIotasOnly(amount uint64) ColoredBalances {
 	return NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: amount})
 }
 
-func (b ColoredBalances) Balance(col ledgerstate.Color) uint64 {
+func (b *ColoredBalances) Clone() *ColoredBalances {
+	return &ColoredBalances{*b.ColoredBalances.Clone()}
+}
+
+func (b *ColoredBalances) Balance(col ledgerstate.Color) uint64 {
 	ret, _ := b.Get(col)
 	return ret
 }
 
-func (b ColoredBalances) Len() uint16 {
+func (b *ColoredBalances) Len() uint16 {
 	return uint16(b.Size())
 }
 
-func (b ColoredBalances) Equal(b1 ColoredBalances) bool {
+func (b *ColoredBalances) Equal(b1 ColoredBalances) bool {
 	ret := true
 	b.ForEach(func(col ledgerstate.Color, bal uint64) bool {
 		if bal != b1.Balance(col) {
@@ -48,7 +52,7 @@ func (b ColoredBalances) Equal(b1 ColoredBalances) bool {
 	return ret
 }
 
-func (b ColoredBalances) Diff(b1 ColoredBalances) map[ledgerstate.Color]int64 {
+func (b *ColoredBalances) Diff(b1 ColoredBalances) map[ledgerstate.Color]int64 {
 	ret := make(map[ledgerstate.Color]int64)
 	allColors := make(map[ledgerstate.Color]bool)
 	b.ForEach(func(col ledgerstate.Color, _ uint64) bool {
@@ -65,7 +69,7 @@ func (b ColoredBalances) Diff(b1 ColoredBalances) map[ledgerstate.Color]int64 {
 	return ret
 }
 
-func (b ColoredBalances) AddToMap(m map[ledgerstate.Color]int64) {
+func (b *ColoredBalances) AddToMap(m map[ledgerstate.Color]int64) {
 	b.ForEach(func(col ledgerstate.Color, bal uint64) bool {
 		s, _ := m[col]
 		m[col] = s + int64(bal)
@@ -95,13 +99,13 @@ func MustToUint64(m map[ledgerstate.Color]int64) map[ledgerstate.Color]uint64 {
 
 // TakeColor takes out all tokens with specific color
 // return what has left
-func (b ColoredBalances) TakeOutColor(col ledgerstate.Color) ColoredBalances {
+func (b *ColoredBalances) TakeOutColor(col ledgerstate.Color) ColoredBalances {
 	m := b.Map()
 	delete(m, col)
 	return NewColoredBalancesFromMap(m)
 }
 
-func WriteColoredBalances(w io.Writer, b ColoredBalances) error {
+func WriteColoredBalances(w io.Writer, b *ColoredBalances) error {
 	return util.WriteBytes16(w, b.Bytes())
 }
 
