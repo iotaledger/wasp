@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"golang.org/x/xerrors"
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -52,12 +53,12 @@ type callContext struct {
 }
 
 // MustNewVMContext a constructor
-func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) *VMContext {
+func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
 	chainID, err := coretypes.NewChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		task.Log.Panicf("MustNewVMContext: %v", err)
+		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
 	}
-	return &VMContext{
+	ret := &VMContext{
 		chainID:      chainID,
 		txBuilder:    txb,
 		virtualState: task.VirtualState.Clone(),
@@ -67,6 +68,20 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) *VMContext {
 		timestamp:    task.Timestamp.UnixNano(),
 		callStack:    make([]*callContext, 0),
 	}
+	err = txb.ConsumeChainInput(task.ChainInput.Address())
+	if err != nil {
+		// chain input must always be present
+		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)
+	}
+	metadata, err := sctransaction.StateMetadataFromBytes(task.ChainInput.GetStateData())
+	if err != nil {
+		// chain input must always be present
+		return nil, xerrors.Errorf("MustNewVMContext: can't parse state metadata %v", err)
+	}
+	if metadata.BlockIndex() != ret.virtualState.BlockIndex() {
+		return nil, xerrors.Errorf("MustNewVMContext: block index mismatch %v", err)
+	}
+	return ret, nil
 }
 
 func (vmctx *VMContext) GetResult() (state.StateUpdate, dict.Dict, error) {

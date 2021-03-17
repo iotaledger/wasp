@@ -149,7 +149,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //    'blob', 'accountsc', 'chainlog'
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
-	env.logger.Infof("deploying new chain '%s'", name)
+	env.logger.Debugf("deploying new chain '%s'", name)
 	stateController := ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
 	stateAddr := ledgerstate.NewED25519Address(stateController.PublicKey)
 
@@ -176,6 +176,9 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
 	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100)
+
+	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
+		name, chainID.String(), stateAddr.Base58())
 
 	ret := &Chain{
 		Env:                    env,
@@ -229,7 +232,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	_, err = ret.runBatch(initReq, "new")
 	require.NoError(env.T, err)
 
-	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID)
+	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
 	return ret
 }
 

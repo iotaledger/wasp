@@ -19,16 +19,11 @@ import (
 	"time"
 )
 
-func (ch *Chain) validateBatch(batch []*sctransaction.Request) {
-}
-
 func (ch *Chain) runBatch(batch []*sctransaction.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
-
-	ch.validateBatch(batch)
 
 	// solidify arguments
 	for _, req := range batch {
@@ -66,6 +61,7 @@ func (ch *Chain) runBatch(batch []*sctransaction.Request, trace string) (dict.Di
 
 	wg.Wait()
 	inputs := sctransaction.OutputsFromRequests(task.Requests...)
+	inputs = append(inputs, task.ChainInput)
 	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransaction, ch.StateControllerKeyPair)
 	require.NoError(ch.Env.T, err)
 

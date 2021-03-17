@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"golang.org/x/xerrors"
 	"time"
 )
 
@@ -175,11 +176,6 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.mustRequestToEventLog(vmctx.lastError)
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
-	stateHash := vmctx.virtualState.Hash()
-	if err := vmctx.txBuilder.AddChainOutputAsReminder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
-		vmctx.log.Panicf("finalizeRequestCall: %v", err)
-	}
-
 	vmctx.log.Debugw("runTheRequest OUT",
 		"reqId", vmctx.req.Output().ID().String(),
 		"entry point", vmctx.req.GetMetadata().EntryPoint().String(),
@@ -214,8 +210,11 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 		vmctx.req.GetMetadata().EntryPoint() == coretypes.EntryPointInit
 }
 
-func (vmctx *VMContext) BuildTransactionEssence() (*ledgerstate.TransactionEssence, error) {
-	// add state block
+func (vmctx *VMContext) BuildTransactionEssence(blockIndex uint32, stateHash hashing.HashValue) (*ledgerstate.TransactionEssence, error) {
+	stateMetadata := sctransaction.NewStateMetadata(blockIndex, stateHash)
+	if err := vmctx.txBuilder.AddChainOutputAsReminder(vmctx.chainID.AsAddress(), stateMetadata.Bytes()); err != nil {
+		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
+	}
 	tx, _, err := vmctx.txBuilder.BuildEssence()
 	if err != nil {
 		return nil, err

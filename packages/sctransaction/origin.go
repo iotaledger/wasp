@@ -19,7 +19,8 @@ func NewChainOriginTransaction(
 	allInputs ...ledgerstate.Output) (*ledgerstate.Transaction, coretypes.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...)
-	if err := txb.AddNewChainMint(balance, stateAddress, hashing.NilHash[:]); err != nil {
+	stateMetadata := NewStateMetadata(0, hashing.NilHash)
+	if err := txb.AddNewChainMint(balance, stateAddress, stateMetadata.Bytes()); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed

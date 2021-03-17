@@ -10,7 +10,7 @@ import (
 )
 
 func TestExample1(t *testing.T) {
-	env := solo.New(t, true, true)
+	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex1")
 
 	chainID, chainOwner, coreContracts := chain.GetInfo() // calls view root::GetInfo
@@ -27,7 +27,7 @@ func TestExample1(t *testing.T) {
 func TestExample2(t *testing.T) {
 	env := solo.New(t, false, false)
 	_, userAddress := env.NewKeyPair()
-	t.Logf("Address of the userWallet is: %s", userAddress)
+	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 0)
@@ -36,7 +36,7 @@ func TestExample2(t *testing.T) {
 func TestExample3(t *testing.T) {
 	env := solo.New(t, false, false)
 	_, userAddress := env.NewKeyPairWithFunds()
-	t.Logf("Address of the userWallet is: %s", userAddress)
+	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)

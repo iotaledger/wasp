@@ -32,11 +32,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx := vmcontext.MustNewVMContext(task, txb)
-
-	err := txb.ConsumeChainInput(task.ChainInput.Address())
+	vmctx, err := vmcontext.MustNewVMContext(task, txb)
 	if err != nil {
-		// chain input must always be present
 		task.Log.Panicf("runTask: %v", err)
 	}
 
@@ -68,8 +65,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		task.OnFinish(nil, nil, fmt.Errorf("RunVM.ApplyBlock: %v", err))
 		return
 	}
-	stateHash := vsClone.Hash()
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence()
+
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.BlockIndex(), vsClone.Hash())
 	if err != nil {
 		task.OnFinish(nil, nil, fmt.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
@@ -78,7 +75,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	task.Log.Debugw("runTask OUT",
 		"batch size", task.ResultBlock.Size(),
 		"block index", task.ResultBlock.StateIndex(),
-		"variable state hash", stateHash.String(),
+		"variable state hash", vsClone.Hash().String(),
 		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
 		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
 	)
