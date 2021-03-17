@@ -33,58 +33,58 @@ func init() {
 	}
 }
 
-func NewAgentIDFromBytes(data []byte) (ret AgentID, err error) {
-	err = ret.Read(bytes.NewReader(data))
-	return
+func NewAgentIDFromBytes(data []byte) (*AgentID, error) {
+	ret := AgentID{}
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return &ret, nil
 }
 
 // NewAgentIDFromContractID makes AgentID from ContractID
-func NewAgentIDFromContractID(id ContractID) AgentID {
-	return AgentID{
+func NewAgentIDFromContractID(id *ContractID) *AgentID {
+	return &AgentID{
 		a: id.ChainID().AsAddress().Clone(),
 		h: id.Hname(),
 	}
 }
 
 // NewAgentIDFromAddress makes AgentID from address.Address
-func NewAgentIDFromAddress(addr ledgerstate.Address) AgentID {
-	return AgentID{
+func NewAgentIDFromAddress(addr ledgerstate.Address) *AgentID {
+	return &AgentID{
 		a: addr.Clone(),
 	}
 }
 
 // NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (ret AgentID, err error) {
+func NewAgentIDFromString(s string) (*AgentID, error) {
 	if len(s) < 2 {
-		err = errors.New("invalid length")
-		return
+		return nil, errors.New("invalid length")
 	}
 	switch s[:2] {
 	case "A/":
 		var addr ledgerstate.Address
-		addr, err = ledgerstate.AddressFromBase58EncodedString(s[2:])
+		addr, err := ledgerstate.AddressFromBase58EncodedString(s[2:])
 		if err != nil {
-			return
+			return nil, err
 		}
-		ret = NewAgentIDFromAddress(addr)
+		return NewAgentIDFromAddress(addr), nil
 	case "C/":
-		var cid ContractID
-		cid, err = NewContractIDFromString(s[2:])
+		var cid *ContractID
+		cid, err := NewContractIDFromString(s[2:])
 		if err != nil {
-			return
+			return nil, err
 		}
-		ret = NewAgentIDFromContractID(cid)
-	default:
-		err = errors.New("invalid prefix")
+		return NewAgentIDFromContractID(cid), err
 	}
-	return
+	return nil, errors.New("invalid prefix")
 }
 
 // NewRandomAgentID creates random AgentID
-func NewRandomAgentID() AgentID {
+func NewRandomAgentID() *AgentID {
 	chainID := NewRandomChainID()
 	hname := Hn("testFunction")
-	cid := NewContractID(chainID, hname)
+	cid := NewContractID(*chainID, hname)
 	return NewAgentIDFromContractID(cid)
 }
 
@@ -123,7 +123,7 @@ func (a *AgentID) AsAddress() ledgerstate.Address {
 }
 
 // MustContractID takes contract ID or panics if not a contract ID
-func (a *AgentID) MustContractID() ContractID {
+func (a *AgentID) MustContractID() *ContractID {
 	chainId, err := NewChainIDFromAddress(a.a)
 	if err != nil {
 		panic(err)

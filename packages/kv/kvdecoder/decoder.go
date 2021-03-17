@@ -160,21 +160,22 @@ func (p *decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgers
 	return ret
 }
 
-func (p *decoder) GetContractID(key kv.Key, def ...coretypes.ContractID) (coretypes.ContractID, error) {
+func (p *decoder) GetContractID(key kv.Key, def ...coretypes.ContractID) (*coretypes.ContractID, error) {
 	v, exists, err := codec.DecodeContractID(p.kv.MustGet(key))
 	if err != nil {
-		return coretypes.ContractID{}, fmt.Errorf("GetContractID: decoding parameter '%s': %v", key, err)
+		return nil, fmt.Errorf("GetContractID: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
-		return v, nil
+		return &v, nil
 	}
 	if len(def) == 0 {
-		return coretypes.ContractID{}, fmt.Errorf("GetContractID: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetContractID: mandatory parameter '%s' does not exist", key)
 	}
-	return def[0], nil
+	r := def[0]
+	return &r, nil
 }
 
-func (p *decoder) MustGetContractID(key kv.Key, def ...coretypes.ContractID) coretypes.ContractID {
+func (p *decoder) MustGetContractID(key kv.Key, def ...coretypes.ContractID) *coretypes.ContractID {
 	ret, err := p.GetContractID(key, def...)
 	if err != nil {
 		p.panic(err)
@@ -182,21 +183,22 @@ func (p *decoder) MustGetContractID(key kv.Key, def ...coretypes.ContractID) cor
 	return ret
 }
 
-func (p *decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (coretypes.AgentID, error) {
+func (p *decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (*coretypes.AgentID, error) {
 	v, exists, err := codec.DecodeAgentID(p.kv.MustGet(key))
 	if err != nil {
-		return coretypes.AgentID{}, fmt.Errorf("GetAgentID: decoding parameter '%s': %v", key, err)
+		return nil, fmt.Errorf("GetAgentID: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
-		return v, nil
+		return &v, nil
 	}
 	if len(def) == 0 {
-		return coretypes.AgentID{}, fmt.Errorf("GetAgentID: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetAgentID: mandatory parameter '%s' does not exist", key)
 	}
-	return def[0], nil
+	r := def[0]
+	return &r, nil
 }
 
-func (p *decoder) MustGetAgentID(key kv.Key, def ...coretypes.AgentID) coretypes.AgentID {
+func (p *decoder) MustGetAgentID(key kv.Key, def ...coretypes.AgentID) *coretypes.AgentID {
 	ret, err := p.GetAgentID(key, def...)
 	if err != nil {
 		p.panic(err)
@@ -204,21 +206,22 @@ func (p *decoder) MustGetAgentID(key kv.Key, def ...coretypes.AgentID) coretypes
 	return ret
 }
 
-func (p *decoder) GetChainID(key kv.Key, def ...coretypes.ChainID) (coretypes.ChainID, error) {
+func (p *decoder) GetChainID(key kv.Key, def ...coretypes.ChainID) (*coretypes.ChainID, error) {
 	v, exists, err := codec.DecodeChainID(p.kv.MustGet(key))
 	if err != nil {
-		return coretypes.ChainID{}, fmt.Errorf("GetChainID: decoding parameter '%s': %v", key, err)
+		return nil, fmt.Errorf("GetChainID: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
-		return v, nil
+		return &v, nil
 	}
 	if len(def) == 0 {
-		return coretypes.ChainID{}, fmt.Errorf("GetChainID: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetChainID: mandatory parameter '%s' does not exist", key)
 	}
-	return def[0], nil
+	r := def[0]
+	return &r, nil
 }
 
-func (p *decoder) MustGetChainID(key kv.Key, def ...coretypes.ChainID) coretypes.ChainID {
+func (p *decoder) MustGetChainID(key kv.Key, def ...coretypes.ChainID) *coretypes.ChainID {
 	ret, err := p.GetChainID(key, def...)
 	if err != nil {
 		p.panic(err)

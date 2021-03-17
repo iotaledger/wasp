@@ -85,7 +85,7 @@ func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
 	defer vmctx.popCallContext()
 
 	aid := vmctx.MyAgentID()
-	return accounts.GetBalance(vmctx.State(), &aid, col)
+	return accounts.GetBalance(vmctx.State(), aid, col)
 }
 
 func (vmctx *VMContext) getMyBalances() *coretypes.ColoredBalances {
@@ -94,7 +94,7 @@ func (vmctx *VMContext) getMyBalances() *coretypes.ColoredBalances {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	r, _ := accounts.GetAccountBalances(vmctx.State(), &agentID)
+	r, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
 	ret := coretypes.NewColoredBalancesFromMap(r)
 	return &ret
 }
@@ -105,7 +105,7 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col ledgerstate.Co
 
 	aid := vmctx.MyAgentID()
 	bals := coretypes.NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{col: amount})
-	return accounts.MoveBetweenAccounts(vmctx.State(), &aid, &target, &bals)
+	return accounts.MoveBetweenAccounts(vmctx.State(), aid, &target, &bals)
 }
 
 func (vmctx *VMContext) StoreToEventLog(contract coretypes.Hname, data []byte) {

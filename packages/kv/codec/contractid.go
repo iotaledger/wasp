@@ -9,7 +9,7 @@ func DecodeContractID(b []byte) (coretypes.ContractID, bool, error) {
 		return coretypes.ContractID{}, false, nil
 	}
 	r, err := coretypes.NewContractIDFromBytes(b)
-	return r, err == nil, err
+	return *r, err == nil, err
 }
 
 func EncodeContractID(value coretypes.ContractID) []byte {

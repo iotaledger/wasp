@@ -50,15 +50,18 @@ func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
 }
 
 // NewRandomChainID creates a random chain ID.
-func NewRandomChainID(seed ...[]byte) (ret ChainID) {
+func NewRandomChainID(seed ...[]byte) *ChainID {
 	var h hashing.HashValue
 	if len(seed) > 0 {
 		h = hashing.HashData(seed[0])
 	} else {
 		h = hashing.RandomHash(nil)
 	}
-	ret = ChainID{ledgerstate.NewAliasAddress(h[:])}
-	return
+	return &ChainID{ledgerstate.NewAliasAddress(h[:])}
+}
+
+func (chid *ChainID) Equals(chid1 *ChainID) bool {
+	return chid.AliasAddress.Equals(chid1.AliasAddress)
 }
 
 func (chid *ChainID) Clone() (ret ChainID) {

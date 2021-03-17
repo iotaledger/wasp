@@ -71,7 +71,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.Require(err == nil, "root.init.fail: %v", err)
 
 	state.Set(VarStateInitialized, []byte{0xFF})
-	state.Set(VarChainID, codec.EncodeChainID(chainID))
+	state.Set(VarChainID, codec.EncodeChainID(*chainID))
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
 	state.Set(VarDescription, codec.EncodeString(chainDescription))
 	if feeColorSet {
@@ -189,7 +189,7 @@ func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	newOwnerID := params.MustGetAgentID(ParamChainOwner)
-	ctx.State().Set(VarChainOwnerIDDelegated, codec.EncodeAgentID(&newOwnerID))
+	ctx.State().Set(VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
 	ctx.Log().Debugf("root.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil, nil
 }
@@ -204,12 +204,12 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	stateDecoder := kvdecoder.New(state, ctx.Log())
 	currentOwner := stateDecoder.MustGetAgentID(VarChainOwnerID)
-	nextOwner := stateDecoder.MustGetAgentID(VarChainOwnerIDDelegated, currentOwner)
+	nextOwner := stateDecoder.MustGetAgentID(VarChainOwnerIDDelegated, *currentOwner)
 
-	a.Require(!nextOwner.Equals(&currentOwner), "root.claimChainOwnership: not delegated to another chain owner")
+	a.Require(!nextOwner.Equals(currentOwner), "root.claimChainOwnership: not delegated to another chain owner")
 	a.Require(nextOwner.Equals(ctx.Caller()), "root.claimChainOwnership: not authorized")
 
-	state.Set(VarChainOwnerID, codec.EncodeAgentID(&nextOwner))
+	state.Set(VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(VarChainOwnerIDDelegated)
 	ctx.Log().Debugf("root.chainChainOwner.success: chain owner changed: %s --> %s",
 		currentOwner.String(), nextOwner.String())

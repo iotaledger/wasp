@@ -36,7 +36,7 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 		contractHname: contractHname,
 		params:        params,
 		state:         contractStateSubpartition(vctx.state, contractHname),
-		events:        vm.NewContractEventPublisher(coretypes.NewContractID(vctx.chainID, contractHname), vctx.log),
+		events:        vm.NewContractEventPublisher(*coretypes.NewContractID(vctx.chainID, contractHname), vctx.log),
 	}
 }
 
@@ -65,8 +65,7 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 }
 
 func (s *sandboxview) ContractID() *coretypes.ContractID {
-	r := coretypes.NewContractID(s.vctx.chainID, s.contractHname)
-	return &r
+	return coretypes.NewContractID(s.vctx.chainID, s.contractHname)
 }
 
 func (s *sandboxview) Log() coretypes.LogInterface {
@@ -84,8 +83,7 @@ func (s *sandboxview) ChainOwnerID() *coretypes.AgentID {
 	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
-	ret := res.MustGetAgentID(root.VarChainOwnerID)
-	return &ret
+	return res.MustGetAgentID(root.VarChainOwnerID)
 }
 
 func (s *sandboxview) ContractCreator() *coretypes.AgentID {

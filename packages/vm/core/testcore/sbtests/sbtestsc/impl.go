@@ -37,7 +37,7 @@ func testEventLogEventData(ctx coretypes.Sandbox) (dict.Dict, error) {
 func testChainOwnerIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID[:])
+	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
 
 	return ret, nil
 }
@@ -45,7 +45,7 @@ func testChainOwnerIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
 func testChainOwnerIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID[:])
+	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
 
 	return ret, nil
 }
@@ -53,14 +53,14 @@ func testChainOwnerIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 func testContractIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	cID := ctx.ContractID()
 	ret := dict.New()
-	ret.Set(VarContractID, cID[:])
+	ret.Set(VarContractID, cID.Bytes())
 	return ret, nil
 }
 
 func testContractIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	cID := ctx.ContractID()
 	ret := dict.New()
-	ret.Set(VarContractID, cID[:])
+	ret.Set(VarContractID, cID.Bytes())
 	return ret, nil
 }
 

@@ -2,7 +2,6 @@ package sbtestsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -15,11 +14,9 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
 	succ := ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: accounts.Interface.ContractID(targetChain),
+		TargetContractID: accounts.Interface.ContractID(*targetChain),
 		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
-		Transfer: coretypes.NewColoredBalancesFromMap(map[balance.Color]int64{
-			balance.ColorIOTA: 2,
-		}),
+		Transfer:         coretypes.NewIotasOnly(2),
 	})
 	if !succ {
 		return nil, fmt.Errorf("failed to post request")

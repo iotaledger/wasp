@@ -101,7 +101,7 @@ func (i *ContractInterface) Hname() coretypes.Hname {
 }
 
 func (i *ContractInterface) ContractID(chainID coretypes.ChainID) coretypes.ContractID {
-	return coretypes.NewContractID(chainID, i.Hname())
+	return *coretypes.NewContractID(chainID, i.Hname())
 }
 
 func (f *ContractFunctionInterface) Hname() coretypes.Hname {

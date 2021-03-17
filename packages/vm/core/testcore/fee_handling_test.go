@@ -4,10 +4,9 @@
 package testcore
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -20,8 +19,8 @@ func TestInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 1)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 1)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-2)
 
 	checkFees(chain, blob.Interface.Name, 0, 0)
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -40,8 +39,8 @@ func TestBase(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 }
@@ -57,8 +56,8 @@ func TestFeeIsEnough1(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 
@@ -68,8 +67,8 @@ func TestFeeIsEnough1(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 3)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-5)
 }
 
 func TestFeeIsEnough2(t *testing.T) {
@@ -83,22 +82,22 @@ func TestFeeIsEnough2(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
 	checkFees(chain, blob.Interface.Name, 2, 0)
 
-	user := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
+	user, userAddr := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentIDFromAddress(userAddr)
 	_, err = chain.UploadBlob(user,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 4)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertAccountBalance(*userAgentID, ledgerstate.ColorIOTA, 1)
+	env.AssertAddressBalance(userAddr, ledgerstate.ColorIOTA, solo.Saldo-3)
 }

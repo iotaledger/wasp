@@ -1,10 +1,8 @@
 package sbtests
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -25,7 +23,7 @@ func testDoNothing(t *testing.T, w bool) {
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-42-extraToken)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-42-extraToken)
 }
 
 func TestDoNothingUser(t *testing.T) { run2(t, testDoNothingUser) }
@@ -46,8 +44,8 @@ func testDoNothingUser(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-1-42)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(user.Address(), balance.ColorIOTA, solo.Saldo-1-42)
 }
 
 func TestWithdrawToAddress(t *testing.T) { run2(t, testWithdrawToAddress) }
@@ -70,8 +68,8 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 42)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-42)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1-42)
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncSendToAddress,
 		sbtestsc.ParamAddress, userAddress,
@@ -83,8 +81,8 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 5+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-5-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-5-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1)
 }
 
 func TestDoPanicUser(t *testing.T) { run2(t, testDoPanicUser) }
@@ -101,8 +99,8 @@ func testDoPanicUser(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 
 	req := solo.NewCallParams(sbtestsc.Interface.Name, sbtestsc.FuncPanicFullEP).
 		WithTransfer(balance.ColorIOTA, 42)
@@ -113,8 +111,8 @@ func testDoPanicUser(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1)
 }
 
 func TestDoPanicUserFeeless(t *testing.T) { run2(t, testDoPanicUserFeeless) }
@@ -131,8 +129,8 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 
 	req := solo.NewCallParams(sbtestsc.Interface.Name, sbtestsc.FuncPanicFullEP).
 		WithTransfer(balance.ColorIOTA, 42)
@@ -143,8 +141,8 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1)
 
 	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
 	_, err = chain.PostRequestSync(req, user)
@@ -153,8 +151,8 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 }
 
 func TestDoPanicUserFee(t *testing.T) { run2(t, testDoPanicUserFee) }
@@ -171,8 +169,8 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, cID.Hname(),
@@ -184,8 +182,8 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 5+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-5-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-5-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 
 	req = solo.NewCallParams(sbtestsc.Interface.Name, sbtestsc.FuncPanicFullEP).
 		WithTransfer(balance.ColorIOTA, 42)
@@ -196,8 +194,8 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 5+10+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-5-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-10)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-5-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1-10)
 }
 
 func TestRequestToView(t *testing.T) { run2(t, testRequestToView) }
@@ -214,8 +212,8 @@ func testRequestToView(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
 
 	// sending request to the view entry point should return an error and invoke fallback for tokens
 	req := solo.NewCallParams(sbtestsc.Interface.Name, sbtestsc.FuncJustView).
@@ -227,6 +225,6 @@ func testRequestToView(t *testing.T, w bool) {
 	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4+extraToken)
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
 	chain.AssertAccountBalance(cAID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1-4-extraToken)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, testutil.RequestFundsAmount-1)
+	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
+	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1)
 }

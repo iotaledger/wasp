@@ -8,6 +8,7 @@ import (
 
 func getMintedSupply(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ret := dict.New()
-	ret.Set(VarMintedSupply, codec.EncodeInt64(ctx.MintedSupply()))
+	_, supply := ctx.Minted()
+	ret.Set(VarMintedSupply, codec.EncodeUint64(supply))
 	return ret, nil
 }

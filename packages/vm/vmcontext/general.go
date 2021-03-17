@@ -30,11 +30,11 @@ func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
 
 func (vmctx *VMContext) CurrentContractID() *coretypes.ContractID {
 	ret := coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname())
-	return &ret
+	return ret
 }
 
-func (vmctx *VMContext) MyAgentID() coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(*vmctx.CurrentContractID())
+func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
+	return coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {

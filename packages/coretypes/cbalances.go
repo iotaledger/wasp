@@ -105,6 +105,23 @@ func (b *ColoredBalances) TakeOutColor(col ledgerstate.Color) ColoredBalances {
 	return NewColoredBalancesFromMap(m)
 }
 
+func (b *ColoredBalances) AboveDustThreshold(dustThreshold map[ledgerstate.Color]uint64) bool {
+	if len(dustThreshold) == 0 {
+		return true
+	}
+	if b == nil {
+		return false
+	}
+	m := b.ColoredBalances.Map()
+	for col, dust := range dustThreshold {
+		b, _ := m[col]
+		if b < dust {
+			return false
+		}
+	}
+	return true
+}
+
 func WriteColoredBalances(w io.Writer, b *ColoredBalances) error {
 	return util.WriteBytes16(w, b.Bytes())
 }

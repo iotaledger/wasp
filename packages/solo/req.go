@@ -104,10 +104,16 @@ func toMap(params ...interface{}) map[string]interface{} {
 	return par
 }
 
+func (r *CallParams) AboveDustThreshold() bool {
+	return AboveDustThreshold(&r.transfer)
+}
+
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
 func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) *ledgerstate.Transaction {
+	require.True(ch.Env.T, req.AboveDustThreshold())
+
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
@@ -161,7 +167,9 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
 	tx := ch.RequestFromParamsToLedger(req, keyPair)
 
-	initReq := ch.Env.RequestsForChain(tx, ch.ChainID)
+	initReq, err := ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(ch.Env.T, err)
+
 	ch.reqCounter.Add(1)
 	res, err := ch.runBatch(initReq, "post")
 	require.NoError(ch.Env.T, err)

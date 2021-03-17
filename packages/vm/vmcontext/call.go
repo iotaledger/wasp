@@ -101,7 +101,7 @@ func (vmctx *VMContext) callerIsRoot() bool {
 }
 
 func (vmctx *VMContext) requesterIsChainOwner() bool {
-	return vmctx.chainOwnerID == vmctx.req.SenderAgentID()
+	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAgentID())
 }
 
 func (vmctx *VMContext) Params() dict.Dict {

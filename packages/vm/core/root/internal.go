@@ -37,8 +37,8 @@ func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecor
 func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
 	d := kvdecoder.New(state)
 	ret := ChainInfo{
-		ChainID:             d.MustGetChainID(VarChainID),
-		ChainOwnerID:        d.MustGetAgentID(VarChainOwnerID),
+		ChainID:             *d.MustGetChainID(VarChainID),
+		ChainOwnerID:        *d.MustGetAgentID(VarChainOwnerID),
 		Description:         d.MustGetString(VarDescription, ""),
 		FeeColor:            d.MustGetColor(VarFeeColor, ledgerstate.ColorIOTA),
 		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),

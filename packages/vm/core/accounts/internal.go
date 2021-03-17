@@ -188,7 +188,7 @@ func calcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
 		if err != nil {
 			panic(err)
 		}
-		for col, b := range getAccountBalances(getAccountR(state, &agentID)) {
+		for col, b := range getAccountBalances(getAccountR(state, agentID)) {
 			ret[col] = ret[col] + b
 		}
 		return true

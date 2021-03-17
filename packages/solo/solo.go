@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"go.uber.org/atomic"
+	"golang.org/x/xerrors"
 	"sync"
 	"testing"
 	"time"
@@ -33,8 +34,10 @@ const DefaultTimeStep = 1 * time.Millisecond
 // which is therefore the amount returned by NewKeyPairWithFunds() and such
 const (
 	Saldo              = uint64(1337)
-	DustThresholdIotas = uint64(100)
+	DustThresholdIotas = uint64(1)
 )
+
+var DustThreshold = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: DustThresholdIotas}
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
@@ -166,7 +169,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	originatorAgentID := coretypes.NewAgentIDFromAddress(originatorAddr)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
-		feeTarget = validatorFeeTarget[0]
+		feeTarget = &validatorFeeTarget[0]
 	}
 
 	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
@@ -188,8 +191,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		StateControllerAddress: stateAddr,
 		OriginatorKeyPair:      chainOriginator,
 		OriginatorAddress:      originatorAddr,
-		OriginatorAgentID:      originatorAgentID,
-		ValidatorFeeTarget:     feeTarget,
+		OriginatorAgentID:      *originatorAgentID,
+		ValidatorFeeTarget:     *feeTarget,
 		State:                  state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		proc:                   processors.MustNew(),
 		Log:                    env.logger.Named(name),
@@ -227,7 +230,9 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	go ret.readRequestsLoop()
 	go ret.batchLoop()
 
-	initReq := env.RequestsForChain(initTx, chainID)
+	initReq, err := env.RequestsForChain(initTx, chainID)
+	require.NoError(env.T, err)
+
 	ret.reqCounter.Add(1)
 	_, err = ret.runBatch(initReq, "new")
 	require.NoError(env.T, err)
@@ -242,13 +247,19 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 	return env.utxoDB.AddTransaction(tx)
 }
 
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) []*sctransaction.Request {
-	m := env.RequestsByChain(tx)
-	ret, _ := m[chid.Array()]
-	return ret
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]*sctransaction.Request, error) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+
+	m := env.requestsByChain(tx)
+	ret, ok := m[chid.Array()]
+	if !ok {
+		return nil, xerrors.Errorf("chain %s does not exist", chid.String())
+	}
+	return ret, nil
 }
 
-func (env *Solo) RequestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.Request {
+func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.Request {
 	sender, err := env.utxoDB.GetSingleSender(tx)
 	require.NoError(env.T, err)
 	ret := make(map[[33]byte][]*sctransaction.Request)
@@ -257,21 +268,26 @@ func (env *Solo) RequestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sc
 		if !ok {
 			continue
 		}
-		lst, ok := ret[o.Address().Array()]
+		arr := o.Address().Array()
+		if _, ok = env.chains[arr]; !ok {
+			// not a chain
+			continue
+		}
+		lst, ok := ret[arr]
 		if !ok {
 			lst = make([]*sctransaction.Request, 0)
 		}
-		ret[o.Address().Array()] = append(lst, sctransaction.RequestFromOutput(o, sender))
+		ret[arr] = append(lst, sctransaction.RequestFromOutput(o, sender))
 	}
 	return ret
 }
 
 // EnqueueRequests dispatches requests contained in the transaction among chains
 func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
-	requests := env.RequestsByChain(tx)
-
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
+
+	requests := env.requestsByChain(tx)
 
 	for chidArr, reqs := range requests {
 		chid, err := coretypes.NewChainIDFromBytes(chidArr[:])
@@ -356,4 +372,8 @@ func (ch *Chain) batchLoop() {
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
 	return int(ch.reqCounter.Load())
+}
+
+func AboveDustThreshold(cb *coretypes.ColoredBalances) bool {
+	return cb.AboveDustThreshold(DustThreshold)
 }

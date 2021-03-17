@@ -21,66 +21,71 @@ type ContractID struct {
 }
 
 // NewContractID creates new ContractID from chainID and contract hname
-func NewContractID(chid ChainID, contractHn Hname) (ret ContractID) {
-	return ContractID{
+func NewContractID(chid ChainID, contractHn Hname) *ContractID {
+	return &ContractID{
 		chainID:       chid,
 		contractHname: contractHn,
 	}
 }
 
 // NewContractIDFromBytes creates contract ID frm its binary representation
-func NewContractIDFromBytes(data []byte) (ret ContractID, err error) {
-	err = ret.Read(bytes.NewReader(data))
-	return
+func NewContractIDFromBytes(data []byte) (*ContractID, error) {
+	ret := ContractID{}
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return &ret, nil
 }
 
 // NewContractIDFromBase58 decodes contract ID from base58 string
-func NewContractIDFromBase58(base58string string) (ret ContractID, err error) {
-	var data []byte
-	if data, err = base58.Decode(base58string); err != nil {
-		return
+func NewContractIDFromBase58(base58string string) (*ContractID, error) {
+	data, err := base58.Decode(base58string)
+	if err != nil {
+		return nil, err
 	}
 	return NewContractIDFromBytes(data)
 }
 
 // NewContractIDFromString parses the human-readable string representation of the contract ID
-func NewContractIDFromString(s string) (ret ContractID, err error) {
+func NewContractIDFromString(s string) (*ContractID, error) {
 	parts := strings.Split(s, "::")
 	if len(parts) != 2 {
-		err = errors.New("invalid ContractID")
-		return
+		return nil, errors.New("invalid ContractID")
 	}
 	chid, err := NewChainIDFromBase58(parts[0])
 	if err != nil {
-		return
+		return nil, err
 	}
 	cid, err := HnameFromString(parts[1])
 	if err != nil {
-		return
+		return nil, err
 	}
-	ret = NewContractID(chid, cid)
-	return
+	return NewContractID(chid, cid), nil
 }
 
-func (scid ContractID) Clone() ContractID {
-	return ContractID{
+func (scid *ContractID) Clone() *ContractID {
+	return &ContractID{
 		chainID:       scid.chainID.Clone(),
 		contractHname: scid.contractHname,
 	}
 }
 
+func (scid *ContractID) Equals(scid1 *ContractID) bool {
+	return scid.chainID.Equals(&scid1.chainID) && scid.contractHname == scid1.contractHname
+}
+
 // ChainID returns ID of the native chain of the contract
-func (scid ContractID) ChainID() *ChainID {
+func (scid *ContractID) ChainID() *ChainID {
 	return &scid.chainID
 }
 
 // Hname returns hashed name of the contract, local ID on the chain
-func (scid ContractID) Hname() Hname {
+func (scid *ContractID) Hname() Hname {
 	return scid.contractHname
 }
 
 // Base58 base58 representation of the binary representation
-func (scid ContractID) Base58() string {
+func (scid *ContractID) Base58() string {
 	return base58.Encode(scid.Bytes())
 }
 

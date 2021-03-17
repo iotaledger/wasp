@@ -117,7 +117,7 @@ func (vmctx *VMContext) mustHandleFees() {
 		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to sender
 		// fallback: not enough fees. Accrue everything to the sender
 		sender := vmctx.req.SenderAgentID()
-		vmctx.creditToAccount(&sender, &vmctx.remainingAfterFees)
+		vmctx.creditToAccount(sender, &vmctx.remainingAfterFees)
 		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Transfer accrued to %s",
 			vmctx.req.Output().ID().Base58(), sender.String())
 		vmctx.remainingAfterFees = coretypes.NewColoredBalancesFromMap(nil)
@@ -158,7 +158,7 @@ func (vmctx *VMContext) mustHandleFallback() {
 			vmctx.log.Panicf("mustHandleFallback: transferring tokens to address %s", sender.AsAddress().String())
 		}
 	} else {
-		vmctx.creditToAccount(&sender, &vmctx.remainingAfterFees)
+		vmctx.creditToAccount(sender, &vmctx.remainingAfterFees)
 	}
 }
 

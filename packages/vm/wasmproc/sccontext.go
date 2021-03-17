@@ -197,7 +197,7 @@ func (o *ScContext) processPost(bytes []byte) {
 		o.Panic("invalid delay: %d", delay)
 	}
 	o.vm.ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: contract,
+		TargetContractID: *contract,
 		EntryPoint:       function,
 		Params:           params,
 		Transfer:         *transfer,

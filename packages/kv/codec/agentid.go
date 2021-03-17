@@ -9,7 +9,7 @@ func DecodeAgentID(b []byte) (coretypes.AgentID, bool, error) {
 		return coretypes.AgentID{}, false, nil
 	}
 	r, err := coretypes.NewAgentIDFromBytes(b)
-	return r, err == nil, err
+	return *r, err == nil, err
 }
 
 func EncodeAgentID(value *coretypes.AgentID) []byte {

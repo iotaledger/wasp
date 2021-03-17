@@ -96,7 +96,7 @@ func (req *Request) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
 }
 
-func (req *Request) SenderAgentID() (ret coretypes.AgentID) {
+func (req *Request) SenderAgentID() (ret *coretypes.AgentID) {
 	if req.senderAddress.Type() == ledgerstate.AliasAddressType {
 		chainID, err := coretypes.NewChainIDFromAddress(req.senderAddress)
 		if err != nil {

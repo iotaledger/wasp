@@ -2,11 +2,8 @@ package sbtests
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
@@ -37,7 +34,7 @@ func setupChain(t *testing.T, sigSchemeChain signaturescheme.SignatureScheme) (*
 
 func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureScheme {
 	user := chain.Env.NewKeyPairWithFunds()
-	chain.Env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+	chain.Env.AssertAddressBalance(user.Address(), balance.ColorIOTA, solo.Saldo)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, coretypes.NewAgentIDFromAddress(user.Address()),

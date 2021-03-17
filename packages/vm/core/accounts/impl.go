@@ -25,7 +25,7 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), &aid), fmt.Sprintf("getBalance for %s", &aid)), nil
+	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("getBalance for %s", &aid)), nil
 }
 
 // getTotalAssets returns total colored balances controlled by the chain
@@ -56,8 +56,8 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	targetAgentID := params.MustGetAgentID(ParamAgentID, *caller)
 
 	// funds currently are at the disposition of accounts, they are moved to the target
-	from := coretypes.NewAgentIDFromContractID(*ctx.ContractID())
-	succ := MoveBetweenAccounts(state, &from, &targetAgentID, ctx.IncomingTransfer())
+	from := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	succ := MoveBetweenAccounts(state, from, targetAgentID, ctx.IncomingTransfer())
 	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", caller.String())
 
 	incoming := ctx.IncomingTransfer()
@@ -128,8 +128,8 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 
 	// take to tokens here to 'accounts' from the caller
-	toAgentId := coretypes.NewAgentIDFromContractID(*ctx.ContractID())
-	succ := MoveBetweenAccounts(ctx.State(), caller, &toAgentId, &toWithdraw)
+	toAgentId := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	succ := MoveBetweenAccounts(ctx.State(), caller, toAgentId, &toWithdraw)
 	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
 
 	succ = ctx.PostRequest(coretypes.PostRequestParams{

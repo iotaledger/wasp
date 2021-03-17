@@ -96,7 +96,7 @@ func TestListBlobs(t *testing.T) {
 func TestDeployNotAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewKeyPairWithFunds()
+	user1, _ := env.NewKeyPairWithFunds()
 	err := chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.Error(t, err)
 }
@@ -104,8 +104,8 @@ func TestDeployNotAuthorized(t *testing.T) {
 func TestDeployGrant(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
+	user1, addr1 := env.NewKeyPairWithFunds()
+	user1AgentID := coretypes.NewAgentIDFromAddress(addr1)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
@@ -116,21 +116,21 @@ func TestDeployGrant(t *testing.T) {
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	_, contacts := chain.GetInfo()
+	_, _, contacts := chain.GetInfo()
 	require.EqualValues(t, 5, len(contacts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
-	_, contacts = chain.GetInfo()
+	_, _, contacts = chain.GetInfo()
 	require.EqualValues(t, 6, len(contacts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
+	user1, addr1 := env.NewKeyPairWithFunds()
+	user1AgentID := coretypes.NewAgentIDFromAddress(addr1)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
@@ -141,7 +141,7 @@ func TestRevokeDeploy(t *testing.T) {
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	_, contacts := chain.GetInfo()
+	_, _, contacts := chain.GetInfo()
 	require.EqualValues(t, 5, len(contacts))
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
@@ -153,15 +153,15 @@ func TestRevokeDeploy(t *testing.T) {
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.Error(t, err)
 
-	_, contacts = chain.GetInfo()
+	_, _, contacts = chain.GetInfo()
 	require.EqualValues(t, 5, len(contacts))
 }
 
 func TestDeployGrantFail(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	user1 := env.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentIDFromAddress(user1.Address())
+	user1, addr1 := env.NewKeyPairWithFunds()
+	user1AgentID := coretypes.NewAgentIDFromAddress(addr1)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
