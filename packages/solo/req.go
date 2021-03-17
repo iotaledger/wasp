@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"golang.org/x/xerrors"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -25,7 +26,7 @@ type CallParams struct {
 	target     coretypes.Hname
 	epName     string
 	entryPoint coretypes.Hname
-	transfer   coretypes.ColoredBalances
+	transfer   map[ledgerstate.Color]uint64
 	mint       uint64
 	args       requestargs.RequestArgs
 }
@@ -81,7 +82,7 @@ func (r *CallParams) WithTransfer(color ledgerstate.Color, amount uint64) *CallP
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
 func (r *CallParams) WithTransfers(transfer map[ledgerstate.Color]uint64) *CallParams {
-	r.transfer = coretypes.NewColoredBalancesFromMap(transfer)
+	r.transfer = CloneBalances(transfer)
 	return r
 }
 
@@ -104,15 +105,13 @@ func toMap(params ...interface{}) map[string]interface{} {
 	return par
 }
 
-func (r *CallParams) AboveDustThreshold() bool {
-	return AboveDustThreshold(&r.transfer)
-}
-
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) *ledgerstate.Transaction {
-	require.True(ch.Env.T, req.AboveDustThreshold())
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, error) {
+	if len(req.transfer) == 0 {
+		return nil, xerrors.New("transfer can't be empty")
+	}
 
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
@@ -130,7 +129,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		Bytes()
 
 	txb := utxoutil.NewBuilder(allOuts...)
-	err := txb.AddExtendedOutputSimple(ch.ChainID.AsAddress(), metadata, req.transfer.Map())
+	err := txb.AddExtendedOutputSimple(ch.ChainID.AsAddress(), metadata, req.transfer)
 	require.NoError(ch.Env.T, err)
 
 	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
@@ -141,7 +140,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
-	return tx
+	return tx, nil
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
@@ -165,8 +164,10 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
-	tx := ch.RequestFromParamsToLedger(req, keyPair)
-
+	tx, err := ch.RequestFromParamsToLedger(req, keyPair)
+	if err != nil {
+		return nil, nil, err
+	}
 	initReq, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 

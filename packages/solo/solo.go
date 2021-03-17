@@ -374,6 +374,15 @@ func (ch *Chain) backlogLen() int {
 	return int(ch.reqCounter.Load())
 }
 
-func AboveDustThreshold(cb *coretypes.ColoredBalances) bool {
-	return cb.AboveDustThreshold(DustThreshold)
+func AboveDustThreshold(m map[ledgerstate.Color]uint64) bool {
+	if len(m) == 0 {
+		return false
+	}
+	for col, bal := range DustThreshold {
+		s, _ := m[col]
+		if s < bal {
+			return false
+		}
+	}
+	return true
 }
