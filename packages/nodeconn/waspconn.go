@@ -43,9 +43,9 @@ func (n *NodeConn) nodeConnect() {
 		return
 	}
 
-	n.bconn.Lock()
-	n.bconn.BufferedConnection = buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize)
-	n.bconn.Unlock()
+	n.mu.Lock()
+	n.bconn = buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize)
+	n.mu.Unlock()
 	n.Events.Connected.Trigger()
 
 	n.log.Debugf("established connection with node at %s", addr)
@@ -58,11 +58,11 @@ func (n *NodeConn) nodeConnect() {
 	n.bconn.Events.Close.Attach(events.NewClosure(func() {
 		n.log.Errorf("lost connection with %s", addr)
 		go func() {
-			n.bconn.Lock()
-			bconnOld := n.bconn.BufferedConnection
+			n.mu.Lock()
+			bconnOld := n.bconn
 			defer bconnOld.Events.ReceiveMessage.Detach(dataReceivedClosure)
-			n.bconn.BufferedConnection = nil
-			n.bconn.Unlock()
+			n.bconn = nil
+			n.mu.Unlock()
 		}()
 	}))
 
@@ -105,9 +105,9 @@ func (n *NodeConn) WaitForConnection(timeout time.Duration) bool {
 }
 
 func (n *NodeConn) IsConnected() bool {
-	n.bconn.Lock()
-	defer n.bconn.Unlock()
-	return n.bconn.BufferedConnection != nil
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.bconn != nil
 }
 
 func (n *NodeConn) retryNodeConnect() {
@@ -116,16 +116,17 @@ func (n *NodeConn) retryNodeConnect() {
 	go n.nodeConnect()
 }
 
-func (n *NodeConn) SendDataToNode(data []byte) error {
+func (n *NodeConn) sendToNode(msg waspconn.Message) error {
+	data := waspconn.EncodeMsg(msg)
 	choppedData, chopped, err := n.msgChopper.ChopData(data, tangle.MaxMessageSize, waspconn.ChunkMessageHeaderSize)
 	if err != nil {
 		return err
 	}
-	n.bconn.Lock()
-	defer n.bconn.Unlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	if n.bconn.BufferedConnection == nil {
-		return fmt.Errorf("SendDataToNode: not connected to node")
+	if n.bconn == nil {
+		return fmt.Errorf("sendToNode: not connected to node")
 	}
 	if !chopped {
 		_, err = n.bconn.Write(data)

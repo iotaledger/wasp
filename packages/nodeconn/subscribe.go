@@ -5,28 +5,29 @@ import (
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 )
 
-func (n *NodeConn) Subscribe(addr ledgerstate.Address, color ledgerstate.Color) {
-	n.bconn.Lock()
-	defer n.bconn.Unlock()
+func (n *NodeConn) Subscribe(addr *ledgerstate.AliasAddress) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	if _, ok := n.subscriptions[addr]; !ok {
+	addrBytes := addr.Array()
+	if _, ok := n.subscriptions[addrBytes]; !ok {
 		n.subscriptionsSent = false
 	}
-	n.subscriptions[addr] = color
+	n.subscriptions[addrBytes] = addr
 }
 
-func (n *NodeConn) Unsubscribe(addr ledgerstate.Address) {
-	n.bconn.Lock()
-	defer n.bconn.Unlock()
+func (n *NodeConn) Unsubscribe(addr *ledgerstate.AliasAddress) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	delete(n.subscriptions, addr)
+	delete(n.subscriptions, addr.Array())
 }
 
 func (n *NodeConn) sendSubscriptions(forceSend bool, goshimerNodeAddress string) {
-	n.bconn.Lock()
-	defer n.bconn.Unlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	if n.bconn.BufferedConnection == nil {
+	if n.bconn == nil {
 		return
 	}
 	if len(n.subscriptions) == 0 {
@@ -36,24 +37,18 @@ func (n *NodeConn) sendSubscriptions(forceSend bool, goshimerNodeAddress string)
 		return
 	}
 
-	addrsWithColors := make([]waspconn.AddressColor, 0, len(n.subscriptions))
-	addrs := make([]string, 0)
-	for a, c := range n.subscriptions {
-		addrsWithColors = append(addrsWithColors, waspconn.AddressColor{
-			Address: a,
-			Color:   c,
-		})
-		addrs = append(addrs, a.String()[:6]+"..")
+	addrs := make([]*ledgerstate.AliasAddress, len(n.subscriptions))
+	for _, addr := range n.subscriptions {
+		addrs = append(addrs, addr)
 	}
 	n.subscriptionsSent = true
 	go func() {
-		data := waspconn.EncodeMsg(&waspconn.WaspToNodeSubscribeMsg{
-			AddressesWithColors: addrsWithColors,
-		})
-		if err := n.SendDataToNode(data); err != nil {
+		if err := n.sendToNode(&waspconn.WaspToNodeSubscribeMsg{
+			ChainAddresses: addrs,
+		}); err != nil {
 			n.log.Errorf("sending subscriptions to %s: %v. Addrs: %+v", goshimerNodeAddress, err, addrs)
-			n.bconn.Lock()
-			defer n.bconn.Unlock()
+			n.mu.Lock()
+			defer n.mu.Unlock()
 			n.subscriptionsSent = false
 		} else {
 			n.log.Infof("sent subscriptions to node %s for addresses %+v", goshimerNodeAddress, addrs)

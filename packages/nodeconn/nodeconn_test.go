@@ -2,30 +2,28 @@ package nodeconn
 
 import (
 	"net"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/goshimmer/packages/waspconn/connector"
-	"github.com/iotaledger/goshimmer/packages/waspconn/utxodb"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/stretchr/testify/require"
 )
 
-func start(t *testing.T) (waspconn.ValueTangle, *NodeConn) {
+func start(t *testing.T) (*utxodb.UtxoDB, *NodeConn) {
 	t.Helper()
 
-	tangle := utxodb.NewConfirmEmulator(0, false, false)
-	t.Cleanup(tangle.Detach)
+	ledger := utxodb.New()
+	t.Cleanup(ledger.Detach)
 
 	dial := DialFunc(func() (string, net.Conn, error) {
 		conn1, conn2 := net.Pipe()
-		connector.Run(conn2, logger.NewExampleLogger("waspconn"), tangle)
+		connector.Run(conn2, logger.NewExampleLogger("waspconn"), ledger)
 		return "pipe", conn1, nil
 	})
 
@@ -35,29 +33,25 @@ func start(t *testing.T) (waspconn.ValueTangle, *NodeConn) {
 	ok := n.WaitForConnection(10 * time.Second)
 	require.True(t, ok)
 
-	return tangle, n
+	return ledger, n
 }
 
-func doAndWaitForResponse(t *testing.T, n *NodeConn, val interface{}, send func() error) {
+func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn.Message) bool) {
 	t.Helper()
 
 	done := make(chan bool)
 
-	vt := reflect.TypeOf(val)
-	closure := events.NewClosure(func(msg interface{}) {
-		mt := reflect.TypeOf(msg)
-		if mt.AssignableTo(vt.Elem()) {
-			reflect.ValueOf(val).Elem().Set(reflect.ValueOf(msg))
+	closure := events.NewClosure(func(msg waspconn.Message) {
+		t.Logf("received msg from waspconn %T", msg)
+		if !rcv(msg) {
 			close(done)
-		} else {
-			t.Logf("Received unexpected message: %T (expected %T)", msg, val)
 		}
 	})
 
 	n.Events.MessageReceived.Attach(closure)
 	defer n.Events.MessageReceived.Detach(closure)
 
-	err := send()
+	err := sendMsg()
 	require.NoError(t, err)
 
 	select {
@@ -67,39 +61,72 @@ func doAndWaitForResponse(t *testing.T, n *NodeConn, val interface{}, send func(
 	}
 }
 
-func TestRequestOutputs(t *testing.T) {
-	tangle, n := start(t)
+func mintAliasAddress(t *testing.T, u *utxodb.UtxoDB) *ledgerstate.AliasAddress {
+	t.Helper()
 
-	// transfer 1337 iotas to addr
-	seed := ed25519.NewSeed()
-	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := tangle.RequestFunds(addr)
+	user, addr := utxodb.NewKeyPairByIndex(2)
+	err := u.RequestFunds(addr)
 	require.NoError(t, err)
 
-	// request outputs for addr
-	var resp *waspconn.WaspFromNodeAddressOutputsMsg
-	doAndWaitForResponse(t, n, &resp, func() error {
-		return n.RequestOutputsFromNode(addr)
+	_, addrStateControl := utxodb.NewKeyPairByIndex(3)
+	bals1 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+
+	outputs := u.GetAddressOutputs(addr)
+	require.EqualValues(t, 1, len(outputs))
+
+	txb := utxoutil.NewBuilder(outputs...)
+	err = txb.AddNewChainMint(bals1, addrStateControl, nil)
+	require.NoError(t, err)
+	err = txb.AddReminderOutputIfNeeded(addr, nil)
+	require.NoError(t, err)
+	tx, err := txb.BuildWithED25519(user)
+	require.NoError(t, err)
+
+	err = u.PostTransaction(tx)
+	require.NoError(t, err)
+
+	chained, err := utxoutil.GetSingleChainedOutput(tx.Essence())
+	require.NoError(t, err)
+
+	return chained.GetAliasAddress()
+}
+
+func TestRequestBacklog(t *testing.T) {
+	ledger, n := start(t)
+
+	chainAddress := mintAliasAddress(t, ledger)
+	t.Logf("chain address: %s", chainAddress.Base58())
+
+	// request backlog for chainAddress
+	var resp *waspconn.WaspFromNodeTransactionMsg
+	send(t, n, func() error { return n.RequestBacklogFromNode(chainAddress) }, func(msg waspconn.Message) bool {
+		switch msg := msg.(type) {
+		case *waspconn.WaspFromNodeTransactionMsg:
+			resp = msg
+			return false
+		}
+		return true
 	})
 
 	// assert response message
-	require.EqualValues(t, addr, resp.Address)
-	require.EqualValues(t, 1, len(resp.Balances))
-	for _, cb := range resp.Balances {
-		cb := cb.Map()
-		require.EqualValues(t, 1, len(cb))
-		require.EqualValues(t, 1337, cb[ledgerstate.ColorIOTA])
-	}
+	require.EqualValues(t, chainAddress.Base58(), resp.ChainAddress.Base58())
+	_, sender := utxodb.NewKeyPairByIndex(2)
+	t.Logf("minter address: %s", sender.Base58())
+	require.EqualValues(t, sender.Base58(), resp.Sender.Base58())
+	require.Empty(t, resp.MintProofs.Map())
+	require.EqualValues(t, chainAddress.Base58(), resp.ChainOutput.Address().Base58())
+	require.Empty(t, resp.Outputs)
 }
 
-func transfer(t *testing.T, tangle waspconn.ValueTangle, from *ed25519.KeyPair, toAddr ledgerstate.Address, transferAmount uint64) *ledgerstate.Transaction {
+/*
+func transfer(t *testing.T, ledger waspconn.Ledger, from *ed25519.KeyPair, toAddr ledgerstate.Address, transferAmount uint64) *ledgerstate.Transaction {
 	fromAddr := ledgerstate.NewED25519Address(from.PublicKey)
 
 	// find an unspent output with balance >= transferAmount
 	var outID ledgerstate.OutputID
 	var outBalance uint64
 	{
-		outs := tangle.GetAddressOutputs(fromAddr)
+		outs := ledger.GetAddressOutputs(fromAddr)
 		for id, bals := range outs {
 			outBalance = bals.Map()[ledgerstate.ColorIOTA]
 			outID = id
@@ -131,17 +158,17 @@ func transfer(t *testing.T, tangle waspconn.ValueTangle, from *ed25519.KeyPair, 
 }
 
 func TestPostTransaction(t *testing.T) {
-	tangle, n := start(t)
+	ledger, n := start(t)
 
 	// transfer 1337 iotas to addr
 	seed := ed25519.NewSeed()
 	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := tangle.RequestFunds(addr)
+	err := ledger.RequestFunds(addr)
 	require.NoError(t, err)
 
 	// transfer 1 iota from fromAddr to addr2
 	addr2 := ledgerstate.NewED25519Address(seed.KeyPair(1).PublicKey)
-	tx := transfer(t, tangle, seed.KeyPair(0), addr2, 1)
+	tx := transfer(t, ledger, seed.KeyPair(0), addr2, 1)
 
 	// post tx
 	err = n.PostTransactionToNode(tx, addr, 0)
@@ -149,43 +176,43 @@ func TestPostTransaction(t *testing.T) {
 
 	// request tx
 	var txMsg *waspconn.WaspFromNodeConfirmedTransactionMsg
-	doAndWaitForResponse(t, n, &txMsg, func() error {
+	send(t, n, &txMsg, func() error {
 		return n.RequestConfirmedTransactionFromNode(tx.ID())
 	})
 	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
 }
 
 func TestRequestInclusionLevel(t *testing.T) {
-	tangle, n := start(t)
+	ledger, n := start(t)
 
 	// transfer 1337 iotas to addr
 	seed := ed25519.NewSeed()
 	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := tangle.RequestFunds(addr)
+	err := ledger.RequestFunds(addr)
 	require.NoError(t, err)
 
 	// find out tx id
 	var txID ledgerstate.TransactionID
-	for outID := range tangle.GetAddressOutputs(addr) {
+	for outID := range ledger.GetAddressOutputs(addr) {
 		txID = outID.TransactionID()
 	}
 	require.NotEqualValues(t, ledgerstate.TransactionID{}, txID)
 
 	// request inclusion level
 	var resp *waspconn.WaspFromNodeBranchInclusionStateMsg
-	doAndWaitForResponse(t, n, &resp, func() error {
+	send(t, n, &resp, func() error {
 		return n.RequestBranchInclusionStateFromNode(txID, addr)
 	})
 	require.EqualValues(t, ledgerstate.Confirmed, resp.State)
 }
 
 func TestSubscribe(t *testing.T) {
-	tangle, n := start(t)
+	ledger, n := start(t)
 
 	// transfer 1337 iotas to addr
 	seed := ed25519.NewSeed()
 	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := tangle.RequestFunds(addr)
+	err := ledger.RequestFunds(addr)
 	require.NoError(t, err)
 
 	// subscribe to addr
@@ -196,12 +223,13 @@ func TestSubscribe(t *testing.T) {
 
 	// transfer 1 iota from fromAddr to addr2
 	addr2 := ledgerstate.NewED25519Address(seed.KeyPair(1).PublicKey)
-	tx := transfer(t, tangle, seed.KeyPair(0), addr2, 1)
+	tx := transfer(t, ledger, seed.KeyPair(0), addr2, 1)
 
 	// request tx
 	var txMsg *waspconn.WaspFromNodeAddressUpdateMsg
-	doAndWaitForResponse(t, n, &txMsg, func() error {
+	send(t, n, &txMsg, func() error {
 		return n.PostTransactionToNode(tx, addr, 0)
 	})
 	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
 }
+*/

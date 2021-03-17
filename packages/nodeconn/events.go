@@ -1,8 +1,6 @@
 package nodeconn
 
 import (
-	"time"
-
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 )
@@ -24,10 +22,6 @@ func (n *NodeConn) msgDataToEvent(data []byte) {
 		if finalData != nil {
 			n.msgDataToEvent(finalData)
 		}
-
-	case *waspconn.WaspPingMsg:
-		roundtrip := time.Since(msg.Timestamp)
-		n.log.Infof("PING %d response from node. Roundtrip %v", msg.Id, roundtrip)
 
 	default:
 		n.Events.MessageReceived.Trigger(msg)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -14,14 +15,12 @@ import (
 )
 
 type NodeConn struct {
-	netID string
-	dial  DialFunc
-	log   *logger.Logger
-	bconn struct {
-		sync.Mutex
-		*buffconn.BufferedConnection
-	}
-	subscriptions     map[ledgerstate.Address]ledgerstate.Color
+	netID             string
+	dial              DialFunc
+	log               *logger.Logger
+	mu                sync.Mutex
+	bconn             *buffconn.BufferedConnection
+	subscriptions     map[[ledgerstate.AddressLength]byte]*ledgerstate.AliasAddress
 	msgChopper        *chopper.Chopper
 	subscriptionsSent bool
 	shutdown          chan bool
@@ -36,7 +35,7 @@ type NodeConnEvents struct {
 type DialFunc func() (addr string, conn net.Conn, err error)
 
 func handleMessageReceived(handler interface{}, params ...interface{}) {
-	handler.(func(interface{}))(params[0])
+	handler.(func(waspconn.Message))(params[0].(waspconn.Message))
 }
 
 func handleConnected(handler interface{}, params ...interface{}) {
@@ -48,7 +47,7 @@ func New(netID string, log *logger.Logger, dial DialFunc, goshimerNodeAddressOpt
 		netID:         netID,
 		dial:          dial,
 		log:           log,
-		subscriptions: make(map[ledgerstate.Address]ledgerstate.Color),
+		subscriptions: make(map[[ledgerstate.AddressLength]byte]*ledgerstate.AliasAddress),
 		msgChopper:    chopper.NewChopper(),
 		shutdown:      make(chan bool),
 		Events: NodeConnEvents{
@@ -70,9 +69,9 @@ func New(netID string, log *logger.Logger, dial DialFunc, goshimerNodeAddressOpt
 
 func (n *NodeConn) Close() {
 	go func() {
-		n.bconn.Lock()
-		defer n.bconn.Unlock()
-		if n.bconn.BufferedConnection != nil {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+		if n.bconn != nil {
 			n.log.Infof("Closing connection with node..")
 			_ = n.bconn.Close()
 			n.log.Infof("Closing connection with node.. Done")
