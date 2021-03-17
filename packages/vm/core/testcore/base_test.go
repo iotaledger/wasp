@@ -11,7 +11,8 @@ func TestNoContractPost(t *testing.T) {
 	env := solo.New(t, true, true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams("dummyContract", "dummyEP")
+	req := solo.NewCallParams("dummyContract", "dummyEP").
+		WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }

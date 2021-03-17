@@ -26,7 +26,7 @@ type CallParams struct {
 	target     coretypes.Hname
 	epName     string
 	entryPoint coretypes.Hname
-	transfer   map[ledgerstate.Color]uint64
+	transfer   *ledgerstate.ColoredBalances
 	mint       uint64
 	args       requestargs.RequestArgs
 }
@@ -82,8 +82,12 @@ func (r *CallParams) WithTransfer(color ledgerstate.Color, amount uint64) *CallP
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
 func (r *CallParams) WithTransfers(transfer map[ledgerstate.Color]uint64) *CallParams {
-	r.transfer = CloneBalances(transfer)
+	r.transfer = ledgerstate.NewColoredBalances(transfer)
 	return r
+}
+
+func (r *CallParams) WithIotas(amount uint64) *CallParams {
+	return r.WithTransfer(ledgerstate.ColorIOTA, amount)
 }
 
 // makes map without hashing
@@ -109,7 +113,7 @@ func toMap(params ...interface{}) map[string]interface{} {
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
 func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, error) {
-	if len(req.transfer) == 0 {
+	if req.transfer == nil || req.transfer.Size() == 0 {
 		return nil, xerrors.New("transfer can't be empty")
 	}
 
@@ -129,7 +133,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		Bytes()
 
 	txb := utxoutil.NewBuilder(allOuts...)
-	err := txb.AddExtendedOutputSimple(ch.ChainID.AsAddress(), metadata, req.transfer)
+	err := txb.AddExtendedOutputSimple(ch.ChainID.AsAddress(), metadata, req.transfer.Map())
 	require.NoError(ch.Env.T, err)
 
 	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
