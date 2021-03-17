@@ -177,7 +177,9 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 
 	ch.reqCounter.Add(1)
 	res, err := ch.runBatch(initReq, "post")
-	require.NoError(ch.Env.T, err)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return tx, res, nil
 }

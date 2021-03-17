@@ -202,7 +202,7 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 // mustGetBaseValues only makes sense if chain is already deployed
 func (vmctx *VMContext) mustGetBaseValues() {
 	info := vmctx.mustGetChainInfo()
-	if info.ChainID != vmctx.chainID {
+	if !info.ChainID.Equals(&vmctx.chainID) {
 		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")
 	}
 	vmctx.chainOwnerID = info.ChainOwnerID

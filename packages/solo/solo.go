@@ -182,6 +182,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Base58())
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Base58())
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	ret := &Chain{
 		Env:                    env,

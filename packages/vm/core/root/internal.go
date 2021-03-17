@@ -129,7 +129,7 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *coretypes.AgentID
 	if err != nil {
 		panic(err)
 	}
-	return currentOwner == *agentID
+	return currentOwner.Equals(agentID)
 }
 
 // storeAndInitContract internal utility function

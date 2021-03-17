@@ -11,8 +11,7 @@ func TestNoContractPost(t *testing.T) {
 	env := solo.New(t, true, true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams("dummyContract", "dummyEP").
-		WithIotas(2)
+	req := solo.NewCallParams("dummyContract", "dummyEP").WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -29,7 +28,7 @@ func TestNoEPPost(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, "dummyEP")
+	req := solo.NewCallParams(root.Interface.Name, "dummyEP").WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -39,5 +38,26 @@ func TestNoEPView(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	_, err := chain.CallView(root.Interface.Name, "dummyEP")
+	require.Error(t, err)
+}
+
+func TestOkCall(t *testing.T) {
+	env := solo.New(t, true, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
+	req.WithIotas(2)
+	_, err := chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+}
+
+func TestNoTokens(t *testing.T) {
+	env := solo.New(t, true, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
+	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
