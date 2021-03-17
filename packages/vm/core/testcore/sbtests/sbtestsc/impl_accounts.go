@@ -16,7 +16,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	succ := ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: accounts.Interface.ContractID(*targetChain),
 		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
-		Transfer:         coretypes.NewIotasOnly(2),
+		Transfer:         coretypes.NewTransferIotas(2),
 	})
 	if !succ {
 		return nil, fmt.Errorf("failed to post request")

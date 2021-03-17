@@ -4,6 +4,7 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -59,7 +60,7 @@ func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hn
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) Balances() *coretypes.ColoredBalances {
+func (s sandboxView) Balances() *ledgerstate.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 

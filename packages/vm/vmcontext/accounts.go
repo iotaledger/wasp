@@ -2,10 +2,9 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-func (vmctx *VMContext) GetIncoming() *coretypes.ColoredBalances {
+func (vmctx *VMContext) GetIncoming() *ledgerstate.ColoredBalances {
 	return vmctx.getCallContext().transfer
 }
 
@@ -13,7 +12,7 @@ func (vmctx *VMContext) GetBalance(col ledgerstate.Color) uint64 {
 	return vmctx.getBalance(col)
 }
 
-func (vmctx *VMContext) GetMyBalances() *coretypes.ColoredBalances {
+func (vmctx *VMContext) GetMyBalances() *ledgerstate.ColoredBalances {
 	return vmctx.getMyBalances()
 }
 

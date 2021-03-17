@@ -200,7 +200,7 @@ func (o *ScContext) processPost(bytes []byte) {
 		TargetContractID: *contract,
 		EntryPoint:       function,
 		Params:           params,
-		Transfer:         *transfer,
+		Transfer:         transfer,
 		TimeLock:         uint32(delay),
 	})
 }
@@ -217,10 +217,9 @@ func (o *ScContext) getParams(paramsId int32) dict.Dict {
 	return params
 }
 
-func (o *ScContext) getTransfer(transferId int32) *coretypes.ColoredBalances {
+func (o *ScContext) getTransfer(transferId int32) *ledgerstate.ColoredBalances {
 	if transferId == 0 {
-		r := coretypes.NewColoredBalancesFromMap(nil)
-		return &r
+		return ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{})
 	}
 	transfer := make(map[ledgerstate.Color]uint64)
 	transferDict := o.host.FindObject(transferId).(*ScDict).kvStore
@@ -237,6 +236,5 @@ func (o *ScContext) getTransfer(transferId int32) *coretypes.ColoredBalances {
 		transfer[color] = amount
 		return true
 	})
-	r := coretypes.NewColoredBalancesFromMap(transfer)
-	return &r
+	return ledgerstate.NewColoredBalances(transfer)
 }

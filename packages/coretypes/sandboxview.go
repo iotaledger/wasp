@@ -4,6 +4,7 @@
 package coretypes
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -25,7 +26,7 @@ type SandboxView interface {
 	// Call calls another contract. Only calls view entry points
 	Call(contractHname Hname, entryPoint Hname, params dict.Dict) (dict.Dict, error)
 	// Balances is colored balances owned by the contract
-	Balances() *ColoredBalances
+	Balances() *ledgerstate.ColoredBalances
 	// Log interface provides local logging on the machine. It includes Panicf method
 	Log() LogInterface
 	//

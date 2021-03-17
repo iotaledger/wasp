@@ -5,7 +5,6 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -28,7 +27,7 @@ func NewScBalances(vm *wasmProcessor, incoming bool) *ScDict {
 	return loadBalances(o, vm.ctxView.Balances())
 }
 
-func loadBalances(o *ScDict, balances *coretypes.ColoredBalances) *ScDict {
+func loadBalances(o *ScDict, balances *ledgerstate.ColoredBalances) *ScDict {
 	index := 0
 	key := o.host.GetKeyStringFromId(wasmhost.KeyColor)
 	balances.ForEach(func(color ledgerstate.Color, balance uint64) bool {

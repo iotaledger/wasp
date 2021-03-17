@@ -84,7 +84,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req *sctransaction.Request, inpu
 			t, input.String(), vmctx.chainID.String())
 	}
 
-	vmctx.remainingAfterFees = coretypes.NewColoredBalances(*req.Output().Balances())
+	vmctx.remainingAfterFees = req.Output().Balances().Clone()
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.stateUpdate = state.NewStateUpdate(req.Output().ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
@@ -113,34 +113,38 @@ func (vmctx *VMContext) mustHandleFees() {
 		return
 	}
 	// handle fees
-	if vmctx.remainingAfterFees.Balance(vmctx.feeColor) < totalFee {
+	if f, ok := vmctx.remainingAfterFees.Get(vmctx.feeColor); !ok || f < totalFee {
 		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to sender
 		// fallback: not enough fees. Accrue everything to the sender
 		sender := vmctx.req.SenderAgentID()
-		vmctx.creditToAccount(sender, &vmctx.remainingAfterFees)
+		vmctx.creditToAccount(sender, vmctx.remainingAfterFees)
 		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Transfer accrued to %s",
 			vmctx.req.Output().ID().Base58(), sender.String())
-		vmctx.remainingAfterFees = coretypes.NewColoredBalancesFromMap(nil)
+		vmctx.remainingAfterFees = nil
 		return
 	}
 	// enough fees. Split between owner and validator
 	if vmctx.ownerFee > 0 {
-		t := coretypes.NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{
+		t := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 			vmctx.feeColor: vmctx.ownerFee,
 		})
-		vmctx.creditToAccount(vmctx.ChainOwnerID(), &t)
+		vmctx.creditToAccount(vmctx.ChainOwnerID(), t)
 	}
 	if vmctx.validatorFee > 0 {
-		t := coretypes.NewColoredBalancesFromMap(map[ledgerstate.Color]uint64{
+		t := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 			vmctx.feeColor: vmctx.validatorFee,
 		})
-		vmctx.creditToAccount(&vmctx.validatorFeeTarget, &t)
+		vmctx.creditToAccount(&vmctx.validatorFeeTarget, t)
 	}
 	// subtract fees from the transfer
 	remaining := vmctx.remainingAfterFees.Map()
 	s, _ := remaining[vmctx.feeColor]
-	remaining[vmctx.feeColor] = s - totalFee
-	vmctx.remainingAfterFees = coretypes.NewColoredBalancesFromMap(remaining)
+	if s > totalFee {
+		remaining[vmctx.feeColor] = s - totalFee
+	} else {
+		delete(remaining, vmctx.feeColor)
+	}
+	vmctx.remainingAfterFees = ledgerstate.NewColoredBalances(remaining)
 }
 
 // mustHandleFallback all remaining tokens are:
@@ -158,7 +162,7 @@ func (vmctx *VMContext) mustHandleFallback() {
 			vmctx.log.Panicf("mustHandleFallback: transferring tokens to address %s", sender.AsAddress().String())
 		}
 	} else {
-		vmctx.creditToAccount(sender, &vmctx.remainingAfterFees)
+		vmctx.creditToAccount(sender, vmctx.remainingAfterFees)
 	}
 }
 
@@ -169,7 +173,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	// calling only non vew entry points. Calling the view will trigger error and fallback
 	md := vmctx.req.GetMetadata()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		md.TargetContract(), md.EntryPoint(), vmctx.req.SolidArgs(), &vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
+		md.TargetContract(), md.EntryPoint(), vmctx.req.SolidArgs(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {

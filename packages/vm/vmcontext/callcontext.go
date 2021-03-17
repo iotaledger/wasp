@@ -2,12 +2,13 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) error {
 	if transfer != nil {
 		agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), contract))
 		if len(vmctx.callStack) == 0 {
@@ -25,7 +26,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances) {
+func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) {
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}

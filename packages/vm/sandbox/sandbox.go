@@ -64,8 +64,8 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, des
 }
 
 // Call calls an entry point of contact, passes parameters and funds
-func (s *sandbox) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances) (dict.Dict, error) {
-	return s.vmctx.Call(contractHname, entryPoint, params, transfer)
+func (s *sandbox) Call(target, entryPoint coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) (dict.Dict, error) {
+	return s.vmctx.Call(target, entryPoint, params, transfer)
 }
 
 func (s *sandbox) RequestID() ledgerstate.OutputID {
@@ -81,7 +81,7 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) TransferToAddress(targetAddr ledgerstate.Address, transfer *coretypes.ColoredBalances) bool {
+func (s *sandbox) TransferToAddress(addr ledgerstate.Address, transfer *ledgerstate.ColoredBalances) bool {
 	panic("TransferToAddress: deprecated")
 
 	//return s.vmctx.TransferToAddress(targetAddr, transfer)
@@ -92,7 +92,7 @@ func (s *sandbox) PostRequest(par coretypes.PostRequestParams) bool {
 	//return s.vmctx.PostRequest(par)
 }
 
-func (s *sandbox) Send(target ledgerstate.Address, tokens *coretypes.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
+func (s *sandbox) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
 	panic("SendTransfer: not implemented")
 }
 
@@ -106,7 +106,7 @@ func (s *sandbox) Event(msg string) {
 	s.vmctx.EventPublisher().Publish(msg)
 }
 
-func (s *sandbox) IncomingTransfer() *coretypes.ColoredBalances {
+func (s *sandbox) IncomingTransfer() *ledgerstate.ColoredBalances {
 	return s.vmctx.GetIncoming()
 }
 
@@ -114,6 +114,6 @@ func (s *sandbox) Balance(col ledgerstate.Color) uint64 {
 	return s.vmctx.GetBalance(col)
 }
 
-func (s *sandbox) Balances() *coretypes.ColoredBalances {
+func (s *sandbox) Balances() *ledgerstate.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }

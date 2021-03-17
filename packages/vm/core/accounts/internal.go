@@ -42,15 +42,15 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // CreditToAccount brings new funds to the on chain ledger.
-func CreditToAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *coretypes.ColoredBalances) {
+func CreditToAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) {
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
 	mustCheckLedger(state, "CreditToAccount")
 }
 
 // creditToAccount internal
-func creditToAccount(state kv.KVStore, account *collections.Map, transfer *coretypes.ColoredBalances) {
-	if transfer.Len() == 0 {
+func creditToAccount(state kv.KVStore, account *collections.Map, transfer *ledgerstate.ColoredBalances) {
+	if transfer == nil {
 		return
 	}
 	defer touchAccount(state, account)
@@ -67,7 +67,7 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer *coret
 }
 
 // DebitFromAccount removes funds from the chain ledger.
-func DebitFromAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *coretypes.ColoredBalances) bool {
+func DebitFromAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) bool {
 	if !debitFromAccount(state, getAccount(state, agentID), transfer) {
 		return false
 	}
@@ -79,8 +79,8 @@ func DebitFromAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *co
 }
 
 // debitFromAccount internal
-func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *coretypes.ColoredBalances) bool {
-	if transfer.Len() == 0 {
+func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *ledgerstate.ColoredBalances) bool {
+	if transfer == nil {
 		return true
 	}
 	defer touchAccount(state, account)
@@ -111,7 +111,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *core
 	return true
 }
 
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *coretypes.AgentID, transfer *coretypes.ColoredBalances) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) bool {
 	if fromAgentID == toAgentID {
 		// no need to move
 		return true
@@ -177,11 +177,11 @@ func GetAccountBalances(state kv.KVStoreReader, agentID *coretypes.AgentID) (map
 	return getAccountBalances(account), true
 }
 
-func getTotalAssetsIntern(state kv.KVStoreReader) coretypes.ColoredBalances {
-	return coretypes.NewColoredBalancesFromMap(getAccountBalances(getTotalAssetsAccountR(state)))
+func getTotalAssetsIntern(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
+	return ledgerstate.NewColoredBalances(getAccountBalances(getTotalAssetsAccountR(state)))
 }
 
-func calcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
+func calcTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 	ret := make(map[ledgerstate.Color]uint64)
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := coretypes.NewAgentIDFromBytes(key)
@@ -193,13 +193,13 @@ func calcTotalAssets(state kv.KVStoreReader) coretypes.ColoredBalances {
 		}
 		return true
 	})
-	return coretypes.NewColoredBalancesFromMap(ret)
+	return ledgerstate.NewColoredBalances(ret)
 }
 
 func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	a := getTotalAssetsIntern(state)
 	c := calcTotalAssets(state)
-	if !a.Equal(c) {
+	if !coretypes.EqualColoredBalances(a, c) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'", checkpoint))
 	}
 }

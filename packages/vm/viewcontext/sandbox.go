@@ -1,6 +1,7 @@
 package viewcontext
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
@@ -56,7 +57,7 @@ func (s *sandboxview) WriteableState() kv.KVStore {
 	return s.state
 }
 
-func (s *sandboxview) Balances() *coretypes.ColoredBalances {
+func (s *sandboxview) Balances() *ledgerstate.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 

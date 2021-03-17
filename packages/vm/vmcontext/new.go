@@ -26,7 +26,7 @@ type VMContext struct {
 	processors         *processors.ProcessorCache
 	txBuilder          *utxoutil.Builder
 	virtualState       state.VirtualState
-	remainingAfterFees coretypes.ColoredBalances
+	remainingAfterFees *ledgerstate.ColoredBalances
 	log                *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
@@ -45,11 +45,11 @@ type VMContext struct {
 }
 
 type callContext struct {
-	isRequestContext bool                       // is called from the request (true) or from another SC (false)
-	caller           coretypes.AgentID          // calling agent
-	contract         coretypes.Hname            // called contract
-	params           dict.Dict                  // params passed
-	transfer         *coretypes.ColoredBalances // transfer passed
+	isRequestContext bool                         // is called from the request (true) or from another SC (false)
+	caller           coretypes.AgentID            // calling agent
+	contract         coretypes.Hname              // called contract
+	params           dict.Dict                    // params passed
+	transfer         *ledgerstate.ColoredBalances // transfer passed
 }
 
 // MustNewVMContext a constructor

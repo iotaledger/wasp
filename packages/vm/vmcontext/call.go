@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 
@@ -19,7 +20,7 @@ var (
 )
 
 // Call
-func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances) (dict.Dict, error) {
+func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode.String())
 	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
@@ -28,7 +29,7 @@ func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hn
 	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
 	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	return ep.Call(NewSandbox(vmctx))
 }
 
-func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *coretypes.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
 	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err

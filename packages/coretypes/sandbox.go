@@ -30,7 +30,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target Hname, entryPoint Hname, params dict.Dict, transfer *ColoredBalances) (dict.Dict, error)
+	Call(target, entryPoint Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) (dict.Dict, error)
 	// RequestID of the request in the context of which is the current call
 	RequestID() ledgerstate.OutputID
 	// GetTimestamp return current timestamp of the context
@@ -39,9 +39,9 @@ type Sandbox interface {
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	// Balances returns colored balances owned by the smart contract
 	// Balances returns all colored balances at the disposition of the smart contract
-	Balances() *ColoredBalances
+	Balances() *ledgerstate.ColoredBalances
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
-	IncomingTransfer() *ColoredBalances
+	IncomingTransfer() *ledgerstate.ColoredBalances
 	// MintedSupply is number of new tokens minted in the request and newly minted color
 	Minted() (ledgerstate.Color, uint64)
 	// TODO proofs of ownership and mint - special collection of methods
@@ -50,14 +50,14 @@ type Sandbox interface {
 
 	// TransferToAddress send tokens to the L1 ledger address
 	// Deprecated: use Send instead
-	TransferToAddress(addr ledgerstate.Address, transfer *ColoredBalances) bool
+	TransferToAddress(addr ledgerstate.Address, transfer *ledgerstate.ColoredBalances) bool
 	// PostRequest sends cross-chain request
 	// Deprecated: use Send instead
 	PostRequest(par PostRequestParams) bool
 
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and PostRequest
-	Send(target ledgerstate.Address, tokens *ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
+	Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
 
 	// Log interface provides local logging on the machine. It also includes Panicf methods which logs and panics
 	Log() LogInterface
@@ -74,7 +74,7 @@ type PostRequestParams struct {
 	EntryPoint       Hname
 	TimeLock         uint32 // unix seconds
 	Params           dict.Dict
-	Transfer         ColoredBalances
+	Transfer         *ledgerstate.ColoredBalances
 }
 
 type SendOptions struct {

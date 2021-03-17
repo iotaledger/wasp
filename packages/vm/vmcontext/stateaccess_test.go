@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"testing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -13,10 +14,10 @@ import (
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coretypes.NewRandomChainID([]byte("mmm"))
 
-	virtualState := state.NewVirtualState(db, &chainID)
-	stateUpdate := state.NewStateUpdate(nil)
+	virtualState := state.NewVirtualState(db, chainID)
+	stateUpdate := state.NewStateUpdate(ledgerstate.OutputID{})
 	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)
@@ -62,10 +63,10 @@ func TestSetThenGet(t *testing.T) {
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	chainID := coretypes.ChainID{1, 3, 3, 7}
+	chainID := coretypes.NewRandomChainID([]byte("mmm"))
 
-	virtualState := state.NewVirtualState(db, &chainID)
-	stateUpdate := state.NewStateUpdate(nil)
+	virtualState := state.NewVirtualState(db, chainID)
+	stateUpdate := state.NewStateUpdate(ledgerstate.OutputID{})
 	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)

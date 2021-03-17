@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -85,14 +86,14 @@ func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.withdrawToAddress.begin: caller agentID: %s myContractId: %s",
 		ctx.Caller().String(), cid.String())
 
-	sendTokens := coretypes.NewColoredBalancesFromMap(bals)
+	sendTokens := ledgerstate.NewColoredBalances(bals)
 	addr := ctx.Caller().AsAddress()
 
 	// remove tokens from the chain ledger
-	a.Require(DebitFromAccount(state, ctx.Caller(), &sendTokens),
+	a.Require(DebitFromAccount(state, ctx.Caller(), sendTokens),
 		"accounts.withdrawToAddress.inconsistency. failed to remove tokens from the chain")
 	// send tokens to address
-	a.Require(ctx.TransferToAddress(addr, &sendTokens),
+	a.Require(ctx.TransferToAddress(addr, sendTokens),
 		"accounts.withdrawToAddress.inconsistency: failed to transfer tokens to address")
 
 	ctx.Log().Debugf("accounts.withdrawToAddress.success. Sent to address %s -- %s",
@@ -120,7 +121,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	toWithdraw := coretypes.NewColoredBalancesFromMap(bals)
+	toWithdraw := ledgerstate.NewColoredBalances(bals)
 	callerContract := caller.MustContractID()
 	if callerContract.ChainID() == ctx.ContractID().ChainID() {
 		// no need to move anything on the same chain
@@ -129,7 +130,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// take to tokens here to 'accounts' from the caller
 	toAgentId := coretypes.NewAgentIDFromContractID(ctx.ContractID())
-	succ := MoveBetweenAccounts(ctx.State(), caller, toAgentId, &toWithdraw)
+	succ := MoveBetweenAccounts(ctx.State(), caller, toAgentId, toWithdraw)
 	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
 
 	succ = ctx.PostRequest(coretypes.PostRequestParams{

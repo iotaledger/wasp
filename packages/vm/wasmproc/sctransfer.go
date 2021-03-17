@@ -5,7 +5,6 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -61,8 +60,8 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		balancesMap[color] = amount
 		return true
 	})
-	transfer := coretypes.NewColoredBalancesFromMap(balancesMap)
-	if !o.vm.ctx.TransferToAddress(o.address, &transfer) {
+	transfer := ledgerstate.NewColoredBalances(balancesMap)
+	if !o.vm.ctx.TransferToAddress(o.address, transfer) {
 		o.Panic("failed to transfer to %s", o.address.String())
 	}
 }

@@ -117,7 +117,7 @@ func testCallPanicViewEPFromView(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func doNothing(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if ctx.IncomingTransfer().Len() == 0 {
+	if ctx.IncomingTransfer() == nil || ctx.IncomingTransfer().Size() == 0 {
 		ctx.Log().Infof(MsgDoNothing)
 	} else {
 		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.IncomingTransfer().String())
