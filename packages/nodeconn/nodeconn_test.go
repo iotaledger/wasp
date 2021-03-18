@@ -22,9 +22,12 @@ func start(t *testing.T) (*utxodbledger.UtxoDBLedger, *NodeConn) {
 	ledger := utxodbledger.New()
 	t.Cleanup(ledger.Detach)
 
+	done := make(chan struct{})
+	t.Cleanup(func() { close(done) })
+
 	dial := DialFunc(func() (string, net.Conn, error) {
 		conn1, conn2 := net.Pipe()
-		connector.Run(conn2, logger.NewExampleLogger("waspconn"), ledger)
+		go connector.Run(conn2, logger.NewExampleLogger("waspconn"), ledger, done)
 		return "pipe", conn1, nil
 	})
 
