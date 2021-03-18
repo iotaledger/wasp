@@ -10,15 +10,16 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/goshimmer/packages/waspconn/connector"
+	"github.com/iotaledger/goshimmer/packages/waspconn/utxodbledger"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/stretchr/testify/require"
 )
 
-func start(t *testing.T) (*utxodb.UtxoDB, *NodeConn) {
+func start(t *testing.T) (*utxodbledger.UtxoDBLedger, *NodeConn) {
 	t.Helper()
 
-	ledger := utxodb.New()
+	ledger := utxodbledger.New()
 	t.Cleanup(ledger.Detach)
 
 	dial := DialFunc(func() (string, net.Conn, error) {
@@ -61,103 +62,92 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 	}
 }
 
-func mintAliasAddress(t *testing.T, u *utxodb.UtxoDB) *ledgerstate.AliasAddress {
+func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, stateControlIndex int, balances map[ledgerstate.Color]uint64) *ledgerstate.AliasAddress {
 	t.Helper()
 
-	user, addr := utxodb.NewKeyPairByIndex(2)
-	err := u.RequestFunds(addr)
+	creatorKP, creatorAddr := utxodb.NewKeyPairByIndex(creatorIndex)
+	err := u.RequestFunds(creatorAddr)
 	require.NoError(t, err)
 
-	_, addrStateControl := utxodb.NewKeyPairByIndex(3)
-	bals1 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
-
-	outputs := u.GetAddressOutputs(addr)
-	require.EqualValues(t, 1, len(outputs))
-
+	_, addrStateControl := utxodb.NewKeyPairByIndex(stateControlIndex)
+	outputs := u.GetAddressOutputs(creatorAddr)
 	txb := utxoutil.NewBuilder(outputs...)
-	err = txb.AddNewChainMint(bals1, addrStateControl, nil)
+	err = txb.AddNewChainMint(balances, addrStateControl, nil)
 	require.NoError(t, err)
-	err = txb.AddReminderOutputIfNeeded(addr, nil)
+	err = txb.AddReminderOutputIfNeeded(creatorAddr, nil)
 	require.NoError(t, err)
-	tx, err := txb.BuildWithED25519(user)
+	tx, err := txb.BuildWithED25519(creatorKP)
 	require.NoError(t, err)
 
 	err = u.PostTransaction(tx)
 	require.NoError(t, err)
 
-	chained, err := utxoutil.GetSingleChainedOutput(tx.Essence())
+	chainOutput, err := utxoutil.GetSingleChainedOutput(tx.Essence())
 	require.NoError(t, err)
 
-	return chained.GetAliasAddress()
+	return chainOutput.GetAliasAddress()
 }
 
 func TestRequestBacklog(t *testing.T) {
+	const (
+		creatorIndex      = 2
+		stateControlIndex = 3
+	)
+
 	ledger, n := start(t)
 
-	chainAddress := mintAliasAddress(t, ledger)
+	chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
 	t.Logf("chain address: %s", chainAddress.Base58())
 
 	// request backlog for chainAddress
 	var resp *waspconn.WaspFromNodeTransactionMsg
-	send(t, n, func() error { return n.RequestBacklogFromNode(chainAddress) }, func(msg waspconn.Message) bool {
-		switch msg := msg.(type) {
-		case *waspconn.WaspFromNodeTransactionMsg:
-			resp = msg
-			return false
-		}
-		return true
-	})
+	send(t, n,
+		func() error {
+			return n.RequestBacklogFromNode(chainAddress)
+		},
+		func(msg waspconn.Message) bool {
+			switch msg := msg.(type) {
+			case *waspconn.WaspFromNodeTransactionMsg:
+				resp = msg
+				return false
+			}
+			return true
+		},
+	)
 
 	// assert response message
 	require.EqualValues(t, chainAddress.Base58(), resp.ChainAddress.Base58())
-	_, sender := utxodb.NewKeyPairByIndex(2)
-	t.Logf("minter address: %s", sender.Base58())
-	require.EqualValues(t, sender.Base58(), resp.Sender.Base58())
-	require.Empty(t, resp.MintProofs.Map())
-	require.EqualValues(t, chainAddress.Base58(), resp.ChainOutput.Address().Base58())
-	require.Empty(t, resp.Outputs)
+
+	_, creatorAddr := utxodb.NewKeyPairByIndex(creatorIndex)
+	t.Logf("creator address: %s", creatorAddr.Base58())
+
+	require.EqualValues(t, creatorAddr.Base58(), resp.Sender.Base58())
+
+	chainOutput, err := utxoutil.GetSingleChainedOutput(resp.Tx.Essence())
+	require.NoError(t, err)
+	require.EqualValues(t, chainAddress.Base58(), chainOutput.Address().Base58())
 }
 
 /*
-func transfer(t *testing.T, ledger waspconn.Ledger, from *ed25519.KeyPair, toAddr ledgerstate.Address, transferAmount uint64) *ledgerstate.Transaction {
-	fromAddr := ledgerstate.NewED25519Address(from.PublicKey)
+func postRequest(t *testing.T, u *utxodbledger.UtxoDBLedger, fromIndex int, chainAddress *ledgerstate.AliasAddress) *ledgerstate.Transaction {
+	kp, addr := utxodb.NewKeyPairByIndex(fromIndex)
 
-	// find an unspent output with balance >= transferAmount
-	var outID ledgerstate.OutputID
-	var outBalance uint64
-	{
-		outs := ledger.GetAddressOutputs(fromAddr)
-		for id, bals := range outs {
-			outBalance = bals.Map()[ledgerstate.ColorIOTA]
-			outID = id
-			if outBalance >= transferAmount {
-				break
-			}
-		}
-		require.GreaterOrEqual(t, outBalance, transferAmount)
-	}
+	outs := u.GetAddressOutputs(addr)
 
-	pledge, _ := identity.RandomID()
-	outputs := []ledgerstate.Output{
-		ledgerstate.NewSigLockedSingleOutput(uint64(transferAmount), toAddr),
-	}
-	if outBalance > transferAmount {
-		outputs = append(outputs, ledgerstate.NewSigLockedSingleOutput(uint64(outBalance-transferAmount), fromAddr))
-	}
-	txEssence := ledgerstate.NewTransactionEssence(
-		0,
-		time.Now(),
-		pledge,
-		pledge,
-		ledgerstate.NewInputs(ledgerstate.NewUTXOInput(outID)),
-		ledgerstate.NewOutputs(outputs...),
-	)
-	sig := ledgerstate.NewED25519Signature(from.PublicKey, ed25519.Signature(from.PrivateKey.Sign(txEssence.Bytes())))
-	unlockBlock := ledgerstate.NewSignatureUnlockBlock(sig)
-	return ledgerstate.NewTransaction(txEssence, ledgerstate.UnlockBlocks{unlockBlock})
+	txb := utxoutil.NewBuilder(outs...)
+	txb.AddExtendedOutputSimple(chainAddress, []byte{1, 3, 3, 7}, nil)
+	err := txb.AddReminderOutputIfNeeded(addr, nil)
+	require.NoError(t, err)
+	tx, err := txb.BuildWithED25519(kp)
+	require.NoError(t, err)
+
+	err = u.PostTransaction(tx)
+	require.NoError(t, err)
+
+	return tx
 }
 
-func TestPostTransaction(t *testing.T) {
+func TestPostRequest(t *testing.T) {
 	ledger, n := start(t)
 
 	// transfer 1337 iotas to addr
@@ -181,7 +171,9 @@ func TestPostTransaction(t *testing.T) {
 	})
 	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
 }
+*/
 
+/*
 func TestRequestInclusionLevel(t *testing.T) {
 	ledger, n := start(t)
 
