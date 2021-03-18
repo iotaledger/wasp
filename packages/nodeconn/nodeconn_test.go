@@ -62,7 +62,7 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 	}
 }
 
-func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, stateControlIndex int, balances map[ledgerstate.Color]uint64) *ledgerstate.AliasAddress {
+func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, stateControlIndex int, balances map[ledgerstate.Color]uint64) (*ledgerstate.Transaction, *ledgerstate.AliasAddress) {
 	t.Helper()
 
 	creatorKP, creatorAddr := utxodb.NewKeyPairByIndex(creatorIndex)
@@ -84,8 +84,10 @@ func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, s
 
 	chainOutput, err := utxoutil.GetSingleChainedOutput(tx.Essence())
 	require.NoError(t, err)
+	chainAddress := chainOutput.GetAliasAddress()
+	t.Logf("chain address: %s", chainAddress.Base58())
 
-	return chainOutput.GetAliasAddress()
+	return tx, chainAddress
 }
 
 func TestRequestBacklog(t *testing.T) {
@@ -96,8 +98,7 @@ func TestRequestBacklog(t *testing.T) {
 
 	ledger, n := start(t)
 
-	chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
-	t.Logf("chain address: %s", chainAddress.Base58())
+	tx, chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
 
 	// request backlog for chainAddress
 	var resp *waspconn.WaspFromNodeTransactionMsg
@@ -123,20 +124,22 @@ func TestRequestBacklog(t *testing.T) {
 
 	require.EqualValues(t, creatorAddr.Base58(), resp.Sender.Base58())
 
+	require.Equal(t, tx.ID(), resp.Tx.ID())
+
 	chainOutput, err := utxoutil.GetSingleChainedOutput(resp.Tx.Essence())
 	require.NoError(t, err)
 	require.EqualValues(t, chainAddress.Base58(), chainOutput.Address().Base58())
 }
 
-/*
 func postRequest(t *testing.T, u *utxodbledger.UtxoDBLedger, fromIndex int, chainAddress *ledgerstate.AliasAddress) *ledgerstate.Transaction {
 	kp, addr := utxodb.NewKeyPairByIndex(fromIndex)
 
 	outs := u.GetAddressOutputs(addr)
 
 	txb := utxoutil.NewBuilder(outs...)
-	txb.AddExtendedOutputSimple(chainAddress, []byte{1, 3, 3, 7}, nil)
-	err := txb.AddReminderOutputIfNeeded(addr, nil)
+	err := txb.AddExtendedOutputSimple(chainAddress, []byte{1, 3, 3, 7}, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1})
+	require.NoError(t, err)
+	err = txb.AddReminderOutputIfNeeded(addr, nil)
 	require.NoError(t, err)
 	tx, err := txb.BuildWithED25519(kp)
 	require.NoError(t, err)
@@ -148,30 +151,39 @@ func postRequest(t *testing.T, u *utxodbledger.UtxoDBLedger, fromIndex int, chai
 }
 
 func TestPostRequest(t *testing.T) {
+	const (
+		creatorIndex      = 2
+		stateControlIndex = 3
+	)
+
 	ledger, n := start(t)
 
-	// transfer 1337 iotas to addr
-	seed := ed25519.NewSeed()
-	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := ledger.RequestFunds(addr)
-	require.NoError(t, err)
+	createTx, chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
 
-	// transfer 1 iota from fromAddr to addr2
-	addr2 := ledgerstate.NewED25519Address(seed.KeyPair(1).PublicKey)
-	tx := transfer(t, ledger, seed.KeyPair(0), addr2, 1)
+	reqTx := postRequest(t, ledger, 2, chainAddress)
 
-	// post tx
-	err = n.PostTransactionToNode(tx, addr, 0)
-	require.NoError(t, err)
+	// request backlog for chainAddress
+	seen := make(map[ledgerstate.TransactionID]bool)
+	send(t, n,
+		func() error {
+			return n.RequestBacklogFromNode(chainAddress)
+		},
+		func(msg waspconn.Message) bool {
+			switch msg := msg.(type) {
+			case *waspconn.WaspFromNodeTransactionMsg:
+				seen[msg.Tx.ID()] = true
+				if len(seen) == 2 {
+					return false
+				}
+			}
+			return true
+		},
+	)
 
-	// request tx
-	var txMsg *waspconn.WaspFromNodeConfirmedTransactionMsg
-	send(t, n, &txMsg, func() error {
-		return n.RequestConfirmedTransactionFromNode(tx.ID())
-	})
-	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
+	require.Equal(t, 2, len(seen))
+	require.True(t, seen[createTx.ID()])
+	require.True(t, seen[reqTx.ID()])
 }
-*/
 
 /*
 func TestRequestInclusionLevel(t *testing.T) {
