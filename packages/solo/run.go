@@ -58,10 +58,10 @@ func (ch *Chain) runBatch(batch []*sctransaction.Request, trace string) (dict.Di
 	wg.Add(1)
 	runvm.MustRunComputationsAsync(task)
 	require.NoError(ch.Env.T, err)
-
 	wg.Wait()
-	inputs := sctransaction.OutputsFromRequests(task.Requests...)
-	inputs = append(inputs, task.ChainInput)
+
+	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransaction)
+	require.NoError(ch.Env.T, err)
 	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransaction, ch.StateControllerKeyPair)
 	require.NoError(ch.Env.T, err)
 

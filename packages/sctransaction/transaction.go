@@ -88,6 +88,10 @@ func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledg
 	return ret
 }
 
+func (req *Request) ID() coretypes.RequestID {
+	return coretypes.RequestID(req.Output().ID())
+}
+
 func (req *Request) Output() *ledgerstate.ExtendedLockedOutput {
 	return req.output
 }

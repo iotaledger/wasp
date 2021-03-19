@@ -6,6 +6,7 @@ package solo
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"go.uber.org/atomic"
@@ -262,7 +263,7 @@ func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.Ch
 }
 
 func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.Request {
-	sender, err := env.utxoDB.GetSingleSender(tx)
+	sender, err := utxoutil.GetSingleSender(tx)
 	require.NoError(env.T, err)
 	ret := make(map[[33]byte][]*sctransaction.Request)
 	for _, out := range tx.Essence().Outputs() {

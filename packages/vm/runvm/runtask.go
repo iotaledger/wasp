@@ -27,7 +27,7 @@ func MustRunComputationsAsync(ctx *vm.VMTask) {
 // runTask runs batch of requests on VM
 func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	task.Log.Debugw("runTask IN",
-		"chainID", task.ChainInput.Address().String(),
+		"chainID", task.ChainInput.Address().Base58(),
 		"timestamp", task.Timestamp,
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
@@ -75,7 +75,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	task.Log.Debugw("runTask OUT",
 		"batch size", task.ResultBlock.Size(),
 		"block index", task.ResultBlock.StateIndex(),
-		"variable state hash", vsClone.Hash().String(),
+		"variable state hash", vsClone.Hash().Bytes(),
 		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
 		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
 	)

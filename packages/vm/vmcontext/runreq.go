@@ -168,7 +168,7 @@ func (vmctx *VMContext) mustHandleFallback() {
 
 // mustCallFromRequest is the call itself. Assumes sc exists
 func (vmctx *VMContext) mustCallFromRequest() {
-	vmctx.log.Debugf("mustCallFromRequest: %s\n", vmctx.req.Output().ID().String())
+	vmctx.log.Debugf("mustCallFromRequest: %s\n", vmctx.req.ID().String())
 
 	// calling only non vew entry points. Calling the view will trigger error and fallback
 	md := vmctx.req.GetMetadata()
@@ -181,7 +181,7 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
 	vmctx.log.Debugw("runTheRequest OUT",
-		"reqId", vmctx.req.Output().ID().String(),
+		"reqId", vmctx.req.ID().Short(),
 		"entry point", vmctx.req.GetMetadata().EntryPoint().String(),
 	)
 }

@@ -37,6 +37,7 @@ func TestAccountsBase1(t *testing.T) {
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentIDFromAddress(ownerAddr)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

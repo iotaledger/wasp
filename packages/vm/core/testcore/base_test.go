@@ -8,7 +8,7 @@ import (
 )
 
 func TestNoContractPost(t *testing.T) {
-	env := solo.New(t, true, true)
+	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams("dummyContract", "dummyEP").WithIotas(2)
