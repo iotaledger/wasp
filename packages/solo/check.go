@@ -71,8 +71,12 @@ func (ch *Chain) CheckAccountLedger() {
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col ledgerstate.Color, bal int64) {
+func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col ledgerstate.Color, bal uint64) {
 	bals := ch.GetAccountBalance(agentID)
 	b, _ := bals.Get(col)
 	require.EqualValues(ch.Env.T, bal, b)
+}
+
+func (ch *Chain) AssertIotas(agentID coretypes.AgentID, bal uint64) {
+	ch.AssertAccountBalance(agentID, ledgerstate.ColorIOTA, bal)
 }

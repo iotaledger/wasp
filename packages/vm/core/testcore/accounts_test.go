@@ -41,16 +41,18 @@ func TestAccountsBase1(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
-	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
+	chain.AssertIotas(*newOwnerAgentID, 0)
+	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 2)
 	chain.CheckAccountLedger()
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
-	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 1)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
+	chain.AssertIotas(*newOwnerAgentID, 0)
+	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 3)
 	chain.CheckAccountLedger()
 }
 

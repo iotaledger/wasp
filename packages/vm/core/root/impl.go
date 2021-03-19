@@ -35,14 +35,14 @@ import (
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	state := ctx.State()
-	if state.MustGet(VarStateInitialized) != nil {
-		// can't be initialized twice
-		return nil, fmt.Errorf("root.initialize.fail: already initialized")
-	}
+	a := assert.NewAssert(ctx.Log())
+
+	a.Require(state.MustGet(VarStateInitialized) == nil, "root.initialize.fail: already initialized")
+	a.Require(!ctx.Caller().IsContract(), "root.init.fail: chain deployer can't be another smart contract")
+
 	// retrieving init parameters
 	// -- chain ID
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert.NewAssert(ctx.Log())
 
 	chainID := params.MustGetChainID(ParamChainID)
 	chainDescription := params.MustGetString(ParamDescription, "N/A")

@@ -1,7 +1,6 @@
 package solo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -29,10 +28,6 @@ func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentI
 	return err
 }
 
-func CloneBalances(m map[ledgerstate.Color]uint64) map[ledgerstate.Color]uint64 {
-	ret := make(map[ledgerstate.Color]uint64)
-	for c, b := range m {
-		ret[c] = b
-	}
-	return ret
+func (ch *Chain) ContractAgentID(name string) coretypes.AgentID {
+	return *coretypes.NewAgentIDFromContractID(coretypes.NewContractID(ch.ChainID, coretypes.Hn(name)))
 }
