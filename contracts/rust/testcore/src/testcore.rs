@@ -72,6 +72,12 @@ pub fn func_do_nothing(ctx: &ScFuncContext) {
     ctx.log("testcore.doNothing ok");
 }
 
+pub fn func_get_minted_supply(ctx: &ScFuncContext) {
+    ctx.log("testcore.getMintedSupply");
+    ctx.results().get_int64(VAR_MINTED_SUPPLY).set_value(ctx.minted_supply());
+    ctx.log("testcore.setInt ok");
+}
+
 pub fn func_init(ctx: &ScFuncContext) {
     ctx.log("testcore.init");
     ctx.log("testcore.init ok");
@@ -156,12 +162,6 @@ pub fn func_set_int(ctx: &ScFuncContext) {
     ctx.require(param_name.exists(), "missing mandatory name");
 
     ctx.state().get_int64(&param_name.value()).set_value(param_int_value.value());
-    ctx.log("testcore.setInt ok");
-}
-
-pub fn func_get_minted_supply(ctx: &ScFuncContext) {
-    ctx.log("testcore.getMintedSupply");
-    ctx.results().get_int64(VAR_MINTED_SUPPLY).set_value(ctx.minted_supply());
     ctx.log("testcore.setInt ok");
 }
 
@@ -284,12 +284,6 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
     ctx.log("testcore.fibonacci ok");
 }
 
-pub fn func_inc_counter(ctx: &ScFuncContext) {
-    ctx.log("testcore.incCounter");
-    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
-    ctx.log("testcore.incCounter ok");
-}
-
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
     let counter = ctx.state().get_int64(VAR_COUNTER);
@@ -310,6 +304,12 @@ pub fn view_get_int(ctx: &ScViewContext) {
     ctx.require(value.exists(), "param 'value' not found");
     ctx.results().get_int64(&name).set_value(value.value());
     ctx.log("testcore.getInt ok");
+}
+
+pub fn func_inc_counter(ctx: &ScFuncContext) {
+    ctx.log("testcore.incCounter");
+    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
+    ctx.log("testcore.incCounter ok");
 }
 
 pub fn view_just_view(ctx: &ScViewContext) {
