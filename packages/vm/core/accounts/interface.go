@@ -24,18 +24,16 @@ func init() {
 		coreutil.ViewFunc(FuncTotalAssets, getTotalAssets),
 		coreutil.ViewFunc(FuncAccounts, getAccounts),
 		coreutil.Func(FuncDeposit, deposit),
-		coreutil.Func(FuncWithdrawToAddress, withdrawToAddress),
-		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
+		coreutil.Func(FuncWithdraw, withdraw),
 	})
 }
 
 const (
-	FuncBalance           = "balance"
-	FuncTotalAssets       = "totalAssets"
-	FuncDeposit           = "deposit"
-	FuncWithdrawToAddress = "withdrawToAddress"
-	FuncWithdrawToChain   = "withdrawToChain"
-	FuncAccounts          = "accounts"
+	FuncBalance     = "balance"
+	FuncTotalAssets = "totalAssets"
+	FuncDeposit     = "deposit"
+	FuncWithdraw    = "withdraw"
+	FuncAccounts    = "accounts"
 
 	ParamAgentID = "a"
 )

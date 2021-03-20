@@ -14,13 +14,13 @@ func TestExample1(t *testing.T) {
 	chain := env.NewChain(nil, "ex1")
 
 	chainID, chainOwner, coreContracts := chain.GetInfo() // calls view root::GetInfo
-	require.EqualValues(t, 4, len(coreContracts))         // 4 core contracts deployed by default
+	require.EqualValues(t, 5, len(coreContracts))         // 5 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwner.String())
 	for hname, rec := range coreContracts {
-		cid := coretypes.NewContractID(chain.ChainID, hname)
-		t.Logf("    Core contract '%s': %s", rec.Name, cid.String())
+		cid := coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
+		t.Logf("    Core contract '%s': %s", rec.Name, cid)
 	}
 }
 

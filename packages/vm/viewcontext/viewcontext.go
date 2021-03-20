@@ -87,7 +87,7 @@ func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretyp
 		return nil, err
 	}
 
-	ep := proc.GetEntryPoint(epCode)
+	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
 		return nil, fmt.Errorf("%s: can't find entry point '%s'", proc.GetDescription(), epCode.String())
 	}
@@ -95,7 +95,7 @@ func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretyp
 	if !ep.IsView() {
 		return nil, fmt.Errorf("only view entry point can be called in this context")
 	}
-	return ep.CallView(newSandboxView(v, contractHname, params))
+	return ep.Call(newSandboxView(v, contractHname, params))
 }
 
 func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStore {

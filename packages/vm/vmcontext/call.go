@@ -34,9 +34,9 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	if err != nil {
 		return nil, err
 	}
-	ep := proc.GetEntryPoint(epCode)
+	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrEntryPointNotFound
+		ep = proc.GetDefaultEntryPoint()
 	}
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
@@ -49,7 +49,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 		}
 		defer vmctx.popCallContext()
 
-		return ep.CallView(NewSandboxView(vmctx))
+		return ep.Call(NewSandboxView(vmctx))
 	}
 	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
 	}
-	return ep.CallFull(NewSandbox(vmctx))
+	return ep.Call(NewSandbox(vmctx))
 }
 
 func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
@@ -70,11 +70,10 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 	if err != nil {
 		return nil, err
 	}
-	ep := proc.GetEntryPoint(epCode)
+	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrEntryPointNotFound
+		ep = proc.GetDefaultEntryPoint()
 	}
-
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
 		return nil, fmt.Errorf("non-view entry point expected")
@@ -90,15 +89,15 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
 	}
-	return ep.CallFull(NewSandbox(vmctx))
+	return ep.Call(NewSandbox(vmctx))
 }
 
 func (vmctx *VMContext) callerIsRoot() bool {
 	caller := vmctx.Caller()
-	if !caller.IsContract() {
+	if !caller.Address().Equals(vmctx.chainID.AsAddress()) {
 		return false
 	}
-	return caller.MustContractID().Hname() == root.Interface.Hname()
+	return caller.Hname() == root.Interface.Hname()
 }
 
 func (vmctx *VMContext) requesterIsChainOwner() bool {

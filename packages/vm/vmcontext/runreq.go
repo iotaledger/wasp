@@ -89,9 +89,12 @@ func (vmctx *VMContext) mustSetUpRequestContext(req *sctransaction.Request, inpu
 	vmctx.stateUpdate = state.NewStateUpdate(req.Output().ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 
-	vmctx.contractRecord = nil
-	if req.GetMetadata().ParsedOk() {
-		vmctx.contractRecord, _ = vmctx.findContractByHname(req.GetMetadata().TargetContract())
+	vmctx.contractRecord, ok = vmctx.findContractByHname(req.GetMetadata().TargetContract())
+	if !ok {
+		vmctx.log.Panicf("inconsistency: findContractByHname")
+	}
+	if vmctx.contractRecord.Hname() == 0 {
+		vmctx.log.Warn("default contract will be called")
 	}
 }
 
@@ -114,12 +117,12 @@ func (vmctx *VMContext) mustHandleFees() {
 	}
 	// handle fees
 	if f, ok := vmctx.remainingAfterFees.Get(vmctx.feeColor); !ok || f < totalFee {
-		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to sender
-		// fallback: not enough fees. Accrue everything to the sender
-		sender := vmctx.req.SenderAgentID()
-		vmctx.creditToAccount(sender, vmctx.remainingAfterFees)
+		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to senderAccount
+		// fallback: not enough fees. Accrue everything to the senderAccount (adjusted to core contracts)
+		senderAccount := vmctx.adjustAccount(vmctx.req.SenderAgentID())
+		vmctx.creditToAccount(senderAccount, vmctx.remainingAfterFees)
 		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Transfer accrued to %s",
-			vmctx.req.Output().ID().Base58(), sender.String())
+			vmctx.req.Output().ID().Base58(), senderAccount.String())
 		vmctx.remainingAfterFees = nil
 		return
 	}
@@ -128,7 +131,8 @@ func (vmctx *VMContext) mustHandleFees() {
 		t := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 			vmctx.feeColor: vmctx.ownerFee,
 		})
-		vmctx.creditToAccount(vmctx.ChainOwnerID(), t)
+		// send to common account
+		vmctx.creditToAccount(vmctx.commonAccount(), t)
 	}
 	if vmctx.validatorFee > 0 {
 		t := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
@@ -152,17 +156,25 @@ func (vmctx *VMContext) mustHandleFees() {
 // -- otherwise accrue to the sender on-chain
 func (vmctx *VMContext) mustHandleFallback() {
 	sender := vmctx.req.SenderAgentID()
-	if !sender.IsContract() {
-		err := vmctx.txBuilder.AddExtendedOutputSimple(
-			sender.AsAddress(),
-			[]byte("returned due to error"),
-			vmctx.remainingAfterFees.Map(),
-		)
-		if err != nil {
-			vmctx.log.Panicf("mustHandleFallback: transferring tokens to address %s", sender.AsAddress().String())
-		}
-	} else {
-		vmctx.creditToAccount(sender, vmctx.remainingAfterFees)
+	if sender.Address().Equals(vmctx.chainID.AsAddress()) {
+		// if sender is on the same chain, just accrue tokens back to it
+		vmctx.creditToAccount(vmctx.adjustAccount(sender), vmctx.remainingAfterFees)
+		return
+	}
+	// send tokens back
+	// the logic is to send to original aliasAddress and to original contract is any
+	// otherwise will be sent to _default contract. In case if sender
+	// is ordinary wallet the tokens (less fees) will be returned back
+	backToAddress := sender.Address()
+	backToContract := vmctx.req.GetMetadata().SenderContract()
+	metadata := sctransaction.NewRequestMetadata().WithTarget(backToContract)
+	err := vmctx.txBuilder.AddExtendedOutputSimple(
+		backToAddress,
+		metadata.Bytes(),
+		vmctx.remainingAfterFees.Map(),
+	)
+	if err != nil {
+		vmctx.log.Panicf("mustHandleFallback: transferring tokens to address %s: %v", backToAddress, err)
 	}
 }
 

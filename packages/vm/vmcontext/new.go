@@ -59,7 +59,7 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
 	}
 	ret := &VMContext{
-		chainID:      chainID,
+		chainID:      *chainID,
 		txBuilder:    txb,
 		virtualState: task.VirtualState.Clone(),
 		processors:   task.Processors,

@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"time"
 )
 
@@ -60,7 +60,7 @@ func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// all non-iota token accrue on-chain to the caller
 	sendBack := ctx.IncomingTransfer().TakeOutColor(balance.ColorIOTA)
-	err := accounts.Accrue(ctx, ctx.Caller(), sendBack)
+	err := vmcontext.Accrue(ctx, ctx.Caller(), sendBack)
 	a.RequireNoError(err)
 
 	ctx.Event(fmt.Sprintf("[micropay.addWarrant] %s increased warrant %d -> %d i for %s",

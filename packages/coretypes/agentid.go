@@ -120,11 +120,6 @@ func (a *AgentID) Equals(a1 *AgentID) bool {
 	return true
 }
 
-// MustAddress takes address or panic if not address
-func (a *AgentID) AsAddress() ledgerstate.Address {
-	return a.a
-}
-
 // String human readable string
 func (a *AgentID) String() string {
 	return "A/" + a.a.Base58() + "::" + a.h.String()

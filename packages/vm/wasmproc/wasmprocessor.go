@@ -109,12 +109,18 @@ func (host *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) coretypes.VMProcessorEntryPoint {
+func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	function := host.FunctionFromCode(uint32(code))
 	if function == "" && code != coretypes.EntryPointInit {
-		function = "default" // TODO refactor default processing
+		return nil, false
 	}
 	host.function = function
+	return host, true
+}
+
+// TODO refactor implement default
+func (host *wasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
+	host.function = "default"
 	return host
 }
 

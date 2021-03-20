@@ -68,7 +68,7 @@ func TestDepositWithdraw(t *testing.T) {
 	}
 
 	// withdraw iotas back
-	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdrawToAddress))
+	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx3, 30*time.Second)
 	check(err, t)

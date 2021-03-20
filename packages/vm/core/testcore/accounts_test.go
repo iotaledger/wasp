@@ -70,7 +70,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42+1)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 0)

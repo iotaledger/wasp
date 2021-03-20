@@ -10,11 +10,13 @@ import (
 
 func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) error {
 	if transfer != nil {
-		agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), contract))
+		agentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contract)
+		agentID = vmctx.adjustAccount(agentID)
 		if len(vmctx.callStack) == 0 {
 			vmctx.creditToAccount(agentID, transfer)
 		} else {
-			fromAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname()))
+			fromAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+			fromAgentID = vmctx.adjustAccount(fromAgentID)
 			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
 				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
 			}
@@ -36,7 +38,7 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Di
 		// request context
 		caller = vmctx.req.SenderAgentID()
 	} else {
-		caller = coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+		caller = vmctx.MyAgentID()
 	}
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())

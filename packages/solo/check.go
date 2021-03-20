@@ -27,7 +27,7 @@ func (ch *Chain) CheckChain() {
 	rootRec, err := ch.FindContract(root.Interface.Name)
 	require.NoError(ch.Env.T, err)
 	emptyRootRecord := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-	require.EqualValues(ch.Env.T, root.EncodeContractRecord(&emptyRootRecord), root.EncodeContractRecord(rootRec))
+	require.EqualValues(ch.Env.T, root.EncodeContractRecord(emptyRootRecord), root.EncodeContractRecord(rootRec))
 
 	accountsRec, err := ch.FindContract(accounts.Interface.Name)
 	require.NoError(ch.Env.T, err)

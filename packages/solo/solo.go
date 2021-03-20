@@ -167,7 +167,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	} else {
 		originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
 	}
-	originatorAgentID := coretypes.NewAgentIDFromAddress(originatorAddr)
+	originatorAgentID := coretypes.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
 		feeTarget = &validatorFeeTarget[0]

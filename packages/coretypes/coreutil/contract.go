@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"golang.org/x/xerrors"
 )
 
 // ContractInterface represents smart contract interface
@@ -24,22 +23,20 @@ type ContractInterface struct {
 
 // ContractFunctionInterface represents entry point interface
 type ContractFunctionInterface struct {
-	Name           string
-	Handler        Handler
-	ViewHandler    ViewHandler
-	DefaultHandler DefaultHandler
+	Name        string
+	Handler     Handler
+	ViewHandler ViewHandler
 }
 
 type Handler func(ctx coretypes.Sandbox) (dict.Dict, error)
 type ViewHandler func(ctx coretypes.SandboxView) (dict.Dict, error)
-type DefaultHandler func(ctx interface{}) (dict.Dict, error)
 
 func defaultInitFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("default init function invoked")
 	return nil, nil
 }
 
-func defaultHandlerFunc(ctx interface{}) (dict.Dict, error) {
+func defaultHandlerFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
 	switch tctx := ctx.(type) {
 	case coretypes.Sandbox:
 		tctx.Log().Debugf("default handler invoked")
@@ -51,22 +48,8 @@ func defaultHandlerFunc(ctx interface{}) (dict.Dict, error) {
 	return nil, nil
 }
 
-func wrongTypeHandlerFunc(ctx interface{}) (dict.Dict, error) {
-	switch tctx := ctx.(type) {
-	case coretypes.Sandbox:
-		err := xerrors.New("view entry point expected")
-		tctx.Log().Debugf("%v", err)
-		return nil, err
-	case coretypes.SandboxView:
-		err := xerrors.New("non-view entry point expected")
-		tctx.Log().Debugf("%v", err)
-		return nil, err
-	}
-	panic(coretypes.ErrInternalWrongTypeEntryPoint)
-}
-
 // Funcs declares init entry point and a list of full and view entry points
-func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...DefaultHandler) map[coretypes.Hname]ContractFunctionInterface {
+func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Handler) map[coretypes.Hname]ContractFunctionInterface {
 	if init == nil {
 		init = defaultInitFunc
 	}
@@ -98,8 +81,8 @@ func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Defa
 	}
 	// under hname == 0 always resides default handler
 	ret[0] = ContractFunctionInterface{
-		Name:           "defaultHandler",
-		DefaultHandler: def,
+		Name:    "defaultHandler",
+		Handler: def,
 	}
 	return ret
 }
@@ -107,18 +90,16 @@ func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Defa
 // Func declares a full entry point: its name and its handler
 func Func(name string, handler Handler) ContractFunctionInterface {
 	return ContractFunctionInterface{
-		Name:           name,
-		Handler:        handler,
-		DefaultHandler: wrongTypeHandlerFunc,
+		Name:    name,
+		Handler: handler,
 	}
 }
 
 // Func declares a view entry point: its name and its handler
 func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
 	return ContractFunctionInterface{
-		Name:           name,
-		ViewHandler:    handler,
-		DefaultHandler: wrongTypeHandlerFunc,
+		Name:        name,
+		ViewHandler: handler,
 	}
 }
 
@@ -131,12 +112,17 @@ func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface
 	return &f, ok
 }
 
-func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) coretypes.VMProcessorEntryPoint {
+func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	f, entryPointFound := i.Functions[code]
 	if !entryPointFound {
-		f = i.Functions[0] // must be ok
+		return nil, false
 	}
-	return &f
+	return &f, true
+}
+
+func (i *ContractInterface) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
+	ret := i.Functions[0]
+	return &ret
 }
 
 func (i *ContractInterface) GetDescription() string {
@@ -169,5 +155,9 @@ func (f *ContractFunctionInterface) Call(ctx interface{}) (dict.Dict, error) {
 			return f.ViewHandler(tctx)
 		}
 	}
-	return f.DefaultHandler(ctx)
+	panic("inconsistency: wrong type of call context")
+}
+
+func (f *ContractFunctionInterface) IsView() bool {
+	return f.ViewHandler != nil
 }

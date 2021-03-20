@@ -144,7 +144,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, solo.Saldo-1-4-extraToken)
 	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-1)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 

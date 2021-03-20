@@ -100,7 +100,7 @@ func TestTutorial5(t *testing.T) {
 	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 43)
 
 	// withdraw back all iotas
-	req = solo.NewCallParams(accounts.Name, accounts.FuncWithdrawToAddress)
+	req = solo.NewCallParams(accounts.Name, accounts.FuncWithdraw)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
