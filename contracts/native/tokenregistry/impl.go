@@ -38,7 +38,7 @@ const (
 	VarReqUserDefinedMetadata = "ud"
 )
 
-// implement Processor and EntryPoint interfaces
+// implement VMProcessor and VMProcessorEntryPoint interfaces
 
 type tokenRegistryProcessor map[coretypes.Hname]tokenRegistryEntryPoint
 
@@ -63,11 +63,11 @@ type TokenMetadata struct {
 }
 
 // Point to link statically with the Wasp
-func GetProcessor() coretypes.Processor {
+func GetProcessor() coretypes.VMProcessor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }

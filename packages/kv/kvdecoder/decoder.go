@@ -160,29 +160,6 @@ func (p *decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgers
 	return ret
 }
 
-func (p *decoder) GetContractID(key kv.Key, def ...coretypes.ContractID) (*coretypes.ContractID, error) {
-	v, exists, err := codec.DecodeContractID(p.kv.MustGet(key))
-	if err != nil {
-		return nil, fmt.Errorf("GetContractID: decoding parameter '%s': %v", key, err)
-	}
-	if exists {
-		return &v, nil
-	}
-	if len(def) == 0 {
-		return nil, fmt.Errorf("GetContractID: mandatory parameter '%s' does not exist", key)
-	}
-	r := def[0]
-	return &r, nil
-}
-
-func (p *decoder) MustGetContractID(key kv.Key, def ...coretypes.ContractID) *coretypes.ContractID {
-	ret, err := p.GetContractID(key, def...)
-	if err != nil {
-		p.panic(err)
-	}
-	return ret
-}
-
 func (p *decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (*coretypes.AgentID, error) {
 	v, exists, err := codec.DecodeAgentID(p.kv.MustGet(key))
 	if err != nil {

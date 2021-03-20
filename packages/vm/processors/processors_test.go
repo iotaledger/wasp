@@ -20,9 +20,9 @@ func TestBasic(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	_, exists := rootproc.GetEntryPoint(0)
+	_ := rootproc.GetEntryPoint(0)
 	assert.False(t, exists)
 
-	_, exists = rootproc.GetEntryPoint(coretypes.Hn(root.FuncDeployContract))
+	_ = rootproc.GetEntryPoint(coretypes.Hn(root.FuncDeployContract))
 	assert.True(t, exists)
 }

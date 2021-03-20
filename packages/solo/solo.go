@@ -117,7 +117,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		if !debug {
 			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
-		wasmtimeConstructor := func(binary []byte) (coretypes.Processor, error) {
+		wasmtimeConstructor := func(binary []byte) (coretypes.VMProcessor, error) {
 			return wasmproc.GetProcessor(binary, glbLogger)
 		}
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmtimeConstructor)

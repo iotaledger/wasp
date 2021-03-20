@@ -24,7 +24,7 @@ import (
 const ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
 const Description = "FairAuction, a PoC smart contract"
 
-// implement Processor and EntryPoint interfaces
+// implement VMProcessor and VMProcessorEntryPoint interfaces
 
 type fairAuctionProcessor map[coretypes.Hname]fairAuctionEntryPoint
 
@@ -86,7 +86,7 @@ func init() {
 }
 
 // statical link point to the Wasp node
-func GetProcessor() coretypes.Processor {
+func GetProcessor() coretypes.VMProcessor {
 	return entryPoints
 }
 
@@ -94,7 +94,7 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }

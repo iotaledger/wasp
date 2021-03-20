@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-func (vmctx *VMContext) ChainID() coretypes.ChainID {
-	return vmctx.chainID
+func (vmctx *VMContext) ChainID() *coretypes.ChainID {
+	return &vmctx.chainID
 }
 
 func (vmctx *VMContext) ChainOwnerID() *coretypes.AgentID {
@@ -28,13 +28,12 @@ func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) CurrentContractID() *coretypes.ContractID {
-	ret := coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname())
-	return ret
+func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
+	return coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
-	return coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+func (vmctx *VMContext) CommonAgentID() *coretypes.AgentID {
+	return coretypes.NewAgentID(vmctx.ChainID().AsAddress(), 0)
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {
@@ -59,7 +58,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
 //	vmctx.log.Debugw("-- PostRequestSync",
 //		"target", par.TargetContractID.String(),
-//		"ep", par.EntryPoint.String(),
+//		"ep", par.VMProcessorEntryPoint.String(),
 //		"transfer", par.Transfer.String(),
 //	)
 //	myAgentID := vmctx.MyAgentID()
@@ -69,7 +68,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //	}
 //	reqParams := requestargs.New(nil)
 //	reqParams.AddEncodeSimpleMany(par.Params)
-//	reqSection := sctransaction_old.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.EntryPoint).
+//	reqSection := sctransaction_old.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.VMProcessorEntryPoint).
 //		WithTimeLock(par.TimeLock).
 //		WithTransfer(par.Transfer).
 //		WithArgs(reqParams)
@@ -79,7 +78,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
 //	return vmctx.PostRequest(coretypes.PostRequestParams{
 //		TargetContractID: vmctx.CurrentContractID(),
-//		EntryPoint:       reqCode,
+//		VMProcessorEntryPoint:       reqCode,
 //		Params:           params,
 //	})
 //}
@@ -89,14 +88,14 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //
 //	return vmctx.PostRequest(coretypes.PostRequestParams{
 //		TargetContractID: vmctx.CurrentContractID(),
-//		EntryPoint:       entryPoint,
+//		VMProcessorEntryPoint:       entryPoint,
 //		Params:           args,
 //		TimeLock:         timelock,
 //	})
 //}
 
 func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
-	return vm.NewContractEventPublisher(*vmctx.CurrentContractID(), vmctx.log)
+	return vm.NewContractEventPublisher(vmctx.ChainID(), vmctx.CurrentContractHname(), vmctx.log)
 }
 
 func (vmctx *VMContext) RequestID() ledgerstate.OutputID {

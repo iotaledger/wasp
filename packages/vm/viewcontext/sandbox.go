@@ -37,7 +37,7 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 		contractHname: contractHname,
 		params:        params,
 		state:         contractStateSubpartition(vctx.state, contractHname),
-		events:        vm.NewContractEventPublisher(*coretypes.NewContractID(vctx.chainID, contractHname), vctx.log),
+		events:        vm.NewContractEventPublisher(&vctx.chainID, contractHname, vctx.log),
 	}
 }
 
@@ -65,16 +65,16 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 
-func (s *sandboxview) ContractID() *coretypes.ContractID {
-	return coretypes.NewContractID(s.vctx.chainID, s.contractHname)
+func (s *sandboxview) ChainID() *coretypes.ChainID {
+	return &s.vctx.chainID
+}
+
+func (s *sandboxview) Contract() coretypes.Hname {
+	return s.contractHname
 }
 
 func (s *sandboxview) Log() coretypes.LogInterface {
 	return s.vctx
-}
-
-func (s *sandboxview) ChainID() *coretypes.ChainID {
-	return &s.vctx.chainID
 }
 
 var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)

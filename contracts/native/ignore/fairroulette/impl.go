@@ -34,7 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// implement Processor and EntryPoint interfaces
+// implement VMProcessor and VMProcessorEntryPoint interfaces
 type fairRouletteProcessor map[coretypes.Hname]fairRouletteEntryPoint
 
 type fairRouletteEntryPoint func(ctx coretypes.Sandbox) error
@@ -110,11 +110,11 @@ type PlayerStats struct {
 }
 
 // coonnection of the SC program with the Wasp node
-func GetProcessor() coretypes.Processor {
+func GetProcessor() coretypes.VMProcessor {
 	return entryPoints
 }
 
-func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	ep, ok := entryPoints[code]
 	return ep, ok
 }

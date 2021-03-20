@@ -9,6 +9,10 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
@@ -37,8 +41,21 @@ func (s *sandbox) ContractCreator() *coretypes.AgentID {
 	return s.vmctx.ContractCreator()
 }
 
-func (s *sandbox) ContractID() *coretypes.ContractID {
-	return s.vmctx.CurrentContractID()
+func (s *sandbox) ChainID() *coretypes.ChainID {
+	return s.vmctx.ChainID()
+}
+
+func (s *sandbox) Contract() coretypes.Hname {
+	return s.vmctx.CurrentContractHname()
+}
+
+func (s *sandbox) AccountID() *coretypes.AgentID {
+	hname := s.vmctx.CurrentContractHname()
+	switch hname {
+	case root.Interface.Hname(), accounts.Interface.Hname(), blob.Interface.Hname(), eventlog.Interface.Hname():
+		hname = 0
+	}
+	return coretypes.NewAgentID(s.ChainID().AsAddress(), hname)
 }
 
 func (s *sandbox) GetTimestamp() int64 {
@@ -79,17 +96,6 @@ func (s *sandbox) Minted() (ledgerstate.Color, uint64) {
 
 func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
-}
-
-func (s *sandbox) TransferToAddress(addr ledgerstate.Address, transfer *ledgerstate.ColoredBalances) bool {
-	panic("TransferToAddress: deprecated")
-
-	//return s.vmctx.TransferToAddress(targetAddr, transfer)
-}
-
-func (s *sandbox) PostRequest(par coretypes.PostRequestParams) bool {
-	panic("PostRequest: deprecated")
-	//return s.vmctx.PostRequest(par)
 }
 
 func (s *sandbox) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {

@@ -5,10 +5,11 @@ package coretypes
 
 import (
 	"bytes"
-	"errors"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 	"io"
+	"strings"
 )
 
 // AgentID represents address on the ledger with optional hname
@@ -33,6 +34,14 @@ func init() {
 	}
 }
 
+// NewAgentID makes new AgentID
+func NewAgentID(addr ledgerstate.Address, hname Hname) *AgentID {
+	return &AgentID{
+		a: addr.Clone(),
+		h: hname,
+	}
+}
+
 func NewAgentIDFromBytes(data []byte) (*AgentID, error) {
 	ret := AgentID{}
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
@@ -41,51 +50,43 @@ func NewAgentIDFromBytes(data []byte) (*AgentID, error) {
 	return &ret, nil
 }
 
-// NewAgentIDFromContractID makes AgentID from ContractID
-func NewAgentIDFromContractID(id *ContractID) *AgentID {
-	return &AgentID{
-		a: id.ChainID().AsAddress().Clone(),
-		h: id.Hname(),
+func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
+	data, err := base58.Decode(s)
+	if err != nil {
+		return nil, err
 	}
-}
-
-// NewAgentIDFromAddress makes AgentID from address.Address
-func NewAgentIDFromAddress(addr ledgerstate.Address) *AgentID {
-	return &AgentID{
-		a: addr.Clone(),
-	}
+	return NewAgentIDFromBytes(data)
 }
 
 // NewAgentIDFromString parses the human-readable string representation
 func NewAgentIDFromString(s string) (*AgentID, error) {
 	if len(s) < 2 {
-		return nil, errors.New("invalid length")
+		return nil, xerrors.New("NewAgentIDFromString: invalid length")
 	}
-	switch s[:2] {
-	case "A/":
-		var addr ledgerstate.Address
-		addr, err := ledgerstate.AddressFromBase58EncodedString(s[2:])
-		if err != nil {
-			return nil, err
-		}
-		return NewAgentIDFromAddress(addr), nil
-	case "C/":
-		var cid *ContractID
-		cid, err := NewContractIDFromString(s[2:])
-		if err != nil {
-			return nil, err
-		}
-		return NewAgentIDFromContractID(cid), err
+	if s[:2] != "A/" {
+		return nil, xerrors.New("NewAgentIDFromString: wrong prefix")
 	}
-	return nil, errors.New("invalid prefix")
+	parts := strings.Split(s[2:], "::")
+	if len(parts) != 2 {
+		return nil, xerrors.New("NewAgentIDFromString: wrong format")
+	}
+	addr, err := ledgerstate.AddressFromBase58EncodedString(parts[0])
+	if err != nil {
+		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+	}
+	hname, err := HnameFromString(parts[1])
+	if err != nil {
+		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+	}
+	return NewAgentID(addr, hname), nil
+
 }
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() *AgentID {
-	chainID := NewRandomChainID()
-	hname := Hn("testFunction")
-	cid := NewContractID(*chainID, hname)
-	return NewAgentIDFromContractID(cid)
+	addr := NewRandomChainID().AsAddress()
+	hname := Hn("testName")
+	return NewAgentID(addr, hname)
 }
 
 func (a *AgentID) Clone() *AgentID {
@@ -93,6 +94,14 @@ func (a *AgentID) Clone() *AgentID {
 		a: a.a.Clone(),
 		h: a.h,
 	}
+}
+
+func (a *AgentID) Address() ledgerstate.Address {
+	return a.a
+}
+
+func (a *AgentID) Hname() Hname {
+	return a.h
 }
 
 func (a *AgentID) Bytes() []byte {
@@ -111,33 +120,18 @@ func (a *AgentID) Equals(a1 *AgentID) bool {
 	return true
 }
 
-// IsNonAliasAddress checks if agentID represents address. 0 in the place of the contract's hname means it is an address
-// This is based on the assumption that fro coretypes.Hname 0 is a reserved value
-func (a *AgentID) IsContract() bool {
-	return a.a.Type() == ledgerstate.AliasAddressType && a.h != 0
-}
-
 // MustAddress takes address or panic if not address
 func (a *AgentID) AsAddress() ledgerstate.Address {
 	return a.a
 }
 
-// MustContractID takes contract ID or panics if not a contract ID
-func (a *AgentID) MustContractID() *ContractID {
-	chainId, err := NewChainIDFromAddress(a.a)
-	if err != nil {
-		panic(err)
-	}
-	return NewContractID(chainId, a.h)
-}
-
 // String human readable string
 func (a *AgentID) String() string {
-	if !a.IsContract() {
-		return "A/" + a.AsAddress().Base58()
-	}
-	cid := a.MustContractID()
-	return "C/" + cid.String()
+	return "A/" + a.a.Base58() + "::" + a.h.String()
+}
+
+func (a *AgentID) Base58() string {
+	return base58.Encode(a.Bytes())
 }
 
 func (a *AgentID) Write(w io.Writer) error {

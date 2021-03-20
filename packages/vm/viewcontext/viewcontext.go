@@ -87,7 +87,7 @@ func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretyp
 		return nil, err
 	}
 
-	ep, ok := proc.GetEntryPoint(epCode)
+	ep := proc.GetEntryPoint(epCode)
 	if !ok {
 		return nil, fmt.Errorf("%s: can't find entry point '%s'", proc.GetDescription(), epCode.String())
 	}

@@ -34,7 +34,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	if err != nil {
 		return nil, err
 	}
-	ep, ok := proc.GetEntryPoint(epCode)
+	ep := proc.GetEntryPoint(epCode)
 	if !ok {
 		return nil, ErrEntryPointNotFound
 	}
@@ -62,7 +62,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
 	}
-	return ep.Call(NewSandbox(vmctx))
+	return ep.CallFull(NewSandbox(vmctx))
 }
 
 func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
@@ -70,7 +70,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 	if err != nil {
 		return nil, err
 	}
-	ep, ok := proc.GetEntryPoint(epCode)
+	ep := proc.GetEntryPoint(epCode)
 	if !ok {
 		return nil, ErrEntryPointNotFound
 	}
@@ -90,7 +90,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
 	}
-	return ep.Call(NewSandbox(vmctx))
+	return ep.CallFull(NewSandbox(vmctx))
 }
 
 func (vmctx *VMContext) callerIsRoot() bool {

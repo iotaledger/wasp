@@ -75,8 +75,9 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 		aid = o.vm.contractCreator()
 		return aid.Bytes()
 	case wasmhost.KeyContractId:
-		cid := o.vm.contractID()
-		return cid.Bytes()
+		panic("TODO refactor")
+		//cid := o.vm.contractID()
+		//return cid.Bytes()
 	case wasmhost.KeyMinted:
 		_, m := o.vm.ctx.Minted()
 		return codec.EncodeUint64(m)
@@ -179,30 +180,32 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	}
 }
 
+// TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
-	decode := NewBytesDecoder(bytes)
-	contract, err := coretypes.NewContractIDFromBytes(decode.Bytes())
-	if err != nil {
-		o.Panic(err.Error())
-	}
-	function, err := coretypes.NewHnameFromBytes(decode.Bytes())
-	if err != nil {
-		o.Panic(err.Error())
-	}
-	o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
-	params := o.getParams(int32(decode.Int64()))
-	transfer := o.getTransfer(int32(decode.Int64()))
-	delay := decode.Int64()
-	if delay < -1 {
-		o.Panic("invalid delay: %d", delay)
-	}
-	o.vm.ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: *contract,
-		EntryPoint:       function,
-		Params:           params,
-		Transfer:         transfer,
-		TimeLock:         uint32(delay),
-	})
+	panic("TODO refactor")
+	//decode := NewBytesDecoder(bytes)
+	//contract, err := coretypes.NewContractIDFromBytes(decode.Bytes())
+	//if err != nil {
+	//	o.Panic(err.Error())
+	//}
+	//function, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	//if err != nil {
+	//	o.Panic(err.Error())
+	//}
+	//o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
+	//params := o.getParams(int32(decode.Int64()))
+	//transfer := o.getTransfer(int32(decode.Int64()))
+	//delay := decode.Int64()
+	//if delay < -1 {
+	//	o.Panic("invalid delay: %d", delay)
+	//}
+	//o.vm.ctx.PostRequest(coretypes.PostRequestParams{
+	//	TargetContractID: *contract,
+	//	VMProcessorEntryPoint:       function,
+	//	Params:           params,
+	//	Transfer:         transfer,
+	//	TimeLock:         uint32(delay),
+	//})
 }
 
 func (o *ScContext) getParams(paramsId int32) dict.Dict {

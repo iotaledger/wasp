@@ -29,74 +29,35 @@ func TestChainID(t *testing.T) {
 	assert.EqualValues(t, chidback, chid)
 }
 
-func TestContractIDHname(t *testing.T) {
-	chid := NewRandomChainID()
-	name := "test contract name"
-	hname := Hn(name)
-	scid := NewContractID(chid, hname)
-	scid58 := scid.Base58()
-	t.Logf("scname = '%s' schname = %s scid58 = %s", name, hname, scid58)
-	scidstr := scid.String()
-	t.Logf("scidstr = %s", scidstr)
-	t.Logf("scid short = %s", scid.Short())
-
-	scidBack, err := NewContractIDFromBytes(scid.Bytes())
-	assert.NoError(t, err)
-	assert.EqualValues(t, scidBack, scid)
-
-	scidBack, err = NewContractIDFromBase58(scid58)
-	assert.NoError(t, err)
-	assert.EqualValues(t, scidBack, scid)
-
-	ep := Hn("dummyFunction")
-	epbytes := ep.Bytes()
-	epstr := ep.String()
-
-	t.Logf("epstr = %s", epstr)
-
-	epback, err := NewHnameFromBytes(epbytes)
-	assert.NoError(t, err)
-	assert.EqualValues(t, ep, epback)
-}
-
 func TestAgentID(t *testing.T) {
-	chid := NewRandomChainID()
+	aid := NewRandomAgentID()
 
-	chid58 := chid.String()
-	t.Logf("chid58 = %s", chid58)
+	t.Logf("random AgentID = %s", aid.String())
 
 	kp := ed25519.GenerateKeyPair()
 	addr := ledgerstate.NewED25519Address(kp.PublicKey)
 
-	aid := NewAgentIDFromAddress(chid.AsAddress())
-	require.False(t, aid.IsContract())
-	t.Logf("agent ID 1: %s", aid.String())
+	hname := Hn("dummy")
+	aid = NewAgentID(addr, hname)
+
+	t.Logf("agent ID string: %s", aid.String())
+	t.Logf("agent ID base58: %s", aid.Base58())
+
 	aidBack, err := NewAgentIDFromBytes(aid.Bytes())
 	require.NoError(t, err)
-	require.EqualValues(t, aid.Bytes(), aidBack.Bytes())
+	require.True(t, aid.Equals(aidBack))
 
-	aid = NewAgentIDFromAddress(addr)
-	require.False(t, aid.IsContract())
-	t.Logf("agent ID 2: %s", aid.String())
-	aidBack, err = NewAgentIDFromBytes(aid.Bytes())
-	require.NoError(t, err)
-	require.EqualValues(t, aid.Bytes(), aidBack.Bytes())
+	aid = NewAgentID(addr, hname)
+	require.True(t, addr.Equals(aid.Address()))
+	require.EqualValues(t, aid.Hname(), hname)
 
-	cid := NewContractID(chid, Hn("dummy"))
-	aid = NewAgentIDFromContractID(cid)
-	require.True(t, aid.IsContract())
-	t.Logf("agent ID 3: %s", aid.String())
-	aidBack, err = NewAgentIDFromBytes(aid.Bytes())
+	aidBack, err = NewAgentIDFromBase58EncodedString(aid.Base58())
 	require.NoError(t, err)
-	require.EqualValues(t, aid.Bytes(), aidBack.Bytes())
+	require.True(t, aid.Equals(aidBack))
 
-	cid = NewContractID(chid, 0)
-	aid = NewAgentIDFromContractID(cid)
-	require.False(t, aid.IsContract())
-	t.Logf("agent ID 4: %s", aid.String())
-	aidBack, err = NewAgentIDFromBytes(aid.Bytes())
+	aidBack, err = NewAgentIDFromString(aid.String())
 	require.NoError(t, err)
-	require.EqualValues(t, aid.Bytes(), aidBack.Bytes())
+	require.True(t, aid.Equals(aidBack))
 }
 
 func TestHname(t *testing.T) {

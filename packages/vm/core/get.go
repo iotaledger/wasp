@@ -14,7 +14,7 @@ const (
 	VMType = "builtinvm"
 )
 
-func GetProcessor(programHash hashing.HashValue) (coretypes.Processor, error) {
+func GetProcessor(programHash hashing.HashValue) (coretypes.VMProcessor, error) {
 	switch programHash {
 	case root.Interface.ProgramHash:
 		return root.Interface, nil

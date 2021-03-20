@@ -21,7 +21,7 @@ import (
 const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
 const Description = "DonateWithFeedback, a PoC smart contract"
 
-// implementation of 'vmtypes.Processor' and 'vmtypes.EntryPoint' interfaces
+// implementation of 'vmtypes.VMProcessor' and 'vmtypes.VMProcessorEntryPoint' interfaces
 type dwfProcessor map[coretypes.Hname]dwfEntryPoint
 
 type dwfEntryPoint func(ctx coretypes.Sandbox) error
@@ -33,13 +33,13 @@ var entryPoints = dwfProcessor{
 }
 
 // point of attachment of hard coded code to the rest of Wasp
-func GetProcessor() coretypes.Processor {
+func GetProcessor() coretypes.VMProcessor {
 	return entryPoints
 }
 
-// GetEntryPoint implements EntryPoint interfaces. It resolves request code to the
+// GetEntryPoint implements VMProcessorEntryPoint interfaces. It resolves request code to the
 // function
-func (v dwfProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (v dwfProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -49,7 +49,7 @@ func (v dwfProcessor) GetDescription() string {
 	return "DonateWithFeedback hard coded smart contract processor"
 }
 
-// Run calls the function wrapped into the EntryPoint
+// Run calls the function wrapped into the VMProcessorEntryPoint
 func (ep dwfEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ret := ep(ctx)
 	if ret != nil {

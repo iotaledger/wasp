@@ -40,7 +40,7 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
-	return tx, chainID, nil
+	return tx, *chainID, nil
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized

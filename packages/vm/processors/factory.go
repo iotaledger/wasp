@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type VMConstructor func(binaryCode []byte) (coretypes.Processor, error)
+type VMConstructor func(binaryCode []byte) (coretypes.VMProcessor, error)
 
 var (
 	vmconstructors = make(map[string]VMConstructor)
@@ -29,7 +29,7 @@ func RegisterVMType(vmtype string, constructor VMConstructor) error {
 }
 
 // NewProcessorFromBinary creates an instance of the processor by its VM type and the binary code
-func NewProcessorFromBinary(vmtype string, binaryCode []byte) (coretypes.Processor, error) {
+func NewProcessorFromBinary(vmtype string, binaryCode []byte) (coretypes.VMProcessor, error) {
 	vmfactoryMutex.Lock()
 	defer vmfactoryMutex.Unlock()
 

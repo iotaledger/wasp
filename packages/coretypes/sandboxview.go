@@ -15,8 +15,10 @@ type SandboxView interface {
 	ChainOwnerID() *AgentID
 	// ContractCreator agentID which deployed contract
 	ContractCreator() *AgentID
-	// ContractID is the ID of the current contract
-	ContractID() *ContractID
+	// ChainID is the chain
+	ChainID() *ChainID
+	// Contract ID
+	Contract() Hname
 	// GetTimestamp return timestamp of the current state
 	GetTimestamp() int64
 	// Params of the current call

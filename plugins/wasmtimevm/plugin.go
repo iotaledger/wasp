@@ -26,7 +26,7 @@ func configure(_ *node.Plugin) {
 	log = logger.NewLogger(VMType)
 
 	// register VM type(s)
-	err := processors.RegisterVMType(VMType, func(binary []byte) (coretypes.Processor, error) {
+	err := processors.RegisterVMType(VMType, func(binary []byte) (coretypes.VMProcessor, error) {
 		return wasmproc.GetProcessor(binary, log)
 	})
 	if err != nil {

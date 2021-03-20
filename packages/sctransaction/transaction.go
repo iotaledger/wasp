@@ -100,17 +100,8 @@ func (req *Request) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
 }
 
-func (req *Request) SenderAgentID() (ret *coretypes.AgentID) {
-	if req.senderAddress.Type() == ledgerstate.AliasAddressType {
-		chainID, err := coretypes.NewChainIDFromAddress(req.senderAddress)
-		if err != nil {
-			panic(err)
-		}
-		ret = coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chainID, req.requestMetadata.SenderContract()))
-	} else {
-		ret = coretypes.NewAgentIDFromAddress(req.senderAddress)
-	}
-	return
+func (req *Request) SenderAgentID() *coretypes.AgentID {
+	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
 }
 
 func (req *Request) SetMetadata(d *RequestMetadata) {

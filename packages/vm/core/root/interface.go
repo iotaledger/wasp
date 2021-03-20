@@ -179,14 +179,13 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-func NewContractRecord(itf *coreutil.ContractInterface, creator *coretypes.AgentID) (ret ContractRecord) {
-	ret = ContractRecord{
+func NewContractRecord(itf *coreutil.ContractInterface, creator *coretypes.AgentID) *ContractRecord {
+	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,
 		Name:        itf.Name,
 		Creator:     *creator,
 	}
-	return
 }
 
 func (p *ContractRecord) HasCreator() bool {

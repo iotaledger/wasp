@@ -19,34 +19,30 @@ type ChainID struct {
 var NilChainID = ChainID{}
 
 // NewChainIDFromAddress temporary
-func NewChainIDFromAddress(addr ledgerstate.Address) (ret ChainID, err error) {
+func NewChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
 	alias, ok := addr.(*ledgerstate.AliasAddress)
 	if !ok {
-		err = xerrors.New("chain id must be an alias address")
-		return
+		return nil, xerrors.New("chain id must be an alias address")
 	}
-	ret = ChainID{alias}
-	return
+	return &ChainID{alias}, nil
 }
 
 // NewChainIDFromBase58 constructor decodes base58 string to the ChainID
-func NewChainIDFromBase58(b58 string) (ret ChainID, err error) {
+func NewChainIDFromBase58(b58 string) (*ChainID, error) {
 	alias, err := ledgerstate.AliasAddressFromBase58EncodedString(b58)
 	if err != nil {
-		return
+		return nil, err
 	}
-	ret = ChainID{alias}
-	return
+	return &ChainID{alias}, nil
 }
 
 // NewChainIDFromBytes reconstructs a ChainID from its binary representation.
-func NewChainIDFromBytes(data []byte) (ret ChainID, err error) {
+func NewChainIDFromBytes(data []byte) (*ChainID, error) {
 	alias, _, err := ledgerstate.AliasAddressFromBytes(data)
 	if err != nil {
-		return
+		return nil, err
 	}
-	ret = ChainID{alias}
-	return
+	return &ChainID{alias}, nil
 }
 
 // NewRandomChainID creates a random chain ID.

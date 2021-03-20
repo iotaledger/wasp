@@ -24,8 +24,6 @@ const ViewCopyAllState = "copy_all_state"
 
 var GoWasmVM wasmhost.WasmVM
 
-//TODO make sure that init function can only be called once, or only be called by contract creator
-
 // NewWasmProcessor creates new wasm processor.
 func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
 	host := &wasmProcessor{}
@@ -97,28 +95,30 @@ func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 	return results, nil
 }
 
-func (host *wasmProcessor) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
-	return host.call(ctx, nil)
-}
-
-func (host *wasmProcessor) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
-	return host.call(nil, ctx)
+func (host *wasmProcessor) Call(ctx interface{}) (dict.Dict, error) {
+	switch tctx := ctx.(type) {
+	case coretypes.Sandbox:
+		return host.call(tctx, nil)
+	case coretypes.SandboxView:
+		return host.call(nil, tctx)
+	}
+	panic(coretypes.ErrWrongTypeEntryPoint)
 }
 
 func (host *wasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) coretypes.VMProcessorEntryPoint {
 	function := host.FunctionFromCode(uint32(code))
 	if function == "" && code != coretypes.EntryPointInit {
-		return nil, false
+		function = "default" // TODO refactor default processing
 	}
 	host.function = function
-	return host, true
+	return host
 }
 
-func GetProcessor(binaryCode []byte, logger *logger.Logger) (coretypes.Processor, error) {
+func GetProcessor(binaryCode []byte, logger *logger.Logger) (coretypes.VMProcessor, error) {
 	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), logger)
 	if err != nil {
 		return nil, err
@@ -148,12 +148,13 @@ func (host *wasmProcessor) contractCreator() *coretypes.AgentID {
 	return host.ctxView.ContractCreator()
 }
 
-func (host *wasmProcessor) contractID() *coretypes.ContractID {
-	if host.ctx != nil {
-		return host.ctx.ContractID()
-	}
-	return host.ctxView.ContractID()
-}
+// TODO refactor
+//func (host *wasmProcessor) contractID() *coretypes.ContractID {
+//	if host.ctx != nil {
+//		return host.ctx.ContractID()
+//	}
+//	return host.ctxView.ContractID()
+//}
 
 func (host *wasmProcessor) log() coretypes.LogInterface {
 	if host.ctx != nil {

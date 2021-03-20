@@ -9,26 +9,31 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 )
 
 // FindContract is an internal utility function which finds a contract in the KVStore
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not directly exposed to the sandbox
+// If contract is not found by the given hname, the default contract is returned
 func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecord, error) {
 	contractRegistry := collections.NewMapReadOnly(state, VarContractRegistry)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
-	if retBin == nil {
+	var ret *ContractRecord
+	var err error
+	if retBin != nil {
+		if ret, err = DecodeContractRecord(retBin); err != nil {
+			return nil, fmt.Errorf("root: %v", err)
+		}
+	} else {
+		// not founc in registry
 		if hname == Interface.Hname() {
 			// if not found and it is root, it means it is chain init --> return empty root record
-			rec := NewContractRecord(Interface, &coretypes.AgentID{})
-			return &rec, nil
+			ret = NewContractRecord(Interface, &coretypes.AgentID{})
+		} else {
+			// return default contract
+			ret = NewContractRecord(_default.Interface, &coretypes.AgentID{})
 		}
-		return nil, ErrContractNotFound
-	}
-
-	ret, err := DecodeContractRecord(retBin)
-	if err != nil {
-		return nil, fmt.Errorf("root: %v", err)
 	}
 	return ret, nil
 }
@@ -156,9 +161,9 @@ func isAuthorizedToDeploy(ctx coretypes.Sandbox) bool {
 		// chain owner is always authorized
 		return true
 	}
-	if caller.IsContract() {
+	if caller.Address().Equals(ctx.ChainID().AsAddress()) {
 		// smart contract from the same chain is always authorize
-		return caller.MustContractID().ChainID() == ctx.ContractID().ChainID()
+		return true
 	}
 
 	return collections.NewMap(ctx.State(), VarDeployPermissions).MustHasAt(caller.Bytes())

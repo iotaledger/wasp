@@ -36,8 +36,12 @@ func (s sandboxView) ContractCreator() *coretypes.AgentID {
 	return s.vmctx.ContractCreator()
 }
 
-func (s sandboxView) ContractID() *coretypes.ContractID {
-	return s.vmctx.CurrentContractID()
+func (s sandboxView) ChainID() *coretypes.ChainID {
+	return s.vmctx.ChainID()
+}
+
+func (s sandboxView) Contract() coretypes.Hname {
+	return s.vmctx.CurrentContractHname()
 }
 
 func (s sandboxView) GetTimestamp() int64 {
@@ -49,10 +53,6 @@ func (s sandboxView) Params() dict.Dict {
 }
 
 func (s sandboxView) State() kv.KVStoreReader {
-	return s.vmctx.State()
-}
-
-func (s sandboxView) WriteableState() kv.KVStore {
 	return s.vmctx.State()
 }
 

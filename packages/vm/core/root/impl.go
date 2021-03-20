@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -38,7 +39,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
 	a.Require(state.MustGet(VarStateInitialized) == nil, "root.initialize.fail: already initialized")
-	a.Require(!ctx.Caller().IsContract(), "root.init.fail: chain deployer can't be another smart contract")
+	a.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
 
 	// retrieving init parameters
 	// -- chain ID
@@ -52,22 +53,27 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
-	rec := NewContractRecord(Interface, ctx.Caller())
-	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(&rec))
+	// install empty default contract at hname == 0
+	rec := NewContractRecord(_default.Interface, ctx.Caller())
+	contractRegistry.MustSetAt(_default.Interface.Hname().Bytes(), EncodeContractRecord(rec))
 
-	// deploy blob
+	// install root contract itself
+	rec = NewContractRecord(Interface, ctx.Caller())
+	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(rec))
+
+	// deploy blob contract
 	rec = NewContractRecord(blob.Interface, ctx.Caller())
-	err := storeAndInitContract(ctx, &rec, nil)
+	err := storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 
 	// deploy accounts
 	rec = NewContractRecord(accounts.Interface, ctx.Caller())
-	err = storeAndInitContract(ctx, &rec, nil)
+	err = storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 
-	// deploy chainlog
+	// deploy eventlog
 	rec = NewContractRecord(eventlog.Interface, ctx.Caller())
-	err = storeAndInitContract(ctx, &rec, nil)
+	err = storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 
 	state.Set(VarStateInitialized, []byte{0xFF})
@@ -77,10 +83,11 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if feeColorSet {
 		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname().String())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname().String())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname().String())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", eventlog.Interface.Name, eventlog.Interface.Hname().String())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", _default.Interface.Name, _default.Interface.Hname())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", eventlog.Interface.Name, eventlog.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }

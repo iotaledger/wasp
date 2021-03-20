@@ -44,10 +44,6 @@ func Encode(v interface{}) []byte {
 		return EncodeChainID(*vt)
 	case coretypes.ChainID:
 		return EncodeChainID(vt)
-	case *coretypes.ContractID:
-		return EncodeContractID(*vt)
-	case coretypes.ContractID:
-		return EncodeContractID(vt)
 	case *coretypes.AgentID:
 		return EncodeAgentID(vt)
 	case coretypes.AgentID:

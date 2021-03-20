@@ -17,8 +17,10 @@ type Sandbox interface {
 	ChainOwnerID() *AgentID
 	// ContractCreator agentID which deployed contract
 	ContractCreator() *AgentID
-	// ContractID is the ID of the current contract. Take chainID with ctx.ContractID().ChainID()
-	ContractID() *ContractID
+	// ChainID id of the chain
+	ChainID() *ChainID
+	// Contract ID of the contract in the current chain
+	Contract() Hname
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// Params of the current call
@@ -48,13 +50,6 @@ type Sandbox interface {
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col ledgerstate.Color) uint64
 
-	// TransferToAddress send tokens to the L1 ledger address
-	// Deprecated: use Send instead
-	TransferToAddress(addr ledgerstate.Address, transfer *ledgerstate.ColoredBalances) bool
-	// PostRequest sends cross-chain request
-	// Deprecated: use Send instead
-	PostRequest(par PostRequestParams) bool
-
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and PostRequest
 	Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
@@ -65,16 +60,6 @@ type Sandbox interface {
 	Event(msg string)
 	//
 	Utils() Utils
-}
-
-// PostRequestParams is parameters of the PostRequest call
-// Deprecated: use SendTransfer instead
-type PostRequestParams struct {
-	TargetContractID ContractID
-	EntryPoint       Hname
-	TimeLock         uint32 // unix seconds
-	Params           dict.Dict
-	Transfer         *ledgerstate.ColoredBalances
 }
 
 type SendOptions struct {
