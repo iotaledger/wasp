@@ -50,20 +50,6 @@ func testChainOwnerIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return ret, nil
 }
 
-func testContractIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
-	cID := ctx.ContractID()
-	ret := dict.New()
-	ret.Set(VarContractID, cID.Bytes())
-	return ret, nil
-}
-
-func testContractIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
-	cID := ctx.ContractID()
-	ret := dict.New()
-	ret.Set(VarContractID, cID.Bytes())
-	return ret, nil
-}
-
 func testSandboxCall(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil)
 	if err != nil {
@@ -137,7 +123,7 @@ func sendToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 		ctx.Log().Panicf("wrong parameter '%s'", ParamAddress)
 	}
 	myTokens := ctx.Balances()
-	succ := ctx.TransferToAddress(targetAddress, myTokens)
+	succ := ctx.Send(targetAddress, myTokens, nil)
 	if !succ {
 		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String())
 	}

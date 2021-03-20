@@ -35,7 +35,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(ownerAddr)
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -43,7 +43,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(*newOwnerAgentID, 0)
-	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 2)
+	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 0)
 	chain.CheckAccountLedger()
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
@@ -52,7 +52,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(*newOwnerAgentID, 0)
-	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 3)
+	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 0)
 	chain.CheckAccountLedger()
 }
 
@@ -62,15 +62,15 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(ownerAddr)
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(ledgerstate.ColorIOTA, 42)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42+1)
+	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 0)
@@ -83,17 +83,17 @@ func TestAccountsDepositWithdrawToChainFail(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(ownerAddr)
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithTransfer(ledgerstate.ColorIOTA, 42)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42+1)
+	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToChain)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
-	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42+2)
-	env.AssertAddressBalance(ownerAddr, ledgerstate.ColorIOTA, solo.Saldo-42-2)
+	chain.AssertAccountBalance(*newOwnerAgentID, ledgerstate.ColorIOTA, 42)
+	env.AssertAddressBalance(ownerAddr, ledgerstate.ColorIOTA, solo.Saldo-42)
 }

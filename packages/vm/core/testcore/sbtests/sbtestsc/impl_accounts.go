@@ -13,10 +13,10 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncWithdrawToChain)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
-	succ := ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: accounts.Interface.ContractID(*targetChain),
-		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
-		Transfer:         coretypes.NewTransferIotas(2),
+	succ := ctx.Send(targetChain.AsAddress(), coretypes.NewTransferIotas(2), &coretypes.SendMetadata{
+		TargetContract: accounts.Interface.Hname(),
+		EntryPoint:     coretypes.Hn(accounts.FuncWithdraw),
+		Args:           nil,
 	})
 	if !succ {
 		return nil, fmt.Errorf("failed to post request")

@@ -112,7 +112,7 @@ func (vmctx *VMContext) mustHandleFees() {
 	totalFee := vmctx.ownerFee + vmctx.validatorFee
 	if totalFee == 0 || vmctx.requesterIsChainOwner() {
 		// no fees enabled or the caller is the chain owner
-		vmctx.log.Debugf("mustHandleFees: no fees charged\n")
+		vmctx.log.Debugf("mustHandleFees: no fees charged")
 		return
 	}
 	// handle fees
@@ -180,7 +180,7 @@ func (vmctx *VMContext) mustHandleFallback() {
 
 // mustCallFromRequest is the call itself. Assumes sc exists
 func (vmctx *VMContext) mustCallFromRequest() {
-	vmctx.log.Debugf("mustCallFromRequest: %s\n", vmctx.req.ID().String())
+	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non vew entry points. Calling the view will trigger error and fallback
 	md := vmctx.req.GetMetadata()

@@ -136,7 +136,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	defer chain.WaitForEmptyBacklog()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(ownerAddr)
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -158,7 +158,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	defer chain.WaitForEmptyBacklog()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(ownerAddr)
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)

@@ -32,19 +32,13 @@ type Handler func(ctx coretypes.Sandbox) (dict.Dict, error)
 type ViewHandler func(ctx coretypes.SandboxView) (dict.Dict, error)
 
 func defaultInitFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("default init function invoked")
+	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
 	return nil, nil
 }
 
 func defaultHandlerFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
-	switch tctx := ctx.(type) {
-	case coretypes.Sandbox:
-		tctx.Log().Debugf("default handler invoked")
-	case coretypes.SandboxView:
-		tctx.Log().Debugf("default view handler invoked")
-	default:
-		panic(coretypes.ErrInternalWrongTypeEntryPoint)
-	}
+	ctx.Log().Debugf("default full entry point handler invoked for contact %s from caller %s\nTokens: %s",
+		ctx.Contract(), ctx.Caller(), ctx.IncomingTransfer().String())
 	return nil, nil
 }
 

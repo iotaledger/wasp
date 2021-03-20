@@ -88,7 +88,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 2, 0)
 
 	user, userAddr := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentIDFromAddress(userAddr)
+	userAgentID := coretypes.NewAgentID(userAddr, 0)
 	_, err = chain.UploadBlob(user,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",

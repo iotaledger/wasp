@@ -25,12 +25,12 @@ func TestNoContractView(t *testing.T) {
 }
 
 func TestNoEPPost(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, true, false)
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, "dummyEP").WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	require.NoError(t, err)
 }
 
 func TestNoEPView(t *testing.T) {

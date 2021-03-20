@@ -24,8 +24,6 @@ func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
 		coreutil.ViewFunc(FuncChainOwnerIDView, testChainOwnerIDView),
 		coreutil.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
-		coreutil.ViewFunc(FuncContractIDView, testContractIDView),
-		coreutil.Func(FuncContractIDFull, testContractIDFull),
 		coreutil.Func(FuncGetMintedSupply, getMintedSupply),
 
 		coreutil.Func(FuncEventLogGenericData, testEventLogGenericData),
@@ -70,8 +68,6 @@ const (
 	//Function sandbox test
 	FuncChainOwnerIDView = "testChainOwnerIDView"
 	FuncChainOwnerIDFull = "testChainOwnerIDFull"
-	FuncContractIDView   = "testContractIDView"
-	FuncContractIDFull   = "testContractIDFull"
 
 	FuncSandboxCall            = "testSandboxCall"
 	FuncCheckContextFromFullEP = "checkContextFromFullEP"

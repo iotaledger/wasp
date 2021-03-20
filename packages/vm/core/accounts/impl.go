@@ -25,7 +25,7 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("getBalance for %s", &aid)), nil
+	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("getBalance for %s", aid)), nil
 }
 
 // getTotalAssets returns total colored balances controlled by the chain

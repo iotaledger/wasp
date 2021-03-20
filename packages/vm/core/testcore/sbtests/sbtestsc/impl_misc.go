@@ -16,7 +16,7 @@ func callOnChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf(FuncCallOnChain)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramIn := params.MustGetInt64(ParamIntParamValue)
-	hnameContract := params.MustGetHname(ParamHnameContract, ctx.ContractID().Hname())
+	hnameContract := params.MustGetHname(ParamHnameContract, ctx.Contract())
 	hnameEP := params.MustGetHname(ParamHnameEP, coretypes.Hn(FuncCallOnChain))
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
@@ -52,7 +52,7 @@ func runRecursion(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if depth <= 0 {
 		return nil, nil
 	}
-	return ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
+	return ctx.Call(ctx.Contract(), coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
 		ParamHnameEP:       coretypes.Hn(FuncRunRecursion),
 		ParamIntParamValue: depth - 1,
 	}), nil)
@@ -69,14 +69,14 @@ func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
 		ret.Set(ParamIntParamValue, codec.EncodeInt64(callInt))
 		return ret, nil
 	}
-	r1, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+	r1, err := ctx.Call(ctx.Contract(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 1,
 	}))
 	a.RequireNoError(err)
 	result := kvdecoder.New(r1, ctx.Log())
 	r1val := result.MustGetInt64(ParamIntParamValue)
 
-	r2, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+	r2, err := ctx.Call(ctx.Contract(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 2,
 	}))
 	a.RequireNoError(err)
