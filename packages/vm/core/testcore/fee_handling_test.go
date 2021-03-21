@@ -19,8 +19,11 @@ func TestInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 1)
-	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-2)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertOwnersIotas(1)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-1)
+	chain.AssertTotalIotas(1)
+	chain.AssertOwnersIotas(1)
 
 	checkFees(chain, blob.Interface.Name, 0, 0)
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -34,15 +37,16 @@ func TestBase(t *testing.T) {
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
-		root.ParamOwnerFee, 1,
-	)
+		root.ParamOwnerFee, 5,
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
+	chain.AssertOwnersIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
-	checkFees(chain, blob.Interface.Name, 1, 0)
+	checkFees(chain, blob.Interface.Name, 5, 0)
 }
 
 func TestFeeIsEnough1(t *testing.T) {
@@ -52,23 +56,27 @@ func TestFeeIsEnough1(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
-	)
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
+	chain.AssertOwnersIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 
+	// the upload blob takes fees itself
 	_, err = chain.UploadBlob(nil,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 3)
-	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-5)
+	chain.AssertOwnersIotas(2 + 1)
+	chain.AssertTotalIotas(2 + 1)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
 }
 
 func TestFeeIsEnough2(t *testing.T) {
@@ -77,27 +85,88 @@ func TestFeeIsEnough2(t *testing.T) {
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
-		root.ParamOwnerFee, 2,
-	)
+		root.ParamOwnerFee, 10,
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
+	chain.AssertOwnersIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
-	checkFees(chain, blob.Interface.Name, 2, 0)
+	checkFees(chain, blob.Interface.Name, 10, 0)
 
-	user, userAddr := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddr, 0)
-	_, err = chain.UploadBlob(user,
+	// the upload blob takes fees itself
+	_, err = chain.UploadBlob(nil,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 4)
-	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
+	chain.AssertOwnersIotas(2 + 10)
+	chain.AssertTotalIotas(2 + 10)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
+}
 
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 1)
-	env.AssertAddressBalance(userAddr, ledgerstate.ColorIOTA, solo.Saldo-3)
+func TestFeesNoNeed(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+		root.ParamHname, blob.Interface.Hname(),
+		root.ParamOwnerFee, 10,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	chain.AssertOwnersIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
+
+	checkFees(chain, blob.Interface.Name, 10, 0)
+
+	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, "par1", []byte("data1"))
+	req.WithIotas(7)
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	chain.AssertOwnersIotas(2 + 7)
+	chain.AssertTotalIotas(2 + 7)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
+
+}
+
+func TestFeesNotEnough(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	user, userAddr := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddr, 0)
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+		root.ParamHname, blob.Interface.Hname(),
+		root.ParamOwnerFee, 10,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	checkFees(chain, blob.Interface.Name, 10, 0)
+
+	chain.AssertOwnersIotas(2)
+	chain.AssertTotalIotas(2)
+	chain.AssertIotas(userAgentID, 0)
+	env.AssertAddressIotas(userAddr, solo.Saldo)
+
+	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, "par1", []byte("data1"))
+	req.WithIotas(7)
+	_, err = chain.PostRequestSync(req, user)
+	require.Error(t, err)
+
+	chain.AssertOwnersIotas(2 + 7)
+	chain.AssertTotalIotas(2 + 7)
+	chain.AssertIotas(userAgentID, 0)
+	env.AssertAddressIotas(userAddr, solo.Saldo-7)
+
 }

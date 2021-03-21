@@ -58,7 +58,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	contractRegistry.MustSetAt(_default.Interface.Hname().Bytes(), EncodeContractRecord(rec))
 
 	// install root contract itself
-	rec = NewContractRecord(Interface, ctx.Caller())
+	rec = NewContractRecord(Interface, &coretypes.AgentID{})
 	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(rec))
 
 	// deploy blob contract

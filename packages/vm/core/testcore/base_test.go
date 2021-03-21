@@ -7,6 +7,14 @@ import (
 	"testing"
 )
 
+func Test1(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+	chain.AssertTotalIotas(1)
+	chain.AssertOwnersIotas(1)
+	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-1)
+}
+
 func TestNoContractPost(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")

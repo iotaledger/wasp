@@ -36,6 +36,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 const (
 	Saldo              = uint64(1337)
 	DustThresholdIotas = uint64(1)
+	ChainDustThreshold = uint64(100)
 )
 
 var DustThreshold = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: DustThresholdIotas}

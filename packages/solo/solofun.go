@@ -48,7 +48,7 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 	if amount > numIotas {
 		numIotas = amount
 	}
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: amount}
+	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: numIotas}
 
 	if err := txb.AddExtendedOutputConsume(addr, nil, bals, amount); err != nil {
 		return [32]byte{}, err

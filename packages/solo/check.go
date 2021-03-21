@@ -18,6 +18,10 @@ func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col ledgerstate.
 	require.EqualValues(env.T, int(expected), int(env.GetAddressBalance(addr, col)))
 }
 
+func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
+	env.AssertAddressBalance(addr, ledgerstate.ColorIOTA, expected)
+}
+
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
 
@@ -82,7 +86,7 @@ func (ch *Chain) CheckAccountLedger() {
 func (ch *Chain) AssertAccountBalance(agentID *coretypes.AgentID, col ledgerstate.Color, bal uint64) {
 	bals := ch.GetAccountBalance(agentID)
 	b, _ := bals.Get(col)
-	require.EqualValues(ch.Env.T, bal, b)
+	require.EqualValues(ch.Env.T, int(bal), int(b))
 }
 
 func (ch *Chain) AssertIotas(agentID *coretypes.AgentID, bal uint64) {

@@ -18,7 +18,6 @@ import (
 func TestRootBasic(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckChain()
 	chain.Log.Infof("\n%s\n", chain.String())
@@ -27,7 +26,6 @@ func TestRootBasic(t *testing.T) {
 func TestRootRepeatInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckChain()
 
@@ -39,13 +37,12 @@ func TestRootRepeatInit(t *testing.T) {
 func TestGetInfo(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	chainID, ownerAgentID, contracts := chain.GetInfo()
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, 5, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -62,7 +59,6 @@ func TestGetInfo(t *testing.T) {
 func TestDeployExample(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
@@ -98,7 +94,6 @@ func TestDeployExample(t *testing.T) {
 func TestDeployDouble(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
@@ -133,29 +128,28 @@ func TestDeployDouble(t *testing.T) {
 func TestChangeOwnerAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	_, ownerAgentID, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
 	_, ownerAgentID, _ = chain.GetInfo()
-	require.EqualValues(t, newOwnerAgentID, ownerAgentID)
+	require.True(t, newOwnerAgentID.Equals(&ownerAgentID))
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)

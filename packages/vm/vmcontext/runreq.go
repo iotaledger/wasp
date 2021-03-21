@@ -121,8 +121,8 @@ func (vmctx *VMContext) mustHandleFees() bool {
 			vmctx.creditToAccount(vmctx.commonAccount(), accrue)
 		}
 		vmctx.mustSendBack(ledgerstate.NewColoredBalances(rem))
-		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Tokens sent back to %s",
-			vmctx.req.ID(), vmctx.req.SenderAddress())
+		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Remaining tokens were sent back to %s",
+			vmctx.req.ID(), vmctx.req.SenderAddress().Base58())
 		vmctx.remainingAfterFees = nil
 		return false
 	}

@@ -14,11 +14,11 @@ func TestMintOk(t *testing.T) {
 	chain.CheckChain()
 
 	wallet, walletAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressBalance(walletAddr, ledgerstate.ColorIOTA, solo.Saldo)
+	env.AssertAddressIotas(walletAddr, solo.Saldo)
 
 	color1, err := env.MintTokens(wallet, 1000)
 	require.NoError(t, err)
-	env.AssertAddressBalance(walletAddr, ledgerstate.ColorIOTA, solo.Saldo-1000)
+	env.AssertAddressIotas(walletAddr, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)
 
 	color2, err := env.MintTokens(wallet, 100)
